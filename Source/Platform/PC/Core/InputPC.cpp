@@ -261,9 +261,14 @@ float Input::GetKeyboardAxis(KeyboardKey positive, KeyboardKey negative, bool ch
         return 0.0f;
     }
 
-    const float pos = static_cast<float>(IsKeyboardKeyHeld(positive));
-    const float neg = static_cast<float>(IsKeyboardKeyHeld(negative));
-    return pos - neg;
+    float axis = IsKeyboardKeyHeld(positive, false) ? 1.0f : 0.0f;
+
+	if (IsKeyboardKeyHeld(negative, false))
+    {
+        axis -= 1.0f;
+    }
+
+    return axis;
 }
 
 bool Input::HasFocus() const
