@@ -1,0 +1,7 @@
+
+.vs
+*.vcxproj.user
+Intermediate/
+Build/
+
+

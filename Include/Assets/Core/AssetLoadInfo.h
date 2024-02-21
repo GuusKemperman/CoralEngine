@@ -1,0 +1,39 @@
+#pragma once
+#include "AssetFileMetaData.h"
+
+namespace Engine
+{
+	class AssetSaveInfo;
+
+	class AssetLoadInfo
+	{
+		// Use LoadFromFile instead
+		AssetLoadInfo(const std::filesystem::path& fromFile);
+
+		// Use LoadFromStream
+		AssetLoadInfo(std::unique_ptr<std::istream> stream);
+
+	public:
+		AssetLoadInfo(const AssetSaveInfo& saveInfo);
+
+		// As if you've loaded an empty file
+		AssetLoadInfo(const MetaType& assetClass, std::string_view name);
+
+		static std::optional<AssetLoadInfo> LoadFromFile(const std::filesystem::path& fromFile);
+		static std::optional<AssetLoadInfo> LoadFromStream(std::unique_ptr<std::istream> stream);
+
+		std::istream& GetStream() { return *mStream; }
+		uint32 GetVersion() const { return mMetaData->mAssetVersion; }
+		const MetaType& GetAssetClass() const { return mMetaData->GetClass(); }
+		const std::string& GetName() const { return mMetaData->GetName(); }
+
+	private:
+		// Returns true on succes
+		bool ConstructFromCurrentStream();
+
+		std::unique_ptr<std::istream> mStream;
+		
+		friend class AssetManager;
+		std::unique_ptr<AssetFileMetaData> mMetaData;
+	};
+}

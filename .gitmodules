@@ -1,0 +1,6 @@
+[submodule "external/xsr"]
+	path = external/xsr
+	url = https://github.com/BredaUniversityGames/xsr.git
+[submodule "external/lua"]
+	path = external/lua
+	url = https://github.com/BredaUniversityGames/lua.git
