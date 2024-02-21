@@ -7,17 +7,21 @@ namespace Engine
 	class World;
 	class BinaryGSONObject;
 
-	enum class Axis
+	class Axis
 	{
-		X,
-		Y,
-		Z,
-		Forward = X,
-		Right = Y,
-		Up = Z
+	public:
+		enum Values
+		{
+			X,
+			Y,
+			Z,
+			Right = X,
+			Up = Y,
+			Forward = Z,
+		};
 	};
 
-	static constexpr glm::vec3 ToVector3(Axis axis) { glm::vec3 v{}; v[static_cast<int>(axis)] = 1.0f; return v; }
+	static constexpr glm::vec3 ToVector3(Axis::Values axis) { glm::vec3 v{}; v[static_cast<int>(axis)] = 1.0f; return v; }
 
 	constexpr glm::vec3 sForward = ToVector3(Axis::Forward);
 	constexpr glm::vec3 sRight = ToVector3(Axis::Right);
@@ -111,12 +115,12 @@ namespace Engine
 		glm::vec3 GetLocalUp() const { return GetLocalAxis(Axis::Up);}
 		glm::vec3 GetLocalRight() const { return GetLocalAxis(Axis::Right); }
 		
-		glm::vec3 GetLocalAxis(const Axis axis) const { return Math::RotateVector(ToVector3(axis), mLocalOrientation); }
+		glm::vec3 GetLocalAxis(const Axis::Values axis) const { return Math::RotateVector(ToVector3(axis), mLocalOrientation); }
 
 		glm::vec3 GetWorldForward() const { return GetWorldAxis(Axis::Forward); }
 		glm::vec3 GetWorldUp() const { return GetWorldAxis(Axis::Up); }
 		glm::vec3 GetWorldRight() const { return GetWorldAxis(Axis::Right); }
-		glm::vec3 GetWorldAxis(const Axis axis) const { return Math::RotateVector(ToVector3(axis), GetWorldOrientation()); }
+		glm::vec3 GetWorldAxis(const Axis::Values axis) const { return Math::RotateVector(ToVector3(axis), GetWorldOrientation()); }
 
 		void SetLocalForward(const glm::vec3& forward) { SetLocalOrientation(Math::CalculateRotationBetweenOrientations(sForward, forward)); }
 		void SetLocalUp(const glm::vec3& up) { SetLocalOrientation(Math::CalculateRotationBetweenOrientations(sUp, up)); }
