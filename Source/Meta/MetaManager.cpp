@@ -29,17 +29,8 @@ void Engine::MetaManager::PostConstruct()
 {
 	for (const auto& [typeId, func] : Internal::GetTypesReflectedAtStartUp())
 	{
-		if (const MetaType* existingType = TryGetType(typeId);
-			existingType != nullptr)
+		if (TryGetType(typeId) != nullptr)
 		{
-#ifdef _DEBUG
-			MetaType newType = func();
-			if (newType.GetName() != existingType->GetName())
-			{
-				// AddType will give a more comprehensive warning.
-				AddType(std::move(newType));
-			}
-#endif
 			continue;
 		}
 
