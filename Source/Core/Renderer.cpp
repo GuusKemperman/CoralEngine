@@ -100,8 +100,6 @@ Engine::Renderer::Renderer()
 	LOG(LogCore, Message, "Initializing xsr");
 	[[maybe_unused]] const bool success = initialize(config);
 	ASSERT_LOG(success, "Failed to initialize xsr");
-
-	CreateImguiContext();
 }
 
 Engine::Renderer::~Renderer()

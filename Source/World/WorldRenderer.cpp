@@ -7,7 +7,7 @@
 #include "Components/CameraComponent.h"
 #include "xsr.hpp"
 #include "Components/TransformComponent.h"
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 
 Engine::WorldRenderer::WorldRenderer(const World& world) :
 	mWorld(world),
