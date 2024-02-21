@@ -468,7 +468,6 @@
     <ClCompile Include="Source\Meta\ReflectedTypes\GLM\ReflectVec2.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\GLM\ReflectVec3.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\GLM\ReflectVec4.cpp" />
-    <ClCompile Include="Source\Meta\ReflectedTypes\ImGui\ReflectImGuiKey.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\PrimitiveTypes\ReflectBool.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\PrimitiveTypes\ReflectFloat32.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\PrimitiveTypes\ReflectInt32.cpp" />
@@ -735,7 +734,6 @@
     <ClInclude Include="Include\Meta\MetaTypeFilter.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\ReflectENTT.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\ReflectGLM.h" />
-    <ClInclude Include="Include\Meta\ReflectedTypes\ReflectImGui.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\ReflectPrimitiveTypes.h" />
     <ClInclude Include="Include\Meta\MetaField.h" />
     <ClInclude Include="Include\Meta\MetaReflect.h" />
