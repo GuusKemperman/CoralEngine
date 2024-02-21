@@ -25,7 +25,7 @@ void Engine::FlyCamControllerComponent::ApplyTranslation(TransformComponent& tra
 	glm::vec3 totalTranslation{};
 	for (uint32 i = 0; i < 3; i++)
 	{
-		totalTranslation += scaledMovementInput[i] * transform.GetWorldAxis(static_cast<Axis>(i));
+		totalTranslation += scaledMovementInput[i] * transform.GetWorldAxis(static_cast<Axis::Values>(i));
 	}
 
 	transform.TranslateWorldPosition(totalTranslation);
