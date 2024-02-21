@@ -411,6 +411,7 @@
     <ClCompile Include="Source\Components\NameComponent.cpp" />
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\Other\ReflectNullChecker.cpp" />
+    <ClCompile Include="Source\Platform\PC\Core\InputPC.cpp" />
     <ClCompile Include="Source\UnitTests\LevelAndPrefabSerializationUnitTests.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -601,7 +602,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">
       </ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="source\core\InputManager.cpp" />
+    <ClCompile Include="source\core\Input.cpp" />
     <ClCompile Include="Source\Core\Renderer.cpp" />
     <ClCompile Include="Source\Utilities\FileFunctions.cpp" />
     <ClCompile Include="Source\Utilities\Imgui\ImguiDragDrop.cpp">
@@ -789,7 +790,7 @@
     <ClInclude Include="include\Engine\Precomp\Precomp.h" />
     <ClInclude Include="include\core\AssetManager.h" />
     <ClInclude Include="include\core\Editor.h" />
-    <ClInclude Include="include\core\InputManager.h" />
+    <ClInclude Include="include\core\Input.h" />
     <ClInclude Include="Include\Core\Renderer.h" />
     <ClInclude Include="include\core\EngineSubsystem.h" />
     <ClInclude Include="Include\Utilities\DoUndo.h" />

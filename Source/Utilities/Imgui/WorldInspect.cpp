@@ -8,7 +8,7 @@
 #include "World/WorldRenderer.h"
 #include "World/Registry.h"
 #include "Utilities/FrameBuffer.h"
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
@@ -45,7 +45,7 @@ namespace Engine
 	{
 		RemoveInvalidEntities(selectedEntities, world);
 
-		if (InputManager::IsKeyReleased(ImGuiKey_Delete))
+		if (Input::Get().WasKeyboardKeyReleased(Input::KeyboardKey::Delete))
 		{
 			for (const auto entity : selectedEntities)
 			{
@@ -258,15 +258,15 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 
 void Engine::WorldViewport::ShowGuizmoOptions()
 {
-	if (InputManager::IsKeyPressed(ImGuiKey_R))
+	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::R))
 	{
 		sGuizmoOperation = ImGuizmo::SCALE;
 	}
-	else if (InputManager::IsKeyPressed(ImGuiKey_E))
+	else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::E))
 	{
 		sGuizmoOperation = ImGuizmo::ROTATE;
 	}
-	else if (InputManager::IsKeyPressed(ImGuiKey_T))
+	else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::T))
 	{
 		sGuizmoOperation = ImGuizmo::TRANSLATE;
 	}
@@ -289,7 +289,7 @@ void Engine::WorldViewport::ShowGuizmoOptions()
 		if (ImGui::RadioButton("World", sGuizmoMode == ImGuizmo::WORLD))
 			sGuizmoMode = ImGuizmo::WORLD;
 	}
-	if (InputManager::IsKeyPressed(ImGuiKey_V))
+	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
 		sShouldGuizmoSnap = !sShouldGuizmoSnap;
 
 	ImGui::Checkbox("Snap", &sShouldGuizmoSnap);
@@ -807,7 +807,7 @@ void Engine::WorldHierarchy::DisplaySingle(Registry& registry,
 
 	if (ImGui::Selectable(displayName.c_str(), &isSelected, 0, selectableAreaSize))
 	{
-		if (!InputManager::IsKeyDown(ImGuiKey_LeftCtrl))
+		if (!Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
 		{
 			selectedEntities.clear();
 		}

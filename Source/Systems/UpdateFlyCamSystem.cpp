@@ -5,20 +5,20 @@
 #include "World/Registry.h"
 #include "Components/TransformComponent.h"
 #include "Components/FlyCamControllerComponent.h"
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
 void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 {
-	const float mouseWheelChange = InputManager::GetScrollY();
+	const float mouseWheelChange = Input::Get().GetMouseWheel();
 	const bool movementSpeedMultiply = mouseWheelChange >= 0.0f;
 
 	glm::vec3 movementInput{};
 
-	movementInput[Axis::Forward] = InputManager::GetAxis(ImGuiKey_W, ImGuiKey_S);
-	movementInput[Axis::Up] = InputManager::GetAxis(ImGuiKey_Space, ImGuiKey_LeftCtrl);
-	movementInput[Axis::Right] = InputManager::GetAxis(ImGuiKey_A, ImGuiKey_D);
+	movementInput[Axis::Forward] = Input::Get().GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S);
+	movementInput[Axis::Up] = Input::Get().GetKeyboardAxis(Input::KeyboardKey::Space, Input::KeyboardKey::LeftControl);
+	movementInput[Axis::Right] =  Input::Get().GetKeyboardAxis(Input::KeyboardKey::A, Input::KeyboardKey::D);
 
 	const glm::vec3 timeScaledMovementInput = movementInput * dt;
 
@@ -30,8 +30,8 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	const glm::vec2 rotationInput
 	{
-		InputManager::GetAxis(ImGuiKey_DownArrow, ImGuiKey_UpArrow),
-		InputManager::GetAxis(ImGuiKey_LeftArrow, ImGuiKey_RightArrow)
+		Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp),
+		Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowLeft, Input::KeyboardKey::ArrowRight)
 	};
 
 	const glm::vec2 timeScaledRotationInput = rotationInput * dt;
