@@ -377,7 +377,11 @@ void Engine::SerializeSingleComponent(const Registry& registry,
 	const entt::entity entity,
 	const ComponentClassSerializeArg& arg)
 {
-	ASSERT(arg.mStorage.contains(entity));
+	if (!arg.mStorage.contains(entity))
+	{
+		return;
+	}
+
 	ASSERT(parentObject.GetName() == arg.mComponentClass.GetName());
 
 	MetaAny component = MetaAny{ arg.mComponentClass, const_cast<void*>(arg.mStorage.value(entity)), false };

@@ -14,16 +14,15 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 	const float mouseWheelChange = Input::Get().GetMouseWheel();
 	const bool movementSpeedMultiply = mouseWheelChange >= 0.0f;
 
-	const glm::vec3 movementInput
-	{
-		 Input::Get().GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S),
-		 Input::Get().GetKeyboardAxis(Input::KeyboardKey::A, Input::KeyboardKey::D),
-		 Input::Get().GetKeyboardAxis(Input::KeyboardKey::Space, Input::KeyboardKey::LeftControl)
-	};
+	glm::vec3 movementInput{};
+
+	movementInput[Axis::Forward] = Input::Get().GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S);
+	movementInput[Axis::Up] = Input::Get().GetKeyboardAxis(Input::KeyboardKey::Space, Input::KeyboardKey::LeftControl);
+	movementInput[Axis::Right] =  Input::Get().GetKeyboardAxis(Input::KeyboardKey::A, Input::KeyboardKey::D);
 
 	const glm::vec3 timeScaledMovementInput = movementInput * dt;
 
-	constexpr Axis rotateAround[2]
+	constexpr Axis::Values rotateAround[2]
 	{
 		Axis::Right,
 		Axis::Up
