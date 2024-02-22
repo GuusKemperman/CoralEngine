@@ -58,7 +58,7 @@ void Engine::EngineClass::Run()
 
 	if (level == nullptr)
 	{
-		LOG(LogCore, Error, "Could not find starter level");
+		LOG_TRIVIAL(LogCore, Error, "Could not find starter level");
 		return;
 	}
 

@@ -40,7 +40,7 @@ Engine::AssetLoadInfo::AssetLoadInfo(std::unique_ptr<std::istream> stream) :
 {
 	if (!ConstructFromCurrentStream())
 	{
-		LOG(LogAssets, Message, "Failed to produce valid AssetLoadInfo: the stream did not contain valid metadata");
+		LOG_TRIVIAL(LogAssets, Message, "Failed to produce valid AssetLoadInfo: the stream did not contain valid metadata");
 	}
 }
 

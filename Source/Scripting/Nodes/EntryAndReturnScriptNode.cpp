@@ -54,7 +54,7 @@ bool Engine::Internal::NodeInvolvingScriptFunc::DeserializeVirtual(const BinaryG
 		|| nameOfFunction == nullptr)
 	{
 		UNLIKELY;
-		LOG(LogAssets, Warning, "Failed to deserialize funcEntryNode: missing values");
+		LOG_TRIVIAL(LogAssets, Warning, "Failed to deserialize funcEntryNode: missing values");
 		return false;
 	}
 

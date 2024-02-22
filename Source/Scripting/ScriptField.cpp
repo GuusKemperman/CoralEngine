@@ -63,7 +63,7 @@ void Engine::ScriptField::SerializeTo(BinaryGSONObject& object) const
 
 	if (type == nullptr)
 	{
-		LOG(LogScripting, Warning, "Metafield type was nullptr, default value will not be serialized.");
+		LOG_TRIVIAL(LogScripting, Warning, "Metafield type was nullptr, default value will not be serialized.");
 		return;
 	}
 
@@ -85,7 +85,7 @@ std::optional<Engine::ScriptField> Engine::ScriptField::DeserializeFrom(const Bi
 	if (serializedTypeData == nullptr)
 	{
 		UNLIKELY;
-		LOG(LogScripting, Warning, "Failed to deserialize script data field, missing values");
+		LOG_TRIVIAL(LogScripting, Warning, "Failed to deserialize script data field, missing values");
 		return std::nullopt;
 	}
 

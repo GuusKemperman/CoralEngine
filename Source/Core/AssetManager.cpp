@@ -196,7 +196,7 @@ void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 	}
 #endif // EDITOR
 
-	LOG(LogAssets, Verbose, "Finished constructing assets");
+	LOG_TRIVIAL(LogAssets, Verbose, "Finished constructing assets");
 }
 
 Engine::AssetManager::AssetInternal::AssetInternal(AssetFileMetaData&& metaData, const std::optional<std::filesystem::path>& path) :

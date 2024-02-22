@@ -34,7 +34,7 @@ std::optional<Engine::ScriptLink> Engine::ScriptLink::DeserializeFrom(const Bina
 		|| output == nullptr)
 	{
 		UNLIKELY;
-		LOG(LogAssets, Warning, "Failed to deserialize link: values missing");
+		LOG_TRIVIAL(LogAssets, Warning, "Failed to deserialize link: values missing");
 		return std::nullopt;
 	}
 

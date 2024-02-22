@@ -43,7 +43,7 @@ void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& seriali
 
 	if (serializedEntities == nullptr)
 	{
-		LOG(LogAssets, Error, "Invalid serialized world provided, this object was not created using Archiver::Serialize");
+		LOG_TRIVIAL(LogAssets, Error, "Invalid serialized world provided, this object was not created using Archiver::Serialize");
 		return;
 	}
 
@@ -194,7 +194,7 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 		const BinaryGSONObject& additionalSerializedData = serializedComponent.GetChildren()[0];
 		const entt::entity owner = FromBinary<entt::entity>(serializedComponent.GetName());
 
-		ASSERT_LOG(storage->contains(owner), "Should've been created already");
+		ASSERT_LOG_TRIVIAL(storage->contains(owner), "Should've been created already");
 		MetaAny componentRef{ *componentClass, storage->value(owner), false };
 
 		FuncResult result = (*onComponentDeserialize)(componentRef, additionalSerializedData, owner, registry.GetWorld());

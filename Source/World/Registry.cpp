@@ -113,7 +113,7 @@ void Engine::Registry::RenderSystems() const
 {
 	if (!mWorld.get().GetRenderer().GetMainCamera().has_value())
 	{
-		LOG(LogTemp, Message, "No camera to render to");
+		LOG_TRIVIAL(LogTemp, Message, "No camera to render to");
 		return;
 	}
 

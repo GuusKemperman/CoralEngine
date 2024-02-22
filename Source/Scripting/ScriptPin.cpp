@@ -98,7 +98,7 @@ Engine::MetaAny* Engine::ScriptPin::TryGetValueIfNoInputLinked()
 {
 	if (!std::holds_alternative<InputData>(mData))
 	{
-		LOG(LogScripting, Warning, "Tried to get default value of non-input pin.");
+		LOG_TRIVIAL(LogScripting, Warning, "Tried to get default value of non-input pin.");
 		return nullptr;
 	}
 
@@ -215,7 +215,7 @@ std::optional<Engine::ScriptPin> Engine::ScriptPin::DeserializeFrom(const Binary
 		|| serializedIsOutput == nullptr)
 	{
 		UNLIKELY;
-		LOG(LogScripting, Warning, "Failed to deserialize pin: missing values");
+		LOG_TRIVIAL(LogScripting, Warning, "Failed to deserialize pin: missing values");
 		return std::nullopt;
 	}
 
@@ -230,7 +230,7 @@ std::optional<Engine::ScriptPin> Engine::ScriptPin::DeserializeFrom(const Binary
 	if (serializedParamInfo == nullptr)
 	{
 		UNLIKELY;
-			LOG(LogScripting, Warning, "Failed to deserialize pin: missing values");
+		LOG_TRIVIAL(LogScripting, Warning, "Failed to deserialize pin: missing values");
 		return std::nullopt;
 	}
 

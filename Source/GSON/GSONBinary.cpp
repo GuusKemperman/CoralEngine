@@ -49,7 +49,7 @@ static inline std::optional<size_t> LoadSmallSize(std::istream& istream)
 		&& !TryLoadSizeAsType<uint16>(istream, size)
 		&& !TryLoadSizeAsType<size_t>(istream, size))
 	{
-		LOG(LogCore, Error, "Invalid save, serialized size invalid.");
+		LOG_TRIVIAL(LogCore, Error, "Invalid save, serialized size invalid.");
 		return std::nullopt;
 	}
 	return size;

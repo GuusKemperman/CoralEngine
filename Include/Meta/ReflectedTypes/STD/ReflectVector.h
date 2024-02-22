@@ -98,7 +98,7 @@ struct Reflector<std::vector<T>>
 				}
 				else
 				{
-					LOG(LogScripting, Warning, "Called PopBack on empty array");
+					LOG_TRIVIAL(LogScripting, Warning, "Called PopBack on empty array");
 				}
 			}, "Remove from end", MetaFunc::ExplicitParams<std::vector<T>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 

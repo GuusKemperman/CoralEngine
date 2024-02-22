@@ -50,7 +50,7 @@ Engine::Script::Script(AssetLoadInfo& loadInfo) :
 	else
 	{
 		UNLIKELY;
-		LOG(LogScripting, Warning, "No functions object serialized");
+		LOG_TRIVIAL(LogScripting, Warning, "No functions object serialized");
 	}
 
 	const BinaryGSONObject* members = obj.TryGetGSONObject("members");
@@ -70,7 +70,7 @@ Engine::Script::Script(AssetLoadInfo& loadInfo) :
 	else
 	{
 		UNLIKELY;
-		LOG(LogScripting, Warning, "No members object serialized");
+		LOG_TRIVIAL(LogScripting, Warning, "No members object serialized");
 	}
 }
 

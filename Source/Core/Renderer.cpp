@@ -225,9 +225,9 @@ Engine::Renderer::Renderer()
 	deviceConfig.width = 3840;
 	deviceConfig.height = 2160;
 
-	LOG(LogCore, Message, "Initializing xsr");
+	LOG_TRIVIAL(LogCore, Message, "Initializing xsr");
 	[[maybe_unused]] bool success = xsr::device::initialize(deviceConfig);
-	ASSERT_LOG(success, "Failed to initialize xsr device");
+	ASSERT_LOG_TRIVIAL(success, "Failed to initialize xsr device");
 
 	// create xsr render config
 	xsr::render_configuration config;
@@ -236,9 +236,9 @@ Engine::Renderer::Renderer()
 	config.texture_filter = xsr::render_configuration::texture_filtering::linear;
 	config.shader_path = "external/xsr/";
 
-	LOG(LogCore, Message, "Initializing xsr");
+	LOG_TRIVIAL(LogCore, Message, "Initializing xsr");
 	success = initialize(config);
-	ASSERT_LOG(success, "Failed to initialize xsr");
+	ASSERT_LOG_TRIVIAL(success, "Failed to initialize xsr");
 }
 
 Engine::Renderer::~Renderer()

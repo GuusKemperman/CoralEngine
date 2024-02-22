@@ -311,7 +311,7 @@ std::string Engine::FuncResult::Error() const
 	{
 		return std::get<std::string>(mResult);
 	}
-	LOG(LogMeta, Warning, "Attempted to get error value out of successful function call");
+	LOG_TRIVIAL(LogMeta, Warning, "Attempted to get error value out of successful function call");
 	return std::string();
 }
 

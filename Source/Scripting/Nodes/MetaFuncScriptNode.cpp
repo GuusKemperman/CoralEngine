@@ -106,7 +106,7 @@ bool Engine::MetaFuncScriptNode::DeserializeVirtual(const BinaryGSONObject& from
 		|| (funcName != nullptr && opType != nullptr))
 	{
 		UNLIKELY;
-		LOG(LogAssets, Warning, "Could not deserialize MetaFuncScriptNode: missing values or ambiguity between name or type");
+		LOG_TRIVIAL(LogAssets, Warning, "Could not deserialize MetaFuncScriptNode: missing values or ambiguity between name or type");
 		return false;
 	}
 

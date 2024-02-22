@@ -668,7 +668,7 @@ std::optional<Engine::ScriptFunc> Engine::ScriptFunc::DeserializeFrom(const Bina
 		|| isStatic == nullptr)
 	{
 		UNLIKELY;
-		LOG(LogAssets, Warning, "Failed to deserialize script function, missing values");
+		LOG_TRIVIAL(LogAssets, Warning, "Failed to deserialize script function, missing values");
 		return std::nullopt;
 	}
 

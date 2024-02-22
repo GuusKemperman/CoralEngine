@@ -29,7 +29,7 @@ Engine::VirtualMachine::~VirtualMachine()
 
 void Engine::VirtualMachine::Recompile()
 {
-	LOG(LogScripting, Message, "Recompiling...");
+	LOG_TRIVIAL(LogScripting, Message, "Recompiling...");
 
 	ClearCompilationResult();
 
@@ -70,7 +70,7 @@ void Engine::VirtualMachine::Recompile()
 
 	PrintCompileErrors();
 
-	LOG(LogScripting, Message, "Compilation completed");
+	LOG_TRIVIAL(LogScripting, Message, "Compilation completed");
 }
 
 void Engine::VirtualMachine::ClearCompilationResult()
@@ -309,7 +309,7 @@ void Engine::VirtualMachine::PrintError(const ScriptError& error, bool compileEr
 
 void Engine::VirtualMachine::DestroyAllTypesCreatedThroughScripts()
 {
-	LOG(LogScripting, Verbose, "Destroying all types created through scripts");
+	LOG_TRIVIAL(LogScripting, Verbose, "Destroying all types created through scripts");
 
 	MetaManager& manager = MetaManager::Get();
 

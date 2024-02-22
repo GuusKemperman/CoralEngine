@@ -4,9 +4,12 @@
 #if 1
 
 #define LOG(channel, severity, formatString, ...) Engine::Logger::Get().Log(Engine::Format(#formatString, __VA_ARGS__), #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
+
+// ***REMOVED*** doesn't like VA_ARGS if we do not provide any formatting arguments, so we have a separate macro for empty
 #define LOG_TRIVIAL(channel, severity, string) Engine::Logger::Get().Log(#string, #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
 #else
 #define LOG(...)
+#define LOG_TRIVIAL(...)
 #defien 
 #endif
 

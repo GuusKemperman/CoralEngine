@@ -40,7 +40,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!version.has_value())
 	{
-		LOG(LogAssets, Message, "Asset metadata was empty");
+		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was empty");
 		return std::nullopt;
 	}
 
@@ -72,7 +72,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!assetClassTypeId.has_value())
 	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
+		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -94,7 +94,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!nameSize.has_value())
 	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
+		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -102,7 +102,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 	name.resize(*nameSize);
 	if (fromStream.readsome(name.data(), *nameSize) != *nameSize)
 	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
+		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -113,7 +113,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!wasImportedFromFile.has_value())
 	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
+		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -126,7 +126,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!importerVersion.has_value())
 	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
+		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -134,7 +134,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!pathSize.has_value())
 	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
+		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -142,7 +142,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 	filePath.resize(*pathSize);
 	if (fromStream.readsome(filePath.data(), *pathSize) != *pathSize)
 	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
+		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -155,7 +155,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!obj.LoadFromBinary(fromStream))
 	{
-		LOG(LogAssets, Message, "Asset metadata was corrupted - GSON parsing failed");
+		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was corrupted - GSON parsing failed");
 		return std::nullopt;
 	}
 
@@ -167,7 +167,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 		|| savedClass == nullptr
 		|| savedAssetName == nullptr)
 	{
-		LOG(LogAssets, Message, "Asset metadata was corrupted - Missing vital information");
+		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was corrupted - Missing vital information");
 		return std::nullopt;
 	}
 
@@ -202,7 +202,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 		if ((savedImporterVersion == nullptr)
 			!= (savedImportedFromFile == nullptr))
 		{
-			LOG(LogAssets, Message, "Asset metadata was corrupted");
+			LOG_TRIVIAL(LogAssets, Message, "Asset metadata was corrupted");
 			return std::nullopt;
 		}
 

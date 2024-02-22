@@ -176,7 +176,7 @@ Engine::Level::Level(AssetLoadInfo& loadInfo) :
 				}
 				else
 				{
-					LOG(LogAssets, Error, "A prefab had a parent child relationship, but atleast one of the entities does not have a transformComponent");
+					LOG_TRIVIAL(LogAssets, Error, "A prefab had a parent child relationship, but atleast one of the entities does not have a transformComponent");
 				}
 			}
 		}
@@ -325,7 +325,7 @@ void Engine::EraseSerializedFactory(BinaryGSONObject& serializedWorld,
 
 	if (serializedEntities == nullptr)
 	{
-		LOG(LogAssets, Error, "Could not erase serialized factory, world does not contain an \"entities\" member");
+		LOG_TRIVIAL(LogAssets, Error, "Could not erase serialized factory, world does not contain an \"entities\" member");
 		return;
 	}
 
@@ -549,7 +549,7 @@ Engine::BinaryGSONObject Engine::Level::GenerateCurrentStateOfPrefabs(const Bina
 		if (serializedHashedPrefabName == nullptr
 			|| serializedFactoryId == nullptr)
 		{
-			LOG(LogAssets, Warning, "Prefab origin component not serialized as expected");
+			LOG_TRIVIAL(LogAssets, Warning, "Prefab origin component not serialized as expected");
 			continue;
 		}
 
@@ -613,7 +613,7 @@ std::vector<entt::entity> Engine::GetAllEntitiesCreatedUsingFactory(const Binary
 		if (serializedHashedPrefabName == nullptr
 			|| serializedFactoryId == nullptr)
 		{
-			LOG(LogAssets, Warning, "Prefab origin component not serialized as expected");
+			LOG_TRIVIAL(LogAssets, Warning, "Prefab origin component not serialized as expected");
 			continue;
 		}
 

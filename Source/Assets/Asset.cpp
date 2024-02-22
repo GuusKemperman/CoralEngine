@@ -36,7 +36,7 @@ Engine::AssetSaveInfo Engine::Asset::Save() const
 
 void Engine::Asset::OnSave(AssetSaveInfo&) const
 {
-	LOG(LogAssets, Verbose, "OnSave was not overriden for this asset class");
+	LOG_TRIVIAL(LogAssets, Verbose, "OnSave was not overriden for this asset class");
 }
 
 Engine::MetaType Engine::Asset::Reflect()

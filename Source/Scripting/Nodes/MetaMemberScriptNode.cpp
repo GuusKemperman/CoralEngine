@@ -52,7 +52,7 @@ bool Engine::NodeInvolvingMetaMember::DeserializeVirtual(const BinaryGSONObject&
 		|| memberName == nullptr)
 	{
 		UNLIKELY;
-		LOG(LogAssets, Warning, "Failed to deserialize setter getter: missing values");
+		LOG_TRIVIAL(LogAssets, Warning, "Failed to deserialize setter getter: missing values");
 		return false;
 	}
 
