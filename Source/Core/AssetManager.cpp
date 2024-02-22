@@ -68,7 +68,7 @@ Engine::AssetManager::AssetManager()
 
 					if (const auto [existingImporterTypeId, existingImporter] = TryGetImporterForExtension(extension); existingImporter != nullptr)
 					{
-						const MetaType* existingImporterType = MetaManager::Get().TryGetType(existingImporterTypeId);
+						[[maybe_unused]] const MetaType* existingImporterType = MetaManager::Get().TryGetType(existingImporterTypeId);
 
 						LOG(LogAssets, Warning, "Importer {} has invalid extension {}: importer {} is already responsible for this extension",
 							derived.GetName(),

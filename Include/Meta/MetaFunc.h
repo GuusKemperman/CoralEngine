@@ -396,7 +396,14 @@ namespace Engine
 	MetaFunc::MetaFunc(std::function<Ret(ParamsT...)>&& func,
 	                   const NameOrTypeInit typeOrName,
 	                   ParamAndRetNames&&... paramAndRetNames) :
-	MetaFunc(std::bind(&DefaultInvoke<Ret, ParamsT...>, std::move(func), std::placeholders::_1, std::placeholders::_2),
+	MetaFunc(
+		InvokeT
+		{
+			[func](DynamicArgs args, RVOBuffer buffer) -> FuncResult
+			{
+				return DefaultInvoke<Ret, ParamsT...>(func, args, buffer);
+			}
+		},
 		typeOrName,
 		[&]
 		{

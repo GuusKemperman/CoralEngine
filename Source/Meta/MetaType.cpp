@@ -124,7 +124,7 @@ size_t Engine::MetaType::RemoveFunc(const std::variant<Name, OperatorType>& name
 
 void* Engine::MetaType::Malloc(uint32 amount) const
 {
-	return _aligned_malloc(GetSize() * amount, GetAlignment());
+	return AlignedMalloc(GetSize() * amount, GetAlignment());
 }
 
 void Engine::MetaType::Free(void* buffer)

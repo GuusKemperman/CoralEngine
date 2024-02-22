@@ -734,7 +734,7 @@ void Engine::AnyStorage::reserve(const size_type cap)
 	const MetaType& type = GetType();
 	const size_t typeSize = type.GetSize();
 
-	char* const newBuffer = (char*)_aligned_malloc(cap * typeSize, type.GetAlignment());
+	char* const newBuffer = (char*)AlignedMalloc(cap * typeSize, type.GetAlignment());
 	ASSERT(newBuffer != nullptr);
 	ASSERT(type.IsMoveConstructible());
 

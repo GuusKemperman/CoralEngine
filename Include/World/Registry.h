@@ -264,7 +264,7 @@ namespace Engine
 		// systems from a metatype. Metatypes construct using placement
 		// new and can thus not construct a normal, default deleter unique
 		// ptr, which is why we cannot do that here either.
-		void* buffer = _aligned_malloc(sizeof(T), alignof(T));
+		void* buffer = AlignedMalloc(sizeof(T), alignof(T));
 		ASSERT(buffer != nullptr);
 
 		T* obj = new (buffer) T(std::forward<Args>(args)...);

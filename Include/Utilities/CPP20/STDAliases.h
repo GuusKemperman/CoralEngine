@@ -56,7 +56,6 @@ namespace Engine
 
 	using SourceLocation = EarlySTD::source_location;
 
-
 	template <class... T>
 	std::string Format(const fmt::format_string<T...> fmt, T&&... args)
 	{
@@ -65,9 +64,36 @@ namespace Engine
 }
 #endif
 
+namespace Engine
+{
 #ifdef PLATFORM_***REMOVED***
-	#define _aligned_malloc aligned_alloc
+	inline void* AlignedMalloc(size_t size, size_t alignment)
+	{
+		return aligned_alloc(size, alignment);
+	}
+
+	inline void AlignedFree(void* buffer)
+	{
+		return free(buffer);
+	}
+
+#define FORCE_INLINE
+
 #elif PLATFORM_WINDOWS
-#else
+	inline void* AlignedMalloc(size_t size, size_t alignment)
+	{
+		return _aligned_malloc(size, alignment);
+	}
+
+	inline void AlignedFree(void* buffer)
+	{
+		return _aligned_free(buffer);
+	}
+
+#define FORCE_INLINE __forceinline
+
+
+#else 
 	static_assert(false)
 #endif
+}

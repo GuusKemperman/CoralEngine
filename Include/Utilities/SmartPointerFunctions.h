@@ -23,7 +23,7 @@ namespace Engine
 
 			if constexpr (UseAlignedFree)
 			{
-				_aligned_free(obj);
+				Engine::AlignedFree(obj);
 			}
 			else
 			{
@@ -35,6 +35,6 @@ namespace Engine
 	template<typename T, typename... Args, std::enable_if_t<std::is_constructible_v<T, Args...>, bool> = true>
 	std::unique_ptr<T, InPlaceDeleter<T, true>> MakeUniqueInPlace(Args&& ...args)
 	{
-		return std::unique_ptr<T, InPlaceDeleter<T, true>>{ new (_aligned_malloc(sizeof(T), alignof(T))) T(std::forward<Args>(args)...) };
+		return std::unique_ptr<T, InPlaceDeleter<T, true>>{ new (AlignedMalloc(sizeof(T), alignof(T))) T(std::forward<Args>(args)...) };
 	}
 }
