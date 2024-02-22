@@ -6,7 +6,7 @@
 #include "World/Registry.h"
 #include "Components/TransformComponent.h"
 #include "Components/TopDownCamControllerComponent.h"
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
@@ -22,13 +22,13 @@ void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 		return;
 	}
 
-	const float zoomDelta = InputManager::GetScrollY(false) + InputManager::GetAxis(ImGuiKey_DownArrow, ImGuiKey_UpArrow);
+	const float zoomDelta = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp) + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickLeftY);
 	const float timeScaledZoomDelta = zoomDelta * dt;
 
-	const float rotationInput = InputManager::GetAxis(ImGuiKey_LeftArrow, ImGuiKey_RightArrow);
+	const float rotationInput = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowLeft, Input::KeyboardKey::ArrowRight) + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickRightX);
 	const float timeScaledRotation = rotationInput * dt;
 
-	const glm::vec2 cursorDistanceScreenCenter = world.GetRenderer().GetViewportSize() * 0.5f - InputManager::GetMousePos();
+	const glm::vec2 cursorDistanceScreenCenter = world.GetRenderer().GetViewportSize() * 0.5f - Input::Get().GetMousePosition();
 
 	const bool emptyRotation = timeScaledRotation == 0;
 	const bool emptyZoom = timeScaledZoomDelta == 0;
