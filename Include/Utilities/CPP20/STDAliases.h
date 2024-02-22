@@ -77,6 +77,7 @@ namespace Engine
 		return free(buffer);
 	}
 
+#define ENGINE_ALLOCA alloca
 #define FORCE_INLINE
 
 #elif PLATFORM_WINDOWS
@@ -90,8 +91,8 @@ namespace Engine
 		return _aligned_free(buffer);
 	}
 
+#define ENGINE_ALLOCA _alloca
 #define FORCE_INLINE __forceinline
-
 
 #else 
 	static_assert(false)
