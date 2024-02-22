@@ -8,13 +8,17 @@ namespace Engine
 	class TopDownCamControllerComponent
 	{
 	public:
-		void ApplyTranslation(TransformComponent& transform, const glm::vec2& cursorDistanceFromScreenCenter) const;
+		void ApplyTranslation(TransformComponent& transform, const glm::vec3& target, const glm::vec2& cursorDistanceFromScreenCenter) const;
 		void UpdateRotation(TransformComponent& transform, const glm::vec3& target);
+
+		void AdjustZoom(const float scrollDelta);
 
 		float mOffsetHeight = 3.0f;
 		float mOffset = 5.0f;
 		float mAngle{};
-		float mCursorOffsetFactor = 0.01f;
+		float mCursorOffsetFactor = 0.001f;
+
+		float mZoomSensitivity = 0.10f;
 
 		entt::entity mTarget{entt::null};
 

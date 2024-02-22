@@ -24,7 +24,9 @@ void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 		return;
 	}
 
-	const glm::vec2 cursorDistanceScreenCenter = InputManager::GetMousePos() - world.GetRenderer().GetViewportSize();
+	const float scrollDelta = InputManager::GetScrollY(false);
+
+	const glm::vec2 cursorDistanceScreenCenter = world.GetRenderer().GetViewportSize() * 0.5f - InputManager::GetMousePos();
 
 	for (auto [entity, topdown, transform] : view.each())
 	{
@@ -40,7 +42,12 @@ void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 			continue;
 		}
 
-		topdown.ApplyTranslation(transform, cursorDistanceScreenCenter);
+		if (scrollDelta)
+		{
+			topdown.AdjustZoom(scrollDelta);
+		}
+
+		topdown.ApplyTranslation(transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
 		topdown.UpdateRotation(transform, target->GetWorldPosition());
 	}
 }
