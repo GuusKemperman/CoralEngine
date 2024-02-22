@@ -6,18 +6,6 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void Engine::FlyCamControllerComponent::AdjustMovementSpeed(const bool movementSpeedMultiply)
-{
-	if (movementSpeedMultiply)
-	{
-		mMovementSpeed *= mMovementSpeedAdjustmentSensitivity;
-	}
-	else
-	{
-		mMovementSpeed /= mMovementSpeedAdjustmentSensitivity;
-	}
-}
-
 void Engine::FlyCamControllerComponent::ApplyTranslation(TransformComponent& transform, const glm::vec3& timeScaledMovementInput) const
 {
 	const glm::vec3 scaledMovementInput = timeScaledMovementInput * mMovementSpeed;
@@ -29,7 +17,6 @@ void Engine::FlyCamControllerComponent::ApplyTranslation(TransformComponent& tra
 	}
 
 	transform.TranslateWorldPosition(totalTranslation);
-	
 }
 
 void Engine::FlyCamControllerComponent::ApplyRotation(TransformComponent& transform, const std::array<glm::quat, 2>& timeScaledRotations) const
@@ -46,7 +33,6 @@ Engine::MetaType Engine::FlyCamControllerComponent::Reflect()
 	props.Add(Props::sIsScriptableTag);
 	type.AddField(&FlyCamControllerComponent::mMovementSpeed, "mMovementSpeed").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&FlyCamControllerComponent::mRotationSpeed, "mRotationSpeed").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&FlyCamControllerComponent::mMovementSpeedAdjustmentSensitivity, "mMovementSpeedAdjustmentSensitivity").GetProperties().Add(Props::sIsScriptableTag);
 	ReflectComponentType<FlyCamControllerComponent>(type);
 	return type;
 }
