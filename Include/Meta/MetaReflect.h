@@ -49,18 +49,6 @@ namespace Engine
 		template<typename T>
 		static constexpr bool sHasExternalReflect = HasExternalReflectHelper<T>::value;
 
-		template<typename T, std::enable_if_t<sHasInternalReflect<T>, bool> = true>
-		MetaType CallReflect()
-		{
-			return ReflectAccess::GetReflectFunc<T>()();
-		}
-
-		template<typename T, std::enable_if_t<sHasExternalReflect<T>, bool> = true>
-		MetaType CallReflect()
-		{
-			return Reflector<T>::Reflect();
-		}
-
 		void RegisterReflectFunc(TypeId typeId, MetaType(*reflectFunc)());
 
 		template<typename T>
@@ -84,6 +72,12 @@ If you are trying to reflect an std::vector<std::shared_ptr<const Material>>, yo
 					return true;
 				}();
 		};
+
+		template<typename T, std::enable_if_t<sHasInternalReflect<T>, bool> = true>
+		MetaType CallReflect();
+
+		template<typename T, std::enable_if_t<sHasExternalReflect<T>, bool> = true>
+		MetaType CallReflect();
 	}
 
 	template<typename T>

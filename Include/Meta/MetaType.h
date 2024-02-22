@@ -600,4 +600,19 @@ namespace Engine
 		const MetaType& base = MetaManager::Get().GetType<TypeT>();
 		AddBaseClass(base);
 	}
+
+	namespace Internal
+	{
+		template<typename T, std::enable_if_t<sHasInternalReflect<T>, bool>>
+		MetaType CallReflect()
+		{
+			return ReflectAccess::GetReflectFunc<T>()();
+		}
+
+		template<typename T, std::enable_if_t<sHasExternalReflect<T>, bool>>
+		MetaType CallReflect()
+		{
+			return Reflector<T>::Reflect();
+		}
+	}
 }

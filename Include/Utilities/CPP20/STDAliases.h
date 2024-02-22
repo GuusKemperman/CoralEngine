@@ -65,3 +65,9 @@ namespace Engine
 }
 #endif
 
+#ifdef PLATFORM_***REMOVED***
+	#define _aligned_malloc aligned_alloc
+#elif PLATFORM_WINDOWS
+#else
+	static_assert(false)
+#endif
