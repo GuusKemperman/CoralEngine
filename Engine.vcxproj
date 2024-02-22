@@ -230,6 +230,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Edge.cpp" />
     <ClCompile Include="external\clipper\src\clipper.engine.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -407,6 +408,12 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
+    <ClCompile Include="Geometry2d.cpp" />
+    <ClCompile Include="Graph.cpp" />
+    <ClCompile Include="NavigationSystem.cpp" />
+    <ClCompile Include="NavMeshAgentComponent.cpp" />
+    <ClCompile Include="NavMeshComponent.cpp" />
+    <ClCompile Include="Node.cpp" />
     <ClCompile Include="Source\Components\IsDestroyedTag.cpp" />
     <ClCompile Include="Source\Components\NameComponent.cpp" />
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
@@ -674,6 +681,7 @@
     <ClCompile Include="Source\World\WorldRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Edge.h" />
     <ClInclude Include="external\clipper\include\clipper2\clipper.core.h" />
     <ClInclude Include="external\clipper\include\clipper2\clipper.engine.h" />
     <ClInclude Include="external\clipper\include\clipper2\clipper.export.h" />
@@ -690,6 +698,8 @@
     <ClInclude Include="external\xsr\backends\***REMOVED***\shader_shared_types.h" />
     <ClInclude Include="external\xsr\backends\***REMOVED***\standard_shader_shared.h" />
     <ClInclude Include="external\xsr\backends\***REMOVED***\standard_srt.h" />
+    <ClInclude Include="Geometry2d.hpp" />
+    <ClInclude Include="Graph.h" />
     <ClInclude Include="Include\Assets\Asset.h" />
     <ClInclude Include="Include\Assets\Core\AssetFileMetaData.h" />
     <ClInclude Include="Include\Assets\Core\AssetLoadInfo.h" />
@@ -843,6 +853,10 @@
     <ClInclude Include="include\World\World.h" />
     <ClInclude Include="Include\World\Registry.h" />
     <ClInclude Include="Include\World\WorldRenderer.h" />
+    <ClInclude Include="NavigationSystem.h" />
+    <ClInclude Include="NavMeshAgentComponent.h" />
+    <ClInclude Include="NavMeshComponent.h" />
+    <ClInclude Include="Node.h" />
     <ClInclude Include="source\platform\***REMOVED***\core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />

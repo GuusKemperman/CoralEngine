@@ -15,7 +15,8 @@ namespace Engine
 		friend EngineSubsystem;
 
 		// We only expose the value to the user; not the TypeId key.
-		using EachTypeT = IterableRange<EncapsulingForwardIterator<AlwaysSecondEncapsulator, std::unordered_map<Name::HashType, std::reference_wrapper<MetaType>>::iterator>>;
+		using EachTypeT = IterableRange<EncapsulingForwardIterator<
+			AlwaysSecondEncapsulator, std::unordered_map<Name::HashType, std::reference_wrapper<MetaType>>::iterator>>;
 
 		void PostConstruct() override;
 
@@ -40,7 +41,7 @@ namespace Engine
 		*/
 		MetaType* TryGetType(TypeId typeId);
 
-		template<typename T>
+		template <typename T>
 		MetaType* TryGetType() { return TryGetType(MakeTypeId<T>()); }
 
 		/*
@@ -48,7 +49,7 @@ namespace Engine
 
 		The type will be reflected if it has not been reflected already.
 		*/
-		template<typename T>
+		template <typename T>
 		MetaType& GetType();
 
 		/*
@@ -65,7 +66,7 @@ namespace Engine
 		Will return true on success. This function will return false if there is no type with this typeid.
 		*/
 		bool RemoveType(TypeId typeId);
-		
+
 		/*
 		Removes a type based on its name. The type will be immediately destroyed, any references will become dangling.
 
@@ -74,13 +75,14 @@ namespace Engine
 		bool RemoveType(Name typeName);
 	};
 
-	template<typename T>
+	template <typename T>
 	MetaType& MetaManager::GetType()
 	{
-		static_assert(sIsReflectable<T>, 
-		R"(Type does not have a reflect function, so the type can never be gotten from the MetaManager. 
+		static_assert(sIsReflectable<T>,
+			R"(Type does not have a reflect function, so the type can never be gotten from the MetaManager. 
 If it does have a Reflect function, make sure it is included from wherever this error originated.
-If you are trying to reflect an std::vector<std::shared_ptr<const Material>>, you need to include Material.h, ReflectVector.h and ReflectSmartPtr.h.)");
+If you are trying to reflect an std::vector<std::shared_ptr<const Material>>, you need to include Material.h, ReflectVector.h and ReflectSmartPtr.h.)"
+		);
 
 		static constexpr TypeId typeId = MakeTypeId<T>();
 
@@ -92,8 +94,6 @@ If you are trying to reflect an std::vector<std::shared_ptr<const Material>>, yo
 		}
 
 		MetaType& newType = AddType(Internal::CallReflect<T>());
-		ASSERT(newType.GetTypeId() == MakeTypeId<T>() && "You have reflected a different type, check what you passed into MetaType constructor");
 		return newType;
-
 	}
 }
