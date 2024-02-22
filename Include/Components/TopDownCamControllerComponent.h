@@ -12,13 +12,15 @@ namespace Engine
 		void UpdateRotation(TransformComponent& transform, const glm::vec3& target);
 
 		void AdjustZoom(const float scrollDelta);
+		void RotateCameraAroundTarget(const float angle);
 
 		float mOffsetHeight = 3.0f;
 		float mOffset = 5.0f;
 		float mAngle{};
 		float mCursorOffsetFactor = 0.001f;
 
-		float mZoomSensitivity = 0.10f;
+		float mZoomSensitivity = 3.0f;
+		float mRotateSensitivity = 100.0f;
 
 		entt::entity mTarget{entt::null};
 

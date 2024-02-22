@@ -12,8 +12,6 @@
 
 void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 {
-	dt;
-
 	auto& registry = world.GetRegistry();
 
 	const auto view = registry.View<TopDownCamControllerComponent, TransformComponent>();
@@ -24,9 +22,16 @@ void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 		return;
 	}
 
-	const float scrollDelta = InputManager::GetScrollY(false);
+	const float zoomDelta = InputManager::GetScrollY(false) + InputManager::GetAxis(ImGuiKey_DownArrow, ImGuiKey_UpArrow);
+	const float timeScaledZoomDelta = zoomDelta * dt;
+
+	const float rotationInput = InputManager::GetAxis(ImGuiKey_LeftArrow, ImGuiKey_RightArrow);
+	const float timeScaledRotation = rotationInput * dt;
 
 	const glm::vec2 cursorDistanceScreenCenter = world.GetRenderer().GetViewportSize() * 0.5f - InputManager::GetMousePos();
+
+	const bool emptyRotation = timeScaledRotation == 0;
+	const bool emptyZoom = timeScaledZoomDelta == 0;
 
 	for (auto [entity, topdown, transform] : view.each())
 	{
@@ -42,9 +47,14 @@ void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 			continue;
 		}
 
-		if (scrollDelta)
+		if (!emptyZoom)
 		{
-			topdown.AdjustZoom(scrollDelta);
+			topdown.AdjustZoom(timeScaledZoomDelta);
+		}
+
+		if (!emptyRotation)
+		{
+			topdown.RotateCameraAroundTarget(timeScaledRotation);
 		}
 
 		topdown.ApplyTranslation(transform, target->GetWorldPosition(), cursorDistanceScreenCenter);

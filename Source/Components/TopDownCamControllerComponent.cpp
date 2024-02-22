@@ -31,6 +31,15 @@ void Engine::TopDownCamControllerComponent::AdjustZoom(const float scrollDelta)
 	mOffsetHeight *= multiplier;
 }
 
+void Engine::TopDownCamControllerComponent::RotateCameraAroundTarget(const float angle)
+{
+	mAngle = fmod(mAngle + angle * mRotateSensitivity, 360.0f);
+	if (mAngle < 0.0f)
+	{
+		mAngle += 360.0f;
+	}
+}
+
 Engine::MetaType Engine::TopDownCamControllerComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<TopDownCamControllerComponent>{}, "TopDownCamControllerComponent"};
@@ -40,6 +49,8 @@ Engine::MetaType Engine::TopDownCamControllerComponent::Reflect()
 	type.AddField(&TopDownCamControllerComponent::mOffsetHeight, "mOffsetHeight").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&TopDownCamControllerComponent::mAngle, "mAngle").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&TopDownCamControllerComponent::mCursorOffsetFactor, "mCursorOffsetFactor").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&TopDownCamControllerComponent::mZoomSensitivity, "mZoomSensitivity").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&TopDownCamControllerComponent::mRotateSensitivity, "mRotateSensitivity").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&TopDownCamControllerComponent::mTarget, "mTarget").GetProperties().Add(Props::sIsScriptableTag);
 	ReflectComponentType<TopDownCamControllerComponent>(type);
 	return type;
