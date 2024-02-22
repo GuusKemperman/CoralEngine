@@ -407,6 +407,10 @@
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
+    <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
+    <ClCompile Include="Source\Components\Physics2D\PhysicsBody2DComponent.cpp" />
+    <ClCompile Include="Source\Components\Physics2D\PolygonColliderComponent.cpp" />
+    <ClCompile Include="Source\Systems\PhysicsSystem2D.cpp" />
     <ClCompile Include="Source\Components\IsDestroyedTag.cpp" />
     <ClCompile Include="Source\Components\NameComponent.cpp" />
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
@@ -717,6 +721,9 @@
     <ClInclude Include="Include\Components\ComponentFilter.h" />
     <ClInclude Include="Include\Components\IsDestroyedTag.h" />
     <ClInclude Include="Include\Components\NameComponent.h" />
+    <ClInclude Include="Include\Components\Physics2D\DiskColliderComponent.h" />
+    <ClInclude Include="Include\Components\Physics2D\PhysicsBody2DComponent.h" />
+    <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
     <ClInclude Include="Include\Components\PrefabOriginComponent.h" />
     <ClInclude Include="include\Containers\ManyStrings.h" />
     <ClInclude Include="Include\Core\CommonMetaProperties.h" />
@@ -742,6 +749,7 @@
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectVector.h" />
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
+    <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />
     <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
     <ClInclude Include="Include\Utilities\CPP20\Span.h" />
     <ClInclude Include="Include\Utilities\CPP20\STDAliases.h" />
