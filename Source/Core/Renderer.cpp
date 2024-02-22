@@ -1,6 +1,10 @@
 #include "Precomp.h"
 #include "Core/Renderer.h"
 
+#include "xsr.hpp"
+
+#ifdef PLATFORM_WINDOWS
+
 // Disable warnings from external code
 #pragma warning(push, 0)
 
@@ -28,8 +32,6 @@
 #endif
 
 #pragma warning(pop)
-
-#include "xsr.hpp"
 
 void ErrorCallback([[maybe_unused]] int error, [[maybe_unused]] const char* description)
 {
@@ -213,3 +215,46 @@ void _CheckFrameBuffer([[maybe_unused]] const char* f, [[maybe_unused]] int l)
 
 	LOG(LogCore, Error, "Invalid frame buffer: File: {}, Line: {}, GLError: {}, GLErrorCode {}", f, l, error, status);
 }
+
+#elif PLATFORM_***REMOVED***
+
+Engine::Renderer::Renderer()
+{
+	xsr::device_configuration deviceConfig;
+	deviceConfig.title = "***REMOVED***";
+	deviceConfig.width = 3840;
+	deviceConfig.height = 2160;
+
+	LOG(LogCore, Message, "Initializing xsr");
+	[[maybe_unused]] bool success = xsr::device::initialize(deviceConfig);
+	ASSERT_LOG(success, "Failed to initialize xsr device");
+
+	// create xsr render config
+	xsr::render_configuration config;
+	config.enable_shadows = true;
+	config.shadow_resolution = 1024;
+	config.texture_filter = xsr::render_configuration::texture_filtering::linear;
+	config.shader_path = "external/xsr/";
+
+	LOG(LogCore, Message, "Initializing xsr");
+	success = initialize(config);
+	ASSERT_LOG(success, "Failed to initialize xsr");
+}
+
+Engine::Renderer::~Renderer()
+{
+	xsr::shutdown();
+}
+
+void Engine::Renderer::CreateImguiContext()
+{}
+
+void Engine::Renderer::NewFrame()
+{
+	xsr::device::update();
+}
+
+void Engine::Renderer::Render()
+{}
+
+#endif
