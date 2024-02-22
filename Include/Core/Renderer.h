@@ -18,10 +18,11 @@ namespace Engine
 
         bool ShouldClose() const { return !mIsWindowOpen; }
 
-        GLFWwindow* mWindow;
+    	void CreateImguiContext();
+
+    	GLFWwindow* mWindow;
 
     private:
-        void CreateImguiContext();
 
         bool mIsWindowOpen{};
     };
