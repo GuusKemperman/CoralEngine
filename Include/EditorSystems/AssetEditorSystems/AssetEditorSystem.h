@@ -1,3 +1,4 @@
+#include <imnodes/imgui_node_editor.h>
 #ifdef EDITOR
 #pragma once
 #include "EditorSystems/EditorSystem.h"
@@ -6,7 +7,7 @@
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Core/AssetManager.h"
 #include "Core/Editor.h"
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include "Meta/MetaType.h"
 #include "Containers/view_istream.h"
 #include "Utilities/DoUndo.h"
@@ -313,11 +314,12 @@ namespace Engine
 	{
 		EditorSystem::Tick(deltaTime);
 
-		if (InputManager::IsKeyDown(ImGuiKey_LeftCtrl) || InputManager::IsKeyDown(ImGuiKey_RightCtrl))
+		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::LeftControl)
+			|| Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::RightControl))
 		{
 			if (mMementoStack.GetNumOfActionsDone() > 1 
 				&& mMementoStack.CanUndo()
-				&& InputManager::IsKeyPressed(ImGuiKey_Z))
+				&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Z))
 			{
 				mMementoStack.Undo();
 				mTimeLeftUntilCheckForDifference = sDifferenceCheckCoolDown;
@@ -325,14 +327,14 @@ namespace Engine
 			}
 
 			if (mMementoStack.CanRedo()
-				&& InputManager::IsKeyPressed(ImGuiKey_Y))
+				&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Y))
 			{
 				mMementoStack.Redo();
 				mTimeLeftUntilCheckForDifference = sDifferenceCheckCoolDown;
 				return;
 			}
 
-			if (InputManager::IsKeyPressed(ImGuiKey_S))
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::S))
 			{
 				SaveToFile();
 			}

@@ -2,8 +2,6 @@
 
 namespace Engine
 {
-	struct GeneratedEntryPoints;
-
 	class EngineClass
 	{
 	public:

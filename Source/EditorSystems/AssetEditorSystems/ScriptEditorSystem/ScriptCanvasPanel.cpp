@@ -10,7 +10,7 @@
 #include <imnodes/examples/blueprints-example/utilities/widgets.h>
 
 #include "Utilities/Search.h"
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include "Core/VirtualMachine.h"
 #include "Scripting/ScriptTools.h"
 #include "Scripting/Nodes/CommentScriptNode.h"
@@ -356,7 +356,7 @@ void Engine::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 	const ScriptNode* createdNode = nullptr;
 
 	if (!mRecommendedNodesBasedOnQuery.empty()
-		&& InputManager::IsKeyPressed(ImGuiKey_Enter))
+		&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Enter))
 	{
 		createdNode = &mRecommendedNodesBasedOnQuery[0].get().mAddNode(currentFunc);
 	}
