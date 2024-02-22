@@ -7,7 +7,7 @@ namespace Engine
 	class Name
 	{
 #ifdef _DEBUG
-		#define INTERNAL_NAME_CHECK_EXPIRATION if (IsOriginalStringExpired()) { LOG(LogCore, Warning, "Original string has been deallocated, may lead to unexpected behaviour"); }
+		#define INTERNAL_NAME_CHECK_EXPIRATION if (IsOriginalStringExpired()) { LOG_TRIVIAL(LogCore, Warning, "Original string has been deallocated, may lead to unexpected behaviour"); }
 #else 
 		#define INTERNAL_NAME_CHECK_EXPIRATION
 #endif
