@@ -14,13 +14,13 @@ namespace Engine
 
         // If isOwnerOfObject is true, this object is responsible for calling the appropriate
         // destructor, and for freeing the buffer.
-        MetaAny(const MetaType& type, void* buffer, bool isOwnerOfObject);
+        MetaAny(const MetaType& type, void* mBuffers, bool isOwnerOfObject);
 
         // If isOwnerOfObject is true, this object is responsible for calling the appropriate
 		// destructor, and for freeing the buffer. In this, make sure that the type is either
 		// trivially destructible, or that the type is reflected, so that the appropriate
 		// destructor can be called.
-    	MetaAny(TypeInfo typeInfo, void* buffer, bool isOwnerOfObject = false);
+    	MetaAny(TypeInfo typeInfo, void* mBuffers, bool isOwnerOfObject = false);
 
         /**
          * \brief Constructs a MetaAny referencing the object, or owning the object, depending on how it was passed in.
@@ -31,7 +31,7 @@ namespace Engine
          * one will be allocated. This argument is not used if the provided anyObject is not an r-value or moved in.
          */
         template<typename T>
-        explicit MetaAny(T&& anyObject, void* buffer = nullptr);
+        explicit MetaAny(T&& anyObject, void* mBuffers = nullptr);
 
         MetaAny(const MetaAny&) = delete;
         MetaAny(MetaAny&& other) noexcept;
@@ -95,7 +95,7 @@ namespace Engine::Internal
 }
 
 template <typename T>
-Engine::MetaAny::MetaAny(T&& anyObject, void* const buffer)
+Engine::MetaAny::MetaAny(T&& anyObject, void* const mBuffers)
 {
     static constexpr TypeTraits traits = MakeTypeTraits<T>();
     static constexpr TypeInfo info = MakeTypeInfo<T>();
@@ -106,9 +106,9 @@ Engine::MetaAny::MetaAny(T&& anyObject, void* const buffer)
     if constexpr (traits.mForm == TypeForm::Value
         || traits.mForm == TypeForm::RValue)
     {
-        mData = buffer;
+        mData = mBuffers;
 
-        if (buffer == nullptr)
+        if (mBuffers == nullptr)
         {
             static_assert(sIsReflectable<T>, "Destructor needs to be known, so the type must be reflected");
             ASSERT(Internal::DoesTypeExist(traits.mStrippedTypeId) && "Destructor must be known, so the type must be reflected");

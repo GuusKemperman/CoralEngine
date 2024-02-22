@@ -27,23 +27,23 @@ void Engine::WorldRenderer::Render()
 	RenderAtSize(ImGui::GetIO().DisplaySize);
 }
 
-void Engine::WorldRenderer::Render(FrameBuffer& buffer, std::optional<glm::vec2> firstResizeBufferTo, const bool clearBufferFirst)
+void Engine::WorldRenderer::Render(FrameBuffer& mBuffers, std::optional<glm::vec2> firstResizeBufferTo, const bool clearBufferFirst)
 {
-	buffer.Bind();
+	mBuffers.Bind();
 
 	if (clearBufferFirst)
 	{
-		buffer.Clear();
+		mBuffers.Clear();
 	}
 
 	if (firstResizeBufferTo.has_value())
 	{
-		buffer.Resize(static_cast<glm::ivec2>(*firstResizeBufferTo));
+		mBuffers.Resize(static_cast<glm::ivec2>(*firstResizeBufferTo));
 	}
 
-	RenderAtSize(buffer.GetSize());
+	RenderAtSize(mBuffers.GetSize());
 
-	buffer.Unbind();
+	mBuffers.Unbind();
 }
 
 #ifdef _MSC_VER

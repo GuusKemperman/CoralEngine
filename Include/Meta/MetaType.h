@@ -293,7 +293,7 @@ namespace Engine
 		Will allocate a buffer of the required size and alignment.
 		*/
 		void* Malloc(uint32 amountOfObjects = 1) const;
-		static void Free(void* buffer);
+		static void Free(void* mBuffers);
 
 		uint32 GetSize() const { return mTypeInfo.GetSize(); }
 		uint32 GetAlignment() const { return mTypeInfo.GetAlign(); }
@@ -481,15 +481,15 @@ namespace Engine
 	void MetaType::AddFromArg(Ctor<Args...>)
 	{
 		AddFunc(
-			[](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer buffer) -> FuncResult
+			[](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer mBuffers) -> FuncResult
 			{
-				ASSERT(buffer != nullptr && "The address provided to a constructor may never be nullptr");
+				ASSERT(mBuffers != nullptr && "The address provided to a constructor may never be nullptr");
 
 				// Unpack needs to know the argument that it
 				// needs to forward.
 				[[maybe_unused]] size_t argIndex = args.size();
 
-				new (buffer) TypeT(Internal::Unpack<Args>(args, argIndex)...);
+				new (mBuffers) TypeT(Internal::Unpack<Args>(args, argIndex)...);
 				return std::nullopt;
 			},
 			OperatorType::constructor,
@@ -516,13 +516,13 @@ namespace Engine
 	template <typename ... Args>
 	FuncResult MetaType::Construct(Args&&... args) const
 	{
-		void* buffer = Malloc();
+		void* mBuffers = Malloc();
 
-		FuncResult constructResult = ConstructInternal(true, buffer, std::forward<Args>(args)...);
+		FuncResult constructResult = ConstructInternal(true, mBuffers, std::forward<Args>(args)...);
 
 		if (constructResult.HasError())
 		{
-			Free(buffer);
+			Free(mBuffers);
 		}
 		return constructResult;
 	}

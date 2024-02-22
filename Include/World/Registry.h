@@ -264,10 +264,10 @@ namespace Engine
 		// systems from a metatype. Metatypes construct using placement
 		// new and can thus not construct a normal, default deleter unique
 		// ptr, which is why we cannot do that here either.
-		void* buffer = _aligned_malloc(sizeof(T), alignof(T));
-		ASSERT(buffer != nullptr);
+		void* mBuffers = _aligned_malloc(sizeof(T), alignof(T));
+		ASSERT(mBuffers != nullptr);
 
-		T* obj = new (buffer) T(std::forward<Args>(args)...);
+		T* obj = new (mBuffers) T(std::forward<Args>(args)...);
 		std::unique_ptr<System, InPlaceDeleter<System, true>> newSystem{ obj };
 		AddSystem(std::move(newSystem));
 

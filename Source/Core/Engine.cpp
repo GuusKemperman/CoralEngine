@@ -4,7 +4,7 @@
 #include <chrono>
 
 #include "Core/FileIO.h"
-#include "Core/Renderer.h"
+#include "Core/Device.h"
 #include "Core/AssetManager.h"
 #include "Core/InputManager.h"
 #include "Core/Editor.h"
@@ -21,7 +21,7 @@ Engine::EngineClass::EngineClass(int argc, char* argv[])
 {
 	FileIO::StartUp(argc == 0 ? std::string_view{} : argv[0]);
 	Logger::StartUp();
-	Renderer::StartUp();
+	Device::StartUp();
 	MetaManager::StartUp();
 	AssetManager::StartUp();
 	VirtualMachine::StartUp();
@@ -42,7 +42,7 @@ Engine::EngineClass::~EngineClass()
 	VirtualMachine::ShutDown();
 	AssetManager::ShutDown();
 	MetaManager::ShutDown();
-	Renderer::ShutDown();
+	Device::ShutDown();
 	Logger::ShutDown();
 	FileIO::ShutDown();
 }
@@ -73,7 +73,7 @@ void Engine::EngineClass::Run()
 	*desiredNumToSpawnField->MakeRef(spawner).As<int32>() = 1'000;
 #endif // EDITOR
 
-	Renderer& renderer = Renderer::Get();
+	Device& renderer = Device::Get();
 
 	float timeElapsedSinceLastGarbageCollect{};
 	static constexpr float garbageCollectInterval = 5.0f;

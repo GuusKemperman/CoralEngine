@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Core/Renderer.h"
+#include "Core/Device.h"
 
 // Disable warnings from external code
 #pragma warning(push, 0)
@@ -30,6 +30,7 @@
 #pragma warning(pop)
 
 #include "xsr.hpp"
+#include "Core/Device.h"
 
 void ErrorCallback([[maybe_unused]] int error, [[maybe_unused]] const char* description)
 {
@@ -39,7 +40,7 @@ void ErrorCallback([[maybe_unused]] int error, [[maybe_unused]] const char* desc
 	}
 }
 
-Engine::Renderer::Renderer()
+Engine::Device::Device()
 {
 	constexpr int width = 1600;
 	constexpr int height = 900;
@@ -101,10 +102,10 @@ Engine::Renderer::Renderer()
 	[[maybe_unused]] const bool success = initialize(config);
 	ASSERT_LOG(success, "Failed to initialize xsr");
 
-	CreateImguiContext();
+	InitializeImGui();
 }
 
-Engine::Renderer::~Renderer()
+Engine::Device::~Device()
 {
 	xsr::shutdown();
 
@@ -116,7 +117,9 @@ Engine::Renderer::~Renderer()
 	glfwTerminate();
 }
 
-void Engine::Renderer::CreateImguiContext()
+
+
+void Engine::Device::InitializeImGui()
 {
 	LOG(LogCore, Message, "Creating imgui context");
 
@@ -137,7 +140,7 @@ void Engine::Renderer::CreateImguiContext()
 	ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
 }
 
-void Engine::Renderer::NewFrame()
+void Engine::Device::NewFrame()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -155,7 +158,7 @@ void Engine::Renderer::NewFrame()
 	}
 }
 
-void Engine::Renderer::Render()
+void Engine::Device::Render()
 {
 	// Rendering 
 	ImGui::Render();

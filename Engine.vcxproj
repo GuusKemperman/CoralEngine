@@ -112,7 +112,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)external\xsr\backends\opengl\external\GLFW;;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;d3d12.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>glfw3.lib;opengl32.lib</AdditionalDependencies>
@@ -230,6 +230,14 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="External\imgui\imgui_impl_dx12.cpp" />
+    <ClCompile Include="Source\Platform\PC\Rendering\RendererPC.cpp" />
+    <ClCompile Include="Source\Platform\PC\Rendering\DXSignature.cpp" />
+    <ClCompile Include="Source\Platform\PC\Rendering\DXConstBuffer.cpp" />
+    <ClCompile Include="Source\Platform\PC\Rendering\DXDescHeap.cpp" />
+    <ClCompile Include="Source\Platform\PC\Rendering\DXPipeline.cpp" />
+    <ClCompile Include="Source\Platform\PC\Rendering\DXResource.cpp" />
+    <ClCompile Include="Source\Platform\PC\Core\DevicePC.cpp" />
     <ClCompile Include="external\clipper\src\clipper.engine.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -674,6 +682,14 @@
     <ClCompile Include="Source\World\WorldRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="External\imgui\imgui_impl_dx12.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\DXDefines.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\DXSignature.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\DXConstBuffer.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\DXDescHeap.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\DXPipeline.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\DXResource.h" />
+    <ClInclude Include="Include\Platform\PC\Core\DevicePC.h" />
     <ClInclude Include="external\clipper\include\clipper2\clipper.core.h" />
     <ClInclude Include="external\clipper\include\clipper2\clipper.engine.h" />
     <ClInclude Include="external\clipper\include\clipper2\clipper.export.h" />
@@ -790,7 +806,7 @@
     <ClInclude Include="include\core\AssetManager.h" />
     <ClInclude Include="include\core\Editor.h" />
     <ClInclude Include="include\core\InputManager.h" />
-    <ClInclude Include="Include\Core\Renderer.h" />
+    <ClInclude Include="Include\Core\Device.h" />
     <ClInclude Include="include\core\EngineSubsystem.h" />
     <ClInclude Include="Include\Utilities\DoUndo.h" />
     <ClInclude Include="Include\Utilities\FileFunctions.h" />
@@ -843,6 +859,7 @@
     <ClInclude Include="include\World\World.h" />
     <ClInclude Include="Include\World\Registry.h" />
     <ClInclude Include="Include\World\WorldRenderer.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\RendererPC.h" />
     <ClInclude Include="source\platform\***REMOVED***\core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />
