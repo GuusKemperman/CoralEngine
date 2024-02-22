@@ -129,7 +129,7 @@ void* Engine::MetaType::Malloc(uint32 amount) const
 
 void Engine::MetaType::Free(void* buffer)
 {
-	_aligned_free(buffer);
+	AlignedFree(buffer);
 }
 
 const Engine::MetaFunc* Engine::MetaType::TryGetConstructor(const std::vector<TypeTraits>& parameters) const

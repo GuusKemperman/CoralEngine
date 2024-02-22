@@ -4,6 +4,7 @@
 template<typename T>
 struct Reflector
 {
+	static constexpr bool sIsSpecialized = false;
 };
 
 namespace Engine
@@ -32,22 +33,31 @@ namespace Engine
 
 	namespace Internal
 	{
+		template <class T, std::size_t = sizeof(T)>
+		std::true_type is_complete_impl(T*);
+
+		std::false_type is_complete_impl(...);
+
+		template <class T>
+		using is_complete = decltype(is_complete_impl(std::declval<T*>()));
+
+
+
+#ifdef PLATFORM_***REMOVED***
 		template<typename T>
-		struct HasExternalReflectHelper
-		{
-			template <class TT>
-			static auto test(int) -> decltype(Reflector<TT>::Reflect(), std::true_type());
+		static constexpr bool sHasInternalReflect = !Reflector<T>::sIsSpecialized;
 
-			template <class> static std::false_type test(...);
-
-			static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
-		};
-
+		template<typename T>
+		static constexpr bool sHasExternalReflect = Reflector<T>::sIsSpecialized;
+#elif PLATFORM_WINDOWS
 		template<typename T>
 		static constexpr bool sHasInternalReflect = ReflectAccess::HasReflectFunc<T>();
 
 		template<typename T>
-		static constexpr bool sHasExternalReflect = HasExternalReflectHelper<T>::value;
+		static constexpr bool sHasExternalReflect = Reflector<T>::sIsSpecialized;
+#else
+		static_assert(false, "No platform");
+#endif
 
 		void RegisterReflectFunc(TypeId typeId, MetaType(*reflectFunc)());
 

@@ -3,7 +3,7 @@
 
 #if 1
 
-#define LOG(channel, severity, formatString, ...) Engine::Logger::Get().Log(Engine::Format(""), #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
+#define LOG(channel, severity, formatString, ...) Engine::Logger::Get().Log(Engine::Format(#string, __VA_ARGS__), #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
 #define LOG_TRIVIAL(channel, severity, string) Engine::Logger::Get().Log(#string, #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
 #else
 #define LOG(...)

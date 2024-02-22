@@ -619,7 +619,7 @@ Engine::AnyStorage::AnyStorage(const MetaType& type) :
 Engine::AnyStorage::~AnyStorage()
 {
 	pop_all();
-	_aligned_free(mData);
+	AlignedFree(mData);
 }
 
 bool Engine::AnyStorage::CanTypeBeUsed(const MetaType& type)
@@ -757,7 +757,7 @@ void Engine::AnyStorage::reserve(const size_type cap)
 		type.Destruct(src, false);
 	}
 
-	_aligned_free(mData);
+	AlignedFree(mData);
 	mData = newBuffer;
 	mCapacity = cap;
 }
