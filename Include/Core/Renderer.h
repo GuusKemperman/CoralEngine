@@ -20,7 +20,10 @@ namespace Engine
 
         bool ShouldClose() const { return !mIsWindowOpen; }
 
-    	void CreateImguiContext();
+        // TODO hardcoded return value
+        glm::vec2 GetDisplaySize() const;
+
+        void CreateImguiContext();
 
     	GLFWwindow* mWindow;
 
@@ -46,6 +49,9 @@ namespace Engine
         void Render();
 
         bool ShouldClose() const { return false; }
+
+        // TODO hardcoded return value
+        glm::vec2 GetDisplaySize() const { return { 1920.0f, 1080.0f }; }
 
         void CreateImguiContext();
     };

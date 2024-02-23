@@ -116,6 +116,16 @@ Engine::Renderer::~Renderer()
 	glfwTerminate();
 }
 
+glm::vec2 Engine::Renderer::GetDisplaySize() const
+{
+#ifdef EDITOR
+	return ImGui::GetIO().DisplaySize;
+#else
+	return { 1920.0f, 1080.0f };
+#endif
+
+}
+
 void Engine::Renderer::CreateImguiContext()
 {
 	LOG(LogCore, Message, "Creating imgui context");

@@ -1,8 +1,6 @@
 #include "Precomp.h"
 #include "Components/TransformComponent.h"
 
-#include "imgui/ImGuizmo.h"
-
 #include "GSON/GSONBinary.h"
 #include "World/World.h"
 #include "World/Registry.h"
@@ -10,6 +8,11 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
+
+namespace
+{
+	void DecomposeMatrixToComponents(const float* matrix, float* translation, float* rotation, float* scale);
+}
 
 Engine::TransformComponent::~TransformComponent()
 {
@@ -68,7 +71,7 @@ void Engine::TransformComponent::SetLocalMatrix(const glm::mat4& matrix)
 {
 	glm::vec3 eulerOrientationDegrees{};
 
-	ImGuizmo::DecomposeMatrixToComponents(&matrix[0][0],
+	DecomposeMatrixToComponents(&matrix[0][0],
 	                                      value_ptr(mLocalPosition),
 	                                      value_ptr(eulerOrientationDegrees),
 	                                      value_ptr(mLocalScale));
@@ -92,7 +95,7 @@ void Engine::TransformComponent::SetWorldMatrix(const glm::mat4& matrix)
 	glm::vec3 eulerOrientation{};
 	glm::vec3 scale{};
 
-	ImGuizmo::DecomposeMatrixToComponents(&matrix[0][0], value_ptr(translation), value_ptr(eulerOrientation), value_ptr(scale));
+	DecomposeMatrixToComponents(&matrix[0][0], value_ptr(translation), value_ptr(eulerOrientation), value_ptr(scale));
 
 	SetWorldPosition(translation);
 	SetWorldOrientation(eulerOrientation * (TWOPI / 360.0f));
@@ -322,4 +325,48 @@ Engine::MetaType Engine::TransformComponent::Reflect()
 	
 	ReflectComponentType<TransformComponent>(type);
 	return type;
+}
+
+namespace
+{
+	// Stolen from imguizmo
+	void DecomposeMatrixToComponents(const float* matrix, float* translation, float* rotation, float* scale)
+	{
+		struct matrix_t
+			{
+			public:
+
+				union
+				{
+					float m[4][4];
+					float m16[16];
+					struct
+					{
+						glm::vec4 right, up, dir, position;
+					} v;
+					glm::vec4 component[4];
+				};
+			};
+
+			matrix_t mat = *(matrix_t*)matrix;
+
+			scale[0] = glm::length(mat.v.right);
+			scale[1] = glm::length(mat.v.up);
+			scale[2] = glm::length(mat.v.dir);
+
+			mat.v.right = glm::normalize(mat.v.right);
+			mat.v.up = glm::normalize(mat.v.up);
+			mat.v.dir = glm::normalize(mat.v.dir);
+
+			static constexpr float ZPI = 3.14159265358979323846f;
+			static constexpr float rad2deg = (180.f / ZPI);
+
+			rotation[0] = rad2deg * atan2f(mat.m[1][2], mat.m[2][2]);
+			rotation[1] = rad2deg * atan2f(-mat.m[0][2], sqrtf(mat.m[1][2] * mat.m[1][2] + mat.m[2][2] * mat.m[2][2]));
+			rotation[2] = rad2deg * atan2f(mat.m[0][1], mat.m[0][0]);
+
+			translation[0] = mat.v.position.x;
+			translation[1] = mat.v.position.y;
+			translation[2] = mat.v.position.z;
+	}
 }

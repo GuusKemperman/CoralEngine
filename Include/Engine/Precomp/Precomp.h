@@ -1,4 +1,9 @@
 #pragma once
+
+#if defined(PLATFORM_***REMOVED***) && defined(EDITOR)
+static_assert(false, "EngineDebug or EngineRelease configuration is not supported for ***REMOVED***");
+#endif
+
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -30,7 +35,25 @@
 #pragma warning(pop)
 #endif
 
+#ifdef PLATFORM_PC
+#define OPEN_GL
+#endif // PLATFORM_PC
+
+// Will be removed once we switch
+// to directX.
+#ifdef OPEN_GL
+
 #include "glad/glad.h"
+
+void _CheckGL(const char* f, int l);
+void _CheckFrameBuffer(const char* f, int l);
+
+#define CheckGL() { _CheckGL( __FILE__, __LINE__ ); }
+#define CheckFrameBuffer() { _CheckFrameBuffer(__FILE__, __LINE__); }
+#else
+#define CheckGL()
+#define CheckFrameBuffer()
+#endif // OPEN_GL
 
 namespace Engine
 {
@@ -65,23 +88,13 @@ else { UNLIKELY; LOG_TRIVIAL(LogTemp, Fatal, "Assert failed: " #string); }
 #define ASSERT(condition) ASSERT_LOG_TRIVIAL(condition, "")
 #define ABORT LOG_TRIVIAL(LogTemp, Fatal, "Aborted");
 
+#ifdef EDITOR
 #define IM_ASSERT(exp) ASSERT(exp)
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_stdlib.h"
-
-#ifdef _DEBUG
-#define CheckGL() { _CheckGL( __FILE__, __LINE__ ); }
-#define CheckFrameBuffer() { _CheckFrameBuffer(__FILE__, __LINE__); }
-
-#else
-#define CheckGL()
-#define CheckFrameBuffer()
-#endif
-
-void _CheckGL(const char* f, int l);
-void _CheckFrameBuffer(const char* f, int l);
+#endif // EDITOR
 
 template<typename T, typename = void>
 constexpr bool IsFullyDefined = false;
@@ -97,5 +110,4 @@ template <class> constexpr bool AlwaysFalse = false;
 #include "Core/CommonMetaProperties.h"
 
 #include "Utilities/EnumString.h"
-
 
