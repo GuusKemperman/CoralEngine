@@ -52,7 +52,7 @@ Engine::Level::Level(AssetLoadInfo& loadInfo) :
 
 	if (serializedWorld == nullptr)
 	{
-		LOG(LogAssets, Warning, "Invalid level {}: No components object serialized",
+		LOG_FMT(LogAssets, Warning, "Invalid level {}: No components object serialized",
 			GetName());
 		return;
 	}
@@ -67,7 +67,7 @@ Engine::Level::Level(AssetLoadInfo& loadInfo) :
 
 			if (!doesClassStillExist)
 			{
-				LOG(LogAssets, Warning, "Level {} has components of a type {}, but this class no longer exists",
+				LOG_FMT(LogAssets, Warning, "Level {} has components of a type {}, but this class no longer exists",
 					GetName(),
 					className);
 			}
@@ -148,7 +148,7 @@ Engine::Level::Level(AssetLoadInfo& loadInfo) :
 
 			if (parent == nullptr)
 			{
-				LOG(LogAssets, Error, "While loading {}: An error occured with a prefab. The factory id of the root entity was changed somehow? This should not be possible. The level will not be loaded in correctly. Resolve the errors with the prefab and try again",
+				LOG_FMT(LogAssets, Error, "While loading {}: An error occured with a prefab. The factory id of the root entity was changed somehow? This should not be possible. The level will not be loaded in correctly. Resolve the errors with the prefab and try again",
 					GetName());
 				continue;
 			}
@@ -176,7 +176,7 @@ Engine::Level::Level(AssetLoadInfo& loadInfo) :
 				}
 				else
 				{
-					LOG_TRIVIAL(LogAssets, Error, "A prefab had a parent child relationship, but atleast one of the entities does not have a transformComponent");
+					LOG(LogAssets, Error, "A prefab had a parent child relationship, but atleast one of the entities does not have a transformComponent");
 				}
 			}
 		}
@@ -227,7 +227,7 @@ void Engine::Level::OnSave(AssetSaveInfo& saveInfo) const
 {
 	if (mSerializedComponents == nullptr)
 	{
-		LOG(LogAssets, Error, "Cannot save level {}, mSerializedComponents is nullptr",
+		LOG_FMT(LogAssets, Error, "Cannot save level {}, mSerializedComponents is nullptr",
 			GetName());
 		return;
 	}
@@ -325,7 +325,7 @@ void Engine::EraseSerializedFactory(BinaryGSONObject& serializedWorld,
 
 	if (serializedEntities == nullptr)
 	{
-		LOG_TRIVIAL(LogAssets, Error, "Could not erase serialized factory, world does not contain an \"entities\" member");
+		LOG(LogAssets, Error, "Could not erase serialized factory, world does not contain an \"entities\" member");
 		return;
 	}
 
@@ -386,7 +386,7 @@ Engine::Level::DiffedPrefabFactory Engine::Level::DiffPrefabFactory(const Binary
 	}
 	else
 	{
-		LOG(LogAssets, Error, "Missing 'Components' object in level {}", GetName());
+		LOG_FMT(LogAssets, Error, "Missing 'Components' object in level {}", GetName());
 	}
 
 	std::vector<uint32> indicesOfComponentNames(componentNames.size());
@@ -437,7 +437,7 @@ Engine::Level::DiffedPrefab Engine::Level::DiffPrefab(const BinaryGSONObject& se
 
 	if (prefab == nullptr)
 	{
-		LOG(LogAssets, Message, "Level {} contains Prefab {}, which no longer exists.",
+		LOG_FMT(LogAssets, Message, "Level {} contains Prefab {}, which no longer exists.",
 			GetName(), prefabName);
 
 		for (const BinaryGSONObject& factoryToErase : serializedFactories)
@@ -549,7 +549,7 @@ Engine::BinaryGSONObject Engine::Level::GenerateCurrentStateOfPrefabs(const Bina
 		if (serializedHashedPrefabName == nullptr
 			|| serializedFactoryId == nullptr)
 		{
-			LOG_TRIVIAL(LogAssets, Warning, "Prefab origin component not serialized as expected");
+			LOG(LogAssets, Warning, "Prefab origin component not serialized as expected");
 			continue;
 		}
 
@@ -613,7 +613,7 @@ std::vector<entt::entity> Engine::GetAllEntitiesCreatedUsingFactory(const Binary
 		if (serializedHashedPrefabName == nullptr
 			|| serializedFactoryId == nullptr)
 		{
-			LOG_TRIVIAL(LogAssets, Warning, "Prefab origin component not serialized as expected");
+			LOG(LogAssets, Warning, "Prefab origin component not serialized as expected");
 			continue;
 		}
 

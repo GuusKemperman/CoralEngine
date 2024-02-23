@@ -65,20 +65,20 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 	}
 	else
 	{
-		LOG(LogAssets, Error, "Invalid extension: {}", path.extension().string());
+		LOG_FMT(LogAssets, Error, "Invalid extension: {}", path.extension().string());
 		return std::nullopt;
 	}
 
 	if (!err.empty()
 		|| !success)
 	{
-		LOG(LogAssets, Error, "Error emitted while loading {}: {}", path.string(), err);
+		LOG_FMT(LogAssets, Error, "Error emitted while loading {}: {}", path.string(), err);
 		return std::nullopt;
 	}
 
 	if (!warn.empty())
 	{
-		LOG(LogAssets, Warning, "Warning emitted while loading {}: {}", path.string(), warn);
+		LOG_FMT(LogAssets, Warning, "Warning emitted while loading {}: {}", path.string(), warn);
 	}
 
 	const MetaType* const myType = MetaManager::Get().TryGetType<GLTFImporter>();
@@ -114,7 +114,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 		}
 		else
 		{
-			LOG(LogAssets, Error, "Failed to import {}", textureName);
+			LOG_FMT(LogAssets, Error, "Failed to import {}", textureName);
 			anyErrors = true;
 		}
 
@@ -207,7 +207,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 				break;
 			}
 			default:
-				LOG(LogAssets, Error, "Importing mesh {} failed: Indices type not handles. Use unsigned int or unsigned shorts.", meshName);
+				LOG_FMT(LogAssets, Error, "Importing mesh {} failed: Indices type not handles. Use unsigned int or unsigned shorts.", meshName);
 				anyErrors = true;
 				break;
 			}
@@ -233,7 +233,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 					}
 					else
 					{
-						LOG(LogAssets, Error, "Importing mesh {} failed: position type not handled. Use floats.", meshName);
+						LOG_FMT(LogAssets, Error, "Importing mesh {} failed: position type not handled. Use floats.", meshName);
 						anyErrors = true;
 					}
 				}
@@ -245,7 +245,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 					}
 					else
 					{
-						LOG(LogAssets, Warning, "While importing mesh {}: normal type not handled. Use floats.", meshName);
+						LOG_FMT(LogAssets, Warning, "While importing mesh {}: normal type not handled. Use floats.", meshName);
 					}
 				}
 				else if (attribName.compare("TEXCOORD_0") == 0)
@@ -256,7 +256,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 					}
 					else
 					{
-						LOG(LogAssets, Warning, "While importing mesh {}: texcoord type not handled. Use floats.", meshName);
+						LOG_FMT(LogAssets, Warning, "While importing mesh {}: texcoord type not handled. Use floats.", meshName);
 					}
 				}
 				else if (attribName.compare("COLOR_0") == 0)
@@ -267,12 +267,12 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 					}
 					else
 					{
-						LOG(LogAssets, Warning, "While importing mesh {}: color type not handled. Use floats.", meshName);
+						LOG_FMT(LogAssets, Warning, "While importing mesh {}: color type not handled. Use floats.", meshName);
 					}
 				}
 				else
 				{
-					LOG(LogAssets, Verbose, "Ignored attribute {}", attribName);
+					LOG_FMT(LogAssets, Verbose, "Ignored attribute {}", attribName);
 				}
 			}
 
@@ -296,7 +296,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 			}
 			else
 			{
-				LOG(LogAssets, Error, "Failed to import mesh {}", meshName);
+				LOG_FMT(LogAssets, Error, "Failed to import mesh {}", meshName);
 				anyErrors = true;
 			}
 

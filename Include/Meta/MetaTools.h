@@ -26,7 +26,7 @@ namespace Engine
 		if (!any.IsOwner()
 			|| any.As<T>() == nullptr)
 		{
-			LOG_TRIVIAL(LogMeta, Warning, "Failed to MakeShared from any; The any was either non owning or was not of the correct type");
+			LOG(LogMeta, Warning, "Failed to MakeShared from any; The any was either non owning or was not of the correct type");
 			return nullptr;
 		}
 		return std::shared_ptr<T>{ static_cast<T*>(any.Release()), InPlaceDeleter<T, true>{} };
@@ -38,7 +38,7 @@ namespace Engine
 		if (!any.IsOwner()
 			|| any.As<T>() == nullptr)
 		{
-			LOG_TRIVIAL(LogMeta, Warning, "Failed to MakeShared from any; The any was either non owning or was not of the correct type");
+			LOG(LogMeta, Warning, "Failed to MakeShared from any; The any was either non owning or was not of the correct type");
 			return nullptr;
 		}
 

@@ -16,7 +16,7 @@ Engine::ComponentFactory::ComponentFactory(const MetaType& objectClass, const Bi
 
 		if (prop == nullptr)
 		{
-			LOG(LogAssets, Verbose, "Failed to deserialize property in {} - The property has been removed since we serialized.",
+			LOG_FMT(LogAssets, Verbose, "Failed to deserialize property in {} - The property has been removed since we serialized.",
 				objectClass.GetName());
 			continue;
 		}
@@ -32,7 +32,7 @@ Engine::ComponentFactory::ComponentFactory(const MetaType& objectClass, const Bi
 
 		if (deserializeFunc == nullptr)
 		{
-			LOG(LogAssets, Warning, "Failed to deserialize {}::{} - No {} function",
+			LOG_FMT(LogAssets, Warning, "Failed to deserialize {}::{} - No {} function",
 				prop->GetName(),
 				objectClass.GetName(),
 				sDeserializeMemberFuncName.StringView());
@@ -43,7 +43,7 @@ Engine::ComponentFactory::ComponentFactory(const MetaType& objectClass, const Bi
 
 		if (defaultConstructResult.HasError())
 		{
-			LOG(LogAssets, Warning, "Failed to deserialize {}::{} - Value of type {} cannot be default constructed", 
+			LOG_FMT(LogAssets, Warning, "Failed to deserialize {}::{} - Value of type {} cannot be default constructed", 
 				prop->GetName(), 
 				objectClass.GetName(),
 				propType.GetName());
@@ -57,7 +57,7 @@ Engine::ComponentFactory::ComponentFactory(const MetaType& objectClass, const Bi
 
 		if (result.HasError())
 		{
-			LOG(LogAssets, Error, "Failed to deserialize {}::{} - {}", 
+			LOG_FMT(LogAssets, Error, "Failed to deserialize {}::{} - {}", 
 				prop->GetName(),
 				objectClass.GetName(),
 				result.Error());
@@ -85,7 +85,7 @@ Engine::MetaAny Engine::ComponentFactory::Construct(Registry& reg, const entt::e
 
 		if (result.HasError())
 		{
-			LOG(LogAssets, Error, "Could not copy assign {}::{}, prefab will only be partially deserialized - {}",
+			LOG_FMT(LogAssets, Error, "Could not copy assign {}::{}, prefab will only be partially deserialized - {}",
 				propValue.mField.get().GetOuterType().GetName(),
 				propValue.mField.get().GetName(),
 				result.Error());
@@ -101,7 +101,7 @@ Engine::MetaAny Engine::ComponentFactory::Construct(Registry& reg, const entt::e
 	//	{
 	//		// This component no longer has a custom step,
 	//		// so let's ignore it the next time we call this function
-	//		LOG(LogAssets, Verbose, "{} no longer has custom OnDeserialize function.",
+	//		LOG_FMT(LogAssets, Verbose, "{} no longer has custom OnDeserialize function.",
 	//			mProductClass.get().GetName());
 	//		mCustomSerializedData.Clear();
 	//	}
@@ -114,7 +114,7 @@ Engine::MetaAny Engine::ComponentFactory::Construct(Registry& reg, const entt::e
 
 	//	if (!result.WasInvoked())
 	//	{
-	//		LOG(LogAssets, Error, "Failed to invoke custom OnDeserialize step for {}",
+	//		LOG_FMT(LogAssets, Error, "Failed to invoke custom OnDeserialize step for {}",
 	//			mProductClass.get().GetName());
 	//		mCustomSerializedData.Clear();
 	//	}

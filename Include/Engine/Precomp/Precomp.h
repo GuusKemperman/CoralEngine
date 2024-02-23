@@ -66,28 +66,6 @@ namespace Engine
 #include "Core/Logger.h"
 #include "BasicDataTypes/Name.h"
 
-#if defined(_DEBUG) || defined(EDITOR)
-#define ASSERTS_ENABLED
-#endif
-
-#ifdef ASSERTS_ENABLED
-
-#define ASSERT_LOG(condition, format, ...)\
-if (condition) {}\
-else { UNLIKELY; LOG(LogTemp, Fatal, "Assert failed: " #condition " - " format, __VA_ARGS__); }
-
-#define ASSERT_LOG_TRIVIAL(condition, string)\
-if (condition) {}\
-else { UNLIKELY; LOG_TRIVIAL(LogTemp, Fatal, "Assert failed: " #string); }
-
-#else
-#define ASSERT_LOG(...)
-#define ASSERT_LOG_TRIVIAL(...)
-#endif // ASSERTS_ENABLED
-
-#define ASSERT(condition) ASSERT_LOG_TRIVIAL(condition, "")
-#define ABORT LOG_TRIVIAL(LogTemp, Fatal, "Aborted");
-
 #ifdef EDITOR
 #define IM_ASSERT(exp) ASSERT(exp)
 

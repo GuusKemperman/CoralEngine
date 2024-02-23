@@ -14,7 +14,7 @@ std::string FileIO::ReadTextFile(Directory type, const std::string& path)
     ifstream file(fullPath);
     if (!file.is_open())
     {
-        LOG(LogFileIO, Warning, "File {} with full path {} was not found!", path, fullPath);
+        LOG_FMT(LogFileIO, Warning, "File {} with full path {} was not found!", path, fullPath);
         return string();
     }
     file.seekg(0, std::ios::end);
@@ -31,7 +31,7 @@ bool FileIO::WriteTextFile(Directory type, const std::string& path, const std::s
     ofstream file(fullPath);
     if (!file.is_open())
     {
-        LOG(LogFileIO, Warning, "File {} with full path {} was not found!", path, fullPath);
+        LOG_FMT(LogFileIO, Warning, "File {} with full path {} was not found!", path, fullPath);
         return false;
     }
     file << content;
@@ -45,7 +45,7 @@ std::vector<char> FileIO::ReadBinaryFile(Directory type, const std::string& path
     ifstream file(fullPath, std::ios::binary | std::ios::ate);
     if (!file.is_open())
     {
-        LOG(LogFileIO, Warning, "File {} with full path {} was not found!", path, fullPath);
+        LOG_FMT(LogFileIO, Warning, "File {} with full path {} was not found!", path, fullPath);
         return vector<char>();
     }
     const streamsize size = file.tellg();
@@ -62,7 +62,7 @@ bool FileIO::WriteBinaryFile(Directory type, const std::string& path, const std:
     ofstream file(fullPath, std::ios::binary);
     if (!file.is_open())
     {
-        LOG(LogFileIO, Warning, "File {} with full path {} was not found!", path, fullPath);
+        LOG_FMT(LogFileIO, Warning, "File {} with full path {} was not found!", path, fullPath);
         return false;
     }
     file.write(content.data(), content.size());

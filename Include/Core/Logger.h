@@ -1,17 +1,56 @@
 #pragma once
 #include "Core/EngineSubsystem.h"
 
-#if 1
+#if LOGGING_ENABLED
 
-#define LOG(channel, severity, formatString, ...) Engine::Logger::Get().Log(Engine::Format(#formatString, __VA_ARGS__), #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
+#define LOG_FMT(channel, severity, formatString, ...) Engine::Logger::Get().Log(Engine::Format(#formatString, __VA_ARGS__), #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
 
 // ***REMOVED*** doesn't like VA_ARGS if we do not provide any formatting arguments, so we have a separate macro for empty
-#define LOG_TRIVIAL(channel, severity, string) Engine::Logger::Get().Log(#string, #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
-#else
+#define LOG(channel, severity, string) Engine::Logger::Get().Log(#string, #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
+
+#ifdef ASSERTS_ENABLED
+
+#define ASSERT_LOG_FMT(condition, format, ...)\
+if (condition) {}\
+else { UNLIKELY; LOG_FMT(LogTemp, Fatal, "Assert failed: " #condition " - " format, __VA_ARGS__); }
+
+#define ASSERT_LOG(condition, string)\
+if (condition) {}\
+else { UNLIKELY; LOG(LogTemp, Fatal, "Assert failed: " #string); }
+
+#define ABORT LOG(LogTemp, Fatal, "Aborted");
+
+#endif // ASSERTS_ENABLED
+
+#else // Ifndef LOGGING_ENABLED
+
+#define LOG_FMT(...)
 #define LOG(...)
-#define LOG_TRIVIAL(...)
-#defien 
+
+#ifdef ASSERTS_ENABLED
+
+#define ASSERT_LOG_FMT(condition, format, ...)\
+if (condition) {}\
+else { UNLIKELY; assert(condition) }
+
+#define ASSERT_LOG(condition, string)\
+if (condition) {}\
+else { UNLIKELY; assert(condition) }
+
+#define ABORT assert(false)
+
+#endif // ASSERTS_ENABLED
+
 #endif
+
+#ifndef ASSERTS_ENABLED
+#define ASSERT_LOG_FMT(...)
+#define ASSERT_LOG(...)
+#define ABORT
+#endif
+
+#define ASSERT(condition) ASSERT_LOG(condition, "")
+
 
 enum LogSeverity
 {

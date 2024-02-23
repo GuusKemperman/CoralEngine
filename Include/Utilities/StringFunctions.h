@@ -22,8 +22,8 @@ namespace Engine
 				const int hex2 = static_cast<int>(hex[doubleIndex + 1]);
 
 #ifdef ASSERTS_ENABLED
-				ASSERT_LOG_TRIVIAL(std::isxdigit(hex1) && std::isxdigit(hex2), "\'Hex\' string contained none-hex characters");
-				ASSERT_LOG_TRIVIAL((std::isdigit(hex1) || std::isupper(hex1)) && (std::isdigit(hex2) || std::isupper(hex2)), "Hex contained lower characters, make the input string upper or make a seperate hextobinary func that accounts for this");
+				ASSERT_LOG(std::isxdigit(hex1) && std::isxdigit(hex2), "\'Hex\' string contained none-hex characters");
+				ASSERT_LOG((std::isdigit(hex1) || std::isupper(hex1)) && (std::isdigit(hex2) || std::isupper(hex2)), "Hex contained lower characters, make the input string upper or make a seperate hextobinary func that accounts for this");
 #endif // ASSERTS_ENABLED
 
 				constexpr int zeroChar = static_cast<int>('0');
@@ -38,7 +38,7 @@ namespace Engine
 			binary.resize(binarySize);
 
 #ifdef ASSERTS_ENABLED
-			ASSERT_LOG_TRIVIAL((hex.size() & 1) == 0, "Hex size was not even, hex must be invalid.");
+			ASSERT_LOG((hex.size() & 1) == 0, "Hex size was not even, hex must be invalid.");
 #endif // ASSERTS_ENABLED
 
 			HexToBinary(hex, { binary.data(), binarySize });

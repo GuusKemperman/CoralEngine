@@ -131,7 +131,7 @@ void Engine::UnreflectComponentType(MetaType& type)
 
 	if (numRemoved != 3)
 	{
-		LOG(LogMeta, Error, "Failed to unreflect component {}, expected to remove 3 functions, but removed {} instead",
+		LOG_FMT(LogMeta, Error, "Failed to unreflect component {}, expected to remove 3 functions, but removed {} instead",
 			type.GetName(),
 			numRemoved);
 	}

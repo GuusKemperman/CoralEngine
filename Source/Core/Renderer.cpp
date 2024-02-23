@@ -41,7 +41,7 @@ void ErrorCallback([[maybe_unused]] int error, [[maybe_unused]] const char* desc
 {
 	if (error != 0)
 	{
-		LOG(LogCore, Error, "GLFW Error: {}, {}", error, description);
+		LOG_FMT(LogCore, Error, "GLFW Error: {}, {}", error, description);
 	}
 }
 
@@ -50,7 +50,7 @@ Engine::Renderer::Renderer()
 	constexpr int width = 1600;
 	constexpr int height = 900;
 
-	LOG(LogCore, Message, "Initializing GLFW");
+	LOG_FMT(LogCore, Message, "Initializing GLFW");
 	[[maybe_unused]] bool succes = glfwInit();
 	ASSERT(succes);
 
@@ -73,7 +73,7 @@ Engine::Renderer::Renderer()
 	windowTitle += "_RELEASE";
 #endif
 
-	LOG(LogCore, Message, "Creating window");
+	LOG_FMT(LogCore, Message, "Creating window");
 	mWindow = glfwCreateWindow(width, height, windowTitle.c_str(), 0, 0);
 	ASSERT(mWindow != nullptr);
 
@@ -85,7 +85,7 @@ Engine::Renderer::Renderer()
 
 	if (dummy != GL_NO_ERROR)
 	{
-		LOG(LogCore, Verbose, "I still get this error: {}", dummy);
+		LOG_FMT(LogCore, Verbose, "I still get this error: {}", dummy);
 	}
 
 	glfwSwapInterval(0);
@@ -103,9 +103,9 @@ Engine::Renderer::Renderer()
 	config.texture_filter = xsr::render_configuration::texture_filtering::linear;
 	config.shader_path = "external/xsr/";
 
-	LOG(LogCore, Message, "Initializing xsr");
+	LOG_FMT(LogCore, Message, "Initializing xsr");
 	[[maybe_unused]] const bool success = initialize(config);
-	ASSERT_LOG(success, "Failed to initialize xsr");
+	ASSERT_LOG_FMT(success, "Failed to initialize xsr");
 }
 
 Engine::Renderer::~Renderer()
@@ -135,7 +135,7 @@ glm::vec2 Engine::Renderer::GetDisplaySize() const
 void Engine::Renderer::CreateImguiContext()
 {
 #ifdef EDITOR
-	LOG(LogCore, Message, "Creating imgui context");
+	LOG_FMT(LogCore, Message, "Creating imgui context");
 
 	glfwShowWindow(mWindow);
 	mIsWindowOpen = true;
@@ -213,7 +213,7 @@ void _CheckGL([[maybe_unused]] const char* f, [[maybe_unused]] int l)
 	case GL_INVALID_INDEX: errorStr = "INVALID INDEX"; break;
 	}
 
-	LOG(LogCore, Error, "GLerror: File: {}, Line {}, GLError {}, GLErrorCode {}", f, l, errorStr, error);
+	LOG_FMT(LogCore, Error, "GLerror: File: {}, Line {}, GLError {}, GLErrorCode {}", f, l, errorStr, error);
 }
 
 void _CheckFrameBuffer([[maybe_unused]] const char* f, [[maybe_unused]] int l)
@@ -234,7 +234,7 @@ void _CheckFrameBuffer([[maybe_unused]] const char* f, [[maybe_unused]] int l)
 	case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: error = ("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS");	break;
 	}
 
-	LOG(LogCore, Error, "Invalid frame buffer: File: {}, Line: {}, GLError: {}, GLErrorCode {}", f, l, error, status);
+	LOG_FMT(LogCore, Error, "Invalid frame buffer: File: {}, Line: {}, GLError: {}, GLErrorCode {}", f, l, error, status);
 }
 
 #elif PLATFORM_***REMOVED***
@@ -246,9 +246,9 @@ Engine::Renderer::Renderer()
 	deviceConfig.width = 3840;
 	deviceConfig.height = 2160;
 
-	LOG_TRIVIAL(LogCore, Message, "Initializing xsr");
+	LOG(LogCore, Message, "Initializing xsr");
 	[[maybe_unused]] bool success = xsr::device::initialize(deviceConfig);
-	ASSERT_LOG_TRIVIAL(success, "Failed to initialize xsr device");
+	ASSERT_LOG(success, "Failed to initialize xsr device");
 
 	// create xsr render config
 	xsr::render_configuration config;
@@ -257,9 +257,9 @@ Engine::Renderer::Renderer()
 	config.texture_filter = xsr::render_configuration::texture_filtering::linear;
 	config.shader_path = "external/xsr/";
 
-	LOG_TRIVIAL(LogCore, Message, "Initializing xsr");
+	LOG(LogCore, Message, "Initializing xsr");
 	success = initialize(config);
-	ASSERT_LOG_TRIVIAL(success, "Failed to initialize xsr");
+	ASSERT_LOG(success, "Failed to initialize xsr");
 }
 
 Engine::Renderer::~Renderer()

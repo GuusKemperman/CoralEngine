@@ -104,7 +104,7 @@ Engine::World& Engine::WorldInspectHelper::BeginPlay()
 {
 	if (mWorldAfterBeginPlay != nullptr)
 	{
-		LOG(LogEditor, Error, "Called begin play when the world has already begun play");
+		LOG_FMT(LogEditor, Error, "Called begin play when the world has already begun play");
 		return GetWorld();
 	}
 	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay() && "Do not call BeginPlay on the world yourself, use WorldInspectHelper::BeginPlay")
@@ -123,7 +123,7 @@ Engine::World& Engine::WorldInspectHelper::EndPlay()
 {
 	if (mWorldAfterBeginPlay == nullptr)
 	{
-		LOG(LogEditor, Error, "Called EndPlay, but WorldInspectHelper::BeginPlay was never called");
+		LOG_FMT(LogEditor, Error, "Called EndPlay, but WorldInspectHelper::BeginPlay was never called");
 		return GetWorld();
 	}
 	ASSERT(mWorldAfterBeginPlay->HasBegunPlay() && "Do not call EndPlay on the world yourself, use WorldInspectHelper::EndPlay");
@@ -455,7 +455,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 		if (componentType == nullptr)
 		{
-			LOG(LogEditor, Error, "Component {} could not be displayed, as it's type was not reflected", storage.type().name());
+			LOG_FMT(LogEditor, Error, "Component {} could not be displayed, as it's type was not reflected", storage.type().name());
 			continue;
 		}
 
@@ -508,7 +508,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 			if (!func.GetParameters().empty()
 				&& !isMemberFunc)
 			{
-				LOG(LogEditor, Warning, "Function {}::{} has {} property, but the function has parameters",
+				LOG_FMT(LogEditor, Warning, "Function {}::{} has {} property, but the function has parameters",
 					componentClass.GetName(), func.GetDesignerFriendlyName(), Props::sCallFromEditorTag);
 				continue;
 			}
@@ -531,7 +531,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 					if (result.HasError())
 					{
-						LOG(LogEditor, Error, "Error invoking {}::{} on entity {} - {}",
+						LOG_FMT(LogEditor, Error, "Error invoking {}::{} on entity {} - {}",
 							componentClass.GetName(), func.GetDesignerFriendlyName(),
 							static_cast<EntityType>(entity),
 							result.Error());
@@ -548,7 +548,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 			if (result.HasError())
 			{
-				LOG(LogEditor, Error, "An error occured while inspecting component that had a custom OnInspect: {}", result.Error());
+				LOG_FMT(LogEditor, Error, "An error occured while inspecting component that had a custom OnInspect: {}", result.Error());
 			}
 		}
 
@@ -592,7 +592,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 			}
 			else
 			{
-				LOG(LogEditor, Error, "Missing equality operator for {}::{}. Will assume all the values are the same.",
+				LOG_FMT(LogEditor, Error, "Missing equality operator for {}::{}. Will assume all the values are the same.",
 					field.GetOuterType().GetName(),
 					field.GetName());
 			}
@@ -609,7 +609,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 			if (newValue.HasError())
 			{
-				LOG(LogEditor, Error, "Could not display value for {}::{} as it could not be constructed",
+				LOG_FMT(LogEditor, Error, "Could not display value for {}::{} as it could not be constructed",
 					field.GetOuterType().GetName(),
 					field.GetName(),
 					newValue.Error());
@@ -630,7 +630,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 				if (result.HasError())
 				{
-					LOG(LogEditor, Warning, "Could not copy assign value to {}::{} - {}",
+					LOG_FMT(LogEditor, Warning, "Could not copy assign value to {}::{} - {}",
 						componentClass.GetName(),
 						field.GetName(),
 						result.Error());

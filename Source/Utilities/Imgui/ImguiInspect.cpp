@@ -8,7 +8,7 @@ bool Engine::ShowInspectUI(const std::string& label, MetaAny& value)
 {
     if (value == nullptr)
     {
-        LOG(Editor, Warning, "Cannot inspect {}: value was nullpr", label);
+        LOG_FMT(Editor, Warning, "Cannot inspect {}: value was nullpr", label);
         return false;
     }
 
@@ -16,7 +16,7 @@ bool Engine::ShowInspectUI(const std::string& label, MetaAny& value)
 
     if (valueType == nullptr)
     {
-        LOG(Editor, Warning, "Cannot inspect {}: valueType was nullpr", label);
+        LOG_FMT(Editor, Warning, "Cannot inspect {}: valueType was nullpr", label);
         return false;
     }
 
@@ -24,7 +24,7 @@ bool Engine::ShowInspectUI(const std::string& label, MetaAny& value)
 
     if (result.HasError())
     {
-        LOG(Editor, Error, "Inspecting failed for {} - {}", label, result.Error());
+        LOG_FMT(Editor, Error, "Inspecting failed for {} - {}", label, result.Error());
         return false;
     }
 

@@ -29,7 +29,7 @@ Engine::VirtualMachine::~VirtualMachine()
 
 void Engine::VirtualMachine::Recompile()
 {
-	LOG_TRIVIAL(LogScripting, Message, "Recompiling...");
+	LOG(LogScripting, Message, "Recompiling...");
 
 	ClearCompilationResult();
 
@@ -70,7 +70,7 @@ void Engine::VirtualMachine::Recompile()
 
 	PrintCompileErrors();
 
-	LOG_TRIVIAL(LogScripting, Message, "Compilation completed");
+	LOG(LogScripting, Message, "Compilation completed");
 }
 
 void Engine::VirtualMachine::ClearCompilationResult()
@@ -101,7 +101,7 @@ Engine::FuncResult Engine::VirtualMachine::ExecuteScriptFunction(MetaFunc::Dynam
 	const ScriptNode& firstNode,
 	const FunctionEntryScriptNode* entryNode)
 {
-	// LOG(LogScripting, Verbose, "Calling {}::{}", func.GetNameOfScriptAsset(), func.GetName());
+	// LOG_FMT(LogScripting, Verbose, "Calling {}::{}", func.GetNameOfScriptAsset(), func.GetName());
 	VMContext context{ func };
 
 	if (context.mCachedValues == nullptr)
@@ -309,7 +309,7 @@ void Engine::VirtualMachine::PrintError(const ScriptError& error, bool compileEr
 
 void Engine::VirtualMachine::DestroyAllTypesCreatedThroughScripts()
 {
-	LOG_TRIVIAL(LogScripting, Verbose, "Destroying all types created through scripts");
+	LOG(LogScripting, Verbose, "Destroying all types created through scripts");
 
 	MetaManager& manager = MetaManager::Get();
 
@@ -319,7 +319,7 @@ void Engine::VirtualMachine::DestroyAllTypesCreatedThroughScripts()
 	{
 		if (WasTypeCreatedByScript(type))
 		{
-			LOG(LogScripting, Verbose, "Type {} will be destroyed", type.GetName());
+			LOG_FMT(LogScripting, Verbose, "Type {} will be destroyed", type.GetName());
 			UnreflectComponentType(type);
 			typesToRemove.push_back(type.GetTypeId());
 		}

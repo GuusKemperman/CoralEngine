@@ -14,7 +14,7 @@ Engine::World::World(const bool beginPlayImmediately)
 	mRenderer = std::make_unique<WorldRenderer>(*this);
 	mRegistry = std::make_unique<Registry>(*this);
 
-	LOG_TRIVIAL(LogCore, Verbose, "World is awaiting begin play..");
+	LOG(LogCore, Verbose, "World is awaiting begin play..");
 
 	if (beginPlayImmediately)
 	{
@@ -64,7 +64,7 @@ void Engine::World::BeginPlay()
 {
 	if (HasBegunPlay())
 	{
-		LOG_TRIVIAL(LogCore, Warning, "Called BeginPlay twice");
+		LOG(LogCore, Warning, "Called BeginPlay twice");
 		return;
 	}
 
@@ -72,17 +72,17 @@ void Engine::World::BeginPlay()
 
 	// Reset the total time elapsed, deltaTime, etc
 	mTime = {};
-	LOG_TRIVIAL(LogCore, Verbose, "World has just begun play");
+	LOG(LogCore, Verbose, "World has just begun play");
 }
 
 void Engine::World::EndPlay()
 {
 	if (!HasBegunPlay())
 	{
-		LOG_TRIVIAL(LogCore, Warning, "Cannot end play, as the world has not begunplay");
+		LOG(LogCore, Warning, "Cannot end play, as the world has not begunplay");
 	}
 
-	LOG_TRIVIAL(LogCore, Verbose, "World has just ended play");
+	LOG(LogCore, Verbose, "World has just ended play");
 
 	mHasBegunPlay = false;
 }
@@ -211,7 +211,7 @@ Engine::MetaType Engine::World::Reflect()
 		{
 			if (prefab == nullptr)
 			{
-				LOG_TRIVIAL(LogWorld, Warning, "Attempted to spawn NULL prefab.");
+				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
 			}
 
 			World* world = TryGetWorldAtTopOfStack();

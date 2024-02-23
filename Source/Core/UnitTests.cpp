@@ -27,7 +27,7 @@ static std::chrono::system_clock::time_point GetTimeOfCompilation()
 
 			if (!std::filesystem::exists(ourExecutable))
 			{
-				LOG(LogUnitTest, Error, "Failed to determine date of compilation, {} does not exist", ourExecutable.string());
+				LOG_FMT(LogUnitTest, Error, "Failed to determine date of compilation, {} does not exist", ourExecutable.string());
 				return {};
 			}
 
@@ -45,7 +45,7 @@ void Engine::UnitTestManager::PostConstruct()
 
 	if (!resultFile.is_open())
 	{
-		LOG(LogUnitTest, Verbose, "Could not load result of tests, file not open");
+		LOG_FMT(LogUnitTest, Verbose, "Could not load result of tests, file not open");
 		return;
 	}
 
@@ -83,7 +83,7 @@ void Engine::UnitTestManager::PostConstruct()
 			|| resultMember == nullptr
 			|| durationMember == nullptr)
 		{
-			LOG(LogUnitTest, Error, "Unit test file was corrupted");
+			LOG_FMT(LogUnitTest, Error, "Unit test file was corrupted");
 			continue;
 		}
 
@@ -126,7 +126,7 @@ Engine::UnitTestManager::~UnitTestManager()
 
 	if (!resultFile.is_open())
 	{
-		LOG(LogUnitTest, Error, "Could not save result of tests!");
+		LOG_FMT(LogUnitTest, Error, "Could not save result of tests!");
 		return;
 	}
 
@@ -163,7 +163,7 @@ void Engine::UnitTest::operator()()
 
 	if (mResult == Failure)
 	{
-		LOG(LogUnitTest, Error, "Unit test {} failed", mName);
+		LOG_FMT(LogUnitTest, Error, "Unit test {} failed", mName);
 	}
 }
 

@@ -28,7 +28,7 @@ bool Engine::CanFunctionBeTurnedIntoNode(const MetaFunc& func)
 		if (returnType == nullptr
 			|| !CanTypeBeUsedInScripts(*returnType, func.GetReturnType().mTypeTraits.mForm))
 		{
-			LOG(LogScripting, Warning, "Function {} was marked as scriptable, but the return value was either not reflected or not scriptable",
+			LOG_FMT(LogScripting, Warning, "Function {} was marked as scriptable, but the return value was either not reflected or not scriptable",
 				func.GetDesignerFriendlyName());
 			return false;
 		}
@@ -41,7 +41,7 @@ bool Engine::CanFunctionBeTurnedIntoNode(const MetaFunc& func)
 		if (paramType == nullptr
 			|| !CanTypeBeUsedInScripts(*paramType, param.mTypeTraits.mForm))
 		{
-			LOG(LogScripting, Warning, "Function {} was marked as scriptable, but parameter {} was either not reflected or not scriptable",
+			LOG_FMT(LogScripting, Warning, "Function {} was marked as scriptable, but parameter {} was either not reflected or not scriptable",
 				func.GetDesignerFriendlyName(),
 				param.mName);
 			return false;
@@ -127,7 +127,7 @@ bool Engine::CanTypeBeOwnedByScripts(const MetaType& type)
 
 	if (!hasFunctionsNeeded)
 	{
-		LOG(LogScripting, Warning, "Type {} was marked as script_ownable, but was missing some of the required functions. See surrounding code.", 
+		LOG_FMT(LogScripting, Warning, "Type {} was marked as script_ownable, but was missing some of the required functions. See surrounding code.", 
 			type.GetName())
 	}
 
@@ -230,7 +230,7 @@ void Engine::InspectPin(const ScriptFunc& func, ScriptPin& pin)
 	if (!CanInspectPin(func, pin)) 
 	{
 		UNLIKELY;
-		LOG(LogEditor, Warning, "Cannot inspect pin {}. You can check using CanInspectPin", pin.GetName());
+		LOG_FMT(LogEditor, Warning, "Cannot inspect pin {}. You can check using CanInspectPin", pin.GetName());
 		return;
 	}
 
@@ -251,7 +251,7 @@ void Engine::InspectPin(const ScriptFunc& func, ScriptPin& pin)
 
 		if (defaultConstructed.HasError())
 		{
-			LOG(LogEditor, Warning, "Cannot inspect pin {}, as it could not be default constructed - {}", pin.GetName(), defaultConstructed.Error());
+			LOG_FMT(LogEditor, Warning, "Cannot inspect pin {}, as it could not be default constructed - {}", pin.GetName(), defaultConstructed.Error());
 			return;
 		}
 

@@ -12,7 +12,7 @@ void Engine::FunctionLikeNode::ConstructExpectedPins(ScriptFunc& scriptFunc)
 
 	if (!insOuts.has_value())
 	{
-		LOG(LogScripting, Warning, "Cannot ConstructExpectedPins for {}: original function no longer exists", GetDisplayName());
+		LOG_FMT(LogScripting, Warning, "Cannot ConstructExpectedPins for {}: original function no longer exists", GetDisplayName());
 		return;
 	}
 

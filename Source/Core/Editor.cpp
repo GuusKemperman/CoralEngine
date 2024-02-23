@@ -18,7 +18,7 @@ void Engine::Editor::PostConstruct()
 
 	if (editorSystemType == nullptr)
 	{
-		LOG(LogEditor, Error, "EditorSystem was not reflected");
+		LOG_FMT(LogEditor, Error, "EditorSystem was not reflected");
 		return;
 	}
 
@@ -38,7 +38,7 @@ void Engine::Editor::PostConstruct()
 					}
 					else
 					{
-						LOG(LogEditor, Error, "Could not {}, since type {} is not default constructible",
+						LOG_FMT(LogEditor, Error, "Could not {}, since type {} is not default constructible",
 							Props::sEditorSystemDefaultOpenTag,
 							type.GetName());
 					}
@@ -96,7 +96,7 @@ Engine::Editor::~Editor()
 
 	if (!editorSavedState.is_open())
 	{
-		LOG(LogEditor, Warning, "Could not save editor state, {} could not be opened", pathToSavedState.string());
+		LOG_FMT(LogEditor, Warning, "Could not save editor state, {} could not be opened", pathToSavedState.string());
 	}
 
 	// Give each system a chance to save their state
@@ -150,7 +150,7 @@ void Engine::Editor::FullFillRefreshRequests()
 		return;
 	}
 
-	LOG(LogEditor, Verbose, "Commiting volatile actions");
+	LOG_FMT(LogEditor, Verbose, "Commiting volatile actions");
 
 
 	uint32 combinedFlags{};
@@ -162,7 +162,7 @@ void Engine::Editor::FullFillRefreshRequests()
 
 	if (combinedFlags & RefreshRequest::SaveAssetsToFile)
 	{
-		LOG(LogEditor, Message, "Saving all assets");
+		LOG_FMT(LogEditor, Message, "Saving all assets");
 	}
 
 	std::forward_list<std::string> namesOfSystemsToRefresh{};
@@ -212,7 +212,7 @@ void Engine::Editor::FullFillRefreshRequests()
 
 		if (systemType == nullptr)
 		{
-			LOG(LogEditor, Verbose, R"(System {} was not reflected and cannot be
+			LOG_FMT(LogEditor, Verbose, R"(System {} was not reflected and cannot be
  offloaded while the engine refreshes. May lead to crashes, assets not updating, 
 or other unexpected behaviour. In these systems, do not hold onto any references 
 or pointers to objects not owned by the system itself, as there is no guarantee 
@@ -276,7 +276,7 @@ system->GetName());
 
 			if (!loadInfo.has_value())
 			{
-				LOG(LogEditor, Error, "Failed to restore to asset editor, loadInfo was invalid");
+				LOG_FMT(LogEditor, Error, "Failed to restore to asset editor, loadInfo was invalid");
 				continue;
 			}
 			system = TryOpenAssetForEdit(std::move(*loadInfo));
@@ -289,7 +289,7 @@ system->GetName());
 			}
 			else
 			{
-				LOG(LogEditor, Error, "Failed to restore do-undo stack, system was not an asset editor");
+				LOG_FMT(LogEditor, Error, "Failed to restore do-undo stack, system was not an asset editor");
 			}
 		}
 		else
@@ -299,13 +299,13 @@ system->GetName());
 
 		if (system == nullptr)
 		{
-			LOG(LogEditor, Error, "Something went wrong while refreshing the engine, and system of type {} could not be restored",
+			LOG_FMT(LogEditor, Error, "Something went wrong while refreshing the engine, and system of type {} could not be restored",
 				restoreData.mType.get().GetName());
 		}
 	}
 
 	mRefreshRequests.clear();
-	LOG(LogEditor, Verbose, "Completed volatile actions");
+	LOG_FMT(LogEditor, Verbose, "Completed volatile actions");
 }
 
 
@@ -313,13 +313,13 @@ void Engine::Editor::DestroySystem(const std::string_view systemName)
 {
 	if (std::find(mSystemsToDestroy.begin(), mSystemsToDestroy.end(), systemName) != mSystemsToDestroy.end())
 	{
-		LOG(LogEditor, Warning, "Attempted to remove window group {} more than once", systemName);
+		LOG_FMT(LogEditor, Warning, "Attempted to remove window group {} more than once", systemName);
 		return;
 	}
 
 	if (TryGetSystem(systemName) == nullptr)
 	{
-		LOG(LogEditor, Warning, "Attempted to remove window group {}, but there is no window with this name", systemName);
+		LOG_FMT(LogEditor, Warning, "Attempted to remove window group {}, but there is no window with this name", systemName);
 		return;
 	}
 
@@ -344,7 +344,7 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>
 
 		if (!loadInfo.has_value())
 		{
-			LOG(LogEditor, Warning, "Cannot open asset editor for {}, {} did not produce a valid AssetLoadInfo",
+			LOG_FMT(LogEditor, Warning, "Cannot open asset editor for {}, {} did not produce a valid AssetLoadInfo",
 				originalAsset.GetName(),
 				originalAsset.GetFileOfOrigin()->string());
 			return nullptr;
@@ -375,7 +375,7 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadIn
 
 	if (asset.HasError())
 	{
-		LOG(LogEditor, Error, "Cannot open asset editor, {} did not have a suitable constructor that takes an AssetLoadInfo& - {}",
+		LOG_FMT(LogEditor, Error, "Cannot open asset editor, {} did not have a suitable constructor that takes an AssetLoadInfo& - {}",
 			assetType.GetName(),
 			asset.Error());
 		return nullptr;
@@ -387,7 +387,7 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadIn
 
 	if (it == assetToEditorMap.end())
 	{
-		LOG(LogEditor, Message, "No asset editor for assets of type {}", assetType.GetName());
+		LOG_FMT(LogEditor, Message, "No asset editor for assets of type {}", assetType.GetName());
 		return nullptr;
 	}
 
@@ -396,7 +396,7 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadIn
 
 	if (baseOfAssetEditor == nullptr)
 	{
-		LOG(LogEditor, Warning, "AssetEditorSystem<{}> was not reflected", assetType.GetName());
+		LOG_FMT(LogEditor, Warning, "AssetEditorSystem<{}> was not reflected", assetType.GetName());
 		return nullptr;
 	}
 
@@ -407,13 +407,13 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadIn
 
 	if (numOfDerived == 0)
 	{
-		LOG(LogEditor, Warning, "The class deriving from AssetEditorSystem<{}> was not reflected", assetType.GetName());
+		LOG_FMT(LogEditor, Warning, "The class deriving from AssetEditorSystem<{}> was not reflected", assetType.GetName());
 		return nullptr;
 	}
 
 	if (numOfDerived > 1)
 	{
-		LOG(LogEditor, Warning, "More than one class derived from AssetEditorSystem<{}>, cannot determine which one to use",
+		LOG_FMT(LogEditor, Warning, "More than one class derived from AssetEditorSystem<{}>, cannot determine which one to use",
 			assetType.GetName());
 		return nullptr;
 	}
@@ -423,7 +423,7 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadIn
 
 	if (createdEditor.HasError())
 	{
-		LOG(LogEditor, Error, "Asset editor could not be constructed by moving the appropriate asset in - {}", createdEditor.Error());
+		LOG_FMT(LogEditor, Error, "Asset editor could not be constructed by moving the appropriate asset in - {}", createdEditor.Error());
 		return nullptr;
 	}
 
@@ -446,7 +446,7 @@ void Engine::Editor::DestroyRequestedSystems()
 
 		if (it == mSystems.end())
 		{
-			LOG(LogEditor, Verbose, "Trying to remove {}, but that window no longer exists or is not registered", name);
+			LOG_FMT(LogEditor, Verbose, "Trying to remove {}, but that window no longer exists or is not registered", name);
 			continue;
 		}
 
@@ -487,7 +487,7 @@ void Engine::Editor::SaveSystemState(const EditorSystem& system)
 
 	if (!stream.is_open())
 	{
-		LOG(LogEditor, Warning, "Could not save system state to {} - file could not be opened", file.string());
+		LOG_FMT(LogEditor, Warning, "Could not save system state to {} - file could not be opened", file.string());
 		return;
 	}
 
@@ -502,11 +502,11 @@ Engine::EditorSystem* Engine::Editor::TryAddSystemInternal(const TypeId typeId, 
 	{
 		if (std::find(mSystemsToDestroy.begin(), mSystemsToDestroy.end(), systemName) != mSystemsToDestroy.end())
 		{
-			LOG(LogEditor, Warning, "Failed to add system {}: There is already a system with this name. A request has been made to destroy this system already, but the existing system will be only destroyed only at the end of this frame.", systemName);
+			LOG_FMT(LogEditor, Warning, "Failed to add system {}: There is already a system with this name. A request has been made to destroy this system already, but the existing system will be only destroyed only at the end of this frame.", systemName);
 		}
 		else
 		{
-			LOG(LogEditor, Warning, "Failed to add system {}: as there is already a system with this name. Destroy the existing system before adding this one.", systemName);
+			LOG_FMT(LogEditor, Warning, "Failed to add system {}: as there is already a system with this name. Destroy the existing system before adding this one.", systemName);
 		}
 
 		return nullptr;
@@ -524,7 +524,7 @@ Engine::EditorSystem* Engine::Editor::TryAddSystemInternal(const MetaType& type)
 
 	if (constructResult.HasError())
 	{
-		LOG(LogEditor, Error, "Could unexpectedly not {} with type {}, constructing must have failed - {}",
+		LOG_FMT(LogEditor, Error, "Could unexpectedly not {} with type {}, constructing must have failed - {}",
 			Props::sEditorSystemDefaultOpenTag,
 			type.GetName(),
 			constructResult.Error());
@@ -606,7 +606,7 @@ void Engine::Editor::DisplayMainMenuBar()
 			}
 			else
 			{
-				LOG(LogEditor, Error, "EditorSystem was not reflected");
+				LOG_FMT(LogEditor, Error, "EditorSystem was not reflected");
 			}
 
 			ImGui::EndMenu();

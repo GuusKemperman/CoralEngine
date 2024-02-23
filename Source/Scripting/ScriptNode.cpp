@@ -140,7 +140,7 @@ std::unique_ptr<Engine::ScriptNode> Engine::ScriptNode::DeserializeFrom(const Bi
 		|| outputs == nullptr)
 	{
 		UNLIKELY;
-		LOG_TRIVIAL(LogAssets, Warning, "Could not deserialize scriptnode: type, inputs or outputs were not serialized");
+		LOG(LogAssets, Warning, "Could not deserialize scriptnode: type, inputs or outputs were not serialized");
 		return nullptr;
 	}
 
@@ -165,7 +165,7 @@ std::unique_ptr<Engine::ScriptNode> Engine::ScriptNode::DeserializeFrom(const Bi
 
 	if (node == nullptr)
 	{
-		LOG(LogAssets, Error, "Invalid node type {}", static_cast<uint32>(type));
+		LOG_FMT(LogAssets, Error, "Invalid node type {}", static_cast<uint32>(type));
 		return node;
 	}
 
@@ -233,7 +233,7 @@ bool Engine::ScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 		|| pos == nullptr)
 	{
 		UNLIKELY;
-		LOG_TRIVIAL(LogAssets, Warning, "Could not deserialize scriptnode: missing values");
+		LOG(LogAssets, Warning, "Could not deserialize scriptnode: missing values");
 		return false;
 	}
 

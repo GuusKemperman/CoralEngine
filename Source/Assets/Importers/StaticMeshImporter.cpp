@@ -27,7 +27,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 
 	if (***REMOVED***ne == nullptr)
 	{
-		LOG(LogAssets, Error, "Loading of file {} failed: assimp returned null ***REMOVED***ne", file.string());
+		LOG_FMT(LogAssets, Error, "Loading of file {} failed: assimp returned null ***REMOVED***ne", file.string());
 		return std::optional<std::vector<ImportedAsset>>{};
 	}
 
@@ -48,7 +48,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 
 		if (AssetManager::Get().TryGetWeakAsset<Material>(aiMat.GetName().C_Str()).has_value())
 		{
-			LOG(LogAssets, Message, "Material {} will not be imported, as there is already a material with this name", aiMat.GetName().C_Str());
+			LOG_FMT(LogAssets, Message, "Material {} will not be imported, as there is already a material with this name", aiMat.GetName().C_Str());
 			continue;
 		}
 
@@ -156,7 +156,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 		}
 		else
 		{
-			LOG(LogAssets, Error, "Loading of mesh {} failed: converting assimp results to engine representation failed", mesh.mName.C_Str());
+			LOG_FMT(LogAssets, Error, "Loading of mesh {} failed: converting assimp results to engine representation failed", mesh.mName.C_Str());
 			anyErrors = true;
 		}
 	}
@@ -226,7 +226,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 		return returnValue;
 	}
 	
-	LOG(LogError, Error, "Importing {} failed; failed to make a valid prefab out of the ai ***REMOVED***ne", file.string());
+	LOG_FMT(LogError, Error, "Importing {} failed; failed to make a valid prefab out of the ai ***REMOVED***ne", file.string());
 	return std::optional<std::vector<ImportedAsset>>{};
 }
 

@@ -15,7 +15,7 @@ Engine::MetaFuncScriptNode::MetaFuncScriptNode(ScriptFunc& scriptFunc,
 	mNameOrType(std::holds_alternative<std::string>(func.GetNameOrType())
 		? decltype(mNameOrType){std::get<std::string>(func.GetNameOrType())} : std::get<OperatorType>(func.GetNameOrType()))
 {
-	ASSERT_LOG(CanFunctionBeTurnedIntoNode(func),
+	ASSERT_LOG_FMT(CanFunctionBeTurnedIntoNode(func),
 		"{} cannot be turned into a node; Check using CanFunctionBeTurnedIntoNode first",
 		func.GetDesignerFriendlyName());
 
@@ -106,7 +106,7 @@ bool Engine::MetaFuncScriptNode::DeserializeVirtual(const BinaryGSONObject& from
 		|| (funcName != nullptr && opType != nullptr))
 	{
 		UNLIKELY;
-		LOG_TRIVIAL(LogAssets, Warning, "Could not deserialize MetaFuncScriptNode: missing values or ambiguity between name or type");
+		LOG(LogAssets, Warning, "Could not deserialize MetaFuncScriptNode: missing values or ambiguity between name or type");
 		return false;
 	}
 

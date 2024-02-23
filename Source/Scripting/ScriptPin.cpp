@@ -28,7 +28,7 @@ Engine::ScriptVariableTypeData::ScriptVariableTypeData(TypeTraits typeTraits, st
 	else
 	{
 		UNLIKELY;
-		LOG(LogScripting, Error, "Could not find type with typeId {} - Likely unintented", typeTraits.mStrippedTypeId);
+		LOG_FMT(LogScripting, Error, "Could not find type with typeId {} - Likely unintented", typeTraits.mStrippedTypeId);
 	}
 }
 
@@ -98,7 +98,7 @@ Engine::MetaAny* Engine::ScriptPin::TryGetValueIfNoInputLinked()
 {
 	if (!std::holds_alternative<InputData>(mData))
 	{
-		LOG_TRIVIAL(LogScripting, Warning, "Tried to get default value of non-input pin.");
+		LOG(LogScripting, Warning, "Tried to get default value of non-input pin.");
 		return nullptr;
 	}
 
@@ -168,7 +168,7 @@ void Engine::ScriptPin::SerializeTo(BinaryGSONObject& to) const
 	if (type == nullptr)
 	{
 		UNLIKELY;
-		LOG(LogScripting, Warning, "Failed to serialize default value of pin: type {} was not reflected", 
+		LOG_FMT(LogScripting, Warning, "Failed to serialize default value of pin: type {} was not reflected", 
 			valueToSerialize->GetTypeId());
 		return;
 	}
@@ -183,7 +183,7 @@ void Engine::ScriptPin::SerializeTo(BinaryGSONObject& to) const
 			if (result.HasError())
 			{
 				UNLIKELY;
-				LOG(LogScripting, Warning, "Failed to serialize default value of pin: {}::{} returned {}",
+				LOG_FMT(LogScripting, Warning, "Failed to serialize default value of pin: {}::{} returned {}",
 					type->GetName(),
 					sSerializeMemberFuncName.StringView(),
 					result.Error());
@@ -215,7 +215,7 @@ std::optional<Engine::ScriptPin> Engine::ScriptPin::DeserializeFrom(const Binary
 		|| serializedIsOutput == nullptr)
 	{
 		UNLIKELY;
-		LOG_TRIVIAL(LogScripting, Warning, "Failed to deserialize pin: missing values");
+		LOG(LogScripting, Warning, "Failed to deserialize pin: missing values");
 		return std::nullopt;
 	}
 
@@ -230,7 +230,7 @@ std::optional<Engine::ScriptPin> Engine::ScriptPin::DeserializeFrom(const Binary
 	if (serializedParamInfo == nullptr)
 	{
 		UNLIKELY;
-		LOG_TRIVIAL(LogScripting, Warning, "Failed to deserialize pin: missing values");
+		LOG(LogScripting, Warning, "Failed to deserialize pin: missing values");
 		return std::nullopt;
 	}
 
@@ -307,7 +307,7 @@ void Engine::ScriptPin::PostDeclarationRefresh()
 
 	if (type == nullptr)
 	{
-		LOG(LogScripting, Error, "Failed to deserialize pin default value: type {} no longer exists", GetTypeName());
+		LOG_FMT(LogScripting, Error, "Failed to deserialize pin default value: type {} no longer exists", GetTypeName());
 		valueToUseIfNotLinked = std::monostate{};
 		return;
 	}
@@ -316,7 +316,7 @@ void Engine::ScriptPin::PostDeclarationRefresh()
 
 	if (defaultConstructedResult.HasError())
 	{
-		LOG(LogScripting, Warning, "Failed to deserialize default value of pin, type {} could not be default constructed - {}",
+		LOG_FMT(LogScripting, Warning, "Failed to deserialize default value of pin, type {} could not be default constructed - {}",
 			type->GetName(),
 			defaultConstructedResult.Error());
 		valueToUseIfNotLinked = std::monostate{};
@@ -330,7 +330,7 @@ void Engine::ScriptPin::PostDeclarationRefresh()
 
 	if (deserializeFunc == nullptr)
 	{
-		LOG(LogScripting, Warning, "Failed to deserialize pin default value: type {} has no {} function",
+		LOG_FMT(LogScripting, Warning, "Failed to deserialize pin default value: type {} has no {} function",
 			type->GetName(),
 			sDeserializeMemberFuncName.StringView());
 		return;
@@ -344,7 +344,7 @@ void Engine::ScriptPin::PostDeclarationRefresh()
 	if (result.HasError())
 	{
 		UNLIKELY;
-		LOG(LogScripting, Warning, "Failed to deserialize default value of pin: {}::{} returned {}",
+		LOG_FMT(LogScripting, Warning, "Failed to deserialize default value of pin: {}::{} returned {}",
 			type->GetName(),
 			sDeserializeMemberFuncName.StringView(),
 			result.Error());

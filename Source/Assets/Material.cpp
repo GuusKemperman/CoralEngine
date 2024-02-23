@@ -47,7 +47,7 @@ Engine::Material::Material(AssetLoadInfo& loadInfo) :
 
 			if (texture == nullptr)
 			{
-				LOG(LogAssets, Warning, "Material {} uses texture {}, but this texture no longer exists",
+				LOG_FMT(LogAssets, Warning, "Material {} uses texture {}, but this texture no longer exists",
 					GetName(),
 					textureName);
 			}
@@ -68,7 +68,7 @@ std::shared_ptr<const Engine::Material> Engine::Material::TryGetDefaultMaterial(
 	
 	if (defaultMat == nullptr)
 	{
-		LOG(LogAssets, Message, "The default material is hardcoded to be {}, but there's no material with that name", sDefaultMaterialName.StringView());
+		LOG_FMT(LogAssets, Message, "The default material is hardcoded to be {}, but there's no material with that name", sDefaultMaterialName.StringView());
 	}
 	
 	return defaultMat;

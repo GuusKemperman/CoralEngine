@@ -78,7 +78,7 @@ std::optional<std::pair<entt::entity, const Engine::CameraComponent&>> Engine::W
 	for (auto [entity, camera] : camerasView.each())
 	{
 		mMainCamera = entity;
-		LOG(LogTemp, Verbose, "Switched to camera {}", static_cast<EntityType>(entity));
+		LOG_FMT(LogTemp, Verbose, "Switched to camera {}", static_cast<EntityType>(entity));
 		return ReturnPair{ mMainCamera, camera };
 	}
 

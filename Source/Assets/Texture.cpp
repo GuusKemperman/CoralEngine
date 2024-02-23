@@ -22,7 +22,7 @@ Engine::Texture::Texture(AssetLoadInfo& loadInfo) :
     unsigned char* pixels = stbi_load_from_memory(reinterpret_cast<const unsigned char*>(data.data()), static_cast<int>(data.size()), &width, &height, &channels, 4);
     if (pixels == nullptr)
     {
-        LOG(LogAssets, Error, "Invalid texture {}", GetName());
+        LOG_FMT(LogAssets, Error, "Invalid texture {}", GetName());
         return;
     }
 
@@ -30,7 +30,7 @@ Engine::Texture::Texture(AssetLoadInfo& loadInfo) :
 
     if (!mTextureHandle.is_valid())
     {
-        LOG(LogAssets, Error, "Invalid texture {}", GetName());
+        LOG_FMT(LogAssets, Error, "Invalid texture {}", GetName());
     }
 
     stbi_image_free(pixels);

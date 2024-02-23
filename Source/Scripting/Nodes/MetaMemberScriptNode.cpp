@@ -15,14 +15,14 @@ Engine::NodeInvolvingMetaMember::NodeInvolvingMetaMember(const ScriptNodeType ty
 {
 	if (type == ScriptNodeType::Setter)
 	{
-		ASSERT_LOG(CanBeSetThroughScripts(field),
+		ASSERT_LOG_FMT(CanBeSetThroughScripts(field),
 			"{}::{} cannot be set through scripts; Check using CanBeSetThroughScripts first",
 			field.GetOuterType().GetName(),
 			field.GetName());
 	}
 	else
 	{
-		ASSERT_LOG(CanBeGetThroughScripts(field),
+		ASSERT_LOG_FMT(CanBeGetThroughScripts(field),
 			"{}::{} cannot be gotten through scripts; Check using CanBeSetThroughScripts first",
 			field.GetOuterType().GetName(),
 			field.GetName());
@@ -52,7 +52,7 @@ bool Engine::NodeInvolvingMetaMember::DeserializeVirtual(const BinaryGSONObject&
 		|| memberName == nullptr)
 	{
 		UNLIKELY;
-		LOG_TRIVIAL(LogAssets, Warning, "Failed to deserialize setter getter: missing values");
+		LOG(LogAssets, Warning, "Failed to deserialize setter getter: missing values");
 		return false;
 	}
 

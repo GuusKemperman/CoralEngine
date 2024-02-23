@@ -110,7 +110,7 @@ void Engine::ScriptFunc::DefineMetaFunc(MetaFunc& func)
 
 	if (ourScript == nullptr)
 	{
-		LOG(LogScripting, Error, "We *should* be able to compile this scriptfunc, except we were somehow not \
+		LOG_FMT(LogScripting, Error, "We *should* be able to compile this scriptfunc, except we were somehow not \
 able to receive our script asset {}. Compilation will silently fail.",
 mNameOfScriptAsset);
 		return;
@@ -186,7 +186,7 @@ void Engine::ScriptFunc::CollectErrors(ScriptErrorInserter inserter, const Scrip
 		{
 			if (numberWithThisName == 0)
 			{
-				LOG(LogScripting, Error, "OwningScript {} was not the script that owns {}, found while collecting errors",
+				LOG_FMT(LogScripting, Error, "OwningScript {} was not the script that owns {}, found while collecting errors",
 					owningScript.GetName(),
 					mName);
 			}
@@ -524,7 +524,7 @@ void Engine::ScriptFunc::RemoveNode(NodeId nodeId)
 
 	if (node == nullptr)
 	{
-		// LOG(LogAssets, Warning, "Node was already removed");
+		// LOG_FMT(LogAssets, Warning, "Node was already removed");
 		return;
 	}
 
@@ -545,7 +545,7 @@ void Engine::ScriptFunc::RemoveLink(LinkId linkId)
 
 	if (link == nullptr)
 	{
-		// LOG(LogAssets, Warning, "Link was already removed");
+		// LOG_FMT(LogAssets, Warning, "Link was already removed");
 		return;
 	}
 
@@ -668,7 +668,7 @@ std::optional<Engine::ScriptFunc> Engine::ScriptFunc::DeserializeFrom(const Bina
 		|| isStatic == nullptr)
 	{
 		UNLIKELY;
-		LOG_TRIVIAL(LogAssets, Warning, "Failed to deserialize script function, missing values");
+		LOG(LogAssets, Warning, "Failed to deserialize script function, missing values");
 		return std::nullopt;
 	}
 

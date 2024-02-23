@@ -43,7 +43,7 @@ void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& seriali
 
 	if (serializedEntities == nullptr)
 	{
-		LOG_TRIVIAL(LogAssets, Error, "Invalid serialized world provided, this object was not created using Archiver::Serialize");
+		LOG(LogAssets, Error, "Invalid serialized world provided, this object was not created using Archiver::Serialize");
 		return;
 	}
 
@@ -56,7 +56,7 @@ void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& seriali
 
 		if (createdEntity != entity)
 		{
-			LOG(LogAssets, Error, "Attempted to deserialize entity with id {}, but this entity could not be added to the registry. May lead to unexpected results.", static_cast<EntityType>(entity));
+			LOG_FMT(LogAssets, Error, "Attempted to deserialize entity with id {}, but this entity could not be added to the registry. May lead to unexpected results.", static_cast<EntityType>(entity));
 		}
 	}
 
@@ -86,7 +86,7 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 
 	if (componentClass == nullptr)
 	{
-		LOG(LogAssets, Warning, "The class {} no longer exists and won't be deserialized.", serializedStorage.GetName());
+		LOG_FMT(LogAssets, Warning, "The class {} no longer exists and won't be deserialized.", serializedStorage.GetName());
 		return;
 	}
 
@@ -100,7 +100,7 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 
 		if (!registry.Valid(owner))
 		{
-			LOG(LogAssets, Error, "Component has owner {}, but this entity does not exist", static_cast<EntityType>(owner));
+			LOG_FMT(LogAssets, Error, "Component has owner {}, but this entity does not exist", static_cast<EntityType>(owner));
 			continue;
 		}
 
@@ -138,7 +138,7 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 
 			if (field == nullptr)
 			{
-				LOG(LogAssets, Warning, "Could not find property whose name generated the hash {} while deserializing a component of class {}",
+				LOG_FMT(LogAssets, Warning, "Could not find property whose name generated the hash {} while deserializing a component of class {}",
 					serializedProperty.GetName(), componentClass->GetName());
 				continue;
 			}
@@ -155,7 +155,7 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 
 			if (deserializeMemberResult.HasError())
 			{
-				LOG(LogAssets, Warning, "Could not deserialize {}::{} - {}",
+				LOG_FMT(LogAssets, Warning, "Could not deserialize {}::{} - {}",
 					componentClass->GetName(),
 					memberType.GetName(),
 					deserializeMemberResult.Error());
@@ -194,14 +194,14 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 		const BinaryGSONObject& additionalSerializedData = serializedComponent.GetChildren()[0];
 		const entt::entity owner = FromBinary<entt::entity>(serializedComponent.GetName());
 
-		ASSERT_LOG_TRIVIAL(storage->contains(owner), "Should've been created already");
+		ASSERT_LOG(storage->contains(owner), "Should've been created already");
 		MetaAny componentRef{ *componentClass, storage->value(owner), false };
 
 		FuncResult result = (*onComponentDeserialize)(componentRef, additionalSerializedData, owner, registry.GetWorld());
 
 		if (result.HasError())
 		{
-			LOG(LogWorld, Error, "Error occured while calling custom deserialization step of {} - {}", componentClass->GetName(), result.Error());
+			LOG_FMT(LogWorld, Error, "Error occured while calling custom deserialization step of {} - {}", componentClass->GetName(), result.Error());
 		}
 	}
 }
@@ -309,7 +309,7 @@ std::optional<Engine::ComponentClassSerializeArg> Engine::GetComponentClassSeria
 
 	if (componentClass == nullptr)
 	{
-		LOG(LogAssets, Warning, "Cannot serialize component of type {}, as it was not reflected", storage.type().name())
+		LOG_FMT(LogAssets, Warning, "Cannot serialize component of type {}, as it was not reflected", storage.type().name())
 			return std::nullopt;
 	}
 
@@ -336,7 +336,7 @@ std::optional<Engine::ComponentClassSerializeArg> Engine::GetComponentClassSeria
 
 			if (func == nullptr)
 			{
-				LOG(LogAssets, Warning, "No operator== function for {} in {}, Now even non-default values will be serialized",
+				LOG_FMT(LogAssets, Warning, "No operator== function for {} in {}, Now even non-default values will be serialized",
 					memberData.GetName(),
 					componentClass->GetName());
 			}
@@ -349,7 +349,7 @@ std::optional<Engine::ComponentClassSerializeArg> Engine::GetComponentClassSeria
 
 			if (serializeMemberFunc == nullptr)
 			{
-				LOG(LogAssets, Warning, "No {} function for {} in {}, it won't be serialized",
+				LOG_FMT(LogAssets, Warning, "No {} function for {} in {}, it won't be serialized",
 					sSerializeMemberFuncName.StringView(),
 					memberData.GetName(),
 					componentClass->GetName());
@@ -407,7 +407,7 @@ void Engine::SerializeSingleComponent(const Registry& registry,
 			MetaAny memberRef = data.MakeRef(component);
 
 			[[maybe_unused]] FuncResult result = (*serializeMemberFunc)(nonDefaultProperty, memberRef);
-			ASSERT_LOG(!result.HasError(), "{}", result.Error());
+			ASSERT_LOG_FMT(!result.HasError(), "{}", result.Error());
 		};
 
 	// We only serialize the differences. Makes the save file smaller and any changes 
@@ -486,7 +486,7 @@ void Engine::SerializeSingleComponent(const Registry& registry,
 
 		if (result.HasError())
 		{
-			LOG(LogAssets, Error, "Could not invoke custom serialization step of {} - {}",
+			LOG_FMT(LogAssets, Error, "Could not invoke custom serialization step of {} - {}",
 				arg.mComponentClass.GetName(),
 				result.Error());
 		}

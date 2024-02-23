@@ -59,7 +59,7 @@ namespace Engine
 		}
 		catch (cereal::Exception)
 		{
-			LOG_TRIVIAL(LogCore, Warning, "Invalid value serialized");
+			LOG(LogCore, Warning, "Invalid value serialized");
 		}
 	}
 

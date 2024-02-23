@@ -32,7 +32,7 @@ bool Engine::CommentScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 		|| size == nullptr)
 	{
 		UNLIKELY;
-		LOG_TRIVIAL(LogAssets, Warning, "Failed to deserialize commentNode, no data serialized");
+		LOG(LogAssets, Warning, "Failed to deserialize commentNode, no data serialized");
 		return false;
 	}
 

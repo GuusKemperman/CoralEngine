@@ -137,7 +137,7 @@ void Engine::ParticleLifeTimeSystem::Update(World& world, float dt)
 	}
 
 #ifdef LOG_NUM_OF_PARTICLES
-	LOG(Particles, Verbose, "Num of particles: {}", totalNumOfAliveParticles);
+	LOG_FMT(Particles, Verbose, "Num of particles: {}", totalNumOfAliveParticles);
 #endif
 }
 

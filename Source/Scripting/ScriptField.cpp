@@ -36,7 +36,7 @@ void Engine::ScriptField::SetType(const MetaType& type)
 {
 	if (!CanTypeBeUsedForFields(type))
 	{
-		LOG(LogScripting, Error, "Cannot set type of {}::{} to {} - This type cannot be used for datamembers. First check using CanTypeBeUsedForFields",
+		LOG_FMT(LogScripting, Error, "Cannot set type of {}::{} to {} - This type cannot be used for datamembers. First check using CanTypeBeUsedForFields",
 			mNameOfScriptAsset,
 			GetName(),
 			type.GetName());
@@ -63,7 +63,7 @@ void Engine::ScriptField::SerializeTo(BinaryGSONObject& object) const
 
 	if (type == nullptr)
 	{
-		LOG_TRIVIAL(LogScripting, Warning, "Metafield type was nullptr, default value will not be serialized.");
+		LOG(LogScripting, Warning, "Metafield type was nullptr, default value will not be serialized.");
 		return;
 	}
 
@@ -75,7 +75,7 @@ void Engine::ScriptField::SerializeTo(BinaryGSONObject& object) const
 	const MetaAny& defaultValue = GetDefaultValue();
 
 	[[maybe_unused]] const FuncResult serializeResult = type->CallFunction(sSerializeMemberFuncName, object.AddGSONMember("defaultValue"), defaultValue);
-	ASSERT_LOG(!serializeResult.HasError(), "{}", serializeResult.Error());
+	ASSERT_LOG_FMT(!serializeResult.HasError(), "{}", serializeResult.Error());
 }
 
 std::optional<Engine::ScriptField> Engine::ScriptField::DeserializeFrom(const BinaryGSONObject& object, const Script& owningScript, [[maybe_unused]] const uint32 version)
@@ -85,7 +85,7 @@ std::optional<Engine::ScriptField> Engine::ScriptField::DeserializeFrom(const Bi
 	if (serializedTypeData == nullptr)
 	{
 		UNLIKELY;
-		LOG_TRIVIAL(LogScripting, Warning, "Failed to deserialize script data field, missing values");
+		LOG(LogScripting, Warning, "Failed to deserialize script data field, missing values");
 		return std::nullopt;
 	}
 
@@ -99,14 +99,14 @@ std::optional<Engine::ScriptField> Engine::ScriptField::DeserializeFrom(const Bi
 
 	if (type == nullptr)
 	{
-		LOG(LogScripting, Warning, "Script {} has field {}, but it's type {} no longer exists. Switching to a different type", owningScript.GetName(), typeData.GetName(), typeData.GetTypeName());
+		LOG_FMT(LogScripting, Warning, "Script {} has field {}, but it's type {} no longer exists. Switching to a different type", owningScript.GetName(), typeData.GetName(), typeData.GetTypeName());
 		field.SetType(MetaManager::Get().GetType<int32>());
 		return std::move(field);
 	}
 
 	if (!CanTypeBeUsedForFields(*type))
 	{
-		LOG(LogScripting, Warning, "Script {} has field {} and was previously of type {}, but this type can no longer be used as a field. Switching to a different type",
+		LOG_FMT(LogScripting, Warning, "Script {} has field {} and was previously of type {}, but this type can no longer be used as a field. Switching to a different type",
 			owningScript.GetName(),
 			typeData.GetName(),
 			type->GetName());
@@ -135,7 +135,7 @@ void Engine::ScriptField::CollectErrors(ScriptErrorInserter inserter, const Scri
 	{
 		if (numberWithThisName == 0)
 		{
-			LOG(LogScripting, Error, "OwningScript {} was not the script that owns {}, found while collecting errors",
+			LOG_FMT(LogScripting, Error, "OwningScript {} was not the script that owns {}, found while collecting errors",
 				owningScript.GetName(),
 				GetName());
 		}
@@ -164,8 +164,8 @@ Engine::MetaAny& Engine::ScriptField::GetDefaultValue()
 		const MetaType* const type = TryGetType();
 
 		// Is already checked during loading
-		ASSERT_LOG(type != nullptr, "Type of field {} on script {} no longer exists", GetName(), GetNameOfScriptAsset());
-		ASSERT_LOG(CanTypeBeUsedForFields(*type), "Type of field {} on script {} cannot be used for scripts", GetName(), GetNameOfScriptAsset());
+		ASSERT_LOG_FMT(type != nullptr, "Type of field {} on script {} no longer exists", GetName(), GetNameOfScriptAsset());
+		ASSERT_LOG_FMT(CanTypeBeUsedForFields(*type), "Type of field {} on script {} cannot be used for scripts", GetName(), GetNameOfScriptAsset());
 
 		std::string defaultValueAsString = std::move(std::get<0>(mDefaultValue));
 
@@ -177,7 +177,7 @@ Engine::MetaAny& Engine::ScriptField::GetDefaultValue()
 			serializedDefaultValue.SetData(std::move(defaultValueAsString));
 
 			const FuncResult deserializeResult = type->CallFunction(sDeserializeMemberFuncName, serializedDefaultValue, *std::get<1>(mDefaultValue));
-			ASSERT_LOG(!deserializeResult.HasError(), "{}", deserializeResult.Error());
+			ASSERT_LOG_FMT(!deserializeResult.HasError(), "{}", deserializeResult.Error());
 		}
 		}
 
@@ -203,7 +203,7 @@ bool Engine::ScriptField::WasValueDefaultConstructed() const
 	ASSERT(defaultConstructedValue != nullptr);
 
 	[[maybe_unused]] FuncResult equalResult = type.CallFunction(OperatorType::equal, defaultConstructedValue, defaultValue);
-	ASSERT_LOG(!equalResult.HasError(), "{}", equalResult.Error());
+	ASSERT_LOG_FMT(!equalResult.HasError(), "{}", equalResult.Error());
 
 	return *equalResult.GetReturnValue().As<bool>();
 }

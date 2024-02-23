@@ -40,7 +40,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!version.has_value())
 	{
-		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was empty");
+		LOG(LogAssets, Message, "Asset metadata was empty");
 		return std::nullopt;
 	}
 
@@ -51,7 +51,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 	case 1:
 		return ReadMetaDataV1(fromStream);
 	default:
-		LOG(LogAssets, Message, "Asset metadata version {} is not recognised and not supported", *version);
+		LOG_FMT(LogAssets, Message, "Asset metadata version {} is not recognised and not supported", *version);
 		return std::nullopt;
 	}
 }
@@ -72,7 +72,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!assetClassTypeId.has_value())
 	{
-		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
+		LOG(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -80,13 +80,13 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (assetClass == nullptr)
 	{
-		LOG(LogAssets, Error, "Asset metadata invalid: There is no class with typeid of \"{}\"", *assetClassTypeId);
+		LOG_FMT(LogAssets, Error, "Asset metadata invalid: There is no class with typeid of \"{}\"", *assetClassTypeId);
 		return std::nullopt;
 	}
 
 	if (!assetClass->IsDerivedFrom<Asset>())
 	{
-		LOG(LogAssets, Error, "Asset metadata invalid: \"{}\" does not derive from Asset", assetClass->GetName());
+		LOG_FMT(LogAssets, Error, "Asset metadata invalid: \"{}\" does not derive from Asset", assetClass->GetName());
 		return std::nullopt;
 	}
 
@@ -94,7 +94,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!nameSize.has_value())
 	{
-		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
+		LOG(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -102,18 +102,18 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 	name.resize(*nameSize);
 	if (fromStream.readsome(name.data(), *nameSize) != *nameSize)
 	{
-		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
+		LOG(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
 	// Now that we know the name, we can give a proper warning message
-	LOG(LogAssets, Error, "Asset {} needs to be resaved - MetaData of version 0 is deprecated. This asset cannot be loaded on a different compiler than the one it was saved with.", name);
+	LOG_FMT(LogAssets, Error, "Asset {} needs to be resaved - MetaData of version 0 is deprecated. This asset cannot be loaded on a different compiler than the one it was saved with.", name);
 
 	std::optional<bool> wasImportedFromFile = TryRead<bool>(fromStream);
 
 	if (!wasImportedFromFile.has_value())
 	{
-		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
+		LOG(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -126,7 +126,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!importerVersion.has_value())
 	{
-		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
+		LOG(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -134,7 +134,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!pathSize.has_value())
 	{
-		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
+		LOG(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -142,7 +142,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 	filePath.resize(*pathSize);
 	if (fromStream.readsome(filePath.data(), *pathSize) != *pathSize)
 	{
-		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was incomplete");
+		LOG(LogAssets, Message, "Asset metadata was incomplete");
 		return std::nullopt;
 	}
 
@@ -155,7 +155,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (!obj.LoadFromBinary(fromStream))
 	{
-		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was corrupted - GSON parsing failed");
+		LOG(LogAssets, Message, "Asset metadata was corrupted - GSON parsing failed");
 		return std::nullopt;
 	}
 
@@ -167,7 +167,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 		|| savedClass == nullptr
 		|| savedAssetName == nullptr)
 	{
-		LOG_TRIVIAL(LogAssets, Message, "Asset metadata was corrupted - Missing vital information");
+		LOG(LogAssets, Message, "Asset metadata was corrupted - Missing vital information");
 		return std::nullopt;
 	}
 
@@ -183,13 +183,13 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (assetClass == nullptr)
 	{
-		LOG(LogAssets, Message, "Failed to load asset {} - Class {} has been deleted or renamed.", assetName, assetClassName);
+		LOG_FMT(LogAssets, Message, "Failed to load asset {} - Class {} has been deleted or renamed.", assetName, assetClassName);
 		return std::nullopt;
 	}
 
 	if (!assetClass->IsDerivedFrom<Asset>())
 	{
-		LOG(LogAssets, Message, "Failed to load asset {} - Class {} does not derive from Asset.", assetName, assetClassName);
+		LOG_FMT(LogAssets, Message, "Failed to load asset {} - Class {} does not derive from Asset.", assetName, assetClassName);
 		return std::nullopt;
 	}
 
@@ -202,7 +202,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 		if ((savedImporterVersion == nullptr)
 			!= (savedImportedFromFile == nullptr))
 		{
-			LOG_TRIVIAL(LogAssets, Message, "Asset metadata was corrupted");
+			LOG(LogAssets, Message, "Asset metadata was corrupted");
 			return std::nullopt;
 		}
 

@@ -28,7 +28,7 @@ Engine::Script::Script(AssetLoadInfo& loadInfo) :
 
 	if (!success)
 	{
-		LOG(LogAssets, Message, "Loading of script {} failed, possible because this is a new script. Adding an OnTick function...", GetName());
+		LOG_FMT(LogAssets, Message, "Loading of script {} failed, possible because this is a new script. Adding an OnTick function...", GetName());
 		AddFunc("OnTick").SetParameters({ {  MakeTypeTraits<float>(), "DeltaTime" } });
 		return;
 	}
@@ -50,7 +50,7 @@ Engine::Script::Script(AssetLoadInfo& loadInfo) :
 	else
 	{
 		UNLIKELY;
-		LOG_TRIVIAL(LogScripting, Warning, "No functions object serialized");
+		LOG(LogScripting, Warning, "No functions object serialized");
 	}
 
 	const BinaryGSONObject* members = obj.TryGetGSONObject("members");
@@ -70,7 +70,7 @@ Engine::Script::Script(AssetLoadInfo& loadInfo) :
 	else
 	{
 		UNLIKELY;
-		LOG_TRIVIAL(LogScripting, Warning, "No members object serialized");
+		LOG(LogScripting, Warning, "No members object serialized");
 	}
 }
 
@@ -80,7 +80,7 @@ Engine::ScriptFunc& Engine::Script::AddFunc(const std::string_view name)
 
 	if (existingFunc != nullptr)
 	{
-		LOG(LogScripting, Error, "There is already a function with the name {} in {}. Returning existing function",
+		LOG_FMT(LogScripting, Error, "There is already a function with the name {} in {}. Returning existing function",
 			name,
 			GetName());
 		return *existingFunc;
@@ -98,7 +98,7 @@ void Engine::Script::RemoveFunc(Name name)
 
 	if (it == mFunctions.end())
 	{
-		LOG(LogScripting, Warning, "Attempted to remove function {} in {}, but theres no function with this name",
+		LOG_FMT(LogScripting, Warning, "Attempted to remove function {} in {}, but theres no function with this name",
 			name.StringView(),
 			GetName());
 	}
@@ -125,7 +125,7 @@ Engine::ScriptField& Engine::Script::AddField(const std::string_view name)
 
 	if (existingMember != nullptr)
 	{
-		LOG(LogScripting, Error, "There is already a field with the name {} in {}. Returning existing function",
+		LOG_FMT(LogScripting, Error, "There is already a field with the name {} in {}. Returning existing function",
 			name,
 			GetName());
 		return *existingMember;
@@ -140,7 +140,7 @@ void Engine::Script::RemoveField(const Name name)
 
 	if (it == mFields.end())
 	{
-		LOG(LogScripting, Warning, "Attempted to remove field {} in {}, but theres no field with this name",
+		LOG_FMT(LogScripting, Warning, "Attempted to remove field {} in {}, but theres no field with this name",
 			name.StringView(),
 			GetName());
 	}
@@ -187,7 +187,7 @@ Engine::MetaType* Engine::Script::DeclareMetaType()
 		static_assert(sIsTypeIdTheSameAsNameHash);
 
 		UNLIKELY;
-		LOG(LogScripting, Error, "By pure chance, the hash of a script ({}) and an existing C++ class ({}) are the same! (the chance is 1 in 2^32). Rename the script or the C++ class",
+		LOG_FMT(LogScripting, Error, "By pure chance, the hash of a script ({}) and an existing C++ class ({}) are the same! (the chance is 1 in 2^32). Rename the script or the C++ class",
 			GetName(), existingType->GetName());
 
 		return nullptr;
@@ -197,7 +197,7 @@ Engine::MetaType* Engine::Script::DeclareMetaType()
 		existingType != nullptr)
 	{
 		UNLIKELY;
-		LOG(LogScripting, Error, "There is already a C++ class with the name {}. Rename the script or the C++ class",
+		LOG_FMT(LogScripting, Error, "There is already a C++ class with the name {}. Rename the script or the C++ class",
 			GetName(), existingType->GetName());
 
 		return nullptr;
@@ -207,11 +207,11 @@ Engine::MetaType* Engine::Script::DeclareMetaType()
 
 	if (entityType == nullptr)
 	{
-		LOG(LogScripting, Warning, "Making a metatype from {} failed - Type entt::entity was not reflected", GetName());
+		LOG_FMT(LogScripting, Warning, "Making a metatype from {} failed - Type entt::entity was not reflected", GetName());
 		return nullptr;
 	}
 
-	LOG(LogScripting, Verbose, "Making type from script {}", GetName());
+	LOG_FMT(LogScripting, Verbose, "Making type from script {}", GetName());
 
 	struct MemberToAdd
 	{
@@ -229,14 +229,14 @@ Engine::MetaType* Engine::Script::DeclareMetaType()
 
 		if (fieldType == nullptr)
 		{
-			LOG(LogScripting, Error, "Could not add field {} to {} - The field type was not reflected",
+			LOG_FMT(LogScripting, Error, "Could not add field {} to {} - The field type was not reflected",
 				field.GetName(), GetName());
 			continue;
 		}
 
 		if (!ScriptField::CanTypeBeUsedForFields(*fieldType))
 		{
-			LOG(LogScripting, Error, "Could not add field {} to {} - The type {} cannot be used as a data field",
+			LOG_FMT(LogScripting, Error, "Could not add field {} to {} - The type {} cannot be used as a data field",
 				field.GetName(), GetName(), fieldType->GetName());
 			continue;
 		}
@@ -247,7 +247,7 @@ Engine::MetaType* Engine::Script::DeclareMetaType()
 				return field.GetName() == existingMember.mName;
 			}) != membersToAdd.end())
 		{
-			LOG(LogScripting, Error, "Could not add field {} to {} - There is already a field with that name",
+			LOG_FMT(LogScripting, Error, "Could not add field {} to {} - There is already a field with that name",
 				field.GetName(), GetName());
 			continue;
 		}
@@ -334,7 +334,7 @@ Engine::MetaType* Engine::Script::DeclareMetaType()
 
 	ReflectComponentType(metaType);
 
-	LOG(LogScripting, Verbose, "Finished making type from script {}", GetName());
+	LOG_FMT(LogScripting, Verbose, "Finished making type from script {}", GetName());
 
 	return &metaType;
 }
@@ -376,7 +376,7 @@ void Engine::Script::DefineMetaType(MetaType& type, bool OnlyDefineBigFiveAndDes
 
 		if (metaFunc == nullptr)
 		{
-			LOG(LogScripting, Error, "Expected to find function {} in {} while defining script type",
+			LOG_FMT(LogScripting, Error, "Expected to find function {} in {} while defining script type",
 				scriptFunc.GetName(),
 				type.GetName());
 			continue;
@@ -472,7 +472,7 @@ void Engine::Script::AddDefaultConstructor(MetaType& toType, bool define) const
 			serializedNonDefaultValue = BinaryGSONMember{};
 
 			FuncResult serializeResult = fieldType.CallFunction(sSerializeMemberFuncName, *serializedNonDefaultValue, scriptField.GetDefaultValue());
-			ASSERT_LOG(!serializeResult.HasError(), "{}", serializeResult.Error());
+			ASSERT_LOG_FMT(!serializeResult.HasError(), "{}", serializeResult.Error());
 		}
 	}
 
@@ -493,7 +493,7 @@ void Engine::Script::AddDefaultConstructor(MetaType& toType, bool define) const
 				void* memberAddress = reinterpret_cast<void*>(addrAsInt + memberOffset);
 
 				[[maybe_unused]] FuncResult constructedMemberResult = memberType.ConstructAt(memberAddress);
-				ASSERT_LOG(!constructedMemberResult.HasError(), "{}", constructedMemberResult.Error());
+				ASSERT_LOG_FMT(!constructedMemberResult.HasError(), "{}", constructedMemberResult.Error());
 
 				const std::optional<BinaryGSONMember>& defaultValue = serializedDefaultValues[i];
 
@@ -503,7 +503,7 @@ void Engine::Script::AddDefaultConstructor(MetaType& toType, bool define) const
 				}
 
 				[[maybe_unused]] FuncResult deserializeResult = memberType.CallFunction(sDeserializeMemberFuncName, *defaultValue, constructedMemberResult.GetReturnValue());
-				ASSERT_LOG(!deserializeResult.HasError(), "{}", deserializeResult.Error());
+				ASSERT_LOG_FMT(!deserializeResult.HasError(), "{}", deserializeResult.Error());
 			}
 
 			return std::nullopt;
@@ -552,7 +552,7 @@ void Engine::Script::AddMoveConstructor(MetaType& toType, bool define) const
 				void* memberAddress = reinterpret_cast<void*>(addrAsInt + memberOffset);
 
 				[[maybe_unused]] FuncResult result = memberType.ConstructAt(memberAddress, field.MakeRef(moveOutOf));
-				ASSERT_LOG(!result.HasError(), "{}", result.Error());
+				ASSERT_LOG_FMT(!result.HasError(), "{}", result.Error());
 			}
 
 			return MetaAny{ toType, addr, false };
@@ -600,7 +600,7 @@ void Engine::Script::AddCopyConstructor(MetaType& toType, bool define) const
 				void* memberAddress = reinterpret_cast<void*>(addrAsInt + memberOffset);
 
 				[[maybe_unused]] FuncResult result = memberType.ConstructAt(memberAddress, field.MakeRef(copyFrom));
-				ASSERT_LOG(!result.HasError(), "{}", result.Error());
+				ASSERT_LOG_FMT(!result.HasError(), "{}", result.Error());
 			}
 
 			return MetaAny{ toType, addr, false };
@@ -648,7 +648,7 @@ void Engine::Script::AddMoveAssign(MetaType& toType, bool define) const
 				const MetaType& memberType = field.GetType();
 
 				[[maybe_unused]] FuncResult result = memberType.CallFunction(OperatorType::assign, valueToAssignTo, std::move(valueToMove));
-				ASSERT_LOG(!result.HasError(), "{}", result.Error());
+				ASSERT_LOG_FMT(!result.HasError(), "{}", result.Error());
 			}
 
 			return MakeRef(lhs);
@@ -696,7 +696,7 @@ void Engine::Script::AddCopyAssign(MetaType& toType, bool define) const
 				const MetaType& memberType = field.GetType();
 
 				[[maybe_unused]] FuncResult result = memberType.CallFunction(OperatorType::assign, valueToAssignTo, valueToCopy);
-				ASSERT_LOG(!result.HasError(), "{}", result.Error());
+				ASSERT_LOG_FMT(!result.HasError(), "{}", result.Error());
 			}
 
 			return MakeRef(lhs);

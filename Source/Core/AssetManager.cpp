@@ -24,7 +24,7 @@ Engine::AssetManager::AssetManager()
 
 				if (constructResult.HasError())
 				{
-					LOG(LogAssets, Error, "Importer {} has no default constructor and cannot be used. Did you override all the pure functions?",
+					LOG_FMT(LogAssets, Error, "Importer {} has no default constructor and cannot be used. Did you override all the pure functions?",
 						derived.GetName());
 					continue;
 				}
@@ -35,7 +35,7 @@ Engine::AssetManager::AssetManager()
 
 				if (canImportExtensions.empty())
 				{
-					LOG(LogAssets, Warning, "Importer {} cannot import any extensions, return value of CanImportExtensions was empty",
+					LOG_FMT(LogAssets, Warning, "Importer {} cannot import any extensions, return value of CanImportExtensions was empty",
 						derived.GetName());
 					continue;
 				}
@@ -44,14 +44,14 @@ Engine::AssetManager::AssetManager()
 				{
 					if (extension.empty())
 					{
-						LOG(LogAssets, Warning, "Importer {} has invalid extension: Extension was empty",
+						LOG_FMT(LogAssets, Warning, "Importer {} has invalid extension: Extension was empty",
 							derived.GetName());
 						goto nextImporter;
 					}
 
 					if (extension.string()[0] != '.')
 					{
-						LOG(LogAssets, Warning, "Importer {} has invalid extension {}: extensions must start with a period",
+						LOG_FMT(LogAssets, Warning, "Importer {} has invalid extension {}: extensions must start with a period",
 							derived.GetName(),
 							extension.string());
 						goto nextImporter;
@@ -59,7 +59,7 @@ Engine::AssetManager::AssetManager()
 
 					if (extension == sAssetExtension)
 					{
-						LOG(LogAssets, Warning, "Importer {} has invalid extension {}: extensions cannot be the same as the asset extension \"{}\"",
+						LOG_FMT(LogAssets, Warning, "Importer {} has invalid extension {}: extensions cannot be the same as the asset extension \"{}\"",
 							derived.GetName(),
 							extension.string(),
 							sAssetExtension);
@@ -70,7 +70,7 @@ Engine::AssetManager::AssetManager()
 					{
 						[[maybe_unused]] const MetaType* existingImporterType = MetaManager::Get().TryGetType(existingImporterTypeId);
 
-						LOG(LogAssets, Warning, "Importer {} has invalid extension {}: importer {} is already responsible for this extension",
+						LOG_FMT(LogAssets, Warning, "Importer {} has invalid extension {}: importer {} is already responsible for this extension",
 							derived.GetName(),
 							extension.string(),
 							existingImporterType == nullptr ? "Unnamed importer" : existingImporterType->GetName());
@@ -99,7 +99,7 @@ void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 {
 	if (!is_directory(directory))
 	{
-		LOG(LogAssets, Warning, "{} is not a directory", directory.string());
+		LOG_FMT(LogAssets, Warning, "{} is not a directory", directory.string());
 		return;
 	}
 
@@ -159,7 +159,7 @@ void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 
 			if (assetImporterVersion != GetClassVersion(*importerType))
 			{
-				LOG(LogAssets, Message, "Asset {} was imported with an older version of the importer ({}). Reimporting...",
+				LOG_FMT(LogAssets, Message, "Asset {} was imported with an older version of the importer ({}). Reimporting...",
 					importableAsset.string(),
 					assetImporterVersion);
 				ImportInternal(importableAsset, false);
@@ -170,7 +170,7 @@ void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 
 			if (assetInternal.mMetaData.mAssetVersion != currentAssetVersion)
 			{
-				LOG(LogAssets, Message, "Asset {} is out-of-date, version is {} (current is {}). The asset will be re-imported from {}",
+				LOG_FMT(LogAssets, Message, "Asset {} is out-of-date, version is {} (current is {}). The asset will be re-imported from {}",
 					assetInternal.mMetaData.GetName(),
 					assetInternal.mMetaData.mAssetVersion,
 					currentAssetVersion,
@@ -181,7 +181,7 @@ void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 
 			if (std::filesystem::last_write_time(*assetInternal.mFileOfOrigin) < importableAssetLastWriteTime)
 			{
-				LOG(LogAssets, Message, "Changes to {} detected. Reimporting...",
+				LOG_FMT(LogAssets, Message, "Changes to {} detected. Reimporting...",
 					importableAsset.string());
 				ImportInternal(importableAsset, false);
 				break;
@@ -190,13 +190,13 @@ void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 
 		if (!wasPreviouslyImported)
 		{
-			LOG(LogAssets, Message, "New content detected at {}. Importing...", importableAsset.string());
+			LOG_FMT(LogAssets, Message, "New content detected at {}. Importing...", importableAsset.string());
 			ImportInternal(importableAsset, false);
 		}
 	}
 #endif // EDITOR
 
-	LOG_TRIVIAL(LogAssets, Verbose, "Finished constructing assets");
+	LOG(LogAssets, Verbose, "Finished constructing assets");
 }
 
 Engine::AssetManager::AssetInternal::AssetInternal(AssetFileMetaData&& metaData, const std::optional<std::filesystem::path>& path) :
@@ -238,12 +238,12 @@ void Engine::AssetManager::Unload(AssetInternal& asset)
 {
 	if (asset.mAsset != nullptr)
 	{
-		LOG(LogAssets, Verbose, "Unloading {}", asset.mMetaData.mAssetName);
+		LOG_FMT(LogAssets, Verbose, "Unloading {}", asset.mMetaData.mAssetName);
 		asset.mAsset.reset();
 	}
 	else
 	{
-		LOG(LogAssets, Verbose, "Asset {} is already unloaded", asset.mMetaData.mAssetName);
+		LOG_FMT(LogAssets, Verbose, "Asset {} is already unloaded", asset.mMetaData.mAssetName);
 	}
 }
 
@@ -284,17 +284,17 @@ std::vector<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::GetAllAssets
 
 void Engine::AssetManager::Load(AssetInternal& internalAsset)
 {
-	LOG(LogAssets, Verbose, "Asset manager is loading {}", internalAsset.mMetaData.mAssetName);
+	LOG_FMT(LogAssets, Verbose, "Asset manager is loading {}", internalAsset.mMetaData.mAssetName);
 
 	auto& asset = internalAsset.mAsset;
 
 	if (asset != nullptr)
 	{
-		LOG(LogAssets, Warning, "Attempting to load {} twice", internalAsset.mMetaData.mAssetName);
+		LOG_FMT(LogAssets, Warning, "Attempting to load {} twice", internalAsset.mMetaData.mAssetName);
 		return;
 	}
 
-	ASSERT_LOG(internalAsset.mFileOfOrigin.has_value(), "Attempted to load {}, but this asset was generated at runtime and should not have been unloaded to begin with", internalAsset.mAsset->GetName());
+	ASSERT_LOG_FMT(internalAsset.mFileOfOrigin.has_value(), "Attempted to load {}, but this asset was generated at runtime and should not have been unloaded to begin with", internalAsset.mAsset->GetName());
 
 	AssetLoadInfo loadInfo{ *internalAsset.mFileOfOrigin };
 
@@ -302,7 +302,7 @@ void Engine::AssetManager::Load(AssetInternal& internalAsset)
 
 	if (constructResult.HasError())
 	{
-		LOG(LogAssets, Error, "Asset {} could not be constructed. Does it have a constructor that takes a LoadInfo&, and was this constructor reflected in your reflect function? {}",
+		LOG_FMT(LogAssets, Error, "Asset {} could not be constructed. Does it have a constructor that takes a LoadInfo&, and was this constructor reflected in your reflect function? {}",
 			internalAsset.mMetaData.mClass.get().GetName(),
 			constructResult.Error());
 		return;
@@ -323,11 +323,11 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 		{
 			const auto [importerTypeId, importer] = TryGetImporterForExtension(path.extension());
 
-			LOG(LogAssets, Message, "Importing {}", path.string());
+			LOG_FMT(LogAssets, Message, "Importing {}", path.string());
 
 			if (importer == nullptr)
 			{
-				LOG(LogAssets, Error, "No importer that can import {}.", path.string());
+				LOG_FMT(LogAssets, Error, "No importer that can import {}.", path.string());
 				return false;
 			}
 
@@ -336,7 +336,7 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 
 			if (!importedAssets.has_value())
 			{
-				LOG(LogAssets, Error, "Importing failed: Null value returned");
+				LOG_FMT(LogAssets, Error, "Importing failed: Null value returned");
 				return false;
 			}
 
@@ -363,7 +363,7 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 
 					if (numWithSameName != 0)
 					{
-						LOG(LogAssets, Error, "Importing failed: {} assets were imported with the name {}", numWithSameName, name);
+						LOG_FMT(LogAssets, Error, "Importing failed: {} assets were imported with the name {}", numWithSameName, name);
 						duplicateNames.push_back(name);
 					}
 				}
@@ -385,7 +385,7 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 				if (!existingAssetWithSameName->mMetaData.GetImporterInfo().has_value()
 					|| existingAssetWithSameName->mMetaData.GetImporterInfo()->mImportedFile != path)
 				{
-					LOG(LogAssets, Error, "Importing failed: there is already an asset with the name {} (see {})",
+					LOG_FMT(LogAssets, Error, "Importing failed: there is already an asset with the name {} (see {})",
 						loadInfo.GetName(),
 						existingAssetWithSameName->mFileOfOrigin.value_or("assets generated at runtime").string());
 
@@ -393,7 +393,7 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 				}
 				else if (existingAssetWithSameName->mAsset.use_count() > 1)
 				{
-					LOG(LogAssets, Error, "Importing failed: Importing {} means replacing existing asset {}, but this asset is still referenced in memory {} time(s).",
+					LOG_FMT(LogAssets, Error, "Importing failed: Importing {} means replacing existing asset {}, but this asset is still referenced in memory {} time(s).",
 						path.string(), existingAssetWithSameName->mMetaData.GetName(), existingAssetWithSameName->mAsset.use_count() - 1);
 					errorsEncountered = true;
 				}
@@ -424,7 +424,7 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 				// Delete existing files that were generated the last time we imported this asset
 				if (std::filesystem::exists(existingImportedAssetFile))
 				{
-					LOG(LogAssets, Message, "Deleting file {} created during previous importation", existingImportedAssetFile.string());
+					LOG_FMT(LogAssets, Message, "Deleting file {} created during previous importation", existingImportedAssetFile.string());
 
 					std::ifstream fstream{ existingImportedAssetFile, std::ifstream::binary };
 
@@ -438,14 +438,14 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 					}
 					else
 					{
-						LOG(LogAssets, Warning, "Importing warning: Could not create a temporary backup of {}. If further errors are encountered, this file will not be restored.",
+						LOG_FMT(LogAssets, Warning, "Importing warning: Could not create a temporary backup of {}. If further errors are encountered, this file will not be restored.",
 							existingImportedAssetFile.string());
 					}
 
 					std::error_code err{};
 					if (!std::filesystem::remove(*assetInternal.mFileOfOrigin, err))
 					{
-						LOG(LogAssets, Error, "Importing failed: Could not delete file {} - {}", existingImportedAssetFile.string(), err.message());
+						LOG_FMT(LogAssets, Error, "Importing failed: Could not delete file {} - {}", existingImportedAssetFile.string(), err.message());
 						errorsEncountered = true;
 					}
 				}
@@ -464,7 +464,7 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 					}
 					else
 					{
-						LOG(LogAssets, Error, "Importing failed: Importing {} means removing existing asset {}, but this asset is still referenced in memory {} time(s).",
+						LOG_FMT(LogAssets, Error, "Importing failed: Importing {} means removing existing asset {}, but this asset is still referenced in memory {} time(s).",
 							path.string(), assetInternal.mMetaData.GetName(), assetInternal.mAsset.use_count() - 1);
 						errorsEncountered = true;
 					}
@@ -480,11 +480,11 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 					if (fstream.is_open())
 					{
 						fstream << content;
-						LOG(LogAssets, Message, "Restored {}", fileToRestore.string());
+						LOG_FMT(LogAssets, Message, "Restored {}", fileToRestore.string());
 					}
 					else
 					{
-						LOG(LogAssets, Error, "Failed to restore {}", fileToRestore.string());
+						LOG_FMT(LogAssets, Error, "Failed to restore {}", fileToRestore.string());
 					}
 				}
 				return false;
@@ -526,7 +526,7 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 
 					if (&existingAsset->mMetaData.GetClass() != &loadInfo.GetAssetClass())
 					{
-						LOG(LogAssets, Warning, "Asset {} is reimported and changed from class {} to {}, existing WeakAssets could now be invalid",
+						LOG_FMT(LogAssets, Warning, "Asset {} is reimported and changed from class {} to {}, existing WeakAssets could now be invalid",
 							loadInfo.GetName(),
 							existingAsset->mMetaData.GetClass().GetName(),
 							loadInfo.GetAssetClass().GetName());
@@ -568,11 +568,11 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 
 				if (!success)
 				{
-					LOG(LogAssets, Error, "Importing partially failed: Could not save {} to {}", loadInfo.GetName(), fileWeWantToSaveTo.string());
+					LOG_FMT(LogAssets, Error, "Importing partially failed: Could not save {} to {}", loadInfo.GetName(), fileWeWantToSaveTo.string());
 					continue;
 				}
 
-				LOG(LogAssets, Message, "Saved imported asset {} to {}", loadInfo.GetName(), fileWeWantToSaveTo.string());
+				LOG_FMT(LogAssets, Message, "Saved imported asset {} to {}", loadInfo.GetName(), fileWeWantToSaveTo.string());
 
 				if (existingAsset != nullptr)
 				{
@@ -582,12 +582,12 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 				{
 					if (TryConstruct(fileWeWantToSaveTo, std::move(*loadInfo.mMetaData)) == nullptr)
 					{
-						LOG(LogAssets, Error, "Importing partially failed: Could not contruct asset from {}", fileWeWantToSaveTo.string());
+						LOG_FMT(LogAssets, Error, "Importing partially failed: Could not contruct asset from {}", fileWeWantToSaveTo.string());
 					}
 				}
 			}
 
-			LOG(LogAssets, Message, "Finished importing {}", path.string());
+			LOG_FMT(LogAssets, Message, "Finished importing {}", path.string());
 
 			return true;
 		};
@@ -623,7 +623,7 @@ bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesyst
 {
 	if (!asset.mAssetInternal.get().mFileOfOrigin.has_value())
 	{
-		LOG(LogAssets, Error, "Failed to move asset {} to {}: This asset was generated at runtime, there is no original file to copy from.",
+		LOG_FMT(LogAssets, Error, "Failed to move asset {} to {}: This asset was generated at runtime, there is no original file to copy from.",
 			asset.GetVersion(),
 			toLocation.string());
 		return false;
@@ -631,7 +631,7 @@ bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesyst
 
 	std::filesystem::path& assetFile = *asset.mAssetInternal.get().mFileOfOrigin;
 
-	LOG(LogAssets, Message, "Moving file from {} to {}", assetFile.string(), toLocation.string());
+	LOG_FMT(LogAssets, Message, "Moving file from {} to {}", assetFile.string(), toLocation.string());
 
 	std::filesystem::create_directories(toLocation.parent_path());
 
@@ -640,7 +640,7 @@ bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesyst
 
 	if (err)
 	{
-		LOG(LogAssets, Error, "Failed to move asset from {} to {}: Copying failed - {}",
+		LOG_FMT(LogAssets, Error, "Failed to move asset from {} to {}: Copying failed - {}",
 			assetFile.string(),
 			toLocation.string(),
 			err.message());
@@ -650,7 +650,7 @@ bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesyst
 	std::filesystem::remove(assetFile, err);
 	if (err)
 	{
-		LOG(LogAssets, Warning, "After moving asset from {} to {}: Could not delete original file - {}",
+		LOG_FMT(LogAssets, Warning, "After moving asset from {} to {}: Could not delete original file - {}",
 			assetFile.string(),
 			toLocation.string(),
 			err.message());
@@ -663,7 +663,7 @@ bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesyst
 
 void Engine::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
 {
-	LOG(LogAssets, Verbose, "Asset {} will be erased. Any WeakAssets referencing it will now be dangling", asset.GetName());
+	LOG_FMT(LogAssets, Verbose, "Asset {} will be erased. Any WeakAssets referencing it will now be dangling", asset.GetName());
 
 	if (asset.GetFileOfOrigin().has_value())
 	{
@@ -672,7 +672,7 @@ void Engine::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
 
 		if (err)
 		{
-			LOG(LogAssets, Error, "Asset {} was removed from the asset manager, but deleting {} failed ({}). Asset will be present again on next startup",
+			LOG_FMT(LogAssets, Error, "Asset {} was removed from the asset manager, but deleting {} failed ({}). Asset will be present again on next startup",
 				asset.GetName(),
 				asset.GetFileOfOrigin()->string(),
 				err.message());
@@ -695,11 +695,11 @@ std::optional<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::AddAsset(c
 
 Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const std::filesystem::path& path)
 {
-	LOG(LogAssets, Verbose, "Constructing asset from {}", path.string());
+	LOG_FMT(LogAssets, Verbose, "Constructing asset from {}", path.string());
 
 	if (path.extension() != sAssetExtension)
 	{
-		LOG(LogAssets, Error, "Failed to construct asset {}: Expected extension {}, but extension was {}.",
+		LOG_FMT(LogAssets, Error, "Failed to construct asset {}: Expected extension {}, but extension was {}.",
 			path.string(),
 			sAssetExtension,
 			path.extension().string());
@@ -710,7 +710,7 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const st
 
 	if (!istream.is_open())
 	{
-		LOG(LogAssets, Warning, "Failed to construct asset {}: Could not open file", path.string());
+		LOG_FMT(LogAssets, Warning, "Failed to construct asset {}: Could not open file", path.string());
 		return nullptr;
 	}
 
@@ -718,7 +718,7 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const st
 
 	if (!metaData.has_value())
 	{
-		LOG(LogAssets, Warning, "Failed to construct asset {}: metadata was invalid", path.string());
+		LOG_FMT(LogAssets, Warning, "Failed to construct asset {}: metadata was invalid", path.string());
 		return nullptr;
 	}
 
@@ -730,7 +730,7 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const st
 	if (path.has_value()
 		&& path->extension() != sAssetExtension)
 	{
-		LOG(LogAssets, Warning, "Expected {}, but extension was {}.", sAssetExtension, path->extension().string());
+		LOG_FMT(LogAssets, Warning, "Expected {}, but extension was {}.", sAssetExtension, path->extension().string());
 	}
 
 	const auto emplaceResult = mAssets.try_emplace(Name::HashString(metaData.mAssetName),
@@ -739,7 +739,7 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const st
 
 	if (!emplaceResult.second)
 	{
-		LOG(LogAssets, Warning, "Failed to construct asset {}: there is already an asset with the name {}, from {}. Returning existing asset.",
+		LOG_FMT(LogAssets, Warning, "Failed to construct asset {}: there is already an asset with the name {}, from {}. Returning existing asset.",
 			path.value_or("Generated at runtime").string(), emplaceResult.first->second.mMetaData.GetName(), emplaceResult.first->second.mFileOfOrigin.value_or("Generated at runtime").string());
 	}
 
@@ -748,7 +748,7 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const st
 	const uint32 currentVersion = GetClassVersion(constructedAssetInternal.mMetaData.GetClass());
 	if (constructedAssetInternal.mMetaData.mAssetVersion != currentVersion)
 	{
-		LOG(LogAssets, Message, "Asset {} is out of date: version is {} (current is {}). If the loader still supports this version, you have nothing to worry about.",
+		LOG_FMT(LogAssets, Message, "Asset {} is out of date: version is {} (current is {}). If the loader still supports this version, you have nothing to worry about.",
 			constructedAssetInternal.mMetaData.mAssetName,
 			constructedAssetInternal.mMetaData.mAssetVersion,
 			currentVersion);

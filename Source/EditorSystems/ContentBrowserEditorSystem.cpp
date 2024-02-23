@@ -315,7 +315,7 @@ void Engine::ContentBrowserEditorSystem::DisplayAssetCreator(const std::vector<C
             }
             else
             {
-                LOG(LogEditor, Error, "Failed to create new asset {}, the file {} could not be saved to",
+                LOG_FMT(LogEditor, Error, "Failed to create new asset {}, the file {} could not be saved to",
                     mAssetCreator->mAssetName, actualOutputFile.string());
             }
         }

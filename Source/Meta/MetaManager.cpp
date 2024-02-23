@@ -45,18 +45,18 @@ Engine::MetaType& Engine::MetaManager::AddType(MetaType&& type)
 	{
 		if (type.GetName() == existingType->GetName())
 		{
-			LOG(LogMeta, Warning, "Tried to add {} twice", existingType->GetName());
+			LOG_FMT(LogMeta, Warning, "Tried to add {} twice", existingType->GetName());
 		}
 		else
 		{
-			LOG(LogMeta, Error, "TypeId clash!! Both {} and {} use typeId {}! Rename either one of these to resolve this.", existingType->GetName(), type.GetName(), type.GetTypeId());
+			LOG_FMT(LogMeta, Error, "TypeId clash!! Both {} and {} use typeId {}! Rename either one of these to resolve this.", existingType->GetName(), type.GetName(), type.GetTypeId());
 		}
 		return *existingType;
 	}
 
 	if (MetaType* existingType = TryGetType(type.GetName()); existingType != nullptr)
 	{
-		LOG(LogMeta, Error, "There is already a type with the name {}", type.GetName());
+		LOG_FMT(LogMeta, Error, "There is already a type with the name {}", type.GetName());
 		return *existingType;
 	}
 
@@ -101,7 +101,7 @@ bool Engine::MetaManager::RemoveType(const TypeId typeId)
 
 	if (!erasedFromBoth)
 	{
-		LOG_TRIVIAL(LogMeta, Error, "Somehow type a type was present in mTypeByTypeId but not in mTypeByTypeName");
+		LOG(LogMeta, Error, "Somehow type a type was present in mTypeByTypeId but not in mTypeByTypeName");
 	}
 
 	return erasedFromBoth;
@@ -120,7 +120,7 @@ bool Engine::MetaManager::RemoveType(const Name typeName)
 
 	if (!erasedFromBoth)
 	{
-		LOG_TRIVIAL(LogMeta, Error, "Somehow type a type was present in mTypeByTypeName but not in mTypeByTypeId");
+		LOG(LogMeta, Error, "Somehow type a type was present in mTypeByTypeName but not in mTypeByTypeId");
 	}
 
 	return erasedFromBoth;

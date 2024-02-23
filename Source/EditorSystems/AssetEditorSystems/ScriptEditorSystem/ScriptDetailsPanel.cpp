@@ -49,7 +49,7 @@ void Engine::ScriptEditorSystem::DisplayDetailsPanel()
 			}
 			else
 			{
-				LOG(LogEditor, Warning, "Selecting a node that no longer exists, should not be possible");
+				LOG_FMT(LogEditor, Warning, "Selecting a node that no longer exists, should not be possible");
 			}
 		}
 		else
@@ -233,7 +233,7 @@ void Engine::ParamWrapper::DisplayInspectUI(const std::string&)
 	if (mParam.GetTypeForm() != TypeForm::Ptr
 		&& mParam.GetTypeForm() != TypeForm::Value)
 	{
-		LOG(LogScripting, Verbose, "Somehow blueprint function accepts a paremeter thats neither a ref or a value. Will be set to reference");
+		LOG_FMT(LogScripting, Verbose, "Somehow blueprint function accepts a paremeter thats neither a ref or a value. Will be set to reference");
 		mParam.SetTypeForm(TypeForm::Value);
 	}
 

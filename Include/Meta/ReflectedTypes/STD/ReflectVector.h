@@ -98,7 +98,7 @@ struct Reflector<std::vector<T>>
 				}
 				else
 				{
-					LOG_TRIVIAL(LogScripting, Warning, "Called PopBack on empty array");
+					LOG(LogScripting, Warning, "Called PopBack on empty array");
 				}
 			}, "Remove from end", MetaFunc::ExplicitParams<std::vector<T>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
@@ -106,7 +106,7 @@ struct Reflector<std::vector<T>>
 			{
 				if (newSize < 0)
 				{
-					LOG(LogScripting, Warning, "Cannot resize array to negative value {}, will resize to 0 instead", newSize);
+					LOG_FMT(LogScripting, Warning, "Cannot resize array to negative value {}, will resize to 0 instead", newSize);
 				}
 
 				v.resize(static_cast<size_t>(std::max(newSize, 0)));

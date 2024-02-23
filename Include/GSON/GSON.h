@@ -208,7 +208,7 @@ namespace Engine
 	typename GSONObjectBase<ObjectT, MemberT>::ObjectType& GSONObjectBase<ObjectT, MemberT>::GetGSONObject(const std::string_view name)
 	{
 		auto* found = TryGetGSONObject(name);
-		ASSERT_LOG(found != nullptr, "{} has no object with name {}", mName, name);
+		ASSERT_LOG_FMT(found != nullptr, "{} has no object with name {}", mName, name);
 		return *found;
 	}
 
@@ -216,7 +216,7 @@ namespace Engine
 	const typename GSONObjectBase<ObjectT, MemberT>::ObjectType& GSONObjectBase<ObjectT, MemberT>::GetGSONObject(const std::string_view name) const
 	{
 		auto* found = TryGetGSONObject(name);
-		ASSERT_LOG(found != nullptr, "{} has no object with name {}", mName, name);
+		ASSERT_LOG_FMT(found != nullptr, "{} has no object with name {}", mName, name);
 		return *found;
 	}
 
@@ -254,7 +254,7 @@ namespace Engine
 	typename GSONObjectBase<ObjectT, MemberT>::MemberType& GSONObjectBase<ObjectT, MemberT>::GetGSONMember(const std::string_view name)
 	{
 		auto* found = TryGetGSONMember(name);
-		ASSERT_LOG(found != nullptr, "{} has no member with name {}", mName, name);
+		ASSERT_LOG_FMT(found != nullptr, "{} has no member with name {}", mName, name);
 		return *found;
 	}
 
@@ -262,7 +262,7 @@ namespace Engine
 	const typename GSONObjectBase<ObjectT, MemberT>::MemberType& GSONObjectBase<ObjectT, MemberT>::GetGSONMember(const std::string_view name) const
 	{
 		auto* found = TryGetGSONMember(name);
-		ASSERT_LOG(found != nullptr, "{} has no member with name {}", mName, name);
+		ASSERT_LOG_FMT(found != nullptr, "{} has no member with name {}", mName, name);
 		return *found;
 	}
 
@@ -298,7 +298,7 @@ namespace Engine
 		if (objectAdress < myObjectsAdress
 			|| objectAdress >= myObjectsAdress + static_cast<intptr>(mChildren.size() * sizeof(object)))
 		{
-			LOG(LogTemp, Warning, "GSONObject was not removed, as {} is not owned by {}", static_cast<void*>(&object), static_cast<void*>(this));
+			LOG_FMT(LogTemp, Warning, "GSONObject was not removed, as {} is not owned by {}", static_cast<void*>(&object), static_cast<void*>(this));
 			return;
 		}
 
@@ -325,7 +325,7 @@ namespace Engine
 		if (memberAdress < myMembersAdress
 			|| memberAdress >= myMembersAdress + static_cast<intptr>(mMembers.size() * sizeof(member)))
 		{
-			LOG(LogTemp, Warning, "GSONMember was not removed, as {} is not owned by {}", static_cast<void*>(&member), static_cast<void*>(this));
+			LOG_FMT(LogTemp, Warning, "GSONMember was not removed, as {} is not owned by {}", static_cast<void*>(&member), static_cast<void*>(this));
 			return;
 		}
 
