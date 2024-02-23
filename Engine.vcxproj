@@ -218,6 +218,7 @@
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
       <Warnings>WarningsOff</Warnings>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
