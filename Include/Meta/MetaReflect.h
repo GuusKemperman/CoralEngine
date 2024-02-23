@@ -33,17 +33,15 @@ namespace Engine
 
 	namespace Internal
 	{
-		template <class T, std::size_t = sizeof(T)>
-		std::true_type is_complete_impl(T*);
-
-		std::false_type is_complete_impl(...);
-
-		template <class T>
-		using is_complete = decltype(is_complete_impl(std::declval<T*>()));
-
-
-
 #ifdef PLATFORM_***REMOVED***
+		// ***REMOVED*** does not understand SFINAE well enough.
+		// Since these are mostly for more understandable
+		// error messages, we assume that if there is no
+		// external reflect, there will be an internal reflect.
+		// Any conflicts, such as there both being an internal
+		// reflect and an external reflect, will only be caught
+		// with PC builds.
+
 		template<typename T>
 		static constexpr bool sHasInternalReflect = !Reflector<T>::sIsSpecialized;
 

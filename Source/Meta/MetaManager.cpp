@@ -101,7 +101,7 @@ bool Engine::MetaManager::RemoveType(const TypeId typeId)
 
 	if (!erasedFromBoth)
 	{
-		LOG(LogMeta, Error, "Somehow type a type was present in mTypeByTypeId but not in mTypeByTypeName");
+		LOG_TRIVIAL(LogMeta, Error, "Somehow type a type was present in mTypeByTypeId but not in mTypeByTypeName");
 	}
 
 	return erasedFromBoth;
@@ -120,7 +120,7 @@ bool Engine::MetaManager::RemoveType(const Name typeName)
 
 	if (!erasedFromBoth)
 	{
-		LOG(LogMeta, Error, "Somehow type a type was present in mTypeByTypeName but not in mTypeByTypeId");
+		LOG_TRIVIAL(LogMeta, Error, "Somehow type a type was present in mTypeByTypeName but not in mTypeByTypeId");
 	}
 
 	return erasedFromBoth;

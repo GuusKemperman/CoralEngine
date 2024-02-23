@@ -78,7 +78,7 @@ namespace Engine
 	}
 
 #define ENGINE_ALLOCA alloca
-#define FORCE_INLINE
+#define FORCE_INLINE inline
 
 #elif PLATFORM_WINDOWS
 	inline void* AlignedMalloc(size_t size, size_t alignment)
