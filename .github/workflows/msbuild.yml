@@ -31,7 +31,7 @@ jobs:
 
     - uses: microsoft/setup-msbuild@v1.0.2
       with:
-        ms-build-archtechture: x64
+        msbuild-architecture: x64
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
