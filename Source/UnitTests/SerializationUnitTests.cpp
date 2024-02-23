@@ -31,7 +31,7 @@ UNIT_TEST(Serialization, AllAssetSerialization)
 		bufferAlign = std::max(asset.GetAssetClass().GetAlignment(), bufferAlign);
 	}
 
-	void* assetBuffer = AlignedMalloc(bufferSize, bufferAlign);
+	void* assetBuffer = FastAlloc(bufferSize, bufferAlign);
 
 	if (assetBuffer == nullptr)
 	{

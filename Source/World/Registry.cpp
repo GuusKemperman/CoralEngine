@@ -619,7 +619,7 @@ Engine::AnyStorage::AnyStorage(const MetaType& type) :
 Engine::AnyStorage::~AnyStorage()
 {
 	pop_all();
-	AlignedFree(mData);
+	FastFree(mData);
 }
 
 bool Engine::AnyStorage::CanTypeBeUsed(const MetaType& type)
@@ -734,7 +734,7 @@ void Engine::AnyStorage::reserve(const size_type cap)
 	const MetaType& type = GetType();
 	const size_t typeSize = type.GetSize();
 
-	char* const newBuffer = (char*)AlignedMalloc(cap * typeSize, type.GetAlignment());
+	char* const newBuffer = (char*)FastAlloc(cap * typeSize, type.GetAlignment());
 	ASSERT(newBuffer != nullptr);
 	ASSERT(type.IsMoveConstructible());
 
@@ -757,7 +757,7 @@ void Engine::AnyStorage::reserve(const size_type cap)
 		type.Destruct(src, false);
 	}
 
-	AlignedFree(mData);
+	FastFree(mData);
 	mData = newBuffer;
 	mCapacity = cap;
 }

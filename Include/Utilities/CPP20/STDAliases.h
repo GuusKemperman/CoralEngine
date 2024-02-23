@@ -67,34 +67,16 @@ namespace Engine
 namespace Engine
 {
 #ifdef PLATFORM_***REMOVED***
-	inline void* AlignedMalloc(size_t size, size_t alignment)
-	{
-		return aligned_alloc(size, alignment);
-	}
-
-	inline void AlignedFree(void* buffer)
-	{
-		return free(buffer);
-	}
 
 #define ENGINE_ALLOCA alloca
 #define FORCE_INLINE inline
 
 #elif PLATFORM_WINDOWS
-	inline void* AlignedMalloc(size_t size, size_t alignment)
-	{
-		return _aligned_malloc(size, alignment);
-	}
-
-	inline void AlignedFree(void* buffer)
-	{
-		return _aligned_free(buffer);
-	}
 
 #define ENGINE_ALLOCA _alloca
 #define FORCE_INLINE __forceinline
 
 #else 
-	static_assert(false)
+	static_assert(false, "No platform")
 #endif
 }

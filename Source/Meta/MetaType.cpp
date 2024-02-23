@@ -124,12 +124,12 @@ size_t Engine::MetaType::RemoveFunc(const std::variant<Name, OperatorType>& name
 
 void* Engine::MetaType::Malloc(uint32 amount) const
 {
-	return AlignedMalloc(GetSize() * amount, GetAlignment());
+	return FastAlloc(GetSize() * amount, GetAlignment());
 }
 
 void Engine::MetaType::Free(void* buffer)
 {
-	AlignedFree(buffer);
+	FastFree(buffer);
 }
 
 const Engine::MetaFunc* Engine::MetaType::TryGetConstructor(const std::vector<TypeTraits>& parameters) const

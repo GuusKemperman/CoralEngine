@@ -2,6 +2,7 @@
 #include "MetaTypeId.h"
 #include "MetaTypeTraits.h"
 #include "Meta/MetaReflect.h"
+#include "Utilities/MemFunctions.h"
 
 namespace Engine
 {
@@ -112,7 +113,7 @@ Engine::MetaAny::MetaAny(T&& anyObject, void* const buffer)
         {
             static_assert(sIsReflectable<T>, "Destructor needs to be known, so the type must be reflected");
             ASSERT(Internal::DoesTypeExist(traits.mStrippedTypeId) && "Destructor must be known, so the type must be reflected");
-            mData = AlignedMalloc(sizeof(T), alignof(T));
+            mData = FastAlloc(sizeof(T), alignof(T));
             ASSERT(mData != nullptr);
 
             // We will own the return value; we are responsible for constructing it,

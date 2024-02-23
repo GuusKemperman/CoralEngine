@@ -1,7 +1,6 @@
 #pragma once
 #include "Meta/MetaManager.h"
 
-
 namespace Engine
 {
 	class MetaType;

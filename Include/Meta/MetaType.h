@@ -481,14 +481,12 @@ namespace Engine
 	void MetaType::AddFromArg(Ctor<Args...>)
 	{
 		AddFunc(
-			[](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer buffer) -> FuncResult
+			// Maybe_unused is there in case sizeo...(Args) == 0
+			[]([[maybe_unused]] MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer buffer) -> FuncResult
 			{
 				ASSERT(buffer != nullptr && "The address provided to a constructor may never be nullptr");
 
-				// Unpack needs to know the argument that it
-				// needs to forward.
-				[[maybe_unused]] size_t argIndex = args.size();
-
+				[[maybe_unused]] size_t argIndex = Internal::GetUnpackStart(sizeof...(Args));
 				new (buffer) TypeT(Internal::Unpack<Args>(args, argIndex)...);
 				return std::nullopt;
 			},

@@ -472,10 +472,39 @@ namespace Engine
 			}
 		}
 
+		// We are doing some sketchy undefined behaviour stuff during unpacking.
+		// Unfortunately, this is platform dependent, and differs on ***REMOVED***.
+#ifdef PLATFORM_WINDOWS
+		static constexpr bool sReverseUnpack = true;
+#elif PLATFORM_***REMOVED***
+		static constexpr bool sReverseUnpack = false;
+#else
+		static_assert(false, "Platform not specified. sReverseUnpack should likely be set to true, but if you find that invoking a MetaFunc turns the arguments you passed into the function into garbage, you should set it to false");
+#endif
+
+		static constexpr size_t GetUnpackStart(size_t numOfArguments)
+		{
+			if constexpr (sReverseUnpack)
+			{
+				return numOfArguments;
+			}
+			else
+			{
+				return 0;
+			}
+		}
+
 		template<typename T>
 		T Unpack(MetaFunc::DynamicArgs& args, size_t& index)
 		{
-			return UnpackSingle<T>(args[--index]);
+			if constexpr (sReverseUnpack)
+			{
+				return UnpackSingle<T>(args[--index]);
+			}
+			else
+			{
+				return UnpackSingle<T>(args[index++]);
+			}
 		}
 	}
 
@@ -517,9 +546,7 @@ namespace Engine
 	FuncResult MetaFunc::DefaultInvoke(const std::function<Ret(ParamsT...)>& functionToInvoke,
 	                                   DynamicArgs runtimeArgs, RVOBuffer rvoBuffer)
 	{
-		// Unpack needs to know the argument that it
-		// needs to forward.
-		[[maybe_unused]] size_t argIndex = runtimeArgs.size();
+		[[maybe_unused]] size_t argIndex = Internal::GetUnpackStart(sizeof...(ParamsT));
 
 		if constexpr (std::is_same_v<Ret, void>)
 		{
