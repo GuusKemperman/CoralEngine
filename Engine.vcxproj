@@ -169,7 +169,7 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>XSR_USE_HARD_CODED_SHADERS;PLATFORM_WINDOWS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);PLATFORM_WINDOWS;PLATFORM_DESKTOP</PreprocessorDefinitions>
+      <PreprocessorDefinitions>XSR_USE_HARD_CODED_SHADERS;PLATFORM_WINDOWS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include/Engine/Precomp;include;$(ProjectDir)external;$(ProjectDir)external\lua;$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;$(ProjectDir)external\xsr\include;$(ProjectDir)external\clipper\include;Intermediate\generated</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -222,8 +222,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)External/fmod/lib;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-l***REMOVED***Sysmodule_stub_weak;-l***REMOVED***PngDec_stub_weak;-l***REMOVED***Pad_stub_weak;-l***REMOVED***UserService_stub_weak;-l***REMOVED******REMOVED***Driver_stub_weak;-l***REMOVED******REMOVED***_stub_weak;-l***REMOVED***VideoOut_stub_weak;-l***REMOVED******REMOVED***_debug_nosubmission;-l***REMOVED******REMOVED***Core_debug_nosubmission;-l***REMOVED******REMOVED***GpuAddress_debug_nosubmission;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>glfw3.lib;opengl32.lib</AdditionalDependencies>
@@ -236,7 +236,7 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>XSR_USE_HARD_CODED_SHADERS;PLATFORM_WINDOWS;EDITOR;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);PLATFORM_WINDOWS;PLATFORM_DESKTOP</PreprocessorDefinitions>
+      <PreprocessorDefinitions>XSR_USE_HARD_CODED_SHADERS;PLATFORM_WINDOWS;EDITOR;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include/Engine/Precomp;include;$(ProjectDir)external;$(ProjectDir)external\lua;$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;$(ProjectDir)external\xsr\include;$(ProjectDir)external\clipper\include;Intermediate\generated</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -292,8 +292,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)External/fmod/lib;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-l***REMOVED***Sysmodule_stub_weak;-l***REMOVED***PngDec_stub_weak;-l***REMOVED***Pad_stub_weak;-l***REMOVED***UserService_stub_weak;-l***REMOVED******REMOVED***Driver_stub_weak;-l***REMOVED******REMOVED***_stub_weak;-l***REMOVED***VideoOut_stub_weak;-l***REMOVED******REMOVED***_debug_nosubmission;-l***REMOVED******REMOVED***Core_debug_nosubmission;-l***REMOVED******REMOVED***GpuAddress_debug_nosubmission;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>IF NOT EXIST "$(TargetDir)assimp-vc143-mtd.dll" COPY /Y "$(ProjectDir)external\assimp\$(Platform)\Debug\assimp-vc143-mtd.dll" "$(TargetDir)"</Command>
@@ -311,7 +311,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>XSR_USE_HARD_CODED_SHADERS;PLATFORM_WINDOWS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);PLATFORM_WINDOWS;PLATFORM_DESKTOP</PreprocessorDefinitions>
+      <PreprocessorDefinitions>XSR_USE_HARD_CODED_SHADERS;PLATFORM_WINDOWS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include/Engine/Precomp;include;$(ProjectDir)external;$(ProjectDir)external\lua;$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;$(ProjectDir)external\xsr\include;$(ProjectDir)external\clipper\include;Intermediate\generated</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -372,8 +372,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)External/fmod/lib;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-l***REMOVED***Sysmodule_stub_weak;-l***REMOVED***PngDec_stub_weak;-l***REMOVED***Pad_stub_weak;-l***REMOVED***UserService_stub_weak;-l***REMOVED******REMOVED***Driver_stub_weak;-l***REMOVED******REMOVED***_stub_weak;-l***REMOVED***VideoOut_stub_weak;-l***REMOVED******REMOVED***_debug_nosubmission;-l***REMOVED******REMOVED***Core_debug_nosubmission;-l***REMOVED******REMOVED***GpuAddress_debug_nosubmission;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>glfw3.lib;opengl32.lib;</AdditionalDependencies>
@@ -388,7 +388,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>XSR_USE_HARD_CODED_SHADERS;PLATFORM_WINDOWS;EDITOR;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);PLATFORM_WINDOWS;PLATFORM_DESKTOP</PreprocessorDefinitions>
+      <PreprocessorDefinitions>XSR_USE_HARD_CODED_SHADERS;PLATFORM_WINDOWS;EDITOR;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include/Engine/Precomp;include;$(ProjectDir)external;$(ProjectDir)external\lua;$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;$(ProjectDir)external\xsr\include;$(ProjectDir)external\clipper\include;Intermediate\generated</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -450,8 +450,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)External/fmod/lib;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>-l***REMOVED***Sysmodule_stub_weak;-l***REMOVED***PngDec_stub_weak;-l***REMOVED***Pad_stub_weak;-l***REMOVED***UserService_stub_weak;-l***REMOVED******REMOVED***Driver_stub_weak;-l***REMOVED******REMOVED***_stub_weak;-l***REMOVED***VideoOut_stub_weak;-l***REMOVED******REMOVED***_debug_nosubmission;-l***REMOVED******REMOVED***Core_debug_nosubmission;-l***REMOVED******REMOVED***GpuAddress_debug_nosubmission;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>IF NOT EXIST "$(TargetDir)assimp-vc143-mt.dll" COPY /Y "$(ProjectDir)external\assimp\$(Platform)\Release\assimp-vc143-mt.dll" "$(TargetDir)"</Command>
@@ -519,6 +519,12 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\imgui_draw.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -613,6 +619,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\implot_demo.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -622,6 +630,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\implot_items.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -631,6 +641,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="External\imnodes\crude_json.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">NotUsing</PrecompiledHeader>
@@ -655,6 +667,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">NotUsing</PrecompiledHeader>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="External\imnodes\examples\blueprints-example\utilities\drawing.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">NotUsing</PrecompiledHeader>
@@ -665,6 +683,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">NotUsing</PrecompiledHeader>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="External\imnodes\examples\blueprints-example\utilities\widgets.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">NotUsing</PrecompiledHeader>
@@ -675,6 +699,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">NotUsing</PrecompiledHeader>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="External\imnodes\imgui_canvas.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">NotUsing</PrecompiledHeader>
@@ -786,11 +816,23 @@
     <ClCompile Include="Source\Components\NameComponent.cpp" />
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\Other\ReflectNullChecker.cpp" />
+    <ClCompile Include="Source\Platform\PC\Core\FileIOPC.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Platform\PC\Core\InputPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Platform\***REMOVED***\Core\FileIO***REMOVED***.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Platform\***REMOVED***\Core\Input***REMOVED***.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
@@ -1074,13 +1116,6 @@
     <ClCompile Include="source\Components\FlyCamControllerComponent.cpp" />
     <ClCompile Include="source\Components\Particles\ParticleEmitterComponent.cpp" />
     <ClCompile Include="source\Components\TransformComponent.cpp" />
-    <ClCompile Include="source\platform\pc\core\fileio_pc.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="source\platform\***REMOVED***\rendering\image_***REMOVED***.cpp">
       <ExcludedFromBuild Condition="'$(Platform)'=='x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Platform)'=='***REMOVED***'">true</ExcludedFromBuild>

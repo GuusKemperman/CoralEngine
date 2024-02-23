@@ -1,6 +1,8 @@
 #include "Precomp.h"
 #include "Core/Renderer.h"
 
+#include <glad/glad.h>
+
 #include "xsr.hpp"
 
 #ifdef PLATFORM_WINDOWS
@@ -20,8 +22,10 @@
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
 
+#ifdef EDITOR
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/ImGuizmo.h"
+#endif
 
 #ifndef APIENTRY
 #define APIENTRY TMP_APIENTRY
@@ -108,9 +112,11 @@ Engine::Renderer::~Renderer()
 {
 	xsr::shutdown();
 
+#ifdef EDITOR
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
+#endif
 
 	glfwDestroyWindow(mWindow);
 	glfwTerminate();
@@ -128,6 +134,7 @@ glm::vec2 Engine::Renderer::GetDisplaySize() const
 
 void Engine::Renderer::CreateImguiContext()
 {
+#ifdef EDITOR
 	LOG(LogCore, Message, "Creating imgui context");
 
 	glfwShowWindow(mWindow);
@@ -145,12 +152,14 @@ void Engine::Renderer::CreateImguiContext()
 
 	std::filesystem::create_directories("Intermediate/Layout");
 	ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
+#endif // EDITOR
 }
 
 void Engine::Renderer::NewFrame()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+#ifdef EDITOR
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -163,10 +172,12 @@ void Engine::Renderer::NewFrame()
 	{
 		glViewport(0, 0, static_cast<GLsizei>(displaySize.x), static_cast<GLsizei>(displaySize.y));
 	}
+#endif // EDITOR 
 }
 
 void Engine::Renderer::Render()
 {
+#ifdef EDITOR
 	// Rendering 
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -181,7 +192,7 @@ void Engine::Renderer::Render()
 		ImGui::RenderPlatformWindowsDefault();
 		glfwMakeContextCurrent(backup_current_context);
 	}
-
+#endif // EDITOR
 	glfwSwapBuffers(mWindow);
 	mIsWindowOpen = !glfwWindowShouldClose(mWindow);
 	CheckGL();

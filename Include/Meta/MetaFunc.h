@@ -541,6 +541,7 @@ namespace Engine
 	template <typename ... Args>
 	std::pair<std::array<MetaAny, sizeof...(Args)>, std::array<TypeForm, sizeof...(Args)>> MetaFunc::Pack(Args&&... args)
 	{
+#ifdef PLATFORM_***REMOVED***
 		// ***REMOVED*** has a bug where their std::array implementation
 		// does not work with non-default-constructible types if the
 		// array size is 0.
@@ -553,11 +554,15 @@ namespace Engine
 		}
 		else
 		{
-			return {
-				std::array<MetaAny, sizeof...(Args)>{ PackSingle<Args>(std::forward<Args>(args))... },
-				std::array<TypeForm, sizeof...(Args)>{ MakeTypeForm<Args>()... }
-			};
-		}
+#endif // PLATFORM_***REMOVED***
 
+		return {
+			std::array<MetaAny, sizeof...(Args)>{ PackSingle<Args>(std::forward<Args>(args))... },
+			std::array<TypeForm, sizeof...(Args)>{ MakeTypeForm<Args>()... }
+		};
+
+#ifdef PLATFORM_***REMOVED***
+		}
+#endif // PLATFORM_***REMOVED***
 	}
 }

@@ -35,9 +35,9 @@ static_assert(false, "EngineDebug or EngineRelease configuration is not supporte
 #pragma warning(pop)
 #endif
 
-#ifdef PLATFORM_PC
+#ifdef PLATFORM_WINDOWS
 #define OPEN_GL
-#endif // PLATFORM_PC
+#endif // PLATFORM_WINDOWS
 
 // Will be removed once we switch
 // to directX.
