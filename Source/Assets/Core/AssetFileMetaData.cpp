@@ -51,7 +51,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 	case 1:
 		return ReadMetaDataV1(fromStream);
 	default:
-		LOG_FMT(LogAssets, Message, "Asset metadata version {} is not recognised and not supported", *version);
+		LOG(LogAssets, Message, "Asset metadata version {} is not recognised and not supported", *version);
 		return std::nullopt;
 	}
 }
@@ -80,13 +80,13 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (assetClass == nullptr)
 	{
-		LOG_FMT(LogAssets, Error, "Asset metadata invalid: There is no class with typeid of \"{}\"", *assetClassTypeId);
+		LOG(LogAssets, Error, "Asset metadata invalid: There is no class with typeid of \"{}\"", *assetClassTypeId);
 		return std::nullopt;
 	}
 
 	if (!assetClass->IsDerivedFrom<Asset>())
 	{
-		LOG_FMT(LogAssets, Error, "Asset metadata invalid: \"{}\" does not derive from Asset", assetClass->GetName());
+		LOG(LogAssets, Error, "Asset metadata invalid: \"{}\" does not derive from Asset", assetClass->GetName());
 		return std::nullopt;
 	}
 
@@ -107,7 +107,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 	}
 
 	// Now that we know the name, we can give a proper warning message
-	LOG_FMT(LogAssets, Error, "Asset {} needs to be resaved - MetaData of version 0 is deprecated. This asset cannot be loaded on a different compiler than the one it was saved with.", name);
+	LOG(LogAssets, Error, "Asset {} needs to be resaved - MetaData of version 0 is deprecated. This asset cannot be loaded on a different compiler than the one it was saved with.", name);
 
 	std::optional<bool> wasImportedFromFile = TryRead<bool>(fromStream);
 
@@ -183,13 +183,13 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 
 	if (assetClass == nullptr)
 	{
-		LOG_FMT(LogAssets, Message, "Failed to load asset {} - Class {} has been deleted or renamed.", assetName, assetClassName);
+		LOG(LogAssets, Message, "Failed to load asset {} - Class {} has been deleted or renamed.", assetName, assetClassName);
 		return std::nullopt;
 	}
 
 	if (!assetClass->IsDerivedFrom<Asset>())
 	{
-		LOG_FMT(LogAssets, Message, "Failed to load asset {} - Class {} does not derive from Asset.", assetName, assetClassName);
+		LOG(LogAssets, Message, "Failed to load asset {} - Class {} does not derive from Asset.", assetName, assetClassName);
 		return std::nullopt;
 	}
 

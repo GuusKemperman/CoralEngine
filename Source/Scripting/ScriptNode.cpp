@@ -165,7 +165,7 @@ std::unique_ptr<Engine::ScriptNode> Engine::ScriptNode::DeserializeFrom(const Bi
 
 	if (node == nullptr)
 	{
-		LOG_FMT(LogAssets, Error, "Invalid node type {}", static_cast<uint32>(type));
+		LOG(LogAssets, Error, "Invalid node type {}", static_cast<uint32>(type));
 		return node;
 	}
 

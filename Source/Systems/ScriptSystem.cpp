@@ -44,7 +44,7 @@ void Engine::ScriptSystem::Update(World& world, float dt)
 		FuncId funcId = MakeFuncId(MakeTypeTraits<void>(), { TypeTraits{ type.GetTypeId(), TypeForm::Ref }, floatTypeTraits });
 		if (func->GetFuncId() != funcId)
 		{
-			LOG_FMT(LogScripting, Warning, "{} has a tick function, but it is either static, or does not take a float as the first parameter", type.GetName());
+			LOG(LogScripting, Warning, "{} has a tick function, but it is either static, or does not take a float as the first parameter", type.GetName());
 			continue;
 		}
 
@@ -70,7 +70,7 @@ void Engine::ScriptSystem::Update(World& world, float dt)
 
 			if (result.HasError())
 			{
-				LOG_FMT(LogScripting, Error, "An error occured while executing component {} of entity {} - {}",
+				LOG(LogScripting, Error, "An error occured while executing component {} of entity {} - {}",
 					type.GetName(),
 					static_cast<EntityType>(entity),
 					result.Error())

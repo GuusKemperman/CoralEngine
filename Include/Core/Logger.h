@@ -3,37 +3,30 @@
 
 #if LOGGING_ENABLED
 
-#define LOG_FMT(channel, severity, formatString, ...) Engine::Logger::Get().Log(Engine::Format(#formatString, __VA_ARGS__), #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
+#define LOG(channel, severity, formatString, ...) Engine::Logger::Get().Log(Engine::Format(#formatString, ##__VA_ARGS__), #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
 
-// ***REMOVED*** doesn't like VA_ARGS if we do not provide any formatting arguments, so we have a separate macro for empty
-#define LOG(channel, severity, string) Engine::Logger::Get().Log(#string, #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
-
+// If logging is enabled, we replace assert with a fatal log entry.
+// This will instruct the logger to dump the current log contents to
+// a file.
 #ifdef ASSERTS_ENABLED
 
-#define ASSERT_LOG_FMT(condition, format, ...)\
+#define ASSERT_LOG(condition, format, ...)\
 if (condition) {}\
-else { UNLIKELY; LOG_FMT(LogTemp, Fatal, "Assert failed: " #condition " - " format, __VA_ARGS__); }
-
-#define ASSERT_LOG(condition, string)\
-if (condition) {}\
-else { UNLIKELY; LOG(LogTemp, Fatal, "Assert failed: " #string); }
+else { UNLIKELY; LOG(LogTemp, Fatal, "Assert failed: " #condition " - " format, ##__VA_ARGS__); }
 
 #define ABORT LOG(LogTemp, Fatal, "Aborted");
 
 #endif // ASSERTS_ENABLED
 
-#else // Ifndef LOGGING_ENABLED
+#else
 
-#define LOG_FMT(...)
+#define LOG(...)
 #define LOG(...)
 
+// If logging is not enabled, use the classic assert().
 #ifdef ASSERTS_ENABLED
 
-#define ASSERT_LOG_FMT(condition, format, ...)\
-if (condition) {}\
-else { UNLIKELY; assert(condition) }
-
-#define ASSERT_LOG(condition, string)\
+#define ASSERT_LOG(condition, ...)\
 if (condition) {}\
 else { UNLIKELY; assert(condition) }
 
@@ -44,13 +37,11 @@ else { UNLIKELY; assert(condition) }
 #endif
 
 #ifndef ASSERTS_ENABLED
-#define ASSERT_LOG_FMT(...)
 #define ASSERT_LOG(...)
 #define ABORT
 #endif
 
 #define ASSERT(condition) ASSERT_LOG(condition, "")
-
 
 enum LogSeverity
 {

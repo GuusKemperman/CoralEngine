@@ -77,7 +77,7 @@ bool Null::CallNullptrOverload(const MetaAny& any)
 
 	if (nullptrComparisonResult.HasError())
 	{
-		LOG_FMT(LogScripting, Error, "An error occured when invoking the IsNull overload for type {} - {}",
+		LOG(LogScripting, Error, "An error occured when invoking the IsNull overload for type {} - {}",
 			type->GetName(),
 			nullptrComparisonResult.Error())
 			return true;

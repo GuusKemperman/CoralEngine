@@ -27,10 +27,10 @@ Engine::Asset::Asset(AssetLoadInfo& loadInfo) :
 
 Engine::AssetSaveInfo Engine::Asset::Save() const
 {
-	LOG_FMT(LogAssets, Verbose, "Begin saving of: {}", GetName());
+	LOG(LogAssets, Verbose, "Begin saving of: {}", GetName());
 	AssetSaveInfo saveInfo{ mName, *MetaManager::Get().TryGetType(mTypeId) };
 	OnSave(saveInfo);
-	LOG_FMT(LogAssets, Verbose, "Finished saving of: {}", GetName());
+	LOG(LogAssets, Verbose, "Finished saving of: {}", GetName());
 	return saveInfo;
 }
 
@@ -78,7 +78,7 @@ void Engine::SaveAssetReference(cereal::BinaryOutputArchive& ar, const std::shar
 	if (asset != nullptr)
 	{
 		const Name::HashType hash = Name::HashString(asset->GetName());
-		ASSERT_LOG_FMT(hash != 0, "Hash of {} was 0, but this value is reserved for null assets. Please rename the asset.", asset->GetName());
+		ASSERT_LOG(hash != 0, "Hash of {} was 0, but this value is reserved for null assets. Please rename the asset.", asset->GetName());
 		ar(hash);
 	}
 	else
@@ -102,6 +102,6 @@ void Engine::LoadAssetReference(cereal::BinaryInputArchive& ar, std::shared_ptr<
 
 	if (asset == nullptr)
 	{
-		LOG_FMT(LogAssets, Warning, "Asset whose name generated the hash {} no longer exists", assetNameHash);
+		LOG(LogAssets, Warning, "Asset whose name generated the hash {} no longer exists", assetNameHash);
 	}
 }

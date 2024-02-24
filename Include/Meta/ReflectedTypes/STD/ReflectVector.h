@@ -106,7 +106,7 @@ struct Reflector<std::vector<T>>
 			{
 				if (newSize < 0)
 				{
-					LOG_FMT(LogScripting, Warning, "Cannot resize array to negative value {}, will resize to 0 instead", newSize);
+					LOG(LogScripting, Warning, "Cannot resize array to negative value {}, will resize to 0 instead", newSize);
 				}
 
 				v.resize(static_cast<size_t>(std::max(newSize, 0)));

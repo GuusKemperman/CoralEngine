@@ -85,7 +85,7 @@ Engine::Registry::Registry(World& world) :
 
 				if (childConstructResult.HasError())
 				{
-					LOG_FMT(LogWorld, Error, "System {} is not default constructible - {}", child.GetName(), childConstructResult.Error());
+					LOG(LogWorld, Error, "System {} is not default constructible - {}", child.GetName(), childConstructResult.Error());
 					continue;
 				}
 				auto newSystem = MakeUnique<System>(std::move(childConstructResult.GetReturnValue()));
@@ -145,7 +145,7 @@ entt::entity Engine::Registry::CreateFromPrefab(const Prefab& prefab, entt::enti
 	if (factories.empty())
 	{
 		UNLIKELY;
-		LOG_FMT(LogAssets, Error, "Invalid prefab provided, the prefab {} is empty", prefab.GetName());
+		LOG(LogAssets, Error, "Invalid prefab provided, the prefab {} is empty", prefab.GetName());
 		return Create();
 	}
 
@@ -172,7 +172,7 @@ entt::entity Engine::Registry::CreateFromFactory(const PrefabEntityFactory& fact
 
 	if (myTransform == nullptr)
 	{
-		LOG_FMT(LogAssets, Error, "Invalid prefab provided, the prefab {} contains a parental relationship, but is missing certain transformcomponents", factory.GetPrefab().GetName());
+		LOG(LogAssets, Error, "Invalid prefab provided, the prefab {} contains a parental relationship, but is missing certain transformcomponents", factory.GetPrefab().GetName());
 		return entity;
 	}
 
@@ -189,7 +189,7 @@ entt::entity Engine::Registry::CreateFromFactory(const PrefabEntityFactory& fact
 		}
 		else
 		{
-			LOG_FMT(LogAssets, Error, "Invalid prefab provided, the prefab {} contains a parental relationship, but is missing certain transformcomponents", factory.GetPrefab().GetName());
+			LOG(LogAssets, Error, "Invalid prefab provided, the prefab {} contains a parental relationship, but is missing certain transformcomponents", factory.GetPrefab().GetName());
 		}
 	}
 	
@@ -245,7 +245,7 @@ Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, c
 		{
 			if (!AnyStorage::CanTypeBeUsed(componentClass))
 			{
-				LOG_FMT(LogWorld, Error, "Failed to add component {} to {} - This class was created through scripts, and because of a programmer error it does not have all the functionality a component needs. My bad!",
+				LOG(LogWorld, Error, "Failed to add component {} to {} - This class was created through scripts, and because of a programmer error it does not have all the functionality a component needs. My bad!",
 					componentClass.GetName(),
 					static_cast<EntityType>(toEntity));
 				return { componentClass, nullptr, false };
@@ -274,7 +274,7 @@ Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, c
 			}
 			else
 			{
-				LOG_FMT(LogScripting, Error, "Expected {}::Owner to be of type entt::entity",
+				LOG(LogScripting, Error, "Expected {}::Owner to be of type entt::entity",
 					componentClass.GetName());
 			}
 		}
@@ -289,7 +289,7 @@ Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, c
 
 	if (addComponentFunc == nullptr)
 	{
-		LOG_FMT(LogWorld, Error, "Failed to add component {} to {}: ReflectComponentType was never called for this type",
+		LOG(LogWorld, Error, "Failed to add component {} to {}: ReflectComponentType was never called for this type",
 			componentClass.GetName(),
 			static_cast<EntityType>(toEntity));
 		return MetaAny{ componentClass.GetTypeInfo(), nullptr };
@@ -303,7 +303,7 @@ Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, c
 
 	if (result.HasError())
 	{
-		LOG_FMT(LogWorld, Error, "Failed to add component {} to {}: Invoking {} failed - {}",
+		LOG(LogWorld, Error, "Failed to add component {} to {}: Invoking {} failed - {}",
 			componentClass.GetName(),
 			static_cast<EntityType>(toEntity),
 			addComponentFuncName,
@@ -752,7 +752,7 @@ void Engine::AnyStorage::reserve(const size_type cap)
 		void* const src = get_at(placeAtIndex);
 		void* const dst = &newBuffer[placeAtIndex * typeSize];
 		[[maybe_unused]] const FuncResult result = type.ConstructAt(dst, MetaAny{ type, src, false });
-		ASSERT_LOG_FMT(!result.HasError(), "{}", result.Error());
+		ASSERT_LOG(!result.HasError(), "{}", result.Error());
 
 		type.Destruct(src, false);
 	}

@@ -119,7 +119,7 @@ void Engine::MetaAny::DestructAndFree()
 		}
 		else
 		{
-			LOG_FMT(LogMeta, Error, "Cannot call destructor for type with id {}: Type was not reflected", GetTypeId());
+			LOG(LogMeta, Error, "Cannot call destructor for type with id {}: Type was not reflected", GetTypeId());
 		}
 	}
 
@@ -137,7 +137,7 @@ bool Engine::MetaAny::IsDerivedFrom(const TypeId typeId) const
 
 	if (type == nullptr)
 	{
-		LOG_FMT(LogMeta, Verbose, "Cannot check if {} is derived from {}, as {} is not reflected", GetTypeId(), typeId, GetTypeId());
+		LOG(LogMeta, Verbose, "Cannot check if {} is derived from {}, as {} is not reflected", GetTypeId(), typeId, GetTypeId());
 		return false;
 	}
 

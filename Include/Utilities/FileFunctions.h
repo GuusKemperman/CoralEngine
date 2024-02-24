@@ -32,9 +32,9 @@ namespace Engine
 			if (!fileStream.is_open())
 			{
 // Because we may want to use this outside of the engine as well
-#ifdef LOG_FMT
-				LOG_FMT(LogFileIO, Warning, "Could not read file {}; File does not exist.", filePath);
-#endif // LOG_FMT
+#ifdef LOG
+				LOG(LogFileIO, Warning, "Could not read file {}; File does not exist.", filePath);
+#endif // LOG
 				return "";
 			}
 

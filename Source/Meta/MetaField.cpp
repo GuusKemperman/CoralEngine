@@ -48,6 +48,6 @@ Engine::MetaAny Engine::MetaField::MakeRef(MetaAny& object) const
 #ifdef ASSERTS_ENABLED
 void Engine::MetaField::AssertThatOuterMatches(TypeId expectedTypeId) const
 {
-	ASSERT_LOG_FMT(GetOuterType().GetTypeId() == expectedTypeId, "Field {} does not belong to type {}", mName, GetOuterType().GetName());
+	ASSERT_LOG(GetOuterType().GetTypeId() == expectedTypeId, "Field {} does not belong to type {}", mName, GetOuterType().GetName());
 }
 #endif // ASSERTS_ENABLED

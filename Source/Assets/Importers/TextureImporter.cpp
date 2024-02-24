@@ -17,7 +17,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::TextureImporter::Impor
 
 	if (pixels == nullptr)
 	{
-		LOG_FMT(LogAssets, Error, "Importing texture failed: stbi returned nullptr", path.string());
+		LOG(LogAssets, Error, "Importing texture failed: stbi returned nullptr", path.string());
 		return std::optional<std::vector<ImportedAsset>>{};
 	}
 
@@ -55,13 +55,13 @@ std::optional<Engine::ImportedAsset> Engine::TextureImporter::ImportFromMemory(c
 	if (width == 0
 		|| height == 0)
 	{
-		LOG_FMT(LogAssets, Error, "Importing texture failed: invalid dimesnsions ({}x{})", width, height);
+		LOG(LogAssets, Error, "Importing texture failed: invalid dimesnsions ({}x{})", width, height);
 		return std::optional<ImportedAsset>{};
 	}
 
 	if (buffer.size() != totalNumOfPixels * 4)
 	{
-		LOG_FMT(LogAssets, Error, "Importing texture failed: wrong number of bytes, received {} but expected {} (RGBA) bytes",
+		LOG(LogAssets, Error, "Importing texture failed: wrong number of bytes, received {} but expected {} (RGBA) bytes",
 			buffer.size(),
 			totalNumOfPixels * 4);
 
@@ -79,7 +79,7 @@ std::optional<Engine::ImportedAsset> Engine::TextureImporter::ImportFromMemory(c
 	
 	if (stbi_write_png_to_func(func, &pngData, static_cast<int>(width), static_cast<int>(height), 4, buffer.data(), width * 4) == 0)
 	{
-		LOG_FMT(LogAssets, Error, "Importing texture failed: could not convert data to png");
+		LOG(LogAssets, Error, "Importing texture failed: could not convert data to png");
 		return std::optional<ImportedAsset>{};
 	}
 

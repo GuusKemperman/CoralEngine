@@ -61,7 +61,7 @@ namespace Engine
 			if (!autoSave.has_value() // We can test to see if an asset exists without having to load it in.
 				|| autoSave->GetVersion() < ClassVersion_v<Level>) // We have access to some metadata without having to load it in.
 			{
-				LOG_FMT(LogGame, Warning, "Autosave does not exist or is out of date");
+				LOG(LogGame, Warning, "Autosave does not exist or is out of date");
 				return;
 			}
 

@@ -36,7 +36,7 @@ bool Engine::AssetSaveInfo::SaveToFile(const std::filesystem::path& path) const
 {
 	if (path.extension() != AssetManager::sAssetExtension)
 	{
-		LOG_FMT(LogAssets, Message, "Failed to save asset: {} did not have extension {}", path.string(), AssetManager::sAssetExtension);
+		LOG(LogAssets, Message, "Failed to save asset: {} did not have extension {}", path.string(), AssetManager::sAssetExtension);
 		return false;
 	}
 
@@ -45,7 +45,7 @@ bool Engine::AssetSaveInfo::SaveToFile(const std::filesystem::path& path) const
 
 	if (err)
 	{
-		LOG_FMT(LogAssets, Message, "Failed to save asset: failed to create directory {} - {}", path.parent_path().string(), err.message());
+		LOG(LogAssets, Message, "Failed to save asset: failed to create directory {} - {}", path.parent_path().string(), err.message());
 		return false;
 	}
 
@@ -53,7 +53,7 @@ bool Engine::AssetSaveInfo::SaveToFile(const std::filesystem::path& path) const
 
 	if (!fstream.is_open())
 	{
-		LOG_FMT(LogAssets, Message, "Failed to save asset: {} could not be written to", path.string());
+		LOG(LogAssets, Message, "Failed to save asset: {} could not be written to", path.string());
 		return false;
 	}
 

@@ -65,7 +65,7 @@ void Engine::ScriptLocation::NavigateToLocation() const
 
 		if (!script.has_value())
 		{
-			LOG_FMT(LogEditor, Message, "Could not navigate to script {}, it no longer exists", mNameOfScript);
+			LOG(LogEditor, Message, "Could not navigate to script {}, it no longer exists", mNameOfScript);
 			return;
 		}
 
@@ -73,7 +73,7 @@ void Engine::ScriptLocation::NavigateToLocation() const
 
 		if (scriptEditor == nullptr)
 		{
-			LOG_FMT(LogEditor, Message, "Could not navigate to script {}, script could not be opened for edit", mNameOfScript);
+			LOG(LogEditor, Message, "Could not navigate to script {}, script could not be opened for edit", mNameOfScript);
 			return;
 		}
 	}

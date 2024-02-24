@@ -129,7 +129,7 @@ bool Engine::BinaryGSONObject::LoadFromBinary(std::istream& istream)
 
 	if (istream.gcount() != static_cast<std::streamsize>(*myNameSize))
 	{
-		LOG_FMT(LogCore, Error, "Invalid GSONObject: expected name of {} length, but found only {} bytes.", *myNameSize, istream.gcount());
+		LOG(LogCore, Error, "Invalid GSONObject: expected name of {} length, but found only {} bytes.", *myNameSize, istream.gcount());
 		return false;
 	}
 
@@ -174,7 +174,7 @@ bool Engine::BinaryGSONObject::LoadFromBinary(std::istream& istream)
 		istream.read(newMember.mName.data(), *memberNameSize);
 		if (istream.gcount() != static_cast<std::streamsize>(*memberNameSize))
 		{
-			LOG_FMT(LogCore, Error, "Invalid GSONObject: expected name of {} length, but found only {} bytes.", *memberNameSize, istream.gcount());
+			LOG(LogCore, Error, "Invalid GSONObject: expected name of {} length, but found only {} bytes.", *memberNameSize, istream.gcount());
 			return false;
 		}
 
@@ -189,7 +189,7 @@ bool Engine::BinaryGSONObject::LoadFromBinary(std::istream& istream)
 		istream.read(newMember.mData.data(), *memberDataSize);
 		if (istream.gcount() != static_cast<std::streamsize>(*memberDataSize))
 		{
-			LOG_FMT(LogCore, Error, "Invalid GSONObject: expected name of {} length, but found only {} bytes.", *memberDataSize, istream.gcount());
+			LOG(LogCore, Error, "Invalid GSONObject: expected name of {} length, but found only {} bytes.", *memberDataSize, istream.gcount());
 			return false;
 		}
 	}

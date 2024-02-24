@@ -52,7 +52,7 @@ Engine::Level::Level(AssetLoadInfo& loadInfo) :
 
 	if (serializedWorld == nullptr)
 	{
-		LOG_FMT(LogAssets, Warning, "Invalid level {}: No components object serialized",
+		LOG(LogAssets, Warning, "Invalid level {}: No components object serialized",
 			GetName());
 		return;
 	}
@@ -70,7 +70,7 @@ Engine::Level::Level(AssetLoadInfo& loadInfo) :
 
 			if (!doesClassStillExist)
 			{
-				LOG_FMT(LogAssets, Warning, "Level {} has components of a type {}, but this class no longer exists",
+				LOG(LogAssets, Warning, "Level {} has components of a type {}, but this class no longer exists",
 					GetName(),
 					className);
 			}
@@ -151,7 +151,7 @@ Engine::Level::Level(AssetLoadInfo& loadInfo) :
 
 			if (parent == nullptr)
 			{
-				LOG_FMT(LogAssets, Error, "While loading {}: An error occured with a prefab. The factory id of the root entity was changed somehow? This should not be possible. The level will not be loaded in correctly. Resolve the errors with the prefab and try again",
+				LOG(LogAssets, Error, "While loading {}: An error occured with a prefab. The factory id of the root entity was changed somehow? This should not be possible. The level will not be loaded in correctly. Resolve the errors with the prefab and try again",
 					GetName());
 				continue;
 			}
@@ -230,7 +230,7 @@ void Engine::Level::OnSave(AssetSaveInfo& saveInfo) const
 {
 	if (mSerializedComponents == nullptr)
 	{
-		LOG_FMT(LogAssets, Error, "Cannot save level {}, mSerializedComponents is nullptr",
+		LOG(LogAssets, Error, "Cannot save level {}, mSerializedComponents is nullptr",
 			GetName());
 		return;
 	}
@@ -389,7 +389,7 @@ Engine::Level::DiffedPrefabFactory Engine::Level::DiffPrefabFactory(const Binary
 	}
 	else
 	{
-		LOG_FMT(LogAssets, Error, "Missing 'Components' object in level {}", GetName());
+		LOG(LogAssets, Error, "Missing 'Components' object in level {}", GetName());
 	}
 
 	std::vector<uint32> indicesOfComponentNames(componentNames.size());
@@ -440,7 +440,7 @@ Engine::Level::DiffedPrefab Engine::Level::DiffPrefab(const BinaryGSONObject& se
 
 	if (prefab == nullptr)
 	{
-		LOG_FMT(LogAssets, Message, "Level {} contains Prefab {}, which no longer exists.",
+		LOG(LogAssets, Message, "Level {} contains Prefab {}, which no longer exists.",
 			GetName(), prefabName);
 
 		for (const BinaryGSONObject& factoryToErase : serializedFactories)

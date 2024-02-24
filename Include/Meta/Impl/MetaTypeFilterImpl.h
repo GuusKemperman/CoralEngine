@@ -48,13 +48,13 @@ void Engine::load(Archive& ar, MetaTypeFilter<Filter>& value)
 
 	if (type == nullptr)
 	{
-		LOG_FMT(LogMeta, Error, "Could not deserialize type, no type exists anymore with type id {}", typeId);
+		LOG(LogMeta, Error, "Could not deserialize type, no type exists anymore with type id {}", typeId);
 		return;
 	}
 
 	if (!MetaTypeFilter<Filter>::IsTypeValid(*type))
 	{
-		LOG_FMT(LogMeta, Error, "Could not deserialize type, type {} no longer matches filter {}", type->GetName(), MakeTypeName<Filter>())
+		LOG(LogMeta, Error, "Could not deserialize type, type {} no longer matches filter {}", type->GetName(), MakeTypeName<Filter>())
 			return;
 	}
 

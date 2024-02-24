@@ -45,18 +45,18 @@ Engine::MetaType& Engine::MetaManager::AddType(MetaType&& type)
 	{
 		if (type.GetName() == existingType->GetName())
 		{
-			LOG_FMT(LogMeta, Warning, "Tried to add {} twice", existingType->GetName());
+			LOG(LogMeta, Warning, "Tried to add {} twice", existingType->GetName());
 		}
 		else
 		{
-			LOG_FMT(LogMeta, Error, "TypeId clash!! Both {} and {} use typeId {}! Rename either one of these to resolve this.", existingType->GetName(), type.GetName(), type.GetTypeId());
+			LOG(LogMeta, Error, "TypeId clash!! Both {} and {} use typeId {}! Rename either one of these to resolve this.", existingType->GetName(), type.GetName(), type.GetTypeId());
 		}
 		return *existingType;
 	}
 
 	if (MetaType* existingType = TryGetType(type.GetName()); existingType != nullptr)
 	{
-		LOG_FMT(LogMeta, Error, "There is already a type with the name {}", type.GetName());
+		LOG(LogMeta, Error, "There is already a type with the name {}", type.GetName());
 		return *existingType;
 	}
 

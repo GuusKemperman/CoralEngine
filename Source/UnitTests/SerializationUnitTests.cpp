@@ -35,7 +35,7 @@ UNIT_TEST(Serialization, AllAssetSerialization)
 
 	if (assetBuffer == nullptr)
 	{
-		LOG_FMT(LogUnitTests, Error, "Failed to run test, requires buffer of size {} and align {}", bufferSize, bufferAlign);
+		LOG(LogUnitTests, Error, "Failed to run test, requires buffer of size {} and align {}", bufferSize, bufferAlign);
 		return UnitTest::Failure;
 	}
 
@@ -58,7 +58,7 @@ UNIT_TEST(Serialization, AllAssetSerialization)
 
 		if (reloadedAssetConstructResult.HasError())
 		{
-			LOG_FMT(LogUnitTests, Error, "Failed to construct asset {} of type {} with a loadInfo object - {}", asset.GetName(), type.GetName(), reloadedAssetConstructResult.Error());
+			LOG(LogUnitTests, Error, "Failed to construct asset {} of type {} with a loadInfo object - {}", asset.GetName(), type.GetName(), reloadedAssetConstructResult.Error());
 			result = UnitTest::Failure;
 			continue;
 		}
@@ -67,7 +67,7 @@ UNIT_TEST(Serialization, AllAssetSerialization)
 
 		if (reloadedAsset == nullptr)
 		{
-			LOG_FMT(LogUnitTests, Error, "Construct asset {} of type {} returned an object that, according to MetaAny, is not an asset.", asset.GetName(), type.GetName());
+			LOG(LogUnitTests, Error, "Construct asset {} of type {} returned an object that, according to MetaAny, is not an asset.", asset.GetName(), type.GetName());
 			result = UnitTest::Failure;
 			continue;
 		}
@@ -79,7 +79,7 @@ UNIT_TEST(Serialization, AllAssetSerialization)
 			continue;
 		}
 
-		LOG_FMT(LogUnitTests, Error, "Asset {} of type {} produced a different save after reloading. Serialization is likely broken", asset.GetName(), type.GetName());
+		LOG(LogUnitTests, Error, "Asset {} of type {} produced a different save after reloading. Serialization is likely broken", asset.GetName(), type.GetName());
 		result = UnitTest::Failure;
 	}
 

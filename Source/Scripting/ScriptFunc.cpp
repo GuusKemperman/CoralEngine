@@ -110,7 +110,7 @@ void Engine::ScriptFunc::DefineMetaFunc(MetaFunc& func)
 
 	if (ourScript == nullptr)
 	{
-		LOG_FMT(LogScripting, Error, "We *should* be able to compile this scriptfunc, except we were somehow not \
+		LOG(LogScripting, Error, "We *should* be able to compile this scriptfunc, except we were somehow not \
 able to receive our script asset {}. Compilation will silently fail.",
 mNameOfScriptAsset);
 		return;
@@ -186,7 +186,7 @@ void Engine::ScriptFunc::CollectErrors(ScriptErrorInserter inserter, const Scrip
 		{
 			if (numberWithThisName == 0)
 			{
-				LOG_FMT(LogScripting, Error, "OwningScript {} was not the script that owns {}, found while collecting errors",
+				LOG(LogScripting, Error, "OwningScript {} was not the script that owns {}, found while collecting errors",
 					owningScript.GetName(),
 					mName);
 			}
@@ -524,7 +524,7 @@ void Engine::ScriptFunc::RemoveNode(NodeId nodeId)
 
 	if (node == nullptr)
 	{
-		// LOG_FMT(LogAssets, Warning, "Node was already removed");
+		// LOG(LogAssets, Warning, "Node was already removed");
 		return;
 	}
 
@@ -545,7 +545,7 @@ void Engine::ScriptFunc::RemoveLink(LinkId linkId)
 
 	if (link == nullptr)
 	{
-		// LOG_FMT(LogAssets, Warning, "Link was already removed");
+		// LOG(LogAssets, Warning, "Link was already removed");
 		return;
 	}
 

@@ -66,4 +66,4 @@ static Engine::UnitTest::Result TestName();																																		\
 Engine::UnitTest::Result TestName()
 #endif
 
-#define TEST_ASSERT(Condition) if (!(Condition)) { LOG_FMT(UnitTests, Error, "{} evaluated to false", #Condition); return UnitTest::Failure; }; 
+#define TEST_ASSERT(Condition) if (!(Condition)) { LOG(UnitTests, Error, "{} evaluated to false", #Condition); return UnitTest::Failure; }; 

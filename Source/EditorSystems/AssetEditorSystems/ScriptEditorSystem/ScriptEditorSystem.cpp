@@ -94,7 +94,7 @@ void Engine::ScriptEditorSystem::Tick(const float deltaTime)
 
 				if (func.TryGetNode(nodeId) == nullptr)
 				{
-					LOG_FMT(LogEditor, Message, "Cannot navigate to node, node no longer exists");
+					LOG(LogEditor, Message, "Cannot navigate to node, node no longer exists");
 				}
 				else
 				{
@@ -110,7 +110,7 @@ void Engine::ScriptEditorSystem::Tick(const float deltaTime)
 
 				if (func.TryGetPin(pinId) == nullptr)
 				{
-					LOG_FMT(LogEditor, Message, "Cannot navigate to node, node no longer exists");
+					LOG(LogEditor, Message, "Cannot navigate to node, node no longer exists");
 				}
 				else
 				{
@@ -126,7 +126,7 @@ void Engine::ScriptEditorSystem::Tick(const float deltaTime)
 
 				if (func.TryGetLink(linkId) == nullptr)
 				{
-					LOG_FMT(LogEditor, Message, "Cannot navigate to link, link no longer exists");
+					LOG(LogEditor, Message, "Cannot navigate to link, link no longer exists");
 				}
 				else
 				{
@@ -290,7 +290,7 @@ void Engine::ScriptEditorSystem::NavigateTo(const ScriptLocation& location)
 {
 	if (location.mNameOfScript != mAsset.GetName())
 	{
-		LOG_FMT(LogEditor, Error, "Cannot navigate to location {}, as this editor is editing a different script ({})",
+		LOG(LogEditor, Error, "Cannot navigate to location {}, as this editor is editing a different script ({})",
 			location.ToString(), mAsset.GetName());
 		return;
 	}
@@ -301,7 +301,7 @@ void Engine::ScriptEditorSystem::NavigateTo(const ScriptLocation& location)
 
 		if (field == nullptr)
 		{
-			LOG_FMT(LogEditor, Message, "Cannot navigate to location {}, field {} no longer exists", location.ToString(), location.mFieldOrFuncName);
+			LOG(LogEditor, Message, "Cannot navigate to location {}, field {} no longer exists", location.ToString(), location.mFieldOrFuncName);
 			return;
 		}
 
@@ -313,7 +313,7 @@ void Engine::ScriptEditorSystem::NavigateTo(const ScriptLocation& location)
 
 		if (func == nullptr)
 		{
-			LOG_FMT(LogEditor, Message, "Cannot navigate to location {}, function {} no longer exists", location.ToString(), location.mFieldOrFuncName);
+			LOG(LogEditor, Message, "Cannot navigate to location {}, function {} no longer exists", location.ToString(), location.mFieldOrFuncName);
 			return;
 		}
 
@@ -442,7 +442,7 @@ void Engine::ScriptEditorSystem::CopySelection()
 
 		if (node == nullptr)
 		{
-			LOG_FMT(LogEditor, Warning, "Could not copy node, node does not exist anymore");
+			LOG(LogEditor, Warning, "Could not copy node, node does not exist anymore");
 			continue;
 		}
 
@@ -502,7 +502,7 @@ void Engine::ScriptEditorSystem::Paste(std::optional<glm::vec2> offsetToOldPos)
 
 	if (clipBoardText.substr(0, sClipboardScriptIdentifier.size()) != sClipboardScriptIdentifier)
 	{
-		LOG_FMT(LogEditor, Message, "The clipboard does not contain nodes");
+		LOG(LogEditor, Message, "The clipboard does not contain nodes");
 		return;
 	}
 
@@ -521,7 +521,7 @@ void Engine::ScriptEditorSystem::Paste(std::optional<glm::vec2> offsetToOldPos)
 		|| serializedNodes == nullptr
 		|| serializedLinks == nullptr)
 	{
-		LOG_FMT(LogEditor, Message, "The clipboard contained invalid date");
+		LOG(LogEditor, Message, "The clipboard contained invalid date");
 		return;
 	}
 
@@ -535,7 +535,7 @@ void Engine::ScriptEditorSystem::Paste(std::optional<glm::vec2> offsetToOldPos)
 
 		if (!optLink.has_value())
 		{
-			LOG_FMT(LogEditor, Message, "The clipboard contained invalid date");
+			LOG(LogEditor, Message, "The clipboard contained invalid date");
 			return;
 		}
 
@@ -548,7 +548,7 @@ void Engine::ScriptEditorSystem::Paste(std::optional<glm::vec2> offsetToOldPos)
 
 		if (nodes.back() == nullptr)
 		{
-			LOG_FMT(LogEditor, Message, "The clipboard contained invalid date");
+			LOG(LogEditor, Message, "The clipboard contained invalid date");
 			return;
 		}
 	}

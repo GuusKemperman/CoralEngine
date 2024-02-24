@@ -20,7 +20,7 @@ Engine::Material::Material(AssetLoadInfo& loadInfo) :
 	{
 	case 0: LoadV0(loadInfo); break;
 	case 1: LoadV1(loadInfo); break;
-	default: LOG_FMT(LogAssets, Error, "Invalid version {} for material {}", loadInfo.GetVersion(), GetName());
+	default: LOG(LogAssets, Error, "Invalid version {} for material {}", loadInfo.GetVersion(), GetName());
 	}
 }
 
@@ -30,7 +30,7 @@ std::shared_ptr<const Engine::Material> Engine::Material::TryGetDefaultMaterial(
 
 	if (defaultMat == nullptr)
 	{
-		LOG_FMT(LogAssets, Message, "The default material is hardcoded to be {}, but there's no material with that name", sDefaultMaterialName.StringView());
+		LOG(LogAssets, Message, "The default material is hardcoded to be {}, but there's no material with that name", sDefaultMaterialName.StringView());
 	}
 
 	return defaultMat;
@@ -137,7 +137,7 @@ void Engine::Material::LoadV0(AssetLoadInfo& loadInfo)
 
 			if (texture == nullptr)
 			{
-				LOG_FMT(LogAssets, Warning, "Material {} uses texture {}, but this texture no longer exists",
+				LOG(LogAssets, Warning, "Material {} uses texture {}, but this texture no longer exists",
 					GetName(),
 					textureName);
 			}
@@ -159,7 +159,7 @@ void Engine::Material::LoadV1(AssetLoadInfo& loadInfo)
 
 	if (!success)
 	{
-		LOG_FMT(LogAssets, Error, "Could not load material {}, GSON parsing failed.", GetName());
+		LOG(LogAssets, Error, "Could not load material {}, GSON parsing failed.", GetName());
 		return;
 	}
 
@@ -191,7 +191,7 @@ void Engine::Material::LoadV1(AssetLoadInfo& loadInfo)
 		|| serializedMetallicRoughnessTexture == nullptr
 		|| serializedEmissiveTexture == nullptr)
 	{
-		LOG_FMT(LogAssets, Error, "Could not load material {}, as there were missing values.", GetName());
+		LOG(LogAssets, Error, "Could not load material {}, as there were missing values.", GetName());
 		return;
 	}
 

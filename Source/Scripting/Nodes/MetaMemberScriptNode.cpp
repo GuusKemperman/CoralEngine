@@ -15,14 +15,14 @@ Engine::NodeInvolvingMetaMember::NodeInvolvingMetaMember(const ScriptNodeType ty
 {
 	if (type == ScriptNodeType::Setter)
 	{
-		ASSERT_LOG_FMT(CanBeSetThroughScripts(field),
+		ASSERT_LOG(CanBeSetThroughScripts(field),
 			"{}::{} cannot be set through scripts; Check using CanBeSetThroughScripts first",
 			field.GetOuterType().GetName(),
 			field.GetName());
 	}
 	else
 	{
-		ASSERT_LOG_FMT(CanBeGetThroughScripts(field),
+		ASSERT_LOG(CanBeGetThroughScripts(field),
 			"{}::{} cannot be gotten through scripts; Check using CanBeSetThroughScripts first",
 			field.GetOuterType().GetName(),
 			field.GetName());

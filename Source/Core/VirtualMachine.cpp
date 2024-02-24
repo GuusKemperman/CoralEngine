@@ -101,7 +101,7 @@ Engine::FuncResult Engine::VirtualMachine::ExecuteScriptFunction(MetaFunc::Dynam
 	const ScriptNode& firstNode,
 	const FunctionEntryScriptNode* entryNode)
 {
-	// LOG_FMT(LogScripting, Verbose, "Calling {}::{}", func.GetNameOfScriptAsset(), func.GetName());
+	// LOG(LogScripting, Verbose, "Calling {}::{}", func.GetNameOfScriptAsset(), func.GetName());
 	VMContext context{ func };
 
 	if (context.mCachedValues == nullptr)
@@ -319,7 +319,7 @@ void Engine::VirtualMachine::DestroyAllTypesCreatedThroughScripts()
 	{
 		if (WasTypeCreatedByScript(type))
 		{
-			LOG_FMT(LogScripting, Verbose, "Type {} will be destroyed", type.GetName());
+			LOG(LogScripting, Verbose, "Type {} will be destroyed", type.GetName());
 			UnreflectComponentType(type);
 			typesToRemove.push_back(type.GetTypeId());
 		}

@@ -29,7 +29,7 @@ MetaType Reflector<T>::Reflect()
 	typestring.AddFunc([](const T& str) { return static_cast<uint32>(std::stoul(str)); }, "ToUInt32", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	typestring.AddFunc([](const T& str) { return std::stof(str); }, "ToFloat32", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	typestring.AddFunc([]([[maybe_unused]] const T& str) {
-		LOG_FMT(LogScripting, Message, "{}", str);
+		LOG(LogScripting, Message, "{}", str);
 		}, "Print", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectFieldType<T>(typestring);

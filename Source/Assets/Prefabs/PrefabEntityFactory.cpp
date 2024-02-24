@@ -33,7 +33,7 @@ Engine::PrefabEntityFactory::PrefabEntityFactory(Prefab& prefab, const BinaryGSO
 		}
 		else
 		{
-			LOG_FMT(Assets, Warning,
+			LOG(Assets, Warning,
 				"While compiling prefab {}: Could not load component {}, as there is no class with this name anymore",
 				prefab.GetName(), serializedComponentClass.GetName());
 		}

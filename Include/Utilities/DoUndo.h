@@ -40,7 +40,7 @@ namespace Engine
 
 				DoTopActionAgain();
 
-				LOG_FMT(LogEditor, Verbose, "Added {} to DoUndoStack", typeid(ActionType).name());
+				LOG(LogEditor, Verbose, "Added {} to DoUndoStack", typeid(ActionType).name());
 
 				return returnValue;
 			}
@@ -65,7 +65,7 @@ namespace Engine
 
 				if (mostRecent != nullptr)
 				{
-					LOG_FMT(LogEditor, Verbose, "Undoing action");
+					LOG(LogEditor, Verbose, "Undoing action");
 					mNumOfActionsDone--;
 					mostRecent->Undo();
 				}
@@ -75,7 +75,7 @@ namespace Engine
 			{
 				if (CanRedo())
 				{
-					LOG_FMT(LogEditor, Verbose, "Redoing action");
+					LOG(LogEditor, Verbose, "Redoing action");
 					mNumOfActionsDone++;
 					DoTopActionAgain();
 				}

@@ -66,7 +66,7 @@ Engine::FuncResult Engine::MetaFunc::InvokeChecked(Span<MetaAny> args, Span<cons
 Engine::FuncResult Engine::MetaFunc::InvokeUnchecked(Span<MetaAny> args,
 	[[maybe_unused]] Span<const TypeForm> formOfArgs, RVOBuffer rvoBuffer) const
 {
-	ASSERT_LOG_FMT(!CanArgBePassedIntoParam(args, formOfArgs, mParams).has_value(), "Invalid arguments passed to function - {} - Use invoke checked if you are not sure your arguments are valid",
+	ASSERT_LOG(!CanArgBePassedIntoParam(args, formOfArgs, mParams).has_value(), "Invalid arguments passed to function - {} - Use invoke checked if you are not sure your arguments are valid",
 		*CanArgBePassedIntoParam(args, formOfArgs, mParams));
 
 	if (!mFuncToInvoke)
@@ -84,7 +84,7 @@ std::optional<std::string> Engine::MetaFunc::CanArgBePassedIntoParam(Span<const 
 {
 	if (args.size() != formOfArgs.size())
 	{
-		LOG_FMT(LogMeta, Error, "Num of args ({}) did not match num of forms provided ({})", args.size(), formOfArgs.size());
+		LOG(LogMeta, Error, "Num of args ({}) did not match num of forms provided ({})", args.size(), formOfArgs.size());
 		return Format("Num of args ({}) did not match num of forms provided ({})", args.size(), formOfArgs.size());
 	}
 

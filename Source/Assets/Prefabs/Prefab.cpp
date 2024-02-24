@@ -85,7 +85,7 @@ void Engine::Prefab::LoadFromGSON(BinaryGSONObject& object)
 
 		if (serializedFactories == nullptr)
 		{
-			LOG_FMT(Assets, Error, "Invalid prefab {}: Prefab is empty", GetName());
+			LOG(Assets, Error, "Invalid prefab {}: Prefab is empty", GetName());
 			return;
 		}
 
@@ -97,7 +97,7 @@ void Engine::Prefab::LoadFromGSON(BinaryGSONObject& object)
 		if (data.mIndexOfParentFactory != std::numeric_limits<uint32>::max()
 			&& data.mIndexOfParentFactory >= factoriesData.size())
 		{
-			LOG_FMT(Assets, Error, "Invalid prefab {}: Index of parent factory is out of bounds", GetName());
+			LOG(Assets, Error, "Invalid prefab {}: Index of parent factory is out of bounds", GetName());
 			return;
 		}
 	}
@@ -107,7 +107,7 @@ void Engine::Prefab::LoadFromGSON(BinaryGSONObject& object)
 
 		if (serializedSeed == nullptr)
 		{
-			LOG_FMT(Assets, Error, "Invalid prefab {}: Prefab is empty", GetName());
+			LOG(Assets, Error, "Invalid prefab {}: Prefab is empty", GetName());
 			return;
 		}
 
@@ -152,7 +152,7 @@ Engine::BinaryGSONObject Engine::Prefab::SaveToGSONObject(const std::string& pre
 
 	if (!reg.Valid(rootEntity))
 	{
-		LOG_FMT(LogAssets, Error, "Cannot create prefab from entity {}, this entity does not exists", static_cast<EntityType>(rootEntity));
+		LOG(LogAssets, Error, "Cannot create prefab from entity {}, this entity does not exists", static_cast<EntityType>(rootEntity));
 		return {};
 	}
 

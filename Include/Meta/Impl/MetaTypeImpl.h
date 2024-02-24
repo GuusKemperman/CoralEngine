@@ -86,7 +86,7 @@ Engine::MetaField& Engine::MetaType::AddField([[maybe_unused]] Args&& ... args)
 		{
 			return field.GetName() == returnValue.GetName();
 		});
-	ASSERT_LOG_FMT(it == mFields.end() - 1, "{}::{} has already been added", GetName(), returnValue.GetName());
+	ASSERT_LOG(it == mFields.end() - 1, "{}::{} has already been added", GetName(), returnValue.GetName());
 #endif // ASSERTS_ENABLED
 
 	return returnValue;

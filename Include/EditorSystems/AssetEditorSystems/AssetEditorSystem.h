@@ -226,7 +226,7 @@ namespace Engine
 	{
 		if (mPathToSaveAssetTo.empty())
 		{
-			LOG_FMT(LogEditor, Warning, "Could not save asset {} - The file location was empty. This is caused by there not being an original asset, and mPathToSaveAssetTo was never updated.",
+			LOG(LogEditor, Warning, "Could not save asset {} - The file location was empty. This is caused by there not being an original asset, and mPathToSaveAssetTo was never updated.",
 				mAsset.GetName());
 			return;
 		}
@@ -279,7 +279,7 @@ namespace Engine
 
 			if (!fileStream.is_open())
 			{
-				LOG_FMT(LogEditor, Warning, "Could not open file {}", mPathToSaveAssetTo.string());
+				LOG(LogEditor, Warning, "Could not open file {}", mPathToSaveAssetTo.string());
 				return false;
 			}
 
@@ -297,7 +297,7 @@ namespace Engine
 
 		if (!loadInfo.has_value())
 		{
-			LOG_FMT(LogEditor, Error, "Could not load asset from file {}", mPathToSaveAssetTo.string());
+			LOG(LogEditor, Error, "Could not load asset from file {}", mPathToSaveAssetTo.string());
 			return false;
 		}
 
@@ -374,7 +374,7 @@ namespace Engine
 
 		if (top == nullptr)
 		{
-			LOG_FMT(LogEditor, Verbose, "No top action for {}, saving current state to memory", GetName());
+			LOG(LogEditor, Verbose, "No top action for {}, saving current state to memory", GetName());
 			mMementoStack.Do(std::move(currentStateAsString), GetName());
 			return;
 		}
@@ -388,7 +388,7 @@ namespace Engine
 
 		if (top->mState != currentStateAsString)
 		{
-			LOG_FMT(LogEditor, Verbose, "Change detected for {}", GetName());
+			LOG(LogEditor, Verbose, "Change detected for {}", GetName());
 			mMementoStack.Do(std::move(currentStateAsString), GetName());
 		}
 	}
@@ -413,7 +413,7 @@ namespace Engine
 
 		if (!loadInfo.has_value())
 		{
-			LOG_FMT(LogEditor, Error, "Failed to load metadata, metadata was invalid somehow?");
+			LOG(LogEditor, Error, "Failed to load metadata, metadata was invalid somehow?");
 			return {};
 		}
 

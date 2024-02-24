@@ -15,7 +15,7 @@ Engine::MetaFuncScriptNode::MetaFuncScriptNode(ScriptFunc& scriptFunc,
 	mNameOrType(std::holds_alternative<std::string>(func.GetNameOrType())
 		? decltype(mNameOrType){std::get<std::string>(func.GetNameOrType())} : std::get<OperatorType>(func.GetNameOrType()))
 {
-	ASSERT_LOG_FMT(CanFunctionBeTurnedIntoNode(func),
+	ASSERT_LOG(CanFunctionBeTurnedIntoNode(func),
 		"{} cannot be turned into a node; Check using CanFunctionBeTurnedIntoNode first",
 		func.GetDesignerFriendlyName());
 

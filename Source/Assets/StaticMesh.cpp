@@ -97,7 +97,7 @@ Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
 
     if (!mMeshHandle.is_valid())
     {
-        LOG_FMT(LogAssets, Error, "Loading of {} failed: Invalid mesh", GetName());
+        LOG(LogAssets, Error, "Loading of {} failed: Invalid mesh", GetName());
     }
 }
 
@@ -126,28 +126,28 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
 
     if (numOfIndices % 3 != 0)
     {
-        LOG_FMT(LogAssets, Error, "Importing static mesh failed: {} indices provided, but this is not divisible by 3", numOfIndices);
+        LOG(LogAssets, Error, "Importing static mesh failed: {} indices provided, but this is not divisible by 3", numOfIndices);
         return false;   
     }
     
     if (normals.has_value()
         && positions.size() != normals->size())
     {
-        LOG_FMT(LogAssets, Error, "Importing static mesh failed: expected {} normals, but received {}", positions.size(), normals->size());
+        LOG(LogAssets, Error, "Importing static mesh failed: expected {} normals, but received {}", positions.size(), normals->size());
         return false;
     }
 
     if (uvs.has_value()
         && positions.size() != uvs->size())
     {
-        LOG_FMT(LogAssets, Error, "Importing static mesh failed: expected {} textureCoordinates, but received {}", positions.size(), uvs->size());
+        LOG(LogAssets, Error, "Importing static mesh failed: expected {} textureCoordinates, but received {}", positions.size(), uvs->size());
         return false;
     }
 
     if (colors.has_value()
         && positions.size() != colors->size())
     {
-        LOG_FMT(LogAssets, Error, "Importing static mesh failed: expected {} vertex colors, but received {}", positions.size(), colors->size());
+        LOG(LogAssets, Error, "Importing static mesh failed: expected {} vertex colors, but received {}", positions.size(), colors->size());
         return false;
     }
 

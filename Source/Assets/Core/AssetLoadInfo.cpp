@@ -25,13 +25,13 @@ Engine::AssetLoadInfo::AssetLoadInfo(const std::filesystem::path& fromFile) :
 {
 	if (!static_cast<const std::ifstream*>(mStream.get())->is_open())
 	{
-		LOG_FMT(LogAssets, Message, "Failed to produce valid AssetLoadInfo: the file {} could not be opened", fromFile.string());
+		LOG(LogAssets, Message, "Failed to produce valid AssetLoadInfo: the file {} could not be opened", fromFile.string());
 		return;
 	}
 
 	if (!ConstructFromCurrentStream())
 	{
-		LOG_FMT(LogAssets, Message, "Failed to produce valid AssetLoadInfo: the file {} did not contain valid metadata", fromFile.string());
+		LOG(LogAssets, Message, "Failed to produce valid AssetLoadInfo: the file {} did not contain valid metadata", fromFile.string());
 	}
 }
 
@@ -58,7 +58,7 @@ Engine::AssetLoadInfo::AssetLoadInfo(const MetaType& assetClass, const std::stri
 {	
 	if (!assetClass.IsDerivedFrom<Asset>())
 	{
-		LOG_FMT(LogAssets, Error, "AssetLoadInfo was constructed with object class {}, but this class does not derive from Asset",
+		LOG(LogAssets, Error, "AssetLoadInfo was constructed with object class {}, but this class does not derive from Asset",
 			assetClass.GetName());
 	}
 }
