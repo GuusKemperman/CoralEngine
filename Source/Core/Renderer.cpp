@@ -77,6 +77,8 @@ Engine::Renderer::Renderer()
 	mWindow = glfwCreateWindow(width, height, windowTitle.c_str(), 0, 0);
 	ASSERT(mWindow != nullptr);
 
+	mIsWindowOpen = true;
+
 	glfwMakeContextCurrent(mWindow);
 	succes = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 	ASSERT(succes);
