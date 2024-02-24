@@ -4,6 +4,7 @@
 #include <forward_list>
 
 #include "Meta/MetaProps.h"
+#include "Utilities/MemFunctions.h"
 
 Engine::MetaType::MetaType(const TypeInfo typeInfo,
 	const std::string_view name) :
