@@ -31,13 +31,21 @@ namespace Engine
 #include "Span.h"
 #include "SourceLocation.h"
 
+#ifdef _MSC_VER 
+
 #pragma warning(push)
 #pragma warning(disable : 4702) // Unreachable code
+
+#endif // _MSC_VER
 
 #define FMT_HEADER_ONLY
 #include "fmt/format.h"
 
+#ifdef _MSC_VER
+
 #pragma warning(pop)
+
+#endif // _MSC_VER
 
 #define CONSTEVAL constexpr
 #define UNLIKELY

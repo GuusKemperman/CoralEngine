@@ -217,8 +217,9 @@
       <CppExceptions>true</CppExceptions>
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
-      <Warnings>WarningsOff</Warnings>
+      <Warnings>MoreWarnings</Warnings>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <WarningsAsErrors>true</WarningsAsErrors>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -288,7 +289,8 @@
       <CppExceptions>true</CppExceptions>
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
-      <Warnings>WarningsOff</Warnings>
+      <Warnings>MoreWarnings</Warnings>
+      <WarningsAsErrors>true</WarningsAsErrors>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -366,7 +368,8 @@
       <CppExceptions>true</CppExceptions>
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
-      <Warnings>WarningsOff</Warnings>
+      <Warnings>MoreWarnings</Warnings>
+      <WarningsAsErrors>true</WarningsAsErrors>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -444,7 +447,8 @@
       <CppExceptions>true</CppExceptions>
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
-      <Warnings>WarningsOff</Warnings>
+      <Warnings>MoreWarnings</Warnings>
+      <WarningsAsErrors>true</WarningsAsErrors>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

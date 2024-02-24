@@ -123,6 +123,9 @@ void Engine::Material::LoadV0(AssetLoadInfo& loadInfo)
 
 	const auto getTex = [&str, this](const uint16 length) -> std::shared_ptr<const Texture>
 		{
+			// 'this' is unused if logging is disabled.
+			(void)(this);
+
 			if (length == 0)
 			{
 				return nullptr;

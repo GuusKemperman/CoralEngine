@@ -4,7 +4,6 @@
 static_assert(false, "EngineDebug or EngineRelease configuration is not supported for ***REMOVED***");
 #endif
 
-#include <iostream>
 #include <sstream>
 #include <vector>
 #include <assert.h>
@@ -15,9 +14,24 @@ static_assert(false, "EngineDebug or EngineRelease configuration is not supporte
 #include <fstream>
 #include <functional>
 #include <variant>
-#include <numeric>
 
-#include "entt/entt.hpp"
+#ifdef __clang__
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
+#endif
+
+#include "entt/entity/component.hpp"
+#include "entt/entity/entity.hpp"
+#include "entt/entity/registry.hpp"
+#include "entt/entity/sparse_set.hpp"
+#include "entt/entity/storage.hpp"
+#include "entt/entity/view.hpp"
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif // __clang__
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -74,17 +88,10 @@ namespace Engine
 #include "imgui/imgui_stdlib.h"
 #endif // EDITOR
 
-template<typename T, typename = void>
-constexpr bool IsFullyDefined = false;
-
-template<typename T>
-constexpr bool IsFullyDefined<T, decltype(typeid(T), void())> = true;
-
 template<bool flag = false> void static_no_match() { static_assert(flag, "No match, see surrounding code for the possible cause."); }
 
 template <class> constexpr bool AlwaysFalse = false;
 
-#include "Utilities/Math.h"
 #include "Core/CommonMetaProperties.h"
 
 #include "Utilities/EnumString.h"
