@@ -70,7 +70,7 @@ void NavigationSystem::Update(World& world, float dt)
 			//}
 
 			//// Deduct the fixed time step from the accumulator
-			//FixedTimeAccumulator -= FixedDt;
+			FixedTimeAccumulator -= FixedDt;
 		}
 	}
 }

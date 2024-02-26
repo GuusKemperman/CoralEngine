@@ -73,5 +73,13 @@ namespace Engine
 		 */
 		[[nodiscard]] std::vector<glm::vec2> FunnelAlgorithm(const std::vector<geometry2d::Polygon>& triangles,
 		                                                     const glm::vec2& start, const glm::vec2& goal) const;
+		void UpdateNavMesh();;
+
+		friend ReflectAccess;
+		static MetaType Reflect();
+		REFLECT_AT_START_UP(NavMeshComponent);
+
+		float m_SizeX = 10;
+		float m_SizeY = 10;
 	};
 }
