@@ -3,6 +3,7 @@
 
 #include <chrono>
 
+#include "../../../../../Program Files (x86)/SCE/***REMOVED*** SDKs/8.000/target/include/stdlib.h"
 #include "Core/FileIO.h"
 #include "Core/Renderer.h"
 #include "Core/AssetManager.h"
@@ -104,9 +105,19 @@ void Engine::EngineClass::Run()
 	}
 }
 
-int main(int argc, char* args[])
+int main(int argc, char* argv[])
 {
-	Engine::EngineClass engine{ argc, args };
+	Engine::EngineClass engine{ argc, argv };
+
+	if (argc >= 2
+		&& strcmp(argv[1], "unit_tests") == 0)
+	{
+#ifdef EDITOR
+		Engine::UnitTestManager::Get().RunTests(Engine::UnitTest::Result::All);
+#endif // EDITOR
+		return Engine::Logger::Get().GetNumOfEntriesPerSeverity()[LogSeverity::Error];
+	}
+
 	engine.Run();
 	return 0;
 }
