@@ -28,7 +28,7 @@ void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 	const float rotationInput = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowLeft, Input::KeyboardKey::ArrowRight) + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickRightX);
 	const float timeScaledRotation = rotationInput * dt;
 
-	const glm::vec2 cursorDistanceScreenCenter = world.GetRenderer().GetViewportSize() * 0.5f - Input::Get().GetMousePosition();
+	const glm::vec2 cursorDistanceScreenCenter = (Input::Get().GetMousePosition() - world.GetRenderer().GetViewportSize() * 0.5f) / world.GetRenderer().GetViewportSize();
 
 	const bool emptyRotation = timeScaledRotation == 0;
 	const bool emptyZoom = timeScaledZoomDelta == 0;
@@ -58,7 +58,38 @@ void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 		}
 
 		topdown.ApplyTranslation(transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
-		topdown.UpdateRotation(transform, target->GetWorldPosition());
+		topdown.UpdateRotation(transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
+	}
+}
+
+void Engine::UpdateTopDownCamSystem::Render(const World& world)
+{
+	auto& registry = world.GetRegistry();
+
+	const auto view = registry.View<TopDownCamControllerComponent, TransformComponent>();
+
+	// Check to see if the view is empty
+	if (view.begin() == view.end())
+	{
+		return;
+	}
+
+	for (auto [entity, topdown, transform] : view.each())
+	{
+		if (!registry.Valid(topdown.mTarget) )
+		{
+			continue;
+		}
+
+		auto target = registry.TryGet<TransformComponent>(topdown.mTarget);
+
+		if (target == nullptr)
+		{
+			continue;
+		}
+
+		world.GetRenderer().AddBox(DebugCategory::Gameplay, topdown.mTargetLocation, glm::vec3(0.1f), glm::vec4(1.0f));
+		world.GetRenderer().AddLine(DebugCategory::Gameplay, target->GetWorldPosition(), topdown.mTargetLocation, glm::vec4(1.0f));
 	}
 }
 
