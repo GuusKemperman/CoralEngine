@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-and-test:
     runs-on: windows-latest
     strategy:
       fail-fast: false # We want to run all configurations to see if the problem is for all of them or not

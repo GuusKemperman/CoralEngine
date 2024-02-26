@@ -3,7 +3,6 @@
 
 #include <chrono>
 
-#include "../../../../../Program Files (x86)/SCE/***REMOVED*** SDKs/8.000/target/include/stdlib.h"
 #include "Core/FileIO.h"
 #include "Core/Renderer.h"
 #include "Core/AssetManager.h"
