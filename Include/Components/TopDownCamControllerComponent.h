@@ -20,7 +20,7 @@ namespace Engine
 		float mOffset = 5.0f;
 		float mMinOffset = 1.0f;
 		float mMaxOffset = 30.0f;
-		float mAngle = 90.0f;
+		float mAngle = 270.0f;
 		float mCursorOffsetFactor = 5.0f;
 
 		float mZoomSensitivity = 3.0f;

@@ -33,9 +33,9 @@ void Engine::TopDownCamControllerComponent::UpdateRotation(TransformComponent& t
 	mTargetLocation[Axis::Right] += CDRotated.x * mCursorOffsetFactor;
 	mTargetLocation[Axis::Forward] += CDRotated.y * mCursorOffsetFactor;
 
-	const glm::vec3 direction = glm::normalize(transform.GetWorldPosition() - mTargetLocation);
+	const glm::vec3 direction = glm::normalize(mTargetLocation - transform.GetWorldPosition());
 
-	transform.SetWorldOrientation(glm::quatLookAtRH(direction, sUp));
+	transform.SetWorldOrientation(glm::quatLookAtLH(direction, sUp));
 }
 
 void Engine::TopDownCamControllerComponent::AdjustZoom(const float scrollDelta)
