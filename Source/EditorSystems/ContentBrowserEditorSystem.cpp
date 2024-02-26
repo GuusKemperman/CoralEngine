@@ -34,7 +34,7 @@ void Engine::ContentBrowserEditorSystem::Tick(const float)
     {
         folders = MakeFolderGraph(AssetManager::Get().GetAllAssets());
         AssetCreator creator{};
-        creator.mFileLocation = folders.empty() ? "" : folders[0].mPath.string();
+        creator.mFolderRelativeToRoot = folders.empty() ? "" : folders[0].mPath.string();
         mAssetCreator = creator;
     }
 
@@ -241,7 +241,7 @@ void Engine::ContentBrowserEditorSystem::DisplayAssetCreator(const std::vector<C
         }
 
         ShowInspectUI("Name", mAssetCreator->mAssetName);
-        ShowInspectUI("File location", mAssetCreator->mFileLocation);
+        ShowInspectUI("File location", mAssetCreator->mFolderRelativeToRoot);
 
         ImGui::PushStyleColor(ImGuiCol_Text, { 1.0f, 0.0f, 0.0f, 1.0f });
 
@@ -267,7 +267,7 @@ void Engine::ContentBrowserEditorSystem::DisplayAssetCreator(const std::vector<C
             canCreate = false;
         }
 
-        std::filesystem::path outputRootFolder = mAssetCreator->mFileLocation;
+        std::filesystem::path outputRootFolder = mAssetCreator->mFolderRelativeToRoot;
 
         while (outputRootFolder.has_parent_path())
         {
@@ -284,7 +284,7 @@ void Engine::ContentBrowserEditorSystem::DisplayAssetCreator(const std::vector<C
             canCreate = false;
         }
 
-        const std::filesystem::path actualOutputFile = (std::filesystem::path{ mAssetCreator->mFileLocation }
+        const std::filesystem::path actualOutputFile = (std::filesystem::path{ mAssetCreator->mFolderRelativeToRoot }
         / mAssetCreator->mAssetName).replace_extension(AssetManager::sAssetExtension);
 
         if (exists(actualOutputFile))
@@ -299,25 +299,8 @@ void Engine::ContentBrowserEditorSystem::DisplayAssetCreator(const std::vector<C
 
         if (ImGui::Button(Format("Save to {}", actualOutputFile.string()).c_str()))
         {
-	        const AssetSaveInfo saveInfo{ mAssetCreator->mAssetName, *assetClass };
-            const bool success = saveInfo.SaveToFile(actualOutputFile);
-
-            if (success)
-            {
-                std::optional<WeakAsset<Asset>> newAsset = AssetManager::Get().AddAsset(actualOutputFile);
-
-                if (newAsset.has_value())
-                {
-                    Editor::Get().TryOpenAssetForEdit(*newAsset);
-                }
-
-                isOpen = false;
-            }
-            else
-            {
-                LOG(LogEditor, Error, "Failed to create new asset {}, the file {} could not be saved to",
-                    mAssetCreator->mAssetName, actualOutputFile.string());
-            }
+            CreateNewAsset(*mAssetCreator, actualOutputFile);
+            isOpen = false;
         }
 
         ImGui::EndDisabled();
@@ -329,6 +312,45 @@ void Engine::ContentBrowserEditorSystem::DisplayAssetCreator(const std::vector<C
     {
         mAssetCreator.reset();
     }
+}
+
+void Engine::ContentBrowserEditorSystem::CreateNewAsset(const AssetCreator& assetCreator, const std::filesystem::path& toFile)
+{
+    const std::string_view assetName = assetCreator.mAssetName;
+    FuncResult constructResult = assetCreator.mClass->Construct(assetName);
+
+    if (constructResult.HasError())
+    {
+        LOG(LogEditor, Error, "Failed to create new asset of type {} - {}", assetCreator.mClass->GetName(), constructResult.Error());
+        return;
+    }
+
+    const Asset* const asset = constructResult.GetReturnValue().As<Asset>();
+
+    if (asset == nullptr)
+    {
+        LOG(LogEditor, Error, "Failed to create new asset of type {} - Construct result was not an asset", assetCreator.mClass->GetName());
+        return;
+    }
+
+    const AssetSaveInfo saveInfo = asset->Save();
+	const bool success = saveInfo.SaveToFile(toFile);
+
+    if (!success)
+    {
+        LOG(LogEditor, Error, "Failed to create new asset, the file {} could not be saved to", toFile.string());
+        return;
+    }
+
+    std::optional<WeakAsset<Asset>> newAsset = AssetManager::Get().AddAsset(toFile);
+
+    if (!newAsset.has_value())
+    {
+        LOG(LogEditor, Error, "Failed to add new asset to asset manager");
+        return;
+    }
+
+	Editor::Get().TryOpenAssetForEdit(*newAsset);
 }
 
 Engine::MetaType Engine::ContentBrowserEditorSystem::Reflect()
