@@ -18,52 +18,6 @@ struct DXDescHeap;
 
 namespace Engine
 {
-    namespace InfoStruct {
-        struct DXMatrixInfo {
-            glm::mat4x4 vm;
-            glm::mat4x4 pm;
-            glm::mat4x4 ivm;
-            glm::mat4x4 ipm;
-        };
-
-        struct DXDirLightInfo {
-            glm::vec4 dir = { 0.f, 0.0f, 0.0f, 0.f };
-            glm::vec4 colorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
-        };
-
-        struct DXPointLightInfo {
-            glm::vec4 position = { 0.f, 0.0f, 0.0f, 0.f };
-            glm::vec4 colorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
-            float radius = 0.f;
-            float padding[3];
-        };
-
-        struct DXLightInfo {
-            DXPointLightInfo pointLights[MAX_LIGHTS];
-            DXDirLightInfo dirLights[MAX_LIGHTS];
-        };
-
-        struct DXMaterialInfo
-        {
-            bool useColorTex;
-            bool useEmissiveTex;
-            bool useMetallicRoughnessTex;
-            bool useNormalTex;
-            bool useOcclusionTex;
-            bool padding1;
-            bool padding2;
-            bool padding3;
-
-            glm::vec4 colorFactor;
-            glm::vec4 emissiveFactor;
-            float metallicFactor;
-            float roughnessFactor;
-            float normalScale;
-            float padding4;
-        };
-
-    }
-
     class Device final : 
         public EngineSubsystem<Device>
     {

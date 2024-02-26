@@ -1,0 +1,67 @@
+#pragma once
+#include <optional>
+#include <variant>
+
+#include "Assets/Asset.h"
+#include "Utilities/CPP20/STDAliases.h"
+
+#include "DX12Classes/DXDefines.h"
+
+class DXResource;
+
+namespace Engine
+{
+    class Material;
+
+    class StaticMesh final :
+        public Asset
+    {
+    public:
+        StaticMesh(std::string_view name);
+        StaticMesh(AssetLoadInfo& loadInfo);
+        ~StaticMesh() override;
+
+        StaticMesh(StaticMesh&& other) noexcept;
+        StaticMesh(const StaticMesh&) = delete;
+
+        void DrawMesh();
+
+        StaticMesh& operator=(StaticMesh&&) = delete;
+        StaticMesh& operator=(const StaticMesh&) = delete;
+
+    private:
+        friend class StaticMeshImporter;
+
+        // Returns true on success
+        static bool OnSave(AssetSaveInfo& saveInfo,
+            Span<const glm::vec3> positions,
+            std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices,
+            std::optional<Span<const glm::vec3>> normals,
+            std::optional<Span<const glm::vec2>> textureCoordinates,
+            std::optional<Span<const glm::vec3>> colors);
+
+        friend ReflectAccess;
+        static MetaType Reflect();
+        REFLECT_AT_START_UP(StaticMesh);
+
+    private:
+        bool LoadMesh(const char* indices, unsigned int indexCount, unsigned int size_of_index_type, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount);
+
+        std::unique_ptr<DXResource> mVertexBuffer;
+        std::unique_ptr<DXResource> mNormalBuffer;
+        std::unique_ptr<DXResource> mTangentBuffer;
+        std::unique_ptr<DXResource> mTexCoordBuffer;
+        std::unique_ptr<DXResource> mIndexBuffer;
+
+        D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
+        D3D12_VERTEX_BUFFER_VIEW mNormalBufferView;
+        D3D12_VERTEX_BUFFER_VIEW mTexCoordBufferView;
+        D3D12_VERTEX_BUFFER_VIEW mTangentBufferView;
+        D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
+
+        int mIndexCount = 0;
+        int mVertexCount = 0;
+        DXGI_FORMAT mIndexFormat;
+
+    };
+}  // namespace Engine

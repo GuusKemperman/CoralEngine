@@ -1,6 +1,5 @@
 #pragma once
 #include "Assets/Asset.h"
-
 #include "xsr.hpp"
 
 namespace Engine

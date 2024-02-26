@@ -1,16 +1,20 @@
 #include "Precomp.h"
-#include "Core/Device.h"
 #include "Platform/PC/Rendering/RendererPC.h"
+#include "Core/Device.h"
 
-
-#include "Platform/PC/Rendering/DXResource.h"
-#include "Platform/PC/Rendering/DXSignature.h"
-#include "Platform/PC/Rendering/DXConstBuffer.h"
-#include "Platform/PC/Rendering/DXPipeline.h"
-#include "Platform/PC/Rendering/DXDescHeap.h"
+#include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
+#include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
+#include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
+#include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
+#include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
+
+//#include "Components/StaticMeshComponent.h"
+//#include "Components/TransformComponent.h"
+//#include "World/World.h"
+//#include "World/Registry.h"
 
 Engine::Renderer::Renderer()
 {

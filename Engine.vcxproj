@@ -230,6 +230,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Platform\PC\Rendering\DXMesh.cpp" />
     <ClCompile Include="External\imgui\imgui_impl_dx12.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\RendererPC.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\DXSignature.cpp" />
@@ -682,6 +683,7 @@
     <ClCompile Include="Source\World\WorldRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Platform\PC\Rendering\DXMesh.h" />
     <ClInclude Include="External\imgui\imgui_impl_dx12.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\DXDefines.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\DXSignature.h" />

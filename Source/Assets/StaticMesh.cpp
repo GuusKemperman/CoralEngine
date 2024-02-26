@@ -8,6 +8,7 @@
 #include "Meta/MetaManager.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
+#include "MeshPC.h"
 
 enum StaticMeshFlags : uint8
 {
