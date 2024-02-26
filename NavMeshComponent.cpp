@@ -561,59 +561,23 @@ void NavMeshComponent::DebugDrawNavMesh(const World& world) const
 
 		auto cleanedPolygonList = navMesh.GetCleanedPolygonList();
 
+		std::vector<glm::vec3> size = {
+			{m_SizeX / 2, -m_SizeY / 2, 0}, {m_SizeX / 2, m_SizeY / 2, 0}, {-m_SizeX / 2, m_SizeY / 2, 0},
+			{-m_SizeX / 2, -m_SizeY / 2, 0}
+		};
+
 		if (transformView == nullptr)
 		{
-			world.GetRenderer().AddLine(DebugCategory::AINavigation, {m_SizeX / 2, -m_SizeY / 2},
-			                            {m_SizeX / 2, m_SizeY / 2},
-			                            {1.f, 0.f, 0.f, 1.f});
-			world.GetRenderer().AddLine(DebugCategory::AINavigation, {m_SizeX / 2, m_SizeY / 2},
-			                            {-m_SizeX / 2, m_SizeY / 2},
-			                            {1.f, 0.f, 0.f, 1.f});
-			world.GetRenderer().AddLine(DebugCategory::AINavigation, {-m_SizeX / 2, m_SizeY / 2},
-			                            {-m_SizeX / 2, -m_SizeY / 2},
-			                            {1.f, 0.f, 0.f, 1.f});
-			world.GetRenderer().AddLine(DebugCategory::AINavigation, {-m_SizeX / 2, -m_SizeY / 2},
-			                            {m_SizeX / 2, -m_SizeY / 2},
-			                            {1.f, 0.f, 0.f, 1.f});
+			world.GetRenderer().AddPolygon(DebugCategory::AINavigation, size, {1.f, 0.f, 0.f, 1.f});
 		}
 		else
 		{
-			world.GetRenderer().AddLine(DebugCategory::AINavigation, {
-				                            m_SizeX / 2 + transformView->GetWorldPosition().x,
-				                            -m_SizeY / 2 + transformView->GetWorldPosition().y
-			                            },
-			                            {
-				                            m_SizeX / 2 + transformView->GetWorldPosition().x,
-				                            m_SizeY / 2 + transformView->GetWorldPosition().y
-			                            },
-			                            {1.f, 0.f, 0.f, 1.f});
-			world.GetRenderer().AddLine(DebugCategory::AINavigation, {
-				                            m_SizeX / 2 + transformView->GetWorldPosition().x,
-				                            m_SizeY / 2 + transformView->GetWorldPosition().y
-			                            },
-			                            {
-				                            -m_SizeX / 2 + transformView->GetWorldPosition().x,
-				                            m_SizeY / 2 + transformView->GetWorldPosition().y
-			                            },
-			                            {1.f, 0.f, 0.f, 1.f});
-			world.GetRenderer().AddLine(DebugCategory::AINavigation, {
-				                            -m_SizeX / 2 + transformView->GetWorldPosition().x,
-				                            m_SizeY / 2 + transformView->GetWorldPosition().y
-			                            },
-			                            {
-				                            -m_SizeX / 2 + transformView->GetWorldPosition().x,
-				                            -m_SizeY / 2 + transformView->GetWorldPosition().y
-			                            },
-			                            {1.f, 0.f, 0.f, 1.f});
-			world.GetRenderer().AddLine(DebugCategory::AINavigation, {
-				                            -m_SizeX / 2 + transformView->GetWorldPosition().x,
-				                            -m_SizeY / 2 + transformView->GetWorldPosition().y
-			                            },
-			                            {
-				                            m_SizeX / 2 + transformView->GetWorldPosition().x,
-				                            -m_SizeY / 2 + transformView->GetWorldPosition().y
-			                            },
-			                            {1.f, 0.f, 0.f, 1.f});
+			for (auto& i : size)
+			{
+				i += transformView->GetWorldPosition();
+			}
+
+			world.GetRenderer().AddPolygon(DebugCategory::AINavigation, size, {1.f, 0.f, 0.f, 1.f});
 		}
 
 		for (int h = 0; h < static_cast<int>(cleanedPolygonList.size()); h++)
