@@ -74,7 +74,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
     Registry& reg = world.GetRegistry();
     const auto diskView = reg.View<PhysicsBody2DComponent, DiskColliderComponent, TransformComponent>();
     const auto& renderer = world.GetRenderer();
-    const glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
+    constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
     for (auto [entity, body, disk, transformComponent] : diskView.each())
     {
         renderer.AddCircle(
@@ -97,7 +97,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 
 void Engine::PhysicsSystem2D::PrintCollisionData(entt::entity entity, PhysicsBody2DComponent& body)
 {
-    for (auto& col : body.mCollisions)
+    for (const auto& col : body.mCollisions)
     {
         LOG(LogPhysics, Message,
             "entity{} col - entity1: {}, entity2: {}, normal: ({}, {}), depth: {}, contact point: ({}, {})\n",
@@ -122,10 +122,10 @@ void Engine::PhysicsSystem2D::RegisterCollision(CollisionData& collision, const 
 bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(const glm::vec2& center1, float radius1, const glm::vec2& center2, float radius2, CollisionData& result)
 {
     // check for overlap
-    glm::vec2 diff(center1 - center2);
-    float l2 = length2(diff);
-    float r = radius1 + radius2;
-    if (l2 >= r * r) return false;
+    const glm::vec2 diff(center1 - center2);
+    const float l2 = length2(diff);
+    const float r = radius1 + radius2;
+    if (l2 > r * r) return false;
 
     // compute collision details
     result.mNormal = normalize(diff);
@@ -139,21 +139,21 @@ bool Engine::PhysicsSystem2D::CollisionCheckDiskPolygon(const glm::vec2& diskCen
     CollisionData& result)
 {
     const glm::vec2& nearest = GetNearestPointOnPolygonBoundary(diskCenter - polygonPos, polygonPoints) + polygonPos;
-    glm::vec2 diff(diskCenter - nearest);
-    float l2 = length2(diff);
+    const glm::vec2 diff(diskCenter - nearest);
+    const float l2 = length2(diff);
 
     if (IsPointInsidePolygon(diskCenter - polygonPos, polygonPoints))
     {
-        float l = sqrt(l2);
+        const float l = sqrt(l2);
         result.mNormal = -diff / l;
         result.mDepth = l + diskRadius;
         return true;
     }
 
-    if (l2 >= diskRadius * diskRadius) return false;
+    if (l2 > diskRadius * diskRadius) return false;
 
     // compute collision details
-    float l = sqrt(l2);
+    const float l = sqrt(l2);
     result.mNormal = diff / l;
     result.mDepth = diskRadius - l;
     result.mContactPoint = nearest;
@@ -165,7 +165,7 @@ bool Engine::PhysicsSystem2D::IsPointInsidePolygon(const glm::vec2& point, const
     // Adapted from: https://wrfranklin.org/Research/Short_Notes/pnpoly.html
 
     size_t i, j;
-    size_t n = polygon.size();
+    const size_t n = polygon.size();
     bool inside = false;
 
     for (i = 0, j = n - 1; i < n; j = i++)
@@ -183,11 +183,11 @@ glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnPolygonBoundary(const glm::v
     float bestDist = std::numeric_limits<float>::max();
     glm::vec2 bestNearest(0.f, 0.f);
 
-    size_t n = polygon.size();
+    const size_t n = polygon.size();
     for (size_t i = 0; i < n; ++i)
     {
         const glm::vec2& nearest = GetNearestPointOnLineSegment(point, polygon[i], polygon[(i + 1) % n]);
-        float dist = distance2(point, nearest);
+        const float dist = distance2(point, nearest);
         if (dist < bestDist)
         {
             bestDist = dist;
@@ -200,7 +200,7 @@ glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnPolygonBoundary(const glm::v
 
 glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnLineSegment(const glm::vec2& p, const glm::vec2& segmentA, const glm::vec2& segmentB)
 {
-    float t = dot(p - segmentA, segmentB - segmentA) / distance2(segmentA, segmentB);
+    const float t = dot(p - segmentA, segmentB - segmentA) / distance2(segmentA, segmentB);
     if (t <= 0) return segmentA;
     if (t >= 1) return segmentB;
     return (1 - t) * segmentA + t * segmentB;
