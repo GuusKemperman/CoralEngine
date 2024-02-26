@@ -40,6 +40,8 @@ Engine::Level::Level(std::string_view name) :
 	Asset(name, MakeTypeId<Level>()),
 	mSerializedComponents(std::make_unique<BinaryGSONObject>())
 {
+	World world{ false };
+	CreateFromWorld(world);
 }
 
 Engine::Level::Level(AssetLoadInfo& loadInfo) :

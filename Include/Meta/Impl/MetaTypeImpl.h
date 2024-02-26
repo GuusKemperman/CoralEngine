@@ -180,7 +180,10 @@ Engine::FuncResult Engine::MetaType::ConstructInternal(bool isOwner, void* addre
 	{
 		return MetaAny{ *this, new (address) TypeT(args), isOwner };
 	}
-	return { "Type is not copy-constructible" };
+	else
+	{
+		return { "Type is not copy-constructible" };
+	}
 }
 
 template <typename TypeT>
