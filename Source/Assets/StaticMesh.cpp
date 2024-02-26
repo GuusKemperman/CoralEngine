@@ -213,7 +213,7 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
 
 Engine::MetaType Engine::StaticMesh::Reflect()
 {
-    MetaType type = MetaType{ MetaType::T<StaticMesh>{}, "StaticMesh", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{} };
+    MetaType type = MetaType{ MetaType::T<StaticMesh>{}, "StaticMesh", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
     ReflectAssetType<StaticMesh>(type);
     return type;
 }

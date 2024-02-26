@@ -751,7 +751,7 @@ void Engine::Script::AddDestructor(MetaType& toType, bool define) const
 
 Engine::MetaType Engine::Script::Reflect()
 {
-	MetaType type = MetaType{ MetaType::T<Script>{}, "Script", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{} };
+	MetaType type = MetaType{ MetaType::T<Script>{}, "Script", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 
 	SetClassVersion(type, 1);
 

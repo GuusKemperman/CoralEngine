@@ -738,7 +738,7 @@ Engine::BinaryGSONObject& Engine::GetOrAddSerializedPrefabObject(BinaryGSONObjec
 
 Engine::MetaType Engine::Level::Reflect()
 {
-	MetaType type = MetaType{ MetaType::T<Level>{}, "Level", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{} };
+	MetaType type = MetaType{ MetaType::T<Level>{}, "Level", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 	ReflectAssetType<Level>(type);
 	return type;
 }

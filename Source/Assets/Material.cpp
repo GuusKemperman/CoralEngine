@@ -212,7 +212,7 @@ void Engine::Material::LoadV1(AssetLoadInfo& loadInfo)
 
 Engine::MetaType Engine::Material::Reflect()
 {
-	MetaType type = MetaType{ MetaType::T<Material>{}, "Material", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{} };
+	MetaType type = MetaType{ MetaType::T<Material>{}, "Material", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 
 	type.AddField(&Material::mBaseColorFactor, "mBaseColorFactor");
 	type.AddField(&Material::mEmissiveFactor, "mEmissiveFactor");

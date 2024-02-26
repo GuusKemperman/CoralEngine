@@ -127,6 +127,12 @@ Engine::FuncResult Engine::MetaType::CallFunctionWithRVO(const std::variant<Name
 }
 
 template <typename ... Args>
+bool Engine::MetaType::IsConstructible() const
+{
+	return IsConstructible({ MakeTypeTraits<Args>()... });
+}
+
+template <typename ... Args>
 Engine::FuncResult Engine::MetaType::Construct(Args&&... args) const
 {
 	void* buffer = Malloc();
