@@ -8,11 +8,11 @@
 #include "xsr.hpp"
 #include "Components/TransformComponent.h"
 #include "Core/Input.h"
-#include "Core/Renderer.h"
+#include "Core/Device.h"
 
 Engine::WorldRenderer::WorldRenderer(const World& world) :
 	mWorld(world),
-	mLastRenderedAtSize(Renderer::Get().GetDisplaySize())
+	mLastRenderedAtSize(glm::vec2(Device::Get().GetWidth(), Device::Get().GetHeight()))
 {
 }
 
@@ -25,7 +25,7 @@ void Engine::WorldRenderer::NewFrame()
 
 void Engine::WorldRenderer::Render()
 {
-	RenderAtSize(Renderer::Get().GetDisplaySize());
+	RenderAtSize(glm::vec2(Device::Get().GetWidth(), Device::Get().GetHeight()));
 }
 
 #ifdef EDITOR
