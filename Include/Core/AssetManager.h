@@ -6,7 +6,7 @@
 #include "Meta/MetaTypeId.h"
 #include "Meta/MetaManager.h"
 #include "Assets/Importers/Importer.h"
-#include "Utilities/SmartPointerFunctions.h"
+#include "Utilities/MemFunctions.h"
 
 namespace Engine
 {

@@ -298,25 +298,28 @@ template<>
 struct Reflector<Engine::Input::KeyboardKey>
 {
     static Engine::MetaType Reflect();
+    static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(KeyBoardKey, Engine::Input::KeyboardKey);
-
 
 template<>
 struct Reflector<Engine::Input::GamepadAxis>
 {
     static Engine::MetaType Reflect();
+    static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(GamepadAxis, Engine::Input::GamepadAxis);
 
 template<>
 struct Reflector<Engine::Input::GamepadButton>
 {
     static Engine::MetaType Reflect();
+    static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(GamepadButton, Engine::Input::GamepadButton);
 
 template<>
 struct Reflector<Engine::Input::MouseButton>
 {
     static Engine::MetaType Reflect();
+    static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(MouseButton, Engine::Input::MouseButton);
 
 

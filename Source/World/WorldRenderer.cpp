@@ -8,10 +8,11 @@
 #include "xsr.hpp"
 #include "Components/TransformComponent.h"
 #include "Core/Input.h"
+#include "Core/Renderer.h"
 
 Engine::WorldRenderer::WorldRenderer(const World& world) :
 	mWorld(world),
-	mLastRenderedAtSize(ImGui::GetIO().DisplaySize)
+	mLastRenderedAtSize(Renderer::Get().GetDisplaySize())
 {
 }
 
@@ -24,9 +25,10 @@ void Engine::WorldRenderer::NewFrame()
 
 void Engine::WorldRenderer::Render()
 {
-	RenderAtSize(ImGui::GetIO().DisplaySize);
+	RenderAtSize(Renderer::Get().GetDisplaySize());
 }
 
+#ifdef EDITOR
 void Engine::WorldRenderer::Render(FrameBuffer& buffer, std::optional<glm::vec2> firstResizeBufferTo, const bool clearBufferFirst)
 {
 	buffer.Bind();
@@ -45,6 +47,7 @@ void Engine::WorldRenderer::Render(FrameBuffer& buffer, std::optional<glm::vec2>
 
 	buffer.Unbind();
 }
+#endif // EDITOR
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -146,7 +149,12 @@ glm::vec3 Engine::WorldRenderer::ScreenToWorld(glm::vec2 screenPosition, float d
 void Engine::WorldRenderer::RenderAtSize(glm::vec2 size)
 {
 	mLastRenderedAtSize = size;
+
+	// If we are not using the editor, we always
+	// render starting from the topleft corner.
+#ifdef EDITOR
 	mLastRenderedAtPos = ImGui::GetCursorScreenPos();
+#endif // EDITOR
 
 	GetWorld().GetRegistry().RenderSystems();
 }

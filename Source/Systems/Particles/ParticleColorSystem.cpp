@@ -7,7 +7,7 @@
 #include "Components/Particles/ParticleEmitterComponent.h"
 #include "Utilities/Random.h"
 #include "Meta/MetaType.h"
-#include "Meta/MetaManager.h"
+#include "Utilities/Math.h"
 
 void Engine::ParticleColorSystem::Update(World& world, [[maybe_unused]] float dt)
 {

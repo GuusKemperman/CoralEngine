@@ -32,7 +32,10 @@ namespace Engine
 
 		void NewFrame();
 		void Render();
+
+#ifdef EDITOR
 		void Render(FrameBuffer& buffer, std::optional<glm::vec2> firstResizeBufferTo = {}, bool clearBufferFirst = true);
+#endif // EDITOR
 
 		const World& GetWorld() const { return mWorld; }
 

@@ -17,7 +17,7 @@ namespace Engine
 
 		float GetSurfaceAreaBetween(float t1, float t2, float stepSize) const;
 
-		__forceinline float GetValueAt(float time) const;
+		FORCE_INLINE float GetValueAt(float time) const;
 
 #ifdef EDITOR
 		void DisplayWidget(const char* label);
@@ -27,7 +27,7 @@ namespace Engine
 		ValueStorage mControlPoints{ glm::vec2{0.0f}, glm::vec2{1.0f}, glm::vec2{-1.0f} };
 
 	private:
-		static __forceinline float spline(const float* key, float t);
+		static FORCE_INLINE float spline(const float* key, float t);
 
 		friend ReflectAccess;
 		static MetaType Reflect();
