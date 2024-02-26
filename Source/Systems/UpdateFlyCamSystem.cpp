@@ -15,7 +15,7 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	movementInput[Axis::Forward] = Input::Get().GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S);
 	movementInput[Axis::Up] = Input::Get().GetKeyboardAxis(Input::KeyboardKey::Space, Input::KeyboardKey::LeftControl);
-	movementInput[Axis::Right] =  Input::Get().GetKeyboardAxis(Input::KeyboardKey::A, Input::KeyboardKey::D);
+	movementInput[Axis::Right] =  Input::Get().GetKeyboardAxis(Input::KeyboardKey::D, Input::KeyboardKey::A);
 
 	const glm::vec3 timeScaledMovementInput = movementInput * dt;
 
@@ -28,7 +28,7 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 	const glm::vec2 rotationInput
 	{
 		Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp),
-		Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowLeft, Input::KeyboardKey::ArrowRight)
+		Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowRight, Input::KeyboardKey::ArrowLeft)
 	};
 
 	const glm::vec2 timeScaledRotationInput = rotationInput * dt;
