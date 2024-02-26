@@ -66,23 +66,23 @@ namespace Engine
             float padding4;
         };
 
-        struct DXMeshInfo {
-            std::unique_ptr<DXResource> vertexBuffer;
-            std::unique_ptr<DXResource> normalBuffer;
-            std::unique_ptr<DXResource> tangentBuffer;
-            std::unique_ptr<DXResource> texCoordBuffer;
-            std::unique_ptr<DXResource> indexBuffer;
+        //struct DXMeshInfo {
+        //    std::unique_ptr<DXResource> vertexBuffer;
+        //    std::unique_ptr<DXResource> normalBuffer;
+        //    std::unique_ptr<DXResource> tangentBuffer;
+        //    std::unique_ptr<DXResource> texCoordBuffer;
+        //    std::unique_ptr<DXResource> indexBuffer;
 
-            D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
-            D3D12_VERTEX_BUFFER_VIEW normalBufferView;
-            D3D12_VERTEX_BUFFER_VIEW texCoordBufferView;
-            D3D12_VERTEX_BUFFER_VIEW tangentBufferView;
-            D3D12_INDEX_BUFFER_VIEW indexBufferView;
+        //    D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
+        //    D3D12_VERTEX_BUFFER_VIEW normalBufferView;
+        //    D3D12_VERTEX_BUFFER_VIEW texCoordBufferView;
+        //    D3D12_VERTEX_BUFFER_VIEW tangentBufferView;
+        //    D3D12_INDEX_BUFFER_VIEW indexBufferView;
 
-            int indexCount = 0;
-            DXGI_FORMAT indexFormat;
-            int vertexCount = 0;
-        };
+        //    int indexCount = 0;
+        //    DXGI_FORMAT indexFormat;
+        //    int vertexCount = 0;
+        //};
     }
 
     class Renderer final :
@@ -92,7 +92,6 @@ namespace Engine
         Renderer();
         void Render(const World& world) override;
 
-
         SystemStaticTraits GetStaticTraits() const override
         {
             SystemStaticTraits traits{};
@@ -101,22 +100,17 @@ namespace Engine
         }
 
     private:
-        // also could be some platform specific variables here and functions which you want to add
+        std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
+        std::unique_ptr<DXPipeline> mPipelines[NUM_PIPELINES];
+        std::unique_ptr<DXSignature> mSignature;
+
+        std::unique_ptr<DXResource> modelMatricesRsc;
 
     private:
         friend ReflectAccess;
         static MetaType Reflect();
         REFLECT_AT_START_UP(Renderer);
 
-        std::unique_ptr<DXDescHeap> mDescriptorHeaps[NUM_DESC_HEAPS];
-        std::unique_ptr<DXResource> mResources[NUM_RESOURCES];
-        std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
-        std::unique_ptr<DXPipeline> mPipelines[NUM_PIPELINES];
-        std::unique_ptr<DXSignature> mSignature;
 
-        std::unordered_map <int, std::shared_ptr<InfoStruct::DXMeshInfo>> meshes;
-
-
-        const DXGI_FORMAT mDepthFormat = DXGI_FORMAT_D32_FLOAT;
     };
 }

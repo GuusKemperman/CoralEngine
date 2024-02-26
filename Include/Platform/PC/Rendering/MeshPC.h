@@ -6,7 +6,7 @@
 #include "Utilities/CPP20/STDAliases.h"
 
 #include "DX12Classes/DXDefines.h"
-
+#include "Meta/MetaReflect.h"
 class DXResource;
 
 namespace Engine

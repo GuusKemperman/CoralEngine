@@ -9,7 +9,8 @@
 #include "imgui/imgui_impl_dx12.h"
 #include "imgui/ImGuizmo.h"
 
-#include "Platform/PC/Rendering/DXDescHeap.h"
+#include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
+#include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 
 Engine::Device::Device() {
 
@@ -142,7 +143,8 @@ void Engine::Device::InitializeDevice()
     //CREATE COMMAND ALLOCATOR
     for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
     {
-        if (FAILED(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator[i])))) {
+        hr = mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator[i]));
+        if (FAILED(hr)) {
             LOG(LogCore, Fatal, "Failed to create command allocator");
             assert(false && "Failed to create command allocator");
         }
@@ -204,27 +206,56 @@ void Engine::Device::InitializeDevice()
     //CREATE IMGUI HEAP
     imguiHeap = std::make_unique<DXDescHeap>(mDevice, 4, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"IMGUI DESCRIPTOR HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
+    //CREATE DESCRIPTOR HEAPS
+    mDescriptorHeaps[RT_HEAP] = std::make_unique<DXDescHeap>(mDevice, 10, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
+    mDescriptorHeaps[DEPTH_HEAP] = std::make_unique<DXDescHeap>(mDevice, 4, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
+    mDescriptorHeaps[RESOURCE_HEAP] = std::make_unique<DXDescHeap>(mDevice, 5000, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"RESOURCE HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    mDescriptorHeaps[SAMPLER_HEAP] = std::make_unique<DXDescHeap>(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, L"SAMPLER HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
+    //CREATE RENDER TARGETS
+    for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
+    {
+        mResources[i] = std::make_unique<DXResource>();
+        ComPtr<ID3D12Resource> res;
+        HRESULT hr = mSwapChain->GetBuffer(i, IID_PPV_ARGS(&res));
+        if (FAILED(hr)) {
+            LOG(LogCore, Fatal, "Failed to get swapchain buffer");
+            assert(false && "Failed to get swapchain buffer");
+        }
+        mResources[i]->SetResource(res);
+        mDevice->CreateRenderTargetView(mResources[i]->Get(), nullptr, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(i));
+        mResources[i]->GetResource()->SetName(L"RENDER TARGET");
+    }
+
+    //CREATE DEPTH STENCIL
+    D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
+    depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+    D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+    depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+    depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+    depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+    auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+    auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(mDepthFormat, mViewport.Width, mViewport.Height, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+
+    mResources[DEPTH_STENCIL_RSC] = std::make_unique<DXResource>(mDevice, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
+    mResources[DEPTH_STENCIL_RSC]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    mDevice->CreateDepthStencilView(mResources[DEPTH_STENCIL_RSC]->Get(), &depthStencilDesc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0));
 }
 
 void Engine::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent)
 {
-    // Wait for previous frame
-    // if the current fence value is still less than "fenceValue", then we know the GPU has not finished executing the command queue
     if (fence->GetCompletedValue() < fenceValue)
     {
-        // we have the fence create an event which is signaled once the fence's current value is "fenceValue"
         if (FAILED(fence->SetEventOnCompletion(fenceValue, fenceEvent))) {
             LOG(LogCore, Fatal, "Failed to set fence event on completion.");
             assert(false && "Failed to set fence event on completion.");
         }
-
-        // We will wait until the fence has triggered the event that it's current value has reached "fenceValue". once it's value
-        // has reached "fenceValue", we know the command queue has finished executing
         WaitForSingleObject(fenceEvent, INFINITE);
     }
-
-    // increment fenceValue for next frame
     fenceValue++;
 }
 
@@ -289,4 +320,10 @@ void Engine::Device::InitializeImGui()
 
     std::filesystem::create_directories("Intermediate/Layout");
     ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
+}
+
+void Engine::Device::AllocateTexture(DXResource* rsc, D3D12_SHADER_RESOURCE_VIEW_DESC desc)
+{
+    mDevice->CreateShaderResourceView(rsc->Get(), &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(resourceCount));
+    resourceCount++;
 }

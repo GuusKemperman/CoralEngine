@@ -7,6 +7,7 @@
 #include "Utilities/StringFunctions.h"
 #include "Meta/MetaManager.h"
 #include "xsr/backends/common/stb_image.h"
+#include "TexturePC.h"
 
 Engine::Texture::Texture(std::string_view name) :
     Asset(name, MakeTypeId<Texture>())
