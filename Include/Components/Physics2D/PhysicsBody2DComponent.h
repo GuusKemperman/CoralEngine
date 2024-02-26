@@ -45,6 +45,8 @@ namespace Engine
 		//glm::vec2 mForce = { 0.f, 0.f };
 
 		std::vector<CollisionData> mCollisions = {};
+		void AddCollisionData(const CollisionData& data) { mCollisions.push_back(data); }
+		void ClearCollisionData() { mCollisions.clear(); }
 
 	private:
 		friend ReflectAccess;
@@ -57,6 +59,7 @@ namespace Engine
 
 		void Update(float dt)
 		{
+			ClearCollisionData();
 			//if (mType == Dynamic) mLinearVelocity += mForce * mInvMass * dt;
 			mPosition += mLinearVelocity * dt;
 		}
