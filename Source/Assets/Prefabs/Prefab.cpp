@@ -16,6 +16,8 @@
 Engine::Prefab::Prefab(std::string_view name) :
 	Asset(name, MakeTypeId<Prefab>())
 {
+	World world{ false };
+	CreateFromEntity(world, world.GetRegistry().Create());
 }
 
 Engine::Prefab::Prefab(AssetLoadInfo& loadInfo) :

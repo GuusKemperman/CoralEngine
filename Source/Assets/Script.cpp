@@ -17,7 +17,7 @@
 Engine::Script::Script(std::string_view name) :
 	Asset(name, MakeTypeId<Script>())
 {
-	
+	AddFunc("OnTick").SetParameters({ {  MakeTypeTraits<float>(), "DeltaTime" } });
 }
 
 Engine::Script::Script(AssetLoadInfo& loadInfo) :
@@ -28,8 +28,7 @@ Engine::Script::Script(AssetLoadInfo& loadInfo) :
 
 	if (!success)
 	{
-		LOG(LogAssets, Message, "Loading of script {} failed, possible because this is a new script. Adding an OnTick function...", GetName());
-		AddFunc("OnTick").SetParameters({ {  MakeTypeTraits<float>(), "DeltaTime" } });
+		LOG(LogAssets, Message, "Loading of script {} failed", GetName());
 		return;
 	}
 
