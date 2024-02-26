@@ -24,6 +24,16 @@ namespace Engine
 		};
 	};
 
+	struct Plane // for 2D debug drawing
+	{
+		enum Enum
+		{
+			XY = 0,
+			XZ,
+			YZ
+		};
+	};
+
 	class WorldRenderer
 	{
 	public:
@@ -32,7 +42,10 @@ namespace Engine
 
 		void NewFrame();
 		void Render();
+
+#ifdef EDITOR
 		void Render(FrameBuffer& buffer, std::optional<glm::vec2> firstResizeBufferTo = {}, bool clearBufferFirst = true);
+#endif // EDITOR
 
 		const World& GetWorld() const { return mWorld; }
 
@@ -43,15 +56,17 @@ namespace Engine
 
 		void AddLine(DebugCategory::Enum category, glm::vec3 from, glm::vec3 to, glm::vec4 color) const;
 
-		void AddLine(DebugCategory::Enum category, glm::vec2 from, glm::vec2 to, glm::vec4 color) const;
+		void AddLine(DebugCategory::Enum category, glm::vec2 from, glm::vec2 to, glm::vec4 color, Plane::Enum plane = Plane::XZ) const;
 
-		void AddCircle(DebugCategory::Enum category, glm::vec3 center, float radius, glm::vec4 color) const;
+		void AddCircle(DebugCategory::Enum category, glm::vec3 center, float radius, glm::vec4 color, Plane::Enum plane = Plane::XZ) const;
 
 		void AddSphere(DebugCategory::Enum category, glm::vec3 center, float radius, glm::vec4 color) const;
 
-		void AddSquare(DebugCategory::Enum category, glm::vec3 center, float size, glm::vec4 color) const;
+		void AddSquare(DebugCategory::Enum category, glm::vec3 center, float size, glm::vec4 color, Plane::Enum plane = Plane::XZ) const;
 
 		void AddBox(DebugCategory::Enum category, glm::vec3 center, glm::vec3 halfExtends, glm::vec4 color)  const;
+
+		void AddPolygon(DebugCategory::Enum category, std::vector<glm::vec3>& points, glm::vec4 color) const;
 
 		static void SetDebugCategoryFlags(DebugCategory::Enum flags) { sDebugCategoryFlags = flags; }
 		static DebugCategory::Enum GetDebugCategoryFlags() { return sDebugCategoryFlags; }

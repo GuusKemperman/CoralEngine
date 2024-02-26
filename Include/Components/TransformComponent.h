@@ -1,6 +1,7 @@
 #pragma once
 #include "Components/Component.h"
 #include "Meta/MetaReflect.h"
+#include "Utilities/Math.h"
 
 namespace Engine
 {	

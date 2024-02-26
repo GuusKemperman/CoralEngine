@@ -624,8 +624,8 @@ Expected<Engine::VirtualMachine::VMContext::CachedValue*, Engine::ScriptError> E
 	};
 
 	// Stack allocation
-	MetaAny* inputValues = static_cast<MetaAny*>(_alloca(numOfInputPins * sizeof(MetaAny)));
-	TypeForm* inputForms = static_cast<TypeForm*>(_alloca(numOfInputPins * sizeof(TypeForm)));
+	MetaAny* inputValues = static_cast<MetaAny*>(ENGINE_ALLOCA(numOfInputPins * sizeof(MetaAny)));
+	TypeForm* inputForms = static_cast<TypeForm*>(ENGINE_ALLOCA(numOfInputPins * sizeof(TypeForm)));
 
 	InputDeleter inputDeleter{ inputValues };
 	ASSERT(inputValues != nullptr && inputForms != nullptr);

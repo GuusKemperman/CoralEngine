@@ -62,6 +62,9 @@ Engine::Level::Level(AssetLoadInfo& loadInfo) :
 	serializedComponents.erase(std::remove_if(serializedComponents.begin(), serializedComponents.end(),
 		[this](const BinaryGSONObject& serializedComponentClass)
 		{
+			// 'this' is not used if logging is not enabled.
+			(void)(this);
+
 			const std::string& className = serializedComponentClass.GetName();
 			const bool doesClassStillExist = MetaManager::Get().TryGetType(className) != nullptr;
 
