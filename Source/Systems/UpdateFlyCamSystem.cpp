@@ -11,9 +11,6 @@
 
 void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 {
-	const float mouseWheelChange = Input::Get().GetMouseWheel();
-	const bool movementSpeedMultiply = mouseWheelChange >= 0.0f;
-
 	glm::vec3 movementInput{};
 
 	movementInput[Axis::Forward] = Input::Get().GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S);
@@ -44,11 +41,9 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	const bool emptyMovement = timeScaledMovementInput == glm::vec3{};
 	const bool emptyRotation = timeScaledRotations[0] == glm::identity<glm::quat>() && timeScaledRotations[1] == glm::identity<glm::quat>();
-	const bool emptyMouseWheel = mouseWheelChange == 0;
 
 	if (emptyMovement
-		&& emptyRotation
-		&& emptyMouseWheel)
+		&& emptyRotation)
 	{
 		return;
 	}
@@ -57,11 +52,6 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	for (auto [entity, flycam, transform] : view.each())
 	{
-		if (!emptyMouseWheel)
-		{
-			flycam.AdjustMovementSpeed(movementSpeedMultiply);
-		}
-
 		if (!emptyMovement)
 		{
 			flycam.ApplyTranslation(transform, timeScaledMovementInput);
