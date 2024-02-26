@@ -51,7 +51,7 @@ Engine::Texture::Texture(Texture&& other) noexcept :
 
 Engine::MetaType Engine::Texture::Reflect()
 {
-    MetaType type = MetaType{ MetaType::T<Texture>{}, "Texture", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{} };
+    MetaType type = MetaType{ MetaType::T<Texture>{}, "Texture", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
     ReflectAssetType<Texture>(type);
     return type;
 }

@@ -23,6 +23,8 @@ struct Null
 		return type;
 	}
 
+	REFLECT_AT_START_UP(Null);
+
 	static bool CallNullptrOverload(const MetaAny& any);
 };
 
@@ -89,5 +91,4 @@ bool Null::CallNullptrOverload(const MetaAny& any)
 	return retAddress;
 }
 
-REFLECT_AT_START_UP(Null);
 

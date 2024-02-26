@@ -11,26 +11,23 @@
 
 namespace Engine::Search
 {
-	namespace Internal
+	template<typename T, typename T2 = void>
+	struct MovableTypeHelper
 	{
-		template<typename T, typename T2 = void>
-		struct MovableTypeHelper
-		{
-			using Type = T;
-		};
+		using Type = T;
+	};
 
-		template<>
-		struct MovableTypeHelper<MetaType>
-		{
-			using Type = std::reference_wrapper<const MetaType>;
-		};
+	template<>
+	struct MovableTypeHelper<MetaType>
+	{
+		using Type = std::reference_wrapper<const MetaType>;
+	};
 
-		template<typename T>
-		struct MovableTypeHelper<T, std::enable_if_t<sIsAssetType<T>>>
-		{
-			using Type = WeakAsset<T>;
-		};
-	}
+	template<typename T>
+	struct MovableTypeHelper<T, std::enable_if_t<sIsAssetType<T>>>
+	{
+		using Type = WeakAsset<T>;
+	};
 
 	/*
 	 * A specialization can be provided to MovableTypeHelper.
@@ -40,22 +37,19 @@ namespace Engine::Search
 	 * for MovableTypeHelper is in place.
 	 */
 	template<typename T>
-	using MovableType = typename Internal::MovableTypeHelper<T>::Type;
+	using MovableType = typename MovableTypeHelper<T>::Type;
 
-	namespace Internal
+	template<typename... Types>
+	struct ChoiceValueTypeHelper
 	{
-		template<typename... Types>
-		struct ChoiceValueTypeHelper
-		{
-			using Type = std::variant<MovableType<Types>...>;
-		};
+		using Type = std::variant<MovableType<Types>...>;
+	};
 
-		template<typename T>
-		struct ChoiceValueTypeHelper<T>
-		{
-			using Type = MovableType<T>;
-		};
-	}
+	template<typename T>
+	struct ChoiceValueTypeHelper<T>
+	{
+		using Type = MovableType<T>;
+	};
 
 	/*
 	* If multiple types are provided, a variant is used. Otherwise it is just the lone value.
@@ -73,7 +67,7 @@ namespace Engine::Search
 	*   std::optional<std::variant<WeakAsset<Asset>, std::reference_wrapper<const MetaType>>> variant = DisplayDropDownWithSearchBar<Asset, MetaType>();
 	*/
 	template<typename... Types>
-	using ChoiceValueType = typename Internal::ChoiceValueTypeHelper<Types...>::Type;
+	using ChoiceValueType = typename ChoiceValueTypeHelper<Types...>::Type;
 
 	template<typename... Types>
 	struct Choice
@@ -94,14 +88,11 @@ namespace Engine::Search
 	template<typename... Types>
 	using Choices = std::vector<Choice<Types...>>;
 
-	namespace Internal
-	{
-		template<typename T, typename T2 = void>
-		struct SearchBarOptionsCollector;
+	template<typename T, typename T2 = void>
+	struct SearchBarOptionsCollector;
 
-		template<typename... Types>
-		using FilterParam = const ChoiceValueType<Types...>&;
-	}
+	template<typename... Types>
+	using FilterParam = const ChoiceValueType<Types...>&;
 
 	static constexpr double sDefaultCutOff = 45.0;
 	static constexpr size_t sDefaultMaxNumOfChoices = 25;
@@ -126,6 +117,7 @@ namespace Engine::Search
 	 */
 	template<typename... Types>
 	Choices<Types...> CollectChoices();
+
 	template<typename... Types, typename FilterType>
 	Choices<Types...> CollectChoices(const FilterType& filter);
 
@@ -192,6 +184,10 @@ namespace Engine::Search
 	template<typename... Types, typename FilterType>
 	std::optional<ChoiceValueType<Types...>> DisplayDropDownWithSearchBar(std::string_view label, std::string_view hint, const FilterType& filter);
 
+	bool BeginSearchCombo(std::string_view label, std::string_view hint);
+
+	void EndSearchCombo(bool wasItemSelected);
+
 	//**************************//
 	//		Implementation		//
 	//**************************//
@@ -200,59 +196,60 @@ namespace Engine::Search
 	{
 		template<typename T, typename... Types, typename FilterType>
 		void AddOptions(Choices<Types...>& scores, const FilterType& filter);
-
-		template<>
-		struct SearchBarOptionsCollector<MetaType>
-		{
-			template<typename... Types, typename FilterType>
-			static void AddOptions(Choices<Types...>& insertInto, const FilterType& filter);
-		};
-
-		template<typename AssetType>
-		struct SearchBarOptionsCollector<AssetType, std::enable_if_t<sIsAssetType<AssetType>>>
-		{
-			template<typename... Types, typename FilterType>
-			static void AddOptions(Choices<Types...>& insertInto, const FilterType& filter)
-			{
-				for (const WeakAsset<Asset>& asset : AssetManager::Get().GetAllAssets())
-				{
-					const MetaType& assetClass = asset.GetAssetClass();
-
-					if (!assetClass.IsDerivedFrom<AssetType>())
-					{
-						continue;
-					}
-
-					WeakAsset<AssetType> casted = WeakAssetStaticCast<AssetType>(asset);
-
-					if (filter(casted))
-					{
-						insertInto.emplace_back(asset.GetName(), casted);
-					}
-				}
-			}
-		};
-
-		// Enums
-		template<typename EnumType>
-		struct SearchBarOptionsCollector<EnumType, std::enable_if_t<sIsEnumReflected<EnumType>>>
-		{
-			template<typename... Types, typename FilterType>
-			static void AddOptions(Choices<Types...>& insertInto, const FilterType& filter)
-			{
-				for (const auto& [enumValue, enumName] : sEnumStringPairs<EnumType>)
-				{
-					if (filter(enumValue))
-					{
-						insertInto.emplace_back(enumName, enumValue);
-					}
-				}
-			}
-		};
-
-		template<typename... Types>
-		bool DefaultFilter(FilterParam<Types...>) { return true; }
 	}
+
+	template<>
+	struct SearchBarOptionsCollector<MetaType>
+	{
+		template<typename... Types, typename FilterType>
+		static void AddOptions(Choices<Types...>& insertInto, const FilterType& filter);
+	};
+
+	template<typename AssetType>
+	struct SearchBarOptionsCollector<AssetType, std::enable_if_t<sIsAssetType<AssetType>>>
+	{
+		template<typename... Types, typename FilterType>
+		static void AddOptions(Choices<Types...>& insertInto, const FilterType& filter)
+		{
+			for (const WeakAsset<Asset>& asset : AssetManager::Get().GetAllAssets())
+			{
+				const MetaType& assetClass = asset.GetAssetClass();
+
+				if (!assetClass.IsDerivedFrom<AssetType>())
+				{
+					continue;
+				}
+
+				WeakAsset<AssetType> casted = WeakAssetStaticCast<AssetType>(asset);
+
+				if (filter(casted))
+				{
+					insertInto.emplace_back(asset.GetName(), casted);
+				}
+			}
+		}
+	};
+
+	// Enums
+	template<typename EnumType>
+	struct SearchBarOptionsCollector<EnumType, std::enable_if_t<sIsEnumReflected<EnumType>>>
+	{
+		template<typename... Types, typename FilterType>
+		static void AddOptions(Choices<Types...>& insertInto, const FilterType& filter)
+		{
+			for (const auto& [enumValue, enumName] : sEnumStringPairs<EnumType>)
+			{
+				if (filter(enumValue))
+				{
+					insertInto.emplace_back(enumName, enumValue);
+				}
+			}
+		}
+	};
+
+	template<typename... Types>
+	bool DefaultFilter(FilterParam<Types...>) { return true; }
+	
 
 	template<typename... Types>
 	constexpr bool operator<(const Choice<Types...>& lhs, const Choice<Types...>& rhs)
@@ -271,7 +268,7 @@ namespace Engine::Search
 	}
 
 	template <typename ... Types, typename FilterType>
-	void Internal::SearchBarOptionsCollector<MetaType>::AddOptions(Choices<Types...>& insertInto, const FilterType& filter)
+	void SearchBarOptionsCollector<MetaType>::AddOptions(Choices<Types...>& insertInto, const FilterType& filter)
 	{
 		for (const MetaType& type : MetaManager::Get().EachType())
 		{
@@ -285,8 +282,8 @@ namespace Engine::Search
 	template<typename... Types, typename FilterType>
 	Choices<Types...> CollectChoices(const FilterType& filter)
 	{
-		static_assert(std::is_invocable_v<FilterType, Internal::FilterParam<Types...>>, "Filter cannot be invoked with the associated arguments");
-		static_assert(std::is_same_v<bool, std::invoke_result_t<FilterType, Internal::FilterParam<Types...>>>, "Filter does not return boolean");
+		static_assert(std::is_invocable_v<FilterType, FilterParam<Types...>>, "Filter cannot be invoked with the associated arguments");
+		static_assert(std::is_same_v<bool, std::invoke_result_t<FilterType, FilterParam<Types...>>>, "Filter does not return boolean");
 
 		Choices<Types...> choices{};
 		(Internal::AddOptions<Types>(choices, filter), ...);
@@ -296,7 +293,7 @@ namespace Engine::Search
 	template<typename... Types>
 	Choices<Types...> CollectChoices()
 	{
-		return CollectChoices<Types...>(&Internal::DefaultFilter<Types...>);
+		return CollectChoices<Types...>(&DefaultFilter<Types...>);
 	}
 
 	template<typename... Types>
@@ -368,48 +365,29 @@ namespace Engine::Search
 		return std::nullopt;
 	}
 
-	namespace Internal
-	{
-		// This function requires including ImguiInternal,
-		// we reallyy dont want to that in a header file like this one.
-		bool IsComboAlreadyOpen(std::string_view comboLabel);
-	}
-
 	template<typename... Types, typename FilterType>
 	std::optional<ChoiceValueType<Types...>> DisplayDropDownWithSearchBar(std::string_view label, std::string_view hint,
 		const FilterType& filter)
 	{
 		using Choices = Choices<Types...>;
 
-		const bool isComboOpen = Internal::IsComboAlreadyOpen(label);
-
-		if (!ImGui::BeginCombo(label.data(), hint.data()))
+		if (!BeginSearchCombo(label, hint))
 		{
 			return std::nullopt;
-		}
-
-		// We just opened
-		if (!isComboOpen)
-		{
-			ImGui::SetKeyboardFocusHere();
 		}
 
 		Choices choices = CollectChoices<Types...>(filter);
 		auto returnValue = DisplaySearchBar<Types...>(choices);
 
-		if (returnValue.has_value())
-		{
-			ImGui::CloseCurrentPopup();
-		}
+		EndSearchCombo(returnValue.has_value());
 
-		ImGui::EndCombo();
 		return returnValue;
 	}
 
 	template<typename... Types>
 	std::optional<ChoiceValueType<Types...>> DisplayDropDownWithSearchBar(std::string_view label, std::string_view hint)
 	{
-		return DisplayDropDownWithSearchBar<Types...>(label, hint, &Internal::DefaultFilter<Types...>);
+		return DisplayDropDownWithSearchBar<Types...>(label, hint, &DefaultFilter<Types...>);
 	}
 }
 #endif // EDITOR

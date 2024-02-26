@@ -47,19 +47,42 @@ Engine::MetaType Engine::Asset::Reflect()
 
 #ifdef EDITOR
 
+struct NullAsset { };
+
+namespace Engine::Search
+{
+	template<>
+	struct SearchBarOptionsCollector<NullAsset>
+	{
+		template<typename... Types, typename FilterType>
+		static void AddOptions(Search::Choices<Types...>& insertInto, const FilterType&)
+		{
+			// The space is intentional, it's a 'hack' to make
+			// sure None is always the first option, since
+			// the options are sorted in a lexicographical order.
+			insertInto.emplace_back(" None", NullAsset{});
+		}
+	};
+}
+
 void Engine::InspectAsset(const std::string& name, std::shared_ptr<const Asset>& asset, const TypeId assetClass)
 {
-	std::vector<WeakAsset<Asset>> allAssets = AssetManager::Get().GetAllAssets();
-
-	std::optional<WeakAsset<Asset>> selectedAsset = Search::DisplayDropDownWithSearchBar<Asset>(name.c_str(), asset == nullptr ? "None" : asset->GetName().data(),
-		[assetClass](const WeakAsset<Asset>& asset)
+	auto selectedAsset = Search::DisplayDropDownWithSearchBar<Asset, NullAsset>(name.c_str(), asset == nullptr ? "None" : asset->GetName().data(),
+		[assetClass](const std::variant<WeakAsset<Asset>, NullAsset>& asset)
 		{
-			return asset.GetAssetClass().IsDerivedFrom(assetClass);
+			return std::get<WeakAsset<Asset>>(asset).GetAssetClass().IsDerivedFrom(assetClass);
 		});
 
 	if (selectedAsset.has_value())
 	{
-		asset = selectedAsset->MakeShared();
+		if (std::holds_alternative<NullAsset>(*selectedAsset))
+		{
+			asset = nullptr;
+		}
+		else
+		{
+			asset = std::get<WeakAsset<Asset>>(*selectedAsset).MakeShared();
+		}
 	}
 
 	std::optional<WeakAsset<Asset>> receivedAsset = DragDrop::PeekAsset(assetClass);

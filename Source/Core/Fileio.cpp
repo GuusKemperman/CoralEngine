@@ -3,9 +3,6 @@
 #include <filesystem>
 #include <fstream>
 
-#if defined(BEE_PLATFORM_PC)
-#endif
-
 #include "Core/FileIO.h"
 
 using namespace Engine;

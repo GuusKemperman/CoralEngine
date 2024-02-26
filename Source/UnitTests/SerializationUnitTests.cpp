@@ -22,20 +22,20 @@ UNIT_TEST(Serialization, AllAssetSerialization)
 	std::string savedAsset{};
 	std::string resavedAsset{};
 
-	uint32 mBufferSize{};
+	uint32 bufferSize{};
 	uint32 bufferAlign{};
 
 	for (WeakAsset<Asset> asset : allAssets)
 	{
-		mBufferSize = std::max(asset.GetAssetClass().GetSize(), mBufferSize);
+		bufferSize = std::max(asset.GetAssetClass().GetSize(), bufferSize);
 		bufferAlign = std::max(asset.GetAssetClass().GetAlignment(), bufferAlign);
 	}
 
-	void* assetBuffer = _aligned_malloc(mBufferSize, bufferAlign);
+	void* assetBuffer = FastAlloc(bufferSize, bufferAlign);
 
 	if (assetBuffer == nullptr)
 	{
-		LOG(LogUnitTests, Error, "Failed to run test, requires buffer of size {} and align {}", mBufferSize, bufferAlign);
+		LOG(LogUnitTests, Error, "Failed to run test, requires buffer of size {} and align {}", bufferSize, bufferAlign);
 		return UnitTest::Failure;
 	}
 

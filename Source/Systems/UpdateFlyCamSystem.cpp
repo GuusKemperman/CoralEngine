@@ -5,20 +5,17 @@
 #include "World/Registry.h"
 #include "Components/TransformComponent.h"
 #include "Components/FlyCamControllerComponent.h"
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
 void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 {
-	const float mouseWheelChange = InputManager::GetScrollY();
-	const bool movementSpeedMultiply = mouseWheelChange >= 0.0f;
-
 	glm::vec3 movementInput{};
 
-	movementInput[Axis::Forward] = InputManager::GetAxis(ImGuiKey_W, ImGuiKey_S);
-	movementInput[Axis::Up] = InputManager::GetAxis(ImGuiKey_Space, ImGuiKey_LeftCtrl);
-	movementInput[Axis::Right] = InputManager::GetAxis(ImGuiKey_A, ImGuiKey_D);
+	movementInput[Axis::Forward] = Input::Get().GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S);
+	movementInput[Axis::Up] = Input::Get().GetKeyboardAxis(Input::KeyboardKey::Space, Input::KeyboardKey::LeftControl);
+	movementInput[Axis::Right] =  Input::Get().GetKeyboardAxis(Input::KeyboardKey::D, Input::KeyboardKey::A);
 
 	const glm::vec3 timeScaledMovementInput = movementInput * dt;
 
@@ -30,8 +27,8 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	const glm::vec2 rotationInput
 	{
-		InputManager::GetAxis(ImGuiKey_DownArrow, ImGuiKey_UpArrow),
-		InputManager::GetAxis(ImGuiKey_LeftArrow, ImGuiKey_RightArrow)
+		Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp),
+		Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowRight, Input::KeyboardKey::ArrowLeft)
 	};
 
 	const glm::vec2 timeScaledRotationInput = rotationInput * dt;
@@ -44,11 +41,9 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	const bool emptyMovement = timeScaledMovementInput == glm::vec3{};
 	const bool emptyRotation = timeScaledRotations[0] == glm::identity<glm::quat>() && timeScaledRotations[1] == glm::identity<glm::quat>();
-	const bool emptyMouseWheel = mouseWheelChange == 0;
 
 	if (emptyMovement
-		&& emptyRotation
-		&& emptyMouseWheel)
+		&& emptyRotation)
 	{
 		return;
 	}
@@ -57,11 +52,6 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	for (auto [entity, flycam, transform] : view.each())
 	{
-		if (!emptyMouseWheel)
-		{
-			flycam.AdjustMovementSpeed(movementSpeedMultiply);
-		}
-
 		if (!emptyMovement)
 		{
 			flycam.ApplyTranslation(transform, timeScaledMovementInput);

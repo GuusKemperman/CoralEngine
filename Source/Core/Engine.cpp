@@ -4,9 +4,9 @@
 #include <chrono>
 
 #include "Core/FileIO.h"
-#include "Core/Device.h"
+#include "Core/Renderer.h"
 #include "Core/AssetManager.h"
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include "Core/Editor.h"
 #include "Core/VirtualMachine.h"
 #include "Meta/MetaManager.h"
@@ -21,7 +21,9 @@ Engine::EngineClass::EngineClass(int argc, char* argv[])
 {
 	FileIO::StartUp(argc == 0 ? std::string_view{} : argv[0]);
 	Logger::StartUp();
-	Device::StartUp();
+	Renderer::StartUp();
+	Input::StartUp();
+	Renderer::Get().CreateImguiContext();
 	MetaManager::StartUp();
 	AssetManager::StartUp();
 	VirtualMachine::StartUp();
@@ -42,7 +44,8 @@ Engine::EngineClass::~EngineClass()
 	VirtualMachine::ShutDown();
 	AssetManager::ShutDown();
 	MetaManager::ShutDown();
-	Device::ShutDown();
+	Input::ShutDown();
+	Renderer::ShutDown();
 	Logger::ShutDown();
 	FileIO::ShutDown();
 }
@@ -60,20 +63,10 @@ void Engine::EngineClass::Run()
 	}
 
 	World world = level->CreateWorld(true);
-
-	const MetaType* spawnerType = MetaManager::Get().TryGetType("DemoEnemySpawnerComponent");
-	ASSERT(spawnerType != nullptr);
-
-	const MetaField* desiredNumToSpawnField = spawnerType->TryGetField("DesiredNumOfEnemies");
-	ASSERT(desiredNumToSpawnField != nullptr);
-
-	entt::entity spawnerEntity = world.GetRegistry().FindEntityWithComponent(spawnerType);
-	ASSERT(spawnerEntity != entt::null);
-	MetaAny spawner = world.GetRegistry().Get(spawnerType->GetTypeId(), spawnerEntity);
-	*desiredNumToSpawnField->MakeRef(spawner).As<int32>() = 1'000;
 #endif // EDITOR
 
-	Device& renderer = Device::Get();
+	Input& input = Input::Get();
+	Renderer& renderer = Renderer::Get();
 
 	float timeElapsedSinceLastGarbageCollect{};
 	static constexpr float garbageCollectInterval = 5.0f;
@@ -88,7 +81,7 @@ void Engine::EngineClass::Run()
 		deltaTime = (std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1)).count();
 		t1 = t2;
 
-		InputManager::NewFrame();
+		input.NewFrame();
 		renderer.NewFrame();
 
 #ifdef EDITOR
@@ -99,6 +92,7 @@ void Engine::EngineClass::Run()
 #endif  // EDITOR
 
 		renderer.Render();
+
 
 		timeElapsedSinceLastGarbageCollect += deltaTime;
 

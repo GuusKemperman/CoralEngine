@@ -56,4 +56,5 @@ template<>
 struct Reflector<Engine::ComponentFilter>
 {
 	static Engine::MetaType Reflect();
+	static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(EngineComponentFilter, Engine::ComponentFilter);
