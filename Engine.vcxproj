@@ -1087,8 +1087,6 @@
     <ClCompile Include="Source\Utilities\Benchmark.cpp" />
     <ClCompile Include="source\Systems\Particles\ParticleSpawnPrefabOnDeathSystem.cpp" />
     <ClCompile Include="source\BasicDataTypes\Colors\ColorGradient.cpp" />
-    <ClCompile Include="source\Systems\RenderToCamerasSystem.cpp" />
-    <ClCompile Include="source\Systems\StaticMeshRenderingSystem.cpp" />
     <ClCompile Include="source\Systems\UpdateCameraMatricesSystem.cpp" />
     <ClCompile Include="Source\Assets\Asset.cpp" />
     <ClCompile Include="Source\Assets\Level.cpp" />
@@ -1135,7 +1133,6 @@
       </ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="source\core\Input.cpp" />
-    <ClCompile Include="Source\Core\Renderer.cpp" />
     <ClCompile Include="Source\Utilities\FileFunctions.cpp" />
     <ClCompile Include="Source\Utilities\Imgui\ImguiDragDrop.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1204,7 +1201,6 @@
     </ClCompile>
     <ClCompile Include="source\Systems\Particles\ParticleColorSystem.cpp" />
     <ClCompile Include="source\Systems\Particles\ParticleLifeTimeSystem.cpp" />
-    <ClCompile Include="source\Systems\Particles\ParticleMeshRenderingSystem.cpp" />
     <ClCompile Include="source\Systems\Particles\ParticlePhysicsSystem.cpp" />
     <ClCompile Include="source\Systems\Particles\ParticleScaleOverTimeSystem.cpp" />
     <ClCompile Include="source\Systems\UpdateFlyCamSystem.cpp" />
@@ -1412,7 +1408,6 @@
     <ClInclude Include="include\core\AssetManager.h" />
     <ClInclude Include="include\core\Editor.h" />
     <ClInclude Include="include\core\Input.h" />
-    <ClInclude Include="Include\Core\Renderer.h" />
     <ClInclude Include="include\core\EngineSubsystem.h" />
     <ClInclude Include="Include\Utilities\DoUndo.h" />
     <ClInclude Include="Include\Utilities\FileFunctions.h" />
@@ -1449,12 +1444,9 @@
     <ClInclude Include="include\Systems\Particles\ParticleColorSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleDebugVisualizationSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleLifeTimeSystem.h" />
-    <ClInclude Include="include\Systems\Particles\ParticleMeshRenderingSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticlePhysicsSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleScaleOverTimeSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleSpawnPrefabOnDeathSystem.h" />
-    <ClInclude Include="include\Systems\RenderToCamerasSystem.h" />
-    <ClInclude Include="include\Systems\StaticMeshRenderingSystem.h" />
     <ClInclude Include="include\Systems\UpdateCameraMatricesSystem.h" />
     <ClInclude Include="include\Systems\UpdateFlyCamSystem.h" />
     <ClInclude Include="include\Systems\System.h" />
