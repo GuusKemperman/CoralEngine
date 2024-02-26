@@ -1,12 +1,47 @@
 #pragma once
 #include "Core/EngineSubsystem.h"
 
-#if 1
+#if LOGGING_ENABLED
 
-#define LOG(channel, severity, formatString, ...) Engine::Logger::Get().Log(Engine::Format(formatString, __VA_ARGS__), #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
+#define LOG(channel, severity, formatString, ...) Engine::Logger::Get().Log(Engine::Format(#formatString, ##__VA_ARGS__), #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
+
+// If logging is enabled, we replace assert with a fatal log entry.
+// This will instruct the logger to dump the current log contents to
+// a file.
+#ifdef ASSERTS_ENABLED
+
+#define ASSERT_LOG(condition, format, ...)\
+if (condition) {}\
+else { UNLIKELY; LOG(LogTemp, Fatal, "Assert failed: " #condition " - " format, ##__VA_ARGS__); }
+
+#define ABORT LOG(LogTemp, Fatal, "Aborted");
+
+#endif // ASSERTS_ENABLED
+
 #else
+
 #define LOG(...)
+#define LOG(...)
+
+// If logging is not enabled, use the classic assert().
+#ifdef ASSERTS_ENABLED
+
+#define ASSERT_LOG(condition, ...)\
+if (condition) {}\
+else { UNLIKELY; assert(condition) }
+
+#define ABORT assert(false)
+
+#endif // ASSERTS_ENABLED
+
 #endif
+
+#ifndef ASSERTS_ENABLED
+#define ASSERT_LOG(...)
+#define ABORT
+#endif
+
+#define ASSERT(condition) ASSERT_LOG(condition, "")
 
 enum LogSeverity
 {

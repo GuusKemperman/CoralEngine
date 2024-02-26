@@ -1,6 +1,12 @@
 #include "Precomp.h"
 #include "Core/Renderer.h"
 
+#include <glad/glad.h>
+
+#include "xsr.hpp"
+
+#ifdef PLATFORM_WINDOWS
+
 // Disable warnings from external code
 #pragma warning(push, 0)
 
@@ -16,8 +22,10 @@
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
 
+#ifdef EDITOR
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/ImGuizmo.h"
+#endif
 
 #ifndef APIENTRY
 #define APIENTRY TMP_APIENTRY
@@ -28,8 +36,6 @@
 #endif
 
 #pragma warning(pop)
-
-#include "xsr.hpp"
 
 void ErrorCallback([[maybe_unused]] int error, [[maybe_unused]] const char* description)
 {
@@ -71,6 +77,8 @@ Engine::Renderer::Renderer()
 	mWindow = glfwCreateWindow(width, height, windowTitle.c_str(), 0, 0);
 	ASSERT(mWindow != nullptr);
 
+	mIsWindowOpen = true;
+
 	glfwMakeContextCurrent(mWindow);
 	succes = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 	ASSERT(succes);
@@ -106,16 +114,29 @@ Engine::Renderer::~Renderer()
 {
 	xsr::shutdown();
 
+#ifdef EDITOR
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
+#endif
 
 	glfwDestroyWindow(mWindow);
 	glfwTerminate();
 }
 
+glm::vec2 Engine::Renderer::GetDisplaySize() const
+{
+#ifdef EDITOR
+	return ImGui::GetIO().DisplaySize;
+#else
+	return { 1920.0f, 1080.0f };
+#endif
+
+}
+
 void Engine::Renderer::CreateImguiContext()
 {
+#ifdef EDITOR
 	LOG(LogCore, Message, "Creating imgui context");
 
 	glfwShowWindow(mWindow);
@@ -133,12 +154,14 @@ void Engine::Renderer::CreateImguiContext()
 
 	std::filesystem::create_directories("Intermediate/Layout");
 	ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
+#endif // EDITOR
 }
 
 void Engine::Renderer::NewFrame()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+#ifdef EDITOR
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -151,10 +174,12 @@ void Engine::Renderer::NewFrame()
 	{
 		glViewport(0, 0, static_cast<GLsizei>(displaySize.x), static_cast<GLsizei>(displaySize.y));
 	}
+#endif // EDITOR 
 }
 
 void Engine::Renderer::Render()
 {
+#ifdef EDITOR
 	// Rendering 
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -169,7 +194,7 @@ void Engine::Renderer::Render()
 		ImGui::RenderPlatformWindowsDefault();
 		glfwMakeContextCurrent(backup_current_context);
 	}
-
+#endif // EDITOR
 	glfwSwapBuffers(mWindow);
 	mIsWindowOpen = !glfwWindowShouldClose(mWindow);
 	CheckGL();
@@ -213,3 +238,46 @@ void _CheckFrameBuffer([[maybe_unused]] const char* f, [[maybe_unused]] int l)
 
 	LOG(LogCore, Error, "Invalid frame buffer: File: {}, Line: {}, GLError: {}, GLErrorCode {}", f, l, error, status);
 }
+
+#elif PLATFORM_***REMOVED***
+
+Engine::Renderer::Renderer()
+{
+	xsr::device_configuration deviceConfig;
+	deviceConfig.title = "***REMOVED***";
+	deviceConfig.width = 3840;
+	deviceConfig.height = 2160;
+
+	LOG(LogCore, Message, "Initializing xsr");
+	[[maybe_unused]] bool success = xsr::device::initialize(deviceConfig);
+	ASSERT_LOG(success, "Failed to initialize xsr device");
+
+	// create xsr render config
+	xsr::render_configuration config;
+	config.enable_shadows = true;
+	config.shadow_resolution = 1024;
+	config.texture_filter = xsr::render_configuration::texture_filtering::linear;
+	config.shader_path = "external/xsr/";
+
+	LOG(LogCore, Message, "Initializing xsr");
+	success = initialize(config);
+	ASSERT_LOG(success, "Failed to initialize xsr");
+}
+
+Engine::Renderer::~Renderer()
+{
+	xsr::shutdown();
+}
+
+void Engine::Renderer::CreateImguiContext()
+{}
+
+void Engine::Renderer::NewFrame()
+{
+	xsr::device::update();
+}
+
+void Engine::Renderer::Render()
+{}
+
+#endif

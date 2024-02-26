@@ -17,7 +17,7 @@
 Engine::Script::Script(std::string_view name) :
 	Asset(name, MakeTypeId<Script>())
 {
-
+	
 }
 
 Engine::Script::Script(AssetLoadInfo& loadInfo) :

@@ -2,6 +2,7 @@
 #include "BasicDataTypes/Colors/ColorGradient.h"
 
 #include "Meta/MetaType.h"
+#include "Utilities/Math.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
 Engine::LinearColor Engine::ColorGradient::GetColorAt(float t) const
