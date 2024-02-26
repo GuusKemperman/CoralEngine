@@ -1492,8 +1492,26 @@
     <WavePsslc Include="external\xsr\backends\***REMOVED***\debug_vv.pssl" />
     <WavePsslc Include="external\xsr\backends\***REMOVED***\standard_p.pssl" />
     <WavePsslc Include="external\xsr\backends\***REMOVED***\standard_vv.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBR_p.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBR_vv.pssl" />
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBR_p.pssl">
+      <Profile Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">PS</Profile>
+      <Profile Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">PS</Profile>
+      <Profile Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">PS</Profile>
+      <Profile Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">PS</Profile>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBR_vv.pssl">
+      <Profile Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">VSVS</Profile>
+      <Profile Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">VSVS</Profile>
+      <Profile Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">VSVS</Profile>
+      <Profile Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">VSVS</Profile>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
   </ItemGroup>
   <ItemGroup>
     <None Include="external\imgui\.editorconfig" />
