@@ -109,7 +109,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 		std::optional<std::vector<uint32>> indices{};
 		std::optional<Span<const glm::vec3>> normals{};
 		std::optional<std::vector<glm::vec2>> textureCoordinates{};
-		std::optional<std::vector<glm::vec3>> colors{};
+		std::optional<std::vector<glm::vec3>> tangents{};
 
 		if (mesh.HasFaces())
 		{
@@ -139,16 +139,12 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 			}
 		}
 
-		if (mesh.HasVertexColors(0))
+		if (mesh.HasTangentsAndBitangents())
 		{
-			colors = std::vector<glm::vec3>(mesh.mNumVertices);
-			for (uint32 v = 0; v < mesh.mNumVertices; v++)
-			{
-				(*colors)[v] = { mesh.mColors[0][v].r, mesh.mColors[0][v].g, mesh.mColors[0][v].b };
-			}
+			tangents = std::vector<glm::vec3>( reinterpret_cast<const glm::vec3*>(mesh.mTangents), reinterpret_cast<const glm::vec3*>(mesh.mTangents) + mesh.mNumVertices );
 		}
 
-		std::optional<ImportedAsset> importedMesh = ImportFromMemory(file, mesh.mName.C_Str(), myVersion, positions, indices, normals, textureCoordinates, colors);
+		std::optional<ImportedAsset> importedMesh = ImportFromMemory(file, mesh.mName.C_Str(), myVersion, positions, indices, normals, tangents, textureCoordinates);
 
 		if (importedMesh.has_value())
 		{
@@ -235,15 +231,15 @@ std::optional<Engine::ImportedAsset> Engine::StaticMeshImporter::ImportFromMemor
     const uint32 importerVersion, 
     Span<const glm::vec3> positions, 
 	std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices,
-    std::optional<Span<const glm::vec3>> normals, 
-    std::optional<Span<const glm::vec2>> textureCoordinates, 
-    std::optional<Span<const glm::vec3>> colors)
+    std::optional<Span<const glm::vec3>> normals,
+	std::optional<Span<const glm::vec3>> tangents,
+    std::optional<Span<const glm::vec2>> textureCoordinates)
 {
 	const MetaType* const staticMeshType = MetaManager::Get().TryGetType<StaticMesh>();
 	ASSERT(staticMeshType != nullptr);
 
     ImportedAsset importedMesh{ name, *staticMeshType, importedFromFile, importerVersion};
-    if (StaticMesh::OnSave(importedMesh, positions, indices, normals, textureCoordinates, colors))
+    if (StaticMesh::OnSave(importedMesh, positions, indices, normals, tangents, textureCoordinates))
     {
         return importedMesh;
     }
@@ -253,5 +249,9 @@ std::optional<Engine::ImportedAsset> Engine::StaticMeshImporter::ImportFromMemor
 Engine::MetaType Engine::StaticMeshImporter::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<StaticMeshImporter>{}, "StaticMeshImporter", MetaType::Base<Importer>{} };
+
+	// Added tangents
+	SetClassVersion(type, 1);
+
 	return type;
 }
