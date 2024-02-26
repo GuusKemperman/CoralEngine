@@ -1,0 +1,12 @@
+#pragma once
+#include "MetaTypeTraitsFwd.h"
+
+namespace Engine
+{
+	using FuncId = uint32;
+
+	FuncId MakeFuncId(TypeTraits returnType, const std::vector<TypeTraits>& parameters);
+
+	template<typename T>
+	CONSTEVAL FuncId MakeFuncId();
+};

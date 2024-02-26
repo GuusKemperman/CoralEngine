@@ -31,13 +31,21 @@ namespace Engine
 #include "Span.h"
 #include "SourceLocation.h"
 
+#ifdef _MSC_VER 
+
 #pragma warning(push)
 #pragma warning(disable : 4702) // Unreachable code
+
+#endif // _MSC_VER
 
 #define FMT_HEADER_ONLY
 #include "fmt/format.h"
 
+#ifdef _MSC_VER
+
 #pragma warning(pop)
+
+#endif // _MSC_VER
 
 #define CONSTEVAL constexpr
 #define UNLIKELY
@@ -56,7 +64,6 @@ namespace Engine
 
 	using SourceLocation = EarlySTD::source_location;
 
-
 	template <class... T>
 	std::string Format(const fmt::format_string<T...> fmt, T&&... args)
 	{
@@ -65,3 +72,19 @@ namespace Engine
 }
 #endif
 
+namespace Engine
+{
+#ifdef PLATFORM_***REMOVED***
+
+#define ENGINE_ALLOCA alloca
+#define FORCE_INLINE inline
+
+#elif PLATFORM_WINDOWS
+
+#define ENGINE_ALLOCA _alloca
+#define FORCE_INLINE __forceinline
+
+#else 
+	static_assert(false, "No platform")
+#endif
+}

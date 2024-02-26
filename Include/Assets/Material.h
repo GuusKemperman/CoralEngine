@@ -16,9 +16,6 @@ namespace Engine
 
 		static std::shared_ptr<const Material> TryGetDefaultMaterial();
 
-		// NOTE: Before adding, removing and reordering variables,
-		// take a look at OnSave and OnLoad, as the order matters.
-
 		LinearColor mBaseColorFactor{ 1.0f };		
 		glm::vec3 mEmissiveFactor{};
 		float mMetallicFactor = 1.0f;
@@ -50,6 +47,9 @@ namespace Engine
 			std::optional<std::string> normalTextureName,
 			std::optional<std::string> occlusionTextureName,
 			std::optional<std::string> emissiveTextureName) const;
+
+		void LoadV0(AssetLoadInfo& loadInfo);
+		void LoadV1(AssetLoadInfo& loadInfo);
 
 		friend ReflectAccess;
 		static MetaType Reflect();

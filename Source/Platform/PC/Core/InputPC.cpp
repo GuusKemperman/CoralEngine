@@ -13,41 +13,44 @@ enum KeyAction
     None = 2
 };
 
-constexpr int nr_keys = 350;
-
-bool keys_down[nr_keys];
-bool prev_keys_down[nr_keys];
-KeyAction keys_action[nr_keys];
-
-constexpr int nr_mousebuttons = 8;
-bool mousebuttons_down[nr_mousebuttons];
-bool prev_mousebuttons_down[nr_mousebuttons];
-KeyAction mousebuttons_action[nr_mousebuttons];
-
-constexpr int max_nr_gamepads = 4;
-bool gamepad_connected[max_nr_gamepads];
-GLFWgamepadstate gamepad_state[max_nr_gamepads];
-GLFWgamepadstate prev_gamepad_state[max_nr_gamepads];
-
-glm::vec2 mousepos;
-float mousewheelDelta = 0;
-
-void cursor_position_callback(GLFWwindow*, double xpos, double ypos)
+namespace
 {
-    mousepos.x = (float)xpos;
-    mousepos.y = (float)ypos;
-}
+    constexpr int nr_keys = 350;
 
-void scroll_callback(GLFWwindow*, double, double yoffset) { mousewheelDelta = (float)yoffset; }
+    bool keys_down[nr_keys];
+    bool prev_keys_down[nr_keys];
+    KeyAction keys_action[nr_keys];
 
-void key_callback(GLFWwindow*, int key, int, int action, int)
-{
-    if (action == GLFW_PRESS || action == GLFW_RELEASE) keys_action[key] = static_cast<KeyAction>(action);
-}
+    constexpr int nr_mousebuttons = 8;
+    bool mousebuttons_down[nr_mousebuttons];
+    bool prev_mousebuttons_down[nr_mousebuttons];
+    KeyAction mousebuttons_action[nr_mousebuttons];
 
-void mousebutton_callback(GLFWwindow*, int button, int action, int)
-{
-    if (action == GLFW_PRESS || action == GLFW_RELEASE) mousebuttons_action[button] = static_cast<KeyAction>(action);
+    constexpr int max_nr_gamepads = 4;
+    bool gamepad_connected[max_nr_gamepads];
+    GLFWgamepadstate gamepad_state[max_nr_gamepads];
+    GLFWgamepadstate prev_gamepad_state[max_nr_gamepads];
+
+    glm::vec2 mousepos;
+    float mousewheelDelta = 0;
+
+    void cursor_position_callback(GLFWwindow*, double xpos, double ypos)
+    {
+        mousepos.x = (float)xpos;
+        mousepos.y = (float)ypos;
+    }
+
+    void scroll_callback(GLFWwindow*, double, double yoffset) { mousewheelDelta = (float)yoffset; }
+
+    void key_callback(GLFWwindow*, int key, int, int action, int)
+    {
+        if (action == GLFW_PRESS || action == GLFW_RELEASE) keys_action[key] = static_cast<KeyAction>(action);
+    }
+
+    void mousebutton_callback(GLFWwindow*, int button, int action, int)
+    {
+        if (action == GLFW_PRESS || action == GLFW_RELEASE) mousebuttons_action[button] = static_cast<KeyAction>(action);
+    }
 }
 
 Input::Input()

@@ -12,7 +12,7 @@
 
 void Engine::RenderToCamerasSystem::Render(const World& world)
 {
-	xsr::render_directional_light(value_ptr(normalize(glm::vec3{ .5f, .5f, -1.0f })), value_ptr(glm::vec3{ 1.0f }));
+	xsr::render_directional_light(value_ptr(normalize(glm::vec3{ .5f, -.5f, 1.0f })), value_ptr(glm::vec3{ 1.0f }));
 
 	const auto optionalEntityCameraPair = world.GetRenderer().GetMainCamera();
 	ASSERT_LOG(optionalEntityCameraPair.has_value(), "XSR draw requests have been made, but they cannot be cleared as there is no camera to draw them to");

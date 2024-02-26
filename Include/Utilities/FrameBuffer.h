@@ -1,3 +1,4 @@
+#ifdef EDITOR
 #pragma once
 
 namespace Engine
@@ -34,3 +35,4 @@ namespace Engine
 		glm::ivec2 mSize{};
 	};
 }
+#endif // EDITOR

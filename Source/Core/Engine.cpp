@@ -63,17 +63,6 @@ void Engine::EngineClass::Run()
 	}
 
 	World world = level->CreateWorld(true);
-
-	const MetaType* spawnerType = MetaManager::Get().TryGetType("DemoEnemySpawnerComponent");
-	ASSERT(spawnerType != nullptr);
-
-	const MetaField* desiredNumToSpawnField = spawnerType->TryGetField("DesiredNumOfEnemies");
-	ASSERT(desiredNumToSpawnField != nullptr);
-
-	entt::entity spawnerEntity = world.GetRegistry().FindEntityWithComponent(spawnerType);
-	ASSERT(spawnerEntity != entt::null);
-	MetaAny spawner = world.GetRegistry().Get(spawnerType->GetTypeId(), spawnerEntity);
-	*desiredNumToSpawnField->MakeRef(spawner).As<int32>() = 1'000;
 #endif // EDITOR
 
 	Input& input = Input::Get();

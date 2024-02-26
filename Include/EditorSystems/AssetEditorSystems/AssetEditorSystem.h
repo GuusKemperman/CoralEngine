@@ -314,8 +314,8 @@ namespace Engine
 	{
 		EditorSystem::Tick(deltaTime);
 
-		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::LeftControl)
-			|| Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::RightControl))
+		if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl)
+			|| Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
 		{
 			if (mMementoStack.GetNumOfActionsDone() > 1 
 				&& mMementoStack.CanUndo()

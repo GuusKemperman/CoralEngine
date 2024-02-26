@@ -31,18 +31,18 @@ namespace Engine
 		static float Float() { return RandWithSeed<float>(sSeed); }		
 		static float FloatRange(const float& min, const float& max) { return RangeWithSeed(min, max, sSeed); }
 
-		template<glm::length_t L, typename T>
-		static glm::vec<L, T> Vec()
-		{
-			return Vec(sSeed);
-		}
-
 		static float Float(uint32& seed) { return RandWithSeed<float>(seed); }
 
 		template<glm::length_t L, typename T>
 		static glm::vec<L, T> Vec(uint32& seed)
 		{
 			return Vec<L, T>(seed);
+		}
+
+		template<glm::length_t L, typename T>
+		static glm::vec<L, T> Vec()
+		{
+			return Vec<L, T>(sSeed);
 		}
 
 		template<typename T>
