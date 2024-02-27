@@ -4,6 +4,7 @@
 #include "Meta/MetaType.h"
 #include "Utilities/StringFunctions.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
+#include "Utilities/ClassVersion.h"
 #include "Assets/Core/AssetSaveInfo.h"
 
 enum StaticMeshFlags : uint8
@@ -11,7 +12,9 @@ enum StaticMeshFlags : uint8
     hasIndices = 1,
     hasNormals = 1 << 1,
     hasUVs = 1 << 2,
+    hasColors = 1 << 3, // No longer used
     areIndices16Bit = 1 << 4,
+    hasTangents = 1 << 5
 };
 
 Engine::StaticMesh::StaticMesh(std::string_view name) :
@@ -22,8 +25,8 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
     Span<const glm::vec3> positions,
     std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices,
     std::optional<Span<const glm::vec3>> normals,
-    std::optional<Span<const glm::vec2>> uvs,
-    std::optional<Span<const glm::vec3>> colors)
+    std::optional<Span<const glm::vec3>> tangents,
+    std::optional<Span<const glm::vec2>> uvs)
 {
     const uint32 numOfIndices = indices.has_value() ? (static_cast<uint32>(std::holds_alternative<Span<const uint16>>(*indices) ?
         std::get<Span<const uint16>>(*indices).size() :
@@ -49,10 +52,10 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
         return false;
     }
 
-    if (colors.has_value()
-        && positions.size() != colors->size())
+    if (tangents.has_value()
+        && positions.size() != tangents->size())
     {
-        LOG(LogAssets, Error, "Importing static mesh failed: expected {} vertex colors, but received {}", positions.size(), colors->size());
+        LOG(LogAssets, Error, "Importing static mesh failed: expected {} tangents, but received {}", positions.size(), tangents->size());
         return false;
     }
 
@@ -75,6 +78,7 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
 
     if (normals.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasNormals);
     if (uvs.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasUVs);
+    if (tangents.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasTangents);
 
     str.write(reinterpret_cast<const char*>(&flags), sizeof(StaticMeshFlags));
 
@@ -110,14 +114,18 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
     }
     if (normals.has_value()) str.write(reinterpret_cast<const char*>(normals->data()), normals->size_bytes());
     if (uvs.has_value()) str.write(reinterpret_cast<const char*>(uvs->data()), uvs->size_bytes());
-    if (colors.has_value()) str.write(reinterpret_cast<const char*>(colors->data()), colors->size_bytes());
+    if (tangents.has_value()) str.write(reinterpret_cast<const char*>(tangents->data()), tangents->size_bytes());
 
     return true;
+
 }
 
 Engine::MetaType Engine::StaticMesh::Reflect()
 {
-    MetaType type = MetaType{ MetaType::T<StaticMesh>{}, "StaticMesh", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{} };
+    MetaType type = MetaType{ MetaType::T<StaticMesh>{}, "StaticMesh", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
+
+    SetClassVersion(type, 1);
+
     ReflectAssetType<StaticMesh>(type);
     return type;
 }
