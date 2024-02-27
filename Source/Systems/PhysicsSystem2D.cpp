@@ -14,7 +14,9 @@ void Engine::PhysicsSystem2D::Update(World& world, float dt)
 {
     UpdateBodiesAndTransforms(world, dt);
     CheckAndRegisterCollisions(world);
+#ifdef _DEBUG
     DebugDrawing(world);
+#endif
 }
 
 void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
@@ -70,7 +72,6 @@ void Engine::PhysicsSystem2D::CheckAndRegisterCollisions(World& world)
 
 void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 {
-#ifdef _DEBUG
     Registry& reg = world.GetRegistry();
     const auto diskView = reg.View<PhysicsBody2DComponent, DiskColliderComponent, TransformComponent>();
     const auto& renderer = world.GetRenderer();
@@ -92,10 +93,9 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
         }
         PrintCollisionData(entity, body);
     }
-#endif
 }
 
-void Engine::PhysicsSystem2D::PrintCollisionData(entt::entity entity, PhysicsBody2DComponent& body)
+void Engine::PhysicsSystem2D::PrintCollisionData(entt::entity entity, const PhysicsBody2DComponent& body)
 {
     for (const auto& col : body.mCollisions)
     {
