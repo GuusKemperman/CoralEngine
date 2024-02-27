@@ -328,9 +328,43 @@ void Engine::WorldRenderer::AddBox(DebugCategory::Enum category, const glm::vec3
 
 void Engine::WorldRenderer::AddPolygon(DebugCategory::Enum category, std::vector<glm::vec3>& points, glm::vec4 color) const
 {
-    size_t pointCount = points.size();
+    if (!(sDebugCategoryFlags & category)) return;
+
+    const size_t pointCount = points.size();
     for (size_t i = 0; i < pointCount; i++)
     {
         AddLine(category, points[i], points[(i + 1) % pointCount], color);
+    }
+}
+
+void Engine::WorldRenderer::AddPolygon(DebugCategory::Enum category, std::vector<glm::vec2>& points, glm::vec4 color, Plane::Enum plane) const
+{
+    if (!(sDebugCategoryFlags & category)) return;
+
+    const size_t pointCount = points.size();
+
+    switch (plane)
+    {
+    case Plane::XY:
+        for (size_t i = 0; i < pointCount; i++)
+        {
+            const size_t nextPointIndex = (i + 1) % pointCount;
+            AddLine(category, { points[i].x, points[i].y, 0.f }, { points[nextPointIndex].x, points[nextPointIndex].y, 0.f }, color);
+        }
+        break;
+    case Plane::XZ:
+        for (size_t i = 0; i < pointCount; i++)
+        {
+            const size_t nextPointIndex = (i + 1) % pointCount;
+            AddLine(category, { points[i].x, 0.f, points[i].y }, { points[nextPointIndex].x, 0.f , points[nextPointIndex].y}, color);
+        }
+        break;
+    case Plane::YZ:
+        for (size_t i = 0; i < pointCount; i++)
+        {
+            const size_t nextPointIndex = (i + 1) % pointCount;
+            AddLine(category, { 0.f, points[i].x, points[i].y }, { 0.f, points[nextPointIndex].x, points[nextPointIndex].y }, color);
+        }
+        break;
     }
 }

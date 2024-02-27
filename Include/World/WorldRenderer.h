@@ -68,6 +68,8 @@ namespace Engine
 
 		void AddPolygon(DebugCategory::Enum category, std::vector<glm::vec3>& points, glm::vec4 color) const;
 
+		void AddPolygon(DebugCategory::Enum category, std::vector<glm::vec2>& points, glm::vec4 color, Plane::Enum plane = Plane::XZ) const;
+
 		static void SetDebugCategoryFlags(DebugCategory::Enum flags) { sDebugCategoryFlags = flags; }
 		static DebugCategory::Enum GetDebugCategoryFlags() { return sDebugCategoryFlags; }
 
