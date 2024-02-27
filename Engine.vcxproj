@@ -482,6 +482,8 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Assets\StaticMesh.cpp" />
+    <ClCompile Include="Source\Assets\Texture.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\Renderer***REMOVED***.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -835,16 +837,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
-    <ClCompile Include="Source\Components\Physics2D\PhysicsBody2DComponent.cpp" />
-    <ClCompile Include="Source\Components\Physics2D\PolygonColliderComponent.cpp" />
-    <ClCompile Include="Source\Systems\PhysicsSystem2D.cpp" />
     <ClCompile Include="Source\Components\IsDestroyedTag.cpp" />
     <ClCompile Include="Source\Components\NameComponent.cpp" />
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
-    <ClCompile Include="Source\Components\TopDownCamControllerComponent.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\Other\ReflectNullChecker.cpp" />
-    <ClCompile Include="Source\Systems\UpdateTopDownCamSystem.cpp" />
     <ClCompile Include="Source\Platform\PC\Core\FileIOPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -881,14 +877,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\UnitTests\ReflectionUnitTests.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="Source\UnitTests\LevelAndPrefabSerializationUnitTests.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -904,14 +892,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Source\UnitTests\PhysicsSystem2DUnitTests.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\UnitTests\ScriptingUnitTests.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1328,11 +1308,7 @@
     <ClInclude Include="Include\Components\ComponentFilter.h" />
     <ClInclude Include="Include\Components\IsDestroyedTag.h" />
     <ClInclude Include="Include\Components\NameComponent.h" />
-    <ClInclude Include="Include\Components\Physics2D\DiskColliderComponent.h" />
-    <ClInclude Include="Include\Components\Physics2D\PhysicsBody2DComponent.h" />
-    <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
     <ClInclude Include="Include\Components\PrefabOriginComponent.h" />
-    <ClInclude Include="Include\Components\TopDownCamControllerComponent.h" />
     <ClInclude Include="include\Containers\ManyStrings.h" />
     <ClInclude Include="Include\Core\CommonMetaProperties.h" />
     <ClInclude Include="include\core\Packager.h" />
@@ -1396,8 +1372,6 @@
     </ClInclude>
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
-    <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />
-    <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
     <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
     <ClInclude Include="Include\Utilities\CPP20\Span.h" />
     <ClInclude Include="Include\Utilities\CPP20\STDAliases.h" />
