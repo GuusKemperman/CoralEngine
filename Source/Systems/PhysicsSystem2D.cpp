@@ -97,7 +97,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 
 void Engine::PhysicsSystem2D::PrintCollisionData([[maybe_unused]] entt::entity entity, [[maybe_unused]] const PhysicsBody2DComponent& body)
 {
-    for (const auto& col : body.mCollisions)
+    for ([[maybe_unused]] const auto& col : body.mCollisions)
     {
         LOG(LogPhysics, Message,
             "entity{} col - entity1: {}, entity2: {}, normal: ({}, {}), depth: {}, contact point: ({}, {})\n",
