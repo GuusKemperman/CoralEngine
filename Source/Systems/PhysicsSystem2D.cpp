@@ -13,7 +13,7 @@
 void Engine::PhysicsSystem2D::Update(World& world, float dt)
 {
     UpdateBodiesAndTransforms(world, dt);
-    CheckAndRegisterCollisions(world);
+    UpdateCollisions(world);
 #ifdef _DEBUG
     DebugDrawing(world);
 #endif
@@ -31,7 +31,7 @@ void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
     }
 }
 
-void Engine::PhysicsSystem2D::CheckAndRegisterCollisions(World& world)
+void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 {
     Registry& reg = world.GetRegistry();
     const auto& viewDisk = reg.View<PhysicsBody2DComponent, DiskColliderComponent>();
@@ -53,17 +53,17 @@ void Engine::PhysicsSystem2D::CheckAndRegisterCollisions(World& world)
 
             if (CollisionCheckDiskDisk(body1.mPosition, disk1.mRadius, body2.mPosition, disk2.mRadius, collision))
             {
-                //ResolveCollision(collision, body1, body2);
+                ResolveCollision(collision, body1, body2);
                 RegisterCollision(collision, entity1, body1, entity2, body2);
             }
         }
 
         // disk-polygon collisions
-        for (const auto& [entity2, body2, polygon2] : viewPolygon.each())
+        for (const auto [entity2, body2, polygon2] : viewPolygon.each())
         {
             if (CollisionCheckDiskPolygon(body1.mPosition, disk1.mRadius, body2.mPosition, polygon2.mPoints, collision))
             {
-                //ResolveCollision(collision, body1, body2);
+                ResolveCollision(collision, body1, body2);
                 RegisterCollision(collision, entity1, body1, entity2, body2);
             }
         }
@@ -103,6 +103,48 @@ void Engine::PhysicsSystem2D::PrintCollisionData([[maybe_unused]] entt::entity e
             "entity{} col - entity1: {}, entity2: {}, normal: ({}, {}), depth: {}, contact point: ({}, {})\n",
             entt::to_integral(entity), entt::to_integral(col.mEntity1), entt::to_integral(col.mEntity2), col.mNormal.x, col.mNormal.y, col.mDepth,
             col.mContactPoint.x, col.mContactPoint.y)
+    }
+}
+
+void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision, PhysicsBody2DComponent& body1, PhysicsBody2DComponent& body2)
+{
+    const bool isBody1Dynamic = body1.mMotionType == MotionType::Dynamic;
+    const bool isBody2Dynamic = body2.mMotionType == MotionType::Dynamic;
+
+    // if both bodies are not dynamic, there's nothing left to do
+    if (!isBody1Dynamic && !isBody2Dynamic) return;
+
+    // displace the objects to resolve overlap
+    const float totalInvMass = body1.mInvMass + body2.mInvMass;
+    const glm::vec2& dist = (collision.mDepth / totalInvMass) * collision.mNormal;
+
+    if (isBody1Dynamic)
+    {
+        body1.mPosition += dist * body1.mInvMass;
+#ifdef _DEBUG
+        //renderer.AddLine(DebugCategory::Physics, glm::vec3(body1.mPosition, 0.15f),
+        //    glm::vec3(body1.mPosition + collision.mNormal, 0.15f), { 1.f, 0.f, 0.f, 1.f });
+#endif
+    }
+    if (isBody2Dynamic)
+    {
+        body2.mPosition += dist * body2.mInvMass;
+#ifdef _DEBUG
+        //renderer.AddLine(DebugCategory::Physics, glm::vec3(body2.mPosition, 0.15f),
+        //    glm::vec3(body2.mPosition + collision.mNormal, 0.15f), { 1.f, 0.f, 0.f, 1.f });
+#endif
+    }
+
+    // compute and apply impulses
+    const float dotProduct = glm::dot(body1.mLinearVelocity - body2.mLinearVelocity, collision.mNormal);
+    if (dotProduct <= 0)
+    {
+        const float restitution = std::min(body1.mRestitution, body2.mRestitution);
+        const float j = -(1 + restitution) * dotProduct / totalInvMass;
+        const glm::vec2& impulse = j * collision.mNormal;
+
+        if (isBody1Dynamic) body1.ApplyImpulse(impulse);
+        if (isBody2Dynamic) body2.ApplyImpulse(-impulse);
     }
 }
 
