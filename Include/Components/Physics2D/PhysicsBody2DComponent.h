@@ -11,20 +11,20 @@ namespace Engine
 	struct CollisionData
 	{
 		/// The ID of the first entity involved in the collision.
-		entt::entity mEntity1;
+		entt::entity mEntity1{};
 
 		/// The ID of the second entity involved in the collision.
-		entt::entity mEntity2;
+		entt::entity mEntity2{};
 
 		/// The normal vector on the point of contact, pointing away from entity2's physics body.
-		glm::vec2 mNormal;
+		glm::vec2 mNormal{};
 
 		/// The penetration depth of the two physics bodies
 		/// (before they were displaced to resolve overlap).
-		float mDepth;
+		float mDepth{};
 
 		/// The approximate point of contact of the collision, in world coordinates.
-		glm::vec2 mContactPoint;
+		glm::vec2 mContactPoint{};
 	};
 
 	class PhysicsBody2DComponent

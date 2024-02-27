@@ -9,9 +9,6 @@ namespace Engine
 	class DiskColliderComponent
 	{
 	public:
-		DiskColliderComponent() = default;
-		explicit DiskColliderComponent(float radius) : mRadius(radius) {}
-
 		float mRadius = 1.f;
 
 	private:

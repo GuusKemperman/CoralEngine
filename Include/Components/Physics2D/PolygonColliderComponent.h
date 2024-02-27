@@ -9,9 +9,6 @@ namespace Engine
 	class PolygonColliderComponent
 	{
 	public:
-		PolygonColliderComponent() = default;
-		explicit PolygonColliderComponent(const std::vector<glm::vec2>& points) : mPoints(points) {}
-
 		/// <summary>
 		/// The boundary vertices of the polygon in local coordinates,
 		/// i.e. relative to the object's rotation and center of mass.
