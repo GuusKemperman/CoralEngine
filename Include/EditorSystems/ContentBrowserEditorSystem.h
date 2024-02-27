@@ -39,10 +39,12 @@ namespace Engine
 		{
 			const MetaType* mClass{};
 			std::string mAssetName{};
-			std::string mFileLocation{};
+			std::string mFolderRelativeToRoot{};
 		};
 		std::optional<AssetCreator> mAssetCreator{};
 		void DisplayAssetCreator(const std::vector<ContentFolder>& contentFolders);
+
+		static void CreateNewAsset(const AssetCreator& assetCreator, const std::filesystem::path& toFile);
 
 		friend ReflectAccess;
 		static MetaType Reflect();

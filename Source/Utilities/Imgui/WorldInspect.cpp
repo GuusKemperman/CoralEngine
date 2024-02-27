@@ -758,7 +758,7 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 
 	}
 
-	ImGui::InvisibleButton("DragToUnparent", ImGui::GetContentRegionAvail());
+	ImGui::InvisibleButton("DragToUnparent", glm::max(static_cast<glm::vec2>(ImGui::GetContentRegionAvail()), glm::vec2{1.0f, 1.0f}));
 	ReceiveDragDropOntoParent(reg, std::nullopt);
 	ReceiveDragDrops(world);
 }

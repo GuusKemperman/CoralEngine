@@ -298,6 +298,10 @@ namespace Engine
 		uint32 GetAlignment() const { return mTypeInfo.GetAlign(); }
 
 		bool IsConstructible(const std::vector<TypeTraits>& parameters) const { return TryGetConstructor(parameters) != nullptr; }
+
+		template<typename... Args>
+		bool IsConstructible() const;
+
 		bool IsDefaultConstructible() const { return mTypeInfo.mFlags & TypeInfo::IsDefaultConstructible; }
 		bool IsMoveConstructible() const { return mTypeInfo.mFlags & TypeInfo::IsMoveConstructible; }
 		bool IsCopyConstructible() const { return mTypeInfo.mFlags & TypeInfo::IsCopyConstructible; }

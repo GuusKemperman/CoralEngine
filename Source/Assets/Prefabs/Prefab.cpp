@@ -16,6 +16,8 @@
 Engine::Prefab::Prefab(std::string_view name) :
 	Asset(name, MakeTypeId<Prefab>())
 {
+	World world{ false };
+	CreateFromEntity(world, world.GetRegistry().Create());
 }
 
 Engine::Prefab::Prefab(AssetLoadInfo& loadInfo) :
@@ -302,7 +304,7 @@ const Engine::PrefabEntityFactory* Engine::Prefab::TryFindFactory(uint32 factory
 
 Engine::MetaType Engine::Prefab::Reflect()
 {
-	MetaType type = MetaType{ MetaType::T<Prefab>{}, "Prefab", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{} };
+	MetaType type = MetaType{ MetaType::T<Prefab>{}, "Prefab", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 	ReflectAssetType<Prefab>(type);
 	return type;
 }
