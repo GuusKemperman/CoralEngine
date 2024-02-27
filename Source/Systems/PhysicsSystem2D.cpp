@@ -119,22 +119,8 @@ void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision, P
     const float totalInvMass = body1.mInvMass + body2.mInvMass;
     const glm::vec2& dist = (collision.mDepth / totalInvMass) * collision.mNormal;
 
-    if (isBody1Dynamic)
-    {
-        body1.mPosition += dist * body1.mInvMass;
-#ifdef _DEBUG
-        //renderer.AddLine(DebugCategory::Physics, glm::vec3(body1.mPosition, 0.15f),
-        //    glm::vec3(body1.mPosition + collision.mNormal, 0.15f), { 1.f, 0.f, 0.f, 1.f });
-#endif
-    }
-    if (isBody2Dynamic)
-    {
-        body2.mPosition += dist * body2.mInvMass;
-#ifdef _DEBUG
-        //renderer.AddLine(DebugCategory::Physics, glm::vec3(body2.mPosition, 0.15f),
-        //    glm::vec3(body2.mPosition + collision.mNormal, 0.15f), { 1.f, 0.f, 0.f, 1.f });
-#endif
-    }
+    if (isBody1Dynamic) body1.mPosition += dist * body1.mInvMass;
+    if (isBody2Dynamic) body2.mPosition += dist * body2.mInvMass;
 
     // compute and apply impulses
     const float dotProduct = glm::dot(body1.mLinearVelocity - body2.mLinearVelocity, collision.mNormal);
