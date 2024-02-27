@@ -56,9 +56,16 @@ namespace Engine
 		glm::vec2 mLinearVelocity{};
 		glm::vec2 mForce{};
 
+		inline void AddForce(const glm::vec2& force)
+		{
+			if (mMotionType == MotionType::Dynamic) mForce += force;
+		}
+		inline void ApplyImpulse(const glm::vec2& imp)
+		{
+			if (mMotionType == MotionType::Dynamic) mLinearVelocity += imp * mInvMass;
+		}
+
 		std::vector<CollisionData> mCollisions = {};
-		void AddCollisionData(const CollisionData& data) { mCollisions.push_back(data); }
-		void ClearCollisionData() { mCollisions.clear(); }
 
 	private:
 		friend ReflectAccess;
@@ -66,6 +73,9 @@ namespace Engine
 		REFLECT_AT_START_UP(PhysicsBody2DComponent);
 
 		friend PhysicsSystem2D;
+
+		void AddCollisionData(const CollisionData& data) { mCollisions.push_back(data); }
+		void ClearCollisionData() { mCollisions.clear(); }
 		
 		void ClearForces() { mForce = {}; }
 
