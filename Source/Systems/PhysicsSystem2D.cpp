@@ -39,9 +39,10 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 
 	CollisionData collision;
 
+    // collisions between a dynamic and static/kinematic body are only resolved if the dynamic body is a disk
     for (auto [entity1, body1, disk1] : viewDisk.each())
     {
-        //if (body1.GetType() == Body::Type::Static) continue;
+        if (body1.mMotionType == MotionType::Static) continue;
 
         // disk-disk collisions
         for (auto [entity2, body2, disk2] : viewDisk.each())
@@ -49,7 +50,7 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
             if (entity1 == entity2) continue;
 
             // avoid duplicate collision checks
-            if (/*body2.GetType() != Body::Type::Static && */entity1 > entity2) continue;
+            if (body2.mMotionType != MotionType::Static && entity1 > entity2) continue;
 
             if (CollisionCheckDiskDisk(body1.mPosition, disk1.mRadius, body2.mPosition, disk2.mRadius, collision))
             {
@@ -155,9 +156,9 @@ void Engine::PhysicsSystem2D::RegisterCollision(CollisionData& collision, const 
     collision.mEntity2 = entity2;
 
     // store collision data in both bodies, also if they are kinematic (implying custom collision resolution)
-    // if (body1.GetType() != Body::Type::Static)
+     if (body1.mMotionType != MotionType::Static)
 		body1.AddCollisionData(collision);
-    //if (body2.GetType() != Body::Type::Static)
+    if (body2.mMotionType != MotionType::Static)
         body2.AddCollisionData(CollisionData{ collision.mEntity2, collision.mEntity1, -collision.mNormal, collision.mDepth });
 }
 
