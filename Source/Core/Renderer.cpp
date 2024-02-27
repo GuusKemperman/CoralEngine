@@ -75,9 +75,15 @@ Engine::Renderer::Renderer()
 
 	LOG(LogCore, Message, "Creating window");
 	mWindow = glfwCreateWindow(width, height, windowTitle.c_str(), 0, 0);
-	ASSERT(mWindow != nullptr);
 
-	mIsWindowOpen = true;
+	if (mWindow == nullptr)
+	{
+		LOG(LogCore, Error, "Could not create a window");
+	}
+	else
+	{
+		mIsWindowOpen = true;
+	}
 
 	glfwMakeContextCurrent(mWindow);
 	succes = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);

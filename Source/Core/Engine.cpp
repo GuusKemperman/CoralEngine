@@ -106,16 +106,41 @@ void Engine::EngineClass::Run()
 
 int main(int argc, char* argv[])
 {
-	Engine::EngineClass engine{ argc, argv };
 
 	if (argc >= 2
 		&& strcmp(argv[1], "unit_tests") == 0)
 	{
+		try
+		{
+			Engine::EngineClass engine{ argc, argv };
+
+			bool anyFailed = false;
 #ifdef EDITOR
-		Engine::UnitTestManager::Get().RunTests(Engine::UnitTest::Result::All);
+			for (auto& test : Engine::UnitTestManager::Get().GetAllTests())
+			{
+				test();
+				if ((test.mResult & Engine::UnitTest::Success) == 0)
+				{
+					anyFailed = true;
+				}
+			}
 #endif // EDITOR
-		return Engine::Logger::Get().GetNumOfEntriesPerSeverity()[LogSeverity::Error];
+
+			return anyFailed;
+		}
+		catch (const std::exception& e) 
+		{
+			std::cerr << "Exception thrown: " << e.what() << std::endl;
+			return 1;
+		}
+		catch (...) 
+		{
+			std::cerr << "Unknown exception thrown" << std::endl;
+			return 1;
+		}
 	}
+
+	Engine::EngineClass engine{ argc, argv };
 
 	engine.Run();
 	return 0;
