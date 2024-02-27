@@ -38,4 +38,4 @@ jobs:
 
     - name: Run Unit Tests
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: .\Build\Engine\x64\${{matrix.build-configuration}}\${{matrix.build-configuration}}.exe run_tests
+      run: Build\Engine\x64\${{matrix.build-configuration}}\${{matrix.build-configuration}}_x64.exe run_tests
