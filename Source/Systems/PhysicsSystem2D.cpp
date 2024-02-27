@@ -95,9 +95,8 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
     }
 }
 
-void Engine::PhysicsSystem2D::PrintCollisionData(entt::entity entity, const PhysicsBody2DComponent& body)
+void Engine::PhysicsSystem2D::PrintCollisionData([[maybe_unused]] entt::entity entity, [[maybe_unused]] const PhysicsBody2DComponent& body)
 {
-#ifdef LOGGING_ENABLED
     for (const auto& col : body.mCollisions)
     {
         LOG(LogPhysics, Message,
@@ -105,7 +104,6 @@ void Engine::PhysicsSystem2D::PrintCollisionData(entt::entity entity, const Phys
             entt::to_integral(entity), entt::to_integral(col.mEntity1), entt::to_integral(col.mEntity2), col.mNormal.x, col.mNormal.y, col.mDepth,
             col.mContactPoint.x, col.mContactPoint.y)
     }
-#endif
 }
 
 void Engine::PhysicsSystem2D::RegisterCollision(CollisionData& collision, const entt::entity& entity1, PhysicsBody2DComponent& body1, const entt::entity& entity2, PhysicsBody2DComponent& body2)
