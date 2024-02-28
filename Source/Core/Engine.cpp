@@ -19,6 +19,7 @@
 
 Engine::EngineClass::EngineClass(int argc, char* argv[])
 {
+	
 	FileIO::StartUp(argc == 0 ? std::string_view{} : argv[0]);
 	Logger::StartUp();
 	Renderer::StartUp();

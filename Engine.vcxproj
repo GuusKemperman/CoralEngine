@@ -98,31 +98,53 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Properties\EngineAndGamePC.props" />
+    <Import Project="Properties\EngineAndGameDebug.props" />
+    <Import Project="Properties\EngineAndGame.props" />
+    <Import Project="Properties\EnginePC.props" />
+    <Import Project="Properties\Engine.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">
+    <Import Project="Properties\EngineAndGame***REMOVED***.props" />
+    <Import Project="Properties\EngineAndGameDebug.props" />
+    <Import Project="Properties\EngineAndGame.props" />
+    <Import Project="Properties\Engine***REMOVED***.props" />
+    <Import Project="Properties\Engine.props" />
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">
+    <Import Project="Properties\EngineAndGame***REMOVED***.props" />
+    <Import Project="Properties\EngineAndGameRelease.props" />
+    <Import Project="Properties\EngineAndGame.props" />
+    <Import Project="Properties\Engine***REMOVED***.props" />
+    <Import Project="Properties\Engine.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Properties\EngineAndGamePC.props" />
+    <Import Project="Properties\EngineAndGameRelease.props" />
+    <Import Project="Properties\EngineAndGameEditor.props" />
+    <Import Project="Properties\EngineAndGame.props" />
+    <Import Project="Properties\EnginePC.props" />
+    <Import Project="Properties\Engine.props" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="Properties\EngineAndGamePC.props" />
+    <Import Project="Properties\EngineAndGameRelease.props" />
+    <Import Project="Properties\EngineAndGame.props" />
+    <Import Project="Properties\EnginePC.props" />
+    <Import Project="Properties\Engine.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">
+    <Import Project="Properties\EngineAndGamePC.props" />
+    <Import Project="Properties\EngineAndGameDebug.props" />
+    <Import Project="Properties\EngineAndGameEditor.props" />
+    <Import Project="Properties\EngineAndGame.props" />
+    <Import Project="Properties\EnginePC.props" />
+    <Import Project="Properties\Engine.props" />
+  </ImportGroup>
+  <ImportGroup Label="Shared">
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -167,15 +189,13 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>LOGGING_ENABLED;ASSERTS_ENABLED;XSR_USE_HARD_CODED_SHADERS;PLATFORM_WINDOWS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include/Engine/Precomp;include;$(ProjectDir)external;$(ProjectDir)external\lua;$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;$(ProjectDir)external\xsr\include;$(ProjectDir)external\clipper\include;Intermediate\generated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Precomp.h</PrecompiledHeaderFile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -187,8 +207,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)external\xsr\backends\opengl\external\GLFW;;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>glfw3.lib;opengl32.lib</AdditionalDependencies>
@@ -201,9 +221,9 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>LOGGING_ENABLED;ASSERTS_ENABLED;XSR_USE_HARD_CODED_SHADERS;PLATFORM_***REMOVED***;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include/Engine/Precomp;include;$(ProjectDir)external;$(ProjectDir)external\lua;$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;$(ProjectDir)external\xsr\include;$(ProjectDir)external\clipper\include;Intermediate\generated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
@@ -217,15 +237,13 @@
       <CppExceptions>true</CppExceptions>
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
-      <Warnings>MoreWarnings</Warnings>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <WarningsAsErrors>true</WarningsAsErrors>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)External/fmod/lib;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>-l***REMOVED***Sysmodule_stub_weak;-l***REMOVED***PngDec_stub_weak;-l***REMOVED***Pad_stub_weak;-l***REMOVED***UserService_stub_weak;-l***REMOVED******REMOVED***Driver_stub_weak;-l***REMOVED******REMOVED***_stub_weak;-l***REMOVED***VideoOut_stub_weak;-l***REMOVED******REMOVED***_debug_nosubmission;-l***REMOVED******REMOVED***Core_debug_nosubmission;-l***REMOVED******REMOVED***GpuAddress_debug_nosubmission;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>glfw3.lib;opengl32.lib</AdditionalDependencies>
@@ -236,15 +254,13 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">
     <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>LOGGING_ENABLED;ASSERTS_ENABLED;XSR_USE_HARD_CODED_SHADERS;PLATFORM_WINDOWS;EDITOR;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include/Engine/Precomp;include;$(ProjectDir)external;$(ProjectDir)external\lua;$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;$(ProjectDir)external\xsr\include;$(ProjectDir)external\clipper\include;Intermediate\generated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Precomp.h</PrecompiledHeaderFile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -256,8 +272,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)external\assimp\$(Platform)\Debug\;$(ProjectDir)external\xsr\backends\opengl\external\GLFW;;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>assimp-vc143-mtd.lib;glfw3.lib;opengl32.lib;;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(EngineDir)External\assimp\$(Platform)\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc143-mtd.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>IF NOT EXIST "$(TargetDir)assimp-vc143-mtd.dll" COPY /Y "$(ProjectDir)external\assimp\$(Platform)\Debug\assimp-vc143-mtd.dll" "$(TargetDir)"</Command>
@@ -273,9 +289,9 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>LOGGING_ENABLED;ASSERTS_ENABLED;XSR_USE_HARD_CODED_SHADERS;PLATFORM_***REMOVED***;EDITOR;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include/Engine/Precomp;include;$(ProjectDir)external;$(ProjectDir)external\lua;$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;$(ProjectDir)external\xsr\include;$(ProjectDir)external\clipper\include;Intermediate\generated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
@@ -289,14 +305,13 @@
       <CppExceptions>true</CppExceptions>
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
-      <Warnings>MoreWarnings</Warnings>
-      <WarningsAsErrors>true</WarningsAsErrors>
+      <ExtraWarnings />
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)External/fmod/lib;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>-l***REMOVED***Sysmodule_stub_weak;-l***REMOVED***PngDec_stub_weak;-l***REMOVED***Pad_stub_weak;-l***REMOVED***UserService_stub_weak;-l***REMOVED******REMOVED***Driver_stub_weak;-l***REMOVED******REMOVED***_stub_weak;-l***REMOVED***VideoOut_stub_weak;-l***REMOVED******REMOVED***_debug_nosubmission;-l***REMOVED******REMOVED***Core_debug_nosubmission;-l***REMOVED******REMOVED***GpuAddress_debug_nosubmission;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>IF NOT EXIST "$(TargetDir)assimp-vc143-mtd.dll" COPY /Y "$(ProjectDir)external\assimp\$(Platform)\Debug\assimp-vc143-mtd.dll" "$(TargetDir)"</Command>
@@ -310,17 +325,15 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>XSR_USE_HARD_CODED_SHADERS;PLATFORM_WINDOWS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include/Engine/Precomp;include;$(ProjectDir)external;$(ProjectDir)external\lua;$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;$(ProjectDir)external\xsr\include;$(ProjectDir)external\clipper\include;Intermediate\generated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Precomp.h</PrecompiledHeaderFile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -335,8 +348,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)external\xsr\backends\opengl\external\GLFW;%(AdditionalLibraryDirectories);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>glfw3.lib;opengl32.lib;</AdditionalDependencies>
@@ -351,9 +364,9 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>XSR_USE_HARD_CODED_SHADERS;PLATFORM_***REMOVED***;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include/Engine/Precomp;include;$(ProjectDir)external;$(ProjectDir)external\lua;$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;$(ProjectDir)external\xsr\include;$(ProjectDir)external\clipper\include;Intermediate\generated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
@@ -368,16 +381,15 @@
       <CppExceptions>true</CppExceptions>
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
-      <Warnings>MoreWarnings</Warnings>
-      <WarningsAsErrors>true</WarningsAsErrors>
+      <ExtraWarnings />
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)External/fmod/lib;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>-l***REMOVED***Sysmodule_stub_weak;-l***REMOVED***PngDec_stub_weak;-l***REMOVED***Pad_stub_weak;-l***REMOVED***UserService_stub_weak;-l***REMOVED******REMOVED***Driver_stub_weak;-l***REMOVED******REMOVED***_stub_weak;-l***REMOVED***VideoOut_stub_weak;-l***REMOVED******REMOVED***_debug_nosubmission;-l***REMOVED******REMOVED***Core_debug_nosubmission;-l***REMOVED******REMOVED***GpuAddress_debug_nosubmission;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>glfw3.lib;opengl32.lib;</AdditionalDependencies>
@@ -388,17 +400,15 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">
     <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>LOGGING_ENABLED;ASSERTS_ENABLED;XSR_USE_HARD_CODED_SHADERS;PLATFORM_WINDOWS;EDITOR;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include/Engine/Precomp;include;$(ProjectDir)external;$(ProjectDir)external\lua;$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;$(ProjectDir)external\xsr\include;$(ProjectDir)external\clipper\include;Intermediate\generated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Precomp.h</PrecompiledHeaderFile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -412,8 +422,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)external\assimp\$(Platform)\Release;$(ProjectDir)external\xsr\backends\opengl\external\GLFW;;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>assimp-vc143-mt.lib;glfw3.lib;opengl32.lib;;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(EngineDir)External\assimp\$(Platform)\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>IF NOT EXIST "$(TargetDir)assimp-vc143-mt.dll" COPY /Y "$(ProjectDir)external\assimp\$(Platform)\Release\assimp-vc143-mt.dll" "$(TargetDir)"</Command>
@@ -431,9 +441,9 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>LOGGING_ENABLED;ASSERTS_ENABLED;XSR_USE_HARD_CODED_SHADERS;PLATFORM_***REMOVED***;EDITOR;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include/Engine/Precomp;include;$(ProjectDir)external;$(ProjectDir)external\lua;$(ProjectDir)external\xsr\backends\opengl\external;$(ProjectDir)external\xsr\backends\opengl\external\glad\include;$(ProjectDir)external\xsr\include;$(ProjectDir)external\clipper\include;Intermediate\generated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
@@ -447,16 +457,15 @@
       <CppExceptions>true</CppExceptions>
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
-      <Warnings>MoreWarnings</Warnings>
-      <WarningsAsErrors>true</WarningsAsErrors>
+      <ExtraWarnings />
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)External/fmod/lib;$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>-l***REMOVED***Sysmodule_stub_weak;-l***REMOVED***PngDec_stub_weak;-l***REMOVED***Pad_stub_weak;-l***REMOVED***UserService_stub_weak;-l***REMOVED******REMOVED***Driver_stub_weak;-l***REMOVED******REMOVED***_stub_weak;-l***REMOVED***VideoOut_stub_weak;-l***REMOVED******REMOVED***_debug_nosubmission;-l***REMOVED******REMOVED***Core_debug_nosubmission;-l***REMOVED******REMOVED***GpuAddress_debug_nosubmission;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>IF NOT EXIST "$(TargetDir)assimp-vc143-mt.dll" COPY /Y "$(ProjectDir)external\assimp\$(Platform)\Release\assimp-vc143-mt.dll" "$(TargetDir)"</Command>
@@ -761,11 +770,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="external\predicates\predicates.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <TreatWarningAsError>false</TreatWarningAsError>
-    </ClCompile>
     <ClCompile Include="external\tinygltf\tiny_gltf.cc">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -804,6 +808,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">false</ExcludedFromBuild>
+      <Warnings Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">WarningsOff</Warnings>
+      <Warnings Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">WarningsOff</Warnings>
+      <Warnings Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">WarningsOff</Warnings>
+      <Warnings Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">WarningsOff</Warnings>
     </ClCompile>
     <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PhysicsBody2DComponent.cpp" />
@@ -1195,6 +1203,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">false</ExcludedFromBuild>
+      <Warnings Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">WarningsOff</Warnings>
+      <Warnings Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">WarningsOff</Warnings>
+      <Warnings Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">WarningsOff</Warnings>
+      <Warnings Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">WarningsOff</Warnings>
     </ClCompile>
     <ClCompile Include="source\Systems\Particles\ParticleColorSystem.cpp" />
     <ClCompile Include="source\Systems\Particles\ParticleLifeTimeSystem.cpp" />
@@ -1234,8 +1246,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="external\predicates\constants.h" />
-    <ClInclude Include="external\predicates\predicates.h" />
     <ClInclude Include="External\xsr\backends\common\stbi_image_write.h" />
     <ClInclude Include="External\xsr\backends\common\stb_image.h" />
     <ClInclude Include="external\xsr\backends\***REMOVED***\shader_shared_types.h" />

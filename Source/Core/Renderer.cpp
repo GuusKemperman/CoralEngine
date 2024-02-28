@@ -1,11 +1,11 @@
 #include "Precomp.h"
 #include "Core/Renderer.h"
 
-#include <glad/glad.h>
 
 #include "xsr.hpp"
 
 #ifdef PLATFORM_WINDOWS
+#include <glad/glad.h>
 
 // Disable warnings from external code
 #pragma warning(push, 0)
