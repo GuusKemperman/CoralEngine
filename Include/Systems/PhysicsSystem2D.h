@@ -18,10 +18,12 @@ namespace Engine
 		friend Physics2DUnitTestAccess;
 
 		void UpdateBodiesAndTransforms(World& world, float dt);
-		void CheckAndRegisterCollisions(World& world);
+		void UpdateCollisions(World& world);
 		void DebugDrawing(World& world);
 
 		static void PrintCollisionData(entt::entity entity, const PhysicsBody2DComponent& body);
+		static void ResolveCollision(const CollisionData& collision, PhysicsBody2DComponent& body1,
+		                             PhysicsBody2DComponent& body2);
 
 		static void RegisterCollision(CollisionData& collision, const entt::entity& entity1, PhysicsBody2DComponent& body1, const entt::entity& entity2, PhysicsBody2DComponent& body2);
 		static bool CollisionCheckDiskDisk(const glm::vec2& center1, float radius1, const glm::vec2& center2, float radius2, CollisionData& result);
