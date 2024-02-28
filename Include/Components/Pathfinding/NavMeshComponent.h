@@ -37,20 +37,20 @@ namespace Engine
 
 		bool mNavMeshNeedsUpdate = true;
 
-		float m_SizeX = 10;
-		float m_SizeY = 10;
+		float mSizeX = 10;
+		float mSizeY = 10;
 
 		std::vector<glm::vec3> mSize{};
 
 	private:
 		/// \brief The A* Graph object.
-		Graph AStarGraph{};
+		Graph mAStarGraph{};
 
 		/// \brief The PolygonList that contains the walkable area. Only used for debugging.
-		geometry2d::PolygonList CleanedPolygonList;
+		geometry2d::PolygonList mCleanedPolygonList;
 
 		/// \brief The PolygonList that contains the triangles for the NavMesh after some CDT clean up.
-		geometry2d::PolygonList PolygonDataNavMesh;
+		geometry2d::PolygonList mPolygonDataNavMesh;
 
 		/**
 		 * \brief Load the info from the given file in order to create the navmesh properly

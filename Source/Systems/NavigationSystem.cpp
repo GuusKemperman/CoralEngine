@@ -25,10 +25,10 @@ void NavigationSystem::Update(World& world, float dt)
 			auto [navMeshComponent] = navMeshComponentView.get(navMeshId);
 
 			std::vector<glm::vec3> size = {
-				{navMeshComponent.m_SizeX / 2, 0, -navMeshComponent.m_SizeY / 2},
-				{navMeshComponent.m_SizeX / 2, 0, navMeshComponent.m_SizeY / 2},
-				{-navMeshComponent.m_SizeX / 2, 0, navMeshComponent.m_SizeY / 2},
-				{-navMeshComponent.m_SizeX / 2, 0, -navMeshComponent.m_SizeY / 2}
+				{navMeshComponent.mSizeX / 2, 0, -navMeshComponent.mSizeY / 2},
+				{navMeshComponent.mSizeX / 2, 0, navMeshComponent.mSizeY / 2},
+				{-navMeshComponent.mSizeX / 2, 0, navMeshComponent.mSizeY / 2},
+				{-navMeshComponent.mSizeX / 2, 0, -navMeshComponent.mSizeY / 2}
 			};
 
 			if (transformView == nullptr)
@@ -52,9 +52,9 @@ void NavigationSystem::Update(World& world, float dt)
 		}
 
 		// Accumulate the time to handle fixed time steps
-		FixedTimeAccumulator += dt;
+		mFixedTimeAccumulator += dt;
 
-		while (FixedTimeAccumulator >= FixedDt)
+		while (mFixedTimeAccumulator >= mFixedDt)
 		{
 			//// Get the navmesh agent entities
 			const auto view = world.GetRegistry().View<
@@ -78,17 +78,17 @@ void NavigationSystem::Update(World& world, float dt)
 					if (t.GetWorldPosition() != transform.GetWorldPosition())
 					{
 						// Find a path from the agent's position to the target's position
-						n.PathFound = naveMesh.FindQuickestPath({t.GetWorldPosition().x, t.GetWorldPosition().z},
-						                                        {
-							                                        transform.GetWorldPosition().x,
-							                                        transform.GetWorldPosition().z
-						                                        });
+						n.mPathFound = naveMesh.FindQuickestPath({t.GetWorldPosition().x, t.GetWorldPosition().z},
+						                                         {
+							                                         transform.GetWorldPosition().x,
+							                                         transform.GetWorldPosition().z
+						                                         });
 
-						if (!n.PathFound.empty())
+						if (!n.mPathFound.empty())
 						{
 							// Calculate the difference in X and Y coordinates
-							const float dx = n.PathFound[1].x - t.GetWorldPosition().x;
-							const float dy = n.PathFound[1].y - t.GetWorldPosition().y;
+							const float dx = n.mPathFound[1].x - t.GetWorldPosition().x;
+							const float dy = n.mPathFound[1].y - t.GetWorldPosition().y;
 
 							// Calculate the distance between the agent and the next waypoint
 							const float distance = std::sqrt(dx * dx + dy * dy);
@@ -99,7 +99,7 @@ void NavigationSystem::Update(World& world, float dt)
 								if (step >= distance)
 								{
 									// If the step is larger than the remaining distance, move directly to the target position
-									t.SetWorldPosition(glm::vec3(n.PathFound[1].x, 0, n.PathFound[1].y));
+									t.SetWorldPosition(glm::vec3(n.mPathFound[1].x, 0, n.mPathFound[1].y));
 								}
 								else
 								{
@@ -114,7 +114,7 @@ void NavigationSystem::Update(World& world, float dt)
 			}
 
 			//// Deduct the fixed time step from the accumulator
-			FixedTimeAccumulator -= FixedDt;
+			mFixedTimeAccumulator -= mFixedDt;
 		}
 	}
 }
@@ -124,11 +124,11 @@ void NavigationSystem::Render(const World& world)
 	const auto view = world.GetRegistry().View<NavMeshAgentComponent>();
 	for (const auto& agentId : view)
 	{
-		if (const auto [n] = view.get(agentId); !n.PathFound.empty())
+		if (const auto [n] = view.get(agentId); !n.mPathFound.empty())
 		{
-			for (int i = 0; i < static_cast<int>(n.PathFound.size()) - 1; i++)
+			for (int i = 0; i < static_cast<int>(n.mPathFound.size()) - 1; i++)
 			{
-				world.GetRenderer().AddLine(DebugCategory::AINavigation, n.PathFound[i], n.PathFound[i + 1],
+				world.GetRenderer().AddLine(DebugCategory::AINavigation, n.mPathFound[i], n.mPathFound[i + 1],
 				                            {1.f, 0.f, 0.f, 1.f});
 				//bee::Engine.DebugRenderer().AddLine(Engine::DebugCategory::Gameplay, n.PathFound[i], n.PathFound[i + 1], { 1.f,0.f,0.f,1.f });
 			}

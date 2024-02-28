@@ -6,13 +6,13 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-Engine::NavMeshAgentComponent::NavMeshAgentComponent(const float walkingSpeed) : Speed(walkingSpeed)
+Engine::NavMeshAgentComponent::NavMeshAgentComponent(const float walkingSpeed) : mSpeed(walkingSpeed)
 {
 }
 
 float Engine::NavMeshAgentComponent::GetSpeed() const
 {
-	return Speed;
+	return mSpeed;
 }
 
 Engine::MetaType Engine::NavMeshAgentComponent::Reflect()
@@ -21,7 +21,7 @@ Engine::MetaType Engine::NavMeshAgentComponent::Reflect()
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
 	MetaProps& props = metaType.GetProperties();
 	props.Add(Props::sIsScriptableTag);
-	metaType.AddField(&NavMeshAgentComponent::Speed, "Speed").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&NavMeshAgentComponent::mSpeed, "Speed").GetProperties().Add(Props::sIsScriptableTag);
 	Engine::ReflectComponentType<NavMeshAgentComponent>(metaType);
 
 	return metaType;

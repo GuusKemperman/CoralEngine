@@ -32,7 +32,7 @@ namespace Engine
 
 		// Create the OpenListItem for the start node and add it to the map and priority queue
 		OpenListItem startOpenListItem((startNode->GetId()), startNode);
-		startOpenListItem.H = Heuristic(*startNode, *endNode);
+		startOpenListItem.mH = Heuristic(*startNode, *endNode);
 		openListItemMap[startNode->GetId()] = startOpenListItem;
 		open.push(&openListItemMap[startNode->GetId()]);
 
@@ -43,28 +43,28 @@ namespace Engine
 			open.pop();
 
 			// If the current node is the end node, construct the path and return it
-			if (v->ActualNode == endNode)
+			if (v->mActualNode == endNode)
 			{
-				const Node* pastNode = v->ActualNode;
-				while (openListItemMap[pastNode->GetId()].ParentNode != nullptr)
+				const Node* pastNode = v->mActualNode;
+				while (openListItemMap[pastNode->GetId()].mParentNode != nullptr)
 				{
 					nodePath.push_back(pastNode);
-					pastNode = openListItemMap[pastNode->GetId()].ParentNode;
+					pastNode = openListItemMap[pastNode->GetId()].mParentNode;
 				}
 				nodePath.push_back(startNode);
 				std::reverse(nodePath.begin(), nodePath.end());
 				return nodePath;
 			}
 
-			if (v->Visited)
+			if (v->mVisited)
 			{
 				// Skip nodes that have already been visited
 				continue;
 			}
-			v->Visited = true;
+			v->mVisited = true;
 
 			// Explore neighbouring nodes
-			for (const auto edge : v->ActualNode->GetConnectingEdges())
+			for (const auto edge : v->mActualNode->GetConnectingEdges())
 			{
 				const int toNodeId = edge.GetToNode()->GetId();
 				const auto it = openListItemMap.find(toNodeId);
@@ -83,21 +83,21 @@ namespace Engine
 					toNode = &it->second;
 				}
 
-				if (toNode->Visited)
+				if (toNode->mVisited)
 				{
 					// Skip visited nodes
 					continue;
 				}
 
 				// Calculate the new G (cost from start node to the current node)
-				const auto newG = v->G + edge.GetCost();
+				const auto newG = v->mG + edge.GetCost();
 
 				// Update node information if this is a better path
-				if (newG < toNode->G || toNode->G == 0.0f)
+				if (newG < toNode->mG || toNode->mG == 0.0f)
 				{
-					toNode->G = newG;
-					toNode->H = Heuristic(*toNode->ActualNode, *endNode);
-					toNode->ParentNode = v->ActualNode;
+					toNode->mG = newG;
+					toNode->mH = Heuristic(*toNode->mActualNode, *endNode);
+					toNode->mParentNode = v->mActualNode;
 					open.push(toNode);
 				}
 			}
@@ -131,6 +131,6 @@ namespace Engine
 
 	bool Graph::CompareNodes::operator()(const OpenListItem* lhs, const OpenListItem* rhs) const
 	{
-		return lhs->G + lhs->H > rhs->G + rhs->H;
+		return lhs->mG + lhs->mH > rhs->mG + rhs->mH;
 	}
 }

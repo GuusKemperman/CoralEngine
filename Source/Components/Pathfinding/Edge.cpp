@@ -3,16 +3,16 @@
 
 using namespace Engine;
 
-Edge::Edge(const float cost, Node* toNode) : Cost(cost), ToNode(toNode)
+Edge::Edge(const float cost, Node* toNode) : mCost(cost), mToNode(toNode)
 {
 }
 
 float Edge::GetCost() const
 {
-	return Cost;
+	return mCost;
 }
 
 Node* Edge::GetToNode() const
 {
-	return ToNode;
+	return mToNode;
 }

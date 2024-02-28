@@ -33,12 +33,12 @@ NavMeshComponent::NavMeshComponent()
 
 void NavMeshComponent::SetNavMesh(const World& world)
 {
-	PolygonDataNavMesh = {};
-	CleanedPolygonList = {};
-	AStarGraph.ListOfNodes = {};
+	mPolygonDataNavMesh = {};
+	mCleanedPolygonList = {};
+	mAStarGraph.ListOfNodes = {};
 
 	CleanupGeometry(LoadNavMeshData(world));
-	Triangulation(CleanedPolygonList);
+	Triangulation(mCleanedPolygonList);
 	mNavMeshNeedsUpdate = false;
 }
 
@@ -158,8 +158,8 @@ void NavMeshComponent::CleanupGeometry(const std::vector<geometry2d::PolygonList
 	}
 
 	// Clear and update the cleaned polygon list
-	CleanedPolygonList.clear();
-	CleanedPolygonList = tempPolygonList;
+	mCleanedPolygonList.clear();
+	mCleanedPolygonList = tempPolygonList;
 }
 
 void NavMeshComponent::Triangulation(const geometry2d::PolygonList& polygonList)
@@ -213,11 +213,11 @@ void NavMeshComponent::Triangulation(const geometry2d::PolygonList& polygonList)
 			{cdt.vertices[vertices[1]].x, cdt.vertices[vertices[1]].y},
 			{cdt.vertices[vertices[2]].x, cdt.vertices[vertices[2]].y}
 		};
-		PolygonDataNavMesh.push_back(polygon);
+		mPolygonDataNavMesh.push_back(polygon);
 
 		// Calculate the center of the triangle and add it as a node to AStarGraph
 		const glm::vec2 centerOfTriangle = geometry2d::ComputeCenterOfPolygon(polygon);
-		AStarGraph.AddNode(centerOfTriangle.x, centerOfTriangle.y);
+		mAStarGraph.AddNode(centerOfTriangle.x, centerOfTriangle.y);
 	}
 
 	// Create edges between nodes based on triangle neighbors
@@ -227,7 +227,7 @@ void NavMeshComponent::Triangulation(const geometry2d::PolygonList& polygonList)
 		{
 			if (cdt.triangles[k].neighbors[j] < cdt.triangles.size())
 			{
-				AStarGraph.ListOfNodes[k].AddEdge(&AStarGraph.ListOfNodes[cdt.triangles[k].neighbors[j]]);
+				mAStarGraph.ListOfNodes[k].AddEdge(&mAStarGraph.ListOfNodes[cdt.triangles[k].neighbors[j]]);
 			}
 		}
 	}
@@ -417,8 +417,8 @@ MetaType NavMeshComponent::Reflect()
 	auto type = MetaType{MetaType::T<NavMeshComponent>{}, "NavMeshComponent"};
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
-	type.AddField(&NavMeshComponent::m_SizeX, "SizeX").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&NavMeshComponent::m_SizeY, "SizeZ").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&NavMeshComponent::mSizeX, "SizeX").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&NavMeshComponent::mSizeY, "SizeZ").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&NavMeshComponent::UpdateNavMesh, "UpdateSquare", "").GetProperties().Add(Props::sIsScriptableTag).Add(
 		Props::sCallFromEditorTag);
 	ReflectComponentType<NavMeshComponent>(type);
@@ -432,15 +432,15 @@ std::vector<glm::vec2> NavMeshComponent::FindQuickestPath(const glm::vec2& start
 	const Node* endNode = nullptr;
 
 	// Find the start and end nodes based on their positions
-	for (int i = 0; i < static_cast<int>(PolygonDataNavMesh.size()); i++)
+	for (int i = 0; i < static_cast<int>(mPolygonDataNavMesh.size()); i++)
 	{
-		if (geometry2d::IsPointInsidePolygon({startPos[0], startPos[1]}, PolygonDataNavMesh[i]))
+		if (geometry2d::IsPointInsidePolygon({startPos[0], startPos[1]}, mPolygonDataNavMesh[i]))
 		{
-			startNode = &AStarGraph.ListOfNodes[i];
+			startNode = &mAStarGraph.ListOfNodes[i];
 		}
-		if (geometry2d::IsPointInsidePolygon({endPos[0], endPos[1]}, PolygonDataNavMesh[i]))
+		if (geometry2d::IsPointInsidePolygon({endPos[0], endPos[1]}, mPolygonDataNavMesh[i]))
 		{
-			endNode = &AStarGraph.ListOfNodes[i];
+			endNode = &mAStarGraph.ListOfNodes[i];
 		}
 		if (startNode != nullptr && endNode != nullptr)
 		{
@@ -463,12 +463,12 @@ std::vector<glm::vec2> NavMeshComponent::FindQuickestPath(const glm::vec2& start
 	// Perform A* search if start and end nodes are different
 	if (startNode != endNode)
 	{
-		nodePathFound = AStarGraph.AStarSearch(startNode, endNode);
+		nodePathFound = mAStarGraph.AStarSearch(startNode, endNode);
 
 		// Convert nodes to corresponding polygons
 		for (const auto& node : nodePathFound)
 		{
-			trianglePathFound.push_back(PolygonDataNavMesh[node->GetId()]);
+			trianglePathFound.push_back(mPolygonDataNavMesh[node->GetId()]);
 		}
 	}
 	else
@@ -514,12 +514,12 @@ std::vector<glm::vec2> NavMeshComponent::FindQuickestPath(const glm::vec2& start
 
 geometry2d::PolygonList NavMeshComponent::GetCleanedPolygonList() const
 {
-	return CleanedPolygonList;
+	return mCleanedPolygonList;
 }
 
 geometry2d::PolygonList NavMeshComponent::GetPolygonDataNavMesh() const
 {
-	return PolygonDataNavMesh;
+	return mPolygonDataNavMesh;
 }
 
 void NavMeshComponent::DebugDrawNavMesh(const World& world) const
@@ -582,5 +582,5 @@ void NavMeshComponent::DebugDrawNavMesh(const World& world) const
 		}
 	}
 
-	AStarGraph.DebugDrawAStarGraph(world);
+	mAStarGraph.DebugDrawAStarGraph(world);
 }

@@ -29,8 +29,8 @@ namespace Engine
 		}
 
 	private:
-		float FixedDt = 1.0f / 10.0f;
-		float FixedTimeAccumulator = 0.0f;
+		float mFixedDt = 1.0f / 10.0f;
+		float mFixedTimeAccumulator = 0.0f;
 
 		friend ReflectAccess;
 		static MetaType Reflect();

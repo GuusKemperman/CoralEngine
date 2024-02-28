@@ -29,8 +29,8 @@ namespace Engine
 
 	private:
 		/// \brief The edge's cost
-		float Cost = 0;
+		float mCost = 0;
 		/// \brief The pointer of the node to which this edge connects to
-		Node* ToNode = nullptr;
+		Node* mToNode = nullptr;
 	};
 }

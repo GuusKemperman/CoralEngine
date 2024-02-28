@@ -22,9 +22,9 @@ namespace Engine
 		[[nodiscard]] float GetSpeed() const;
 
 		/// \brief The quickest path from the NavMeshAgent to the KeyboardControl component
-		std::vector<glm::vec2> PathFound = {};
+		std::vector<glm::vec2> mPathFound = {};
 
-		float Speed = 0;
+		float mSpeed = 0;
 
 	private:
 		friend ReflectAccess;

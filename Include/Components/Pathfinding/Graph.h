@@ -57,19 +57,19 @@ namespace Engine
 		 */
 		struct OpenListItem
 		{
-			float G = 0;
-			float H = 0;
-			int Id{};
+			float mG = 0;
+			float mH = 0;
+			int mId{};
 
-			bool Visited = false;
+			bool mVisited = false;
 
-			const Node* ActualNode = nullptr;
-			const Node* ParentNode = nullptr;
+			const Node* mActualNode = nullptr;
+			const Node* mParentNode = nullptr;
 
 			OpenListItem()
 			{
 				// Initialize members if needed
-				Id = 0;
+				mId = 0;
 			}
 
 			/**
@@ -77,7 +77,7 @@ namespace Engine
 			 * \param id The node's id
 			 * \param actualNode The open list item's node pointer
 			 */
-			OpenListItem(const int id, const Node* actualNode) : Id(id), ActualNode(actualNode)
+			OpenListItem(const int id, const Node* actualNode) : mId(id), mActualNode(actualNode)
 			{
 			}
 		};

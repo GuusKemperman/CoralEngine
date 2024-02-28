@@ -41,12 +41,12 @@ namespace Engine
 
 	private:
 		/// \brief The node's Id
-		int Id{};
+		int mId{};
 
 		/// \brief The connecting edges to the node
-		std::vector<Edge> ConnectingEdges{};
+		std::vector<Edge> mConnectingEdges{};
 
 		/// \brief The position of the node
-		glm::vec2 Position{};
+		glm::vec2 mPosition{};
 	};
 }
