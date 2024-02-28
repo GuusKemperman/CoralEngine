@@ -9,7 +9,6 @@
     <_PropertySheetDisplayName>EngineAndGame</_PropertySheetDisplayName>
     <OutDir>$(EngineOutputDir)</OutDir>
     <TargetName>$(EngineProjectName)</TargetName>
-    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -20,9 +19,6 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>XSR_USE_HARD_CODED_SHADERS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link>
-      <OptimizeReferences>false</OptimizeReferences>
-    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <BuildMacro Include="EngineOutputDir">

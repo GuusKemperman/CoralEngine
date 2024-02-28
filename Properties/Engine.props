@@ -17,6 +17,13 @@
     <Link>
       <OptimizeReferences>false</OptimizeReferences>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>$(EngineDir)External/ReflectionParser\ReflectionParser.exe REFLECT_AT_START_UP $(EngineDir)Include $(EngineDir)\Intermediate\Generated\AllReflectAtStartUp.h</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <BuildMacro Include="EngineDir">
