@@ -2,6 +2,7 @@
 #include "NavigationSystem.h"
 
 #include "NavMeshAgentComponent.h"
+#include "Components/TransformComponent.h"
 #include "glm/glm.hpp"
 #include "World/Registry.h"
 #include "World/World.h"
@@ -11,8 +12,42 @@ using namespace Engine;
 
 void NavigationSystem::Update(World& world, float dt)
 {
+	const auto navMeshComponentView = world.GetRegistry().View<NavMeshComponent>();
+
 	if (world.GetRegistry().View<NavMeshComponent>().empty() == false)
 	{
+		for (const auto navMeshId : navMeshComponentView)
+		{
+			const auto& transformView = world.GetRegistry().TryGet<TransformComponent>(navMeshId);
+			auto [navMeshComponent] = navMeshComponentView.get(navMeshId);
+
+			std::vector<glm::vec3> size = {
+				{navMeshComponent.m_SizeX / 2, 0, -navMeshComponent.m_SizeY / 2},
+				{navMeshComponent.m_SizeX / 2, 0, navMeshComponent.m_SizeY / 2},
+				{-navMeshComponent.m_SizeX / 2, 0, navMeshComponent.m_SizeY / 2},
+				{-navMeshComponent.m_SizeX / 2, 0, -navMeshComponent.m_SizeY / 2}
+			};
+
+			if (transformView == nullptr)
+			{
+				navMeshComponent.mSize = size;
+			}
+			else
+			{
+				for (auto& i : size)
+				{
+					i += transformView->GetWorldPosition();
+				}
+
+				navMeshComponent.mSize = size;
+			}
+
+			if (navMeshComponent.mNavMeshNeedsUpdate)
+			{
+				navMeshComponent.SetNavMesh(world);
+			}
+		}
+
 		// Accumulate the time to handle fixed time steps
 		FixedTimeAccumulator += dt;
 

@@ -16,6 +16,9 @@
 
 #include "clipper2/clipper.h"
 #include "Components/TransformComponent.h"
+#include "Components/Physics2D/DiskColliderComponent.h"
+#include "Components/Physics2D/PolygonColliderComponent.h"
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Registry.h"
 #include "World/World.h"
@@ -25,104 +28,73 @@ using namespace Engine;
 
 NavMeshComponent::NavMeshComponent()
 {
-	//CleanupGeometry(LoadNavMeshData(filePath));
-	//Triangulation(CleanedPolygonList);
+}
+
+void NavMeshComponent::SetNavMesh(const World& world)
+{
+	PolygonDataNavMesh = {};
+	CleanedPolygonList = {};
+	AStarGraph.ListOfNodes = {};
+
+	CleanupGeometry(LoadNavMeshData(world));
+	Triangulation(CleanedPolygonList);
+	mNavMeshNeedsUpdate = false;
 }
 
 // Discovered the tokenisation of lines from ChatGPT, but i then changed all the code for it to work with FileIO
-//std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData() const
-//{
-//// Initialize a vector to store the messy polygons
-//std::vector<geometry2d::PolygonList> messyPolygons;
+std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const World& world) const
+{
+	//// initialize a vector to store the messy polygons
+	std::vector<geometry2d::PolygonList> messypolygons;
 
-//// Read the content of the file into a string
-//std::string readFileString = bee::Engine.FileIO().ReadTextFile(bee::FileIO::Directory::Asset, filePath);
+	// initialize lists to store walkable and obstacle polygons
+	geometry2d::PolygonList walkablelist = {};
+	geometry2d::PolygonList obstaclelist = {};
 
-//// Create an input string stream to split the input into lines
-//std::istringstream iss(readFileString);
+	const auto& polygonView = world.GetRegistry().View<PolygonColliderComponent, PhysicsBody2DComponent>();
+	const auto& diskView = world.GetRegistry().View<DiskColliderComponent, TransformComponent>();
 
-//// Check if the file is empty
-//if (!bee::Engine.FileIO().Exists(bee::FileIO::Directory::Asset, filePath))
-//{
-//	spdlog::info("File not Found");
-//	return {};
-//}
+	for (const auto& polygonId : polygonView)
+	{
+		const auto& [polygonCollider, rigidBody] = polygonView.get(polygonId);
+		geometry2d::Polygon polygon;
 
-//// Initialize lists to store walkable and obstacle polygons
-//bee::geometry2d::PolygonList walkableList = {};
-//bee::geometry2d::PolygonList obstacleList = {};
+		for (const auto& coordinate : polygonCollider.mPoints)
+		{
+			const glm::vec2 pair = coordinate + rigidBody.mPosition;
+			polygon.push_back(pair);
+		}
 
-//// Iterate through each line in the file
-//std::string line;
-//while (std::getline(iss, line))
-//{
-//	// Create a string stream for the current line
-//	std::istringstream lineStream(line);
-//	std::vector<std::string> tokens;
-//	std::string token;
+		obstaclelist.push_back(polygon);
+	}
+	for (const auto& diskId : diskView)
+	{
+		const auto& [diskCollider, transform] = diskView.get(diskId);
+		geometry2d::Polygon polygon;
 
-//	// Tokenize the line and store each token
-//	while (lineStream >> token)
-//	{
-//		tokens.push_back(token);
-//	}
+		polygon.push_back({diskCollider.mRadius + transform.GetWorldPosition().x, transform.GetWorldPosition().z});
+		polygon.push_back({transform.GetWorldPosition().x, diskCollider.mRadius + transform.GetWorldPosition().z});
+		polygon.push_back({-diskCollider.mRadius + transform.GetWorldPosition().x, transform.GetWorldPosition().z});
+		polygon.push_back({transform.GetWorldPosition().x, -diskCollider.mRadius + transform.GetWorldPosition().z});
 
-//	for (size_t i = 0; i < tokens.size(); ++i)
-//	{
-//		// Check if 'o' or 'w' is in the tokens, indicating an obstacle or walkable area
-//		if (tokens[i] == "o" || tokens[i] == "w")
-//		{
-//			bee::geometry2d::Polygon polygon;
-//			// Extract every two numbers following 'o' or 'w' and create a polygon
-//			for (size_t j = i + 1; j < tokens.size(); j += 2)
-//			{
-//				if (j + 1 < tokens.size())
-//				{
-//					const float num1 = std::stof(tokens[j]);
-//					const float num2 = std::stof(tokens[j + 1]);
-//					const glm::vec2 pair = {num1, num2};
-//					polygon.push_back(pair);
-//				}
-//			}
+		obstaclelist.push_back(polygon);
+	}
 
-//			if (tokens[i] == "o")
-//			{
-//				// Create components for obstacle entity and add it to the obstacle list
-//				const auto entity = bee::Engine.ECS().CreateEntity();
-//				bee::Engine.ECS().CreateComponent<Physics::PolygonCollider>(entity, polygon);
-//				bee::Engine.ECS().CreateComponent<Physics::Body>(entity, 0, polygon, Physics::Body::Static);
+	//const auto& transformView = world.GetRegistry().TryGet<TransformComponent>(agentId);
+	const std::vector<glm::vec2> size = {
+		{mSize[0].x, mSize[0].z},
+		{mSize[1].x, mSize[1].z},
+		{mSize[2].x, mSize[2].z},
+		{mSize[3].x, mSize[3].z}
+	};
+	walkablelist.push_back(size);
 
-//				obstacleList.push_back(polygon);
-//			}
-//			else
-//			{
-//				// Add the polygon to the walkable list
-//				walkableList.push_back(polygon);
-//			}
-//		}
-//		else if (tokens[i] == "p" || tokens[i] == "a")
-//		{
-//			glm::vec2 playerPosition;
-//			for (size_t j = i + 1; j < tokens.size(); j += 2)
-//			{
-//				if (j + 1 < tokens.size())
-//				{
-//					playerPosition = {std::stof(tokens[j]), std::stof(tokens[j + 1])};
-//				}
-//			}
+	// add the walkable and obstacle lists to the messy polygons vector
+	messypolygons.push_back(walkablelist);
+	messypolygons.push_back(obstaclelist);
 
-//			// Create a NavMesh agent or player entity
-//			CreateAgentOrPlayer(tokens[i] == "p", playerPosition);
-//		}
-//	}
-//}
-
-//// Add the walkable and obstacle lists to the messy polygons vector
-//messyPolygons.push_back(walkableList);
-//messyPolygons.push_back(obstacleList);
-
-//return messyPolygons;
-//}
+	return messypolygons;
+}
 
 void NavMeshComponent::CleanupGeometry(const std::vector<geometry2d::PolygonList>& dirtyPolygonList)
 {
@@ -435,6 +407,7 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 
 void NavMeshComponent::UpdateNavMesh()
 {
+	mNavMeshNeedsUpdate = true;
 }
 
 MetaType NavMeshComponent::Reflect()
@@ -556,29 +529,12 @@ void NavMeshComponent::DebugDrawNavMesh(const World& world) const
 
 	for (auto& agentId : view)
 	{
-		const auto* transformView = world.GetRegistry().TryGet<TransformComponent>(agentId);
 		auto [navMesh] = view.get(agentId);
 
 		auto cleanedPolygonList = navMesh.GetCleanedPolygonList();
 
-		std::vector<glm::vec3> size = {
-			{m_SizeX / 2, -m_SizeY / 2, 0}, {m_SizeX / 2, m_SizeY / 2, 0}, {-m_SizeX / 2, m_SizeY / 2, 0},
-			{-m_SizeX / 2, -m_SizeY / 2, 0}
-		};
-
-		if (transformView == nullptr)
-		{
-			world.GetRenderer().AddPolygon(DebugCategory::AINavigation, size, {1.f, 0.f, 0.f, 1.f});
-		}
-		else
-		{
-			for (auto& i : size)
-			{
-				i += transformView->GetWorldPosition();
-			}
-
-			world.GetRenderer().AddPolygon(DebugCategory::AINavigation, size, {1.f, 0.f, 0.f, 1.f});
-		}
+		auto size = mSize;
+		world.GetRenderer().AddPolygon(DebugCategory::AINavigation, size, {1.f, 0.f, 0.f, 1.f});
 
 		for (int h = 0; h < static_cast<int>(cleanedPolygonList.size()); h++)
 		{
@@ -592,14 +548,17 @@ void NavMeshComponent::DebugDrawNavMesh(const World& world) const
 					// Draw a line connecting the last vertex to the first vertex
 
 
-					world.GetRenderer().AddLine(DebugCategory::Gameplay, cleanedPolygonList[h][j],
-					                            cleanedPolygonList[h][0], colour);
+					world.GetRenderer().AddLine(DebugCategory::Gameplay,
+					                            {cleanedPolygonList[h][j].x, 0, cleanedPolygonList[h][j].y},
+					                            {cleanedPolygonList[h][0].x, 0, cleanedPolygonList[h][0].y}, colour);
 				}
 				else
 				{
 					// Draw a line connecting two consecutive vertices
-					world.GetRenderer().AddLine(DebugCategory::Gameplay, cleanedPolygonList[h][j],
-					                            cleanedPolygonList[h][j + 1], colour);
+					world.GetRenderer().AddLine(DebugCategory::Gameplay,
+					                            {cleanedPolygonList[h][j].x, 0, cleanedPolygonList[h][j].y},
+					                            {cleanedPolygonList[h][j + 1].x, 0, cleanedPolygonList[h][j + 1].y},
+					                            colour);
 				}
 			}
 		}
@@ -609,11 +568,14 @@ void NavMeshComponent::DebugDrawNavMesh(const World& world) const
 		for (const auto& polygonList : polygonDataNavMesh)
 		{
 			// Draw the edges of each triangle with a blue color
-			world.GetRenderer().AddLine(DebugCategory::Gameplay, polygonList[0], polygonList[1],
+			world.GetRenderer().AddLine(DebugCategory::Gameplay, {polygonList[0].x, 0, polygonList[0].y},
+			                            {polygonList[1].x, 0, polygonList[1].y},
 			                            {0.f, 0.f, 1.f, 1.f});
-			world.GetRenderer().AddLine(DebugCategory::Gameplay, polygonList[1], polygonList[2],
+			world.GetRenderer().AddLine(DebugCategory::Gameplay, {polygonList[1].x, 0, polygonList[1].y},
+			                            {polygonList[2].x, 0, polygonList[2].y},
 			                            {0.f, 0.f, 1.f, 1.f});
-			world.GetRenderer().AddLine(DebugCategory::Gameplay, polygonList[2], polygonList[0],
+			world.GetRenderer().AddLine(DebugCategory::Gameplay, {polygonList[2].x, 0, polygonList[2].y},
+			                            {polygonList[0].x, 0, polygonList[0].y},
 			                            {0.f, 0.f, 1.f, 1.f});
 		}
 	}

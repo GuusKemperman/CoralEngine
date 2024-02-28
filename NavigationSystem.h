@@ -20,6 +20,14 @@ namespace Engine
 		 */
 		void Render(const World& world) override;
 
+		SystemStaticTraits GetStaticTraits() const override
+		{
+			SystemStaticTraits traits{};
+			traits.mShouldTickBeforeBeginPlay = true;
+			traits.mShouldTickWhilstPaused = true;
+			return traits;
+		}
+
 	private:
 		float FixedDt = 1.0f / 10.0f;
 		float FixedTimeAccumulator = 0.0f;

@@ -15,6 +15,8 @@ namespace Engine
 		 */
 		NavMeshComponent();
 
+		void SetNavMesh(const World& world);
+
 		/**
 		 * \brief
 		 * Finds the quickest path from one point to another, by doing an AStarSearch on the nav mesh.
@@ -33,6 +35,13 @@ namespace Engine
 		/// \param world the current World in the ***REMOVED***ne
 		void DebugDrawNavMesh(const World& world) const;
 
+		bool mNavMeshNeedsUpdate = true;
+
+		float m_SizeX = 10;
+		float m_SizeY = 10;
+
+		std::vector<glm::vec3> mSize{};
+
 	private:
 		/// \brief The A* Graph object.
 		Graph AStarGraph{};
@@ -47,7 +56,7 @@ namespace Engine
 		 * \brief Load the info from the given file in order to create the navmesh properly
 		 * \return The walkable and obstacle areas
 		 */
-		//[[nodiscard]] std::vector<geometry2d::PolygonList> LoadNavMeshData() const;
+		[[nodiscard]] std::vector<geometry2d::PolygonList> LoadNavMeshData(const World& world) const;
 
 		/**
 		 * \brief
@@ -73,13 +82,10 @@ namespace Engine
 		 */
 		[[nodiscard]] std::vector<glm::vec2> FunnelAlgorithm(const std::vector<geometry2d::Polygon>& triangles,
 		                                                     const glm::vec2& start, const glm::vec2& goal) const;
-		void UpdateNavMesh();;
+		void UpdateNavMesh();
 
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(NavMeshComponent);
-
-		float m_SizeX = 10;
-		float m_SizeY = 10;
 	};
 }
