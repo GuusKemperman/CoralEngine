@@ -1,8 +1,8 @@
 #include "Precomp.h"
 #include "Assets/Importers/TextureImporter.h"
 
-#include "xsr/backends/common/stb_image.h"
-#include "xsr/backends/common/stbi_image_write.h"
+#include "stb_image/stb_image.h"
+#include "stb_image/stbi_image_write.h"
 
 #include "Assets/Texture.h"
 #include "Utilities/ClassVersion.h"

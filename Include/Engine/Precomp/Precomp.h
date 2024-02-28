@@ -51,7 +51,7 @@ static_assert(false, "EngineDebug or EngineRelease configuration is not supporte
 #endif
 
 #ifdef PLATFORM_WINDOWS
-#define OPEN_GL
+#define DX12
 #endif // PLATFORM_WINDOWS
 
 // Will be removed once we switch

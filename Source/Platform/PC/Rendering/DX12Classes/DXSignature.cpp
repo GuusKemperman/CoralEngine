@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "../Include/Platform/PC/Rendering/DXSignature.h"
+#include "../Include/Platform/PC/Rendering/DX12Classes/DXSignature.h"
 
 void DXSignature::CreateSignature(ComPtr<ID3D12Device5> device, LPCWSTR name)
 {

@@ -6,7 +6,9 @@
 
 #include "Utilities/StringFunctions.h"
 #include "Assets/Core/AssetLoadInfo.h"
-#include "xsr/backends/common/stb_image.h"
+#include "stb_image/stb_image.h"
+#include "Meta/MetaManager.h"
+#include "Utilities/Reflect/ReflectAssetType.h"
 
 #include "Core/Device.h"
 
@@ -86,7 +88,7 @@ bool Engine::Texture::LoadTexture(const unsigned char* fileContents, const unsig
 	srvDesc.Format = resourceDescription.Format;
 	srvDesc.Texture2D.MipLevels = 1;
 	srvDesc.Texture2D.MostDetailedMip = 0;
-	engineDevice.AllocateTexture(mTextureBuffer.get(), srvDesc);
+	heapSlot = engineDevice.AllocateTexture(mTextureBuffer.get(), srvDesc);
 
 	return true;
 }
@@ -110,4 +112,18 @@ int Engine::Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 	else if (dxgiFormat == DXGI_FORMAT_R8_UNORM) return 8;
 	else if (dxgiFormat == DXGI_FORMAT_A8_UNORM) return 8;
 	else return 0;
+}
+
+Engine::Texture::Texture(Texture&& other) noexcept :
+	Asset(std::move(other))
+{
+	mTextureBuffer = other.mTextureBuffer;
+	heapSlot = other.heapSlot;
+}
+
+Engine::MetaType Engine::Texture::Reflect()
+{
+	MetaType type = MetaType{ MetaType::T<Texture>{}, "Texture", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
+	ReflectAssetType<Texture>(type);
+	return type;
 }

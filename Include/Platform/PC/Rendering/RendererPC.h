@@ -1,23 +1,15 @@
 #pragma once
+#include "DX12Classes/DXDefines.h"
 #include "Core/EngineSubsystem.h"
 #include "Meta/MetaReflect.h"
 #include "Systems/System.h"
-#include "DX12Classes/DXDefines.h"
-
-#pragma warning(push)
-#pragma warning(disable: 4005)
-#include <wrl.h>
-#define NOMINMAX
-#include <Windows.h>
-#pragma warning(pop) 
-using namespace Microsoft::WRL;
+#include "glm/glm.hpp"
 
 class DXResource;
 class DXConstBuffer;
 class DXPipeline;
 class DXSignature;
 class DXDescHeap;
-struct MeshHandle;
 
 namespace Engine
 {
@@ -65,31 +57,13 @@ namespace Engine
             float normalScale;
             float padding4;
         };
-
-        //struct DXMeshInfo {
-        //    std::unique_ptr<DXResource> vertexBuffer;
-        //    std::unique_ptr<DXResource> normalBuffer;
-        //    std::unique_ptr<DXResource> tangentBuffer;
-        //    std::unique_ptr<DXResource> texCoordBuffer;
-        //    std::unique_ptr<DXResource> indexBuffer;
-
-        //    D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
-        //    D3D12_VERTEX_BUFFER_VIEW normalBufferView;
-        //    D3D12_VERTEX_BUFFER_VIEW texCoordBufferView;
-        //    D3D12_VERTEX_BUFFER_VIEW tangentBufferView;
-        //    D3D12_INDEX_BUFFER_VIEW indexBufferView;
-
-        //    int indexCount = 0;
-        //    DXGI_FORMAT indexFormat;
-        //    int vertexCount = 0;
-        //};
     }
 
-    class Renderer final :
+    class RenderToCamerasSystem final :
         public System
     {
     public:
-        Renderer();
+        RenderToCamerasSystem();
         void Render(const World& world) override;
 
         SystemStaticTraits GetStaticTraits() const override
@@ -104,12 +78,13 @@ namespace Engine
         std::unique_ptr<DXPipeline> mPipelines[NUM_PIPELINES];
         std::unique_ptr<DXSignature> mSignature;
 
-        std::unique_ptr<DXResource> modelMatricesRsc;
+        InfoStruct::DXLightInfo  lights;
+        std::vector<glm::mat4x4> modelMatrices;
 
     private:
         friend ReflectAccess;
         static MetaType Reflect();
-        REFLECT_AT_START_UP(Renderer);
+        REFLECT_AT_START_UP(RenderToCamerasSystem);
 
 
     };

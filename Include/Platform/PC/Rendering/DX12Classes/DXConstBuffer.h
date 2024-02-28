@@ -1,5 +1,5 @@
 #pragma once
-#include "DXDefines.h"
+#include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
 
 class DXResource;
 class DXConstBuffer

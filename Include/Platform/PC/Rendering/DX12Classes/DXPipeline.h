@@ -1,15 +1,10 @@
 #pragma once
 #include <vector>
 #include <memory>
-#pragma warning(push)
-#pragma warning(disable: 4005)
-#include <wrl.h>
-#define NOMINMAX
-#include <Windows.h>
-#pragma warning(pop) 
+#include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
 
 class DXSignature;
-using namespace Microsoft::WRL;
+struct ID3D12Device5;
 using uint = unsigned int;
 
 class DXPipeline

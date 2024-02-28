@@ -8,41 +8,47 @@
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 
+#include "Components/StaticMeshComponent.h"
+#include "Components/TransformComponent.h"
+#include "World/Registry.h"
+#include "World/World.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
-//#include "Components/StaticMeshComponent.h"
-//#include "Components/TransformComponent.h"
-//#include "World/World.h"
-//#include "World/Registry.h"
+#include "World/WorldRenderer.h"
+#include "Components/CameraComponent.h"
+#include "Assets/Material.h"
+#include "Assets/Texture.h"
+#include "Assets/StaticMesh.h"
 
-Engine::Renderer::Renderer()
+Engine::RenderToCamerasSystem::RenderToCamerasSystem()
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
-    IDXGISwapChain3* swapchain = reinterpret_cast<IDXGISwapChain3*>(engineDevice.GetSwapchain());
-    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
-
 
     //CREATE ROOT SIGNATURE
     mSignature = std::make_unique<DXSignature>(11);
-    mSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX);
-    mSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL);
-    mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_PIXEL);
-    mSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL);
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4);
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);
-    mSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_VERTEX);
+    mSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX);//0
+    mSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL);//1
+    mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_PIXEL);//2
+    mSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL);//3
+
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);//4
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);//5
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);//6
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//7
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//8
+
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);//9
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);//10
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);//11
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);//12
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4);//13
+
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);//14
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//15
+    mSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_VERTEX);//16
+    mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//17
     mSignature->CreateSignature(device, L"MAIN ROOT SIGNATURE");
 
     //CREATE PBR PIPELINE
@@ -80,31 +86,93 @@ Engine::Renderer::Renderer()
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[MATERIAL_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Material info data", FRAME_BUFFER_COUNT);
-    mConstBuffers[MESH_INDEX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(int), MAX_MESHES + 11000, "Mesh index data", FRAME_BUFFER_COUNT);
-
-    //CREATE MODEL MATRIX RESOURCE
-    CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(glm::mat4x4) * MAX_MESHES);
-    CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    modelMatricesRsc = std::make_unique<DXResource>(device, heapProperties, bufferDesc, nullptr, "Model matrix structured buffer");
-    modelMatricesRsc->CreateUploadBuffer(device, sizeof(glm::mat4x4) * MAX_MESHES, 0);
-
-    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-    srvDesc.Buffer.NumElements = MAX_MESHES;
-    srvDesc.Buffer.StructureByteStride = sizeof(glm::mat4x4);
-    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-    device->CreateShaderResourceView(modelMatricesRsc->Get(), &srvDesc, engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->GetCPUHandle(MODEL_MATRIX_RSC));
+    mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4), MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
 
     //CLOSE COMMAND LIST
     engineDevice.EndFrame();
 }
 
-void Engine::Renderer::Render(const World& world)
+void Engine::RenderToCamerasSystem::Render(const World& world)
 {
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
+    int frameIndex = engineDevice.GetFrameIndex();
+
+    //GET WORLD
+    const auto optionalEntityCameraPair = world.GetRenderer().GetMainCamera();
+    ASSERT_LOG(optionalEntityCameraPair.has_value(), "DX12 draw requests have been made, but they cannot be cleared as there is no camera to draw them to");
+
+    //UPDATE CAMERA
+    const auto camera = optionalEntityCameraPair->second;
+    InfoStruct::DXMatrixInfo matrixInfo;
+    matrixInfo.pm = glm::transpose(camera.GetProjection());
+    matrixInfo.vm = glm::transpose(camera.GetView());
+    matrixInfo.ipm = glm::inverse(matrixInfo.pm);
+    matrixInfo.ivm = glm::inverse(matrixInfo.vm);
+    mConstBuffers[CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
+
+    //UPDATE LIGHTS
+    lights.dirLights[0].colorAndIntensity = glm::vec4{ 1.0f };
+    lights.dirLights[0].dir = normalize(glm::vec4{ .5f, -.5f, 1.0f, 0.f });
+    mConstBuffers[LIGHT_CB]->Update(&lights, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
+
+    commandList->SetGraphicsRootSignature(mSignature->GetSignature().Get());
+    commandList->SetPipelineState(mPipelines[PBR_PIPELINE]->GetPipeline().Get());
+
+    //BIND CONSTANT BUFFERS
+    mConstBuffers[LIGHT_CB]->Bind(commandList, 6, 0, frameIndex);
+    mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 0, 0, frameIndex);
+
+    ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
+    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+    const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
+    int meshCounter = 0;
+
+    for (auto [entity, staticMeshComponent, transform] : view.each())
+    {
+        //UPDATE AND BIND MODEL MATRIX
+        glm::mat4x4 modelMatrix = glm::transpose(transform.GetWorldMatrix());
+        mConstBuffers[MODEL_MATRIX_CB]->Update(&modelMatrix, sizeof(glm::mat4x4), meshCounter, frameIndex);
+        mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 16, meshCounter, frameIndex);
+
+        //UPDATE AND BIND MATERIAL INFO
+        InfoStruct::DXMaterialInfo materialInfo;
+        materialInfo.colorFactor = { staticMeshComponent.mMaterial->mBaseColorFactor.r,
+                                    staticMeshComponent.mMaterial->mBaseColorFactor.g,
+                                    staticMeshComponent.mMaterial->mBaseColorFactor.b,
+                                    0.f };
+        materialInfo.emissiveFactor = { staticMeshComponent.mMaterial->mEmissiveFactor.r,
+                                        staticMeshComponent.mMaterial->mEmissiveFactor.g,
+                                        staticMeshComponent.mMaterial->mEmissiveFactor.b,
+                                        0.f };
+        materialInfo.metallicFactor = staticMeshComponent.mMaterial->mMetallicFactor;
+        materialInfo.roughnessFactor = staticMeshComponent.mMaterial->mRoughnessFactor;
+        materialInfo.normalScale = staticMeshComponent.mMaterial->mNormalScale;
+        materialInfo.useColorTex = staticMeshComponent.mMaterial->mBaseColorTexture != nullptr;
+        materialInfo.useEmissiveTex = staticMeshComponent.mMaterial->mEmissiveTexture != nullptr;
+        materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr;
+        materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr;
+        materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr;
+        mConstBuffers[MATERIAL_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
+        mConstBuffers[MATERIAL_CB]->Bind(commandList, 3, meshCounter, frameIndex);
+
+        //BIND TEXTURES
+        resourceHeap->BindToGraphics(commandList, 4, staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
+        resourceHeap->BindToGraphics(commandList, 5, staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
+        resourceHeap->BindToGraphics(commandList, 6, staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
+        resourceHeap->BindToGraphics(commandList, 7, staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
+        resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
+
+        //DRAW THE MESH
+        staticMeshComponent.mStaticMesh->DrawMesh();
+
+        meshCounter++;
+    }
 }
 
-Engine::MetaType Engine::Renderer::Reflect()
+Engine::MetaType Engine::RenderToCamerasSystem::Reflect()
 {
-    return MetaType{ MetaType::T<Renderer>{}, "Renderer", MetaType::Base<System>{} };
+    return MetaType{ MetaType::T<RenderToCamerasSystem>{}, "Renderer", MetaType::Base<System>{} };
 }

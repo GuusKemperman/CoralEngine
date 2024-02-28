@@ -1,18 +1,8 @@
 #pragma once
-#pragma warning(push)
-#pragma warning(disable: 4005)
-#include <wrl.h>
-#define NOMINMAX
-#include <Windows.h>
-#pragma warning(pop) 
-
 #include "DXDefines.h"
 
 #include <memory>
 #include <vector>
-
-
-using namespace Microsoft::WRL;
 class DXResource
 {
 public:

@@ -1,17 +1,6 @@
 #pragma once
-#pragma once
-#pragma once
-
-#pragma warning(push)
-#pragma warning(disable: 4005)
-#include <wrl.h>
-#define NOMINMAX
-#include <Windows.h>
-#pragma warning(pop) 
-
 #include "DXDefines.h"
 
-using namespace Microsoft::WRL;
 
 class DXDescHeap
 {

@@ -1,6 +1,6 @@
 #include "Precomp.h"
-#include "../Include/Platform/PC/Rendering/DXConstBuffer.h"
-#include "../Include/Platform/PC/Rendering/DXResource.h"
+#include "../Include/Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
+#include "../Include/Platform/PC/Rendering/DX12Classes/DXResource.h"
 
 DXConstBuffer::DXConstBuffer(const ComPtr<ID3D12Device5>& device, size_t dataSize, int numberOfObjects, const char* bufferDebugName, int frameNumber)
 {

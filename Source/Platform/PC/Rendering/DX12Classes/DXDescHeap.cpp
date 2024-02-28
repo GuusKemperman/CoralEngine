@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "../Include/Platform/PC/Rendering/DXDescHeap.h"
+#include "../Include/Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 
 DXDescHeap::DXDescHeap(const ComPtr<ID3D12Device5>& device, int numDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE type, LPCWSTR name, D3D12_DESCRIPTOR_HEAP_FLAGS flags)
 {

@@ -42,8 +42,8 @@ void Engine::ParticleDebugVisualizationSystem::Render(const World& world)
 			}
 
 			const glm::vec3 particlePos = positions[i];
-			boundingBoxMax = max(boundingBoxMax, particlePos);
-			boundingBoxMin = min(boundingBoxMin, particlePos);
+			boundingBoxMax = (glm::max)(boundingBoxMax, particlePos);
+			boundingBoxMin = (glm::min)(boundingBoxMin, particlePos);
 
 			{ // Draw velocity
 				const glm::vec3 lineEnd = particlePos + velocities[i];

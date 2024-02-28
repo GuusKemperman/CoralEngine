@@ -2,11 +2,9 @@
 #include <optional>
 #include <variant>
 
-#include "Assets/Asset.h"
-#include "Utilities/CPP20/STDAliases.h"
-
 #include "DX12Classes/DXDefines.h"
-#include "Meta/MetaReflect.h"
+#include "Assets/Asset.h"
+
 class DXResource;
 
 namespace Engine
@@ -19,12 +17,12 @@ namespace Engine
     public:
         StaticMesh(std::string_view name);
         StaticMesh(AssetLoadInfo& loadInfo);
-        ~StaticMesh() override;
+        ~StaticMesh() override {};
 
         StaticMesh(StaticMesh&& other) noexcept;
         StaticMesh(const StaticMesh&) = delete;
 
-        void DrawMesh();
+        void DrawMesh() const;
 
         StaticMesh& operator=(StaticMesh&&) = delete;
         StaticMesh& operator=(const StaticMesh&) = delete;
@@ -47,11 +45,11 @@ namespace Engine
     private:
         bool LoadMesh(const char* indices, unsigned int indexCount, unsigned int size_of_index_type, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount);
 
-        std::unique_ptr<DXResource> mVertexBuffer;
-        std::unique_ptr<DXResource> mNormalBuffer;
-        std::unique_ptr<DXResource> mTangentBuffer;
-        std::unique_ptr<DXResource> mTexCoordBuffer;
-        std::unique_ptr<DXResource> mIndexBuffer;
+        std::shared_ptr<DXResource> mVertexBuffer;
+        std::shared_ptr<DXResource> mNormalBuffer;
+        std::shared_ptr<DXResource> mTangentBuffer;
+        std::shared_ptr<DXResource> mTexCoordBuffer;
+        std::shared_ptr<DXResource> mIndexBuffer;
 
         D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
         D3D12_VERTEX_BUFFER_VIEW mNormalBufferView;

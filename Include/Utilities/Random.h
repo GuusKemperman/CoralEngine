@@ -71,7 +71,7 @@ namespace Engine
 		static uint32 RangeWithSeed(uint32 max, uint32& seed)
 		{
 			// Prevents division by 0
-			return RandWithSeed<uint32>(seed) % std::max(max, 1u);
+			return RandWithSeed<uint32>(seed) % (std::max)(max, 1u);
 		}
 
 		static float RangeWithSeed(float max, uint32& seed)
@@ -125,13 +125,13 @@ namespace Engine
 	{
 		const uint32 unsig = RandWithSeed<uint32>(seed);
 
-		if (unsig <= static_cast<uint32>(std::numeric_limits<int32>::max()))
+		if (unsig <= static_cast<uint32>((std::numeric_limits<int32>::max)()))
 		{
 			return static_cast<int>(unsig);
 		}
 		else
 		{
-			return static_cast<int>(unsig - std::numeric_limits<int32>::min()) + std::numeric_limits<int32>::min();
+			return static_cast<int>(unsig - (std::numeric_limits<int32>::min)()) + (std::numeric_limits<int32>::min)();
 		}
 	}
 

@@ -1,6 +1,6 @@
 #include "Precomp.h"
-#include "../Include/Platform/PC/Rendering/DxPipeline.h"
-#include "../Include/Platform/PC/Rendering/DXSignature.h"
+#include "../Include/Platform/PC/Rendering/DX12Classes/DxPipeline.h"
+#include "../Include/Platform/PC/Rendering/DX12Classes/DXSignature.h"
 
 void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const std::unique_ptr<DXSignature>& root, LPCWSTR name)
 {
@@ -21,7 +21,8 @@ void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const std::unique_
 		psoDesc.SampleMask = 0xffffffff;
 		psoDesc.RasterizerState = rast;
 		psoDesc.BlendState = blend;
-		if (renderTargetFormats.size() <= 0) {
+		if (renderTargetFormats.size() <= 0)
+		{
 			psoDesc.NumRenderTargets = 1;
 			psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
@@ -33,7 +34,6 @@ void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const std::unique_
 		}
 		psoDesc.DSVFormat = depthFormat;
 		psoDesc.DepthStencilState = depth;
-
 		hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipeline));
 	}
 	else {
@@ -42,6 +42,7 @@ void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const std::unique_
 		psoDesc.CS = { reinterpret_cast<UINT8*>(computeShaderBuffer), computeShaderSize };
 		hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&pipeline));
 	}
+
 
 	if (FAILED(hr)) {
 		MessageBox(NULL, L"Failed to create default pipeline", L"FATAL ERROR!", MB_ICONERROR | MB_OK);

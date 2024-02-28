@@ -4,7 +4,10 @@
 #include "Assets/Core/AssetSaveInfo.h"
 #include "Assets/Asset.h"
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
+#include "Utilities/Reflect/ReflectAssetType.h"
 #include "Core/Device.h"
+#include "Meta/MetaManager.h"
+#include <numeric> 
 
 enum StaticMeshFlags : uint8
 {
@@ -99,7 +102,28 @@ Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
     }
 }
 
-void Engine::StaticMesh::DrawMesh()
+Engine::StaticMesh::StaticMesh(StaticMesh&& other) noexcept:
+	Asset(std::move(other))
+{
+	mVertexBuffer = other.mVertexBuffer;
+	mNormalBuffer = other.mNormalBuffer;
+	mTangentBuffer = other.mTangentBuffer;
+	mTexCoordBuffer = other.mTexCoordBuffer;
+	mIndexBuffer = other.mIndexBuffer;
+
+	mVertexBufferView = other.mVertexBufferView;
+	mNormalBufferView = other.mNormalBufferView;
+	mTexCoordBufferView = other.mTexCoordBufferView;
+	mTangentBufferView = other.mTangentBufferView;
+	mIndexBufferView = other.mIndexBufferView;
+
+	mIndexCount = other.mIndexCount;
+	mVertexCount = other.mVertexCount;
+	mIndexFormat = other.mIndexFormat;
+
+}
+
+void Engine::StaticMesh::DrawMesh() const
 {
 	Device& engineDevice = Device::Get();
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -110,6 +134,106 @@ void Engine::StaticMesh::DrawMesh()
 	commandList->IASetVertexBuffers(3, 1, &mTangentBufferView);
 	commandList->IASetIndexBuffer(&mIndexBufferView);
 	commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
+}
+
+bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo, Span<const glm::vec3> positions, std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices, std::optional<Span<const glm::vec3>> normals, std::optional<Span<const glm::vec2>> textureCoordinates, std::optional<Span<const glm::vec3>> tangents)
+{
+    const uint32 numOfIndices = indices.has_value() ? (static_cast<uint32>(std::holds_alternative<Span<const uint16>>(*indices) ?
+        std::get<Span<const uint16>>(*indices).size() :
+        std::get<Span<const uint32>>(*indices).size())) : 0;
+
+    if (numOfIndices % 3 != 0)
+    {
+        LOG(LogAssets, Error, "Importing static mesh failed: {} indices provided, but this is not divisible by 3", numOfIndices);
+        return false;   
+    }
+    
+    if (normals.has_value()
+        && positions.size() != normals->size())
+    {
+        LOG(LogAssets, Error, "Importing static mesh failed: expected {} normals, but received {}", positions.size(), normals->size());
+        return false;
+    }
+
+    if (textureCoordinates.has_value()
+        && positions.size() != textureCoordinates->size())
+    {
+        LOG(LogAssets, Error, "Importing static mesh failed: expected {} textureCoordinates, but received {}", positions.size(), textureCoordinates->size());
+        return false;
+    }
+
+    if (tangents.has_value()
+        && positions.size() != tangents->size())
+    {
+        LOG(LogAssets, Error, "Importing static mesh failed: expected {} tangents, but received {}", positions.size(), tangents->size());
+        return false;
+    }
+
+    std::ostream& str = saveInfo.GetStream();
+
+    const uint32 numOfPositions = static_cast<uint32>(positions.size());
+
+    StaticMeshFlags flags{};
+    
+    if (indices.has_value())
+    {
+        flags = static_cast<StaticMeshFlags>(flags | hasIndices);
+
+        if (numOfPositions < std::numeric_limits<uint16>::max()
+            || std::holds_alternative<Span<const uint16>>(*indices))
+        {
+            flags = static_cast<StaticMeshFlags>(flags | areIndices16Bit);
+        }
+    }
+
+    if (normals.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasNormals);
+    if (textureCoordinates.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasUVs);
+    if (tangents.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasColors);
+
+    str.write(reinterpret_cast<const char*>(&flags), sizeof(StaticMeshFlags));
+
+    str.write(reinterpret_cast<const char*>(&numOfPositions), sizeof(numOfPositions));
+    str.write(reinterpret_cast<const char*>(positions.data()), positions.size_bytes());
+
+    if (indices.has_value())
+    {
+        str.write(reinterpret_cast<const char*>(&numOfIndices), sizeof(numOfIndices));
+
+        if (std::holds_alternative<Span<const uint16>>(*indices))
+        {
+            const Span<const uint16>& shorts = std::get<Span<const uint16>>(*indices);
+            str.write(reinterpret_cast<const char*>(shorts.data()), shorts.size_bytes());
+            ASSERT(flags & areIndices16Bit);
+        }
+        else
+        {
+            const Span<const uint32>& unsigneds = std::get<Span<const uint32>>(*indices);
+
+            if (numOfPositions >= std::numeric_limits<uint16>::max())
+            {
+                str.write(reinterpret_cast<const char*>(unsigneds.data()), unsigneds.size_bytes());
+                ASSERT((flags & areIndices16Bit) == 0);
+            }
+            else
+            {
+                const std::vector<uint16> shorts = { unsigneds.data(), unsigneds.data() + unsigneds.size() };
+                str.write(reinterpret_cast<const char*>(shorts.data()), shorts.size() * sizeof(uint16));
+                ASSERT(flags & areIndices16Bit);
+            }
+        }
+    }
+    if (normals.has_value()) str.write(reinterpret_cast<const char*>(normals->data()), normals->size_bytes());
+    if (textureCoordinates.has_value()) str.write(reinterpret_cast<const char*>(textureCoordinates->data()), textureCoordinates->size_bytes());
+    if (tangents.has_value()) str.write(reinterpret_cast<const char*>(tangents->data()), tangents->size_bytes());
+
+    return true;
+}
+
+Engine::MetaType Engine::StaticMesh::Reflect()
+{
+    MetaType type = MetaType{ MetaType::T<StaticMesh>{}, "StaticMesh", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
+    ReflectAssetType<StaticMesh>(type);
+    return type;
 }
 
 bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, unsigned int sizeOfIndexType, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount)
@@ -143,10 +267,10 @@ bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, 
 	int tBufferSize = sizeof(float) * mVertexCount * 2;
 	int tanBufferSize = sizeof(float) * mVertexCount * 3;
 
-	mVertexBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(nBufferSize), nullptr, "Vertex resource buffer");
-	mTexCoordBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(tBufferSize), nullptr, "Texture coord resource buffer");
-	mNormalBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(nBufferSize), nullptr, "Normals resource buffer");
-	mTangentBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(tanBufferSize), nullptr, "Tangent resource buffer");
+	mVertexBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(nBufferSize), nullptr, "Vertex resource buffer");
+	mTexCoordBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(tBufferSize), nullptr, "Texture coord resource buffer");
+	mNormalBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(nBufferSize), nullptr, "Normals resource buffer");
+	mTangentBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(tanBufferSize), nullptr, "Tangent resource buffer");
 
 	D3D12_SUBRESOURCE_DATA vData = {};
 	vData.pData = positions;

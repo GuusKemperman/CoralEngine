@@ -1,15 +1,6 @@
 #pragma once
 #include <vector>
-#pragma warning(push)
-#pragma warning(disable: 4005)
-#include <wrl.h>
-#define NOMINMAX
-#include <Windows.h>
-#pragma warning(pop) 
-
 #include "DXDefines.h"
-
-using namespace Microsoft::WRL;
 using uint = unsigned int;
 
 class DXSignature

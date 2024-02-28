@@ -1,22 +1,20 @@
 #include "Precomp.h"
 #include "Platform/PC/Core/DevicePC.h"
 
-#include "GLFW/glfw3.h"
-#include "GLFW/glfw3native.h"
-
+#pragma warning(push)
+#pragma warning(disable: 4189)
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_dx12.h"
 #include "imgui/ImGuizmo.h"
+#pragma warning(pop)
 
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
-#include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 
 Engine::Device::Device() {
 
     InitializeWindow();
     InitializeDevice();
-    InitializeImGui();
 }
 
 void Engine::Device::InitializeWindow()
@@ -45,12 +43,12 @@ void Engine::Device::InitializeWindow()
     mFullscreen = false;
 
     if (mFullscreen){
-        mViewport.Width = maxScreenWidth;
-        mViewport.Height = maxScreenHeight;
-        mWindow = glfwCreateWindow(mViewport.Width, mViewport.Height, "BEE", mMonitor, nullptr);
+        mViewport.Width = static_cast<FLOAT>(maxScreenWidth);
+        mViewport.Height = static_cast<FLOAT>(maxScreenHeight);
+        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "BEE", mMonitor, nullptr);
     }
     else{
-        mWindow = glfwCreateWindow(mViewport.Width, mViewport.Height, "BEE", nullptr, nullptr);
+        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "BEE", nullptr, nullptr);
     }
 
     if (!mWindow)
@@ -84,8 +82,8 @@ void Engine::Device::InitializeDevice()
 
     mScissorRect.left = 0;
     mScissorRect.top = 0;
-    mScissorRect.right = mViewport.Width;
-    mScissorRect.bottom = mViewport.Height;
+    mScissorRect.right = static_cast<LONG>(mViewport.Width);
+    mScissorRect.bottom = static_cast<LONG>(mViewport.Height);
 
     ComPtr<IDXGIFactory4> dxgiFactory;
     HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory));
@@ -179,12 +177,13 @@ void Engine::Device::InitializeDevice()
 
     //CREATE SWAPCHAIN
     DXGI_MODE_DESC backBufferDesc = {};
-    backBufferDesc.Width = mViewport.Width;
-    backBufferDesc.Height = mViewport.Height;
+    backBufferDesc.Width = static_cast<UINT>(mViewport.Width);
+    backBufferDesc.Height = static_cast<UINT>(mViewport.Height);
     backBufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
     DXGI_SAMPLE_DESC sampleDesc = {};
     sampleDesc.Count = 1;
+    sampleDesc.Quality = 0;
 
     DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
     swapChainDesc.BufferCount = FRAME_BUFFER_COUNT;
@@ -203,21 +202,19 @@ void Engine::Device::InitializeDevice()
     }
     mSwapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
 
-    //CREATE IMGUI HEAP
-    imguiHeap = std::make_unique<DXDescHeap>(mDevice, 4, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"IMGUI DESCRIPTOR HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
     //CREATE DESCRIPTOR HEAPS
     mDescriptorHeaps[RT_HEAP] = std::make_unique<DXDescHeap>(mDevice, 10, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
     mDescriptorHeaps[DEPTH_HEAP] = std::make_unique<DXDescHeap>(mDevice, 4, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
     mDescriptorHeaps[RESOURCE_HEAP] = std::make_unique<DXDescHeap>(mDevice, 5000, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"RESOURCE HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
     mDescriptorHeaps[SAMPLER_HEAP] = std::make_unique<DXDescHeap>(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, L"SAMPLER HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    mDescriptorHeaps[IMGUI_HEAP] = std::make_unique<DXDescHeap>(mDevice, 4, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"IMGUI DESCRIPTOR HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     //CREATE RENDER TARGETS
     for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
     {
         mResources[i] = std::make_unique<DXResource>();
         ComPtr<ID3D12Resource> res;
-        HRESULT hr = mSwapChain->GetBuffer(i, IID_PPV_ARGS(&res));
+        hr = mSwapChain->GetBuffer(i, IID_PPV_ARGS(&res));
         if (FAILED(hr)) {
             LOG(LogCore, Fatal, "Failed to get swapchain buffer");
             assert(false && "Failed to get swapchain buffer");
@@ -239,7 +236,7 @@ void Engine::Device::InitializeDevice()
     depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(mDepthFormat, mViewport.Width, mViewport.Height, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+    auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(mDepthFormat, static_cast<UINT>(mViewport.Width), static_cast<UINT>(mViewport.Height), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
     mResources[DEPTH_STENCIL_RSC] = std::make_unique<DXResource>(mDevice, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
     mResources[DEPTH_STENCIL_RSC]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
@@ -277,6 +274,16 @@ void Engine::Device::NewFrame() {
         assert(false && "Failed to reset command list");
     }
 
+    glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
+    mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0);
+    mDescriptorHeaps[RESOURCE_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
+    mDescriptorHeaps[RESOURCE_HEAP]->ClearRenderTarget(mCommandList, mFrameIndex, &clearColor[0]);
+    mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, 0);
+
+    mCommandList->RSSetViewports(1, &mViewport); 
+    mCommandList->RSSetScissorRects(1, &mScissorRect); 
+    mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 }
 
 void Engine::Device::EndFrame()
@@ -295,10 +302,16 @@ void Engine::Device::EndFrame()
     }
 
     ImGui::EndFrame();
+
+    auto* desc_ptr = mDescriptorHeaps[IMGUI_HEAP]->Get();
+    mCommandList->SetDescriptorHeaps(1, &desc_ptr);
+    ImGui::Render();
+    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
+
 }
 
 
-void Engine::Device::InitializeImGui()
+void Engine::Device::CreateImguiContext()
 {
     LOG(LogCore, Message, "Creating imgui context");
 
@@ -311,9 +324,9 @@ void Engine::Device::InitializeImGui()
     ImGui::GetIO().ConfigViewportsNoDecoration = false;
 
     ImGui_ImplDX12_Init(mDevice.Get(), FRAME_BUFFER_COUNT,
-        DXGI_FORMAT_R8G8B8A8_UNORM, imguiHeap->Get(),
-        imguiHeap->GetCPUHandle(0),
-        imguiHeap->GetGPUHandle(0));
+        DXGI_FORMAT_R8G8B8A8_UNORM, mDescriptorHeaps[IMGUI_HEAP]->Get(),
+        mDescriptorHeaps[IMGUI_HEAP]->GetCPUHandle(0),
+        mDescriptorHeaps[IMGUI_HEAP]->GetGPUHandle(0));
     ImGui_ImplGlfw_InitForOther(mWindow, true);
 
     ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
@@ -322,8 +335,23 @@ void Engine::Device::InitializeImGui()
     ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
 }
 
-void Engine::Device::AllocateTexture(DXResource* rsc, D3D12_SHADER_RESOURCE_VIEW_DESC desc)
+int Engine::Device::AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
 {
     mDevice->CreateShaderResourceView(rsc->Get(), &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(resourceCount));
     resourceCount++;
+
+    return resourceCount - 1;
+}
+
+int Engine::Device::AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc)
+{
+    mDevice->CreateRenderTargetView(rsc->Get(), &desc, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(frameBufferCount));
+    frameBufferCount++;
+
+    return frameBufferCount-1;
+}
+
+void Engine::Device::AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc, unsigned int slot)
+{
+    mDevice->CreateRenderTargetView(rsc->Get(), &desc, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(slot));
 }

@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "../Include/Platform/PC/Rendering/DXResource.h"
+#include "../Include/Platform/PC/Rendering/DX12Classes/DXResource.h"
 
 DXResource::DXResource(const ComPtr<ID3D12Device5>& device, const CD3DX12_HEAP_PROPERTIES& heapProperties, const CD3DX12_RESOURCE_DESC& descr, D3D12_CLEAR_VALUE* clearValue, const char* name)
 {
