@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "NavMeshTargetComponent.h"
+#include "Components/Pathfinding/NavMeshObstacleTag.h"
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
@@ -8,16 +8,16 @@
 
 using namespace Engine;
 
-NavMeshTargetComponent::NavMeshTargetComponent()
+NavMeshObstacleTag::NavMeshObstacleTag()
 {
 }
 
-MetaType NavMeshTargetComponent::Reflect()
+MetaType NavMeshObstacleTag::Reflect()
 {
-	auto metaType = MetaType{MetaType::T<NavMeshTargetComponent>{}, "NavMeshTargetComponent"};
+	auto metaType = MetaType{MetaType::T<NavMeshObstacleTag>{}, "NavMeshObstacleComponent"};
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
 
-	ReflectComponentType<NavMeshTargetComponent>(metaType);
+	ReflectComponentType<NavMeshObstacleTag>(metaType);
 
 	return metaType;
 }

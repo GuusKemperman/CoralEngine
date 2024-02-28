@@ -1,5 +1,4 @@
 #pragma once
-#include "NavMeshComponent.h"
 #include "Systems/System.h"
 
 namespace Engine

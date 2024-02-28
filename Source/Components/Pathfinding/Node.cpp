@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Node.h"
+#include "Components/Pathfinding/Node.h"
 
 using namespace Engine;
 

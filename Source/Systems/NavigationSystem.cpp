@@ -1,8 +1,11 @@
 #include "Precomp.h"
-#include "NavigationSystem.h"
+#include "Systems/NavigationSystem.h"
 
-#include "NavMeshAgentComponent.h"
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/TransformComponent.h"
+#include "Components/Pathfinding/NavMeshAgentComponent.h"
+#include "Components/Pathfinding/NavMeshComponent.h"
+#include "Components/Pathfinding/NavMeshTargetComponent.h"
 #include "glm/glm.hpp"
 #include "World/Registry.h"
 #include "World/World.h"
@@ -54,55 +57,61 @@ void NavigationSystem::Update(World& world, float dt)
 		while (FixedTimeAccumulator >= FixedDt)
 		{
 			//// Get the navmesh agent entities
-			//const auto view = bee::Engine.ECS().Registry.view<NavMeshAgent, bee::Transform, Physics::Body>();
+			const auto view = world.GetRegistry().View<
+				NavMeshAgentComponent, TransformComponent, PhysicsBody2DComponent>();
 
 			//// There is only one entity with keyboard control
-			//const auto target = bee::Engine.ECS().Registry.view<bee::KeyboardControl, bee::Transform>();
+			auto target = world.GetRegistry().View<NavMeshTargetTag, TransformComponent>();
+
+			auto navMesh = world.GetRegistry().View<NavMeshComponent>();
+			auto [naveMesh] = navMesh.get(navMesh.front());
 
 			//// Iterate over the target entity
-			//for (const auto& targetId : target)
-			//{
-			//    auto [kc, targetT] = target.get(targetId);
+			for (auto [targetId, transform] : target.each())
+			{
+				// Iterate over the entities that have NavMeshAgent, Transform, and Physics::Body components simultaneously
+				for (const auto& agentId : view)
+				{
+					auto [n, t, b] = view.get(agentId);
 
-			//    // Iterate over the entities that have NavMeshAgent, Transform, and Physics::Body components simultaneously
-			//    for (const auto& agentId : view)
-			//    {
-			//        auto [n, t, b] = view.get(agentId);
+					// Check if the agent's position is different from the target's position
+					if (t.GetWorldPosition() != transform.GetWorldPosition())
+					{
+						// Find a path from the agent's position to the target's position
+						n.PathFound = naveMesh.FindQuickestPath({t.GetWorldPosition().x, t.GetWorldPosition().z},
+						                                        {
+							                                        transform.GetWorldPosition().x,
+							                                        transform.GetWorldPosition().z
+						                                        });
 
-			//        // Check if the agent's position is different from the target's position
-			//        if (t.Translation != targetT.Translation)
-			//        {
-			//            // Find a path from the agent's position to the target's position
-			//            n.PathFound = NavigationMesh->FindQuickestPath(t.Translation, targetT.Translation);
+						if (!n.PathFound.empty())
+						{
+							// Calculate the difference in X and Y coordinates
+							const float dx = n.PathFound[1].x - t.GetWorldPosition().x;
+							const float dy = n.PathFound[1].y - t.GetWorldPosition().y;
 
-			//            if (!n.PathFound.empty())
-			//            {
-			//                // Calculate the difference in X and Y coordinates
-			//                const float dx = n.PathFound[1].x - t.Translation.x;
-			//                const float dy = n.PathFound[1].y - t.Translation.y;
+							// Calculate the distance between the agent and the next waypoint
+							const float distance = std::sqrt(dx * dx + dy * dy);
 
-			//                // Calculate the distance between the agent and the next waypoint
-			//                const float distance = std::sqrt(dx * dx + dy * dy);
-
-			//                if (distance > 0)
-			//                {
-			//                    const float step = n.GetSpeed() * dt;
-			//                    if (step >= distance)
-			//                    {
-			//                        // If the step is larger than the remaining distance, move directly to the target position
-			//                        t.Translation = glm::vec3(n.PathFound[1], 0);
-			//                    }
-			//                    else
-			//                    {
-			//                        // Calculate the new direction using linear interpolation
-			//                        const float ratio = n.GetSpeed() / distance;
-			//                        b.Velocity = { dx * ratio, dy * ratio };
-			//                    }
-			//                }
-			//            }
-			//        }
-			//    }
-			//}
+							if (distance > 0)
+							{
+								const float step = n.GetSpeed() * dt;
+								if (step >= distance)
+								{
+									// If the step is larger than the remaining distance, move directly to the target position
+									t.SetWorldPosition(glm::vec3(n.PathFound[1].x, 0, n.PathFound[1].y));
+								}
+								else
+								{
+									// Calculate the new direction using linear interpolation
+									const float ratio = n.GetSpeed() / distance;
+									b.mLinearVelocity = {dx * ratio, dy * ratio};
+								}
+							}
+						}
+					}
+				}
+			}
 
 			//// Deduct the fixed time step from the accumulator
 			FixedTimeAccumulator -= FixedDt;

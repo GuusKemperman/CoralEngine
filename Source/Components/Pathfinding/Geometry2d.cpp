@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Geometry2d.hpp"
+#include "Components/Pathfinding/Geometry2d.hpp"
 
 #include <predicates/predicates.h>
 

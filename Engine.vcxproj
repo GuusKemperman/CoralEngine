@@ -469,7 +469,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Edge.cpp" />
     <ClCompile Include="external\clipper\src\clipper.engine.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -806,16 +805,18 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Geometry2d.cpp" />
-    <ClCompile Include="Graph.cpp" />
-    <ClCompile Include="NavigationSystem.cpp" />
-    <ClCompile Include="NavMeshAgentComponent.cpp" />
-    <ClCompile Include="NavMeshComponent.cpp" />
-    <ClCompile Include="NavMeshTargetComponent.cpp" />
-    <ClCompile Include="Node.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\Edge.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\Geometry2d.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\Graph.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\NavMeshAgentComponent.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\NavMeshComponent.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\NavMeshObstacleTag.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\NavMeshTargetComponent.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\Node.cpp" />
     <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PhysicsBody2DComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PolygonColliderComponent.cpp" />
+    <ClCompile Include="Source\Systems\NavigationSystem.cpp" />
     <ClCompile Include="Source\Systems\PhysicsSystem2D.cpp" />
     <ClCompile Include="Source\Components\IsDestroyedTag.cpp" />
     <ClCompile Include="Source\Components\NameComponent.cpp" />
@@ -1229,7 +1230,6 @@
     <ClCompile Include="Source\World\WorldRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Edge.h" />
     <ClInclude Include="external\clipper\include\clipper2\clipper.core.h" />
     <ClInclude Include="external\clipper\include\clipper2\clipper.engine.h" />
     <ClInclude Include="external\clipper\include\clipper2\clipper.export.h" />
@@ -1250,8 +1250,6 @@
     <ClInclude Include="external\xsr\backends\***REMOVED***\shader_shared_types.h" />
     <ClInclude Include="external\xsr\backends\***REMOVED***\standard_shader_shared.h" />
     <ClInclude Include="external\xsr\backends\***REMOVED***\standard_srt.h" />
-    <ClInclude Include="Geometry2d.hpp" />
-    <ClInclude Include="Graph.h" />
     <ClInclude Include="Include\Assets\Asset.h" />
     <ClInclude Include="Include\Assets\Core\AssetFileMetaData.h" />
     <ClInclude Include="Include\Assets\Core\AssetLoadInfo.h" />
@@ -1279,6 +1277,14 @@
     <ClInclude Include="Include\Components\ComponentFilter.h" />
     <ClInclude Include="Include\Components\IsDestroyedTag.h" />
     <ClInclude Include="Include\Components\NameComponent.h" />
+    <ClInclude Include="Include\Components\Pathfinding\Edge.h" />
+    <ClInclude Include="Include\Components\Pathfinding\Geometry2d.hpp" />
+    <ClInclude Include="Include\Components\Pathfinding\Graph.h" />
+    <ClInclude Include="Include\Components\Pathfinding\NavMeshAgentComponent.h" />
+    <ClInclude Include="Include\Components\Pathfinding\NavMeshComponent.h" />
+    <ClInclude Include="Include\Components\Pathfinding\NavMeshObstacleTag.h" />
+    <ClInclude Include="Include\Components\Pathfinding\NavMeshTargetComponent.h" />
+    <ClInclude Include="Include\Components\Pathfinding\Node.h" />
     <ClInclude Include="Include\Components\Physics2D\DiskColliderComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PhysicsBody2DComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
@@ -1341,6 +1347,7 @@
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectVector.h" />
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
+    <ClInclude Include="Include\Systems\NavigationSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
     <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
@@ -1433,11 +1440,6 @@
     <ClInclude Include="include\World\World.h" />
     <ClInclude Include="Include\World\Registry.h" />
     <ClInclude Include="Include\World\WorldRenderer.h" />
-    <ClInclude Include="NavigationSystem.h" />
-    <ClInclude Include="NavMeshAgentComponent.h" />
-    <ClInclude Include="NavMeshComponent.h" />
-    <ClInclude Include="NavMeshTargetComponent.h" />
-    <ClInclude Include="Node.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />

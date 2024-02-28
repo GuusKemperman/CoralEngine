@@ -3,14 +3,14 @@
 
 namespace Engine
 {
-	class NavMeshTargetComponent
+	class NavMeshTargetTag
 	{
 	public:
-		NavMeshTargetComponent();
+		NavMeshTargetTag();
 
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(NavMeshTargetComponent);
+		REFLECT_AT_START_UP(NavMeshTargetTag);
 	};
 }

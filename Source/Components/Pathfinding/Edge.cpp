@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Edge.h"
+#include "Components/Pathfinding/Edge.h"
 
 using namespace Engine;
 

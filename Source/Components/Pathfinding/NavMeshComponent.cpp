@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "NavMeshComponent.h"
+#include "Components/Pathfinding/NavMeshComponent.h"
 
 #include <sstream>
 #ifdef _MSC_VER
@@ -16,6 +16,7 @@
 
 #include "clipper2/clipper.h"
 #include "Components/TransformComponent.h"
+#include "Components/Pathfinding/NavMeshObstacleTag.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
@@ -51,8 +52,9 @@ std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const Wor
 	geometry2d::PolygonList walkablelist = {};
 	geometry2d::PolygonList obstaclelist = {};
 
-	const auto& polygonView = world.GetRegistry().View<PolygonColliderComponent, PhysicsBody2DComponent>();
-	const auto& diskView = world.GetRegistry().View<DiskColliderComponent, TransformComponent>();
+	const auto& polygonView = world.GetRegistry().View<
+		PolygonColliderComponent, PhysicsBody2DComponent, NavMeshObstacleTag>();
+	const auto& diskView = world.GetRegistry().View<DiskColliderComponent, TransformComponent, NavMeshObstacleTag>();
 
 	for (const auto& polygonId : polygonView)
 	{

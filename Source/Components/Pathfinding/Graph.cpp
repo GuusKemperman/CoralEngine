@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Graph.h"
+#include "Components/Pathfinding/Graph.h"
 
 #include <queue>
 #include <unordered_map>
