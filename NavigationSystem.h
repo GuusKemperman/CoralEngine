@@ -23,6 +23,7 @@ namespace Engine
 		SystemStaticTraits GetStaticTraits() const override
 		{
 			SystemStaticTraits traits{};
+			traits.mPriority = static_cast<int>(TickPriorities::PostPhysics);
 			traits.mShouldTickBeforeBeginPlay = true;
 			traits.mShouldTickWhilstPaused = true;
 			return traits;

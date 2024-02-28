@@ -811,6 +811,7 @@
     <ClCompile Include="NavigationSystem.cpp" />
     <ClCompile Include="NavMeshAgentComponent.cpp" />
     <ClCompile Include="NavMeshComponent.cpp" />
+    <ClCompile Include="NavMeshTargetComponent.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PhysicsBody2DComponent.cpp" />
@@ -1435,6 +1436,7 @@
     <ClInclude Include="NavigationSystem.h" />
     <ClInclude Include="NavMeshAgentComponent.h" />
     <ClInclude Include="NavMeshComponent.h" />
+    <ClInclude Include="NavMeshTargetComponent.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
