@@ -5,8 +5,10 @@
   <PropertyGroup />
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>PLATFORM_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+		<AdditionalIncludeDirectories>$(EngineDir)external\xsr\backends\opengl\external;$(EngineDir)external\xsr\backends\opengl\external\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+		<PreprocessorDefinitions>PLATFORM_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup />
 </Project>
+

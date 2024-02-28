@@ -105,9 +105,3 @@ void Engine::EngineClass::Run()
 	}
 }
 
-int main(int argc, char* args[])
-{
-	Engine::EngineClass engine{ argc, args };
-	engine.Run();
-	return 0;
-}

@@ -4,10 +4,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
   <ItemDefinitionGroup>
-    <Link>
-      <AdditionalLibraryDirectories>$(EngineDir)External\xsr\backends\opengl\external\GLFW;</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
+	  <Lib>
+		  <AdditionalDependencies>glfw3.lib;opengl32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+	  </Lib>
+	  <Lib>
+		  <AdditionalLibraryDirectories>$(EngineDir)External\xsr\backends\opengl\external\GLFW;</AdditionalLibraryDirectories>
+	  </Lib>
     <ClCompile>
       <WarningLevel />
     </ClCompile>
