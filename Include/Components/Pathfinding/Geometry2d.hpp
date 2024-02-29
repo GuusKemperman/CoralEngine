@@ -1,9 +1,5 @@
 #pragma once
 
-#include <vector>
-
-#include "glm/vec2.hpp"
-
 /// <summary>
 /// A namespace containing functions related to 2D geometry.
 /// </summary>

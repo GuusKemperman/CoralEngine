@@ -37,10 +37,7 @@ namespace Engine
 
 		bool mNavMeshNeedsUpdate = true;
 
-		float mSizeX = 10;
-		float mSizeY = 10;
-
-		std::vector<glm::vec3> mSize{};
+		geometry2d::Polygon mBorderCorners{};
 
 	private:
 		/// \brief The A* Graph object.

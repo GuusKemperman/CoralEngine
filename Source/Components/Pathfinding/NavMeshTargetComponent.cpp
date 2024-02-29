@@ -6,13 +6,8 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-using namespace Engine;
 
-NavMeshTargetTag::NavMeshTargetTag()
-{
-}
-
-MetaType NavMeshTargetTag::Reflect()
+Engine::MetaType Engine::NavMeshTargetTag::Reflect()
 {
 	auto metaType = MetaType{MetaType::T<NavMeshTargetTag>{}, "NavMeshTargetComponent"};
 	metaType.GetProperties().Add(Props::sIsScriptableTag);

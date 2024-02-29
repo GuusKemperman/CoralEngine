@@ -21,6 +21,7 @@
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "World/WorldRenderer.h"
@@ -83,13 +84,7 @@ std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const Wor
 	}
 
 	//const auto& transformView = world.GetRegistry().TryGet<TransformComponent>(agentId);
-	const std::vector<glm::vec2> size = {
-		{mSize[0].x, mSize[0].z},
-		{mSize[1].x, mSize[1].z},
-		{mSize[2].x, mSize[2].z},
-		{mSize[3].x, mSize[3].z}
-	};
-	walkablelist.push_back(size);
+	walkablelist.push_back(mBorderCorners);
 
 	// add the walkable and obstacle lists to the messy polygons vector
 	messypolygons.push_back(walkablelist);
@@ -417,8 +412,7 @@ MetaType NavMeshComponent::Reflect()
 	auto type = MetaType{MetaType::T<NavMeshComponent>{}, "NavMeshComponent"};
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
-	type.AddField(&NavMeshComponent::mSizeX, "SizeX").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&NavMeshComponent::mSizeY, "SizeZ").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&NavMeshComponent::mBorderCorners, "BorderCorners").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&NavMeshComponent::UpdateNavMesh, "UpdateSquare", "").GetProperties().Add(Props::sIsScriptableTag).Add(
 		Props::sCallFromEditorTag);
 	ReflectComponentType<NavMeshComponent>(type);
@@ -535,8 +529,13 @@ void NavMeshComponent::DebugDrawNavMesh(const World& world) const
 
 		auto cleanedPolygonList = navMesh.GetCleanedPolygonList();
 
-		auto size = mSize;
-		world.GetRenderer().AddPolygon(DebugCategory::AINavigation, size, {1.f, 0.f, 0.f, 1.f});
+		std::vector<glm::vec3> renderBorder;
+		for (int i = 0; i < mBorderCorners.size(); i++)
+		{
+			renderBorder.push_back({mBorderCorners[i].x, 0, mBorderCorners[i].y});
+		}
+
+		world.GetRenderer().AddPolygon(DebugCategory::AINavigation, renderBorder, {1.f, 0.f, 0.f, 1.f});
 
 		for (int h = 0; h < static_cast<int>(cleanedPolygonList.size()); h++)
 		{

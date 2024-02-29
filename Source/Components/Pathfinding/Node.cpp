@@ -1,21 +1,19 @@
 #include "Precomp.h"
 #include "Components/Pathfinding/Node.h"
 
-using namespace Engine;
-
-Node::Node(const int id, const glm::vec2& position) : mId(id), mPosition(position)
+Engine::Node::Node(const int id, const glm::vec2& position) : mId(id), mPosition(position)
 {
 }
 
-void Node::AddEdge(const Node* toNode, float cost, const bool biDirectional)
+void Engine::Node::AddEdge(Node* toNode, float cost, const bool biDirectional)
 {
 	if (cost < 0)
 	{
-		cost = sqrt(static_cast<float>(pow(toNode->mPosition.x - mPosition.x, 2)) +
-			static_cast<float>(pow(toNode->mPosition.y - mPosition.y, 2)));
+		cost = sqrt(powf(toNode->mPosition.x - mPosition.x, 2) +
+			powf(toNode->mPosition.y - mPosition.y, 2));
 	}
 
-	const Edge newEdge = {cost, const_cast<Node*>(toNode)};
+	const Edge newEdge = {cost, toNode};
 	mConnectingEdges.push_back(newEdge);
 
 	if (biDirectional)
@@ -25,17 +23,17 @@ void Node::AddEdge(const Node* toNode, float cost, const bool biDirectional)
 	}
 }
 
-std::vector<Edge> Node::GetConnectingEdges() const
+const std::vector<Engine::Edge>& Engine::Node::GetConnectingEdges() const
 {
 	return mConnectingEdges;
 }
 
-glm::vec2 Node::GetPosition() const
+glm::vec2 Engine::Node::GetPosition() const
 {
 	return mPosition;
 }
 
-int Node::GetId() const
+int Engine::Node::GetId() const
 {
 	return mId;
 }

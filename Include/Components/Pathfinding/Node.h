@@ -25,11 +25,12 @@ namespace Engine
 		/// \param biDirectional
 		/// By default, it'll create an edge in one direction unless otherwise specified, which in that case,
 		/// it'll also create a similar edge but from the other node to the current one, AKA another edge in reverse.
-		void AddEdge(const Node* toNode, float cost = -1, bool biDirectional = false);
+		void AddEdge(Node* toNode, float cost = -1, bool biDirectional = false);
 
 		/// \brief Getter to grab the connecting edges to the node
 		/// \return The connectingEdges as a vector of Edges
-		[[nodiscard]] std::vector<Edge> GetConnectingEdges() const;
+		[[nodiscard]] const std::vector<Edge>& GetConnectingEdges() const;
+
 
 		/// \brief Getter to grab the position of the node
 		/// \return The position as a vec2

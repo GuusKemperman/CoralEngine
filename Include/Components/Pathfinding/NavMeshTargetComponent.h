@@ -5,9 +5,6 @@ namespace Engine
 {
 	class NavMeshTargetTag
 	{
-	public:
-		NavMeshTargetTag();
-
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();

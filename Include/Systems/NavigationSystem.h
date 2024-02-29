@@ -3,7 +3,8 @@
 
 namespace Engine
 {
-	class NavigationSystem final : public System
+	class NavigationSystem final
+		: public System
 	{
 	public:
 		/**
@@ -23,15 +24,13 @@ namespace Engine
 		{
 			SystemStaticTraits traits{};
 			traits.mPriority = static_cast<int>(TickPriorities::PostPhysics);
+			traits.mFixedTickInterval = static_cast<float>(2);
 			traits.mShouldTickBeforeBeginPlay = true;
 			traits.mShouldTickWhilstPaused = true;
 			return traits;
 		}
 
 	private:
-		float mFixedDt = 1.0f / 10.0f;
-		float mFixedTimeAccumulator = 0.0f;
-
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(NavigationSystem);
