@@ -190,7 +190,7 @@ void Engine::Device::InitializeDevice()
     swapChainDesc.BufferDesc = backBufferDesc;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    swapChainDesc.OutputWindow = reinterpret_cast<HWND>(mWindow);
+    swapChainDesc.OutputWindow = reinterpret_cast<HWND>(glfwGetWin32Window(mWindow));
     swapChainDesc.SampleDesc = sampleDesc;
     swapChainDesc.Windowed = true;
 
@@ -241,6 +241,7 @@ void Engine::Device::InitializeDevice()
     mResources[DEPTH_STENCIL_RSC] = std::make_unique<DXResource>(mDevice, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
     mResources[DEPTH_STENCIL_RSC]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
     mDevice->CreateDepthStencilView(mResources[DEPTH_STENCIL_RSC]->Get(), &depthStencilDesc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0));
+    SubmitCommands();
 }
 
 void Engine::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent)
@@ -258,27 +259,19 @@ void Engine::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue,
 
 void Engine::Device::NewFrame() {
 
+    ImGui_ImplDX12_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
 
     WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
-    mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
-
-    if (FAILED(mCommandAllocator[mFrameIndex]->Reset())) {
-        LOG(LogCore, Fatal, "Failed to reset command allocator");
-        assert(false && "Failed to reset command allocator");
-    }
-
-    if (FAILED(mCommandList->Reset(mCommandAllocator[mFrameIndex].Get(), nullptr))) {
-        LOG(LogCore, Fatal, "Failed to reset command list");
-        assert(false && "Failed to reset command list");
-    }
+    StartRecordingCommands();
 
     glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
     CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0);
-    mDescriptorHeaps[RESOURCE_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
-    mDescriptorHeaps[RESOURCE_HEAP]->ClearRenderTarget(mCommandList, mFrameIndex, &clearColor[0]);
+    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
+    mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mFrameIndex, &clearColor[0]);
     mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, 0);
 
     mCommandList->RSSetViewports(1, &mViewport); 
@@ -287,6 +280,24 @@ void Engine::Device::NewFrame() {
 }
 
 void Engine::Device::EndFrame()
+{
+    auto* desc_ptr = mDescriptorHeaps[IMGUI_HEAP]->Get();
+    mCommandList->SetDescriptorHeaps(1, &desc_ptr);
+    ImGui::Render();
+    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
+    ImGui::UpdatePlatformWindows();
+
+    mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_PRESENT);
+
+    SubmitCommands();
+    if (FAILED(mSwapChain->Present(0, 0))) {
+        assert(false && "Failded to present");
+    }
+
+    ImGui::EndFrame();
+}
+
+void Engine::Device::SubmitCommands()
 {
     //CLOSE COMMAND LIST
     mCommandList->Close();
@@ -301,12 +312,21 @@ void Engine::Device::EndFrame()
         assert(false && "Failed to signal fence");
     }
 
-    ImGui::EndFrame();
+}
 
-    auto* desc_ptr = mDescriptorHeaps[IMGUI_HEAP]->Get();
-    mCommandList->SetDescriptorHeaps(1, &desc_ptr);
-    ImGui::Render();
-    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
+void Engine::Device::StartRecordingCommands()
+{
+    mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
+
+    if (FAILED(mCommandAllocator[mFrameIndex]->Reset())) {
+        LOG(LogCore, Fatal, "Failed to reset command allocator");
+        assert(false && "Failed to reset command allocator");
+    }
+
+    if (FAILED(mCommandList->Reset(mCommandAllocator[mFrameIndex].Get(), nullptr))) {
+        LOG(LogCore, Fatal, "Failed to reset command list");
+        assert(false && "Failed to reset command list");
+    }
 
 }
 
@@ -322,6 +342,8 @@ void Engine::Device::CreateImguiContext()
     ImGui::CreateContext();
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
     ImGui::GetIO().ConfigViewportsNoDecoration = false;
+    ImGui::GetIO().DisplaySize.x = mViewport.Width;
+    ImGui::GetIO().DisplaySize.y = mViewport.Height;
 
     ImGui_ImplDX12_Init(mDevice.Get(), FRAME_BUFFER_COUNT,
         DXGI_FORMAT_R8G8B8A8_UNORM, mDescriptorHeaps[IMGUI_HEAP]->Get(),

@@ -20,6 +20,8 @@ namespace Engine
     public:
         void NewFrame();
         void EndFrame();
+        void SubmitCommands();
+        void StartRecordingCommands();
         bool ShouldClose() const { return !mIsWindowOpen; }
 
         void* GetWindow() { return mWindow; }

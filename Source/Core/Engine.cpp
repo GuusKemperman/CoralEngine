@@ -91,6 +91,8 @@ void Engine::EngineClass::Run()
 		world.GetRenderer().Render();
 #endif  // EDITOR
 
+		device.EndFrame();
+
 		timeElapsedSinceLastGarbageCollect += deltaTime;
 
 		if (timeElapsedSinceLastGarbageCollect > garbageCollectInterval)
