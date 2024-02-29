@@ -751,9 +751,9 @@ bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const ScriptPin& contextPi
 	{
 		for (const TypeTraits& paramTraits : parameters)
 		{
-			if (contextType->GetTypeId() == paramTraits.mStrippedTypeId
-				|| (contextType != nullptr
-					&& contextType->IsDerivedFrom(paramTraits.mStrippedTypeId)))
+			if (contextType != nullptr
+				&& (contextType->IsDerivedFrom(paramTraits.mStrippedTypeId) || contextType->GetTypeId() == paramTraits.mStrippedTypeId)
+				)
 			{
 				return true;
 			}
