@@ -46,6 +46,8 @@ namespace Engine
         void InitializeWindow();
         void InitializeDevice();
         void WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent);
+        void UpdateRenderTarget();
+
     private:
         bool mIsWindowOpen{};
         GLFWwindow* mWindow;
@@ -54,6 +56,8 @@ namespace Engine
         D3D12_RECT mScissorRect;
         unsigned int mFrameIndex = 0;
         bool mFullscreen = false;
+
+        int mPreviousWidth, mPreviousHeight;
 
         ComPtr<ID3D12CommandQueue> mCommandQueue;
         ComPtr<ID3D12CommandAllocator> mCommandAllocator[FRAME_BUFFER_COUNT];
@@ -70,6 +74,8 @@ namespace Engine
 
         ComPtr<IDXGISwapChain3> mSwapChain;
         ComPtr<ID3D12Device5> mDevice;
+
+        bool mUpdateWindow = false;
     };
 }
 

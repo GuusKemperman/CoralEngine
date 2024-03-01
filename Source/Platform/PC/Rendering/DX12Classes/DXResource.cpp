@@ -28,6 +28,13 @@ DXResource::DXResource(ComPtr<ID3D12Resource> res, D3D12_RESOURCE_STATES resStat
 	state = resState;
 }
 
+DXResource::~DXResource()
+{
+	for (size_t i = 0; i < uploadBuffers.size(); i++) {
+		uploadBuffers[i] = nullptr;
+	}
+}
+
 void DXResource::ChangeState(const ComPtr<ID3D12GraphicsCommandList>& list, D3D12_RESOURCE_STATES dstState)
 {
 	if (dstState == state)

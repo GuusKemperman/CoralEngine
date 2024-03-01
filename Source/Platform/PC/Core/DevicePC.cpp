@@ -39,6 +39,8 @@ void Engine::Device::InitializeWindow()
 
     mViewport.Width = 1920;
     mViewport.Height = 1080;
+    mPreviousWidth = 1920;
+    mPreviousHeight = 1080;
 
     mFullscreen = false;
 
@@ -48,6 +50,7 @@ void Engine::Device::InitializeWindow()
         mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "BEE", mMonitor, nullptr);
     }
     else{
+        glfwWindowHint(GLFW_RESIZABLE, 1);
         mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "BEE", nullptr, nullptr);
     }
 
@@ -246,7 +249,8 @@ void Engine::Device::InitializeDevice()
 
 void Engine::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent)
 {
-    if (fence->GetCompletedValue() < fenceValue)
+    UINT64 completedValue = fence->GetCompletedValue();
+    if (completedValue < fenceValue)
     {
         if (FAILED(fence->SetEventOnCompletion(fenceValue, fenceEvent))) {
             LOG(LogCore, Fatal, "Failed to set fence event on completion.");
@@ -257,22 +261,86 @@ void Engine::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue,
     fenceValue++;
 }
 
+void Engine::Device::UpdateRenderTarget()
+{
+    mResources[0] = nullptr;
+    mResources[1] = nullptr;
+    mResources[DEPTH_STENCIL_RSC] = nullptr;
+
+    HRESULT hr = mSwapChain->ResizeBuffers(FRAME_BUFFER_COUNT, static_cast<UINT>(mViewport.Width),  static_cast<UINT>(mViewport.Height), DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+    if (FAILED(hr)) {
+        LOG(LogCore, Fatal, "Failed to resize framebuffer");
+        assert(false && "Failed to resize framebuffer");
+    }
+
+    for (int i = 0; i < FRAME_BUFFER_COUNT; i++) {
+        mResources[i] = std::make_unique<DXResource>();
+        ComPtr<ID3D12Resource> res;
+        hr = mSwapChain->GetBuffer(i, IID_PPV_ARGS(&res));
+        if (FAILED(hr)) {
+            LOG(LogCore, Fatal, "Failed to get swapchain buffer");
+            assert(false && "Failed to get swapchain buffer");
+        }
+        mResources[i]->SetResource(res);
+        mDevice->CreateRenderTargetView(mResources[i]->Get(), nullptr, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(i));
+        mResources[i]->GetResource()->SetName(L"RENDER TARGET");
+    }
+
+    D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
+    depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+    D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+    depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+    depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+    depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+    auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+    auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(mDepthFormat, static_cast<UINT>(mViewport.Width), static_cast<UINT>(mViewport.Height), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+
+    mResources[DEPTH_STENCIL_RSC] = std::make_unique<DXResource>(mDevice, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
+    mResources[DEPTH_STENCIL_RSC]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    mDevice->CreateDepthStencilView(mResources[DEPTH_STENCIL_RSC]->Get(), &depthStencilDesc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0));
+
+    mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
+}
+
 void Engine::Device::NewFrame() {
+
+    int width, height;
+    mIsWindowOpen = !glfwWindowShouldClose(mWindow);
+
+    glfwGetWindowSize(mWindow, &width, &height);
+    if (width != mPreviousWidth || height != mPreviousHeight) {
+        mViewport.Width = static_cast<float>(width);
+        mViewport.Height = static_cast<float>(height);
+        mPreviousWidth = width;
+        mPreviousHeight = height;
+        mScissorRect.right = static_cast<LONG>(mViewport.Width);
+        mScissorRect.bottom = static_cast<LONG>(mViewport.Height);
+        mUpdateWindow = true;
+    }
+
+    ImGui::GetIO().DisplaySize.x = mViewport.Width;
+    ImGui::GetIO().DisplaySize.y = mViewport.Height;
+
+    WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
+    StartRecordingCommands();
+
+    if (mUpdateWindow) {
+        int otherFrameIndex = mFrameIndex == 0 ? 1 : 0;
+        mFenceValue[otherFrameIndex]++;
+        mCommandQueue->Signal(mFence[otherFrameIndex].Get(), mFenceValue[otherFrameIndex]);
+        WaitForFence(mFence[otherFrameIndex], mFenceValue[otherFrameIndex], mFenceEvent);
+        UpdateRenderTarget();
+        mUpdateWindow = false;
+    }
 
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
-
-    WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
-    StartRecordingCommands();
-
-    glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
-    mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0);
-    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
-    mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mFrameIndex, &clearColor[0]);
-    mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, 0);
 
     mCommandList->RSSetViewports(1, &mViewport); 
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
@@ -280,7 +348,14 @@ void Engine::Device::NewFrame() {
 }
 
 void Engine::Device::EndFrame()
-{
+{   
+    glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
+    mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0);
+    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
+    mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mFrameIndex, &clearColor[0]);
+    mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, 0);
+
     auto* desc_ptr = mDescriptorHeaps[IMGUI_HEAP]->Get();
     mCommandList->SetDescriptorHeaps(1, &desc_ptr);
     ImGui::Render();
@@ -290,6 +365,7 @@ void Engine::Device::EndFrame()
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_PRESENT);
 
     SubmitCommands();
+
     if (FAILED(mSwapChain->Present(0, 0))) {
         assert(false && "Failded to present");
     }
@@ -327,7 +403,6 @@ void Engine::Device::StartRecordingCommands()
         LOG(LogCore, Fatal, "Failed to reset command list");
         assert(false && "Failed to reset command list");
     }
-
 }
 
 

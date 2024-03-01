@@ -9,7 +9,8 @@ public:
 	DXResource(){};
 	DXResource(const ComPtr<ID3D12Device5>& device, const CD3DX12_HEAP_PROPERTIES& heapProperties, const CD3DX12_RESOURCE_DESC& desc, D3D12_CLEAR_VALUE* clearValue, const char* name);
 	DXResource(ComPtr<ID3D12Resource> res, D3D12_RESOURCE_STATES resState);
-
+	~DXResource();
+	
 	ComPtr<ID3D12Resource> GetResource() { return resource; }
 	ComPtr<ID3D12Resource> GetUploadResource(int subresource) { return uploadBuffers[subresource]->GetResource(); }
 	ID3D12Resource* Get() { return resource.Get(); }
