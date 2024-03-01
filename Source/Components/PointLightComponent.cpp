@@ -1,8 +1,6 @@
 #include "Precomp.h"
 #include "Components/PointLightComponent.h"
 
-#include "Meta/MetaProps.h"
-#include "Meta/MetaType.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
 Engine::MetaType Engine::PointLightComponent::Reflect()
