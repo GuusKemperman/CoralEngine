@@ -184,6 +184,8 @@ namespace Engine
 		void Unload(AssetInternal& asset);
 
 #ifdef EDITOR
+		static bool WasImportedFrom(const AssetInternal& asset, const std::filesystem::path& file);
+
 		void ImportInternal(const std::filesystem::path& path, bool refreshEngine);
 
 		std::pair<TypeId, const Importer*> TryGetImporterForExtension(const std::filesystem::path& extension) const;

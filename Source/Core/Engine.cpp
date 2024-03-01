@@ -17,10 +17,9 @@
 #include "Utilities/Benchmark.h"
 #include "World/Registry.h"
 
-Engine::EngineClass::EngineClass(int argc, char* argv[])
+Engine::EngineClass::EngineClass(int argc, char* argv[], const std::optional<std::string_view>& additionalAssetsDirectory)
 {
-	
-	FileIO::StartUp(argc == 0 ? std::string_view{} : argv[0]);
+	FileIO::StartUp(argc, argv, additionalAssetsDirectory);
 	Logger::StartUp();
 	Renderer::StartUp();
 	Input::StartUp();
