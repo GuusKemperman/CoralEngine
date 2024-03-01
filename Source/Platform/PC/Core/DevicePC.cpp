@@ -141,6 +141,12 @@ void Engine::Device::InitializeDevice()
         assert(false && "Failed to create command queue");
     }
 
+    hr = mDevice->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&mUploadCommandQueue));
+    if (FAILED(hr)) {
+        LOG(LogCore, Fatal, "Failed to create upload command queue");
+        assert(false && "Failed to create upload command queue");
+    }
+
     //CREATE COMMAND ALLOCATOR
     for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
     {
@@ -151,6 +157,12 @@ void Engine::Device::InitializeDevice()
         }
     }
 
+    hr = mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mUploadCommandAllocator));
+    if (FAILED(hr)) {
+        LOG(LogCore, Fatal, "Failed to create upload command allocator");
+        assert(false && "Failed to create upload command allocator");
+    }
+
     //CREATE COMMAND LIST
     hr = mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator[0].Get(), NULL, IID_PPV_ARGS(&mCommandList));
     if (FAILED(hr)) {
@@ -158,6 +170,14 @@ void Engine::Device::InitializeDevice()
         assert(false && "Failed to create command list");
     }
     mCommandList->SetName(L"Main command list");
+
+    hr = mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mUploadCommandAllocator.Get(), NULL, IID_PPV_ARGS(&mUploadCommandList));
+    if (FAILED(hr)) {
+        LOG(LogCore, Fatal, "Failed to create upload command list");
+        assert(false && "Failed to create upload command list");
+    }
+    mUploadCommandList->SetName(L"Upload command list");
+    mUploadCommandList->Close();
 
     //CREATE FENCES
     for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
@@ -171,12 +191,28 @@ void Engine::Device::InitializeDevice()
         mFenceValue[i] = 0; // set the initial fence value to 0
     }
 
+    hr = mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mUploadFence));
+    if (FAILED(hr)) {
+        LOG(LogCore, Fatal, "Failed to upload create fence");
+        assert(false && "Failed to upload create fence");
+    }
+
+    mUploadFenceValue = 0; // set the initial fence value to 0
+
+
     //CREATE FENCE EVENT
     mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
     if (mFenceEvent == nullptr) {
         LOG(LogCore, Fatal, "Failed to create fence event");
         assert(false && "Failed to create fence event");
     }
+
+    mUploadFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (mUploadFenceEvent == nullptr) {
+        LOG(LogCore, Fatal, "Failed to create upload fence event");
+        assert(false && "Failed to create upload fence event");
+    }
+
 
     //CREATE SWAPCHAIN
     DXGI_MODE_DESC backBufferDesc = {};
@@ -325,6 +361,9 @@ void Engine::Device::NewFrame() {
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
 
+    //SubmitUploadCommands();
+    //WaitForFence(mUploadFence, mUploadFenceValue, mUploadFenceEvent);
+
     WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
     StartRecordingCommands();
 
@@ -371,6 +410,8 @@ void Engine::Device::EndFrame()
     }
 
     ImGui::EndFrame();
+
+   // StartUploadCommands();
 }
 
 void Engine::Device::SubmitCommands()
@@ -402,6 +443,36 @@ void Engine::Device::StartRecordingCommands()
     if (FAILED(mCommandList->Reset(mCommandAllocator[mFrameIndex].Get(), nullptr))) {
         LOG(LogCore, Fatal, "Failed to reset command list");
         assert(false && "Failed to reset command list");
+    }
+}
+
+void Engine::Device::StartUploadCommands()
+{
+    if (FAILED(mUploadCommandAllocator->Reset())) {
+        LOG(LogCore, Fatal, "Failed to reset upload command allocator");
+        assert(false && "Failed to reset upload command allocator");
+    }
+
+    if (FAILED(mUploadCommandList->Reset(mUploadCommandAllocator.Get(), nullptr))) {
+        LOG(LogCore, Fatal, "Failed to reset upload command list");
+        assert(false && "Failed to reset upload command list");
+    }
+
+}
+
+void Engine::Device::SubmitUploadCommands()
+{
+    //CLOSE COMMAND LIST
+    mUploadCommandList->Close();
+    ID3D12CommandList* ppCommandLists[] = { mUploadCommandList.Get()};
+    mUploadCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+    mUploadFenceValue++;
+    HRESULT hr = mUploadCommandQueue->Signal(mUploadFence.Get(), mUploadFenceValue);
+
+    if (FAILED(hr)) {
+        LOG(LogCore, Fatal, "Failed to signal upload fence");
+        assert(false && "Failed to signal upload fence");
     }
 }
 

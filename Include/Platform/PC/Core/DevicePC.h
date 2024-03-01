@@ -20,19 +20,19 @@ namespace Engine
     public:
         void NewFrame();
         void EndFrame();
-        void SubmitCommands();
-        void StartRecordingCommands();
         bool ShouldClose() const { return !mIsWindowOpen; }
 
         void* GetWindow() { return mWindow; }
         void* GetSwapchain() { return mSwapChain.Get(); }
         void* GetDevice() { return mDevice.Get(); }
         void* GetCommandList() { return mCommandList.Get(); }
+        void* GetUploadCommandList() { return mUploadCommandList.Get(); }
         void* GetCommandQueue() { return mCommandQueue.Get(); }
         void CreateImguiContext();
+        void StartUploadCommands();
+        void SubmitUploadCommands();
 
-        //int GetWidth() const{ return static_cast<int>(mViewport.Width); }
-        //int GetHeight() const { return static_cast<int>(mViewport.Height); }
+
         glm::vec2 GetDisplaySize() { return glm::vec2(mViewport.Width, mViewport.Height); }
     //Platform specific heap
     public:
@@ -47,6 +47,9 @@ namespace Engine
         void InitializeDevice();
         void WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent);
         void UpdateRenderTarget();
+        void SubmitCommands();
+        void StartRecordingCommands();
+
 
     private:
         bool mIsWindowOpen{};
@@ -60,15 +63,23 @@ namespace Engine
         int mPreviousWidth, mPreviousHeight;
 
         ComPtr<ID3D12CommandQueue> mCommandQueue;
+        ComPtr<ID3D12CommandQueue> mUploadCommandQueue;
         ComPtr<ID3D12CommandAllocator> mCommandAllocator[FRAME_BUFFER_COUNT];
+        ComPtr<ID3D12CommandAllocator> mUploadCommandAllocator;
         ComPtr<ID3D12GraphicsCommandList4> mCommandList;
+        ComPtr<ID3D12GraphicsCommandList4> mUploadCommandList;
+
         ComPtr<ID3D12Fence> mFence[FRAME_BUFFER_COUNT];
+        ComPtr<ID3D12Fence> mUploadFence;
+
         std::shared_ptr<DXDescHeap> mDescriptorHeaps[NUM_DESC_HEAPS];
         std::unique_ptr<DXResource> mResources[NUM_RESOURCES];
         const DXGI_FORMAT mDepthFormat = DXGI_FORMAT_D32_FLOAT;
 
         HANDLE mFenceEvent;
+        HANDLE mUploadFenceEvent;
         UINT64 mFenceValue[FRAME_BUFFER_COUNT];
+        UINT64 mUploadFenceValue;
         int resourceCount = NUM_RESOURCES;
         int frameBufferCount = RT_COUNT;
 

@@ -60,6 +60,7 @@ namespace Engine
         int mIndexCount = 0;
         int mVertexCount = 0;
         DXGI_FORMAT mIndexFormat;
+        bool beenUpdated = false;
 
     };
 }  // namespace Engine

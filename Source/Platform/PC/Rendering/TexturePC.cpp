@@ -46,7 +46,9 @@ bool Engine::Texture::LoadTexture(const unsigned char* fileContents, const unsig
 
 	Device& engineDevice = Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
-	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+	ID3D12GraphicsCommandList4* uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetUploadCommandList());
+
+	engineDevice.StartUploadCommands();
 
 	DXGI_FORMAT dxgiformat = (DXGI_FORMAT)format;
 	CD3DX12_RESOURCE_DESC resourceDescription = {};
@@ -81,15 +83,16 @@ bool Engine::Texture::LoadTexture(const unsigned char* fileContents, const unsig
 	textureData.SlicePitch = bytesPerRow * resourceDescription.Height; // also the size of our triangle vertex data
 
 	mTextureBuffer->CreateUploadBuffer(device, static_cast<int>(textureUploadBufferSize), 0);
-	mTextureBuffer->Update(commandList, textureData, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1);
+	mTextureBuffer->Update(uploadCmdList, textureData, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1);
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format = resourceDescription.Format;
 	srvDesc.Texture2D.MipLevels = 1;
 	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	heapSlot = engineDevice.AllocateTexture(mTextureBuffer.get(), srvDesc);
-
+	engineDevice.SubmitUploadCommands();
 	return true;
 }
 

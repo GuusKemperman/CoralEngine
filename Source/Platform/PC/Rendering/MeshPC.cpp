@@ -257,8 +257,8 @@ bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, 
 
 	Device& engineDevice = Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
-	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
-
+	ID3D12GraphicsCommandList4* uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetUploadCommandList());
+    engineDevice.StartUploadCommands();
 	mIndexCount = indexCount;
 	mVertexCount = vertexCount;
 
@@ -277,7 +277,7 @@ bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, 
 	vData.RowPitch = sizeof(float) * 4;
 	vData.SlicePitch = nBufferSize;
 	mVertexBuffer->CreateUploadBuffer(device, nBufferSize, 0);
-	mVertexBuffer->Update(commandList, vData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+	mVertexBuffer->Update(uploadCmdList, vData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 
 	if (textureCoordinates) {
 		D3D12_SUBRESOURCE_DATA tData = {};
@@ -285,7 +285,7 @@ bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, 
 		tData.RowPitch = sizeof(float) * 2;
 		tData.SlicePitch = tBufferSize;
 		mTexCoordBuffer->CreateUploadBuffer(device, tBufferSize, 0);
-		mTexCoordBuffer->Update(commandList, tData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+		mTexCoordBuffer->Update(uploadCmdList, tData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 	}
 
 	if (normalsBuffer) {
@@ -294,7 +294,7 @@ bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, 
 		nData.RowPitch = sizeof(float) * 4;
 		nData.SlicePitch = nBufferSize;
 		mNormalBuffer->CreateUploadBuffer(device, nBufferSize, 0);
-		mNormalBuffer->Update(commandList, nData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+		mNormalBuffer->Update(uploadCmdList, nData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 	}
 
 	if (tangents) {
@@ -303,7 +303,7 @@ bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, 
 		tanData.RowPitch = sizeof(float) * 3;
 		tanData.SlicePitch = tanBufferSize;
 		mTangentBuffer->CreateUploadBuffer(device, tanBufferSize, 0);
-		mTangentBuffer->Update(commandList, tanData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+		mTangentBuffer->Update(uploadCmdList, tanData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 	}
 
 	mIndexBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(iBufferSize), nullptr, "Index resource buffer");
@@ -312,7 +312,7 @@ bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, 
 	iData.RowPitch = iBufferSize;
 	iData.SlicePitch = iBufferSize;
 	mIndexBuffer->CreateUploadBuffer(device, iBufferSize, 0);
-	mIndexBuffer->Update(commandList, iData, D3D12_RESOURCE_STATE_INDEX_BUFFER, 0, 1);
+	mIndexBuffer->Update(uploadCmdList, iData, D3D12_RESOURCE_STATE_INDEX_BUFFER, 0, 1);
 
 	mVertexBufferView.BufferLocation = mVertexBuffer->GetResource()->GetGPUVirtualAddress();
 	mVertexBufferView.StrideInBytes = sizeof(float) * 4;
@@ -333,5 +333,6 @@ bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, 
 	mIndexBufferView.BufferLocation = mIndexBuffer->GetResource()->GetGPUVirtualAddress();
 	mIndexBufferView.Format = mIndexFormat;
 	mIndexBufferView.SizeInBytes = iBufferSize;
+    engineDevice.SubmitUploadCommands();
 	return true;
 }

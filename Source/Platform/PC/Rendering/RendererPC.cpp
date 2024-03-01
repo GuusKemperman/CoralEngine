@@ -142,31 +142,47 @@ void Engine::RenderToCamerasSystem::Render(const World& world)
 
         //UPDATE AND BIND MATERIAL INFO
         InfoStruct::DXMaterialInfo materialInfo;
-        materialInfo.colorFactor = { staticMeshComponent.mMaterial->mBaseColorFactor.r,
-                                    staticMeshComponent.mMaterial->mBaseColorFactor.g,
-                                    staticMeshComponent.mMaterial->mBaseColorFactor.b,
-                                    0.f };
-        materialInfo.emissiveFactor = { staticMeshComponent.mMaterial->mEmissiveFactor.r,
-                                        staticMeshComponent.mMaterial->mEmissiveFactor.g,
-                                        staticMeshComponent.mMaterial->mEmissiveFactor.b,
-                                        0.f };
-        materialInfo.metallicFactor = staticMeshComponent.mMaterial->mMetallicFactor;
-        materialInfo.roughnessFactor = staticMeshComponent.mMaterial->mRoughnessFactor;
-        materialInfo.normalScale = staticMeshComponent.mMaterial->mNormalScale;
-        materialInfo.useColorTex = staticMeshComponent.mMaterial->mBaseColorTexture != nullptr;
-        materialInfo.useEmissiveTex = staticMeshComponent.mMaterial->mEmissiveTexture != nullptr;
-        materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr;
-        materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr;
-        materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr;
+        if (staticMeshComponent.mMaterial != nullptr) {
+            materialInfo.colorFactor = { staticMeshComponent.mMaterial->mBaseColorFactor.r,
+                staticMeshComponent.mMaterial->mBaseColorFactor.g,
+                staticMeshComponent.mMaterial->mBaseColorFactor.b,
+                0.f };
+            materialInfo.emissiveFactor = { staticMeshComponent.mMaterial->mEmissiveFactor.r,
+                staticMeshComponent.mMaterial->mEmissiveFactor.g,
+                staticMeshComponent.mMaterial->mEmissiveFactor.b,
+                0.f };
+            materialInfo.metallicFactor = staticMeshComponent.mMaterial->mMetallicFactor;
+            materialInfo.roughnessFactor = staticMeshComponent.mMaterial->mRoughnessFactor;
+            materialInfo.normalScale = staticMeshComponent.mMaterial->mNormalScale;
+            materialInfo.useColorTex = staticMeshComponent.mMaterial->mBaseColorTexture != nullptr;
+            materialInfo.useEmissiveTex = staticMeshComponent.mMaterial->mEmissiveTexture != nullptr;
+            materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr;
+            materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr;
+            materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr;
+            
+            //BIND TEXTURES
+            resourceHeap->BindToGraphics(commandList, 4, staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
+            resourceHeap->BindToGraphics(commandList, 5, staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
+            resourceHeap->BindToGraphics(commandList, 6, staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
+            resourceHeap->BindToGraphics(commandList, 7, staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
+            resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
+
+        }
+        else {
+            materialInfo.colorFactor = {0.f, 0.f, 0.f, 0.f };
+            materialInfo.emissiveFactor = {0.f, 0.f, 0.f, 0.f };
+            materialInfo.metallicFactor = 0.f;
+            materialInfo.roughnessFactor = 0.f;
+            materialInfo.normalScale = 0.f;
+            materialInfo.useColorTex = false;
+            materialInfo.useEmissiveTex = false;
+            materialInfo.useMetallicRoughnessTex = false;
+            materialInfo.useNormalTex = false;
+            materialInfo.useOcclusionTex = false;
+
+        }
         mConstBuffers[MATERIAL_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
         mConstBuffers[MATERIAL_CB]->Bind(commandList, 3, meshCounter, frameIndex);
-
-        //BIND TEXTURES
-        resourceHeap->BindToGraphics(commandList, 4, staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
-        resourceHeap->BindToGraphics(commandList, 5, staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
-        resourceHeap->BindToGraphics(commandList, 6, staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
-        resourceHeap->BindToGraphics(commandList, 7, staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
-        resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
 
         //DRAW THE MESH
         staticMeshComponent.mStaticMesh->DrawMesh();
