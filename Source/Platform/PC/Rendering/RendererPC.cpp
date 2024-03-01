@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Platform/PC/Rendering/RendererPC.h"
 #include "Core/Device.h"
+#include "Core/FileIO.h"
 
 #include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
@@ -27,7 +28,7 @@ Engine::RenderToCamerasSystem::RenderToCamerasSystem()
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
     //CREATE ROOT SIGNATURE
-    mSignature = std::make_unique<DXSignature>(11);
+    mSignature = std::make_unique<DXSignature>(12);
     mSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX);//0
     mSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL);//1
     mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_PIXEL);//2
@@ -39,7 +40,7 @@ Engine::RenderToCamerasSystem::RenderToCamerasSystem()
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//7
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//8
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);//9
+    //mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);//9
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);//10
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);//11
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);//12
@@ -52,8 +53,11 @@ Engine::RenderToCamerasSystem::RenderToCamerasSystem()
     mSignature->CreateSignature(device, L"MAIN ROOT SIGNATURE");
 
     //CREATE PBR PIPELINE
-    ComPtr<ID3DBlob> v = DXPipeline::ShaderToBlob("assets/shaders/PBRVertex.hlsl", "vs_5_0");
-    ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob("assets/shaders/PBRPixel.hlsl", "ps_5_0", "main");
+    FileIO& fileIO = FileIO::Get();
+    std::string shaderPath = fileIO.GetPath(FileIO::Directory::Asset, "shaders/HLSL/PBRVertex.hlsl");
+    ComPtr<ID3DBlob> v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    shaderPath = fileIO.GetPath(FileIO::Directory::Asset, "shaders/HLSL/PBRPixel.hlsl");
+    ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
     mPipelines[PBR_PIPELINE] = std::make_unique<DXPipeline>();
     mPipelines[PBR_PIPELINE]->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
     mPipelines[PBR_PIPELINE]->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
@@ -70,8 +74,10 @@ Engine::RenderToCamerasSystem::RenderToCamerasSystem()
     depth.DepthEnable = FALSE;
     depth.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 
-    v = DXPipeline::ShaderToBlob("assets/shaders/SkyboxVertex.hlsl", "vs_5_0");
-    p = DXPipeline::ShaderToBlob("assets/shaders/SkyboxPixel.hlsl", "ps_5_0", "main");
+    shaderPath = fileIO.GetPath(FileIO::Directory::Asset, "shaders/HLSL/SkyboxVertex.hlsl");
+    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    shaderPath = fileIO.GetPath(FileIO::Directory::Asset, "shaders/HLSL/SkyboxPixel.hlsl");
+    p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
     mPipelines[SKY_PIPELINE] = std::make_unique<DXPipeline>();
     mPipelines[SKY_PIPELINE]->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
     mPipelines[SKY_PIPELINE]->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
