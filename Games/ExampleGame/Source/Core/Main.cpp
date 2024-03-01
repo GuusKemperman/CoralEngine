@@ -1,7 +1,8 @@
 #include "Precomp.h"
 #include "Core/Engine.h"
 
-#include "../Intermediate/Generated/AllReflectAtStartUp.h"
+#include "Core/UnitTests.h"
+#include "../Intermediate/Generated/Generated.h"
 
 int main(int argc, char* args[])
 {
