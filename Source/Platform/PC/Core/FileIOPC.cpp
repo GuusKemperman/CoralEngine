@@ -4,11 +4,11 @@
 using namespace Engine;
 using namespace std;
 
-FileIO::FileIO(int argc, char* argv[], const std::optional<std::string_view>& additionalAssetsDirectory)
+FileIO::FileIO(int argc, char* argv[], const std::string_view gameDir)
 {
-	mPaths[Directory::EngineAssets] = std::string{ additionalAssetsDirectory.value_or("") };
-	mPaths[Directory::GameAssets] = "Assets/";
-	mPaths[Directory::Intermediate] = "Intermediate/";
+	mPaths[Directory::EngineAssets] = "Assets/";
+	mPaths[Directory::GameAssets] = std::string{ gameDir } + "Assets/";
+	mPaths[Directory::Intermediate] = std::string{ gameDir } + "Intermediate/";
 	mPaths[Directory::ThisExecutable] = argc == 0 ? std::string{} : std::string{ argv[0] };
 }
 

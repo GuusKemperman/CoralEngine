@@ -5,11 +5,6 @@
     <EngineOutputDir>Build\$(Platform)\$(Configuration)\</EngineOutputDir>
     <EngineProjectName>Engine</EngineProjectName>
   </PropertyGroup>
-  <PropertyGroup>
-    <_PropertySheetDisplayName>EngineAndGame</_PropertySheetDisplayName>
-    <OutDir>$(EngineOutputDir)</OutDir>
-    <TargetName>$(EngineProjectName)</TargetName>
-  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(EngineDir)Include;$(EngineDir)External;$(EngineDir)External\xsr\include;$(EngineDir)External\clipper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

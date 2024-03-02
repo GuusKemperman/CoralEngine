@@ -19,7 +19,7 @@ namespace Engine
 		/// Initializes the File IO system, filling in all the paths and
 		/// mounting the virtual file system on platforms that need it.
 		/// </summary>
-		FileIO(int argc, char* argv[], const std::optional<std::string_view>& additionalAssetsDirectory = std::nullopt);
+		FileIO(int argc, char* argv[], std::string_view gameDir);
 
 		/// <summary>
 		/// Unmount the virtual file system and shut down the File IO system.

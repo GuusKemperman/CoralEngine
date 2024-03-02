@@ -17,9 +17,9 @@
 #include "Utilities/Benchmark.h"
 #include "World/Registry.h"
 
-Engine::EngineClass::EngineClass(int argc, char* argv[], const std::optional<std::string_view>& additionalAssetsDirectory)
+Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
-	FileIO::StartUp(argc, argv, additionalAssetsDirectory);
+	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
 	Renderer::StartUp();
 	Input::StartUp();

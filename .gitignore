@@ -3,10 +3,3 @@
 *.vcxproj.user
 Intermediate/
 Build/
-
-# Ignore all ***REMOVED***_module folders, because they are like dll's that have to be copied to the projectDir of the executable
-**/***REMOVED***_module/
-
-# Except the one in EngineDir/External, as this is where we copy them from
-!External/***REMOVED***_module/
-

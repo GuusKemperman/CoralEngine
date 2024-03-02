@@ -5,8 +5,7 @@ namespace Engine
 	class EngineClass
 	{
 	public:
-		EngineClass(int argc, char* argv[], 
-			const std::optional<std::string_view>& additionalAssetsDirectory = std::nullopt);
+		EngineClass(int argc, char* argv[], std::string_view gameDir);
 		~EngineClass();
 
 		void Run();

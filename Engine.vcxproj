@@ -148,30 +148,42 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IntDir>Intermediate\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(EngineDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
+    <OutDir>$(EngineOutputDir)</OutDir>
+    <TargetName>$(EngineProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">
-    <IntDir>Intermediate\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(EngineDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
+    <OutDir>$(EngineOutputDir)</OutDir>
+    <TargetName>$(EngineProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">
-    <IntDir>Intermediate\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(EngineDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
+    <OutDir>$(EngineOutputDir)</OutDir>
+    <TargetName>$(EngineProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">
-    <IntDir>Intermediate\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(EngineDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
     <OutDir>$(EngineOutputDir)</OutDir>
     <TargetName>$(EngineProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IntDir>Intermediate\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(EngineDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
+    <OutDir>$(EngineOutputDir)</OutDir>
+    <TargetName>$(EngineProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">
-    <IntDir>Intermediate\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(EngineDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
+    <OutDir>$(EngineOutputDir)</OutDir>
+    <TargetName>$(EngineProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">
-    <IntDir>Intermediate\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(EngineDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
+    <OutDir>$(EngineOutputDir)</OutDir>
+    <TargetName>$(EngineProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">
-    <IntDir>Intermediate\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(EngineDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
     <OutDir>$(EngineOutputDir)</OutDir>
     <TargetName>$(EngineProjectName)</TargetName>
   </PropertyGroup>
