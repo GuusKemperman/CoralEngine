@@ -189,16 +189,15 @@ namespace Engine
 		void ImportInternal(const std::filesystem::path& path, bool refreshEngine);
 
 		std::pair<TypeId, const Importer*> TryGetImporterForExtension(const std::filesystem::path& extension) const;
-#endif // EDITOR
-
-		AssetInternal* TryConstruct(const std::filesystem::path& path);
-		AssetInternal* TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData);
-
 
 		// Importers are created using the runtime reflection system,
 		// which uses placement new for the constructing of objects.
 		// Hence, the custom deleter
 		std::vector<std::pair<TypeId, std::unique_ptr<Importer, InPlaceDeleter<Importer, true>>>> mImporters{};
+#endif // EDITOR
+
+		AssetInternal* TryConstruct(const std::filesystem::path& path);
+		AssetInternal* TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData);
 	};
 
 	/*
