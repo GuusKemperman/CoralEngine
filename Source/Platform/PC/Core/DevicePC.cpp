@@ -299,6 +299,9 @@ void Engine::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue,
 
 void Engine::Device::UpdateRenderTarget()
 {
+    if (mViewport.Width <= 0 || mViewport.Height <= 0)
+        return;
+
     mResources[0] = nullptr;
     mResources[1] = nullptr;
     mResources[DEPTH_STENCIL_RSC] = nullptr;

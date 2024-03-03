@@ -18,21 +18,7 @@ Engine::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 	clearValue.Color[2] = mClearColor.z; // Blue component
 	clearValue.Color[3] = mClearColor.w; // Alpha component
 
-	//CD3DX12_RESOURCE_DESC framebufferDesc = {};
-	//framebufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	//framebufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Adjust the format as needed.
-	//framebufferDesc.Width = initialSize.x;
-	//framebufferDesc.Height = initialSize.y;
-	//framebufferDesc.DepthOrArraySize = 1;
-	//framebufferDesc.MipLevels = 1;
-	//framebufferDesc.SampleDesc.Count = 1; 
-	//framebufferDesc.SampleDesc.Quality = 0;
-	//framebufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-	//framebufferDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-	//framebufferDesc.Layout = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	auto framebufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, static_cast<UINT>(mSize.x), static_cast<UINT>(mSize.y), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
-
-
 	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
 	for (int i = 0; i < FRAME_BUFFER_COUNT; i++) {
@@ -73,13 +59,10 @@ void Engine::FrameBuffer::Bind()
 	std::shared_ptr<DXDescHeap> rtHeap = engineDevice.GetDescriptorHeap(RT_HEAP);
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = engineDevice.GetDescriptorHeap(DEPTH_HEAP)->GetCPUHandle(depthStencilIndex);
-	//CD3DX12_CPU_DESCRIPTOR_HANDLE rtHandle = engineDevice.GetDescriptorHeap(RT_HEAP)->GetCPUHandle(frameBufferIndex[engineDevice.GetFrameIndex()]);
 	resource[engineDevice.GetFrameIndex()]->ChangeState(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	depthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
 	rtHeap->BindRenderTargets(commandList, &frameBufferIndex[engineDevice.GetFrameIndex()], depthHandle);
-	//commandList->OMSetRenderTargets(1, &rtHandle, FALSE, &depthHandle);
-
 }
 
 void Engine::FrameBuffer::Unbind()
@@ -89,9 +72,12 @@ void Engine::FrameBuffer::Unbind()
 
 void Engine::FrameBuffer::Resize(glm::ivec2 newSize)
 {
+	mSize = newSize;
+	if (mSize.x <= 0 || mSize.y <= 0)
+		return;
+
 	Device& engineDevice = Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
-	mSize = newSize;
 
 	mClearColor = { 0.2f, 0.2f, 0.2f, 1.f };
 	D3D12_CLEAR_VALUE clearValue = {};
@@ -101,19 +87,7 @@ void Engine::FrameBuffer::Resize(glm::ivec2 newSize)
 	clearValue.Color[2] = mClearColor.z; // Blue component
 	clearValue.Color[3] = mClearColor.w; // Alpha component
 
-	//CD3DX12_RESOURCE_DESC framebufferDesc = {};
-	//framebufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	//framebufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Adjust the format as needed.
-	//framebufferDesc.Width = newSize.x;
-	//framebufferDesc.Height = newSize.y;
-	//framebufferDesc.DepthOrArraySize = 1;
-	//framebufferDesc.MipLevels = 1;
-	//framebufferDesc.SampleDesc.Count = 1; 
-	//framebufferDesc.SampleDesc.Quality = 0;
-	//framebufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-	//framebufferDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-	//framebufferDesc.Layout = D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	auto framebufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, static_cast<UINT>(newSize.x), static_cast<UINT>(newSize.y), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+	auto framebufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, static_cast<UINT>(mSize.x), static_cast<UINT>(mSize.y), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
 	for (int i = 0; i < FRAME_BUFFER_COUNT; i++) {
@@ -137,7 +111,7 @@ void Engine::FrameBuffer::Resize(glm::ivec2 newSize)
 	depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
 	heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, static_cast<UINT>(newSize.x), static_cast<UINT>(newSize.y), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, static_cast<UINT>(mSize.x), static_cast<UINT>(mSize.y), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
 	depthResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
 	engineDevice.AllocateDepthStencil(depthResource.get(), depthStencilDesc, depthStencilIndex);
