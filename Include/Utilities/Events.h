@@ -23,12 +23,24 @@ namespace Engine
 	//********************************//
 
 	/**
-	 * \brief Can be bound using BindEvent.
+	 * \brief Called every frame.
 	 * \World& The world this component is in. 
 	 * \entt::entity The owner of this component. 
 	 * \float The deltatime. 
 	 */
-	static constexpr Event<World&, entt::entity, float> sTickEvent{};
+	static constexpr Event<World&, entt::entity, float> sTickEvent{ "OnTick" };
+
+	/**
+	 * \brief Called every sFixedTickEventStepSize seconds.
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	static constexpr Event<World&, entt::entity> sFixedTickEvent{ "OnFixedTick" };
+
+	/**
+	 * \brief The number of seconds between fixed ticks.
+	 */
+	static constexpr float sFixedTickEventStepSize = 0.2f;
 
 	/**
 	 * \brief Binds an event to a type.

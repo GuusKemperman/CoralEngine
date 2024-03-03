@@ -12,9 +12,12 @@ namespace Engine
 	public:
 		void OnTick(World& world, entt::entity owner, float dt);
 
+		void OnFixedTick(World& world, entt::entity owner);
+
 		entt::entity mOwner{ entt::null };
 
 		uint32 mNumOfTicks{};
+		uint32 mNumOfFixedTicks{};
 		uint32 mTotalNumOfEventsCalled{};
 
 		World* mLastReceivedWorld{};

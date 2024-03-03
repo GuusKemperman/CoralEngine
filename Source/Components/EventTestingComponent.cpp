@@ -13,12 +13,21 @@ void Engine::EventTestingComponent::OnTick(World& world, entt::entity owner, flo
 	++mTotalNumOfEventsCalled;
 }
 
+void Engine::EventTestingComponent::OnFixedTick(World& world, entt::entity owner)
+{
+	mLastReceivedWorld = &world;
+	mLastReceivedOwner = owner;
+	++mNumOfFixedTicks;
+	++mTotalNumOfEventsCalled;
+}
+
 Engine::MetaType Engine::EventTestingComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<EventTestingComponent>{}, "EventTestingComponent" };
 	type.GetProperties().Add(Props::sNoInspectTag);
 
 	BindEvent(type, sTickEvent, &EventTestingComponent::OnTick);
+	BindEvent(type, sFixedTickEvent, &EventTestingComponent::OnFixedTick);
 
 	ReflectComponentType<EventTestingComponent>(type);
 	return type;

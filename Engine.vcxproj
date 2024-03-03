@@ -815,7 +815,7 @@
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
     <ClCompile Include="Source\Components\TopDownCamControllerComponent.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\Other\ReflectNullChecker.cpp" />
-    <ClCompile Include="Source\Systems\Systems\TickSystem.cpp" />
+    <ClCompile Include="Source\Systems\EventsSystem.cpp" />
     <ClCompile Include="Source\Systems\UpdateTopDownCamSystem.cpp" />
     <ClCompile Include="Source\Platform\PC\Core\FileIOPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
@@ -1335,7 +1335,7 @@
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectVector.h" />
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
-    <ClInclude Include="Include\Systems\Events\TickSystem.h" />
+    <ClInclude Include="Include\Systems\EventsSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
     <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
