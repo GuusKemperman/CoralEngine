@@ -915,7 +915,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Components\Component.cpp" />
+    <ClCompile Include="Source\Components\ComponentFilter.cpp" />
     <ClCompile Include="Source\EditorSystems\AssetEditorSystems\ScriptEditorSystem\ScriptClassPanel.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -1265,6 +1265,7 @@
     <ClInclude Include="include\BasicDataTypes\Bezier.h" />
     <ClInclude Include="include\BasicDataTypes\Name.h" />
     <ClInclude Include="include\Components\Component.h" />
+    <ClInclude Include="Include\Components\ComponentFiler.h" />
     <ClInclude Include="Include\Components\ComponentFilter.h" />
     <ClInclude Include="Include\Components\IsDestroyedTag.h" />
     <ClInclude Include="Include\Components\NameComponent.h" />
