@@ -31,6 +31,9 @@ void Engine::ScriptSystem::Update(World& world, float dt)
 		}
 	}
 
+	// It's veryy slightly faster to convert the arguments to a meta any once.
+	MetaAny dtArg{ dt };
+
 	for (const MetaType& type : typesToIterateOver)
 	{
 		const MetaFunc* const func = type.TryGetFunc("OnTick"_Name);
@@ -66,7 +69,7 @@ void Engine::ScriptSystem::Update(World& world, float dt)
 			void* ptr = storage->value(entity);
 			MetaAny refToComponent{ type, ptr, false };
 		
-			FuncResult result = (*func)(refToComponent, dt);
+			FuncResult result = (*func)(refToComponent, dtArg);
 
 			if (result.HasError())
 			{

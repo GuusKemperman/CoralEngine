@@ -805,6 +805,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Components\EventTestingComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PhysicsBody2DComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PolygonColliderComponent.cpp" />
@@ -814,6 +815,7 @@
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
     <ClCompile Include="Source\Components\TopDownCamControllerComponent.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\Other\ReflectNullChecker.cpp" />
+    <ClCompile Include="Source\Systems\Systems\TickSystem.cpp" />
     <ClCompile Include="Source\Systems\UpdateTopDownCamSystem.cpp" />
     <ClCompile Include="Source\Platform\PC\Core\FileIOPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
@@ -851,6 +853,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\UnitTests\EventUnitTests.cpp" />
     <ClCompile Include="Source\UnitTests\ReflectionUnitTests.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -1267,6 +1270,7 @@
     <ClInclude Include="include\Components\Component.h" />
     <ClInclude Include="Include\Components\ComponentFiler.h" />
     <ClInclude Include="Include\Components\ComponentFilter.h" />
+    <ClInclude Include="Include\Components\EventTestingComponent.h" />
     <ClInclude Include="Include\Components\IsDestroyedTag.h" />
     <ClInclude Include="Include\Components\NameComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\DiskColliderComponent.h" />
@@ -1331,11 +1335,13 @@
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectVector.h" />
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
+    <ClInclude Include="Include\Systems\Events\TickSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
     <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
     <ClInclude Include="Include\Utilities\CPP20\Span.h" />
     <ClInclude Include="Include\Utilities\CPP20\STDAliases.h" />
+    <ClInclude Include="Include\Utilities\Events.h" />
     <ClInclude Include="Include\Utilities\MemFunctions.h" />
     <ClInclude Include="Include\Utilities\IterableRange.h" />
     <ClInclude Include="Include\Utilities\Search.h" />
