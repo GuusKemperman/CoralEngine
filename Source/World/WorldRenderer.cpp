@@ -31,16 +31,16 @@ void Engine::WorldRenderer::Render()
 #ifdef EDITOR
 void Engine::WorldRenderer::Render(FrameBuffer& buffer, std::optional<glm::vec2> firstResizeBufferTo, const bool clearBufferFirst)
 {
+    if (firstResizeBufferTo.has_value())
+    {
+        buffer.Resize(static_cast<glm::ivec2>(*firstResizeBufferTo));
+    }
+
 	buffer.Bind();
 
 	if (clearBufferFirst)
 	{
 		buffer.Clear();
-	}
-
-	if (firstResizeBufferTo.has_value())
-	{
-		buffer.Resize(static_cast<glm::ivec2>(*firstResizeBufferTo));
 	}
 
 	RenderAtSize(buffer.GetSize());

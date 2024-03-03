@@ -34,7 +34,9 @@ namespace Engine
 		//GLuint mColorTexture{};
 		//GLuint mDepthTexture{};
 		std::unique_ptr<DXResource> resource[FRAME_BUFFER_COUNT];
+		std::unique_ptr<DXResource> depthResource;
 		unsigned int frameBufferIndex[FRAME_BUFFER_COUNT];
+		unsigned int depthStencilIndex;
 
 		glm::vec4 mClearColor{};
 		glm::ivec2 mSize{};

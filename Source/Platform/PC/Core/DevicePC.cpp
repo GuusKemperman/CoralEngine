@@ -243,7 +243,7 @@ void Engine::Device::InitializeDevice()
 
     //CREATE DESCRIPTOR HEAPS
     mDescriptorHeaps[RT_HEAP] = std::make_unique<DXDescHeap>(mDevice, 10, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
-    mDescriptorHeaps[DEPTH_HEAP] = std::make_unique<DXDescHeap>(mDevice, 4, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
+    mDescriptorHeaps[DEPTH_HEAP] = std::make_unique<DXDescHeap>(mDevice, 8, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
     mDescriptorHeaps[RESOURCE_HEAP] = std::make_unique<DXDescHeap>(mDevice, 5000, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"RESOURCE HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
     mDescriptorHeaps[SAMPLER_HEAP] = std::make_unique<DXDescHeap>(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, L"SAMPLER HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
     mDescriptorHeaps[IMGUI_HEAP] = std::make_unique<DXDescHeap>(mDevice, 4, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"IMGUI DESCRIPTOR HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
@@ -324,7 +324,7 @@ void Engine::Device::UpdateRenderTarget()
 
     D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
     depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
+    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
     depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 
     D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
@@ -360,9 +360,6 @@ void Engine::Device::NewFrame() {
 
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
-
-    //SubmitUploadCommands();
-    //WaitForFence(mUploadFence, mUploadFenceValue, mUploadFenceEvent);
 
     WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
     StartRecordingCommands();
@@ -517,6 +514,19 @@ int Engine::Device::AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARG
     frameBufferCount++;
 
     return frameBufferCount-1;
+}
+
+int Engine::Device::AllocateDepthStencil(DXResource* rsc, const D3D12_DEPTH_STENCIL_VIEW_DESC& desc)
+{
+    mDevice->CreateDepthStencilView(rsc->Get(), &desc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(depthStencilCount));
+    depthStencilCount++;
+
+    return depthStencilCount-1;
+}
+
+void Engine::Device::AllocateDepthStencil(DXResource* rsc, const D3D12_DEPTH_STENCIL_VIEW_DESC& desc, unsigned int slot)
+{
+    mDevice->CreateDepthStencilView(rsc->Get(), &desc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(slot));
 }
 
 void Engine::Device::AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc, unsigned int slot)

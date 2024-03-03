@@ -31,16 +31,16 @@ Engine::RenderToCamerasSystem::RenderToCamerasSystem()
     mSignature = std::make_unique<DXSignature>(12);
     mSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX);//0
     mSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL);//1
-    mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_PIXEL);//2
+    mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX);//2
     mSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL);//3
+    mSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL);//4
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);//4
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);//5
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);//6
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//7
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//8
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);//5
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);//6
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);//7
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//8
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//9
 
-    //mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);//9
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);//10
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);//11
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);//12
@@ -48,8 +48,7 @@ Engine::RenderToCamerasSystem::RenderToCamerasSystem()
 
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);//14
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//15
-    mSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_VERTEX);//16
-    mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//17
+    mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//16
     mSignature->CreateSignature(device, L"MAIN ROOT SIGNATURE");
 
     //CREATE PBR PIPELINE
@@ -124,8 +123,9 @@ void Engine::RenderToCamerasSystem::Render(const World& world)
     commandList->SetPipelineState(mPipelines[PBR_PIPELINE]->GetPipeline().Get());
 
     //BIND CONSTANT BUFFERS
-    mConstBuffers[LIGHT_CB]->Bind(commandList, 6, 0, frameIndex);
+    mConstBuffers[LIGHT_CB]->Bind(commandList, 1, 0, frameIndex);
     mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 0, 0, frameIndex);
+    mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 4, 0, frameIndex);
 
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
@@ -138,7 +138,7 @@ void Engine::RenderToCamerasSystem::Render(const World& world)
         //UPDATE AND BIND MODEL MATRIX
         glm::mat4x4 modelMatrix = glm::transpose(transform.GetWorldMatrix());
         mConstBuffers[MODEL_MATRIX_CB]->Update(&modelMatrix, sizeof(glm::mat4x4), meshCounter, frameIndex);
-        mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 16, meshCounter, frameIndex);
+        mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
 
         //UPDATE AND BIND MATERIAL INFO
         InfoStruct::DXMaterialInfo materialInfo;
@@ -161,11 +161,11 @@ void Engine::RenderToCamerasSystem::Render(const World& world)
             materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr;
             
             //BIND TEXTURES
-            resourceHeap->BindToGraphics(commandList, 4, staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
-            resourceHeap->BindToGraphics(commandList, 5, staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
-            resourceHeap->BindToGraphics(commandList, 6, staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
-            resourceHeap->BindToGraphics(commandList, 7, staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
-            resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
+            resourceHeap->BindToGraphics(commandList, 5, staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
+            resourceHeap->BindToGraphics(commandList, 6, staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
+            resourceHeap->BindToGraphics(commandList, 7, staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
+            resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
+            resourceHeap->BindToGraphics(commandList, 9, staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
 
         }
         else {

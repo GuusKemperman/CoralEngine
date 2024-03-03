@@ -39,6 +39,8 @@ namespace Engine
         std::shared_ptr<DXDescHeap> GetDescriptorHeap(int heap) { return mDescriptorHeaps[heap]; }
         int AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc);
         int AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc);
+        int AllocateDepthStencil(DXResource* rsc, const D3D12_DEPTH_STENCIL_VIEW_DESC& desc);
+        void AllocateDepthStencil(DXResource* rsc, const D3D12_DEPTH_STENCIL_VIEW_DESC& desc, unsigned int slot);
         void AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc, unsigned int slot);
         int GetFrameIndex() { return mFrameIndex; }
 
@@ -82,6 +84,7 @@ namespace Engine
         UINT64 mUploadFenceValue;
         int resourceCount = NUM_RESOURCES;
         int frameBufferCount = RT_COUNT;
+        int depthStencilCount = 1;
 
         ComPtr<IDXGISwapChain3> mSwapChain;
         ComPtr<ID3D12Device5> mDevice;
