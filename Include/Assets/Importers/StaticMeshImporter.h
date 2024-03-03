@@ -17,8 +17,8 @@ namespace Engine
 			Span<const glm::vec3> positions,
 			std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices,
 			std::optional<Span<const glm::vec3>> normals,
-			std::optional<Span<const glm::vec2>> textureCoordinates,
-			std::optional<Span<const glm::vec3>> colors);
+			std::optional<Span<const glm::vec3>> tangents,
+			std::optional<Span<const glm::vec2>> textureCoordinates);
 
 		std::vector<std::filesystem::path> CanImportExtensions() const override
 		{
