@@ -246,7 +246,7 @@ void Engine::Device::InitializeDevice()
     mDescriptorHeaps[DEPTH_HEAP] = std::make_unique<DXDescHeap>(mDevice, 8, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
     mDescriptorHeaps[RESOURCE_HEAP] = std::make_unique<DXDescHeap>(mDevice, 5000, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"RESOURCE HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
     mDescriptorHeaps[SAMPLER_HEAP] = std::make_unique<DXDescHeap>(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, L"SAMPLER HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-    mDescriptorHeaps[IMGUI_HEAP] = std::make_unique<DXDescHeap>(mDevice, 4, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"IMGUI DESCRIPTOR HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    //mDescriptorHeaps[IMGUI_HEAP] = std::make_unique<DXDescHeap>(mDevice, 4, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"IMGUI DESCRIPTOR HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     //CREATE RENDER TARGETS
     for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
@@ -395,7 +395,7 @@ void Engine::Device::EndFrame()
     mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mFrameIndex, &clearColor[0]);
     mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, 0);
 
-    auto* desc_ptr = mDescriptorHeaps[IMGUI_HEAP]->Get();
+    auto* desc_ptr = mDescriptorHeaps[RESOURCE_HEAP]->Get();
     mCommandList->SetDescriptorHeaps(1, &desc_ptr);
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
@@ -492,9 +492,9 @@ void Engine::Device::CreateImguiContext()
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
 
     ImGui_ImplDX12_Init(mDevice.Get(), FRAME_BUFFER_COUNT,
-        DXGI_FORMAT_R8G8B8A8_UNORM, mDescriptorHeaps[IMGUI_HEAP]->Get(),
-        mDescriptorHeaps[IMGUI_HEAP]->GetCPUHandle(0),
-        mDescriptorHeaps[IMGUI_HEAP]->GetGPUHandle(0));
+        DXGI_FORMAT_R8G8B8A8_UNORM, mDescriptorHeaps[RESOURCE_HEAP]->Get(),
+        mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(0),
+        mDescriptorHeaps[RESOURCE_HEAP]->GetGPUHandle(0));
     ImGui_ImplGlfw_InitForOther(mWindow, true);
 
     ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
@@ -505,10 +505,10 @@ void Engine::Device::CreateImguiContext()
 
 int Engine::Device::AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
 {
-    mDevice->CreateShaderResourceView(rsc->Get(), &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(resourceCount));
-    resourceCount++;
+    mDevice->CreateShaderResourceView(rsc->Get(), &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(mHeapResourceCount));
+    mHeapResourceCount++;
 
-    return resourceCount - 1;
+    return mHeapResourceCount - 1;
 }
 
 int Engine::Device::AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc)

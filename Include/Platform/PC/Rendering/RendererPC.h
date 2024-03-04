@@ -85,7 +85,5 @@ namespace Engine
         friend ReflectAccess;
         static MetaType Reflect();
         REFLECT_AT_START_UP(RenderToCamerasSystem);
-
-
     };
 }

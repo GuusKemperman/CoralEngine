@@ -161,12 +161,26 @@ void Engine::RenderToCamerasSystem::Render(const World& world)
             materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr;
             
             //BIND TEXTURES
-            resourceHeap->BindToGraphics(commandList, 5, staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
-            resourceHeap->BindToGraphics(commandList, 6, staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
-            resourceHeap->BindToGraphics(commandList, 7, staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
-            resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
-            resourceHeap->BindToGraphics(commandList, 9, staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
-
+            if (materialInfo.useColorTex)
+            {
+                resourceHeap->BindToGraphics(commandList, 5, staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
+            }
+            if (materialInfo.useEmissiveTex)
+            {
+                resourceHeap->BindToGraphics(commandList, 6, staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
+            }
+            if (materialInfo.useMetallicRoughnessTex)
+            {
+                resourceHeap->BindToGraphics(commandList, 7, staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
+            }
+            if (materialInfo.useNormalTex)
+            {
+                resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
+            }
+            if (materialInfo.useOcclusionTex)
+            {
+                resourceHeap->BindToGraphics(commandList, 9, staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
+            }
         }
         else {
             materialInfo.colorFactor = {0.f, 0.f, 0.f, 0.f };

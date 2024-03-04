@@ -28,7 +28,17 @@ Engine::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		rtvDesc.Texture2D.MipSlice = 0;
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		srvDesc.Texture2D.MipLevels = 1;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
 		frameBufferIndex[i] = engineDevice.AllocateFramebuffer(resource[i].get(), rtvDesc);
+		frameBufferRscIndex[i] = engineDevice.AllocateTexture(resource[i].get(), srvDesc);
+		gpuHandles[i] = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->GetGPUHandle(frameBufferRscIndex[i]);
 	}
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -46,6 +56,7 @@ Engine::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 
 	depthResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
 	depthStencilIndex = engineDevice.AllocateDepthStencil(depthResource.get(), depthStencilDesc);
+
 }
 
 Engine::FrameBuffer::~FrameBuffer()
@@ -98,6 +109,16 @@ void Engine::FrameBuffer::Resize(glm::ivec2 newSize)
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		rtvDesc.Texture2D.MipSlice = 0;
 		engineDevice.AllocateFramebuffer(resource[i].get(), rtvDesc, frameBufferIndex[i]);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		srvDesc.Texture2D.MipLevels = 1;
+		srvDesc.Texture2D.MostDetailedMip = 0;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+		frameBufferRscIndex[i] = engineDevice.AllocateTexture(resource[i].get(), srvDesc);
+		gpuHandles[i] = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->GetGPUHandle(frameBufferRscIndex[i]);
 	}
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -125,4 +146,10 @@ void Engine::FrameBuffer::Clear()
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 	rtHeap->ClearRenderTarget(commandList, frameBufferIndex[engineDevice.GetFrameIndex()], &mClearColor[0]);
 	rtHeap->ClearDepthStencil(commandList, depthStencilIndex);
+}
+
+size_t Engine::FrameBuffer::GetColorTextureId()
+{
+	Device& engineDevice = Device::Get();
+	return gpuHandles[engineDevice.GetFrameIndex()].ptr;
 }

@@ -82,7 +82,7 @@ namespace Engine
         HANDLE mUploadFenceEvent;
         UINT64 mFenceValue[FRAME_BUFFER_COUNT];
         UINT64 mUploadFenceValue;
-        int resourceCount = NUM_RESOURCES;
+        int mHeapResourceCount = TEX_START;
         int frameBufferCount = RT_COUNT;
         int depthStencilCount = 1;
 

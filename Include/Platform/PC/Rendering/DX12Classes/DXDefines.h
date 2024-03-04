@@ -36,8 +36,7 @@ using namespace Microsoft::WRL;
 #define DEPTH_HEAP					1
 #define RESOURCE_HEAP				2
 #define SAMPLER_HEAP				3
-#define IMGUI_HEAP					4
-#define NUM_DESC_HEAPS IMGUI_HEAP+1
+#define NUM_DESC_HEAPS SAMPLER_HEAP+1
 
 //RESOURCES
 #define RENDER_TARGETS_RSC				0
@@ -45,6 +44,11 @@ using namespace Microsoft::WRL;
 #define DEPTH_STENCIL_RSC				4
 #define NUM_RESOURCES DEPTH_STENCIL_RSC+1
 #define RT_COUNT 4
+
+//HEAP SLOTS
+#define IMGUI_SLOT 0
+#define TEX_START 4
+
 
 //CONSTANT BUFFERS
 #define CAM_MATRIX_CB			0

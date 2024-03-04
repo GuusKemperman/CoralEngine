@@ -162,7 +162,12 @@ void Engine::StaticMesh::DrawMesh() const
 	commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
 }
 
-bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo, Span<const glm::vec3> positions, std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices, std::optional<Span<const glm::vec3>> normals, std::optional<Span<const glm::vec2>> textureCoordinates, std::optional<Span<const glm::vec3>> tangents)
+bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo, 
+    Span<const glm::vec3> positions, 
+    std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices,
+    std::optional<Span<const glm::vec3>> normals,
+    std::optional<Span<const glm::vec3>> tangents,
+    std::optional<Span<const glm::vec2>> uvs)
 {
     const uint32 numOfIndices = indices.has_value() ? (static_cast<uint32>(std::holds_alternative<Span<const uint16>>(*indices) ?
         std::get<Span<const uint16>>(*indices).size() :
@@ -173,7 +178,7 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo, Span<const glm::vec3> p
         LOG(LogAssets, Error, "Importing static mesh failed: {} indices provided, but this is not divisible by 3", numOfIndices);
         return false;   
     }
-    
+
     if (normals.has_value()
         && positions.size() != normals->size())
     {
@@ -181,10 +186,10 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo, Span<const glm::vec3> p
         return false;
     }
 
-    if (textureCoordinates.has_value()
-        && positions.size() != textureCoordinates->size())
+    if (uvs.has_value()
+        && positions.size() != uvs->size())
     {
-        LOG(LogAssets, Error, "Importing static mesh failed: expected {} textureCoordinates, but received {}", positions.size(), textureCoordinates->size());
+        LOG(LogAssets, Error, "Importing static mesh failed: expected {} textureCoordinates, but received {}", positions.size(), uvs->size());
         return false;
     }
 
@@ -200,7 +205,7 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo, Span<const glm::vec3> p
     const uint32 numOfPositions = static_cast<uint32>(positions.size());
 
     StaticMeshFlags flags{};
-    
+
     if (indices.has_value())
     {
         flags = static_cast<StaticMeshFlags>(flags | hasIndices);
@@ -213,8 +218,8 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo, Span<const glm::vec3> p
     }
 
     if (normals.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasNormals);
-    if (textureCoordinates.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasUVs);
-    if (tangents.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasColors);
+    if (uvs.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasUVs);
+    if (tangents.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasTangents);
 
     str.write(reinterpret_cast<const char*>(&flags), sizeof(StaticMeshFlags));
 
@@ -249,7 +254,7 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo, Span<const glm::vec3> p
         }
     }
     if (normals.has_value()) str.write(reinterpret_cast<const char*>(normals->data()), normals->size_bytes());
-    if (textureCoordinates.has_value()) str.write(reinterpret_cast<const char*>(textureCoordinates->data()), textureCoordinates->size_bytes());
+    if (uvs.has_value()) str.write(reinterpret_cast<const char*>(uvs->data()), uvs->size_bytes());
     if (tangents.has_value()) str.write(reinterpret_cast<const char*>(tangents->data()), tangents->size_bytes());
 
     return true;
