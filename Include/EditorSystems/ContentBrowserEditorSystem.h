@@ -47,7 +47,7 @@ namespace Engine
 			bool mIsEngineAsset{};
 		};
 		std::optional<AssetCreator> mAssetCreator{};
-		void DisplayAssetCreator(const std::vector<ContentFolder>& contentFolders);
+		void DisplayAssetCreator();
 
 		static void CreateNewAsset(const AssetCreator& assetCreator, const std::filesystem::path& toFile);
 
