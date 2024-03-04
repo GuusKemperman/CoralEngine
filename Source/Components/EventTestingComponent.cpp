@@ -26,6 +26,10 @@ Engine::MetaType Engine::EventTestingComponent::Reflect()
 	MetaType type = MetaType{ MetaType::T<EventTestingComponent>{}, "EventTestingComponent" };
 	type.GetProperties().Add(Props::sNoInspectTag);
 
+	type.AddField(&EventTestingComponent::mNumOfTicks, "mNumOfTicks");
+	type.AddField(&EventTestingComponent::mNumOfFixedTicks, "mNumOfFixedTicks");
+	type.AddField(&EventTestingComponent::mTotalNumOfEventsCalled, "mTotalNumOfEventsCalled");
+
 	BindEvent(type, sTickEvent, &EventTestingComponent::OnTick);
 	BindEvent(type, sFixedTickEvent, &EventTestingComponent::OnFixedTick);
 

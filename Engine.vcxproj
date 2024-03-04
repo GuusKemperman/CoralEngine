@@ -809,6 +809,7 @@
     <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PhysicsBody2DComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PolygonColliderComponent.cpp" />
+    <ClCompile Include="Source\Scripting\ScriptEvents.cpp" />
     <ClCompile Include="Source\Systems\PhysicsSystem2D.cpp" />
     <ClCompile Include="Source\Components\IsDestroyedTag.cpp" />
     <ClCompile Include="Source\Components\NameComponent.cpp" />
@@ -1016,7 +1017,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Scripting\ScriptErrors.cpp" />
-    <ClCompile Include="Source\Systems\ScriptSystem.cpp" />
     <ClCompile Include="Source\Scripting\ScriptField.cpp" />
     <ClCompile Include="Source\Scripting\Nodes\CommentScriptNode.cpp" />
     <ClCompile Include="Source\Scripting\Nodes\EntryAndReturnScriptNode.cpp" />
@@ -1335,6 +1335,7 @@
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectVector.h" />
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
+    <ClInclude Include="Include\Scripting\ScriptEvents.h" />
     <ClInclude Include="Include\Systems\EventsSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
@@ -1363,7 +1364,6 @@
     <ClInclude Include="Include\Scripting\ScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptPin.h" />
     <ClInclude Include="Include\Scripting\ScriptTools.h" />
-    <ClInclude Include="Include\Systems\ScriptSystem.h" />
     <ClInclude Include="Include\Utilities\ClassVersion.h" />
     <ClInclude Include="Include\Utilities\EnumString.h" />
     <ClInclude Include="Include\Utilities\Expected.h" />

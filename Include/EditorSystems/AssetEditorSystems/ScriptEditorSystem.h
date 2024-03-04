@@ -208,6 +208,7 @@ namespace Engine
 		//************************************************//
 		void DisplayClassPanel();
 
+		void DisplayEventsOverview();
 		void DisplayFunctionsOverview();
 		void DisplayMembersOverview();
 
