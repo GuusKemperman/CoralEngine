@@ -31,13 +31,11 @@ UNIT_TEST(Serialization, AllAssetSerialization)
 		bufferAlign = std::max(asset.GetAssetClass().GetAlignment(), bufferAlign);
 	}
 
+	TEST_ASSERT(bufferSize != 0 && bufferAlign != 0);
+
 	void* assetBuffer = FastAlloc(bufferSize, bufferAlign);
 
-	if (assetBuffer == nullptr)
-	{
-		LOG(LogUnitTests, Error, "Failed to run test, requires buffer of size {} and align {}", bufferSize, bufferAlign);
-		return UnitTest::Failure;
-	}
+	TEST_ASSERT(assetBuffer != nullptr);
 
 	for (WeakAsset<Asset> asset : allAssets)
 	{
