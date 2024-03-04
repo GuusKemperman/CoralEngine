@@ -3,8 +3,6 @@
 
 namespace Engine
 {
-	class Registry;
-
 	class AbilityComponent
 	{
 	public:
@@ -19,17 +17,22 @@ namespace Engine
 			SelfAndFriendly
 		}mTarget{};
 
-		bool mGCD = true; // whether this ability takes into account the global cooldown
+		bool mGlobalCooldown = true; // whether this ability takes into account the global cooldown
 
 		enum RequirementType
 		{
 			Cooldown,
 			Kills
 		}mRequirementType{};
+
 		float mRequirementToUse{};
 		float mRequirementCounter{};
-		int mCharges{};
+
+		int mCharges = 1;
 		int mCurrentCharges{};
+
+		entt::entity mCastByPlayer{};
+		std::vector<entt::entity> mHitPlayers{};
 
 	private:
 		friend ReflectAccess;

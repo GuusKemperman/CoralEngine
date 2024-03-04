@@ -5,6 +5,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
+#include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 Engine::MetaType Engine::AbilityComponent::Reflect()
 {
@@ -13,17 +14,28 @@ Engine::MetaType Engine::AbilityComponent::Reflect()
 
 	metaType.AddField(&AbilityComponent::mDescription, "mDescription").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&AbilityComponent::mIconTextureName, "mIconTextureName").GetProperties().Add(Props::sIsScriptableTag);
+
 	metaType.AddField(&AbilityComponent::mTarget, "mTarget").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&AbilityComponent::mGCD, "mGCD").GetProperties().Add(Props::sIsScriptableTag);
+
+	metaType.AddField(&AbilityComponent::mGlobalCooldown, "mGlobalCooldown").GetProperties().Add(Props::sIsScriptableTag);
+
 	metaType.AddField(&AbilityComponent::mRequirementType, "mRequirementType").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&AbilityComponent::mRequirementToUse, "mRequirementToUse").GetProperties().Add(Props::sIsScriptableTag);
 	auto& requirementCounterProps = metaType.AddField(&AbilityComponent::mRequirementCounter, "mRequirementCounter").GetProperties();
 	requirementCounterProps.Add(Props::sIsScriptableTag);
 	requirementCounterProps.Add(Props::sNoInspectTag);
+
 	metaType.AddField(&AbilityComponent::mCharges, "mCharges").GetProperties().Add(Props::sIsScriptableTag);
 	auto& currentChargesProps = metaType.AddField(&AbilityComponent::mCurrentCharges, "mCurrentCharges").GetProperties();
 	currentChargesProps.Add(Props::sIsScriptableTag);
 	currentChargesProps.Add(Props::sNoInspectTag);
+
+	auto& castByPlayerProps = metaType.AddField(&AbilityComponent::mCastByPlayer, "mCastByPlayer").GetProperties();
+	castByPlayerProps.Add(Props::sIsScriptableTag);
+	castByPlayerProps.Add(Props::sNoInspectTag);
+	auto& hitPlayersProps = metaType.AddField(&AbilityComponent::mHitPlayers, "mHitPlayers").GetProperties();
+	hitPlayersProps.Add(Props::sIsScriptableTag);
+	hitPlayersProps.Add(Props::sNoInspectTag);
 
 	ReflectComponentType<AbilityComponent>(metaType);
 
