@@ -849,6 +849,7 @@
       <Warnings Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">WarningsOff</Warnings>
       <Warnings Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">WarningsOff</Warnings>
     </ClCompile>
+    <ClCompile Include="Source\Components\Abilities\CharacterComponent.cpp" />
     <ClCompile Include="Source\Components\Abilities\AbilityComponent.cpp" />
     <ClCompile Include="Source\Components\PointLightComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\Edge.cpp" />
@@ -1320,6 +1321,7 @@
     <ClInclude Include="include\BasicDataTypes\Bezier.h" />
     <ClInclude Include="include\BasicDataTypes\Name.h" />
     <ClInclude Include="Include\Components\Abilities\AbilityComponent.h" />
+    <ClInclude Include="Include\Components\Abilities\CharacterComponent.h" />
     <ClInclude Include="include\Components\Component.h" />
     <ClInclude Include="Include\Components\ComponentFilter.h" />
     <ClInclude Include="Include\Components\IsDestroyedTag.h" />
