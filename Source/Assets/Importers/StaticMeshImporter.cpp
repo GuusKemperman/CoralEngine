@@ -23,7 +23,7 @@
 std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Import(const std::filesystem::path& file) const
 {
     Assimp::Importer importer{};
-    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipWindingOrder | aiProcess_FlipUVs);
+    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
 
 	if (***REMOVED***ne == nullptr)
 	{
@@ -52,7 +52,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 			continue;
 		}
 
-		Material engineMat{ aiMat.GetName().C_Str() };
+		Material engineMat{ (*aiMat.GetName().C_Str() == *"") ? "M_Unnamed_" + std::to_string(i) : aiMat.GetName().C_Str() };
 
 		aiGetMaterialColor(&aiMat, AI_MATKEY_BASE_COLOR, reinterpret_cast<aiColor4D*>(&engineMat.mBaseColorFactor));
 		
