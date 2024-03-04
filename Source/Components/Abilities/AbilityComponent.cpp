@@ -12,30 +12,17 @@ Engine::MetaType Engine::AbilityComponent::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<AbilityComponent>{}, "AbilityComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
 
-	metaType.AddField(&AbilityComponent::mDescription, "mDescription").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&AbilityComponent::mIconTextureName, "mIconTextureName").GetProperties().Add(Props::sIsScriptableTag);
-
-	metaType.AddField(&AbilityComponent::mTarget, "mTarget").GetProperties().Add(Props::sIsScriptableTag);
-
-	metaType.AddField(&AbilityComponent::mGlobalCooldown, "mGlobalCooldown").GetProperties().Add(Props::sIsScriptableTag);
-
-	metaType.AddField(&AbilityComponent::mRequirementType, "mRequirementType").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&AbilityComponent::mRequirementToUse, "mRequirementToUse").GetProperties().Add(Props::sIsScriptableTag);
-	auto& requirementCounterProps = metaType.AddField(&AbilityComponent::mRequirementCounter, "mRequirementCounter").GetProperties();
-	requirementCounterProps.Add(Props::sIsScriptableTag);
-	requirementCounterProps.Add(Props::sNoInspectTag);
-
-	metaType.AddField(&AbilityComponent::mCharges, "mCharges").GetProperties().Add(Props::sIsScriptableTag);
-	auto& currentChargesProps = metaType.AddField(&AbilityComponent::mCurrentCharges, "mCurrentCharges").GetProperties();
-	currentChargesProps.Add(Props::sIsScriptableTag);
-	currentChargesProps.Add(Props::sNoInspectTag);
-
-	auto& castByPlayerProps = metaType.AddField(&AbilityComponent::mCastByPlayer, "mCastByPlayer").GetProperties();
-	castByPlayerProps.Add(Props::sIsScriptableTag);
-	castByPlayerProps.Add(Props::sNoInspectTag);
-	auto& hitPlayersProps = metaType.AddField(&AbilityComponent::mHitPlayers, "mHitPlayers").GetProperties();
-	hitPlayersProps.Add(Props::sIsScriptableTag);
-	hitPlayersProps.Add(Props::sNoInspectTag);
+	metaType.AddField(&AbilityComponent::mDescription, "mDescription").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	metaType.AddField(&AbilityComponent::mIconTextureName, "mIconTextureName").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	metaType.AddField(&AbilityComponent::mTarget, "mTarget").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	metaType.AddField(&AbilityComponent::mGlobalCooldown, "mGlobalCooldown").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	metaType.AddField(&AbilityComponent::mRequirementType, "mRequirementType").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	metaType.AddField(&AbilityComponent::mRequirementToUse, "mRequirementToUse").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	metaType.AddField(&AbilityComponent::mRequirementCounter, "mRequirementCounter").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	metaType.AddField(&AbilityComponent::mCharges, "mCharges").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	metaType.AddField(&AbilityComponent::mCurrentCharges, "mCurrentCharges").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	metaType.AddField(&AbilityComponent::mCastByPlayer, "mCastByPlayer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	metaType.AddField(&AbilityComponent::mHitPlayers, "mHitPlayers").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
 	ReflectComponentType<AbilityComponent>(metaType);
 
