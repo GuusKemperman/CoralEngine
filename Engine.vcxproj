@@ -807,9 +807,18 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Components\PointLightComponent.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\Edge.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\Geometry2d.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\Graph.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\NavMeshAgentComponent.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\NavMeshComponent.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\NavMeshObstacleTag.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\NavMeshTargetComponent.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\Node.cpp" />
     <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PhysicsBody2DComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PolygonColliderComponent.cpp" />
+    <ClCompile Include="Source\Systems\NavigationSystem.cpp" />
     <ClCompile Include="Source\Systems\PhysicsSystem2D.cpp" />
     <ClCompile Include="Source\Components\IsDestroyedTag.cpp" />
     <ClCompile Include="Source\Components\NameComponent.cpp" />
@@ -1271,6 +1280,14 @@
     <ClInclude Include="Include\Components\ComponentFilter.h" />
     <ClInclude Include="Include\Components\IsDestroyedTag.h" />
     <ClInclude Include="Include\Components\NameComponent.h" />
+    <ClInclude Include="Include\Components\Pathfinding\Edge.h" />
+    <ClInclude Include="Include\Components\Pathfinding\Geometry2d.hpp" />
+    <ClInclude Include="Include\Components\Pathfinding\Graph.h" />
+    <ClInclude Include="Include\Components\Pathfinding\NavMeshAgentComponent.h" />
+    <ClInclude Include="Include\Components\Pathfinding\NavMeshComponent.h" />
+    <ClInclude Include="Include\Components\Pathfinding\NavMeshObstacleTag.h" />
+    <ClInclude Include="Include\Components\Pathfinding\NavMeshTargetComponent.h" />
+    <ClInclude Include="Include\Components\Pathfinding\Node.h" />
     <ClInclude Include="Include\Components\Physics2D\DiskColliderComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PhysicsBody2DComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
@@ -1333,6 +1350,7 @@
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectVector.h" />
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
+    <ClInclude Include="Include\Systems\NavigationSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
     <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
