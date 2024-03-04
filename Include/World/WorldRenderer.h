@@ -44,7 +44,8 @@ namespace Engine
 		void Render();
 
 #ifdef EDITOR
-		void Render(FrameBuffer& buffer, std::optional<glm::vec2> firstResizeBufferTo = {}, bool clearBufferFirst = true);
+		void Render(FrameBuffer& buffer, std::optional<glm::vec2> firstResizeBufferTo = {},
+		            bool clearBufferFirst = true);
 #endif // EDITOR
 
 		const World& GetWorld() const { return mWorld; }
@@ -56,15 +57,18 @@ namespace Engine
 
 		void AddLine(DebugCategory::Enum category, glm::vec3 from, glm::vec3 to, glm::vec4 color) const;
 
-		void AddLine(DebugCategory::Enum category, glm::vec2 from, glm::vec2 to, glm::vec4 color, Plane::Enum plane = Plane::XZ) const;
+		void AddLine(DebugCategory::Enum category, glm::vec2 from, glm::vec2 to, glm::vec4 color,
+		             Plane::Enum plane = Plane::XZ) const;
 
-		void AddCircle(DebugCategory::Enum category, glm::vec3 center, float radius, glm::vec4 color, Plane::Enum plane = Plane::XZ) const;
+		void AddCircle(DebugCategory::Enum category, glm::vec3 center, float radius, glm::vec4 color,
+		               Plane::Enum plane = Plane::XZ) const;
 
 		void AddSphere(DebugCategory::Enum category, glm::vec3 center, float radius, glm::vec4 color) const;
 
-		void AddSquare(DebugCategory::Enum category, glm::vec3 center, float size, glm::vec4 color, Plane::Enum plane = Plane::XZ) const;
+		void AddSquare(DebugCategory::Enum category, glm::vec3 center, float size, glm::vec4 color,
+		               Plane::Enum plane = Plane::XZ) const;
 
-		void AddBox(DebugCategory::Enum category, glm::vec3 center, glm::vec3 halfExtends, glm::vec4 color)  const;
+		void AddBox(DebugCategory::Enum category, glm::vec3 center, glm::vec3 halfExtends, glm::vec4 color) const;
 
 		void AddPolygon(DebugCategory::Enum category, std::vector<glm::vec3>& points, glm::vec4 color) const;
 
@@ -83,7 +87,7 @@ namespace Engine
 		friend class World;
 		std::reference_wrapper<const World> mWorld;
 
-		static inline DebugCategory::Enum sDebugCategoryFlags{};
+		static inline DebugCategory::Enum sDebugCategoryFlags{DebugCategory::All};
 
 		// In pixels
 		glm::vec2 mLastRenderedAtSize{};
