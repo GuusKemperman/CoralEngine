@@ -59,11 +59,11 @@ namespace Engine
         };
     }
 
-    class RenderToCamerasSystem final :
+    class Renderer final :
         public System
     {
     public:
-        RenderToCamerasSystem();
+        Renderer();
         void Render(const World& world) override;
 
         SystemStaticTraits GetStaticTraits() const override
@@ -84,6 +84,6 @@ namespace Engine
     private:
         friend ReflectAccess;
         static MetaType Reflect();
-        REFLECT_AT_START_UP(RenderToCamerasSystem);
+        REFLECT_AT_START_UP(Renderer);
     };
 }

@@ -28,11 +28,6 @@ namespace Engine
 		size_t GetColorTextureId();
 
 	private:
-		/*void SetGLViewport() const;*/
-
-		//GLuint mFrameBuffer{};
-		//GLuint mColorTexture{};
-		//GLuint mDepthTexture{};
 		std::unique_ptr<DXResource> resource[FRAME_BUFFER_COUNT];
 		std::unique_ptr<DXResource> depthResource;
 		unsigned int frameBufferIndex[FRAME_BUFFER_COUNT];
@@ -42,6 +37,9 @@ namespace Engine
 
 		glm::vec4 mClearColor{};
 		glm::ivec2 mSize{};
+		D3D12_VIEWPORT mViewport;
+		D3D12_RECT mScissorRect;
+
 	};
 }
 #endif // EDITOR

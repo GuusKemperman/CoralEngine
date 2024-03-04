@@ -22,7 +22,7 @@
 #include "Assets/Texture.h"
 #include "Assets/StaticMesh.h"
 
-Engine::RenderToCamerasSystem::RenderToCamerasSystem()
+Engine::Renderer::Renderer()
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
@@ -94,7 +94,7 @@ Engine::RenderToCamerasSystem::RenderToCamerasSystem()
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4), MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
 }
 
-void Engine::RenderToCamerasSystem::Render(const World& world)
+void Engine::Renderer::Render(const World& world)
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -108,7 +108,8 @@ void Engine::RenderToCamerasSystem::Render(const World& world)
     //UPDATE CAMERA
     const auto camera = optionalEntityCameraPair->second;
     InfoStruct::DXMatrixInfo matrixInfo;
-    matrixInfo.pm = glm::transpose(camera.GetProjection());
+    //matrixInfo.pm = camera.GetProjection();
+    matrixInfo.pm = glm::transpose(glm::perspectiveLH(45.0f * (3.14f / 180.0f), 1.77f, 0.5f, 1000.f));
     matrixInfo.vm = glm::transpose(camera.GetView());
     matrixInfo.ipm = glm::inverse(matrixInfo.pm);
     matrixInfo.ivm = glm::inverse(matrixInfo.vm);
@@ -205,7 +206,7 @@ void Engine::RenderToCamerasSystem::Render(const World& world)
     }
 }
 
-Engine::MetaType Engine::RenderToCamerasSystem::Reflect()
+Engine::MetaType Engine::Renderer::Reflect()
 {
-    return MetaType{ MetaType::T<RenderToCamerasSystem>{}, "Renderer", MetaType::Base<System>{} };
+    return MetaType{ MetaType::T<Renderer>{}, "Renderer", MetaType::Base<System>{} };
 }
