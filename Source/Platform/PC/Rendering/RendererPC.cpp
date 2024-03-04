@@ -53,9 +53,9 @@ Engine::Renderer::Renderer()
 
     //CREATE PBR PIPELINE
     FileIO& fileIO = FileIO::Get();
-    std::string shaderPath = fileIO.GetPath(FileIO::Directory::GameAssets, "shaders/HLSL/PBRVertex.hlsl");
+    std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRVertex.hlsl");
     ComPtr<ID3DBlob> v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
-    shaderPath = fileIO.GetPath(FileIO::Directory::GameAssets, "shaders/HLSL/PBRPixel.hlsl");
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
     ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
     mPipelines[PBR_PIPELINE] = std::make_unique<DXPipeline>();
     mPipelines[PBR_PIPELINE]->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
@@ -73,9 +73,9 @@ Engine::Renderer::Renderer()
     depth.DepthEnable = FALSE;
     depth.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 
-    shaderPath = fileIO.GetPath(FileIO::Directory::GameAssets, "shaders/HLSL/SkyboxVertex.hlsl");
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/SkyboxVertex.hlsl");
     v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
-    shaderPath = fileIO.GetPath(FileIO::Directory::GameAssets, "shaders/HLSL/SkyboxPixel.hlsl");
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/SkyboxPixel.hlsl");
     p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
     mPipelines[SKY_PIPELINE] = std::make_unique<DXPipeline>();
     mPipelines[SKY_PIPELINE]->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
