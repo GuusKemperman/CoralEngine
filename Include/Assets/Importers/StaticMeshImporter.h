@@ -1,4 +1,5 @@
 #pragma once
+#ifdef EDITOR
 #include "Assets/Importers/Importer.h"
 
 namespace Engine
@@ -8,7 +9,6 @@ namespace Engine
 	{
 	public:
 
-#ifdef EDITOR
 		std::optional<std::vector<ImportedAsset>> Import(const std::filesystem::path& path) const override;
 
 		static std::optional<ImportedAsset> ImportFromMemory(const std::filesystem::path& importedFromFile,
@@ -17,8 +17,8 @@ namespace Engine
 			Span<const glm::vec3> positions,
 			std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices,
 			std::optional<Span<const glm::vec3>> normals,
-			std::optional<Span<const glm::vec2>> textureCoordinates,
-			std::optional<Span<const glm::vec3>> colors);
+			std::optional<Span<const glm::vec3>> tangents,
+			std::optional<Span<const glm::vec2>> textureCoordinates);
 
 		std::vector<std::filesystem::path> CanImportExtensions() const override
 		{
@@ -27,7 +27,6 @@ namespace Engine
 			".obj", ".gltf", ".glb"
 			};
 		}
-#endif // EDITOR
 
 	private:
 		friend ReflectAccess;
@@ -35,3 +34,4 @@ namespace Engine
 		REFLECT_AT_START_UP(StaticMeshImporter);
 	};
 }
+#endif // EDITOR

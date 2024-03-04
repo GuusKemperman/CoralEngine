@@ -1,4 +1,5 @@
 #pragma once
+#ifdef EDITOR
 #include "Assets/Importers/Importer.h"
 
 namespace Engine
@@ -8,14 +9,12 @@ namespace Engine
 	{
 	public:
 
-#ifdef EDITOR
 		std::optional<std::vector<ImportedAsset>> Import(const std::filesystem::path& path) const override;
 
 		std::vector<std::filesystem::path> CanImportExtensions() const override
 		{
 			return { };
 		}
-#endif // EDITOR
 
 	private:
 		friend ReflectAccess;
@@ -23,3 +22,4 @@ namespace Engine
 		REFLECT_AT_START_UP(GLTFImporter);
 	};
 }
+#endif // EDITOR

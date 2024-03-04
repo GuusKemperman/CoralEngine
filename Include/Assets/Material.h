@@ -41,13 +41,6 @@ namespace Engine
 
 		void OnSave(AssetSaveInfo& saveInfo) const override;
 
-		void OnSave(AssetSaveInfo& saveInfo,
-			std::optional<std::string> baseColorTextureName,
-			std::optional<std::string> metallicRoughnessTextureName,
-			std::optional<std::string> normalTextureName,
-			std::optional<std::string> occlusionTextureName,
-			std::optional<std::string> emissiveTextureName) const;
-
 		void LoadV0(AssetLoadInfo& loadInfo);
 		void LoadV1(AssetLoadInfo& loadInfo);
 

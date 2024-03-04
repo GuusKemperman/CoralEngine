@@ -89,12 +89,12 @@ namespace Engine
 		{
 			// https://stackoverflow.com/a/4976611
 			std::string ret;
-			char buffer[4096];
-			while (stream.read(buffer, sizeof(buffer)))
+			char mBuffers[4096];
+			while (stream.read(mBuffers, sizeof(mBuffers)))
 			{
-				ret.append(buffer, sizeof(buffer));
+				ret.append(mBuffers, sizeof(mBuffers));
 			}
-			ret.append(buffer, stream.gcount());
+			ret.append(mBuffers, stream.gcount());
 			return ret;
 		}
 

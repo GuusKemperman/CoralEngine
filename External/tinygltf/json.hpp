@@ -15898,7 +15898,7 @@ inline void grisu2_round(char* buf, int len, std::uint64_t dist, std::uint64_t d
 Generates V = buffer * 10^decimal_exponent, such that M- <= V <= M+.
 M- and M+ must be normalized and share the same exponent -60 <= e <= -32.
 */
-inline void grisu2_digit_gen(char* buffer, int& length, int& decimal_exponent,
+inline void grisu2_digit_gen(char* mBuffers, int& length, int& decimal_exponent,
                              diyfp M_minus, diyfp w, diyfp M_plus)
 {
     static_assert(kAlpha >= -60, "internal error");
@@ -15975,7 +15975,7 @@ inline void grisu2_digit_gen(char* buffer, int& length, int& decimal_exponent,
         //         = (buffer * 10 + d) * 10^(n-1) + (r + p2 * 2^e)
         //
         JSON_ASSERT(d <= 9);
-        buffer[length++] = static_cast<char>('0' + d); // buffer := buffer * 10 + d
+        mBuffers[length++] = static_cast<char>('0' + d); // buffer := buffer * 10 + d
         //
         //      M+ = buffer * 10^(n-1) + (r + p2 * 2^e)
         //
@@ -16011,7 +16011,7 @@ inline void grisu2_digit_gen(char* buffer, int& length, int& decimal_exponent,
             //      10^n = (10^n * 2^-e) * 2^e = ulp * 2^e
             //
             const std::uint64_t ten_n = std::uint64_t{pow10} << -one.e;
-            grisu2_round(buffer, length, dist, delta, rest, ten_n);
+            grisu2_round(mBuffers, length, dist, delta, rest, ten_n);
 
             return;
         }
@@ -16082,7 +16082,7 @@ inline void grisu2_digit_gen(char* buffer, int& length, int& decimal_exponent,
         //         = (buffer * 10 + d) * 10^(-m-1) + 10^(-m-1) * r * 2^e
         //
         JSON_ASSERT(d <= 9);
-        buffer[length++] = static_cast<char>('0' + d); // buffer := buffer * 10 + d
+        mBuffers[length++] = static_cast<char>('0' + d); // buffer := buffer * 10 + d
         //
         //      M+ = buffer * 10^(-m-1) + 10^(-m-1) * r * 2^e
         //
@@ -16116,7 +16116,7 @@ inline void grisu2_digit_gen(char* buffer, int& length, int& decimal_exponent,
     //      10^m * 10^-m = 1 = 2^-e * 2^e = ten_m * 2^e
     //
     const std::uint64_t ten_m = one.f;
-    grisu2_round(buffer, length, dist, delta, p2, ten_m);
+    grisu2_round(mBuffers, length, dist, delta, p2, ten_m);
 
     // By construction this algorithm generates the shortest possible decimal
     // number (Loitsch, Theorem 6.2) which rounds back to w.

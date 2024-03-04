@@ -4,7 +4,7 @@
 #include <chrono>
 
 #include "Core/FileIO.h"
-#include "Core/Renderer.h"
+#include "Core/Device.h"
 #include "Core/AssetManager.h"
 #include "Core/Input.h"
 #include "Core/Editor.h"
@@ -17,13 +17,13 @@
 #include "Utilities/Benchmark.h"
 #include "World/Registry.h"
 
-Engine::EngineClass::EngineClass(int argc, char* argv[])
+Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
-	FileIO::StartUp(argc == 0 ? std::string_view{} : argv[0]);
+	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
-	Renderer::StartUp();
+	Device::StartUp();
 	Input::StartUp();
-	Renderer::Get().CreateImguiContext();
+	Device::Get().CreateImguiContext();
 	MetaManager::StartUp();
 	AssetManager::StartUp();
 	VirtualMachine::StartUp();
@@ -45,7 +45,7 @@ Engine::EngineClass::~EngineClass()
 	AssetManager::ShutDown();
 	MetaManager::ShutDown();
 	Input::ShutDown();
-	Renderer::ShutDown();
+	Device::ShutDown();
 	Logger::ShutDown();
 	FileIO::ShutDown();
 }
@@ -66,7 +66,7 @@ void Engine::EngineClass::Run()
 #endif // EDITOR
 
 	Input& input = Input::Get();
-	Renderer& renderer = Renderer::Get();
+	Device& device = Device::Get();
 
 	float timeElapsedSinceLastGarbageCollect{};
 	static constexpr float garbageCollectInterval = 5.0f;
@@ -75,14 +75,14 @@ void Engine::EngineClass::Run()
 	std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	std::chrono::high_resolution_clock::time_point t2{};
 
-	while (!renderer.ShouldClose())
+	while (!device.ShouldClose())
 	{
 		t2 = std::chrono::high_resolution_clock::now();
 		deltaTime = (std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1)).count();
 		t1 = t2;
 
 		input.NewFrame();
-		renderer.NewFrame();
+		device.NewFrame();
 
 #ifdef EDITOR
 		Editor::Get().Tick(deltaTime);
@@ -91,8 +91,7 @@ void Engine::EngineClass::Run()
 		world.GetRenderer().Render();
 #endif  // EDITOR
 
-		renderer.Render();
-
+		device.EndFrame();
 
 		timeElapsedSinceLastGarbageCollect += deltaTime;
 
@@ -104,9 +103,3 @@ void Engine::EngineClass::Run()
 	}
 }
 
-int main(int argc, char* args[])
-{
-	Engine::EngineClass engine{ argc, args };
-	engine.Run();
-	return 0;
-}

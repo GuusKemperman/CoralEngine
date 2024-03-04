@@ -189,7 +189,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 			
 			const tinygltf::Accessor& indicesAccessor = model.accessors[primitive.indices];
 			const tinygltf::BufferView& indicesBufferView = model.bufferViews[indicesAccessor.bufferView];
-			const tinygltf::Buffer& indicesBuffer = model.buffers[indicesBufferView.buffer];
+			const tinygltf::Buffer& indicesBuffer = model.buffers[indicesBufferView.mBuffers];
 			const unsigned char* indicesData = &indicesBuffer.data[indicesBufferView.byteOffset];
 
 			switch (indicesAccessor.componentType)
@@ -215,15 +215,15 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 			Span<const glm::vec3> positions{};
 			std::optional<Span<const glm::vec3>> normals{};
 			std::optional<Span<const glm::vec2>> textureCoordinates{};
-			std::optional<Span<const glm::vec3>> colors{};
+			std::optional<Span<const glm::vec3>> tangents{};
 
 			for (const auto& [attribName, accessorIndex] : primitive.attributes)
 			{
 				const tinygltf::Accessor& accessor = model.accessors[accessorIndex];
 				const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-				const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+				const tinygltf::Buffer& mBuffers = model.buffers[bufferView.mBuffers];
 
-				const unsigned char* data = &buffer.data[bufferView.byteOffset];
+				const unsigned char* data = &mBuffers.data[bufferView.byteOffset];
 
 				if (attribName.compare("POSITION") == 0)
 				{
@@ -259,15 +259,15 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 						LOG(LogAssets, Warning, "While importing mesh {}: texcoord type not handled. Use floats.", meshName);
 					}
 				}
-				else if (attribName.compare("COLOR_0") == 0)
+				else if (attribName.compare("TANGENT") == 0)
 				{
 					if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT)
 					{
-						colors = { reinterpret_cast<const glm::vec3*>(data), accessor.count };
+						tangents = { reinterpret_cast<const glm::vec3*>(data), accessor.count };
 					}
 					else
 					{
-						LOG(LogAssets, Warning, "While importing mesh {}: color type not handled. Use floats.", meshName);
+						LOG(LogAssets, Warning, "While importing mesh {}: tangents type not handled. Use floats.", meshName);
 					}
 				}
 				else
@@ -287,8 +287,8 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 				positions,
 				indices,
 				normals,
-				textureCoordinates,
-				colors);
+				tangents,
+				textureCoordinates);
 
 			if (importedAsset.has_value())
 			{

@@ -5,14 +5,14 @@
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/CameraComponent.h"
-#include "xsr.hpp"
 #include "Components/TransformComponent.h"
 #include "Core/Input.h"
-#include "Core/Renderer.h"
+#include "Core/Device.h"
+#include "Systems/System.h"
 
 Engine::WorldRenderer::WorldRenderer(const World& world) :
 	mWorld(world),
-	mLastRenderedAtSize(Renderer::Get().GetDisplaySize())
+	mLastRenderedAtSize(Device::Get().GetDisplaySize())
 {
 }
 
@@ -25,22 +25,22 @@ void Engine::WorldRenderer::NewFrame()
 
 void Engine::WorldRenderer::Render()
 {
-	RenderAtSize(Renderer::Get().GetDisplaySize());
+	RenderAtSize(Device::Get().GetDisplaySize());
 }
 
 #ifdef EDITOR
 void Engine::WorldRenderer::Render(FrameBuffer& buffer, std::optional<glm::vec2> firstResizeBufferTo, const bool clearBufferFirst)
 {
+    if (firstResizeBufferTo.has_value())
+    {
+        buffer.Resize(static_cast<glm::ivec2>(*firstResizeBufferTo));
+    }
+
 	buffer.Bind();
 
 	if (clearBufferFirst)
 	{
 		buffer.Clear();
-	}
-
-	if (firstResizeBufferTo.has_value())
-	{
-		buffer.Resize(static_cast<glm::ivec2>(*firstResizeBufferTo));
 	}
 
 	RenderAtSize(buffer.GetSize());
@@ -159,11 +159,11 @@ void Engine::WorldRenderer::RenderAtSize(glm::vec2 size)
 	GetWorld().GetRegistry().RenderSystems();
 }
 
-void Engine::WorldRenderer::AddLine(DebugCategory::Enum category, const glm::vec3 from, const glm::vec3 to, const glm::vec4 color) const
+void Engine::WorldRenderer::AddLine(DebugCategory::Enum category, const glm::vec3, const glm::vec3, const glm::vec4) const
 {
     if (!(sDebugCategoryFlags & category)) return;
 
-    xsr::render_debug_line(value_ptr(from), value_ptr(to), value_ptr(color));
+    //xsr::render_debug_line(value_ptr(from), value_ptr(to), value_ptr(color));
 }
 
 void Engine::WorldRenderer::AddLine(DebugCategory::Enum category, const glm::vec2 from, const glm::vec2 to, const glm::vec4 color, Plane::Enum plane) const
@@ -328,9 +328,43 @@ void Engine::WorldRenderer::AddBox(DebugCategory::Enum category, const glm::vec3
 
 void Engine::WorldRenderer::AddPolygon(DebugCategory::Enum category, std::vector<glm::vec3>& points, glm::vec4 color) const
 {
-    size_t pointCount = points.size();
+    if (!(sDebugCategoryFlags & category)) return;
+
+    const size_t pointCount = points.size();
     for (size_t i = 0; i < pointCount; i++)
     {
         AddLine(category, points[i], points[(i + 1) % pointCount], color);
+    }
+}
+
+void Engine::WorldRenderer::AddPolygon(DebugCategory::Enum category, std::vector<glm::vec2>& points, glm::vec4 color, Plane::Enum plane) const
+{
+    if (!(sDebugCategoryFlags & category)) return;
+
+    const size_t pointCount = points.size();
+
+    switch (plane)
+    {
+    case Plane::XY:
+        for (size_t i = 0; i < pointCount; i++)
+        {
+            const size_t nextPointIndex = (i + 1) % pointCount;
+            AddLine(category, { points[i].x, points[i].y, 0.f }, { points[nextPointIndex].x, points[nextPointIndex].y, 0.f }, color);
+        }
+        break;
+    case Plane::XZ:
+        for (size_t i = 0; i < pointCount; i++)
+        {
+            const size_t nextPointIndex = (i + 1) % pointCount;
+            AddLine(category, { points[i].x, 0.f, points[i].y }, { points[nextPointIndex].x, 0.f , points[nextPointIndex].y}, color);
+        }
+        break;
+    case Plane::YZ:
+        for (size_t i = 0; i < pointCount; i++)
+        {
+            const size_t nextPointIndex = (i + 1) % pointCount;
+            AddLine(category, { 0.f, points[i].x, points[i].y }, { 0.f, points[nextPointIndex].x, points[nextPointIndex].y }, color);
+        }
+        break;
     }
 }
