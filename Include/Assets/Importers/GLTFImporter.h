@@ -13,7 +13,7 @@ namespace Engine
 
 		std::vector<std::filesystem::path> CanImportExtensions() const override
 		{
-			return { ".gltf", ".glb" };
+			return { };
 		}
 #endif // EDITOR
 
