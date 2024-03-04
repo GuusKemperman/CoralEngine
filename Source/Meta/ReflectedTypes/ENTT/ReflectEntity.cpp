@@ -23,15 +23,15 @@ MetaType Reflector<T>::Reflect()
 	ASSERT(defaultConstructor != nullptr);
 
 	*defaultConstructor = {
-		[](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer buffer) -> FuncResult
+		[](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer mBuffers) -> FuncResult
 		{
-			ASSERT(buffer != nullptr && "The address provided to a constructor may never be nullptr");
+			ASSERT(mBuffers != nullptr && "The address provided to a constructor may never be nullptr");
 
 			// Unpack needs to know the argument that it
 			// needs to forward.
 			[[maybe_unused]] size_t argIndex = args.size();
 
-			new (buffer) entt::entity(entt::null);
+			new (mBuffers) entt::entity(entt::null);
 			return std::nullopt;
 		},
 		OperatorType::constructor,

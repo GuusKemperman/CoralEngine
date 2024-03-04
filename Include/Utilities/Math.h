@@ -144,8 +144,8 @@ namespace Engine
 		// Function needed for line-line intersection
 		static bool onSegment(const glm::vec2& p, const glm::vec2& q, const glm::vec2& r)
 		{
-			return q.x <= glm::max(p.x, r.x) && q.x >= glm::min(p.x, r.x) &&
-				q.y <= glm::max(p.y, r.y) && q.y >= glm::min(p.y, r.y);
+			return q.x <= (glm::max)(p.x, r.x) && q.x >= (glm::min)(p.x, r.x) &&
+				q.y <= (glm::max)(p.y, r.y) && q.y >= (glm::min)(p.y, r.y);
 		}
 		// Function needed for line-line intersection
 		static int orientation(const glm::vec2& p, const glm::vec2& q, const glm::vec2& r)
