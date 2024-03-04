@@ -1458,7 +1458,7 @@
     <ClInclude Include="include\World\World.h" />
     <ClInclude Include="Include\World\Registry.h" />
     <ClInclude Include="Include\World\WorldRenderer.h" />
-    <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
+    <ClInclude Include="Include\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Texture***REMOVED***.h">
