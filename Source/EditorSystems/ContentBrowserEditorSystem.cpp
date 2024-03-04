@@ -4,12 +4,20 @@
 #include "Assets/Asset.h"
 #include "Core/AssetManager.h"
 #include "Core/Editor.h"
+#include "Core/FileIO.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Search.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
+
+// The index inside the rootfolder when calling MakeFolderGraph
+static constexpr uint32 sIndexOfEngineAssets = 0;
+static constexpr uint32 sIndexOfGameAssets = 1;
+
+static constexpr std::string_view sEngineAssetsDisplayName = "EngineAssets";
+static constexpr std::string_view sGameAssetsDisplayName = "GameAssets";
 
 Engine::ContentBrowserEditorSystem::ContentBrowserEditorSystem() :
 	EditorSystem("ContentBrowser")
@@ -34,7 +42,6 @@ void Engine::ContentBrowserEditorSystem::Tick(const float)
     {
         folders = MakeFolderGraph(AssetManager::Get().GetAllAssets());
         AssetCreator creator{};
-        creator.mFolderRelativeToRoot = folders.empty() ? "" : folders[0].mPath.string();
         mAssetCreator = creator;
     }
 
@@ -76,13 +83,36 @@ std::vector<Engine::ContentBrowserEditorSystem::ContentFolder> Engine::ContentBr
     // Create the root folder to hold the top-level directories and files
     ContentFolder rootFolder{};
 
+    rootFolder.mChildren.emplace_back(sEngineAssetsDisplayName);
+    rootFolder.mChildren.emplace_back(sGameAssetsDisplayName);
+
+    const std::string engineAssets = FileIO::Get().GetPath(FileIO::Directory::EngineAssets, "");
+    const std::string gameAssets = FileIO::Get().GetPath(FileIO::Directory::GameAssets, "");
+
     // Iterate through the provided paths
     for (auto& asset : assets)
     {
-        const std::filesystem::path& fullPath = asset.GetFileOfOrigin().value_or("Generated assets");
+        const std::string fullPath = asset.GetFileOfOrigin().value_or("Generated assets").string();
+
         std::filesystem::path currentPath{};
-        const std::filesystem::path& relativePath = fullPath.relative_path();
+        std::filesystem::path relativePath{};
         ContentFolder* currentFolder = &rootFolder;
+
+        if (fullPath.substr(0, engineAssets.size()) == engineAssets)
+        {
+            currentFolder = &rootFolder.mChildren[sIndexOfEngineAssets];
+            relativePath = fullPath.substr(engineAssets.size());
+        }
+        else if (fullPath.substr(0, gameAssets.size()) == gameAssets)
+        {
+            currentFolder = &rootFolder.mChildren[sIndexOfGameAssets];
+            relativePath = fullPath.substr(gameAssets.size());
+        }
+        else
+        {
+            currentFolder = &rootFolder;
+            relativePath = fullPath;
+        }
 
         // Traverse the folder structure and create necessary folders
         for (const std::filesystem::path& subPath : relativePath)
@@ -242,6 +272,7 @@ void Engine::ContentBrowserEditorSystem::DisplayAssetCreator(const std::vector<C
 
         ShowInspectUI("Name", mAssetCreator->mAssetName);
         ShowInspectUI("File location", mAssetCreator->mFolderRelativeToRoot);
+        ShowInspectUI("IsEngineAsset", mAssetCreator->mIsEngineAsset);
 
         ImGui::PushStyleColor(ImGuiCol_Text, { 1.0f, 0.0f, 0.0f, 1.0f });
 
@@ -274,22 +305,26 @@ void Engine::ContentBrowserEditorSystem::DisplayAssetCreator(const std::vector<C
             outputRootFolder = outputRootFolder.parent_path();
         }
 
-        if (std::find_if(contentFolders.begin(), contentFolders.end(),
-            [&outputRootFolder](const ContentFolder& folder)
-            {
-                return folder.mPath.filename() == outputRootFolder.string();
-            }) == contentFolders.end())
-        {
-            ImGui::Text("Folder is not inside one of the existing root folders");
-            canCreate = false;
-        }
+        const std::filesystem::path actualOutputFile =
+            Format("{}{}{}{}{}",
+                mAssetCreator->mIsEngineAsset ? FileIO::Get().GetPath(FileIO::Directory::EngineAssets, "") : FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""),
+                mAssetCreator->mFolderRelativeToRoot,
+                mAssetCreator->mFolderRelativeToRoot.empty() ? "" : "/",
+                mAssetCreator->mAssetName,
+                AssetManager::sAssetExtension);
 
-        const std::filesystem::path actualOutputFile = (std::filesystem::path{ mAssetCreator->mFolderRelativeToRoot }
-        / mAssetCreator->mAssetName).replace_extension(AssetManager::sAssetExtension);
+        // Gaslight our users
+        const std::string outputFileToDisplay =
+            Format("{}/{}{}{}{}",
+                mAssetCreator->mIsEngineAsset ? sEngineAssetsDisplayName : sGameAssetsDisplayName,
+                mAssetCreator->mFolderRelativeToRoot,
+                mAssetCreator->mFolderRelativeToRoot.empty() ? "" : "/",
+                mAssetCreator->mAssetName,
+                AssetManager::sAssetExtension);
 
-        if (exists(actualOutputFile))
+        if (std::filesystem::exists(actualOutputFile))
         {
-            ImGui::Text("There is already a file at %s", actualOutputFile.string().c_str());
+            ImGui::Text("There is already a file at %s", outputFileToDisplay.c_str());
             canCreate = false;
         }
 
@@ -297,7 +332,7 @@ void Engine::ContentBrowserEditorSystem::DisplayAssetCreator(const std::vector<C
 
         ImGui::BeginDisabled(!canCreate);
 
-        if (ImGui::Button(Format("Save to {}", actualOutputFile.string()).c_str()))
+        if (ImGui::Button(Format("Save to {}", outputFileToDisplay).c_str()))
         {
             CreateNewAsset(*mAssetCreator, actualOutputFile);
             isOpen = false;
