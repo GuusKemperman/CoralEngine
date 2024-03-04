@@ -17,13 +17,13 @@
 #include "Utilities/Benchmark.h"
 #include "World/Registry.h"
 
-Engine::EngineClass::EngineClass(int argc, char* argv[])
+Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
-	FileIO::StartUp(argc == 0 ? std::string_view{} : argv[0]);
+	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
 	Device::StartUp();
 	Input::StartUp();
-	// Renderer::Get().CreateImguiContext(); // TODO: Check this for cross-platform
+	Device::Get().CreateImguiContext();
 	MetaManager::StartUp();
 	AssetManager::StartUp();
 	VirtualMachine::StartUp();
@@ -103,9 +103,3 @@ void Engine::EngineClass::Run()
 	}
 }
 
-int main(int argc, char* args[])
-{
-	Engine::EngineClass engine{ argc, args };
-	engine.Run();
-	return 0;
-}

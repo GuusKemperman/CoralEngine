@@ -38,21 +38,6 @@ std::shared_ptr<const Engine::Material> Engine::Material::TryGetDefaultMaterial(
 
 void Engine::Material::OnSave(AssetSaveInfo& saveInfo) const
 {
-	OnSave(saveInfo,
-		mBaseColorTexture == nullptr ? std::optional<std::string>{} : mBaseColorTexture->GetName(),
-		mMetallicRoughnessTexture == nullptr ? std::optional<std::string>{} : mMetallicRoughnessTexture->GetName(),
-		mNormalTexture == nullptr ? std::optional<std::string>{} : mNormalTexture->GetName(),
-		mOcclusionTexture == nullptr ? std::optional<std::string>{} : mOcclusionTexture->GetName(),
-		mEmissiveTexture == nullptr ? std::optional<std::string>{} : mEmissiveTexture->GetName());
-}
-
-void Engine::Material::OnSave(AssetSaveInfo& saveInfo,
-	std::optional<std::string> baseColorTextureName,
-	std::optional<std::string> metallicRoughnessTextureName,
-	std::optional<std::string> normalTextureName,
-	std::optional<std::string> occlusionTextureName,
-	std::optional<std::string> emissiveTextureName) const
-{
 	BinaryGSONObject obj{};
 
 	obj.AddGSONMember("BaseColorFactor") << mBaseColorFactor;

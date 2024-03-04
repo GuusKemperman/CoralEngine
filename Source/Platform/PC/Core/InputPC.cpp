@@ -1,8 +1,6 @@
 #include "Precomp.h"
-#include <GLFW/glfw3.h>
-
 #include "Core/Input.h"
-#include "Core/Renderer.h"
+#include "Core/Device.h"
 
 using namespace Engine;
 
@@ -55,7 +53,7 @@ namespace
 
 Input::Input()
 {
-    GLFWwindow* window = Renderer::Get().mWindow;
+    GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
 
     // glfwSetJoystickCallback(joystick_callback);
     glfwSetCursorPosCallback(window, cursor_position_callback);
@@ -66,7 +64,7 @@ Input::Input()
 
 Input::~Input()
 {
-    GLFWwindow* window = Renderer::Get().mWindow;
+    GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
     
     // glfwSetJoystickCallback(NULL);
     glfwSetCursorPosCallback(window, NULL);

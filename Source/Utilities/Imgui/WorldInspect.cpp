@@ -243,7 +243,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 
 	ImGui::SetCursorPos(contentMin);
 
-	ImGui::Image(reinterpret_cast<void*>(static_cast<intptr>(frameBuffer.GetColorTextureId())),
+	ImGui::Image((ImTextureID)frameBuffer.GetColorTextureId(),
 		ImVec2(contentSize),
 		ImVec2(0, 1),
 		ImVec2(1, 0));
