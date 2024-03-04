@@ -12,11 +12,6 @@
 
 #include "Core/Device.h"
 
-Engine::Texture::Texture(std::string_view name) :
-Asset(name, MakeTypeId<Texture>())
-{
-}
-
 Engine::Texture::Texture(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {
@@ -122,11 +117,4 @@ Engine::Texture::Texture(Texture&& other) noexcept :
 {
 	mTextureBuffer = other.mTextureBuffer;
 	heapSlot = other.heapSlot;
-}
-
-Engine::MetaType Engine::Texture::Reflect()
-{
-	MetaType type = MetaType{ MetaType::T<Texture>{}, "Texture", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
-	ReflectAssetType<Texture>(type);
-	return type;
 }

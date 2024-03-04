@@ -507,6 +507,8 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Assets\StaticMesh.cpp" />
+    <ClCompile Include="Source\Assets\Texture.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\FramebufferPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>

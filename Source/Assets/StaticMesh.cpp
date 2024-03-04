@@ -117,7 +117,6 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
     if (tangents.has_value()) str.write(reinterpret_cast<const char*>(tangents->data()), tangents->size_bytes());
 
     return true;
-
 }
 
 Engine::MetaType Engine::StaticMesh::Reflect()
