@@ -23,7 +23,7 @@
 std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Import(const std::filesystem::path& file) const
 {
     Assimp::Importer importer{};
-    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_FlipWindingOrder | aiProcess_FlipUVs);
 
 	if (***REMOVED***ne == nullptr)
 	{
@@ -199,7 +199,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 				StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(entity);
 
 				std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>(***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str());
-				reg.AddComponent<NameComponent>(meshHolder, mesh->GetName());
+				//reg.AddComponent<NameComponent>(meshHolder, mesh->GetName());
 				meshComponent.mStaticMesh = std::move(mesh);
 				
 				std::shared_ptr<Material> mat = std::make_shared<Material>(***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str());

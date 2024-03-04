@@ -24,7 +24,7 @@ namespace Engine
 		{
 			// We can import anything assimp can, so this list can be significantly expanded
 			return {
-			".obj"
+			".obj", ".gltf", ".glb"
 			};
 		}
 #endif // EDITOR
