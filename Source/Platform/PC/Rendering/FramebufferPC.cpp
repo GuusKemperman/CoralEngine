@@ -1,4 +1,5 @@
 #include "Precomp.h"
+#ifdef EDITOR
 #include "Platform/PC/Rendering/FramebufferPC.h"
 #include "Core/Device.h"
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
@@ -178,3 +179,4 @@ size_t Engine::FrameBuffer::GetColorTextureId()
 	Device& engineDevice = Device::Get();
 	return gpuHandles[engineDevice.GetFrameIndex()].ptr;
 }
+#endif
