@@ -473,8 +473,6 @@
   <ItemGroup>
     <ClCompile Include="Source\Platform\PC\Rendering\FramebufferPC.cpp" />
     <ClCompile Include="Source\Core\Input.cpp" />
-    <ClCompile Include="Source\Platform\PC\Core\FileIOPC.cpp" />
-    <ClCompile Include="Source\Platform\PC\Core\InputPC.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\MeshPC.cpp" />
     <ClCompile Include="External\imgui\imgui_impl_dx12.cpp">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">TurnOffAllWarnings</WarningLevel>

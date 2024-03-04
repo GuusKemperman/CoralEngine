@@ -6,7 +6,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
 		<AdditionalIncludeDirectories>$(EngineDir)external\xsr\backends\opengl\external;$(EngineDir)external\xsr\backends\opengl\external\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-		<PreprocessorDefinitions>PLATFORM_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+		<PreprocessorDefinitions>PLATFORM_WINDOWS;GLFW_EXPOSE_NATIVE_WIN32;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup />

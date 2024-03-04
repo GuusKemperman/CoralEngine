@@ -5,10 +5,10 @@
   <PropertyGroup />
   <ItemDefinitionGroup>
 	  <Lib>
-		  <AdditionalDependencies>glfw3.lib;opengl32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+		  <AdditionalDependencies>glfw3.lib;opengl32.lib;$(CoreLibraryDependencies);d3d12.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
 	  </Lib>
 	  <Lib>
-		  <AdditionalLibraryDirectories>$(EngineDir)External\xsr\backends\opengl\external\GLFW;</AdditionalLibraryDirectories>
+		  <AdditionalLibraryDirectories>$(ProjectDir)external\GLFW;</AdditionalLibraryDirectories>
 	  </Lib>
     <ClCompile>
       <WarningLevel />
