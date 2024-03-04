@@ -285,7 +285,7 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 	}
 
 	// Iterate through the remaining triangles
-	for (int i = 2; i < triangles.size(); i++)
+	for (uint32 i = 2; i < triangles.size(); i++)
 	{
 		// Find overlapping vertices between current triangle and previous triangle
 		overlappingVertexes.clear();
@@ -316,7 +316,7 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 		glm::vec2 vertexToCheck;
 
 		// Determine if the path goes into the left or right funnel
-		for (int j = 0; j < overlappingVertexes.size(); j++)
+		for (uint32 j = 0; j < overlappingVertexes.size(); j++)
 		{
 			if (funnelLeft.back() == overlappingVertexes[j])
 			{
@@ -372,7 +372,7 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 	// // Determine the shortest path between the funnel edges and the goal and add points accordingly
 	if (funnelLeft.size() <= funnelRight.size())
 	{
-		for (int i = 0; i < funnelLeft.size(); i++)
+		for (uint32 i = 0; i < funnelLeft.size(); i++)
 		{
 			if (distance(funnelLeft[i], goal) <= distance(funnelRight[i], goal))
 			{
@@ -386,7 +386,7 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 	}
 	else
 	{
-		for (int i = 0; i < funnelRight.size(); i++)
+		for (uint32 i = 0; i < funnelRight.size(); i++)
 		{
 			if (distance(funnelRight[i], goal) <= distance(funnelLeft[i], goal))
 			{
@@ -530,7 +530,7 @@ void NavMeshComponent::DebugDrawNavMesh(const World& world) const
 		auto cleanedPolygonList = navMesh.GetCleanedPolygonList();
 
 		std::vector<glm::vec3> renderBorder;
-		for (int i = 0; i < mBorderCorners.size(); i++)
+		for (uint32 i = 0; i < mBorderCorners.size(); i++)
 		{
 			renderBorder.push_back({mBorderCorners[i].x, 0, mBorderCorners[i].y});
 		}

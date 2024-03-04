@@ -67,7 +67,7 @@ void Engine::ContentBrowserEditorSystem::Tick(const float)
     }
 
     folders = MakeFolderGraph(AssetManager::Get().GetAllAssets());
-    DisplayAssetCreator(folders);
+    DisplayAssetCreator();
 
     for (ContentFolder& folder : folders)
     {
@@ -239,7 +239,7 @@ void Engine::ContentBrowserEditorSystem::OpenAsset(WeakAsset<Asset> asset) const
     Editor::Get().TryOpenAssetForEdit(asset);
 }
 
-void Engine::ContentBrowserEditorSystem::DisplayAssetCreator(const std::vector<ContentFolder>& contentFolders)
+void Engine::ContentBrowserEditorSystem::DisplayAssetCreator()
 {
     if (!mAssetCreator.has_value())
     {
