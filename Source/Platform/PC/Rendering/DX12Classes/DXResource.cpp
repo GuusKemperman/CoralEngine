@@ -1,17 +1,17 @@
 #include "Precomp.h"
 #include "../Include/Platform/PC/Rendering/DX12Classes/DXResource.h"
 
-DXResource::DXResource(const ComPtr<ID3D12Device5>& device, const CD3DX12_HEAP_PROPERTIES& heapProperties, const CD3DX12_RESOURCE_DESC& descr, D3D12_CLEAR_VALUE* clearValue, const char* name)
+DXResource::DXResource(const ComPtr<ID3D12Device5>& device, const CD3DX12_HEAP_PROPERTIES& heapProperties, const CD3DX12_RESOURCE_DESC& descr, D3D12_CLEAR_VALUE* clearValue, const char* name, D3D12_RESOURCE_STATES state)
 {
 	HRESULT hr = device->CreateCommittedResource(
 		&heapProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&descr,
-		D3D12_RESOURCE_STATE_COMMON,
+		state,
 		clearValue,
 		IID_PPV_ARGS(&resource)
 	);
-	state = D3D12_RESOURCE_STATE_COMMON;
+	state = state;
 	desc = descr;
 
 	if (FAILED(hr)) assert(false && "Resource creation failed");
@@ -52,7 +52,7 @@ void DXResource::CreateUploadBuffer(const ComPtr<ID3D12Device5>& device, int dat
 	if (uploadBuffers.size() <= currentSubresource)
 		uploadBuffers.resize(currentSubresource + 1);
 
-	uploadBuffers[currentSubresource] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "Upload buffer");
+	uploadBuffers[currentSubresource] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "Upload buffer", D3D12_RESOURCE_STATE_GENERIC_READ);
 }
 
 void DXResource::Update(const ComPtr<ID3D12GraphicsCommandList>& list, D3D12_SUBRESOURCE_DATA data, D3D12_RESOURCE_STATES dstState, int currentSubresource, int totalSubresources)

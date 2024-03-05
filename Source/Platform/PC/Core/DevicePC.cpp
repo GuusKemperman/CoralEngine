@@ -47,11 +47,11 @@ void Engine::Device::InitializeWindow()
     if (mFullscreen){
         mViewport.Width = static_cast<FLOAT>(maxScreenWidth);
         mViewport.Height = static_cast<FLOAT>(maxScreenHeight);
-        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "BEE", mMonitor, nullptr);
+        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "General engine", mMonitor, nullptr);
     }
     else{
         glfwWindowHint(GLFW_RESIZABLE, 1);
-        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "BEE", nullptr, nullptr);
+        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "General engine", nullptr, nullptr);
     }
 
     if (!mWindow)
@@ -363,7 +363,6 @@ void Engine::Device::NewFrame() {
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
 
-    WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
     StartRecordingCommands();
 
     if (mUpdateWindow) {
@@ -409,6 +408,9 @@ void Engine::Device::EndFrame()
     }
 
     ImGui::EndFrame();
+
+    WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
+
 
    // StartUploadCommands();
 }

@@ -2,7 +2,6 @@
 #include "Systems/System.h"
 #include "Utilities/MemFunctions.h"
 #include "Components/Component.h"
-#include "Components/IsDestroyedTag.h"
 
 namespace Engine
 {
@@ -125,36 +124,7 @@ namespace Engine
 
 		void Clear();
 
-		std::vector<entt::entity> GetAllEntities() const;
-
-		/**
-		 * \brief Find an entity by it's name. If there are multiple by this name, this function will return only one of them.
-		 * \param name The display name of the entity, as shown in the world hierarchy.
-		 * \return entt::null if the entity does not exists, otherwise returns the entity.
-		 */
-		entt::entity FindEntityWithName(const std::string& name) const;
-
-		/**
-		 * \brief Find all the entities with this name
-		 * \param name The display name of the entity, as shown in the world hierarchy.
-		 */
-		std::vector<entt::entity> FindAllEntitiesWithName(const std::string& name) const;
-
-		/**
-		 * \brief Find an entity that has this component. If there are multiple with this component, this function will return only one of them.
-		 * \return entt::null if the entity does not exists, otherwise returns the entity.
-		 */
-		entt::entity FindEntityWithComponent(ComponentFilter componentType) const;
-
-		entt::entity FindEntityWithComponents(const std::vector<ComponentFilter>& components) const;
-
-		std::vector<entt::entity> FindAllEntitiesWithComponent(ComponentFilter componentType) const;
-
-		std::vector<entt::entity> FindAllEntitiesWithComponents(const std::vector<ComponentFilter>& components) const;
-
 	private:
-		std::vector<entt::entity> FindAllEntitiesWithComponents(const std::vector<ComponentFilter>& components, bool returnAfterFirstFound) const;
-
 		struct SingleTick
 		{
 			SingleTick(System& system, float deltaTime = 0.0f) : mSystem(system), mDeltaTime(deltaTime) {};
@@ -254,7 +224,10 @@ namespace Engine
 	template<typename It>
 	void Registry::Destroy(It first, It last)
 	{
-		AddComponents(first, last, IsDestroyedTag{});
+		for (auto it = first; it != last; ++it)
+		{
+			Destroy(*it);
+		}
 	}
 
 	template <typename T, typename... Args>

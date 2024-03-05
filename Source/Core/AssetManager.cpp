@@ -397,8 +397,7 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 					continue;
 				}
 
-				if (!existingAssetWithSameName->mMetaData.GetImporterInfo().has_value()
-					|| existingAssetWithSameName->mMetaData.GetImporterInfo()->mImportedFile != path)
+				if (!WasImportedFrom(*existingAssetWithSameName, path))
 				{
 					LOG(LogAssets, Error, "Importing failed: there is already an asset with the name {} (see {})",
 						loadInfo.GetName(),

@@ -3,6 +3,9 @@
 
 #include <stack>
 
+#include "Components/ComponentFiler.h"
+#include "Components/IsDestroyedTag.h"
+#include "Components/NameComponent.h"
 #include "Meta/MetaProps.h"
 #include "World/Registry.h"
 #include "World/Archiver.h"
@@ -111,6 +114,66 @@ Engine::World* Engine::World::TryGetWorldAtTopOfStack()
 	return &sWorldStack.top().get();
 }
 
+namespace
+{
+	std::vector<entt::entity> FindAllEntitiesWithComponents(const Engine::World& world, const std::vector<Engine::ComponentFilter>& components, bool returnAfterFirstFound)
+	{
+		using namespace Engine;
+
+		std::vector<std::reference_wrapper<const entt::sparse_set>> storages{};
+
+		for (const ComponentFilter& component : components)
+		{
+			if (component == nullptr)
+			{
+				continue;
+			}
+
+			const entt::sparse_set* storage = world.GetRegistry().Storage(component.Get()->GetTypeId());
+
+			if (storage == nullptr)
+			{
+				return {};
+			}
+
+			storages.push_back(*storage);
+		}
+
+		if (storages.empty())
+		{
+			return {};
+		}
+
+		std::sort(storages.begin(), storages.end(),
+			[](const entt::sparse_set& lhs, const entt::sparse_set& rhs)
+			{
+				return lhs.size() < rhs.size();
+			});
+
+		std::vector<entt::entity> returnValue{};
+
+		for (entt::entity entity : storages[0].get())
+		{
+			if (std::find_if(storages.begin(), storages.end(),
+				[entity](const entt::sparse_set& storage)
+				{
+					return !storage.contains(entity);
+				}) == storages.end())
+			{
+				returnValue.push_back(entity);
+
+				if (returnAfterFirstFound)
+				{
+					return returnValue;
+				}
+			}
+		}
+
+		return returnValue;
+	}
+
+}
+
 Engine::MetaType Engine::World::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<World>{}, "World" };
@@ -188,9 +251,26 @@ Engine::MetaType Engine::World::Reflect()
 	// We hide the distinction between the registry and the world from the designers
 	type.AddFunc([]
 		{
-			World* world = TryGetWorldAtTopOfStack();
+			const World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return world->GetRegistry().GetAllEntities();
+
+			std::vector<entt::entity> returnValue{};
+
+			const auto entityStorage = world->GetRegistry().Storage<entt::entity>();
+
+			if (entityStorage == nullptr)
+			{
+				return returnValue;
+			}
+
+			returnValue.reserve(entityStorage->size());
+
+			for (const auto [entity] : entityStorage->each())
+			{
+				returnValue.push_back(entity);
+			}
+
+			return returnValue;
 		}, "Get all entities").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([]
@@ -226,46 +306,73 @@ Engine::MetaType Engine::World::Reflect()
 			world->GetRegistry().DestroyAlongWithChildren(entity);
 		}, "Destroy entity", MetaFunc::ExplicitParams<const entt::entity&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const std::string& name)
+	type.AddFunc([](const std::string& name) -> entt::entity
 		{
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return world->GetRegistry().FindEntityWithName(name);
+
+			const auto view = world->GetRegistry().View<const NameComponent>();
+
+			for (auto [entity, nameComponent] : view.each())
+			{
+				if (nameComponent.mName == name)
+				{
+					return entity;
+				}
+			}
+
+			return entt::null;
 		}, "Find entity with name", MetaFunc::ExplicitParams<const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const std::string& name)
 		{
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return world->GetRegistry().FindAllEntitiesWithName(name);
+
+			std::vector<entt::entity> returnValue{};
+			const auto view = world->GetRegistry().View<const NameComponent>();
+
+			for (auto [entity, nameComponent] : view.each())
+			{
+				if (nameComponent.mName == name)
+				{
+					returnValue.push_back(entity);
+				}
+			}
+
+			return returnValue;
 		}, "Find all entities with name", MetaFunc::ExplicitParams<const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const ComponentFilter& component)
 		{
-			World* world = TryGetWorldAtTopOfStack();
+			const World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return world->GetRegistry().FindEntityWithComponent(component);
+
+			const std::vector<entt::entity> entities = FindAllEntitiesWithComponents(*world, { component }, true);
+			return entities.empty() ? entt::null : entities[0];
 		}, "Find entity with component", MetaFunc::ExplicitParams<const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const ComponentFilter& component)
 		{
-			World* world = TryGetWorldAtTopOfStack();
+			const World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return world->GetRegistry().FindAllEntitiesWithComponent(component);
+			return FindAllEntitiesWithComponents(*world, { component }, false);
 		}, "Find all entities with component", MetaFunc::ExplicitParams<const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const std::vector<ComponentFilter>& components)
 		{
-			World* world = TryGetWorldAtTopOfStack();
+			const World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return world->GetRegistry().FindEntityWithComponents(components);
+
+			const std::vector<entt::entity> entities = FindAllEntitiesWithComponents(*world, components, true);
+			return entities.empty() ? entt::null : entities[0];
 		}, "Find entity with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const std::vector<ComponentFilter>& components)
 		{
-			World* world = TryGetWorldAtTopOfStack();
+			const World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return world->GetRegistry().FindAllEntitiesWithComponents(components);
+			return FindAllEntitiesWithComponents(*world, components, false);
 		}, "Find all entities with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const glm::vec2& screenPosition, float distanceFromCamera)

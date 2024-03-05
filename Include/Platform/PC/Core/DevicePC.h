@@ -32,7 +32,6 @@ namespace Engine
         void StartUploadCommands();
         void SubmitUploadCommands();
 
-
         glm::vec2 GetDisplaySize() { return glm::vec2(mViewport.Width, mViewport.Height); }
     //Platform specific heap
     public:

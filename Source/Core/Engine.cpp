@@ -23,7 +23,9 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	Logger::StartUp();
 	Device::StartUp();
 	Input::StartUp();
+#ifdef PLATFORM_WINDOWS
 	Device::Get().CreateImguiContext();
+#endif
 	MetaManager::StartUp();
 	AssetManager::StartUp();
 	VirtualMachine::StartUp();
@@ -82,16 +84,15 @@ void Engine::EngineClass::Run()
 		t1 = t2;
 
 		input.NewFrame();
-		device.NewFrame();
 
 #ifdef EDITOR
 		Editor::Get().Tick(deltaTime);
 #else
+		device.NewFrame();
 		world.Tick(deltaTime);
 		world.GetRenderer().Render();
-#endif  // EDITOR
-
 		device.EndFrame();
+#endif  // EDITOR
 
 		timeElapsedSinceLastGarbageCollect += deltaTime;
 
