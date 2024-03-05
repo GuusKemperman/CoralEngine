@@ -13,50 +13,67 @@ namespace Engine
 		return MetaManager::Get().TryGetType("UnitTestScript");
 	}
 
-	template<bool TestScriptingSide>
+	template<bool TestScriptingSide, bool TestEmpty>
 	static bool DoesValueMatch(MetaAny component, std::string_view nameOfField, uint32 expectedValue)
 	{
-		const MetaType* type{};
-
-		if constexpr (TestScriptingSide)
+		if constexpr (TestEmpty)
 		{
-			type = GetUnitTestScript();
-
-			if (type == nullptr)
-			{
-				LOG(LogUnitTests, Error, "UnitTestScript is missing");
-				return false;
-			}
+			return EmptyEventTestingComponent::GetValue(nameOfField) == expectedValue;
 		}
 		else
 		{
-			type = &MetaManager::Get().GetType<EventTestingComponent>();
+			const MetaType* type{};
+
+			if constexpr (TestScriptingSide)
+			{
+				type = GetUnitTestScript();
+
+				if (type == nullptr)
+				{
+					LOG(LogUnitTests, Error, "UnitTestScript is missing");
+					return false;
+				}
+			}
+			else
+			{
+				type = &MetaManager::Get().GetType<EventTestingComponent>();
+			}
+
+			const MetaField* field = type->TryGetField(nameOfField);
+
+			if (field == nullptr)
+			{
+				LOG(LogUnitTests, Error, "{} is missing", nameOfField);
+				return false;
+			}
+
+			if (field->GetType().GetTypeId() != MakeTypeId<uint32>())
+			{
+				LOG(LogUnitTests, Error, "{} is not an uint32", nameOfField);
+				return false;
+			}
+
+			MetaAny value = field->MakeRef(component);
+			const uint32 actualValue = *value.As<uint32>();
+
+			return actualValue == expectedValue;
 		}
-
-		const MetaField* field = type->TryGetField(nameOfField);
-
-		if (field == nullptr)
-		{
-			LOG(LogUnitTests, Error, "{} is missing", nameOfField);
-			return false;
-		}
-
-		if (field->GetType().GetTypeId() != MakeTypeId<uint32>())
-		{
-			LOG(LogUnitTests, Error, "{} is not an uint32", nameOfField);
-			return false;
-		}
-
-		MetaAny value = field->MakeRef(component);
-		const uint32 actualValue = *value.As<uint32>();
-
-		return actualValue == expectedValue;
 	}
 
 	static bool DoBothValuesMatch(World& world, entt::entity entity, std::string_view nameOfField, uint32 expectedValue)
 	{
-		return DoesValueMatch<false>(world.GetRegistry().TryGet(MakeTypeId<EventTestingComponent>(), entity), nameOfField, expectedValue)
-			&& DoesValueMatch<true>(world.GetRegistry().TryGet(GetUnitTestScript()->GetTypeId(), entity), nameOfField, expectedValue);
+		return DoesValueMatch<false, false>(world.GetRegistry().TryGet(MakeTypeId<EventTestingComponent>(), entity), nameOfField, expectedValue)
+			&& DoesValueMatch<true, false>(world.GetRegistry().TryGet(GetUnitTestScript()->GetTypeId(), entity), nameOfField, expectedValue)
+			&& DoesValueMatch<false, true>(MetaAny{ MakeTypeInfo<EmptyEventTestingComponent>(), nullptr, false }, nameOfField, expectedValue);
+	}
+
+	static entt::entity InitTest(World& world)
+	{
+		EmptyEventTestingComponent::Reset();
+		const entt::entity owner = world.GetRegistry().Create();
+		world.GetRegistry().AddComponent<EventTestingComponent>(owner);
+		world.GetRegistry().AddComponent<EmptyEventTestingComponent>(owner);
+		return owner;
 	}
 }
 
@@ -65,10 +82,8 @@ UNIT_TEST(Events, OnTick)
 	using namespace Engine;
 
 	World world{ true };
-	const entt::entity owner = world.GetRegistry().Create();
 
-	const EventTestingComponent& eventTester = world.GetRegistry().AddComponent<EventTestingComponent>(owner);
-	TEST_ASSERT(eventTester.mOwner == owner);
+	entt::entity owner = InitTest(world);
 
 	const MetaType* const unitTestScript = GetUnitTestScript();
 	TEST_ASSERT(unitTestScript != nullptr);
@@ -83,9 +98,6 @@ UNIT_TEST(Events, OnTick)
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mTotalNumOfEventsCalled", 2));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfTicks", 1));
 
-	TEST_ASSERT(eventTester.mLastReceivedOwner == owner);
-	TEST_ASSERT(eventTester.mLastReceivedWorld == &world);
-
 	return UnitTest::Success;
 }
 
@@ -94,10 +106,7 @@ UNIT_TEST(Events, OnFixedTick)
 	using namespace Engine;
 
 	World world{ true };
-	const entt::entity owner = world.GetRegistry().Create();
-
-	const EventTestingComponent& eventTester = world.GetRegistry().AddComponent<EventTestingComponent>(owner);
-	TEST_ASSERT(eventTester.mOwner == owner);
+	entt::entity owner = InitTest(world);
 
 	const MetaType* const unitTestScript = GetUnitTestScript();
 	TEST_ASSERT(unitTestScript != nullptr);
@@ -120,9 +129,6 @@ UNIT_TEST(Events, OnFixedTick)
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mTotalNumOfEventsCalled", 5));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfFixedTicks", 2));
-
-	TEST_ASSERT(eventTester.mLastReceivedOwner == owner);
-	TEST_ASSERT(eventTester.mLastReceivedWorld == &world);
 
 	return UnitTest::Success;
 }

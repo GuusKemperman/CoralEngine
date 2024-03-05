@@ -7,6 +7,27 @@ namespace Engine
 {
 	class World;
 
+	class EmptyEventTestingComponent
+	{
+	public:
+		static void OnTick(World& world, entt::entity owner, float dt);
+
+		static void OnFixedTick(World& world, entt::entity owner);
+
+		static uint32 GetValue(Name valueName);
+
+		static inline uint32 sNumOfTicks{};
+		static inline uint32 sNumOfFixedTicks{};
+		static inline uint32 sTotalNumOfEventsCalled{};
+
+		static void Reset();
+
+	private:
+		friend ReflectAccess;
+		static MetaType Reflect();
+		REFLECT_AT_START_UP(EmptyEventTestingComponent);
+	};
+
 	class EventTestingComponent
 	{
 	public:

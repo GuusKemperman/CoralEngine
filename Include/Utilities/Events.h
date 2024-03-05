@@ -22,6 +22,14 @@ namespace Engine
 	//				API				  //
 	//********************************//
 
+	template<typename T>
+	static constexpr bool sIsEventStatic = entt::component_traits<T>::page_size == 0;
+
+	namespace Props
+	{
+		static constexpr std::string_view sIsEventStaticTag = "sIsEventStaticTag";
+	}
+
 	/**
 	 * \brief Called every frame.
 	 * \World& The world this component is in. 
@@ -41,6 +49,10 @@ namespace Engine
 	 * \brief The number of seconds between fixed ticks.
 	 */
 	static constexpr float sFixedTickEventStepSize = 0.2f;
+
+	static constexpr Event<World&, entt::entity> sOnConstructEvent{ "OnConstruct" };
+
+	static constexpr Event<World&, entt::entity> sOnBeginPlayEvent{ "OnConstruct" };
 
 	/**
 	 * \brief Binds an event to a type.
@@ -83,6 +95,9 @@ namespace Engine
 	template<typename FuncRet, typename FuncObj, typename... FuncParams, typename... EventParams>
 	void BindEvent(MetaType& type, const Event<EventParams...>& event, FuncRet(FuncObj::* func)(FuncParams...) const);
 
+	template<typename FuncRet, typename... FuncParams, typename... EventParams>
+	void BindEvent(MetaType& type, const Event<EventParams...>& event, FuncRet(*func)(FuncParams...));
+
 	/**
 	 * \brief Returns the event bound during BindEvent, if any.
 	 */
@@ -101,8 +116,20 @@ namespace Engine
 	template<typename Class, typename Func, typename... Args>
 	void BindEvent(MetaType& type, const Event<Args...>& event, Func&& func)
 	{
-		ASSERT(type.GetTypeId() == MakeTypeId<Class>());
-		type.AddFunc(std::function<void(Class&, Args...)>{ std::forward<Func>(func) }, event.mName).GetProperties().Add(Internal::sIsEventProp);
+		MetaFunc* eventFunc{};
+
+		if constexpr (!sIsEventStatic<Class>)
+		{
+			ASSERT(type.GetTypeId() == MakeTypeId<Class>());
+
+			eventFunc = &type.AddFunc(std::function<void(Class&, Args...)>{ std::forward<Func>(func) }, event.mName);
+		}
+		else
+		{
+			eventFunc = &type.AddFunc(std::function<void(Args...)>{ std::forward<Func>(func) }, event.mName);
+			eventFunc->GetProperties().Add(Props::sIsEventStaticTag);
+		}
+		eventFunc->GetProperties().Add(Internal::sIsEventProp);
 	}
 
 	template <typename FuncRet, typename FuncObj, typename ... FuncParams, typename ... EventParams>
@@ -117,12 +144,16 @@ namespace Engine
 		BindEvent<FuncObj>(type, event, func);
 	}
 
+	template <typename FuncRet, typename ... FuncParams, typename ... EventParams>
+	void BindEvent(MetaType& type, const Event<EventParams...>& event, FuncRet(* func)(FuncParams...))
+	{
+		BindEvent<std::monostate>(type, event, func);
+	}
+
 	template <typename ... Args>
 	const MetaFunc* TryGetEvent(const MetaType& fromType, const Event<Args...>& event)
 	{
-		const FuncId funcId = MakeFuncId(MakeTypeTraits<void>(), std::vector<TypeTraits>{ TypeTraits{ fromType.GetTypeId(), TypeForm::Ref }, MakeTypeTraits<Args>()... });
-
-		const MetaFunc* func = fromType.TryGetFunc(event.mName, funcId);
+		const MetaFunc* func = fromType.TryGetFunc(event.mName);
 
 		if (func != nullptr
 			&& func->GetProperties().Has(Internal::sIsEventProp))

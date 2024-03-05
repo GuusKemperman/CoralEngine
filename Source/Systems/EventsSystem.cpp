@@ -17,9 +17,13 @@ void Engine::TickSystem::Update(World& world, float dt)
 {
 	struct TickFunctor
 	{
-		FuncResult operator()(const MetaFunc& event, MetaAny& component, entt::entity owner)
+		FuncResult operator()(const MetaFunc& event, std::optional<MetaAny>&& component, entt::entity owner)
 		{
-			return event.InvokeUncheckedUnpacked(component, mWorldArg, owner, mDtArg);
+			if (component.has_value())
+			{
+				return event.InvokeUncheckedUnpacked(*component, mWorldArg, owner, mDtArg);
+			}
+			return event.InvokeUncheckedUnpacked(mWorldArg, owner, mDtArg);
 		}
 		MetaAny mWorldArg{ world };
 		MetaAny mDtArg{ dt };
@@ -31,9 +35,13 @@ void Engine::FixedTickSystem::Update(World& world, float)
 {
 	struct FixedTickFunctor
 	{
-		FuncResult operator()(const MetaFunc& event, MetaAny& component, entt::entity owner)
+		FuncResult operator()(const MetaFunc& event, std::optional<MetaAny>&& component, entt::entity owner)
 		{
-			return event.InvokeUncheckedUnpacked(component, mWorldArg, owner);
+			if (component.has_value())
+			{
+				return event.InvokeUncheckedUnpacked(*component, mWorldArg, owner);
+			}
+			return event.InvokeUncheckedUnpacked(mWorldArg, owner);
 		}
 		MetaAny mWorldArg{ world };
 	};
@@ -78,6 +86,8 @@ void Engine::CallEvent(World& world, const EventT& event, Functor&& functor)
 
 	for (const auto& [type, func, storage] : typesWithEvent)
 	{
+		const bool isStatic = func.get().GetProperties().Has(Props::sIsEventStaticTag);
+
 		for (const entt::entity entity : storage.get())
 		{
 			// Tombstone check
@@ -85,13 +95,8 @@ void Engine::CallEvent(World& world, const EventT& event, Functor&& functor)
 			{
 				continue;
 			}
-
-			void* ptr = storage.get().value(entity);
-			ASSERT(ptr != nullptr);
-
-			MetaAny refToComponent{ type.get(), ptr, false };
-
-			FuncResult result = functor(func, refToComponent, entity);
+			;
+			FuncResult result = isStatic ? functor(func, std::nullopt, entity) : functor(func, MetaAny{  type.get(), storage.get().value(entity), false }, entity);
 
 			if (result.HasError())
 			{
