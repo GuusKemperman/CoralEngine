@@ -58,16 +58,19 @@ Engine::Renderer::Renderer()
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
     ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
     mPipelines[PBR_PIPELINE] = std::make_unique<DXPipeline>();
+    CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    rast.CullMode = D3D12_CULL_MODE_FRONT;
     mPipelines[PBR_PIPELINE]->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
     mPipelines[PBR_PIPELINE]->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
     mPipelines[PBR_PIPELINE]->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
     mPipelines[PBR_PIPELINE]->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
     mPipelines[PBR_PIPELINE]->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
+    mPipelines[PBR_PIPELINE]->SetRasterizer(rast);
     mPipelines[PBR_PIPELINE]->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
     mPipelines[PBR_PIPELINE]->CreatePipeline(device, mSignature, L"PBR RENDER PIPELINE");
 
     //CREATE SKY PIPELINE
-    CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     rast.CullMode = D3D12_CULL_MODE_NONE;
     depth.DepthEnable = FALSE;
@@ -109,8 +112,9 @@ void Engine::Renderer::Render(const World& world)
     const auto camera = optionalEntityCameraPair->second;
     InfoStruct::DXMatrixInfo matrixInfo;
     //matrixInfo.pm = camera.GetProjection();
-    matrixInfo.pm = glm::transpose(glm::perspectiveLH(45.0f * (3.14f / 180.0f), 1.77f, 0.5f, 1000.f));
+    matrixInfo.pm = glm::transpose(glm::scale(camera.GetProjection(), glm::vec3(1.f, -1.f, 1.f)));
     matrixInfo.vm = glm::transpose(camera.GetView());
+
     matrixInfo.ipm = glm::inverse(matrixInfo.pm);
     matrixInfo.ivm = glm::inverse(matrixInfo.vm);
     mConstBuffers[CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);

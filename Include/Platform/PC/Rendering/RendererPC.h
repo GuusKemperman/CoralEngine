@@ -41,21 +41,23 @@ namespace Engine
 
         struct DXMaterialInfo
         {
-            bool useColorTex;
-            bool useEmissiveTex;
-            bool useMetallicRoughnessTex;
-            bool useNormalTex;
-            bool useOcclusionTex;
-            bool padding1;
-            bool padding2;
-            bool padding3;
-
             glm::vec4 colorFactor;
             glm::vec4 emissiveFactor;
             float metallicFactor;
             float roughnessFactor;
             float normalScale;
-            float padding4;
+            float padding1; // Padding to align the next bools
+
+            // Grouping bools together for efficient packing, and adding padding to ensure
+            // the struct ends on a 16-byte boundary. Even though individual bools are treated
+            // as 4 bytes in HLSL, aligning them like this without additional padding will not align
+            // the struct size since the total size becomes 60 bytes, which is not a multiple of 16.
+            bool useColorTex;
+            bool useEmissiveTex;
+            bool useMetallicRoughnessTex;
+            bool useNormalTex;
+            bool useOcclusionTex;
+            char padding2[11]; // Additional padding to align the struct size to a multiple of 16 bytes        
         };
     }
 
