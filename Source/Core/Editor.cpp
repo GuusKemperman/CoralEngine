@@ -1,5 +1,6 @@
 #include "Precomp.h"
 #include "Core/Editor.h"
+#include "Core/Device.h"
 
 #include "Core/AssetManager.h"
 #include "Core/VirtualMachine.h"
@@ -120,6 +121,9 @@ Engine::Editor::~Editor()
 
 void Engine::Editor::Tick(const float deltaTime)
 {
+	Device& device = Device::Get();
+	device.NewFrame();
+
 	DestroyRequestedSystems();
 	DisplayMainMenuBar();
 
@@ -139,6 +143,8 @@ void Engine::Editor::Tick(const float deltaTime)
 	{
 		SaveAll();
 	}
+
+	device.EndFrame();
 
 	FullFillRefreshRequests();
 }

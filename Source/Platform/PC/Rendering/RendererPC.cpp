@@ -154,9 +154,6 @@ void Engine::Renderer::Render(const World& world)
         dirLightCounter++;
     }
 
-
-    //lights.mDirLights[0].mColorAndIntensity = glm::vec4{ 1.0f };
-    //lights.mDirLights[0].mDir = normalize(glm::vec4{ .5f, -.5f, 1.0f, 0.f });
     mConstBuffers[LIGHT_CB]->Update(&lights, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
 
     commandList->SetGraphicsRootSignature(mSignature->GetSignature().Get());
