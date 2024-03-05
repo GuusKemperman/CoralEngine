@@ -23,39 +23,41 @@ namespace Engine
         };
 
         struct DXDirLightInfo {
-            glm::vec4 dir = { 0.f, 0.0f, 0.0f, 0.f };
-            glm::vec4 colorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
+            glm::vec4 mDir = { 0.f, 0.0f, 0.0f, 0.f };
+            glm::vec4 mColorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
         };
 
         struct DXPointLightInfo {
-            glm::vec4 position = { 0.f, 0.0f, 0.0f, 0.f };
-            glm::vec4 colorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
-            float radius = 0.f;
+            glm::vec4 mPosition = { 0.f, 0.0f, 0.0f, 0.f };
+            glm::vec4 mColorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
+            float mRadius = 0.f;
             float padding[3];
         };
 
         struct DXLightInfo {
-            DXPointLightInfo pointLights[MAX_LIGHTS];
-            DXDirLightInfo dirLights[MAX_LIGHTS];
+            DXPointLightInfo mPointLights[MAX_LIGHTS];
+            DXDirLightInfo mDirLights[MAX_LIGHTS];
         };
 
         struct DXMaterialInfo
         {
-            bool useColorTex;
-            bool useEmissiveTex;
-            bool useMetallicRoughnessTex;
-            bool useNormalTex;
-            bool useOcclusionTex;
-            bool padding1;
-            bool padding2;
-            bool padding3;
-
             glm::vec4 colorFactor;
             glm::vec4 emissiveFactor;
             float metallicFactor;
             float roughnessFactor;
             float normalScale;
-            float padding4;
+            float padding1; // Padding to align the next bools
+
+            // Grouping bools together for efficient packing, and adding padding to ensure
+            // the struct ends on a 16-byte boundary. Even though individual bools are treated
+            // as 4 bytes in HLSL, aligning them like this without additional padding will not align
+            // the struct size since the total size becomes 60 bytes, which is not a multiple of 16.
+            bool useColorTex;
+            bool useEmissiveTex;
+            bool useMetallicRoughnessTex;
+            bool useNormalTex;
+            bool useOcclusionTex;
+            char padding2[11]; // Additional padding to align the struct size to a multiple of 16 bytes        
         };
     }
 

@@ -13,7 +13,7 @@ DXConstBuffer::DXConstBuffer(const ComPtr<ID3D12Device5>& device, size_t dataSiz
 		auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 		auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(static_cast<UINT64>(mBufferSize));
 
-		mBuffers[i] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, bufferDebugName);
+		mBuffers[i] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, bufferDebugName, D3D12_RESOURCE_STATE_GENERIC_READ);
 
 		CD3DX12_RANGE readRange(0, 0);
 		HRESULT hr = mBuffers[i]->GetResource()->Map(0, &readRange, reinterpret_cast<void**>(&mBufferGPUAddress[i]));

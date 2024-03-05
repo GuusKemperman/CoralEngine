@@ -60,15 +60,10 @@ bool Engine::Texture::LoadTexture(const unsigned char* fileContents, const unsig
 	resourceDescription.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-
 	mTextureBuffer = std::make_shared<DXResource>(device, heapProperties, resourceDescription, nullptr, "Texture Buffer Resource Heap");
 
 	UINT64 textureUploadBufferSize;
-
 	device->GetCopyableFootprints(&resourceDescription, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
-
-	heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	CD3DX12_RESOURCE_DESC buffer = CD3DX12_RESOURCE_DESC::Buffer(textureUploadBufferSize);
 
 	int bytesPerRow = (width * GetDXGIFormatBitsPerPixel(resourceDescription.Format)) / 8; // number of bytes in each row of the image data
 

@@ -18,6 +18,8 @@
 
 #include "World/WorldRenderer.h"
 #include "Components/CameraComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Components/DirectionalLightComponent.h"
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
 #include "Assets/StaticMesh.h"
@@ -58,16 +60,19 @@ Engine::Renderer::Renderer()
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
     ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
     mPipelines[PBR_PIPELINE] = std::make_unique<DXPipeline>();
+    CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    rast.CullMode = D3D12_CULL_MODE_FRONT;
     mPipelines[PBR_PIPELINE]->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
     mPipelines[PBR_PIPELINE]->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
     mPipelines[PBR_PIPELINE]->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
     mPipelines[PBR_PIPELINE]->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
     mPipelines[PBR_PIPELINE]->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
+    mPipelines[PBR_PIPELINE]->SetRasterizer(rast);
     mPipelines[PBR_PIPELINE]->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
     mPipelines[PBR_PIPELINE]->CreatePipeline(device, mSignature, L"PBR RENDER PIPELINE");
 
     //CREATE SKY PIPELINE
-    CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     rast.CullMode = D3D12_CULL_MODE_NONE;
     depth.DepthEnable = FALSE;
@@ -109,15 +114,49 @@ void Engine::Renderer::Render(const World& world)
     const auto camera = optionalEntityCameraPair->second;
     InfoStruct::DXMatrixInfo matrixInfo;
     //matrixInfo.pm = camera.GetProjection();
-    matrixInfo.pm = glm::transpose(glm::perspectiveLH(45.0f * (3.14f / 180.0f), 1.77f, 0.5f, 1000.f));
+    matrixInfo.pm = glm::transpose(glm::scale(camera.GetProjection(), glm::vec3(1.f, -1.f, 1.f)));
     matrixInfo.vm = glm::transpose(camera.GetView());
+
     matrixInfo.ipm = glm::inverse(matrixInfo.pm);
     matrixInfo.ivm = glm::inverse(matrixInfo.vm);
     mConstBuffers[CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
 
     //UPDATE LIGHTS
-    lights.dirLights[0].colorAndIntensity = glm::vec4{ 1.0f };
-    lights.dirLights[0].dir = normalize(glm::vec4{ .5f, -.5f, 1.0f, 0.f });
+    const auto pointLightView = world.GetRegistry().View<const PointLightComponent, const TransformComponent>();
+    int pointLightCounter = 0;
+    for (auto [entity, lightComponent, transform] : pointLightView.each()) {
+        if (pointLightCounter < MAX_LIGHTS) {
+            lights.mPointLights[pointLightCounter].mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
+            lights.mPointLights[pointLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+            lights.mPointLights[pointLightCounter].mRadius = lightComponent.mRange;
+        }
+        else {
+            LOG(LogCore, Warning, ("Maximum (%i) of point lights has been surpassed.", MAX_LIGHTS));
+            break;
+        }
+        pointLightCounter++;
+    }
+    const auto dirLightView = world.GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
+    int dirLightCounter = 0;
+    for (auto [entity, lightComponent, transform] : dirLightView.each()) {
+        if (dirLightCounter < MAX_LIGHTS) {
+            glm::quat quatRotation = transform.GetLocalOrientation();
+            glm::vec3 baseDir = glm::vec3(0, 0, 1);
+            glm::vec3 lightDirection = quatRotation * baseDir;
+
+            lights.mDirLights[dirLightCounter].mDir = glm::vec4(lightDirection, 1.f);
+            lights.mDirLights[dirLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+        }
+        else {
+            LOG(LogCore, Warning, ("Maximum (%i) of directional lights has been surpassed.", MAX_LIGHTS));
+            break;
+        }
+        dirLightCounter++;
+    }
+
+
+    //lights.mDirLights[0].mColorAndIntensity = glm::vec4{ 1.0f };
+    //lights.mDirLights[0].mDir = normalize(glm::vec4{ .5f, -.5f, 1.0f, 0.f });
     mConstBuffers[LIGHT_CB]->Update(&lights, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
 
     commandList->SetGraphicsRootSignature(mSignature->GetSignature().Get());

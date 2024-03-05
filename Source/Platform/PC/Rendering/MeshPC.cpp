@@ -146,6 +146,9 @@ Engine::StaticMesh::StaticMesh(StaticMesh&& other) noexcept:
 
 void Engine::StaticMesh::DrawMesh() const
 {
+    if (mVertexBuffer == nullptr)
+        return;
+
 	Device& engineDevice = Device::Get();
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 
