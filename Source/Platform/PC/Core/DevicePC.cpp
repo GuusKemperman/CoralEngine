@@ -363,7 +363,6 @@ void Engine::Device::NewFrame() {
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
 
-    WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
     StartRecordingCommands();
 
     if (mUpdateWindow) {
@@ -409,6 +408,9 @@ void Engine::Device::EndFrame()
     }
 
     ImGui::EndFrame();
+
+    WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
+
 
    // StartUploadCommands();
 }
