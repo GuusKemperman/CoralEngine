@@ -8,7 +8,7 @@ namespace Engine
 	public:
 		EnemyAiControllerComponent();
 
-		void UpdateState(World& world, entt::entity enemyID);
+		void UpdateState(World& world, entt::entity enemyID, float dt);
 
 		int CurrentState = 0;
 

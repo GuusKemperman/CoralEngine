@@ -3,14 +3,20 @@
 
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Registry.h"
+#include "Utilities/Events.h"
 
 Engine::EnemyAiControllerComponent::EnemyAiControllerComponent()
 {
 }
 
-void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity enemyID)
+void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity enemyID, float dt)
 {
 	Registry& reg = world.GetRegistry();
+
+	float bestScore = std::numeric_limits<float>::lowest();
+	MetaType* bestType = nullptr;
+	entt::basic_sparse_set<>* bestStorage = nullptr;
+
 
 	for (auto&& [typeHash, storage] : reg.Storage())
 	{
@@ -21,9 +27,30 @@ void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity 
 			continue;
 		}
 
-		if (storage.contains(enemyID))
+		if (storage.contains(enemyID) && TryGetEvent(type, sAITickEvent))
 		{
+			MetaAny component(type, storage.value(enemyID));
+
+			auto& componentAiEvaluate = *TryGetEvent(type, sAIEvaluateEvent);
+			FuncResult fr = componentAiEvaluate(component, world, enemyID, dt);
+
+			float score = fr.GetReturnValue().As<float>();
+
+			if (score > bestScore)
+			{
+				bestScore = score;
+				bestType = type;
+				bestStorage = &storage;
+			}
 		}
+	}
+
+	if (bestType != nullptr)
+	{
+		MetaAny component(*bestType, bestStorage->value(enemyID));
+
+		auto& componentAiTick = *TryGetEvent(*bestType, sAITickEvent);
+		FuncResult fr = componentAiTick(component, world, enemyID, dt);
 	}
 }
 

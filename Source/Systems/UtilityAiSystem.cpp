@@ -7,13 +7,13 @@
 #include "World/WorldRenderer.h"
 #include "Meta/MetaType.h"
 
-void Engine::UtilityAiSystem::Update(World& world, float)
+void Engine::UtilityAiSystem::Update(World& world, float dt)
 {
 	const auto& enemyAIControllerView = world.GetRegistry().View<EnemyAiControllerComponent>();
 
 	for (auto [enemyAIControllerID, currentAIController] : enemyAIControllerView.each())
 	{
-		currentAIController.UpdateState(world, enemyAIControllerID);
+		currentAIController.UpdateState(world, enemyAIControllerID, dt);
 	}
 }
 
