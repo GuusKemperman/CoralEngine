@@ -164,7 +164,7 @@ namespace Engine
 		 */
 		static std::string Reserialize(std::string_view serialized);
 
-		static constexpr float sDifferenceCheckCoolDown = 2.0f;
+		static constexpr float sDifferenceCheckCoolDown = 10000.0f;
 		float mTimeLeftUntilCheckForDifference{};
 	};
 

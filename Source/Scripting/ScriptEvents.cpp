@@ -190,3 +190,45 @@ void Engine::ScriptAIEvaluateEvent::Define(MetaFunc& declaredFunc, const ScriptF
 		});
 }
 
+Engine::ScriptAbilityActivateEvent::ScriptAbilityActivateEvent() :
+	ScriptEvent(sOnAbilityActivate, { { MakeTypeTraits<entt::entity>(), "Ability user" } }, std::nullopt)
+{
+}
+
+Engine::MetaFunc& Engine::ScriptAbilityActivateEvent::Declare(TypeTraits, MetaType& toType) const
+{
+	static_assert(std::is_same_v<const Event<void(World&, entt::entity), false, true>, decltype(sOnAbilityActivate)>);
+
+	std::vector<MetaFuncNamedParam> metaParams
+	{
+		{ MakeTypeTraits<World&>() },
+		{ MakeTypeTraits<entt::entity>() },
+	};
+
+	MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
+
+	MetaFunc& func = toType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
+		{
+			return { "There were unresolved compilation errors" };
+		},
+		mBasedOnEvent.get().mName,
+		metaReturn,
+		metaParams
+	);
+
+	func.GetProperties().Add(Internal::sIsEventProp).Add(Props::sIsEventStaticTag);
+
+	return func;
+}
+
+void Engine::ScriptAbilityActivateEvent::Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc,
+	std::shared_ptr<const Script> script) const
+{
+	declaredFunc.RedirectFunction([&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			// The script knows about world, but we do have to provide entt::entity
+			Span<MetaAny, 1> scriptArgs{ &args[1], 1 };
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		});
+}
