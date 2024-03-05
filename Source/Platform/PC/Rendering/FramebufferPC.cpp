@@ -72,7 +72,7 @@ Engine::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 
 Engine::FrameBuffer::~FrameBuffer()
 {
-
+	printf("Framebuffer being destroyed");
 }
 
 void Engine::FrameBuffer::Bind()

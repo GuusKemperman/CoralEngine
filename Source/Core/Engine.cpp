@@ -82,7 +82,6 @@ void Engine::EngineClass::Run()
 		t1 = t2;
 
 		input.NewFrame();
-		device.NewFrame();
 
 #ifdef EDITOR
 		Editor::Get().Tick(deltaTime);
@@ -90,8 +89,6 @@ void Engine::EngineClass::Run()
 		world.Tick(deltaTime);
 		world.GetRenderer().Render();
 #endif  // EDITOR
-
-		device.EndFrame();
 
 		timeElapsedSinceLastGarbageCollect += deltaTime;
 
