@@ -27,11 +27,6 @@ static std::string GetTexName(const std::filesystem::path& modelPath, int index)
 	return modelPath.filename().replace_extension().string().append("_tex").append(std::to_string(index));
 }
 
-static std::string GetMeshName(const std::filesystem::path& modelPath, const char* name)
-{
-	return modelPath.filename().replace_extension().string().append("_").append(name);
-}
-
 static std::string Get***REMOVED***neName(const std::filesystem::path& modelPath, const char* name)
 {
 	return modelPath.filename().replace_extension().string().append("_").append(name);
@@ -167,7 +162,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 	{
 		const aiMesh& mesh = ****REMOVED***ne->mMeshes[i];
 
-		const std::string meshName = GetMeshName(file, mesh.mName.C_Str());
+		const std::string meshName = mesh.mName.C_Str();
 
 		const Span<const glm::vec3> positions = { reinterpret_cast<const glm::vec3*>(mesh.mVertices), mesh.mNumVertices };
 		std::optional<std::vector<uint32>> indices{};
