@@ -50,10 +50,6 @@ namespace Engine
 	 */
 	static constexpr float sFixedTickEventStepSize = 0.2f;
 
-	static constexpr Event<World&, entt::entity> sOnConstructEvent{ "OnConstruct" };
-
-	static constexpr Event<World&, entt::entity> sOnBeginPlayEvent{ "OnConstruct" };
-
 	/**
 	 * \brief Binds an event to a type.
 	 * \tparam Class The class that is being reflected.
