@@ -109,7 +109,7 @@ struct Reflector<std::vector<T>>
 					LOG(LogScripting, Warning, "Cannot resize array to negative value {}, will resize to 0 instead", newSize);
 				}
 
-				v.resize(static_cast<size_t>(std::max(newSize, 0)));
+				v.resize(static_cast<size_t>((std::max)(newSize, 0)));
 			}, "Resize", MetaFunc::ExplicitParams<std::vector<T>&, const int32&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 		arrayType.AddFunc([](const std::vector<T>& v) -> int32

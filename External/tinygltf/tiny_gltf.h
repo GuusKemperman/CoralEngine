@@ -806,7 +806,7 @@ struct Material {
 
 struct BufferView {
   std::string name;
-  int buffer{-1};        // Required
+  int mBuffers{-1};        // Required
   size_t byteOffset{0};  // minimum 0, default 0
   size_t byteLength{0};  // required, minimum 1. 0 = invalid
   size_t byteStride{0};  // minimum 4, maximum 252 (multiple of 4), default 0 =
@@ -823,7 +823,7 @@ struct BufferView {
   bool dracoDecoded{false};  // Flag indicating this has been draco decoded
 
   BufferView()
-      : buffer(-1),
+      : mBuffers(-1),
         byteOffset(0),
         byteLength(0),
         byteStride(0),
@@ -2016,7 +2016,7 @@ bool Buffer::operator==(const Buffer &other) const {
          this->uri == other.uri;
 }
 bool BufferView::operator==(const BufferView &other) const {
-  return this->buffer == other.buffer && this->byteLength == other.byteLength &&
+  return this->mBuffers == other.mBuffers && this->byteLength == other.byteLength &&
          this->byteOffset == other.byteOffset &&
          this->byteStride == other.byteStride && this->name == other.name &&
          this->target == other.target && this->extensions == other.extensions &&
@@ -2718,12 +2718,12 @@ void TinyGLTF::SetImageWriter(WriteImageDataFunction func, void *user_data) {
 
 #ifndef TINYGLTF_NO_STB_IMAGE_WRITE
 static void WriteToMemory_stbi(void *context, void *data, int size) {
-  std::vector<unsigned char> *buffer =
+  std::vector<unsigned char> *mBuffers =
       reinterpret_cast<std::vector<unsigned char> *>(context);
 
   unsigned char *pData = reinterpret_cast<unsigned char *>(data);
 
-  buffer->insert(buffer->end(), pData, pData + size);
+  mBuffers->insert(mBuffers->end(), pData, pData + size);
 }
 
 bool WriteImageData(const std::string *basepath, const std::string *filename,
@@ -4437,7 +4437,7 @@ static bool ParseOcclusionTextureInfo(
   return true;
 }
 
-static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o,
+static bool ParseBuffer(Buffer *mBuffers, std::string *err, const detail::json &o,
                         bool store_original_json_for_extras_and_extensions,
                         FsCallbacks *fs, const URICallbacks *uri_cb,
                         const std::string &basedir, const size_t max_buffer_size, bool is_binary = false,
@@ -4450,11 +4450,11 @@ static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o,
   }
 
   // In glTF 2.0, uri is not mandatory anymore
-  buffer->uri.clear();
-  ParseStringProperty(&buffer->uri, err, o, "uri", false, "Buffer");
+  mBuffers->uri.clear();
+  ParseStringProperty(&mBuffers->uri, err, o, "uri", false, "Buffer");
 
   // having an empty uri for a non embedded image should not be valid
-  if (!is_binary && buffer->uri.empty()) {
+  if (!is_binary && mBuffers->uri.empty()) {
     if (err) {
       (*err) += "'uri' is missing from non binary glTF file buffer.\n";
     }
@@ -4472,25 +4472,25 @@ static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o,
 
   if (is_binary) {
     // Still binary glTF accepts external dataURI.
-    if (!buffer->uri.empty()) {
+    if (!mBuffers->uri.empty()) {
       // First try embedded data URI.
-      if (IsDataURI(buffer->uri)) {
+      if (IsDataURI(mBuffers->uri)) {
         std::string mime_type;
-        if (!DecodeDataURI(&buffer->data, mime_type, buffer->uri, byteLength,
+        if (!DecodeDataURI(&mBuffers->data, mime_type, mBuffers->uri, byteLength,
                            true)) {
           if (err) {
             (*err) +=
-                "Failed to decode 'uri' : " + buffer->uri + " in Buffer\n";
+                "Failed to decode 'uri' : " + mBuffers->uri + " in Buffer\n";
           }
           return false;
         }
       } else {
         // External .bin file.
         std::string decoded_uri;
-        if (!uri_cb->decode(buffer->uri, &decoded_uri, uri_cb->user_data)) {
+        if (!uri_cb->decode(mBuffers->uri, &decoded_uri, uri_cb->user_data)) {
           return false;
         }
-        if (!LoadExternalFile(&buffer->data, err, /* warn */ nullptr,
+        if (!LoadExternalFile(&mBuffers->data, err, /* warn */ nullptr,
                               decoded_uri, basedir, /* required */ true,
                               byteLength, /* checkSize */ true, /* max_file_size */max_buffer_size, fs)) {
           return false;
@@ -4518,27 +4518,27 @@ static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o,
       }
 
       // Read buffer data
-      buffer->data.resize(static_cast<size_t>(byteLength));
-      memcpy(&(buffer->data.at(0)), bin_data, static_cast<size_t>(byteLength));
+      mBuffers->data.resize(static_cast<size_t>(byteLength));
+      memcpy(&(mBuffers->data.at(0)), bin_data, static_cast<size_t>(byteLength));
     }
 
   } else {
-    if (IsDataURI(buffer->uri)) {
+    if (IsDataURI(mBuffers->uri)) {
       std::string mime_type;
-      if (!DecodeDataURI(&buffer->data, mime_type, buffer->uri, byteLength,
+      if (!DecodeDataURI(&mBuffers->data, mime_type, mBuffers->uri, byteLength,
                          true)) {
         if (err) {
-          (*err) += "Failed to decode 'uri' : " + buffer->uri + " in Buffer\n";
+          (*err) += "Failed to decode 'uri' : " + mBuffers->uri + " in Buffer\n";
         }
         return false;
       }
     } else {
       // Assume external .bin file.
       std::string decoded_uri;
-      if (!uri_cb->decode(buffer->uri, &decoded_uri, uri_cb->user_data)) {
+      if (!uri_cb->decode(mBuffers->uri, &decoded_uri, uri_cb->user_data)) {
         return false;
       }
-      if (!LoadExternalFile(&buffer->data, err, /* warn */ nullptr, decoded_uri,
+      if (!LoadExternalFile(&mBuffers->data, err, /* warn */ nullptr, decoded_uri,
                             basedir, /* required */ true, byteLength,
                             /* checkSize */ true, /* max file size */max_buffer_size, fs)) {
         return false;
@@ -4546,9 +4546,9 @@ static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o,
     }
   }
 
-  ParseStringProperty(&buffer->name, err, o, "name", false);
+  ParseStringProperty(&mBuffers->name, err, o, "name", false);
 
-  ParseExtrasAndExtensions(buffer, err, o, store_original_json_for_extras_and_extensions);
+  ParseExtrasAndExtensions(mBuffers, err, o, store_original_json_for_extras_and_extensions);
 
   return true;
 }
@@ -4556,8 +4556,8 @@ static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o,
 static bool ParseBufferView(
     BufferView *bufferView, std::string *err, const detail::json &o,
     bool store_original_json_for_extras_and_extensions) {
-  int buffer = -1;
-  if (!ParseIntegerProperty(&buffer, err, o, "buffer", true, "BufferView")) {
+  int mBuffers = -1;
+  if (!ParseIntegerProperty(&mBuffers, err, o, "buffer", true, "BufferView")) {
     return false;
   }
 
@@ -4606,7 +4606,7 @@ static bool ParseBufferView(
 
   ParseExtrasAndExtensions(bufferView, err, o, store_original_json_for_extras_and_extensions);
 
-  bufferView->buffer = buffer;
+  bufferView->mBuffers = mBuffers;
   bufferView->byteOffset = byteOffset;
   bufferView->byteLength = byteLength;
   bufferView->byteStride = byteStride;
@@ -5942,14 +5942,14 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
         }
         return false;
       }
-      Buffer buffer;
-      if (!ParseBuffer(&buffer, err, o,
+      Buffer mBuffers;
+      if (!ParseBuffer(&mBuffers, err, o,
                        store_original_json_for_extras_and_extensions_, &fs,
                        &uri_cb, base_dir, max_external_file_size_, is_binary_, bin_data_, bin_size_)) {
         return false;
       }
 
-      model->buffers.emplace_back(std::move(buffer));
+      model->buffers.emplace_back(std::move(mBuffers));
       return true;
     });
 
@@ -6216,16 +6216,16 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
 
         const BufferView &bufferView =
             model->bufferViews[size_t(image.bufferView)];
-        if (size_t(bufferView.buffer) >= model->buffers.size()) {
+        if (size_t(bufferView.mBuffers) >= model->buffers.size()) {
           if (err) {
             std::stringstream ss;
-            ss << "image[" << idx << "] buffer \"" << bufferView.buffer
+            ss << "image[" << idx << "] buffer \"" << bufferView.mBuffers
                << "\" not found in the ***REMOVED***ne." << std::endl;
             (*err) += ss.str();
           }
           return false;
         }
-        const Buffer &buffer = model->buffers[size_t(bufferView.buffer)];
+        const Buffer &mBuffers = model->buffers[size_t(bufferView.mBuffers)];
 
         if (*LoadImageData == nullptr) {
           if (err) {
@@ -6235,7 +6235,7 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
         }
         bool ret = LoadImageData(
             &image, idx, err, warn, image.width, image.height,
-            &buffer.data[bufferView.byteOffset],
+            &mBuffers.data[bufferView.byteOffset],
             static_cast<int>(bufferView.byteLength), load_image_user_data);
         if (!ret) {
           return false;
@@ -7215,40 +7215,40 @@ static void SerializeGltfAsset(const Asset &asset, detail::json &o) {
   SerializeExtrasAndExtensions(asset, o);
 }
 
-static void SerializeGltfBufferBin(const Buffer &buffer, detail::json &o,
+static void SerializeGltfBufferBin(const Buffer &mBuffers, detail::json &o,
                                    std::vector<unsigned char> &binBuffer) {
-  SerializeNumberProperty("byteLength", buffer.data.size(), o);
-  binBuffer = buffer.data;
+  SerializeNumberProperty("byteLength", mBuffers.data.size(), o);
+  binBuffer = mBuffers.data;
 
-  if (buffer.name.size()) SerializeStringProperty("name", buffer.name, o);
+  if (mBuffers.name.size()) SerializeStringProperty("name", mBuffers.name, o);
 
-  SerializeExtrasAndExtensions(buffer, o);
+  SerializeExtrasAndExtensions(mBuffers, o);
 }
 
-static void SerializeGltfBuffer(const Buffer &buffer, detail::json &o) {
-  SerializeNumberProperty("byteLength", buffer.data.size(), o);
-  SerializeGltfBufferData(buffer.data, o);
+static void SerializeGltfBuffer(const Buffer &mBuffers, detail::json &o) {
+  SerializeNumberProperty("byteLength", mBuffers.data.size(), o);
+  SerializeGltfBufferData(mBuffers.data, o);
 
-  if (buffer.name.size()) SerializeStringProperty("name", buffer.name, o);
+  if (mBuffers.name.size()) SerializeStringProperty("name", mBuffers.name, o);
 
-  SerializeExtrasAndExtensions(buffer, o);
+  SerializeExtrasAndExtensions(mBuffers, o);
 }
 
-static bool SerializeGltfBuffer(const Buffer &buffer, detail::json &o,
+static bool SerializeGltfBuffer(const Buffer &mBuffers, detail::json &o,
                                 const std::string &binFilename,
                                 const std::string &binUri) {
-  if (!SerializeGltfBufferData(buffer.data, binFilename)) return false;
-  SerializeNumberProperty("byteLength", buffer.data.size(), o);
+  if (!SerializeGltfBufferData(mBuffers.data, binFilename)) return false;
+  SerializeNumberProperty("byteLength", mBuffers.data.size(), o);
   SerializeStringProperty("uri", binUri, o);
 
-  if (buffer.name.size()) SerializeStringProperty("name", buffer.name, o);
+  if (mBuffers.name.size()) SerializeStringProperty("name", mBuffers.name, o);
 
-  SerializeExtrasAndExtensions(buffer, o);
+  SerializeExtrasAndExtensions(mBuffers, o);
   return true;
 }
 
 static void SerializeGltfBufferView(const BufferView &bufferView, detail::json &o) {
-  SerializeNumberProperty("buffer", bufferView.buffer, o);
+  SerializeNumberProperty("buffer", bufferView.mBuffers, o);
   SerializeNumberProperty<size_t>("byteLength", bufferView.byteLength, o);
 
   // byteStride is optional, minimum allowed is 4
@@ -8193,13 +8193,13 @@ bool TinyGLTF::WriteGltf***REMOVED***neToStream(const Model *model, std::ostream
     detail::json buffers;
     detail::JsonReserveArray(buffers, model->buffers.size());
     for (unsigned int i = 0; i < model->buffers.size(); ++i) {
-      detail::json buffer;
+      detail::json mBuffers;
       if (writeBinary && i == 0 && model->buffers[i].uri.empty()) {
-        SerializeGltfBufferBin(model->buffers[i], buffer, binBuffer);
+        SerializeGltfBufferBin(model->buffers[i], mBuffers, binBuffer);
       } else {
-        SerializeGltfBuffer(model->buffers[i], buffer);
+        SerializeGltfBuffer(model->buffers[i], mBuffers);
       }
-      detail::JsonPushBack(buffers, std::move(buffer));
+      detail::JsonPushBack(buffers, std::move(mBuffers));
     }
     detail::JsonAddMember(output, "buffers", std::move(buffers));
   }
@@ -8263,11 +8263,11 @@ bool TinyGLTF::WriteGltf***REMOVED***neToFile(const Model *model,
     detail::json buffers;
     detail::JsonReserveArray(buffers, model->buffers.size());
     for (unsigned int i = 0; i < model->buffers.size(); ++i) {
-      detail::json buffer;
+      detail::json mBuffers;
       if (writeBinary && i == 0 && model->buffers[i].uri.empty()) {
-        SerializeGltfBufferBin(model->buffers[i], buffer, binBuffer);
+        SerializeGltfBufferBin(model->buffers[i], mBuffers, binBuffer);
       } else if (embedBuffers) {
-        SerializeGltfBuffer(model->buffers[i], buffer);
+        SerializeGltfBuffer(model->buffers[i], mBuffers);
       } else {
         std::string binSavePath;
         std::string binFilename;
@@ -8304,12 +8304,12 @@ bool TinyGLTF::WriteGltf***REMOVED***neToFile(const Model *model,
         }
         usedFilenames.push_back(binFilename);
         binSavePath = JoinPath(baseDir, binFilename);
-        if (!SerializeGltfBuffer(model->buffers[i], buffer, binSavePath,
+        if (!SerializeGltfBuffer(model->buffers[i], mBuffers, binSavePath,
                                  binUri)) {
           return false;
         }
       }
-      detail::JsonPushBack(buffers, std::move(buffer));
+      detail::JsonPushBack(buffers, std::move(mBuffers));
     }
     detail::JsonAddMember(output, "buffers", std::move(buffers));
   }

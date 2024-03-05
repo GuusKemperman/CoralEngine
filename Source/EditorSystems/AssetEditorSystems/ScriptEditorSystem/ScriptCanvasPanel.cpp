@@ -77,12 +77,14 @@ void Engine::ScriptEditorSystem::DisplayCanvas()
 
 		ax::NodeEditor::SetNodePosition(node.GetId(), ImGui::GetMousePos());
 
-		ScriptLink* newLink1 = currentFunc.TryAddLink(outputPin, node.GetInputs(currentFunc)[0]);
-		ScriptLink* newLink2 = currentFunc.TryAddLink(inputPin, node.GetOutputs(currentFunc)[0]);
+		[[maybe_unused]] ScriptLink* newLink1 = currentFunc.TryAddLink(outputPin, node.GetInputs(currentFunc)[0]);
+		[[maybe_unused]] ScriptLink* newLink2 = currentFunc.TryAddLink(inputPin, node.GetOutputs(currentFunc)[0]);
 		// Break the original 
 		currentFunc.RemoveLink(doubleClickedLink);
-		ASSERT(newLink1 != nullptr
-			&& newLink2 != nullptr);
+		if (newLink1 == nullptr && newLink2 == nullptr) 
+		{
+			assert(false);
+		}
 	}
 
 	ax::NodeEditor::End();

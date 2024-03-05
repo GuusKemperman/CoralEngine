@@ -89,8 +89,10 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
         const size_t pointCount = poly.mPoints.size();
         for (size_t i = 0; i < pointCount; ++i)
         {
-            renderer.AddLine(DebugCategory::Physics, glm::vec2(poly.mPoints[i] + body.mPosition),
-                             glm::vec2(poly.mPoints[(i + 1) % pointCount] + body.mPosition), color);
+            const glm::vec2 from = poly.mPoints[i] + body.mPosition;
+            const glm::vec2 to = poly.mPoints[(i + 1) % pointCount] + body.mPosition;
+            renderer.AddLine(DebugCategory::Physics, glm::vec3(from.x, 1.1f, from.y),
+                             glm::vec3(to.x, 1.1f, to.y), color);
         }
         PrintCollisionData(entity, body);
     }

@@ -719,32 +719,32 @@ struct ShadedRenderer {
 };
 
 /// Renders primitive shapes in bulk as efficiently as possible.
-template <typename Renderer>
-IMPLOT_INLINE void RenderPrimitives(const Renderer& renderer, ImDrawList& DrawList, const ImRect& cull_rect) {
+template <typename Device>
+IMPLOT_INLINE void RenderPrimitives(const Device& renderer, ImDrawList& DrawList, const ImRect& cull_rect) {
     unsigned int prims        = renderer.Prims;
     unsigned int prims_culled = 0;
     unsigned int idx          = 0;
     const ImVec2 uv = DrawList._Data->TexUvWhitePixel;
     while (prims) {
         // find how many can be reserved up to end of current draw command's limit
-        unsigned int cnt = ImMin(prims, (MaxIdx<ImDrawIdx>::Value - DrawList._VtxCurrentIdx) / Renderer::VtxConsumed);
+        unsigned int cnt = ImMin(prims, (MaxIdx<ImDrawIdx>::Value - DrawList._VtxCurrentIdx) / Device::VtxConsumed);
         // make sure at least this many elements can be rendered to avoid situations where at the end of buffer this slow path is not taken all the time
         if (cnt >= ImMin(64u, prims)) {
             if (prims_culled >= cnt)
                 prims_culled -= cnt; // reuse previous reservation
             else {
-                DrawList.PrimReserve((cnt - prims_culled) * Renderer::IdxConsumed, (cnt - prims_culled) * Renderer::VtxConsumed); // add more elements to previous reservation
+                DrawList.PrimReserve((cnt - prims_culled) * Device::IdxConsumed, (cnt - prims_culled) * Device::VtxConsumed); // add more elements to previous reservation
                 prims_culled = 0;
             }
         }
         else
         {
             if (prims_culled > 0) {
-                DrawList.PrimUnreserve(prims_culled * Renderer::IdxConsumed, prims_culled * Renderer::VtxConsumed);
+                DrawList.PrimUnreserve(prims_culled * Device::IdxConsumed, prims_culled * Device::VtxConsumed);
                 prims_culled = 0;
             }
-            cnt = ImMin(prims, (MaxIdx<ImDrawIdx>::Value - 0/*DrawList._VtxCurrentIdx*/) / Renderer::VtxConsumed);
-            DrawList.PrimReserve(cnt * Renderer::IdxConsumed, cnt * Renderer::VtxConsumed); // reserve new draw command
+            cnt = ImMin(prims, (MaxIdx<ImDrawIdx>::Value - 0/*DrawList._VtxCurrentIdx*/) / Device::VtxConsumed);
+            DrawList.PrimReserve(cnt * Device::IdxConsumed, cnt * Device::VtxConsumed); // reserve new draw command
         }
         prims -= cnt;
         for (unsigned int ie = idx + cnt; idx != ie; ++idx) {
@@ -753,7 +753,7 @@ IMPLOT_INLINE void RenderPrimitives(const Renderer& renderer, ImDrawList& DrawLi
         }
     }
     if (prims_culled > 0)
-        DrawList.PrimUnreserve(prims_culled * Renderer::IdxConsumed, prims_culled * Renderer::VtxConsumed);
+        DrawList.PrimUnreserve(prims_culled * Device::IdxConsumed, prims_culled * Device::VtxConsumed);
 }
 
 template <typename Getter, typename Transformer>
@@ -1850,15 +1850,15 @@ template IMPLOT_API void PlotHLines<double>(const char* label_id, const double* 
 
 IMPLOT_INLINE void RenderPieSlice(ImDrawList& DrawList, const ImPlotPoint& center, double radius, double a0, double a1, ImU32 col) {
     static const float resolution = 50 / (2 * IM_PI);
-    static ImVec2 buffer[50];
-    buffer[0] = PlotToPixels(center,IMPLOT_AUTO,IMPLOT_AUTO);
+    static ImVec2 mBuffers[50];
+    mBuffers[0] = PlotToPixels(center,IMPLOT_AUTO,IMPLOT_AUTO);
     int n = ImMax(3, (int)((a1 - a0) * resolution));
     double da = (a1 - a0) / (n - 1);
     for (int i = 0; i < n; ++i) {
         double a = a0 + i * da;
-        buffer[i + 1] = PlotToPixels(center.x + radius * cos(a), center.y + radius * sin(a),IMPLOT_AUTO,IMPLOT_AUTO);
+        mBuffers[i + 1] = PlotToPixels(center.x + radius * cos(a), center.y + radius * sin(a),IMPLOT_AUTO,IMPLOT_AUTO);
     }
-    DrawList.AddConvexPolyFilled(buffer, n + 1, col);
+    DrawList.AddConvexPolyFilled(mBuffers, n + 1, col);
 }
 
 template <typename T>
@@ -1896,18 +1896,18 @@ void PlotPieChart(const char* const label_ids[], const T* values, int count, dou
     if (fmt != NULL) {
         a0 = angle0 * 2 * IM_PI / 360.0;
         a1 = angle0 * 2 * IM_PI / 360.0;
-        char buffer[32];
+        char mBuffers[32];
         for (int i = 0; i < count; ++i) {
             ImPlotItem* item = GetItem(label_ids[i]);
             double percent = normalize ? (double)values[i] / sum : (double)values[i];
             a1 = a0 + 2 * IM_PI * percent;
             if (item->Show) {
-                ImFormatString(buffer, 32, fmt, (double)values[i]);
-                ImVec2 size = ImGui::CalcTextSize(buffer);
+                ImFormatString(mBuffers, 32, fmt, (double)values[i]);
+                ImVec2 size = ImGui::CalcTextSize(mBuffers);
                 double angle = a0 + (a1 - a0) * 0.5;
                 ImVec2 pos = PlotToPixels(center.x + 0.5 * radius * cos(angle), center.y + 0.5 * radius * sin(angle),IMPLOT_AUTO,IMPLOT_AUTO);
                 ImU32 col  = CalcTextColor(ImGui::ColorConvertU32ToFloat4(item->Color));
-                DrawList.AddText(pos - size * 0.5f, col, buffer);
+                DrawList.AddText(pos - size * 0.5f, col, mBuffers);
             }
             a0 = a1;
         }

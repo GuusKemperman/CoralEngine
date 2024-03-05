@@ -189,7 +189,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 			
 			const tinygltf::Accessor& indicesAccessor = model.accessors[primitive.indices];
 			const tinygltf::BufferView& indicesBufferView = model.bufferViews[indicesAccessor.bufferView];
-			const tinygltf::Buffer& indicesBuffer = model.buffers[indicesBufferView.buffer];
+			const tinygltf::Buffer& indicesBuffer = model.buffers[indicesBufferView.mBuffers];
 			const unsigned char* indicesData = &indicesBuffer.data[indicesBufferView.byteOffset];
 
 			switch (indicesAccessor.componentType)
@@ -221,9 +221,9 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::GLTFImporter::Import(c
 			{
 				const tinygltf::Accessor& accessor = model.accessors[accessorIndex];
 				const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-				const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+				const tinygltf::Buffer& mBuffers = model.buffers[bufferView.mBuffers];
 
-				const unsigned char* data = &buffer.data[bufferView.byteOffset];
+				const unsigned char* data = &mBuffers.data[bufferView.byteOffset];
 
 				if (attribName.compare("POSITION") == 0)
 				{
