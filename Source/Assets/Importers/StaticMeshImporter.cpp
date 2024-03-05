@@ -126,27 +126,27 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 		aiString textureName{};
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_BASE_COLOR, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mBaseColorTexture{};
 		{
-			engineMat.mBaseColorTexture = textures[atoi(textureName.C_Str())];
+			engineMat.mBaseColorTexture = textures[atoi(std::string(textureName.C_Str()).erase(0, 1).c_str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_NORMALS, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mNormalTexture{};
 		{
-			engineMat.mNormalTexture = textures[atoi(textureName.C_Str())];
+			engineMat.mNormalTexture = textures[atoi(std::string(textureName.C_Str()).erase(0, 1).c_str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_AMBIENT_OCCLUSION, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mOcclusionTexture{};
 		{
-			engineMat.mOcclusionTexture = textures[atoi(textureName.C_Str())];
+			engineMat.mOcclusionTexture = textures[atoi(std::string(textureName.C_Str()).erase(0, 1).c_str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mMetallicRoughnessTexture{};
 		{
-			engineMat.mMetallicRoughnessTexture = textures[atoi(textureName.C_Str())];
+			engineMat.mMetallicRoughnessTexture = textures[atoi(std::string(textureName.C_Str()).erase(0, 1).c_str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_EMISSIVE, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mEmissiveTexture{};
 		{
-			engineMat.mEmissiveTexture = textures[atoi(textureName.C_Str())];
+			engineMat.mEmissiveTexture = textures[atoi(std::string(textureName.C_Str()).erase(0, 1).c_str())];
 		}
 
 		returnValue.emplace_back(MaterialImporter::Import(file, myVersion, engineMat));
