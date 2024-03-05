@@ -18,6 +18,8 @@
 
 #include "World/WorldRenderer.h"
 #include "Components/CameraComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Components/DirectionalLightComponent.h"
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
 #include "Assets/StaticMesh.h"
@@ -120,8 +122,41 @@ void Engine::Renderer::Render(const World& world)
     mConstBuffers[CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
 
     //UPDATE LIGHTS
-    lights.dirLights[0].colorAndIntensity = glm::vec4{ 1.0f };
-    lights.dirLights[0].dir = normalize(glm::vec4{ .5f, -.5f, 1.0f, 0.f });
+    const auto pointLightView = world.GetRegistry().View<const PointLightComponent, const TransformComponent>();
+    int pointLightCounter = 0;
+    for (auto [entity, lightComponent, transform] : pointLightView.each()) {
+        if (pointLightCounter < MAX_LIGHTS) {
+            lights.mPointLights[pointLightCounter].mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
+            lights.mPointLights[pointLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+            lights.mPointLights[pointLightCounter].mRadius = lightComponent.mRange;
+        }
+        else {
+            LOG(LogCore, Warning, ("Maximum (%i) of point lights has been surpassed.", MAX_LIGHTS));
+            break;
+        }
+        pointLightCounter++;
+    }
+    const auto dirLightView = world.GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
+    int dirLightCounter = 0;
+    for (auto [entity, lightComponent, transform] : dirLightView.each()) {
+        if (dirLightCounter < MAX_LIGHTS) {
+            glm::quat quatRotation = transform.GetLocalOrientation();
+            glm::vec3 baseDir = glm::vec3(0, 0, 1);
+            glm::vec3 lightDirection = quatRotation * baseDir;
+
+            lights.mDirLights[dirLightCounter].mDir = glm::vec4(lightDirection, 1.f);
+            lights.mDirLights[dirLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+        }
+        else {
+            LOG(LogCore, Warning, ("Maximum (%i) of directional lights has been surpassed.", MAX_LIGHTS));
+            break;
+        }
+        dirLightCounter++;
+    }
+
+
+    //lights.mDirLights[0].mColorAndIntensity = glm::vec4{ 1.0f };
+    //lights.mDirLights[0].mDir = normalize(glm::vec4{ .5f, -.5f, 1.0f, 0.f });
     mConstBuffers[LIGHT_CB]->Update(&lights, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
 
     commandList->SetGraphicsRootSignature(mSignature->GetSignature().Get());

@@ -23,20 +23,20 @@ namespace Engine
         };
 
         struct DXDirLightInfo {
-            glm::vec4 dir = { 0.f, 0.0f, 0.0f, 0.f };
-            glm::vec4 colorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
+            glm::vec4 mDir = { 0.f, 0.0f, 0.0f, 0.f };
+            glm::vec4 mColorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
         };
 
         struct DXPointLightInfo {
-            glm::vec4 position = { 0.f, 0.0f, 0.0f, 0.f };
-            glm::vec4 colorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
-            float radius = 0.f;
+            glm::vec4 mPosition = { 0.f, 0.0f, 0.0f, 0.f };
+            glm::vec4 mColorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
+            float mRadius = 0.f;
             float padding[3];
         };
 
         struct DXLightInfo {
-            DXPointLightInfo pointLights[MAX_LIGHTS];
-            DXDirLightInfo dirLights[MAX_LIGHTS];
+            DXPointLightInfo mPointLights[MAX_LIGHTS];
+            DXDirLightInfo mDirLights[MAX_LIGHTS];
         };
 
         struct DXMaterialInfo
