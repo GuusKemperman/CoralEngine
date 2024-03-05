@@ -82,6 +82,7 @@ void Engine::EngineClass::Run()
 		t1 = t2;
 
 		input.NewFrame();
+		device.NewFrame();
 
 #ifdef EDITOR
 		Editor::Get().Tick(deltaTime);

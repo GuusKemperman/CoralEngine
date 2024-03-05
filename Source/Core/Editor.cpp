@@ -122,7 +122,6 @@ Engine::Editor::~Editor()
 void Engine::Editor::Tick(const float deltaTime)
 {
 	Device& device = Device::Get();
-	device.NewFrame();
 
 	DestroyRequestedSystems();
 	DisplayMainMenuBar();
