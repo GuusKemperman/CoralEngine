@@ -27,6 +27,17 @@ static std::string GetTexName(const std::filesystem::path& modelPath, int index)
 	return modelPath.filename().replace_extension().string().append("_tex").append(std::to_string(index));
 }
 
+static std::string GetMeshName(const std::filesystem::path& modelPath, const char* name)
+{
+	return modelPath.filename().replace_extension().string().append("_").append(name);
+}
+
+static std::string Get***REMOVED***neName(const std::filesystem::path& modelPath, const char* name)
+{
+	return modelPath.filename().replace_extension().string().append("_").append(name);
+}
+
+
 std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Import(const std::filesystem::path& file) const
 {
     Assimp::Importer importer{};
@@ -156,6 +167,8 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 	{
 		const aiMesh& mesh = ****REMOVED***ne->mMeshes[i];
 
+		const std::string meshName = GetMeshName(file, mesh.mName.C_Str());
+
 		const Span<const glm::vec3> positions = { reinterpret_cast<const glm::vec3*>(mesh.mVertices), mesh.mNumVertices };
 		std::optional<std::vector<uint32>> indices{};
 		std::optional<Span<const glm::vec3>> normals{};
@@ -195,7 +208,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 			tangents = std::vector<glm::vec3>( reinterpret_cast<const glm::vec3*>(mesh.mTangents), reinterpret_cast<const glm::vec3*>(mesh.mTangents) + mesh.mNumVertices );
 		}
 
-		std::optional<ImportedAsset> importedMesh = ImportFromMemory(file, mesh.mName.C_Str(), myVersion, positions, indices, normals, tangents, textureCoordinates);
+		std::optional<ImportedAsset> importedMesh = ImportFromMemory(file, meshName, myVersion, positions, indices, normals, tangents, textureCoordinates);
 
 		if (importedMesh.has_value())
 		{
@@ -203,7 +216,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 		}
 		else
 		{
-			LOG(LogAssets, Error, "Loading of mesh {} failed: converting assimp results to engine representation failed", mesh.mName.C_Str());
+			LOG(LogAssets, Error, "Loading of mesh {} failed: converting assimp results to engine representation failed", meshName);
 			anyErrors = true;
 		}
 	}
@@ -264,7 +277,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 
 	const entt::entity prefabEntity = makePrefab(****REMOVED***ne->mRootNode, {});
 
-	std::optional<ImportedAsset> importedPrefab = PrefabImporter::MakePrefabFromEntity(file, file.filename().string().append("_Prefab"), myVersion, world, prefabEntity);
+	std::optional<ImportedAsset> importedPrefab = PrefabImporter::MakePrefabFromEntity(file, Get***REMOVED***neName(file, ***REMOVED***ne->mName.C_Str()), myVersion, world, prefabEntity);
 
 	if (importedPrefab.has_value())
 	{
