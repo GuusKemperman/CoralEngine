@@ -65,3 +65,6 @@ using namespace Microsoft::WRL;
 //RESOURCE HEAP SLOTS
 #define  MODEL_MAT_SB_SLOT			0
 #define  TEXTURE_START				1
+
+//DEBUG RENDERER
+#define MAX_LINES 32760

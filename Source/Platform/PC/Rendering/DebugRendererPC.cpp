@@ -1,5 +1,9 @@
 #include "Precomp.h"
 #include "Utilities/DebugRenderer.h"
+#include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
+#include "Platform/PC/Rendering/DX12Classes/DXResource.h"
+#include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
+#include <memory>
 
 class Engine::DebugRenderer::Impl
 {
@@ -7,6 +11,9 @@ public:
     Impl();
     bool AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color);
     void Render(const glm::mat4& view, const glm::mat4& projection);
+
+private:
+    std::vector<std::unique_ptr<DXResource>> lineResources;
 };
 
 Engine::DebugRenderer::DebugRenderer()

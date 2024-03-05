@@ -507,6 +507,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Platform\PC\Rendering\DebugRendererPC.cpp" />
     <ClCompile Include="Source\Assets\StaticMesh.cpp" />
     <ClCompile Include="Source\Assets\Texture.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\FramebufferPC.cpp">
@@ -1333,6 +1334,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Utilities\DebugRenderer.h" />
     <ClInclude Include="Include\Core\Renderer.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\FramebufferPC.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
