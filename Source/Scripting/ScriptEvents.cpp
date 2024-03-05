@@ -17,7 +17,7 @@ Engine::ScriptTickEvent::ScriptTickEvent() :
 
 Engine::MetaFunc& Engine::ScriptTickEvent::Declare(TypeTraits selfTraits, MetaType& toType) const
 {
-	static_assert(std::is_same_v<const Event<World&, entt::entity, float>, decltype(sTickEvent)>);
+	static_assert(std::is_same_v<const Event<void(World&, entt::entity, float)>, decltype(sTickEvent)>);
 	std::vector<MetaFuncNamedParam> metaParams
 	{
 		{ selfTraits },
@@ -60,7 +60,7 @@ Engine::ScriptFixedTickEvent::ScriptFixedTickEvent() :
 
 Engine::MetaFunc& Engine::ScriptFixedTickEvent::Declare(TypeTraits selfTraits, MetaType& toType) const
 {
-	static_assert(std::is_same_v<const Event<World&, entt::entity, float>, decltype(sTickEvent)>);
+	static_assert(std::is_same_v<const Event<void(World&, entt::entity, float)>, decltype(sTickEvent)>);
 	std::vector<MetaFuncNamedParam> metaParams
 	{
 		{ selfTraits },
