@@ -77,7 +77,6 @@ namespace Engine
         std::shared_ptr<DXDescHeap> mDescriptorHeaps[NUM_DESC_HEAPS];
         std::unique_ptr<DXResource> mResources[NUM_RESOURCES];
         const DXGI_FORMAT mDepthFormat = DXGI_FORMAT_D32_FLOAT;
-        std::vector<DXResource*> resourcesToRelease;
 
         HANDLE mFenceEvent;
         HANDLE mUploadFenceEvent;
