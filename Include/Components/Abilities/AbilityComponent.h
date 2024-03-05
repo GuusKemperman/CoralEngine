@@ -14,7 +14,7 @@ namespace Engine
 		enum RequirementType
 		{
 			Cooldown,
-			Mana
+			Mana // can be based on kills or some other criteria
 		}mRequirementType{};
 
 		float mRequirementToUse{};
