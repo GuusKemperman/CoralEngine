@@ -22,9 +22,9 @@
 #include "Utilities/ClassVersion.h"
 #include "Meta/MetaManager.h"
 
-static std::string GetTexName(const std::filesystem::path& modelPath, const aiTexture& texture)
+static std::string GetTexName(const std::filesystem::path& modelPath, int index)
 {
-	return modelPath.filename().replace_extension().string().append("_tex").append(texture.mFilename.C_Str());
+	return modelPath.filename().replace_extension().string().append("_tex").append(std::to_string(index));
 }
 
 std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Import(const std::filesystem::path& file) const
@@ -56,7 +56,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 	{
 		const aiTexture& aiTex = ****REMOVED***ne->mTextures[i];
 
-		const std::string textureName = GetTexName(file, aiTex);
+		const std::string textureName = GetTexName(file, i);
 
 		if (AssetManager::Get().TryGetWeakAsset<Texture>(textureName).has_value())
 		{
@@ -227,7 +227,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 				transform.SetParent(&reg.Get<TransformComponent>(*parent));
 			}
 
-			transform.SetLocalMatrix(reinterpret_cast<const glm::mat4&>(node.mTransformation));
+			transform.SetLocalMatrix(glm::transpose(reinterpret_cast<const glm::mat4&>(node.mTransformation)));
 
 			for (size_t i = 0; i < node.mNumMeshes; i++)
 			{
@@ -246,7 +246,6 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 				StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(entity);
 
 				std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>(***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str());
-				//reg.AddComponent<NameComponent>(meshHolder, mesh->GetName());
 				meshComponent.mStaticMesh = std::move(mesh);
 				
 				std::shared_ptr<Material> mat = std::make_shared<Material>(***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str());
