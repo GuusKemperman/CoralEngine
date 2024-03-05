@@ -453,9 +453,9 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 		const MetaType* componentType = MetaManager::Get().TryGetType(typeHash);
 
-		if (componentType == nullptr)
+		if (componentType == nullptr
+			|| componentType->GetProperties().Has(Props::sNoInspectTag))
 		{
-			LOG(LogEditor, Error, "Component {} could not be displayed, as it's type was not reflected", storage.type().name());
 			continue;
 		}
 
@@ -650,6 +650,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 		Search::Choices<MetaType> choices = Search::CollectChoices<MetaType>([&classesThatCannotBeAdded](const MetaType& type)
 			{
 				return type.GetProperties().Has(Props::sComponentTag)
+					&& !type.GetProperties().Has(Props::sNoInspectTag)
 					&& std::find_if(classesThatCannotBeAdded.begin(), classesThatCannotBeAdded.end(),
 						[&type](const TypeId other)
 						{

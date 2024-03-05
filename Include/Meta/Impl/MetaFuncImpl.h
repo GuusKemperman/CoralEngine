@@ -196,7 +196,7 @@ Engine::FuncResult Engine::MetaFunc::InvokeCheckedUnpackedWithRVO(RVOBuffer rvoB
 template <typename ... Args>
 Engine::FuncResult Engine::MetaFunc::InvokeUncheckedUnpacked(Args&&... args) const
 {
-	return InvokeCheckedUnpackedWithRVO(nullptr, std::forward<Args>(args)...);
+	return InvokeUncheckedUnpackedWithRVO(nullptr, std::forward<Args>(args)...);
 }
 
 template <typename ... Args>

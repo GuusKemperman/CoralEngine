@@ -874,6 +874,15 @@
       <WarningLevel>Level3</WarningLevel>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
     </ClCompile>
+    <ClCompile Include="Source\Components\EventTestingComponent.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Scripting\ScriptEvents.cpp" />
     <ClCompile Include="Source\Components\PointLightComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\Edge.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\Geometry2d.cpp" />
@@ -922,6 +931,7 @@
     <ClCompile Include="Source\Components\NameComponent.cpp" />
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
     <ClCompile Include="Source\Components\TopDownCamControllerComponent.cpp" />
+    <ClCompile Include="Source\Systems\EventsSystem.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\ReflectNull.cpp" />
     <ClCompile Include="Source\Systems\UpdateTopDownCamSystem.cpp" />
     <ClCompile Include="Source\Platform\PC\Core\FileIOPC.cpp">
@@ -958,6 +968,14 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\UnitTests\EventUnitTests.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\UnitTests\ReflectionUnitTests.cpp">
@@ -1024,7 +1042,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Components\Component.cpp" />
+    <ClCompile Include="Source\Components\ComponentFilter.cpp" />
     <ClCompile Include="Source\EditorSystems\AssetEditorSystems\ScriptEditorSystem\ScriptClassPanel.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -1153,7 +1171,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Scripting\ScriptErrors.cpp" />
-    <ClCompile Include="Source\Systems\ScriptSystem.cpp" />
     <ClCompile Include="Source\Scripting\ScriptField.cpp" />
     <ClCompile Include="Source\Scripting\Nodes\CommentScriptNode.cpp" />
     <ClCompile Include="Source\Scripting\Nodes\EntryAndReturnScriptNode.cpp" />
@@ -1418,7 +1435,9 @@
     <ClInclude Include="include\BasicDataTypes\Bezier.h" />
     <ClInclude Include="include\BasicDataTypes\Name.h" />
     <ClInclude Include="include\Components\Component.h" />
+    <ClInclude Include="Include\Components\ComponentFiler.h" />
     <ClInclude Include="Include\Components\ComponentFilter.h" />
+    <ClInclude Include="Include\Components\EventTestingComponent.h" />
     <ClInclude Include="Include\Components\IsDestroyedTag.h" />
     <ClInclude Include="Include\Components\NameComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\Edge.h" />
@@ -1551,12 +1570,16 @@
     </ClInclude>
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
+    <ClInclude Include="Include\Scripting\ScriptEvents.h" />
+    <ClInclude Include="Include\Systems\EventsSystem.h" />
     <ClInclude Include="Include\Systems\NavigationSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
     <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
     <ClInclude Include="Include\Utilities\CPP20\Span.h" />
     <ClInclude Include="Include\Utilities\CPP20\STDAliases.h" />
+    <ClInclude Include="Include\Utilities\Events.h" />
+    <ClInclude Include="Include\Utilities\MemFunctions.h" />
     <ClInclude Include="Include\Utilities\IterableRange.h" />
     <ClInclude Include="Include\Utilities\Search.h" />
     <ClInclude Include="Include\Utilities\Imgui\WorldInspect.h" />
@@ -1586,7 +1609,6 @@
     <ClInclude Include="Include\Scripting\ScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptPin.h" />
     <ClInclude Include="Include\Scripting\ScriptTools.h" />
-    <ClInclude Include="Include\Systems\ScriptSystem.h" />
     <ClInclude Include="Include\Utilities\ClassVersion.h" />
     <ClInclude Include="Include\Utilities\EnumString.h" />
     <ClInclude Include="Include\Utilities\Expected.h" />

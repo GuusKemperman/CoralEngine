@@ -9,6 +9,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "World/WorldRenderer.h"
+#include "Meta/MetaType.h"
 
 using namespace Engine;
 
