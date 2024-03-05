@@ -478,6 +478,7 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\FramebufferPC.cpp" />
     <ClCompile Include="Source\Core\Input.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\MeshPC.cpp" />
@@ -1046,8 +1047,10 @@
     <ClCompile Include="Source\World\Registry.cpp" />
     <ClCompile Include="Source\World\WorldRenderer.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\TexturePC.cpp" />
+    <ClCompile Include="Source\Systems\UtilityAiSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\UtililtyAi\EnemyAiControllerComponent.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\FramebufferPC.h" />
     <ClInclude Include="Include\Core\Input.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\MeshPC.h" />
@@ -1249,10 +1252,10 @@
     <ClInclude Include="Include\Platform\PC\Rendering\RendererPC.h" />
     <ClInclude Include="Include\Components\PointLightComponent.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
-
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\TexturePC.h" />
+    <ClInclude Include="Include\Systems\UtilityAiSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="external\entt\natvis\entt\config.natvis" />
