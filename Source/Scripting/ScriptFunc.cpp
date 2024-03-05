@@ -48,7 +48,6 @@ Engine::ScriptFunc::ScriptFunc(const Script& script, const ScriptEvent& event) :
 	mName(event.mBasedOnEvent.get().mName),
 	mNameOfScriptAsset(script.GetName()),
 	mTypeIdOfScript(Name::HashString(script.GetName())),
-	mIsPure(false),
 	mBasedOnEvent(&event)
 {
 	for (const MetaFuncNamedParam& param : event.mParamsToShowToUser)
