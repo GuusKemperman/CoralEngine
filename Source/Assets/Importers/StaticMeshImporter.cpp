@@ -9,7 +9,9 @@
 #include "Assets/StaticMesh.h"
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
+#include "stb_image/stb_image.h"
 #include "Assets/Importers/MaterialImporter.h"
+#include "Assets/Importers/TextureImporter.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Assets/Importers/PrefabImporter.h"
@@ -20,10 +22,15 @@
 #include "Utilities/ClassVersion.h"
 #include "Meta/MetaManager.h"
 
+static std::string GetTexName(const std::filesystem::path& modelPath, const aiTexture& texture)
+{
+	return modelPath.filename().replace_extension().string().append("_tex").append(texture.mFilename.C_Str());
+}
+
 std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Import(const std::filesystem::path& file) const
 {
     Assimp::Importer importer{};
-    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
+    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
 
 	if (***REMOVED***ne == nullptr)
 	{
@@ -38,9 +45,53 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 
 	std::vector<ImportedAsset> returnValue{};
 
+	// Not really loaded in, but materials hold a shared ptr to textures
+	std::vector<std::shared_ptr<const Texture>> textures{};
+
 	// We set it to false initially. If we encounter errors, we continue importing for a bit (but set this to false), 
 	// just so we can log more errors and inform the user of any other issues.
 	bool anyErrors = false;
+
+	for (uint32 i = 0; i < ***REMOVED***ne->mNumTextures; i++)
+	{
+		const aiTexture& aiTex = ****REMOVED***ne->mTextures[i];
+
+		const std::string textureName = GetTexName(file, aiTex);
+
+		if (AssetManager::Get().TryGetWeakAsset<Texture>(textureName).has_value())
+		{
+			LOG(LogAssets, Message, "Texture {} will not be imported, as there is already a texture with this name", textureName);
+			continue;
+		}
+
+		std::optional<ImportedAsset> importedTexture{};
+
+		const int size = aiTex.mHeight != 0 ? aiTex.mWidth * aiTex.mHeight : aiTex.mWidth;
+
+		int width, height, channels;
+		unsigned char* pixels = stbi_load_from_memory(reinterpret_cast<const unsigned char*>(aiTex.pcData), size, &width, &height, &channels, 4);
+    
+		const std::vector<char> data(pixels, pixels + width * height * 4);
+
+		importedTexture = TextureImporter::ImportFromMemory(file,
+			textureName,
+			myVersion,
+			reinterpret_cast<const std::vector<char>&>(data), 
+			static_cast<uint32>(width),
+			static_cast<uint32>(height));
+
+		if (importedTexture.has_value())
+		{
+			returnValue.emplace_back(std::move(*importedTexture));
+		}
+		else
+		{
+			LOG(LogAssets, Error, "Failed to import {}", textureName);
+			anyErrors = true;
+		}
+
+		textures.emplace_back(std::make_shared<const Texture>(textureName));
+	}
 
 	for (uint32 i = 0; i < ***REMOVED***ne->mNumMaterials; i++)
 	{
@@ -75,27 +126,27 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 		aiString textureName{};
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_BASE_COLOR, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mBaseColorTexture{};
 		{
-			engineMat.mBaseColorTexture = std::make_shared<const Texture>(textureName.C_Str());
+			engineMat.mBaseColorTexture = textures[atoi(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_NORMALS, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mNormalTexture{};
 		{
-			engineMat.mNormalTexture = std::make_shared<const Texture>(textureName.C_Str());
+			engineMat.mNormalTexture = textures[atoi(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_AMBIENT_OCCLUSION, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mOcclusionTexture{};
 		{
-			engineMat.mOcclusionTexture = std::make_shared<const Texture>(textureName.C_Str());
+			engineMat.mOcclusionTexture = textures[atoi(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mMetallicRoughnessTexture{};
 		{
-			engineMat.mMetallicRoughnessTexture = std::make_shared<const Texture>(textureName.C_Str());
+			engineMat.mMetallicRoughnessTexture = textures[atoi(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_EMISSIVE, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mEmissiveTexture{};
 		{
-			engineMat.mEmissiveTexture = std::make_shared<const Texture>(textureName.C_Str());
+			engineMat.mEmissiveTexture = textures[atoi(textureName.C_Str())];
 		}
 
 		returnValue.emplace_back(MaterialImporter::Import(file, myVersion, engineMat));
