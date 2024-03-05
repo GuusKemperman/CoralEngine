@@ -4,14 +4,16 @@
 #include "Components/UtililtyAi/EnemyAiControllerComponent.h"
 #include "World/Registry.h"
 #include "World/World.h"
+#include "World/WorldRenderer.h"
+#include "Meta/MetaType.h"
 
-void Engine::UtilityAiSystem::Update(World& world, float dt)
+void Engine::UtilityAiSystem::Update(World& world, float)
 {
 	const auto& enemyAIControllerView = world.GetRegistry().View<EnemyAiControllerComponent>();
 
 	for (auto [enemyAIControllerID, currentAIController] : enemyAIControllerView.each())
 	{
-		currentAIController.UpdateState();
+		currentAIController.UpdateState(world, enemyAIControllerID);
 	}
 }
 

@@ -8,8 +8,23 @@ Engine::EnemyAiControllerComponent::EnemyAiControllerComponent()
 {
 }
 
-void Engine::EnemyAiControllerComponent::UpdateState()
+void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity enemyID)
 {
+	Registry& reg = world.GetRegistry();
+
+	for (auto&& [typeHash, storage] : reg.Storage())
+	{
+		const MetaType* const type = MetaManager::Get().TryGetType(typeHash);
+
+		if (type == nullptr)
+		{
+			continue;
+		}
+
+		if (storage.contains(enemyID))
+		{
+		}
+	}
 }
 
 Engine::MetaType Engine::EnemyAiControllerComponent::Reflect()
