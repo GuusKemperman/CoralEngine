@@ -1651,8 +1651,18 @@
     <None Include="external\imgui\.editorconfig" />
   </ItemGroup>
   <ItemGroup>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBR_p.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBR_vv.pssl" />
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBR_p.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBR_vv.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
