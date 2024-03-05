@@ -40,7 +40,6 @@ namespace Engine
 
         friend ReflectAccess;
         static MetaType Reflect();
-        REFLECT_AT_START_UP(StaticMesh);
 
     private:
         bool LoadMesh(const char* indices, unsigned int indexCount, unsigned int size_of_index_type, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount);

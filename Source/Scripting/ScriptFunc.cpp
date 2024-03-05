@@ -12,6 +12,7 @@
 #include "Assets/Script.h"
 #include "Core/AssetManager.h"
 #include "Core/VirtualMachine.h"
+#include "Scripting/ScriptEvents.h"
 
 namespace Engine::Internal
 {
@@ -43,6 +44,18 @@ Engine::ScriptFunc::ScriptFunc(const Script& script, const std::string_view name
 	mTypeIdOfScript(Name::HashString(script.GetName()))
 {}
 
+Engine::ScriptFunc::ScriptFunc(const Script& script, const ScriptEvent& event) :
+	mName(event.mBasedOnEvent.get().mName),
+	mNameOfScriptAsset(script.GetName()),
+	mTypeIdOfScript(Name::HashString(script.GetName())),
+	mBasedOnEvent(&event)
+{
+	for (const MetaFuncNamedParam& param : event.mParamsToShowToUser)
+	{
+		mParams.emplace_back(param.mTypeTraits, param.mName);
+	}
+}
+
 Engine::ScriptFunc::~ScriptFunc()
 {
 	for (ScriptNode& node : mNodes)
@@ -53,49 +66,57 @@ Engine::ScriptFunc::~ScriptFunc()
 
 void Engine::ScriptFunc::DeclareMetaFunc(MetaType& addToType)
 {
-	std::vector<MetaFuncNamedParam> metaParams{};
+	MetaFunc* declaredFunc{};
 
-	for (ScriptVariableTypeData& scriptParam : GetParameters(false))
+	if (IsEvent())
 	{
-		scriptParam.RefreshTypePointer();
-
-		if (scriptParam.TryGetType() == nullptr)
-		{
-			VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, scriptParam.GetTypeName() });
-			continue;
-		}
-
-		metaParams.emplace_back(TypeTraits{ scriptParam.TryGetType()->GetTypeId(), scriptParam.GetTypeForm() }, scriptParam.GetName());
+		declaredFunc = &mBasedOnEvent->Declare(TypeTraits{ mTypeIdOfScript, TypeForm::Ref }, addToType);
 	}
-
-	MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
-
-	if (mReturns.has_value())
+	else
 	{
-		if (mReturns->TryGetType() == nullptr)
+		std::vector<MetaFuncNamedParam> metaParams{};
+
+		for (ScriptVariableTypeData& scriptParam : GetParameters(false))
 		{
-			VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, mReturns->GetTypeName() });
+			scriptParam.RefreshTypePointer();
+
+			if (scriptParam.TryGetType() == nullptr)
+			{
+				VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, scriptParam.GetTypeName() });
+				continue;
+			}
+
+			metaParams.emplace_back(TypeTraits{ scriptParam.TryGetType()->GetTypeId(), scriptParam.GetTypeForm() }, scriptParam.GetName());
 		}
-		else
+
+		MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
+
+		if (mReturns.has_value())
 		{
-			metaReturn = { { mReturns->TryGetType()->GetTypeId(), mReturns->GetTypeForm() }, mReturns->GetTypeName() };
+			if (mReturns->TryGetType() == nullptr)
+			{
+				VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, mReturns->GetTypeName() });
+			}
+			else
+			{
+				metaReturn = { { mReturns->TryGetType()->GetTypeId(), mReturns->GetTypeForm() }, mReturns->GetTypeName() };
+			}
 		}
+
+		declaredFunc = &addToType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
+			{
+				return { "There were unresolved compilation errors" };
+			},
+			mName,
+			metaReturn,
+			metaParams
+		);
+
+		declaredFunc->GetProperties().Set(Props::sIsScriptPure, IsPure()).Add(Props::sIsScriptableTag);;
+		
 	}
-
-	MetaFunc& func = addToType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
-		{
-			return { "There were unresolved compilation errors" };
-		},
-		mName,
-		metaReturn,
-		metaParams
-	);
-
-	MetaProps& properties = func.GetProperties();
-
-	properties.Add(Props::sIsScriptableTag);
-	properties.Set(Script::sWasTypeCreatedFromScriptProperty, true);
-	properties.Set(Props::sIsScriptPure, IsPure());
+	
+	declaredFunc->GetProperties().Set(Script::sWasTypeCreatedFromScriptProperty, true);
 }
 
 void Engine::ScriptFunc::DefineMetaFunc(MetaFunc& func)
@@ -104,9 +125,6 @@ void Engine::ScriptFunc::DefineMetaFunc(MetaFunc& func)
 
 	// Get a reference to our script to prevent unloading
 	std::shared_ptr<const Script> ourScript = AssetManager::Get().TryGetAsset<Script>(mNameOfScriptAsset);
-	Expected<std::reference_wrapper<const ScriptNode>, std::string> possibleFirstNode = GetFirstNode();
-	Expected<const FunctionEntryScriptNode*, std::string> possibleEntryNode = GetEntryNode();
-
 
 	if (ourScript == nullptr)
 	{
@@ -116,14 +134,24 @@ mNameOfScriptAsset);
 		return;
 	}
 
-	ASSERT(!possibleFirstNode.HasError() && "Should've been part of the compilation errors");
-	ASSERT(!possibleEntryNode.HasError() && "Should've been part of the compilation errors");
+	if (IsEvent())
+	{
+		mBasedOnEvent->Define(func, *this, ourScript);
+	}
+	else
+	{
+		Expected<std::reference_wrapper<const ScriptNode>, std::string> possibleFirstNode = GetFirstNode();
+		Expected<const FunctionEntryScriptNode*, std::string> possibleEntryNode = GetEntryNode();
 
-	func.RedirectFunction([this, ourScript, firstNode = possibleFirstNode.GetValue(), entry = possibleEntryNode.GetValue()]
-	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
-		{
-			return CallAccess::ExecuteScriptFunction(args, rvoBuffer, *this, firstNode, entry);
-		});
+		ASSERT(!possibleFirstNode.HasError() && "Should've been part of the compilation errors");
+		ASSERT(!possibleEntryNode.HasError() && "Should've been part of the compilation errors");
+
+		func.RedirectFunction([this, ourScript, firstNode = possibleFirstNode.GetValue(), entry = possibleEntryNode.GetValue()]
+		(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+			{
+				return VirtualMachine::Get().ExecuteScriptFunction(args, rvoBuffer, *this, firstNode, entry);
+			});
+	}
 }
 
 std::vector<std::reference_wrapper<Engine::ScriptLink>> Engine::ScriptFunc::GetAllLinksConnectedToPin(PinId id)
@@ -164,7 +192,7 @@ std::vector<Engine::ScriptVariableTypeData> Engine::ScriptFunc::GetParameters(bo
 		&& !ignoreObjectInstanceIfMemberFunction)
 	{
 		static_assert(Script::sIsTypeIdTheSameAsNameHash);
-		params.emplace_back(TypeTraits{ Name::HashString(mNameOfScriptAsset), TypeForm::Ref });
+		params.emplace_back(TypeTraits{ mTypeIdOfScript, TypeForm::Ref });
 	}
 
 	params.insert(params.end(), mParams.begin(), mParams.end());
@@ -193,6 +221,17 @@ void Engine::ScriptFunc::CollectErrors(ScriptErrorInserter inserter, const Scrip
 
 			inserter = { ScriptError::Type::NameNotUnique, *this };
 		}
+	}
+
+	// Check if our name is not an event
+	if (!IsEvent()
+		&& std::any_of(sAllScriptableEvents.begin(), sAllScriptableEvents.end(),
+			[ourName = mName](const ScriptEvent& event)
+			{
+				return event.mBasedOnEvent.get().mName == ourName;
+			}))
+	{ 
+		inserter = { ScriptError::Type::NameNotUnique, *this, Format("Name {} is reserved for the event of the same name", mName) };
 	}
 
 	{ // Check if the types we are using are still valid
@@ -624,16 +663,23 @@ bool Engine::Internal::IsNull(const ScriptNode& node)
 
 void Engine::ScriptFunc::SerializeTo(BinaryGSONObject& object) const
 {
-	object.AddGSONMember("name") << mName;
-
-	if (mReturns.has_value())
+	if (IsEvent())
 	{
-		object.AddGSONMember("returnInfo") << mReturns;
+		object.AddGSONMember("event") << std::string{ mBasedOnEvent->mBasedOnEvent.get().mName };
+	}
+	else
+	{
+		if (mReturns.has_value())
+		{
+			object.AddGSONMember("returnInfo") << mReturns;
+		}
+
+		object.AddGSONMember("paramsInfo") << mParams;
+		object.AddGSONMember("isPure") << mIsPure;
+		object.AddGSONMember("isStatic") << mIsStatic;
 	}
 
-	object.AddGSONMember("paramsInfo") << mParams;
-	object.AddGSONMember("isPure") << mIsPure;
-	object.AddGSONMember("isStatic") << mIsStatic;
+	object.AddGSONMember("name") << mName;
 
 	BinaryGSONObject& nodes = object.AddGSONObject("nodes");
 
@@ -652,40 +698,21 @@ void Engine::ScriptFunc::SerializeTo(BinaryGSONObject& object) const
 
 std::optional<Engine::ScriptFunc> Engine::ScriptFunc::DeserializeFrom(const BinaryGSONObject& object, const Script& owningScript, const uint32 version)
 {
-	const BinaryGSONMember* name = object.TryGetGSONMember("name");
-	const BinaryGSONMember* serializedReturn = object.TryGetGSONMember("returnInfo");
-	const BinaryGSONMember* serializedParams = object.TryGetGSONMember("paramsInfo");
-	const BinaryGSONMember* isPure = object.TryGetGSONMember("isPure");
-	const BinaryGSONMember* isStatic = object.TryGetGSONMember("isStatic");
 	const BinaryGSONObject* linksObj = object.TryGetGSONObject("links");
 	const BinaryGSONObject* nodesObj = object.TryGetGSONObject("nodes");
+	const BinaryGSONMember* serializedName = object.TryGetGSONMember("name");
 
-	if (name == nullptr
-		|| serializedParams == nullptr
+	if (serializedName == nullptr
 		|| linksObj == nullptr
-		|| nodesObj == nullptr
-		|| isPure == nullptr
-		|| isStatic == nullptr)
+		|| nodesObj == nullptr)
 	{
 		UNLIKELY;
 		LOG(LogAssets, Warning, "Failed to deserialize script function, missing values");
 		return std::nullopt;
 	}
 
-	std::string nameAsStr{};
-	*name >> nameAsStr;
-
-	ScriptFunc func{ owningScript, nameAsStr };
-
-	*isPure >> func.mIsPure;
-	*isStatic >> func.mIsStatic;
-
-	if (serializedReturn != nullptr)
-	{
-		*serializedReturn >> func.mReturns;
-	}
-
-	*serializedParams >> func.mParams;
+	std::string name{};
+	*serializedName >> name;
 
 	std::vector<std::unique_ptr<ScriptNode>> nodes{};
 	std::vector<ScriptLink> links{};
@@ -696,7 +723,7 @@ std::optional<Engine::ScriptFunc> Engine::ScriptFunc::DeserializeFrom(const Bina
 		if (nodes.emplace_back(ScriptNode::DeserializeFrom(node, std::back_inserter(pins), version)) == nullptr)
 		{
 			UNLIKELY;
-				return std::nullopt;
+			return std::nullopt;
 		}
 	}
 
@@ -707,15 +734,71 @@ std::optional<Engine::ScriptFunc> Engine::ScriptFunc::DeserializeFrom(const Bina
 		if (!deserializedLink.has_value())
 		{
 			UNLIKELY;
-				return std::nullopt;
+			return std::nullopt;
 		}
 
 		links.emplace_back(std::move(*deserializedLink));
 	}
 
-	func.AddCondensed(std::move(nodes), std::move(links), std::move(pins));
+	std::optional<ScriptFunc> returnValue{};
+	const BinaryGSONMember* serializedEventName = object.TryGetGSONMember("event");
 
-	return func;
+	if (serializedEventName != nullptr)
+	{
+		std::string eventName{};
+		*serializedEventName >> eventName;
+
+		for (const ScriptEvent& event : sAllScriptableEvents)
+		{
+			if (event.mBasedOnEvent.get().mName != eventName)
+			{
+				continue;
+			}
+
+			returnValue.emplace(owningScript, event);
+			break;
+		}
+
+		if (!returnValue.has_value())
+		{
+			UNLIKELY;
+			LOG(LogAssets, Warning, "Event {} does not exist anymore, {} will no longer have this function", eventName, owningScript.GetName());
+			return std::nullopt;
+		}
+	}
+	else
+	{
+		const BinaryGSONMember* serializedReturn = object.TryGetGSONMember("returnInfo");
+		const BinaryGSONMember* serializedParams = object.TryGetGSONMember("paramsInfo");
+		const BinaryGSONMember* isPure = object.TryGetGSONMember("isPure");
+		const BinaryGSONMember* isStatic = object.TryGetGSONMember("isStatic");
+
+		if (serializedName == nullptr
+			|| serializedParams == nullptr
+			|| isPure == nullptr
+			|| isStatic == nullptr)
+		{
+			UNLIKELY;
+			LOG(LogAssets, Warning, "Failed to deserialize script function, missing values");
+			return std::nullopt;
+		}
+
+		returnValue.emplace(owningScript, name);
+
+		*isPure >> returnValue->mIsPure;
+		*isStatic >> returnValue->mIsStatic;
+
+		if (serializedReturn != nullptr)
+		{
+			*serializedReturn >> returnValue->mReturns;
+		}
+
+		*serializedParams >> returnValue->mParams;
+	}
+
+	returnValue->AddCondensed(std::move(nodes), std::move(links), std::move(pins));
+
+	return returnValue;
 }
 
 Engine::Span<Engine::ScriptPin> Engine::ScriptFunc::AllocPins(NodeId calledFrom,

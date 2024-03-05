@@ -8,7 +8,7 @@
 
 void Engine::CameraComponent::UpdateView(const glm::vec3 position, const glm::vec3 forward, const glm::vec3 up, bool recalulateViewProjection)
 {
-	mView = glm::lookAtLH(position, position + forward, up);
+	mView = glm::lookAt(position, position + forward, up);
 
 	if (recalulateViewProjection)
 	{
@@ -28,7 +28,7 @@ void Engine::CameraComponent::UpdateProjection(const glm::vec2 viewportSize, boo
 
 void Engine::CameraComponent::UpdateProjection(const float aspectRatio, bool recalculateViewProjection)
 {
-	mProjection = glm::perspectiveLH(mFOV, aspectRatio, mNear, mFar);
+	mProjection = glm::perspective(mFOV, aspectRatio, mNear, mFar);
 
 	if (recalculateViewProjection)
 	{
