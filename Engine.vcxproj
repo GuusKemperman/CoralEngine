@@ -882,9 +882,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
-    <ClCompile Include="Source\Components\Physics2D\PhysicsBody2DComponent.cpp" />
-    <ClCompile Include="Source\Components\Physics2D\PolygonColliderComponent.cpp" />
     <ClCompile Include="Source\Scripting\ScriptEvents.cpp" />
     <ClCompile Include="Source\Components\PointLightComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\Edge.cpp" />
