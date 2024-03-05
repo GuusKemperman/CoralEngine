@@ -23,7 +23,9 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	Logger::StartUp();
 	Device::StartUp();
 	Input::StartUp();
+#ifdef PLATFORM_WINDOWS
 	Device::Get().CreateImguiContext();
+#endif
 	MetaManager::StartUp();
 	AssetManager::StartUp();
 	VirtualMachine::StartUp();

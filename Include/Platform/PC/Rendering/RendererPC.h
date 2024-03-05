@@ -84,6 +84,5 @@ namespace Engine
     private:
         friend ReflectAccess;
         static MetaType Reflect();
-        REFLECT_AT_START_UP(Renderer);
     };
 }

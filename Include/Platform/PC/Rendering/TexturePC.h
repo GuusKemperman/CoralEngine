@@ -29,6 +29,5 @@ namespace Engine
 			int heapSlot = 0;
 			friend ReflectAccess;
 			static MetaType Reflect();
-			REFLECT_AT_START_UP(Texture);
 	};
 }
