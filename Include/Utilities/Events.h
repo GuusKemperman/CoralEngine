@@ -102,6 +102,13 @@ namespace Engine
 	static constexpr float sFixedTickEventStepSize = 0.2f;
 
 	/**
+	 * \brief Called just before the C++ destructor. 
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	static constexpr Event<void(World&, entt::entity)> sDestructEvent{ "OnDestruct" };
+
+	/**
 	 * \brief Binds an event to a type.
 	 * \tparam Class The class that is being reflected.
 	 * \tparam Args The arguments of the events. Note that each event also requires the first argument to be Class& (see Class template argument).

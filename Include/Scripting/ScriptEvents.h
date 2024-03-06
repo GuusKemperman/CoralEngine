@@ -63,6 +63,16 @@ namespace Engine
 		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
 	};
 
+	class ScriptDestructEvent final :
+		public ScriptEvent
+	{
+	public:
+		ScriptDestructEvent();
+
+		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
+		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
+	};
+
 	class ScriptAITickEvent final :
 		public ScriptEvent
 	{
@@ -97,13 +107,15 @@ namespace Engine
 	static const ScriptOnBeginPlayEvent sOnBeginPlayScriptEvent{};
 	static const ScriptTickEvent sOnTickScriptEvent{};
 	static const ScriptFixedTickEvent sOnFixedTickScriptEvent{};
+	static const ScriptDestructEvent sOnDestructScriptEvent{};
 	static const ScriptAITickEvent sAITickScriptEvent{};
 	static const ScriptAIEvaluateEvent sAIEvaluateScriptEvent{};
 	static const ScriptAbilityActivateEvent sScriptAbilityActivateEvent{};
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 7> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 8> sAllScriptableEvents
 	{
 		sOnConstructScriptEvent,
+		sOnDestructScriptEvent,
 		sOnBeginPlayScriptEvent,
 		sOnTickScriptEvent,
 		sOnFixedTickScriptEvent,

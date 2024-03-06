@@ -139,6 +139,9 @@ namespace Engine
 		
 		void AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system);
 
+		template <typename Component>
+		static void DestroyCallback(entt::registry&, entt::entity entity);
+
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
 		friend class World;
 		std::reference_wrapper<World> mWorld; 
@@ -196,6 +199,15 @@ namespace Engine
 					return ComponentEvents{};
 				}
 			}();
+
+		if constexpr (sIsReflectable<ComponentType>)
+		{
+			if (const_cast<const Registry&>(*this).Storage<ComponentType>() == nullptr
+				&& TryGetEvent(*events.mType, sDestructEvent) != nullptr)
+			{
+				mRegistry.on_destroy<ComponentType>().template connect<&DestroyCallback<ComponentType>>();
+			}
+		}
 
 		static constexpr bool isEmpty = entt::component_traits<ComponentType>::page_size == 0;
 
@@ -263,16 +275,46 @@ namespace Engine
 		return storage != nullptr && storage->contains(entity);
 	}
 
+	template <typename Component>
+	void Registry::DestroyCallback(entt::registry&, entt::entity entity)
+	{
+		static const MetaType& metaType = MetaManager::Get().GetType<Component>();
+		static const MetaFunc& destroyEvent = *TryGetEvent(metaType, sDestructEvent);
+
+		if (World::TryGetWorldAtTopOfStack() == nullptr)
+		{
+			UNLIKELY;
+			LOG(LogWorld, Error, "A componentw as destroyed from a function that did not push/pop a world. The destruct event cannot be invoked. Trace callstack and figure out where to place Push/PopWorld");
+			return;
+		}
+
+		World& world = *World::TryGetWorldAtTopOfStack();
+
+		if constexpr (entt::component_traits<Component>::page_size == 0)
+		{
+			destroyEvent.InvokeUncheckedUnpacked(world, entity);
+		}
+		else
+		{
+			Component& component = world.GetRegistry().Get<Component>(entity);
+			destroyEvent.InvokeUncheckedUnpacked(component, world, entity);
+		}
+	}
+
 	template<typename ComponentType>
 	void Registry::RemoveComponent(entt::entity fromEntity)
 	{
+		World::PushWorld(mWorld);
 		mRegistry.erase<ComponentType>(fromEntity);
+		World::PopWorld();
 	}
 
 	template<typename ComponentType>
 	void Registry::RemoveComponentIfEntityHasIt(entt::entity fromEntity)
 	{
+		World::PushWorld(mWorld);
 		mRegistry.remove<ComponentType>(fromEntity);
+		World::PopWorld();
 	}
 
 	template<typename It>

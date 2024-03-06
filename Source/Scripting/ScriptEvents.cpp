@@ -195,6 +195,56 @@ void Engine::ScriptFixedTickEvent::Define(MetaFunc& declaredFunc, const ScriptFu
 		});
 }
 
+Engine::ScriptDestructEvent::ScriptDestructEvent() :
+	ScriptEvent(sDestructEvent, {}, std::nullopt)
+{
+}
+
+Engine::MetaFunc& Engine::ScriptDestructEvent::Declare(TypeTraits selfTraits, MetaType& toType) const
+{
+	static_assert(std::is_same_v<const Event<void(World&, entt::entity)>, decltype(sDestructEvent)>);
+	std::vector<MetaFuncNamedParam> metaParams
+	{
+		{ selfTraits },
+		{ MakeTypeTraits<World&>() },
+		{ MakeTypeTraits<entt::entity>() },
+	};
+
+	MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
+
+	MetaFunc& func = toType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
+		{
+			return { "There were unresolved compilation errors" };
+		},
+		mBasedOnEvent.get().mName,
+		metaReturn,
+		metaParams
+	);
+
+	func.GetProperties().Add(Internal::sIsEventProp);
+
+	return func;
+}
+
+void Engine::ScriptDestructEvent::Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc,
+	std::shared_ptr<const Script> script) const
+{
+	declaredFunc.RedirectFunction([&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			World& world = *args[1].As<World>();
+			World::PushWorld(world);
+
+			// The component already has the world
+			// and it's owner
+			Span<MetaAny, 1> scriptArgs{ &args[0], 1 };
+			FuncResult result = VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+
+			World::PopWorld();
+			return result;
+		});
+}
+
 Engine::ScriptAITickEvent::ScriptAITickEvent() :
 	ScriptEvent(sAITickEvent, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt)
 {

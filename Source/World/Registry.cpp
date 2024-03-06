@@ -67,6 +67,7 @@ namespace Engine
 		std::reference_wrapper<const MetaType> mType;
 		const MetaFunc* mOnConstruct{};
 		const MetaFunc* mOnBeginPlay{};
+		const MetaFunc* mOnDestruct{};
 
 		char* mData{};
 		size_t mCapacity{};
@@ -231,12 +232,14 @@ void Engine::Registry::DestroyAlongWithChildren(entt::entity entity)
 
 void Engine::Registry::RemovedDestroyed()
 {
+	World::PushWorld(mWorld);
 	const auto view = View<const IsDestroyedTag>();
 
 	for (const auto [entity] : view.each())
 	{
 		mRegistry.destroy(entity);
 	}
+	World::PopWorld();
 }
 
 Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, const entt::entity toEntity)
@@ -399,7 +402,9 @@ bool Engine::Registry::HasComponent(TypeId componentClassTypeId, entt::entity en
 
 void Engine::Registry::Clear()
 {
+	World::PushWorld(mWorld);
 	mRegistry.clear();
+	World::PopWorld();
 }
 
 std::vector<Engine::Registry::SingleTick> Engine::Registry::GetSortedSystemsToUpdate(const float dt)
@@ -571,10 +576,20 @@ void Engine::AnyStorage::swap_or_move(const std::size_t from, const std::size_t 
 
 void Engine::AnyStorage::pop(basic_iterator first, basic_iterator last)
 {
+	ASSERT(World::TryGetWorldAtTopOfStack() != nullptr);
+	World& world = *World::TryGetWorldAtTopOfStack();
+
 	const MetaType& type = GetType();
 	for (; first != last; ++first)
 	{
-		type.Destruct(element_at(index(*first)).GetData(), false);
+		const entt::entity entity = *first;
+		MetaAny component = element_at(index(entity));
+		if (mOnDestruct != nullptr)
+		{
+			mOnDestruct->InvokeUncheckedUnpacked(component, world, entity);
+		}
+
+		type.Destruct(component.GetData(), false);
 		in_place_pop(first);
 	}
 }

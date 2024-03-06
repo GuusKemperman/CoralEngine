@@ -35,6 +35,7 @@ Engine::World::World(World&& other) noexcept :
 
 Engine::World::~World()
 {
+	mRegistry->Clear();
 	mRegistry.reset();
 	mRenderer.reset();
 }
