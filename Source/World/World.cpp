@@ -35,9 +35,13 @@ Engine::World::World(World&& other) noexcept :
 
 Engine::World::~World()
 {
-	mRegistry->Clear();
-	mRegistry.reset();
-	mRenderer.reset();
+	// Mightve been moved out
+	if (mRegistry != nullptr)
+	{
+		mRegistry->Clear();
+		mRegistry.reset();
+		mRenderer.reset();
+	}
 }
 
 Engine::World& Engine::World::operator=(World&& other) noexcept
