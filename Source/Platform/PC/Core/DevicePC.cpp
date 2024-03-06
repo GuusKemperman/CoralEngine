@@ -397,8 +397,19 @@ void Engine::Device::EndFrame()
     mCommandList->SetDescriptorHeaps(1, &desc_ptr);
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
-    ImGui::UpdatePlatformWindows();
 
+    // Update and Render additional Platform Windows 
+    // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere. 
+    //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly) 
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        GLFWwindow* backup_current_context = glfwGetCurrentContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        glfwMakeContextCurrent(backup_current_context);
+    }
+
+    glfwSwapBuffers(mWindow);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_PRESENT);
 
     SubmitCommands();
@@ -410,7 +421,6 @@ void Engine::Device::EndFrame()
     ImGui::EndFrame();
 
     WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
-
 
    // StartUploadCommands();
 }
