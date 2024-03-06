@@ -32,7 +32,7 @@ void Engine::TransformComponent::OnConstruct(World&, entt::entity owner)
 	mOwner = owner;
 }
 
-void Engine::TransformComponent::OnDeserialize(World& world, const BinaryGSONObject& deserializeFrom, const entt::entity)
+void Engine::TransformComponent::OnDeserialize(World& world, const entt::entity, const BinaryGSONObject& deserializeFrom)
 {
 	entt::entity parentEntity;
 
@@ -45,7 +45,7 @@ void Engine::TransformComponent::OnDeserialize(World& world, const BinaryGSONObj
 	SetParent(parent);
 }
 
-void Engine::TransformComponent::OnSerialize(const World& world, BinaryGSONObject& serializeTo, const entt::entity) const
+void Engine::TransformComponent::OnSerialize(const World&, const entt::entity, BinaryGSONObject& serializeTo) const
 {
 	if (mParent != nullptr)
 	{

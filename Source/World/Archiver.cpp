@@ -22,6 +22,7 @@ namespace Engine
 		const entt::sparse_set& mStorage;
 		const MetaType& mComponentClass;
 		const MetaFunc* mCustomStep;
+		bool mIsCustomStepStatic;
 		MetaAny mComponentDefaultConstructed;
 		std::vector<const MetaFunc*> mEqualityFunctions{};
 		std::vector<const MetaFunc*> mSerializeMemberFunction{};
@@ -197,7 +198,7 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 		ASSERT_LOG(storage->contains(owner), "Should've been created already");
 		MetaAny componentRef{ *componentClass, storage->value(owner), false };
 
-		FuncResult result = (*onComponentDeserialize)(componentRef, additionalSerializedData, owner, registry.GetWorld());
+		FuncResult result = (*onComponentDeserialize)(componentRef, registry.GetWorld(), additionalSerializedData, owner);
 
 		if (result.HasError())
 		{
@@ -366,6 +367,7 @@ std::optional<Engine::ComponentClassSerializeArg> Engine::GetComponentClassSeria
 		storage,
 		*componentClass,
 		onSerialize,
+		onSerialize == nullptr ? false : onSerialize->GetProperties().Has(Props::sIsEventStaticTag),
 		std::move(defaultComponent),
 		std::move(equalityFunctions),
 		std::move(serializeMemberFunctions)
@@ -384,6 +386,7 @@ void Engine::SerializeSingleComponent(const Registry& registry,
 
 	ASSERT(parentObject.GetName() == arg.mComponentClass.GetName());
 
+	// Note that this might be nullptr if it's an empty component
 	MetaAny component = MetaAny{ arg.mComponentClass, const_cast<void*>(arg.mStorage.value(entity)), false };
 	BinaryGSONObject& serializedComponent = parentObject.AddGSONObject(ToBinary(entity));
 
@@ -476,7 +479,9 @@ void Engine::SerializeSingleComponent(const Registry& registry,
 	{
 		BinaryGSONObject& customStepObject = serializedComponent.AddGSONObject("");
 
-		FuncResult result = (*arg.mCustomStep)(component, customStepObject, entity, registry.GetWorld());
+		FuncResult result = arg.mIsCustomStepStatic ? 
+			(*arg.mCustomStep)(registry.GetWorld(), customStepObject, entity) :
+			(*arg.mCustomStep)(component, registry.GetWorld(), customStepObject, entity);
 
 		if (customStepObject.IsEmpty()
 			|| result.HasError())

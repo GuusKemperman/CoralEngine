@@ -540,11 +540,11 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 			}
 		}
 
-		const MetaFunc* const onInspect = componentClass.TryGetFunc(sComponentCustomOnInspectFuncName);
+		const MetaFunc* const onInspect = TryGetEvent(componentClass, sInspectEvent);
 
 		if (onInspect != nullptr)
 		{
-			FuncResult result = (*onInspect)(reg, selectedEntities);
+			FuncResult result = (*onInspect)(world, selectedEntities);
 
 			if (result.HasError())
 			{

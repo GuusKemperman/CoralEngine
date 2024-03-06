@@ -206,10 +206,10 @@ namespace Engine
 
 		MetaFunc* eventFunc{};
 
-		if constexpr (entt::component_traits<Class>::page_size != 0
+		if constexpr (entt::component_traits<std::remove_const_t<Class>>::page_size != 0
 			&& !IsAlwaysStatic)
 		{
-			ASSERT(type.GetTypeId() == MakeTypeId<Class>());
+			ASSERT(type.GetTypeId() == MakeTypeId<std::remove_const_t<Class>>());
 
 			eventFunc = &type.AddFunc(std::function<Ret(Class&, Args...)>{ std::forward<Func>(func) }, event.mName);
 		}
@@ -230,7 +230,7 @@ namespace Engine
 	template<typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
 	void BindEvent(MetaType& type, const EventT& event, FuncRet(FuncObj::* func)(FuncParams...) const)
 	{
-		BindEvent<FuncObj>(type, event, func);
+		BindEvent<const FuncObj>(type, event, func);
 	}
 
 	template<typename FuncRet, typename... FuncParams, typename EventT>
