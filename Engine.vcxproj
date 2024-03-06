@@ -1208,7 +1208,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="source\Assets\Importers\StaticMeshImporter.cpp">
+    <ClCompile Include="source\Assets\Importers\ModelImporter.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
@@ -1407,7 +1407,7 @@
     <ClInclude Include="include\Assets\Importers\Importer.h" />
     <ClInclude Include="include\Assets\Importers\MaterialImporter.h" />
     <ClInclude Include="include\Assets\Importers\PrefabImporter.h" />
-    <ClInclude Include="include\Assets\Importers\StaticMeshImporter.h" />
+    <ClInclude Include="include\Assets\Importers\ModelImporter.h" />
     <ClInclude Include="include\Assets\Importers\TextureImporter.h" />
     <ClInclude Include="Include\Assets\Level.h" />
     <ClInclude Include="include\Assets\Material.h" />

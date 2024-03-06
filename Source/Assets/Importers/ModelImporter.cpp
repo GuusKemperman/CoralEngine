@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Assets/Importers/StaticMeshImporter.h"
+#include "Assets/Importers/ModelImporter.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/***REMOVED***ne.h>
@@ -50,7 +50,7 @@ static int GetIndexFromAssimpTextureName(const char* name)
 std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(const std::filesystem::path& file) const
 {
     Assimp::Importer importer{};
-    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
+    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
 
 	if (***REMOVED***ne == nullptr)
 	{
@@ -143,7 +143,12 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 			engineMat.mNormalTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
+		// See if we have an AO texture
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_AMBIENT_OCCLUSION, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mOcclusionTexture{};
+		{
+			engineMat.mOcclusionTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
+		} // AO might be stored in the ORM
+		else if (aiGetMaterialTexture(&aiMat, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &textureName) == aiReturn_SUCCESS)
 		{
 			engineMat.mOcclusionTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
