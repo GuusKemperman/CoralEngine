@@ -4,7 +4,7 @@
 
 namespace Engine
 {
-	class StaticMeshImporter :
+	class ModelImporter :
 		public Importer
 	{
 	public:
@@ -31,7 +31,7 @@ namespace Engine
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(StaticMeshImporter);
+		REFLECT_AT_START_UP(ModelImporter);
 	};
 }
 #endif // EDITOR

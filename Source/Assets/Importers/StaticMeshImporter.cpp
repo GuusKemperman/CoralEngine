@@ -47,7 +47,7 @@ static int GetIndexFromAssimpTextureName(const char* name)
 	return atoi(std::string(name).erase(0, 1).c_str());
 }
 
-std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Import(const std::filesystem::path& file) const
+std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(const std::filesystem::path& file) const
 {
     Assimp::Importer importer{};
     const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
@@ -58,7 +58,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 		return std::optional<std::vector<ImportedAsset>>{};
 	}
 
-	const MetaType* const myType = MetaManager::Get().TryGetType<StaticMeshImporter>();
+	const MetaType* const myType = MetaManager::Get().TryGetType<ModelImporter>();
 	ASSERT(myType != nullptr);
 	
 	const uint32 myVersion = GetClassVersion(*myType);
@@ -77,12 +77,6 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 		const aiTexture& aiTex = ****REMOVED***ne->mTextures[i];
 
 		const std::string textureName = GetTexName(file, i);
-
-		if (AssetManager::Get().TryGetWeakAsset<Texture>(textureName).has_value())
-		{
-			LOG(LogAssets, Message, "Texture {} will not be imported, as there is already a texture with this name", textureName);
-			continue;
-		}
 
 		std::optional<ImportedAsset> importedTexture{};
 
@@ -117,12 +111,6 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 	for (uint32 i = 0; i < ***REMOVED***ne->mNumMaterials; i++)
 	{
 		const aiMaterial& aiMat = ****REMOVED***ne->mMaterials[i];
-
-		if (AssetManager::Get().TryGetWeakAsset<Material>(aiMat.GetName().C_Str()).has_value())
-		{
-			LOG(LogAssets, Message, "Material {} will not be imported, as there is already a material with this name", aiMat.GetName().C_Str());
-			continue;
-		}
 
 		Material engineMat{ GetMaterialName(file, aiMat.GetName().C_Str(), i) };
 
@@ -299,7 +287,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 	return std::optional<std::vector<ImportedAsset>>{};
 }
 
-std::optional<Engine::ImportedAsset> Engine::StaticMeshImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
+std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
     const std::string& name, 
     const uint32 importerVersion, 
     Span<const glm::vec3> positions, 
@@ -319,9 +307,9 @@ std::optional<Engine::ImportedAsset> Engine::StaticMeshImporter::ImportFromMemor
     return std::optional<ImportedAsset>();
 }
 
-Engine::MetaType Engine::StaticMeshImporter::Reflect()
+Engine::MetaType Engine::ModelImporter::Reflect()
 {
-	MetaType type = MetaType{ MetaType::T<StaticMeshImporter>{}, "StaticMeshImporter", MetaType::Base<Importer>{} };
+	MetaType type = MetaType{ MetaType::T<ModelImporter>{}, "ModelImporter", MetaType::Base<Importer>{} };
 
 	// Added tangents
 	SetClassVersion(type, 1);
