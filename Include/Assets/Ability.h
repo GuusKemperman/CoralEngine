@@ -3,6 +3,9 @@
 
 namespace Engine
 {
+	class Texture;
+	class Script;
+
 	class Ability :
 		public Asset
 	{
@@ -22,7 +25,7 @@ namespace Engine
 	private:
         void OnSave(AssetSaveInfo& saveInfo) const override;
 
-		std::string mIconTextureName{};
+		std::shared_ptr<const Texture> mIconTexture{};
 		std::string mDescription{};
 
 		bool mGlobalCooldown = true; // whether this ability takes into account the global cooldown
