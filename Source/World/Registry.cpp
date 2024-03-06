@@ -6,7 +6,6 @@
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/Prefabs/PrefabEntityFactory.h"
 #include "Components/IsDestroyedTag.h"
-#include "Components/NameComponent.h"
 #include "Components/PrefabOriginComponent.h"
 #include "Components/TransformComponent.h"
 #include "World/WorldRenderer.h"
@@ -31,6 +30,8 @@ namespace Engine
 		static bool CanTypeBeUsed(const MetaType& type);
 
 		const MetaType& GetType() const { return mType; }
+		const MetaFunc* GetOnConstruct() const { return mOnConstruct; }
+		const MetaFunc* GetOnBeginPlay() const { return mOnBeginPlay; }
 
 		const void* get_at(std::size_t pos) const override;
 
@@ -61,6 +62,10 @@ namespace Engine
 		void reserve_atleast(size_type cap);
 
 		std::reference_wrapper<const MetaType> mType;
+		const MetaFunc* mOnConstruct{};
+		const MetaFunc* mOnBeginPlay{};
+		const MetaFunc* mOnDestruct{};
+
 		char* mData{};
 		size_t mCapacity{};
 		entt::type_info mTypeInfo;
@@ -224,12 +229,14 @@ void Engine::Registry::DestroyAlongWithChildren(entt::entity entity)
 
 void Engine::Registry::RemovedDestroyed()
 {
+	World::PushWorld(mWorld);
 	const auto view = View<const IsDestroyedTag>();
 
 	for (const auto [entity] : view.each())
 	{
 		mRegistry.destroy(entity);
 	}
+	World::PopWorld();
 }
 
 Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, const entt::entity toEntity)
@@ -255,7 +262,7 @@ Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, c
 
 		storage = Storage(componentClass.GetTypeId());
 
-		AnyStorage* asAnyStorage = static_cast<AnyStorage*>(storage);
+		AnyStorage* const asAnyStorage = static_cast<AnyStorage*>(storage);
 		const auto it = asAnyStorage->try_emplace(toEntity, false, nullptr);
 
 		MetaAny componentToReturn = asAnyStorage->element_at(it.index());
@@ -274,6 +281,22 @@ Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, c
 				LOG(LogScripting, Error, "Expected {}::Owner to be of type entt::entity",
 					componentClass.GetName());
 			}
+		}
+
+		// Call events
+		const MetaFunc* const onConstruct = asAnyStorage->GetOnConstruct();
+
+		if (onConstruct != nullptr)
+		{
+			onConstruct->InvokeUncheckedUnpacked(componentToReturn, GetWorld(), toEntity);
+		}
+		
+		const MetaFunc* const onBeginPlay = asAnyStorage->GetOnBeginPlay();
+
+		if (onBeginPlay != nullptr
+			&& GetWorld().HasBegunPlay())
+		{
+			onBeginPlay->InvokeUncheckedUnpacked(componentToReturn, GetWorld(), toEntity);
 		}
 
 		return componentToReturn;
@@ -376,7 +399,9 @@ bool Engine::Registry::HasComponent(TypeId componentClassTypeId, entt::entity en
 
 void Engine::Registry::Clear()
 {
+	World::PushWorld(mWorld);
 	mRegistry.clear();
+	World::PopWorld();
 }
 
 std::vector<Engine::Registry::SingleTick> Engine::Registry::GetSortedSystemsToUpdate(const float dt)
@@ -479,6 +504,8 @@ void Engine::Registry::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, 
 Engine::AnyStorage::AnyStorage(const MetaType& type) :
 	BaseType(GetTypeInfo(), entt::deletion_policy::in_place),
 	mType(type),
+	mOnConstruct(TryGetEvent(type, sConstructEvent)),
+	mOnBeginPlay(TryGetEvent(type, sBeginPlayEvent)),
 	mTypeInfo(type.GetTypeId(), type.GetTypeInfo(), type.GetName())
 {
 	ASSERT(CanTypeBeUsed(type));
@@ -546,10 +573,20 @@ void Engine::AnyStorage::swap_or_move(const std::size_t from, const std::size_t 
 
 void Engine::AnyStorage::pop(basic_iterator first, basic_iterator last)
 {
+	ASSERT(World::TryGetWorldAtTopOfStack() != nullptr);
+	World& world = *World::TryGetWorldAtTopOfStack();
+
 	const MetaType& type = GetType();
 	for (; first != last; ++first)
 	{
-		type.Destruct(element_at(index(*first)).GetData(), false);
+		const entt::entity entity = *first;
+		MetaAny component = element_at(index(entity));
+		if (mOnDestruct != nullptr)
+		{
+			mOnDestruct->InvokeUncheckedUnpacked(component, world, entity);
+		}
+
+		type.Destruct(component.GetData(), false);
 		in_place_pop(first);
 	}
 }
