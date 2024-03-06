@@ -4,11 +4,9 @@
 #include <stack>
 
 #include "Components/ComponentFiler.h"
-#include "Components/IsDestroyedTag.h"
 #include "Components/NameComponent.h"
 #include "Meta/MetaProps.h"
 #include "World/Registry.h"
-#include "World/Archiver.h"
 #include "World/WorldRenderer.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
@@ -75,7 +73,46 @@ void Engine::World::BeginPlay()
 
 	// Reset the total time elapsed, deltaTime, etc
 	mTime = {};
-	LOG(LogCore, Verbose, "World has just begun play");
+	LOG(LogCore, Verbose, "World will begin play");
+
+	for (auto&& [typeHash, storage] : mRegistry->Storage())
+	{
+		const MetaType* const metaType = MetaManager::Get().TryGetType(typeHash);
+
+		if (metaType == nullptr)
+		{
+			continue;
+		}
+
+		const MetaFunc* const beginPlayEvent = TryGetEvent(*metaType, sBeginPlayEvent);
+
+		if (beginPlayEvent == nullptr)
+		{
+			continue;
+		}
+
+		const bool isStatic = beginPlayEvent->GetProperties().Has(Props::sIsEventStaticTag);
+
+		for (const entt::entity entity : storage)
+		{
+			// Tombstone check
+			if (!storage.contains(entity))
+			{
+				continue;
+			}
+
+			if (isStatic)
+			{
+				beginPlayEvent->InvokeCheckedUnpacked(*this, entity);
+			}
+			else
+			{
+				MetaAny component{ *metaType, storage.value(entity), false };
+				beginPlayEvent->InvokeCheckedUnpacked(component, *this, entity);
+			}
+		}
+	}
+
 }
 
 void Engine::World::EndPlay()

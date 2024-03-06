@@ -174,7 +174,6 @@ namespace Engine
 	template<typename ComponentType, typename ...AdditonalArgs>
 	decltype(auto) Registry::AddComponent(const entt::entity toEntity, AdditonalArgs && ...additionalArgs)
 	{
-
 		struct ComponentEvents
 		{
 			const MetaType* mType{};

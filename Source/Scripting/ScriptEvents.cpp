@@ -3,6 +3,7 @@
 
 #include "Core/VirtualMachine.h"
 #include "Scripting/ScriptFunc.h"
+#include "World/World.h"
 
 Engine::ScriptEvent::ScriptEvent(const EventBase& event, std::vector<MetaFuncNamedParam>&& params, std::optional<MetaFuncNamedParam>&& ret) :
 	mBasedOnEvent(event),
@@ -21,9 +22,10 @@ Engine::MetaFunc& Engine::ScriptOnConstructEvent::Declare(TypeTraits selfTraits,
 	static_assert(std::is_same_v<const Event<void(World&, entt::entity)>, decltype(sConstructEvent)>);
 	std::vector<MetaFuncNamedParam> metaParams
 	{
-		{ selfTraits }
+		{ selfTraits },
+		{ MakeTypeTraits<World&>() },
+		{ MakeTypeTraits<entt::entity>() },
 	};
-
 	MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
 
 	MetaFunc& func = toType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
@@ -44,12 +46,16 @@ void Engine::ScriptOnConstructEvent::Define(MetaFunc& declaredFunc, const Script
 	std::shared_ptr<const Script> script) const
 {
 	declaredFunc.RedirectFunction([&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
-	(MetaFunc::DynamicArgs, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
 		{
-			// The component already has the world
-			// and it's owner
-			Span<MetaAny, 0> scriptArgs{};
-			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+			World& world = *args[1].As<World>();
+			World::PushWorld(world);
+
+			Span<MetaAny, 1> scriptArgs{ &args[0], 1 };
+			FuncResult result = VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+
+			World::PopWorld();
+			return result;
 		});
 }
 
@@ -63,7 +69,9 @@ Engine::MetaFunc& Engine::ScriptOnBeginPlayEvent::Declare(TypeTraits selfTraits,
 	static_assert(std::is_same_v<const Event<void(World&, entt::entity)>, decltype(sBeginPlayEvent)>);
 	std::vector<MetaFuncNamedParam> metaParams
 	{
-		{ selfTraits }
+		{ selfTraits },
+		{ MakeTypeTraits<World&>() },
+		{ MakeTypeTraits<entt::entity>() },
 	};
 
 	MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
@@ -86,12 +94,18 @@ void Engine::ScriptOnBeginPlayEvent::Define(MetaFunc& declaredFunc, const Script
 	std::shared_ptr<const Script> script) const
 {
 	declaredFunc.RedirectFunction([&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
-	(MetaFunc::DynamicArgs, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
 		{
+			World& world = *args[1].As<World>();
+			World::PushWorld(world);
+
 			// The component already has the world
 			// and it's owner
-			Span<MetaAny, 0> scriptArgs{};
-			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+			Span<MetaAny, 1> scriptArgs{ &args[0], 1 };
+			FuncResult result = VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+
+			World::PopWorld();
+			return result;
 		});
 }
 

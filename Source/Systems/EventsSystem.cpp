@@ -12,7 +12,6 @@ namespace Engine
 	static void CallEvent(World& world, const EventT& event, Functor&& functor);
 }
 
-
 void Engine::TickSystem::Update(World& world, float dt)
 {
 	struct TickFunctor

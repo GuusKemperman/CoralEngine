@@ -86,6 +86,8 @@ Engine::MetaType Engine::EventTestingComponent::Reflect()
 
 	type.AddField(&EventTestingComponent::mNumOfTicks, "mNumOfTicks");
 	type.AddField(&EventTestingComponent::mNumOfFixedTicks, "mNumOfFixedTicks");
+	type.AddField(&EventTestingComponent::mNumOfConstructs, "mNumOfConstructs");
+	type.AddField(&EventTestingComponent::mNumOfBeginPlays, "mNumOfBeginPlays");
 
 	BindEvent(type, sConstructEvent, &EventTestingComponent::OnConstruct);
 	BindEvent(type, sBeginPlayEvent, &EventTestingComponent::OnBeginPlay);

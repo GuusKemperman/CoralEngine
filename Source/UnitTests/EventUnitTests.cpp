@@ -75,7 +75,7 @@ namespace Engine
 		world.GetRegistry().AddComponent<EmptyEventTestingComponent>(owner);
 
 		const MetaType* const unitTestScript = GetUnitTestScript();
-		if (unitTestScript != nullptr)
+		if (unitTestScript == nullptr)
 		{
 			LOG(LogUnitTests, Error, "No unit test script");
 			return entt::null;
