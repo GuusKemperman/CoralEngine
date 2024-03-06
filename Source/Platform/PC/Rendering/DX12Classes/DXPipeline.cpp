@@ -112,9 +112,9 @@ ComPtr<ID3DBlob> DXPipeline::ShaderToBlob(const char* path, const char* shaderVe
 	else
 		hr = D3DCompileFromFile(wString, nullptr, nullptr, "main", shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
 
-	if (FAILED(hr)) {
-		printf((const char*)errorBuff->GetBufferPointer());
-		assert(false && "Check output");
+	if (FAILED(hr))
+	{
+		LOG(LogAssets, Fatal, "Error while compiling HLSL shader: {}", (const char*)errorBuff->GetBufferPointer());
 	}
 
 	delete[] wString;
