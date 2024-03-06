@@ -19,6 +19,10 @@ namespace Engine
 
 		static void OnFixedTick(World& world, entt::entity owner);
 
+		static void OnAiTick(World& world, entt::entity owner, float dt);
+
+		static float OnAiEvaluate(const World& world, entt::entity owner);
+
 		static uint32 GetValue(Name valueName);
 
 		static inline uint32 sNumOfConstructs{};
@@ -26,6 +30,8 @@ namespace Engine
 		static inline uint32 sNumOfBeginPlays{};
 		static inline uint32 sNumOfTicks{};
 		static inline uint32 sNumOfFixedTicks{};
+		static inline uint32 sNumOfAiTicks{};
+		static inline uint32 sNumOfAiEvaluates{};
 
 		static void Reset();
 
@@ -48,11 +54,17 @@ namespace Engine
 
 		void OnFixedTick(World& world, entt::entity owner);
 
+		void OnAiTick(World& world, entt::entity owner, float dt);
+
+		float OnAiEvaluate(const World& world, entt::entity owner) const;
+
 		uint32 mNumOfConstructs{};
 		uint32 mNumOfDestructs{};
 		uint32 mNumOfBeginPlays{};
 		uint32 mNumOfTicks{};
 		uint32 mNumOfFixedTicks{};
+		uint32 mNumOfAiTicks{};
+		mutable uint32 mNumOfAiEvaluates{};
 
 	private:
 		friend ReflectAccess;
