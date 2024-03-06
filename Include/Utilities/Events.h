@@ -202,12 +202,14 @@ namespace Engine
 	template<typename Class, typename Func, typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
 	void BindEvent(MetaType& type, const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event, Func&& func)
 	{
-		static_assert(std::is_const_v<Class> == IsPure, "Cannot be bound to function, make the function const (or remove const)");
+		static constexpr bool isStatic = entt::component_traits<std::remove_const_t<Class>>::page_size == 0 ||
+			IsAlwaysStatic;
+		static_assert(isStatic || std::is_const_v<Class> == IsPure,
+			"Cannot be bound to function, make the function const (or remove const)");
 
 		MetaFunc* eventFunc{};
 
-		if constexpr (entt::component_traits<std::remove_const_t<Class>>::page_size != 0
-			&& !IsAlwaysStatic)
+		if constexpr (!isStatic)
 		{
 			ASSERT(type.GetTypeId() == MakeTypeId<std::remove_const_t<Class>>());
 
@@ -215,26 +217,26 @@ namespace Engine
 		}
 		else
 		{
-			eventFunc = &type.AddFunc(std::function<Ret(Args...)>{ std::forward<Func>(func) }, event.mName);
+			eventFunc = &type.AddFunc(std::function<Ret(Args...)>{std::forward<Func>(func)}, event.mName);
 			eventFunc->GetProperties().Add(Props::sIsEventStaticTag);
 		}
 		eventFunc->GetProperties().Add(Internal::sIsEventProp).Set(Props::sIsScriptPure, IsPure);
 	}
 
-	template<typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
-	void BindEvent(MetaType& type, const EventT& event, FuncRet(FuncObj::* func)(FuncParams...))
+	template <typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
+	void BindEvent(MetaType& type, const EventT& event, FuncRet (FuncObj::* func)(FuncParams...))
 	{
 		BindEvent<FuncObj>(type, event, func);
 	}
 
-	template<typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
-	void BindEvent(MetaType& type, const EventT& event, FuncRet(FuncObj::* func)(FuncParams...) const)
+	template <typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
+	void BindEvent(MetaType& type, const EventT& event, FuncRet (FuncObj::* func)(FuncParams...) const)
 	{
 		BindEvent<const FuncObj>(type, event, func);
 	}
 
-	template<typename FuncRet, typename... FuncParams, typename EventT>
-	void BindEvent(MetaType& type, const EventT& event, FuncRet(*func)(FuncParams...))
+	template <typename FuncRet, typename... FuncParams, typename EventT>
+	void BindEvent(MetaType& type, const EventT& event, FuncRet (*func)(FuncParams...))
 	{
 		BindEvent<std::monostate>(type, event, func);
 	}
