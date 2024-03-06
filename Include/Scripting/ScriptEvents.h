@@ -1,6 +1,6 @@
 #pragma once
-#include <tinygltf/tiny_gltf.h>
 
+#include "Assets/Script.h"
 #include "Utilities/Events.h"
 
 namespace Engine
@@ -21,6 +21,26 @@ namespace Engine
 
 		virtual MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const = 0;
 		virtual void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const = 0;
+	};
+
+	class ScriptOnConstructEvent final :
+		public ScriptEvent
+	{
+	public:
+		ScriptOnConstructEvent();
+
+		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
+		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
+	};
+
+	class ScriptOnBeginPlayEvent final :
+		public ScriptEvent
+	{
+	public:
+		ScriptOnBeginPlayEvent();
+
+		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
+		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
 	};
 
 	class ScriptTickEvent final :
@@ -73,14 +93,18 @@ namespace Engine
 		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
 	};
 
+	static const ScriptOnConstructEvent sOnConstructScriptEvent{};
+	static const ScriptOnBeginPlayEvent sOnBeginPlayScriptEvent{};
 	static const ScriptTickEvent sOnTickScriptEvent{};
 	static const ScriptFixedTickEvent sOnFixedTickScriptEvent{};
 	static const ScriptAITickEvent sAITickScriptEvent{};
 	static const ScriptAIEvaluateEvent sAIEvaluateScriptEvent{};
 	static const ScriptAbilityActivateEvent sScriptAbilityActivateEvent{};
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 5> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 7> sAllScriptableEvents
 	{
+		sOnConstructScriptEvent,
+		sOnBeginPlayScriptEvent,
 		sOnTickScriptEvent,
 		sOnFixedTickScriptEvent,
 		sAITickScriptEvent,

@@ -9,7 +9,6 @@
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/Prefabs/PrefabEntityFactory.h"
 #include "Components/IsDestroyedTag.h"
-#include "Components/NameComponent.h"
 #include "Components/PrefabOriginComponent.h"
 #include "Components/TransformComponent.h"
 #include "World/WorldRenderer.h"
@@ -34,6 +33,8 @@ namespace Engine
 		static bool CanTypeBeUsed(const MetaType& type);
 
 		const MetaType& GetType() const { return mType; }
+		const MetaFunc* GetOnConstruct() const { return mOnConstruct; }
+		const MetaFunc* GetOnBeginPlay() const { return mOnBeginPlay; }
 
 		const void* get_at(std::size_t pos) const override;
 
@@ -64,6 +65,9 @@ namespace Engine
 		void reserve_atleast(size_type cap);
 
 		std::reference_wrapper<const MetaType> mType;
+		const MetaFunc* mOnConstruct{};
+		const MetaFunc* mOnBeginPlay{};
+
 		char* mData{};
 		size_t mCapacity{};
 		entt::type_info mTypeInfo;
@@ -258,7 +262,7 @@ Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, c
 
 		storage = Storage(componentClass.GetTypeId());
 
-		AnyStorage* asAnyStorage = static_cast<AnyStorage*>(storage);
+		AnyStorage* const asAnyStorage = static_cast<AnyStorage*>(storage);
 		const auto it = asAnyStorage->try_emplace(toEntity, false, nullptr);
 
 		MetaAny componentToReturn = asAnyStorage->element_at(it.index());
@@ -277,6 +281,22 @@ Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, c
 				LOG(LogScripting, Error, "Expected {}::Owner to be of type entt::entity",
 					componentClass.GetName());
 			}
+		}
+
+		// Call events
+		const MetaFunc* const onConstruct = asAnyStorage->GetOnConstruct();
+
+		if (onConstruct != nullptr)
+		{
+			onConstruct->InvokeUncheckedUnpacked(componentToReturn, GetWorld(), toEntity);
+		}
+		
+		const MetaFunc* const onBeginPlay = asAnyStorage->GetOnBeginPlay();
+
+		if (onBeginPlay != nullptr
+			&& GetWorld().HasBegunPlay())
+		{
+			onBeginPlay->InvokeUncheckedUnpacked(componentToReturn, GetWorld(), toEntity);
 		}
 
 		return componentToReturn;
@@ -482,6 +502,8 @@ void Engine::Registry::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, 
 Engine::AnyStorage::AnyStorage(const MetaType& type) :
 	BaseType(GetTypeInfo(), entt::deletion_policy::in_place),
 	mType(type),
+	mOnConstruct(TryGetEvent(type, sConstructEvent)),
+	mOnBeginPlay(TryGetEvent(type, sBeginPlayEvent)),
 	mTypeInfo(type.GetTypeId(), type.GetTypeInfo(), type.GetName())
 {
 	ASSERT(CanTypeBeUsed(type));

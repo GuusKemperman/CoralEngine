@@ -11,6 +11,90 @@ Engine::ScriptEvent::ScriptEvent(const EventBase& event, std::vector<MetaFuncNam
 {
 }
 
+Engine::ScriptOnConstructEvent::ScriptOnConstructEvent() :
+	ScriptEvent(sConstructEvent, {}, std::nullopt)
+{
+}
+
+Engine::MetaFunc& Engine::ScriptOnConstructEvent::Declare(TypeTraits selfTraits, MetaType& toType) const
+{
+	static_assert(std::is_same_v<const Event<void(World&, entt::entity)>, decltype(sConstructEvent)>);
+	std::vector<MetaFuncNamedParam> metaParams
+	{
+		{ selfTraits }
+	};
+
+	MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
+
+	MetaFunc& func = toType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
+		{
+			return { "There were unresolved compilation errors" };
+		},
+		mBasedOnEvent.get().mName,
+		metaReturn,
+		metaParams
+	);
+
+	func.GetProperties().Add(Internal::sIsEventProp);
+
+	return func;
+}
+
+void Engine::ScriptOnConstructEvent::Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc,
+	std::shared_ptr<const Script> script) const
+{
+	declaredFunc.RedirectFunction([&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			// The component already has the world
+			// and it's owner
+			Span<MetaAny, 0> scriptArgs{};
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		});
+}
+
+Engine::ScriptOnBeginPlayEvent::ScriptOnBeginPlayEvent() :
+	ScriptEvent(sBeginPlayEvent, {}, std::nullopt)
+{
+}
+
+Engine::MetaFunc& Engine::ScriptOnBeginPlayEvent::Declare(TypeTraits selfTraits, MetaType& toType) const
+{
+	static_assert(std::is_same_v<const Event<void(World&, entt::entity)>, decltype(sBeginPlayEvent)>);
+	std::vector<MetaFuncNamedParam> metaParams
+	{
+		{ selfTraits }
+	};
+
+	MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
+
+	MetaFunc& func = toType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
+		{
+			return { "There were unresolved compilation errors" };
+		},
+		mBasedOnEvent.get().mName,
+		metaReturn,
+		metaParams
+	);
+
+	func.GetProperties().Add(Internal::sIsEventProp);
+
+	return func;
+}
+
+void Engine::ScriptOnBeginPlayEvent::Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc,
+	std::shared_ptr<const Script> script) const
+{
+	declaredFunc.RedirectFunction([&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			// The component already has the world
+			// and it's owner
+			Span<MetaAny, 0> scriptArgs{};
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		});
+}
+
 Engine::ScriptTickEvent::ScriptTickEvent() :
 	ScriptEvent(sTickEvent, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt)
 {
@@ -191,13 +275,13 @@ void Engine::ScriptAIEvaluateEvent::Define(MetaFunc& declaredFunc, const ScriptF
 }
 
 Engine::ScriptAbilityActivateEvent::ScriptAbilityActivateEvent() :
-	ScriptEvent(sOnAbilityActivate, { { MakeTypeTraits<entt::entity>(), "Ability user" } }, std::nullopt)
+	ScriptEvent(sAbilityActivateEvent, { { MakeTypeTraits<entt::entity>(), "Ability user" } }, std::nullopt)
 {
 }
 
 Engine::MetaFunc& Engine::ScriptAbilityActivateEvent::Declare(TypeTraits, MetaType& toType) const
 {
-	static_assert(std::is_same_v<const Event<void(World&, entt::entity), false, true>, decltype(sOnAbilityActivate)>);
+	static_assert(std::is_same_v<const Event<void(World&, entt::entity), false, true>, decltype(sAbilityActivateEvent)>);
 
 	std::vector<MetaFuncNamedParam> metaParams
 	{

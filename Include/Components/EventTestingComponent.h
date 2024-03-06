@@ -10,15 +10,20 @@ namespace Engine
 	class EmptyEventTestingComponent
 	{
 	public:
+		static void OnConstruct(World& world, entt::entity owner);
+
+		static void OnBeginPlay(World& world, entt::entity owner);
+
 		static void OnTick(World& world, entt::entity owner, float dt);
 
 		static void OnFixedTick(World& world, entt::entity owner);
 
 		static uint32 GetValue(Name valueName);
 
+		static inline uint32 sNumOfConstructs{};
+		static inline uint32 sNumOfBeginPlays{};
 		static inline uint32 sNumOfTicks{};
 		static inline uint32 sNumOfFixedTicks{};
-		static inline uint32 sTotalNumOfEventsCalled{};
 
 		static void Reset();
 
@@ -31,29 +36,23 @@ namespace Engine
 	class EventTestingComponent
 	{
 	public:
+		void OnConstruct(World& world, entt::entity owner);
+
+		void OnBeginPlay(World& world, entt::entity owner);
+
 		void OnTick(World& world, entt::entity owner, float dt);
 
 		void OnFixedTick(World& world, entt::entity owner);
 
-		entt::entity mOwner{ entt::null };
-
+		uint32 mNumOfConstructs{};
+		uint32 mNumOfBeginPlays{};
 		uint32 mNumOfTicks{};
 		uint32 mNumOfFixedTicks{};
-		uint32 mTotalNumOfEventsCalled{};
-
-		World* mLastReceivedWorld{};
-		entt::entity mLastReceivedOwner{ entt::null };
 
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(EventTestingComponent);
-	};
-
-	template<>
-	struct AlwaysPassComponentOwnerAsFirstArgumentOfConstructor<EventTestingComponent>
-	{
-		static constexpr bool sValue = true;
 	};
 }
 #endif // EDITOR
