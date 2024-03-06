@@ -116,7 +116,6 @@ Engine::ScriptFunc& Engine::Script::AddEvent(const ScriptEvent& event)
 	if (result.GetReturnType().has_value())
 	{
 		result.AddNode<FunctionReturnScriptNode>(result, *this);
-
 	}
 
 	return result;
