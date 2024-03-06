@@ -202,7 +202,10 @@ namespace Engine
 	template<typename Class, typename Func, typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
 	void BindEvent(MetaType& type, const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event, Func&& func)
 	{
-		static_assert(std::is_const_v<Class> == IsPure, "Cannot be bound to function, make the function const (or remove const)");
+		static constexpr bool isStatic = entt::component_traits<std::remove_const_t<Class>>::page_size == 0 ||
+			IsAlwaysStatic;
+		static_assert(isStatic || std::is_const_v<Class> == IsPure,
+			"Cannot be bound to function, make the function const (or remove const)");
 
 		MetaFunc* eventFunc{};
 
