@@ -6,10 +6,5 @@
 
 Engine::MetaType Engine::BaseIdleState::Reflect()
 {
-	auto metaType = MetaType{MetaType::T<BaseIdleState>{}, "BaseIdleState"};
-	metaType.GetProperties().Add("AiState");
-
-	ReflectComponentType<BaseIdleState>(metaType);
-
-	return metaType;
+	return MetaType{MetaType::T<BaseIdleState>{}, "BaseIdleState"};
 }

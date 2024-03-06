@@ -6,7 +6,10 @@ namespace Engine
 	class BaseIdleState
 	{
 	public:
-		BaseIdleState();
+		BaseIdleState()
+		{
+		};
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();

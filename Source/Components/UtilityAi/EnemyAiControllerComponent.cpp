@@ -29,7 +29,12 @@ void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity 
 
 		if (storage.contains(enemyID) && TryGetEvent(*type, sAITickEvent))
 		{
-			MetaAny component(type, storage.value(enemyID));
+			MetaAny component(*type, storage.value(enemyID));
+
+			if (!TryGetEvent(*type, sAIEvaluateEvent))
+			{
+				continue;
+			}
 
 			const MetaFunc& componentAiEvaluate = *TryGetEvent(*type, sAIEvaluateEvent);
 			FuncResult fr = componentAiEvaluate(component, world, enemyID, dt);
@@ -49,8 +54,11 @@ void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity 
 	{
 		MetaAny component(*bestType, bestStorage->value(enemyID));
 
-		const MetaFunc& componentAiTick = *TryGetEvent(*bestType, sAITickEvent);
-		FuncResult fr = componentAiTick(component, world, enemyID, dt);
+		if (TryGetEvent(*bestType, sAIEvaluateEvent))
+		{
+			const MetaFunc& componentAiTick = *TryGetEvent(*bestType, sAITickEvent);
+			FuncResult fr = componentAiTick(component, world, enemyID, dt);
+		}
 	}
 }
 
