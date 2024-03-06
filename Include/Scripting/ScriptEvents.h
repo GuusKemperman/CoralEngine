@@ -13,10 +13,11 @@ namespace Engine
 	class ScriptEvent
 	{
 	public:
-		ScriptEvent(const EventBase& event, std::vector<MetaFuncNamedParam>&& params);
+		ScriptEvent(const EventBase& event, std::vector<MetaFuncNamedParam>&& params, std::optional<MetaFuncNamedParam>&& ret);
 
 		std::reference_wrapper<const EventBase> mBasedOnEvent;
 		std::vector<MetaFuncNamedParam> mParamsToShowToUser{};
+		std::optional<MetaFuncNamedParam> mReturnValueToShowToUser{};
 
 		virtual MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const = 0;
 		virtual void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const = 0;
@@ -42,8 +43,36 @@ namespace Engine
 		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
 	};
 
+	class ScriptAITickEvent final :
+		public ScriptEvent
+	{
+	public:
+		ScriptAITickEvent();
+
+		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
+		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
+	};
+
+	class ScriptAIEvaluateEvent final :
+		public ScriptEvent
+	{
+	public:
+		ScriptAIEvaluateEvent();
+
+		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
+		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
+	};
+
 	static const ScriptTickEvent sOnTickScriptEvent{};
 	static const ScriptFixedTickEvent sOnFixedTickScriptEvent{};
+	static const ScriptAITickEvent sAITickScriptEvent{};
+	static const ScriptAIEvaluateEvent sAIEvaluateScriptEvent{};
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 2> sAllScriptableEvents{ sOnTickScriptEvent, sOnFixedTickScriptEvent };
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 4> sAllScriptableEvents
+	{
+		sOnTickScriptEvent,
+		sOnFixedTickScriptEvent,
+		sAITickScriptEvent,
+		sAIEvaluateScriptEvent
+	};
 }

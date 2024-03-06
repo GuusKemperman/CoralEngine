@@ -107,7 +107,17 @@ Engine::ScriptFunc& Engine::Script::AddEvent(const ScriptEvent& event)
 	}
 
 	auto& result = mFunctions.emplace_back(*this, event);
-	result.AddNode<FunctionEntryScriptNode>(result, *this);
+
+	if (!result.GetParameters(true).empty())
+	{
+		result.AddNode<FunctionEntryScriptNode>(result, *this);
+	}
+
+	if (result.GetReturnType().has_value())
+	{
+		result.AddNode<FunctionReturnScriptNode>(result, *this);
+
+	}
 
 	return result;
 }

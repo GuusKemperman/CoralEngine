@@ -48,7 +48,9 @@ Engine::ScriptFunc::ScriptFunc(const Script& script, const ScriptEvent& event) :
 	mName(event.mBasedOnEvent.get().mName),
 	mNameOfScriptAsset(script.GetName()),
 	mTypeIdOfScript(Name::HashString(script.GetName())),
-	mBasedOnEvent(&event)
+	mReturns(event.mReturnValueToShowToUser.has_value() ? std::optional<ScriptVariableTypeData> { ScriptVariableTypeData{ event.mReturnValueToShowToUser->mTypeTraits, event.mReturnValueToShowToUser->mName } } : std::nullopt),
+	mBasedOnEvent(&event),
+	mIsPure(event.mBasedOnEvent.get().mIsPure)
 {
 	for (const MetaFuncNamedParam& param : event.mParamsToShowToUser)
 	{
