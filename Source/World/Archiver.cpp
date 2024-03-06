@@ -175,7 +175,7 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 		return;
 	}
 
-	const MetaFunc* const onComponentDeserialize = componentClass->TryGetFunc(sComponentCustomDeserializeFuncName);
+	const MetaFunc* const onComponentDeserialize = TryGetEvent(*componentClass, sDeserializeEvent);
 
 	if (onComponentDeserialize == nullptr)
 	{
@@ -313,7 +313,7 @@ std::optional<Engine::ComponentClassSerializeArg> Engine::GetComponentClassSeria
 			return std::nullopt;
 	}
 
-	const MetaFunc* onSerialize = componentClass->TryGetFunc(sComponentCustomSerializeFuncName);
+	const MetaFunc* onSerialize = TryGetEvent(*componentClass, sSerializeEvent);
 	std::vector<const MetaFunc*> equalityFunctions{};
 	std::vector<const MetaFunc*> serializeMemberFunctions{};
 

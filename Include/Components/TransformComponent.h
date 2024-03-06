@@ -38,8 +38,8 @@ namespace Engine
 
 		void OnConstruct(World& world, entt::entity owner);
 
-		void OnDeserialize(const BinaryGSONObject& deserializeFrom, entt::entity owner, World& world);
-		void OnSerialize(BinaryGSONObject& serializeTo, entt::entity owner, const World& world) const;
+		void OnDeserialize(World& world, const BinaryGSONObject& deserializeFrom, entt::entity owner);
+		void OnSerialize(const World& world, BinaryGSONObject& serializeTo, entt::entity owner) const;
 
 		static glm::mat4 ToMatrix(glm::vec3 position, glm::vec3 scale, glm::quat orientation);
 

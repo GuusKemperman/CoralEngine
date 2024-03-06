@@ -1,4 +1,5 @@
 #pragma once
+#include "GSON/GSONBinary.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 
@@ -107,6 +108,35 @@ namespace Engine
 	 * \entt::entity The owner of this component.
 	 */
 	static constexpr Event<void(World&, entt::entity)> sDestructEvent{ "OnDestruct" };
+
+	/**
+	 * \brief Some component require extra steps during serialization, this event can be used for that
+	 *
+	 * TODO: Does not work when the component is used in prefabs, does not get called when a prefab is saved
+	 *
+	 * \const World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 * \BinaryGSONObject& An empty object. Everything that you save into this object is given back to you in the Deserialize event.
+	 */
+	static constexpr Event<void(const World&, entt::entity, BinaryGSONObject&), true> sSerializeEvent{ "OnSerialize" };
+
+	/**
+	 * \brief Some component require extra steps during serialization, this event can be used for that
+	 *
+	 * TODO: Does not work when the component is used in prefabs, does not get called when a prefab is loaded/spawned in a world.
+	 *
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 * \const BinaryGSONObject& The object you outputted to in OnSerialize.
+	 */
+	static constexpr Event<void(World&, entt::entity, const BinaryGSONObject&)> sDeserializeEvent{ "OnDeserialize" };
+
+	/**
+	 * \brief For custom inspect logic. You can make calls to ImGui from this event.
+	 * \World& The world you are inspecting
+	 * \const std::vector<entt::entity>& All the selected entities that have this component AND require inspecting
+	 */
+	static constexpr Event<void(World&, const std::vector<entt::entity>&), false, true> sInspectEvent{ "OnInspect" };
 
 	/**
 	 * \brief Binds an event to a type.
