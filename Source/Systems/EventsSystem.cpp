@@ -12,7 +12,6 @@ namespace Engine
 	static void CallEvent(World& world, const EventT& event, Functor&& functor);
 }
 
-
 void Engine::TickSystem::Update(World& world, float dt)
 {
 	struct TickFunctor
@@ -96,15 +95,13 @@ void Engine::CallEvent(World& world, const EventT& event, Functor&& functor)
 				continue;
 			}
 			;
-			FuncResult result = isStatic ? functor(func, std::nullopt, entity) : functor(func, MetaAny{  type.get(), storage.get().value(entity), false }, entity);
-
-			if (result.HasError())
+			if (isStatic)
 			{
-				LOG(LogWorld, Error, "An error occured while executing {}::{} of entity {} - {}",
-					type.get().GetName(),
-					event.mName,
-					static_cast<EntityType>(entity),
-					result.Error())
+				functor(func, std::nullopt, entity);
+			}
+			else
+			{
+				functor(func, MetaAny{ type.get(), storage.get().value(entity), false }, entity);
 			}
 		}
 	}

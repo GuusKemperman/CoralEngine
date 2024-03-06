@@ -57,11 +57,29 @@ namespace Engine
 	static constexpr Event<void(World&, entt::entity, float)> sAITickEvent{ "OnAITick" };
 
 	/**
-	 * \brief
+	 * \brief 
 	 * 	World& The world the ability controller component is in. 
 	 * \entt::entity The owner of the ability controller component.  
 	 */
-	static constexpr Event<void(World&, entt::entity), false, true> sOnAbilityActivate{ "OnAbilityActivate" };
+	static constexpr Event<void(World&, entt::entity), false, true> sAbilityActivateEvent{ "OnAbilityActivate" };
+
+	/**
+	 * \brief Called immediately when the component is constructed.
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	static constexpr Event<void(World&, entt::entity)> sConstructEvent{ "OnConstruct" };
+
+	/**
+	 * \brief Called when the world begins play, or if the component is created after the world has begun play. Called after OnConstruct.
+	 *
+	 * Note that the order of BeginPlay is undefined; if you add a prefab to a world that has already begun play, you have no guarantee
+	 * during OnBeginPlay that each component of the prefab has been added to the entity.
+	 *
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	static constexpr Event<void(World&, entt::entity)> sBeginPlayEvent{ "OnBeginPlay" };
 
 	/**
 	 * \brief Called every frame.
@@ -82,6 +100,13 @@ namespace Engine
 	 * \brief The number of seconds between fixed ticks.
 	 */
 	static constexpr float sFixedTickEventStepSize = 0.2f;
+
+	/**
+	 * \brief Called just before the C++ destructor. 
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	static constexpr Event<void(World&, entt::entity)> sDestructEvent{ "OnDestruct" };
 
 	/**
 	 * \brief Binds an event to a type.
