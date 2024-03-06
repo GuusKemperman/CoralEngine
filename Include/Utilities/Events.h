@@ -9,44 +9,43 @@ namespace Engine
 	class EventBase
 	{
 	public:
-		constexpr EventBase(std::string_view name, bool isPure);
+		constexpr EventBase(std::string_view name, bool isPure, bool isAlwaysStatic);
 
 		std::string_view mName{};
 		bool mIsPure{};
+		bool mIsAlwaysStatic{};
 	};
 
-	template<typename T, bool IsPure = false>
+	template<typename T, bool IsPure = false, bool IsAlwaysStatic = false>
 	class Event
 	{
 		static_assert(AlwaysFalse<T>, "Not a signature");
 	};
 
-	template<typename Ret, typename... Args, bool IsPure>
-	class Event<Ret(Args...), IsPure> :
+	template<typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
+	class Event<Ret(Args...), IsPure, IsAlwaysStatic> :
 		public EventBase
 	{
 	public:
 		constexpr Event(std::string_view name);
 	};
 
-	constexpr EventBase::EventBase(std::string_view name, bool isPure) :
+	constexpr EventBase::EventBase(std::string_view name, bool isPure, bool isAlwaysStatic) :
 		mName(name),
-		mIsPure(isPure)
+		mIsPure(isPure),
+		mIsAlwaysStatic(isAlwaysStatic)
 	{
 	}
 
-	template <typename Ret, typename ... Args, bool IsPure>
-	constexpr Event<Ret(Args...), IsPure>::Event(std::string_view name) :
-		EventBase(name, IsPure)
+	template <typename Ret, typename ... Args, bool IsPure, bool IsAlwaysStatic>
+	constexpr Event<Ret(Args...), IsPure, IsAlwaysStatic>::Event(std::string_view name) :
+		EventBase(name, IsPure, IsAlwaysStatic)
 	{
 	}
 
 	//********************************//
 	//				API				  //
 	//********************************//
-
-	template<typename T>
-	static constexpr bool sIsEventStatic = entt::component_traits<T>::page_size == 0;
 
 	namespace Props
 	{
@@ -56,6 +55,31 @@ namespace Engine
 	static constexpr Event<float(const World&, entt::entity), true> sAIEvaluateEvent{ "OnAIEvaluate" };
 
 	static constexpr Event<void(World&, entt::entity, float)> sAITickEvent{ "OnAITick" };
+
+	/**
+	 * \brief 
+	 * 	World& The world the ability controller component is in. 
+	 * \entt::entity The owner of the ability controller component.  
+	 */
+	static constexpr Event<void(World&, entt::entity), false, true> sAbilityActivateEvent{ "OnAbilityActivate" };
+
+	/**
+	 * \brief Called immediately when the component is constructed.
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	static constexpr Event<void(World&, entt::entity)> sConstructEvent{ "OnConstruct" };
+
+	/**
+	 * \brief Called when the world begins play, or if the component is created after the world has begun play. Called after OnConstruct.
+	 *
+	 * Note that the order of BeginPlay is undefined; if you add a prefab to a world that has already begun play, you have no guarantee
+	 * during OnBeginPlay that each component of the prefab has been added to the entity.
+	 *
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	static constexpr Event<void(World&, entt::entity)> sBeginPlayEvent{ "OnBeginPlay" };
 
 	/**
 	 * \brief Called every frame.
@@ -76,6 +100,13 @@ namespace Engine
 	 * \brief The number of seconds between fixed ticks.
 	 */
 	static constexpr float sFixedTickEventStepSize = 0.2f;
+
+	/**
+	 * \brief Called just before the C++ destructor. 
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	static constexpr Event<void(World&, entt::entity)> sDestructEvent{ "OnDestruct" };
 
 	/**
 	 * \brief Binds an event to a type.
@@ -103,8 +134,8 @@ namespace Engine
 	 *		return type;
 	 *	}
 	 */
-	template<typename Class, typename Func, typename Ret, typename... Args, bool IsPure>
-	void BindEvent(MetaType& type, const Event<Ret(Args...), IsPure>& event, Func&& func);
+	template<typename Class, typename Func, typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
+	void BindEvent(MetaType& type, const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event, Func&& func);
 
 	/**
 	 * \brief An overload that prevents having to specify Class for mutable member functions
@@ -123,29 +154,30 @@ namespace Engine
 
 	/**
 	 * \brief Returns the event bound during BindEvent, if any.
+	 *
+	 *  Example: TryGetEvent(componentType, sFixedTickEvent);
 	 */
-	template<typename T>
-	const MetaFunc* TryGetEvent(const MetaType& fromType, const Event<T>& event);
+	template<typename EventT>
+	const MetaFunc* TryGetEvent(const MetaType& fromType, const EventT& event);
 
 	//********************************//
 	//			Implementation		  //
 	//********************************//
-
-
 
 	namespace Internal
 	{
 		static constexpr std::string_view sIsEventProp = "IsEvent";
 	}
 
-	template<typename Class, typename Func, typename Ret, typename... Args, bool IsPure>
-	void BindEvent(MetaType& type, const Event<Ret(Args...), IsPure>& event, Func&& func)
+	template<typename Class, typename Func, typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
+	void BindEvent(MetaType& type, const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event, Func&& func)
 	{
 		static_assert(std::is_const_v<Class> == IsPure, "Cannot be bound to function, make the function const (or remove const)");
 
 		MetaFunc* eventFunc{};
 
-		if constexpr (!sIsEventStatic<Class>)
+		if constexpr (entt::component_traits<Class>::page_size != 0
+			&& !IsAlwaysStatic)
 		{
 			ASSERT(type.GetTypeId() == MakeTypeId<Class>());
 
@@ -158,7 +190,6 @@ namespace Engine
 		}
 		eventFunc->GetProperties().Add(Internal::sIsEventProp).Set(Props::sIsScriptPure, IsPure);
 	}
-
 
 	template<typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
 	void BindEvent(MetaType& type, const EventT& event, FuncRet(FuncObj::* func)(FuncParams...))
@@ -178,8 +209,8 @@ namespace Engine
 		BindEvent<std::monostate>(type, event, func);
 	}
 
-	template <typename T>
-	const MetaFunc* TryGetEvent(const MetaType& fromType, const Event<T>& event)
+	template <typename EventT>
+	const MetaFunc* TryGetEvent(const MetaType& fromType, const EventT& event)
 	{
 		const MetaFunc* func = fromType.TryGetFunc(event.mName);
 

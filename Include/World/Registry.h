@@ -1,7 +1,11 @@
 #pragma once
+#include "World.h"
 #include "Systems/System.h"
 #include "Utilities/MemFunctions.h"
-#include "Components/Component.h"
+#include "Meta/MetaFunc.h"
+#include "Meta/MetaManager.h"
+#include "Utilities/Events.h"
+
 
 namespace Engine
 {
@@ -135,6 +139,9 @@ namespace Engine
 		
 		void AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system);
 
+		template <typename Component>
+		static void DestroyCallback(entt::registry&, entt::entity entity);
+
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
 		friend class World;
 		std::reference_wrapper<World> mWorld; 
@@ -169,13 +176,78 @@ namespace Engine
 	template<typename ComponentType, typename ...AdditonalArgs>
 	decltype(auto) Registry::AddComponent(const entt::entity toEntity, AdditonalArgs && ...additionalArgs)
 	{
-		if constexpr (AlwaysPassComponentOwnerAsFirstArgumentOfConstructor<ComponentType>::sValue)
+		struct ComponentEvents
 		{
-			return mRegistry.emplace<ComponentType>(toEntity, toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
+			const MetaType* mType{};
+			const MetaFunc* mOnConstruct{};
+			const MetaFunc* mOnBeginPlay{};
+		};
+
+		static const ComponentEvents events =
+			[]
+			{
+				if constexpr (sIsReflectable<ComponentType>)
+				{
+					ComponentEvents tmpEvents{};
+					tmpEvents.mType = &MetaManager::Get().GetType<ComponentType>();
+					tmpEvents.mOnConstruct = TryGetEvent(*tmpEvents.mType, sConstructEvent);
+					tmpEvents.mOnBeginPlay = TryGetEvent(*tmpEvents.mType, sBeginPlayEvent);
+					return tmpEvents;
+				}
+				else
+				{
+					return ComponentEvents{};
+				}
+			}();
+
+		if constexpr (sIsReflectable<ComponentType>)
+		{
+			if (const_cast<const Registry&>(*this).Storage<ComponentType>() == nullptr
+				&& TryGetEvent(*events.mType, sDestructEvent) != nullptr)
+			{
+				mRegistry.on_destroy<ComponentType>().template connect<&DestroyCallback<ComponentType>>();
+			}
+		}
+
+		static constexpr bool isEmpty = entt::component_traits<ComponentType>::page_size == 0;
+
+		if constexpr (isEmpty)
+		{
+			mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
+
+			if constexpr (sIsReflectable<ComponentType>)
+			{
+				if (events.mOnConstruct != nullptr)
+				{
+					events.mOnConstruct->InvokeUncheckedUnpacked(GetWorld(), toEntity);
+				}
+
+				if (GetWorld().HasBegunPlay()
+					&& events.mOnBeginPlay != nullptr)
+				{
+					events.mOnBeginPlay->InvokeUncheckedUnpacked(GetWorld(), toEntity);
+				}
+			}
 		}
 		else
 		{
-			return mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
+			ComponentType& component = mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);;
+
+			if constexpr (sIsReflectable<ComponentType>)
+			{
+				if (events.mOnConstruct != nullptr)
+				{
+					events.mOnConstruct->InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
+				}
+
+				if (GetWorld().HasBegunPlay()
+					&& events.mOnBeginPlay != nullptr)
+				{
+					events.mOnBeginPlay->InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
+				}
+			}
+
+			return component;
 		}
 	}
 
@@ -203,16 +275,46 @@ namespace Engine
 		return storage != nullptr && storage->contains(entity);
 	}
 
+	template <typename Component>
+	void Registry::DestroyCallback(entt::registry&, entt::entity entity)
+	{
+		static const MetaType& metaType = MetaManager::Get().GetType<Component>();
+		static const MetaFunc& destroyEvent = *TryGetEvent(metaType, sDestructEvent);
+
+		if (World::TryGetWorldAtTopOfStack() == nullptr)
+		{
+			UNLIKELY;
+			LOG(LogWorld, Error, "A componentw as destroyed from a function that did not push/pop a world. The destruct event cannot be invoked. Trace callstack and figure out where to place Push/PopWorld");
+			return;
+		}
+
+		World& world = *World::TryGetWorldAtTopOfStack();
+
+		if constexpr (entt::component_traits<Component>::page_size == 0)
+		{
+			destroyEvent.InvokeUncheckedUnpacked(world, entity);
+		}
+		else
+		{
+			Component& component = world.GetRegistry().Get<Component>(entity);
+			destroyEvent.InvokeUncheckedUnpacked(component, world, entity);
+		}
+	}
+
 	template<typename ComponentType>
 	void Registry::RemoveComponent(entt::entity fromEntity)
 	{
+		World::PushWorld(mWorld);
 		mRegistry.erase<ComponentType>(fromEntity);
+		World::PopWorld();
 	}
 
 	template<typename ComponentType>
 	void Registry::RemoveComponentIfEntityHasIt(entt::entity fromEntity)
 	{
+		World::PushWorld(mWorld);
 		mRegistry.remove<ComponentType>(fromEntity);
+		World::PopWorld();
 	}
 
 	template<typename It>

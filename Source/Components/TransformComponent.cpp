@@ -27,6 +27,11 @@ Engine::TransformComponent::~TransformComponent()
 	}
 }
 
+void Engine::TransformComponent::OnConstruct(World&, entt::entity owner)
+{
+	mOwner = owner;
+}
+
 void Engine::TransformComponent::OnDeserialize(const BinaryGSONObject& deserializeFrom, const entt::entity, World& world)
 {
 	entt::entity parentEntity;
@@ -322,7 +327,9 @@ Engine::MetaType Engine::TransformComponent::Reflect()
 	type.AddFunc(&TransformComponent::GetWorldScaleUniform, "GetWorldScaleUniform", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<void (TransformComponent::*)(glm::vec3)>(&TransformComponent::SetLocalScale), "SetLocalScale", "", "scale").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<void (TransformComponent::*)(glm::vec3)>(&TransformComponent::SetWorldScale), "SetWorldScale", "", "scale").GetProperties().Add(Props::sIsScriptableTag);
-	
+
+	BindEvent(type, sConstructEvent, &TransformComponent::OnConstruct);
+
 	ReflectComponentType<TransformComponent>(type);
 	return type;
 }
