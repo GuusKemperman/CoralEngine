@@ -14,27 +14,27 @@ void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity 
 	Registry& reg = world.GetRegistry();
 
 	float bestScore = std::numeric_limits<float>::lowest();
-	MetaType* bestType = nullptr;
+	const MetaType* bestType = nullptr;
 	entt::basic_sparse_set<>* bestStorage = nullptr;
 
 
 	for (auto&& [typeHash, storage] : reg.Storage())
 	{
-		const MetaType* const type = MetaManager::Get().TryGetType(typeHash);
+		const MetaType* type = MetaManager::Get().TryGetType(typeHash);
 
 		if (type == nullptr)
 		{
 			continue;
 		}
 
-		if (storage.contains(enemyID) && TryGetEvent(type, sAITickEvent))
+		if (storage.contains(enemyID) && TryGetEvent(*type, sAITickEvent))
 		{
 			MetaAny component(type, storage.value(enemyID));
 
-			auto& componentAiEvaluate = *TryGetEvent(type, sAIEvaluateEvent);
+			auto& componentAiEvaluate = TryGetEvent(type, sAIEvaluateEvent);
 			FuncResult fr = componentAiEvaluate(component, world, enemyID, dt);
 
-			float score = fr.GetReturnValue().As<float>();
+			float score = fr.GetReturnValue().IsExactly<float>();
 
 			if (score > bestScore)
 			{
