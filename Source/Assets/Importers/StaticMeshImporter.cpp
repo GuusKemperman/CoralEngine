@@ -22,16 +22,30 @@
 #include "Utilities/ClassVersion.h"
 #include "Meta/MetaManager.h"
 
-static std::string GetTexName(const std::filesystem::path& modelPath, int index)
+static std::string GetTexName(const std::filesystem::path& modelPath, const int index)
 {
 	return modelPath.filename().replace_extension().string().append("_tex").append(std::to_string(index));
 }
 
-static std::string Get***REMOVED***neName(const std::filesystem::path& modelPath, const char* name)
+static std::string GetMeshName(const std::filesystem::path& modelPath, const char* name)
 {
 	return modelPath.filename().replace_extension().string().append("_").append(name);
 }
 
+static std::string Get***REMOVED***neName(const std::filesystem::path& modelPath)
+{
+	return modelPath.filename().replace_extension().string().append("_").append("Prefab");
+}
+
+static std::string GetMaterialName(const std::filesystem::path& modelPath, const char* name, const int index)
+{
+	return (*name == *"") ? "M_" + modelPath.filename().string() + *"_Unnamed_Material_" + std::to_string(index) : name;
+}
+
+static int GetIndexFromAssimpTextureName(const char* name)
+{
+	return atoi(std::string(name).erase(0, 1).c_str());
+}
 
 std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Import(const std::filesystem::path& file) const
 {
@@ -74,15 +88,16 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 
 		const int size = aiTex.mHeight != 0 ? aiTex.mWidth * aiTex.mHeight : aiTex.mWidth;
 
-		int width, height, channels;
-		unsigned char* pixels = stbi_load_from_memory(reinterpret_cast<const unsigned char*>(aiTex.pcData), size, &width, &height, &channels, 4);
-    
-		const std::vector<char> data(pixels, pixels + width * height * 4);
+		int width{}, height{}, channels{};
+
+		const Engine::Span<char> pixels = { 
+			reinterpret_cast<char*>(stbi_load_from_memory(reinterpret_cast<const unsigned char*>(aiTex.pcData), size, &width, &height, &channels, 4)),
+			static_cast<unsigned int>(width * height * 4)};
 
 		importedTexture = TextureImporter::ImportFromMemory(file,
 			textureName,
 			myVersion,
-			reinterpret_cast<const std::vector<char>&>(data), 
+			pixels, 
 			static_cast<uint32>(width),
 			static_cast<uint32>(height));
 
@@ -109,7 +124,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 			continue;
 		}
 
-		Material engineMat{ (*aiMat.GetName().C_Str() == *"") ? "M_" + file.filename().string() + *"_Unnamed_Material_" + std::to_string(i) : aiMat.GetName().C_Str() };
+		Material engineMat{ GetMaterialName(file, aiMat.GetName().C_Str(), i) };
 
 		aiGetMaterialColor(&aiMat, AI_MATKEY_BASE_COLOR, reinterpret_cast<aiColor4D*>(&engineMat.mBaseColorFactor));
 		
@@ -132,27 +147,27 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 		aiString textureName{};
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_BASE_COLOR, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mBaseColorTexture{};
 		{
-			engineMat.mBaseColorTexture = textures[atoi(std::string(textureName.C_Str()).erase(0, 1).c_str())];
+			engineMat.mBaseColorTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_NORMALS, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mNormalTexture{};
 		{
-			engineMat.mNormalTexture = textures[atoi(std::string(textureName.C_Str()).erase(0, 1).c_str())];
+			engineMat.mNormalTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_AMBIENT_OCCLUSION, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mOcclusionTexture{};
 		{
-			engineMat.mOcclusionTexture = textures[atoi(std::string(textureName.C_Str()).erase(0, 1).c_str())];
+			engineMat.mOcclusionTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mMetallicRoughnessTexture{};
 		{
-			engineMat.mMetallicRoughnessTexture = textures[atoi(std::string(textureName.C_Str()).erase(0, 1).c_str())];
+			engineMat.mMetallicRoughnessTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_EMISSIVE, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mEmissiveTexture{};
 		{
-			engineMat.mEmissiveTexture = textures[atoi(std::string(textureName.C_Str()).erase(0, 1).c_str())];
+			engineMat.mEmissiveTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		returnValue.emplace_back(MaterialImporter::Import(file, myVersion, engineMat));
@@ -162,7 +177,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 	{
 		const aiMesh& mesh = ****REMOVED***ne->mMeshes[i];
 
-		const std::string meshName = mesh.mName.C_Str();
+		const std::string meshName = GetMeshName(file, mesh.mName.C_Str());
 
 		const Span<const glm::vec3> positions = { reinterpret_cast<const glm::vec3*>(mesh.mVertices), mesh.mNumVertices };
 		std::optional<std::vector<uint32>> indices{};
@@ -253,10 +268,10 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 
 				StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(entity);
 
-				std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>(***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str());
+				std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>(GetMeshName(file, ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str()));
 				meshComponent.mStaticMesh = std::move(mesh);
 				
-				std::shared_ptr<Material> mat = std::make_shared<Material>(***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str());
+				std::shared_ptr<Material> mat = std::make_shared<Material>(GetMaterialName(file, ***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex));
 				meshComponent.mMaterial = std::move(mat);
 			}
 
@@ -272,7 +287,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 
 	const entt::entity prefabEntity = makePrefab(****REMOVED***ne->mRootNode, {});
 
-	std::optional<ImportedAsset> importedPrefab = PrefabImporter::MakePrefabFromEntity(file, Get***REMOVED***neName(file, ***REMOVED***ne->mName.C_Str()), myVersion, world, prefabEntity);
+	std::optional<ImportedAsset> importedPrefab = PrefabImporter::MakePrefabFromEntity(file, Get***REMOVED***neName(file), myVersion, world, prefabEntity);
 
 	if (importedPrefab.has_value())
 	{
