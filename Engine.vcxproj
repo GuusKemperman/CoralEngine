@@ -507,6 +507,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="External\stb_image\stb_image.cpp" />
     <ClCompile Include="Source\Assets\StaticMesh.cpp" />
     <ClCompile Include="Source\Assets\Texture.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\FramebufferPC.cpp">
@@ -868,11 +869,6 @@
       <Warnings Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">WarningsOff</Warnings>
       <Warnings Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">WarningsOff</Warnings>
       <Warnings Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">WarningsOff</Warnings>
-    </ClCompile>
-    <ClCompile Include="external\tinygltf\tiny_gltf.cc">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <WarningLevel>TurnOffAllWarnings</WarningLevel>
     </ClCompile>
     <ClCompile Include="Source\Components\EventTestingComponent.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

@@ -1,8 +1,5 @@
 #include "Precomp.h"
 #include "Assets/Core/AssetFileMetaData.h"
-
-#include <tinygltf/tiny_gltf.h>
-
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 #include "Assets/Asset.h"

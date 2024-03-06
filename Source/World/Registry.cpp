@@ -1,8 +1,5 @@
 #include "Precomp.h"
 #include "World/Registry.h"
-
-#include <tinygltf/json.hpp>
-
 #include "Assets/Script.h"
 #include "World/World.h"
 #include "Assets/Prefabs/ComponentFactory.h"

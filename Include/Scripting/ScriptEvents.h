@@ -1,6 +1,4 @@
 #pragma once
-#include <tinygltf/tiny_gltf.h>
-
 #include "Utilities/Events.h"
 
 namespace Engine
