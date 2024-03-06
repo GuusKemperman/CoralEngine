@@ -2,7 +2,6 @@
 #include "World.h"
 #include "Systems/System.h"
 #include "Utilities/MemFunctions.h"
-#include "Components/Component.h"
 #include "Meta/MetaFunc.h"
 #include "Meta/MetaManager.h"
 #include "Utilities/Events.h"
@@ -202,14 +201,7 @@ namespace Engine
 
 		if constexpr (isEmpty)
 		{
-			if constexpr (AlwaysPassComponentOwnerAsFirstArgumentOfConstructor<ComponentType>::sValue)
-			{
-				mRegistry.emplace<ComponentType>(toEntity, toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
-			}
-			else
-			{
-				mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
-			}
+			mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
 
 			if constexpr (sIsReflectable<ComponentType>)
 			{
@@ -227,31 +219,23 @@ namespace Engine
 		}
 		else
 		{
-			ComponentType* component{};
-			if constexpr (AlwaysPassComponentOwnerAsFirstArgumentOfConstructor<ComponentType>::sValue)
-			{
-				component = &mRegistry.emplace<ComponentType>(toEntity, toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
-			}
-			else
-			{
-				component = &mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
-			}
+			ComponentType& component = mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);;
 
 			if constexpr (sIsReflectable<ComponentType>)
 			{
 				if (events.mOnConstruct != nullptr)
 				{
-					events.mOnConstruct->InvokeUncheckedUnpacked(*component, GetWorld(), toEntity);
+					events.mOnConstruct->InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
 				}
 
 				if (GetWorld().HasBegunPlay()
 					&& events.mOnBeginPlay != nullptr)
 				{
-					events.mOnBeginPlay->InvokeUncheckedUnpacked(*component, GetWorld(), toEntity);
+					events.mOnBeginPlay->InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
 				}
 			}
 
-			return *component;
+			return component;
 		}
 	}
 

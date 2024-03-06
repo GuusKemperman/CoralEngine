@@ -3,15 +3,6 @@
 
 namespace Engine
 {
-	// This can be specialized so that everytime you call Registry::AddComponent<T>,
-	// the owning entity is automatically passed to the constructor of the component
-	// See TransformComponent.h for example
-	template<typename T>
-	struct AlwaysPassComponentOwnerAsFirstArgumentOfConstructor 
-	{
-		static constexpr bool sValue = false;
-	};
-
 	/*
 	Some component require extra steps during serialization. This can be done by adding the following function:
 
