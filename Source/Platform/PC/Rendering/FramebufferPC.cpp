@@ -72,7 +72,6 @@ Engine::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 
 Engine::FrameBuffer::~FrameBuffer()
 {
-
 }
 
 void Engine::FrameBuffer::Bind()
