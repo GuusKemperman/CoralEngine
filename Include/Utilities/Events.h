@@ -129,9 +129,11 @@ namespace Engine
 
 	/**
 	 * \brief Returns the event bound during BindEvent, if any.
+	 *
+	 *  Example: TryGetEvent(componentType, sFixedTickEvent);
 	 */
-	template<typename T>
-	const MetaFunc* TryGetEvent(const MetaType& fromType, const Event<T>& event);
+	template<typename EventT>
+	const MetaFunc* TryGetEvent(const MetaType& fromType, const EventT& event);
 
 	//********************************//
 	//			Implementation		  //
@@ -182,8 +184,8 @@ namespace Engine
 		BindEvent<std::monostate>(type, event, func);
 	}
 
-	template <typename T>
-	const MetaFunc* TryGetEvent(const MetaType& fromType, const Event<T>& event)
+	template <typename EventT>
+	const MetaFunc* TryGetEvent(const MetaType& fromType, const EventT& event)
 	{
 		const MetaFunc* func = fromType.TryGetFunc(event.mName);
 
