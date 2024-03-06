@@ -25,6 +25,8 @@ namespace Engine
 	private:
         void OnSave(AssetSaveInfo& saveInfo) const override;
 
+		std::shared_ptr<const Script> mScript{};
+
 		std::shared_ptr<const Texture> mIconTexture{};
 		std::string mDescription{};
 

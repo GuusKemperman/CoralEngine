@@ -7,6 +7,7 @@
 #include "Meta/Fwd/MetaTypeFwd.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 #include "Assets/Texture.h"
+#include "Assets/Script.h"
 
 Engine::Ability::Ability(std::string_view name) :
 	Asset(name, MakeTypeId<Ability>())
@@ -25,6 +26,7 @@ Engine::Ability::Ability(AssetLoadInfo& loadInfo) :
 		return;
 	}
 
+	const BinaryGSONMember* serializedScript = obj.TryGetGSONMember("Script");
 	const BinaryGSONMember* serializedIconTexture = obj.TryGetGSONMember("IconTexture");
 	const BinaryGSONMember* serializedDescription = obj.TryGetGSONMember("Description");
 	const BinaryGSONMember* serializedGlobalCooldown = obj.TryGetGSONMember("GlobalCooldown");
@@ -32,7 +34,8 @@ Engine::Ability::Ability(AssetLoadInfo& loadInfo) :
 	const BinaryGSONMember* serializedRequirementToUse = obj.TryGetGSONMember("RequirementToUse");
 	const BinaryGSONMember* serializedCharges = obj.TryGetGSONMember("Charges");
 
-	if (serializedIconTexture == nullptr
+	if (serializedScript == nullptr 
+		|| serializedIconTexture == nullptr
 		|| serializedDescription == nullptr
 		|| serializedGlobalCooldown == nullptr
 		|| serializedRequirementType == nullptr
@@ -43,6 +46,7 @@ Engine::Ability::Ability(AssetLoadInfo& loadInfo) :
 		return;
 	}
 
+	*serializedScript >> mScript;
 	*serializedIconTexture >> mIconTexture;
 	*serializedDescription >> mDescription;
 	*serializedGlobalCooldown >> mGlobalCooldown;
@@ -53,7 +57,8 @@ Engine::Ability::Ability(AssetLoadInfo& loadInfo) :
 
 bool Engine::Ability::operator==(const Ability& other) const
 {
-	return mIconTexture == other.mIconTexture &&
+	return mScript == other.mScript &&
+		mIconTexture == other.mIconTexture &&
 		mDescription == other.mDescription &&
 		mGlobalCooldown == other.mGlobalCooldown &&
 		mRequirementType == other.mRequirementType &&
@@ -63,7 +68,8 @@ bool Engine::Ability::operator==(const Ability& other) const
 
 bool Engine::Ability::operator!=(const Ability& other) const
 {
-	return mIconTexture != other.mIconTexture ||
+	return mScript != other.mScript ||
+		mIconTexture != other.mIconTexture ||
 		mDescription != other.mDescription ||
 		mGlobalCooldown != other.mGlobalCooldown ||
 		mRequirementType != other.mRequirementType ||
@@ -75,6 +81,7 @@ void Engine::Ability::OnSave(AssetSaveInfo& saveInfo) const
 {
 	BinaryGSONObject obj{};
 
+	obj.AddGSONMember("Script") << mScript;
 	obj.AddGSONMember("IconTexture") << mIconTexture;
 	obj.AddGSONMember("Description") << mDescription;
 	obj.AddGSONMember("GlobalCooldown") << mGlobalCooldown;
@@ -89,6 +96,7 @@ Engine::MetaType Engine::Ability::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Ability>{}, "Ability", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 
+	type.AddField(&Ability::mScript, "mScript");
 	type.AddField(&Ability::mIconTexture, "mIconTexture");
 	type.AddField(&Ability::mDescription, "mDescription");
 	type.AddField(&Ability::mGlobalCooldown, "mGlobalCooldown");
