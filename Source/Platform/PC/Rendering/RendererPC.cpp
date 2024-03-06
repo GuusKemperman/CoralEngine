@@ -23,35 +23,12 @@
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
 #include "Assets/StaticMesh.h"
+#include "Utilities/DebugRenderer.h"
 
 Engine::Renderer::Renderer()
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
-
-    //CREATE ROOT SIGNATURE
-    mSignature = std::make_unique<DXSignature>(12);
-    mSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX);//0
-    mSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL);//1
-    mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX);//2
-    mSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL);//3
-    mSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL);//4
-
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);//5
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);//6
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);//7
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//8
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//9
-
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);//10
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);//11
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);//12
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4);//13
-
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);//14
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//15
-    mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//16
-    mSignature->CreateSignature(device, L"MAIN ROOT SIGNATURE");
 
     //CREATE PBR PIPELINE
     FileIO& fileIO = FileIO::Get();
@@ -59,44 +36,25 @@ Engine::Renderer::Renderer()
     ComPtr<ID3DBlob> v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
     ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
-    mPipelines[PBR_PIPELINE] = std::make_unique<DXPipeline>();
+    mPBRPipeline = std::make_unique<DXPipeline>();
     CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     rast.CullMode = D3D12_CULL_MODE_FRONT;
-    mPipelines[PBR_PIPELINE]->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
-    mPipelines[PBR_PIPELINE]->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
-    mPipelines[PBR_PIPELINE]->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
-    mPipelines[PBR_PIPELINE]->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
-    mPipelines[PBR_PIPELINE]->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
-    mPipelines[PBR_PIPELINE]->SetRasterizer(rast);
-    mPipelines[PBR_PIPELINE]->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
-    mPipelines[PBR_PIPELINE]->CreatePipeline(device, mSignature, L"PBR RENDER PIPELINE");
-
-    //CREATE SKY PIPELINE
-    rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-    CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-    rast.CullMode = D3D12_CULL_MODE_NONE;
-    depth.DepthEnable = FALSE;
-    depth.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-
-    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/SkyboxVertex.hlsl");
-    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
-    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/SkyboxPixel.hlsl");
-    p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
-    mPipelines[SKY_PIPELINE] = std::make_unique<DXPipeline>();
-    mPipelines[SKY_PIPELINE]->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
-    mPipelines[SKY_PIPELINE]->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
-    mPipelines[SKY_PIPELINE]->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
-    mPipelines[SKY_PIPELINE]->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
-    mPipelines[SKY_PIPELINE]->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
-    mPipelines[SKY_PIPELINE]->SetDepthState(depth);
-    mPipelines[SKY_PIPELINE]->SetRasterizer(rast);
-    mPipelines[SKY_PIPELINE]->CreatePipeline(device, mSignature, L"SKYBOX SIGNATURE");
+    mPBRPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+    mPBRPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
+    mPBRPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
+    mPBRPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
+    mPBRPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
+    mPBRPipeline->SetRasterizer(rast);
+    mPBRPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
+    mPBRPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
 
     //CREATE CONSTANT BUFFERS
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[MATERIAL_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Material info data", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4), MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
+
+    mDebugRenderer = std::make_unique<DebugRenderer>();
 }
 
 void Engine::Renderer::Render(const World& world)
@@ -155,9 +113,7 @@ void Engine::Renderer::Render(const World& world)
     }
 
     mConstBuffers[LIGHT_CB]->Update(&lights, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
-
-    commandList->SetGraphicsRootSignature(mSignature->GetSignature().Get());
-    commandList->SetPipelineState(mPipelines[PBR_PIPELINE]->GetPipeline().Get());
+    commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
 
     //BIND CONSTANT BUFFERS
     mConstBuffers[LIGHT_CB]->Bind(commandList, 1, 0, frameIndex);

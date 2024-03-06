@@ -2,7 +2,7 @@
 #include "../Include/Platform/PC/Rendering/DX12Classes/DxPipeline.h"
 #include "../Include/Platform/PC/Rendering/DX12Classes/DXSignature.h"
 
-void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const std::unique_ptr<DXSignature>& root, LPCWSTR name)
+void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature* root, LPCWSTR name)
 {
 	HRESULT hr;
 

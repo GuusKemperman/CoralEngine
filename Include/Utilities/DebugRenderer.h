@@ -2,6 +2,7 @@
 #include "glm/glm.hpp"
 
 namespace Engine {
+    class World;
     class DebugRenderer
     {
     public:
@@ -21,6 +22,7 @@ namespace Engine {
         void AddPlane(
             const glm::vec3& p1,
             const glm::vec3& p2);
+        void Render(const World& world);
 
     private:
         class Impl;

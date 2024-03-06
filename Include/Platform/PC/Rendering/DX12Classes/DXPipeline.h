@@ -11,7 +11,7 @@ class DXPipeline
 {
 public:
 	DXPipeline() {};
-	void CreatePipeline(ComPtr<ID3D12Device5> device, const std::unique_ptr<DXSignature>& root, LPCWSTR name);
+	void CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature* root, LPCWSTR name);
 
 	void AddInput(LPCSTR name, DXGI_FORMAT format, const uint slot);
 	void SetRasterizer(const CD3DX12_RASTERIZER_DESC& rasterizer);
