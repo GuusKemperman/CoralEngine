@@ -495,6 +495,10 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Assets\Ability.cpp" />
+    <ClCompile Include="Source\Components\Abilities\AbilitiesOnPlayerComponent.cpp" />
+    <ClCompile Include="Source\EditorSystems\AssetEditorSystems\AbilityEditorSystem.cpp" />
+    <ClCompile Include="Source\Systems\AbilitySystem.cpp" />
     <ClCompile Include="Source\Components\Abilities\ActiveAbilityComponent.cpp" />
     <ClCompile Include="Source\Components\DirectionalLightComponent.cpp" />
     <ClCompile Include="external\clipper\src\clipper.engine.cpp">
@@ -851,7 +855,6 @@
       <Warnings Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">WarningsOff</Warnings>
     </ClCompile>
     <ClCompile Include="Source\Components\Abilities\CharacterComponent.cpp" />
-    <ClCompile Include="Source\Components\Abilities\AbilityComponent.cpp" />
     <ClCompile Include="Source\Components\PointLightComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\Edge.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\Geometry2d.cpp" />
@@ -1277,6 +1280,8 @@
     <ClCompile Include="Source\World\WorldRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Assets\Ability.h" />
+    <ClInclude Include="Include\Components\Abilities\AbilitiesOnPlayerComponent.h" />
     <ClInclude Include="Include\Components\Abilities\ActiveAbilityComponent.h" />
     <ClInclude Include="Include\Components\DirectionalLightComponent.h" />
     <ClInclude Include="external\clipper\include\clipper2\clipper.core.h" />
@@ -1322,7 +1327,6 @@
     <ClInclude Include="include\BasicDataTypes\Colors\LinearColor.h" />
     <ClInclude Include="include\BasicDataTypes\Bezier.h" />
     <ClInclude Include="include\BasicDataTypes\Name.h" />
-    <ClInclude Include="Include\Components\Abilities\AbilityComponent.h" />
     <ClInclude Include="Include\Components\Abilities\CharacterComponent.h" />
     <ClInclude Include="include\Components\Component.h" />
     <ClInclude Include="Include\Components\ComponentFilter.h" />
@@ -1345,6 +1349,7 @@
     <ClInclude Include="Include\Core\CommonMetaProperties.h" />
     <ClInclude Include="include\core\Packager.h" />
     <ClInclude Include="Include\Core\VirtualMachine.h" />
+    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\AbilityEditorSystem.h" />
     <ClInclude Include="Include\EditorSystems\AssetEditorSystems\AssetEditorSystem.h" />
     <ClInclude Include="Include\EditorSystems\AssetEditorSystems\LevelEditorSystem.h" />
     <ClInclude Include="Include\EditorSystems\AssetEditorSystems\MaterialEditorSystem.h" />
@@ -1399,6 +1404,7 @@
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectVector.h" />
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
+    <ClInclude Include="Include\Systems\AbilitySystem.h" />
     <ClInclude Include="Include\Systems\NavigationSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
