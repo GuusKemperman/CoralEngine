@@ -3,6 +3,7 @@
 
 namespace Engine
 {
+	class AbilitySystem;
 	class Texture;
 	class Script;
 
@@ -23,6 +24,7 @@ namespace Engine
 		};
 
 	private:
+		friend AbilitySystem;
         void OnSave(AssetSaveInfo& saveInfo) const override;
 
 		std::shared_ptr<const Script> mScript{};
