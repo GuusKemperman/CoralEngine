@@ -31,7 +31,7 @@ void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity 
 		{
 			MetaAny component(type, storage.value(enemyID));
 
-			auto& componentAiEvaluate = TryGetEvent(type, sAIEvaluateEvent);
+			const MetaFunc& componentAiEvaluate = *TryGetEvent(*type, sAIEvaluateEvent);
 			FuncResult fr = componentAiEvaluate(component, world, enemyID, dt);
 
 			float score = fr.GetReturnValue().IsExactly<float>();
@@ -49,7 +49,7 @@ void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity 
 	{
 		MetaAny component(*bestType, bestStorage->value(enemyID));
 
-		auto& componentAiTick = *TryGetEvent(*bestType, sAITickEvent);
+		const MetaFunc& componentAiTick = *TryGetEvent(*bestType, sAITickEvent);
 		FuncResult fr = componentAiTick(component, world, enemyID, dt);
 	}
 }
