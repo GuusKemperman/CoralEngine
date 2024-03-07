@@ -15,7 +15,6 @@
 #include "World/World.h"
 #include "World/WorldRenderer.h"
 #include "Utilities/Benchmark.h"
-#include "Utilities/DebugRenderer.h"
 #include "World/Registry.h"
 
 Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
@@ -30,7 +29,6 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	MetaManager::StartUp();
 	AssetManager::StartUp();
 	VirtualMachine::StartUp();
-	DebugRenderer::StartUp();
 
 #ifdef EDITOR
 	Editor::StartUp();
@@ -45,7 +43,6 @@ Engine::EngineClass::~EngineClass()
 	Editor::ShutDown();
 #endif  // EDITOR
 
-	DebugRenderer::ShutDown();
 	VirtualMachine::ShutDown();
 	AssetManager::ShutDown();
 	MetaManager::ShutDown();
@@ -72,7 +69,6 @@ void Engine::EngineClass::Run()
 
 	Input& input = Input::Get();
 	Device& device = Device::Get();
-	DebugRenderer& debugRenderer = DebugRenderer::Get();
 
 	float timeElapsedSinceLastGarbageCollect{};
 	static constexpr float garbageCollectInterval = 5.0f;
@@ -95,7 +91,6 @@ void Engine::EngineClass::Run()
 		device.NewFrame();
 		world.Tick(deltaTime);
 		world.GetRenderer().Render();
-		debugRenderer.Render(world);
 		device.EndFrame();
 #endif  // EDITOR
 

@@ -6,53 +6,100 @@
 
 namespace Engine 
 {
-    class DebugRenderer final :
-        public EngineSubsystem<DebugRenderer>
+    struct DebugCategory
     {
-        friend EngineSubsystem;
+        enum Enum
+        {
+            General = 1 << 0,
+            Gameplay = 1 << 1,
+            Physics = 1 << 2,
+            Sound = 1 << 3,
+            Rendering = 1 << 4,
+            AINavigation = 1 << 5,
+            AIDecision = 1 << 6,
+            Editor = 1 << 7,
+            AccelStructs = 1 << 8,
+            Particles = 1 << 9,
+            All = 0xFFFFFFFF
+        };
+    };
+
+    struct Plane // for 2D debug drawing
+    {
+        enum Enum
+        {
+            XY = 0,
+            XZ,
+            YZ
+        };
+    };
+
+    class DebugRenderer
+    {
+        friend class WorldRenderer;
+        
+    public:
         DebugRenderer();
         ~DebugRenderer();
-
-    public:
         void Render(const World& world);
+
         void AddLine(
-            const glm::vec3& from,
-            const glm::vec3& to,
-            const glm::vec4& color);
+            DebugCategory::Enum category, 
+            const glm::vec3& from, 
+            const glm::vec3& to, 
+            const glm::vec4& color) const;
 
-        /// <summary>
-        /// Renders a circle with debug lines. Assumes y = center.y.
-        /// </summary>
-        /// <param name="center">Center of the circle.</param>
-        /// <param name="radius">Rdius of the circle.</param>
-        /// <param name="color">Color of the lines.</param>
+        void AddLine(
+            DebugCategory::Enum category, 
+            const glm::vec2& from, 
+            const glm::vec2& to, 
+            const glm::vec4& color,
+            Plane::Enum plane = Plane::XZ) const;
+
         void AddCircle(
-            const glm::vec3& center,
-            float radius,
-            const glm::vec4& color);
-        void AddSphere(
-            const glm::vec3& center,
-            float radius,
-            const glm::vec4& color); 
-        void AddCube(
-            const glm::vec3& center,
-            float size,
-            const glm::vec4& color);
+            DebugCategory::Enum category, 
+            const glm::vec3& center, 
+            float radius, 
+            const glm::vec4& color,
+            Plane::Enum plane = Plane::XZ) const;
 
-        /// <summary>
-        /// Plane drawn from lines. Will assume plane is renderer flatly on the y axis.
-        /// </summary>
-        /// <param name="center">Center of the plane.</param>
-        /// <param name="size">Size of the plane.</param>
-        /// <param name="color">Color of the lines.</param>
-        void AddPlane(
-            const glm::vec3& center,
-            float size,
-            const glm::vec4& color);
+        void AddSphere(
+            DebugCategory::Enum category, 
+            const glm::vec3& center, 
+            float radius, 
+            const glm::vec4& color) const;
+
+        void AddSquare(
+            DebugCategory::Enum category, 
+            const glm::vec3& center, 
+            float size, 
+            const glm::vec4& color,
+            Plane::Enum plane = Plane::XZ) const;
+
+        void AddBox(
+            DebugCategory::Enum category, 
+            const glm::vec3& center, 
+            const glm::vec3& halfExtends, 
+            const glm::vec4& color) const;
+
+        void AddPolygon(
+            DebugCategory::Enum category, 
+            const std::vector<glm::vec3>& points, 
+            const glm::vec4& color) const;
+
+        void AddPolygon(
+            DebugCategory::Enum category, 
+            const std::vector<glm::vec2>& points, 
+            const glm::vec4& color, 
+            Plane::Enum plane = Plane::XZ) const;
+
+        static void SetDebugCategoryFlags(DebugCategory::Enum flags) { sDebugCategoryFlags = flags; }
+        static DebugCategory::Enum GetDebugCategoryFlags() { return sDebugCategoryFlags; }
 
     private:
         class Impl;
         std::unique_ptr<Impl> mImpl;
+        static inline DebugCategory::Enum sDebugCategoryFlags{ DebugCategory::All };
     };
 
     namespace Colors
