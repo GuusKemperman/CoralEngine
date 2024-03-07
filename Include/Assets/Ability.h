@@ -3,6 +3,7 @@
 
 namespace Engine
 {
+	struct AbilityInstanceWithInputs;
 	class AbilitySystem;
 	class Texture;
 	class Script;
@@ -14,9 +15,6 @@ namespace Engine
         Ability(std::string_view name);
         Ability(AssetLoadInfo& loadInfo);
 
-		bool operator==(const Ability& other) const;
-		bool operator!=(const Ability& other) const;
-
 		enum RequirementType
 		{
 			Cooldown,
@@ -25,6 +23,8 @@ namespace Engine
 
 	private:
 		friend AbilitySystem;
+		friend AbilityInstanceWithInputs;
+
         void OnSave(AssetSaveInfo& saveInfo) const override;
 
 		std::shared_ptr<const Script> mScript{};
@@ -32,7 +32,12 @@ namespace Engine
 		std::shared_ptr<const Texture> mIconTexture{};
 		std::string mDescription{};
 
-		bool mGlobalCooldown = true; // whether this ability takes into account the global cooldown
+		/**
+		*@brief Indicates whether this ability takes into account the GDC (global cooldown).
+		* Every player has a GDC, so regardless of if an ability is off its own internal cooldown,
+		* it still could not be activated if this variable is set to true. A GDC ensures abilities cannot be spammed.
+		*/
+		bool mGlobalCooldown = true;
 
 		RequirementType mRequirementType{};
 

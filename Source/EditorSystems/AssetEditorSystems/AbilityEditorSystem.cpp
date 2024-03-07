@@ -2,6 +2,7 @@
 #include "EditorSystems/AssetEditorSystems/AbilityEditorSystem.h"
 
 #include "Utilities/Imgui/ImguiInspect.h"
+#include "Meta/MetaManager.h"
 
 Engine::AbilityEditorSystem::AbilityEditorSystem(Ability&& asset)
 	: AssetEditorSystem(std::move(asset))
@@ -24,12 +25,11 @@ void Engine::AbilityEditorSystem::Tick(float deltaTime)
 		ImGui::EndMenuBar();
 	}
 
-	const MetaType* const ability = MetaManager::Get().TryGetType<Ability>();
-	ASSERT(ability != nullptr);
+	const MetaType& ability = MetaManager::Get().GetType<Ability>();
 
 	MetaAny refToMat{ mAsset };
 
-	for (const MetaField& field : ability->EachField())
+	for (const MetaField& field : ability.EachField())
 	{
 		MetaAny refToMember = field.MakeRef(refToMat);
 		ShowInspectUI(std::string{ field.GetName() }, refToMember);

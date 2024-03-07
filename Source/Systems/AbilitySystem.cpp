@@ -23,61 +23,63 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             characterData.mGlobalCooldownTimer -= dt;
         }
 
-        if (auto abilities = reg.TryGet<AbilitiesOnPlayerComponent>(entity); abilities)
+        auto abilities = reg.TryGet<AbilitiesOnPlayerComponent>(entity);
+        if (abilities == nullptr)
         {
-	        for (auto& ability : abilities->mAbilitiesToInput)
-	        {
-                // update counter
-		        switch (ability.mAbilityAsset->mRequirementType)
-		        {
-		        case Ability::Cooldown:
+	        continue;
+        }
+
+        for (auto& ability : abilities->mAbilitiesToInput)
+        {
+            // update counter
+            switch (ability.mAbilityAsset->mRequirementType)
+            {
+            case Ability::Cooldown:
+            {
+                if (ability.mRequirementCounter < ability.mAbilityAsset->mRequirementToUse)
                 {
-                    if (ability.mRequirementCounter < ability.mAbilityAsset->mRequirementToUse)
+                    ability.mRequirementCounter += dt;
+                }
+                break;
+            }
+            case Ability::Mana:
+            {
+                break;
+            }
+            }
+            // check if ability can be used
+            if (ability.mRequirementCounter >= ability.mAbilityAsset->mRequirementToUse &&
+                ability.mChargesCounter < ability.mAbilityAsset->mCharges &&
+                (ability.mAbilityAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f))
+            {
+                for (auto& key : ability.mKeyboardKeys)
+                {
+                    if (input.WasKeyboardKeyPressed(key))
                     {
-                        ability.mRequirementCounter += dt;
+                        ActivateAbility(world, entity, characterData, ability);
                     }
-                    break;
                 }
-                case Ability::Mana:
+                for (auto& button : ability.mGamepadButtons)
                 {
-                    break;
-                }
-		        }
-                // check if ability can be used
-                if (ability.mRequirementCounter >= ability.mAbilityAsset->mRequirementToUse && 
-                    ability.mChargesCounter < ability.mAbilityAsset->mCharges && 
-                    (ability.mAbilityAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f))
-                {
-	                for (auto& key : ability.mKeyboardKeys)
-	                {
-		                if (input.WasKeyboardKeyPressed(key))
-                        {
-                            ActivateAbility(world, entity, characterData, ability);
-                        }
-                    }
-                    for (auto& button : ability.mGamepadButtons)
+                    // TODO: replace zero with player id by separating abilities on player and abilities on AI
+                    if (input.WasGamepadButtonPressed(0, button))
                     {
-                        // TODO: replace zero with player id by separating abilities on player and abilities on AI
-                        if (input.WasGamepadButtonPressed(0, button))
-                        {
-                            ActivateAbility(world, entity, characterData, ability);
-                        }
+                        ActivateAbility(world, entity, characterData, ability);
                     }
                 }
-	        }
+            }
         }
     }
 }
 
 void Engine::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstanceWithInputs& ability)
 {
-    // on ability activate effect
-    
+    // ability activate event
     if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mScript->GetName()))
     {
 	    if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
         {
-            (*metaFunc)(world, castBy);
+            metaFunc->InvokeUncheckedUnpacked(world, castBy);
         }
     }
     else

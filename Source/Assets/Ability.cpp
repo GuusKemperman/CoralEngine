@@ -55,28 +55,6 @@ Engine::Ability::Ability(AssetLoadInfo& loadInfo) :
 	*serializedCharges >> mCharges;
 }
 
-bool Engine::Ability::operator==(const Ability& other) const
-{
-	return mScript == other.mScript &&
-		mIconTexture == other.mIconTexture &&
-		mDescription == other.mDescription &&
-		mGlobalCooldown == other.mGlobalCooldown &&
-		mRequirementType == other.mRequirementType &&
-		mRequirementToUse - other.mRequirementToUse <= 1e-9 &&
-		mCharges == other.mCharges;
-}
-
-bool Engine::Ability::operator!=(const Ability& other) const
-{
-	return mScript != other.mScript ||
-		mIconTexture != other.mIconTexture ||
-		mDescription != other.mDescription ||
-		mGlobalCooldown != other.mGlobalCooldown ||
-		mRequirementType != other.mRequirementType ||
-		mRequirementToUse - other.mRequirementToUse > 1e-9 ||
-		mCharges != other.mCharges;
-}
-
 void Engine::Ability::OnSave(AssetSaveInfo& saveInfo) const
 {
 	BinaryGSONObject obj{};
