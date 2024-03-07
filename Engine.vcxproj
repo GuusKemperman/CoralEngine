@@ -1581,6 +1581,7 @@
     <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
     <ClInclude Include="Include\Utilities\CPP20\Span.h" />
     <ClInclude Include="Include\Utilities\CPP20\STDAliases.h" />
+    <ClInclude Include="Include\Utilities\DebugRenderer.h" />
     <ClInclude Include="Include\Utilities\Events.h" />
     <ClInclude Include="Include\Utilities\MemFunctions.h" />
     <ClInclude Include="Include\Utilities\IterableRange.h" />
