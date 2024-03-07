@@ -47,6 +47,14 @@ static int GetIndexFromAssimpTextureName(const char* name)
 	return atoi(std::string(name).erase(0, 1).c_str());
 }
 
+//void ExtractBoneWeightsForVertices(std::vector<glm::vec2>& boneWeights, aiMesh& mesh, const ai***REMOVED***ne* ***REMOVED***ne)
+//{
+//
+//
+//
+//
+//}
+
 std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(const std::filesystem::path& file) const
 {
     Assimp::Importer importer{};
@@ -204,6 +212,11 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 		if (mesh.HasTangentsAndBitangents())
 		{
 			tangents = std::vector<glm::vec3>( reinterpret_cast<const glm::vec3*>(mesh.mTangents), reinterpret_cast<const glm::vec3*>(mesh.mTangents) + mesh.mNumVertices );
+		}
+
+		if (mesh.HasBones())
+		{
+
 		}
 
 		std::optional<ImportedAsset> importedMesh = ImportFromMemory(file, meshName, myVersion, positions, indices, normals, tangents, textureCoordinates);

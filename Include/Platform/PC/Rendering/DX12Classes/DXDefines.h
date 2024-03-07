@@ -30,6 +30,7 @@ using namespace Microsoft::WRL;
 #define FRAME_BUFFER_COUNT 2
 #define MAX_LIGHTS 20
 #define MAX_MESHES 65000
+#define MAX_BONES 128
 
 //DESCRIPTOR HEAPS
 #define RT_HEAP						0
@@ -55,7 +56,8 @@ using namespace Microsoft::WRL;
 #define MATERIAL_CB				1
 #define LIGHT_CB				2
 #define MODEL_MATRIX_CB			3
-#define NUM_CBS MODEL_MATRIX_CB+	1
+#define FINAL_BONE_MATRIX_CB	4
+#define NUM_CBS FINAL_BONE_MATRIX_CB+	1
 
 //PIPELINES
 #define PBR_PIPELINE				0
