@@ -48,6 +48,7 @@ void Engine::AbilityInstanceWithInputs::DisplayWidget()
 Engine::MetaType Engine::AbilityInstanceWithInputs::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<AbilityInstanceWithInputs>{}, "AbilityInstanceWithInputs" };
+	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
 	metaType.AddField(&AbilityInstanceWithInputs::mAbilityAsset, "mAbilityAsset").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&AbilityInstanceWithInputs::mRequirementCounter, "mRequirementCounter").GetProperties().Add(Props::sIsScriptableTag);
