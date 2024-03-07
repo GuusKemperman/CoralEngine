@@ -8,7 +8,7 @@
 
 namespace Engine
 {
-	template<typename EventT, typename Functor>
+	template <typename EventT, typename Functor>
 	static void CallEvent(World& world, const EventT& event, Functor&& functor);
 }
 
@@ -24,8 +24,9 @@ void Engine::TickSystem::Update(World& world, float dt)
 			}
 			return event.InvokeUncheckedUnpacked(mWorldArg, owner, mDtArg);
 		}
-		MetaAny mWorldArg{ world };
-		MetaAny mDtArg{ dt };
+
+		MetaAny mWorldArg{world};
+		MetaAny mDtArg{dt};
 	};
 	CallEvent(world, sTickEvent, TickFunctor{});
 }
@@ -42,12 +43,32 @@ void Engine::FixedTickSystem::Update(World& world, float)
 			}
 			return event.InvokeUncheckedUnpacked(mWorldArg, owner);
 		}
-		MetaAny mWorldArg{ world };
+
+		MetaAny mWorldArg{world};
 	};
 	CallEvent(world, sFixedTickEvent, FixedTickFunctor{});
 }
 
-template<typename EventT, typename Functor>
+void Engine::AiTickSystem::Update(World& world, float dt)
+{
+	struct AiTickFunctor
+	{
+		FuncResult operator()(const MetaFunc& event, std::optional<MetaAny>&& component, entt::entity owner)
+		{
+			if (component.has_value())
+			{
+				return event.InvokeUncheckedUnpacked(*component, mWorldArg, owner, mDtArg);
+			}
+			return event.InvokeUncheckedUnpacked(mWorldArg, owner, mDtArg);
+		}
+
+		MetaAny mWorldArg{world};
+		MetaAny mDtArg{dt};
+	};
+	CallEvent(world, sAITickEvent, AiTickFunctor{});
+}
+
+template <typename EventT, typename Functor>
 void Engine::CallEvent(World& world, const EventT& event, Functor&& functor)
 {
 	Registry& reg = world.GetRegistry();
@@ -79,7 +100,7 @@ void Engine::CallEvent(World& world, const EventT& event, Functor&& functor)
 
 		if (func != nullptr)
 		{
-			typesWithEvent.emplace_back(TypeToCallEventFor{ *type, *func, storage });
+			typesWithEvent.emplace_back(TypeToCallEventFor{*type, *func, storage});
 		}
 	}
 
@@ -94,14 +115,13 @@ void Engine::CallEvent(World& world, const EventT& event, Functor&& functor)
 			{
 				continue;
 			}
-			;
 			if (isStatic)
 			{
 				functor(func, std::nullopt, entity);
 			}
 			else
 			{
-				functor(func, MetaAny{ type.get(), storage.get().value(entity), false }, entity);
+				functor(func, MetaAny{type.get(), storage.get().value(entity), false}, entity);
 			}
 		}
 	}
@@ -109,10 +129,15 @@ void Engine::CallEvent(World& world, const EventT& event, Functor&& functor)
 
 Engine::MetaType Engine::TickSystem::Reflect()
 {
-	return MetaType{ MetaType::T<TickSystem>{}, "TickSystem", MetaType::Base<System>{} };
+	return MetaType{MetaType::T<TickSystem>{}, "TickSystem", MetaType::Base<System>{}};
 }
 
 Engine::MetaType Engine::FixedTickSystem::Reflect()
 {
-	return MetaType{ MetaType::T<FixedTickSystem>{}, "FixedTickSystem", MetaType::Base<System>{} };
+	return MetaType{MetaType::T<FixedTickSystem>{}, "FixedTickSystem", MetaType::Base<System>{}};
+}
+
+Engine::MetaType Engine::AiTickSystem::Reflect()
+{
+	return MetaType{MetaType::T<AiTickSystem>{}, "AiTickSystem", MetaType::Base<System>{}};
 }

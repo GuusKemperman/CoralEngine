@@ -29,30 +29,47 @@ void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity 
 
 		if (storage.contains(enemyID) && TryGetEvent(*type, sAITickEvent))
 		{
-			MetaAny component(*type, storage.value(enemyID));
+			MetaAny component{*type, storage.value(enemyID), false};
 
 			if (!TryGetEvent(*type, sAIEvaluateEvent))
 			{
 				continue;
 			}
 
-			const MetaFunc& componentAiEvaluate = *TryGetEvent(*type, sAIEvaluateEvent);
-			FuncResult fr = componentAiEvaluate(component, world, enemyID, dt);
-
-			float score = fr.GetReturnValue().IsExactly<float>();
-
-			if (score > bestScore)
+			const MetaFunc* componentAiEvaluate = TryGetEvent(*type, sAIEvaluateEvent);
+			const bool isStatic = componentAiEvaluate->GetProperties().Has(Props::sIsEventStaticTag);
+			if (isStatic)
 			{
-				bestScore = score;
-				bestType = type;
-				bestStorage = &storage;
+				FuncResult fr = (*componentAiEvaluate)(world, enemyID);
+
+				const float* score = fr.GetReturnValue().As<float>();
+
+				if (*score > bestScore)
+				{
+					bestScore = *score;
+					bestType = type;
+					bestStorage = &storage;
+				}
+			}
+			else
+			{
+				FuncResult fr = (*componentAiEvaluate)(component, world, enemyID);
+
+				const float* score = fr.GetReturnValue().As<float>();
+
+				if (*score > bestScore)
+				{
+					bestScore = *score;
+					bestType = type;
+					bestStorage = &storage;
+				}
 			}
 		}
 	}
 
 	if (bestType != nullptr)
 	{
-		MetaAny component(*bestType, bestStorage->value(enemyID));
+		MetaAny component(*bestType, bestStorage->value(enemyID), false);
 
 		if (TryGetEvent(*bestType, sAIEvaluateEvent))
 		{
