@@ -13,7 +13,7 @@ namespace Engine
 		void Update(World& world, float dt) override;
 
 	private:
-		void DeployAbility(CharacterComponent& characterData, AbilityInstanceWithInputs& ability);
+		void ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstanceWithInputs& ability);
 
 		friend ReflectAccess;
 		static MetaType Reflect();

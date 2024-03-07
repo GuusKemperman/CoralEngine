@@ -5,9 +5,11 @@
 #include "Components/Abilities/AbilitiesOnPlayerComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Meta/MetaType.h"
+#include "Meta/MetaFunc.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Core/Input.h"
+#include "Assets/Script.h"
 
 void Engine::AbilitySystem::Update(World& world, float dt)
 {
@@ -50,7 +52,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
 	                {
 		                if (input.WasKeyboardKeyPressed(key))
                         {
-                            DeployAbility(characterData, ability);
+                            ActivateAbility(world, entity, characterData, ability);
                         }
                     }
                     for (auto& button : ability.mGamepadButtons)
@@ -58,7 +60,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
                         // TODO: replace zero with player id by separating abilities on player and abilities on AI
                         if (input.WasGamepadButtonPressed(0, button))
                         {
-                            DeployAbility(characterData, ability);
+                            ActivateAbility(world, entity, characterData, ability);
                         }
                     }
                 }
@@ -67,10 +69,21 @@ void Engine::AbilitySystem::Update(World& world, float dt)
     }
 }
 
-void Engine::AbilitySystem::DeployAbility(CharacterComponent& characterData, AbilityInstanceWithInputs& ability)
+void Engine::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstanceWithInputs& ability)
 {
-    // on fire event
-    LOG(LogAbilitySystem, Message, "Fired ability {}", ability.mAbilityAsset->GetName())
+    // on ability activate effect
+    
+    if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mScript->GetName()))
+    {
+	    if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
+        {
+            (*metaFunc)(world, castBy);
+        }
+    }
+    else
+    {
+        LOG(LogAbilitySystem, Error, "Unable to call OnAbilityActivate event for ability "{}"", ability.mAbilityAsset->GetName())
+    }
     characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
     ability.mChargesCounter++;
     if (ability.mChargesCounter >= ability.mAbilityAsset->mCharges)
