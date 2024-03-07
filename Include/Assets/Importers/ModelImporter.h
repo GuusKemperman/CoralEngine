@@ -4,7 +4,7 @@
 
 namespace Engine
 {
-	class StaticMeshImporter :
+	class ModelImporter :
 		public Importer
 	{
 	public:
@@ -24,14 +24,14 @@ namespace Engine
 		{
 			// We can import anything assimp can, so this list can be significantly expanded
 			return {
-			".obj"
+			".obj", ".gltf", ".glb"
 			};
 		}
 
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(StaticMeshImporter);
+		REFLECT_AT_START_UP(ModelImporter);
 	};
 }
 #endif // EDITOR

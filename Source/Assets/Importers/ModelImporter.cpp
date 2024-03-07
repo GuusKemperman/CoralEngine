@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Assets/Importers/StaticMeshImporter.h"
+#include "Assets/Importers/ModelImporter.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/***REMOVED***ne.h>
@@ -9,7 +9,9 @@
 #include "Assets/StaticMesh.h"
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
+#include "stb_image/stb_image.h"
 #include "Assets/Importers/MaterialImporter.h"
+#include "Assets/Importers/TextureImporter.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Assets/Importers/PrefabImporter.h"
@@ -20,10 +22,35 @@
 #include "Utilities/ClassVersion.h"
 #include "Meta/MetaManager.h"
 
-std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Import(const std::filesystem::path& file) const
+static std::string GetTexName(const std::filesystem::path& modelPath, const int index)
+{
+	return modelPath.filename().replace_extension().string().append("_tex").append(std::to_string(index));
+}
+
+static std::string GetMeshName(const std::filesystem::path& modelPath, const char* name)
+{
+	return modelPath.filename().replace_extension().string().append("_").append(name);
+}
+
+static std::string Get***REMOVED***neName(const std::filesystem::path& modelPath)
+{
+	return modelPath.filename().replace_extension().string().append("_").append("Prefab");
+}
+
+static std::string GetMaterialName(const std::filesystem::path& modelPath, const char* name, const int index)
+{
+	return (*name == *"") ? "M_" + modelPath.filename().string() + *"_Unnamed_Material_" + std::to_string(index) : name;
+}
+
+static int GetIndexFromAssimpTextureName(const char* name)
+{
+	return atoi(std::string(name).erase(0, 1).c_str());
+}
+
+std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(const std::filesystem::path& file) const
 {
     Assimp::Importer importer{};
-    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
 
 	if (***REMOVED***ne == nullptr)
 	{
@@ -31,28 +58,61 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 		return std::optional<std::vector<ImportedAsset>>{};
 	}
 
-	const MetaType* const myType = MetaManager::Get().TryGetType<StaticMeshImporter>();
+	const MetaType* const myType = MetaManager::Get().TryGetType<ModelImporter>();
 	ASSERT(myType != nullptr);
 	
 	const uint32 myVersion = GetClassVersion(*myType);
 
 	std::vector<ImportedAsset> returnValue{};
 
+	// Not really loaded in, but materials hold a shared ptr to textures
+	std::vector<std::shared_ptr<const Texture>> textures{};
+
 	// We set it to false initially. If we encounter errors, we continue importing for a bit (but set this to false), 
 	// just so we can log more errors and inform the user of any other issues.
 	bool anyErrors = false;
+
+	for (uint32 i = 0; i < ***REMOVED***ne->mNumTextures; i++)
+	{
+		const aiTexture& aiTex = ****REMOVED***ne->mTextures[i];
+
+		const std::string textureName = GetTexName(file, i);
+
+		std::optional<ImportedAsset> importedTexture{};
+
+		const int size = aiTex.mHeight != 0 ? aiTex.mWidth * aiTex.mHeight : aiTex.mWidth;
+
+		int width{}, height{}, channels{};
+
+		const Engine::Span<char> pixels = { 
+			reinterpret_cast<char*>(stbi_load_from_memory(reinterpret_cast<const unsigned char*>(aiTex.pcData), size, &width, &height, &channels, 4)),
+			static_cast<unsigned int>(width * height * 4)};
+
+		importedTexture = TextureImporter::ImportFromMemory(file,
+			textureName,
+			myVersion,
+			pixels, 
+			static_cast<uint32>(width),
+			static_cast<uint32>(height));
+
+		if (importedTexture.has_value())
+		{
+			returnValue.emplace_back(std::move(*importedTexture));
+		}
+		else
+		{
+			LOG(LogAssets, Error, "Failed to import {}", textureName);
+			anyErrors = true;
+		}
+
+		textures.emplace_back(std::make_shared<const Texture>(textureName));
+	}
 
 	for (uint32 i = 0; i < ***REMOVED***ne->mNumMaterials; i++)
 	{
 		const aiMaterial& aiMat = ****REMOVED***ne->mMaterials[i];
 
-		if (AssetManager::Get().TryGetWeakAsset<Material>(aiMat.GetName().C_Str()).has_value())
-		{
-			LOG(LogAssets, Message, "Material {} will not be imported, as there is already a material with this name", aiMat.GetName().C_Str());
-			continue;
-		}
-
-		Material engineMat{ aiMat.GetName().C_Str() };
+		Material engineMat{ GetMaterialName(file, aiMat.GetName().C_Str(), i) };
 
 		aiGetMaterialColor(&aiMat, AI_MATKEY_BASE_COLOR, reinterpret_cast<aiColor4D*>(&engineMat.mBaseColorFactor));
 		
@@ -75,27 +135,27 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 		aiString textureName{};
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_BASE_COLOR, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mBaseColorTexture{};
 		{
-			engineMat.mBaseColorTexture = std::make_shared<const Texture>(textureName.C_Str());
+			engineMat.mBaseColorTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_NORMALS, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mNormalTexture{};
 		{
-			engineMat.mNormalTexture = std::make_shared<const Texture>(textureName.C_Str());
+			engineMat.mNormalTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
-		if (aiGetMaterialTexture(&aiMat, aiTextureType_AMBIENT_OCCLUSION, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mOcclusionTexture{};
+		if (aiGetMaterialTexture(&aiMat, aiTextureType_LIGHTMAP, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mOcclusionTexture{};
 		{
-			engineMat.mOcclusionTexture = std::make_shared<const Texture>(textureName.C_Str());
+			engineMat.mOcclusionTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mMetallicRoughnessTexture{};
 		{
-			engineMat.mMetallicRoughnessTexture = std::make_shared<const Texture>(textureName.C_Str());
+			engineMat.mMetallicRoughnessTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_EMISSIVE, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mEmissiveTexture{};
 		{
-			engineMat.mEmissiveTexture = std::make_shared<const Texture>(textureName.C_Str());
+			engineMat.mEmissiveTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		returnValue.emplace_back(MaterialImporter::Import(file, myVersion, engineMat));
@@ -104,6 +164,8 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 	for (uint32 i = 0; i < ***REMOVED***ne->mNumMeshes; i++)
 	{
 		const aiMesh& mesh = ****REMOVED***ne->mMeshes[i];
+
+		const std::string meshName = GetMeshName(file, mesh.mName.C_Str());
 
 		const Span<const glm::vec3> positions = { reinterpret_cast<const glm::vec3*>(mesh.mVertices), mesh.mNumVertices };
 		std::optional<std::vector<uint32>> indices{};
@@ -144,7 +206,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 			tangents = std::vector<glm::vec3>( reinterpret_cast<const glm::vec3*>(mesh.mTangents), reinterpret_cast<const glm::vec3*>(mesh.mTangents) + mesh.mNumVertices );
 		}
 
-		std::optional<ImportedAsset> importedMesh = ImportFromMemory(file, mesh.mName.C_Str(), myVersion, positions, indices, normals, tangents, textureCoordinates);
+		std::optional<ImportedAsset> importedMesh = ImportFromMemory(file, meshName, myVersion, positions, indices, normals, tangents, textureCoordinates);
 
 		if (importedMesh.has_value())
 		{
@@ -152,7 +214,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 		}
 		else
 		{
-			LOG(LogAssets, Error, "Loading of mesh {} failed: converting assimp results to engine representation failed", mesh.mName.C_Str());
+			LOG(LogAssets, Error, "Loading of mesh {} failed: converting assimp results to engine representation failed", meshName);
 			anyErrors = true;
 		}
 	}
@@ -176,7 +238,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 				transform.SetParent(&reg.Get<TransformComponent>(*parent));
 			}
 
-			transform.SetLocalMatrix(reinterpret_cast<const glm::mat4&>(node.mTransformation));
+			transform.SetLocalMatrix(glm::transpose(reinterpret_cast<const glm::mat4&>(node.mTransformation)));
 
 			for (size_t i = 0; i < node.mNumMeshes; i++)
 			{
@@ -194,11 +256,10 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 
 				StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(entity);
 
-				std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>(***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str());
-				reg.AddComponent<NameComponent>(meshHolder, mesh->GetName());
+				std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>(GetMeshName(file, ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str()));
 				meshComponent.mStaticMesh = std::move(mesh);
 				
-				std::shared_ptr<Material> mat = std::make_shared<Material>(***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str());
+				std::shared_ptr<Material> mat = std::make_shared<Material>(GetMaterialName(file, ***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex));
 				meshComponent.mMaterial = std::move(mat);
 			}
 
@@ -212,9 +273,10 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 			return entity;
 		};
 
+	***REMOVED***ne->mRootNode->mName = file.filename().replace_extension().string();
 	const entt::entity prefabEntity = makePrefab(****REMOVED***ne->mRootNode, {});
 
-	std::optional<ImportedAsset> importedPrefab = PrefabImporter::MakePrefabFromEntity(file, file.filename().string().append("_Prefab"), myVersion, world, prefabEntity);
+	std::optional<ImportedAsset> importedPrefab = PrefabImporter::MakePrefabFromEntity(file, Get***REMOVED***neName(file), myVersion, world, prefabEntity);
 
 	if (importedPrefab.has_value())
 	{
@@ -226,7 +288,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::StaticMeshImporter::Im
 	return std::optional<std::vector<ImportedAsset>>{};
 }
 
-std::optional<Engine::ImportedAsset> Engine::StaticMeshImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
+std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
     const std::string& name, 
     const uint32 importerVersion, 
     Span<const glm::vec3> positions, 
@@ -246,9 +308,9 @@ std::optional<Engine::ImportedAsset> Engine::StaticMeshImporter::ImportFromMemor
     return std::optional<ImportedAsset>();
 }
 
-Engine::MetaType Engine::StaticMeshImporter::Reflect()
+Engine::MetaType Engine::ModelImporter::Reflect()
 {
-	MetaType type = MetaType{ MetaType::T<StaticMeshImporter>{}, "StaticMeshImporter", MetaType::Base<Importer>{} };
+	MetaType type = MetaType{ MetaType::T<ModelImporter>{}, "ModelImporter", MetaType::Base<Importer>{} };
 
 	// Added tangents
 	SetClassVersion(type, 1);
