@@ -6,6 +6,7 @@ namespace Engine
 {
 	class Registry;
 	class WorldRenderer;
+	class DebugRenderer;
 	class BinaryGSONObject;
 
 	class World
@@ -30,6 +31,7 @@ namespace Engine
 
 		WorldRenderer& GetRenderer() { ASSERT(mRenderer != nullptr); return *mRenderer; };
 		const WorldRenderer& GetRenderer() const { ASSERT(mRenderer != nullptr); return *mRenderer; };
+		const DebugRenderer& GetDebugRenderer() const;
 
 		bool HasBegunPlay() const { return mHasBegunPlay; }
 
