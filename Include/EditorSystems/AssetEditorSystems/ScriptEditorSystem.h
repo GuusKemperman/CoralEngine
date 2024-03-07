@@ -5,15 +5,9 @@
 #include "imnodes/imgui_node_editor.h"
 #include "Assets/Script.h"
 
-namespace ax
+namespace ax::NodeEditor::Utilities
 {
-	namespace NodeEditor
-	{
-		namespace Utilities
-		{
-			struct BlueprintNodeBuilder;
-		}
-	}
+	struct BlueprintNodeBuilder;
 }
 
 namespace Engine

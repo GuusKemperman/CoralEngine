@@ -1,5 +1,4 @@
 #pragma once
-#include "Components/Component.h"
 #include "Meta/MetaReflect.h"
 #include "Utilities/Math.h"
 
@@ -34,12 +33,12 @@ namespace Engine
 	class TransformComponent
 	{
 	public:
-		TransformComponent() = default;
-		TransformComponent(const entt::entity owner) : mOwner(owner) {}
 		~TransformComponent();
 
-		void OnDeserialize(const BinaryGSONObject& deserializeFrom, entt::entity owner, World& world);
-		void OnSerialize(BinaryGSONObject& serializeTo, entt::entity owner, const World& world) const;
+		void OnConstruct(World& world, entt::entity owner);
+
+		void OnDeserialize(World& world, entt::entity owner, const BinaryGSONObject& deserializeFrom);
+		void OnSerialize(const World& world, entt::entity owner, BinaryGSONObject& serializeTo) const;
 
 		static glm::mat4 ToMatrix(glm::vec3 position, glm::vec3 scale, glm::quat orientation);
 
@@ -171,18 +170,11 @@ namespace Engine
 		// Storing pointers is safe, as pointer stability has been enabled for this component.
 		std::vector<std::reference_wrapper<TransformComponent>> mChildren{}; 
 	};
-
-	template<>
-	struct AlwaysPassComponentOwnerAsFirstArgumentOfConstructor<TransformComponent>
-	{
-		static constexpr bool sValue = true;
-	};
 }
 
 template<>
-struct entt::component_traits<Engine::TransformComponent, void> {
-	static_assert(std::is_same_v<std::decay_t<Engine::TransformComponent>, Engine::TransformComponent>, "Unsupported type");
-
+struct entt::component_traits<Engine::TransformComponent, void>
+{
 	using type = Engine::TransformComponent;
 
 	// TransformComponent is often accessed in random order so we get little 

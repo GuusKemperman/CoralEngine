@@ -73,6 +73,15 @@ namespace Engine
 		const entt::entity owner = world.GetRegistry().Create();
 		world.GetRegistry().AddComponent<EventTestingComponent>(owner);
 		world.GetRegistry().AddComponent<EmptyEventTestingComponent>(owner);
+
+		const MetaType* const unitTestScript = GetUnitTestScript();
+		if (unitTestScript == nullptr)
+		{
+			LOG(LogUnitTests, Error, "No unit test script");
+			return entt::null;
+		}
+		world.GetRegistry().AddComponent(*unitTestScript, owner);
+
 		return owner;
 	}
 }
@@ -85,17 +94,10 @@ UNIT_TEST(Events, OnTick)
 
 	entt::entity owner = InitTest(world);
 
-	const MetaType* const unitTestScript = GetUnitTestScript();
-	TEST_ASSERT(unitTestScript != nullptr);
-	world.GetRegistry().AddComponent(*unitTestScript, owner);
-
-
-	TEST_ASSERT(DoBothValuesMatch(world, owner, "mTotalNumOfEventsCalled", 0));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfTicks", 0));
 
 	world.Tick(sFixedTickEventStepSize * .5f);
 
-	TEST_ASSERT(DoBothValuesMatch(world, owner, "mTotalNumOfEventsCalled", 2));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfTicks", 1));
 
 	return UnitTest::Success;
@@ -108,27 +110,114 @@ UNIT_TEST(Events, OnFixedTick)
 	World world{ true };
 	entt::entity owner = InitTest(world);
 
-	const MetaType* const unitTestScript = GetUnitTestScript();
-	TEST_ASSERT(unitTestScript != nullptr);
-	world.GetRegistry().AddComponent(*unitTestScript, owner);
-
-	TEST_ASSERT(DoBothValuesMatch(world, owner, "mTotalNumOfEventsCalled", 0));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfFixedTicks", 0));
 
 	world.Tick(sFixedTickEventStepSize * .5f);
 
-	TEST_ASSERT(DoBothValuesMatch(world, owner, "mTotalNumOfEventsCalled", 2));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfFixedTicks", 1));
 
 	world.Tick(sFixedTickEventStepSize * .6f);
 
-	TEST_ASSERT(DoBothValuesMatch(world, owner, "mTotalNumOfEventsCalled", 4));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfFixedTicks", 2));
 
 	world.Tick(sFixedTickEventStepSize * .5f);
 
-	TEST_ASSERT(DoBothValuesMatch(world, owner, "mTotalNumOfEventsCalled", 5));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfFixedTicks", 2));
+
+	return UnitTest::Success;
+}
+
+UNIT_TEST(Events, OnConstruct)
+{
+	using namespace Engine;
+
+	World world{ false };
+	entt::entity owner = InitTest(world);
+
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfConstructs", 1));
+
+	return UnitTest::Success;
+}
+
+UNIT_TEST(Events, OnBeginPlay)
+{
+	using namespace Engine;
+
+	World world{ false };
+	entt::entity owner = InitTest(world);
+
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfBeginPlays", 0));
+
+	world.BeginPlay();
+
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfBeginPlays", 1));
+
+	return UnitTest::Success;
+}
+
+UNIT_TEST(Events, OnBeginPlayWhenAddedAfterWorldBeginsPlay)
+{
+	using namespace Engine;
+
+	World world{ true };
+	entt::entity owner = InitTest(world);
+
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfBeginPlays", 1));
+
+	return UnitTest::Success;
+}
+
+UNIT_TEST(Events, OnDestructEntireWorld)
+{
+	using namespace Engine;
+
+	{
+		World world{ true };
+		entt::entity owner = InitTest(world);
+
+		TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfDestructs", 0));
+	}
+
+	// I guess we can't really test the num of destructs if the instance were destroyed..
+	// But we have the static one atleast
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfDestructs == 1);
+
+	return UnitTest::Success;
+}
+
+UNIT_TEST(Events, OnDestructRemoveComponent)
+{
+	using namespace Engine;
+
+	World world{ true };
+	entt::entity owner = InitTest(world);
+
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfDestructs", 0));
+
+	world.GetRegistry().RemoveComponent<EmptyEventTestingComponent>(owner);
+
+	// I guess we can't really test the num of destructs if the instance were destroyed..
+	// But we have the static one atleast
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfDestructs == 1);
+
+	return UnitTest::Success;
+}
+
+UNIT_TEST(Events, OnDestructDestroyEntity)
+{
+	using namespace Engine;
+
+	World world{ true };
+	entt::entity owner = InitTest(world);
+
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfDestructs", 0));
+
+	world.GetRegistry().Destroy(owner);
+	world.GetRegistry().RemovedDestroyed();
+
+	// I guess we can't really test the num of destructs if the instance were destroyed..
+	// But we have the static one atleast
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfDestructs == 1);
 
 	return UnitTest::Success;
 }

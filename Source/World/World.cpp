@@ -4,12 +4,11 @@
 #include <stack>
 
 #include "Components/ComponentFiler.h"
-#include "Components/IsDestroyedTag.h"
 #include "Components/NameComponent.h"
 #include "Meta/MetaProps.h"
 #include "World/Registry.h"
-#include "World/Archiver.h"
 #include "World/WorldRenderer.h"
+#include "Utilities/DebugRenderer.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 Engine::World::World(const bool beginPlayImmediately)
@@ -37,8 +36,13 @@ Engine::World::World(World&& other) noexcept :
 
 Engine::World::~World()
 {
-	mRegistry.reset();
-	mRenderer.reset();
+	// Mightve been moved out
+	if (mRegistry != nullptr)
+	{
+		mRegistry->Clear();
+		mRegistry.reset();
+		mRenderer.reset();
+	}
 }
 
 Engine::World& Engine::World::operator=(World&& other) noexcept
@@ -75,7 +79,46 @@ void Engine::World::BeginPlay()
 
 	// Reset the total time elapsed, deltaTime, etc
 	mTime = {};
-	LOG(LogCore, Verbose, "World has just begun play");
+	LOG(LogCore, Verbose, "World will begin play");
+
+	for (auto&& [typeHash, storage] : mRegistry->Storage())
+	{
+		const MetaType* const metaType = MetaManager::Get().TryGetType(typeHash);
+
+		if (metaType == nullptr)
+		{
+			continue;
+		}
+
+		const MetaFunc* const beginPlayEvent = TryGetEvent(*metaType, sBeginPlayEvent);
+
+		if (beginPlayEvent == nullptr)
+		{
+			continue;
+		}
+
+		const bool isStatic = beginPlayEvent->GetProperties().Has(Props::sIsEventStaticTag);
+
+		for (const entt::entity entity : storage)
+		{
+			// Tombstone check
+			if (!storage.contains(entity))
+			{
+				continue;
+			}
+
+			if (isStatic)
+			{
+				beginPlayEvent->InvokeCheckedUnpacked(*this, entity);
+			}
+			else
+			{
+				MetaAny component{ *metaType, storage.value(entity), false };
+				beginPlayEvent->InvokeCheckedUnpacked(component, *this, entity);
+			}
+		}
+	}
+
 }
 
 void Engine::World::EndPlay()
@@ -88,6 +131,11 @@ void Engine::World::EndPlay()
 	LOG(LogCore, Verbose, "World has just ended play");
 
 	mHasBegunPlay = false;
+}
+
+const Engine::DebugRenderer& Engine::World::GetDebugRenderer() const
+{
+	return *mRenderer->mDebugRenderer;
 }
 
 static inline std::stack<std::reference_wrapper<Engine::World>> sWorldStack{};

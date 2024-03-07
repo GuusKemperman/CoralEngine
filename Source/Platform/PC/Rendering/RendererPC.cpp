@@ -193,6 +193,12 @@ void Engine::Renderer::Render(const World& world)
         mConstBuffers[MATERIAL_CB]->Bind(commandList, 3, meshCounter, frameIndex);
 
         //DRAW THE MESH
+
+        if (!staticMeshComponent.mStaticMesh)
+        {
+            continue;
+        }
+
         staticMeshComponent.mStaticMesh->DrawMesh();
 
         meshCounter++;
