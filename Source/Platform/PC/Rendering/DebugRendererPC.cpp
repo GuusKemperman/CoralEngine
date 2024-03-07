@@ -1,5 +1,4 @@
 #include "Precomp.h"
-#ifdef PLATFORM_WINDOWS
 #include "Utilities/DebugRenderer.h"
 #include "Core/FileIO.h"
 #include "Core/Device.h"
@@ -172,4 +171,3 @@ void Engine::DebugRenderer::Impl::Render(const glm::mat4& view, const glm::mat4&
 	mModelMats.clear();
 	mColors.clear();
 }
-#endif
