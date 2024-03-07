@@ -99,6 +99,5 @@ namespace Engine
 
 #ifdef EDITOR
 IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::Bezier, var.DisplayWidget(name.c_str());)
-IMGUI_AUTO_DEFINE_INLINE(template<>, const Engine::Bezier, var.DisplayWidget(name.c_str());)
 #endif // EDITOR
 
