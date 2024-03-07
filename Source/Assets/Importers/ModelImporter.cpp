@@ -273,6 +273,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 			return entity;
 		};
 
+	***REMOVED***ne->mRootNode->mName = file.filename().replace_extension().string();
 	const entt::entity prefabEntity = makePrefab(****REMOVED***ne->mRootNode, {});
 
 	std::optional<ImportedAsset> importedPrefab = PrefabImporter::MakePrefabFromEntity(file, Get***REMOVED***neName(file), myVersion, world, prefabEntity);
