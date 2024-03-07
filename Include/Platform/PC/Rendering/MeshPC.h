@@ -28,7 +28,7 @@ namespace Engine
         StaticMesh& operator=(const StaticMesh&) = delete;
 
     private:
-        friend class StaticMeshImporter;
+        friend class ModelImporter;
 
         // Returns true on success
         static bool OnSave(AssetSaveInfo& saveInfo,

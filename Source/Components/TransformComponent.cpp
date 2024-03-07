@@ -32,7 +32,7 @@ void Engine::TransformComponent::OnConstruct(World&, entt::entity owner)
 	mOwner = owner;
 }
 
-void Engine::TransformComponent::OnDeserialize(const BinaryGSONObject& deserializeFrom, const entt::entity, World& world)
+void Engine::TransformComponent::OnDeserialize(World& world, const entt::entity, const BinaryGSONObject& deserializeFrom)
 {
 	entt::entity parentEntity;
 
@@ -45,7 +45,7 @@ void Engine::TransformComponent::OnDeserialize(const BinaryGSONObject& deseriali
 	SetParent(parent);
 }
 
-void Engine::TransformComponent::OnSerialize(BinaryGSONObject& serializeTo, const entt::entity, const World&) const
+void Engine::TransformComponent::OnSerialize(const World&, const entt::entity, BinaryGSONObject& serializeTo) const
 {
 	if (mParent != nullptr)
 	{
@@ -329,6 +329,8 @@ Engine::MetaType Engine::TransformComponent::Reflect()
 	type.AddFunc(static_cast<void (TransformComponent::*)(glm::vec3)>(&TransformComponent::SetWorldScale), "SetWorldScale", "", "scale").GetProperties().Add(Props::sIsScriptableTag);
 
 	BindEvent(type, sConstructEvent, &TransformComponent::OnConstruct);
+	BindEvent(type, sSerializeEvent, &TransformComponent::OnSerialize);
+	BindEvent(type, sDeserializeEvent, &TransformComponent::OnDeserialize);
 
 	ReflectComponentType<TransformComponent>(type);
 	return type;
