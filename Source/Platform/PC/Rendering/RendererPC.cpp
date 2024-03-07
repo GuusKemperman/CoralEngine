@@ -54,8 +54,6 @@ Engine::Renderer::Renderer()
     mConstBuffers[MATERIAL_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Material info data", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4), MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
 
-    mDebugRenderer = std::make_unique<DebugRenderer>();
-    mDebugRenderer->AddLine(glm::vec3(-2.f, 0.f, 0.f), glm::vec3(2.f, 0.f, 0.f), glm::vec4(1.f, 0.f, 0.f, 1.f));
 }
 
 void Engine::Renderer::Render(const World& world)
@@ -203,8 +201,6 @@ void Engine::Renderer::Render(const World& world)
 
         meshCounter++;
     }
-
-    mDebugRenderer->Render(world);
 }
 
 Engine::MetaType Engine::Renderer::Reflect()

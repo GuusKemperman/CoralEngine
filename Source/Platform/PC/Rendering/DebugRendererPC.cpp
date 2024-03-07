@@ -24,7 +24,7 @@ class Engine::DebugRenderer::Impl
 public:
     Impl();
     bool AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color);
-    void Render(const World& world);
+    void Render(const glm::mat4& view, const glm::mat4& projection);
 
 	D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
     std::vector<glm::mat4x4> mModelMats;
@@ -104,16 +104,11 @@ void Engine::DebugRenderer::Render(const World& world)
     }
 }
 
-void Engine::DebugRenderer::Render(const World& world)
-{
-	mImpl->Render(world);
-}
-
 Engine::DebugRenderer::Impl::Impl()
 {
 }
 
-bool Engine::DebugRenderer::Impl::AddLine(const glm::vec3&, const glm::vec3&, const glm::vec4&)
+bool Engine::DebugRenderer::Impl::AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
 {
 	// Calculate the scale as the distance between 'from' and 'to'
 	float scaleLength = glm::length(to - from);
@@ -143,9 +138,8 @@ bool Engine::DebugRenderer::Impl::AddLine(const glm::vec3&, const glm::vec3&, co
     return true;
 }
 
-void Engine::DebugRenderer::Impl::Render(const glm::mat4&, const glm::mat4&)
+void Engine::DebugRenderer::Impl::Render(const glm::mat4& view, const glm::mat4& projection)
 {
-
 	Device& engineDevice = Device::Get();
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 	std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
@@ -154,15 +148,10 @@ void Engine::DebugRenderer::Impl::Render(const glm::mat4&, const glm::mat4&)
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST); 
 	commandList->SetPipelineState(mDebugPipeline->GetPipeline().Get());
 
-	//GET WORLD
-	const auto optionalEntityCameraPair = world.GetRenderer().GetMainCamera();
-	ASSERT_LOG(optionalEntityCameraPair.has_value(), "DX12 draw requests have been made, but they cannot be cleared as there is no camera to draw them to");
-
 	//UPDATE CAMERA
-	const auto camera = optionalEntityCameraPair->second;
 	InfoStruct::DXMatrixInfo matrixInfo;
-	matrixInfo.pm = glm::transpose(glm::scale(camera.GetProjection(), glm::vec3(1.f, -1.f, 1.f)));
-	matrixInfo.vm = glm::transpose(camera.GetView());
+	matrixInfo.pm = glm::transpose(glm::scale(projection, glm::vec3(1.f, -1.f, 1.f)));
+	matrixInfo.vm = glm::transpose(view);
 	matrixInfo.ipm = glm::inverse(matrixInfo.pm);
 	matrixInfo.ivm = glm::inverse(matrixInfo.vm);
 	mCameraMatrixBuffer->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
@@ -171,14 +160,16 @@ void Engine::DebugRenderer::Impl::Render(const glm::mat4&, const glm::mat4&)
 	mCameraMatrixBuffer->Bind(commandList, 0, 0, frameIndex);
 
 	for (size_t i = 0; i < mModelMats.size(); i++) {
-		mLineMatrixBuffer->Update(mModelMats.data(), sizeof(glm::mat4x4), static_cast<int>(i), frameIndex);
+		mLineMatrixBuffer->Update(&mModelMats[i], sizeof(glm::mat4x4), static_cast<int>(i), frameIndex);
 		mLineMatrixBuffer->Bind(commandList, 2, static_cast<int>(i), frameIndex);
 
-		mLineColorBuffer->Update(mColors.data(), sizeof(glm::vec4), static_cast<int>(i), frameIndex);
+		mLineColorBuffer->Update(&mColors[i], sizeof(glm::vec4), static_cast<int>(i), frameIndex);
 		mLineColorBuffer->Bind(commandList, 1, static_cast<int>(i), frameIndex);
 
 		commandList->IASetVertexBuffers(0, 1, &mVertexBufferView);
 		commandList->DrawInstanced(2, 1, 0, 0);
 	}
+	mModelMats.clear();
+	mColors.clear();
 }
 #endif

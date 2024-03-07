@@ -82,7 +82,6 @@ namespace Engine
 
         InfoStruct::DXLightInfo  lights;
         std::vector<glm::mat4x4> modelMatrices;
-        std::unique_ptr<DebugRenderer> mDebugRenderer;
 
     private:
         friend ReflectAccess;
