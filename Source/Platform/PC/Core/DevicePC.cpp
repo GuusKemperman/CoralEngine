@@ -382,16 +382,20 @@ void Engine::Device::NewFrame() {
     mCommandList->RSSetViewports(1, &mViewport); 
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
     mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
-}
 
-void Engine::Device::EndFrame()
-{   
     glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
     CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0);
     mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
     mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mFrameIndex, &clearColor[0]);
     mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, 0);
+
+}
+
+void Engine::Device::EndFrame()
+{   
+    CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0);
+    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
 
     auto* desc_ptr = mDescriptorHeaps[RESOURCE_HEAP]->Get();
     mCommandList->SetDescriptorHeaps(1, &desc_ptr);
