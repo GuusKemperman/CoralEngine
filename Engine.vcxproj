@@ -1422,7 +1422,6 @@
     <ClInclude Include="include\BasicDataTypes\Colors\LinearColor.h" />
     <ClInclude Include="include\BasicDataTypes\Bezier.h" />
     <ClInclude Include="include\BasicDataTypes\Name.h" />
-    <ClInclude Include="include\Components\Component.h" />
     <ClInclude Include="Include\Components\ComponentFiler.h" />
     <ClInclude Include="Include\Components\ComponentFilter.h" />
     <ClInclude Include="Include\Components\EventTestingComponent.h" />
