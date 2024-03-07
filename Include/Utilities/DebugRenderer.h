@@ -1,7 +1,6 @@
 #pragma once
 
 #include "glm/glm.hpp"
-#include "Core/EngineSubsystem.h"
 #include "World/World.h"
 
 namespace Engine 
@@ -24,7 +23,7 @@ namespace Engine
         };
     };
 
-    struct Plane // for 2D debug drawing
+    struct Plane
     {
         enum Enum
         {
