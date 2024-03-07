@@ -11,6 +11,7 @@
 Engine::MetaType Engine::AbilitiesOnPlayerComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<AbilitiesOnPlayerComponent>{}, "AbilitiesOnPlayerComponent" };
+	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 	
 	metaType.AddField(&AbilitiesOnPlayerComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties();
 
