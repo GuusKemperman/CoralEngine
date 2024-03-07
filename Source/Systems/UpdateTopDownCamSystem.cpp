@@ -2,13 +2,14 @@
 #include "Systems/UpdateTopDownCamSystem.h"
 
 #include "World/World.h"
-#include "World/WorldRenderer.h"
 #include "World/Registry.h"
+#include "World/WorldRenderer.h"
 #include "Components/TransformComponent.h"
 #include "Components/TopDownCamControllerComponent.h"
 #include "Core/Input.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
+#include "Utilities/DebugRenderer.h"
 
 void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 {
@@ -89,8 +90,8 @@ void Engine::UpdateTopDownCamSystem::Render(const World& world)
 			continue;
 		}
 
-		world.GetRenderer().AddBox(DebugCategory::Gameplay, topdown.mTargetLocation, glm::vec3(0.1f), glm::vec4(1.0f));
-		world.GetRenderer().AddLine(DebugCategory::Gameplay, target->GetWorldPosition(), topdown.mTargetLocation, glm::vec4(1.0f));
+		world.GetDebugRenderer().AddBox(DebugCategory::Gameplay, topdown.mTargetLocation, glm::vec3(0.1f), glm::vec4(1.0f));
+		world.GetDebugRenderer().AddLine(DebugCategory::Gameplay, target->GetWorldPosition(), topdown.mTargetLocation, glm::vec4(1.0f));
 	}
 }
 

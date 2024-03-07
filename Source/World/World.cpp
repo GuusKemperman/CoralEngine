@@ -8,6 +8,7 @@
 #include "Meta/MetaProps.h"
 #include "World/Registry.h"
 #include "World/WorldRenderer.h"
+#include "Utilities/DebugRenderer.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 Engine::World::World(const bool beginPlayImmediately)
@@ -130,6 +131,11 @@ void Engine::World::EndPlay()
 	LOG(LogCore, Verbose, "World has just ended play");
 
 	mHasBegunPlay = false;
+}
+
+const Engine::DebugRenderer& Engine::World::GetDebugRenderer() const
+{
+	return *mRenderer->mDebugRenderer;
 }
 
 static inline std::stack<std::reference_wrapper<Engine::World>> sWorldStack{};

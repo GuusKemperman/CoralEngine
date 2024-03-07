@@ -8,8 +8,8 @@
 #include "Components/Pathfinding/NavMeshTargetComponent.h"
 #include "World/Registry.h"
 #include "World/World.h"
-#include "World/WorldRenderer.h"
 #include "Meta/MetaType.h"
+#include "Utilities/DebugRenderer.h"
 
 using namespace Engine;
 
@@ -98,7 +98,7 @@ void NavigationSystem::Render(const World& world)
 		{
 			for (size_t i = 0; i < n.mPathFound.size() - 1; i++)
 			{
-				world.GetRenderer().AddLine(DebugCategory::AINavigation, n.mPathFound[i], n.mPathFound[i + 1],
+				world.GetDebugRenderer().AddLine(DebugCategory::AINavigation, n.mPathFound[i], n.mPathFound[i + 1],
 				                            {1.f, 0.f, 0.f, 1.f});
 			}
 		}
