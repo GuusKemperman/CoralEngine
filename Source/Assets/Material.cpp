@@ -19,7 +19,8 @@ Engine::Material::Material(AssetLoadInfo& loadInfo) :
 	switch (loadInfo.GetVersion())
 	{
 	case 0: LoadV0(loadInfo); break;
-	case 1: LoadV1(loadInfo); break;
+	case 1:
+	case 2: LoadV1V2(loadInfo); break;
 	default: LOG(LogAssets, Error, "Invalid version {} for material {}", loadInfo.GetVersion(), GetName());
 	}
 }
@@ -137,7 +138,7 @@ void Engine::Material::LoadV0(AssetLoadInfo& loadInfo)
 	mEmissiveTexture = getTex(emissiveTextureNameLength);
 }
 
-void Engine::Material::LoadV1(AssetLoadInfo& loadInfo)
+void Engine::Material::LoadV1V2(AssetLoadInfo& loadInfo)
 {
 	BinaryGSONObject obj{};
 	const bool success = obj.LoadFromBinary(loadInfo.GetStream());
@@ -193,6 +194,12 @@ void Engine::Material::LoadV1(AssetLoadInfo& loadInfo)
 	*serializedOcclusionTexture >> mOcclusionTexture;
 	*serializedMetallicRoughnessTexture >> mMetallicRoughnessTexture;
 	*serializedEmissiveTexture >> mEmissiveTexture;
+
+	// Occlusion strength is 0 at default in V1, that makes the materials being rendered black at default
+	if (loadInfo.GetVersion() == 1)
+	{
+		mOcclusionStrength = 1.0f;
+	}
 }
 
 Engine::MetaType Engine::Material::Reflect()
@@ -213,7 +220,7 @@ Engine::MetaType Engine::Material::Reflect()
 	type.AddField(&Material::mMetallicRoughnessTexture, "mMetallicRoughnessTexture");
 	type.AddField(&Material::mEmissiveTexture, "mEmissiveTexture");
 
-	SetClassVersion(type, 1);
+	SetClassVersion(type, 2);
 
 	ReflectAssetType<Material>(type);
 	return type;
