@@ -21,30 +21,32 @@ public:
 	void SetComputeShader(LPVOID computeShaderBuffer, SIZE_T computeShaderSize);
 	void SetMsaaCountAndQuality(uint count, uint quality);
 	void AddRenderTarget(DXGI_FORMAT format);
+	void SetPrimitiveTopology(const D3D12_PRIMITIVE_TOPOLOGY_TYPE& topology);
 
 	static ComPtr<ID3DBlob> ShaderToBlob(const char* path, const char* shaderVersion, const char* functionName = nullptr);
 
-	ComPtr<ID3D12PipelineState> GetPipeline() const { return pipeline; }
+	ComPtr<ID3D12PipelineState> GetPipeline() const { return mPipeline; }
 
 private:
-	std::vector<D3D12_INPUT_ELEMENT_DESC> inputs;
-	std::vector<DXGI_FORMAT> renderTargetFormats;
+	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputs;
+	std::vector<DXGI_FORMAT> mRenderTargetFormats;
 
-	LPVOID vertexShaderBuffer = nullptr;
-	SIZE_T vertexShaderSize = 0;
+	LPVOID mVertexShaderBuffer = nullptr;
+	SIZE_T mVertexShaderSize = 0;
 
-	LPVOID fragmentShaderBuffer = nullptr;
-	SIZE_T fragmentShaderSize = 0;
+	LPVOID mFragmentShaderBuffer = nullptr;
+	SIZE_T mFragmentShaderSize = 0;
 
-	LPVOID computeShaderBuffer = nullptr;
-	SIZE_T computeShaderSize = 0;
+	LPVOID mComputeShaderBuffer = nullptr;
+	SIZE_T mComputeShaderSize = 0;
 
-	DXGI_FORMAT depthFormat = DXGI_FORMAT_D32_FLOAT;
-	CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	CD3DX12_BLEND_DESC blend = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	uint msaaCount = 1;
-	uint msaaQuality = 0;
-	ComPtr<ID3D12PipelineState> pipeline;
+	DXGI_FORMAT mDepthFormat = DXGI_FORMAT_D32_FLOAT;
+	D3D12_PRIMITIVE_TOPOLOGY_TYPE mTopology = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	CD3DX12_RASTERIZER_DESC mRast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	CD3DX12_BLEND_DESC mBlend = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	CD3DX12_DEPTH_STENCIL_DESC mDepth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+	uint mMsaaCount = 1;
+	uint mMsaaQuality = 0;
+	ComPtr<ID3D12PipelineState> mPipeline;
 };
 

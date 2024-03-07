@@ -47,30 +47,32 @@ Engine::DebugRenderer::DebugRenderer()
 	mImpl->mDebugPipeline = std::make_unique<DXPipeline>();
 	mImpl->mDebugPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 	mImpl->mDebugPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
+	mImpl->mDebugPipeline->SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
 	mImpl->mDebugPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"SKYBOX SIGNATURE");
 
-	std::vector<glm::vec3> positions(2);
-	positions[0] = glm::vec3(-1.f, 0.f, 0.f);
-	positions[1] = glm::vec3(1.f, 0.f, 0.f);
+	std::vector<glm::vec4> positions(2);
+	positions[0] = glm::vec4(0.f, 0.f, 0.f, 1.f);
+	positions[1] = glm::vec4(1.f, 0.f, 0.f, 1.f);
 
 	engineDevice.StartUploadCommands();
 	int vertexCount = 2;
-	int vBufferSize = sizeof(float) * vertexCount * 3;
+	int vBufferSize = sizeof(float) * vertexCount * 4;
 
 	mImpl->mVertexBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(vBufferSize), nullptr, "Line Vertex resource buffer");
 	
 	D3D12_SUBRESOURCE_DATA vData = {};
 	vData.pData = positions.data();
-	vData.RowPitch = sizeof(float) * 3;
+	vData.RowPitch = sizeof(float) * 4;
 	vData.SlicePitch = vBufferSize;
+
 	mImpl->mVertexBuffer->CreateUploadBuffer(device, vBufferSize, 0);
 	mImpl->mVertexBuffer->Update(uploadCmdList, vData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 
 	mImpl->mVertexBufferView.BufferLocation = mImpl->mVertexBuffer->GetResource()->GetGPUVirtualAddress();
-	mImpl->mVertexBufferView.StrideInBytes = sizeof(float) * 3;
+	mImpl->mVertexBufferView.StrideInBytes = sizeof(float) * 4;
 	mImpl->mVertexBufferView.SizeInBytes = vBufferSize;
 
-	mImpl->mLineColorBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::vec3), MAX_LINES, "Lines color const buffer", FRAME_BUFFER_COUNT);
+	mImpl->mLineColorBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::vec4), MAX_LINES, "Lines color const buffer", FRAME_BUFFER_COUNT);
 	mImpl->mLineMatrixBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4), MAX_LINES, "Lines matrix const buffer", FRAME_BUFFER_COUNT);
 	mImpl->mCameraMatrixBuffer = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
 
@@ -83,7 +85,6 @@ Engine::DebugRenderer::~DebugRenderer()
 
 void Engine::DebugRenderer::AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
 {
-
     mImpl->AddLine(from, to, color);
 }
 
@@ -110,33 +111,27 @@ Engine::DebugRenderer::Impl::Impl()
 
 bool Engine::DebugRenderer::Impl::AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
 {
-	// Initial line direction (normalized)
-	glm::vec3 initialDir = glm::vec3(1, 0, 0); // From (-1, 0, 0) to (1, 0, 0)
+	// Calculate the scale as the distance between 'from' and 'to'
+	float scaleLength = glm::length(to - from);
 
-	// Target line direction
-	glm::vec3 targetDir = glm::normalize(to - from);
+	// Calculate the direction vector of the target line and normalize it
+	glm::vec3 direction = glm::normalize(to - from);
 
-	// Scale factor (the length of the target line)
-	float scale = glm::length(to - from) / 2.0f; // Initial line length is 2
+	// Initial direction vector of the line is along the x-axis (1, 0, 0)
+	glm::vec3 initialDirection = glm::vec3(1.f, 0.f, 0.f);
 
-	// Calculate the rotation axis and angle
-	glm::vec3 rotationAxis = glm::cross(initialDir, targetDir);
-	float dotProduct = glm::dot(initialDir, targetDir);
-	float angle = acos(dotProduct); // Angle in radians
+	// Calculate rotation quaternion from initial direction to target direction
+	glm::quat rotationQuat = glm::rotation(initialDirection, direction);
 
-	// Create rotation matrix
-	glm::mat4 rotation = glm::mat4(1.0f); // Identity matrix
-	if(glm::length(rotationAxis) != 0) // To avoid division by zero
-		rotation = glm::rotate(rotation, angle, glm::normalize(rotationAxis));
+	// Convert quaternion to a rotation matrix
+	glm::mat4 rotationMat = glm::toMat4(rotationQuat);
 
-	// Create scale matrix
-	glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale, scale, scale));
+	// Scale, Rotate, then Translate
+	glm::mat4 scaleMat = glm::scale(glm::mat4x4(1.f), glm::vec3(scaleLength)); // Uniform scale
+	glm::mat4 translateMat = glm::translate(glm::mat4x4(1.f), from);
 
-	// Create translation matrix
-	glm::mat4 translation = glm::translate(glm::mat4(1.0f), from);
-
-	// Compose the model matrix: first scale, then rotate, and finally translate
-	glm::mat4 modelMatrix = translation * rotation * scaleMatrix;
+	// Combine transformations: T * R * S
+	glm::mat4 modelMatrix = translateMat * rotationMat * scaleMat;
 
 	mModelMats.push_back(glm::transpose(modelMatrix));
 	mColors.push_back(color);
@@ -146,10 +141,14 @@ bool Engine::DebugRenderer::Impl::AddLine(const glm::vec3& from, const glm::vec3
 
 void Engine::DebugRenderer::Impl::Render(const World& world)
 {
+
 	Device& engineDevice = Device::Get();
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 	std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
 	int frameIndex = engineDevice.GetFrameIndex();
+
+	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST); 
+	commandList->SetPipelineState(mDebugPipeline->GetPipeline().Get());
 
 	//GET WORLD
 	const auto optionalEntityCameraPair = world.GetRenderer().GetMainCamera();
@@ -170,6 +169,9 @@ void Engine::DebugRenderer::Impl::Render(const World& world)
 	for (size_t i = 0; i < mModelMats.size(); i++) {
 		mLineMatrixBuffer->Update(mModelMats.data(), sizeof(glm::mat4x4), static_cast<int>(i), frameIndex);
 		mLineMatrixBuffer->Bind(commandList, 2, static_cast<int>(i), frameIndex);
+
+		mLineColorBuffer->Update(mColors.data(), sizeof(glm::vec4), static_cast<int>(i), frameIndex);
+		mLineColorBuffer->Bind(commandList, 1, static_cast<int>(i), frameIndex);
 
 		commandList->IASetVertexBuffers(0, 1, &mVertexBufferView);
 		commandList->DrawInstanced(2, 1, 0, 0);
