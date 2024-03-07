@@ -1,31 +1,12 @@
 #pragma once
+#include <forward_list>
+
 #include "Meta/MetaReflect.h"
 
 namespace Engine
 {
+	class World;
 	class PhysicsSystem2D;
-
-	/// <summary>
-	/// Stores the details of a single collision.
-	/// </summary>
-	struct CollisionData
-	{
-		/// The ID of the first entity involved in the collision.
-		entt::entity mEntity1{};
-
-		/// The ID of the second entity involved in the collision.
-		entt::entity mEntity2{};
-
-		/// The normal vector on the point of contact, pointing away from entity2's physics body.
-		glm::vec2 mNormal{};
-
-		/// The penetration depth of the two physics bodies
-		/// (before they were displaced to resolve overlap).
-		float mDepth{};
-
-		/// The approximate point of contact of the collision, in world coordinates.
-		glm::vec2 mContactPoint{};
-	};
 
 	enum class MotionType
 	{
@@ -49,6 +30,8 @@ namespace Engine
 			mInvMass = mass == 0.f ? 0.f : (1.f / mass);
 		}
 
+		void OnConstruct(World& world, entt::entity owner);
+
 		MotionType mMotionType{};
 		float mInvMass = 1.f;
 		float mRestitution = 1.f;
@@ -56,16 +39,18 @@ namespace Engine
 		glm::vec2 mLinearVelocity{};
 		glm::vec2 mForce{};
 
-		inline void AddForce(const glm::vec2& force)
+		entt::entity mOwner{};
+
+		void AddForce(const glm::vec2& force)
 		{
 			if (mMotionType == MotionType::Dynamic) mForce += force;
 		}
-		inline void ApplyImpulse(const glm::vec2& imp)
+
+		void ApplyImpulse(const glm::vec2& imp)
 		{
 			if (mMotionType == MotionType::Dynamic) mLinearVelocity += imp * mInvMass;
 		}
 
-		std::vector<CollisionData> mCollisions = {};
 
 	private:
 		friend ReflectAccess;
@@ -74,14 +59,10 @@ namespace Engine
 
 		friend PhysicsSystem2D;
 
-		void AddCollisionData(const CollisionData& data) { mCollisions.push_back(data); }
-		void ClearCollisionData() { mCollisions.clear(); }
-		
 		void ClearForces() { mForce = {}; }
 
 		void Update(float dt)
 		{
-			ClearCollisionData();
 			if (mMotionType == MotionType::Dynamic) mLinearVelocity += mForce * mInvMass * dt;
 			mPosition += mLinearVelocity * dt;
 		}
