@@ -17,16 +17,13 @@ namespace Engine
 		static std::shared_ptr<const Material> TryGetDefaultMaterial();
 
 		LinearColor mBaseColorFactor{ 1.0f };		
-		glm::vec3 mEmissiveFactor{};
+		glm::vec3 mEmissiveFactor{ 1.0f };
 		float mMetallicFactor = 1.0f;
 		float mRoughnessFactor = 1.0f;
-		float mAlphaCutoff = .5f;
+		float mAlphaCutoff = 0.5f;
 		float mNormalScale = 1.0f;
-
-		// occludedColor = lerp(color, color * <sampled occlusion
-		// texture value>, <occlusion strength>
-		float mOcclusionStrength{};
-		bool mDoubleSided{};
+		float mOcclusionStrength = 1.0f;
+		bool mDoubleSided = false;
 
 		std::shared_ptr<const Texture> mBaseColorTexture{};
 		std::shared_ptr<const Texture> mNormalTexture{};
@@ -42,7 +39,7 @@ namespace Engine
 		void OnSave(AssetSaveInfo& saveInfo) const override;
 
 		void LoadV0(AssetLoadInfo& loadInfo);
-		void LoadV1(AssetLoadInfo& loadInfo);
+		void LoadV1V2(AssetLoadInfo& loadInfo);
 
 		friend ReflectAccess;
 		static MetaType Reflect();
