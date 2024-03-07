@@ -20,7 +20,7 @@ Engine::Material::Material(AssetLoadInfo& loadInfo) :
 	{
 	case 0: LoadV0(loadInfo); break;
 	case 1:
-	case 2: LoadV1(loadInfo); break;
+	case 2: LoadV1V2(loadInfo); break;
 	default: LOG(LogAssets, Error, "Invalid version {} for material {}", loadInfo.GetVersion(), GetName());
 	}
 }
@@ -138,7 +138,7 @@ void Engine::Material::LoadV0(AssetLoadInfo& loadInfo)
 	mEmissiveTexture = getTex(emissiveTextureNameLength);
 }
 
-void Engine::Material::LoadV1(AssetLoadInfo& loadInfo)
+void Engine::Material::LoadV1V2(AssetLoadInfo& loadInfo)
 {
 	BinaryGSONObject obj{};
 	const bool success = obj.LoadFromBinary(loadInfo.GetStream());

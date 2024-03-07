@@ -39,7 +39,7 @@ namespace Engine
 		void OnSave(AssetSaveInfo& saveInfo) const override;
 
 		void LoadV0(AssetLoadInfo& loadInfo);
-		void LoadV1(AssetLoadInfo& loadInfo);
+		void LoadV1V2(AssetLoadInfo& loadInfo);
 
 		friend ReflectAccess;
 		static MetaType Reflect();
