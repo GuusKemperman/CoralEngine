@@ -10,6 +10,7 @@
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
 #include "Meta/MetaTools.h"
+#include "Scripting/ScriptEvents.h"
 #include "Utilities/ClassVersion.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
@@ -87,6 +88,36 @@ Engine::ScriptFunc& Engine::Script::AddFunc(const std::string_view name)
 
 	auto& result = mFunctions.emplace_back(*this, name);
 	result.AddNode<FunctionEntryScriptNode>(result, *this);
+
+	return result;
+}
+
+Engine::ScriptFunc& Engine::Script::AddEvent(const ScriptEvent& event)
+{
+	const std::string_view name = event.mBasedOnEvent.get().mName;
+
+	ScriptFunc* existingFunc = TryGetFunc(name);
+
+	if (existingFunc != nullptr)
+	{
+		LOG(LogScripting, Error, "There is already a function with the name {} in {}. Returning existing function",
+			name,
+			GetName());
+		return *existingFunc;
+	}
+
+	auto& result = mFunctions.emplace_back(*this, event);
+
+	if (!result.IsPure()
+		|| !result.GetParameters(true).empty())
+	{
+		result.AddNode<FunctionEntryScriptNode>(result, *this);
+	}
+
+	if (result.GetReturnType().has_value())
+	{
+		result.AddNode<FunctionReturnScriptNode>(result, *this);
+	}
 
 	return result;
 }

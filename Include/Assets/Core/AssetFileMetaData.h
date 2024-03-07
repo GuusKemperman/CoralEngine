@@ -20,7 +20,7 @@ namespace Engine
 
 	private:
 		// If no version is provided, the current version is used.
-		AssetFileMetaData(std::string_view name, const MetaType& assetClass, uint32 version = std::numeric_limits<uint32>::max(), const std::optional<ImporterInfo>& importerInfo = std::nullopt);
+		AssetFileMetaData(std::string_view name, const MetaType& assetClass, uint32 version = (std::numeric_limits<int>::max)(), const std::optional<ImporterInfo>& importerInfo = std::nullopt);
 
 	public:
 		AssetFileMetaData(const AssetFileMetaData&) = default;

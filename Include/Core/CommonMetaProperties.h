@@ -90,11 +90,18 @@ namespace Engine::Props
 
 	/*
 	Use on:
-		Fields
+		Fields, Type
 
 	Description:
 		By default, each field can be inspected through the editor.
-		By adding this property, the field is hidden from the user.
+
+		By adding this property to a field, the field is hidden from the user.
+
+		By adding this property to a type, each field is hidden from the user.
+		If this type is a component, it's existence is hidden from the user,
+		it cannot be added through the UI.
+
+		For components, this property hides all the fields
 
 	Example:
 		field.GetProperties().Add(Props::sNoInspectTag);
