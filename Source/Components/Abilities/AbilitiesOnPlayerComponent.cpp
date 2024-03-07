@@ -21,18 +21,24 @@ Engine::MetaType Engine::AbilitiesOnPlayerComponent::Reflect()
 
 bool Engine::AbilityInstanceWithInputs::operator==(const AbilityInstanceWithInputs& other) const
 {
-	return mAbilityAsset == other.mAbilityAsset;
+	return mAbilityAsset == other.mAbilityAsset && 
+		mKeyboardKeys == other.mKeyboardKeys && 
+		mGamepadButtons == other.mGamepadButtons;
 }
 
 bool Engine::AbilityInstanceWithInputs::operator!=(const AbilityInstanceWithInputs& other) const
 {
-	return mAbilityAsset != other.mAbilityAsset;
+	return mAbilityAsset != other.mAbilityAsset ||
+		mKeyboardKeys != other.mKeyboardKeys ||
+		mGamepadButtons != other.mGamepadButtons;
 }
 
 #ifdef EDITOR
 void Engine::AbilityInstanceWithInputs::DisplayWidget()
 {
 	ShowInspectUI("mAbilityAsset", mAbilityAsset);
+	ImGui::Text("mRequirementCounter: %f", mRequirementCounter);
+	ImGui::Text("mChargesCounter: %d", mChargesCounter);
 	ShowInspectUI("mKeyboardKeys", mKeyboardKeys);
 	ShowInspectUI("mGamepadButtons", mGamepadButtons);
 }

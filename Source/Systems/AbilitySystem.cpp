@@ -30,7 +30,10 @@ void Engine::AbilitySystem::Update(World& world, float dt)
 		        {
 		        case Ability::Cooldown:
                 {
-                    ability.mRequirementCounter += dt;
+                    if (ability.mRequirementCounter < ability.mAbilityAsset->mRequirementToUse)
+                    {
+                        ability.mRequirementCounter += dt;
+                    }
                     break;
                 }
                 case Ability::Mana:
