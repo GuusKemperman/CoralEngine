@@ -4,10 +4,10 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Assets/Core/AssetLoadInfo.h"
-#include "Meta/Fwd/MetaTypeFwd.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 #include "Assets/Texture.h"
 #include "Assets/Script.h"
+#include "Assets/Core/AssetSaveInfo.h"
 
 Engine::Ability::Ability(std::string_view name) :
 	Asset(name, MakeTypeId<Ability>())

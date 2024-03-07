@@ -22,7 +22,9 @@ namespace Engine
 		bool operator==(const AbilityInstanceWithInputs& other) const;
 		bool operator!=(const AbilityInstanceWithInputs& other) const;
 
+#ifdef EDITOR
 		void DisplayWidget();
+#endif // EDITOR
 
 		friend ReflectAccess;
 		static MetaType Reflect();

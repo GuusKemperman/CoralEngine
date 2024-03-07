@@ -497,7 +497,12 @@
   <ItemGroup>
     <ClCompile Include="Source\Assets\Ability.cpp" />
     <ClCompile Include="Source\Components\Abilities\AbilitiesOnPlayerComponent.cpp" />
-    <ClCompile Include="Source\EditorSystems\AssetEditorSystems\AbilityEditorSystem.cpp" />
+    <ClCompile Include="Source\EditorSystems\AssetEditorSystems\AbilityEditorSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Systems\AbilitySystem.cpp" />
     <ClCompile Include="Source\Components\Abilities\ActiveAbilityComponent.cpp" />
     <ClCompile Include="Source\Components\DirectionalLightComponent.cpp" />

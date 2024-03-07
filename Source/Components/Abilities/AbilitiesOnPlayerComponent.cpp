@@ -29,12 +29,14 @@ bool Engine::AbilityInstanceWithInputs::operator!=(const AbilityInstanceWithInpu
 	return mAbilityAsset != other.mAbilityAsset;
 }
 
+#ifdef EDITOR
 void Engine::AbilityInstanceWithInputs::DisplayWidget()
 {
 	ShowInspectUI("mAbilityAsset", mAbilityAsset);
 	ShowInspectUI("mKeyboardKeys", mKeyboardKeys);
 	ShowInspectUI("mGamepadButtons", mGamepadButtons);
 }
+#endif // EDITOR
 
 Engine::MetaType Engine::AbilityInstanceWithInputs::Reflect()
 {
