@@ -42,12 +42,19 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       timeout-minutes: 5
       run:  |
-        echo Running tests
-        Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe run_tests
-        echo Finished running tests
-        $exitCode = $LastExitCode
-        if ($exitCode -ne 0) {
-            Write-Error "Tests failed with exit code $exitCode"
-            exit $exitCode
-        }
+        # Run the executable and capture stdout and stderr
+        $output = & "path_to_your_executable.exe" 2>&1
+        
+        # Store the exit code separately
+        $exitCode = $LASTEXITCODE
+        
+        # Output the stdout and stderr to the test result
+        Write-Output "Executable Output:"
+        Write-Output $output
+        
+        # Output the exit code
+        Write-Output "Exit Code: $exitCode"
+        
+        # Exit with the same exit code as the executable
+        exit $exitCode
       
