@@ -19,6 +19,9 @@
 
 Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
+	std::cout << "Hello world!" << std::endl;
+	exit(1);
+
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
 	Device::StartUp();
