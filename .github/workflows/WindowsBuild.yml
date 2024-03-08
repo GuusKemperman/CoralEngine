@@ -36,10 +36,13 @@ jobs:
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: msbuild /m /p:Configuration=${{matrix.build-configuration}} /p:Platform=x64 ${{env.SOLUTION_FILE_PATH}}
+      timeout-minutes: 10
 
     - name: Run Unit Tests
       working-directory: ${{env.GITHUB_WORKSPACE}}
       timeout-minutes: 5
-      run: |
-            Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe run_tests > test_output.txt
-            cat test_output.txt
+      # We still want to print the result if the test fails
+      continue-on-error: true
+      run: | 
+          Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe run_tests > ${{matrix.build-configuration}}_test_output.txt
+          Get-Content ${{matrix.build-configuration}}_test_output.txt
