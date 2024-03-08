@@ -9,7 +9,17 @@ class DXResource;
 
 namespace Engine
 {
+#define MAX_BONES 128
+#define MAX_BONE_INFLUENCE 4
+
     class Material;
+
+    struct BoneInfo
+    {
+        int mId;
+
+        glm::mat4 mOffset;
+    };
 
     class StaticMesh final :
         public Asset
@@ -60,6 +70,8 @@ namespace Engine
         int mVertexCount = 0;
         DXGI_FORMAT mIndexFormat;
         bool beenUpdated = false;
+
+        bool mIsAnimated = false;
 
     };
 }  // namespace Engine

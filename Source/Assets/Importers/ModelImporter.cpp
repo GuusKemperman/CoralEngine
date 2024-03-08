@@ -180,6 +180,11 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 		std::optional<Span<const glm::vec3>> normals{};
 		std::optional<std::vector<glm::vec2>> textureCoordinates{};
 		std::optional<std::vector<glm::vec3>> tangents{};
+		
+		std::optional<std::vector<glm::ivec4>> boneIds{};
+		std::optional<std::vector<glm::vec4>> boneWeights{};
+		std::optional<std::map<std::string, BoneInfo>> boneMap{};
+		int boneCounter = 0;
 
 		if (mesh.HasFaces())
 		{
@@ -214,9 +219,66 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 			tangents = std::vector<glm::vec3>( reinterpret_cast<const glm::vec3*>(mesh.mTangents), reinterpret_cast<const glm::vec3*>(mesh.mTangents) + mesh.mNumVertices );
 		}
 
+		// Load bone data
 		if (mesh.HasBones())
 		{
+			boneIds = std::vector<glm::ivec4>(mesh.mNumVertices, glm::ivec4(-1));
+			boneWeights = std::vector<glm::vec4>(mesh.mNumVertices, glm::vec4(0.0f));
+			boneMap = std::map<std::string, BoneInfo>{};
 
+			for (unsigned int boneIndex = 0; boneIndex < mesh.mNumBones; boneIndex++)
+			{
+				int boneId = -1;
+				std::string boneName = mesh.mBones[boneIndex]->mName.C_Str();
+				
+				if (boneMap->find(boneName) == boneMap->end())
+				{
+					BoneInfo newBoneInfo{};
+					newBoneInfo.mId = boneCounter;
+					newBoneInfo.mOffset = glm::transpose(reinterpret_cast<const glm::mat4&>(mesh.mBones[boneIndex]->mOffsetMatrix));
+					(*boneMap)[boneName] = newBoneInfo;
+					boneId = boneCounter;
+					boneCounter++;
+				}
+				else 
+				{
+					boneId = (*boneMap)[boneName].mId;				
+				}
+				
+				if (boneId == -1)
+				{
+					LOG(LogAssets, Error, "Loading of animated mesh {} in file {} failed", mesh.mName.C_Str(), file.string());
+					anyErrors = true;
+					break;
+				}
+
+				aiVertexWeight* weights = mesh.mBones[boneIndex]->mWeights;
+				int numWeights = mesh.mBones[boneIndex]->mNumWeights;
+				
+				for (int weightIndex = 0; weightIndex < numWeights; weightIndex++)
+				{
+					unsigned int vertexId = weights[weightIndex].mVertexId;
+					float weight = weights[weightIndex].mWeight;
+					if (vertexId > mesh.mNumVertices)
+					{
+						LOG(LogAssets, Error, "Loading of animated mesh {} in file {} failed", mesh.mName.C_Str(), file.string());
+						anyErrors = true;
+						break;
+					}
+
+					glm::vec4* vertexBoneWeights = &(*boneWeights)[vertexId];
+					glm::ivec4* vertexBoneIds = &(*boneIds)[vertexId];
+					for (int j = 0; j < MAX_BONE_INFLUENCE; j++)
+					{
+						if ((*vertexBoneIds)[j] < 0)
+						{
+							(*vertexBoneWeights)[j] = weight;
+							(*vertexBoneIds)[j] = boneId;
+							break;
+						}
+					}
+				}
+			}
 		}
 
 		std::optional<ImportedAsset> importedMesh = ImportFromMemory(file, meshName, myVersion, positions, indices, normals, tangents, textureCoordinates);
