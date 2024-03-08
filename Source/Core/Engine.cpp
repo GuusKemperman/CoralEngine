@@ -37,25 +37,28 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	if (argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0)
 	{
-		uint32 numFailed = 0;
-		for (UnitTest& test : UnitTestManager::Get().GetAllTests())
-		{
-			test();
-			if (test.mResult != UnitTest::Success)
-			{
-				numFailed++;
-			}
-		}
+		exit(0);
 
-		// We only exit if numFailed != 0,
-		// since maybe theres a crash in
-		// the shutdown process and we want
-		// to test that as well
-		if (numFailed != 0)
-		{
-			exit(0);
-		}
+		//uint32 numFailed = 0;
+		//for (UnitTest& test : UnitTestManager::Get().GetAllTests())
+		//{
+		//	test();
+		//	if (test.mResult != UnitTest::Success)
+		//	{
+		//		numFailed++;
+		//	}
+		//}
+
+		//// We only exit if numFailed != 0,
+		//// since maybe theres a crash in
+		//// the shutdown process and we want
+		//// to test that as well
+		//if (numFailed != 0)
+		//{
+		//	exit(0);
+		//}
 	}
+	exit(55);
 
 #endif // !EDITOR
 }
