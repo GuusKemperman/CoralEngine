@@ -35,7 +35,7 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	UnitTestManager::StartUp();
 
 	if (argc >= 2
-		&& strcmp(argv[1], "unit_tests") == 0)
+		&& strcmp(argv[1], "run_tests") == 0)
 	{
 		uint32 numFailed = 0;
 		for (UnitTest& test : UnitTestManager::Get().GetAllTests())
