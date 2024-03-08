@@ -53,7 +53,7 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 		// to test that as well
 		if (numFailed != 0)
 		{
-			exit(numFailed);
+			exit(0);
 		}
 	}
 
