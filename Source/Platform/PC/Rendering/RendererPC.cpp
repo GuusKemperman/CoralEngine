@@ -52,7 +52,7 @@ Engine::Renderer::Renderer()
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[MATERIAL_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Material info data", FRAME_BUFFER_COUNT);
-    mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4), MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
+    mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
 
 }
 
@@ -127,9 +127,11 @@ void Engine::Renderer::Render(const World& world)
 
     for (auto [entity, staticMeshComponent, transform] : view.each())
     {
-        //UPDATE AND BIND MODEL MATRIX
-        glm::mat4x4 modelMatrix = glm::transpose(transform.GetWorldMatrix());
-        mConstBuffers[MODEL_MATRIX_CB]->Update(&modelMatrix, sizeof(glm::mat4x4), meshCounter, frameIndex);
+        // UPDATE AND BIND MODEL AND INVESE TRANSPOSE MODEL MATRIX
+        glm::mat4x4 modelMatrices[2]{};
+        modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
+        modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
+        mConstBuffers[MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
         mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
 
         //UPDATE AND BIND MATERIAL INFO
