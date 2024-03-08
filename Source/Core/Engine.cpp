@@ -20,7 +20,7 @@
 Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
 	std::cout << "Hello world!" << std::endl;
-	exit(1);
+	exit(0);
 
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
