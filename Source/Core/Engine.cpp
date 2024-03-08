@@ -19,15 +19,25 @@
 
 Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
+	Device::sIsHeadless = argc >= 2
+		&& strcmp(argv[1], "run_tests") == 0;
 	//std::cout << "Hello world!" << std::endl;
 	//exit(0);
 
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
-	Device::StartUp();
+
+	if (!Device::IsHeadless())
+	{
+		Device::StartUp();
+	}
+
 	Input::StartUp();
 #ifdef PLATFORM_WINDOWS
-	Device::Get().CreateImguiContext();
+	if (!Device::IsHeadless())
+	{
+		Device::Get().CreateImguiContext();
+	}
 #endif
 	MetaManager::StartUp();
 	AssetManager::StartUp();
@@ -37,8 +47,7 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	Editor::StartUp();
 	UnitTestManager::StartUp();
 
-	if (argc >= 2
-		&& strcmp(argv[1], "run_tests") == 0)
+	if (Device::sIsHeadless)
 	{
 		uint32 numFailed = 0;
 		for (UnitTest& test : UnitTestManager::Get().GetAllTests())
@@ -76,7 +85,12 @@ Engine::EngineClass::~EngineClass()
 	AssetManager::ShutDown();
 	MetaManager::ShutDown();
 	Input::ShutDown();
-	Device::ShutDown();
+
+	if (!Device::IsHeadless())
+	{
+		Device::ShutDown();
+	}
+
 	Logger::ShutDown();
 	FileIO::ShutDown();
 }

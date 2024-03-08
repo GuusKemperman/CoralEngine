@@ -27,12 +27,12 @@
 
 Engine::Renderer::Renderer()
 {
-    Device& engineDevice = Device::Get();
-
-    if (engineDevice.IsHeadless())
+    if (Device::IsHeadless())
     {
         return;
     }
+
+    Device& engineDevice = Device::Get();
 
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 

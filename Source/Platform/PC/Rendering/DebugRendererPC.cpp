@@ -38,13 +38,13 @@ public:
 
 Engine::DebugRenderer::DebugRenderer()
 {
-	Device& engineDevice = Device::Get();
-	mImpl = std::make_unique<Impl>();
-
-	if (engineDevice.IsHeadless())
+	if (Device::IsHeadless())
 	{
 		return;
 	}
+
+	Device& engineDevice = Device::Get();
+	mImpl = std::make_unique<Impl>();
 
 	FileIO& fileIO = FileIO::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
@@ -93,8 +93,11 @@ Engine::DebugRenderer::~DebugRenderer() = default;
 
 void Engine::DebugRenderer::AddLine(DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) const
 {
-    if (!(sDebugCategoryFlags & category)) return;
-    mImpl->AddLine(from, to, color);
+	if (!Device::IsHeadless()
+		&& (sDebugCategoryFlags & category) != 0)
+	{
+		mImpl->AddLine(from, to, color);
+	}
 }
 
 void Engine::DebugRenderer::Render(const World& world)

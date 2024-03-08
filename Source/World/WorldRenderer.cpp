@@ -13,7 +13,7 @@
 
 Engine::WorldRenderer::WorldRenderer(const World& world) :
 	mWorld(world),
-	mLastRenderedAtSize(Device::Get().GetDisplaySize())
+	mLastRenderedAtSize(Device::IsHeadless() ? glm::vec2{} : Device::Get().GetDisplaySize())
 {
     mDebugRenderer = std::make_unique<DebugRenderer>();
 }

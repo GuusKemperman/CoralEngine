@@ -11,10 +11,13 @@ class DXDescHeap;
 
 namespace Engine
 {
-    class Device final : 
+    class EngineClass;
+
+	class Device final : 
         public EngineSubsystem<Device>
     {
         friend EngineSubsystem;
+
         Device();
         ~Device() final override {};
 
@@ -38,9 +41,11 @@ namespace Engine
 
         /**
          * \brief Some build/testing servers do not support graphics. This function can be used to check that.
-         * \return True if there 
+         *
+         * Device will not be initialized when the engine is in headless mode. Device::Get() will then throw an error.
+         * Only check for IsHeadless if you find that Device::Get() is being called from somewhere during unit tests.
          */
-        bool IsHeadless() const { return mIsHeadless; }
+        static bool IsHeadless() { return sIsHeadless; }
 
     //Platform specific heap
     public:
@@ -54,6 +59,11 @@ namespace Engine
         int GetFrameIndex() { return mFrameIndex; }
 
     private:
+        friend EngineClass;
+
+        // Set to true by EngineClass if in unit_test mode.
+        static inline bool sIsHeadless{};
+
         void InitializeWindow();
         void InitializeDevice();
         void WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent);
@@ -61,10 +71,8 @@ namespace Engine
         void SubmitCommands();
         void StartRecordingCommands();
 
-
     private:
         bool mIsWindowOpen{};
-        bool mIsHeadless{};
 
         GLFWwindow* mWindow;
         GLFWmonitor* mMonitor;

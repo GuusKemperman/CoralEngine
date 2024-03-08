@@ -14,11 +14,7 @@
 Engine::Device::Device()
 {
     InitializeWindow();
-
-    if (!mIsHeadless)
-    {
-		InitializeDevice();
-    }
+	InitializeDevice();
 }
 
 void Engine::Device::InitializeWindow()
@@ -26,8 +22,7 @@ void Engine::Device::InitializeWindow()
     LOG(LogCore, Message, "Initializing GLFW");
     if (!glfwInit())
     {
-        LOG(LogCore, Warning, "GLFW could not be initialized - continueing in headless mode");
-        mIsHeadless = true;
+        LOG(LogCore, Fatal, "GLFW could not be initialized");
         return;
     }
 
@@ -62,8 +57,7 @@ void Engine::Device::InitializeWindow()
 
     if (mWindow == nullptr)
     {
-        LOG(LogCore, Warning, "GLFW window could not be created - continuing in headless mode");
-        mIsHeadless = true;
+        LOG(LogCore, Fatal, "GLFW window could not be created");
         return;
     }
 
@@ -95,9 +89,9 @@ void Engine::Device::InitializeDevice()
 
     ComPtr<IDXGIFactory4> dxgiFactory;
     HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory));
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to create dxgi factory");
-        assert(false && "Failed to create dxgi factory");
     }
 
     ComPtr<IDXGIAdapter1> adapter;
@@ -125,9 +119,9 @@ void Engine::Device::InitializeDevice()
             hr = mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5,
                 &options5, sizeof(options5));
 
-            if (FAILED(hr)) {
+            if (FAILED(hr)) 
+            {
                 LOG(LogCore, Fatal, "Failed to pick adaptor");
-                assert(false && "Failed to check raytracing support");
             }
             if (options5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED) {
                 adapterFound = false;
@@ -143,43 +137,42 @@ void Engine::Device::InitializeDevice()
     hr = mDevice->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&mCommandQueue));
     if (FAILED(hr)) {
         LOG(LogCore, Fatal, "Failed to create command queue");
-        assert(false && "Failed to create command queue");
     }
 
     hr = mDevice->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&mUploadCommandQueue));
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to create upload command queue");
-        assert(false && "Failed to create upload command queue");
     }
 
     //CREATE COMMAND ALLOCATOR
     for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
     {
         hr = mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator[i]));
-        if (FAILED(hr)) {
+        if (FAILED(hr)) 
+        {
             LOG(LogCore, Fatal, "Failed to create command allocator");
-            assert(false && "Failed to create command allocator");
         }
     }
 
     hr = mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mUploadCommandAllocator));
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to create upload command allocator");
-        assert(false && "Failed to create upload command allocator");
     }
 
     //CREATE COMMAND LIST
     hr = mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator[0].Get(), NULL, IID_PPV_ARGS(&mCommandList));
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         LOG(LogCore, Fatal, "Failed to create command list");
-        assert(false && "Failed to create command list");
     }
     mCommandList->SetName(L"Main command list");
 
     hr = mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mUploadCommandAllocator.Get(), NULL, IID_PPV_ARGS(&mUploadCommandList));
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         LOG(LogCore, Fatal, "Failed to create upload command list");
-        assert(false && "Failed to create upload command list");
     }
     mUploadCommandList->SetName(L"Upload command list");
     mUploadCommandList->Close();
@@ -188,18 +181,18 @@ void Engine::Device::InitializeDevice()
     for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
     {
         hr = mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence[i]));
-        if (FAILED(hr)) {
+        if (FAILED(hr)) 
+        {
             LOG(LogCore, Fatal, "Failed to create fence");
-            assert(false && "Failed to create fence");
         }
 
         mFenceValue[i] = 0; // set the initial fence value to 0
     }
 
     hr = mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mUploadFence));
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to upload create fence");
-        assert(false && "Failed to upload create fence");
     }
 
     mUploadFenceValue = 0; // set the initial fence value to 0
@@ -207,15 +200,15 @@ void Engine::Device::InitializeDevice()
 
     //CREATE FENCE EVENT
     mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (mFenceEvent == nullptr) {
+    if (mFenceEvent == nullptr) 
+    {
         LOG(LogCore, Fatal, "Failed to create fence event");
-        assert(false && "Failed to create fence event");
     }
 
     mUploadFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (mUploadFenceEvent == nullptr) {
+    if (mUploadFenceEvent == nullptr) 
+    {
         LOG(LogCore, Fatal, "Failed to create upload fence event");
-        assert(false && "Failed to create upload fence event");
     }
 
 
@@ -240,9 +233,9 @@ void Engine::Device::InitializeDevice()
 
     IDXGISwapChain* tempSwapChain;
     hr = dxgiFactory->CreateSwapChain(mCommandQueue.Get(), &swapChainDesc, &tempSwapChain);
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to create swap chain");
-        assert(false && "Failed to create swap chain");
     }
     mSwapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
 
@@ -525,11 +518,6 @@ void Engine::Device::SubmitUploadCommands()
 
 void Engine::Device::CreateImguiContext()
 {
-    if (mIsHeadless)
-    {
-        return;
-    }
-
     LOG(LogCore, Message, "Creating imgui context");
 
     glfwShowWindow(mWindow);
