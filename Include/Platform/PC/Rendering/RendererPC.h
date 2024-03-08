@@ -79,9 +79,7 @@ namespace Engine
     private:
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
         std::unique_ptr<DXPipeline> mPBRPipeline;
-
         InfoStruct::DXLightInfo  lights;
-        std::vector<glm::mat4x4> modelMatrices;
 
     private:
         friend ReflectAccess;
