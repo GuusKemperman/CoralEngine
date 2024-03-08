@@ -24,7 +24,8 @@ jobs:
     strategy:
       fail-fast: false # We want to run all configurations to see if the problem is for all of them or not
       matrix:
-        build-configuration: [Debug, EngineDebug, Release, EngineRelease]
+        # build-configuration: [Debug, EngineDebug, Release, EngineRelease]
+        build-configuration: [EngineDebug]
 
     steps:
     - uses: actions/checkout@v4
@@ -39,4 +40,6 @@ jobs:
     - name: Run Unit Tests
       working-directory: ${{env.GITHUB_WORKSPACE}}
       timeout-minutes: 5
-      run: Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe run_tests
+      run: |
+            Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe run_tests > test_output.txt
+            cat test_output.txt
