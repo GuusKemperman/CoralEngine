@@ -43,7 +43,7 @@ jobs:
       timeout-minutes: 5
       run:  |
         # Run the executable and capture stdout and stderr
-        $output = & "path_to_your_executable.exe" 2>&1
+        $output = & "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe" run_tests 2>&1
         
         # Store the exit code separately
         $exitCode = $LASTEXITCODE
