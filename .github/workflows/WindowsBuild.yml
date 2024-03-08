@@ -43,6 +43,5 @@ jobs:
       timeout-minutes: 5
       # We still want to print the result if the test fails
       continue-on-error: true
-      run: | 
-          Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe run_tests > ${{matrix.build-configuration}}_test_output.txt
-          Get-Content ${{matrix.build-configuration}}_test_output.txt
+      run: Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe run_tests
+
