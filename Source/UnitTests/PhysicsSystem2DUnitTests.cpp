@@ -25,31 +25,31 @@ struct Physics2DUnitTestAccess
 UNIT_TEST(PhysicsSystem2D, CollisionCheckDiskDisk)
 {
 	// not overlapping
-	if (Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, { 1.f }, { 5.f, 0.f }, { 1.f }))
+	if (Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, 1.f, { 5.f, 0.f }, 1.f))
 	{
 		LOG(LogUnitTest, Error, "*Not overlapping* test failed.");
 		return UnitTest::Failure;
 	}
 	// overlapping
-	if (!Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, { 2.f }, { 3.f, 0.f }, { 2.f }))
+	if (!Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, 2.f, { 3.f, 0.f }, 2.f))
 	{
 		LOG(LogUnitTest, Error, "*Overlapping* test failed.");
 		return UnitTest::Failure;
 	}
 	// encapsulated
-	if (!Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, { 1.f }, { 0.f, 0.f }, { 2.f }))
+	if (!Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, 1.f, { 0.f, 0.f }, 2.f))
 	{
 		LOG(LogUnitTest, Error, "*Encapsulated* test failed.");
 		return UnitTest::Failure;
 	}
 	// same circle
-	if (!Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, { 1.f }, { 0.f, 0.f }, { 1.f }))
+	if (!Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, 1.f, { 0.f, 0.f }, 1.f))
 	{
 		LOG(LogUnitTest, Error, "*Same circle* test failed.");
 		return UnitTest::Failure;
 	}
 	// one point collision
-	if (!Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, { 1.f }, { 2.f, 0.f }, { 1.f }))
+	if (!Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, 1.f, { 2.f, 0.f }, 1.f))
 	{
 		LOG(LogUnitTest, Error, "*One point collision* test failed.");
 		return UnitTest::Failure;
@@ -67,37 +67,37 @@ UNIT_TEST(PhysicsSystem2D, CollisionCheckDiskPolygon)
 	};
 
 	// not overlapping
-	if (Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, { 1.f }, { 5.f, 0.f }, polygonPoints))
+	if (Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 1.f, { 5.f, 0.f }, polygonPoints))
 	{
 		LOG(LogUnitTest, Error, "*Not overlapping* test failed.");
 		return UnitTest::Failure;
 	}
 	// overlapping 1 edge
-	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, { 1.f }, { 1.5f, 0.f }, polygonPoints))
+	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 1.f, { 1.5f, 0.f }, polygonPoints))
 	{
 		LOG(LogUnitTest, Error, "*Overlapping 1 edge* test failed.");
 		return UnitTest::Failure;
 	}
 	// overlapping more edges
-	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, { 2.f }, { 2.f, 0.f }, polygonPoints))
+	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 2.f, { 2.f, 0.f }, polygonPoints))
 	{
 		LOG(LogUnitTest, Error, "*Overlapping more edges* test failed.");
 		return UnitTest::Failure;
 	}
 	// polygon in circle
-	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, { 2.f }, { 0.f, 0.f }, polygonPoints))
+	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 2.f, { 0.f, 0.f }, polygonPoints))
 	{
 		LOG(LogUnitTest, Error, "*Polygon in circle* test failed.");
 		return UnitTest::Failure;
 	}
 	// circle in polygon
-	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, { 0.5f }, { 0.f, 0.f }, polygonPoints))
+	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 0.5f, { 0.f, 0.f }, polygonPoints))
 	{
 		LOG(LogUnitTest, Error, "*Circle in polygon* test failed.");
 		return UnitTest::Failure;
 	}
 	// one point edge collision
-	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, { 1.f }, { 2.f, 0.f }, polygonPoints))
+	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 1.f, { 2.f, 0.f }, polygonPoints))
 	{
 		LOG(LogUnitTest, Error, "*One point edge collision* test failed.");
 		return UnitTest::Failure;
@@ -109,7 +109,7 @@ UNIT_TEST(PhysicsSystem2D, CollisionCheckDiskPolygon)
 		{0.f, -1.f},
 	};
 	// one point corner collision
-	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, { 1.f }, { 2.f, 0.f }, polygonPointsCornerTest))
+	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 1.f, { 2.f, 0.f }, polygonPointsCornerTest))
 	{
 		LOG(LogUnitTest, Error, "*One point corner collision* test failed.");
 		return UnitTest::Failure;

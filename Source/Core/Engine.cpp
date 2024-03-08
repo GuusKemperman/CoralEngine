@@ -21,8 +21,6 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 {
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
-	//std::cout << "Hello world!" << std::endl;
-	//exit(0);
 
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();

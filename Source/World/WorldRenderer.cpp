@@ -13,9 +13,9 @@
 
 Engine::WorldRenderer::WorldRenderer(const World& world) :
 	mWorld(world),
+	mDebugRenderer(std::make_unique<DebugRenderer>()),
 	mLastRenderedAtSize(Device::IsHeadless() ? glm::vec2{} : Device::Get().GetDisplaySize())
 {
-    mDebugRenderer = std::make_unique<DebugRenderer>();
 }
 
 Engine::WorldRenderer::~WorldRenderer() = default;
