@@ -45,6 +45,8 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 
 #ifdef EDITOR
 	Editor::StartUp();
+#endif // !EDITOR
+
 	UnitTestManager::StartUp();
 
 	if (Device::sIsHeadless)
@@ -71,13 +73,13 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 			exit(numFailed + 1);
 		}
 	}
-#endif // !EDITOR
 }
 
 Engine::EngineClass::~EngineClass()
 {
-#ifdef EDITOR
 	UnitTestManager::ShutDown();
+
+#ifdef EDITOR
 	Editor::ShutDown();
 #endif  // EDITOR
 
@@ -97,9 +99,7 @@ Engine::EngineClass::~EngineClass()
 
 void Engine::EngineClass::Run()
 {
-	Device& device = Device::Get();
-
-	if (device.IsHeadless())
+	if (Device::IsHeadless())
 	{
 		return;
 	}
@@ -118,6 +118,7 @@ void Engine::EngineClass::Run()
 #endif // EDITOR
 
 	Input& input = Input::Get();
+	Device& device = Device::Get();
 
 	float timeElapsedSinceLastGarbageCollect{};
 	static constexpr float garbageCollectInterval = 5.0f;

@@ -1,5 +1,4 @@
 #pragma once
-#ifdef EDITOR
 #include "Meta/MetaReflect.h"
 
 namespace Engine
@@ -60,4 +59,3 @@ namespace Engine
 		REFLECT_AT_START_UP(EventTestingComponent);
 	};
 }
-#endif // EDITOR

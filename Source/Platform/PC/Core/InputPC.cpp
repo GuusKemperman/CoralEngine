@@ -69,6 +69,11 @@ Input::Input()
 
 Input::~Input()
 {
+    if (Device::IsHeadless())
+    {
+        return;
+    }
+
     GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
     
     // glfwSetJoystickCallback(NULL);
