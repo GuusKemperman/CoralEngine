@@ -43,10 +43,9 @@ jobs:
       timeout-minutes: 5
       run:  |
         echo Running tests
-        Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe run_tests > test_output.txt
+        Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe run_tests
         echo Finished running tests
         $exitCode = $LastExitCode
-        Get-Content test_output.txt
         if ($exitCode -ne 0) {
             Write-Error "Tests failed with exit code $exitCode"
             exit $exitCode
