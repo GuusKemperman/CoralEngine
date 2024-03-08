@@ -21,7 +21,7 @@
 class Engine::DebugRenderer::Impl
 {
 public:
-    Impl();
+	Impl() = default;
     bool AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color);
     void Render(const glm::mat4& view, const glm::mat4& projection);
 
@@ -39,11 +39,17 @@ public:
 Engine::DebugRenderer::DebugRenderer()
 {
 	Device& engineDevice = Device::Get();
+	mImpl = std::make_unique<Impl>();
+
+	if (engineDevice.IsHeadless())
+	{
+		return;
+	}
+
 	FileIO& fileIO = FileIO::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 	ID3D12GraphicsCommandList4* uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetUploadCommandList());
 
-	mImpl = std::make_unique<Impl>();
 	std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/DebugVertex.hlsl");
 	ComPtr<ID3DBlob> v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
 	shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/DebugPixel.hlsl");
@@ -83,9 +89,7 @@ Engine::DebugRenderer::DebugRenderer()
 	engineDevice.SubmitUploadCommands();
 }
 
-Engine::DebugRenderer::~DebugRenderer()
-{
-}
+Engine::DebugRenderer::~DebugRenderer() = default;
 
 void Engine::DebugRenderer::AddLine(DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) const
 {
@@ -101,10 +105,6 @@ void Engine::DebugRenderer::Render(const World& world)
     {
         mImpl->Render(camera.GetView(), camera.GetProjection());
     }
-}
-
-Engine::DebugRenderer::Impl::Impl()
-{
 }
 
 bool Engine::DebugRenderer::Impl::AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)

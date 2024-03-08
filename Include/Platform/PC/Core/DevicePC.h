@@ -35,6 +35,13 @@ namespace Engine
         void SubmitUploadCommands();
 
         glm::vec2 GetDisplaySize() { return glm::vec2(mViewport.Width, mViewport.Height); }
+
+        /**
+         * \brief Some build/testing servers do not support graphics. This function can be used to check that.
+         * \return True if there 
+         */
+        bool IsHeadless() const { return mIsHeadless; }
+
     //Platform specific heap
     public:
         std::shared_ptr<DXDescHeap> GetDescriptorHeap(int heap) { return mDescriptorHeaps[heap]; }
@@ -57,6 +64,8 @@ namespace Engine
 
     private:
         bool mIsWindowOpen{};
+        bool mIsHeadless{};
+
         GLFWwindow* mWindow;
         GLFWmonitor* mMonitor;
         D3D12_VIEWPORT mViewport;

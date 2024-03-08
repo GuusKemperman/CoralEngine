@@ -33,6 +33,30 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 #ifdef EDITOR
 	Editor::StartUp();
 	UnitTestManager::StartUp();
+
+	if (argc >= 2
+		&& strcmp(argv[1], "unit_tests") == 0)
+	{
+		uint32 numFailed = 0;
+		for (UnitTest& test : UnitTestManager::Get().GetAllTests())
+		{
+			test();
+			if (test.mResult != UnitTest::Success)
+			{
+				numFailed++;
+			}
+		}
+
+		// We only exit if numFailed != 0,
+		// since maybe theres a crash in
+		// the shutdown process and we want
+		// to test that as well
+		if (numFailed != 0)
+		{
+			exit(numFailed);
+		}
+	}
+
 #endif // !EDITOR
 }
 
@@ -54,6 +78,13 @@ Engine::EngineClass::~EngineClass()
 
 void Engine::EngineClass::Run()
 {
+	Device& device = Device::Get();
+
+	if (device.IsHeadless())
+	{
+		return;
+	}
+
 #ifndef EDITOR
 	// TODO level name is hardcoded
 	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>("DemoLevel");
@@ -68,7 +99,6 @@ void Engine::EngineClass::Run()
 #endif // EDITOR
 
 	Input& input = Input::Get();
-	Device& device = Device::Get();
 
 	float timeElapsedSinceLastGarbageCollect{};
 	static constexpr float garbageCollectInterval = 5.0f;

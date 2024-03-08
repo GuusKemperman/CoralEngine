@@ -11,10 +11,14 @@
 
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 
-Engine::Device::Device() {
-
+Engine::Device::Device()
+{
     InitializeWindow();
-    InitializeDevice();
+
+    if (!mIsHeadless)
+    {
+		InitializeDevice();
+    }
 }
 
 void Engine::Device::InitializeWindow()
@@ -22,9 +26,9 @@ void Engine::Device::InitializeWindow()
     LOG(LogCore, Message, "Initializing GLFW");
     if (!glfwInit())
     {
-        LOG(LogCore, Fatal, "GLFW could not be initialized");
-        assert(false);
-        exit(EXIT_FAILURE);
+        LOG(LogCore, Warning, "GLFW could not be initialized - continueing in headless mode");
+        mIsHeadless = true;
+        return;
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -520,6 +524,11 @@ void Engine::Device::SubmitUploadCommands()
 
 void Engine::Device::CreateImguiContext()
 {
+    if (mIsHeadless)
+    {
+        return;
+    }
+
     LOG(LogCore, Message, "Creating imgui context");
 
     glfwShowWindow(mWindow);

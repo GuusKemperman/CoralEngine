@@ -275,7 +275,8 @@ float Input::GetKeyboardAxis(KeyboardKey positive, KeyboardKey negative, bool ch
 bool Input::HasFocus() const
 {
 #ifdef EDITOR
-    return ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+    return !Device::Get().IsHeadless()  // ImGui may not have been initialised
+		&& ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 #else
     // No editor windows, so assume we always have focus.
     return true;
