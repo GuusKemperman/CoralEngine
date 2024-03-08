@@ -244,35 +244,35 @@ UNIT_TEST(Events, CollisionEvents)
 	reg.AddComponent<PhysicsBody2DComponent>(other).mMotionType = MotionType::Static;
 	reg.AddComponent<DiskColliderComponent>(other);
 
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionEntry == 0);
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionStay == 0);
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionExit == 0);
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 0));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 0));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
 	world.Tick(1 / 60.0f);
 
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionEntry == 1);
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionStay == 1);
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionExit == 0);
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 1));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
 	world.Tick(1 / 60.0f);
 
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionEntry == 1);
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionStay == 2);
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionExit == 0);
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 2));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
 	world.Tick(1 / 60.0f);
 
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionEntry == 1);
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionStay == 3);
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionExit == 0);
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 3));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
 	otherTransform.SetWorldPosition(glm::vec2{ 100000.0f });
 
 	world.Tick(1 / 60.0f);
 
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionEntry == 1);
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionStay == 3);
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionExit == 1);
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 3));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 1));
 
 	return UnitTest::Success;
 }
