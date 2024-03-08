@@ -9,7 +9,7 @@
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "World/Registry.h"
 #include "World/World.h"
-#include "World/WorldRenderer.h"
+#include "Utilities/DebugRenderer.h"
 
 Engine::PhysicsSystem2D::PhysicsSystem2D()
 {
@@ -227,7 +227,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 {
 	Registry& reg = world.GetRegistry();
 	const auto diskView = reg.View<PhysicsBody2DComponent, DiskColliderComponent, TransformComponent>();
-	const auto& renderer = world.GetRenderer();
+	const auto& renderer = world.GetDebugRenderer();
 	constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
 	for (auto [entity, body, disk, transformComponent] : diskView.each())
 	{

@@ -1,5 +1,4 @@
 #pragma once
-#include "Components/Component.h"
 #include "Meta/MetaReflect.h"
 #include "Utilities/Math.h"
 
@@ -38,8 +37,8 @@ namespace Engine
 
 		void OnConstruct(World& world, entt::entity owner);
 
-		void OnDeserialize(const BinaryGSONObject& deserializeFrom, entt::entity owner, World& world);
-		void OnSerialize(BinaryGSONObject& serializeTo, entt::entity owner, const World& world) const;
+		void OnDeserialize(World& world, entt::entity owner, const BinaryGSONObject& deserializeFrom);
+		void OnSerialize(const World& world, entt::entity owner, BinaryGSONObject& serializeTo) const;
 
 		static glm::mat4 ToMatrix(glm::vec3 position, glm::vec3 scale, glm::quat orientation);
 

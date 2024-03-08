@@ -1,4 +1,5 @@
 #pragma once
+#include "GSON/GSONBinary.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 
@@ -142,6 +143,35 @@ namespace Engine
 	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionExitEvent{ "OnCollisionExit" };
 
 	/**
+	 * \brief Some component require extra steps during serialization, this event can be used for that
+	 *
+	 * TODO: Does not work when the component is used in prefabs, does not get called when a prefab is saved
+	 *
+	 * \const World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 * \BinaryGSONObject& An empty object. Everything that you save into this object is given back to you in the Deserialize event.
+	 */
+	static constexpr Event<void(const World&, entt::entity, BinaryGSONObject&), true> sSerializeEvent{ "OnSerialize" };
+
+	/**
+	 * \brief Some component require extra steps during serialization, this event can be used for that
+	 *
+	 * TODO: Does not work when the component is used in prefabs, does not get called when a prefab is loaded/spawned in a world.
+	 *
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 * \const BinaryGSONObject& The object you outputted to in OnSerialize.
+	 */
+	static constexpr Event<void(World&, entt::entity, const BinaryGSONObject&)> sDeserializeEvent{ "OnDeserialize" };
+
+	/**
+	 * \brief For custom inspect logic. You can make calls to ImGui from this event.
+	 * \World& The world you are inspecting
+	 * \const std::vector<entt::entity>& All the selected entities that have this component AND require inspecting
+	 */
+	static constexpr Event<void(World&, const std::vector<entt::entity>&), false, true> sInspectEvent{ "OnInspect" };
+
+	/**
 	 * \brief Binds an event to a type.
 	 * \tparam Class The class that is being reflected.
 	 * \tparam Args The arguments of the events. Note that each event also requires the first argument to be Class& (see Class template argument).
@@ -205,14 +235,17 @@ namespace Engine
 	template<typename Class, typename Func, typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
 	void BindEvent(MetaType& type, const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event, Func&& func)
 	{
-		static_assert(std::is_const_v<Class> == IsPure, "Cannot be bound to function, make the function const (or remove const)");
+		static constexpr bool isStatic = entt::component_traits<std::remove_const_t<Class>>::page_size == 0 ||
+			IsAlwaysStatic;
+		static_assert(isStatic || std::is_const_v<Class> == IsPure,
+			"Cannot be bound to function, make the function const (or remove const)");
 
 		MetaFunc* eventFunc{};
 
-		if constexpr (entt::component_traits<Class>::page_size != 0
+		if constexpr (entt::component_traits<std::remove_const_t<Class>>::page_size != 0
 			&& !IsAlwaysStatic)
 		{
-			ASSERT(type.GetTypeId() == MakeTypeId<Class>());
+			ASSERT(type.GetTypeId() == MakeStrippedTypeId<Class>());
 			static_assert(std::is_invocable_v<decltype(func), Class&, Args...>, "The parameters of the event do not match the parameters of the function");
 
 			eventFunc = &type.AddFunc(std::function<Ret(Class&, Args...)>{ std::forward<Func>(func) }, event.mName);
@@ -236,7 +269,7 @@ namespace Engine
 	template<typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
 	void BindEvent(MetaType& type, const EventT& event, FuncRet(FuncObj::* func)(FuncParams...) const)
 	{
-		BindEvent<FuncObj>(type, event, func);
+		BindEvent<const FuncObj>(type, event, func);
 	}
 
 	template<typename FuncRet, typename... FuncParams, typename EventT>

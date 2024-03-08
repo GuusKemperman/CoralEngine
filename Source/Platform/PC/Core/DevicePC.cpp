@@ -262,6 +262,31 @@ void Engine::Device::InitializeDevice()
         mResources[i]->GetResource()->SetName(L"RENDER TARGET");
     }
 
+    //CREATE ROOT SIGNATURE
+    mSignature = std::make_unique<DXSignature>(12);
+    mSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX);//0
+    mSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL);//1
+    mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX);//2
+    mSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL);//3
+    mSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL);//4
+
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);//5
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);//6
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);//7
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//8
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//9
+
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);//10
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);//11
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);//12
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4);//13
+
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);//14
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//15
+    mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//16
+    mSignature->CreateSignature(mDevice, L"MAIN ROOT SIGNATURE");
+
+
     //CREATE DEPTH STENCIL
     D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
     depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
@@ -382,16 +407,21 @@ void Engine::Device::NewFrame() {
     mCommandList->RSSetViewports(1, &mViewport); 
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
     mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
-}
+    mCommandList->SetGraphicsRootSignature(mSignature->GetSignature().Get());
 
-void Engine::Device::EndFrame()
-{   
     glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
     CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0);
     mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
     mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mFrameIndex, &clearColor[0]);
     mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, 0);
+
+}
+
+void Engine::Device::EndFrame()
+{   
+    CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0);
+    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
 
     auto* desc_ptr = mDescriptorHeaps[RESOURCE_HEAP]->Get();
     mCommandList->SetDescriptorHeaps(1, &desc_ptr);
