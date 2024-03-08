@@ -24,8 +24,8 @@ namespace Engine
 	{
 	public:
 		PhysicsBody2DComponent() = default;
-		explicit PhysicsBody2DComponent(float mass, float restitution, glm::vec2 position)
-			: mRestitution(restitution), mPosition(position)
+		explicit PhysicsBody2DComponent(float mass, float restitution)
+			: mRestitution(restitution)
 		{
 			mInvMass = mass == 0.f ? 0.f : (1.f / mass);
 		}
@@ -35,7 +35,6 @@ namespace Engine
 		MotionType mMotionType{};
 		float mInvMass = 1.f;
 		float mRestitution = 1.f;
-		glm::vec2 mPosition{};
 		glm::vec2 mLinearVelocity{};
 		glm::vec2 mForce{};
 
@@ -60,12 +59,6 @@ namespace Engine
 		friend PhysicsSystem2D;
 
 		void ClearForces() { mForce = {}; }
-
-		void Update(float dt)
-		{
-			if (mMotionType == MotionType::Dynamic) mLinearVelocity += mForce * mInvMass * dt;
-			mPosition += mLinearVelocity * dt;
-		}
 	};
 }
 

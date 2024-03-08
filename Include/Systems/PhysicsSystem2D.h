@@ -1,4 +1,5 @@
 #pragma once
+#include "Components/TransformComponent.h"
 #include "Systems/System.h"
 
 struct Physics2DUnitTestAccess;
@@ -13,6 +14,8 @@ namespace Engine
 		public System
 	{
 	public:
+		PhysicsSystem2D();
+
 		void Update(World& world, float dt) override;
 
 		SystemStaticTraits GetStaticTraits() const override
@@ -63,9 +66,12 @@ namespace Engine
 
 		static void CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage, entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint);
 
-		static void PrintCollisionData(entt::entity entity, const PhysicsBody2DComponent& body);
-		static void ResolveCollision(const CollisionData& collision, PhysicsBody2DComponent& body1,
-			PhysicsBody2DComponent& body2);
+		static void ResolveCollision(const CollisionData& collision, 
+			PhysicsBody2DComponent& body1,
+			PhysicsBody2DComponent& body2,
+			TransformComponent& transform2,
+			glm::vec2& entity1WorldPos,
+			const glm::vec2& entity2WorldPos);
 
 		//static void RegisterCollision(CollisionData& collision, const entt::entity& entity1,
 		//	PhysicsBody2DComponent& body1, const entt::entity& entity2,

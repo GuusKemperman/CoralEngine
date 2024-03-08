@@ -109,6 +109,39 @@ namespace Engine
 	static constexpr Event<void(World&, entt::entity)> sDestructEvent{ "OnDestruct" };
 
 	/**
+	 * \brief Called the first frame two entities are colliding
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 * \entt::entity The entity this entity collided with.
+	 * \float The depth of the collision, how far it penetrated
+	 * \glm::vec2 The collision normal
+	 * \glm::vec2 The point of contact
+	 */
+	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionEntryEvent{ "OnCollisionEntry" };
+
+	/**
+	 * \brief Called every frame in which two entities are colliding. ALWAYS called after at one OnCollisionEntry
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 * \entt::entity The entity this entity collided with.
+	 * \float The depth of the collision, how far it penetrated
+	 * \glm::vec2 The collision normal
+	 * \glm::vec2 The point of contact
+	 */
+	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionStayEvent{ "OnCollisionStay" };
+
+	/**
+	 * \brief Called the first frame that two entities who were colliding in the previous frame, but no longer are.
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 * \entt::entity The entity this entity collided with.
+	 * \float The depth of the collision, how far it penetrated
+	 * \glm::vec2 The collision normal
+	 * \glm::vec2 The point of contact
+	 */
+	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionExitEvent{ "OnCollisionExit" };
+
+	/**
 	 * \brief Binds an event to a type.
 	 * \tparam Class The class that is being reflected.
 	 * \tparam Args The arguments of the events. Note that each event also requires the first argument to be Class& (see Class template argument).
@@ -180,11 +213,14 @@ namespace Engine
 			&& !IsAlwaysStatic)
 		{
 			ASSERT(type.GetTypeId() == MakeTypeId<Class>());
+			static_assert(std::is_invocable_v<decltype(func), Class&, Args...>, "The parameters of the event do not match the parameters of the function");
 
 			eventFunc = &type.AddFunc(std::function<Ret(Class&, Args...)>{ std::forward<Func>(func) }, event.mName);
 		}
 		else
 		{
+			static_assert(std::is_invocable_v<decltype(func), Args...>, "The parameters of the event do not match the parameters of the function");
+
 			eventFunc = &type.AddFunc(std::function<Ret(Args...)>{ std::forward<Func>(func) }, event.mName);
 			eventFunc->GetProperties().Add(Props::sIsEventStaticTag);
 		}

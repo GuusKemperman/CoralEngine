@@ -61,7 +61,6 @@ namespace Engine
 
 		bool IsOrphan() const { return mParent == nullptr; }
 
-
 		/**
 		 * \brief Recursively checks if this transformcomponent is a child of the provided transform.
 		 * \return True if the provided transformcomponent is this transform is the child of the forefather,
@@ -77,22 +76,22 @@ namespace Engine
 		// -----------------------------------------------------------------------------------------------------------------//
 		
 		glm::vec3 GetLocalPosition() const { return mLocalPosition; }
-		glm::vec2 GetLocalPosition2D() const { return { mLocalPosition.x, mLocalPosition.y }; }
+		glm::vec2 GetLocalPosition2D() const { return To2D(mLocalPosition); }
 
 		glm::vec3 GetWorldPosition() const;
-		glm::vec2 GetWorldPosition2D() const { const glm::vec3 in3D = GetWorldPosition(); return { in3D.x, in3D.y }; }
+		glm::vec2 GetWorldPosition2D() const { return To2D(GetWorldPosition()); }
 
 		void SetLocalPosition(const glm::vec3 position) { mLocalPosition = position; }
-		void SetLocalPosition(const glm::vec2 position) { mLocalPosition.x = position.x, mLocalPosition.y = position.y; }
+		void SetLocalPosition(const glm::vec2 position) { mLocalPosition = To3D(position, mLocalPosition[Axis::Up]); }
 
 		void TranslateLocalPosition(const glm::vec3 translation) { mLocalPosition += translation; }
-		void TranslateLocalPosition(const glm::vec2 translation) { mLocalPosition.x += translation.x, mLocalPosition.y += translation.y; }
+		void TranslateLocalPosition(const glm::vec2 translation) { mLocalPosition += To3D(translation); }
 
 		void SetWorldPosition(glm::vec3 position);
-		void SetWorldPosition(const glm::vec2 position) { SetWorldPosition(glm::vec3{ position, mLocalPosition.z }); }
+		void SetWorldPosition(const glm::vec2 position) { SetWorldPosition(To3D(position, GetWorldPosition()[Axis::Up])); }
 
 		void TranslateWorldPosition(const glm::vec3 translation) { SetWorldPosition(GetWorldPosition() + translation); }
-		void TranslateWorldPosition(const glm::vec2 translation) { TranslateWorldPosition(glm::vec3{ translation.x, translation.y, 0.0f }); }
+		void TranslateWorldPosition(const glm::vec2 translation) { TranslateWorldPosition(To3D(translation)); }
 
 		// -----------------------------------------------------------------------------------------------------------------//
 		// Getting/setting the orientation																					//
@@ -136,22 +135,36 @@ namespace Engine
 		// -----------------------------------------------------------------------------------------------------------------//
 
 		glm::vec3 GetLocalScale() const { return mLocalScale; }
-		glm::vec2 GetLocalScale2D() const { return glm::vec2{ mLocalScale.x, mLocalScale.y }; }
+		glm::vec2 GetLocalScale2D() const { return To2D(mLocalScale); }
 		float GetLocalScaleUniform() const { const glm::vec3 scale = GetLocalScale(); return (scale.x + scale.y + scale.z) * (1.0f / 3.0f); }
 
 		glm::vec3 GetWorldScale() const;
-		glm::vec2 GetWorldScale2D() const { const glm::vec3 scale = GetWorldScale(); return glm::vec2{ scale.x, scale.y }; }
+		glm::vec2 GetWorldScale2D() const { return To2D(GetWorldScale()); }
 		float GetWorldScaleUniform() const { const glm::vec3 scale = GetWorldScale(); return (scale.x + scale.y + scale.z) * (1.0f / 3.0f); }
 	
 		void SetLocalScale(const float xyz) { mLocalScale = glm::vec3{ xyz }; }
 		void SetLocalScale(const glm::vec3 scale) { mLocalScale = scale; }
-		void SetLocalScale(const glm::vec2 scale) { mLocalScale.x = scale.x, mLocalScale.y = scale.y; }
+		void SetLocalScale(const glm::vec2 scale) { mLocalScale = To3D(scale, mLocalScale[Axis::Up]); }
 		
 		void SetWorldSclae(const float xyz) { SetWorldScale(glm::vec3{ xyz }); }
 		void SetWorldScale(glm::vec3 scale);
-		void SetWorldScale(const glm::vec2 scale) { SetWorldScale(glm::vec3{ scale, mLocalScale.z }); }
+		void SetWorldScale(const glm::vec2 scale) { SetWorldScale(To3D(scale, GetWorldScale()[Axis::Up])); }
 		
 	private:
+		static glm::vec2 To2D(glm::vec3 v3)
+		{
+			return { v3[Axis::Right], v3[Axis::Forward] };
+		}
+
+		static glm::vec3 To3D(glm::vec2 v2, float up = 0.0f)
+		{
+			glm::vec3 v3{};
+			v3[Axis::Right] = v2.x;
+			v3[Axis::Forward] = v2.y;
+			v3[Axis::Up] = up;
+			return v3;
+		}
+
 		void AttachChild(TransformComponent& child);
 		void DetachChild(TransformComponent& child);
 

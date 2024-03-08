@@ -4,6 +4,9 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Components/EventTestingComponent.h"
+#include "Components/TransformComponent.h"
+#include "Components/Physics2D/DiskColliderComponent.h"
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/Events.h"
 
 namespace Engine
@@ -218,6 +221,58 @@ UNIT_TEST(Events, OnDestructDestroyEntity)
 	// I guess we can't really test the num of destructs if the instance were destroyed..
 	// But we have the static one atleast
 	TEST_ASSERT(EmptyEventTestingComponent::sNumOfDestructs == 1);
+
+	return UnitTest::Success;
+}
+
+UNIT_TEST(Events, CollisionEvents)
+{
+	using namespace Engine;
+
+	World world{ true };
+	const entt::entity owner = InitTest(world);
+
+	Registry& reg = world.GetRegistry();
+
+	reg.AddComponent<TransformComponent>(owner);
+	reg.AddComponent<PhysicsBody2DComponent>(owner).mMotionType = MotionType::Static;
+	reg.AddComponent<DiskColliderComponent>(owner);
+
+	const entt::entity other = reg.Create();
+
+	TransformComponent& otherTransform = reg.AddComponent<TransformComponent>(other);
+	reg.AddComponent<PhysicsBody2DComponent>(other).mMotionType = MotionType::Static;
+	reg.AddComponent<DiskColliderComponent>(other);
+
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionEntry == 0);
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionStay == 0);
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionExit == 0);
+
+	world.Tick(1 / 60.0f);
+
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionEntry == 1);
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionStay == 1);
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionExit == 0);
+
+	world.Tick(1 / 60.0f);
+
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionEntry == 1);
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionStay == 2);
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionExit == 0);
+
+	world.Tick(1 / 60.0f);
+
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionEntry == 1);
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionStay == 3);
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionExit == 0);
+
+	otherTransform.SetWorldPosition(glm::vec2{ 100000.0f });
+
+	world.Tick(1 / 60.0f);
+
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionEntry == 1);
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionStay == 3);
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfCollisionExit == 1);
 
 	return UnitTest::Success;
 }

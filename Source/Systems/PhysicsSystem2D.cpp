@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Systems/PhysicsSystem2D.h"
 
+#include "Components/ComponentFiler.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Meta/MetaType.h"
 #include "Components/TransformComponent.h"
@@ -9,6 +10,36 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "World/WorldRenderer.h"
+
+Engine::PhysicsSystem2D::PhysicsSystem2D()
+{
+	for (const MetaType& type : MetaManager::Get().EachType())
+	{
+		if (!ComponentFilter::IsTypeValid(type))
+		{
+			continue;
+		}
+
+		const MetaFunc* const entry = TryGetEvent(type, sCollisionEntryEvent);
+		const MetaFunc* const stay = TryGetEvent(type, sCollisionStayEvent);
+		const MetaFunc* const exit = TryGetEvent(type, sCollisionExitEvent);
+
+		if (entry != nullptr)
+		{
+			mOnCollisionEntryEvents.emplace_back(CollisionEvent{ type, *entry, entry->GetProperties().Has(Props::sIsEventStaticTag) });
+		}
+
+		if (stay != nullptr)
+		{
+			mOnCollisionStayEvents.emplace_back(CollisionEvent{ type, *stay, stay->GetProperties().Has(Props::sIsEventStaticTag) });
+		}
+
+		if (exit != nullptr)
+		{
+			mOnCollisionExitEvents.emplace_back(CollisionEvent{ type, *exit, exit->GetProperties().Has(Props::sIsEventStaticTag) });
+		}
+	}
+}
 
 void Engine::PhysicsSystem2D::Update(World& world, float dt)
 {
@@ -22,12 +53,23 @@ void Engine::PhysicsSystem2D::Update(World& world, float dt)
 void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
-	auto view = reg.View<PhysicsBody2DComponent, TransformComponent>();
+	const auto view = reg.View<PhysicsBody2DComponent, TransformComponent>();
 	for (auto [entity, body, transform] : view.each())
 	{
-		body.Update(dt);
-
-		transform.SetLocalPosition({ body.mPosition.x, transform.GetLocalPosition().y, body.mPosition.y });
+		switch (body.mMotionType)
+		{
+		case MotionType::Dynamic:
+			body.mLinearVelocity += body.mForce * body.mInvMass * dt;
+		case MotionType::Kinematic:
+			if (body.mLinearVelocity != glm::vec2{})
+			{
+				// @Amzy should we not move this in the above if-statement,
+				// since static/kinematic bodies are (i think?) not moved
+				// using velocity?
+				transform.TranslateWorldPosition(body.mLinearVelocity * dt);
+			}
+		default:;
+		}
 	}
 }
 
@@ -35,33 +77,51 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 {
 	Registry& reg = world.GetRegistry();
 
-	const auto& viewDisk = reg.View<PhysicsBody2DComponent, DiskColliderComponent>();
-	const auto& viewPolygon = reg.View<PhysicsBody2DComponent, PolygonColliderComponent>();
+	const auto& viewDisk = reg.View<PhysicsBody2DComponent, TransformComponent, DiskColliderComponent>();
+	const auto& viewPolygon = reg.View<PhysicsBody2DComponent, TransformComponent, PolygonColliderComponent>();
 
 	CollisionData collision;
 
-	// prev collisions are stored in physicssystem2d.
+	// prev collisions are stored as a member function,
+	// but this is made static so we can reuse the same
+	// buffer every frame, even if we have multiple worlds.
 	static std::vector<CollisionData> currentCollisions{};
 	currentCollisions.clear();
 
 	// collisions between a dynamic and static/kinematic body are only resolved if the dynamic body is a disk
-	for (auto [entity1, body1, disk1] : viewDisk.each())
+	for (auto [entity1, body1, transform1, disk1] : viewDisk.each())
 	{
-		if (body1.mMotionType == MotionType::Static) continue;
+		// @Amzy why are we not checking for collisions
+		// with static objects? I've commented this out:
+		// Because otherwise static objects get ignored
+		// everywhere right?
+		/*if (body1.mMotionType == MotionType::Static)
+		{
+			continue;
+		}*/
+
+		// Can be modified by ResolveCollision. Is only actually applied
+		// to the transform at the end of this loop, for performance
+		// reasons.
+		glm::vec2 entity1Pos = transform1.GetWorldPosition2D();
+		const glm::vec2 entity1PosAtStart = entity1Pos;
 
 		// disk-disk collisions
-		for (auto [entity2, body2, disk2] : viewDisk.each())
+		for (auto [entity2, body2, transform2, disk2] : viewDisk.each())
 		{
-			// avoid duplicate collision checks
-			if (body2.mMotionType != MotionType::Static
-				&& entity1 >= entity2)
+			// Avoid duplicate collision checks
+			if (/*body2.mMotionType != MotionType::Static // @Amzy why are we only checking for collisions with non-static objects?
+				&&*/ entity1 >= entity2)
 			{
 				continue;
 			}
 
-			if (CollisionCheckDiskDisk(body1.mPosition, disk1.mRadius, body2.mPosition, disk2.mRadius, collision))
+			const glm::vec2 entity2Pos = transform2.GetWorldPosition2D();
+
+			if (CollisionCheckDiskDisk(entity1Pos, disk1.mRadius, entity2Pos, disk2.mRadius, collision))
 			{
-				ResolveCollision(collision, body1, body2);
+				ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
+
 				collision.mEntity1 = entity1;
 				collision.mEntity2 = entity2;
 				currentCollisions.emplace_back(collision);
@@ -69,17 +129,26 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 		}
 
 		// disk-polygon collisions
-		for (const auto [entity2, body2, polygon2] : viewPolygon.each())
+		for (const auto [entity2, body2, transform2, polygon2] : viewPolygon.each())
 		{
-			if (CollisionCheckDiskPolygon(body1.mPosition, disk1.mRadius, body2.mPosition, polygon2.mPoints, collision))
+			// In case an entity has both a polygon collider and a disk collider,
+			// otherwise it might check against itself
+			if (entity1 >= entity2)
 			{
-				ResolveCollision(collision, body1, body2);
-
-				collision.mEntity1 = entity1;
-				collision.mEntity2 = entity2;
-				currentCollisions.emplace_back(collision);
-				//RegisterCollision(collision, entity1, body1, entity2, body2);
+				continue;
 			}
+
+			const glm::vec2 entity2Pos = transform2.GetWorldPosition2D();
+
+			if (CollisionCheckDiskPolygon(entity1Pos, disk1.mRadius, entity2Pos, polygon2.mPoints, collision))
+			{
+				ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
+			}
+		}
+
+		if (entity1Pos != entity1PosAtStart)
+		{
+			transform1.SetWorldPosition(entity1Pos);
 		}
 	}
 
@@ -105,7 +174,7 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 
 	for (const CollisionData& prevFrame : mPreviousCollisions)
 	{
-		const bool isCollidingNow = std::any_of(mPreviousCollisions.begin(), mPreviousCollisions.end(),
+		const bool isCollidingNow = std::any_of(currentCollisions.begin(), currentCollisions.end(),
 			[&prevFrame](const CollisionData& currFrame)
 			{
 				return currFrame.mEntity1 == prevFrame.mEntity1
@@ -114,7 +183,7 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 
 		if (!isCollidingNow)
 		{
-			enters.emplace_back(prevFrame);
+			exits.emplace_back(prevFrame);
 		}
 	}
 
@@ -125,7 +194,6 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 
 	std::swap(mPreviousCollisions, currentCollisions);
 }
-
 
 template <typename CollisionDataContainer>
 void Engine::PhysicsSystem2D::CallEvents(World& world, const CollisionDataContainer& collisions,
@@ -163,20 +231,19 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 	constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
 	for (auto [entity, body, disk, transformComponent] : diskView.each())
 	{
-		renderer.AddCircle(
-			DebugCategory::Physics, transformComponent.GetWorldPosition(), disk.mRadius + 0.1f, color);
-		PrintCollisionData(entity, body);
+		renderer.AddCircle(DebugCategory::Physics, transformComponent.GetWorldPosition(), disk.mRadius + 0.1f, color);
 	}
+
 	const auto polyView = reg.View<PhysicsBody2DComponent, PolygonColliderComponent, TransformComponent>();
 	for (auto [entity, body, poly, transformComponent] : polyView.each())
 	{
+		const glm::vec2 worldPos = transformComponent.GetWorldPosition2D();
 		const size_t pointCount = poly.mPoints.size();
 		for (size_t i = 0; i < pointCount; ++i)
 		{
-			const glm::vec2 from = poly.mPoints[i] + body.mPosition;
-			const glm::vec2 to = poly.mPoints[(i + 1) % pointCount] + body.mPosition;
-			renderer.AddLine(DebugCategory::Physics, glm::vec3(from.x, 1.1f, from.y),
-				glm::vec3(to.x, 1.1f, to.y), color);
+			const glm::vec2 from = poly.mPoints[i] + worldPos;
+			const glm::vec2 to = poly.mPoints[(i + 1) % pointCount] + worldPos;
+			renderer.AddLine(DebugCategory::Physics, glm::vec3(from.x, 1.1f, from.y), glm::vec3(to.x, 1.1f, to.y), color);
 		}
 	}
 }
@@ -184,6 +251,10 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 void Engine::PhysicsSystem2D::CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage,
 	entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint)
 {
+	static_assert(std::is_same_v<decltype(sCollisionEntryEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
+	static_assert(std::is_same_v<decltype(sCollisionStayEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
+	static_assert(std::is_same_v<decltype(sCollisionExitEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
+
 	// Tombstone check, is needed
 	if (!storage.contains(owner))
 	{
@@ -192,60 +263,67 @@ void Engine::PhysicsSystem2D::CallEvent(const CollisionEvent& event, World& worl
 
 	if (event.mIsStatic)
 	{
-		// TODO pass arguments
-		event.mEvent.get().InvokeUncheckedUnpacked();
+		event.mEvent.get().InvokeUncheckedUnpacked(world, owner, otherEntity, depth, normal, contactPoint);
 	}
 	else
 	{
-		// TODO pass arguments
-		event.mEvent.get().InvokeUncheckedUnpacked();
+		MetaAny component{ event.mComponentType, storage.value(owner), false };
+		event.mEvent.get().InvokeUncheckedUnpacked(component, world, owner, otherEntity, depth, normal, contactPoint);
 	}
 }
 
-void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision, PhysicsBody2DComponent& body1, PhysicsBody2DComponent& body2)
+void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision, 
+	PhysicsBody2DComponent& body1, 
+	PhysicsBody2DComponent& body2, 
+	TransformComponent& transform2,			
+	glm::vec2& entity1WorldPos,
+	const glm::vec2& entity2WorldPos)
 {
 	const bool isBody1Dynamic = body1.mMotionType == MotionType::Dynamic;
 	const bool isBody2Dynamic = body2.mMotionType == MotionType::Dynamic;
 
 	// if both bodies are not dynamic, there's nothing left to do
-	if (!isBody1Dynamic && !isBody2Dynamic) return;
-
-	// displace the objects to resolve overlap
-	const float totalInvMass = body1.mInvMass + body2.mInvMass;
-	const glm::vec2& dist = (collision.mDepth / totalInvMass) * collision.mNormalFor1;
-
-	if (isBody1Dynamic) body1.mPosition += dist * body1.mInvMass;
-	if (isBody2Dynamic) body2.mPosition += dist * body2.mInvMass;
-
-	// compute and apply impulses
-	const float dotProduct = glm::dot(body1.mLinearVelocity - body2.mLinearVelocity, collision.mNormalFor1);
-	if (dotProduct <= 0)
+	if (isBody1Dynamic 
+		|| isBody2Dynamic)
 	{
-		const float restitution = std::min(body1.mRestitution, body2.mRestitution);
-		const float j = -(1 + restitution) * dotProduct / totalInvMass;
-		const glm::vec2& impulse = j * collision.mNormalFor1;
+		// displace the objects to resolve overlap
+		const float totalInvMass = body1.mInvMass + body2.mInvMass;
+		const glm::vec2 dist = (collision.mDepth / totalInvMass) * collision.mNormalFor1;
 
-		if (isBody1Dynamic) body1.ApplyImpulse(impulse);
-		if (isBody2Dynamic) body2.ApplyImpulse(-impulse);
+		if (isBody1Dynamic)
+		{
+			// entity1WorldPos is applied to the transform
+			// outside of the loop that iterates over all the entity2's,
+			// see UpdateCollisions.
+			entity1WorldPos += dist * body1.mInvMass;
+		}
+
+		if (isBody2Dynamic)
+		{
+			transform2.SetWorldPosition(entity2WorldPos + dist * body2.mInvMass);
+		}
+
+		// compute and apply impulses
+		const float dotProduct = glm::dot(body1.mLinearVelocity - body2.mLinearVelocity, collision.mNormalFor1);
+
+		if (dotProduct <= 0)
+		{
+			const float restitution = std::min(body1.mRestitution, body2.mRestitution);
+			const float j = -(1 + restitution) * dotProduct / totalInvMass;
+			const glm::vec2 impulse = j * collision.mNormalFor1;
+
+			if (isBody1Dynamic)
+			{
+				body1.ApplyImpulse(impulse);
+			}
+
+			if (isBody2Dynamic)
+			{
+				body2.ApplyImpulse(-impulse);
+			}
+		}
 	}
 }
-
-//void Engine::PhysicsSystem2D::RegisterCollision(CollisionData& collision, const entt::entity& entity1, PhysicsBody2DComponent& body1, const entt::entity& entity2, PhysicsBody2DComponent& body2)
-//{
-//	// store collision data in both bodies, also if they are kinematic (implying custom collision resolution)
-//	if (body1.mMotionType != MotionType::Static)
-//	{
-//		collision.mOtherEntity = entity2;
-//		body1.AddCollisionData(collision);
-//	}
-//
-//	if (body2.mMotionType != MotionType::Static)
-//	{
-//		collision.mOtherEntity = entity1;
-//		collision.mNormalFor1 = -collision.mNormalFor1;
-//		body2.AddCollisionData(collision);
-//	}
-//}
 
 bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(const glm::vec2& center1, float radius1, const glm::vec2& center2, float radius2, CollisionData& result)
 {
