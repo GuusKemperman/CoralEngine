@@ -17,50 +17,53 @@
 #include "Utilities/Benchmark.h"
 #include "World/Registry.h"
 
-Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
+Engine::EngineClass::EngineClass(int, char*[], std::string_view)
 {
-	FileIO::StartUp(argc, argv, gameDir);
-	Logger::StartUp();
-	Device::StartUp();
-	Input::StartUp();
-#ifdef PLATFORM_WINDOWS
-	Device::Get().CreateImguiContext();
-#endif
-	MetaManager::StartUp();
-	AssetManager::StartUp();
-	VirtualMachine::StartUp();
+	std::cout << "Hello world!" << std::endl;
+	exit(EXIT_SUCCESS);
 
-#ifdef EDITOR
-	Editor::StartUp();
-	UnitTestManager::StartUp();
-
-	if (argc >= 2
-		&& strcmp(argv[1], "run_tests") == 0)
-	{
-		exit(0);
-
-		//uint32 numFailed = 0;
-		//for (UnitTest& test : UnitTestManager::Get().GetAllTests())
-		//{
-		//	test();
-		//	if (test.mResult != UnitTest::Success)
-		//	{
-		//		numFailed++;
-		//	}
-		//}
-
-		//// We only exit if numFailed != 0,
-		//// since maybe theres a crash in
-		//// the shutdown process and we want
-		//// to test that as well
-		//if (numFailed != 0)
-		//{
-		//	exit(0);
-		//}
-	}
-	exit(55);
-
-#endif // !EDITOR
+//	FileIO::StartUp(argc, argv, gameDir);
+//	Logger::StartUp();
+//	Device::StartUp();
+//	Input::StartUp();
+//#ifdef PLATFORM_WINDOWS
+//	Device::Get().CreateImguiContext();
+//#endif
+//	MetaManager::StartUp();
+//	AssetManager::StartUp();
+//	VirtualMachine::StartUp();
+//
+//#ifdef EDITOR
+//	Editor::StartUp();
+//	UnitTestManager::StartUp();
+//
+//	if (argc >= 2
+//		&& strcmp(argv[1], "run_tests") == 0)
+//	{
+//		exit(0);
+//
+//		//uint32 numFailed = 0;
+//		//for (UnitTest& test : UnitTestManager::Get().GetAllTests())
+//		//{
+//		//	test();
+//		//	if (test.mResult != UnitTest::Success)
+//		//	{
+//		//		numFailed++;
+//		//	}
+//		//}
+//
+//		//// We only exit if numFailed != 0,
+//		//// since maybe theres a crash in
+//		//// the shutdown process and we want
+//		//// to test that as well
+//		//if (numFailed != 0)
+//		//{
+//		//	exit(0);
+//		//}
+//	}
+//	exit(55);
+//
+//#endif // !EDITOR
 }
 
 Engine::EngineClass::~EngineClass()
