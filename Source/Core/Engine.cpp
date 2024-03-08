@@ -20,7 +20,7 @@
 Engine::EngineClass::EngineClass(int, char*[], std::string_view)
 {
 	std::cout << "Hello world!" << std::endl;
-	exit(EXIT_SUCCESS);
+	exit(EXIT_FAILURE);
 
 //	FileIO::StartUp(argc, argv, gameDir);
 //	Logger::StartUp();
