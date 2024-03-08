@@ -48,22 +48,23 @@ void Engine::Device::InitializeWindow()
 
     mFullscreen = false;
 
-    if (mFullscreen){
+    if (mFullscreen)
+    {
         mViewport.Width = static_cast<FLOAT>(maxScreenWidth);
         mViewport.Height = static_cast<FLOAT>(maxScreenHeight);
         mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "General engine", mMonitor, nullptr);
     }
-    else{
+    else
+    {
         glfwWindowHint(GLFW_RESIZABLE, 1);
         mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "General engine", nullptr, nullptr);
     }
 
-    if (!mWindow)
+    if (mWindow == nullptr)
     {
-        LOG(LogCore, Fatal, "GLFW window could not be created");
-        glfwTerminate();
-        assert(false);
-        exit(EXIT_FAILURE);
+        LOG(LogCore, Warning, "GLFW window could not be created - continuing in headless mode");
+        mIsHeadless = true;
+        return;
     }
 
     glfwMakeContextCurrent(mWindow);

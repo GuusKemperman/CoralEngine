@@ -38,4 +38,5 @@ jobs:
 
     - name: Run Unit Tests
       working-directory: ${{env.GITHUB_WORKSPACE}}
+      timeout-minutes: 5
       run: Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe run_tests
