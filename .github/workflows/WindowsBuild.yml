@@ -41,10 +41,10 @@ jobs:
     - name: Run Unit Tests
       working-directory: ${{env.GITHUB_WORKSPACE}}
       timeout-minutes: 5
-      # We still want to print the result if the test fails
-      continue-on-error: true
       run:  |
+        echo Running tests
         Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe run_tests > test_output.txt
+        echo Finished running tests
         $exitCode = $LastExitCode
         Get-Content test_output.txt
         if ($exitCode -ne 0) {
