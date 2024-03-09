@@ -99,50 +99,50 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Import Project="Properties\EngineAndGameDebug.props" />
-    <Import Project="Properties\EngineAndGamePC.props" />
-    <Import Project="Properties\EngineAndGame.props" />
-    <Import Project="Properties\GamePC.props" />
-    <Import Project="Properties\Game.props" />
+    <Import Project="..\..\Properties\EngineAndGameDebug.props" />
+    <Import Project="..\..\Properties\EngineAndGamePC.props" />
+    <Import Project="..\..\Properties\EngineAndGame.props" />
+    <Import Project="..\..\Properties\GamePC.props" />
+    <Import Project="..\..\Properties\Game.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">
-    <Import Project="Properties\EngineAndGameDebug.props" />
-    <Import Project="Properties\EngineAndGame***REMOVED***.props" />
-    <Import Project="Properties\Game***REMOVED***.props" />
-    <Import Project="Properties\EngineAndGame.props" />
-    <Import Project="Properties\Game.props" />
+    <Import Project="..\..\Properties\EngineAndGameDebug.props" />
+    <Import Project="..\..\Properties\EngineAndGame***REMOVED***.props" />
+    <Import Project="..\..\Properties\Game***REMOVED***.props" />
+    <Import Project="..\..\Properties\EngineAndGame.props" />
+    <Import Project="..\..\Properties\Game.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">
-    <Import Project="Properties\Game***REMOVED***.props" />
-    <Import Project="Properties\EngineAndGame***REMOVED***.props" />
-    <Import Project="Properties\EngineAndGameRelease.props" />
-    <Import Project="Properties\EngineAndGame.props" />
-    <Import Project="Properties\Game.props" />
+    <Import Project="..\..\Properties\Game***REMOVED***.props" />
+    <Import Project="..\..\Properties\EngineAndGame***REMOVED***.props" />
+    <Import Project="..\..\Properties\EngineAndGameRelease.props" />
+    <Import Project="..\..\Properties\EngineAndGame.props" />
+    <Import Project="..\..\Properties\Game.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">
-    <Import Project="Properties\EngineAndGame.props" />
-    <Import Project="Properties\EngineAndGameEditor.props" />
-    <Import Project="Properties\EngineAndGamePC.props" />
-    <Import Project="Properties\EngineAndGameRelease.props" />
-    <Import Project="Properties\GamePC.props" />
-    <Import Project="Properties\Game.props" />
+    <Import Project="..\..\Properties\EngineAndGame.props" />
+    <Import Project="..\..\Properties\EngineAndGameEditor.props" />
+    <Import Project="..\..\Properties\EngineAndGamePC.props" />
+    <Import Project="..\..\Properties\EngineAndGameRelease.props" />
+    <Import Project="..\..\Properties\GamePC.props" />
+    <Import Project="..\..\Properties\Game.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Import Project="Properties\EngineAndGame.props" />
-    <Import Project="Properties\EngineAndGamePC.props" />
-    <Import Project="Properties\EngineAndGameRelease.props" />
-    <Import Project="Properties\GamePC.props" />
-    <Import Project="Properties\Game.props" />
+    <Import Project="..\..\Properties\EngineAndGame.props" />
+    <Import Project="..\..\Properties\EngineAndGamePC.props" />
+    <Import Project="..\..\Properties\EngineAndGameRelease.props" />
+    <Import Project="..\..\Properties\GamePC.props" />
+    <Import Project="..\..\Properties\Game.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">
-    <Import Project="Properties\EngineAndGame.props" />
-    <Import Project="Properties\EngineAndGameDebug.props" />
-    <Import Project="Properties\EngineAndGameEditor.props" />
-    <Import Project="Properties\EngineAndGamePC.props" />
-    <Import Project="Properties\GamePC.props" />
-    <Import Project="Properties\Game.props" />
+    <Import Project="..\..\Properties\EngineAndGame.props" />
+    <Import Project="..\..\Properties\EngineAndGameDebug.props" />
+    <Import Project="..\..\Properties\EngineAndGameEditor.props" />
+    <Import Project="..\..\Properties\EngineAndGamePC.props" />
+    <Import Project="..\..\Properties\GamePC.props" />
+    <Import Project="..\..\Properties\Game.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -347,11 +347,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="external\imgui\.editorconfig" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Games\ExampleGame\Source\Core\Main.cpp" />
-    <ClCompile Include="Games\ExampleGame\Source\Core\Precomp.cpp">
+    <ClCompile Include="Source\Core\Main.cpp" />
+    <ClCompile Include="Source\Core\Precomp.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">Create</PrecompiledHeader>
@@ -361,13 +358,13 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Games\ExampleGame\Source\Platform\***REMOVED***\UserMem\user_malloc.cpp">
+    <ClCompile Include="Source\Platform\***REMOVED***\UserMem\user_malloc.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Games\ExampleGame\Source\Platform\***REMOVED***\UserMem\user_new.cpp">
+    <ClCompile Include="Source\Platform\***REMOVED***\UserMem\user_new.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
@@ -375,8 +372,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Games\ExampleGame\Include\ExampleGame\Precomp.h" />
-    <ClInclude Include="Games\ExampleGame\Source\Platform\***REMOVED***\UserMem\address_sanitizer_utils.h">
+    <ClInclude Include="Include\ExampleGame\Precomp.h" />
+    <ClInclude Include="Source\Platform\***REMOVED***\UserMem\address_sanitizer_utils.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
