@@ -10,6 +10,7 @@
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkinnedMeshComponent.h"
 #include "Components/TransformComponent.h"
 #include "World/Registry.h"
 #include "World/World.h"
@@ -23,6 +24,7 @@
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
 #include "Assets/StaticMesh.h"
+#include "Assets/SkinnedMesh.h"
 
 Engine::Renderer::Renderer()
 {
@@ -289,7 +291,7 @@ void Engine::Renderer::Render(const World& world)
                 continue;
             }
 
-            //staticMeshComponent.mStaticMesh->DrawMesh();
+            staticMeshComponent.mStaticMesh->DrawMesh();
 
             meshCounter++;
         }
@@ -305,12 +307,13 @@ void Engine::Renderer::Render(const World& world)
     mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 0, 0, frameIndex);
     mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 4, 0, frameIndex);
 
+    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
     {
-    
-        const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
+        const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
         int meshCounter = 0;
 
-        for (auto [entity, staticMeshComponent, transform] : view.each())
+        for (auto [entity, skinnedMeshComponent, transform] : view.each())
         {
             //UPDATE AND BIND MODEL MATRIX
             glm::mat4x4 modelMatrix = glm::transpose(transform.GetWorldMatrix());
@@ -323,44 +326,44 @@ void Engine::Renderer::Render(const World& world)
 
             //UPDATE AND BIND MATERIAL INFO
             InfoStruct::DXMaterialInfo materialInfo;
-            if (staticMeshComponent.mMaterial != nullptr) {
-                materialInfo.colorFactor = { staticMeshComponent.mMaterial->mBaseColorFactor.r,
-                    staticMeshComponent.mMaterial->mBaseColorFactor.g,
-                    staticMeshComponent.mMaterial->mBaseColorFactor.b,
+            if (skinnedMeshComponent.mMaterial != nullptr) {
+                materialInfo.colorFactor = { skinnedMeshComponent.mMaterial->mBaseColorFactor.r,
+                    skinnedMeshComponent.mMaterial->mBaseColorFactor.g,
+                    skinnedMeshComponent.mMaterial->mBaseColorFactor.b,
                     0.f };
-                materialInfo.emissiveFactor = { staticMeshComponent.mMaterial->mEmissiveFactor.r,
-                    staticMeshComponent.mMaterial->mEmissiveFactor.g,
-                    staticMeshComponent.mMaterial->mEmissiveFactor.b,
+                materialInfo.emissiveFactor = { skinnedMeshComponent.mMaterial->mEmissiveFactor.r,
+                    skinnedMeshComponent.mMaterial->mEmissiveFactor.g,
+                    skinnedMeshComponent.mMaterial->mEmissiveFactor.b,
                     0.f };
-                materialInfo.metallicFactor = staticMeshComponent.mMaterial->mMetallicFactor;
-                materialInfo.roughnessFactor = staticMeshComponent.mMaterial->mRoughnessFactor;
-                materialInfo.normalScale = staticMeshComponent.mMaterial->mNormalScale;
-                materialInfo.useColorTex = staticMeshComponent.mMaterial->mBaseColorTexture != nullptr;
-                materialInfo.useEmissiveTex = staticMeshComponent.mMaterial->mEmissiveTexture != nullptr;
-                materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr;
-                materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr;
-                materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr;
+                materialInfo.metallicFactor = skinnedMeshComponent.mMaterial->mMetallicFactor;
+                materialInfo.roughnessFactor = skinnedMeshComponent.mMaterial->mRoughnessFactor;
+                materialInfo.normalScale = skinnedMeshComponent.mMaterial->mNormalScale;
+                materialInfo.useColorTex = skinnedMeshComponent.mMaterial->mBaseColorTexture != nullptr;
+                materialInfo.useEmissiveTex = skinnedMeshComponent.mMaterial->mEmissiveTexture != nullptr;
+                materialInfo.useMetallicRoughnessTex = skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr;
+                materialInfo.useNormalTex = skinnedMeshComponent.mMaterial->mNormalTexture != nullptr;
+                materialInfo.useOcclusionTex = skinnedMeshComponent.mMaterial->mOcclusionTexture != nullptr;
             
                 //BIND TEXTURES
                 if (materialInfo.useColorTex)
                 {
-                    resourceHeap->BindToGraphics(commandList, 6, staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
+                    resourceHeap->BindToGraphics(commandList, 6, skinnedMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
                 }
                 if (materialInfo.useEmissiveTex)
                 {
-                    resourceHeap->BindToGraphics(commandList, 7, staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
+                    resourceHeap->BindToGraphics(commandList, 7, skinnedMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
                 }
                 if (materialInfo.useMetallicRoughnessTex)
                 {
-                    resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
+                    resourceHeap->BindToGraphics(commandList, 8, skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
                 }
                 if (materialInfo.useNormalTex)
                 {
-                    resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
+                    resourceHeap->BindToGraphics(commandList, 8, skinnedMeshComponent.mMaterial->mNormalTexture->GetIndex());
                 }
                 if (materialInfo.useOcclusionTex)
                 {
-                    resourceHeap->BindToGraphics(commandList, 10, staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
+                    resourceHeap->BindToGraphics(commandList, 10, skinnedMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
                 }
             }
             else {
@@ -381,12 +384,12 @@ void Engine::Renderer::Render(const World& world)
 
             //DRAW THE MESH
 
-            if (!staticMeshComponent.mStaticMesh)
+            if (!skinnedMeshComponent.mSkinnedMesh)
             {
                 continue;
             }
 
-            staticMeshComponent.mStaticMesh->DrawMesh();
+            skinnedMeshComponent.mSkinnedMesh->DrawMesh();
 
             meshCounter++;
         }

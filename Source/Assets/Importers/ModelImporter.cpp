@@ -7,6 +7,7 @@
 #include <assimp/GltfMaterial.h>
 
 #include "Assets/StaticMesh.h"
+#include "Assets/SkinnedMesh.h"
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
 #include "stb_image/stb_image.h"
@@ -186,6 +187,8 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 		std::optional<std::map<std::string, BoneInfo>> boneMap{};
 		int boneCounter = 0;
 
+		bool isSkinnedMesh = false;
+
 		if (mesh.HasFaces())
 		{
 			indices = std::vector<uint32>(mesh.mNumFaces * 3);
@@ -279,9 +282,19 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 					}
 				}
 			}
+			isSkinnedMesh = true;
 		}
 
-		std::optional<ImportedAsset> importedMesh = ImportFromMemory(file, meshName, myVersion, positions, indices, normals, tangents, textureCoordinates);
+		std::optional<ImportedAsset> importedMesh{}; 
+
+		if (isSkinnedMesh)
+		{
+			importedMesh = ImportFromMemory(file, meshName, myVersion, positions, indices, normals, tangents, textureCoordinates, boneIds, boneWeights);
+		} 
+		else
+		{
+			importedMesh = ImportFromMemory(file, meshName, myVersion, positions, indices, normals, tangents, textureCoordinates);
+		}
 
 		if (importedMesh.has_value())
 		{
@@ -377,6 +390,28 @@ std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(con
 
     ImportedAsset importedMesh{ name, *staticMeshType, importedFromFile, importerVersion};
     if (StaticMesh::OnSave(importedMesh, positions, indices, normals, tangents, textureCoordinates))
+    {
+        return importedMesh;
+    }
+    return std::optional<ImportedAsset>();
+}
+
+std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
+    const std::string& name, 
+    const uint32 importerVersion, 
+    Span<const glm::vec3> positions, 
+	std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices,
+    std::optional<Span<const glm::vec3>> normals,
+	std::optional<Span<const glm::vec3>> tangents,
+    std::optional<Span<const glm::vec2>> textureCoordinates,
+	std::optional<Span<const glm::ivec4>> boneIds,
+	std::optional<Span<const glm::vec4>> boneWeights)
+{
+	const MetaType* const skinnedMeshType = MetaManager::Get().TryGetType<SkinnedMesh>();
+	ASSERT(skinnedMeshType != nullptr);
+
+    ImportedAsset importedMesh{ name, *skinnedMeshType, importedFromFile, importerVersion};
+    if (SkinnedMesh::OnSave(importedMesh, positions, indices, normals, tangents, textureCoordinates, boneIds, boneWeights))
     {
         return importedMesh;
     }

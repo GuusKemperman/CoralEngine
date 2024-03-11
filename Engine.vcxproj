@@ -508,8 +508,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="External\stb_image\stb_image.cpp" />
+    <ClCompile Include="Source\Assets\SkinnedMesh.cpp" />
     <ClCompile Include="Source\Assets\StaticMesh.cpp" />
     <ClCompile Include="Source\Assets\Texture.cpp" />
+    <ClCompile Include="Source\Components\SkinnedMeshComponent.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\FramebufferPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -878,6 +880,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Platform\PC\Rendering\SkinnedMeshPC.cpp" />
     <ClCompile Include="Source\Scripting\ScriptEvents.cpp" />
     <ClCompile Include="Source\Components\PointLightComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\Edge.cpp" />
@@ -1321,6 +1324,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Assets\SkinnedMesh.h" />
+    <ClInclude Include="Include\Components\SkinnedMeshComponent.h" />
     <ClInclude Include="Include\Components\TopDownCamControllerComponent.h" />
     <ClInclude Include="Include\Core\Renderer.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\FramebufferPC.h">
@@ -1507,6 +1512,7 @@
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectSmartPtr.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectString.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectVector.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\SkinnedMeshPC.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Core\address_sanitizer_utils.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

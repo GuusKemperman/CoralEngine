@@ -9,23 +9,31 @@ class DXResource;
 
 namespace Engine
 {
-    class Material;
+    #define MAX_BONES 128
+    #define MAX_BONE_INFLUENCE 4
 
-    class StaticMesh final :
+    struct BoneInfo
+    {
+        int mId;
+
+        glm::mat4 mOffset;
+    };
+
+    class SkinnedMesh final :
         public Asset
     {
     public:
-        StaticMesh(std::string_view name);
-        StaticMesh(AssetLoadInfo& loadInfo);
-        ~StaticMesh() override {};
+	    SkinnedMesh(std::string_view name);
+        SkinnedMesh(AssetLoadInfo& loadInfo);
+        ~SkinnedMesh() override {};
 
-        StaticMesh(StaticMesh&& other) noexcept;
-        StaticMesh(const StaticMesh&) = delete;
+        SkinnedMesh(SkinnedMesh&& other) noexcept;
+        SkinnedMesh(const SkinnedMesh&) = delete;
 
         void DrawMesh() const;
 
-        StaticMesh& operator=(StaticMesh&&) = delete;
-        StaticMesh& operator=(const StaticMesh&) = delete;
+        SkinnedMesh& operator=(SkinnedMesh&&) = delete;
+        SkinnedMesh& operator=(const SkinnedMesh&) = delete;
 
     private:
         friend class ModelImporter;
@@ -36,24 +44,29 @@ namespace Engine
             std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices,
             std::optional<Span<const glm::vec3>> normals,
             std::optional<Span<const glm::vec3>> tangents,
-            std::optional<Span<const glm::vec2>> textureCoordinates);
-
+            std::optional<Span<const glm::vec2>> textureCoordinates,
+            std::optional<Span<const glm::ivec4>> boneIds,
+            std::optional<Span<const glm::vec4>> boneWeights);
+        
         friend ReflectAccess;
         static MetaType Reflect();
-
     private:
-        bool LoadMesh(const char* indices, unsigned int indexCount, unsigned int size_of_index_type, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount);
+        bool LoadMesh(const char* indices, unsigned int indexCount, unsigned int size_of_index_type, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, const int* boneIds, const float* boneWeights, unsigned int vertexCount);
 
         std::shared_ptr<DXResource> mVertexBuffer;
         std::shared_ptr<DXResource> mNormalBuffer;
         std::shared_ptr<DXResource> mTangentBuffer;
         std::shared_ptr<DXResource> mTexCoordBuffer;
         std::shared_ptr<DXResource> mIndexBuffer;
+        std::shared_ptr<DXResource> mBoneIdBuffer;
+        std::shared_ptr<DXResource> mBoneWeightBuffer;
 
         D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
         D3D12_VERTEX_BUFFER_VIEW mNormalBufferView;
         D3D12_VERTEX_BUFFER_VIEW mTexCoordBufferView;
         D3D12_VERTEX_BUFFER_VIEW mTangentBufferView;
+        D3D12_VERTEX_BUFFER_VIEW mBoneIdBufferView;
+        D3D12_VERTEX_BUFFER_VIEW mBoneWeightBufferView;
         D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
 
         int mIndexCount = 0;
@@ -61,4 +74,4 @@ namespace Engine
         DXGI_FORMAT mIndexFormat;
         bool beenUpdated = false;
     };
-}  // namespace Engine
+}
