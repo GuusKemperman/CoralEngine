@@ -30,6 +30,7 @@ using namespace Microsoft::WRL;
 #define FRAME_BUFFER_COUNT 2
 #define MAX_LIGHTS 20
 #define MAX_MESHES 65000
+#define MAX_SKINNED_MESHES 128
 
 //DESCRIPTOR HEAPS
 #define RT_HEAP						0
