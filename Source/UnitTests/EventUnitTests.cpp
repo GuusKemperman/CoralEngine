@@ -8,6 +8,8 @@
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/Events.h"
+#include "Meta/MetaType.h"
+#include "Components/UtililtyAi/EnemyAiControllerComponent.h"
 
 namespace Engine
 {
@@ -16,7 +18,7 @@ namespace Engine
 		return MetaManager::Get().TryGetType("UnitTestScript");
 	}
 
-	template<bool TestScriptingSide, bool TestEmpty>
+	template <bool TestScriptingSide, bool TestEmpty>
 	static bool DoesValueMatch(MetaAny component, std::string_view nameOfField, uint32 expectedValue)
 	{
 		if constexpr (TestEmpty)
@@ -65,9 +67,12 @@ namespace Engine
 
 	static bool DoBothValuesMatch(World& world, entt::entity entity, std::string_view nameOfField, uint32 expectedValue)
 	{
-		return DoesValueMatch<false, false>(world.GetRegistry().TryGet(MakeTypeId<EventTestingComponent>(), entity), nameOfField, expectedValue)
-			&& DoesValueMatch<true, false>(world.GetRegistry().TryGet(GetUnitTestScript()->GetTypeId(), entity), nameOfField, expectedValue)
-			&& DoesValueMatch<false, true>(MetaAny{ MakeTypeInfo<EmptyEventTestingComponent>(), nullptr, false }, nameOfField, expectedValue);
+		return DoesValueMatch<false, false>(world.GetRegistry().TryGet(MakeTypeId<EventTestingComponent>(), entity),
+		                                    nameOfField, expectedValue)
+			&& DoesValueMatch<true, false>(world.GetRegistry().TryGet(GetUnitTestScript()->GetTypeId(), entity),
+			                               nameOfField, expectedValue)
+			&& DoesValueMatch<false, true>(MetaAny{MakeTypeInfo<EmptyEventTestingComponent>(), nullptr, false},
+			                               nameOfField, expectedValue);
 	}
 
 	static entt::entity InitTest(World& world)
@@ -93,7 +98,7 @@ UNIT_TEST(Events, OnTick)
 {
 	using namespace Engine;
 
-	World world{ true };
+	World world{true};
 
 	entt::entity owner = InitTest(world);
 
@@ -110,7 +115,7 @@ UNIT_TEST(Events, OnFixedTick)
 {
 	using namespace Engine;
 
-	World world{ true };
+	World world{true};
 	entt::entity owner = InitTest(world);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfFixedTicks", 0));
@@ -134,7 +139,7 @@ UNIT_TEST(Events, OnConstruct)
 {
 	using namespace Engine;
 
-	World world{ false };
+	World world{false};
 	entt::entity owner = InitTest(world);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfConstructs", 1));
@@ -146,7 +151,7 @@ UNIT_TEST(Events, OnBeginPlay)
 {
 	using namespace Engine;
 
-	World world{ false };
+	World world{false};
 	entt::entity owner = InitTest(world);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfBeginPlays", 0));
@@ -162,7 +167,7 @@ UNIT_TEST(Events, OnBeginPlayWhenAddedAfterWorldBeginsPlay)
 {
 	using namespace Engine;
 
-	World world{ true };
+	World world{true};
 	entt::entity owner = InitTest(world);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfBeginPlays", 1));
@@ -175,7 +180,7 @@ UNIT_TEST(Events, OnDestructEntireWorld)
 	using namespace Engine;
 
 	{
-		World world{ true };
+		World world{true};
 		entt::entity owner = InitTest(world);
 
 		TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfDestructs", 0));
@@ -192,7 +197,7 @@ UNIT_TEST(Events, OnDestructRemoveComponent)
 {
 	using namespace Engine;
 
-	World world{ true };
+	World world{true};
 	entt::entity owner = InitTest(world);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfDestructs", 0));
@@ -210,7 +215,7 @@ UNIT_TEST(Events, OnDestructDestroyEntity)
 {
 	using namespace Engine;
 
-	World world{ true };
+	World world{true};
 	entt::entity owner = InitTest(world);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfDestructs", 0));
@@ -221,6 +226,46 @@ UNIT_TEST(Events, OnDestructDestroyEntity)
 	// I guess we can't really test the num of destructs if the instance were destroyed..
 	// But we have the static one atleast
 	TEST_ASSERT(EmptyEventTestingComponent::sNumOfDestructs == 1);
+
+	return UnitTest::Success;
+}
+
+UNIT_TEST(Events, OnAiTick)
+{
+	using namespace Engine;
+
+	World world{true};
+	entt::entity owner = InitTest(world);
+
+	world.GetRegistry().AddComponent<EnemyAiControllerComponent>(owner);
+
+	world.Tick(sFixedTickEventStepSize * .5f);
+
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiTicks == 1);
+
+	world.Tick(sFixedTickEventStepSize * .5f);
+
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiTicks == 2);
+
+	return UnitTest::Success;
+}
+
+UNIT_TEST(Events, OnAiEvaluate)
+{
+	using namespace Engine;
+
+	World world{true};
+	entt::entity owner = InitTest(world);
+
+	world.GetRegistry().AddComponent<EnemyAiControllerComponent>(owner);
+
+	world.Tick(sFixedTickEventStepSize * .5f);
+
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiEvaluates == 1);
+
+	world.Tick(sFixedTickEventStepSize * .5f);
+
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiEvaluates == 2);
 
 	return UnitTest::Success;
 }
@@ -276,3 +321,4 @@ UNIT_TEST(Events, CollisionEvents)
 
 	return UnitTest::Success;
 }
+

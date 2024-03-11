@@ -5,10 +5,10 @@
   <PropertyGroup />
   <ItemDefinitionGroup>
 	<Link>
-		<AdditionalLibraryDirectories>$(EngineDir)$(EngineOutputDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+		<AdditionalLibraryDirectories>$(EngineDir)$(EngineOutputDir);$(EngineDir)External\GLFW;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 	</Link>
 	<Link>
-		<AdditionalDependencies>$(EngineProjectName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+		<AdditionalDependencies>$(EngineProjectName).lib;glfw3.lib;d3d12.lib;dxgi.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
 	</Link>
 	</ItemDefinitionGroup>
 	<ItemGroup />

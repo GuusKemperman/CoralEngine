@@ -217,6 +217,9 @@
     <Lib>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies />
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">
     <ClCompile>
@@ -288,11 +291,14 @@
       </Command>
     </PostBuildEvent>
     <Lib>
-      <AdditionalDependencies>assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(EngineDir)external\assimp\$(Platform)\Debug\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies />
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">
     <ClCompile>
@@ -373,6 +379,9 @@
     <Lib>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies />
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">
     <ClCompile>
@@ -453,11 +462,14 @@
       </Command>
     </PostBuildEvent>
     <Lib>
-      <AdditionalDependencies>assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(EngineDir)external\assimp\$(Platform)\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies />
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">
     <ClCompile>
@@ -508,6 +520,8 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\BaseIdleState.cpp" />
     <ClCompile Include="Source\Assets\Ability.cpp" />
     <ClCompile Include="Source\Components\Abilities\AbilitiesOnPlayerComponent.cpp" />
     <ClCompile Include="Source\EditorSystems\AssetEditorSystems\AbilityEditorSystem.cpp">
@@ -1398,6 +1412,11 @@
     <ClCompile Include="source\World\World.cpp" />
     <ClCompile Include="Source\World\Registry.cpp" />
     <ClCompile Include="Source\World\WorldRenderer.cpp" />
+    <ClCompile Include="Source\Systems\UtilityAiSystem.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\Components\UtililtyAi\BaseIdleState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\EnemyAiControllerComponent.h" />
     <ClCompile Include="Source\Platform\PC\Rendering\TexturePC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -1753,6 +1772,7 @@
     <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />
+    <ClInclude Include="Include\Systems\UtilityAiSystem.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\TexturePC.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
