@@ -20,7 +20,8 @@ void Engine::TickSystem::Update(World& world, float dt)
 			:
 			mWorldArg(std::move(world)),
 			mDtArg(std::move(dtArg))
-		{}
+		{
+		}
 
 		FuncResult operator()(const MetaFunc& event, std::optional<MetaAny>&& component, entt::entity owner)
 		{
@@ -33,11 +34,9 @@ void Engine::TickSystem::Update(World& world, float dt)
 
 		MetaAny mWorldArg{world};
 		MetaAny mDtArg{dt};
-		MetaAny mWorldArg;
-		MetaAny mDtArg;
 	};
-	
-	CallEvent(world, sTickEvent, TickFunctor{ MetaAny{world}, MetaAny{dt} });
+
+	CallEvent(world, sTickEvent, TickFunctor{MetaAny{world}, MetaAny{dt}});
 }
 
 void Engine::FixedTickSystem::Update(World& world, float)
@@ -47,7 +46,8 @@ void Engine::FixedTickSystem::Update(World& world, float)
 		FixedTickFunctor(MetaAny&& worldArg)
 			:
 			mWorldArg(std::move(worldArg))
-		{}
+		{
+		}
 
 		FuncResult operator()(const MetaFunc& event, std::optional<MetaAny>&& component, entt::entity owner)
 		{
@@ -57,10 +57,10 @@ void Engine::FixedTickSystem::Update(World& world, float)
 			}
 			return event.InvokeUncheckedUnpacked(mWorldArg, owner);
 		}
+
 		MetaAny mWorldArg{world};
-		MetaAny mWorldArg;
 	};
-	CallEvent(world, sFixedTickEvent, FixedTickFunctor{ MetaAny{world} });
+	CallEvent(world, sFixedTickEvent, FixedTickFunctor{MetaAny{world}});
 }
 
 template <typename EventT, typename Functor>
