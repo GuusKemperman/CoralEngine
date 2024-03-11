@@ -27,12 +27,12 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 		FileIO::StartUp(argc, argv, gameDir);
 		Logger::StartUp();
 
-		if (!Device::IsHeadless())
-		{
-			Device::StartUp();
-		}
+		//if (!Device::IsHeadless())
+		//{
+		//	Device::StartUp();
+		//}
 
-		Input::StartUp();
+		//Input::StartUp();
 //#ifdef PLATFORM_WINDOWS
 //		if (!Device::IsHeadless())
 //		{
