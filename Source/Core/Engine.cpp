@@ -41,11 +41,11 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 #endif
 		MetaManager::StartUp();
 		AssetManager::StartUp();
-		VirtualMachine::StartUp();
-
-#ifdef EDITOR
-		Editor::StartUp();
-#endif // !EDITOR
+//		VirtualMachine::StartUp();
+//
+//#ifdef EDITOR
+//		Editor::StartUp();
+//#endif // !EDITOR
 
 		//UnitTestManager::StartUp();
 
