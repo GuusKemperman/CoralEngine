@@ -143,15 +143,15 @@ extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(const char* s
 static void LogV(const char* fmt, va_list args)
 {
     const int buffer_size = 1024;
-    static char mBuffers[1024];
+    static char buffers[1024];
 
-    vsnprintf(mBuffers, buffer_size - 1, fmt, args);
-    mBuffers[buffer_size - 1] = 0;
+    vsnprintf(buffers, buffer_size - 1, fmt, args);
+    buffers[buffer_size - 1] = 0;
 
-    ImGui::LogText("\nNode Editor: %s", mBuffers);
+    ImGui::LogText("\nNode Editor: %s", buffers);
 
     OutputDebugStringA("NodeEditor: ");
-    OutputDebugStringA(mBuffers);
+    OutputDebugStringA(buffers);
     OutputDebugStringA("\n");
 }
 # endif

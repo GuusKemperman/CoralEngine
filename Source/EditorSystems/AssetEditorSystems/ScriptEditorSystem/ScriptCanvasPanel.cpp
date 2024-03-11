@@ -81,10 +81,9 @@ void Engine::ScriptEditorSystem::DisplayCanvas()
 		[[maybe_unused]] ScriptLink* newLink2 = currentFunc.TryAddLink(inputPin, node.GetOutputs(currentFunc)[0]);
 		// Break the original 
 		currentFunc.RemoveLink(doubleClickedLink);
-		if (newLink1 == nullptr && newLink2 == nullptr) 
-		{
-			assert(false);
-		}
+
+		ASSERT(newLink1 != nullptr
+			&& newLink2 != nullptr);
 	}
 
 	ax::NodeEditor::End();
