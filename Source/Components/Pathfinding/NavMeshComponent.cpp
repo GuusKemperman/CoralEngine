@@ -28,10 +28,6 @@
 
 using namespace Engine;
 
-NavMeshComponent::NavMeshComponent()
-{
-}
-
 void NavMeshComponent::SetNavMesh(const World& world)
 {
 	mPolygonDataNavMesh = {};
@@ -43,7 +39,6 @@ void NavMeshComponent::SetNavMesh(const World& world)
 	mNavMeshNeedsUpdate = false;
 }
 
-// Discovered the tokenisation of lines from ChatGPT, but i then changed all the code for it to work with FileIO
 std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const World& world) const
 {
 	//// initialize a vector to store the messy polygons
@@ -54,18 +49,18 @@ std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const Wor
 	geometry2d::PolygonList obstaclelist = {};
 
 	const auto& polygonView = world.GetRegistry().View<
-		PolygonColliderComponent, PhysicsBody2DComponent, NavMeshObstacleTag>();
+		PolygonColliderComponent, PhysicsBody2DComponent, TransformComponent, NavMeshObstacleTag>();
 	const auto& diskView = world.GetRegistry().View<DiskColliderComponent, TransformComponent, NavMeshObstacleTag>();
 
 	for (const auto& polygonId : polygonView)
 	{
-		const auto& [polygonCollider, rigidBody] = polygonView.get(polygonId);
+		const auto& [polygonCollider, rigidBody, transform] = polygonView.get(polygonId);
 		geometry2d::Polygon polygon;
 
+		const glm::vec2 pos = transform.GetWorldPosition2D();
 		for (const auto& coordinate : polygonCollider.mPoints)
 		{
-			const glm::vec2 pair = coordinate + rigidBody.mPosition;
-			polygon.push_back(pair);
+			polygon.push_back(coordinate + pos);
 		}
 
 		obstaclelist.push_back(polygon);
@@ -75,15 +70,16 @@ std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const Wor
 		const auto& [diskCollider, transform] = diskView.get(diskId);
 		geometry2d::Polygon polygon;
 
-		polygon.push_back({diskCollider.mRadius + transform.GetWorldPosition().x, transform.GetWorldPosition().z});
-		polygon.push_back({transform.GetWorldPosition().x, diskCollider.mRadius + transform.GetWorldPosition().z});
-		polygon.push_back({-diskCollider.mRadius + transform.GetWorldPosition().x, transform.GetWorldPosition().z});
-		polygon.push_back({transform.GetWorldPosition().x, -diskCollider.mRadius + transform.GetWorldPosition().z});
+		const glm::vec2 pos = transform.GetWorldPosition2D();
+
+		polygon.emplace_back(diskCollider.mRadius + pos.x, pos.y);
+		polygon.emplace_back(pos.x, diskCollider.mRadius + pos.y);
+		polygon.emplace_back(-diskCollider.mRadius + pos.x, pos.y);
+		polygon.emplace_back(pos.x, -diskCollider.mRadius + pos.y);
 
 		obstaclelist.push_back(polygon);
 	}
 
-	//const auto& transformView = world.GetRegistry().TryGet<TransformComponent>(agentId);
 	walkablelist.push_back(mBorderCorners);
 
 	// add the walkable and obstacle lists to the messy polygons vector
@@ -293,21 +289,23 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 		{
 			for (const auto& nextTriangleVertex : triangles[i])
 			{
-				if (currentTriangleVertex == nextTriangleVertex)
+				if (currentTriangleVertex != nextTriangleVertex)
 				{
-					if (!overlappingVertexes.empty())
-					{
-						if (overlappingVertexes[0] != currentTriangleVertex)
-						{
-							overlappingVertexes.push_back(currentTriangleVertex);
-							break;
-						}
-					}
-					else
+					continue;
+				}
+
+				if (!overlappingVertexes.empty())
+				{
+					if (overlappingVertexes[0] != currentTriangleVertex)
 					{
 						overlappingVertexes.push_back(currentTriangleVertex);
 						break;
 					}
+				}
+				else
+				{
+					overlappingVertexes.push_back(currentTriangleVertex);
+					break;
 				}
 			}
 		}
@@ -407,6 +405,79 @@ void NavMeshComponent::UpdateNavMesh()
 	mNavMeshNeedsUpdate = true;
 }
 
+std::vector<glm::vec2> NavMeshComponent::CleanupPathfinding(const std::vector<geometry2d::Polygon>& triangles,
+                                                            const glm::vec2& start, const glm::vec2& goal) const
+{
+	std::vector<glm::vec2> path{};
+
+	// Check if there are enough triangles to form a path
+	if (triangles.size() < 3)
+	{
+		return {};
+	}
+
+	// Initialize the path with the start position
+	path.push_back(start);
+
+	// Compute overlapping vertices between the first two triangles
+	std::vector<std::vector<glm::vec2>> overlappingSides;
+	for (auto currentTriangleVertex : triangles[0])
+	{
+		std::vector<glm::vec2> overlappingVertex;
+		for (auto nextTriangleVertex : triangles[1])
+		{
+			if (currentTriangleVertex == nextTriangleVertex)
+			{
+				overlappingVertex.emplace_back(currentTriangleVertex);
+			}
+
+			if (overlappingVertex.size() == 2)
+			{
+				overlappingSides.emplace_back(overlappingVertex);
+			}
+		}
+	}
+
+	// Calculate the middle point between overlapping vertices
+	//const glm::vec2 middlePoint = (overlappingSides[1] + overlappingSides[0]) / 2.0f;
+
+
+	// Iterate through the remaining triangles
+	for (uint32 i = 1; i < triangles.size(); i++)
+	{
+		std::vector<glm::vec2> overlappingVertex;
+		for (const auto& currentTriangleVertex : triangles[i - 1])
+		{
+			for (const auto& nextTriangleVertex : triangles[i])
+			{
+				if (currentTriangleVertex != nextTriangleVertex)
+				{
+					continue;
+				}
+
+				if (currentTriangleVertex == nextTriangleVertex)
+				{
+					overlappingVertex.emplace_back(currentTriangleVertex);
+				}
+
+				if (overlappingVertex.size() == 2)
+				{
+					overlappingSides.emplace_back(overlappingVertex);
+				}
+			}
+		}
+	}
+
+	for (const auto& currentSide : overlappingSides)
+	{
+		const glm::vec2 middlePoint = (currentSide[1] + currentSide[0]) / 2.0f;
+		path.emplace_back(middlePoint);
+	}
+
+	path.emplace_back(goal);
+	return path;
+}
+
 MetaType NavMeshComponent::Reflect()
 {
 	auto type = MetaType{MetaType::T<NavMeshComponent>{}, "NavMeshComponent"};
@@ -473,7 +544,16 @@ std::vector<glm::vec2> NavMeshComponent::FindQuickestPath(const glm::vec2& start
 	std::vector<glm::vec2> pathFound = {};
 
 	// Compute the shortest path with the funnel algorithm between start and end positions
-	pathFound = FunnelAlgorithm(trianglePathFound, startPos, endPos);
+	pathFound.clear();
+
+	/*for (auto& triangle : trianglePathFound)
+	{
+		pathFound.emplace_back(geometry2d::ComputeCenterOfPolygon(triangle));
+	}*/
+
+	pathFound = CleanupPathfinding(trianglePathFound, startPos, endPos);
+
+	//pathFound = FunnelAlgorithm(trianglePathFound, startPos, endPos);
 
 	//pathFound.reserve(nodePathFound.size());
 
@@ -550,16 +630,20 @@ void NavMeshComponent::DebugDrawNavMesh(const World& world) const
 
 
 					world.GetDebugRenderer().AddLine(DebugCategory::Gameplay,
-					                            {cleanedPolygonList[h][j].x, 0, cleanedPolygonList[h][j].y},
-					                            {cleanedPolygonList[h][0].x, 0, cleanedPolygonList[h][0].y}, colour);
+					                                 {cleanedPolygonList[h][j].x, 0, cleanedPolygonList[h][j].y},
+					                                 {cleanedPolygonList[h][0].x, 0, cleanedPolygonList[h][0].y},
+					                                 colour);
 				}
 				else
 				{
 					// Draw a line connecting two consecutive vertices
 					world.GetDebugRenderer().AddLine(DebugCategory::Gameplay,
-					                            {cleanedPolygonList[h][j].x, 0, cleanedPolygonList[h][j].y},
-					                            {cleanedPolygonList[h][j + 1].x, 0, cleanedPolygonList[h][j + 1].y},
-					                            colour);
+					                                 {cleanedPolygonList[h][j].x, 0, cleanedPolygonList[h][j].y},
+					                                 {
+						                                 cleanedPolygonList[h][j + 1].x, 0,
+						                                 cleanedPolygonList[h][j + 1].y
+					                                 },
+					                                 colour);
 				}
 			}
 		}
@@ -570,14 +654,14 @@ void NavMeshComponent::DebugDrawNavMesh(const World& world) const
 		{
 			// Draw the edges of each triangle with a blue color
 			world.GetDebugRenderer().AddLine(DebugCategory::Gameplay, {polygonList[0].x, 0, polygonList[0].y},
-			                            {polygonList[1].x, 0, polygonList[1].y},
-			                            {0.f, 0.f, 1.f, 1.f});
+			                                 {polygonList[1].x, 0, polygonList[1].y},
+			                                 {0.f, 0.f, 1.f, 1.f});
 			world.GetDebugRenderer().AddLine(DebugCategory::Gameplay, {polygonList[1].x, 0, polygonList[1].y},
-			                            {polygonList[2].x, 0, polygonList[2].y},
-			                            {0.f, 0.f, 1.f, 1.f});
+			                                 {polygonList[2].x, 0, polygonList[2].y},
+			                                 {0.f, 0.f, 1.f, 1.f});
 			world.GetDebugRenderer().AddLine(DebugCategory::Gameplay, {polygonList[2].x, 0, polygonList[2].y},
-			                            {polygonList[0].x, 0, polygonList[0].y},
-			                            {0.f, 0.f, 1.f, 1.f});
+			                                 {polygonList[0].x, 0, polygonList[0].y},
+			                                 {0.f, 0.f, 1.f, 1.f});
 		}
 	}
 

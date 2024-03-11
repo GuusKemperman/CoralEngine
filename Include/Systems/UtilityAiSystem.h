@@ -1,0 +1,38 @@
+#pragma once
+#include "Systems/System.h"
+
+namespace Engine
+{
+	class AITickSystem final :
+		public System
+	{
+	public:
+		void Update(World& world, float dt) override;
+
+	private:
+		friend ReflectAccess;
+		static MetaType Reflect();
+		REFLECT_AT_START_UP(AITickSystem);
+	};
+
+	class AIEvaluateSystem final :
+		public System
+	{
+	public:
+		void Update(World& world, float dt) override;
+
+		SystemStaticTraits GetStaticTraits() const override
+		{
+			SystemStaticTraits traits{};
+			traits.mPriority = static_cast<int>(TickPriorities::PreTick);
+			traits.mFixedTickInterval = 0.2f;
+			return traits;
+		}
+
+	private:
+		friend ReflectAccess;
+		static MetaType Reflect();
+		REFLECT_AT_START_UP(AIEvaluateSystem);
+	};
+
+}

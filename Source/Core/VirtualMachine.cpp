@@ -14,6 +14,7 @@
 #include "Meta/MetaTools.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Scripting/ScriptConfig.h"
+#include "Scripting/ScriptEvents.h"
 
 void Engine::VirtualMachine::PostConstruct()
 {
@@ -155,11 +156,12 @@ Engine::FuncResult Engine::VirtualMachine::ExecuteScriptFunction(MetaFunc::Dynam
 				// TODO can be checked at compile time?
 				if (copyResult.HasError())
 				{
-					return { Format("Failed to copy construct type {} from pin {} on node {} - {} try passing by reference instead",
+					PrintError({ ScriptError::TypeCannotBeOwnedByScripts, { context.mFunc }, Format("Failed to copy construct type {} from pin {} on node {} - {} try passing by reference instead",
 						type->GetName(),
 						pin.GetName(),
 						entryNode->GetDisplayName(),
-						copyResult.Error()) };
+						copyResult.Error()) });
+					return { "Cannot copy construct type" };
 				}
 			}
 			else
