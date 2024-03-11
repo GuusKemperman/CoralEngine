@@ -127,6 +127,7 @@
     <Import Project="Properties\EngineAndGameRelease.props" />
     <Import Project="Properties\GamePC.props" />
     <Import Project="Properties\Game.props" />
+    <Import Project="Properties\GameEditor.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -143,6 +144,7 @@
     <Import Project="Properties\EngineAndGamePC.props" />
     <Import Project="Properties\GamePC.props" />
     <Import Project="Properties\Game.props" />
+    <Import Project="Properties\GameEditor.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
