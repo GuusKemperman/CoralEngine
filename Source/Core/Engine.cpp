@@ -92,9 +92,9 @@ Engine::EngineClass::~EngineClass()
 	//{
 		UnitTestManager::ShutDown();
 
-	//#ifdef EDITOR
-	//	Editor::ShutDown();
-	//#endif  // EDITOR
+	#ifdef EDITOR
+		Editor::ShutDown();
+	#endif  // EDITOR
 
 	//	VirtualMachine::ShutDown();
 	//	AssetManager::ShutDown();
