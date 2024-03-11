@@ -90,7 +90,7 @@ Engine::EngineClass::~EngineClass()
 {
 	//try
 	//{
-	//	UnitTestManager::ShutDown();
+		UnitTestManager::ShutDown();
 
 	//#ifdef EDITOR
 	//	Editor::ShutDown();
