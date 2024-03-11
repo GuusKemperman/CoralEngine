@@ -183,6 +183,7 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 		return;
 	}
 
+	const bool isStatic = onComponentDeserialize->GetProperties().Has(Props::sIsEventStaticTag);
 	MetaAny worldRef{ registry.GetWorld() };
 
 	for (const BinaryGSONObject& serializedComponent : serializedStorage.GetChildren())
@@ -198,7 +199,9 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 		ASSERT_LOG(storage->contains(owner), "Should've been created already");
 		MetaAny componentRef{ *componentClass, storage->value(owner), false };
 
-		FuncResult result = (*onComponentDeserialize)(componentRef, registry.GetWorld(), additionalSerializedData, owner);
+		FuncResult result = isStatic ? 
+			(*onComponentDeserialize)(registry.GetWorld(), owner, additionalSerializedData) :
+			(*onComponentDeserialize)(componentRef, registry.GetWorld(), owner, additionalSerializedData);
 
 		if (result.HasError())
 		{
@@ -480,8 +483,8 @@ void Engine::SerializeSingleComponent(const Registry& registry,
 		BinaryGSONObject& customStepObject = serializedComponent.AddGSONObject("");
 
 		FuncResult result = arg.mIsCustomStepStatic ? 
-			(*arg.mCustomStep)(registry.GetWorld(), customStepObject, entity) :
-			(*arg.mCustomStep)(component, registry.GetWorld(), customStepObject, entity);
+			(*arg.mCustomStep)(registry.GetWorld(), entity, customStepObject) :
+			(*arg.mCustomStep)(component, registry.GetWorld(), entity, customStepObject);
 
 		if (customStepObject.IsEmpty()
 			|| result.HasError())
