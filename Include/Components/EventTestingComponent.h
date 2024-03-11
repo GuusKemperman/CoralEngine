@@ -19,6 +19,10 @@ namespace Engine
 
 		static void OnFixedTick(World& world, entt::entity owner);
 
+		static void OnCollisionEntry(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
+		static void OnCollisionStay(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
+		static void OnCollisionExit(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
+
 		static uint32 GetValue(Name valueName);
 
 		static inline uint32 sNumOfConstructs{};
@@ -26,6 +30,9 @@ namespace Engine
 		static inline uint32 sNumOfBeginPlays{};
 		static inline uint32 sNumOfTicks{};
 		static inline uint32 sNumOfFixedTicks{};
+		static inline uint32 sNumOfCollisionEntry{};
+		static inline uint32 sNumOfCollisionStay{};
+		static inline uint32 sNumOfCollisionExit{};
 
 		static void Reset();
 
@@ -48,11 +55,18 @@ namespace Engine
 
 		void OnFixedTick(World& world, entt::entity owner);
 
+		void OnCollisionEntry(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
+		void OnCollisionStay(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
+		void OnCollisionExit(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
+
 		uint32 mNumOfConstructs{};
 		uint32 mNumOfDestructs{};
 		uint32 mNumOfBeginPlays{};
 		uint32 mNumOfTicks{};
 		uint32 mNumOfFixedTicks{};
+		uint32 mNumOfCollisionEntry{};
+		uint32 mNumOfCollisionStay{};
+		uint32 mNumOfCollisionExit{};
 
 	private:
 		friend ReflectAccess;

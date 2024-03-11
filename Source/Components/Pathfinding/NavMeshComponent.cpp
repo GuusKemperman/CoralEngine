@@ -43,7 +43,6 @@ void NavMeshComponent::SetNavMesh(const World& world)
 	mNavMeshNeedsUpdate = false;
 }
 
-// Discovered the tokenisation of lines from ChatGPT, but i then changed all the code for it to work with FileIO
 std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const World& world) const
 {
 	//// initialize a vector to store the messy polygons
@@ -54,18 +53,18 @@ std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const Wor
 	geometry2d::PolygonList obstaclelist = {};
 
 	const auto& polygonView = world.GetRegistry().View<
-		PolygonColliderComponent, PhysicsBody2DComponent, NavMeshObstacleTag>();
+		PolygonColliderComponent, PhysicsBody2DComponent, TransformComponent, NavMeshObstacleTag>();
 	const auto& diskView = world.GetRegistry().View<DiskColliderComponent, TransformComponent, NavMeshObstacleTag>();
 
 	for (const auto& polygonId : polygonView)
 	{
-		const auto& [polygonCollider, rigidBody] = polygonView.get(polygonId);
+		const auto& [polygonCollider, rigidBody, transform] = polygonView.get(polygonId);
 		geometry2d::Polygon polygon;
 
+		const glm::vec2 pos = transform.GetWorldPosition2D();
 		for (const auto& coordinate : polygonCollider.mPoints)
 		{
-			const glm::vec2 pair = coordinate + rigidBody.mPosition;
-			polygon.push_back(pair);
+			polygon.push_back(coordinate + pos);
 		}
 
 		obstaclelist.push_back(polygon);
@@ -75,15 +74,16 @@ std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const Wor
 		const auto& [diskCollider, transform] = diskView.get(diskId);
 		geometry2d::Polygon polygon;
 
-		polygon.push_back({diskCollider.mRadius + transform.GetWorldPosition().x, transform.GetWorldPosition().z});
-		polygon.push_back({transform.GetWorldPosition().x, diskCollider.mRadius + transform.GetWorldPosition().z});
-		polygon.push_back({-diskCollider.mRadius + transform.GetWorldPosition().x, transform.GetWorldPosition().z});
-		polygon.push_back({transform.GetWorldPosition().x, -diskCollider.mRadius + transform.GetWorldPosition().z});
+		const glm::vec2 pos = transform.GetWorldPosition2D();
+
+		polygon.emplace_back(diskCollider.mRadius + pos.x, pos.y);
+		polygon.emplace_back(pos.x, diskCollider.mRadius + pos.y);
+		polygon.emplace_back(-diskCollider.mRadius + pos.x, pos.y);
+		polygon.emplace_back(pos.x, -diskCollider.mRadius + pos.y);
 
 		obstaclelist.push_back(polygon);
 	}
 
-	//const auto& transformView = world.GetRegistry().TryGet<TransformComponent>(agentId);
 	walkablelist.push_back(mBorderCorners);
 
 	// add the walkable and obstacle lists to the messy polygons vector
