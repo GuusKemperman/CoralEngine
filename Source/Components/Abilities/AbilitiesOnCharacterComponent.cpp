@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Components/Abilities/AbilitiesOnPlayerComponent.h"
+#include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
@@ -9,28 +9,28 @@
 #include "Assets/Ability.h"
 #include "World/World.h"
 
-Engine::MetaType Engine::AbilitiesOnPlayerComponent::Reflect()
+Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
 {
-	MetaType metaType = MetaType{ MetaType::T<AbilitiesOnPlayerComponent>{}, "AbilitiesOnPlayerComponent" };
+	MetaType metaType = MetaType{ MetaType::T<AbilitiesOnCharacterComponent>{}, "AbilitiesOnCharacterComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 	
-	metaType.AddField(&AbilitiesOnPlayerComponent::mIsPlayer, "mIsPlayer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
-	metaType.AddField(&AbilitiesOnPlayerComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties().Add(Props::sNoInspectTag);
+	metaType.AddField(&AbilitiesOnCharacterComponent::mIsPlayer, "mIsPlayer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&AbilitiesOnCharacterComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties().Add(Props::sNoInspectTag);
 
-	BindEvent(metaType, sInspectEvent, &AbilitiesOnPlayerComponent::OnInspect);
+	BindEvent(metaType, sInspectEvent, &AbilitiesOnCharacterComponent::OnInspect);
 
-	ReflectComponentType<AbilitiesOnPlayerComponent>(metaType);
+	ReflectComponentType<AbilitiesOnCharacterComponent>(metaType);
 
 	return metaType;
 }
 
 static bool isPlayer = true; // little hack to inspect the component conditionally
-void Engine::AbilitiesOnPlayerComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
+void Engine::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
 {
 	auto& reg = world.GetRegistry();
 	for (auto entity : entities)
 	{
-		auto& abilities = reg.Get<AbilitiesOnPlayerComponent>(entity);
+		auto& abilities = reg.Get<AbilitiesOnCharacterComponent>(entity);
 		ShowInspectUI("mIsPlayer", abilities.mIsPlayer);
 		if (ImGui::IsItemHovered())
 		{

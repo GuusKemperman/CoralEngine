@@ -32,7 +32,7 @@ namespace Engine
 		REFLECT_AT_START_UP(AbilityInstanceWithInputs);
 	};
 
-	class AbilitiesOnPlayerComponent
+	class AbilitiesOnCharacterComponent
 	{
 	public:
 		bool mIsPlayer = true;
@@ -42,7 +42,7 @@ namespace Engine
 		friend ReflectAccess;
 		static MetaType Reflect();
 		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
-		REFLECT_AT_START_UP(AbilitiesOnPlayerComponent);
+		REFLECT_AT_START_UP(AbilitiesOnCharacterComponent);
 	};
 
 	template<class Archive>

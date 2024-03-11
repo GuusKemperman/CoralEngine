@@ -2,7 +2,7 @@
 #include "Systems/AbilitySystem.h"
 
 #include "Assets/Ability.h"
-#include "Components/Abilities/AbilitiesOnPlayerComponent.h"
+#include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaFunc.h"
@@ -23,7 +23,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             characterData.mGlobalCooldownTimer -= dt;
         }
 
-        auto abilities = reg.TryGet<AbilitiesOnPlayerComponent>(entity);
+        auto abilities = reg.TryGet<AbilitiesOnCharacterComponent>(entity);
         if (abilities == nullptr)
         {
 	        continue;
