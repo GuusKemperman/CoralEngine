@@ -88,37 +88,37 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 
 Engine::EngineClass::~EngineClass()
 {
-	try
-	{
-		UnitTestManager::ShutDown();
+	//try
+	//{
+	//	UnitTestManager::ShutDown();
 
-	#ifdef EDITOR
-		Editor::ShutDown();
-	#endif  // EDITOR
+	//#ifdef EDITOR
+	//	Editor::ShutDown();
+	//#endif  // EDITOR
 
-		VirtualMachine::ShutDown();
-		AssetManager::ShutDown();
-		MetaManager::ShutDown();
-		Input::ShutDown();
+	//	VirtualMachine::ShutDown();
+	//	AssetManager::ShutDown();
+	//	MetaManager::ShutDown();
+	//	Input::ShutDown();
 
-		if (!Device::IsHeadless())
-		{
-			Device::ShutDown();
-		}
+	//	if (!Device::IsHeadless())
+	//	{
+	//		Device::ShutDown();
+	//	}
 
-		Logger::ShutDown();
-		FileIO::ShutDown();
-	}
-	catch(const std::runtime_error& e)
-	{
-		std::cerr << e.what() << std::endl;
-		exit(1);
-	}
-	catch(...)
-	{
-		std::cerr << "Unknown exception" << std::endl;
-		exit(1);
-	}
+	//	Logger::ShutDown();
+	//	FileIO::ShutDown();
+	//}
+	//catch(const std::runtime_error& e)
+	//{
+	//	std::cerr << e.what() << std::endl;
+	//	exit(1);
+	//}
+	//catch(...)
+	//{
+	//	std::cerr << "Unknown exception" << std::endl;
+	//	exit(1);
+	//}
 }
 
 void Engine::EngineClass::Run()
