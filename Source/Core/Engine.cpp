@@ -19,106 +19,80 @@
 
 Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
-	try
+	Device::sIsHeadless = argc >= 2
+		&& strcmp(argv[1], "run_tests") == 0;
+
+	FileIO::StartUp(argc, argv, gameDir);
+	Logger::StartUp();
+
+	if (!Device::IsHeadless())
 	{
-		Device::sIsHeadless = argc >= 2
-			&& strcmp(argv[1], "run_tests") == 0;
-
-		//FileIO::StartUp(argc, argv, gameDir);
-		//Logger::StartUp();
-
-		//if (!Device::IsHeadless())
-		//{
-		//	Device::StartUp();
-		//}
-
-		//Input::StartUp();
-//#ifdef PLATFORM_WINDOWS
-//		if (!Device::IsHeadless())
-//		{
-//			Device::Get().CreateImguiContext();
-//		}
-//#endif
-		//MetaManager::StartUp();
-		//AssetManager::StartUp();
-//		VirtualMachine::StartUp();
-//
-//#ifdef EDITOR
-//		Editor::StartUp();
-//#endif // !EDITOR
-
-		//UnitTestManager::StartUp();
-
-		//if (Device::sIsHeadless)
-		//{
-		//	uint32 numFailed = 0;
-		//	for (UnitTest& test : UnitTestManager::Get().GetAllTests())
-		//	{
-		//		test();
-		//		if (test.mResult != UnitTest::Success)
-		//		{
-		//			numFailed++;
-		//		}
-		//	}
-
-		//	// We only exit if numFailed != 0,
-		//	// since maybe theres a crash in
-		//	// the shutdown process and we want
-		//	// to test that as well
-		//	if (numFailed != 0)
-		//	{
-		//		// A lot of exits lead to exit(1).
-		//		// by doing + 1 we can distinguish
-		//		// from those errors
-		//		exit(numFailed + 1);
-		//	}
-		//}
+		Device::StartUp();
 	}
-	catch (const std::exception& e)
+
+	Input::StartUp();
+#ifdef PLATFORM_WINDOWS
+	if (!Device::IsHeadless())
 	{
-		std::cerr << e.what() << std::endl;
-		exit(1);
+		Device::Get().CreateImguiContext();
 	}
-	catch (...)
+#endif
+	MetaManager::StartUp();
+	AssetManager::StartUp();
+	VirtualMachine::StartUp();
+
+#ifdef EDITOR
+	Editor::StartUp();
+#endif // !EDITOR
+
+	UnitTestManager::StartUp();
+
+	if (Device::sIsHeadless)
 	{
-		std::cerr << "Unknown exception" << std::endl;
-		exit(1);
+		uint32 numFailed = 0;
+		for (UnitTest& test : UnitTestManager::Get().GetAllTests())
+		{
+			test();
+			if (test.mResult != UnitTest::Success)
+			{
+				numFailed++;
+			}
+		}
+
+		// We only exit if numFailed != 0,
+		// since maybe theres a crash in
+		// the shutdown process and we want
+		// to test that as well
+		if (numFailed != 0)
+		{
+			// A lot of exits lead to exit(1).
+			// by doing + 1 we can distinguish
+			// from those errors
+			exit(numFailed + 1);
+		}
 	}
 }
 
 Engine::EngineClass::~EngineClass()
 {
-	//try
-	//{
-	//	UnitTestManager::ShutDown();
+	UnitTestManager::ShutDown();
 
-	//#ifdef EDITOR
-	//	Editor::ShutDown();
-	//#endif  // EDITOR
+#ifdef EDITOR
+	Editor::ShutDown();
+#endif  // EDITOR
 
-	//	VirtualMachine::ShutDown();
-	//	AssetManager::ShutDown();
-	//	MetaManager::ShutDown();
-	//	Input::ShutDown();
+	VirtualMachine::ShutDown();
+	AssetManager::ShutDown();
+	MetaManager::ShutDown();
+	Input::ShutDown();
 
-	//	if (!Device::IsHeadless())
-	//	{
-	//		Device::ShutDown();
-	//	}
+	if (!Device::IsHeadless())
+	{
+		Device::ShutDown();
+	}
 
-	//	Logger::ShutDown();
-	//	FileIO::ShutDown();
-	//}
-	//catch(const std::runtime_error& e)
-	//{
-	//	std::cerr << e.what() << std::endl;
-	//	exit(1);
-	//}
-	//catch(...)
-	//{
-	//	std::cerr << "Unknown exception" << std::endl;
-	//	exit(1);
-	//}
+	Logger::ShutDown();
+	FileIO::ShutDown();
 }
 
 void Engine::EngineClass::Run()

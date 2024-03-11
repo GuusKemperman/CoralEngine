@@ -42,6 +42,9 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       timeout-minutes: 5
       run:  |
+        # Set the working directory to that of the engine
+        Set-Location "${{env.GITHUB_WORKSPACE}}"
+
         # Run the executable and capture stdout and stderr
         $output = & "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe" run_tests 2>&1
         
