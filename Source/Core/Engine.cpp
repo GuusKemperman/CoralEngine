@@ -96,10 +96,10 @@ Engine::EngineClass::~EngineClass()
 		Editor::ShutDown();
 	#endif  // EDITOR
 
-	//	VirtualMachine::ShutDown();
-	//	AssetManager::ShutDown();
-	//	MetaManager::ShutDown();
-	//	Input::ShutDown();
+		VirtualMachine::ShutDown();
+		AssetManager::ShutDown();
+		MetaManager::ShutDown();
+		Input::ShutDown();
 
 	//	if (!Device::IsHeadless())
 	//	{
