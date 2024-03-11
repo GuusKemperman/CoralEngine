@@ -10,11 +10,6 @@ namespace Engine
 	class NavMeshComponent
 	{
 	public:
-		/**
-		 * \brief Sets up the NavMesh based on the info from the file given.
-		 */
-		NavMeshComponent();
-
 		void SetNavMesh(const World& world);
 
 		/**
