@@ -52,16 +52,15 @@ Engine::Renderer::Renderer()
     mPBRPipeline->SetDepthState(depth);
     mPBRPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
     mPBRPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
-
+    
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
+    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     mZPipeline = std::make_unique<DXPipeline>();
     mZPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
-    mZPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
-    mZPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
-    mZPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
     mZPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
     mZPipeline->SetRasterizer(rast);
     mZPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
-    mZPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
+    mZPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
 
     //CREATE CONSTANT BUFFERS
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
@@ -151,7 +150,7 @@ void Engine::Renderer::Render(const World& world)
         if (!staticMeshComponent.mStaticMesh)
             continue;
 
-        staticMeshComponent.mStaticMesh->DrawMesh();
+        staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
     }
 
     //RENDERING

@@ -160,6 +160,19 @@ void Engine::StaticMesh::DrawMesh() const
 	commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
 }
 
+void Engine::StaticMesh::DrawMeshVertexOnly() const
+{
+    if (mVertexBuffer == nullptr)
+        return;
+
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+
+    commandList->IASetVertexBuffers(0, 1, &mVertexBufferView);
+    commandList->IASetIndexBuffer(&mIndexBufferView);
+    commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
+}
+
 bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, unsigned int sizeOfIndexType, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount)
 {
 	if (indices == nullptr ||
