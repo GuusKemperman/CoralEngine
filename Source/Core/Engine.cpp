@@ -101,13 +101,13 @@ Engine::EngineClass::~EngineClass()
 		MetaManager::ShutDown();
 		Input::ShutDown();
 
-	//	if (!Device::IsHeadless())
-	//	{
-	//		Device::ShutDown();
-	//	}
+		if (!Device::IsHeadless())
+		{
+			Device::ShutDown();
+		}
 
-	//	Logger::ShutDown();
-	//	FileIO::ShutDown();
+		Logger::ShutDown();
+		FileIO::ShutDown();
 	//}
 	//catch(const std::runtime_error& e)
 	//{
