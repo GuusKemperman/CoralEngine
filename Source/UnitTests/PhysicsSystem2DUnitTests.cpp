@@ -10,13 +10,13 @@ struct Physics2DUnitTestAccess
 {
 	static bool CollisionCheckDiskDiskUnitTest(const glm::vec2& center1, float radius1, const glm::vec2& center2, float radius2)
 	{
-		CollisionData collision;
+		PhysicsSystem2D::CollisionData collision;
 		return PhysicsSystem2D::CollisionCheckDiskDisk(center1, radius1, center2, radius2, collision);
 	}
 
 	static bool CollisionCheckDiskPolygonUnitTest(const glm::vec2& diskCenter, float diskRadius, const glm::vec2& polygonPos, const std::vector<glm::vec2>& polygonPoints)
 	{
-		CollisionData collision;
+		PhysicsSystem2D::CollisionData collision;
 		return PhysicsSystem2D::CollisionCheckDiskPolygon(diskCenter, diskRadius, polygonPos, polygonPoints, collision);
 
 	}
