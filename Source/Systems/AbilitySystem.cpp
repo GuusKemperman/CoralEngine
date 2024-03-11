@@ -48,9 +48,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             }
             }
             // check if ability can be used
-            if (ability.mRequirementCounter >= ability.mAbilityAsset->mRequirementToUse &&
-                ability.mChargesCounter < ability.mAbilityAsset->mCharges &&
-                (ability.mAbilityAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f))
+            if (CanAbilityBeActivated(characterData, ability))
             {
                 if (abilities->mIsPlayer) // player
                 {
@@ -70,12 +68,16 @@ void Engine::AbilitySystem::Update(World& world, float dt)
                         }
                     }
                 }
-                else // AI
-                {
-                }
             }
         }
     }
+}
+
+bool Engine::AbilitySystem::CanAbilityBeActivated(const CharacterComponent& characterData, const AbilityInstanceWithInputs& ability)
+{
+    return ability.mRequirementCounter >= ability.mAbilityAsset->mRequirementToUse &&
+        ability.mChargesCounter < ability.mAbilityAsset->mCharges &&
+        (ability.mAbilityAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
 }
 
 void Engine::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstanceWithInputs& ability)

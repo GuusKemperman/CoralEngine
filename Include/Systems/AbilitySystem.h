@@ -13,7 +13,9 @@ namespace Engine
 		void Update(World& world, float dt) override;
 
 	private:
-		void ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstanceWithInputs& ability);
+		friend class Ability;
+		static bool CanAbilityBeActivated(const CharacterComponent& characterData, const AbilityInstanceWithInputs& ability);
+		static void ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstanceWithInputs& ability);
 
 		friend ReflectAccess;
 		static MetaType Reflect();
