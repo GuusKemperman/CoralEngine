@@ -163,8 +163,19 @@ namespace Engine
 		 */
 		static std::string Reserialize(std::string_view serialized);
 
-		static constexpr float sDifferenceCheckCoolDown = 2.0f;
+		static constexpr float sDifferenceCheckCoolDown = 4.0f;
 		float mTimeLeftUntilCheckForDifference{};
+
+		// Used for checking if our asset has unsaved changes. Kept in memory for performance reasons.
+		// May not always be up to date, it's updated when needed.
+		struct AssetOnFile
+		{
+			std::string mReserializedAsset{};
+
+			// If changes are made to the asset file, this mAssetAsSeenOnFile is updated.
+			std::filesystem::file_time_type mWriteTimeAtTimeOfReserializing{};
+		};
+		mutable AssetOnFile mAssetOnFile{};
 	};
 
 	namespace Internal
@@ -267,43 +278,32 @@ namespace Engine
 
 		const std::filesystem::file_time_type lastWriteTime = std::filesystem::last_write_time(mPathToSaveAssetTo);
 
-		if (topAction->mTimeWeCheckedIfIsSameAsFile >= lastWriteTime)
+		if (topAction->mTimeWeCheckedIfIsSameAsFile == lastWriteTime)
 		{
 			return topAction->mIsSameAsFile;
 		}
+
 		topAction->mTimeWeCheckedIfIsSameAsFile = lastWriteTime;
 
-		{ // Early out if the file is directly equal to the top state.
-			std::ifstream fileStream{ mPathToSaveAssetTo, std::ifstream::binary };
+		if (mAssetOnFile.mWriteTimeAtTimeOfReserializing != lastWriteTime)
+		{
+			// Otherwise we load and save the file.
+			LOG(LogEditor, Verbose, "Loading asset {} from file to check if it's unsaved...", mAsset.GetName());
 
-			if (!fileStream.is_open())
+			std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromFile(mPathToSaveAssetTo);
+
+			if (!loadInfo.has_value())
 			{
-				LOG(LogEditor, Warning, "Could not open file {}", mPathToSaveAssetTo.string());
+				LOG(LogEditor, Error, "Could not load asset from file {}", mPathToSaveAssetTo.string());
 				return false;
 			}
 
-			view_istream memoryStream{ topAction->mState };
-			topAction->mIsSameAsFile = StringFunctions::AreStreamsEqual(fileStream, memoryStream);
-
-			if (topAction->mIsSameAsFile)
-			{
-				return true;
-			}
+			T assetAsSeenOnFile{ *loadInfo };
+			mAssetOnFile.mReserializedAsset = Reserialize(assetAsSeenOnFile.Save().ToString());
+			mAssetOnFile.mWriteTimeAtTimeOfReserializing = lastWriteTime;
 		}
 
-		// Otherwise we load and save the file. 
-		std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromFile(mPathToSaveAssetTo);
-
-		if (!loadInfo.has_value())
-		{
-			LOG(LogEditor, Error, "Could not load asset from file {}", mPathToSaveAssetTo.string());
-			return false;
-		}
-
-		T assetAsSeenOnFile{ *loadInfo };
-		std::string reserializedFile = Reserialize(assetAsSeenOnFile.Save().ToString());
-
-		topAction->mIsSameAsFile = reserializedFile == topAction->mState;
+		topAction->mIsSameAsFile = mAssetOnFile.mReserializedAsset == topAction->mState;
 
 		return topAction->mIsSameAsFile;
 	}
