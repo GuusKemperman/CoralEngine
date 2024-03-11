@@ -19,7 +19,9 @@ permissions:
   contents: read
 
 jobs:
-  build-and-test:
+    # okay so we also test, but the github rule checks if the "build" job is finished
+    # before allowing a merge, so we can't easily change the name
+  build:
     runs-on: windows-latest
     strategy:
       fail-fast: false # We want to run all configurations to see if the problem is for all of them or not
