@@ -28,6 +28,11 @@ void NavigationSystem::Update(World& world, float dt)
 		}
 	}
 
+	if (!world.HasBegunPlay())
+	{
+		return;
+	}
+
 	//// Get the navmesh agent entities
 	const auto agentsView = world.GetRegistry().View<
 		NavMeshAgentComponent, TransformComponent, PhysicsBody2DComponent>();
