@@ -19,10 +19,10 @@ std::string FileIO::ReadTextFile(Directory type, const std::string& path)
     }
     file.seekg(0, std::ios::end);
     const size_t size = file.tellg();
-    string mBuffers(size, '\0');
+    string buffers(size, '\0');
     file.seekg(0);
-    file.read(&mBuffers[0], size);
-    return mBuffers;
+    file.read(&buffers[0], size);
+    return buffers;
 }
 
 bool FileIO::WriteTextFile(Directory type, const std::string& path, const std::string& content)
@@ -50,8 +50,8 @@ std::vector<char> FileIO::ReadBinaryFile(Directory type, const std::string& path
     }
     const streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
-    std::vector<char> mBuffers(size);
-    if (file.read(mBuffers.data(), size)) return mBuffers;
+    std::vector<char> buffers(size);
+    if (file.read(buffers.data(), size)) return buffers;
     assert(false);
     return vector<char>();
 }
