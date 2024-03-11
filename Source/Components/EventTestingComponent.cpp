@@ -30,6 +30,24 @@ void Engine::EmptyEventTestingComponent::OnFixedTick(World&, entt::entity)
 	++sNumOfFixedTicks;
 }
 
+void Engine::EmptyEventTestingComponent::OnCollisionEntry(World&, entt::entity, entt::entity, float, glm::vec2,
+	glm::vec2)
+{
+	++sNumOfCollisionEntry;
+}
+
+void Engine::EmptyEventTestingComponent::OnCollisionStay(World&, entt::entity, entt::entity, float, glm::vec2,
+	glm::vec2)
+{
+	++sNumOfCollisionStay;
+}
+
+void Engine::EmptyEventTestingComponent::OnCollisionExit(World&, entt::entity, entt::entity, float, glm::vec2,
+	glm::vec2)
+{
+	++sNumOfCollisionExit;
+}
+
 uint32 Engine::EmptyEventTestingComponent::GetValue(Name valueName)
 {
 	switch(valueName.GetHash())
@@ -39,6 +57,9 @@ uint32 Engine::EmptyEventTestingComponent::GetValue(Name valueName)
 	case Name::HashString("mNumOfConstructs"): return sNumOfConstructs;
 	case Name::HashString("mNumOfBeginPlays"): return sNumOfBeginPlays;
 	case Name::HashString("mNumOfDestructs"): return sNumOfDestructs;
+	case Name::HashString("mNumOfCollisionEntry"): return sNumOfCollisionEntry;
+	case Name::HashString("mNumOfCollisionStay"): return sNumOfCollisionStay;
+	case Name::HashString("mNumOfCollisionExit"): return sNumOfCollisionExit;
 	default: return std::numeric_limits<uint32>::max();
 	}
 }
@@ -50,6 +71,9 @@ void Engine::EmptyEventTestingComponent::Reset()
 	sNumOfConstructs = 0;
 	sNumOfBeginPlays = 0;
 	sNumOfDestructs = 0;
+	sNumOfCollisionEntry = 0;
+	sNumOfCollisionStay = 0;
+	sNumOfCollisionExit = 0;
 }
 
 Engine::MetaType Engine::EmptyEventTestingComponent::Reflect()
@@ -62,6 +86,9 @@ Engine::MetaType Engine::EmptyEventTestingComponent::Reflect()
 	BindEvent(type, sBeginPlayEvent, &EmptyEventTestingComponent::OnBeginPlay);
 	BindEvent(type, sTickEvent, &EmptyEventTestingComponent::OnTick);
 	BindEvent(type, sFixedTickEvent, &EmptyEventTestingComponent::OnFixedTick);
+	BindEvent(type, sCollisionEntryEvent, &EmptyEventTestingComponent::OnCollisionEntry);
+	BindEvent(type, sCollisionStayEvent, &EmptyEventTestingComponent::OnCollisionStay);
+	BindEvent(type, sCollisionExitEvent, &EmptyEventTestingComponent::OnCollisionExit);
 
 	ReflectComponentType<EventTestingComponent>(type);
 	return type;
@@ -92,6 +119,21 @@ void Engine::EventTestingComponent::OnFixedTick(World&, entt::entity)
 	++mNumOfFixedTicks;
 }
 
+void Engine::EventTestingComponent::OnCollisionEntry(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
+{
+	++mNumOfCollisionEntry;
+}
+
+void Engine::EventTestingComponent::OnCollisionStay(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
+{
+	++mNumOfCollisionStay;
+}
+
+void Engine::EventTestingComponent::OnCollisionExit(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
+{
+	++mNumOfCollisionExit;
+}
+
 Engine::MetaType Engine::EventTestingComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<EventTestingComponent>{}, "EventTestingComponent" };
@@ -102,12 +144,18 @@ Engine::MetaType Engine::EventTestingComponent::Reflect()
 	type.AddField(&EventTestingComponent::mNumOfConstructs, "mNumOfConstructs");
 	type.AddField(&EventTestingComponent::mNumOfBeginPlays, "mNumOfBeginPlays");
 	type.AddField(&EventTestingComponent::mNumOfDestructs, "mNumOfDestructs");
+	type.AddField(&EventTestingComponent::mNumOfCollisionEntry, "mNumOfCollisionEntry");
+	type.AddField(&EventTestingComponent::mNumOfCollisionStay, "mNumOfCollisionStay");
+	type.AddField(&EventTestingComponent::mNumOfCollisionExit, "mNumOfCollisionExit");
 
 	BindEvent(type, sConstructEvent, &EventTestingComponent::OnConstruct);
 	BindEvent(type, sBeginPlayEvent, &EventTestingComponent::OnBeginPlay);
 	BindEvent(type, sTickEvent, &EventTestingComponent::OnTick);
 	BindEvent(type, sFixedTickEvent, &EventTestingComponent::OnFixedTick);
 	BindEvent(type, sDestructEvent, &EventTestingComponent::OnDestruct);
+	BindEvent(type, sCollisionEntryEvent, &EventTestingComponent::OnCollisionEntry);
+	BindEvent(type, sCollisionStayEvent, &EventTestingComponent::OnCollisionStay);
+	BindEvent(type, sCollisionExitEvent, &EventTestingComponent::OnCollisionExit);
 
 	ReflectComponentType<EventTestingComponent>(type);
 	return type;
