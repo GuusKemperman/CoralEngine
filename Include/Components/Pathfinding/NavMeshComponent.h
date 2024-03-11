@@ -81,6 +81,9 @@ namespace Engine
 		                                                     const glm::vec2& start, const glm::vec2& goal) const;
 		void UpdateNavMesh();
 
+		std::vector<glm::vec2> CleanupPathfinding(const std::vector<geometry2d::Polygon>& triangles,
+		                                          const glm::vec2& start, const glm::vec2& goal) const;
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(NavMeshComponent);
