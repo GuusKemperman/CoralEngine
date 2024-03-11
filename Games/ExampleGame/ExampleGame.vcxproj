@@ -121,6 +121,7 @@
     <Import Project="..\..\Properties\Game.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">
+    <Import Project="..\..\Properties\GameEditor.props" />
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\EngineAndGameEditor.props" />
     <Import Project="..\..\Properties\EngineAndGamePC.props" />
@@ -137,6 +138,7 @@
     <Import Project="..\..\Properties\Game.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">
+    <Import Project="..\..\Properties\GameEditor.props" />
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\EngineAndGameDebug.props" />
     <Import Project="..\..\Properties\EngineAndGameEditor.props" />
