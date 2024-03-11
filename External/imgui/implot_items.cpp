@@ -1850,15 +1850,15 @@ template IMPLOT_API void PlotHLines<double>(const char* label_id, const double* 
 
 IMPLOT_INLINE void RenderPieSlice(ImDrawList& DrawList, const ImPlotPoint& center, double radius, double a0, double a1, ImU32 col) {
     static const float resolution = 50 / (2 * IM_PI);
-    static ImVec2 mBuffers[50];
-    mBuffers[0] = PlotToPixels(center,IMPLOT_AUTO,IMPLOT_AUTO);
+    static ImVec2 buffers[50];
+    buffers[0] = PlotToPixels(center,IMPLOT_AUTO,IMPLOT_AUTO);
     int n = ImMax(3, (int)((a1 - a0) * resolution));
     double da = (a1 - a0) / (n - 1);
     for (int i = 0; i < n; ++i) {
         double a = a0 + i * da;
-        mBuffers[i + 1] = PlotToPixels(center.x + radius * cos(a), center.y + radius * sin(a),IMPLOT_AUTO,IMPLOT_AUTO);
+        buffers[i + 1] = PlotToPixels(center.x + radius * cos(a), center.y + radius * sin(a),IMPLOT_AUTO,IMPLOT_AUTO);
     }
-    DrawList.AddConvexPolyFilled(mBuffers, n + 1, col);
+    DrawList.AddConvexPolyFilled(buffers, n + 1, col);
 }
 
 template <typename T>
@@ -1896,18 +1896,18 @@ void PlotPieChart(const char* const label_ids[], const T* values, int count, dou
     if (fmt != NULL) {
         a0 = angle0 * 2 * IM_PI / 360.0;
         a1 = angle0 * 2 * IM_PI / 360.0;
-        char mBuffers[32];
+        char buffers[32];
         for (int i = 0; i < count; ++i) {
             ImPlotItem* item = GetItem(label_ids[i]);
             double percent = normalize ? (double)values[i] / sum : (double)values[i];
             a1 = a0 + 2 * IM_PI * percent;
             if (item->Show) {
-                ImFormatString(mBuffers, 32, fmt, (double)values[i]);
-                ImVec2 size = ImGui::CalcTextSize(mBuffers);
+                ImFormatString(buffers, 32, fmt, (double)values[i]);
+                ImVec2 size = ImGui::CalcTextSize(buffers);
                 double angle = a0 + (a1 - a0) * 0.5;
                 ImVec2 pos = PlotToPixels(center.x + 0.5 * radius * cos(angle), center.y + 0.5 * radius * sin(angle),IMPLOT_AUTO,IMPLOT_AUTO);
                 ImU32 col  = CalcTextColor(ImGui::ColorConvertU32ToFloat4(item->Color));
-                DrawList.AddText(pos - size * 0.5f, col, mBuffers);
+                DrawList.AddText(pos - size * 0.5f, col, buffers);
             }
             a0 = a1;
         }
