@@ -95,9 +95,9 @@ Engine::MetaType Engine::AbilityInstance::Reflect()
 
 	metaType.AddFunc([](const AbilityInstance& ability, const CharacterComponent& characterData)
 		{
-			AbilitySystem::CanAbilityBeActivated(characterData, ability);
+			return AbilitySystem::CanAbilityBeActivated(characterData, ability);
 
-		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<const AbilityInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<const AbilityInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	return metaType;
 }
