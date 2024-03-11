@@ -4,6 +4,9 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Components/EventTestingComponent.h"
+#include "Components/TransformComponent.h"
+#include "Components/Physics2D/DiskColliderComponent.h"
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/Events.h"
 #include "Meta/MetaType.h"
 #include "Components/UtililtyAi/EnemyAiControllerComponent.h"
@@ -266,3 +269,56 @@ UNIT_TEST(Events, OnAiEvaluate)
 
 	return UnitTest::Success;
 }
+
+UNIT_TEST(Events, CollisionEvents)
+{
+	using namespace Engine;
+
+	World world{ true };
+	const entt::entity owner = InitTest(world);
+
+	Registry& reg = world.GetRegistry();
+
+	reg.AddComponent<TransformComponent>(owner);
+	reg.AddComponent<PhysicsBody2DComponent>(owner).mMotionType = MotionType::Static;
+	reg.AddComponent<DiskColliderComponent>(owner);
+
+	const entt::entity other = reg.Create();
+
+	TransformComponent& otherTransform = reg.AddComponent<TransformComponent>(other);
+	reg.AddComponent<PhysicsBody2DComponent>(other).mMotionType = MotionType::Static;
+	reg.AddComponent<DiskColliderComponent>(other);
+
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 0));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 0));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
+
+	world.Tick(1 / 60.0f);
+
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 1));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
+
+	world.Tick(1 / 60.0f);
+
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 2));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
+
+	world.Tick(1 / 60.0f);
+
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 3));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
+
+	otherTransform.SetWorldPosition(glm::vec2{ 100000.0f });
+
+	world.Tick(1 / 60.0f);
+
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 3));
+	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 1));
+
+	return UnitTest::Success;
+}
+
