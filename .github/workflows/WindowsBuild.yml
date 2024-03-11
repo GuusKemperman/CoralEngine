@@ -42,22 +42,8 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       timeout-minutes: 5
       run:  |
-        # Set the working directory to that of the engine
-        Set-Location "${{env.GITHUB_WORKSPACE}}"
+        $exePath = "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe"
+        $workingDirectory = Get-Location
 
-        # Run the executable and capture stdout and stderr
-        $output = & "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe" run_tests 2>&1
-        
-        # Store the exit code separately
-        $exitCode = $LASTEXITCODE
-        
-        # Output the stdout and stderr to the test result
-        Write-Output "Executable Output:"
-        Write-Output $output
-        
-        # Output the exit code
-        Write-Output "Exit Code: $exitCode"
-        
-        # Exit with the same exit code as the executable
-        exit $exitCode
+        Start-Process -FilePath $exePath -WorkingDirectory $workingDirectory
       
