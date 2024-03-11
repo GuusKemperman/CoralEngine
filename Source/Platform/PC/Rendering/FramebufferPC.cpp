@@ -8,6 +8,11 @@
 
 Engine::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 {
+	if (Device::IsHeadless())
+	{
+		return;
+	}
+
 	Device& engineDevice = Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 	mSize = initialSize;
@@ -71,9 +76,7 @@ Engine::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 	depthStencilIndex = engineDevice.AllocateDepthStencil(depthResource.get(), depthStencilDesc);
 }
 
-Engine::FrameBuffer::~FrameBuffer()
-{
-}
+Engine::FrameBuffer::~FrameBuffer() = default;
 
 void Engine::FrameBuffer::Bind()
 {

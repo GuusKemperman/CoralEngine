@@ -1,5 +1,4 @@
 #pragma once
-#ifdef EDITOR
 #include "Core/EngineSubsystem.h"
 
 // To borrow the CONCAT macro
@@ -69,8 +68,3 @@ Engine::UnitTest::Result TestName();																																		\
 
 #define TEST_ASSERT(Condition) if (!(Condition)) { LOG(UnitTests, Error, "{} evaluated to false", #Condition); return UnitTest::Failure; }; 
 
-#else
-
-#define UNIT_TEST_DECLARATION(...)
-
-#endif // EDITOR
