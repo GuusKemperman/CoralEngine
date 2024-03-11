@@ -24,7 +24,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "World/Registry.h"
 #include "World/World.h"
-#include "World/WorldRenderer.h"
+#include "Utilities/DebugRenderer.h"
 
 using namespace Engine;
 
@@ -43,7 +43,6 @@ void NavMeshComponent::SetNavMesh(const World& world)
 	mNavMeshNeedsUpdate = false;
 }
 
-// Discovered the tokenisation of lines from ChatGPT, but i then changed all the code for it to work with FileIO
 std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const World& world) const
 {
 	//// initialize a vector to store the messy polygons
@@ -54,18 +53,18 @@ std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const Wor
 	geometry2d::PolygonList obstaclelist = {};
 
 	const auto& polygonView = world.GetRegistry().View<
-		PolygonColliderComponent, PhysicsBody2DComponent, NavMeshObstacleTag>();
+		PolygonColliderComponent, PhysicsBody2DComponent, TransformComponent, NavMeshObstacleTag>();
 	const auto& diskView = world.GetRegistry().View<DiskColliderComponent, TransformComponent, NavMeshObstacleTag>();
 
 	for (const auto& polygonId : polygonView)
 	{
-		const auto& [polygonCollider, rigidBody] = polygonView.get(polygonId);
+		const auto& [polygonCollider, rigidBody, transform] = polygonView.get(polygonId);
 		geometry2d::Polygon polygon;
 
+		const glm::vec2 pos = transform.GetWorldPosition2D();
 		for (const auto& coordinate : polygonCollider.mPoints)
 		{
-			const glm::vec2 pair = coordinate + rigidBody.mPosition;
-			polygon.push_back(pair);
+			polygon.push_back(coordinate + pos);
 		}
 
 		obstaclelist.push_back(polygon);
@@ -75,15 +74,16 @@ std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const Wor
 		const auto& [diskCollider, transform] = diskView.get(diskId);
 		geometry2d::Polygon polygon;
 
-		polygon.push_back({diskCollider.mRadius + transform.GetWorldPosition().x, transform.GetWorldPosition().z});
-		polygon.push_back({transform.GetWorldPosition().x, diskCollider.mRadius + transform.GetWorldPosition().z});
-		polygon.push_back({-diskCollider.mRadius + transform.GetWorldPosition().x, transform.GetWorldPosition().z});
-		polygon.push_back({transform.GetWorldPosition().x, -diskCollider.mRadius + transform.GetWorldPosition().z});
+		const glm::vec2 pos = transform.GetWorldPosition2D();
+
+		polygon.emplace_back(diskCollider.mRadius + pos.x, pos.y);
+		polygon.emplace_back(pos.x, diskCollider.mRadius + pos.y);
+		polygon.emplace_back(-diskCollider.mRadius + pos.x, pos.y);
+		polygon.emplace_back(pos.x, -diskCollider.mRadius + pos.y);
 
 		obstaclelist.push_back(polygon);
 	}
 
-	//const auto& transformView = world.GetRegistry().TryGet<TransformComponent>(agentId);
 	walkablelist.push_back(mBorderCorners);
 
 	// add the walkable and obstacle lists to the messy polygons vector
@@ -535,7 +535,7 @@ void NavMeshComponent::DebugDrawNavMesh(const World& world) const
 			renderBorder.push_back({mBorderCorners[i].x, 0, mBorderCorners[i].y});
 		}
 
-		world.GetRenderer().AddPolygon(DebugCategory::AINavigation, renderBorder, {1.f, 0.f, 0.f, 1.f});
+		world.GetDebugRenderer().AddPolygon(DebugCategory::AINavigation, renderBorder, {1.f, 0.f, 0.f, 1.f});
 
 		for (int h = 0; h < static_cast<int>(cleanedPolygonList.size()); h++)
 		{
@@ -549,14 +549,14 @@ void NavMeshComponent::DebugDrawNavMesh(const World& world) const
 					// Draw a line connecting the last vertex to the first vertex
 
 
-					world.GetRenderer().AddLine(DebugCategory::Gameplay,
+					world.GetDebugRenderer().AddLine(DebugCategory::Gameplay,
 					                            {cleanedPolygonList[h][j].x, 0, cleanedPolygonList[h][j].y},
 					                            {cleanedPolygonList[h][0].x, 0, cleanedPolygonList[h][0].y}, colour);
 				}
 				else
 				{
 					// Draw a line connecting two consecutive vertices
-					world.GetRenderer().AddLine(DebugCategory::Gameplay,
+					world.GetDebugRenderer().AddLine(DebugCategory::Gameplay,
 					                            {cleanedPolygonList[h][j].x, 0, cleanedPolygonList[h][j].y},
 					                            {cleanedPolygonList[h][j + 1].x, 0, cleanedPolygonList[h][j + 1].y},
 					                            colour);
@@ -569,13 +569,13 @@ void NavMeshComponent::DebugDrawNavMesh(const World& world) const
 		for (const auto& polygonList : polygonDataNavMesh)
 		{
 			// Draw the edges of each triangle with a blue color
-			world.GetRenderer().AddLine(DebugCategory::Gameplay, {polygonList[0].x, 0, polygonList[0].y},
+			world.GetDebugRenderer().AddLine(DebugCategory::Gameplay, {polygonList[0].x, 0, polygonList[0].y},
 			                            {polygonList[1].x, 0, polygonList[1].y},
 			                            {0.f, 0.f, 1.f, 1.f});
-			world.GetRenderer().AddLine(DebugCategory::Gameplay, {polygonList[1].x, 0, polygonList[1].y},
+			world.GetDebugRenderer().AddLine(DebugCategory::Gameplay, {polygonList[1].x, 0, polygonList[1].y},
 			                            {polygonList[2].x, 0, polygonList[2].y},
 			                            {0.f, 0.f, 1.f, 1.f});
-			world.GetRenderer().AddLine(DebugCategory::Gameplay, {polygonList[2].x, 0, polygonList[2].y},
+			world.GetDebugRenderer().AddLine(DebugCategory::Gameplay, {polygonList[2].x, 0, polygonList[2].y},
 			                            {polygonList[0].x, 0, polygonList[0].y},
 			                            {0.f, 0.f, 1.f, 1.f});
 		}

@@ -14,7 +14,6 @@ Engine::MetaType Engine::PhysicsBody2DComponent::Reflect()
 	metaType.AddField(&PhysicsBody2DComponent::mMotionType, "mMotionType").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&PhysicsBody2DComponent::mInvMass, "mInvMass").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&PhysicsBody2DComponent::mRestitution, "mRestitution").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&PhysicsBody2DComponent::mPosition, "mPosition").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&PhysicsBody2DComponent::mLinearVelocity, "mLinearVelocity").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&PhysicsBody2DComponent::mForce, "mForce").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddFunc(&PhysicsBody2DComponent::AddForce, "AddForce", "").GetProperties().Add(Props::sIsScriptableTag);

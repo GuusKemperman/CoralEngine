@@ -18,7 +18,7 @@
 Engine::Script::Script(std::string_view name) :
 	Asset(name, MakeTypeId<Script>())
 {
-	AddFunc("OnTick").SetParameters({ {  MakeTypeTraits<float>(), "DeltaTime" } });
+	AddEvent(sOnTickScriptEvent);
 }
 
 Engine::Script::Script(AssetLoadInfo& loadInfo) :

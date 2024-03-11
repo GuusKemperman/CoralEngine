@@ -50,7 +50,6 @@ using namespace Microsoft::WRL;
 #define IMGUI_SLOT 0
 #define TEX_START 4
 
-
 //CONSTANT BUFFERS
 #define CAM_MATRIX_CB					0
 #define MATERIAL_CB						1
@@ -73,3 +72,6 @@ using namespace Microsoft::WRL;
 //RESOURCE HEAP SLOTS
 #define  MODEL_MAT_SB_SLOT			0
 #define  TEXTURE_START				1
+
+//DEBUG RENDERER
+#define MAX_LINES 32760

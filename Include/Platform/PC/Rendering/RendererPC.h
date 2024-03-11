@@ -13,6 +13,7 @@ class DXDescHeap;
 
 namespace Engine
 {
+    class DebugRenderer;
     class World;
     namespace InfoStruct {
         struct DXMatrixInfo {
@@ -80,8 +81,8 @@ namespace Engine
         std::unique_ptr<DXPipeline> mPipelines[NUM_PIPELINES];
         std::unique_ptr<DXSignature> mSignatures[NUM_ROOT_SIGNATURES];
 
+        std::unique_ptr<DXPipeline> mPBRPipeline;
         InfoStruct::DXLightInfo  lights;
-        std::vector<glm::mat4x4> modelMatrices;
 
     private:
         friend ReflectAccess;
