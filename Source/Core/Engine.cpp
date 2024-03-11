@@ -74,7 +74,7 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 			}
 		}
 	}
-	catch (std::exception e)
+	catch (const std::exception& e)
 	{
 		std::cerr << e.what() << std::endl;
 		exit(1);
@@ -109,7 +109,7 @@ Engine::EngineClass::~EngineClass()
 		Logger::ShutDown();
 		FileIO::ShutDown();
 	}
-	catch(std::runtime_error e)
+	catch(const std::runtime_error& e)
 	{
 		std::cerr << e.what() << std::endl;
 		exit(1);
