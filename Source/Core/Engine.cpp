@@ -33,12 +33,12 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 		}
 
 		Input::StartUp();
-#ifdef PLATFORM_WINDOWS
-		if (!Device::IsHeadless())
-		{
-			Device::Get().CreateImguiContext();
-		}
-#endif
+//#ifdef PLATFORM_WINDOWS
+//		if (!Device::IsHeadless())
+//		{
+//			Device::Get().CreateImguiContext();
+//		}
+//#endif
 		//MetaManager::StartUp();
 		//AssetManager::StartUp();
 //		VirtualMachine::StartUp();
