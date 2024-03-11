@@ -50,6 +50,7 @@ namespace Engine
 		};
 
 		void UpdateBodiesAndTransforms(World& world, float dt);
+
 		void UpdateCollisions(World& world);
 		void DebugDrawing(World& world);
 
@@ -73,9 +74,8 @@ namespace Engine
 			glm::vec2& entity1WorldPos,
 			const glm::vec2& entity2WorldPos);
 
-		//static void RegisterCollision(CollisionData& collision, const entt::entity& entity1,
-		//	PhysicsBody2DComponent& body1, const entt::entity& entity2,
-		//	PhysicsBody2DComponent& body2);
+		void RegisterCollision(std::vector<CollisionData>& currentCollisions,
+			CollisionData& collision, entt::entity entity1, entt::entity entity2);
 
 		static bool CollisionCheckDiskDisk(const glm::vec2& center1, float radius1, const glm::vec2& center2,
 			float radius2, CollisionData& result);

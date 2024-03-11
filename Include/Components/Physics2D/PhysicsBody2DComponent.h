@@ -30,15 +30,11 @@ namespace Engine
 			mInvMass = mass == 0.f ? 0.f : (1.f / mass);
 		}
 
-		void OnConstruct(World& world, entt::entity owner);
-
 		MotionType mMotionType{};
 		float mInvMass = 1.f;
 		float mRestitution = 1.f;
 		glm::vec2 mLinearVelocity{};
 		glm::vec2 mForce{};
-
-		entt::entity mOwner{};
 
 		void AddForce(const glm::vec2& force)
 		{

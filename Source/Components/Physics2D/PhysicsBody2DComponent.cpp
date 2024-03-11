@@ -6,11 +6,6 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-void Engine::PhysicsBody2DComponent::OnConstruct(World&, entt::entity owner)
-{
-	mOwner = owner;
-}
-
 Engine::MetaType Engine::PhysicsBody2DComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<PhysicsBody2DComponent>{}, "PhysicsBody2DComponent" };
@@ -23,8 +18,6 @@ Engine::MetaType Engine::PhysicsBody2DComponent::Reflect()
 	metaType.AddField(&PhysicsBody2DComponent::mForce, "mForce").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddFunc(&PhysicsBody2DComponent::AddForce, "AddForce", "").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddFunc(&PhysicsBody2DComponent::ApplyImpulse, "ApplyImpulse", "").GetProperties().Add(Props::sIsScriptableTag);
-
-	BindEvent(metaType, sConstructEvent, &PhysicsBody2DComponent::OnConstruct);
 
 	ReflectComponentType<PhysicsBody2DComponent>(metaType);
 

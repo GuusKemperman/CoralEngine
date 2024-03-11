@@ -63,9 +63,6 @@ void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
 		case MotionType::Kinematic:
 			if (body.mLinearVelocity != glm::vec2{})
 			{
-				// @Amzy should we not move this in the above if-statement,
-				// since static/kinematic bodies are (i think?) not moved
-				// using velocity?
 				transform.TranslateWorldPosition(body.mLinearVelocity * dt);
 			}
 		default:;
@@ -91,15 +88,6 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 	// collisions between a dynamic and static/kinematic body are only resolved if the dynamic body is a disk
 	for (auto [entity1, body1, transform1, disk1] : viewDisk.each())
 	{
-		// @Amzy why are we not checking for collisions
-		// with static objects? I've commented this out:
-		// Because otherwise static objects get ignored
-		// everywhere right?
-		/*if (body1.mMotionType == MotionType::Static)
-		{
-			continue;
-		}*/
-
 		// Can be modified by ResolveCollision. Is only actually applied
 		// to the transform at the end of this loop, for performance
 		// reasons.
@@ -110,8 +98,7 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 		for (auto [entity2, body2, transform2, disk2] : viewDisk.each())
 		{
 			// Avoid duplicate collision checks
-			if (/*body2.mMotionType != MotionType::Static // @Amzy why are we only checking for collisions with non-static objects?
-				&&*/ entity1 >= entity2)
+			if (entity1 >= entity2)
 			{
 				continue;
 			}
@@ -121,28 +108,19 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 			if (CollisionCheckDiskDisk(entity1Pos, disk1.mRadius, entity2Pos, disk2.mRadius, collision))
 			{
 				ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
-
-				collision.mEntity1 = entity1;
-				collision.mEntity2 = entity2;
-				currentCollisions.emplace_back(collision);
+				RegisterCollision(currentCollisions, collision, entity1, entity2);
 			}
 		}
 
 		// disk-polygon collisions
 		for (const auto [entity2, body2, transform2, polygon2] : viewPolygon.each())
 		{
-			// In case an entity has both a polygon collider and a disk collider,
-			// otherwise it might check against itself
-			if (entity1 >= entity2)
-			{
-				continue;
-			}
-
 			const glm::vec2 entity2Pos = transform2.GetWorldPosition2D();
 
 			if (CollisionCheckDiskPolygon(entity1Pos, disk1.mRadius, entity2Pos, polygon2.mPoints, collision))
 			{
 				ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
+				RegisterCollision(currentCollisions, collision, entity1, entity2);
 			}
 		}
 
@@ -282,7 +260,6 @@ void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
 	const bool isBody1Dynamic = body1.mMotionType == MotionType::Dynamic;
 	const bool isBody2Dynamic = body2.mMotionType == MotionType::Dynamic;
 
-	// if both bodies are not dynamic, there's nothing left to do
 	if (isBody1Dynamic 
 		|| isBody2Dynamic)
 	{
@@ -324,6 +301,15 @@ void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
 		}
 	}
 }
+
+void Engine::PhysicsSystem2D::RegisterCollision(std::vector<CollisionData>& currentCollisions,
+	CollisionData& collision, entt::entity entity1, entt::entity entity2)
+{
+	collision.mEntity1 = entity1;
+	collision.mEntity2 = entity2;
+	currentCollisions.emplace_back(collision);
+}
+
 
 bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(const glm::vec2& center1, float radius1, const glm::vec2& center2, float radius2, CollisionData& result)
 {

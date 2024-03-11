@@ -75,22 +75,22 @@ namespace Engine
 		// -----------------------------------------------------------------------------------------------------------------//
 		
 		glm::vec3 GetLocalPosition() const { return mLocalPosition; }
-		glm::vec2 GetLocalPosition2D() const { return To2D(mLocalPosition); }
+		glm::vec2 GetLocalPosition2D() const { return To2DRightForward(mLocalPosition); }
 
 		glm::vec3 GetWorldPosition() const;
-		glm::vec2 GetWorldPosition2D() const { return To2D(GetWorldPosition()); }
+		glm::vec2 GetWorldPosition2D() const { return To2DRightForward(GetWorldPosition()); }
 
 		void SetLocalPosition(const glm::vec3 position) { mLocalPosition = position; }
-		void SetLocalPosition(const glm::vec2 position) { mLocalPosition = To3D(position, mLocalPosition[Axis::Up]); }
+		void SetLocalPosition(const glm::vec2 position) { mLocalPosition = To3DRightForward(position, mLocalPosition[Axis::Up]); }
 
 		void TranslateLocalPosition(const glm::vec3 translation) { mLocalPosition += translation; }
-		void TranslateLocalPosition(const glm::vec2 translation) { mLocalPosition += To3D(translation); }
+		void TranslateLocalPosition(const glm::vec2 translation) { mLocalPosition += To3DRightForward(translation); }
 
 		void SetWorldPosition(glm::vec3 position);
-		void SetWorldPosition(const glm::vec2 position) { SetWorldPosition(To3D(position, GetWorldPosition()[Axis::Up])); }
+		void SetWorldPosition(const glm::vec2 position) { SetWorldPosition(To3DRightForward(position, GetWorldPosition()[Axis::Up])); }
 
 		void TranslateWorldPosition(const glm::vec3 translation) { SetWorldPosition(GetWorldPosition() + translation); }
-		void TranslateWorldPosition(const glm::vec2 translation) { TranslateWorldPosition(To3D(translation)); }
+		void TranslateWorldPosition(const glm::vec2 translation) { TranslateWorldPosition(To3DRightForward(translation)); }
 
 		// -----------------------------------------------------------------------------------------------------------------//
 		// Getting/setting the orientation																					//
@@ -134,28 +134,28 @@ namespace Engine
 		// -----------------------------------------------------------------------------------------------------------------//
 
 		glm::vec3 GetLocalScale() const { return mLocalScale; }
-		glm::vec2 GetLocalScale2D() const { return To2D(mLocalScale); }
+		glm::vec2 GetLocalScale2D() const { return To2DRightForward(mLocalScale); }
 		float GetLocalScaleUniform() const { const glm::vec3 scale = GetLocalScale(); return (scale.x + scale.y + scale.z) * (1.0f / 3.0f); }
 
 		glm::vec3 GetWorldScale() const;
-		glm::vec2 GetWorldScale2D() const { return To2D(GetWorldScale()); }
+		glm::vec2 GetWorldScale2D() const { return To2DRightForward(GetWorldScale()); }
 		float GetWorldScaleUniform() const { const glm::vec3 scale = GetWorldScale(); return (scale.x + scale.y + scale.z) * (1.0f / 3.0f); }
 	
 		void SetLocalScale(const float xyz) { mLocalScale = glm::vec3{ xyz }; }
 		void SetLocalScale(const glm::vec3 scale) { mLocalScale = scale; }
-		void SetLocalScale(const glm::vec2 scale) { mLocalScale = To3D(scale, mLocalScale[Axis::Up]); }
+		void SetLocalScale(const glm::vec2 scale) { mLocalScale = To3DRightForward(scale, mLocalScale[Axis::Up]); }
 		
 		void SetWorldSclae(const float xyz) { SetWorldScale(glm::vec3{ xyz }); }
 		void SetWorldScale(glm::vec3 scale);
-		void SetWorldScale(const glm::vec2 scale) { SetWorldScale(To3D(scale, GetWorldScale()[Axis::Up])); }
+		void SetWorldScale(const glm::vec2 scale) { SetWorldScale(To3DRightForward(scale, GetWorldScale()[Axis::Up])); }
 		
 	private:
-		static glm::vec2 To2D(glm::vec3 v3)
+		static glm::vec2 To2DRightForward(glm::vec3 v3)
 		{
 			return { v3[Axis::Right], v3[Axis::Forward] };
 		}
 
-		static glm::vec3 To3D(glm::vec2 v2, float up = 0.0f)
+		static glm::vec3 To3DRightForward(glm::vec2 v2, float up = 0.0f)
 		{
 			glm::vec3 v3{};
 			v3[Axis::Right] = v2.x;
