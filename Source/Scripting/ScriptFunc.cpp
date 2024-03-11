@@ -73,7 +73,7 @@ void Engine::ScriptFunc::DeclareMetaFunc(MetaType& addToType)
 
 	if (IsEvent())
 	{
-		declaredFunc = &mBasedOnEvent->Declare(TypeTraits{ mTypeIdOfScript, TypeForm::Ref }, addToType);
+		declaredFunc = &mBasedOnEvent->Declare(mTypeIdOfScript, addToType);
 	}
 	else
 	{

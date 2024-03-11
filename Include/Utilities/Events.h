@@ -110,6 +110,39 @@ namespace Engine
 	static constexpr Event<void(World&, entt::entity)> sDestructEvent{ "OnDestruct" };
 
 	/**
+	 * \brief Called the first frame two entities are colliding
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 * \entt::entity The entity this entity collided with.
+	 * \float The depth of the collision, how far it penetrated
+	 * \glm::vec2 The collision normal
+	 * \glm::vec2 The point of contact
+	 */
+	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionEntryEvent{ "OnCollisionEntry" };
+
+	/**
+	 * \brief Called every frame in which two entities are colliding. ALWAYS called after at one OnCollisionEntry
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 * \entt::entity The entity this entity collided with.
+	 * \float The depth of the collision, how far it penetrated
+	 * \glm::vec2 The collision normal
+	 * \glm::vec2 The point of contact
+	 */
+	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionStayEvent{ "OnCollisionStay" };
+
+	/**
+	 * \brief Called the first frame that two entities who were colliding in the previous frame, but no longer are.
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 * \entt::entity The entity this entity collided with.
+	 * \float The depth of the collision, how far it penetrated
+	 * \glm::vec2 The collision normal
+	 * \glm::vec2 The point of contact
+	 */
+	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionExitEvent{ "OnCollisionExit" };
+
+	/**
 	 * \brief Some component require extra steps during serialization, this event can be used for that
 	 *
 	 * TODO: Does not work when the component is used in prefabs, does not get called when a prefab is saved
@@ -209,35 +242,37 @@ namespace Engine
 
 		MetaFunc* eventFunc{};
 
-		if constexpr (entt::component_traits<std::remove_const_t<Class>>::page_size != 0
-			&& !IsAlwaysStatic)
+		if constexpr (!isStatic)
 		{
-			ASSERT(type.GetTypeId() == MakeTypeId<std::remove_const_t<Class>>());
+			ASSERT(type.GetTypeId() == MakeStrippedTypeId<Class>());
+			static_assert(std::is_invocable_v<decltype(func), Class&, Args...>, "The parameters of the event do not match the parameters of the function");
 
 			eventFunc = &type.AddFunc(std::function<Ret(Class&, Args...)>{ std::forward<Func>(func) }, event.mName);
 		}
 		else
 		{
+			static_assert(std::is_invocable_v<decltype(func), Args...>, "The parameters of the event do not match the parameters of the function");
+
 			eventFunc = &type.AddFunc(std::function<Ret(Args...)>{ std::forward<Func>(func) }, event.mName);
 			eventFunc->GetProperties().Add(Props::sIsEventStaticTag);
 		}
 		eventFunc->GetProperties().Add(Internal::sIsEventProp).Set(Props::sIsScriptPure, IsPure);
 	}
 
-	template<typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
-	void BindEvent(MetaType& type, const EventT& event, FuncRet(FuncObj::* func)(FuncParams...))
+	template <typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
+	void BindEvent(MetaType& type, const EventT& event, FuncRet (FuncObj::* func)(FuncParams...))
 	{
 		BindEvent<FuncObj>(type, event, func);
 	}
 
-	template<typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
-	void BindEvent(MetaType& type, const EventT& event, FuncRet(FuncObj::* func)(FuncParams...) const)
+	template <typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
+	void BindEvent(MetaType& type, const EventT& event, FuncRet (FuncObj::* func)(FuncParams...) const)
 	{
 		BindEvent<const FuncObj>(type, event, func);
 	}
 
-	template<typename FuncRet, typename... FuncParams, typename EventT>
-	void BindEvent(MetaType& type, const EventT& event, FuncRet(*func)(FuncParams...))
+	template <typename FuncRet, typename... FuncParams, typename EventT>
+	void BindEvent(MetaType& type, const EventT& event, FuncRet (*func)(FuncParams...))
 	{
 		BindEvent<std::monostate>(type, event, func);
 	}
