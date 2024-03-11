@@ -47,7 +47,7 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 		Editor::StartUp();
 #endif // !EDITOR
 
-		UnitTestManager::StartUp();
+		//UnitTestManager::StartUp();
 
 		//if (Device::sIsHeadless)
 		//{
