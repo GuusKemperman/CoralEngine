@@ -537,6 +537,7 @@ void Engine::Device::CreateImguiContext()
         mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(0),
         mDescriptorHeaps[RESOURCE_HEAP]->GetGPUHandle(0));
     ImGui_ImplGlfw_InitForOther(mWindow, true);
+    ImGui_ImplGlfw_SetCallbacksChainForAllWindows(true);
 
     ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
 
