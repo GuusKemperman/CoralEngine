@@ -232,14 +232,17 @@ UNIT_TEST(Events, OnAiTick)
 	using namespace Engine;
 
 	World world{true};
-
 	entt::entity owner = InitTest(world);
 
-	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfAiTicks", 0));
+	world.GetRegistry().AddComponent<EnemyAiControllerComponent>(owner);
 
 	world.Tick(sFixedTickEventStepSize * .5f);
 
-	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfAiTicks", 1));
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiTicks == 1);
+
+	world.Tick(sFixedTickEventStepSize * .5f);
+
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiTicks == 2);
 
 	return UnitTest::Success;
 }
@@ -256,6 +259,10 @@ UNIT_TEST(Events, OnAiEvaluate)
 	world.Tick(sFixedTickEventStepSize * .5f);
 
 	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiEvaluates == 1);
+
+	world.Tick(sFixedTickEventStepSize * .5f);
+
+	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiEvaluates == 2);
 
 	return UnitTest::Success;
 }

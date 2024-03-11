@@ -6,11 +6,11 @@ namespace Engine
 	class EnemyAiControllerComponent
 	{
 	public:
-		EnemyAiControllerComponent();
+		//EnemyAiControllerComponent() = default;
 
 		void UpdateState(World& world, entt::entity enemyID, float dt);
 
-		int CurrentState = 0;
+		TypeId CurrentState = 0;
 
 	private:
 		friend ReflectAccess;

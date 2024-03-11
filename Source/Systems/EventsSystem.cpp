@@ -49,25 +49,6 @@ void Engine::FixedTickSystem::Update(World& world, float)
 	CallEvent(world, sFixedTickEvent, FixedTickFunctor{});
 }
 
-void Engine::AiTickSystem::Update(World& world, float dt)
-{
-	struct AiTickFunctor
-	{
-		FuncResult operator()(const MetaFunc& event, std::optional<MetaAny>&& component, entt::entity owner)
-		{
-			if (component.has_value())
-			{
-				return event.InvokeUncheckedUnpacked(*component, mWorldArg, owner, mDtArg);
-			}
-			return event.InvokeUncheckedUnpacked(mWorldArg, owner, mDtArg);
-		}
-
-		MetaAny mWorldArg{world};
-		MetaAny mDtArg{dt};
-	};
-	CallEvent(world, sAITickEvent, AiTickFunctor{});
-}
-
 template <typename EventT, typename Functor>
 void Engine::CallEvent(World& world, const EventT& event, Functor&& functor)
 {
@@ -135,9 +116,4 @@ Engine::MetaType Engine::TickSystem::Reflect()
 Engine::MetaType Engine::FixedTickSystem::Reflect()
 {
 	return MetaType{MetaType::T<FixedTickSystem>{}, "FixedTickSystem", MetaType::Base<System>{}};
-}
-
-Engine::MetaType Engine::AiTickSystem::Reflect()
-{
-	return MetaType{MetaType::T<AiTickSystem>{}, "AiTickSystem", MetaType::Base<System>{}};
 }

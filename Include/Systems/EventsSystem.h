@@ -34,23 +34,4 @@ namespace Engine
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(FixedTickSystem);
 	};
-
-	class AiTickSystem final :
-		public System
-	{
-	public:
-		void Update(World& world, float dt) override;
-
-		SystemStaticTraits GetStaticTraits() const override
-		{
-			SystemStaticTraits traits{};
-			traits.mFixedTickInterval = sFixedTickEventStepSize;
-			return traits;
-		}
-
-	private:
-		friend ReflectAccess;
-		static MetaType Reflect();
-		REFLECT_AT_START_UP(AiTickSystem);
-	};
 }

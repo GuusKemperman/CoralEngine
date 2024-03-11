@@ -5,10 +5,6 @@
 #include "World/Registry.h"
 #include "Utilities/Events.h"
 
-Engine::EnemyAiControllerComponent::EnemyAiControllerComponent()
-{
-}
-
 void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity enemyID, float dt)
 {
 	Registry& reg = world.GetRegistry();
@@ -16,7 +12,6 @@ void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity 
 	float bestScore = std::numeric_limits<float>::lowest();
 	const MetaType* bestType = nullptr;
 	entt::basic_sparse_set<>* bestStorage = nullptr;
-
 
 	for (auto&& [typeHash, storage] : reg.Storage())
 	{
@@ -27,54 +22,57 @@ void Engine::EnemyAiControllerComponent::UpdateState(World& world, entt::entity 
 			continue;
 		}
 
-		if (storage.contains(enemyID) && TryGetEvent(*type, sAITickEvent))
+		const MetaFunc* componentAiEvaluate = TryGetEvent(*type, sAIEvaluateEvent);
+		const MetaFunc* componentAiTick = TryGetEvent(*type, sAITickEvent);
+
+		// focus on cleaning this
+		if (!storage.contains(enemyID) || !componentAiEvaluate || !componentAiTick)
 		{
-			MetaAny component{*type, storage.value(enemyID), false};
+			continue;
+		}
 
-			if (!TryGetEvent(*type, sAIEvaluateEvent))
-			{
-				continue;
-			}
+		MetaAny component{*type, storage.value(enemyID), false};
 
-			const MetaFunc* componentAiEvaluate = TryGetEvent(*type, sAIEvaluateEvent);
-			const bool isStatic = componentAiEvaluate->GetProperties().Has(Props::sIsEventStaticTag);
-			if (isStatic)
-			{
-				FuncResult fr = (*componentAiEvaluate)(world, enemyID);
+		const bool isStatic = componentAiEvaluate->GetProperties().Has(Props::sIsEventStaticTag);
 
-				const float* score = fr.GetReturnValue().As<float>();
+		FuncResult fr;
+		if (isStatic)
+		{
+			fr = componentAiEvaluate->InvokeCheckedUnpacked(world, enemyID);
+		}
+		else
+		{
+			fr = componentAiEvaluate->InvokeCheckedUnpacked(component, world, enemyID);
+		}
 
-				if (*score > bestScore)
-				{
-					bestScore = *score;
-					bestType = type;
-					bestStorage = &storage;
-				}
-			}
-			else
-			{
-				FuncResult fr = (*componentAiEvaluate)(component, world, enemyID);
+		if (fr.HasError())
+		{
+			//log here (I forgor)
+			continue;
+		}
 
-				const float* score = fr.GetReturnValue().As<float>();
-
-				if (*score > bestScore)
-				{
-					bestScore = *score;
-					bestType = type;
-					bestStorage = &storage;
-				}
-			}
+		const float* score = fr.GetReturnValue().As<float>();
+		if (*score > bestScore)
+		{
+			bestScore = *score;
+			bestType = type;
+			bestStorage = &storage;
 		}
 	}
 
 	if (bestType != nullptr)
 	{
 		MetaAny component(*bestType, bestStorage->value(enemyID), false);
+		const MetaFunc* componentAiTick = TryGetEvent(*bestType, sAITickEvent);
 
-		if (TryGetEvent(*bestType, sAIEvaluateEvent))
+		const bool isStatic = componentAiTick->GetProperties().Has(Props::sIsEventStaticTag);
+		if (isStatic)
 		{
-			const MetaFunc& componentAiTick = *TryGetEvent(*bestType, sAITickEvent);
-			FuncResult fr = componentAiTick(component, world, enemyID, dt);
+			FuncResult fr = componentAiTick->InvokeCheckedUnpacked(world, enemyID, dt);
+		}
+		else
+		{
+			FuncResult fr = componentAiTick->InvokeCheckedUnpacked(component, world, enemyID, dt);
 		}
 	}
 }
