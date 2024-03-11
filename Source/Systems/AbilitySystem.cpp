@@ -52,20 +52,26 @@ void Engine::AbilitySystem::Update(World& world, float dt)
                 ability.mChargesCounter < ability.mAbilityAsset->mCharges &&
                 (ability.mAbilityAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f))
             {
-                for (auto& key : ability.mKeyboardKeys)
+                if (abilities->mIsPlayer) // player
                 {
-                    if (input.WasKeyboardKeyPressed(key))
+                    for (auto& key : ability.mKeyboardKeys)
                     {
-                        ActivateAbility(world, entity, characterData, ability);
+                        if (input.WasKeyboardKeyPressed(key))
+                        {
+                            ActivateAbility(world, entity, characterData, ability);
+                        }
+                    }
+                    for (auto& button : ability.mGamepadButtons)
+                    {
+                        // TODO: replace zero with player id by separating abilities on player and abilities on AI
+                        if (input.WasGamepadButtonPressed(0, button))
+                        {
+                            ActivateAbility(world, entity, characterData, ability);
+                        }
                     }
                 }
-                for (auto& button : ability.mGamepadButtons)
+                else // AI
                 {
-                    // TODO: replace zero with player id by separating abilities on player and abilities on AI
-                    if (input.WasGamepadButtonPressed(0, button))
-                    {
-                        ActivateAbility(world, entity, characterData, ability);
-                    }
                 }
             }
         }

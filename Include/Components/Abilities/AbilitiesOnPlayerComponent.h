@@ -2,13 +2,13 @@
 #include <cereal/types/memory.hpp>
 #include <cereal/types/vector.hpp>
 
-#include "Assets/Ability.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Core/Input.h"
 #include "Meta/MetaReflect.h"
 
 namespace Engine
 {
+	class World;
 	class Ability;
 	
 	struct AbilityInstanceWithInputs
@@ -17,8 +17,8 @@ namespace Engine
 		float mRequirementCounter{};
 		int mChargesCounter{};
 
-		std::vector<Input::KeyboardKey> mKeyboardKeys{};
-		std::vector<Input::GamepadButton> mGamepadButtons{};
+		std::vector<Input::KeyboardKey> mKeyboardKeys;
+		std::vector<Input::GamepadButton> mGamepadButtons;
 
 		bool operator==(const AbilityInstanceWithInputs& other) const;
 		bool operator!=(const AbilityInstanceWithInputs& other) const;
@@ -35,11 +35,13 @@ namespace Engine
 	class AbilitiesOnPlayerComponent
 	{
 	public:
-		std::vector<AbilityInstanceWithInputs> mAbilitiesToInput{};
+		bool mIsPlayer = true;
+		std::vector<AbilityInstanceWithInputs> mAbilitiesToInput;
 
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
+		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
 		REFLECT_AT_START_UP(AbilitiesOnPlayerComponent);
 	};
 
