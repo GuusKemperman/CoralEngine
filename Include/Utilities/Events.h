@@ -242,8 +242,7 @@ namespace Engine
 
 		MetaFunc* eventFunc{};
 
-		if constexpr (entt::component_traits<std::remove_const_t<Class>>::page_size != 0
-			&& !IsAlwaysStatic)
+		if constexpr (!isStatic)
 		{
 			ASSERT(type.GetTypeId() == MakeStrippedTypeId<Class>());
 			static_assert(std::is_invocable_v<decltype(func), Class&, Args...>, "The parameters of the event do not match the parameters of the function");
@@ -260,20 +259,20 @@ namespace Engine
 		eventFunc->GetProperties().Add(Internal::sIsEventProp).Set(Props::sIsScriptPure, IsPure);
 	}
 
-	template<typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
-	void BindEvent(MetaType& type, const EventT& event, FuncRet(FuncObj::* func)(FuncParams...))
+	template <typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
+	void BindEvent(MetaType& type, const EventT& event, FuncRet (FuncObj::* func)(FuncParams...))
 	{
 		BindEvent<FuncObj>(type, event, func);
 	}
 
-	template<typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
-	void BindEvent(MetaType& type, const EventT& event, FuncRet(FuncObj::* func)(FuncParams...) const)
+	template <typename FuncRet, typename FuncObj, typename... FuncParams, typename EventT>
+	void BindEvent(MetaType& type, const EventT& event, FuncRet (FuncObj::* func)(FuncParams...) const)
 	{
 		BindEvent<const FuncObj>(type, event, func);
 	}
 
-	template<typename FuncRet, typename... FuncParams, typename EventT>
-	void BindEvent(MetaType& type, const EventT& event, FuncRet(*func)(FuncParams...))
+	template <typename FuncRet, typename... FuncParams, typename EventT>
+	void BindEvent(MetaType& type, const EventT& event, FuncRet (*func)(FuncParams...))
 	{
 		BindEvent<std::monostate>(type, event, func);
 	}
