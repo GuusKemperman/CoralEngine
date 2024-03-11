@@ -233,9 +233,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>IF NOT EXIST "$(TargetDir)assimp-vc143-mtd.dll" COPY /Y "$(EngineDir)external\assimp\$(Platform)\Debug\assimp-vc143-mtd.dll" "$(TargetDir)"</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">
     <ClCompile>
@@ -335,9 +333,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>IF NOT EXIST "$(TargetDir)assimp-vc143-mt.dll" COPY /Y "$(EngineDir)external\assimp\$(Platform)\Release\assimp-vc143-mt.dll" "$(TargetDir)"</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">
     <ClCompile>
