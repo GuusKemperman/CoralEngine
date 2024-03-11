@@ -30,6 +30,7 @@ namespace Engine
         void* GetUploadCommandList() { return mUploadCommandList.Get(); }
         void* GetCommandQueue() { return mCommandQueue.Get(); }
         void* GetSignature() { return mSignature.get(); }
+        void* GetComputeSignature() { return mComputeSignature.get(); }
         void CreateImguiContext();
         void StartUploadCommands();
         void SubmitUploadCommands();
@@ -91,6 +92,7 @@ namespace Engine
         ComPtr<IDXGISwapChain3> mSwapChain;
         ComPtr<ID3D12Device5> mDevice;
         std::unique_ptr<DXSignature> mSignature;
+        std::unique_ptr<DXSignature> mComputeSignature;
 
         bool mUpdateWindow = false;
     };

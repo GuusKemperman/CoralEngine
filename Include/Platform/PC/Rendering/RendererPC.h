@@ -40,6 +40,14 @@ namespace Engine
             DXDirLightInfo mDirLights[MAX_LIGHTS];
         };
 
+        struct DXClusterInfo {
+            glm::vec4 numClusters;
+            glm::vec2 screenDimesions;
+            float sizeClusters;
+            float zFar;
+            float zNear;
+        };
+
         struct DXMaterialInfo
         {
             glm::vec4 colorFactor;
@@ -79,6 +87,8 @@ namespace Engine
     private:
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
         std::unique_ptr<DXPipeline> mPBRPipeline;
+        std::unique_ptr<DXPipeline> mZPipeline;
+        std::unique_ptr<DXPipeline> mClusterGridPipeline;
         InfoStruct::DXLightInfo  lights;
 
     private:

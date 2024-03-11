@@ -286,6 +286,12 @@ void Engine::Device::InitializeDevice()
     mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//16
     mSignature->CreateSignature(mDevice, L"MAIN ROOT SIGNATURE");
 
+    //CREATE COMPUTE ROOT SIGNATURE
+    mComputeSignature = std::make_unique<DXSignature>(1);
+    mComputeSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL);//0
+    mComputeSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_ALL);//1
+    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);//3
+    mComputeSignature->CreateSignature(mDevice, L"COMPUTE ROOT SIGNATURE");
 
     //CREATE DEPTH STENCIL
     D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};

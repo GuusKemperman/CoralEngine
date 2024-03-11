@@ -3,6 +3,16 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
-  <ItemDefinitionGroup />
+  <ItemDefinitionGroup>
+	  <Lib>
+		  <AdditionalDependencies>glfw3.lib;opengl32.lib;$(CoreLibraryDependencies);d3d12.lib;dxgi.lib;D3DCompiler.lib;dxcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+	  </Lib>
+	  <Lib>
+		  <AdditionalLibraryDirectories>$(ProjectDir)external\GLFW;</AdditionalLibraryDirectories>
+	  </Lib>
+    <ClCompile>
+      <WarningLevel />
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup />
 </Project>

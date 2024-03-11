@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "../Include/Platform/PC/Rendering/DX12Classes/DxPipeline.h"
 #include "../Include/Platform/PC/Rendering/DX12Classes/DXSignature.h"
+#include <d3dcompiler.h>
 
 void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature* root, LPCWSTR name)
 {
@@ -43,10 +44,9 @@ void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature*
 		hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&mPipeline));
 	}
 
-
 	if (FAILED(hr)) {
-		MessageBox(NULL, L"Failed to create default pipeline", L"FATAL ERROR!", MB_ICONERROR | MB_OK);
-		assert(false && "Failed to create default pipeline");
+		MessageBox(NULL, L"Failed to create pipeline", L"FATAL ERROR!", MB_ICONERROR | MB_OK);
+		assert(false && "Failed to create pipeline");
 	}
 	mPipeline->SetName(name);
 }
@@ -103,7 +103,7 @@ void DXPipeline::SetPrimitiveTopology(const D3D12_PRIMITIVE_TOPOLOGY_TYPE& topol
 	mTopology = topology;
 }
 
-ComPtr<ID3DBlob> DXPipeline::ShaderToBlob(const char* path, const char* shaderVersion, const char* functionName)
+ComPtr<ID3DBlob> DXPipeline::ShaderToBlob(const char* path, const char* shaderVersion, bool library, const char* functionName)
 {
 	ComPtr<ID3DBlob> shader; // d3d blob for holding vertex shader bytecode
 	ComPtr<ID3DBlob> errorBuff;
@@ -112,10 +112,15 @@ ComPtr<ID3DBlob> DXPipeline::ShaderToBlob(const char* path, const char* shaderVe
 	MultiByteToWideChar(CP_ACP, 0, path, -1, wString, 4096);
 	HRESULT hr;
 
-	if(functionName != nullptr)
-		hr = D3DCompileFromFile(wString, nullptr, nullptr, functionName, shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
-	else
-		hr = D3DCompileFromFile(wString, nullptr, nullptr, "main", shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
+	if (!library) {
+		if(functionName != nullptr)
+			hr = D3DCompileFromFile(wString, nullptr, nullptr, functionName, shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
+		else
+			hr = D3DCompileFromFile(wString, nullptr, nullptr, "main", shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
+	}
+	else {
+		hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "cs_5_0", D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
+	}
 
 	if (FAILED(hr))
 	{

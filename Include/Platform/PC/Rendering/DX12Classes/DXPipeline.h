@@ -2,6 +2,7 @@
 #include <vector>
 #include <memory>
 #include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
+#include <dxcapi.h>
 
 class DXSignature;
 struct ID3D12Device5;
@@ -23,7 +24,7 @@ public:
 	void AddRenderTarget(DXGI_FORMAT format);
 	void SetPrimitiveTopology(const D3D12_PRIMITIVE_TOPOLOGY_TYPE& topology);
 
-	static ComPtr<ID3DBlob> ShaderToBlob(const char* path, const char* shaderVersion, const char* functionName = nullptr);
+	static ComPtr<ID3DBlob> ShaderToBlob(const char* path, const char* shaderVersion, bool library = false, const char* functionName = nullptr);
 
 	ComPtr<ID3D12PipelineState> GetPipeline() const { return mPipeline; }
 

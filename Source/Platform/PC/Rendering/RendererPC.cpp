@@ -41,12 +41,39 @@ Engine::Renderer::Renderer()
     rast.CullMode = D3D12_CULL_MODE_FRONT;
     mPBRPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
     mPBRPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1);
+    ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0");
+
+    CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+    depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
+    rast.CullMode = D3D12_CULL_MODE_FRONT;
+
+    mPBRPipeline = std::make_unique<DXPipeline>();
+    mPBRPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+    mPBRPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
     mPBRPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
     mPBRPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
     mPBRPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
     mPBRPipeline->SetRasterizer(rast);
     mPBRPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
     mPBRPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
+
+    mZPipeline = std::make_unique<DXPipeline>();
+    mZPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+    mZPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
+    mZPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
+    mZPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
+    mZPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
+    mZPipeline->SetRasterizer(rast);
+    mZPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
+    mZPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"Z PIPELINE");
+
+
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ClusterGridCS.hlsl");
+    ComPtr<ID3DBlob> cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0", true);
+    mClusterGridPipeline = std::make_unique<DXPipeline>();
+    mClusterGridPipeline->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
+    mClusterGridPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"CLUSTER GRID COMPUTE SHADER");
 
     //CREATE CONSTANT BUFFERS
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
