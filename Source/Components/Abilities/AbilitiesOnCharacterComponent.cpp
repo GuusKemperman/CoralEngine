@@ -7,6 +7,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 #include "Assets/Ability.h"
+#include "Systems/AbilitySystem.h"
 #include "World/World.h"
 
 Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
@@ -82,6 +83,21 @@ Engine::MetaType Engine::AbilityInstance::Reflect()
 
 	metaType.AddField(&AbilityInstance::mKeyboardKeys, "mKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&AbilityInstance::mGamepadButtons, "mGamepadButtons").GetProperties().Add(Props::sIsScriptableTag);
+
+	metaType.AddFunc([](AbilityInstance& ability, entt::entity castBy, CharacterComponent& characterData)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			AbilitySystem::ActivateAbility(*world, castBy, characterData, ability);
+
+		}, "ActivateAbility", MetaFunc::ExplicitParams<AbilityInstance&, entt::entity, CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](const AbilityInstance& ability, const CharacterComponent& characterData)
+		{
+			AbilitySystem::CanAbilityBeActivated(characterData, ability);
+
+		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<const AbilityInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	return metaType;
 }
