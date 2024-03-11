@@ -38,7 +38,7 @@ void Engine::EmptyEventTestingComponent::OnAiTick(World&, entt::entity, float)
 float Engine::EmptyEventTestingComponent::OnAiEvaluate(const World&, entt::entity)
 {
 	++sNumOfAiEvaluates;
-	return 0.0f;
+	return 1000.0f;
 }
 
 uint32 Engine::EmptyEventTestingComponent::GetValue(Name valueName)

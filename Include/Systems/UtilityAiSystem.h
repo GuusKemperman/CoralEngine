@@ -3,7 +3,20 @@
 
 namespace Engine
 {
-	class UtilityAiSystem final : public System
+	class AITickSystem final :
+		public System
+	{
+	public:
+		void Update(World& world, float dt) override;
+
+	private:
+		friend ReflectAccess;
+		static MetaType Reflect();
+		REFLECT_AT_START_UP(AITickSystem);
+	};
+
+	class AIEvaluateSystem final :
+		public System
 	{
 	public:
 		void Update(World& world, float dt) override;
@@ -11,15 +24,15 @@ namespace Engine
 		SystemStaticTraits GetStaticTraits() const override
 		{
 			SystemStaticTraits traits{};
-			traits.mPriority = static_cast<int>(TickPriorities::PostPhysics);
+			traits.mPriority = static_cast<int>(TickPriorities::PreTick);
 			traits.mFixedTickInterval = 0.2f;
-			traits.mShouldTickBeforeBeginPlay = true;
 			return traits;
 		}
 
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(UtilityAiSystem);
+		REFLECT_AT_START_UP(AIEvaluateSystem);
 	};
+
 }
