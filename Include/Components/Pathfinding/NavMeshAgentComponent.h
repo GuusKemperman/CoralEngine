@@ -3,6 +3,8 @@
 
 namespace Engine
 {
+	class TransformComponent;
+
 	class NavMeshAgentComponent
 	{
 	public:
@@ -12,12 +14,20 @@ namespace Engine
 		 */
 		[[nodiscard]] float GetSpeed() const;
 
-		float mSpeed = 0;
+		[[nodiscard]] std::optional<glm::vec2> GetTargetPosition() const;
+
+		void SetTarget(glm::vec2 targetPosition);
+		void SetTarget(const TransformComponent& transformComponent);
+
+		void StopNavMesh();
 
 		/// \brief The quickest path from the NavMeshAgent to the KeyboardControl component
 		std::vector<glm::vec2> mPathFound = {};
 
 	private:
+		float mSpeed = 0;
+		std::optional<glm::vec2> mTargetPosition{};
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(NavMeshAgentComponent);
