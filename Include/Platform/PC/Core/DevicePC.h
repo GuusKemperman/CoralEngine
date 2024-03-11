@@ -3,6 +3,7 @@
 #include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
 #include "glm/glm.hpp"
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
+#include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
 
 struct GLFWwindow;
 struct GLFWmonitor;
@@ -28,6 +29,7 @@ namespace Engine
         void* GetCommandList() { return mCommandList.Get(); }
         void* GetUploadCommandList() { return mUploadCommandList.Get(); }
         void* GetCommandQueue() { return mCommandQueue.Get(); }
+        void* GetSignature() { return mSignature.get(); }
         void CreateImguiContext();
         void StartUploadCommands();
         void SubmitUploadCommands();
@@ -88,6 +90,7 @@ namespace Engine
 
         ComPtr<IDXGISwapChain3> mSwapChain;
         ComPtr<ID3D12Device5> mDevice;
+        std::unique_ptr<DXSignature> mSignature;
 
         bool mUpdateWindow = false;
     };

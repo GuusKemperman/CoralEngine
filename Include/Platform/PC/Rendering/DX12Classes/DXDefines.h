@@ -49,19 +49,16 @@ using namespace Microsoft::WRL;
 #define IMGUI_SLOT 0
 #define TEX_START 4
 
-
 //CONSTANT BUFFERS
 #define CAM_MATRIX_CB			0
 #define MATERIAL_CB				1
 #define LIGHT_CB				2
 #define MODEL_MATRIX_CB			3
-#define NUM_CBS MODEL_MATRIX_CB+	1
-
-//PIPELINES
-#define PBR_PIPELINE				0
-#define SKY_PIPELINE				1
-#define NUM_PIPELINES SKY_PIPELINE +1
+#define NUM_CBS MODEL_MATRIX_CB+1
 
 //RESOURCE HEAP SLOTS
 #define  MODEL_MAT_SB_SLOT			0
 #define  TEXTURE_START				1
+
+//DEBUG RENDERER
+#define MAX_LINES 32760

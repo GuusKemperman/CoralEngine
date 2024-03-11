@@ -40,6 +40,7 @@
     <ProjectGuid>{a5d06fec-7fcb-4af8-b043-6d92d6b99695}</ProjectGuid>
     <RootNamespace>Engine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <***REMOVED***SdkVersion>7.000</***REMOVED***SdkVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -509,8 +510,25 @@
   <ItemGroup>
     <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\BaseIdleState.cpp" />
+    <ClCompile Include="Source\Assets\Ability.cpp" />
+    <ClCompile Include="Source\Components\Abilities\AbilitiesOnPlayerComponent.cpp" />
+    <ClCompile Include="Source\EditorSystems\AssetEditorSystems\AbilityEditorSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\AbilitySystem.cpp" />
+    <ClCompile Include="Source\Components\Abilities\ActiveAbilityComponent.cpp" />
+    <ClCompile Include="External\stb_image\stb_image.cpp" />
     <ClCompile Include="Source\Assets\StaticMesh.cpp" />
     <ClCompile Include="Source\Assets\Texture.cpp" />
+    <ClCompile Include="Source\Platform\PC\Rendering\DebugRendererPC.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Platform\PC\Rendering\FramebufferPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -871,11 +889,6 @@
       <Warnings Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">WarningsOff</Warnings>
       <Warnings Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">WarningsOff</Warnings>
     </ClCompile>
-    <ClCompile Include="external\tinygltf\tiny_gltf.cc">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <WarningLevel>TurnOffAllWarnings</WarningLevel>
-    </ClCompile>
     <ClCompile Include="Source\Components\EventTestingComponent.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -883,6 +896,13 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Components\Abilities\CharacterComponent.cpp" />
+    <ClCompile Include="Source\Platform\***REMOVED***\Rendering\DebugRenderer***REMOVED***.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Scripting\ScriptEvents.cpp" />
     <ClCompile Include="Source\Components\PointLightComponent.cpp" />
@@ -1070,6 +1090,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Meta\MetaFuncId.cpp" />
+    <ClCompile Include="Source\Utilities\DebugRenderer.cpp" />
     <ClCompile Include="Source\Utilities\Random.cpp" />
     <ClCompile Include="Source\Systems\System.cpp" />
     <ClCompile Include="Source\Assets\Importers\Importer.cpp">
@@ -1214,7 +1235,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="source\Assets\Importers\StaticMeshImporter.cpp">
+    <ClCompile Include="source\Assets\Importers\ModelImporter.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
@@ -1243,14 +1264,6 @@
     <ClCompile Include="Source\Assets\Core\AssetFileMetaData.cpp" />
     <ClCompile Include="source\Meta\MetaType.cpp" />
     <ClCompile Include="source\Assets\Material.cpp" />
-    <ClCompile Include="source\Assets\Importers\GLTFImporter.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="source\Systems\Particles\ParticleDebugVisualizationSystem.cpp" />
     <ClCompile Include="Source\Utilities\Benchmark.cpp" />
     <ClCompile Include="source\Systems\Particles\ParticleSpawnPrefabOnDeathSystem.cpp" />
@@ -1340,6 +1353,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Assets\Ability.h" />
+    <ClInclude Include="Include\Components\Abilities\AbilitiesOnPlayerComponent.h" />
+    <ClInclude Include="Include\Components\Abilities\ActiveAbilityComponent.h" />
     <ClInclude Include="Include\Components\TopDownCamControllerComponent.h" />
     <ClInclude Include="Include\Core\Renderer.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\FramebufferPC.h">
@@ -1424,11 +1440,10 @@
     <ClInclude Include="Include\Assets\Core\AssetLoadInfo.h" />
     <ClInclude Include="Include\Assets\Core\AssetSaveInfo.h" />
     <ClInclude Include="Include\Assets\Core\ImportedAsset.h" />
-    <ClInclude Include="include\Assets\Importers\GLTFImporter.h" />
     <ClInclude Include="include\Assets\Importers\Importer.h" />
     <ClInclude Include="include\Assets\Importers\MaterialImporter.h" />
     <ClInclude Include="include\Assets\Importers\PrefabImporter.h" />
-    <ClInclude Include="include\Assets\Importers\StaticMeshImporter.h" />
+    <ClInclude Include="include\Assets\Importers\ModelImporter.h" />
     <ClInclude Include="include\Assets\Importers\TextureImporter.h" />
     <ClInclude Include="Include\Assets\Level.h" />
     <ClInclude Include="include\Assets\Material.h" />
@@ -1442,6 +1457,7 @@
     <ClInclude Include="include\BasicDataTypes\Colors\LinearColor.h" />
     <ClInclude Include="include\BasicDataTypes\Bezier.h" />
     <ClInclude Include="include\BasicDataTypes\Name.h" />
+    <ClInclude Include="Include\Components\Abilities\CharacterComponent.h" />
     <ClInclude Include="Include\Components\ComponentFiler.h" />
     <ClInclude Include="Include\Components\ComponentFilter.h" />
     <ClInclude Include="Include\Components\EventTestingComponent.h" />
@@ -1463,67 +1479,53 @@
     <ClInclude Include="Include\Core\CommonMetaProperties.h" />
     <ClInclude Include="include\core\Packager.h" />
     <ClInclude Include="Include\Core\VirtualMachine.h" />
-    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\AssetEditorSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\LevelEditorSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\MaterialEditorSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\PrefabEditorSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\ScriptEditorSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Include\EditorSystems\ContentBrowserEditorSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Include\EditorSystems\EditorSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Include\EditorSystems\LogWindowEditorSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Include\EditorSystems\UnitTestEditorSystem.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\AbilityEditorSystem.h" />
+    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\AssetEditorSystem.h" />
+    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\LevelEditorSystem.h" />
+    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\MaterialEditorSystem.h" />
+    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\PrefabEditorSystem.h" />
+    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\ScriptEditorSystem.h" />
+    <ClInclude Include="Include\EditorSystems\ContentBrowserEditorSystem.h" />
+    <ClInclude Include="Include\EditorSystems\EditorSystem.h" />
+    <ClInclude Include="Include\EditorSystems\LogWindowEditorSystem.h" />
+    <ClInclude Include="Include\EditorSystems\UnitTestEditorSystem.h" />
+    <ClInclude Include="Include\Meta\Fwd\MetaAnyFwd.h" />
+    <ClInclude Include="Include\Meta\Fwd\MetaFieldFwd.h" />
+    <ClInclude Include="Include\Meta\Fwd\MetaFuncFwd.h" />
+    <ClInclude Include="Include\Meta\Fwd\MetaFuncIdFwd.h" />
+    <ClInclude Include="Include\Meta\Fwd\MetaManagerFwd.h" />
+    <ClInclude Include="Include\Meta\Fwd\MetaPropsFwd.h" />
+    <ClInclude Include="Include\Meta\Fwd\MetaReflectFwd.h" />
+    <ClInclude Include="Include\Meta\Fwd\MetaToolsFwd.h" />
+    <ClInclude Include="Include\Meta\Fwd\MetaTypeFilterFwd.h" />
+    <ClInclude Include="Include\Meta\Fwd\MetaTypeFwd.h" />
+    <ClInclude Include="Include\Meta\Fwd\MetaTypeIdFwd.h" />
+    <ClInclude Include="Include\Meta\Fwd\MetaTypeTraitsFwd.h" />
+    <ClInclude Include="Include\Meta\Impl\MetaAnyImpl.h" />
+    <ClInclude Include="Include\Meta\Impl\MetaFieldImpl.h" />
+    <ClInclude Include="Include\Meta\Impl\MetaFuncImpl.h" />
+    <ClInclude Include="Include\Meta\Impl\MetaFuncIdImpl.h" />
+    <ClInclude Include="Include\Meta\Impl\MetaManagerImpl.h" />
+    <ClInclude Include="Include\Meta\Impl\MetaPropsImpl.h" />
+    <ClInclude Include="Include\Meta\Impl\MetaReflectImpl.h" />
+    <ClInclude Include="Include\Meta\Impl\MetaToolsImpl.h" />
+    <ClInclude Include="Include\Meta\Impl\MetaTypeFilterImpl.h" />
+    <ClInclude Include="Include\Meta\Impl\MetaTypeIdImpl.h" />
+    <ClInclude Include="Include\Meta\Impl\MetaTypeImpl.h" />
+    <ClInclude Include="Include\Meta\Impl\MetaTypeTraitsImpl.h" />
+    <ClInclude Include="Include\Meta\MetaAny.h" />
+    <ClInclude Include="Include\Meta\MetaField.h" />
+    <ClInclude Include="Include\Meta\MetaFunc.h" />
+    <ClInclude Include="Include\Meta\MetaFuncId.h" />
+    <ClInclude Include="Include\Meta\MetaManager.h" />
+    <ClInclude Include="Include\Meta\MetaProps.h" />
+    <ClInclude Include="Include\Meta\MetaReflect.h" />
+    <ClInclude Include="Include\Meta\MetaTools.h" />
     <ClInclude Include="Include\Meta\MetaTypeFilter.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\ReflectENTT.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\ReflectGLM.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\ReflectNull.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\ReflectPrimitiveTypes.h" />
-    <ClInclude Include="Include\Meta\MetaField.h" />
-    <ClInclude Include="Include\Meta\MetaReflect.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectSmartPtr.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectString.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectVector.h" />
@@ -1577,6 +1579,7 @@
     </ClInclude>
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
+    <ClInclude Include="Include\Systems\AbilitySystem.h" />
     <ClInclude Include="Include\Scripting\ScriptEvents.h" />
     <ClInclude Include="Include\Systems\EventsSystem.h" />
     <ClInclude Include="Include\Systems\NavigationSystem.h" />
@@ -1585,6 +1588,7 @@
     <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
     <ClInclude Include="Include\Utilities\CPP20\Span.h" />
     <ClInclude Include="Include\Utilities\CPP20\STDAliases.h" />
+    <ClInclude Include="Include\Utilities\DebugRenderer.h" />
     <ClInclude Include="Include\Utilities\Events.h" />
     <ClInclude Include="Include\Utilities\MemFunctions.h" />
     <ClInclude Include="Include\Utilities\IterableRange.h" />
@@ -1593,14 +1597,8 @@
     <ClInclude Include="include\GSON\GSON.h" />
     <ClInclude Include="include\GSON\GSONBinary.h" />
     <ClInclude Include="include\GSON\GSONReadable.h" />
-    <ClInclude Include="include\Meta\MetaFunc.h" />
-    <ClInclude Include="include\Meta\MetaFuncId.h" />
-    <ClInclude Include="include\Meta\MetaManager.h" />
-    <ClInclude Include="include\Meta\MetaProps.h" />
-    <ClInclude Include="include\Meta\MetaTools.h" />
     <ClInclude Include="include\Meta\MetaType.h" />
     <ClInclude Include="include\Meta\MetaTypeId.h" />
-    <ClInclude Include="include\Meta\MetaAny.h" />
     <ClInclude Include="include\Meta\MetaTypeTraits.h" />
     <ClInclude Include="Include\Scripting\Nodes\ControlScriptNodes.h" />
     <ClInclude Include="Include\Scripting\Nodes\MetaFuncScriptNode.h" />
@@ -1729,6 +1727,18 @@
     <None Include="external\imgui\.editorconfig" />
   </ItemGroup>
   <ItemGroup>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Line_p.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Line_vv.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBR_p.pssl">
       <Embed Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>

@@ -52,12 +52,10 @@ void DXDescHeap::BindRenderTargets(ComPtr<ID3D12GraphicsCommandList4> commandLis
 	commandList->OMSetRenderTargets(1, &cpuHandle, FALSE, nullptr);
 }
 
-
 void DXDescHeap::ClearRenderTarget(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int heapSlot, const float* clearData)
 {
 	if (type != D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
 		return;
-
 	commandList->ClearRenderTargetView(GetCPUHandle(heapSlot), clearData, 0, nullptr);
 }
 
@@ -65,20 +63,17 @@ void DXDescHeap::ClearDepthStencil(ComPtr<ID3D12GraphicsCommandList4> commandLis
 {
 	if (type != D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
 		return;
-
 	commandList->ClearDepthStencilView(GetCPUHandle(heapSlot), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
 CD3DX12_CPU_DESCRIPTOR_HANDLE DXDescHeap::GetCPUHandle(unsigned int heapSlot) const
 {
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(descriptorHeap->GetCPUDescriptorHandleForHeapStart(), heapSlot, descriptorSize);
-
 	return handle;
 }
 
 CD3DX12_GPU_DESCRIPTOR_HANDLE DXDescHeap::GetGPUHandle(unsigned int heapSlot) const
 {
 	CD3DX12_GPU_DESCRIPTOR_HANDLE handle(descriptorHeap->GetGPUDescriptorHandleForHeapStart(), heapSlot, descriptorSize);
-
 	return handle;
 }

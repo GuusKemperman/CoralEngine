@@ -9,7 +9,7 @@
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Meta/MetaTools.h"
 #include "Meta/MetaProps.h"
-#include "World/WorldRenderer.h"
+#include "Utilities/DebugRenderer.h"
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
 #include "Containers/view_istream.h"
 
@@ -620,7 +620,7 @@ void Engine::Editor::DisplayMainMenuBar()
 
 		if (ImGui::BeginMenu("DebugDrawing"))
 		{
-			unsigned int flags = WorldRenderer::GetDebugCategoryFlags();
+			unsigned int flags = DebugRenderer::GetDebugCategoryFlags();
 
 			// If we had static reflection in c++ we could just 
 			// loop over the debug categories and performa enum_to_string operation..
@@ -670,7 +670,7 @@ void Engine::Editor::DisplayMainMenuBar()
 				flags ^= DebugCategory::All;
 			}
 
-			WorldRenderer::SetDebugCategoryFlags(static_cast<DebugCategory::Enum>(flags));
+			DebugRenderer::SetDebugCategoryFlags(static_cast<DebugCategory::Enum>(flags));
 
 			ImGui::EndMenu();
 		}

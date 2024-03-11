@@ -99,7 +99,7 @@ namespace Engine
 			struct CachedValue
 			{
 				void* mData{};
-				uint32 mNumOfImpureNodesExecutedAtTimeOfCaching{ (std::numeric_limits<uint32>::max)() };
+				uint32 mNumOfImpureNodesExecutedAtTimeOfCaching{ std::numeric_limits<uint32>::max() };
 				uint32 mTypeInfoFlags{};
 			};
 			CachedValue* mCachedValues{};

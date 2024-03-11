@@ -4,6 +4,7 @@
 #include "Core/Device.h"
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
+#include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
 
 Engine::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 {
