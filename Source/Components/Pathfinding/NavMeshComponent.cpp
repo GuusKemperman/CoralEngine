@@ -28,10 +28,6 @@
 
 using namespace Engine;
 
-NavMeshComponent::NavMeshComponent()
-{
-}
-
 void NavMeshComponent::SetNavMesh(const World& world)
 {
 	mPolygonDataNavMesh = {};
