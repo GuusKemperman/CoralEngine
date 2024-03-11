@@ -46,7 +46,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::TextureImporter::Impor
 std::optional<Engine::ImportedAsset> Engine::TextureImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
 	const std::string& name,
 	const uint32 importerVersion,
-	const Span<const char> mBuffers,
+	const Span<const char> buffers,
 	const uint32 width,
 	const uint32 height)
 {
@@ -59,10 +59,10 @@ std::optional<Engine::ImportedAsset> Engine::TextureImporter::ImportFromMemory(c
 		return std::optional<ImportedAsset>{};
 	}
 
-	if (mBuffers.size() != totalNumOfPixels * 4)
+	if (buffers.size() != totalNumOfPixels * 4)
 	{
 		LOG(LogAssets, Error, "Importing texture failed: wrong number of bytes, received {} but expected {} (RGBA) bytes",
-			mBuffers.size(),
+			buffers.size(),
 			totalNumOfPixels * 4);
 
 		return std::optional<ImportedAsset>{};
@@ -77,7 +77,7 @@ std::optional<Engine::ImportedAsset> Engine::TextureImporter::ImportFromMemory(c
 			static_cast<std::string*>(context)->append(static_cast<const char*>(data), size);
 		};
 	
-	if (stbi_write_png_to_func(func, &pngData, static_cast<int>(width), static_cast<int>(height), 4, mBuffers.data(), width * 4) == 0)
+	if (stbi_write_png_to_func(func, &pngData, static_cast<int>(width), static_cast<int>(height), 4, buffers.data(), width * 4) == 0)
 	{
 		LOG(LogAssets, Error, "Importing texture failed: could not convert data to png");
 		return std::optional<ImportedAsset>{};

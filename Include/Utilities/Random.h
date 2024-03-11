@@ -71,7 +71,7 @@ namespace Engine
 		static uint32 RangeWithSeed(uint32 max, uint32& seed)
 		{
 			// Prevents division by 0
-			return RandWithSeed<uint32>(seed) % (std::max)(max, 1u);
+			return RandWithSeed<uint32>(seed) % std::max(max, 1u);
 		}
 
 		static float RangeWithSeed(float max, uint32& seed)

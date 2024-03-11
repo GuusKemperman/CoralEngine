@@ -15,7 +15,7 @@ namespace Engine
 		static std::optional<ImportedAsset> ImportFromMemory(const std::filesystem::path& importedFromFile,
 			const std::string& name,
 			uint32 importerVersion,
-			Span<const char> mBuffers,
+			Span<const char> buffers,
 			uint32 width,
 			uint32 height);
 

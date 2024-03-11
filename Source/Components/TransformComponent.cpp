@@ -266,8 +266,6 @@ Engine::MetaType Engine::TransformComponent::Reflect()
 	type.AddField(&TransformComponent::mLocalPosition, "mLocalPosition");
 	type.AddField(&TransformComponent::mLocalOrientation, "mLocalOrientation");
 	type.AddField(&TransformComponent::mLocalScale, "mLocalScale");
-	type.AddFunc(&TransformComponent::OnDeserialize, "OnDeserialize", "", "deserializeFrom", "owner", "world");
-	type.AddFunc(&TransformComponent::OnSerialize, "OnSerialize", "", "serializeTo", "owner", "world");
 	type.AddFunc(&TransformComponent::GetLocalMatrix, "GetLocalMatrix", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::SetLocalMatrix, "SetLocalMatrix", "", "matrix").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::GetWorldMatrix, "GetWorldMatrix", "").GetProperties().Add(Props::sIsScriptableTag);
