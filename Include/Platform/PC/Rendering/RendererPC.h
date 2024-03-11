@@ -78,10 +78,9 @@ namespace Engine
 
     private:
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
-        std::unique_ptr<DXPipeline> mPipelines[NUM_PIPELINES];
-        std::unique_ptr<DXSignature> mSignatures[NUM_ROOT_SIGNATURES];
 
         std::unique_ptr<DXPipeline> mPBRPipeline;
+        std::unique_ptr<DXPipeline> mPBRSkinnedPipeline;
         InfoStruct::DXLightInfo  lights;
 
     private:

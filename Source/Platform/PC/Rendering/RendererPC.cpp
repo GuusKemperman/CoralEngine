@@ -50,12 +50,30 @@ Engine::Renderer::Renderer()
     mPBRPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
     mPBRPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
 
+    //CREATE PBR SKINNED PIPELINE
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRVertexSkinned.hlsl");
+    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
+    p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
+    mPBRSkinnedPipeline = std::make_unique<DXPipeline>();
+    rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    rast.CullMode = D3D12_CULL_MODE_FRONT;
+    mPBRSkinnedPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+    mPBRSkinnedPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
+    mPBRSkinnedPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
+    mPBRSkinnedPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
+    mPBRSkinnedPipeline->AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 4);
+    mPBRSkinnedPipeline->AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 5);
+    mPBRSkinnedPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
+    mPBRSkinnedPipeline->SetRasterizer(rast);
+    mPBRSkinnedPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
+    mPBRSkinnedPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR SKINNED RENDER PIPELINE");
+
     //CREATE CONSTANT BUFFERS
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[MATERIAL_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Material info data", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
-
     mConstBuffers[FINAL_BONE_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * MAX_BONES, MAX_SKINNED_MESHES, "Skinned Mesh Bone Matrices", FRAME_BUFFER_COUNT);
 }
 
@@ -125,11 +143,12 @@ void Engine::Renderer::Render(const World& world)
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
+    int meshCounter = 0;
+
     //RENDER STATIC MESHES
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
-        int meshCounter = 0;
-
+        
     for (auto [entity, staticMeshComponent, transform] : view.each())
     {
         // UPDATE AND BIND MODEL AND INVESE TRANSPOSE MODEL MATRIX
@@ -162,23 +181,23 @@ void Engine::Renderer::Render(const World& world)
                 //BIND TEXTURES
                 if (materialInfo.useColorTex)
                 {
-                    resourceHeap->BindToGraphics(commandList, 5, staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
+                    resourceHeap->BindToGraphics(commandList, 6, staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
                 }
                 if (materialInfo.useEmissiveTex)
                 {
-                    resourceHeap->BindToGraphics(commandList, 6, staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
+                    resourceHeap->BindToGraphics(commandList, 7, staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
                 }
                 if (materialInfo.useMetallicRoughnessTex)
                 {
-                    resourceHeap->BindToGraphics(commandList, 7, staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
+                    resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
                 }
                 if (materialInfo.useNormalTex)
                 {
-                    resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
+                    resourceHeap->BindToGraphics(commandList, 9, staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
                 }
                 if (materialInfo.useOcclusionTex)
                 {
-                    resourceHeap->BindToGraphics(commandList, 9, staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
+                    resourceHeap->BindToGraphics(commandList, 10, staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
                 }
             }
             else {
@@ -212,8 +231,7 @@ void Engine::Renderer::Render(const World& world)
     
     //RENDER SKINNED MESHES
 
-    commandList->SetGraphicsRootSignature(mSignatures[SKINNED_ROOT_SIGNATURE]->GetSignature().Get());
-    commandList->SetPipelineState(mPipelines[PBR_SKINNED_PIPELINE]->GetPipeline().Get());
+    commandList->SetPipelineState(mPBRSkinnedPipeline->GetPipeline().Get());
 
     //BIND CONSTANT BUFFERS
     mConstBuffers[LIGHT_CB]->Bind(commandList, 1, 0, frameIndex);
@@ -224,8 +242,7 @@ void Engine::Renderer::Render(const World& world)
 
     {
         const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
-        int meshCounter = 0;
-
+        
         for (auto [entity, skinnedMeshComponent, transform] : view.each())
         {
             //UPDATE AND BIND MODEL MATRIX
@@ -272,7 +289,7 @@ void Engine::Renderer::Render(const World& world)
                 }
                 if (materialInfo.useNormalTex)
                 {
-                    resourceHeap->BindToGraphics(commandList, 8, skinnedMeshComponent.mMaterial->mNormalTexture->GetIndex());
+                    resourceHeap->BindToGraphics(commandList, 9, skinnedMeshComponent.mMaterial->mNormalTexture->GetIndex());
                 }
                 if (materialInfo.useOcclusionTex)
                 {
