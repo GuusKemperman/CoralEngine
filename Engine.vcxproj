@@ -508,6 +508,8 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\BaseIdleState.cpp" />
     <ClCompile Include="Source\Assets\Ability.cpp" />
     <ClCompile Include="Source\Components\Abilities\AbilitiesOnPlayerComponent.cpp" />
     <ClCompile Include="Source\EditorSystems\AssetEditorSystems\AbilityEditorSystem.cpp">
@@ -1338,6 +1340,11 @@
     <ClCompile Include="source\World\World.cpp" />
     <ClCompile Include="Source\World\Registry.cpp" />
     <ClCompile Include="Source\World\WorldRenderer.cpp" />
+    <ClCompile Include="Source\Systems\UtilityAiSystem.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\Components\UtililtyAi\BaseIdleState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\EnemyAiControllerComponent.h" />
     <ClCompile Include="Source\Platform\PC\Rendering\TexturePC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -1693,6 +1700,7 @@
     <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />
+    <ClInclude Include="Include\Systems\UtilityAiSystem.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\TexturePC.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
