@@ -4,7 +4,7 @@
 namespace Engine
 {
 	class CharacterComponent;
-	struct AbilityInstanceWithInputs;
+	struct AbilityInstance;
 
 	class AbilitySystem final :
 		public System
@@ -14,8 +14,8 @@ namespace Engine
 
 	private:
 		friend class Ability;
-		static bool CanAbilityBeActivated(const CharacterComponent& characterData, const AbilityInstanceWithInputs& ability);
-		static void ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstanceWithInputs& ability);
+		static bool CanAbilityBeActivated(const CharacterComponent& characterData, const AbilityInstance& ability);
+		static void ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability);
 
 		friend ReflectAccess;
 		static MetaType Reflect();

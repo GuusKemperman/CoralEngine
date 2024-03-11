@@ -73,14 +73,14 @@ void Engine::AbilitySystem::Update(World& world, float dt)
     }
 }
 
-bool Engine::AbilitySystem::CanAbilityBeActivated(const CharacterComponent& characterData, const AbilityInstanceWithInputs& ability)
+bool Engine::AbilitySystem::CanAbilityBeActivated(const CharacterComponent& characterData, const AbilityInstance& ability)
 {
     return ability.mRequirementCounter >= ability.mAbilityAsset->mRequirementToUse &&
         ability.mChargesCounter < ability.mAbilityAsset->mCharges &&
         (ability.mAbilityAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
 }
 
-void Engine::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstanceWithInputs& ability)
+void Engine::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability)
 {
     // ability activate event
     if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mScript->GetName()))

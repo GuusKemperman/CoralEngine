@@ -84,20 +84,20 @@ Engine::MetaType Engine::Ability::Reflect()
 	type.AddField(&Ability::mRequirementToUse, "mRequirementToUse");
 	type.AddField(&Ability::mCharges, "mCharges");
 
-	type.AddFunc([](entt::entity castBy, CharacterComponent& characterData, AbilityInstanceWithInputs& ability)
+	type.AddFunc([](entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
 			AbilitySystem::ActivateAbility(*world, castBy, characterData, ability);
 
-		}, "ActivateAbility", MetaFunc::ExplicitParams<entt::entity, CharacterComponent&, AbilityInstanceWithInputs&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "ActivateAbility", MetaFunc::ExplicitParams<entt::entity, CharacterComponent&, AbilityInstance&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](CharacterComponent& characterData, AbilityInstanceWithInputs& ability)
+	type.AddFunc([](CharacterComponent& characterData, AbilityInstance& ability)
 		{
 			AbilitySystem::CanAbilityBeActivated(characterData, ability);
 
-		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<CharacterComponent&, AbilityInstanceWithInputs&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<CharacterComponent&, AbilityInstance&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	ReflectAssetType<Ability>(type);
 	return type;

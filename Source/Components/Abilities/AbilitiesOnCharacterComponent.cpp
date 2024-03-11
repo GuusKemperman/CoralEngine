@@ -43,14 +43,14 @@ void Engine::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::v
 	}
 }
 
-bool Engine::AbilityInstanceWithInputs::operator==(const AbilityInstanceWithInputs& other) const
+bool Engine::AbilityInstance::operator==(const AbilityInstance& other) const
 {
 	return mAbilityAsset == other.mAbilityAsset &&
 		mKeyboardKeys == other.mKeyboardKeys && 
 		mGamepadButtons == other.mGamepadButtons;
 }
 
-bool Engine::AbilityInstanceWithInputs::operator!=(const AbilityInstanceWithInputs& other) const
+bool Engine::AbilityInstance::operator!=(const AbilityInstance& other) const
 {
 	return mAbilityAsset != other.mAbilityAsset ||
 		mKeyboardKeys != other.mKeyboardKeys ||
@@ -58,7 +58,7 @@ bool Engine::AbilityInstanceWithInputs::operator!=(const AbilityInstanceWithInpu
 }
 
 #ifdef EDITOR
-void Engine::AbilityInstanceWithInputs::DisplayWidget()
+void Engine::AbilityInstance::DisplayWidget()
 {
 	ShowInspectUI("mAbilityAsset", mAbilityAsset);
 	ImGui::Text("mRequirementCounter: %f", mRequirementCounter);
@@ -71,17 +71,17 @@ void Engine::AbilityInstanceWithInputs::DisplayWidget()
 }
 #endif // EDITOR
 
-Engine::MetaType Engine::AbilityInstanceWithInputs::Reflect()
+Engine::MetaType Engine::AbilityInstance::Reflect()
 {
-	MetaType metaType = MetaType{ MetaType::T<AbilityInstanceWithInputs>{}, "AbilityInstanceWithInputs" };
+	MetaType metaType = MetaType{ MetaType::T<AbilityInstance>{}, "AbilityInstance" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddField(&AbilityInstanceWithInputs::mAbilityAsset, "mAbilityAsset").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&AbilityInstanceWithInputs::mRequirementCounter, "mRequirementCounter").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&AbilityInstanceWithInputs::mChargesCounter, "mChargesCounter").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&AbilityInstance::mAbilityAsset, "mAbilityAsset").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&AbilityInstance::mRequirementCounter, "mRequirementCounter").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&AbilityInstance::mChargesCounter, "mChargesCounter").GetProperties().Add(Props::sIsScriptableTag);
 
-	metaType.AddField(&AbilityInstanceWithInputs::mKeyboardKeys, "mKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&AbilityInstanceWithInputs::mGamepadButtons, "mGamepadButtons").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&AbilityInstance::mKeyboardKeys, "mKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&AbilityInstance::mGamepadButtons, "mGamepadButtons").GetProperties().Add(Props::sIsScriptableTag);
 
 	return metaType;
 }
