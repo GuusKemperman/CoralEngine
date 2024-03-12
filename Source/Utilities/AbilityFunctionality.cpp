@@ -4,8 +4,26 @@
 #include "Components/Abilities/CharacterComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
+#include "Utilities/Reflect/ReflectFieldType.h"
 #include "World/Registry.h"
 #include "World/World.h"
+
+Engine::MetaType Engine::AbilityFunctionality::Reflect()
+{
+	MetaType metaType = MetaType{ MetaType::T<AbilityFunctionality>{}, "AbilityFunctionality" };
+	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+
+	metaType.AddFunc([](entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			ApplyInstantEffect(*world, affectedEntity, stat, amount, flatOrPercentage, increaseOrDecrease);
+
+		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+		return metaType;
+}
 
 void Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease)
 {
@@ -46,19 +64,44 @@ std::pair<float&, float&> Engine::AbilityFunctionality::GetStat(Stat stat, Chara
 	return { characterComponent.mBaseHealth, characterComponent.mCurrentHealth };
 }
 
-Engine::MetaType Engine::AbilityFunctionality::Reflect()
+Engine::MetaType Reflector<Engine::AbilityFunctionality::Stat>::Reflect()
 {
-	MetaType metaType = MetaType{ MetaType::T<AbilityFunctionality>{}, "AbilityFunctionality" };
-	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	using namespace Engine;
+	using T = AbilityFunctionality::Stat;
+	MetaType type{ MetaType::T<T>{}, "Stat" };
 
-	//metaType.AddFunc([](entt::entity castBy, CharacterComponent& characterData)
-	//	{
-	//		World* world = World::TryGetWorldAtTopOfStack();
-	//		ASSERT(world != nullptr);
+	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	type.AddFunc(std::equal_to<T>(), OperatorType::equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	ReflectFieldType<T>(type);
 
-	//		AbilitySystem::ActivateAbility(*world, castBy, characterData, ability);
+	return type;
+}
 
-	//	}, "ActivateAbility", MetaFunc::ExplicitParams<entt::entity, CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+Engine::MetaType Reflector<Engine::AbilityFunctionality::FlatOrPercentage>::Reflect()
+{
+	using namespace Engine;
+	using T = AbilityFunctionality::FlatOrPercentage;
+	MetaType type{ MetaType::T<T>{}, "FlatOrPercentage" };
 
-	return metaType;
+	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	type.AddFunc(std::equal_to<T>(), OperatorType::equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	ReflectFieldType<T>(type);
+
+	return type;
+}
+
+Engine::MetaType Reflector<Engine::AbilityFunctionality::IncreaseOrDecrease>::Reflect()
+{
+	using namespace Engine;
+	using T = AbilityFunctionality::IncreaseOrDecrease;
+	MetaType type{ MetaType::T<T>{}, "IncreaseOrDecrease" };
+
+	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	type.AddFunc(std::equal_to<T>(), OperatorType::equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	ReflectFieldType<T>(type);
+
+	return type;
 }
