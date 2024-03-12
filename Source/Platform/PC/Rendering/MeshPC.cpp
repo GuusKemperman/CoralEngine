@@ -175,7 +175,8 @@ void Engine::StaticMesh::DrawMeshVertexOnly() const
 
 bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, unsigned int sizeOfIndexType, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount)
 {
-	if (indices == nullptr ||
+	if (Device::IsHeadless() ||
+		indices == nullptr ||
 		indexCount == 0 ||
 		positions == nullptr ||
 		vertexCount == 0 ||
@@ -186,9 +187,9 @@ bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, 
 	switch (sizeOfIndexType)
 	{
 		case sizeof(unsigned char):			mIndexFormat = DXGI_FORMAT_R8_UINT; break;
-			case sizeof(unsigned short):		mIndexFormat = DXGI_FORMAT_R16_UINT; break;
-				case sizeof(unsigned int):			mIndexFormat = DXGI_FORMAT_R32_UINT; break;
-				default: return false;
+		case sizeof(unsigned short):		mIndexFormat = DXGI_FORMAT_R16_UINT; break;
+		case sizeof(unsigned int):			mIndexFormat = DXGI_FORMAT_R32_UINT; break;
+		default: return false;
 	}
 
 

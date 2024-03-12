@@ -27,7 +27,13 @@
 
 Engine::Renderer::Renderer()
 {
+    if (Device::IsHeadless())
+    {
+        return;
+    }
+
     Device& engineDevice = Device::Get();
+
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
     //CREATE PBR PIPELINE

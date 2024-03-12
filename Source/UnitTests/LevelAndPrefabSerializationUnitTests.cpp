@@ -4,6 +4,7 @@
 #include "Core/UnitTests.h"
 #include "Core/AssetManager.h"
 #include "Assets/Core/AssetLoadInfo.h"
+#include "Assets/Core/AssetSaveInfo.h"
 #include "Components/CameraComponent.h"
 #include "Components/IsDestroyedTag.h"
 #include "Containers/view_istream.h"
