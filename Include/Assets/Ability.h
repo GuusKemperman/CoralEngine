@@ -3,7 +3,7 @@
 
 namespace Engine
 {
-	struct AbilityInstanceWithInputs;
+	struct AbilityInstance;
 	class AbilitySystem;
 	class Texture;
 	class Script;
@@ -23,7 +23,7 @@ namespace Engine
 
 	private:
 		friend AbilitySystem;
-		friend AbilityInstanceWithInputs;
+		friend AbilityInstance;
 
         void OnSave(AssetSaveInfo& saveInfo) const override;
 
