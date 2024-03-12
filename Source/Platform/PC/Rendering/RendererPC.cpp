@@ -53,7 +53,7 @@ Engine::Renderer::Renderer()
     mPBRPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
     mPBRPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
 
-    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ClusterGridCS.hlsl");
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/ClusterGridCS.hlsl");
     ComPtr<ID3DBlob> cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0", true);
     mClusterGridPipeline = std::make_unique<DXPipeline>();
     mClusterGridPipeline->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
