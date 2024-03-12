@@ -157,8 +157,10 @@ void Engine::Renderer::Render(const World& world)
             continue;
 
         staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
+        meshCounter++;
     }
 
+    meshCounter = 0;
     //RENDERING
     for (auto [entity, staticMeshComponent, transform] : view.each())
     {
