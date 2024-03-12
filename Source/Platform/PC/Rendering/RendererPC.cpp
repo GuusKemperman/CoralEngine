@@ -27,7 +27,13 @@
 
 Engine::Renderer::Renderer()
 {
+    if (Device::IsHeadless())
+    {
+        return;
+    }
+
     Device& engineDevice = Device::Get();
+
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
     //CREATE PBR PIPELINE
@@ -36,17 +42,31 @@ Engine::Renderer::Renderer()
     ComPtr<ID3DBlob> v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
     ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
+
     mPBRPipeline = std::make_unique<DXPipeline>();
     CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+    depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
+
     rast.CullMode = D3D12_CULL_MODE_FRONT;
-    mPBRPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
-    mPBRPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
+    mPBRPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
+    mPBRPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1);
     mPBRPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
     mPBRPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
     mPBRPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
     mPBRPipeline->SetRasterizer(rast);
+    mPBRPipeline->SetDepthState(depth);
     mPBRPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
     mPBRPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
+    
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
+    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    mZPipeline = std::make_unique<DXPipeline>();
+    mZPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+    mZPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
+    mZPipeline->SetRasterizer(rast);
+    mZPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
+    mZPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
 
     //CREATE CONSTANT BUFFERS
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
@@ -112,7 +132,6 @@ void Engine::Renderer::Render(const World& world)
     }
 
     mConstBuffers[LIGHT_CB]->Update(&lights, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
-    commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
 
     //BIND CONSTANT BUFFERS
     mConstBuffers[LIGHT_CB]->Bind(commandList, 1, 0, frameIndex);
@@ -125,13 +144,25 @@ void Engine::Renderer::Render(const World& world)
     const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
     int meshCounter = 0;
 
-    for (auto [entity, staticMeshComponent, transform] : view.each())
-    {
-        // UPDATE AND BIND MODEL AND INVESE TRANSPOSE MODEL MATRIX
+    //DEPTH PRE PASS
+    for (auto [entity, staticMeshComponent, transform] : view.each()) {
+        commandList->SetPipelineState(mZPipeline->GetPipeline().Get());
         glm::mat4x4 modelMatrices[2]{};
         modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
         modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
         mConstBuffers[MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+        mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
+
+        if (!staticMeshComponent.mStaticMesh)
+            continue;
+
+        staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
+    }
+
+    //RENDERING
+    for (auto [entity, staticMeshComponent, transform] : view.each())
+    {
+        commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
         mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
 
         //UPDATE AND BIND MATERIAL INFO
@@ -153,7 +184,7 @@ void Engine::Renderer::Render(const World& world)
             materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr;
             materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr;
             materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr;
-            
+
             //BIND TEXTURES
             if (materialInfo.useColorTex)
             {
@@ -177,8 +208,8 @@ void Engine::Renderer::Render(const World& world)
             }
         }
         else {
-            materialInfo.colorFactor = {0.f, 0.f, 0.f, 0.f };
-            materialInfo.emissiveFactor = {0.f, 0.f, 0.f, 0.f };
+            materialInfo.colorFactor = { 0.f, 0.f, 0.f, 0.f };
+            materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
             materialInfo.metallicFactor = 0.f;
             materialInfo.roughnessFactor = 0.f;
             materialInfo.normalScale = 0.f;
@@ -192,15 +223,11 @@ void Engine::Renderer::Render(const World& world)
         mConstBuffers[MATERIAL_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
         mConstBuffers[MATERIAL_CB]->Bind(commandList, 3, meshCounter, frameIndex);
 
-        //DRAW THE MESH
-
         if (!staticMeshComponent.mStaticMesh)
-        {
             continue;
-        }
 
+        //DRAW THE MESH
         staticMeshComponent.mStaticMesh->DrawMesh();
-
         meshCounter++;
     }
 }

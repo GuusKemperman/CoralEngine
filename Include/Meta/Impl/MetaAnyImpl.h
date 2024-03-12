@@ -18,6 +18,8 @@ Engine::MetaAny::MetaAny(T&& anyObject, void* const buffer)
     static constexpr TypeTraits traits = MakeTypeTraits<T>();
     static constexpr TypeInfo info = MakeTypeInfo<T>();
     static_assert(traits.mStrippedTypeId != MakeTypeId<MetaAny>(), "There should be other overloads in place to handle cases with MetaAny");
+    static_assert(traits.mStrippedTypeId != MakeTypeId<MetaType>(), "You probably meant to use one of the other constructors. Take a look at the other constructors of MetaAny. You will need to provide a boolean as one of the arguments");
+    static_assert(traits.mStrippedTypeId != MakeTypeId<TypeTraits>(), "You probably meant to use one of the other constructors. Take a look at the other constructors of MetaAny. You will need to provide a boolean as one of the arguments");
 
     mTypeInfo = info;
 
