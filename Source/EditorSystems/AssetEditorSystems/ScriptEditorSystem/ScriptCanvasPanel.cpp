@@ -81,10 +81,9 @@ void Engine::ScriptEditorSystem::DisplayCanvas()
 		[[maybe_unused]] ScriptLink* newLink2 = currentFunc.TryAddLink(inputPin, node.GetOutputs(currentFunc)[0]);
 		// Break the original 
 		currentFunc.RemoveLink(doubleClickedLink);
-		if (newLink1 == nullptr && newLink2 == nullptr) 
-		{
-			assert(false);
-		}
+
+		ASSERT(newLink1 != nullptr
+			&& newLink2 != nullptr);
 	}
 
 	ax::NodeEditor::End();
@@ -905,14 +904,24 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 		{
 			if (CanBeGetThroughScripts(field))
 			{
-				returnValue.emplace_back(std::string{ type.GetName() }, Format("Get {}", field.GetName()),
+				returnValue.emplace_back(std::string{ type.GetName() }, GetterScriptNode::GetTitle(field.GetName(), true),
 					[&field](ScriptFunc& func) -> decltype(auto)
 					{
-						return func.AddNode<GetterScriptNode>(func, field);
+						return func.AddNode<GetterScriptNode>(func, field, true);
 					},
 					[&field](const ScriptPin& contextPin) -> bool
 					{
-						return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId() }, { { field.GetOuterType().GetTypeId() } }, true);
+						return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId(), TypeForm::Value }, { { field.GetOuterType().GetTypeId(), TypeForm::ConstRef } }, true);
+					});
+
+				returnValue.emplace_back(std::string{ type.GetName() }, GetterScriptNode::GetTitle(field.GetName(), false),
+					[&field](ScriptFunc& func) -> decltype(auto)
+					{
+						return func.AddNode<GetterScriptNode>(func, field, false);
+					},
+					[&field](const ScriptPin& contextPin) -> bool
+					{
+						return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId(), TypeForm::Ref }, { { field.GetOuterType().GetTypeId(), TypeForm::Ref } }, true);
 					});
 			}
 

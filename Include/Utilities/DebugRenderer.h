@@ -98,7 +98,7 @@ namespace Engine
     private:
         class Impl;
         std::unique_ptr<Impl> mImpl;
-        static inline DebugCategory::Enum sDebugCategoryFlags{ DebugCategory::All };
+        static inline DebugCategory::Enum sDebugCategoryFlags{};
     };
 
     namespace Colors

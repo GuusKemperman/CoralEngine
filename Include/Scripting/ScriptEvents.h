@@ -13,14 +13,25 @@ namespace Engine
 	class ScriptEvent
 	{
 	public:
-		ScriptEvent(const EventBase& event, std::vector<MetaFuncNamedParam>&& params, std::optional<MetaFuncNamedParam>&& ret);
+		template<typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
+		ScriptEvent(const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event, std::vector<MetaFuncNamedParam>&& params, std::optional<MetaFuncNamedParam>&& ret);
+
+		MetaFunc& Declare(TypeId selfTypeId, MetaType& toType) const;
+		void Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const;
 
 		std::reference_wrapper<const EventBase> mBasedOnEvent;
+
 		std::vector<MetaFuncNamedParam> mParamsToShowToUser{};
 		std::optional<MetaFuncNamedParam> mReturnValueToShowToUser{};
 
-		virtual MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const = 0;
-		virtual void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const = 0;
+	private:
+		virtual MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const = 0;
+
+		std::vector<TypeTraits> mEventParams{};
+		TypeTraits mEventReturnType{};
+
+		bool mIsStatic{};
+		bool mIsPure{};
 	};
 
 	class ScriptOnConstructEvent final :
@@ -29,8 +40,8 @@ namespace Engine
 	public:
 		ScriptOnConstructEvent();
 
-		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
-		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
 	};
 
 	class ScriptOnBeginPlayEvent final :
@@ -39,8 +50,8 @@ namespace Engine
 	public:
 		ScriptOnBeginPlayEvent();
 
-		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
-		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
 	};
 
 	class ScriptTickEvent final :
@@ -49,8 +60,8 @@ namespace Engine
 	public:
 		ScriptTickEvent();
 
-		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
-		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
 	};
 
 	class ScriptFixedTickEvent final :
@@ -59,8 +70,8 @@ namespace Engine
 	public:
 		ScriptFixedTickEvent();
 
-		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
-		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
 	};
 
 	class ScriptDestructEvent final :
@@ -69,8 +80,8 @@ namespace Engine
 	public:
 		ScriptDestructEvent();
 
-		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
-		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
 	};
 
 	class ScriptAITickEvent final :
@@ -79,8 +90,8 @@ namespace Engine
 	public:
 		ScriptAITickEvent();
 
-		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
-		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
 	};
 
 	class ScriptAIEvaluateEvent final :
@@ -89,8 +100,8 @@ namespace Engine
 	public:
 		ScriptAIEvaluateEvent();
 
-		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
-		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
 	};
 
 	class ScriptAbilityActivateEvent final :
@@ -99,9 +110,65 @@ namespace Engine
 	public:
 		ScriptAbilityActivateEvent();
 
-		MetaFunc& Declare(TypeTraits selfTraits, MetaType& toType) const override;
-		void Define(MetaFunc& declaredFunc, const ScriptFunc& scriptFunc, std::shared_ptr<const Script> script) const override;
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
 	};
+
+	class CollisionEvent :
+		public ScriptEvent
+	{
+	public:
+		template<typename EventT>
+		CollisionEvent(const EventT& event);
+
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
+
+	};
+	class ScriptCollisionEntryEvent final :
+		public CollisionEvent
+	{
+	public:
+		ScriptCollisionEntryEvent() : CollisionEvent(sCollisionEntryEvent) {}
+	};
+
+	class ScriptCollisionStayEvent final :
+		public CollisionEvent
+	{
+	public:
+		ScriptCollisionStayEvent() : CollisionEvent(sCollisionStayEvent) {}
+	};
+
+	class ScriptCollisionExitEvent final :
+		public CollisionEvent
+	{
+	public:
+		ScriptCollisionExitEvent() : CollisionEvent(sCollisionExitEvent) {}
+	};
+
+	template <typename Ret, typename ... Args, bool IsPure, bool IsAlwaysStatic>
+	ScriptEvent::ScriptEvent(const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event,
+		std::vector<MetaFuncNamedParam>&& params, std::optional<MetaFuncNamedParam>&& ret) :
+		mBasedOnEvent(event),
+		mParamsToShowToUser(std::move(params)),
+		mReturnValueToShowToUser(std::move(ret)),
+		mEventParams({ MakeTypeTraits<Args>()... }),
+		mEventReturnType(MakeTypeTraits<Ret>()),
+		mIsStatic(IsAlwaysStatic),
+		mIsPure(IsPure)
+	{
+	}
+
+	template <typename EventT>
+	CollisionEvent::CollisionEvent(const EventT& event) :
+		ScriptEvent(event, {
+			{ MakeTypeTraits<entt::entity>(), "Other" },
+			{ MakeTypeTraits<float>(), "Depth" },
+			{ MakeTypeTraits<glm::vec2>(), "Hit Normal" },
+			{ MakeTypeTraits<glm::vec2>(), "Contact point" },
+			}, std::nullopt)
+	{
+	}
 
 	static const ScriptOnConstructEvent sOnConstructScriptEvent{};
 	static const ScriptOnBeginPlayEvent sOnBeginPlayScriptEvent{};
@@ -111,8 +178,11 @@ namespace Engine
 	static const ScriptAITickEvent sAITickScriptEvent{};
 	static const ScriptAIEvaluateEvent sAIEvaluateScriptEvent{};
 	static const ScriptAbilityActivateEvent sScriptAbilityActivateEvent{};
+	static const ScriptCollisionEntryEvent sOnCollisionEntryScriptEvent{};
+	static const ScriptCollisionStayEvent sOnCollisionStayScriptEvent{};
+	static const ScriptCollisionExitEvent sOnCollisionExitScriptEvent{};
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 8> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 11> sAllScriptableEvents
 	{
 		sOnConstructScriptEvent,
 		sOnDestructScriptEvent,
@@ -121,6 +191,9 @@ namespace Engine
 		sOnFixedTickScriptEvent,
 		sAITickScriptEvent,
 		sAIEvaluateScriptEvent,
-		sScriptAbilityActivateEvent
+		sScriptAbilityActivateEvent,
+		sOnCollisionEntryScriptEvent,
+		sOnCollisionStayScriptEvent,
+		sOnCollisionExitScriptEvent,
 	};
 }

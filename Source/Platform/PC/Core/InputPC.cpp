@@ -53,6 +53,11 @@ namespace
 
 Input::Input()
 {
+    if (Device::IsHeadless())
+    {
+        return;
+    }
+
     GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
 
     // glfwSetJoystickCallback(joystick_callback);
@@ -64,6 +69,11 @@ Input::Input()
 
 Input::~Input()
 {
+    if (Device::IsHeadless())
+    {
+        return;
+    }
+
     GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
     
     // glfwSetJoystickCallback(NULL);
@@ -275,7 +285,8 @@ float Input::GetKeyboardAxis(KeyboardKey positive, KeyboardKey negative, bool ch
 bool Input::HasFocus() const
 {
 #ifdef EDITOR
-    return ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+    return !Device::IsHeadless()  // ImGui may not have been initialised
+		&& ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 #else
     // No editor windows, so assume we always have focus.
     return true;

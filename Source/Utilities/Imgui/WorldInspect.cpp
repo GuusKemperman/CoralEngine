@@ -708,7 +708,11 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 
 	if (ImGui::Button("Add Entity"))
 	{
-		reg.Create();
+		const entt::entity newEntity = reg.Create();
+
+		// Add a transform component, since
+		// 99% of entities require it
+		reg.AddComponent<TransformComponent>(newEntity);
 	}
 
 	ImGui::SameLine();
@@ -842,6 +846,8 @@ void Engine::WorldHierarchy::DisplaySingle(Registry& registry,
 			                       selectedEntities.end());
 		}
 	}
+
+	ImGui::SetItemTooltip(Format("Entity {}", static_cast<EntityType>(owner)).c_str());
 
 	// Only objects with transforms can accept children
 	if (!transformComponent)

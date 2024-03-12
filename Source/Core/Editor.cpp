@@ -12,6 +12,7 @@
 #include "Utilities/DebugRenderer.h"
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
 #include "Containers/view_istream.h"
+#include "GSON/GSONBinary.h"
 
 void Engine::Editor::PostConstruct()
 {
@@ -27,32 +28,51 @@ void Engine::Editor::PostConstruct()
 
 	std::ifstream editorSavedState{ pathToSavedState };
 
+	std::function<void(const MetaType&)> recursivelyStart = [this, &recursivelyStart](const MetaType& type)
+		{
+			if (type.GetProperties().Has(Props::sEditorSystemDefaultOpenTag))
+			{
+				if (type.IsDefaultConstructible())
+				{
+					TryAddSystemInternal(type);
+				}
+				else
+				{
+					LOG(LogEditor, Error, "Could not {}, since type {} is not default constructible",
+						Props::sEditorSystemDefaultOpenTag,
+						type.GetName());
+				}
+			}
+
+			for (const MetaType& derived : type.GetDirectDerivedClasses())
+			{
+				recursivelyStart(derived);
+			}
+		};
+
 	if (!editorSavedState.is_open())
 	{
-		std::function<void(const MetaType&)> recursivelyStart = [this, &recursivelyStart](const MetaType& type)
-			{
-				if (type.GetProperties().Has(Props::sEditorSystemDefaultOpenTag))
-				{
-					if (type.IsDefaultConstructible())
-					{
-						TryAddSystemInternal(type);
-					}
-					else
-					{
-						LOG(LogEditor, Error, "Could not {}, since type {} is not default constructible",
-							Props::sEditorSystemDefaultOpenTag,
-							type.GetName());
-					}
-				}
-
-				for (const MetaType& derived : type.GetDirectDerivedClasses())
-				{
-					recursivelyStart(derived);
-				}
-			};
 		recursivelyStart(*editorSystemType);
 		return;
 	}
+
+	uint32 savedDataVersion{};
+	editorSavedState >> savedDataVersion;
+
+	if (savedDataVersion == 0)
+	{
+		recursivelyStart(*editorSystemType);
+		return;
+	}
+
+	// Currently not being used, but if we ever
+	// change the format, we can support
+	// backwards compatibility.
+	(void)savedDataVersion;
+
+	uint32 debugFlags{};
+	editorSavedState >> debugFlags;
+	DebugRenderer::SetDebugCategoryFlags(static_cast<DebugCategory::Enum>(debugFlags));
 
 	while (editorSavedState)
 	{
@@ -99,6 +119,12 @@ Engine::Editor::~Editor()
 	{
 		LOG(LogEditor, Warning, "Could not save editor state, {} could not be opened", pathToSavedState.string());
 	}
+
+	static constexpr uint32 savedDataVersion = 1;
+	editorSavedState << savedDataVersion << '\n';
+
+	const uint32 flags = DebugRenderer::GetDebugCategoryFlags();
+	editorSavedState << flags << '\n';
 
 	// Give each system a chance to save their state
 	for (const auto& [typeId, system] : mSystems)
