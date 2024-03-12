@@ -747,35 +747,29 @@ bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const ScriptPin& contextPi
 	const std::vector<TypeTraits>& parameters,
 	bool isPure)
 {
-	if (!isPure
-		&& contextPin.IsFlow())
+	if (contextPin.IsFlow())
 	{
-		return true;
+		return isPure;
 	}
 
 	const MetaType* const contextType = contextPin.TryGetType();
 
-	if (contextPin.IsOutput())
+	if (contextType == nullptr)
 	{
-		for (const TypeTraits& paramTraits : parameters)
-		{
-			if (contextType != nullptr
-				&& (contextType->IsDerivedFrom(paramTraits.mStrippedTypeId) || contextType->GetTypeId() == paramTraits.mStrippedTypeId)
-				)
-			{
-				return true;
-			}
-		}
 		return false;
 	}
 
-	if (returnTypeTraits.mStrippedTypeId == contextType->GetTypeId()
-		|| contextType->GetTypeId() == MakeTypeId<MetaAny>())
-	{
-		return true;
-	}
+	const TypeTraits contextTraits{ contextType->GetTypeId(), contextPin.GetTypeForm() };
 
-	return contextType->IsBaseClassOf(returnTypeTraits.mStrippedTypeId);
+	if (contextPin.IsOutput())
+	{
+		return std::any_of(parameters.begin(), parameters.end(),
+			[contextTraits](TypeTraits param)
+			{
+				return !MetaFunc::CanArgBePassedIntoParam(contextTraits, param).has_value();
+			});
+	}
+	return !MetaFunc::CanArgBePassedIntoParam({ returnTypeTraits.mStrippedTypeId, returnTypeTraits.mForm }, contextTraits).has_value();
 }
 
 bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const NodeTheUserCanAdd& node) const
