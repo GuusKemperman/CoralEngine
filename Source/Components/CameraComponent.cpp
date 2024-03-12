@@ -5,6 +5,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "World/WorldRenderer.h"
 
 void Engine::CameraComponent::UpdateView(const glm::vec3 position, const glm::vec3 forward, const glm::vec3 up, bool recalulateViewProjection)
 {
@@ -42,6 +43,25 @@ void Engine::CameraComponent::RecalculateViewProjection()
 	mInvViewProjection = inverse(mViewProjection);
 }
 
+void Engine::CameraComponent::OnDeserialize(World& world, entt::entity owner, const BinaryGSONObject&)
+{
+	// This only gets called if we serialized something
+	// during OnSerialize.
+	// And we only serialize if we are the active camera.
+	world.GetRenderer().SetMainCamera(owner);
+}
+
+void Engine::CameraComponent::OnSerialize(const World& world, entt::entity owner, BinaryGSONObject& serializeTo) const
+{
+	auto cam = world.GetRenderer().GetMainCamera();
+
+	if (cam.has_value()
+		&& cam->first == owner)
+	{
+		serializeTo.AddGSONMember("active");
+	}
+}
+
 Engine::MetaType Engine::CameraComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<CameraComponent>{}, "CameraComponent" };
@@ -54,6 +74,12 @@ Engine::MetaType Engine::CameraComponent::Reflect()
 	type.AddFunc(&CameraComponent::GetView, "GetView", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&CameraComponent::GetProjection, "GetProjection", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&CameraComponent::RecalculateViewProjection, "RecalculateViewProjection", "").GetProperties().Add(Props::sIsScriptableTag);
+
+	BindEvent(type, sSerializeEvent, &CameraComponent::OnSerialize);
+	BindEvent(type, sDeserializeEvent, &CameraComponent::OnDeserialize);
+
 	ReflectComponentType<CameraComponent>(type);
+
+
 	return type;
 }
