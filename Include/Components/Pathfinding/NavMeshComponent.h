@@ -10,11 +10,6 @@ namespace Engine
 	class NavMeshComponent
 	{
 	public:
-		/**
-		 * \brief Sets up the NavMesh based on the info from the file given.
-		 */
-		NavMeshComponent();
-
 		void SetNavMesh(const World& world);
 
 		/**
@@ -80,6 +75,9 @@ namespace Engine
 		[[nodiscard]] std::vector<glm::vec2> FunnelAlgorithm(const std::vector<geometry2d::Polygon>& triangles,
 		                                                     const glm::vec2& start, const glm::vec2& goal) const;
 		void UpdateNavMesh();
+
+		std::vector<glm::vec2> CleanupPathfinding(const std::vector<geometry2d::Polygon>& triangles,
+		                                          const glm::vec2& start, const glm::vec2& goal) const;
 
 		friend ReflectAccess;
 		static MetaType Reflect();

@@ -20,8 +20,7 @@ else { UNLIKELY; LOG(LogTemp, Fatal, "Assert failed: " #condition " - " format, 
 
 #else
 
-#define LOG(...)
-#define LOG(...)
+#define LOG(channel, severity, ...) if constexpr (severity == Fatal) { ABORT; } 
 
 // If logging is not enabled, use the classic assert().
 #ifdef ASSERTS_ENABLED

@@ -27,7 +27,13 @@
 
 Engine::Renderer::Renderer()
 {
+    if (Device::IsHeadless())
+    {
+        return;
+    }
+
     Device& engineDevice = Device::Get();
+
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
     //CREATE PBR PIPELINE
@@ -39,8 +45,8 @@ Engine::Renderer::Renderer()
     mPBRPipeline = std::make_unique<DXPipeline>();
     CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     rast.CullMode = D3D12_CULL_MODE_FRONT;
-    mPBRPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
-    mPBRPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
+    mPBRPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
+    mPBRPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1);
     mPBRPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
     mPBRPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
     mPBRPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);

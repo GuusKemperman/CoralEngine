@@ -28,6 +28,11 @@ void NavigationSystem::Update(World& world, float dt)
 		}
 	}
 
+	if (!world.HasBegunPlay())
+	{
+		return;
+	}
+
 	//// Get the navmesh agent entities
 	const auto agentsView = world.GetRegistry().View<
 		NavMeshAgentComponent, TransformComponent, PhysicsBody2DComponent>();
@@ -99,7 +104,7 @@ void NavigationSystem::Render(const World& world)
 			for (size_t i = 0; i < n.mPathFound.size() - 1; i++)
 			{
 				world.GetDebugRenderer().AddLine(DebugCategory::AINavigation, n.mPathFound[i], n.mPathFound[i + 1],
-				                            {1.f, 0.f, 0.f, 1.f});
+				                                 {1.f, 0.f, 0.f, 1.f});
 			}
 		}
 	}
