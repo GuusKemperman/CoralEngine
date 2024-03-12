@@ -20,7 +20,8 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 
 			ApplyInstantEffect(*world, affectedEntity, stat, amount, flatOrPercentage, increaseOrDecrease);
 
-		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
+		entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease>{}, "ApplyToEntity", "Stat", "Amount").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 		return metaType;
 }
