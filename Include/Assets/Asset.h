@@ -1,5 +1,6 @@
 #pragma once
 #include "Meta/MetaReflect.h"
+#include "Assets/Core/AssetFileMetaData.h"
 
 namespace cereal
 {
@@ -49,7 +50,7 @@ namespace Engine
 		In order to implement your own implementation
 		for saving an asset, override OnSave.
 		*/
-		[[nodiscard]] AssetSaveInfo Save() const;
+		[[nodiscard]] AssetSaveInfo Save(const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = std::nullopt) const;
 
 	private:
 		//********************************//

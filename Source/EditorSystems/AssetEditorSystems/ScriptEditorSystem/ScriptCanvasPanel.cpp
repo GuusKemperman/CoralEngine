@@ -49,6 +49,13 @@ void Engine::ScriptEditorSystem::DisplayCanvas()
 		return;
 	}
 
+	// ax::NodeEditor has a bug where sometimes it zooms out to
+	// near infinite size. This is a safe-guard against that.
+	if (ax::NodeEditor::GetCurrentZoom() > sZoomLevels.back() * 100.0f)
+	{
+		ax::NodeEditor::NavigateToRect(ImRect{ 0.0f, 0.0f, 100.0f, 100.0f });
+	}
+
 	TryGetSelectedFunc()->PostDeclarationRefresh();
 
 	DrawCanvasObjects();
@@ -445,6 +452,7 @@ void Engine::ScriptEditorSystem::DisplayPinContextPopUp()
 	}
 
 	ImGui::Text("Type: %s", pin->GetTypeName().c_str());
+	ImGui::Text("Form: %s", EnumToString(pin->GetTypeForm()).data());
 
 	const std::vector<std::reference_wrapper<ScriptLink>> linksConnectedToPin = currentFunc.GetAllLinksConnectedToPin(mPinTheUserRightClicked);
 
@@ -740,35 +748,29 @@ bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const ScriptPin& contextPi
 	const std::vector<TypeTraits>& parameters,
 	bool isPure)
 {
-	if (!isPure
-		&& contextPin.IsFlow())
+	if (contextPin.IsFlow())
 	{
-		return true;
+		return isPure;
 	}
 
 	const MetaType* const contextType = contextPin.TryGetType();
 
-	if (contextPin.IsOutput())
+	if (contextType == nullptr)
 	{
-		for (const TypeTraits& paramTraits : parameters)
-		{
-			if (contextType != nullptr
-				&& (contextType->IsDerivedFrom(paramTraits.mStrippedTypeId) || contextType->GetTypeId() == paramTraits.mStrippedTypeId)
-				)
-			{
-				return true;
-			}
-		}
 		return false;
 	}
 
-	if (returnTypeTraits.mStrippedTypeId == contextType->GetTypeId()
-		|| contextType->GetTypeId() == MakeTypeId<MetaAny>())
-	{
-		return true;
-	}
+	const TypeTraits contextTraits{ contextType->GetTypeId(), contextPin.GetTypeForm() };
 
-	return contextType->IsBaseClassOf(returnTypeTraits.mStrippedTypeId);
+	if (contextPin.IsOutput())
+	{
+		return std::any_of(parameters.begin(), parameters.end(),
+			[contextTraits](TypeTraits param)
+			{
+				return !MetaFunc::CanArgBePassedIntoParam(contextTraits, param).has_value();
+			});
+	}
+	return !MetaFunc::CanArgBePassedIntoParam({ returnTypeTraits.mStrippedTypeId, returnTypeTraits.mForm }, contextTraits).has_value();
 }
 
 bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const NodeTheUserCanAdd& node) const

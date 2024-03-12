@@ -54,6 +54,8 @@ namespace Engine
 
 	bool CanCreateLink(const ScriptPin& a, const ScriptPin& b);
 
+	bool CanCreateLink(TypeTraits outputTraits, TypeTraits inputTraits);
+
 	// If false, a value is allowed to be default constructed to pass to the pin
 	bool DoesPinRequireLink(const ScriptFunc& inFunc, const ScriptPin& pin);
 
