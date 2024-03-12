@@ -5,6 +5,7 @@
 #include "World/Registry.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
+#include "Components/DirectionalLightComponent.h"
 #include "Components/FlyCamControllerComponent.h"
 #include "Components/NameComponent.h"
 #include "Utilities/Imgui/WorldInspect.h"
@@ -24,13 +25,21 @@ Engine::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
 	}
 
 	// Make a camera to see the prefab nicely
-	const entt::entity camera = reg.Create();
-	reg.AddComponent<CameraComponent>(camera);
-	reg.AddComponent<FlyCamControllerComponent>(camera);
-	reg.AddComponent<NameComponent>(camera, "Camera");
-	TransformComponent& cameraTransform = reg.AddComponent<TransformComponent>(camera);
+	{
+		const entt::entity camera = reg.Create();
+		reg.AddComponent<CameraComponent>(camera);
+		reg.AddComponent<FlyCamControllerComponent>(camera);
+		reg.AddComponent<NameComponent>(camera, "Camera");
+		reg.AddComponent<TransformComponent>(camera).SetLocalPosition({ 0.0f, 0.0f, -30.0f });;
+	}
 
-	cameraTransform.SetLocalPosition({ 0.0f, 0.0f, -30.0f });
+	// And ofcourse some light
+	{
+		const entt::entity light = reg.Create();
+		reg.AddComponent<NameComponent>(light, "Light");
+		reg.AddComponent<DirectionalLightComponent>(light);
+		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({DEG2RAD(17.0f), DEG2RAD(-63.0f), 0.0f });
+	}
 }
 
 Engine::PrefabEditorSystem::~PrefabEditorSystem() = default;

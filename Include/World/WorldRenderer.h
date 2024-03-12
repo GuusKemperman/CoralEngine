@@ -28,6 +28,8 @@ namespace Engine
 		std::optional<std::pair<entt::entity, CameraComponent&>> GetMainCamera();
 		std::optional<std::pair<entt::entity, const CameraComponent&>> GetMainCamera() const;
 
+		void SetMainCamera(entt::entity entity) { mMainCamera = entity; }
+
 		glm::vec3 GetScreenToWorldDirection(glm::vec2 screenPosition) const;
 		glm::vec3 ScreenToWorld(glm::vec2 screenPosition, float distanceFromCamera) const;
 

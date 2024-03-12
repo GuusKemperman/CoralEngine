@@ -51,7 +51,9 @@ namespace Engine
 		arrow,						// ->  class field
 		dot,						// .   class field
 		dot_indirect,				// .*  pointer to field
-		none,
+		increment = 45,				// ++
+		decrement,					// --
+		none = 44,
 	};
 
 	std::string_view GetNameOfOperator(OperatorType type);
