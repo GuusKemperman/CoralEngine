@@ -54,11 +54,13 @@ using namespace Microsoft::WRL;
 #define MATERIAL_CB				1
 #define LIGHT_CB				2
 #define MODEL_MATRIX_CB			3
-#define NUM_CBS MODEL_MATRIX_CB+1
+#define CLUSTER_INFO_CB			4
+#define NUM_CBS CLUSTER_INFO_CB+1
 
 //RESOURCE HEAP SLOTS
 #define  MODEL_MAT_SB_SLOT			0
-#define  TEXTURE_START				1
+#define  CLUSTERS_UAV_SLOT			1
+#define  TEXTURE_START				2
 
 //DEBUG RENDERER
 #define MAX_LINES 32760

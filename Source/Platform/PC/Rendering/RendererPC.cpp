@@ -34,13 +34,8 @@ Engine::Renderer::Renderer()
     FileIO& fileIO = FileIO::Get();
     std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRVertex.hlsl");
     ComPtr<ID3DBlob> v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
-    ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
-    mPBRPipeline = std::make_unique<DXPipeline>();
-    CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-    rast.CullMode = D3D12_CULL_MODE_FRONT;
-    mPBRPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
-    mPBRPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1);
     ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0");
 
     CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -58,17 +53,6 @@ Engine::Renderer::Renderer()
     mPBRPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
     mPBRPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
 
-    mZPipeline = std::make_unique<DXPipeline>();
-    mZPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
-    mZPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
-    mZPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
-    mZPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
-    mZPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
-    mZPipeline->SetRasterizer(rast);
-    mZPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
-    mZPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"Z PIPELINE");
-
-
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ClusterGridCS.hlsl");
     ComPtr<ID3DBlob> cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0", true);
     mClusterGridPipeline = std::make_unique<DXPipeline>();
@@ -80,7 +64,20 @@ Engine::Renderer::Renderer()
     mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[MATERIAL_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Material info data", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
+    mConstBuffers[CLUSTER_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXClusterInfo), 1, "Cluster creation data", FRAME_BUFFER_COUNT);
 
+    auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+    auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXCluster) * 50, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    mClusterResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "CLUSTER RESULT BUFFER");
+   
+    D3D12_UNORDERED_ACCESS_VIEW_DESC  uavDesc = {};
+    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+    uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+    uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+    uavDesc.Buffer.FirstElement = 0;
+    uavDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXCluster);
+    uavDesc.Buffer.NumElements = 50;
+    clusterUavIndex = engineDevice.AllocateUAV(mClusterResource.get(), uavDesc);
 }
 
 void Engine::Renderer::Render(const World& world)
@@ -220,7 +217,6 @@ void Engine::Renderer::Render(const World& world)
         mConstBuffers[MATERIAL_CB]->Bind(commandList, 3, meshCounter, frameIndex);
 
         //DRAW THE MESH
-
         if (!staticMeshComponent.mStaticMesh)
         {
             continue;
@@ -235,4 +231,8 @@ void Engine::Renderer::Render(const World& world)
 Engine::MetaType Engine::Renderer::Reflect()
 {
     return MetaType{ MetaType::T<Renderer>{}, "Renderer", MetaType::Base<System>{} };
+}
+
+void Engine::Renderer::CalculateClusterGrid()
+{
 }

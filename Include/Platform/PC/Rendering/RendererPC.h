@@ -68,6 +68,12 @@ namespace Engine
             bool useOcclusionTex;
             char padding2[11]; // Additional padding to align the struct size to a multiple of 16 bytes        
         };
+
+        struct DXCluster
+        {  
+            glm::vec4 min;
+            glm::vec4 max;
+        };
     }
 
     class Renderer final :
@@ -87,9 +93,13 @@ namespace Engine
     private:
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
         std::unique_ptr<DXPipeline> mPBRPipeline;
-        std::unique_ptr<DXPipeline> mZPipeline;
         std::unique_ptr<DXPipeline> mClusterGridPipeline;
         InfoStruct::DXLightInfo  lights;
+
+        std::unique_ptr<DXResource> mClusterResource;
+        unsigned int clusterUavIndex = 0;
+    private:
+        void CalculateClusterGrid();
 
     private:
         friend ReflectAccess;

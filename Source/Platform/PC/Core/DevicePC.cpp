@@ -558,6 +558,14 @@ int Engine::Device::AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE
     return mHeapResourceCount - 1;
 }
 
+int Engine::Device::AllocateUAV(DXResource* rsc, const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc)
+{
+    mDevice->CreateUnorderedAccessView(rsc->Get(), nullptr, &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(mHeapResourceCount));
+    mHeapResourceCount++;
+
+    return mHeapResourceCount - 1;
+}
+
 void Engine::Device::AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, unsigned int slot)
 {
     mDevice->CreateShaderResourceView(rsc->Get(), &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(slot));
