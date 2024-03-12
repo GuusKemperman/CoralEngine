@@ -523,7 +523,7 @@
     <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\BaseIdleState.cpp" />
     <ClCompile Include="Source\Assets\Ability.cpp" />
-    <ClCompile Include="Source\Components\Abilities\AbilitiesOnPlayerComponent.cpp" />
+    <ClCompile Include="Source\Components\Abilities\AbilitiesOnCharacterComponent.cpp" />
     <ClCompile Include="Source\EditorSystems\AssetEditorSystems\AbilityEditorSystem.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1426,7 +1426,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Assets\Ability.h" />
-    <ClInclude Include="Include\Components\Abilities\AbilitiesOnPlayerComponent.h" />
+    <ClInclude Include="Include\Components\Abilities\AbilitiesOnCharacterComponent.h" />
     <ClInclude Include="Include\Components\Abilities\ActiveAbilityComponent.h" />
     <ClInclude Include="Include\Components\TopDownCamControllerComponent.h" />
     <ClInclude Include="Include\Core\Renderer.h" />
