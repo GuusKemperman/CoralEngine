@@ -15,10 +15,21 @@ void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 {
 	auto& registry = world.GetRegistry();
 
-	const auto view = registry.View<TopDownCamControllerComponent, TransformComponent>();
+	auto activeCamera = world.GetRenderer().GetMainCamera();
+	const entt::entity activeCameraOwner = activeCamera.has_value() ? activeCamera->first : entt::null;
+	TopDownCamControllerComponent* const topDownController = registry.TryGet<TopDownCamControllerComponent>(activeCameraOwner);
+	TransformComponent* const transform = registry.TryGet<TransformComponent>(activeCameraOwner);
 
-	// Check to see if the view is empty
-	if (view.begin() == view.end())
+	if (topDownController == nullptr
+		|| transform == nullptr
+		|| !registry.Valid(topDownController->mTarget))
+	{
+		return;
+	}
+
+	auto target = registry.TryGet<TransformComponent>(topDownController->mTarget);
+
+	if (target == nullptr)
 	{
 		return;
 	}
@@ -35,33 +46,18 @@ void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 	const bool emptyRotation = timeScaledRotation == 0;
 	const bool emptyZoom = timeScaledZoomDelta == 0;
 
-	for (auto [entity, topdown, transform] : view.each())
+	if (!emptyZoom)
 	{
-		if (!registry.Valid(topdown.mTarget) )
-		{
-			continue;
-		}
-		
-		auto target = registry.TryGet<TransformComponent>(topdown.mTarget);
-
-		if (target == nullptr)
-		{
-			continue;
-		}
-
-		if (!emptyZoom)
-		{
-			topdown.AdjustZoom(timeScaledZoomDelta);
-		}
-
-		if (!emptyRotation)
-		{
-			topdown.RotateCameraAroundTarget(timeScaledRotation);
-		}
-
-		topdown.ApplyTranslation(transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
-		topdown.UpdateRotation(transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
+		topDownController->AdjustZoom(timeScaledZoomDelta);
 	}
+
+	if (!emptyRotation)
+	{
+		topDownController->RotateCameraAroundTarget(timeScaledRotation);
+	}
+
+	topDownController->ApplyTranslation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
+	topDownController->UpdateRotation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
 }
 
 void Engine::UpdateTopDownCamSystem::Render(const World& world)
