@@ -98,7 +98,7 @@ std::optional<Engine::FunctionLikeNode::InputsOutputs> Engine::SetterScriptNode:
 		});
 	
 	insOuts.mOutputs.emplace_back(ScriptPin::sFlow);
-	insOuts.mOutputs.emplace_back(TypeTraits{ originalMemberData->GetType().GetTypeId(), TypeForm::Value });
+	insOuts.mOutputs.emplace_back(TypeTraits{ originalMemberData->GetType().GetTypeId(), TypeForm::Ref });
 
 	return insOuts;
 }

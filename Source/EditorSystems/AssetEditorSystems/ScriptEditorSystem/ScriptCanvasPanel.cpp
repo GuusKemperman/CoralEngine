@@ -452,6 +452,7 @@ void Engine::ScriptEditorSystem::DisplayPinContextPopUp()
 	}
 
 	ImGui::Text("Type: %s", pin->GetTypeName().c_str());
+	ImGui::Text("Form: %s", EnumToString(pin->GetTypeForm()).data());
 
 	const std::vector<std::reference_wrapper<ScriptLink>> linksConnectedToPin = currentFunc.GetAllLinksConnectedToPin(mPinTheUserRightClicked);
 
