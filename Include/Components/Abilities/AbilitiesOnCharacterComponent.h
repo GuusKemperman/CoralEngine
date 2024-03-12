@@ -41,7 +41,9 @@ namespace Engine
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
+#ifdef EDITOR
 		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
+#endif // EDITOR
 		REFLECT_AT_START_UP(AbilitiesOnCharacterComponent);
 	};
 

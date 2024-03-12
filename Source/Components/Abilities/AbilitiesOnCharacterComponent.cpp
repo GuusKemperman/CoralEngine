@@ -6,6 +6,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
+#include "Utilities/Imgui/ImguiInspect.h"
 #include "Assets/Ability.h"
 #include "Systems/AbilitySystem.h"
 #include "World/World.h"
@@ -18,13 +19,16 @@ Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
 	metaType.AddField(&AbilitiesOnCharacterComponent::mIsPlayer, "mIsPlayer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&AbilitiesOnCharacterComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties().Add(Props::sNoInspectTag);
 
+#ifdef EDITOR
 	BindEvent(metaType, sInspectEvent, &AbilitiesOnCharacterComponent::OnInspect);
+#endif // EDITOR
 
 	ReflectComponentType<AbilitiesOnCharacterComponent>(metaType);
 
 	return metaType;
 }
 
+#ifdef EDITOR
 static bool isPlayer = true; // little hack to inspect the component conditionally
 void Engine::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
 {
@@ -43,6 +47,7 @@ void Engine::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::v
 		ShowInspectUI("Abilities", abilities.mAbilitiesToInput);
 	}
 }
+#endif // EDITOR
 
 bool Engine::AbilityInstance::operator==(const AbilityInstance& other) const
 {
