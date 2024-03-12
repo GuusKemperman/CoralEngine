@@ -59,13 +59,22 @@ void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
 		switch (body.mMotionType)
 		{
 		case MotionType::Dynamic:
+		{
 			body.mLinearVelocity += body.mForce * body.mInvMass * dt;
+			break;
+		}
 		case MotionType::Kinematic:
+		{
 			if (body.mLinearVelocity != glm::vec2{})
 			{
 				transform.TranslateWorldPosition(body.mLinearVelocity * dt);
 			}
-		default:;
+			break;
+		}
+		default:
+		{
+			break;
+		}
 		}
 	}
 }

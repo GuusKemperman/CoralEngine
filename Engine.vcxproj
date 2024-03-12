@@ -520,6 +520,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\Abilities\ProjectileComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\BaseIdleState.cpp" />
     <ClCompile Include="Source\Utilities\AbilityFunctionality.cpp" />
@@ -1416,6 +1417,7 @@
     <ClCompile Include="Source\Systems\UtilityAiSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\Abilities\ProjectileComponent.h" />
     <ClInclude Include="Include\Components\UtililtyAi\BaseIdleState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\EnemyAiControllerComponent.h" />
     <ClCompile Include="Source\Platform\PC\Rendering\TexturePC.cpp">

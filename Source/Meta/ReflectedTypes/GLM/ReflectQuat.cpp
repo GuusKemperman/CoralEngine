@@ -25,6 +25,16 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc([](const T& n) { return -n; }, OperatorType::negate, MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const glm::vec3& n) { return glm::quat{ n }; }, "EulerToQuat (Radians)", MetaFunc::ExplicitParams<const glm::vec3&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const glm::quat& n) { return glm::eulerAngles(n); }, "QuatToEuler (Radians)", MetaFunc::ExplicitParams<const glm::quat&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](const glm::quat& n)
+	{
+		const glm::vec3 direction3D = glm::vec3(0.f, 0.f, 1.f) * n;
+		return normalize(glm::vec2(-direction3D.x, direction3D.z));
+	}, "QuatToXZDirection (vec2)", MetaFunc::ExplicitParams<const glm::quat&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](const glm::quat& n)
+		{
+			const glm::vec3 direction3D = glm::vec3(0.f, 0.f, 1.f) * n;
+			return normalize(glm::vec3(-direction3D.x, direction3D.y, direction3D.z));
+		}, "QuatToDirection (vec3)", MetaFunc::ExplicitParams<const glm::quat&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectFieldType<T>(type);
 
