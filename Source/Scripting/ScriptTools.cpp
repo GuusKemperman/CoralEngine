@@ -143,14 +143,7 @@ namespace Engine
 {
 	static bool CanMemberBeSetOrGetThroughScripts(const MetaField& field)
 	{
-		const bool hasProperty = field.GetProperties().Has(Props::sIsScriptableTag);
-
-		if (!hasProperty)
-		{
-			return false;
-		}
-
-		return CanTypeBeUsedInScripts(field.GetType(), TypeForm::Ref);
+		return CanTypeBeUsedInScripts(field.GetType(), TypeForm::Value);
 	}
 }
 

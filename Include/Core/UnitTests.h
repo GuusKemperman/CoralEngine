@@ -61,9 +61,16 @@ namespace Engine
 }
 
 #define UNIT_TEST(Category, TestName)																																			\
-static Engine::UnitTest::Result TestName();																																		\
-[[maybe_unused]] static inline const bool CONCAT(__sTestDummyVariable, CONCAT(Category, TestName)) = Engine::Internal::RegisterUnitTest(#Category, #TestName, &(TestName));		\
 Engine::UnitTest::Result TestName()
-#endif
+
+#define UNIT_TEST_DECLARATION(Category, TestName)																																			\
+Engine::UnitTest::Result TestName();																																		\
+[[maybe_unused]] static inline const bool CONCAT(__sTestDummyVariable, CONCAT(Category, TestName)) = Engine::Internal::RegisterUnitTest(#Category, #TestName, &(TestName));		\
 
 #define TEST_ASSERT(Condition) if (!(Condition)) { LOG(UnitTests, Error, "{} evaluated to false", #Condition); return UnitTest::Failure; }; 
+
+#else
+
+#define UNIT_TEST_DECLARATION(...)
+
+#endif // EDITOR

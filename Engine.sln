@@ -5,22 +5,55 @@ VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Engine", "Engine.vcxproj", "{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExampleGame", "Games/ExampleGame/ExampleGame.vcxproj", "{E177CE21-4736-47E8-9F92-132652C5750F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695} = {A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|***REMOVED*** = Debug|***REMOVED***
 		Debug|x64 = Debug|x64
+		EngineDebug|***REMOVED*** = EngineDebug|***REMOVED***
 		EngineDebug|x64 = EngineDebug|x64
+		EngineRelease|***REMOVED*** = EngineRelease|***REMOVED***
 		EngineRelease|x64 = EngineRelease|x64
+		Release|***REMOVED*** = Release|***REMOVED***
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.Debug|***REMOVED***.ActiveCfg = Debug|***REMOVED***
+		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.Debug|***REMOVED***.Build.0 = Debug|***REMOVED***
 		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.Debug|x64.ActiveCfg = Debug|x64
 		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.Debug|x64.Build.0 = Debug|x64
+		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.EngineDebug|***REMOVED***.ActiveCfg = EngineDebug|***REMOVED***
+		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.EngineDebug|***REMOVED***.Build.0 = EngineDebug|***REMOVED***
 		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.EngineDebug|x64.ActiveCfg = EngineDebug|x64
 		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.EngineDebug|x64.Build.0 = EngineDebug|x64
+		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.EngineRelease|***REMOVED***.ActiveCfg = EngineRelease|***REMOVED***
+		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.EngineRelease|***REMOVED***.Build.0 = EngineRelease|***REMOVED***
 		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.EngineRelease|x64.ActiveCfg = EngineRelease|x64
 		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.EngineRelease|x64.Build.0 = EngineRelease|x64
+		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.Release|***REMOVED***.ActiveCfg = Release|***REMOVED***
+		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.Release|***REMOVED***.Build.0 = Release|***REMOVED***
 		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.Release|x64.ActiveCfg = Release|x64
 		{A5D06FEC-7FCB-4AF8-B043-6D92D6B99695}.Release|x64.Build.0 = Release|x64
+		{E177CE21-4736-47E8-9F92-132652C5750F}.Debug|***REMOVED***.ActiveCfg = Debug|***REMOVED***
+		{E177CE21-4736-47E8-9F92-132652C5750F}.Debug|***REMOVED***.Build.0 = Debug|***REMOVED***
+		{E177CE21-4736-47E8-9F92-132652C5750F}.Debug|x64.ActiveCfg = Debug|x64
+		{E177CE21-4736-47E8-9F92-132652C5750F}.Debug|x64.Build.0 = Debug|x64
+		{E177CE21-4736-47E8-9F92-132652C5750F}.EngineDebug|***REMOVED***.ActiveCfg = EngineDebug|***REMOVED***
+		{E177CE21-4736-47E8-9F92-132652C5750F}.EngineDebug|***REMOVED***.Build.0 = EngineDebug|***REMOVED***
+		{E177CE21-4736-47E8-9F92-132652C5750F}.EngineDebug|x64.ActiveCfg = EngineDebug|x64
+		{E177CE21-4736-47E8-9F92-132652C5750F}.EngineDebug|x64.Build.0 = EngineDebug|x64
+		{E177CE21-4736-47E8-9F92-132652C5750F}.EngineRelease|***REMOVED***.ActiveCfg = EngineRelease|***REMOVED***
+		{E177CE21-4736-47E8-9F92-132652C5750F}.EngineRelease|***REMOVED***.Build.0 = EngineRelease|***REMOVED***
+		{E177CE21-4736-47E8-9F92-132652C5750F}.EngineRelease|x64.ActiveCfg = EngineRelease|x64
+		{E177CE21-4736-47E8-9F92-132652C5750F}.EngineRelease|x64.Build.0 = EngineRelease|x64
+		{E177CE21-4736-47E8-9F92-132652C5750F}.Release|***REMOVED***.ActiveCfg = Release|***REMOVED***
+		{E177CE21-4736-47E8-9F92-132652C5750F}.Release|***REMOVED***.Build.0 = Release|***REMOVED***
+		{E177CE21-4736-47E8-9F92-132652C5750F}.Release|x64.ActiveCfg = Release|x64
+		{E177CE21-4736-47E8-9F92-132652C5750F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -5,11 +5,12 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
+#include "Utilities/Math.h"
 
 void Engine::ParticleEmitterComponent::OnParticleSpawn(const size_t i, 
-	const glm::quat emitterWorldOrientaton, 
-	const glm::vec3 emitterWorldScale, 
-	const glm::mat4& emitterMatrix)
+                                                       const glm::quat emitterWorldOrientaton, 
+                                                       const glm::vec3 emitterWorldScale, 
+                                                       const glm::mat4& emitterMatrix)
 {
 	const float lifeTime = Random::Range(mMinLifeTime, mMaxLifeTime);
 	mParticleLifeSpan[i] = lifeTime;

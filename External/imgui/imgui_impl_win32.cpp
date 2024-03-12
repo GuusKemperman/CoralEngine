@@ -20,6 +20,9 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 #include <windowsx.h> // GET_X_LPARAM(), GET_Y_LPARAM()
 #include <tchar.h>

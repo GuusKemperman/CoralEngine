@@ -1097,7 +1097,7 @@ static const char* MONTH_NAMES[]  = {"January","February","March","April","May",
 static const char* WD_ABRVS[]     = {"Su","Mo","Tu","We","Th","Fr","Sa"};
 static const char* MONTH_ABRVS[]  = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
 
-int FormatTime(const ImPlotTime& t, char* buffer, int size, ImPlotTimeFmt fmt, bool use_24_hr_clk) {
+int FormatTime(const ImPlotTime& t, char* buffers, int size, ImPlotTimeFmt fmt, bool use_24_hr_clk) {
     tm& Tm = GImPlot->Tm;
     GetTime(t, &Tm);
     const int us   = t.Us % 1000;
@@ -1107,14 +1107,14 @@ int FormatTime(const ImPlotTime& t, char* buffer, int size, ImPlotTimeFmt fmt, b
     if (use_24_hr_clk) {
         const int hr   = Tm.tm_hour;
         switch(fmt) {
-            case ImPlotTimeFmt_Us:        return ImFormatString(buffer, size, ".%03d %03d", ms, us);
-            case ImPlotTimeFmt_SUs:       return ImFormatString(buffer, size, ":%02d.%03d %03d", sec, ms, us);
-            case ImPlotTimeFmt_SMs:       return ImFormatString(buffer, size, ":%02d.%03d", sec, ms);
-            case ImPlotTimeFmt_S:         return ImFormatString(buffer, size, ":%02d", sec);
-            case ImPlotTimeFmt_HrMinSMs:  return ImFormatString(buffer, size, "%02d:%02d:%02d.%03d", hr, min, sec, ms);
-            case ImPlotTimeFmt_HrMinS:    return ImFormatString(buffer, size, "%02d:%02d:%02d", hr, min, sec);
-            case ImPlotTimeFmt_HrMin:     return ImFormatString(buffer, size, "%02d:%02d", hr, min);
-            case ImPlotTimeFmt_Hr:        return ImFormatString(buffer, size, "%02d:00", hr);
+            case ImPlotTimeFmt_Us:        return ImFormatString(buffers, size, ".%03d %03d", ms, us);
+            case ImPlotTimeFmt_SUs:       return ImFormatString(buffers, size, ":%02d.%03d %03d", sec, ms, us);
+            case ImPlotTimeFmt_SMs:       return ImFormatString(buffers, size, ":%02d.%03d", sec, ms);
+            case ImPlotTimeFmt_S:         return ImFormatString(buffers, size, ":%02d", sec);
+            case ImPlotTimeFmt_HrMinSMs:  return ImFormatString(buffers, size, "%02d:%02d:%02d.%03d", hr, min, sec, ms);
+            case ImPlotTimeFmt_HrMinS:    return ImFormatString(buffers, size, "%02d:%02d:%02d", hr, min, sec);
+            case ImPlotTimeFmt_HrMin:     return ImFormatString(buffers, size, "%02d:%02d", hr, min);
+            case ImPlotTimeFmt_Hr:        return ImFormatString(buffers, size, "%02d:00", hr);
             default:                      return 0;
         }
     }
@@ -1122,20 +1122,20 @@ int FormatTime(const ImPlotTime& t, char* buffer, int size, ImPlotTimeFmt fmt, b
         const char* ap = Tm.tm_hour < 12 ? "am" : "pm";
         const int hr   = (Tm.tm_hour == 0 || Tm.tm_hour == 12) ? 12 : Tm.tm_hour % 12;
         switch(fmt) {
-            case ImPlotTimeFmt_Us:        return ImFormatString(buffer, size, ".%03d %03d", ms, us);
-            case ImPlotTimeFmt_SUs:       return ImFormatString(buffer, size, ":%02d.%03d %03d", sec, ms, us);
-            case ImPlotTimeFmt_SMs:       return ImFormatString(buffer, size, ":%02d.%03d", sec, ms);
-            case ImPlotTimeFmt_S:         return ImFormatString(buffer, size, ":%02d", sec);
-            case ImPlotTimeFmt_HrMinSMs:  return ImFormatString(buffer, size, "%d:%02d:%02d.%03d%s", hr, min, sec, ms, ap);
-            case ImPlotTimeFmt_HrMinS:    return ImFormatString(buffer, size, "%d:%02d:%02d%s", hr, min, sec, ap);
-            case ImPlotTimeFmt_HrMin:     return ImFormatString(buffer, size, "%d:%02d%s", hr, min, ap);
-            case ImPlotTimeFmt_Hr:        return ImFormatString(buffer, size, "%d%s", hr, ap);
+            case ImPlotTimeFmt_Us:        return ImFormatString(buffers, size, ".%03d %03d", ms, us);
+            case ImPlotTimeFmt_SUs:       return ImFormatString(buffers, size, ":%02d.%03d %03d", sec, ms, us);
+            case ImPlotTimeFmt_SMs:       return ImFormatString(buffers, size, ":%02d.%03d", sec, ms);
+            case ImPlotTimeFmt_S:         return ImFormatString(buffers, size, ":%02d", sec);
+            case ImPlotTimeFmt_HrMinSMs:  return ImFormatString(buffers, size, "%d:%02d:%02d.%03d%s", hr, min, sec, ms, ap);
+            case ImPlotTimeFmt_HrMinS:    return ImFormatString(buffers, size, "%d:%02d:%02d%s", hr, min, sec, ap);
+            case ImPlotTimeFmt_HrMin:     return ImFormatString(buffers, size, "%d:%02d%s", hr, min, ap);
+            case ImPlotTimeFmt_Hr:        return ImFormatString(buffers, size, "%d%s", hr, ap);
             default:                      return 0;
         }
     }
 }
 
-int FormatDate(const ImPlotTime& t, char* buffer, int size, ImPlotDateFmt fmt, bool use_iso_8601) {
+int FormatDate(const ImPlotTime& t, char* buffers, int size, ImPlotDateFmt fmt, bool use_iso_8601) {
     tm& Tm = GImPlot->Tm;
     GetTime(t, &Tm);
     const int day  = Tm.tm_mday;
@@ -1144,52 +1144,52 @@ int FormatDate(const ImPlotTime& t, char* buffer, int size, ImPlotDateFmt fmt, b
     const int yr   = year % 100;
     if (use_iso_8601) {
         switch (fmt) {
-            case ImPlotDateFmt_DayMo:   return ImFormatString(buffer, size, "--%02d-%02d", mon, day);
-            case ImPlotDateFmt_DayMoYr: return ImFormatString(buffer, size, "%d-%02d-%02d", year, mon, day);
-            case ImPlotDateFmt_MoYr:    return ImFormatString(buffer, size, "%d-%02d", year, mon);
-            case ImPlotDateFmt_Mo:      return ImFormatString(buffer, size, "--%02d", mon);
-            case ImPlotDateFmt_Yr:      return ImFormatString(buffer, size, "%d", year);
+            case ImPlotDateFmt_DayMo:   return ImFormatString(buffers, size, "--%02d-%02d", mon, day);
+            case ImPlotDateFmt_DayMoYr: return ImFormatString(buffers, size, "%d-%02d-%02d", year, mon, day);
+            case ImPlotDateFmt_MoYr:    return ImFormatString(buffers, size, "%d-%02d", year, mon);
+            case ImPlotDateFmt_Mo:      return ImFormatString(buffers, size, "--%02d", mon);
+            case ImPlotDateFmt_Yr:      return ImFormatString(buffers, size, "%d", year);
             default:                    return 0;
         }
     }
     else {
         switch (fmt) {
-            case ImPlotDateFmt_DayMo:   return ImFormatString(buffer, size, "%d/%d", mon, day);
-            case ImPlotDateFmt_DayMoYr: return ImFormatString(buffer, size, "%d/%d/%02d", mon, day, yr);
-            case ImPlotDateFmt_MoYr:    return ImFormatString(buffer, size, "%s %d", MONTH_ABRVS[Tm.tm_mon], year);
-            case ImPlotDateFmt_Mo:      return ImFormatString(buffer, size, "%s", MONTH_ABRVS[Tm.tm_mon]);
-            case ImPlotDateFmt_Yr:      return ImFormatString(buffer, size, "%d", year);
+            case ImPlotDateFmt_DayMo:   return ImFormatString(buffers, size, "%d/%d", mon, day);
+            case ImPlotDateFmt_DayMoYr: return ImFormatString(buffers, size, "%d/%d/%02d", mon, day, yr);
+            case ImPlotDateFmt_MoYr:    return ImFormatString(buffers, size, "%s %d", MONTH_ABRVS[Tm.tm_mon], year);
+            case ImPlotDateFmt_Mo:      return ImFormatString(buffers, size, "%s", MONTH_ABRVS[Tm.tm_mon]);
+            case ImPlotDateFmt_Yr:      return ImFormatString(buffers, size, "%d", year);
             default:                    return 0;
         }
     }
  }
 
-int FormatDateTime(const ImPlotTime& t, char* buffer, int size, ImPlotDateTimeFmt fmt) {
+int FormatDateTime(const ImPlotTime& t, char* buffers, int size, ImPlotDateTimeFmt fmt) {
     int written = 0;
     if (fmt.Date != ImPlotDateFmt_None)
-        written += FormatDate(t, buffer, size, fmt.Date, fmt.UseISO8601);
+        written += FormatDate(t, buffers, size, fmt.Date, fmt.UseISO8601);
     if (fmt.Time != ImPlotTimeFmt_None) {
         if (fmt.Date != ImPlotDateFmt_None)
-            buffer[written++] = ' ';
-        written += FormatTime(t, &buffer[written], size - written, fmt.Time, fmt.Use24HourClock);
+            buffers[written++] = ' ';
+        written += FormatTime(t, &buffers[written], size - written, fmt.Time, fmt.Use24HourClock);
     }
     return written;
 }
 
 inline float GetDateTimeWidth(ImPlotDateTimeFmt fmt) {
     static const ImPlotTime t_max_width = MakeTime(2888, 12, 22, 12, 58, 58, 888888); // best guess at time that maximizes pixel width
-    char buffer[32];
-    FormatDateTime(t_max_width, buffer, 32, fmt);
-    return ImGui::CalcTextSize(buffer).x;
+    char buffers[32];
+    FormatDateTime(t_max_width, buffers, 32, fmt);
+    return ImGui::CalcTextSize(buffers).x;
 }
 
-void LabelTickTime(ImPlotTick& tick, ImGuiTextBuffer& buffer, const ImPlotTime& t, ImPlotDateTimeFmt fmt) {
+void LabelTickTime(ImPlotTick& tick, ImGuiTextBuffer& buffers, const ImPlotTime& t, ImPlotDateTimeFmt fmt) {
     char temp[32];
     if (tick.ShowLabel) {
-        tick.TextOffset = buffer.size();
+        tick.TextOffset = buffers.size();
         FormatDateTime(t, temp, 32, fmt);
-        buffer.append(temp, temp + strlen(temp) + 1);
-        tick.LabelSize = ImGui::CalcTextSize(buffer.Buf.Data + tick.TextOffset);
+        buffers.append(temp, temp + strlen(temp) + 1);
+        tick.LabelSize = ImGui::CalcTextSize(buffers.Buf.Data + tick.TextOffset);
     }
 }
 
@@ -4333,11 +4333,11 @@ ImPlotColormap AddColormap(const char* name, const ImVec4* colormap, int size, b
     ImPlotContext& gp = *GImPlot;
     IM_ASSERT_USER_ERROR(size > 1, "The colormap size must be greater than 1!");
     IM_ASSERT_USER_ERROR(gp.ColormapData.GetIndex(name) == -1, "The colormap name has already been used!");
-    ImVector<ImU32> buffer;
-    buffer.resize(size);
+    ImVector<ImU32> buffers;
+    buffers.resize(size);
     for (int i = 0; i < size; ++i)
-        buffer[i] = ImGui::ColorConvertFloat4ToU32(colormap[i]);
-    return gp.ColormapData.Append(name, buffer.Data, size, qual);
+        buffers[i] = ImGui::ColorConvertFloat4ToU32(colormap[i]);
+    return gp.ColormapData.Append(name, buffers.Data, size, qual);
 }
 
 ImPlotColormap AddColormap(const char* name, const ImU32*  colormap, int size, bool qual) {

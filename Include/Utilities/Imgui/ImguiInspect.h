@@ -1,5 +1,5 @@
-#ifdef EDITOR
 #pragma once
+#ifdef EDITOR
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4201)
@@ -10,6 +10,7 @@
 #pragma warning(pop)
 #endif
 
+#include "Utilities/Math.h"
 #include "Utilities/Search.h"
 
 namespace Engine
