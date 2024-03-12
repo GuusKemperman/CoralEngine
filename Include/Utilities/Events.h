@@ -55,7 +55,9 @@ namespace Engine
 
 	static constexpr Event<float(const World&, entt::entity), true> sAIEvaluateEvent{ "OnAIEvaluate" };
 
+	static constexpr Event<void(World&, entt::entity)> sAIStateEnterEvent{ "OnAIStateEnter" };
 	static constexpr Event<void(World&, entt::entity, float)> sAITickEvent{ "OnAITick" };
+	static constexpr Event<void(World&, entt::entity)> sAIStateExitEvent{ "OnAIStateExit" };
 
 	/**
 	 * \brief 
