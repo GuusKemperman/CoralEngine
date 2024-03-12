@@ -10,6 +10,7 @@
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
 #include "Meta/MetaTools.h"
+#include "Scripting/ScriptEvents.h"
 #include "Utilities/ClassVersion.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
@@ -17,7 +18,7 @@
 Engine::Script::Script(std::string_view name) :
 	Asset(name, MakeTypeId<Script>())
 {
-
+	AddEvent(sOnTickScriptEvent);
 }
 
 Engine::Script::Script(AssetLoadInfo& loadInfo) :
@@ -28,8 +29,7 @@ Engine::Script::Script(AssetLoadInfo& loadInfo) :
 
 	if (!success)
 	{
-		LOG(LogAssets, Message, "Loading of script {} failed, possible because this is a new script. Adding an OnTick function...", GetName());
-		AddFunc("OnTick").SetParameters({ {  MakeTypeTraits<float>(), "DeltaTime" } });
+		LOG(LogAssets, Message, "Loading of script {} failed", GetName());
 		return;
 	}
 
@@ -88,6 +88,36 @@ Engine::ScriptFunc& Engine::Script::AddFunc(const std::string_view name)
 
 	auto& result = mFunctions.emplace_back(*this, name);
 	result.AddNode<FunctionEntryScriptNode>(result, *this);
+
+	return result;
+}
+
+Engine::ScriptFunc& Engine::Script::AddEvent(const ScriptEvent& event)
+{
+	const std::string_view name = event.mBasedOnEvent.get().mName;
+
+	ScriptFunc* existingFunc = TryGetFunc(name);
+
+	if (existingFunc != nullptr)
+	{
+		LOG(LogScripting, Error, "There is already a function with the name {} in {}. Returning existing function",
+			name,
+			GetName());
+		return *existingFunc;
+	}
+
+	auto& result = mFunctions.emplace_back(*this, event);
+
+	if (!result.IsPure()
+		|| !result.GetParameters(true).empty())
+	{
+		result.AddNode<FunctionEntryScriptNode>(result, *this);
+	}
+
+	if (result.GetReturnType().has_value())
+	{
+		result.AddNode<FunctionReturnScriptNode>(result, *this);
+	}
 
 	return result;
 }
@@ -751,7 +781,7 @@ void Engine::Script::AddDestructor(MetaType& toType, bool define) const
 
 Engine::MetaType Engine::Script::Reflect()
 {
-	MetaType type = MetaType{ MetaType::T<Script>{}, "Script", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{} };
+	MetaType type = MetaType{ MetaType::T<Script>{}, "Script", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 
 	SetClassVersion(type, 1);
 

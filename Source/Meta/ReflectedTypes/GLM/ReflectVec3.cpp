@@ -6,6 +6,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
+#include "Utilities/Math.h"
 
 using namespace Engine;
 using namespace glm;

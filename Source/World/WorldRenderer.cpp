@@ -5,14 +5,17 @@
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/CameraComponent.h"
-#include "xsr.hpp"
 #include "Components/TransformComponent.h"
-#include "Core/InputManager.h"
+#include "Core/Input.h"
+#include "Core/Device.h"
+#include "Systems/System.h"
+#include "Utilities/DebugRenderer.h"
 
 Engine::WorldRenderer::WorldRenderer(const World& world) :
 	mWorld(world),
-	mLastRenderedAtSize(ImGui::GetIO().DisplaySize)
+	mLastRenderedAtSize(Device::Get().GetDisplaySize())
 {
+    mDebugRenderer = std::make_unique<DebugRenderer>();
 }
 
 Engine::WorldRenderer::~WorldRenderer() = default;
@@ -24,11 +27,17 @@ void Engine::WorldRenderer::NewFrame()
 
 void Engine::WorldRenderer::Render()
 {
-	RenderAtSize(ImGui::GetIO().DisplaySize);
+	RenderAtSize(Device::Get().GetDisplaySize());
 }
 
+#ifdef EDITOR
 void Engine::WorldRenderer::Render(FrameBuffer& buffer, std::optional<glm::vec2> firstResizeBufferTo, const bool clearBufferFirst)
 {
+    if (firstResizeBufferTo.has_value())
+    {
+        buffer.Resize(static_cast<glm::ivec2>(*firstResizeBufferTo));
+    }
+
 	buffer.Bind();
 
 	if (clearBufferFirst)
@@ -36,15 +45,11 @@ void Engine::WorldRenderer::Render(FrameBuffer& buffer, std::optional<glm::vec2>
 		buffer.Clear();
 	}
 
-	if (firstResizeBufferTo.has_value())
-	{
-		buffer.Resize(static_cast<glm::ivec2>(*firstResizeBufferTo));
-	}
-
 	RenderAtSize(buffer.GetSize());
 
 	buffer.Unbind();
 }
+#endif // EDITOR
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -146,99 +151,13 @@ glm::vec3 Engine::WorldRenderer::ScreenToWorld(glm::vec2 screenPosition, float d
 void Engine::WorldRenderer::RenderAtSize(glm::vec2 size)
 {
 	mLastRenderedAtSize = size;
+
+	// If we are not using the editor, we always
+	// render starting from the topleft corner.
+#ifdef EDITOR
 	mLastRenderedAtPos = ImGui::GetCursorScreenPos();
+#endif // EDITOR
 
 	GetWorld().GetRegistry().RenderSystems();
-}
-
-void Engine::WorldRenderer::AddLine(DebugCategory::Enum category, const glm::vec3 from, const glm::vec3 to, const glm::vec4 color) const
-{
-    if (!(sDebugCategoryFlags & category)) return;
-
-    xsr::render_debug_line(value_ptr(from), value_ptr(to), value_ptr(color));
-}
-
-void Engine::WorldRenderer::AddLine(DebugCategory::Enum category, const glm::vec2 from, const glm::vec2 to, const glm::vec4 color) const
-{
-    if (!(sDebugCategoryFlags & category)) return;
-
-    AddLine(category, glm::vec3(from.x, from.y, 0.0f), glm::vec3(to.x, to.y, 0.0f), color);
-}
-
-void Engine::WorldRenderer::AddCircle(DebugCategory::Enum category, const glm::vec3 center, float radius, const glm::vec4 color) const
-{
-    if (!(sDebugCategoryFlags & category)) return;
-
-    constexpr float dt = glm::two_pi<float>() / 64.0f;
-    float t = 0.0f;
-
-    glm::vec3 v0(center.x + radius * cos(t), center.y + radius * sin(t), center.z);
-    for (; t < glm::two_pi<float>() - dt; t += dt)
-    {
-	    const glm::vec3 v1(center.x + radius * cos(t + dt), center.y + radius * sin(t + dt), center.z);
-        AddLine(category, v0, v1, color);
-        v0 = v1;
-    }
-}
-
-void Engine::WorldRenderer::AddSphere(DebugCategory::Enum category, const glm::vec3 center, float radius, const glm::vec4 color) const
-{
-    if (!(sDebugCategoryFlags & category)) return;
-
-    constexpr float dt = glm::two_pi<float>() / 64.0f;
-    float t = 0.0f;
-
-    glm::vec3 v0(center.x + radius * cos(t), center.y + radius * sin(t), center.z);
-    for (; t < glm::two_pi<float>() - dt; t += dt)
-    {
-	    const glm::vec3 v1(center.x + radius * cos(t + dt), center.y + radius * sin(t + dt), center.z);
-        AddLine(category, v0, v1, color);
-        v0 = v1;
-    }
-}
-
-void Engine::WorldRenderer::AddSquare(DebugCategory::Enum category, const glm::vec3 center, float size, const glm::vec4 color) const
-{
-    if (!(sDebugCategoryFlags & category)) return;
-
-    const float s = size * 0.5f;
-    const auto A = center + glm::vec3(-s, -s, 0.0f);
-    const auto B = center + glm::vec3(-s, s, 0.0f);
-    const auto C = center + glm::vec3(s, s, 0.0f);
-    const auto D = center + glm::vec3(s, -s, 0.0f);
-
-    AddLine(category, A, B, color);
-    AddLine(category, B, C, color);
-    AddLine(category, C, D, color);
-    AddLine(category, D, A, color);
-}
-
-void Engine::WorldRenderer::AddBox(DebugCategory::Enum category, const glm::vec3 center, const glm::vec3 halfExtents, const glm::vec4 color) const
-{
-    if (!(sDebugCategoryFlags & category)) return;
-
-    // Generated using chatgpt
-
-    // Calculate the minimum and maximum corner points of the box
-    const glm::vec3 minCorner = center - halfExtents;
-    const glm::vec3 maxCorner = center + halfExtents;
-
-    // Generate the lines for the box
-    // Front face
-    AddLine(category, glm::vec3(minCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, minCorner.y, minCorner.z), color);
-    AddLine(category, glm::vec3(maxCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), color);
-    AddLine(category, glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, maxCorner.y, minCorner.z), color);
-    AddLine(category, glm::vec3(minCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, minCorner.y, minCorner.z), color);
-
-    // Back face
-    AddLine(category, glm::vec3(minCorner.x, minCorner.y, maxCorner.z), glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), color);
-    AddLine(category, glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), color);
-    AddLine(category, glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), color);
-    AddLine(category, glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), glm::vec3(minCorner.x, minCorner.y, maxCorner.z), color);
-
-    // Connecting lines between the front and back faces
-    AddLine(category, glm::vec3(minCorner.x, minCorner.y, minCorner.z), glm::vec3(minCorner.x, minCorner.y, maxCorner.z), color);
-    AddLine(category, glm::vec3(maxCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), color);
-    AddLine(category, glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), color);
-    AddLine(category, glm::vec3(minCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), color);
+    mDebugRenderer->Render(mWorld);
 }

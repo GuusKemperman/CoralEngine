@@ -4086,7 +4086,7 @@ static const unsigned char *stb_decompress_token(const unsigned char *i)
     return i;
 }
 
-static unsigned int stb_adler32(unsigned int adler32, unsigned char *buffer, unsigned int buflen)
+static unsigned int stb_adler32(unsigned int adler32, unsigned char *buffers, unsigned int buflen)
 {
     const unsigned long ADLER_MOD = 65521;
     unsigned long s1 = adler32 & 0xffff, s2 = adler32 >> 16;
@@ -4095,20 +4095,20 @@ static unsigned int stb_adler32(unsigned int adler32, unsigned char *buffer, uns
     unsigned long i;
     while (buflen) {
         for (i=0; i + 7 < blocklen; i += 8) {
-            s1 += buffer[0], s2 += s1;
-            s1 += buffer[1], s2 += s1;
-            s1 += buffer[2], s2 += s1;
-            s1 += buffer[3], s2 += s1;
-            s1 += buffer[4], s2 += s1;
-            s1 += buffer[5], s2 += s1;
-            s1 += buffer[6], s2 += s1;
-            s1 += buffer[7], s2 += s1;
+            s1 += buffers[0], s2 += s1;
+            s1 += buffers[1], s2 += s1;
+            s1 += buffers[2], s2 += s1;
+            s1 += buffers[3], s2 += s1;
+            s1 += buffers[4], s2 += s1;
+            s1 += buffers[5], s2 += s1;
+            s1 += buffers[6], s2 += s1;
+            s1 += buffers[7], s2 += s1;
 
-            buffer += 8;
+            buffers += 8;
         }
 
         for (; i < blocklen; ++i)
-            s1 += *buffer++, s2 += s1;
+            s1 += *buffers++, s2 += s1;
 
         s1 %= ADLER_MOD, s2 %= ADLER_MOD;
         buflen -= blocklen;

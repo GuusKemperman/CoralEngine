@@ -3,7 +3,7 @@
 
 #include <imgui/imgui_internal.h>
 
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include "Core/VirtualMachine.h"
 #include "GSON/GSONBinary.h"
 #include "Scripting/ScriptNode.h"
@@ -374,27 +374,27 @@ void Engine::ScriptEditorSystem::ReadInput()
 		return;
 	}
 
-	if (InputManager::IsKeyDown(ImGuiKey_LeftCtrl) || InputManager::IsKeyDown(ImGuiKey_RightCtrl))
+	if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl) || Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
 	{
-		if (InputManager::IsKeyPressed(ImGuiKey_C))
+		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::C))
 		{
 			CopySelection();
 		}
-		else if (InputManager::IsKeyPressed(ImGuiKey_V))
+		else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
 		{
 			Paste();
 		}
-		else if (InputManager::IsKeyPressed(ImGuiKey_D))
+		else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::D))
 		{
 			DuplicateSelection();
 		}
-		else if (InputManager::IsKeyPressed(ImGuiKey_X))
+		else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::X))
 		{
 			CutSelection();
 		}
 	}
 
-	if (InputManager::IsKeyPressed(ImGuiKey_Delete))
+	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Delete))
 	{
 		DeleteSelection();
 	}

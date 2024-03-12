@@ -10,7 +10,7 @@
 #include <imnodes/examples/blueprints-example/utilities/widgets.h>
 
 #include "Utilities/Search.h"
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include "Core/VirtualMachine.h"
 #include "Scripting/ScriptTools.h"
 #include "Scripting/Nodes/CommentScriptNode.h"
@@ -77,10 +77,11 @@ void Engine::ScriptEditorSystem::DisplayCanvas()
 
 		ax::NodeEditor::SetNodePosition(node.GetId(), ImGui::GetMousePos());
 
-		ScriptLink* newLink1 = currentFunc.TryAddLink(outputPin, node.GetInputs(currentFunc)[0]);
-		ScriptLink* newLink2 = currentFunc.TryAddLink(inputPin, node.GetOutputs(currentFunc)[0]);
+		[[maybe_unused]] ScriptLink* newLink1 = currentFunc.TryAddLink(outputPin, node.GetInputs(currentFunc)[0]);
+		[[maybe_unused]] ScriptLink* newLink2 = currentFunc.TryAddLink(inputPin, node.GetOutputs(currentFunc)[0]);
 		// Break the original 
 		currentFunc.RemoveLink(doubleClickedLink);
+
 		ASSERT(newLink1 != nullptr
 			&& newLink2 != nullptr);
 	}
@@ -356,7 +357,7 @@ void Engine::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 	const ScriptNode* createdNode = nullptr;
 
 	if (!mRecommendedNodesBasedOnQuery.empty()
-		&& InputManager::IsKeyPressed(ImGuiKey_Enter))
+		&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Enter))
 	{
 		createdNode = &mRecommendedNodesBasedOnQuery[0].get().mAddNode(currentFunc);
 	}
@@ -751,9 +752,9 @@ bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const ScriptPin& contextPi
 	{
 		for (const TypeTraits& paramTraits : parameters)
 		{
-			if (contextType->GetTypeId() == paramTraits.mStrippedTypeId
-				|| (contextType != nullptr
-					&& contextType->IsDerivedFrom(paramTraits.mStrippedTypeId)))
+			if (contextType != nullptr
+				&& (contextType->IsDerivedFrom(paramTraits.mStrippedTypeId) || contextType->GetTypeId() == paramTraits.mStrippedTypeId)
+				)
 			{
 				return true;
 			}
