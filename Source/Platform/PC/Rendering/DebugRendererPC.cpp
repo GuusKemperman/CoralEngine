@@ -55,7 +55,7 @@ Engine::DebugRenderer::DebugRenderer()
 	shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/DebugPixel.hlsl");
 	ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
 	mImpl->mDebugPipeline = std::make_unique<DXPipeline>();
-	mImpl->mDebugPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+	mImpl->mDebugPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
 	mImpl->mDebugPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
 	mImpl->mDebugPipeline->SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
 	mImpl->mDebugPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"SKYBOX SIGNATURE");
@@ -66,20 +66,20 @@ Engine::DebugRenderer::DebugRenderer()
 
 	engineDevice.StartUploadCommands();
 	int vertexCount = 2;
-	int vBufferSize = sizeof(float) * vertexCount * 4;
+	int vBufferSize = sizeof(float) * vertexCount * 3;
 
 	mImpl->mVertexBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(vBufferSize), nullptr, "Line Vertex resource buffer");
 	
 	D3D12_SUBRESOURCE_DATA vData = {};
 	vData.pData = positions.data();
-	vData.RowPitch = sizeof(float) * 4;
+	vData.RowPitch = sizeof(float) * 3;
 	vData.SlicePitch = vBufferSize;
 
 	mImpl->mVertexBuffer->CreateUploadBuffer(device, vBufferSize, 0);
 	mImpl->mVertexBuffer->Update(uploadCmdList, vData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 
 	mImpl->mVertexBufferView.BufferLocation = mImpl->mVertexBuffer->GetResource()->GetGPUVirtualAddress();
-	mImpl->mVertexBufferView.StrideInBytes = sizeof(float) * 4;
+	mImpl->mVertexBufferView.StrideInBytes = sizeof(float) * 3;
 	mImpl->mVertexBufferView.SizeInBytes = vBufferSize;
 
 	mImpl->mLineColorBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::vec4), MAX_LINES, "Lines color const buffer", FRAME_BUFFER_COUNT);

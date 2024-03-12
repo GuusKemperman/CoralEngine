@@ -62,7 +62,7 @@ Engine::Renderer::Renderer()
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
     v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     mZPipeline = std::make_unique<DXPipeline>();
-    mZPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+    mZPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
     mZPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
     mZPipeline->SetRasterizer(rast);
     mZPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
@@ -82,6 +82,8 @@ void Engine::Renderer::Render(const World& world)
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
     std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
     int frameIndex = engineDevice.GetFrameIndex();
+
+    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 
     //GET WORLD
     const auto optionalEntityCameraPair = world.GetRenderer().GetMainCamera();
