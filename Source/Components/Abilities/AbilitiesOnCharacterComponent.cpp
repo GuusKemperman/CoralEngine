@@ -6,6 +6,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
+#include "Utilities/Imgui/ImguiInspect.h"
 #include "Assets/Ability.h"
 #include "Systems/AbilitySystem.h"
 #include "World/World.h"
