@@ -267,6 +267,11 @@ Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world, std::ve
 
 	for (auto&& [typeId, storage] : reg.Storage())
 	{
+		if (storage.empty())
+		{
+			continue;
+		}
+
 		const std::optional<ComponentClassSerializeArg> serializeArg = GetComponentClassSerializeArg(storage);
 
 		if (!serializeArg.has_value())

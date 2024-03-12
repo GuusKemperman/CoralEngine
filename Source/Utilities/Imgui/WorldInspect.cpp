@@ -523,10 +523,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 		bool removeButtonPressed{};
 
-		// We do not allow the root component to be removed
-		const bool isHeaderOpen = typeHash != MakeTypeId<RootComponent>() ?
-			ImGui::CollapsingHeaderWithButton(className, "X", &removeButtonPressed) :
-			ImGui::CollapsingHeader(className);
+		const bool isHeaderOpen = ImGui::CollapsingHeaderWithButton(className, "X", &removeButtonPressed);
 
 		if (removeButtonPressed)
 		{
