@@ -104,6 +104,31 @@ namespace Engine
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
 	};
 
+	class ScriptAITransitionEvent :
+		public ScriptEvent
+	{
+	public:
+		template<typename EventT>
+		ScriptAITransitionEvent(const EventT& event);
+
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
+	};
+
+	class ScriptAIEnterStateEvent final :
+		public ScriptAITransitionEvent
+	{
+	public:
+		ScriptAIEnterStateEvent() : ScriptAITransitionEvent(sAIStateEnterEvent) {}
+	};
+
+	class ScriptAIExitStateEvent final :
+		public ScriptAITransitionEvent
+	{
+	public:
+		ScriptAIExitStateEvent() : ScriptAITransitionEvent(sAIStateExitEvent) {}
+	};
+
 	class ScriptAbilityActivateEvent final :
 		public ScriptEvent
 	{
@@ -160,6 +185,12 @@ namespace Engine
 	}
 
 	template <typename EventT>
+	ScriptAITransitionEvent::ScriptAITransitionEvent(const EventT& event) :
+		ScriptEvent(event, {}, std::nullopt)
+	{
+	}
+
+	template <typename EventT>
 	CollisionEvent::CollisionEvent(const EventT& event) :
 		ScriptEvent(event, {
 			{ MakeTypeTraits<entt::entity>(), "Other" },
@@ -175,25 +206,29 @@ namespace Engine
 	static const ScriptTickEvent sOnTickScriptEvent{};
 	static const ScriptFixedTickEvent sOnFixedTickScriptEvent{};
 	static const ScriptDestructEvent sOnDestructScriptEvent{};
-	static const ScriptAITickEvent sAITickScriptEvent{};
+	static const ScriptAIEnterStateEvent sOnAIStateEnterScriptEvent{};
+	static const ScriptAITickEvent sOnAITickScriptEvent{};
+	static const ScriptAIExitStateEvent sOnAIStateExitScriptEvent{};
 	static const ScriptAIEvaluateEvent sAIEvaluateScriptEvent{};
 	static const ScriptAbilityActivateEvent sScriptAbilityActivateEvent{};
 	static const ScriptCollisionEntryEvent sOnCollisionEntryScriptEvent{};
 	static const ScriptCollisionStayEvent sOnCollisionStayScriptEvent{};
 	static const ScriptCollisionExitEvent sOnCollisionExitScriptEvent{};
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 11> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 14> sAllScriptableEvents
 	{
 		sOnConstructScriptEvent,
 		sOnDestructScriptEvent,
 		sOnBeginPlayScriptEvent,
 		sOnTickScriptEvent,
 		sOnFixedTickScriptEvent,
-		sAITickScriptEvent,
+		sOnAIStateEnterScriptEvent,
+		sOnAITickScriptEvent,
+		sOnAIStateExitScriptEvent,
 		sAIEvaluateScriptEvent,
 		sScriptAbilityActivateEvent,
 		sOnCollisionEntryScriptEvent,
 		sOnCollisionStayScriptEvent,
-		sOnCollisionExitScriptEvent,
+		sOnCollisionExitScriptEvent
 	};
 }

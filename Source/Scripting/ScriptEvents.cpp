@@ -174,6 +174,19 @@ Engine::MetaFunc::InvokeT  Engine::ScriptAIEvaluateEvent::GetScriptInvoker(const
 		};
 }
 
+Engine::MetaFunc::InvokeT Engine::ScriptAITransitionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const std::shared_ptr<const Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			// The component already has the world
+			// and it's owner
+			Span<MetaAny, 1> scriptArgs{ &args[0], 1 };
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
 Engine::ScriptAbilityActivateEvent::ScriptAbilityActivateEvent() :
 	ScriptEvent(sAbilityActivateEvent, { { MakeTypeTraits<entt::entity>(), "Ability user" } }, std::nullopt)
 {
