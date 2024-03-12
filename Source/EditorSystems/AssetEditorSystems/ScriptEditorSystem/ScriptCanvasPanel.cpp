@@ -49,6 +49,13 @@ void Engine::ScriptEditorSystem::DisplayCanvas()
 		return;
 	}
 
+	// ax::NodeEditor has a bug where sometimes it zooms out to
+	// near infinite size. This is a safe-guard against that.
+	if (ax::NodeEditor::GetCurrentZoom() > sZoomLevels.back() * 100.0f)
+	{
+		ax::NodeEditor::NavigateToRect(ImRect{ 0.0f, 0.0f, 100.0f, 100.0f });
+	}
+
 	TryGetSelectedFunc()->PostDeclarationRefresh();
 
 	DrawCanvasObjects();
