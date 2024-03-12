@@ -32,8 +32,8 @@ void Engine::TickSystem::Update(World& world, float dt)
 			return event.InvokeUncheckedUnpacked(mWorldArg, owner, mDtArg);
 		}
 
-		MetaAny mWorldArg;
-		MetaAny mDtArg;
+		MetaAny mWorldArg{world};
+		MetaAny mDtArg{dt};
 	};
 
 	CallEvent(world, sTickEvent, TickFunctor{MetaAny{world}, MetaAny{dt}});
@@ -58,7 +58,7 @@ void Engine::FixedTickSystem::Update(World& world, float)
 			return event.InvokeUncheckedUnpacked(mWorldArg, owner);
 		}
 
-		MetaAny mWorldArg;
+		MetaAny mWorldArg{world};
 	};
 	CallEvent(world, sFixedTickEvent, FixedTickFunctor{MetaAny{world}});
 }

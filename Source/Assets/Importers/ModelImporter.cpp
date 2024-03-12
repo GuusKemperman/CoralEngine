@@ -22,14 +22,9 @@
 #include "Utilities/ClassVersion.h"
 #include "Meta/MetaManager.h"
 
-static std::string GetEmbedTexName(const std::filesystem::path& modelPath, const int index)
+static std::string GetTexName(const std::filesystem::path& modelPath, const int index)
 {
 	return modelPath.filename().replace_extension().string().append("_tex").append(std::to_string(index));
-}
-
-static std::string GetTexName(const char* name)
-{
-	return std::filesystem::path(name).filename().replace_extension().string();
 }
 
 static std::string GetMeshName(const std::filesystem::path& modelPath, const char* name)
@@ -51,7 +46,6 @@ static int GetIndexFromAssimpTextureName(const char* name)
 {
 	return atoi(std::string(name).erase(0, 1).c_str());
 }
-
 
 std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(const std::filesystem::path& file) const
 {
@@ -82,7 +76,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 	{
 		const aiTexture& aiTex = ****REMOVED***ne->mTextures[i];
 
-		const std::string textureName = GetEmbedTexName(file, i);
+		const std::string textureName = GetTexName(file, i);
 
 		std::optional<ImportedAsset> importedTexture{};
 
@@ -141,62 +135,27 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 		aiString textureName{};
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_BASE_COLOR, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mBaseColorTexture{};
 		{
-			if (textureName.C_Str()[0] == '*')
-			{
-				engineMat.mBaseColorTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
-			}
-			else
-			{
-				engineMat.mBaseColorTexture = std::make_shared<const Texture>(GetTexName(textureName.C_Str()));
-			}
+			engineMat.mBaseColorTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_NORMALS, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mNormalTexture{};
 		{
-			if (textureName.C_Str()[0] == '*')
-			{
-				engineMat.mNormalTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
-			}
-			else
-			{
-				engineMat.mNormalTexture = std::make_shared<const Texture>(GetTexName(textureName.C_Str()));
-			}
+			engineMat.mNormalTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_LIGHTMAP, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mOcclusionTexture{};
 		{
-			if (textureName.C_Str()[0] == '*')
-			{
-				engineMat.mOcclusionTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
-			}
-			else
-			{
-				engineMat.mOcclusionTexture = std::make_shared<const Texture>(GetTexName(textureName.C_Str()));
-			}
+			engineMat.mOcclusionTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mMetallicRoughnessTexture{};
 		{
-			if (textureName.C_Str()[0] == '*')
-			{
-				engineMat.mMetallicRoughnessTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
-			}
-			else
-			{
-				engineMat.mMetallicRoughnessTexture = std::make_shared<const Texture>(GetTexName(textureName.C_Str()));
-			}
+			engineMat.mMetallicRoughnessTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		if (aiGetMaterialTexture(&aiMat, aiTextureType_EMISSIVE, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mEmissiveTexture{};
 		{
-			if (textureName.C_Str()[0] == '*')
-			{
-				engineMat.mEmissiveTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
-			}
-			else
-			{
-				engineMat.mEmissiveTexture = std::make_shared<const Texture>(GetTexName(textureName.C_Str()));
-			}
+			engineMat.mEmissiveTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 		}
 
 		returnValue.emplace_back(MaterialImporter::Import(file, myVersion, engineMat));
