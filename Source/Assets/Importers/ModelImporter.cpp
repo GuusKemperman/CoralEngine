@@ -29,7 +29,7 @@ static std::string GetEmbedTexName(const std::filesystem::path& modelPath, const
 
 static std::string GetTexName(const char* name)
 {
-	return std::filesystem::path(name).replace_extension().string();
+	return std::filesystem::path(name).filename().replace_extension().string();
 }
 
 static std::string GetMeshName(const std::filesystem::path& modelPath, const char* name)
