@@ -84,7 +84,7 @@ Engine::Renderer::Renderer()
     mConstBuffers[CLUSTER_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXClusterInfo), 1, "Cluster creation data", FRAME_BUFFER_COUNT);
 
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXCluster) * 50, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * 50, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mClusterResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "CLUSTER RESULT BUFFER");
    
     D3D12_UNORDERED_ACCESS_VIEW_DESC  uavDesc = {};
@@ -92,9 +92,9 @@ Engine::Renderer::Renderer()
     uavDesc.Format = DXGI_FORMAT_UNKNOWN;
     uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
     uavDesc.Buffer.FirstElement = 0;
-    uavDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXCluster);
+    uavDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXAABB);
     uavDesc.Buffer.NumElements = 50;
-    clusterUavIndex = engineDevice.AllocateUAV(mClusterResource.get(), uavDesc);
+    mClusterUavIndex = engineDevice.AllocateUAV(mClusterResource.get(), uavDesc);
 }
 
 void Engine::Renderer::Render(const World& world)
@@ -126,9 +126,9 @@ void Engine::Renderer::Render(const World& world)
     int pointLightCounter = 0;
     for (auto [entity, lightComponent, transform] : pointLightView.each()) {
         if (pointLightCounter < MAX_LIGHTS) {
-            lights.mPointLights[pointLightCounter].mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
-            lights.mPointLights[pointLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
-            lights.mPointLights[pointLightCounter].mRadius = lightComponent.mRange;
+            mLights.mPointLights[pointLightCounter].mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
+            mLights.mPointLights[pointLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+            mLights.mPointLights[pointLightCounter].mRadius = lightComponent.mRange;
         }
         else {
             LOG(LogCore, Warning, ("Maximum (%i) of point lights has been surpassed.", MAX_LIGHTS));
@@ -144,8 +144,8 @@ void Engine::Renderer::Render(const World& world)
             glm::vec3 baseDir = glm::vec3(0, 0, 1);
             glm::vec3 lightDirection = quatRotation * baseDir;
 
-            lights.mDirLights[dirLightCounter].mDir = glm::vec4(lightDirection, 1.f);
-            lights.mDirLights[dirLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+            mLights.mDirLights[dirLightCounter].mDir = glm::vec4(lightDirection, 1.f);
+            mLights.mDirLights[dirLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
         }
         else {
             LOG(LogCore, Warning, ("Maximum (%i) of directional lights has been surpassed.", MAX_LIGHTS));
@@ -154,7 +154,7 @@ void Engine::Renderer::Render(const World& world)
         dirLightCounter++;
     }
 
-    mConstBuffers[LIGHT_CB]->Update(&lights, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
+    mConstBuffers[LIGHT_CB]->Update(&mLights, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
 
     //BIND CONSTANT BUFFERS
     mConstBuffers[LIGHT_CB]->Bind(commandList, 1, 0, frameIndex);
