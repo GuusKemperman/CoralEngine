@@ -9,7 +9,7 @@
 
 Engine::MetaType Engine::NavMeshTargetTag::Reflect()
 {
-	auto metaType = MetaType{MetaType::T<NavMeshTargetTag>{}, "NavMeshTargetComponent"};
+	auto metaType = MetaType{MetaType::T<NavMeshTargetTag>{}, "NavMeshTargetTag"};
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectComponentType<NavMeshTargetTag>(metaType);

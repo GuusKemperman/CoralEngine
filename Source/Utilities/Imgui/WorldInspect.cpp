@@ -192,6 +192,37 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			ImGui::SetItemTooltip("Stop");
 		}
 
+		{
+			auto possibleCamerasView = GetWorld().GetRegistry().View<CameraComponent>();
+
+			if (possibleCamerasView.size() > 1)
+			{
+				auto cam = GetWorld().GetRenderer().GetMainCamera();
+
+				entt::entity cameraEntity = cam.has_value() ? cam->first : entt::null;
+
+				ImGui::SameLine();
+
+				static constexpr float cameraComboWidth = 200.0f;
+
+				ImGui::SetCursorPosX(viewportPos.x + mViewportWidth - cameraComboWidth);
+				ImGui::SetNextItemWidth(cameraComboWidth);
+
+				if (ImGui::BeginCombo("Camera", NameComponent::GetDisplayName(GetWorld().GetRegistry(), cameraEntity).c_str()))
+				{
+					for (entt::entity possibleCamera : possibleCamerasView)
+					{
+						if (ImGui::Button(NameComponent::GetDisplayName(GetWorld().GetRegistry(), possibleCamera).c_str()))
+						{
+							GetWorld().GetRenderer().SetMainCamera(possibleCamera);
+						}
+					}
+
+					ImGui::EndCombo();
+				}
+			}
+		}
+
 		drawList->ChannelsSetCurrent(0);
 		ImGui::SetCursorPos(viewportPos);
 
@@ -487,15 +518,25 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 	{
 		const MetaType& componentClass = choice.mValue;
 		const TypeId typeHash = componentClass.GetTypeId();
+
+		ImGui::PushID(static_cast<int>(typeHash));
+
+		// Makes sure we popId regardless of where we call continue or break
+		struct IdPopper
+		{
+			~IdPopper()
+			{
+				ImGui::PopID();
+			}
+		};
+		IdPopper __{};
+
 		const char* className = componentClass.GetName().c_str();
 		auto& storage = *reg.Storage(typeHash);
 
 		bool removeButtonPressed{};
 
-		// We do not allow the root component to be removed
-		const bool isHeaderOpen = typeHash != MakeTypeId<RootComponent>() ?
-			ImGui::CollapsingHeaderWithButton(className, "X", &removeButtonPressed) :
-			ImGui::CollapsingHeader(className);
+		const bool isHeaderOpen = ImGui::CollapsingHeaderWithButton(className, "X", &removeButtonPressed);
 
 		if (removeButtonPressed)
 		{
@@ -511,6 +552,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 		{
 			continue;
 		}
+
 
 		for (const MetaFunc& func : componentClass.EachFunc())
 		{

@@ -128,10 +128,45 @@ void Engine::AIEvaluateSystem::Update(World& world, float)
 			}
 		}
 
+		CallTransitionEvent(sAIStateExitEvent, currentAIController.mCurrentState, world, entity);
 		currentAIController.mCurrentState = bestType;
+		CallTransitionEvent(sAIStateEnterEvent, currentAIController.mCurrentState, world, entity);
 	}
 }
 
+template <typename EventT>
+void Engine::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const MetaType* type, World& world, entt::entity owner)
+{
+	if (type == nullptr)
+	{
+		return;
+	}
+
+	const MetaFunc* const boundEvent = TryGetEvent(*type, event);
+
+	if (boundEvent == nullptr)
+	{
+		return;
+	}
+
+	entt::sparse_set* storage = world.GetRegistry().Storage(type->GetTypeId());
+
+	if (storage == nullptr
+		|| !storage->contains(owner))
+	{
+		return;
+	}
+
+	if (boundEvent->GetProperties().Has(Props::sIsEventStaticTag))
+	{
+		boundEvent->InvokeUncheckedUnpacked(world, owner);
+	}
+	else
+	{
+		MetaAny component{ *type, storage->value(owner), false };
+		boundEvent->InvokeUncheckedUnpacked(component, world, owner);
+	}
+}
 
 Engine::MetaType Engine::AIEvaluateSystem::Reflect()
 {

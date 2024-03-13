@@ -252,6 +252,12 @@ namespace Engine
 			return importerInfo.has_value() ? importerInfo->mImportedFile : std::optional<std::filesystem::path>{};
 		}
 
+		std::optional<uint32> GetImporterVersion() const
+		{
+			const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = mAssetInternal.get().mMetaData.GetImporterInfo();
+			return importerInfo.has_value() ? importerInfo->mImporterVersion : std::optional<uint32>{};
+		}
+
 	private:
 		std::reference_wrapper<AssetManager::AssetInternal> mAssetInternal;
 

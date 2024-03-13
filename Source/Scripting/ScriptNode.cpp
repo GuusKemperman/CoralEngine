@@ -273,6 +273,12 @@ Engine::ScriptNode::CompareOutOfDataResult Engine::ScriptNode::CheckIfOutOfDateB
 {
 	static constexpr auto compareToPins = [](const ScriptVariableTypeData& currentParams, const ScriptPin& oldPins) -> bool
 		{
+			if (oldPins.GetTypeForm() == TypeForm::Value
+				&& currentParams.GetTypeForm() == TypeForm::Ref)
+			{
+				const_cast<ScriptPin&>(oldPins).RemoveME(TypeForm::Ref);
+			}
+
 			return oldPins.GetTypeName() == currentParams.GetTypeName() && oldPins.GetTypeForm() == currentParams.GetTypeForm();
 		};
 

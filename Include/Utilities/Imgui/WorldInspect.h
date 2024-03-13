@@ -5,7 +5,6 @@ namespace Engine
 {
 	class World;
 	class TransformComponent;
-	class RootComponent;
 	class Registry;
 	class World;
 	class CameraComponent;

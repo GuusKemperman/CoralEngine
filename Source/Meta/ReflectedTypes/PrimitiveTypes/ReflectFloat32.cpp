@@ -43,6 +43,15 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc(&atan2f, "ATan2").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&sqrtf, "Sqrt").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&powf, "Pow").GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](T& n) -> T& { ++n; return n; }, OperatorType::increment, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n) -> T& { ++n; return n; }, OperatorType::decrement, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n += l; return n; }, OperatorType::add_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n -= l; return n; }, OperatorType::subtract_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n *= l; return n; }, OperatorType::multiplies_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n /= l; return n; }, OperatorType::divides_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n = fmodf(n, l); return n; }, OperatorType::modulus_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
 	ReflectFieldType<T>(type);
 
 	return type;

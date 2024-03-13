@@ -37,9 +37,6 @@ namespace Engine
 
 		void OnConstruct(World& world, entt::entity owner);
 
-		void OnDeserialize(World& world, entt::entity owner, const BinaryGSONObject& deserializeFrom);
-		void OnSerialize(const World& world, entt::entity owner, BinaryGSONObject& serializeTo) const;
-
 		static glm::mat4 ToMatrix(glm::vec3 position, glm::vec3 scale, glm::quat orientation);
 
 		glm::mat4 GetLocalMatrix() const;		
@@ -150,6 +147,9 @@ namespace Engine
 		void SetWorldScale(const glm::vec2 scale) { SetWorldScale(To3DRightForward(scale, GetWorldScale()[Axis::Up])); }
 		
 	private:
+		void OnDeserialize(World& world, entt::entity owner, const BinaryGSONObject& deserializeFrom);
+		void OnSerialize(const World& world, entt::entity owner, BinaryGSONObject& serializeTo) const;
+
 		static glm::vec2 To2DRightForward(glm::vec3 v3)
 		{
 			return { v3[Axis::Right], v3[Axis::Forward] };

@@ -10,13 +10,27 @@
 #include "World/World.h"
 #include "Core/Input.h"
 #include "Assets/Script.h"
+#include "Components/Abilities/ProjectileComponent.h"
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
 
 void Engine::AbilitySystem::Update(World& world, float dt)
 {
     Registry& reg = world.GetRegistry();
-    auto view = reg.View<CharacterComponent>();
+
+    auto viewProjectiles = reg.View<ProjectileComponent>();
+    for (auto [entity, projectile] : viewProjectiles.each())
+    {
+        auto& physicsBody = reg.Get<PhysicsBody2DComponent>(entity);
+        projectile.mCurrentRange += glm::length(physicsBody.mLinearVelocity) * dt;
+	    if (projectile.mCurrentRange >= projectile.mRange)
+	    {
+            reg.Destroy(entity);
+	    }
+    }
+
+    auto viewCharacters = reg.View<CharacterComponent>();
     const auto& input = Input::Get();
-    for (auto [entity, characterData] : view.each())
+    for (auto [entity, characterData] : viewCharacters.each())
     {
         if (characterData.mGlobalCooldownTimer > 0.f)
         {
@@ -29,6 +43,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
 	        continue;
         }
 
+        // create abilities
         for (auto& ability : abilities->mAbilitiesToInput)
         {
             // update counter
@@ -82,6 +97,13 @@ bool Engine::AbilitySystem::CanAbilityBeActivated(const CharacterComponent& char
 
 void Engine::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability)
 {
+    if (!CanAbilityBeActivated(characterData, ability))
+    {
+        // for the player, this will get checked twice,
+        // but it is a small tradeoff for safety in the AI usage
+        return;
+    }
+
     // ability activate event
     if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mScript->GetName()))
     {
