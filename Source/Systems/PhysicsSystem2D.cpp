@@ -5,6 +5,7 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Meta/MetaType.h"
 #include "Components/TransformComponent.h"
+#include "Components/Abilities/CharacterComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "World/Registry.h"
@@ -64,6 +65,12 @@ void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
 			if (body.mLinearVelocity != glm::vec2{})
 			{
 				transform.TranslateWorldPosition(body.mLinearVelocity * dt);
+
+				// update orientation based on velocity
+				if (reg.TryGet<CharacterComponent>(entity)) // TODO: abstract component away from system
+				{
+					transform.SetLocalOrientation(Math::Direction2DToXZQuatOrientation(body.mLinearVelocity));
+				}
 			}
 		default:;
 		}

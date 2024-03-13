@@ -104,10 +104,11 @@ void Engine::DebugRenderer::Render(const World& world)
 {
     const auto cameraView = world.GetRegistry().View<const TransformComponent, const CameraComponent>();
 
-    for (auto [entity, cameraTransform, camera] : cameraView.each())
-    {
-        mImpl->Render(camera.GetView(), camera.GetProjection());
-    }
+	const auto optionalEntityCameraPair = world.GetRenderer().GetMainCamera();
+    ASSERT_LOG(optionalEntityCameraPair.has_value(), "DX12 draw requests have been made, but they cannot be cleared as there is no camera to draw them to");
+
+	const auto camera = optionalEntityCameraPair->second;
+    mImpl->Render(camera.GetView(), camera.GetProjection());
 }
 
 bool Engine::DebugRenderer::Impl::AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
