@@ -35,7 +35,11 @@ Engine::Texture::Texture(AssetLoadInfo& loadInfo) :
 
 bool Engine::Texture::LoadTexture(const unsigned char* fileContents, const unsigned int width, const unsigned int height, const unsigned int format)
 {
-	if (fileContents == nullptr || width <= 0 || height <= 0) {
+	if (Device::IsHeadless()
+		|| fileContents == nullptr 
+		|| width <= 0 
+		|| height <= 0) 
+	{
 		return false;
 	}
 

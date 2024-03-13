@@ -6,7 +6,7 @@ namespace Engine
 	class ActiveAbilityComponent
 	{
 	public:
-		entt::entity mCastByPlayer{};
+		entt::entity mCastByCharacter{};
 
 	private:
 		friend ReflectAccess;

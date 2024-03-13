@@ -51,7 +51,9 @@ namespace Engine
 		arrow,						// ->  class field
 		dot,						// .   class field
 		dot_indirect,				// .*  pointer to field
-		none,
+		increment = 45,				// ++
+		decrement,					// --
+		none = 44,
 	};
 
 	std::string_view GetNameOfOperator(OperatorType type);
@@ -61,8 +63,6 @@ namespace Engine
 		MetaFuncNamedParam(TypeTraits typeTraits = {}, std::string_view name = {}) :
 			mTypeTraits(typeTraits),
 			mName(name) {}
-
-		constexpr operator TypeTraits() const { return mTypeTraits; }
 
 		bool operator==(const MetaFuncNamedParam& other) const { return mTypeTraits == other.mTypeTraits && mName == other.mName; };
 		bool operator!=(const MetaFuncNamedParam& other) const { return mTypeTraits != other.mTypeTraits || mName != other.mName; };

@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
 
+#include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
@@ -9,6 +10,26 @@
 float Engine::NavMeshAgentComponent::GetSpeed() const
 {
 	return mSpeed;
+}
+
+std::optional<glm::vec2> Engine::NavMeshAgentComponent::GetTargetPosition() const
+{
+	return mTargetPosition;
+}
+
+void Engine::NavMeshAgentComponent::SetTarget(glm::vec2 targetPosition)
+{
+	mTargetPosition = targetPosition;
+}
+
+void Engine::NavMeshAgentComponent::SetTarget(const TransformComponent& transformComponent)
+{
+	mTargetPosition = {transformComponent.GetWorldPosition().x, transformComponent.GetWorldPosition().z};
+}
+
+void Engine::NavMeshAgentComponent::StopNavMesh()
+{
+	mTargetPosition.reset();
 }
 
 Engine::MetaType Engine::NavMeshAgentComponent::Reflect()

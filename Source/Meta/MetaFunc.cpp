@@ -15,7 +15,19 @@ Engine::MetaFunc::MetaFunc(const InvokeT& funcToInvoke,
 	mNameOrType(std::holds_alternative<std::string_view>(nameOrType) ?
 		NameOrType{ std::string{ std::get<std::string_view>(nameOrType) } } : NameOrType{ std::get<OperatorType>(nameOrType) }),
 	mProperties(std::make_unique<MetaProps>()),
-	mFuncId(MakeFuncId(mReturn.mTypeTraits, std::vector<TypeTraits>{ mParams.data(), mParams.data() + mParams.size() })),
+	mFuncId(MakeFuncId(mReturn.mTypeTraits,
+		[&]
+		{
+			std::vector<TypeTraits> params{};
+			params.reserve(mParams.size());
+
+			for (const MetaFuncNamedParam& namedParam : mParams)
+			{
+				params.emplace_back(namedParam.mTypeTraits);
+			}
+
+			return params;
+		}())),
 	mFuncToInvoke(funcToInvoke)
 {
 }
@@ -360,6 +372,8 @@ std::string_view Engine::GetNameOfOperator(const OperatorType type)
 	case OperatorType::arrow: return "->";
 	case OperatorType::dot: return ".";
 	case OperatorType::dot_indirect: return ".*";
+	case OperatorType::increment: return "++";
+	case OperatorType::decrement: return "--";
 	default: return "Invalid operator";
 	}
 }

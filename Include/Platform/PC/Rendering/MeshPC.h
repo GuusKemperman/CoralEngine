@@ -23,6 +23,7 @@ namespace Engine
         StaticMesh(const StaticMesh&) = delete;
 
         void DrawMesh() const;
+        void DrawMeshVertexOnly() const;
 
         StaticMesh& operator=(StaticMesh&&) = delete;
         StaticMesh& operator=(const StaticMesh&) = delete;

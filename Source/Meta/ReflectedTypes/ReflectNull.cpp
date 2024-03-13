@@ -40,10 +40,10 @@ namespace
 
 	bool IsNotNull(const MetaAny* any)
 	{
-		if (any == nullptr
-			|| *any == nullptr)
+		if (any != nullptr
+			&& *any != nullptr)
 		{
-			return false;
+			return true;
 		}
 
 		return !CallNullptrOverload(*any);
