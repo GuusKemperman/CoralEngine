@@ -133,16 +133,20 @@ namespace Engine
 	private:
 		static void DisplayFamily(Registry& registry,
 			TransformComponent& parentTransform,
-			std::vector<entt::entity>& selectedEntities);
+			std::vector<entt::entity>& selectedEntities,
+			std::optional<ImVec2>& openPopUpPosition);
 
 		static void DisplaySingle(Registry& registry,
 		                          entt::entity entity,
 			std::vector<entt::entity>& selectedEntities,
-			TransformComponent* transformComponent = nullptr);
+			TransformComponent* transformComponent,
+			std::optional<ImVec2>& openPopUpPosition);
 
 		// Nullopt to unparent them
 		static void ReceiveDragDropOntoParent(Registry& registry,
 			std::optional<entt::entity> parentAllToThisEntity);
+
+		static void DisplayRightClickPopUp(Registry& registry, std::vector<entt::entity>& selectedEntities);
 	};
 }
 #endif // EDITOR

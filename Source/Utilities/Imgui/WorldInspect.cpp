@@ -722,6 +722,8 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* selectedEntities)
 {
+	ImGui::ShowDemoWindow();
+
 	std::vector<entt::entity> dummySelectedEntities{};
 	if (selectedEntities == nullptr)
 	{
@@ -747,6 +749,8 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 
 	const std::string searchFor = Search::DisplaySearchBar();
 
+	std::optional<ImVec2> popUpPosition{};
+
 	if (!searchFor.empty())
 	{
 		Search::Choices<entt::entity> entitiesToDisplay{};
@@ -761,7 +765,7 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 
 		for (const Search::Choice<entt::entity>& entityToDisplay : entitiesToDisplay)
 		{
-			DisplaySingle(reg, entityToDisplay.mValue, *selectedEntities);
+			DisplaySingle(reg, entityToDisplay.mValue, *selectedEntities, nullptr, popUpPosition);
 		}
 	}
 	else
@@ -779,7 +783,7 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 					continue;
 				}
 
-				DisplaySingle(reg, entity, *selectedEntities);
+				DisplaySingle(reg, entity, *selectedEntities, nullptr, popUpPosition);
 				anyDisplayed = true;
 			}
 		}
@@ -800,12 +804,21 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 				// this transform does not have a parent.
 				if (transform.IsOrphan())
 				{
-					DisplayFamily(reg, transform, *selectedEntities);
+					DisplayFamily(reg, transform, *selectedEntities, popUpPosition);
 				}
 			}
 		}
-
 	}
+
+	if (popUpPosition.has_value())
+	{
+		const ImVec2 backUpCursor = ImGui::GetCursorPos();
+		ImGui::SetCursorPos(*popUpPosition);
+		ImGui::OpenPopup("HierarchyPopUp");
+		ImGui::SetCursorPos(backUpCursor);
+	}
+
+	DisplayRightClickPopUp(reg, *selectedEntities);
 
 	ImGui::InvisibleButton("DragToUnparent", glm::max(static_cast<glm::vec2>(ImGui::GetContentRegionAvail()), glm::vec2{1.0f, 1.0f}));
 	ReceiveDragDropOntoParent(reg, std::nullopt);
@@ -814,7 +827,8 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 
 void Engine::WorldHierarchy::DisplayFamily(Registry& reg,
 	TransformComponent& parentTransform,
-	std::vector<entt::entity>& selectedEntities)
+	std::vector<entt::entity>& selectedEntities,
+	std::optional<ImVec2>& openPopUpPosition)
 {
 	const entt::entity entity = parentTransform.GetOwner();
 	ImGui::PushID(static_cast<int>(entity));
@@ -829,13 +843,13 @@ void Engine::WorldHierarchy::DisplayFamily(Registry& reg,
 		ImGui::SameLine();
 	}
 
-	DisplaySingle(reg, entity, selectedEntities, &parentTransform);
+	DisplaySingle(reg, entity, selectedEntities, &parentTransform, openPopUpPosition);
 
 	if (isTreeNodeOpen)
 	{
 		for (TransformComponent& childTransform : children)
 		{
-			DisplayFamily(reg, childTransform, selectedEntities);
+			DisplayFamily(reg, childTransform, selectedEntities, openPopUpPosition);
 		}
 
 		ImGui::TreePop();
@@ -847,7 +861,8 @@ void Engine::WorldHierarchy::DisplayFamily(Registry& reg,
 void Engine::WorldHierarchy::DisplaySingle(Registry& registry,
 	const entt::entity owner,
 	std::vector<entt::entity>& selectedEntities,
-	TransformComponent* const transformComponent)
+	TransformComponent* const transformComponent,
+	std::optional<ImVec2>& openPopUpPosition)
 {
 	const std::string displayName = NameComponent::GetDisplayName(registry, owner).append("##DisplayName");
 
@@ -873,6 +888,11 @@ void Engine::WorldHierarchy::DisplaySingle(Registry& registry,
 			selectedEntities.erase(std::remove(selectedEntities.begin(), selectedEntities.end(), owner),
 			                       selectedEntities.end());
 		}
+	}
+
+	if (ImGui::IsItemClicked(1))
+	{
+		openPopUpPosition = ImGui::GetCursorPos();
 	}
 
 	ImGui::SetItemTooltip(Format("Entity {}", static_cast<EntityType>(owner)).c_str());
@@ -943,4 +963,20 @@ void Engine::WorldHierarchy::ReceiveDragDropOntoParent(Registry& registry,
 			}
 		}
 	}
+}
+
+void Engine::WorldHierarchy::DisplayRightClickPopUp(Registry& registry, std::vector<entt::entity>& selectedEntities)
+{
+	if (!ImGui::BeginPopup("HierarchyPopUp"))
+	{
+		return;
+	}
+
+	if (ImGui::Button("Delete"))
+	{
+		registry.Destroy(selectedEntities.begin(), selectedEntities.end());
+		selectedEntities.clear();
+	}
+
+	ImGui::EndPopup();
 }
