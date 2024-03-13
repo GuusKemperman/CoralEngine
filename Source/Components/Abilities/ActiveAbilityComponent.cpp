@@ -10,7 +10,7 @@ Engine::MetaType Engine::ActiveAbilityComponent::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<ActiveAbilityComponent>{}, "ActiveAbilityComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
 
-	metaType.AddField(&ActiveAbilityComponent::mCastByPlayer, "mCastByPlayer").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&ActiveAbilityComponent::mCastByCharacter, "mCastByCharacter").GetProperties().Add(Props::sIsScriptableTag);
 	
 	ReflectComponentType<ActiveAbilityComponent>(metaType);
 

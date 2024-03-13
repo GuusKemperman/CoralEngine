@@ -6,8 +6,10 @@ namespace Engine
 	class ProjectileComponent
 	{
 	public:
-		float mRange{};
-		float mCurrentRange{};
+		float mRange{}; // how far the projectile will travel before it gets destroyed
+		float mCurrentRange{}; // how far the projectile has traveled
+
+		float mSpeed{}; // initial speed to set the velocity of the physics body
 
 	private:
 		friend ReflectAccess;
