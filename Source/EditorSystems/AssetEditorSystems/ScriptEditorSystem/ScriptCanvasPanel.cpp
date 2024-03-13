@@ -895,9 +895,19 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 				[&metaFunc](const ScriptPin& contextPin) -> bool
 				{
 					return DoesNodeMatchContext(contextPin,
-					metaFunc.GetReturnType(),
-					std::vector<TypeTraits>(metaFunc.GetParameters().data(),
-					metaFunc.GetParameters().data() + metaFunc.GetParameters().size()),
+					metaFunc.GetReturnType().mTypeTraits,
+					[&]
+					{
+						std::vector<TypeTraits> params{};
+						params.reserve(metaFunc.GetParameters().size());
+
+						for (const MetaFuncNamedParam& namedParam : metaFunc.GetParameters())
+						{
+							params.emplace_back(namedParam.mTypeTraits);
+						}
+
+						return params;
+					}(),
 					IsFunctionPure(metaFunc));
 				});
 		}
