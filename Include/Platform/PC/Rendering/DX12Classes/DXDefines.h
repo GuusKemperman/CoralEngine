@@ -51,7 +51,7 @@ using namespace Microsoft::WRL;
 
 //CONSTANT BUFFERS
 #define CAM_MATRIX_CB			0
-#define MATERIAL_CB				1
+#define MODEL_INDEX_CB			1
 #define LIGHT_CB				2
 #define MODEL_MATRIX_CB			3
 #define NUM_CBS MODEL_MATRIX_CB+1
