@@ -508,6 +508,10 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Assets\Animation.cpp" />
+    <ClCompile Include="Source\Assets\Importers\AnimationImporter.cpp" />
+    <ClCompile Include="Source\Components\Animation\Bone.cpp" />
+    <ClCompile Include="Source\Components\Animation\BoneInfo.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\BaseIdleState.cpp" />
     <ClCompile Include="Source\Assets\Ability.cpp" />
@@ -1346,6 +1350,9 @@
     <ClCompile Include="Source\Systems\UtilityAiSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Assets\Animation.h" />
+    <ClInclude Include="Include\Assets\Importers\AnimationImporter.h" />
+    <ClInclude Include="Include\Components\Animation\BoneInfo.h" />
     <ClInclude Include="Include\Components\UtililtyAi\BaseIdleState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\EnemyAiControllerComponent.h" />
     <ClCompile Include="Source\Platform\PC\Rendering\TexturePC.cpp">
@@ -1587,6 +1594,9 @@
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
     <ClInclude Include="Include\Systems\AbilitySystem.h" />
     <ClInclude Include="Include\Scripting\ScriptEvents.h" />
+    <ClInclude Include="Include\Components\Animation\Animation.h" />
+    <ClInclude Include="Include\Components\Animation\Bone.h" />
+    <ClInclude Include="Include\Systems\Animation\AnimationSystem.h" />
     <ClInclude Include="Include\Systems\EventsSystem.h" />
     <ClInclude Include="Include\Systems\NavigationSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />

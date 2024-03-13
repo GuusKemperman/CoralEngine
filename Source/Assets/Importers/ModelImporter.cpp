@@ -10,9 +10,13 @@
 #include "Assets/SkinnedMesh.h"
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
+#include "Assets/Animation.h"
+#include "Components/Animation/BoneInfo.h"
+#include "Components/Animation/Bone.h"
 #include "stb_image/stb_image.h"
 #include "Assets/Importers/MaterialImporter.h"
 #include "Assets/Importers/TextureImporter.h"
+#include "Assets/Importers/AnimationImporter.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Assets/Importers/PrefabImporter.h"
@@ -43,18 +47,38 @@ static std::string GetMaterialName(const std::filesystem::path& modelPath, const
 	return (*name == *"") ? "M_" + modelPath.filename().string() + *"_Unnamed_Material_" + std::to_string(index) : name;
 }
 
+static std::string GetAnimName(const std::filesystem::path& modelPath, const char* name)
+{
+	return modelPath.filename().replace_extension().string().append("_").append(name).append("_").append("Animation");
+}
+
 static int GetIndexFromAssimpTextureName(const char* name)
 {
 	return atoi(std::string(name).erase(0, 1).c_str());
 }
 
-//void ExtractBoneWeightsForVertices(std::vector<glm::vec2>& boneWeights, aiMesh& mesh, const ai***REMOVED***ne* ***REMOVED***ne)
-//{
-//
-//
-//
-//
-//}
+static inline glm::vec3 GetGLMVec(const aiVector3D& vec) 
+{ 
+	return glm::vec3(vec.x, vec.y, vec.z); 
+}
+
+static inline glm::quat GetGLMQuat(const aiQuaternion& pOrientation)
+{
+	return glm::quat(pOrientation.w, pOrientation.x, pOrientation.y, pOrientation.z);
+}
+
+void ReadHierarchyForAnimRecursive(const aiNode& node, Engine::AnimNode& dest)
+{
+	dest.mName = node.mName.C_Str();
+	dest.mTransform = glm::transpose(reinterpret_cast<const glm::mat4x4&>(node.mTransformation));
+
+	for (size_t j = 0; j < node.mNumChildren; j++)
+	{
+		Engine::AnimNode newNode;
+		ReadHierarchyForAnimRecursive(*node.mChildren[j], newNode);
+		dest.mChildren.push_back(newNode);
+	}
+}
 
 std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(const std::filesystem::path& file) const
 {
@@ -305,6 +329,67 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 			LOG(LogAssets, Error, "Loading of mesh {} failed: converting assimp results to engine representation failed", meshName);
 			anyErrors = true;
 		}
+	}
+
+	for (uint32 animIndex = 0; animIndex < ***REMOVED***ne->mNumAnimations; animIndex++)
+	{
+		const aiAnimation& aiAnim = ****REMOVED***ne->mAnimations[animIndex];
+		
+		Animation engineAnim{ GetAnimName(file, aiAnim.mName.C_Str()) };
+		engineAnim.mDuration = aiAnim.mDuration;
+		engineAnim.mTickPerSecond = aiAnim.mTicksPerSecond;
+		
+		engineAnim.mBones = std::vector<Bone>();
+		
+		ReadHierarchyForAnimRecursive(****REMOVED***ne->mRootNode, engineAnim.mRootNode);
+
+		int size = aiAnim.mNumChannels;
+		for (int channelIndex = 0; channelIndex < size; channelIndex++)
+		{
+			auto channel = aiAnim.mChannels[channelIndex];
+
+			// Create bone
+			AnimData animData{};
+			animData.mPositions = std::vector<KeyPosition>();
+			animData.mRotations = std::vector<KeyRotation>();
+			animData.mScales = std::vector<KeyScale>();
+
+			unsigned int numPositions = channel->mNumPositionKeys;
+			unsigned int numRotations = channel->mNumRotationKeys;
+			unsigned int numScalings = channel->mNumScalingKeys;
+
+			for (unsigned int positionIndex = 0; positionIndex < numPositions; positionIndex++)
+			{
+				KeyPosition data{};
+				data.position = GetGLMVec(channel->mPositionKeys[positionIndex].mValue);
+				data.timeStamp = channel->mPositionKeys[positionIndex].mTime;
+				animData.mPositions->push_back(data);
+			}
+
+			for (unsigned int rotationIndex = 0; rotationIndex < numRotations; rotationIndex++)
+			{
+				KeyRotation data{};
+				data.orientation = GetGLMQuat(channel->mRotationKeys[rotationIndex].mValue);
+				data.timeStamp = channel->mRotationKeys[rotationIndex].mTime;
+				animData.mRotations->push_back(data);
+			}
+
+			for (unsigned int scaleIndex = 0; scaleIndex < numScalings; scaleIndex++)
+			{
+				KeyScale data{};
+				data.scale = GetGLMVec(channel->mScalingKeys[scaleIndex].mValue);
+				data.timeStamp = channel->mScalingKeys[scaleIndex].mTime;
+				animData.mScales->push_back(data);
+			}
+
+			engineAnim.mBones.push_back(Bone(channel->mNodeName.data, animData));
+		}
+
+		// Import the animation
+
+
+		returnValue.emplace_back(AnimationImporter::Import(file, myVersion, engineAnim));
+
 	}
 
 	if (anyErrors)

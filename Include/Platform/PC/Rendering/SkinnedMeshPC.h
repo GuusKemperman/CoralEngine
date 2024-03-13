@@ -1,9 +1,11 @@
 #pragma once
 #include <optional>
 #include <variant>
+#include <map>
 
 #include "DX12Classes/DXDefines.h"
 #include "Assets/Asset.h"
+#include "components/Animation/BoneInfo.h"
 
 class DXResource;
 
@@ -11,13 +13,6 @@ namespace Engine
 {
     #define MAX_BONES 128
     #define MAX_BONE_INFLUENCE 4
-
-    struct BoneInfo
-    {
-        int mId;
-
-        glm::mat4 mOffset;
-    };
 
     class SkinnedMesh final :
         public Asset
@@ -68,6 +63,8 @@ namespace Engine
         D3D12_VERTEX_BUFFER_VIEW mBoneIdBufferView;
         D3D12_VERTEX_BUFFER_VIEW mBoneWeightBufferView;
         D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
+
+        std::map<std::string, BoneInfo> mBoneInfoMap;
 
         int mIndexCount = 0;
         int mVertexCount = 0;
