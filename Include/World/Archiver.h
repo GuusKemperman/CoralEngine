@@ -28,10 +28,10 @@ namespace Engine
 		// Will serialize the entire world.
 		static BinaryGSONObject Serialize(const World& world);
 
-		// Will serialize a single entity, optionally it's children as well.
-		static BinaryGSONObject Serialize(const World& world, entt::entity entity, bool serializeChildren);
+		// Will serialize the provided entities, optionally their children as well.
+		static BinaryGSONObject Serialize(const World& world, Span<const entt::entity> entities, bool serializeChildren);
 
 	private:
-		static BinaryGSONObject Serialize(const World& world, std::vector<entt::entity> entitiesToSerialize, bool allEntitiesInWorldAreBeingSerialized);
+		static BinaryGSONObject SerializeInternal(const World& world, std::vector<entt::entity>&& entitiesToSerialize, bool allEntitiesInWorldAreBeingSerialized);
 	};
 }

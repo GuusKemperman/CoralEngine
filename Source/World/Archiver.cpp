@@ -15,7 +15,7 @@
 
 namespace Engine
 {
-	static void DeserializeStorage(Registry& registry, const BinaryGSONObject& serializedStorage);
+	static void DeserializeStorage(Registry& registry, const BinaryGSONObject& serializedStorage, const std::unordered_map<entt::entity, entt::entity>& idRemappings);
 
 	struct ComponentClassSerializeArg
 	{
@@ -48,17 +48,18 @@ void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& seriali
 		return;
 	}
 
+
 	std::vector<entt::entity> entities{};
 	*serializedEntities >> entities;
 
+	// In case an entity id is taken
+	std::unordered_map<entt::entity, entt::entity> idRemappings{};
+	idRemappings.reserve(entities.size());
+
 	for (entt::entity& entity : entities)
 	{
-		entt::entity createdEntity = reg.Create(entity);
-
-		if (createdEntity != entity)
-		{
-			LOG(LogAssets, Error, "Attempted to deserialize entity with id {}, but this entity could not be added to the registry. May lead to unexpected results.", static_cast<EntityType>(entity));
-		}
+		const entt::entity createdEntity = reg.Create(entity);
+		idRemappings.emplace(entity, createdEntity);
 	}
 
 	// We need to be able to retrieve each entity's prefab of origin while
@@ -67,7 +68,7 @@ void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& seriali
 	const BinaryGSONObject* serializedPrefabFactoryOfOrigin = serializedWorld.TryGetGSONObject(MetaManager::Get().GetType<PrefabOriginComponent>().GetName());
 	if (serializedPrefabFactoryOfOrigin != nullptr)
 	{
-		DeserializeStorage(reg, *serializedPrefabFactoryOfOrigin);
+		DeserializeStorage(reg, *serializedPrefabFactoryOfOrigin, idRemappings);
 	}
 
 	for (const BinaryGSONObject& serializedStorage : serializedWorld.GetChildren())
@@ -77,11 +78,11 @@ void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& seriali
 			continue;
 		}
 
-		DeserializeStorage(reg, serializedStorage);
+		DeserializeStorage(reg, serializedStorage, idRemappings);
 	}
 }
 
-void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializedStorage)
+void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializedStorage, const std::unordered_map<entt::entity, entt::entity>& idRemappings)
 {
 	const MetaType* const componentClass = MetaManager::Get().TryGetType(serializedStorage.GetName());
 
@@ -93,11 +94,26 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 
 	const bool checkForFactoryOfOrigin = componentClass->GetTypeId() != MakeTypeId<PrefabOriginComponent>();
 
+	auto remapId = [&idRemappings](entt::entity entity) -> entt::entity
+		{
+			// Check if this is one of the many entities we are deserializing
+			const auto it = idRemappings.find(entity);
+
+			if (it != idRemappings.end())
+			{
+				// This entity is part of our deserializing process
+				return it->second;
+			}
+
+			// Otherwise, leave it as it is.
+			return entity;
+		};
+
 	for (const BinaryGSONObject& serializedComponent : serializedStorage.GetChildren())
 	{
 		const std::vector<BinaryGSONMember>& serializedProperties = serializedComponent.GetGSONMembers();
 
-		const entt::entity owner = FromBinary<entt::entity>(serializedComponent.GetName());
+		const entt::entity owner = remapId(FromBinary<entt::entity>(serializedComponent.GetName()));
 
 		if (!registry.Valid(owner))
 		{
@@ -160,6 +176,10 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 					componentClass->GetName(),
 					memberType.GetName(),
 					deserializeMemberResult.Error());
+			}
+			else if (memberType.GetTypeId() == MakeTypeId<entt::entity>())
+			{
+				remapId(*fieldValue.As<entt::entity>());
 			}
 		}
 	}
@@ -226,35 +246,44 @@ Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world)
 		}
 	}
 
-	return Serialize(world, std::move(entitiesToSerialize), true);
+	return SerializeInternal(world, std::move(entitiesToSerialize), true);
 }
 
-Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world, entt::entity entity, bool serializeChildren)
+Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world, Span<const entt::entity> entities, bool serializeChildren)
 {
-	std::vector<entt::entity> entitiesToSerialize{ entity };
+	std::vector<entt::entity> entitiesToSerialize{ entities.begin(), entities.end() };
 
 	if (serializeChildren)
 	{
-		const TransformComponent* transform = world.GetRegistry().TryGet<TransformComponent>(entity);
+		const Registry& reg = world.GetRegistry();
 
-		if (transform != nullptr)
+		for (const entt::entity entity : entities)
 		{
-			std::function<void(const TransformComponent&)> addChildren = [&entitiesToSerialize, &addChildren](const TransformComponent& parent)
-				{
-					for (const TransformComponent& child : parent.GetChildren())
+			const TransformComponent* transform = reg.TryGet<TransformComponent>(entity);
+
+			if (transform != nullptr)
+			{
+				std::function<void(const TransformComponent&)> addChildren = [&entitiesToSerialize, &addChildren](const TransformComponent& parent)
 					{
-						entitiesToSerialize.emplace_back(child.GetOwner());
-						addChildren(child);
-					}
-				};
-			addChildren(*transform);
+						for (const TransformComponent& child : parent.GetChildren())
+						{
+							entitiesToSerialize.emplace_back(child.GetOwner());
+							addChildren(child);
+						}
+					};
+				addChildren(*transform);
+			}
 		}
 	}
 
-	return Serialize(world, std::move(entitiesToSerialize), false);
+	// Remove any potential duplicates
+	std::sort(entitiesToSerialize.begin(), entitiesToSerialize.end());
+	entitiesToSerialize.erase(std::unique(entitiesToSerialize.begin(), entitiesToSerialize.end()), entitiesToSerialize.end());
+
+	return SerializeInternal(world, std::move(entitiesToSerialize), false);
 }
 
-Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world, std::vector<entt::entity> entitiesToSerialize,
+Engine::BinaryGSONObject Engine::Archiver::SerializeInternal(const World& world, std::vector<entt::entity>&& entitiesToSerialize,
                                                      bool allEntitiesInWorldAreBeingSerialized)
 {
 	const Registry& reg = world.GetRegistry();
