@@ -4,7 +4,7 @@
 namespace Engine
 {
 	class CharacterComponent;
-	struct AbilityInstanceWithInputs;
+	struct AbilityInstance;
 
 	class AbilitySystem final :
 		public System
@@ -12,9 +12,10 @@ namespace Engine
 	public:
 		void Update(World& world, float dt) override;
 
-	private:
-		void ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstanceWithInputs& ability);
+		static bool CanAbilityBeActivated(const CharacterComponent& characterData, const AbilityInstance& ability);
+		static void ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability);
 
+	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AbilitySystem);

@@ -94,6 +94,7 @@ namespace Engine
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
         std::unique_ptr<DXPipeline> mPBRPipeline;
         std::unique_ptr<DXPipeline> mClusterGridPipeline;
+        std::unique_ptr<DXPipeline> mZPipeline;
         InfoStruct::DXLightInfo  lights;
 
         std::unique_ptr<DXResource> mClusterResource;

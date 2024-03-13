@@ -21,7 +21,7 @@
 class Engine::DebugRenderer::Impl
 {
 public:
-    Impl();
+	Impl() = default;
     bool AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color);
     void Render(const glm::mat4& view, const glm::mat4& projection);
 
@@ -38,18 +38,24 @@ public:
 
 Engine::DebugRenderer::DebugRenderer()
 {
+	if (Device::IsHeadless())
+	{
+		return;
+	}
+
 	Device& engineDevice = Device::Get();
+	mImpl = std::make_unique<Impl>();
+
 	FileIO& fileIO = FileIO::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 	ID3D12GraphicsCommandList4* uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetUploadCommandList());
 
-	mImpl = std::make_unique<Impl>();
 	std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/DebugVertex.hlsl");
 	ComPtr<ID3DBlob> v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
 	shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/DebugPixel.hlsl");
 	ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0");
 	mImpl->mDebugPipeline = std::make_unique<DXPipeline>();
-	mImpl->mDebugPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+	mImpl->mDebugPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
 	mImpl->mDebugPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
 	mImpl->mDebugPipeline->SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
 	mImpl->mDebugPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"SKYBOX SIGNATURE");
@@ -60,20 +66,20 @@ Engine::DebugRenderer::DebugRenderer()
 
 	engineDevice.StartUploadCommands();
 	int vertexCount = 2;
-	int vBufferSize = sizeof(float) * vertexCount * 4;
+	int vBufferSize = sizeof(float) * vertexCount * 3;
 
 	mImpl->mVertexBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(vBufferSize), nullptr, "Line Vertex resource buffer");
 	
 	D3D12_SUBRESOURCE_DATA vData = {};
 	vData.pData = positions.data();
-	vData.RowPitch = sizeof(float) * 4;
+	vData.RowPitch = sizeof(float) * 3;
 	vData.SlicePitch = vBufferSize;
 
 	mImpl->mVertexBuffer->CreateUploadBuffer(device, vBufferSize, 0);
 	mImpl->mVertexBuffer->Update(uploadCmdList, vData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 
 	mImpl->mVertexBufferView.BufferLocation = mImpl->mVertexBuffer->GetResource()->GetGPUVirtualAddress();
-	mImpl->mVertexBufferView.StrideInBytes = sizeof(float) * 4;
+	mImpl->mVertexBufferView.StrideInBytes = sizeof(float) * 3;
 	mImpl->mVertexBufferView.SizeInBytes = vBufferSize;
 
 	mImpl->mLineColorBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::vec4), MAX_LINES, "Lines color const buffer", FRAME_BUFFER_COUNT);
@@ -83,14 +89,15 @@ Engine::DebugRenderer::DebugRenderer()
 	engineDevice.SubmitUploadCommands();
 }
 
-Engine::DebugRenderer::~DebugRenderer()
-{
-}
+Engine::DebugRenderer::~DebugRenderer() = default;
 
 void Engine::DebugRenderer::AddLine(DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) const
 {
-    if (!(sDebugCategoryFlags & category)) return;
-    mImpl->AddLine(from, to, color);
+	if (!Device::IsHeadless()
+		&& (sDebugCategoryFlags & category) != 0)
+	{
+		mImpl->AddLine(from, to, color);
+	}
 }
 
 void Engine::DebugRenderer::Render(const World& world)
@@ -101,10 +108,6 @@ void Engine::DebugRenderer::Render(const World& world)
     {
         mImpl->Render(camera.GetView(), camera.GetProjection());
     }
-}
-
-Engine::DebugRenderer::Impl::Impl()
-{
 }
 
 bool Engine::DebugRenderer::Impl::AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)

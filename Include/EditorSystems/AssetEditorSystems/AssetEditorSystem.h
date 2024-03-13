@@ -257,7 +257,11 @@ namespace Engine
 	AssetSaveInfo AssetEditorSystem<T>::SaveToMemory()
 	{
 		ApplyChangesToAsset();
-		AssetSaveInfo saveInfo = mAsset.Save();
+		const std::optional<WeakAsset<T>> originalAsset = TryGetOriginalAsset();
+
+		AssetSaveInfo saveInfo = mAsset.Save(originalAsset->GetImportedFromFile().has_value() 
+			? AssetFileMetaData::ImporterInfo{ *originalAsset->GetImportedFromFile(), *originalAsset->GetImporterVersion()}
+			: std::optional<AssetFileMetaData::ImporterInfo>{});
 		return saveInfo;
 	}
 

@@ -745,10 +745,14 @@ Expected<Engine::VirtualMachine::VMContext::CachedValue*, Engine::ScriptError> E
 				return ScriptError{ ScriptError::FunctionCallFailed, { context.mFunc, node }, setResult.Error() };
 			}
 		}
+		else if (static_cast<const GetterScriptNode&>(node).DoesNodeReturnCopy())
+		{
+			// Make a copy of the value when getting or setting
+			// TODO Check if it has the copy-constructor at script-compile time
+			result = returnType->ConstructAt(returnAddress->mData, refToMemberInsideTarget);
+		}
 
-		// Make a copy of the value when getting or setting
-		// TODO Check if it has the copy-constructor at script-compile time
-		result = returnType->ConstructAt(returnAddress->mData, refToMemberInsideTarget);
+		result = std::move(refToMemberInsideTarget);
 		break;
 	}
 	case ScriptNodeType::FunctionCall:

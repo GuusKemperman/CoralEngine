@@ -66,6 +66,16 @@ namespace Engine
 		void SaveFunctionState() const;
 		void LoadFunctionState();
 
+		static constexpr std::array<float, 6> sZoomLevels
+		{
+			.03f,
+			.06f,
+			.125f,
+			.25f,
+			.5f,
+			1.0f,
+		};
+
 		float mOverviewPanelWidth = .17f;
 		float mCanvasWidth = .8f;
 		float mDetailsWidth = .17f;

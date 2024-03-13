@@ -11,20 +11,19 @@
 
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 
-Engine::Device::Device() {
-
+Engine::Device::Device()
+{
     InitializeWindow();
-    InitializeDevice();
+	InitializeDevice();
 }
 
 void Engine::Device::InitializeWindow()
 {
-    LOG(LogCore, Message, "Initializing GLFW");
+    LOG(LogCore, Verbose, "Initializing GLFW");
+
     if (!glfwInit())
     {
         LOG(LogCore, Fatal, "GLFW could not be initialized");
-        assert(false);
-        exit(EXIT_FAILURE);
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -44,22 +43,21 @@ void Engine::Device::InitializeWindow()
 
     mFullscreen = false;
 
-    if (mFullscreen){
+    if (mFullscreen)
+    {
         mViewport.Width = static_cast<FLOAT>(maxScreenWidth);
         mViewport.Height = static_cast<FLOAT>(maxScreenHeight);
         mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "General engine", mMonitor, nullptr);
     }
-    else{
+    else
+    {
         glfwWindowHint(GLFW_RESIZABLE, 1);
         mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "General engine", nullptr, nullptr);
     }
 
-    if (!mWindow)
+    if (mWindow == nullptr)
     {
         LOG(LogCore, Fatal, "GLFW window could not be created");
-        glfwTerminate();
-        assert(false);
-        exit(EXIT_FAILURE);
     }
 
     glfwMakeContextCurrent(mWindow);
@@ -73,7 +71,7 @@ void Engine::Device::InitializeDevice()
     Microsoft::WRL::ComPtr<ID3D12Debug> debugInterface;
     if (FAILED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)))) {
         LOG(LogCore, Fatal, "Failed to get debug interface");
-        assert(false && "Failed to get debug interface");
+        ABORT;
     }
     debugInterface->EnableDebugLayer();
 #endif
@@ -90,9 +88,9 @@ void Engine::Device::InitializeDevice()
 
     ComPtr<IDXGIFactory4> dxgiFactory;
     HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory));
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to create dxgi factory");
-        assert(false && "Failed to create dxgi factory");
     }
 
     ComPtr<IDXGIAdapter1> adapter;
@@ -113,16 +111,15 @@ void Engine::Device::InitializeDevice()
             hr = D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&mDevice));
             if (FAILED(hr)) {
                 LOG(LogCore, Fatal, "Failed to create render device");
-                assert(false && "Failed to create device");
             }
 
             D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
             hr = mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5,
                 &options5, sizeof(options5));
 
-            if (FAILED(hr)) {
+            if (FAILED(hr)) 
+            {
                 LOG(LogCore, Fatal, "Failed to pick adaptor");
-                assert(false && "Failed to check raytracing support");
             }
             if (options5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED) {
                 adapterFound = false;
@@ -138,43 +135,42 @@ void Engine::Device::InitializeDevice()
     hr = mDevice->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&mCommandQueue));
     if (FAILED(hr)) {
         LOG(LogCore, Fatal, "Failed to create command queue");
-        assert(false && "Failed to create command queue");
     }
 
     hr = mDevice->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&mUploadCommandQueue));
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to create upload command queue");
-        assert(false && "Failed to create upload command queue");
     }
 
     //CREATE COMMAND ALLOCATOR
     for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
     {
         hr = mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator[i]));
-        if (FAILED(hr)) {
+        if (FAILED(hr)) 
+        {
             LOG(LogCore, Fatal, "Failed to create command allocator");
-            assert(false && "Failed to create command allocator");
         }
     }
 
     hr = mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mUploadCommandAllocator));
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to create upload command allocator");
-        assert(false && "Failed to create upload command allocator");
     }
 
     //CREATE COMMAND LIST
     hr = mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator[0].Get(), NULL, IID_PPV_ARGS(&mCommandList));
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         LOG(LogCore, Fatal, "Failed to create command list");
-        assert(false && "Failed to create command list");
     }
     mCommandList->SetName(L"Main command list");
 
     hr = mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mUploadCommandAllocator.Get(), NULL, IID_PPV_ARGS(&mUploadCommandList));
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         LOG(LogCore, Fatal, "Failed to create upload command list");
-        assert(false && "Failed to create upload command list");
     }
     mUploadCommandList->SetName(L"Upload command list");
     mUploadCommandList->Close();
@@ -183,18 +179,18 @@ void Engine::Device::InitializeDevice()
     for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
     {
         hr = mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence[i]));
-        if (FAILED(hr)) {
+        if (FAILED(hr)) 
+        {
             LOG(LogCore, Fatal, "Failed to create fence");
-            assert(false && "Failed to create fence");
         }
 
         mFenceValue[i] = 0; // set the initial fence value to 0
     }
 
     hr = mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mUploadFence));
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to upload create fence");
-        assert(false && "Failed to upload create fence");
     }
 
     mUploadFenceValue = 0; // set the initial fence value to 0
@@ -202,15 +198,15 @@ void Engine::Device::InitializeDevice()
 
     //CREATE FENCE EVENT
     mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (mFenceEvent == nullptr) {
+    if (mFenceEvent == nullptr) 
+    {
         LOG(LogCore, Fatal, "Failed to create fence event");
-        assert(false && "Failed to create fence event");
     }
 
     mUploadFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (mUploadFenceEvent == nullptr) {
+    if (mUploadFenceEvent == nullptr) 
+    {
         LOG(LogCore, Fatal, "Failed to create upload fence event");
-        assert(false && "Failed to create upload fence event");
     }
 
 
@@ -235,9 +231,9 @@ void Engine::Device::InitializeDevice()
 
     IDXGISwapChain* tempSwapChain;
     hr = dxgiFactory->CreateSwapChain(mCommandQueue.Get(), &swapChainDesc, &tempSwapChain);
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to create swap chain");
-        assert(false && "Failed to create swap chain");
     }
     mSwapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
 
@@ -253,9 +249,9 @@ void Engine::Device::InitializeDevice()
         mResources[i] = std::make_unique<DXResource>();
         ComPtr<ID3D12Resource> res;
         hr = mSwapChain->GetBuffer(i, IID_PPV_ARGS(&res));
-        if (FAILED(hr)) {
+        if (FAILED(hr)) 
+        {
             LOG(LogCore, Fatal, "Failed to get swapchain buffer");
-            assert(false && "Failed to get swapchain buffer");
         }
         mResources[i]->SetResource(res);
         mDevice->CreateRenderTargetView(mResources[i]->Get(), nullptr, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(i));
@@ -318,9 +314,9 @@ void Engine::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue,
     UINT64 completedValue = fence->GetCompletedValue();
     if (completedValue < fenceValue)
     {
-        if (FAILED(fence->SetEventOnCompletion(fenceValue, fenceEvent))) {
+        if (FAILED(fence->SetEventOnCompletion(fenceValue, fenceEvent))) 
+        {
             LOG(LogCore, Fatal, "Failed to set fence event on completion.");
-            assert(false && "Failed to set fence event on completion.");
         }
         WaitForSingleObject(fenceEvent, INFINITE);
     }
@@ -337,18 +333,18 @@ void Engine::Device::UpdateRenderTarget()
     mResources[DEPTH_STENCIL_RSC] = nullptr;
 
     HRESULT hr = mSwapChain->ResizeBuffers(FRAME_BUFFER_COUNT, static_cast<UINT>(mViewport.Width),  static_cast<UINT>(mViewport.Height), DXGI_FORMAT_R8G8B8A8_UNORM, 0);
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to resize framebuffer");
-        assert(false && "Failed to resize framebuffer");
     }
 
     for (int i = 0; i < FRAME_BUFFER_COUNT; i++) {
         mResources[i] = std::make_unique<DXResource>();
         ComPtr<ID3D12Resource> res;
         hr = mSwapChain->GetBuffer(i, IID_PPV_ARGS(&res));
-        if (FAILED(hr)) {
+        if (FAILED(hr)) 
+        {
             LOG(LogCore, Fatal, "Failed to get swapchain buffer");
-            assert(false && "Failed to get swapchain buffer");
         }
         mResources[i]->SetResource(res);
         mDevice->CreateRenderTargetView(mResources[i]->Get(), nullptr, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(i));
@@ -450,8 +446,9 @@ void Engine::Device::EndFrame()
 
     SubmitCommands();
 
-    if (FAILED(mSwapChain->Present(0, 0))) {
-        assert(false && "Failded to present");
+    if (FAILED(mSwapChain->Present(0, 0))) 
+    {
+        LOG(LogCore, Fatal, "Failded to present");
     }
 
     ImGui::EndFrame();
@@ -471,9 +468,9 @@ void Engine::Device::SubmitCommands()
     mFenceValue[mFrameIndex]++;
     HRESULT hr = mCommandQueue->Signal(mFence[mFrameIndex].Get(), mFenceValue[mFrameIndex]);
 
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to signal fence");
-        assert(false && "Failed to signal fence");
     }
 
 }
@@ -482,27 +479,27 @@ void Engine::Device::StartRecordingCommands()
 {
     mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
 
-    if (FAILED(mCommandAllocator[mFrameIndex]->Reset())) {
+    if (FAILED(mCommandAllocator[mFrameIndex]->Reset())) 
+    {
         LOG(LogCore, Fatal, "Failed to reset command allocator");
-        assert(false && "Failed to reset command allocator");
     }
 
-    if (FAILED(mCommandList->Reset(mCommandAllocator[mFrameIndex].Get(), nullptr))) {
+    if (FAILED(mCommandList->Reset(mCommandAllocator[mFrameIndex].Get(), nullptr))) 
+    {
         LOG(LogCore, Fatal, "Failed to reset command list");
-        assert(false && "Failed to reset command list");
     }
 }
 
 void Engine::Device::StartUploadCommands()
 {
-    if (FAILED(mUploadCommandAllocator->Reset())) {
+    if (FAILED(mUploadCommandAllocator->Reset())) 
+    {
         LOG(LogCore, Fatal, "Failed to reset upload command allocator");
-        assert(false && "Failed to reset upload command allocator");
     }
 
-    if (FAILED(mUploadCommandList->Reset(mUploadCommandAllocator.Get(), nullptr))) {
+    if (FAILED(mUploadCommandList->Reset(mUploadCommandAllocator.Get(), nullptr)))
+    {
         LOG(LogCore, Fatal, "Failed to reset upload command list");
-        assert(false && "Failed to reset upload command list");
     }
 
 }
@@ -517,16 +514,15 @@ void Engine::Device::SubmitUploadCommands()
     mUploadFenceValue++;
     HRESULT hr = mUploadCommandQueue->Signal(mUploadFence.Get(), mUploadFenceValue);
 
-    if (FAILED(hr)) {
+    if (FAILED(hr)) 
+    {
         LOG(LogCore, Fatal, "Failed to signal upload fence");
-        assert(false && "Failed to signal upload fence");
     }
 }
 
-
 void Engine::Device::CreateImguiContext()
 {
-    LOG(LogCore, Message, "Creating imgui context");
+    LOG(LogCore, Verbose, "Creating imgui context");
 
     glfwShowWindow(mWindow);
     mIsWindowOpen = true;
@@ -543,6 +539,7 @@ void Engine::Device::CreateImguiContext()
         mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(0),
         mDescriptorHeaps[RESOURCE_HEAP]->GetGPUHandle(0));
     ImGui_ImplGlfw_InitForOther(mWindow, true);
+    ImGui_ImplGlfw_SetCallbacksChainForAllWindows(true);
 
     ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
 
