@@ -292,8 +292,8 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 
 	ImGui::Image((ImTextureID)frameBuffer.GetColorTextureId(),
 		ImVec2(contentSize),
-		ImVec2(0, 1),
-		ImVec2(1, 0));
+		ImVec2(0, 0),
+		ImVec2(1, 1));
 
 	// Since it is our 'image' that receives the drag drop, we call this right after the image call.
 	ReceiveDragDrops(world);

@@ -44,17 +44,14 @@ Engine::Renderer::Renderer()
     ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
 
     mPBRPipeline = std::make_unique<DXPipeline>();
-    CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
 
-    rast.CullMode = D3D12_CULL_MODE_FRONT;
     mPBRPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
     mPBRPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1);
     mPBRPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
     mPBRPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
     mPBRPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
-    mPBRPipeline->SetRasterizer(rast);
     mPBRPipeline->SetDepthState(depth);
     mPBRPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
     mPBRPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
@@ -64,7 +61,6 @@ Engine::Renderer::Renderer()
     mZPipeline = std::make_unique<DXPipeline>();
     mZPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
     mZPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
-    mZPipeline->SetRasterizer(rast);
     mZPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
     mZPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
 
@@ -108,8 +104,7 @@ void Engine::Renderer::Render(const World& world)
     //UPDATE CAMERA
     const auto camera = optionalEntityCameraPair->second;
     InfoStruct::DXMatrixInfo matrixInfo;
-    //matrixInfo.pm = camera.GetProjection();
-    matrixInfo.pm = glm::transpose(glm::scale(camera.GetProjection(), glm::vec3(1.f, -1.f, 1.f)));
+    matrixInfo.pm = glm::transpose(camera.GetProjection());
     matrixInfo.vm = glm::transpose(camera.GetView());
 
     matrixInfo.ipm = glm::inverse(matrixInfo.pm);
