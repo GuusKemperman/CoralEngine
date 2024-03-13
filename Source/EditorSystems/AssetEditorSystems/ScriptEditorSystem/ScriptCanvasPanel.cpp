@@ -634,7 +634,8 @@ void Engine::ScriptEditorSystem::DisplayCommentNode(CommentScriptNode& node)
 
 	ImGui::TextUnformatted(node.GetComment().c_str());
 
-	ax::NodeEditor::Group(ImMax({ 300.0f, 200.0f }, ImVec2{ node.GetSize() }));
+	const ImVec2 nodeDesiredSize = ImMax({ 50.0f, 50.0f }, ImVec2{ node.GetSize() });
+	ax::NodeEditor::Group(nodeDesiredSize);
 	ImGui::PopID();
 	ax::NodeEditor::EndNode();
 	ax::NodeEditor::PopStyleColor(2);
