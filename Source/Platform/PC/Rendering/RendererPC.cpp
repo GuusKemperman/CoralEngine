@@ -86,7 +86,7 @@ Engine::Renderer::Renderer()
     srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
     srvDesc.Buffer.FirstElement = 0;
     srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXMaterialInfo);
-    srvDesc.Buffer.NumElements = 50;
+    srvDesc.Buffer.NumElements = MAX_MESHES +2;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     materialHeapSlot = engineDevice.AllocateTexture(mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB].get(), srvDesc);
     materials = std::vector<InfoStruct::DXMaterialInfo>(MAX_MESHES + 2);
@@ -262,8 +262,7 @@ void Engine::Renderer::Render(const World& world)
     data.SlicePitch = sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2);
     mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
-    materials.clear();
-    materials.resize(MAX_MESHES + 2);
+    memset(materials.data(), 0, sizeof(InfoStruct::DXMaterialInfo) * materials.size());
 }
 
 Engine::MetaType Engine::Renderer::Reflect()

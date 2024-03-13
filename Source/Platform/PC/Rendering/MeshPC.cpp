@@ -98,7 +98,6 @@ Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
     }
     else
     {
-        //std::optional<std::vector<glm::vec3>> optTangents = CalculateTangents(indices.data(), numOfIndices, flags & areIndices16Bit, positions.data(), normals, UVs, numOfVertices);
         std::optional<std::vector<glm::vec3>> optTangents = CalculateTangents(indices.data(),
             numOfIndices,
             flags & areIndices16Bit,
