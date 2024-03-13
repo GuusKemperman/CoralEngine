@@ -5,6 +5,7 @@
 
 namespace Engine
 {
+	class TransformComponent;
 	class World;
 
 	class NavMeshComponent
