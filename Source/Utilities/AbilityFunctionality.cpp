@@ -34,7 +34,7 @@ void Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity
 
 	if (flatOrPercentage == FlatOrPercentage::Percentage)
 	{
-		amount = amount * 0.01f;
+		amount = amount * 0.01f * base;
 	}
 
 	// in the future apply damage modifier
