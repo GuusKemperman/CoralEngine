@@ -157,6 +157,8 @@ void Engine::ScriptEditorSystem::DrawCanvasObjects()
 
 	const ImRect& canvasRect = ax::NodeEditor::GetCanvasRect();
 
+	const bool bringPinsToFront = Input::Get().HasFocus();
+
 	for (const auto& [pinId, inspectPos] : pinsToInspect)
 	{
 		ScriptPin& pin = currentFunc.GetPin(pinId);
@@ -176,6 +178,12 @@ void Engine::ScriptEditorSystem::DrawCanvasObjects()
 			| ImGuiWindowFlags_NoBackground
 			| ImGuiWindowFlags_AlwaysAutoResize))
 		{
+			if (bringPinsToFront)
+			{
+				ImGuiWindow* window = ImGui::GetCurrentWindow();
+				ImGui::BringWindowToDisplayFront(window);
+			}
+
 			InspectPin(currentFunc, pin);
 		}
 
