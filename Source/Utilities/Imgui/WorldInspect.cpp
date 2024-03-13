@@ -518,6 +518,19 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 	{
 		const MetaType& componentClass = choice.mValue;
 		const TypeId typeHash = componentClass.GetTypeId();
+
+		ImGui::PushID(static_cast<int>(typeHash));
+
+		// Makes sure we popId regardless of where we call continue or break
+		struct IdPopper
+		{
+			~IdPopper()
+			{
+				ImGui::PopID();
+			}
+		};
+		IdPopper __{};
+
 		const char* className = componentClass.GetName().c_str();
 		auto& storage = *reg.Storage(typeHash);
 
@@ -539,6 +552,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 		{
 			continue;
 		}
+
 
 		for (const MetaFunc& func : componentClass.EachFunc())
 		{
