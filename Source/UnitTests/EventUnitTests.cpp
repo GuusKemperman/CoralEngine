@@ -9,10 +9,12 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/Events.h"
 #include "Meta/MetaType.h"
-#include "Components/UtililtyAi/EnemyAiControllerComponent.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 namespace Engine
 {
+	class EnemyAiControllerComponent;
+
 	static const MetaType* GetUnitTestScript()
 	{
 		return MetaManager::Get().TryGetType("UnitTestScript");
@@ -274,7 +276,7 @@ UNIT_TEST(Events, CollisionEvents)
 {
 	using namespace Engine;
 
-	World world{ true };
+	World world{true};
 	const entt::entity owner = InitTest(world);
 
 	Registry& reg = world.GetRegistry();
@@ -311,7 +313,7 @@ UNIT_TEST(Events, CollisionEvents)
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 3));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
-	otherTransform.SetWorldPosition(glm::vec2{ 100000.0f });
+	otherTransform.SetWorldPosition(glm::vec2{100000.0f});
 
 	world.Tick(1 / 60.0f);
 
@@ -321,4 +323,3 @@ UNIT_TEST(Events, CollisionEvents)
 
 	return UnitTest::Success;
 }
-
