@@ -117,9 +117,9 @@ ComPtr<ID3DBlob> DXPipeline::ShaderToBlob(const char* path, const char* shaderVe
 
 	if (!library) {
 		if(functionName != nullptr)
-			hr = D3DCompileFromFile(wString, nullptr, nullptr, functionName, shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
+			hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, functionName, shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
 		else
-			hr = D3DCompileFromFile(wString, nullptr, nullptr, "main", shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
+			hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
 	}
 	else {
 		hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "cs_5_0", D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
