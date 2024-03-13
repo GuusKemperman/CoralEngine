@@ -60,9 +60,9 @@ Engine::DebugRenderer::DebugRenderer()
 	mImpl->mDebugPipeline->SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
 	mImpl->mDebugPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"SKYBOX SIGNATURE");
 
-	std::vector<glm::vec4> positions(2);
-	positions[0] = glm::vec4(0.f, 0.f, 0.f, 1.f);
-	positions[1] = glm::vec4(1.f, 0.f, 0.f, 1.f);
+	std::vector<glm::vec3> positions(2);
+	positions[0] = glm::vec3(0.f, 0.f, 0.f);
+	positions[1] = glm::vec3(1.f, 0.f, 0.f);
 
 	engineDevice.StartUploadCommands();
 	int vertexCount = 2;
