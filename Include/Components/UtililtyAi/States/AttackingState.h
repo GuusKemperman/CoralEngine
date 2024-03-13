@@ -18,7 +18,7 @@ namespace Engine
 		entt::entity mTargetEntity = entt::null;
 		entt::entity mChosenTargetEntity = entt::null;
 
-		float mRadius = 0;
+		float mRadius{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();

@@ -77,7 +77,7 @@ std::pair<float, entt::entity> Engine::AttackingState::GetHighestScore(const Wor
 
 		if (distance < mRadius)
 		{
-			score = 10;
+			score = 10.0f;
 		}
 
 		if (highestScore < score)
