@@ -284,9 +284,13 @@ void Engine::Device::InitializeDevice()
 
     //CREATE COMPUTE ROOT SIGNATURE
     mComputeSignature = std::make_unique<DXSignature>(1);
-    mComputeSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL);//0
-    mComputeSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_ALL);//1
-    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);//3
+    mComputeSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL); // Cluster info
+    mComputeSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_ALL); // Camera info
+    mComputeSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_ALL); // Cluster camera info
+    mComputeSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_ALL); // Light info
+    mComputeSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_ALL); // Model matrices
+    mComputeSignature->AddCBuffer(5, D3D12_SHADER_VISIBILITY_ALL); // Pixel color for cluster culling
+    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);
     mComputeSignature->CreateSignature(mDevice, L"COMPUTE ROOT SIGNATURE");
 
     //CREATE DEPTH STENCIL
