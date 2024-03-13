@@ -97,6 +97,13 @@ bool Engine::AbilitySystem::CanAbilityBeActivated(const CharacterComponent& char
 
 void Engine::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability)
 {
+    if (!CanAbilityBeActivated(characterData, ability))
+    {
+        // for the player, this will get checked twice,
+        // but it is a small tradeoff for safety in the AI usage
+        return;
+    }
+
     // ability activate event
     if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mScript->GetName()))
     {
