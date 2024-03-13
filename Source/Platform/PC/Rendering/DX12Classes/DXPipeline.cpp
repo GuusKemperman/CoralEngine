@@ -1,13 +1,14 @@
 #include "Precomp.h"
-#include "../Include/Platform/PC/Rendering/DX12Classes/DxPipeline.h"
-#include "../Include/Platform/PC/Rendering/DX12Classes/DXSignature.h"
+#include "Platform/PC/Rendering/DX12Classes/DxPipeline.h"
+#include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
 #include <d3dcompiler.h>
 
 void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature* root, LPCWSTR name)
 {
 	HRESULT hr;
 
-	if (mComputeShaderBuffer == nullptr) {
+	if (mComputeShaderBuffer == nullptr) 
+	{
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.InputLayout.NumElements = static_cast<UINT>(mInputs.size());
 		psoDesc.InputLayout.pInputElementDescs = mInputs.data();
@@ -37,14 +38,16 @@ void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature*
 		psoDesc.DepthStencilState = mDepth;
 		hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPipeline));
 	}
-	else {
+	else 
+	{
 		D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.pRootSignature = root->GetSignature().Get();
 		psoDesc.CS = { reinterpret_cast<UINT8*>(mComputeShaderBuffer), mComputeShaderSize };
 		hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&mPipeline));
 	}
 
-	if (FAILED(hr)) {
+	if (FAILED(hr)) 
+	{
 		MessageBox(NULL, L"Failed to create pipeline", L"FATAL ERROR!", MB_ICONERROR | MB_OK);
 		assert(false && "Failed to create pipeline");
 	}
