@@ -140,6 +140,18 @@ namespace Engine
 			return vec;
 		}
 
+		static glm::vec2 QuatToDirectionXZ(const glm::quat& quat)
+		{
+			const glm::vec3 direction3D = glm::vec3(0.f, 0.f, 1.f) * quat;
+			return normalize(glm::vec2(-direction3D.x, direction3D.z));
+		}
+
+		static glm::vec2 QuatToDirection(const glm::quat& quat)
+		{
+			const glm::vec3 direction3D = glm::vec3(0.f, 0.f, 1.f) * quat;
+			return normalize(glm::vec3(-direction3D.x, direction3D.y, direction3D.z));
+		}
+
 	private:
 		// Function needed for line-line intersection
 		static bool onSegment(const glm::vec2& p, const glm::vec2& q, const glm::vec2& r)

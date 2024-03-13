@@ -11,6 +11,7 @@ Engine::MetaType Engine::ProjectileComponent::Reflect()
 
 	metaType.AddField(&ProjectileComponent::mRange, "mRange").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&ProjectileComponent::mCurrentRange, "mCurrentRange").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&ProjectileComponent::mSpeed, "mSpeed").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectComponentType<ProjectileComponent>(metaType);
 
