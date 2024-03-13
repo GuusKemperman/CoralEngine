@@ -86,7 +86,6 @@ namespace Engine
 
         unsigned int materialHeapSlot = 0;
         std::vector<InfoStruct::DXMaterialInfo> materials;
-        std::vector<std::shared_ptr<StaticMesh>> meshes;
     private:
         friend ReflectAccess;
         static MetaType Reflect();
