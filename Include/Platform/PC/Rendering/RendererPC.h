@@ -48,14 +48,11 @@ namespace Engine
             float metallicFactor;
             float roughnessFactor;
             float normalScale;
-            bool useColorTex;
-            bool useEmissiveTex;
-            bool useMetallicRoughnessTex;
-            bool useNormalTex;
-            bool useOcclusionTex;
-            float padding1; // 4 bytes
-            float padding2; // 4 bytes
-            float padding3; 
+            unsigned int useColorTex;
+            unsigned int useEmissiveTex;
+            unsigned int useMetallicRoughnessTex;
+            unsigned int useNormalTex;
+            unsigned int useOcclusionTex;
         };
     }
 
