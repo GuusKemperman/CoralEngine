@@ -1,7 +1,11 @@
 #include "Precomp.h"
 #include "Utilities/AbilityFunctionality.h"
 
+#include "Components/TransformComponent.h"
+#include "Components/Abilities/ActiveAbilityComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
+#include "Components/Abilities/ProjectileComponent.h"
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
@@ -23,7 +27,22 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
 		entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease>{}, "ApplyToEntity", "Stat", "Amount").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-		return metaType;
+	metaType.AddFunc([](const std::shared_ptr<const Prefab>& prefab, entt::entity castBy)
+		{
+			if (prefab == nullptr)
+			{
+				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
+			}
+
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			SpawnProjectile(*world, *prefab, castBy);
+
+		}, "SpawnProjectile", MetaFunc::ExplicitParams<
+		const std::shared_ptr<const Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	return metaType;
 }
 
 void Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease)
@@ -49,6 +68,49 @@ void Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity
 	current = std::max(current, 0.0f);
 	//if (ability.clampToMax)
 		current = std::min(current, base);
+}
+
+void Engine::AbilityFunctionality::SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy)
+{
+	auto& reg = world.GetRegistry();
+	auto prefabEntity = reg.CreateFromPrefab(prefab);
+
+	auto prejectileComponent = reg.TryGet<ProjectileComponent>(prefabEntity);
+	if (prejectileComponent == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "The prefab does not have a ProjectileComponent attached.")
+			return;
+	}
+	auto activeAbility = reg.TryGet<ActiveAbilityComponent>(prefabEntity);
+	if (activeAbility == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "The prefab does not have an ActiveAbilityComponent attached.")
+			return;
+	}
+	auto prefabTransform = reg.TryGet<TransformComponent>(prefabEntity);
+	if (prefabTransform == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "The prefab does not have a TransformComponent attached.")
+			return;
+	}
+	auto prefabPhysicsBody= reg.TryGet<PhysicsBody2DComponent>(prefabEntity);
+	if (prefabPhysicsBody == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "The prefab does not have a PhysicsBody2DComponent attached.")
+			return;
+	}
+	auto characterTransform = reg.TryGet<TransformComponent>(castBy);
+	if (characterTransform == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "The cast-by character does not have a TransformComponent attached.")
+			return;
+	}
+
+	activeAbility->mCastByCharacter = castBy;
+	auto characterWorldPos = characterTransform->GetWorldPosition();
+	prefabTransform->SetLocalPosition(characterWorldPos);
+	auto characterDirection = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+	prefabPhysicsBody->mLinearVelocity = characterDirection * prejectileComponent->mSpeed;
 }
 
 std::pair<float&, float&> Engine::AbilityFunctionality::GetStat(Stat stat, CharacterComponent& characterComponent)

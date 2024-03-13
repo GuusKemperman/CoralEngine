@@ -9,6 +9,9 @@ namespace Engine
 		float mRange{};
 		float mCurrentRange{};
 
+		float mSpeed{};
+		float mCurrentSpeed{};
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
