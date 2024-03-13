@@ -340,9 +340,11 @@ Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, c
 
 void Engine::Registry::RemoveComponent(const TypeId componentClassTypeId, const entt::entity fromEntity)
 {
+	World::PushWorld(mWorld);
 	entt::sparse_set* storage = Storage(componentClassTypeId);
 	ASSERT(storage != nullptr);
 	storage->erase(fromEntity);
+	World::PopWorld();
 }
 
 void Engine::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassTypeId, const entt::entity fromEntity)
@@ -351,7 +353,9 @@ void Engine::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassT
 
 	if (storage != nullptr)
 	{
+		World::PushWorld(mWorld);
 		storage->remove(fromEntity);
+		World::PopWorld();
 	}
 }
 

@@ -8,6 +8,8 @@
 #include "Assets/Texture.h"
 #include "Assets/Script.h"
 #include "Assets/Core/AssetSaveInfo.h"
+#include "Systems/AbilitySystem.h"
+#include "World/World.h"
 
 Engine::Ability::Ability(std::string_view name) :
 	Asset(name, MakeTypeId<Ability>())

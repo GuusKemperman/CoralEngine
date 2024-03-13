@@ -42,6 +42,15 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc([](const float& x, const float& y, const float& z) { return T{ x, y, z }; }, "MakeVec3", MetaFunc::ExplicitParams<const float&, const float&, const float&>{}, "X", "Y", "Z").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const T& v, const float& s) { return v * s; }, "Scale", MetaFunc::ExplicitParams<const T&, const float&>{}, "Vector", "Scalar", "Product").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<T(*)(const T&, const float&, const float&)>(&Math::ClampLength), "ClampLength").GetProperties().Add(Props::sIsScriptableTag);
+
+
+	type.AddFunc([](T& n) -> T& { ++n; return n; }, OperatorType::increment, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n) -> T& { ++n; return n; }, OperatorType::decrement, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n += l; return n; }, OperatorType::add_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n -= l; return n; }, OperatorType::subtract_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n *= l; return n; }, OperatorType::multiplies_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n /= l; return n; }, OperatorType::divides_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
 	ReflectFieldType<T>(type);
 
 

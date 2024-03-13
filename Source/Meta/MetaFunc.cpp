@@ -360,6 +360,8 @@ std::string_view Engine::GetNameOfOperator(const OperatorType type)
 	case OperatorType::arrow: return "->";
 	case OperatorType::dot: return ".";
 	case OperatorType::dot_indirect: return ".*";
+	case OperatorType::increment: return "++";
+	case OperatorType::decrement: return "--";
 	default: return "Invalid operator";
 	}
 }

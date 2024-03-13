@@ -25,10 +25,16 @@ Engine::Asset::Asset(AssetLoadInfo& loadInfo) :
 {
 }
 
-Engine::AssetSaveInfo Engine::Asset::Save() const
+Engine::AssetSaveInfo Engine::Asset::Save(const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo) const
 {
 	LOG(LogAssets, Verbose, "Begin saving of: {}", GetName());
-	AssetSaveInfo saveInfo{ mName, *MetaManager::Get().TryGetType(mTypeId) };
+
+	MetaType& metaType = *MetaManager::Get().TryGetType(mTypeId);
+
+	AssetSaveInfo saveInfo = importerInfo.has_value()
+		? AssetSaveInfo{ mName, metaType, importerInfo->mImportedFile, importerInfo->mImporterVersion }
+		: AssetSaveInfo{ mName, metaType };
+
 	OnSave(saveInfo);
 	LOG(LogAssets, Verbose, "Finished saving of: {}", GetName());
 	return saveInfo;

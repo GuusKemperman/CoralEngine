@@ -192,6 +192,37 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			ImGui::SetItemTooltip("Stop");
 		}
 
+		{
+			auto possibleCamerasView = GetWorld().GetRegistry().View<CameraComponent>();
+
+			if (possibleCamerasView.size() > 1)
+			{
+				auto cam = GetWorld().GetRenderer().GetMainCamera();
+
+				entt::entity cameraEntity = cam.has_value() ? cam->first : entt::null;
+
+				ImGui::SameLine();
+
+				static constexpr float cameraComboWidth = 200.0f;
+
+				ImGui::SetCursorPosX(viewportPos.x + mViewportWidth - cameraComboWidth);
+				ImGui::SetNextItemWidth(cameraComboWidth);
+
+				if (ImGui::BeginCombo("Camera", NameComponent::GetDisplayName(GetWorld().GetRegistry(), cameraEntity).c_str()))
+				{
+					for (entt::entity possibleCamera : possibleCamerasView)
+					{
+						if (ImGui::Button(NameComponent::GetDisplayName(GetWorld().GetRegistry(), possibleCamera).c_str()))
+						{
+							GetWorld().GetRenderer().SetMainCamera(possibleCamera);
+						}
+					}
+
+					ImGui::EndCombo();
+				}
+			}
+		}
+
 		drawList->ChannelsSetCurrent(0);
 		ImGui::SetCursorPos(viewportPos);
 
@@ -505,10 +536,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 		bool removeButtonPressed{};
 
-		// We do not allow the root component to be removed
-		const bool isHeaderOpen = typeHash != MakeTypeId<RootComponent>() ?
-			ImGui::CollapsingHeaderWithButton(className, "X", &removeButtonPressed) :
-			ImGui::CollapsingHeader(className);
+		const bool isHeaderOpen = ImGui::CollapsingHeaderWithButton(className, "X", &removeButtonPressed);
 
 		if (removeButtonPressed)
 		{
@@ -722,7 +750,11 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 
 	if (ImGui::Button("Add Entity"))
 	{
-		reg.Create();
+		const entt::entity newEntity = reg.Create();
+
+		// Add a transform component, since
+		// 99% of entities require it
+		reg.AddComponent<TransformComponent>(newEntity);
 	}
 
 	ImGui::SameLine();
@@ -856,6 +888,8 @@ void Engine::WorldHierarchy::DisplaySingle(Registry& registry,
 			                       selectedEntities.end());
 		}
 	}
+
+	ImGui::SetItemTooltip(Format("Entity {}", static_cast<EntityType>(owner)).c_str());
 
 	// Only objects with transforms can accept children
 	if (!transformComponent)

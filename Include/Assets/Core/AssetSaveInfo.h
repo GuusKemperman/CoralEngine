@@ -9,7 +9,7 @@ namespace Engine
 	{
 	public:
 		AssetSaveInfo(const std::string& name, const MetaType& assetClass);
-		AssetSaveInfo(const std::string& name, const MetaType& assetClass,
+		AssetSaveInfo(const std::string& name, const MetaType& assetClass, 
 			const std::filesystem::path& importedFromFile, uint32 importerVersion);
 		
 		AssetSaveInfo(AssetSaveInfo&& other) noexcept;

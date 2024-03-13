@@ -8,9 +8,22 @@
 #include "Core/Input.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
+#include "World/WorldRenderer.h"
 
 void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 {
+	auto activeCamera = world.GetRenderer().GetMainCamera();
+	const entt::entity activeCameraOwner = activeCamera.has_value() ? activeCamera->first : entt::null;
+
+	FlyCamControllerComponent* const flyCam = world.GetRegistry().TryGet<FlyCamControllerComponent>(activeCameraOwner);
+	TransformComponent* const transform = world.GetRegistry().TryGet<TransformComponent>(activeCameraOwner);
+
+	if (flyCam == nullptr
+		|| transform == nullptr)
+	{
+		return;
+	}
+
 	glm::vec3 movementInput{};
 
 	movementInput[Axis::Forward] = Input::Get().GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S);
@@ -42,25 +55,14 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 	const bool emptyMovement = timeScaledMovementInput == glm::vec3{};
 	const bool emptyRotation = timeScaledRotations[0] == glm::identity<glm::quat>() && timeScaledRotations[1] == glm::identity<glm::quat>();
 
-	if (emptyMovement
-		&& emptyRotation)
+	if (!emptyMovement)
 	{
-		return;
+		flyCam->ApplyTranslation(*transform, timeScaledMovementInput);
 	}
 
-	const auto view = world.GetRegistry().View<FlyCamControllerComponent, TransformComponent>();
-
-	for (auto [entity, flycam, transform] : view.each())
+	if (!emptyRotation)
 	{
-		if (!emptyMovement)
-		{
-			flycam.ApplyTranslation(transform, timeScaledMovementInput);
-		}
-
-		if (!emptyRotation)
-		{
-			flycam.ApplyRotation(transform, timeScaledRotations);
-		}
+		flyCam->ApplyRotation(*transform, timeScaledRotations);
 	}
 }
 

@@ -576,6 +576,11 @@ void ax::NodeEditor::NavigateToSelection(bool zoomIn, float duration)
     s_Editor->NavigateTo(s_Editor->GetSelectionBounds(), zoomIn, duration);
 }
 
+void ax::NodeEditor::NavigateToRect(const ImRect& rect)
+{
+    s_Editor->NavigateTo(rect, true);
+}
+
 const ImRect& ax::NodeEditor::GetSettingsVisibleRect()
 {
     return s_Editor->GetSettings().m_VisibleRect;

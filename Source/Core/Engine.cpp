@@ -19,12 +19,23 @@
 
 Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
+	Device::sIsHeadless = argc >= 2
+		&& strcmp(argv[1], "run_tests") == 0;
+
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
-	Device::StartUp();
+
+	if (!Device::IsHeadless())
+	{
+		Device::StartUp();
+	}
+
 	Input::StartUp();
 #ifdef PLATFORM_WINDOWS
-	Device::Get().CreateImguiContext();
+	if (!Device::IsHeadless())
+	{
+		Device::Get().CreateImguiContext();
+	}
 #endif
 	MetaManager::StartUp();
 	AssetManager::StartUp();
@@ -32,14 +43,41 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 
 #ifdef EDITOR
 	Editor::StartUp();
-	UnitTestManager::StartUp();
 #endif // !EDITOR
+
+	UnitTestManager::StartUp();
+
+	if (Device::sIsHeadless)
+	{
+		uint32 numFailed = 0;
+		for (UnitTest& test : UnitTestManager::Get().GetAllTests())
+		{
+			test();
+			if (test.mResult != UnitTest::Success)
+			{
+				numFailed++;
+			}
+		}
+
+		// We only exit if numFailed != 0,
+		// since maybe theres a crash in
+		// the shutdown process and we want
+		// to test that as well
+		if (numFailed != 0)
+		{
+			// A lot of exits lead to exit(1).
+			// by doing + 1 we can distinguish
+			// from those errors
+			exit(numFailed + 1);
+		}
+	}
 }
 
 Engine::EngineClass::~EngineClass()
 {
-#ifdef EDITOR
 	UnitTestManager::ShutDown();
+
+#ifdef EDITOR
 	Editor::ShutDown();
 #endif  // EDITOR
 
@@ -47,13 +85,23 @@ Engine::EngineClass::~EngineClass()
 	AssetManager::ShutDown();
 	MetaManager::ShutDown();
 	Input::ShutDown();
-	Device::ShutDown();
+
+	if (!Device::IsHeadless())
+	{
+		Device::ShutDown();
+	}
+
 	Logger::ShutDown();
 	FileIO::ShutDown();
 }
 
 void Engine::EngineClass::Run()
 {
+	if (Device::IsHeadless())
+	{
+		return;
+	}
+
 #ifndef EDITOR
 	// TODO level name is hardcoded
 	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>("DemoLevel");

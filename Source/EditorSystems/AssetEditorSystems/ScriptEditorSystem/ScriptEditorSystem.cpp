@@ -178,17 +178,10 @@ void Engine::ScriptEditorSystem::SelectFunction(ScriptFunc* func)
 	ax::NodeEditor::Config config{};
 	config.SettingsFile = "";
 
-	//for (float i = 1.0f; i > .1f; i /= 2.0f)
-	//{
-	//	config.CustomZoomLevels.push_back(1.0f );
-	//}
-
-	config.CustomZoomLevels.push_back(.03f);
-	config.CustomZoomLevels.push_back(.06f);
-	config.CustomZoomLevels.push_back(.125f);
-	config.CustomZoomLevels.push_back(.25f);
-	config.CustomZoomLevels.push_back(.5f);
-	config.CustomZoomLevels.push_back(1.0f);
+	for (float zoomLevel : sZoomLevels)
+	{
+		config.CustomZoomLevels.push_back(zoomLevel);
+	}
 
 	mContext = CreateEditor(&config);
 	SetCurrentEditor(mContext);

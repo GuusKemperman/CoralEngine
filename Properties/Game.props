@@ -16,6 +16,8 @@
       <AdditionalIncludeDirectories>$(GameDir)Include/$(ProjectName);$(GameDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>GAME_DIR=R"($(GameDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <BuildMacro Include="EngineDir">
