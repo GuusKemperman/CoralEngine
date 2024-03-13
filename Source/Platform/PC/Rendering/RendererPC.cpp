@@ -71,9 +71,25 @@ Engine::Renderer::Renderer()
     //CREATE CONSTANT BUFFERS
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
-    mConstBuffers[MATERIAL_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Material info data", FRAME_BUFFER_COUNT);
+    mConstBuffers[MODEL_INDEX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(int), MAX_MESHES + 2, "Model index", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
 
+    //CREATE STRUCTURED BUFFERS
+    auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+    auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "MATERIAL STRUCTURED BUFFER");
+    mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXMaterialInfo)* (MAX_MESHES + 2), 0);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC  srvDesc = {};
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+    srvDesc.Buffer.FirstElement = 0;
+    srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXMaterialInfo);
+    srvDesc.Buffer.NumElements = 50;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    materialHeapSlot = engineDevice.AllocateTexture(mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB].get(), srvDesc);
+    materials = std::vector<InfoStruct::DXMaterialInfo>(MAX_MESHES + 2);
 }
 
 void Engine::Renderer::Render(const World& world)
@@ -145,10 +161,10 @@ void Engine::Renderer::Render(const World& world)
 
     const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
     int meshCounter = 0;
+    commandList->SetPipelineState(mZPipeline->GetPipeline().Get());
 
     //DEPTH PRE PASS
     for (auto [entity, staticMeshComponent, transform] : view.each()) {
-        commandList->SetPipelineState(mZPipeline->GetPipeline().Get());
         glm::mat4x4 modelMatrices[2]{};
         modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
         modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
@@ -162,14 +178,12 @@ void Engine::Renderer::Render(const World& world)
         meshCounter++;
     }
 
+    commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
+
     meshCounter = 0;
     //RENDERING
     for (auto [entity, staticMeshComponent, transform] : view.each())
     {
-        commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
-        mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
-
-        //UPDATE AND BIND MATERIAL INFO
         InfoStruct::DXMaterialInfo materialInfo;
         if (staticMeshComponent.mMaterial != nullptr) {
             materialInfo.colorFactor = { staticMeshComponent.mMaterial->mBaseColorFactor.r,
@@ -224,8 +238,15 @@ void Engine::Renderer::Render(const World& world)
             materialInfo.useOcclusionTex = false;
 
         }
-        mConstBuffers[MATERIAL_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
-        mConstBuffers[MATERIAL_CB]->Bind(commandList, 3, meshCounter, frameIndex);
+        materials[meshCounter] = materialInfo;
+
+        mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
+
+        //UPDATE AND BIND MATERIAL INFO
+        mConstBuffers[MODEL_INDEX_CB]->Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
+        mConstBuffers[MODEL_INDEX_CB]->Bind(commandList, 3, meshCounter, frameIndex);
+
+        engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 15, materialHeapSlot);
 
         if (!staticMeshComponent.mStaticMesh)
             continue;
@@ -234,6 +255,15 @@ void Engine::Renderer::Render(const World& world)
         staticMeshComponent.mStaticMesh->DrawMesh();
         meshCounter++;
     }
+
+    D3D12_SUBRESOURCE_DATA data;
+    data.pData = materials.data();
+    data.RowPitch = sizeof(InfoStruct::DXMaterialInfo);
+    data.SlicePitch = sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2);
+    mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
+    materials.clear();
+    materials.resize(MAX_MESHES + 2);
 }
 
 Engine::MetaType Engine::Renderer::Reflect()

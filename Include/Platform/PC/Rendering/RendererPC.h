@@ -4,6 +4,7 @@
 #include "Meta/MetaReflect.h"
 #include "Systems/System.h"
 #include "glm/glm.hpp"
+#include "Assets/StaticMesh.h"
 
 class DXResource;
 class DXConstBuffer;
@@ -47,20 +48,17 @@ namespace Engine
             float metallicFactor;
             float roughnessFactor;
             float normalScale;
-            float padding1; // Padding to align the next bools
-
-            // Grouping bools together for efficient packing, and adding padding to ensure
-            // the struct ends on a 16-byte boundary. Even though individual bools are treated
-            // as 4 bytes in HLSL, aligning them like this without additional padding will not align
-            // the struct size since the total size becomes 60 bytes, which is not a multiple of 16.
             bool useColorTex;
             bool useEmissiveTex;
             bool useMetallicRoughnessTex;
             bool useNormalTex;
             bool useOcclusionTex;
-            char padding2[11]; // Additional padding to align the struct size to a multiple of 16 bytes        
+            float padding1; // 4 bytes
+            float padding2; // 4 bytes
+            float padding3; 
         };
     }
+
 
     class Renderer final :
         public System
@@ -76,12 +74,22 @@ namespace Engine
             return traits;
         }
 
+        enum DXStructuredBuffers {
+            MODEL_MAT_SB,
+            MATERIAL_SB
+        };
+
+
     private:
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
+        std::unique_ptr<DXResource> mStructuredBuffers[3];
         std::unique_ptr<DXPipeline> mPBRPipeline;
         std::unique_ptr<DXPipeline> mZPipeline;
         InfoStruct::DXLightInfo  lights;
 
+        unsigned int materialHeapSlot = 0;
+        std::vector<InfoStruct::DXMaterialInfo> materials;
+        std::vector<std::shared_ptr<StaticMesh>> meshes;
     private:
         friend ReflectAccess;
         static MetaType Reflect();
