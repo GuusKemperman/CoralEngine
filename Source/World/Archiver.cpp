@@ -21,8 +21,6 @@ namespace Engine
 	{
 		const entt::sparse_set& mStorage;
 		const MetaType& mComponentClass;
-		const MetaFunc* mCustomStep;
-		bool mIsCustomStepStatic;
 		MetaAny mComponentDefaultConstructed;
 		std::vector<const MetaFunc*> mEqualityFunctions{};
 		std::vector<const MetaFunc*> mSerializeMemberFunction{};
@@ -184,27 +182,15 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 		}
 	}
 
-	// Call the custom deserialisation step only after all components have been created.
-	// The custom deserialization is sometimes used when we want to serialize pointers to
-	// components, the transformcomponent for example serialized it's parent as an entity 
-	// id instead. This can't be deserialized properly into a pointer if that transform 
-	// does not exist yet.
-	auto* storage = registry.Storage(componentClass->GetTypeId());
 
-	if (storage == nullptr)
+	// TransformComponents are kinda dumb, back when i made them I added
+	// pointer stability, and the parent/child relations are stored by
+	// pointer and by entity id.
+	// Sooo we have a beautiful hardcoded solution!
+	if (componentClass->GetTypeId() != MakeTypeId<TransformComponent>())
 	{
 		return;
 	}
-
-	const MetaFunc* const onComponentDeserialize = TryGetEvent(*componentClass, sDeserializeEvent);
-
-	if (onComponentDeserialize == nullptr)
-	{
-		return;
-	}
-
-	const bool isStatic = onComponentDeserialize->GetProperties().Has(Props::sIsEventStaticTag);
-	MetaAny worldRef{ registry.GetWorld() };
 
 	for (const BinaryGSONObject& serializedComponent : serializedStorage.GetChildren())
 	{
@@ -214,19 +200,29 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 		}
 
 		const BinaryGSONObject& additionalSerializedData = serializedComponent.GetChildren()[0];
-		const entt::entity owner = FromBinary<entt::entity>(serializedComponent.GetName());
+		const entt::entity owner = remapId(FromBinary<entt::entity>(serializedComponent.GetName()));
 
-		ASSERT_LOG(storage->contains(owner), "Should've been created already");
-		MetaAny componentRef{ *componentClass, storage->value(owner), false };
+		TransformComponent* transform = registry.TryGet<TransformComponent>(owner);
 
-		FuncResult result = isStatic ? 
-			(*onComponentDeserialize)(registry.GetWorld(), owner, additionalSerializedData) :
-			(*onComponentDeserialize)(componentRef, registry.GetWorld(), owner, additionalSerializedData);
-
-		if (result.HasError())
+		if (transform == nullptr
+			|| additionalSerializedData.GetGSONMembers().size() != 1)
 		{
-			LOG(LogWorld, Error, "Error occured while calling custom deserialization step of {} - {}", componentClass->GetName(), result.Error());
+			LOG(LogAssets, Warning, "Could not deserialize transform parent-child relation, invalid saved data");
+			continue;
 		}
+
+		entt::entity parentEntity;
+		additionalSerializedData.GetGSONMembers()[0] >> parentEntity;
+		parentEntity = remapId(parentEntity);
+
+		TransformComponent* parent = registry.TryGet<TransformComponent>(parentEntity);
+
+		if (parent == nullptr)
+		{
+			LOG(LogAssets, Warning, "Could not deserialize transform parent-child relation, parent does not exist anymore");
+		}
+
+		transform->SetParent(parent);
 	}
 }
 
@@ -351,7 +347,6 @@ std::optional<Engine::ComponentClassSerializeArg> Engine::GetComponentClassSeria
 			return std::nullopt;
 	}
 
-	const MetaFunc* onSerialize = TryGetEvent(*componentClass, sSerializeEvent);
 	std::vector<const MetaFunc*> equalityFunctions{};
 	std::vector<const MetaFunc*> serializeMemberFunctions{};
 
@@ -403,8 +398,6 @@ std::optional<Engine::ComponentClassSerializeArg> Engine::GetComponentClassSeria
 	return ComponentClassSerializeArg{
 		storage,
 		*componentClass,
-		onSerialize,
-		onSerialize == nullptr ? false : onSerialize->GetProperties().Has(Props::sIsEventStaticTag),
 		std::move(defaultComponent),
 		std::move(equalityFunctions),
 		std::move(serializeMemberFunctions)
@@ -512,25 +505,19 @@ void Engine::SerializeSingleComponent(const Registry& registry,
 		}
 	}
 
-	if (arg.mCustomStep != nullptr)
+	if (arg.mComponentClass.GetTypeId() != MakeTypeId<TransformComponent>())
 	{
-		BinaryGSONObject& customStepObject = serializedComponent.AddGSONObject("");
+		return;
+	}
 
-		FuncResult result = arg.mIsCustomStepStatic ? 
-			(*arg.mCustomStep)(registry.GetWorld(), entity, customStepObject) :
-			(*arg.mCustomStep)(component, registry.GetWorld(), entity, customStepObject);
+	const TransformComponent& transform = registry.Get<TransformComponent>(entity);
 
-		if (customStepObject.IsEmpty()
-			|| result.HasError())
-		{
-			serializedComponent.GetChildren().pop_back();
-		}
-
-		if (result.HasError())
-		{
-			LOG(LogAssets, Error, "Could not invoke custom serialization step of {} - {}",
-				arg.mComponentClass.GetName(),
-				result.Error());
-		}
+	if (transform.GetParent() != nullptr)
+	{
+		// Since the parent/children are stored through a raw ptr they
+		// are trickier to serialize. Since this is the only place where
+		// storing a raw pointer to a component makes sense, we're not going
+		// to bother with making a system that allows serializing component pointers
+		serializedComponent.AddGSONObject("").AddGSONMember("") << transform.GetParent()->GetOwner();
 	}
 }

@@ -722,8 +722,6 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* selectedEntities)
 {
-	ImGui::ShowDemoWindow();
-
 	std::vector<entt::entity> dummySelectedEntities{};
 	if (selectedEntities == nullptr)
 	{
