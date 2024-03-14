@@ -34,7 +34,7 @@ namespace Engine
 		const ComponentClassSerializeArg& arg);
 }
 
-void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& serializedWorld)
+std::vector<entt::entity> Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& serializedWorld)
 {
 	Registry& reg = world.GetRegistry();
 
@@ -43,9 +43,8 @@ void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& seriali
 	if (serializedEntities == nullptr)
 	{
 		LOG(LogAssets, Error, "Invalid serialized world provided, this object was not created using Archiver::Serialize");
-		return;
+		return {};
 	}
-
 
 	std::vector<entt::entity> entities{};
 	*serializedEntities >> entities;
@@ -58,6 +57,7 @@ void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& seriali
 	{
 		const entt::entity createdEntity = reg.Create(entity);
 		idRemappings.emplace(entity, createdEntity);
+		entity = createdEntity;
 	}
 
 	// We need to be able to retrieve each entity's prefab of origin while
@@ -78,6 +78,8 @@ void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& seriali
 
 		DeserializeStorage(reg, serializedStorage, idRemappings);
 	}
+
+	return entities;
 }
 
 void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializedStorage, const std::unordered_map<entt::entity, entt::entity>& idRemappings)
@@ -177,7 +179,8 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 			}
 			else if (memberType.GetTypeId() == MakeTypeId<entt::entity>())
 			{
-				remapId(*fieldValue.As<entt::entity>());
+				entt::entity& asEntity = *fieldValue.As<entt::entity>();
+				asEntity = remapId(asEntity);
 			}
 		}
 	}

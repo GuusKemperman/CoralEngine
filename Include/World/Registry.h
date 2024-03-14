@@ -128,6 +128,15 @@ namespace Engine
 
 		void Clear();
 
+		std::string Copy(Span<const entt::entity> entities, bool copyChildren) const;
+
+		/**
+		 * \brief Pastes the entities previously copied using Copy.
+		 * \param copiedEntities The return value of Copy
+		 * \return A vector containing all copied entities
+		 */
+		std::vector<entt::entity> Paste(std::string_view copiedEntities);
+
 	private:
 		struct SingleTick
 		{

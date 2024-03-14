@@ -15,6 +15,7 @@
 #include "Meta/MetaTools.h"
 #include "Scripting/ScriptTools.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "World/Archiver.h"
 
 namespace Engine
 {
@@ -406,6 +407,39 @@ void Engine::Registry::Clear()
 	World::PushWorld(mWorld);
 	mRegistry.clear();
 	World::PopWorld();
+}
+
+static constexpr std::string_view sCopiedEntitiesId = "CopiedEntities";
+
+std::string Engine::Registry::Copy(Span<const entt::entity> entities, bool copyChildren) const
+{
+	BinaryGSONObject object = Archiver::Serialize(mWorld, entities, copyChildren);
+	std::ostringstream strStream{};
+	object.SaveToBinary(strStream);
+	
+	return std::string{ sCopiedEntitiesId } + strStream.str();
+}
+
+std::vector<entt::entity> Engine::Registry::Paste(std::string_view copiedEntities)
+{
+	if (copiedEntities.substr(0, sCopiedEntitiesId.size()) != sCopiedEntitiesId)
+	{
+		LOG(LogWorld, Error, "Trying to paste entities, but the provided string did not originate from copied entities");
+		return {};
+	}
+
+	BinaryGSONObject object{};
+
+	{
+		view_istream stream{ copiedEntities.substr(sCopiedEntitiesId.size()) };
+
+		if (!object.LoadFromBinary(stream))
+		{
+			LOG(LogWorld, Error, "Trying to paste entities, but the provided string was invalid");
+		}
+	}
+
+	return Archiver::Deserialize(mWorld, object);
 }
 
 std::vector<Engine::Registry::SingleTick> Engine::Registry::GetSortedSystemsToUpdate(const float dt)
