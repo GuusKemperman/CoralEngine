@@ -153,7 +153,7 @@ void Engine::DebugRenderer::Impl::Render(const glm::mat4& view, const glm::mat4&
 
 	//UPDATE CAMERA
 	InfoStruct::DXMatrixInfo matrixInfo;
-	matrixInfo.pm = glm::transpose(glm::scale(projection, glm::vec3(1.f, -1.f, 1.f)));
+	matrixInfo.pm = glm::transpose(projection);
 	matrixInfo.vm = glm::transpose(view);
 	matrixInfo.ipm = glm::inverse(matrixInfo.pm);
 	matrixInfo.ivm = glm::inverse(matrixInfo.vm);
