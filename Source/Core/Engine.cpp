@@ -104,7 +104,7 @@ void Engine::EngineClass::Run()
 
 #ifndef EDITOR
 	// TODO level name is hardcoded
-	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>("DemoLevel");
+	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>("KayLevel");
 
 	if (level == nullptr)
 	{

@@ -88,16 +88,16 @@ Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
     std::vector<glm::vec3> tangentsStorage(0);
     const glm::vec3* tangents = nullptr;
 
-    int loadInfoVersion = loadInfo.GetVersion();
-    if (loadInfoVersion == 1
-        && flags & hasTangents)
-    {
-        tangentsStorage.resize(numOfVertices);
-        str.read(reinterpret_cast<char*>(tangentsStorage.data()), numOfVertices * sizeof(glm::vec3));
-        tangents = tangentsStorage.data();
-    }
-    else
-    {
+  //  int loadInfoVersion = loadInfo.GetVersion();
+    //if (loadInfoVersion == 1
+    //    && flags & hasTangents)
+    //{
+    //    tangentsStorage.resize(numOfVertices);
+    //    str.read(reinterpret_cast<char*>(tangentsStorage.data()), numOfVertices * sizeof(glm::vec3));
+    //    tangents = tangentsStorage.data();
+    //}
+    //else
+    //{
         std::optional<std::vector<glm::vec3>> optTangents = CalculateTangents(indices.data(),
             numOfIndices,
             flags & areIndices16Bit,
@@ -112,7 +112,7 @@ Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
             tangentsStorage = std::move(*optTangents);
             tangents = tangentsStorage.data();
         }
-    }
+    //}
 
     bool meshLoaded = LoadMesh(indices.data(),
         numOfIndices,
@@ -161,8 +161,8 @@ void Engine::StaticMesh::DrawMesh() const
 
 	commandList->IASetVertexBuffers(0, 1, &mVertexBufferView);
 	commandList->IASetVertexBuffers(1, 1, &mNormalBufferView);
-	commandList->IASetVertexBuffers(2, 1, &mTexCoordBufferView);
-	commandList->IASetVertexBuffers(3, 1, &mTangentBufferView);
+    commandList->IASetVertexBuffers(2, 1, &mTangentBufferView);
+	commandList->IASetVertexBuffers(3, 1, &mTexCoordBufferView);
 	commandList->IASetIndexBuffer(&mIndexBufferView);
 	commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
 }
