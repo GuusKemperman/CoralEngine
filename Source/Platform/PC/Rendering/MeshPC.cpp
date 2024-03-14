@@ -38,7 +38,7 @@ Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
     std::istream& str = loadInfo.GetStream();
 
     StaticMeshFlags flags{};
-    str.read(reinterpret_cast<char*>(&flags), sizeof(flags));
+    str.read(reinterpret_cast<char*>(&flags), sizeof(StaticMeshFlags));
 
     uint32 numOfVertices{};
     str.read(reinterpret_cast<char*>(&numOfVertices), sizeof(numOfVertices));

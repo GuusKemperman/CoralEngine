@@ -78,7 +78,11 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
 
     if (normals.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasNormals);
     if (uvs.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasUVs);
-    if (tangents.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasTangents);
+    if (tangents.has_value())
+        flags = static_cast<StaticMeshFlags>(flags | hasTangents);
+    else {
+        printf("No tangents");
+    }
 
     str.write(reinterpret_cast<const char*>(&flags), sizeof(StaticMeshFlags));
 
