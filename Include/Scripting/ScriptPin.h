@@ -4,7 +4,13 @@
 
 #include "Meta/MetaAny.h"
 #include "Meta/MetaTypeTraits.h"
+#include "Meta/Fwd/MetaFuncFwd.h"
 #include "Scripting/ScriptErrors.h"
+
+namespace Engine
+{
+	struct MetaFuncNamedParam;
+}
 
 namespace Engine
 {
@@ -25,6 +31,7 @@ namespace Engine
 	public:
 		ScriptVariableTypeData() = default;
 		ScriptVariableTypeData(TypeTraits typeTraits, std::string_view name = {});
+		ScriptVariableTypeData(const MetaFuncNamedParam& metaParam) : ScriptVariableTypeData(metaParam.mTypeTraits, metaParam.mName) {}
 		ScriptVariableTypeData(std::string_view typeName, TypeForm typeForm, std::string_view name = {});
 		ScriptVariableTypeData(const MetaType& type, TypeForm typeForm, std::string_view name = {});
 

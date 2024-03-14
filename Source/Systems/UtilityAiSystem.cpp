@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Systems/UtilityAiSystem.h"
 
-#include "Components/UtililtyAi/EnemyAiControllerComponent.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
@@ -32,9 +32,9 @@ void Engine::AITickSystem::Update(World& world, float dt)
 		if (aiTickEvent == nullptr)
 		{
 			LOG(LogAI, Warning, "Component {} has an {} event, but not a {} event",
-				currentAIController.mCurrentState->GetName(),
-				sAIEvaluateEvent.mName,
-				sAITickEvent.mName);
+			    currentAIController.mCurrentState->GetName(),
+			    sAIEvaluateEvent.mName,
+			    sAITickEvent.mName);
 			continue;
 		}
 
@@ -44,7 +44,7 @@ void Engine::AITickSystem::Update(World& world, float dt)
 		}
 		else
 		{
-			MetaAny component{ *currentAIController.mCurrentState, storage->value(entity), false };
+			MetaAny component{*currentAIController.mCurrentState, storage->value(entity), false};
 			aiTickEvent->InvokeUncheckedUnpacked(component, world, entity, dt);
 		}
 	}
@@ -84,7 +84,9 @@ void Engine::AIEvaluateSystem::Update(World& world, float)
 			continue;
 		}
 
-		statesToEvaluate.emplace_back(StateToEvaluate{ storage, *state, *evaluateEvent, evaluateEvent->GetProperties().Has(Props::sIsEventStaticTag) });
+		statesToEvaluate.emplace_back(StateToEvaluate{
+			storage, *state, *evaluateEvent, evaluateEvent->GetProperties().Has(Props::sIsEventStaticTag)
+		});
 	}
 
 	const auto& enemyAIControllerView = world.GetRegistry().View<EnemyAiControllerComponent>();
@@ -111,13 +113,14 @@ void Engine::AIEvaluateSystem::Update(World& world, float)
 			else
 			{
 				// const_cast is fine since we are assigning it to a const MetaAny
-				const MetaAny component{ state.mType, const_cast<void*>(state.mStorage.get().value(entity)), false };
+				const MetaAny component{state.mType, const_cast<void*>(state.mStorage.get().value(entity)), false};
 				evalResult = state.mEvaluate.get().InvokeUncheckedUnpackedWithRVO(&score, component, world, entity);
 			}
 
 			if (evalResult.HasError())
 			{
-				LOG(LogAI, Error, "Error occured while evaluating state {} - {}", state.mType.get().GetName(), evalResult.Error());
+				LOG(LogAI, Error, "Error occured while evaluating state {} - {}", state.mType.get().GetName(),
+				    evalResult.Error());
 				continue;
 			}
 
@@ -135,7 +138,8 @@ void Engine::AIEvaluateSystem::Update(World& world, float)
 }
 
 template <typename EventT>
-void Engine::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const MetaType* type, World& world, entt::entity owner)
+void Engine::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const MetaType* type, World& world,
+                                                   entt::entity owner)
 {
 	if (type == nullptr)
 	{
@@ -163,12 +167,12 @@ void Engine::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const Me
 	}
 	else
 	{
-		MetaAny component{ *type, storage->value(owner), false };
+		MetaAny component{*type, storage->value(owner), false};
 		boundEvent->InvokeUncheckedUnpacked(component, world, owner);
 	}
 }
 
 Engine::MetaType Engine::AIEvaluateSystem::Reflect()
 {
-	return MetaType{ MetaType::T<AIEvaluateSystem>{}, "AIEvaluateSystem", MetaType::Base<System>{} };
+	return MetaType{MetaType::T<AIEvaluateSystem>{}, "AIEvaluateSystem", MetaType::Base<System>{}};
 }
