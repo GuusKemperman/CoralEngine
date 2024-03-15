@@ -103,43 +103,6 @@ std::optional<Engine::FunctionLikeNode::InputsOutputs> Engine::SetterScriptNode:
 	return insOuts;
 }
 
-std::string Engine::GetterScriptNode::GetTitle(std::string_view memberName, bool returnsCopy)
-{
-	if (returnsCopy)
-	{
-		return Format("Get {} (a copy)", memberName);
-	}
-	return Format("Get {}", memberName);
-}
-
-void Engine::GetterScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
-{
-	NodeInvolvingMetaMember::SerializeTo(to, scriptFunc);
-
-	to.AddGSONMember("copy") << mReturnsCopy;
-}
-
-bool Engine::GetterScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
-{
-	if (!NodeInvolvingMetaMember::DeserializeVirtual(from))
-	{
-		return false;
-	}
-
-	const BinaryGSONMember* copy = from.TryGetGSONMember("copy");
-
-	if (copy != nullptr)
-	{
-		*copy >> mReturnsCopy;
-	}
-	else
-	{
-		mReturnsCopy = true;
-	}
-
-	return true;
-}
-
 std::optional<Engine::FunctionLikeNode::InputsOutputs> Engine::GetterScriptNode::GetExpectedInputsOutputs(const ScriptFunc&) const
 {
 	const MetaField* const originalMemberData = TryGetOriginalMemberData();
@@ -155,10 +118,10 @@ std::optional<Engine::FunctionLikeNode::InputsOutputs> Engine::GetterScriptNode:
 	insOuts.mInputs.emplace_back(TypeTraits
 		{
 			originalMemberData->GetOuterType().GetTypeId(),
-			mReturnsCopy ? TypeForm::ConstRef : TypeForm::Ref,
+			TypeForm::Ref,
 		}, mTypeName);
 
-	insOuts.mOutputs.emplace_back(TypeTraits{ originalMemberData->GetType().GetTypeId(), mReturnsCopy ? TypeForm::Value : TypeForm::Ref });
+	insOuts.mOutputs.emplace_back(TypeTraits{ originalMemberData->GetType().GetTypeId(), TypeForm::Ref });
 
 	return insOuts;
 }

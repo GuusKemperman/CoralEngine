@@ -82,29 +82,17 @@ namespace Engine
 		GetterScriptNode() :
 			NodeInvolvingMetaMember(ScriptNodeType::Getter) {};
 	public:
-		GetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field, bool returnsCopy) :
-			NodeInvolvingMetaMember(ScriptNodeType::Getter, scriptFunc, field),
-			mReturnsCopy(returnsCopy)
+		GetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field) :
+			NodeInvolvingMetaMember(ScriptNodeType::Getter, scriptFunc, field)
 		{
 			ConstructExpectedPins(scriptFunc);
 		}
 
-		static std::string GetTitle(std::string_view memberName, bool returnsCopy);
+		static std::string GetTitle(std::string_view memberName) { return Format("Get {}", memberName);	}
 
-		std::string GetTitle() const override { return GetTitle(mMemberName, mReturnsCopy); }
-
-		bool DoesNodeReturnCopy() const { return mReturnsCopy; }
-
-		void SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const override;
+		std::string GetTitle() const override { return GetTitle(mMemberName); }
 
 	private:
-		bool DeserializeVirtual(const BinaryGSONObject& from) override;
-
 		std::optional<InputsOutputs> GetExpectedInputsOutputs(const ScriptFunc&) const override;
-
-		// Whether this gets a copy
-		// or a reference
-		bool mReturnsCopy{};
-
 	};
 }

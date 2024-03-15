@@ -19,7 +19,6 @@ namespace Engine
 		void CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const override;
 
 	protected:
-
 		// Return std::nullopt if the function no longer exists.
 		virtual std::optional<InputsOutputs> GetExpectedInputsOutputs([[maybe_unused]] const ScriptFunc& scriptFunc) const = 0;
 	};

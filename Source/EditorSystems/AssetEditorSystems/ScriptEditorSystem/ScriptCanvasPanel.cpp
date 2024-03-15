@@ -671,7 +671,6 @@ void Engine::ScriptEditorSystem::DisplayCommentNode(CommentScriptNode& node)
 	ax::NodeEditor::EndGroupHint();
 }
 
-
 void Engine::ScriptEditorSystem::DisplayPin(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
 	ScriptPin& pin, std::vector<PinToInspect>& pinsToInspect)
 {
@@ -915,20 +914,10 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 		{
 			if (CanBeGetThroughScripts(field))
 			{
-				returnValue.emplace_back(std::string{ type.GetName() }, GetterScriptNode::GetTitle(field.GetName(), true),
+				returnValue.emplace_back(std::string{ type.GetName() }, GetterScriptNode::GetTitle(field.GetName()),
 					[&field](ScriptFunc& func) -> decltype(auto)
 					{
-						return func.AddNode<GetterScriptNode>(func, field, true);
-					},
-					[&field](const ScriptPin& contextPin) -> bool
-					{
-						return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId(), TypeForm::Value }, { { field.GetOuterType().GetTypeId(), TypeForm::ConstRef } }, true);
-					});
-
-				returnValue.emplace_back(std::string{ type.GetName() }, GetterScriptNode::GetTitle(field.GetName(), false),
-					[&field](ScriptFunc& func) -> decltype(auto)
-					{
-						return func.AddNode<GetterScriptNode>(func, field, false);
+						return func.AddNode<GetterScriptNode>(func, field);
 					},
 					[&field](const ScriptPin& contextPin) -> bool
 					{
