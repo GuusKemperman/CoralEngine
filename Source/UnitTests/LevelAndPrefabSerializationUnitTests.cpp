@@ -14,6 +14,7 @@
 #include "Components/PrefabOriginComponent.h"
 #include "Components/TopDownCamControllerComponent.h"
 #include "Components/TransformComponent.h"
+#include "World/Archiver.h"
 
 using namespace Engine;
 
@@ -427,8 +428,8 @@ UNIT_TEST(Serialization, CopyPaste)
 
 			if (depthRemaining > 0)
 			{
-				const std::string copy = reg.Copy(std::array<entt::entity, 2>{ parent, child }, true);
-				const std::vector<entt::entity> copiedEntities = reg.Paste(copy);
+				BinaryGSONObject copy = Archiver::Serialize(world, std::array<entt::entity, 2>{ parent, child }, true);
+				const std::vector<entt::entity> copiedEntities = Archiver::Deserialize(world, copy);
 				entitiesToCheck.insert(entitiesToCheck.end(), copiedEntities.begin(), copiedEntities.end());
 				return doesMatch(entitiesToCheck);
 			}

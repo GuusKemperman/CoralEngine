@@ -362,7 +362,7 @@ Engine::MetaType* Engine::Script::DeclareMetaType()
 	AddCopyAssign(metaType, false);
 	AddDestructor(metaType, false);
 
-	ReflectComponentType(metaType);
+	Internal::ReflectComponentType(metaType, false);
 
 	LOG(LogScripting, Verbose, "Finished making type from script {}", GetName());
 

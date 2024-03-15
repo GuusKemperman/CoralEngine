@@ -69,6 +69,9 @@ namespace Engine
 		template<typename ComponentType>
 		void RemoveComponent(entt::entity fromEntity);
 
+		template<typename ComponentType, typename It>
+		void RemoveComponents(It first, It last);
+
 		void RemoveComponentIfEntityHasIt(TypeId componentClassTypeId, entt::entity fromEntity);
 
 		template<typename ComponentType>
@@ -127,15 +130,6 @@ namespace Engine
 		const entt::sparse_set* Storage(const TypeId componentClassTypeId) const { return mRegistry.storage(componentClassTypeId); }
 
 		void Clear();
-
-		std::string Copy(Span<const entt::entity> entities, bool copyChildren) const;
-
-		/**
-		 * \brief Pastes the entities previously copied using Copy.
-		 * \param copiedEntities The return value of Copy
-		 * \return A vector containing all copied entities
-		 */
-		std::vector<entt::entity> Paste(std::string_view copiedEntities);
 
 	private:
 		struct SingleTick
@@ -263,7 +257,10 @@ namespace Engine
 	template<typename Type, typename It>
 	void Registry::AddComponents(It first, It last, const Type& value)
 	{
-		mRegistry.insert(std::move(first), std::move(last), value);
+		for (auto curr = first; curr != last; ++curr)
+		{
+			AddComponent<Type>(*curr, value);
+		}
 	}
 
 	template<typename Type>
@@ -315,6 +312,19 @@ namespace Engine
 	{
 		World::PushWorld(mWorld);
 		mRegistry.erase<ComponentType>(fromEntity);
+		World::PopWorld();
+	}
+
+	template <typename ComponentType, typename It>
+	void Registry::RemoveComponents(It first, It last)
+	{
+		World::PushWorld(mWorld);
+
+		for (auto curr = first; curr != last; ++curr)
+		{
+			mRegistry.erase<ComponentType>(*curr);
+		}
+
 		World::PopWorld();
 	}
 

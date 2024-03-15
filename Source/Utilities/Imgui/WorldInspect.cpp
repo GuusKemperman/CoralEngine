@@ -23,63 +23,28 @@
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
 #include "Core/AssetManager.h"
+#include "Utilities/StringFunctions.h"
+#include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Archiver.h"
 
-
-static ImGuizmo::OPERATION sGuizmoOperation{ ImGuizmo::OPERATION::TRANSLATE };
-static ImGuizmo::MODE sGuizmoMode{ ImGuizmo::MODE::WORLD };
-static bool sShouldGuizmoSnap{};
-static glm::vec3 sSnapTo{};
-
-namespace Engine
+namespace
 {
-	static void RemoveInvalidEntities(std::vector<entt::entity>& entities, World& world)
-	{
-		entities.erase(std::remove_if(entities.begin(), entities.end(),
-			[&world](const entt::entity& entity)
-			{
-				return !world.GetRegistry().Valid(entity);
-			}), entities.end());
-	}
+	ImGuizmo::OPERATION sGuizmoOperation{ ImGuizmo::OPERATION::TRANSLATE };
+	ImGuizmo::MODE sGuizmoMode{ ImGuizmo::MODE::WORLD };
+	bool sShouldGuizmoSnap{};
+	glm::vec3 sSnapTo{ 1.0f };
 
-	static void ReadUserInputAndApply(World& world, std::vector<entt::entity>& selectedEntities)
-	{
-		RemoveInvalidEntities(selectedEntities, world);
+	void RemoveInvalidEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities);
 
-		if (Input::Get().WasKeyboardKeyReleased(Input::KeyboardKey::Delete))
-		{
-			for (const auto entity : selectedEntities)
-			{
-				world.GetRegistry().DestroyAlongWithChildren(entity);
-			}
-			selectedEntities.clear();
-		}
-	}
+	void DeleteEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities);
+	void CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities);
+	void CutToClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities);
+	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities);
+	void Duplicate(Engine::World& world, std::vector<entt::entity>& selectedEntities);
+	bool DoesClipboardContainEntities();
 
-	static void ReceiveDragDrops(World& world)
-	{
-		std::optional<WeakAsset<Prefab>> receivedPrefab = DragDrop::PeekAsset<Prefab>();
-
-		if (receivedPrefab.has_value()
-			&& DragDrop::AcceptAsset())
-		{
-			world.GetRegistry().CreateFromPrefab(*receivedPrefab->MakeShared());
-		}
-
-		std::optional<WeakAsset<StaticMesh>> receivedMesh = DragDrop::PeekAsset<StaticMesh>();
-
-		if (receivedMesh.has_value()
-			&& DragDrop::AcceptAsset())
-		{
-			Registry& reg = world.GetRegistry();
-			entt::entity entity = reg.Create();
-
-			reg.AddComponent<TransformComponent>(entity);
-			StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(entity);
-			meshComponent.mStaticMesh = receivedMesh->MakeShared();
-			meshComponent.mMaterial = Material::TryGetDefaultMaterial();
-		}
-	}
+	void CheckShortcuts(Engine::World& world, std::vector<entt::entity>& selectedEntities);
+	void ReceiveDragDrops(Engine::World& world);
 }
 
 Engine::WorldInspectHelper::WorldInspectHelper(World&& worldThatHasNotYetBegunPlay) :
@@ -251,6 +216,8 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 	}
 
 	ImGui::EndChild();
+
+	CheckShortcuts(GetWorld(), mSelectedEntities);
 }
 
 void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
@@ -272,8 +239,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 		selectedEntities = &dummySelectedEntities;
 	}// From here on out, we can assume selectedEntities != nullptr
 
-	RemoveInvalidEntities(*selectedEntities, world);
-	ReadUserInputAndApply(world, *selectedEntities);
+	RemoveInvalidEntities(world, *selectedEntities);
 
 	const auto cameraPair = world.GetRenderer().GetMainCamera();
 
@@ -305,19 +271,6 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 
 void Engine::WorldViewport::ShowGuizmoOptions()
 {
-	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::R))
-	{
-		sGuizmoOperation = ImGuizmo::SCALE;
-	}
-	else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::E))
-	{
-		sGuizmoOperation = ImGuizmo::ROTATE;
-	}
-	else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::T))
-	{
-		sGuizmoOperation = ImGuizmo::TRANSLATE;
-	}
-
 	if (ImGui::RadioButton("Translate", sGuizmoOperation == ImGuizmo::TRANSLATE))
 		sGuizmoOperation = ImGuizmo::TRANSLATE;
 	ImGui::SameLine();
@@ -336,8 +289,6 @@ void Engine::WorldViewport::ShowGuizmoOptions()
 		if (ImGui::RadioButton("World", sGuizmoMode == ImGuizmo::WORLD))
 			sGuizmoMode = ImGuizmo::WORLD;
 	}
-	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
-		sShouldGuizmoSnap = !sShouldGuizmoSnap;
 
 	ImGui::Checkbox("Snap", &sShouldGuizmoSnap);
 	ImGui::SameLine();
@@ -444,10 +395,6 @@ void Engine::WorldViewport::GuizmoManipulateSelectedTransforms(World& world,
 
 void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& selectedEntities)
 {
-	// While our window may have the focus, we still want users 
-	// to be able to, for example, use del to delete selected entities
-	ReadUserInputAndApply(world, selectedEntities);
-
 	const uint32 numOfSelected = static_cast<uint32>(selectedEntities.size());
 
 	if (numOfSelected == 0)
@@ -728,9 +675,11 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 		selectedEntities = &dummySelectedEntities;
 	}// From here on out, we can assume selectedEntities != nullptr
 
-	// While our window may have the focus, we still want users 
-	// to be able to, for example, use del to delete selected entities
-	ReadUserInputAndApply(world, *selectedEntities);
+	if (ImGui::IsMouseClicked(1)
+		&& ImGui::IsWindowHovered())
+	{
+		ImGui::OpenPopup("HierarchyPopUp");
+	}
 
 	Registry& reg = world.GetRegistry();
 
@@ -747,8 +696,6 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 
 	const std::string searchFor = Search::DisplaySearchBar();
 
-	std::optional<ImVec2> popUpPosition{};
-
 	if (!searchFor.empty())
 	{
 		Search::Choices<entt::entity> entitiesToDisplay{};
@@ -763,7 +710,7 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 
 		for (const Search::Choice<entt::entity>& entityToDisplay : entitiesToDisplay)
 		{
-			DisplaySingle(reg, entityToDisplay.mValue, *selectedEntities, nullptr, popUpPosition);
+			DisplaySingle(reg, entityToDisplay.mValue, *selectedEntities, nullptr);
 		}
 	}
 	else
@@ -781,7 +728,7 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 					continue;
 				}
 
-				DisplaySingle(reg, entity, *selectedEntities, nullptr, popUpPosition);
+				DisplaySingle(reg, entity, *selectedEntities, nullptr);
 				anyDisplayed = true;
 			}
 		}
@@ -802,21 +749,13 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 				// this transform does not have a parent.
 				if (transform.IsOrphan())
 				{
-					DisplayFamily(reg, transform, *selectedEntities, popUpPosition);
+					DisplayFamily(reg, transform, *selectedEntities);
 				}
 			}
 		}
 	}
 
-	if (popUpPosition.has_value())
-	{
-		const ImVec2 backUpCursor = ImGui::GetCursorPos();
-		ImGui::SetCursorPos(*popUpPosition);
-		ImGui::OpenPopup("HierarchyPopUp");
-		ImGui::SetCursorPos(backUpCursor);
-	}
-
-	DisplayRightClickPopUp(reg, *selectedEntities);
+	DisplayRightClickPopUp(world, *selectedEntities);
 
 	ImGui::InvisibleButton("DragToUnparent", glm::max(static_cast<glm::vec2>(ImGui::GetContentRegionAvail()), glm::vec2{1.0f, 1.0f}));
 	ReceiveDragDropOntoParent(reg, std::nullopt);
@@ -825,8 +764,7 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 
 void Engine::WorldHierarchy::DisplayFamily(Registry& reg,
 	TransformComponent& parentTransform,
-	std::vector<entt::entity>& selectedEntities,
-	std::optional<ImVec2>& openPopUpPosition)
+	std::vector<entt::entity>& selectedEntities)
 {
 	const entt::entity entity = parentTransform.GetOwner();
 	ImGui::PushID(static_cast<int>(entity));
@@ -841,13 +779,13 @@ void Engine::WorldHierarchy::DisplayFamily(Registry& reg,
 		ImGui::SameLine();
 	}
 
-	DisplaySingle(reg, entity, selectedEntities, &parentTransform, openPopUpPosition);
+	DisplaySingle(reg, entity, selectedEntities, &parentTransform);
 
 	if (isTreeNodeOpen)
 	{
 		for (TransformComponent& childTransform : children)
 		{
-			DisplayFamily(reg, childTransform, selectedEntities, openPopUpPosition);
+			DisplayFamily(reg, childTransform, selectedEntities);
 		}
 
 		ImGui::TreePop();
@@ -859,8 +797,7 @@ void Engine::WorldHierarchy::DisplayFamily(Registry& reg,
 void Engine::WorldHierarchy::DisplaySingle(Registry& registry,
 	const entt::entity owner,
 	std::vector<entt::entity>& selectedEntities,
-	TransformComponent* const transformComponent,
-	std::optional<ImVec2>& openPopUpPosition)
+	TransformComponent* const transformComponent)
 {
 	const std::string displayName = NameComponent::GetDisplayName(registry, owner).append("##DisplayName");
 
@@ -886,11 +823,6 @@ void Engine::WorldHierarchy::DisplaySingle(Registry& registry,
 			selectedEntities.erase(std::remove(selectedEntities.begin(), selectedEntities.end(), owner),
 			                       selectedEntities.end());
 		}
-	}
-
-	if (ImGui::IsItemClicked(1))
-	{
-		openPopUpPosition = ImGui::GetCursorPos();
 	}
 
 	ImGui::SetItemTooltip(Format("Entity {}", static_cast<EntityType>(owner)).c_str());
@@ -963,18 +895,256 @@ void Engine::WorldHierarchy::ReceiveDragDropOntoParent(Registry& registry,
 	}
 }
 
-void Engine::WorldHierarchy::DisplayRightClickPopUp(Registry& registry, std::vector<entt::entity>& selectedEntities)
+void Engine::WorldHierarchy::DisplayRightClickPopUp(World& world, std::vector<entt::entity>& selectedEntities)
 {
 	if (!ImGui::BeginPopup("HierarchyPopUp"))
 	{
 		return;
 	}
 
-	if (ImGui::Button("Delete"))
+	if (ImGui::MenuItem("Delete", "Del", nullptr, !selectedEntities.empty()))
 	{
-		registry.Destroy(selectedEntities.begin(), selectedEntities.end());
-		selectedEntities.clear();
+		DeleteEntities(world, selectedEntities);
+	}
+
+	if (ImGui::MenuItem("Duplicate", "Ctrl+D", nullptr, !selectedEntities.empty()))
+	{
+		Duplicate(world, selectedEntities);
+	}
+
+	if (ImGui::MenuItem("Cut", "Ctrl+X", nullptr, !selectedEntities.empty()))
+	{
+		CutToClipBoard(world, selectedEntities);
+	}
+
+	if (ImGui::MenuItem("Copy", "Ctrl+C", nullptr, !selectedEntities.empty()))
+	{
+		CopyToClipBoard(world, selectedEntities);
+	}
+
+	if (ImGui::MenuItem("Paste", "Ctrl+V", nullptr, DoesClipboardContainEntities()))
+	{
+		PasteClipBoard(world, selectedEntities);
 	}
 
 	ImGui::EndPopup();
+}
+
+namespace
+{
+	void RemoveInvalidEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	{
+		selectedEntities.erase(std::remove_if(selectedEntities.begin(), selectedEntities.end(),
+			[&world](const entt::entity& entity)
+			{
+				return !world.GetRegistry().Valid(entity);
+			}), selectedEntities.end());
+	}
+
+	void DeleteEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	{
+		world.GetRegistry().Destroy(selectedEntities.begin(), selectedEntities.end());
+		selectedEntities.clear();
+	}
+
+
+	// We prepend some form of known string so we can verify whether
+	// the clipboard holds copied entities
+	constexpr std::string_view sCopiedEntitiesId = "B1C2FF80";
+
+	struct WasRootCopyTag
+	{
+		static Engine::MetaType Reflect()
+		{
+			Engine::MetaType type{ Engine::MetaType::T<WasRootCopyTag>{}, "WasRootCopyTag" };
+			Engine::ReflectComponentType<WasRootCopyTag>(type);
+			return type;
+		}
+	};
+
+	void CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities)
+	{
+		using namespace Engine;
+
+		if (selectedEntities.empty())
+		{
+			return;
+		}
+
+		// Const_cast is fine, we remove the changes immediately afterwards.
+		// We just want the tags to be serialized so we know what to return in the Paste function.
+		Registry& reg = const_cast<Registry&>(world.GetRegistry());
+
+		reg.AddComponents<WasRootCopyTag>(selectedEntities.begin(), selectedEntities.end());
+		BinaryGSONObject object = Archiver::Serialize(world, selectedEntities, true);
+		reg.RemoveComponents<WasRootCopyTag>(selectedEntities.begin(), selectedEntities.end());
+
+		std::ostringstream strStream{};
+
+		object.SaveToBinary(strStream);
+
+		// Clipboards work with c strings,
+		// since our binary data might contain a
+		// \0 character, we convert it to HEX first
+		const std::string clipBoardData = std::string{ sCopiedEntitiesId } + StringFunctions::BinaryToHex(strStream.str());
+		ImGui::SetClipboardText(clipBoardData.c_str());
+	}
+
+	void CutToClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	{
+		CopyToClipBoard(world, selectedEntities);
+		DeleteEntities(world, selectedEntities);
+	}
+
+	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	{
+		if (!DoesClipboardContainEntities())
+		{
+			return;
+		}
+
+		using namespace Engine;
+
+		// Force reflection, if it hasn't been already
+		(void)MetaManager::Get().GetType<WasRootCopyTag>();
+
+		BinaryGSONObject object{};
+
+		{
+			const std::string_view clipBoardData = ImGui::GetClipboardText();
+			const std::string binaryCopiedEntities = StringFunctions::HexToBinary(clipBoardData.substr(sCopiedEntitiesId.size()));
+			view_istream stream{ binaryCopiedEntities };
+
+			if (!object.LoadFromBinary(stream))
+			{
+				LOG(LogWorld, Error, "Trying to paste entities, but the provided string was unexpectedly invalid");
+				return;
+			}
+		}
+
+		selectedEntities = Archiver::Deserialize(world, object);
+
+		Registry& reg = world.GetRegistry();
+
+		// We only return the entities that were passed into the Paste function,
+		// otherwise we would be returning the children, and thats difficult for
+		// the caller to sort out.
+		selectedEntities.erase(std::remove_if(selectedEntities.begin(), selectedEntities.end(),
+			[&reg](entt::entity entity)
+			{
+				return !reg.HasComponent<WasRootCopyTag>(entity);
+			}), selectedEntities.end());
+
+		// The tag got copied as well, lets remove that as well
+		reg.RemoveComponents<WasRootCopyTag>(selectedEntities.begin(), selectedEntities.end());
+	}
+
+	void Duplicate(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	{
+		CopyToClipBoard(world, selectedEntities);
+		PasteClipBoard(world, selectedEntities);
+	}
+
+	bool DoesClipboardContainEntities()
+	{
+		const char* clipBoardDataCStr = ImGui::GetClipboardText();
+
+		if (clipBoardDataCStr == nullptr)
+		{
+			return false;
+		}
+
+		const std::string_view clipBoardData{ clipBoardDataCStr };
+
+		return clipBoardData.substr(0, sCopiedEntitiesId.size()) == sCopiedEntitiesId;
+	}
+
+	void CheckShortcuts(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	{
+		using namespace Engine;
+
+		RemoveInvalidEntities(world, selectedEntities);
+
+		if (Input::Get().WasKeyboardKeyReleased(Input::KeyboardKey::Delete))
+		{
+			DeleteEntities(world, selectedEntities);
+		}
+
+		if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl)
+			|| Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
+		{
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::C))
+			{
+				CopyToClipBoard(world, selectedEntities);
+			}
+
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
+			{
+				PasteClipBoard(world, selectedEntities);
+			}
+
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::X))
+			{
+				CutToClipBoard(world, selectedEntities);
+			}
+
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::D))
+			{
+				Duplicate(world, selectedEntities);
+			}
+
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::A))
+			{
+				const auto& entityStorage = world.GetRegistry().Storage<entt::entity>();
+				selectedEntities = { entityStorage.begin(), entityStorage.end() };
+			}
+		}
+
+		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Escape))
+		{
+			selectedEntities.clear();
+		}
+
+		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::R))
+		{
+			sGuizmoOperation = ImGuizmo::SCALE;
+		}
+
+		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::E))
+		{
+			sGuizmoOperation = ImGuizmo::ROTATE;
+		}
+
+		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::T))
+		{
+			sGuizmoOperation = ImGuizmo::TRANSLATE;
+		}
+	}
+
+	void ReceiveDragDrops(Engine::World& world)
+	{
+		using namespace Engine;
+
+		std::optional<WeakAsset<Prefab>> receivedPrefab = DragDrop::PeekAsset<Prefab>();
+
+		if (receivedPrefab.has_value()
+			&& DragDrop::AcceptAsset())
+		{
+			world.GetRegistry().CreateFromPrefab(*receivedPrefab->MakeShared());
+		}
+
+		std::optional<WeakAsset<StaticMesh>> receivedMesh = DragDrop::PeekAsset<StaticMesh>();
+
+		if (receivedMesh.has_value()
+			&& DragDrop::AcceptAsset())
+		{
+			Registry& reg = world.GetRegistry();
+			entt::entity entity = reg.Create();
+
+			reg.AddComponent<TransformComponent>(entity);
+			StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(entity);
+			meshComponent.mStaticMesh = receivedMesh->MakeShared();
+			meshComponent.mMaterial = Material::TryGetDefaultMaterial();
+		}
+	}
 }

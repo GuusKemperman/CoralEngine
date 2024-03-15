@@ -142,12 +142,14 @@ namespace Engine
 	 */
 	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionExitEvent{ "OnCollisionExit" };
 
+#ifdef EDITOR
 	/**
 	 * \brief For custom inspect logic. You can make calls to ImGui from this event.
 	 * \World& The world you are inspecting
 	 * \const std::vector<entt::entity>& All the selected entities that have this component AND require inspecting
 	 */
 	static constexpr Event<void(World&, const std::vector<entt::entity>&), false, true> sInspectEvent{ "OnInspect" };
+#endif // EDITOR
 
 	/**
 	 * \brief Binds an event to a type.

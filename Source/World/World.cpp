@@ -132,7 +132,8 @@ void Engine::World::EndPlay()
 
 	mHasBegunPlay = false;
 }
-
+
+
 const Engine::DebugRenderer& Engine::World::GetDebugRenderer() const
 {
 	return *mRenderer->mDebugRenderer;
