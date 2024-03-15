@@ -96,7 +96,7 @@ namespace Engine::Search
 
 	static constexpr double sDefaultCutOff = 45.0;
 	static constexpr size_t sDefaultMaxNumOfChoices = 25;
-	static constexpr std::string_view sDefaultLabel = "##SearchBar";
+	static constexpr std::string_view sDefaultLabel = ICON_FA_SEARCH "##SearchBar";
 	static constexpr std::string_view sDefaultHint = "Search";
 
 	using CachedScorer = rapidfuzz::fuzz::CachedPartialTokenSortRatio<char>;

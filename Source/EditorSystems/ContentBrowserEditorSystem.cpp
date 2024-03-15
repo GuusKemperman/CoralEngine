@@ -38,12 +38,14 @@ void Engine::ContentBrowserEditorSystem::Tick(const float)
 
     ImGui::BeginDisabled(mAssetCreator.has_value());
 
-    if (ImGui::Button("Create new asset"))
+    if (ImGui::Button(ICON_FA_PLUS))
     {
         folders = MakeFolderGraph(AssetManager::Get().GetAllAssets());
         AssetCreator creator{};
         mAssetCreator = creator;
     }
+
+    ImGui::SetItemTooltip("Create a new asset");
 
     ImGui::EndDisabled();
 

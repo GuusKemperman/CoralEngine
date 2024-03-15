@@ -600,17 +600,19 @@ void Engine::Editor::DisplayMainMenuBar()
 {
 	if (ImGui::BeginMainMenuBar())
 	{
-		if (ImGui::SmallButton("RefreshAll"))
+		if (ImGui::SmallButton(ICON_FA_REFRESH))
 		{
 			Refresh({ RefreshRequest::Volatile });
 		}
+		ImGui::SetItemTooltip("Refresh all open windows");
 
-		if (ImGui::SmallButton("Save all"))
+		if (ImGui::SmallButton(ICON_FA_FLOPPY_O))
 		{
 			SaveAll();
 		}
+		ImGui::SetItemTooltip("Save all open assets");
 
-		if (ImGui::BeginMenu("View"))
+		if (ImGui::BeginMenu(ICON_FA_WINDOW_RESTORE))
 		{
 			std::function<void(const MetaType&)> recursivelyDisplayAsOption = [this, &recursivelyDisplayAsOption](const MetaType& type)
 				{
@@ -650,8 +652,12 @@ void Engine::Editor::DisplayMainMenuBar()
 
 			ImGui::EndMenu();
 		}
+		else
+		{
+			ImGui::SetItemTooltip("Select which windows are open");
+		}
 
-		if (ImGui::BeginMenu("DebugDrawing"))
+		if (ImGui::BeginMenu(ICON_FA_EYE))
 		{
 			unsigned int flags = DebugRenderer::GetDebugCategoryFlags();
 
@@ -706,6 +712,10 @@ void Engine::Editor::DisplayMainMenuBar()
 			DebugRenderer::SetDebugCategoryFlags(static_cast<DebugCategory::Enum>(flags));
 
 			ImGui::EndMenu();
+		}
+		else
+		{
+			ImGui::SetItemTooltip("Specify which debug categories to draw");
 		}
 	}
 	ImGui::EndMainMenuBar();

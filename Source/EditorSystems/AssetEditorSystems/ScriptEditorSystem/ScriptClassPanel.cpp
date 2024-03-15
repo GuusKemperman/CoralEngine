@@ -185,7 +185,7 @@ Engine::ScriptEditorSystem::OverviewResult Engine::ScriptEditorSystem::DisplayOv
 {
 	OverviewResult result{};
 
-	if (ImGui::CollapsingHeaderWithButton(label, "+", &result.mAddButtonPressed, ImGuiTreeNodeFlags_DefaultOpen))
+	if (ImGui::CollapsingHeaderWithButton(label, ICON_FA_PLUS, &result.mAddButtonPressed, ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		for (const Name& name : names)
 		{

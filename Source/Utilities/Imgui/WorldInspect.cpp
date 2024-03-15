@@ -120,7 +120,7 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		{
 			ImGui::SetNextItemAllowOverlap();
 			ImGui::SetItemTooltip("Begin play");
-			if (ImGui::Button("|>"))
+			if (ImGui::Button(ICON_FA_PLAY))
 			{
 				(void)BeginPlay();
 			}
@@ -130,7 +130,7 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			if (GetWorld().IsPaused())
 			{
 				ImGui::SetNextItemAllowOverlap();
-				if (ImGui::Button("|>"))
+				if (ImGui::Button(ICON_FA_PLAY))
 				{
 					GetWorld().Unpause();
 				}
@@ -139,7 +139,7 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			else
 			{
 				ImGui::SetNextItemAllowOverlap();
-				if (ImGui::Button("||"))
+				if (ImGui::Button(ICON_FA_PAUSE))
 				{
 					GetWorld().Pause();
 				}
@@ -150,7 +150,7 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			ImGui::SetCursorPosY(beginPlayPos.y);
 
 			ImGui::SetNextItemAllowOverlap();
-			if (ImGui::Button("[]"))
+			if (ImGui::Button(ICON_FA_STOP))
 			{
 				(void)EndPlay();
 			}
@@ -168,22 +168,23 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 				ImGui::SameLine();
 
-				static constexpr float cameraComboWidth = 200.0f;
+				ImGui::SetCursorPosY(0.0f);
+				ImGui::SetCursorPosX(viewportPos.x + mViewportWidth - ImGui::CalcTextSize(ICON_FA_CAMERA).x - 10.0f);
+				if (ImGui::Button(ICON_FA_CAMERA))
+				{
+					ImGui::OpenPopup("CameraSelectPopUp");
+				}
 
-				ImGui::SetCursorPosX(viewportPos.x + mViewportWidth - cameraComboWidth);
-				ImGui::SetNextItemWidth(cameraComboWidth);
-
-				if (ImGui::BeginCombo("Camera", NameComponent::GetDisplayName(GetWorld().GetRegistry(), cameraEntity).c_str()))
+				if (ImGui::BeginPopup("CameraSelectPopUp"))
 				{
 					for (entt::entity possibleCamera : possibleCamerasView)
 					{
-						if (ImGui::Button(NameComponent::GetDisplayName(GetWorld().GetRegistry(), possibleCamera).c_str()))
+						if (ImGui::MenuItem(NameComponent::GetDisplayName(GetWorld().GetRegistry(), possibleCamera).c_str(), nullptr, possibleCamera == cameraEntity))
 						{
 							GetWorld().GetRenderer().SetMainCamera(possibleCamera);
 						}
 					}
-
-					ImGui::EndCombo();
+					ImGui::EndPopup();
 				}
 			}
 		}
@@ -463,7 +464,9 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 		ImGui::Text(" and %u others", numOfSelected - 1);
 	}
 
-	const bool addComponentPopUpJustOpened = ImGui::Button("Add");
+	const bool addComponentPopUpJustOpened = ImGui::Button(ICON_FA_PLUS);
+	ImGui::SetItemTooltip("Add a new component");
+
 	if (addComponentPopUpJustOpened)
 	{
 		ImGui::OpenPopup("##AddComponentPopUp");
@@ -733,7 +736,7 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 
 	Registry& reg = world.GetRegistry();
 
-	if (ImGui::Button("Add Entity"))
+	if (ImGui::Button(ICON_FA_PLUS))
 	{
 		const entt::entity newEntity = reg.Create();
 
@@ -741,6 +744,7 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 		// 99% of entities require it
 		reg.AddComponent<TransformComponent>(newEntity);
 	}
+	ImGui::SetItemTooltip("Create a new entity");
 
 	ImGui::SameLine();
 
