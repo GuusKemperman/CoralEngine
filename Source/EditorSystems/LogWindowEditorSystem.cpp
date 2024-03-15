@@ -85,7 +85,7 @@ void Engine::LogWindow::DisplayMenuBar()
 	}
 
 	static_assert(std::is_same_v<int, std::underlying_type_t<LogSeverity>>);
-	for (int i = 0; i < static_cast<int>(NUM_OF_SEVERITIES); i++)
+	for (int i = 0; i < static_cast<int>(NUM_OF_SEVERITIES) - 1; i++)
 	{
 		ImGui::TextColored(Logger::sDisplayColorOfLogSeverities[i], "%u %s\t", logger.GetNumOfEntriesPerSeverity()[i], Logger::sDisplayNameOfLogSeverities[i].data());
 	}

@@ -184,9 +184,16 @@ void Engine::ContentBrowserEditorSystem::DisplayDirectory(ContentFolder&& folder
 
 void Engine::ContentBrowserEditorSystem::DisplayAsset(WeakAsset<Asset>&& asset) const
 {
-    if (ImGui::Button(asset.GetName().c_str()))
+    if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetAssetClass().GetTypeId()))
     {
-        OpenAsset(asset);
+        if (ImGui::Button(asset.GetName().c_str()))
+        {
+            OpenAsset(asset);
+        }
+    }
+    else
+    {
+        ImGui::TextUnformatted(asset.GetName().c_str());
     }
 
     // Looks scary because we may end up deleting the asset,
