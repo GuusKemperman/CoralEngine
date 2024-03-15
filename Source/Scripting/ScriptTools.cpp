@@ -176,11 +176,6 @@ bool Engine::CanCreateLink(const ScriptPin& a, const ScriptPin& b)
 		return false;
 	}
 
-	if (a.TryGetType() == b.TryGetType())
-	{
-		return true;
-	}
-
 	const ScriptPin& input = a.IsInput() ? a : b;
 	const ScriptPin& output = a.IsOutput() ? a : b;
 
