@@ -717,17 +717,26 @@ namespace
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		const std::string fontPath = Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::EngineAssets, "Fonts/Roboto-Regular.ttf");
+		const std::string iconsPath = Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::EngineAssets, "Fonts/fontawesome-webfont.ttf");
 
 		ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 16.0f);
 
 		if (font == nullptr)
 		{
 			LOG(LogEditor, Warning, "Failed to load custom font {}. Using ImGui's default font instead", fontPath.c_str());
+			io.Fonts->AddFontDefault();
 		}
 		else
 		{
 			io.FontDefault = font;
 		}
+
+		// Merge icons into default font
+		ImFontConfig config;
+		config.MergeMode = true;
+		config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
+		static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+		io.Fonts->AddFontFromFileTTF(iconsPath.c_str(), 13.0f, &config, icon_ranges);
 
 		ImGui::GetStyle().FrameRounding = 4.0f;
 		ImGui::GetStyle().GrabRounding = 4.0f;
