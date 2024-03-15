@@ -10,36 +10,6 @@
 
 void Engine::ScriptEditorSystem::DisplayClassPanel()
 {
-	ImGui::BeginDisabled(mContext == nullptr);
-
-	if (ImGui::Button("Zoom to Content"))
-		ax::NodeEditor::NavigateToContent();
-
-	ImGui::SameLine();
-
-	if (ImGui::Button("Show Flow"))
-	{
-		const ScriptFunc& currentFunc = *TryGetSelectedFunc();
-
-		for (const ScriptLink& link : currentFunc.GetLinks())
-		{
-			const ScriptPin* const inputPin = currentFunc.TryGetPin(link.GetInputPinId());
-			const ScriptPin* const outputPin = currentFunc.TryGetPin(link.GetOutputPinId());
-
-			if (inputPin == nullptr
-				|| outputPin == nullptr
-				|| !inputPin->IsFlow()
-				|| !outputPin->IsFlow())
-			{
-				continue;
-			}
-
-			ax::NodeEditor::Flow(link.GetId());
-		}
-	}
-
-	ImGui::EndDisabled();
-
 	DisplayEventsOverview();
 	DisplayFunctionsOverview();
 	DisplayMembersOverview();

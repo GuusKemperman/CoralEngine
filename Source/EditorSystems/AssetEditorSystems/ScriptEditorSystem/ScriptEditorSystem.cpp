@@ -25,8 +25,6 @@ Engine::ScriptEditorSystem::~ScriptEditorSystem()
 
 void Engine::ScriptEditorSystem::Tick(const float deltaTime)
 {
-
-
 	if (!Begin(ImGuiWindowFlags_MenuBar))
 	{
 		End();
@@ -34,14 +32,24 @@ void Engine::ScriptEditorSystem::Tick(const float deltaTime)
 	}
 
 	AssetEditorSystem::Tick(deltaTime);
+	ax::NodeEditor::SetCurrentEditor(mContext);
 
 	if (ImGui::BeginMenuBar())
 	{
 		ShowSaveButton();
+
+		ImGui::BeginDisabled(mContext == nullptr);
+
+		if (ImGui::Button(ICON_FA_SEARCH_PLUS))
+		{
+			ax::NodeEditor::NavigateToContent();
+		}
+		ImGui::SetItemTooltip("Zoom to fit function contents");
+
+		ImGui::EndDisabled();
+
 		ImGui::EndMenuBar();
 	}
-
-	ax::NodeEditor::SetCurrentEditor(mContext);
 
 	ImGui::Splitter(true, &mOverviewPanelWidth, &mCanvasPlusDetailsWidth);
 
