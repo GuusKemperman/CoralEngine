@@ -158,7 +158,12 @@ void Engine::ScriptEditorSystem::SelectFunction(ScriptFunc* func)
 		return;
 	}
 
-	DeselectCurrentFieldOrFunc();
+	SaveFunctionState();
+	DestroyEditor(mContext);
+	mContext = nullptr;
+	mIndexOfCurrentFunc = std::numeric_limits<uint32>::max();
+	mNavigateToLocationAtEndOfFrame.first = -1;
+	ax::NodeEditor::SetCurrentEditor(nullptr);
 
 	if (func == nullptr)
 	{
@@ -197,7 +202,7 @@ void Engine::ScriptEditorSystem::SelectField(ScriptField* field)
 		return;
 	}
 
-	DeselectCurrentFieldOrFunc();
+	mIndexOfCurrentField = std::numeric_limits<uint32>::max();
 
 	for (uint32 i = 0; i < mAsset.GetFields().size(); i++)
 	{
@@ -208,17 +213,6 @@ void Engine::ScriptEditorSystem::SelectField(ScriptField* field)
 		}
 	}
 	ASSERT(TryGetSelectedField() == field);
-}
-
-void Engine::ScriptEditorSystem::DeselectCurrentFieldOrFunc()
-{
-	SaveFunctionState();
-	DestroyEditor(mContext);
-	mContext = nullptr;
-	mIndexOfCurrentField = std::numeric_limits<uint32>::max();
-	mIndexOfCurrentFunc = std::numeric_limits<uint32>::max();
-	mNavigateToLocationAtEndOfFrame.first = -1;
-	ax::NodeEditor::SetCurrentEditor(nullptr);
 }
 
 void Engine::ScriptEditorSystem::SaveState(std::ostream& toStream) const

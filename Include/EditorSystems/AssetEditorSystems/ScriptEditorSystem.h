@@ -41,8 +41,6 @@ namespace Engine
 		const ScriptField* TryGetSelectedField() const;
 		ScriptField* TryGetSelectedField();
 
-		void DeselectCurrentFieldOrFunc();
-
 		void SelectFunction(ScriptFunc* func);
 		void SelectField(ScriptField* field);
 
