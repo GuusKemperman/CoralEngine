@@ -411,11 +411,14 @@ void Engine::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 
 		for (auto it = first; it != last; ++it)
 		{
-			if (ShouldShowUserNode(*it)
-				&& ImGui::Button(it->mName.data()))
+			if (ShouldShowUserNode(*it))
 			{
-				createdNode = &it->mAddNode(currentFunc);
+				if (ImGui::Button(Format("{} - {}", it->mName.data(), it->mSimilarityToQuery).c_str()))
+				{
+					createdNode = &it->mAddNode(currentFunc);
+				}
 			}
+				
 		}
 
 		ImGui::TreePop();
@@ -789,7 +792,7 @@ bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const NodeTheUserCanAdd& n
 
 bool Engine::ScriptEditorSystem::ShouldShowUserNode(const NodeTheUserCanAdd& node) const
 {
-	return DoesNodeMatchContext(node) && (mCurrentQuery.empty() || node.mSimilarityToQuery > sSimilarityCuttOff);
+	return DoesNodeMatchContext(node) && (mCurrentQuery.empty() || node.mSimilarityToQuery > mSimilarityCutOff);
 }
 
 std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorSystem::GetALlNodesTheUserCanAdd() const
@@ -1049,6 +1052,40 @@ void Engine::ScriptEditorSystem::UpdateSimilarityToQuery()
 		mRecommendedNodesBasedOnQuery.emplace_back(mNodesThatCanBeCreated[sortedIndices[i]]);
 	}
 
+	const double similaritySum = std::accumulate(mNodesThatCanBeCreated.begin(), mNodesThatCanBeCreated.end(), 0.0,
+		[](double curr, const NodeTheUserCanAdd& node)
+		{
+			return curr + node.mSimilarityToQuery;
+		});
+
+	const double avgSimilarity = similaritySum / static_cast<double>(mNodesThatCanBeCreated.size());
+
+	mSimilarityCutOff = avgSimilarity * sCutOffStrength;
+	LOG(LogEditor, Message, "{}", mSimilarityCutOff);
+
+	// Open the categories if there are interesting items inside
+	for (auto first = mNodesThatCanBeCreated.begin(), last = first; first != mNodesThatCanBeCreated.end(); first = last)
+	{
+		last = std::find_if(first, mNodesThatCanBeCreated.end(),
+			[&first](const NodeTheUserCanAdd& node)
+			{
+				return node.mCategory != first->mCategory;
+			});
+
+		ImGui::TreeNodeSetOpen(window->GetID(first->mCategory.data()),
+
+			// Close all the tabs after clearing the query
+			mCurrentQuery.empty() ? false :
+
+			// If any of the nodes inside the category match the search term,
+			// we open the category
+			std::find_if(first, last,
+				[this](const NodeTheUserCanAdd& node)
+				{
+					return ShouldShowUserNode(node);
+				}) != last);
+	}
+
 	if (mCurrentQuery.empty())
 	{
 		ClearQuery();
@@ -1075,6 +1112,7 @@ void Engine::ScriptEditorSystem::ClearQuery()
 	}
 	mCurrentQuery.clear();
 	mRecommendedNodesBasedOnQuery.clear();
+	mSimilarityCutOff = 0.0;
 
 	for (NodeTheUserCanAdd& node : mNodesThatCanBeCreated)
 	{

@@ -122,7 +122,8 @@ namespace Engine
 			std::function<ScriptNode& (ScriptFunc&)> mAddNode{};
 			std::function<bool(const ScriptPin&)> mMatchesContext{};
 
-			// How similar the name of this item is to the string the user is searching for
+			// How similar the name of this item is to the string the user is searching for,
+			// in a range from 0.0 to 100.0
 			double mSimilarityToQuery = 100.0;
 		};
 
@@ -176,11 +177,15 @@ namespace Engine
 
 		std::vector<std::reference_wrapper<NodeTheUserCanAdd>> mRecommendedNodesBasedOnQuery{};
 		std::string mCurrentQuery{};
+		// Increase this number to reduce the amount of nodes
+		// shown to the user when searching
+		static constexpr double sCutOffStrength = 1.8;
+		double mSimilarityCutOff = 0.0;
 
 		// This makes it more likely to show functions and fields from
 		// this script when searching.
 		static constexpr double sBiasTowardsNodesFromThisScript = 1.5f;
-		static constexpr double sSimilarityCuttOff = 50.0f;
+		//static constexpr double sSimilarityCuttOff = 50.0f;
 		static constexpr uint32 sMaxNumOfRecommendedNodesDuringQuery = 5;
 
 		ax::NodeEditor::PinId mPinTheUserRightClicked{};
