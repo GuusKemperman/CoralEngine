@@ -7,6 +7,21 @@
 #include "Utilities/ClassVersion.h"
 #include "Assets/Core/AssetSaveInfo.h"
 
+#include <cereal/types/map.hpp>
+
+namespace cereal
+{
+    inline void save(BinaryOutputArchive& ar, const Engine::BoneInfo& value)
+    {
+        ar(value.mOffset, value.mId);
+    }
+
+    inline void load(BinaryInputArchive& ar, Engine::BoneInfo& value)
+    {
+        ar(value.mOffset, value.mId);
+    }
+}
+
 enum SkinnedMeshFlags : uint8
 {
     hasIndices = 1,
@@ -30,7 +45,8 @@ bool Engine::SkinnedMesh::OnSave(AssetSaveInfo& saveInfo,
     std::optional<Span<const glm::vec3>> tangents, 
     std::optional<Span<const glm::vec2>> uvs, 
     std::optional<Span<const glm::ivec4>> boneIds, 
-    std::optional<Span<const glm::vec4>> boneWeights)
+    std::optional<Span<const glm::vec4>> boneWeights,
+    std::optional<std::map<std::string, BoneInfo>> boneMap)
 {
     const uint32 numOfIndices = indices.has_value() ? (static_cast<uint32>(std::holds_alternative<Span<const uint16>>(*indices) ?
         std::get<Span<const uint16>>(*indices).size() :
@@ -137,6 +153,12 @@ bool Engine::SkinnedMesh::OnSave(AssetSaveInfo& saveInfo,
     if (tangents.has_value()) str.write(reinterpret_cast<const char*>(tangents->data()), tangents->size_bytes());
     if (boneIds.has_value()) str.write(reinterpret_cast<const char*>(boneIds->data()), boneIds->size_bytes());
     if (boneWeights.has_value()) str.write(reinterpret_cast<const char*>(boneWeights->data()), boneWeights->size_bytes());
+
+    BinaryGSONObject obj { "SkinnedMesh" }; 
+
+    obj.AddGSONMember("BoneMap") << boneMap.value();
+
+    obj.SaveToBinary(str);
 
     return true;
 }

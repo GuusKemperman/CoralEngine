@@ -69,8 +69,8 @@ Engine::Renderer::Renderer()
     mPBRSkinnedPipeline = std::make_unique<DXPipeline>();
     rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
     rast.CullMode = D3D12_CULL_MODE_FRONT;
-    mPBRSkinnedPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
-    mPBRSkinnedPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
+    mPBRSkinnedPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
+    mPBRSkinnedPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1);
     mPBRSkinnedPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
     mPBRSkinnedPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
     mPBRSkinnedPipeline->AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 4);
@@ -183,12 +183,10 @@ void Engine::Renderer::Render(const World& world)
     int meshCounter = 0;
     commandList->SetPipelineState(mZPipeline->GetPipeline().Get());
 
-    //RENDER STATIC MESHES
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
-        
-    //DEPTH PRE PASS
-    for (auto [entity, staticMeshComponent, transform] : view.each()) {
+        //DEPTH PRE PASS
+        for (auto [entity, staticMeshComponent, transform] : view.each()) {
         glm::mat4x4 modelMatrices[2]{};
         modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
         modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
@@ -200,11 +198,14 @@ void Engine::Renderer::Render(const World& world)
 
         staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
         meshCounter++;
+        }
     }
 
     commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
 
     meshCounter = 0;
+    {
+    const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
     //RENDERING
     for (auto [entity, staticMeshComponent, transform] : view.each())
     {
@@ -270,7 +271,7 @@ void Engine::Renderer::Render(const World& world)
         mConstBuffers[MODEL_INDEX_CB]->Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
         mConstBuffers[MODEL_INDEX_CB]->Bind(commandList, 3, meshCounter, frameIndex);
 
-        engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 15, materialHeapSlot);
+        engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, materialHeapSlot);
 
         if (!staticMeshComponent.mStaticMesh)
             continue;
@@ -278,7 +279,7 @@ void Engine::Renderer::Render(const World& world)
         //DRAW THE MESH
             staticMeshComponent.mStaticMesh->DrawMesh();
             meshCounter++;
-        }
+    }
     }
     
     //RENDER SKINNED MESHES
@@ -343,17 +344,26 @@ void Engine::Renderer::Render(const World& world)
                 materialInfo.useMetallicRoughnessTex = false;
                 materialInfo.useNormalTex = false;
                 materialInfo.useOcclusionTex = false;
-
             }
             materials[meshCounter] = materialInfo;
 
             mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
 
+            glm::mat4x4 modelMatrices[2]{};
+            modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
+            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
+            mConstBuffers[MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+            mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
+            
+            const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
+            mConstBuffers[FINAL_BONE_MATRIX_CB]->Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
+            mConstBuffers[FINAL_BONE_MATRIX_CB]->Bind(commandList, 5, meshCounter, frameIndex);
+
             //UPDATE AND BIND MATERIAL INFO
             mConstBuffers[MODEL_INDEX_CB]->Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
             mConstBuffers[MODEL_INDEX_CB]->Bind(commandList, 3, meshCounter, frameIndex);
 
-            engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 15, materialHeapSlot);
+            engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, materialHeapSlot);
 
             if (!skinnedMeshComponent.mSkinnedMesh)
             {

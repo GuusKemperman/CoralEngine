@@ -1,9 +1,12 @@
 #pragma once
 #ifdef EDITOR
 #include "Assets/Importers/Importer.h"
+#include <map>
 
 namespace Engine
 {
+	struct BoneInfo;
+
 	class ModelImporter :
 		public Importer
 	{
@@ -29,7 +32,8 @@ namespace Engine
 			std::optional<Span<const glm::vec3>> tangents,
 			std::optional<Span<const glm::vec2>> textureCoordinates,
 			std::optional<Span<const glm::ivec4>> boneIds,
-			std::optional<Span<const glm::vec4>> boneWeights);
+			std::optional<Span<const glm::vec4>> boneWeights,
+			std::optional<std::map<std::string, BoneInfo>> boneMap);
 
 		std::vector<std::filesystem::path> CanImportExtensions() const override
 		{

@@ -15,8 +15,9 @@ Engine::MetaType Engine::SkinnedMeshComponent::Reflect()
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
 	type.AddField(&SkinnedMeshComponent::mSkinnedMesh, "mSkinnnedMesh").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&SkinnedMeshComponent::mAnimation, "mAnimation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&SkinnedMeshComponent::mMaterial, "mMaterial").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&SkinnedMeshComponent::mAnimation, "mAnimation").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&SkinnedMeshComponent::mCurrentTime, "mCurrentTime").GetProperties().Add(Props::sIsScriptableTag);
 	ReflectComponentType<SkinnedMeshComponent>(type);
 	return type;
 }

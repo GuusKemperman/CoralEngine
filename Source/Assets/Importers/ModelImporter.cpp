@@ -23,6 +23,7 @@
 #include "Components/NameComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkinnedMeshComponent.h"
 #include "Core/AssetManager.h"
 #include "Utilities/ClassVersion.h"
 #include "Meta/MetaManager.h"
@@ -353,7 +354,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 
 		if (isSkinnedMesh)
 		{
-			importedMesh = ImportFromMemory(file, meshName, myVersion, positions, indices, normals, tangents, textureCoordinates, boneIds, boneWeights);
+			importedMesh = ImportFromMemory(file, meshName, myVersion, positions, indices, normals, tangents, textureCoordinates, boneIds, boneWeights, boneMap);
 		} 
 		else
 		{
@@ -376,8 +377,8 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 		const aiAnimation& aiAnim = ****REMOVED***ne->mAnimations[animIndex];
 		
 		Animation engineAnim{ GetAnimName(file, aiAnim.mName.C_Str()) };
-		engineAnim.mDuration = aiAnim.mDuration;
-		engineAnim.mTickPerSecond = aiAnim.mTicksPerSecond;
+		engineAnim.mDuration = static_cast<float>(aiAnim.mDuration);
+		engineAnim.mTickPerSecond = static_cast<float>(aiAnim.mTicksPerSecond);
 		
 		engineAnim.mBones = std::vector<Bone>();
 		
@@ -402,7 +403,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 			{
 				KeyPosition data{};
 				data.position = GetGLMVec(channel->mPositionKeys[positionIndex].mValue);
-				data.timeStamp = channel->mPositionKeys[positionIndex].mTime;
+				data.timeStamp = static_cast<float>(channel->mPositionKeys[positionIndex].mTime);
 				animData.mPositions->push_back(data);
 			}
 
@@ -410,7 +411,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 			{
 				KeyRotation data{};
 				data.orientation = GetGLMQuat(channel->mRotationKeys[rotationIndex].mValue);
-				data.timeStamp = channel->mRotationKeys[rotationIndex].mTime;
+				data.timeStamp = static_cast<float>(channel->mRotationKeys[rotationIndex].mTime);
 				animData.mRotations->push_back(data);
 			}
 
@@ -418,7 +419,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 			{
 				KeyScale data{};
 				data.scale = GetGLMVec(channel->mScalingKeys[scaleIndex].mValue);
-				data.timeStamp = channel->mScalingKeys[scaleIndex].mTime;
+				data.timeStamp = static_cast<float>(channel->mScalingKeys[scaleIndex].mTime);
 				animData.mScales->push_back(data);
 			}
 
@@ -467,13 +468,27 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 					reg.AddComponent<TransformComponent>(meshHolder).SetParent(&transform);
 				}
 
-				StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(entity);
+				if (***REMOVED***ne->mMeshes[node.mMeshes[i]]->HasBones())
+				{
+					SkinnedMeshComponent& meshComponent = reg.AddComponent<SkinnedMeshComponent>(entity);
 
-				std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>(GetMeshName(file, ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str()));
-				meshComponent.mStaticMesh = std::move(mesh);
+					std::shared_ptr<SkinnedMesh> mesh = std::make_shared<SkinnedMesh>(GetMeshName(file, ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str()));
+					meshComponent.mSkinnedMesh = std::move(mesh);
+
+					std::shared_ptr<Material> mat = std::make_shared<Material>(GetMaterialName(file, ***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex));
+					meshComponent.mMaterial = std::move(mat);
+				}
+				else
+				{
+					StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(entity);
+
+					std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>(GetMeshName(file, ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str()));
+					meshComponent.mStaticMesh = std::move(mesh);
 				
-				std::shared_ptr<Material> mat = std::make_shared<Material>(GetMaterialName(file, ***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex));
-				meshComponent.mMaterial = std::move(mat);
+					std::shared_ptr<Material> mat = std::make_shared<Material>(GetMaterialName(file, ***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex));
+					meshComponent.mMaterial = std::move(mat);
+				}
+
 			}
 
 			for (size_t i = 0; i < node.mNumChildren; i++)
@@ -530,13 +545,14 @@ std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(con
 	std::optional<Span<const glm::vec3>> tangents,
     std::optional<Span<const glm::vec2>> textureCoordinates,
 	std::optional<Span<const glm::ivec4>> boneIds,
-	std::optional<Span<const glm::vec4>> boneWeights)
+	std::optional<Span<const glm::vec4>> boneWeights,
+	std::optional<std::map<std::string, BoneInfo>> boneMap)
 {
 	const MetaType* const skinnedMeshType = MetaManager::Get().TryGetType<SkinnedMesh>();
 	ASSERT(skinnedMeshType != nullptr);
 
     ImportedAsset importedMesh{ name, *skinnedMeshType, importedFromFile, importerVersion};
-    if (SkinnedMesh::OnSave(importedMesh, positions, indices, normals, tangents, textureCoordinates, boneIds, boneWeights))
+    if (SkinnedMesh::OnSave(importedMesh, positions, indices, normals, tangents, textureCoordinates, boneIds, boneWeights, boneMap))
     {
         return importedMesh;
     }

@@ -9,6 +9,19 @@
 #include "Meta/MetaManager.h"
 #include <numeric> 
 
+namespace cereal
+{
+    inline void save(BinaryOutputArchive& ar, const Engine::BoneInfo& value)
+    {
+        ar(value.mOffset, value.mId);
+    }
+
+    inline void load(BinaryInputArchive& ar, Engine::BoneInfo& value)
+    {
+        ar(value.mOffset, value.mId);
+    }
+}
+
 enum SkinnedMeshFlags : uint8
 {
     hasIndices = 1,
@@ -140,7 +153,27 @@ Engine::SkinnedMesh::SkinnedMesh(AssetLoadInfo& loadInfo) :
         reinterpret_cast<const float*>(&boneWeights->x),
         numOfVertices
     );
+
+    BinaryGSONObject obj {};
+
+    const bool success = obj.LoadFromBinary(loadInfo.GetStream());
     
+    if (!success)
+    {
+        LOG(LogAssets, Error, "Could not load skinned mesh {}, GSON parsing failed", GetName());
+        return;
+    }
+
+    const BinaryGSONMember* serializedBoneMap = obj.TryGetGSONMember("BoneMap");
+
+    if (serializedBoneMap == nullptr)
+    {
+        LOG(LogAssets, Error, "Could not load skinned mesh {}, bone map is missing", GetName());
+        return;
+    }
+
+    *serializedBoneMap >> mBoneInfoMap;
+
     if (!meshLoaded)
     {
         LOG(LogAssets, Error, "Loading of {} failed: Invalid mesh", GetName());

@@ -178,3 +178,20 @@ Engine::MetaType Engine::Animation::Reflect()
 	return type;
 }
 
+const Engine::Bone* Engine::Animation::FindBone(std::string_view name) const
+{
+	auto iter = std::find_if(mBones.begin(), mBones.end(),
+		[&](const Engine::Bone& bone)
+		{
+			return bone.mName == name; 
+		}
+	);
+	if (iter == mBones.end())
+	{
+		return nullptr;
+	}
+	else
+	{
+		return &(*iter);
+	}
+}

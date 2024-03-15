@@ -20,8 +20,10 @@ namespace Engine
 		Animation(const std::string_view name);
 		Animation(AssetLoadInfo& loadInfo);
 
-		double mDuration = 0.0;
-		double mTickPerSecond = 0.0;
+		const Bone* FindBone(std::string_view name) const;
+
+		float mDuration = 0.0;
+		float mTickPerSecond = 0.0;
 		AnimNode mRootNode;
 		std::vector<Bone> mBones;
 	private:

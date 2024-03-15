@@ -6,6 +6,6 @@ namespace Engine
     {
         int mId;
 
-        glm::mat4 mOffset;
+        glm::mat4x4 mOffset;
     };
 }

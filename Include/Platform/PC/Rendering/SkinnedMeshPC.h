@@ -27,6 +27,8 @@ namespace Engine
 
         void DrawMesh() const;
 
+        const std::map<std::string, BoneInfo>* GetBoneMap() const { return &mBoneInfoMap; };
+
         SkinnedMesh& operator=(SkinnedMesh&&) = delete;
         SkinnedMesh& operator=(const SkinnedMesh&) = delete;
 
@@ -41,7 +43,8 @@ namespace Engine
             std::optional<Span<const glm::vec3>> tangents,
             std::optional<Span<const glm::vec2>> textureCoordinates,
             std::optional<Span<const glm::ivec4>> boneIds,
-            std::optional<Span<const glm::vec4>> boneWeights);
+            std::optional<Span<const glm::vec4>> boneWeights,
+            std::optional<std::map<std::string, BoneInfo>> boneMap);
         
         friend ReflectAccess;
         static MetaType Reflect();
