@@ -165,6 +165,9 @@ namespace Engine
 
 		bool ShouldShowUserNode(const NodeTheUserCanAdd& node) const;
 
+		// Our searching algorithm likes space separated words,
+		// so our pretty camelcase naming will have to go.
+		static std::string PrepareStringForFuzzySearch(const std::string& string);
 		void UpdateSimilarityToQuery();
 		void ClearQuery();
 
@@ -179,7 +182,7 @@ namespace Engine
 		std::string mCurrentQuery{};
 		// Increase this number to reduce the amount of nodes
 		// shown to the user when searching
-		static constexpr double sCutOffStrength = 1.8;
+		static constexpr double sCutOffStrength = 1.5;
 		double mSimilarityCutOff = 0.0;
 
 		// This makes it more likely to show functions and fields from

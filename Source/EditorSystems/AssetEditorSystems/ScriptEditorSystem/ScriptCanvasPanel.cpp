@@ -792,7 +792,28 @@ bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const NodeTheUserCanAdd& n
 
 bool Engine::ScriptEditorSystem::ShouldShowUserNode(const NodeTheUserCanAdd& node) const
 {
-	return DoesNodeMatchContext(node) && (mCurrentQuery.empty() || node.mSimilarityToQuery > mSimilarityCutOff);
+	return DoesNodeMatchContext(node) && (mCurrentQuery.empty() || node.mSimilarityToQuery >= mSimilarityCutOff);
+}
+
+std::string Engine::ScriptEditorSystem::PrepareStringForFuzzySearch(const std::string& string)
+{
+	std::string result;
+	for (const char c : string)
+	{
+		if (std::isupper(c))
+		{
+			if (!result.empty() && result.back() != ' ')
+			{
+				result.push_back(' ');
+			}
+			result.push_back(static_cast<char>(std::tolower(c)));
+		}
+		else
+		{
+			result.push_back(c);
+		}
+	}
+	return result;
 }
 
 std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorSystem::GetALlNodesTheUserCanAdd() const
@@ -981,11 +1002,12 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 
 void Engine::ScriptEditorSystem::UpdateSimilarityToQuery()
 {
-	std::string tmp = std::move(mCurrentQuery);
+	std::string tmp = mCurrentQuery;
 	ClearQuery();
 	mCurrentQuery = std::move(tmp);
 
-	Search::CachedScorer scorer(mCurrentQuery);
+	const std::string preparedQuery = PrepareStringForFuzzySearch(mCurrentQuery);
+	Search::CachedScorer scorer(preparedQuery);
 
 	for (NodeTheUserCanAdd& node : mNodesThatCanBeCreated)
 	{
@@ -994,7 +1016,7 @@ void Engine::ScriptEditorSystem::UpdateSimilarityToQuery()
 		if (DoesNodeMatchContext(node))
 		{
 			// I dont know how to spell synonym
-			std::string nameWithSynonyms = std::string{ node.mName }.append(" ").append(node.mCategory);
+			std::string nameWithSynonyms = PrepareStringForFuzzySearch(std::string{ node.mName }.append(" ").append(node.mCategory));
 			node.mSimilarityToQuery = scorer.similarity(nameWithSynonyms);
 		}
 		else
@@ -1060,7 +1082,7 @@ void Engine::ScriptEditorSystem::UpdateSimilarityToQuery()
 
 	const double avgSimilarity = similaritySum / static_cast<double>(mNodesThatCanBeCreated.size());
 
-	mSimilarityCutOff = avgSimilarity * sCutOffStrength;
+	mSimilarityCutOff = std::clamp(avgSimilarity * sCutOffStrength, 0.0, 100.0);
 	LOG(LogEditor, Message, "{}", mSimilarityCutOff);
 
 	// Open the categories if there are interesting items inside
