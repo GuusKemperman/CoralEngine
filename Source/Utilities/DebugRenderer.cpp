@@ -1,5 +1,6 @@
 #include "Precomp.h"
 #include "Utilities/DebugRenderer.h"
+#include "glm/gtx/rotate_vector.hpp"
 
 void Engine::DebugRenderer::AddLine(DebugCategory::Enum category, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color, Plane::Enum plane) const
 {
@@ -167,6 +168,53 @@ void Engine::DebugRenderer::AddBox(DebugCategory::Enum category, const glm::vec3
     AddLine(category, glm::vec3(maxCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), color);
     AddLine(category, glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), color);
     AddLine(category, glm::vec3(minCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), color);
+}
+
+void Engine::DebugRenderer::AddCylinder(DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, float radius, uint32 segments, const glm::vec4& color) const
+{
+    if (!(sDebugCategoryFlags & category)) return;
+
+    segments = segments < 4 ? 4 : segments; // We need at least 4 segments
+
+    // Rotate a point around axis to form cylinder segments
+    const float angleIncrease = glm::radians(360.0f / segments);
+    float angle = angleIncrease;
+    glm::vec3 axis = glm::normalize(to - from);
+    
+    glm::vec3 perpendicular{};
+    glm::vec3 axisAbs = glm::abs(axis);
+    
+    // Find best basis vectors
+    if (axisAbs.z > axisAbs.x 
+        && axisAbs.z > axisAbs.y)
+    {
+        perpendicular = glm::vec3(1.0f, 0.0f, 0.0f);
+    }
+    else
+    {
+        perpendicular = glm::vec3(0.0f, 0.0f, 1.0f);
+    }
+
+    perpendicular = glm::normalize(perpendicular - axis * glm::vec3(perpendicular.x * axis.x + perpendicular.y * axis.y + perpendicular.z * axis.z));
+    glm::vec3 segment = glm::rotate(perpendicular, 0.0f, axis) * radius;
+    
+    glm::vec3 p1 = segment + from;
+    glm::vec3 p3 = segment + to;
+    
+    for (uint32 i = 0; i < segments; ++i)
+    {
+        segment = glm::rotate(perpendicular, angle, axis) * radius;
+        glm::vec3 p2 = segment + from;
+        glm::vec3 p4 = segment + to;
+        
+        AddLine(category, p2, p4, color);
+        AddLine(category, p1, p2, color);
+        AddLine(category, p3, p4, color);
+
+        p1 = p2;
+        p3 = p4;
+        angle += angleIncrease;
+    }
 }
 
 void Engine::DebugRenderer::AddPolygon(DebugCategory::Enum category, const std::vector<glm::vec3>& points, const glm::vec4& color) const

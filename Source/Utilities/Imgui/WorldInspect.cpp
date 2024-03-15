@@ -12,12 +12,13 @@
 #include "Core/Input.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
+#include "Components/NameComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Components/DirectionalLightComponent.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/StaticMesh.h"
-#include "Components/NameComponent.h"
-#include "Components/StaticMeshComponent.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
 #include "Utilities/Search.h"
@@ -302,7 +303,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 
 	ImGui::SetCursorPos(contentMin);
 
-	// There is no need to try and draw gizmos/manipulate transforms when nothing is selected
+	// There is no need to try to draw gizmos/manipulate transforms when nothing is selected
 	if (selectedEntities->size())
 	{
 		ShowComponentGizmos(world, *selectedEntities);
@@ -325,6 +326,8 @@ void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<
 			continue;
 		}
 
+		glm::vec3 worldPosition = transformComponent->GetWorldPosition();
+
 		// Point lights
 		{
 			auto pointLightComponent = reg.TryGet<PointLightComponent>(entity);
@@ -333,8 +336,30 @@ void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<
 			{
 				world.GetDebugRenderer().AddSphere(
 					DebugCategory::Editor,
-					transformComponent->GetWorldPosition(),
+					worldPosition,
 					pointLightComponent->mRange,
+					Colors::Red);
+			}
+		}
+
+		// Directional lights
+		{
+			bool hasDirectionalLight = reg.HasComponent<DirectionalLightComponent>(entity);
+			
+			if (hasDirectionalLight)
+			{
+				constexpr float radius = 1.0f;
+				constexpr float length = 4.0f;
+				constexpr uint32 segments = 8;
+
+				glm::vec3 drawToPosition = worldPosition + transformComponent->GetWorldForward() * length;
+
+				world.GetDebugRenderer().AddCylinder(
+					DebugCategory::Editor, 
+					worldPosition, 
+					drawToPosition, 
+					radius,
+					segments,
 					Colors::Red);
 			}
 		}
