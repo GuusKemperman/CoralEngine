@@ -26,11 +26,11 @@ Engine::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
 
 	// Make a camera to see the prefab nicely
 	{
-		const entt::entity camera = reg.Create();
-		reg.AddComponent<CameraComponent>(camera);
-		reg.AddComponent<FlyCamControllerComponent>(camera);
-		reg.AddComponent<NameComponent>(camera, "Camera");
-		reg.AddComponent<TransformComponent>(camera).SetLocalPosition({ 0.0f, 0.0f, -30.0f });;
+		mCameraInstance = reg.Create();
+		reg.AddComponent<CameraComponent>(mCameraInstance);
+		reg.AddComponent<FlyCamControllerComponent>(mCameraInstance);
+		reg.AddComponent<NameComponent>(mCameraInstance, "Camera");
+		reg.AddComponent<TransformComponent>(mCameraInstance).SetLocalPosition({ 0.0f, 0.0f, -30.0f });;
 	}
 
 	// And ofcourse some light
@@ -63,6 +63,65 @@ void Engine::PrefabEditorSystem::Tick(const float deltaTime)
 	mWorldHelper->DisplayAndTick(deltaTime);
 
 	End();
+}
+
+void Engine::PrefabEditorSystem::SaveState(std::ostream& toStream) const
+{
+	AssetEditorSystem<Prefab>::SaveState(toStream);
+
+	BinaryGSONObject savedState{};
+	mWorldHelper->SaveState(savedState);
+
+	const TransformComponent* const  cameraTranform = mWorldHelper->GetWorld().GetRegistry().TryGet<TransformComponent>(mCameraInstance);
+
+	if (cameraTranform != nullptr)
+	{
+		savedState.AddGSONMember("cameraPos") << cameraTranform->GetLocalPosition();
+		savedState.AddGSONMember("cameraOri") << cameraTranform->GetLocalOrientation();
+	}
+
+	savedState.SaveToBinary(toStream);
+}
+
+void Engine::PrefabEditorSystem::LoadState(std::istream& fromStream)
+{
+	AssetEditorSystem<Prefab>::LoadState(fromStream);
+
+	BinaryGSONObject savedState{};
+
+	if (!savedState.LoadFromBinary(fromStream))
+	{
+		LOG(LogEditor, Verbose, "Failed to load level editor saved state");
+		return;
+	}
+
+	mWorldHelper->LoadState(savedState);
+
+	const BinaryGSONMember* const cameraPos = savedState.TryGetGSONMember("cameraPos");
+	const BinaryGSONMember* const cameraOri = savedState.TryGetGSONMember("cameraOri");
+
+	if (cameraPos == nullptr
+		|| cameraOri == nullptr)
+	{
+		LOG(LogEditor, Verbose, "No camera transform saved");
+		return;
+	}
+
+	TransformComponent* const cameraTranform = mWorldHelper->GetWorld().GetRegistry().TryGet<TransformComponent>(mCameraInstance);
+
+	if (cameraTranform == nullptr)
+	{
+		return;
+	}
+
+	glm::vec3 localPos{};
+	glm::quat localOri{};
+
+	*cameraPos >> localPos;
+	*cameraOri >> localOri;
+
+	cameraTranform->SetLocalPosition(localPos);
+	cameraTranform->SetLocalOrientation(localOri);
 }
 
 void Engine::PrefabEditorSystem::ApplyChangesToAsset()

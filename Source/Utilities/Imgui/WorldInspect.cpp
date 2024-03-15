@@ -220,6 +220,56 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 	CheckShortcuts(GetWorld(), mSelectedEntities);
 }
 
+void Engine::WorldInspectHelper::SaveState(BinaryGSONObject& state)
+{
+	state.AddGSONMember("selected") << mSelectedEntities;
+	state.AddGSONMember("hierarchyWidth") << mHierarchyHeight;
+	state.AddGSONMember("detailsWidth") << mDetailsHeight;
+	state.AddGSONMember("viewportWidth") << mViewportWidth;
+	state.AddGSONMember("hierarchyAndDetailsWidth") << mHierarchyAndDetailsWidth;
+
+	auto activeCamera = GetWorld().GetRenderer().GetMainCamera();
+
+	if (activeCamera.has_value())
+	{
+		state.AddGSONMember("activeCamera") << activeCamera->first;
+	}
+}
+
+void Engine::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
+{
+	const BinaryGSONMember* const selected = state.TryGetGSONMember("selected");
+	const BinaryGSONMember* const hierarchyWidth = state.TryGetGSONMember("hierarchyWidth");
+	const BinaryGSONMember* const detailsWidth = state.TryGetGSONMember("detailsWidth");
+	const BinaryGSONMember* const viewportWidth = state.TryGetGSONMember("viewportWidth");
+	const BinaryGSONMember* const hierarchyAndDetailsWidth = state.TryGetGSONMember("hierarchyAndDetailsWidth");
+
+	if (selected == nullptr
+		|| hierarchyWidth == nullptr
+		|| detailsWidth == nullptr
+		|| viewportWidth == nullptr
+		|| hierarchyAndDetailsWidth == nullptr)
+	{
+		LOG(LogEditor, Verbose, "Could not load state for world inspect helper, missing values");
+		return;
+	}
+
+	*selected >> mSelectedEntities;
+	*hierarchyWidth >> mHierarchyHeight;
+	*detailsWidth >> mDetailsHeight;
+	*viewportWidth >> mViewportWidth;
+	*hierarchyAndDetailsWidth >> mHierarchyAndDetailsWidth;
+
+	const BinaryGSONMember* const activeCamera = state.TryGetGSONMember("activeCamera");
+
+	if (activeCamera != nullptr)
+	{
+		entt::entity cameraEntity{};
+		*activeCamera >> cameraEntity;
+		GetWorld().GetRenderer().SetMainCamera(cameraEntity);
+	}
+}
+
 void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 	std::vector<entt::entity>* selectedEntities)
 {
@@ -353,9 +403,9 @@ void Engine::WorldViewport::GuizmoManipulateSelectedTransforms(World& world,
 	glm::mat4 avgMatrix;
 
 	ImGuizmo::RecomposeMatrixFromComponents(value_ptr(avgPosition),
-	                                        value_ptr(transformComponents.size() == 1 ? transformComponents[0]->GetWorldOrientationEuler() * (360.0f / TWOPI) : glm::vec3{}),
-	                                        value_ptr(avgScale),
-	                                        &avgMatrix[0][0]);
+		value_ptr(transformComponents.size() == 1 ? transformComponents[0]->GetWorldOrientationEuler() * (360.0f / TWOPI) : glm::vec3{}),
+		value_ptr(avgScale),
+		&avgMatrix[0][0]);
 
 	glm::mat4 delta;
 
@@ -367,9 +417,9 @@ void Engine::WorldViewport::GuizmoManipulateSelectedTransforms(World& world,
 			glm::mat4 transformMatrix;
 
 			ImGuizmo::RecomposeMatrixFromComponents(value_ptr(transformComponent->GetWorldPosition()),
-			                                        value_ptr(transformComponent->GetWorldOrientationEuler() * (360.0f / TWOPI)),
-			                                        value_ptr(transformComponent->GetWorldScale()),
-			                                        &transformMatrix[0][0]);
+				value_ptr(transformComponent->GetWorldOrientationEuler() * (360.0f / TWOPI)),
+				value_ptr(transformComponent->GetWorldScale()),
+				&transformMatrix[0][0]);
 
 			// TODO Fix the scaling of multiple items at a time
 			if (sGuizmoOperation & ImGuizmo::SCALE)
@@ -386,7 +436,7 @@ void Engine::WorldViewport::GuizmoManipulateSelectedTransforms(World& world,
 			glm::vec3 scale{};
 
 			ImGuizmo::DecomposeMatrixToComponents(&transformMatrix[0][0], value_ptr(translation), value_ptr(eulerOrientation),
-			                                      value_ptr(scale));
+				value_ptr(scale));
 
 			transformComponent->SetWorldMatrix(transformMatrix);
 		}
@@ -662,7 +712,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 			}
 			ImGui::CloseCurrentPopup();
 		}
-		
+
 		ImGui::EndPopup();
 	}
 }
@@ -742,7 +792,7 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 		{
 			auto withTransforms = reg.View<TransformComponent>();
 
-			for (auto [entity,  transform] : withTransforms.each())
+			for (auto [entity, transform] : withTransforms.each())
 			{
 				// We recursively display children.
 				// So we only call display family if
@@ -757,7 +807,7 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 
 	DisplayRightClickPopUp(world, *selectedEntities);
 
-	ImGui::InvisibleButton("DragToUnparent", glm::max(static_cast<glm::vec2>(ImGui::GetContentRegionAvail()), glm::vec2{1.0f, 1.0f}));
+	ImGui::InvisibleButton("DragToUnparent", glm::max(static_cast<glm::vec2>(ImGui::GetContentRegionAvail()), glm::vec2{ 1.0f, 1.0f }));
 	ReceiveDragDropOntoParent(reg, std::nullopt);
 	ReceiveDragDrops(world);
 }
@@ -821,7 +871,7 @@ void Engine::WorldHierarchy::DisplaySingle(Registry& registry,
 		else
 		{
 			selectedEntities.erase(std::remove(selectedEntities.begin(), selectedEntities.end(), owner),
-			                       selectedEntities.end());
+				selectedEntities.end());
 		}
 	}
 
