@@ -12,6 +12,7 @@
 #include "Core/Input.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
+#include "Components/PointLightComponent.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/StaticMesh.h"
@@ -20,6 +21,7 @@
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
 #include "Utilities/Search.h"
+#include "Utilities/DebugRenderer.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
 #include "Core/AssetManager.h"
@@ -284,7 +286,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 	}
 
 	ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-	SetGuizmoRect(windowPos + contentMin, contentSize);
+	SetGizmoRect(windowPos + contentMin, contentSize);
 
 	world.GetRenderer().Render(frameBuffer, contentSize);
 
@@ -299,11 +301,47 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 	ReceiveDragDrops(world);
 
 	ImGui::SetCursorPos(contentMin);
-	ShowGuizmoOptions();
-	GuizmoManipulateSelectedTransforms(world, *selectedEntities, cameraPair->second);
+
+	// There is no need to try and draw gizmos/manipulate transforms when nothing is selected
+	if (selectedEntities->size())
+	{
+		ShowComponentGizmos(world, *selectedEntities);
+		GizmoManipulateSelectedTransforms(world, *selectedEntities, cameraPair->second);
+	}
 }
 
-void Engine::WorldViewport::ShowGuizmoOptions()
+void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
+{
+	Registry& reg = world.GetRegistry();
+
+	ShowTransformGizmos();
+
+	for (auto entity : selectedEntities)
+	{
+		auto transformComponent = reg.TryGet<TransformComponent>(entity);
+
+		if (transformComponent == nullptr)
+		{
+			continue;
+		}
+
+		// Point lights
+		{
+			auto pointLightComponent = reg.TryGet<PointLightComponent>(entity);
+
+			if (pointLightComponent != nullptr)
+			{
+				world.GetDebugRenderer().AddSphere(
+					DebugCategory::Editor,
+					transformComponent->GetWorldPosition(),
+					pointLightComponent->mRange,
+					Colors::Red);
+			}
+		}
+	}
+}
+
+void Engine::WorldViewport::ShowTransformGizmos()
 {
 	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::R))
 	{
@@ -361,12 +399,12 @@ void Engine::WorldViewport::ShowGuizmoOptions()
 	}
 }
 
-void Engine::WorldViewport::SetGuizmoRect(const glm::vec2 windowPos, const glm::vec2& windowSize)
+void Engine::WorldViewport::SetGizmoRect(const glm::vec2 windowPos, const glm::vec2& windowSize)
 {
 	ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
 }
 
-void Engine::WorldViewport::GuizmoManipulateSelectedTransforms(World& world,
+void Engine::WorldViewport::GizmoManipulateSelectedTransforms(World& world,
 	const std::vector<entt::entity>& selectedEntities,
 	const CameraComponent& camera)
 {
