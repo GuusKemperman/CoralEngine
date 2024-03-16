@@ -12,14 +12,18 @@
 #include "Utilities/StringFunctions.h"
 
 Engine::ScriptEditorSystem::ScriptEditorSystem(Script&& asset) :
-	AssetEditorSystem(std::move(asset)),
-	mNodesThatCanBeCreated(GetALlNodesTheUserCanAdd())
+	AssetEditorSystem(std::move(asset))
 {
+	mLastUpToDateQueryData.mNodesThatCanBeCreated = GetALlNodesTheUserCanAdd();
 	mAsset.PostDeclarationRefresh();
 }
 
 Engine::ScriptEditorSystem::~ScriptEditorSystem()
 {
+	if (mQueryThread.joinable())
+	{
+		mQueryThread.join();
+	}
 	SelectFunction(nullptr);
 }
 
