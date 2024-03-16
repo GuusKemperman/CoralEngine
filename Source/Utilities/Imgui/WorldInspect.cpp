@@ -320,7 +320,7 @@ void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<
 	// rotating and snapping.
 	ShowTransformGizmos();
 
-	for (auto&& [typeHash,storage] : world.GetRegistry().Storage())
+	for (auto&& [typeHash,storage] : reg.Storage())
 	{
 		const MetaType* const type = MetaManager::Get().TryGetType(typeHash);
 
