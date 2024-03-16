@@ -45,9 +45,7 @@ void Engine::PhysicsSystem2D::Update(World& world, float dt)
 {
 	UpdateBodiesAndTransforms(world, dt);
 	UpdateCollisions(world);
-#ifdef _DEBUG
 	DebugDrawing(world);
-#endif
 }
 
 void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
@@ -56,16 +54,14 @@ void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
 	const auto view = reg.View<PhysicsBody2DComponent, TransformComponent>();
 	for (auto [entity, body, transform] : view.each())
 	{
-		switch (body.mMotionType)
+		if (body.mIsAffectedByForces)
 		{
-		case MotionType::Dynamic:
 			body.mLinearVelocity += body.mForce * body.mInvMass * dt;
-		case MotionType::Kinematic:
-			if (body.mLinearVelocity != glm::vec2{})
-			{
-				transform.TranslateWorldPosition(body.mLinearVelocity * dt);
-			}
-		default:;
+		}
+
+		if (body.mLinearVelocity != glm::vec2{})
+		{
+			transform.TranslateWorldPosition(body.mLinearVelocity * dt);
 		}
 	}
 }
@@ -203,6 +199,11 @@ void Engine::PhysicsSystem2D::CallEvents(World& world, const CollisionDataContai
 
 void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 {
+	if ((DebugRenderer::GetDebugCategoryFlags() & DebugCategory::Physics) == 0)
+	{
+		return;
+	}
+
 	Registry& reg = world.GetRegistry();
 	const auto diskView = reg.View<PhysicsBody2DComponent, DiskColliderComponent, TransformComponent>();
 	const auto& renderer = world.GetDebugRenderer();
@@ -257,8 +258,8 @@ void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
 	glm::vec2& entity1WorldPos,
 	const glm::vec2& entity2WorldPos)
 {
-	const bool isBody1Dynamic = body1.mMotionType == MotionType::Dynamic;
-	const bool isBody2Dynamic = body2.mMotionType == MotionType::Dynamic;
+	const bool isBody1Dynamic = body1.mIsAffectedByForces;
+	const bool isBody2Dynamic = body2.mIsAffectedByForces;
 
 	if (isBody1Dynamic 
 		|| isBody2Dynamic)
