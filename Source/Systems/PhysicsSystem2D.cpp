@@ -99,24 +99,46 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 				continue;
 			}
 
+			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
+
+			if (response == CollisionResponse::Ignore)
+			{
+				continue;
+			}
+
 			const glm::vec2 entity2Pos = transform2.GetWorldPosition2D();
 
 			if (CollisionCheckDiskDisk(entity1Pos, disk1.mRadius, entity2Pos, disk2.mRadius, collision))
 			{
-				ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
 				RegisterCollision(currentCollisions, collision, entity1, entity2);
+
+				if (response == CollisionResponse::Blocking)
+				{
+					ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
+				}
 			}
 		}
 
 		// disk-polygon collisions
 		for (const auto [entity2, body2, transform2, polygon2] : viewPolygon.each())
 		{
+			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
+
+			if (response == CollisionResponse::Ignore)
+			{
+				continue;
+			}
+
 			const glm::vec2 entity2Pos = transform2.GetWorldPosition2D();
 
 			if (CollisionCheckDiskPolygon(entity1Pos, disk1.mRadius, entity2Pos, polygon2.mPoints, collision))
 			{
-				ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
 				RegisterCollision(currentCollisions, collision, entity1, entity2);
+
+				if (response == CollisionResponse::Blocking)
+				{
+					ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
+				}
 			}
 		}
 

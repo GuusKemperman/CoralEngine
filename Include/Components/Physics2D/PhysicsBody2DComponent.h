@@ -52,6 +52,8 @@ namespace Engine
 		constexpr bool operator!=(const CollisionRules& other) const { return mLayer != other.mLayer || mResponses != other.mResponses; }
 		constexpr bool operator==(const CollisionRules& other) const { return mLayer == other.mLayer && mResponses == other.mResponses; }
 
+		constexpr CollisionResponse GetResponse(const CollisionRules& other) const;
+
 		CollisionLayer mLayer{};
 		std::array<CollisionResponse, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> mResponses{};
 	};
@@ -62,8 +64,20 @@ namespace Engine
 		CollisionRules mRules{};
 	};
 
+	static constexpr CollisionPreset sDefaultCollisionPreset
+	{
+			"WorldDynamic",
+			CollisionLayer::WorldDynamic,
+			{
+				CollisionResponse::Blocking, // WorldStatic
+				CollisionResponse::Blocking, // WorldDynamic
+				CollisionResponse::Blocking, // Character
+			}
+	};
+
 	static constexpr std::array<CollisionPreset, 4> sCollisionPresets
 	{
+		sDefaultCollisionPreset,
 		CollisionPreset
 		{
 			"Character",
@@ -91,15 +105,6 @@ namespace Engine
 				CollisionResponse::Blocking, // WorldDynamic
 				CollisionResponse::Blocking, // Character
 			}
-		},
-		{
-			"WorldDynamic",
-			CollisionLayer::WorldDynamic,
-			{
-				CollisionResponse::Blocking, // WorldStatic
-				CollisionResponse::Blocking, // WorldDynamic
-				CollisionResponse::Blocking, // Character
-			}
 		}
 	};
 
@@ -113,7 +118,7 @@ namespace Engine
 			mInvMass = mass == 0.f ? 0.f : (1.f / mass);
 		}
 
-		CollisionRules mRules{};
+		CollisionRules mRules = sDefaultCollisionPreset.mRules;
 
 		float mInvMass = 1.f;
 		float mRestitution = 1.f;
@@ -123,7 +128,7 @@ namespace Engine
 		/**
 		 * \brief If true, this object can be moved by gravity, forces and impulses. Otherwise, it moves purely according to its velocity.
 		 */
-		bool mIsAffectedByForces{};
+		bool mIsAffectedByForces = true;
 
 		void AddForce(const glm::vec2& force)
 		{
@@ -144,6 +149,12 @@ namespace Engine
 
 		void ClearForces() { mForce = {}; }
 	};
+
+	constexpr CollisionResponse CollisionRules::GetResponse(const CollisionRules& other) const
+	{
+		return static_cast<CollisionResponse>(std::min(static_cast<std::underlying_type_t<CollisionResponse>>(mResponses[static_cast<std::underlying_type_t<CollisionLayer>>(other.mLayer)]),
+			static_cast<std::underlying_type_t<CollisionResponse>>(other.mResponses[static_cast<std::underlying_type_t<CollisionLayer>>(mLayer)])));
+	}
 }
 
 namespace cereal

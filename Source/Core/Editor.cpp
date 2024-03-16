@@ -159,7 +159,6 @@ void Engine::Editor::Tick(const float deltaTime)
 
 	DestroyRequestedSystems();
 	DisplayMainMenuBar();
-	ImGui::ShowDemoWindow();
 
 	ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
