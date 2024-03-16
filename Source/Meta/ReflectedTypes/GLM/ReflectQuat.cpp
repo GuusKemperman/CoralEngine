@@ -6,6 +6,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
+#include "Utilities/Math.h"
 
 using namespace Engine;
 using namespace glm;
@@ -23,6 +24,14 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc([](const T& n) { return -n; }, OperatorType::negate, MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const glm::vec3& n) { return glm::quat{ n }; }, "EulerToQuat (Radians)", MetaFunc::ExplicitParams<const glm::vec3&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const glm::quat& n) { return glm::eulerAngles(n); }, "QuatToEuler (Radians)", MetaFunc::ExplicitParams<const glm::quat&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](const glm::quat& n)
+	{
+			return Math::QuatToDirectionXZ(n);
+	}, "QuatToXZDirection (vec2)", MetaFunc::ExplicitParams<const glm::quat&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](const glm::quat& n)
+		{
+			return Math::QuatToDirection(n);
+		}, "QuatToDirection (vec3)", MetaFunc::ExplicitParams<const glm::quat&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddFunc([](T& n, const T& l) -> T& { n *= l; return n; }, OperatorType::multiplies_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 

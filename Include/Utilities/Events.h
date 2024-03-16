@@ -55,7 +55,9 @@ namespace Engine
 
 	static constexpr Event<float(const World&, entt::entity), true> sAIEvaluateEvent{ "OnAIEvaluate" };
 
+	static constexpr Event<void(World&, entt::entity)> sAIStateEnterEvent{ "OnAIStateEnter" };
 	static constexpr Event<void(World&, entt::entity, float)> sAITickEvent{ "OnAITick" };
+	static constexpr Event<void(World&, entt::entity)> sAIStateExitEvent{ "OnAIStateExit" };
 
 	/**
 	 * \brief 
@@ -152,6 +154,15 @@ namespace Engine
 #endif // EDITOR
 
 	/**
+	 * \brief Implement this event to draw a gizmo if the entity is selected.
+	 * Gizmos are drawn only when the entity is selected.
+	 * For example an explosion script could draw a sphere showing the explosion radius.
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	static constexpr Event<void(World&, entt::entity)> sDrawGizmoEvent{ "OnDrawGizmo" };
+
+	/**
 	 * \brief Binds an event to a type.
 	 * \tparam Class The class that is being reflected.
 	 * \tparam Args The arguments of the events. Note that each event also requires the first argument to be Class& (see Class template argument).
@@ -217,8 +228,8 @@ namespace Engine
 	{
 		static constexpr bool isStatic = entt::component_traits<std::remove_const_t<Class>>::page_size == 0 ||
 			IsAlwaysStatic;
-		static_assert(isStatic || std::is_const_v<Class> == IsPure,
-			"Cannot be bound to function, make the function const (or remove const)");
+		static_assert(isStatic || !IsPure || std::is_const_v<Class>,
+			"Cannot be bound to function, make the function const");
 
 		MetaFunc* eventFunc{};
 

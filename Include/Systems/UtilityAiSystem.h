@@ -30,9 +30,11 @@ namespace Engine
 		}
 
 	private:
+		template<typename EventT>
+		static void CallTransitionEvent(const EventT& event, const MetaType* type, World& world, entt::entity owner);
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AIEvaluateSystem);
 	};
-
 }
