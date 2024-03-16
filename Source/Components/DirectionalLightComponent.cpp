@@ -34,7 +34,7 @@ void Engine::DirectionalLightComponent::OnDrawGizmos(World& world, entt::entity 
 		drawToPosition,
 		radius,
 		segments,
-		Colors::Red);
+		Colors::Yellow);
 }
 
 Engine::MetaType Engine::DirectionalLightComponent::Reflect()

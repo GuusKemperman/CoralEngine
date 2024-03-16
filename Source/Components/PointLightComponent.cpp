@@ -25,7 +25,7 @@ void Engine::PointLightComponent::OnDrawGizmos(World& world, entt::entity owner)
 		category,
 		transform->GetWorldPosition(),
 		mRange,
-		Colors::Red);
+		Colors::Yellow);
 }
 
 Engine::MetaType Engine::PointLightComponent::Reflect()
