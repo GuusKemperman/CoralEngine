@@ -4,7 +4,7 @@
 
 void Engine::DebugRenderer::AddLine(DebugCategory::Enum category, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color, Plane::Enum plane) const
 {
-    if (!(sDebugCategoryFlags & category)) return;
+    if (!IsCategoryVisible(category)) return;
 
     switch (plane)
     {
@@ -22,7 +22,7 @@ void Engine::DebugRenderer::AddLine(DebugCategory::Enum category, const glm::vec
 
 void Engine::DebugRenderer::AddCircle(DebugCategory::Enum category, const glm::vec3& center, float radius, const glm::vec4& color, Plane::Enum plane) const
 {
-    if (!(sDebugCategoryFlags & category)) return;
+    if (!IsCategoryVisible(category)) return;
 
     constexpr float dt = glm::two_pi<float>() / 64.0f;
     float t = 0.0f;
@@ -71,7 +71,7 @@ void Engine::DebugRenderer::AddCircle(DebugCategory::Enum category, const glm::v
 
 void Engine::DebugRenderer::AddSphere(DebugCategory::Enum category, const glm::vec3& center, float radius, const glm::vec4& color) const
 {
-    if (!(sDebugCategoryFlags & category)) return;
+    if (!IsCategoryVisible(category)) return;
 
     constexpr float dt = glm::two_pi<float>() / 64.0f;
     float t = 0.0f;
@@ -107,7 +107,7 @@ void Engine::DebugRenderer::AddSphere(DebugCategory::Enum category, const glm::v
 
 void Engine::DebugRenderer::AddSquare(DebugCategory::Enum category, const glm::vec3& center, float size, const glm::vec4& color, Plane::Enum plane) const
 {
-    if (!(sDebugCategoryFlags & category)) return;
+    if (!IsCategoryVisible(category)) return;
 
     const float s = size * 0.5f;
     glm::vec3 A{}, B{}, C{}, D{};
@@ -142,7 +142,7 @@ void Engine::DebugRenderer::AddSquare(DebugCategory::Enum category, const glm::v
 
 void Engine::DebugRenderer::AddBox(DebugCategory::Enum category, const glm::vec3& center, const glm::vec3& halfExtents, const glm::vec4& color) const
 {
-    if (!(sDebugCategoryFlags & category)) return;
+    if (!IsCategoryVisible(category)) return;
 
     // Generated using chatgpt
 
@@ -172,7 +172,7 @@ void Engine::DebugRenderer::AddBox(DebugCategory::Enum category, const glm::vec3
 
 void Engine::DebugRenderer::AddCylinder(DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, float radius, uint32 segments, const glm::vec4& color) const
 {
-    if (!(sDebugCategoryFlags & category)) return;
+    if (!IsCategoryVisible(category)) return;
 
     segments = segments < 4 ? 4 : segments; // We need at least 4 segments
 
@@ -219,7 +219,7 @@ void Engine::DebugRenderer::AddCylinder(DebugCategory::Enum category, const glm:
 
 void Engine::DebugRenderer::AddPolygon(DebugCategory::Enum category, const std::vector<glm::vec3>& points, const glm::vec4& color) const
 {
-    if (!(sDebugCategoryFlags & category)) return;
+    if (!IsCategoryVisible(category)) return;
 
     const size_t pointCount = points.size();
     for (size_t i = 0; i < pointCount; i++)
@@ -230,7 +230,7 @@ void Engine::DebugRenderer::AddPolygon(DebugCategory::Enum category, const std::
 
 void Engine::DebugRenderer::AddPolygon(DebugCategory::Enum category, const std::vector<glm::vec2>& points, const glm::vec4& color, Plane::Enum plane) const
 {
-    if (!(sDebugCategoryFlags & category)) return;
+    if (!IsCategoryVisible(category)) return;
 
     const size_t pointCount = points.size();
 

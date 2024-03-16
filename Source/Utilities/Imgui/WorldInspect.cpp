@@ -1,7 +1,6 @@
 #include "Precomp.h"
 #include "Utilities/Imgui/WorldInspect.h"
 
-#include "Assets/Material.h"
 #include "imgui/ImGuizmo.h"
 #include "imgui/imgui_internal.h"
 
@@ -14,20 +13,17 @@
 #include "Components/CameraComponent.h"
 #include "Components/NameComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/PointLightComponent.h"
-#include "Components/DirectionalLightComponent.h"
-#include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/StaticMesh.h"
+#include "Assets/Material.h"
+#include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
 #include "Utilities/Search.h"
-#include "Utilities/DebugRenderer.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
 #include "Core/AssetManager.h"
 #include "World/Archiver.h"
-
 
 static ImGuizmo::OPERATION sGuizmoOperation{ ImGuizmo::OPERATION::TRANSLATE };
 static ImGuizmo::MODE sGuizmoMode{ ImGuizmo::MODE::WORLD };
@@ -304,7 +300,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 	ImGui::SetCursorPos(contentMin);
 
 	// There is no need to try to draw gizmos/manipulate transforms when nothing is selected
-	if (selectedEntities->size())
+	if (!selectedEntities->empty())
 	{
 		ShowComponentGizmos(world, *selectedEntities);
 		GizmoManipulateSelectedTransforms(world, *selectedEntities, cameraPair->second);
@@ -315,52 +311,48 @@ void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<
 {
 	Registry& reg = world.GetRegistry();
 
+	// Transform gizmos are hardcoded here,
+	// since they are already tightly coupled
+	// with the displaying of the world
+	// hierarchy, and because there is
+	// additional UI in place for switching
+	// between translating, scaling,
+	// rotating and snapping.
 	ShowTransformGizmos();
 
-	for (auto entity : selectedEntities)
+	for (auto&& [typeHash,storage] : world.GetRegistry().Storage())
 	{
-		auto transformComponent = reg.TryGet<TransformComponent>(entity);
+		const MetaType* const type = MetaManager::Get().TryGetType(typeHash);
 
-		if (transformComponent == nullptr)
+		if (type == nullptr)
 		{
 			continue;
 		}
 
-		glm::vec3 worldPosition = transformComponent->GetWorldPosition();
+		const MetaFunc* const event = TryGetEvent(*type, sDrawGizmoEvent);
 
-		// Point lights
+		if (event == nullptr)
 		{
-			auto pointLightComponent = reg.TryGet<PointLightComponent>(entity);
-
-			if (pointLightComponent != nullptr)
-			{
-				world.GetDebugRenderer().AddSphere(
-					DebugCategory::Editor,
-					worldPosition,
-					pointLightComponent->mRange,
-					Colors::Red);
-			}
+			continue;
 		}
 
-		// Directional lights
+		const bool isStatic = event->GetProperties().Has(Props::sIsEventStaticTag);
+
+		for (entt::entity entity : selectedEntities)
 		{
-			bool hasDirectionalLight = reg.HasComponent<DirectionalLightComponent>(entity);
-			
-			if (hasDirectionalLight)
+			if (!storage.contains(entity))
 			{
-				constexpr float radius = 1.0f;
-				constexpr float length = 4.0f;
-				constexpr uint32 segments = 8;
+				continue;
+			}
 
-				glm::vec3 drawToPosition = worldPosition + transformComponent->GetWorldForward() * length;
-
-				world.GetDebugRenderer().AddCylinder(
-					DebugCategory::Editor, 
-					worldPosition, 
-					drawToPosition, 
-					radius,
-					segments,
-					Colors::Red);
+			if (isStatic)
+			{
+				event->InvokeUncheckedUnpacked(world, entity);
+			}
+			else
+			{
+				MetaAny component{ *type, storage.value(entity), false };
+				event->InvokeUncheckedUnpacked(component, world, entity);
 			}
 		}
 	}

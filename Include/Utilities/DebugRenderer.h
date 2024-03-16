@@ -103,6 +103,8 @@ namespace Engine
         static void SetDebugCategoryFlags(DebugCategory::Enum flags) { sDebugCategoryFlags = flags; }
         static DebugCategory::Enum GetDebugCategoryFlags() { return sDebugCategoryFlags; }
 
+        static bool IsCategoryVisible(DebugCategory::Enum flags) { return sDebugCategoryFlags & flags; }
+
     private:
         class Impl;
         std::unique_ptr<Impl> mImpl;
