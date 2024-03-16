@@ -1,7 +1,6 @@
 #include "Precomp.h"
 #include "Utilities/Imgui/WorldInspect.h"
 
-#include "Assets/Material.h"
 #include "imgui/ImGuizmo.h"
 #include "imgui/imgui_internal.h"
 
@@ -12,11 +11,12 @@
 #include "Core/Input.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
-#include "Utilities/Imgui/ImguiDragDrop.h"
-#include "Assets/Prefabs/Prefab.h"
-#include "Assets/StaticMesh.h"
 #include "Components/NameComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Assets/Prefabs/Prefab.h"
+#include "Assets/StaticMesh.h"
+#include "Assets/Material.h"
+#include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
 #include "Utilities/Search.h"
@@ -24,7 +24,6 @@
 #include "Meta/MetaProps.h"
 #include "Core/AssetManager.h"
 #include "World/Archiver.h"
-
 
 static ImGuizmo::OPERATION sGuizmoOperation{ ImGuizmo::OPERATION::TRANSLATE };
 static ImGuizmo::MODE sGuizmoMode{ ImGuizmo::MODE::WORLD };
@@ -284,7 +283,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 	}
 
 	ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-	SetGuizmoRect(windowPos + contentMin, contentSize);
+	SetGizmoRect(windowPos + contentMin, contentSize);
 
 	world.GetRenderer().Render(frameBuffer, contentSize);
 
@@ -299,11 +298,67 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 	ReceiveDragDrops(world);
 
 	ImGui::SetCursorPos(contentMin);
-	ShowGuizmoOptions();
-	GuizmoManipulateSelectedTransforms(world, *selectedEntities, cameraPair->second);
+
+	// There is no need to try to draw gizmos/manipulate transforms when nothing is selected
+	if (!selectedEntities->empty())
+	{
+		ShowComponentGizmos(world, *selectedEntities);
+		GizmoManipulateSelectedTransforms(world, *selectedEntities, cameraPair->second);
+	}
 }
 
-void Engine::WorldViewport::ShowGuizmoOptions()
+void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
+{
+	Registry& reg = world.GetRegistry();
+
+	// Transform gizmos are hardcoded here,
+	// since they are already tightly coupled
+	// with the displaying of the world
+	// hierarchy, and because there is
+	// additional UI in place for switching
+	// between translating, scaling,
+	// rotating and snapping.
+	ShowTransformGizmos();
+
+	for (auto&& [typeHash,storage] : reg.Storage())
+	{
+		const MetaType* const type = MetaManager::Get().TryGetType(typeHash);
+
+		if (type == nullptr)
+		{
+			continue;
+		}
+
+		const MetaFunc* const event = TryGetEvent(*type, sDrawGizmoEvent);
+
+		if (event == nullptr)
+		{
+			continue;
+		}
+
+		const bool isStatic = event->GetProperties().Has(Props::sIsEventStaticTag);
+
+		for (entt::entity entity : selectedEntities)
+		{
+			if (!storage.contains(entity))
+			{
+				continue;
+			}
+
+			if (isStatic)
+			{
+				event->InvokeUncheckedUnpacked(world, entity);
+			}
+			else
+			{
+				MetaAny component{ *type, storage.value(entity), false };
+				event->InvokeUncheckedUnpacked(component, world, entity);
+			}
+		}
+	}
+}
+
+void Engine::WorldViewport::ShowTransformGizmos()
 {
 	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::R))
 	{
@@ -361,12 +416,12 @@ void Engine::WorldViewport::ShowGuizmoOptions()
 	}
 }
 
-void Engine::WorldViewport::SetGuizmoRect(const glm::vec2 windowPos, const glm::vec2& windowSize)
+void Engine::WorldViewport::SetGizmoRect(const glm::vec2 windowPos, const glm::vec2& windowSize)
 {
 	ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
 }
 
-void Engine::WorldViewport::GuizmoManipulateSelectedTransforms(World& world,
+void Engine::WorldViewport::GizmoManipulateSelectedTransforms(World& world,
 	const std::vector<entt::entity>& selectedEntities,
 	const CameraComponent& camera)
 {
