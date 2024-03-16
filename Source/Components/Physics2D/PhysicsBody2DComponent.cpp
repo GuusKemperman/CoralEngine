@@ -6,6 +6,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
+#ifdef EDITOR
 void Engine::CollisionRules::DisplayWidget(const std::string& name)
 {
 	if (ImGui::TreeNode(name.c_str()))
@@ -71,6 +72,7 @@ void Engine::CollisionRules::DisplayWidget(const std::string& name)
 		ImGui::TreePop();
 	}
 }
+#endif // EDITOR
 
 Engine::MetaType Engine::PhysicsBody2DComponent::Reflect()
 {
