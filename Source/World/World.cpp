@@ -371,7 +371,7 @@ Engine::MetaType Engine::World::Reflect()
 			}
 
 			return entt::null;
-		}, "Find entity with name", MetaFunc::ExplicitParams<const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "Find entity with name", MetaFunc::ExplicitParams<const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const std::string& name)
 		{
@@ -390,7 +390,7 @@ Engine::MetaType Engine::World::Reflect()
 			}
 
 			return returnValue;
-		}, "Find all entities with name", MetaFunc::ExplicitParams<const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "Find all entities with name", MetaFunc::ExplicitParams<const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const ComponentFilter& component)
 		{
@@ -399,14 +399,14 @@ Engine::MetaType Engine::World::Reflect()
 
 			const std::vector<entt::entity> entities = FindAllEntitiesWithComponents(*world, { component }, true);
 			return entities.empty() ? entt::null : entities[0];
-		}, "Find entity with component", MetaFunc::ExplicitParams<const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "Find entity with component", MetaFunc::ExplicitParams<const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const ComponentFilter& component)
 		{
 			const World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 			return FindAllEntitiesWithComponents(*world, { component }, false);
-		}, "Find all entities with component", MetaFunc::ExplicitParams<const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "Find all entities with component", MetaFunc::ExplicitParams<const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const std::vector<ComponentFilter>& components)
 		{
@@ -415,14 +415,14 @@ Engine::MetaType Engine::World::Reflect()
 
 			const std::vector<entt::entity> entities = FindAllEntitiesWithComponents(*world, components, true);
 			return entities.empty() ? entt::null : entities[0];
-		}, "Find entity with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "Find entity with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const std::vector<ComponentFilter>& components)
 		{
 			const World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 			return FindAllEntitiesWithComponents(*world, components, false);
-		}, "Find all entities with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "Find all entities with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const glm::vec2& screenPosition, float distanceFromCamera)
 		{
