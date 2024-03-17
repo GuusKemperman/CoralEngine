@@ -15,7 +15,19 @@ Engine::MetaFunc::MetaFunc(const InvokeT& funcToInvoke,
 	mNameOrType(std::holds_alternative<std::string_view>(nameOrType) ?
 		NameOrType{ std::string{ std::get<std::string_view>(nameOrType) } } : NameOrType{ std::get<OperatorType>(nameOrType) }),
 	mProperties(std::make_unique<MetaProps>()),
-	mFuncId(MakeFuncId(mReturn.mTypeTraits, std::vector<TypeTraits>{ mParams.data(), mParams.data() + mParams.size() })),
+	mFuncId(MakeFuncId(mReturn.mTypeTraits,
+		[&]
+		{
+			std::vector<TypeTraits> params{};
+			params.reserve(mParams.size());
+
+			for (const MetaFuncNamedParam& namedParam : mParams)
+			{
+				params.emplace_back(namedParam.mTypeTraits);
+			}
+
+			return params;
+		}())),
 	mFuncToInvoke(funcToInvoke)
 {
 }

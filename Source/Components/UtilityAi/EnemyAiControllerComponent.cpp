@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Components/UtililtyAi/EnemyAiControllerComponent.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 #include "Utilities/Reflect/ReflectComponentType.h"
 

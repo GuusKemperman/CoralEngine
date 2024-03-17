@@ -60,9 +60,9 @@ Engine::DebugRenderer::DebugRenderer()
 	mImpl->mDebugPipeline->SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
 	mImpl->mDebugPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"SKYBOX SIGNATURE");
 
-	std::vector<glm::vec4> positions(2);
-	positions[0] = glm::vec4(0.f, 0.f, 0.f, 1.f);
-	positions[1] = glm::vec4(1.f, 0.f, 0.f, 1.f);
+	std::vector<glm::vec3> positions(2);
+	positions[0] = glm::vec3(0.f, 0.f, 0.f);
+	positions[1] = glm::vec3(1.f, 0.f, 0.f);
 
 	engineDevice.StartUploadCommands();
 	int vertexCount = 2;
@@ -104,10 +104,11 @@ void Engine::DebugRenderer::Render(const World& world)
 {
     const auto cameraView = world.GetRegistry().View<const TransformComponent, const CameraComponent>();
 
-    for (auto [entity, cameraTransform, camera] : cameraView.each())
-    {
-        mImpl->Render(camera.GetView(), camera.GetProjection());
-    }
+	const auto optionalEntityCameraPair = world.GetRenderer().GetMainCamera();
+    ASSERT_LOG(optionalEntityCameraPair.has_value(), "DX12 draw requests have been made, but they cannot be cleared as there is no camera to draw them to");
+
+	const auto camera = optionalEntityCameraPair->second;
+    mImpl->Render(camera.GetView(), camera.GetProjection());
 }
 
 bool Engine::DebugRenderer::Impl::AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
@@ -152,7 +153,7 @@ void Engine::DebugRenderer::Impl::Render(const glm::mat4& view, const glm::mat4&
 
 	//UPDATE CAMERA
 	InfoStruct::DXMatrixInfo matrixInfo;
-	matrixInfo.pm = glm::transpose(glm::scale(projection, glm::vec3(1.f, -1.f, 1.f)));
+	matrixInfo.pm = glm::transpose(projection);
 	matrixInfo.vm = glm::transpose(view);
 	matrixInfo.ipm = glm::inverse(matrixInfo.pm);
 	matrixInfo.ivm = glm::inverse(matrixInfo.vm);

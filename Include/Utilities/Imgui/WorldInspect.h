@@ -94,10 +94,11 @@ namespace Engine
 			std::vector<entt::entity>* selectedEntities);
 
 	private:
-		static void ShowGuizmoOptions();
-		static void SetGuizmoRect(glm::vec2 windowPos, const glm::vec2& windowSize);
+		static void ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities);
+		static void ShowTransformGizmos();
+		static void SetGizmoRect(glm::vec2 windowPos, const glm::vec2& windowSize);
 
-		static void GuizmoManipulateSelectedTransforms(World& world,
+		static void GizmoManipulateSelectedTransforms(World& world,
 			const std::vector<entt::entity>& selectedEntities,
 			const CameraComponent& camera);
 	};
