@@ -49,12 +49,12 @@ std::optional<int> Engine::Texture::GetIndex() const
 	}
 
 	Texture& self = const_cast<Texture&>(*this);
-	self.FinaliseLoading();
+	self.RetrieveResultsFromLoadThread();
 
 	return GetIndex();
 }
 
-void Engine::Texture::FinaliseLoading()
+void Engine::Texture::RetrieveResultsFromLoadThread()
 {
 	ASSERT(mLoadThread.joinable());
 

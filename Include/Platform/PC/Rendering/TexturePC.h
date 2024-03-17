@@ -33,7 +33,7 @@ namespace Engine
 			std::optional<int> GetIndex() const;
 
 		private:
-			void FinaliseLoading();
+			void RetrieveResultsFromLoadThread();
 
 			bool LoadTexture(const unsigned char* fileContents, unsigned int width, unsigned int height, unsigned int format);
 			int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
