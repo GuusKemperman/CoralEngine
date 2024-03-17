@@ -1,4 +1,5 @@
 #include "Precomp.h"
+#include "Platform/PC/Rendering/TexturePC.h"
 #include "Platform/pc/Rendering/TexturePC.h"
 #include "Platform/pc/Rendering/DX12Classes/DXDefines.h"
 #include "Platform/pc/Rendering/DX12Classes/DXResource.h"
@@ -13,24 +14,68 @@
 #include "Core/Device.h"
 
 Engine::Texture::Texture(AssetLoadInfo& loadInfo) :
-	Asset(loadInfo)
+	Asset(loadInfo),
+	mLoadedPixels(std::make_shared<STBIPixels>()),
+	mLoadThread([data = StringFunctions::StreamToString(loadInfo.GetStream()), buffer = mLoadedPixels]()
+		{
+			int channels{};
+			buffer->mPixels = stbi_load_from_memory(reinterpret_cast<const unsigned char*>(data.data()), static_cast<int>(data.size()), &buffer->mWidth, &buffer->mHeight, &channels, 4);
+		})
 {
-    const std::string data = StringFunctions::StreamToString(loadInfo.GetStream());
+}
 
-    int width, height, channels;
-    unsigned char* pixels = stbi_load_from_memory(reinterpret_cast<const unsigned char*>(data.data()), static_cast<int>(data.size()), &width, &height, &channels, 4);
-    if (pixels == nullptr)
-    {
-        LOG(LogAssets, Error, "Invalid texture {}", GetName());
-        return;
-    }
+Engine::Texture::Texture(Texture&& other) noexcept = default;
 
-	bool textureLoaded = LoadTexture(pixels, static_cast<int>(width), static_cast<int>(height), DXGI_FORMAT_R8G8B8A8_UNORM);
+Engine::Texture::~Texture()
+{
+	if (mLoadThread.joinable())
+	{
+		mLoadThread.detach();
+	}
+}
 
-    if (!textureLoaded)
-    {
-        LOG(LogAssets, Error, "Invalid texture {}", GetName());
-    }
+std::optional<int> Engine::Texture::GetIndex() const
+{
+	if (mHeapSlot != -1)
+	{
+		return mHeapSlot;
+	}
+
+	if (!mLoadThread.joinable()
+		|| mLoadedPixels == nullptr
+		|| mLoadedPixels->mPixels == nullptr)
+	{
+		return std::nullopt;
+	}
+
+	Texture& self = const_cast<Texture&>(*this);
+	self.FinaliseLoading();
+
+	return GetIndex();
+}
+
+void Engine::Texture::FinaliseLoading()
+{
+	ASSERT(mLoadThread.joinable());
+
+	mLoadThread.join();
+
+	if (mLoadedPixels == nullptr
+		|| mLoadedPixels->mPixels == nullptr)
+	{
+		LOG(LogAssets, Error, "Invalid texture {}", GetName());
+		return;
+	}
+
+	LOG(LogAssets, Message, "Finished processing texture file, sending {} to GPU", GetName());
+
+	const bool textureLoaded = LoadTexture(mLoadedPixels->mPixels, mLoadedPixels->mWidth, mLoadedPixels->mHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
+	mLoadedPixels.reset();
+
+	if (!textureLoaded)
+	{
+		LOG(LogAssets, Error, "Invalid texture {}", GetName());
+	}
 }
 
 bool Engine::Texture::LoadTexture(const unsigned char* fileContents, const unsigned int width, const unsigned int height, const unsigned int format)
@@ -85,7 +130,7 @@ bool Engine::Texture::LoadTexture(const unsigned char* fileContents, const unsig
 	srvDesc.Texture2D.MipLevels = 1;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	heapSlot = engineDevice.AllocateTexture(mTextureBuffer.get(), srvDesc);
+	mHeapSlot = engineDevice.AllocateTexture(mTextureBuffer.get(), srvDesc);
 	engineDevice.SubmitUploadCommands();
 	return true;
 }
@@ -111,9 +156,8 @@ int Engine::Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 	else return 0;
 }
 
-Engine::Texture::Texture(Texture&& other) noexcept :
-	Asset(std::move(other))
+Engine::Texture::STBIPixels::~STBIPixels()
 {
-	mTextureBuffer = other.mTextureBuffer;
-	heapSlot = other.heapSlot;
+	stbi_image_free(mPixels);
 }
+
