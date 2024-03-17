@@ -67,8 +67,6 @@ void Engine::Texture::FinaliseLoading()
 		return;
 	}
 
-	LOG(LogAssets, Message, "Finished processing texture file, sending {} to GPU", GetName());
-
 	const bool textureLoaded = LoadTexture(mLoadedPixels->mPixels, mLoadedPixels->mWidth, mLoadedPixels->mHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
 	mLoadedPixels.reset();
 
