@@ -40,6 +40,7 @@ namespace Engine
 			// We can import anything assimp can, so this list can be significantly expanded
 			// Assimp does not support .blend version 3.1.2
 			return {
+				".obj", ".gltf", ".glb"
 			};
 		}
 
