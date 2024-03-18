@@ -214,10 +214,8 @@ void Engine::PhysicsSystem2D::CallEvents(World& world, const CollisionDataContai
 
 		for (const CollisionData& collision : collisions)
 		{
-			CallEvent(event, world, *storage, collision.mEntity1, collision.mEntity2, collision.mDepth,
-			          collision.mNormalFor1, collision.mContactPoint);
-			CallEvent(event, world, *storage, collision.mEntity2, collision.mEntity1, collision.mDepth,
-			          -collision.mNormalFor1, collision.mContactPoint);
+			CallEvent(event, world, *storage, collision.mEntity1, collision.mEntity2, collision.mDepth, collision.mNormalFor1, collision.mContactPoint);
+			CallEvent(event, world, *storage, collision.mEntity2, collision.mEntity1, collision.mDepth, -collision.mNormalFor1, collision.mContactPoint);
 		}
 	}
 }
