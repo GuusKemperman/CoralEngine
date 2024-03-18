@@ -181,7 +181,7 @@ namespace Engine
 		ImColor GetIconColor(const ScriptVariableTypeData& typeData) const;
 		void DrawPinIcon(const ScriptPin& pin, bool connected, int alpha, bool mirrored = false) const;
 
-		std::vector<NodeTheUserCanAdd> GetALlNodesTheUserCanAdd() const;
+		std::vector<NodeTheUserCanAdd> GetAllNodesTheUserCanAdd() const;
 
 		struct QueryData
 		{
