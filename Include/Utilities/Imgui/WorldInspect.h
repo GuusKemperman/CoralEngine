@@ -9,6 +9,7 @@ namespace Engine
 	class World;
 	class CameraComponent;
 	class FrameBuffer;
+	class BinaryGSONObject;
 
 	/*
 	A little helper class that manages the BeginPlay / EndPlay logic for you, and nicely
@@ -50,6 +51,9 @@ namespace Engine
 		along with some BeginPlay/EndPlay buttons.
 		*/
 		void DisplayAndTick(float deltaTime);
+
+		void SaveState(BinaryGSONObject& state);
+		void LoadState(const BinaryGSONObject& state);
 
 		// Can be passed to WorldViewport::Display/WorldHierarchy::Display/WorldDetails::Display, etc.
 		std::vector<entt::entity> mSelectedEntities{};

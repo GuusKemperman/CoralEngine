@@ -750,6 +750,7 @@ Expected<Engine::VirtualMachine::VMContext::CachedValue*, Engine::ScriptError> E
 			// Make a copy of the value when getting or setting
 			// TODO Check if it has the copy-constructor at script-compile time
 			result = returnType->ConstructAt(returnAddress->mData, refToMemberInsideTarget);
+			break;
 		}
 
 		result = std::move(refToMemberInsideTarget);
