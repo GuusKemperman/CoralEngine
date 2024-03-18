@@ -103,7 +103,7 @@ void Engine::UnitTestEditorSystem::Tick(const float)
 		ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.00f, 0.00f, 0.00f, 0.00f));
 		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.51f, 0.51f, 0.51f, 0.52f));
 		ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.77f, 0.77f, 0.77f, 1.00f));
-		const bool isOpen = ImGui::CollapsingHeaderWithButton(categoryText.c_str(), "|>", &runAllInCategory);
+		const bool isOpen = ImGui::CollapsingHeaderWithButton(categoryText.c_str(), ICON_FA_PLAY_CIRCLE, &runAllInCategory);
 		ImGui::PopStyleColor(4);
 
 		if (runAllInCategory)

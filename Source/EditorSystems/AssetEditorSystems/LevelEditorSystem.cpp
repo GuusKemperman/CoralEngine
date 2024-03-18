@@ -33,6 +33,30 @@ void Engine::LevelEditorSystem::Tick(const float deltaTime)
 	End();
 }
 
+void Engine::LevelEditorSystem::SaveState(std::ostream& toStream) const
+{
+	AssetEditorSystem<Level>::SaveState(toStream);
+
+	BinaryGSONObject savedState{};
+	mWorldHelper->SaveState(savedState);
+	savedState.SaveToBinary(toStream);
+}
+
+void Engine::LevelEditorSystem::LoadState(std::istream& fromStream)
+{
+	AssetEditorSystem<Level>::LoadState(fromStream);
+
+	BinaryGSONObject savedState{};
+
+	if (!savedState.LoadFromBinary(fromStream))
+	{
+		LOG(LogEditor, Warning, "Failed to load level editor saved state, which may be fine if this level was an older format (pre 18/03/2024)");
+		return;
+	}
+
+	mWorldHelper->LoadState(savedState);
+}
+
 void Engine::LevelEditorSystem::ApplyChangesToAsset()
 {
 	mAsset.CreateFromWorld(mWorldHelper->GetWorldBeforeBeginPlay());

@@ -34,7 +34,11 @@ void Engine::ScriptEditorSystem::DisplayDetailsPanel()
 	ScriptFunc* func = TryGetSelectedFunc();
 	ScriptField* field = TryGetSelectedField();
 
-	if (func != nullptr)
+	if (field != nullptr)
+	{
+		DisplayMemberDetails(*field);
+	}
+	else if (func != nullptr)
 	{
 		std::vector<NodeId> selectedNodes = GetSelectedNodes();
 
@@ -56,10 +60,6 @@ void Engine::ScriptEditorSystem::DisplayDetailsPanel()
 		{
 			DisplayFunctionDetails(*func);
 		}
-	}
-	else if (field != nullptr)
-	{
-		DisplayMemberDetails(*field);
 	}
 }
 

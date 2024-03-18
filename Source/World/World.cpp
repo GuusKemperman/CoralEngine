@@ -132,7 +132,8 @@ void Engine::World::EndPlay()
 
 	mHasBegunPlay = false;
 }
-
+
+
 const Engine::DebugRenderer& Engine::World::GetDebugRenderer() const
 {
 	return *mRenderer->mDebugRenderer;
@@ -319,7 +320,7 @@ Engine::MetaType Engine::World::Reflect()
 			}
 
 			return returnValue;
-		}, "Get all entities").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Get all entities").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([]
 		{

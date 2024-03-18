@@ -93,7 +93,6 @@ namespace Engine
 
 		std::vector<CollisionData> mPreviousCollisions{};
 
-
 		std::vector<CollisionEvent> mOnCollisionEntryEvents{};
 		std::vector<CollisionEvent> mOnCollisionStayEvents{};
 		std::vector<CollisionEvent> mOnCollisionExitEvents{};

@@ -12,7 +12,9 @@
 #include "World/Registry.h"
 #include "Components/NameComponent.h"
 #include "Components/PrefabOriginComponent.h"
+#include "Components/TopDownCamControllerComponent.h"
 #include "Components/TransformComponent.h"
+#include "World/Archiver.h"
 
 using namespace Engine;
 
@@ -358,6 +360,84 @@ UNIT_TEST(Serialization, PrefabRemoveChild)
 				},
 			},
 		});
+}
+
+UNIT_TEST(Serialization, CopyPaste)
+{
+	static const std::string parentName = "EntityName\t\n\t!!";
+	static constexpr glm::vec3 parentPosition = { 102.0f, 2035.f, -2035.f };
+
+	static const std::string childName = "ChildName\t\n\t!!";
+	static constexpr glm::vec3 childPosition = -glm::vec3{ 102.0f, 2035.f, -2035.f };
+
+	World world{ false };
+	Registry& reg = world.GetRegistry();
+
+	const entt::entity parent = reg.Create();
+	const entt::entity child = reg.Create();
+
+	{
+		reg.AddComponent<NameComponent>(parent, parentName);
+		reg.AddComponent<TransformComponent>(parent).SetLocalPosition(parentPosition);
+		reg.AddComponent<TopDownCamControllerComponent>(parent).mTarget = child;
+
+		reg.AddComponent<NameComponent>(child, childName);
+
+		TransformComponent& childTransform = reg.AddComponent<TransformComponent>(child);
+		childTransform.SetLocalPosition(childPosition);
+		childTransform.SetParent(&reg.Get<TransformComponent>(parent));
+	}
+
+	int depthRemaining = 4;
+	std::function<UnitTest::Result(std::vector<entt::entity>&)> doesMatch = [&](std::vector<entt::entity>& entitiesToCheck) -> UnitTest::Result
+		{
+			TEST_ASSERT(reg.Storage<entt::entity>().in_use() == entitiesToCheck.size());
+
+			for (const entt::entity& entity : entitiesToCheck)
+			{
+				TEST_ASSERT(reg.TryGet<NameComponent>(entity) != nullptr);
+
+				const std::string_view name = reg.Get<NameComponent>(entity).mName;
+
+				TEST_ASSERT(name == parentName || name == childName);
+
+				if (name == parentName)
+				{
+					const TransformComponent* const parentTransform = reg.TryGet<TransformComponent>(entity);
+
+					TEST_ASSERT(parentTransform != nullptr);
+					TEST_ASSERT(parentTransform->GetLocalPosition() == parentPosition);
+					TEST_ASSERT(parentTransform->GetParent() == nullptr);
+
+					const TopDownCamControllerComponent* const topDownController = reg.TryGet<TopDownCamControllerComponent>(entity);
+
+					TEST_ASSERT(topDownController != nullptr);
+
+					TEST_ASSERT(parentTransform->GetChildren().size() == 1);
+					TEST_ASSERT(parentTransform->GetChildren()[0].get().GetOwner() == topDownController->mTarget);
+				}
+				else if (name == childName)
+				{
+					TEST_ASSERT(reg.TryGet<TransformComponent>(entity) != nullptr);
+					TEST_ASSERT(reg.Get<TransformComponent>(entity).GetLocalPosition() == childPosition);
+					TEST_ASSERT(reg.Get<TransformComponent>(entity).GetParent() != nullptr);
+				}
+			}
+
+			--depthRemaining;
+
+			if (depthRemaining > 0)
+			{
+				BinaryGSONObject copy = Archiver::Serialize(world, std::array<entt::entity, 2>{ parent, child }, true);
+				const std::vector<entt::entity> copiedEntities = Archiver::Deserialize(world, copy);
+				entitiesToCheck.insert(entitiesToCheck.end(), copiedEntities.begin(), copiedEntities.end());
+				return doesMatch(entitiesToCheck);
+			}
+			return UnitTest::Success;
+		};
+
+	std::vector<entt::entity> entities{ parent, child };
+	return doesMatch(entities);
 }
 
 namespace

@@ -273,7 +273,7 @@ Engine::BinaryGSONObject Engine::Prefab::SaveToGSONObject(const std::string& pre
 		}
 	}
 
-	BinaryGSONObject returnValue = Archiver::Serialize(world, rootEntity, true);
+	BinaryGSONObject returnValue = Archiver::Serialize(world, std::array<entt::entity, 1>{ rootEntity }, true);
 
 	returnValue.AddGSONMember("factories") << factoriesData;
 	returnValue.AddGSONMember("seed") << seed;
