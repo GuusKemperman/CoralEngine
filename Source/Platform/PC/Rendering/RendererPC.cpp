@@ -126,12 +126,6 @@ void Engine::Renderer::Render(const World& world)
         updateClusterGrid = true;
     }
 
-    if (updateClusterGrid) {
-        CalculateClusterGrid(camera);
-        engineDevice.WaitForFence();
-        updateClusterGrid = false;
-    }
-
     commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 
@@ -268,6 +262,13 @@ void Engine::Renderer::Render(const World& world)
         //DRAW THE MESH
         staticMeshComponent.mStaticMesh->DrawMesh();
         meshCounter++;
+    }
+
+    if (updateClusterGrid) {
+        CalculateClusterGrid(camera);
+        engineDevice.WaitForFence();
+        updateClusterGrid = false;
+        commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
     }
 }
 

@@ -47,6 +47,10 @@ void Engine::WorldRenderer::Render(FrameBuffer& buffer, std::optional<glm::vec2>
 
 	RenderAtSize(buffer.GetSize());
 
+	//Framebuffer needs to be bound again before the debug renderer renders
+	buffer.Bind();
+	mDebugRenderer->Render(mWorld);
+
 	buffer.Unbind();
 }
 #endif // EDITOR
@@ -159,5 +163,4 @@ void Engine::WorldRenderer::RenderAtSize(glm::vec2 size)
 #endif // EDITOR
 
 	GetWorld().GetRegistry().RenderSystems();
-    mDebugRenderer->Render(mWorld);
 }
