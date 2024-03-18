@@ -59,6 +59,7 @@ namespace Engine
         void AllocateDepthStencil(DXResource* rsc, const D3D12_DEPTH_STENCIL_VIEW_DESC& desc, unsigned int slot);
         void AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc, unsigned int slot);
         int GetFrameIndex() { return mFrameIndex; }
+        void WaitForFence();
 
     private:
         friend EngineClass;

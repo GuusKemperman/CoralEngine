@@ -81,10 +81,11 @@ Engine::Renderer::Renderer()
     mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[MATERIAL_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Material info data", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
-    mConstBuffers[CLUSTER_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXClusterInfo), 1, "Cluster creation data", FRAME_BUFFER_COUNT);
+    mConstBuffers[CLUSTER_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::Clustering::DXCluster), 1, "Cluster creation data", FRAME_BUFFER_COUNT);
+    mConstBuffers[CLUSTERING_CAM_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::Clustering::DXCameraClustering), 1, "Clustering camera data", FRAME_BUFFER_COUNT);
 
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * 50, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mClusterResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "CLUSTER RESULT BUFFER");
    
     D3D12_UNORDERED_ACCESS_VIEW_DESC  uavDesc = {};
@@ -93,19 +94,19 @@ Engine::Renderer::Renderer()
     uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
     uavDesc.Buffer.FirstElement = 0;
     uavDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXAABB);
-    uavDesc.Buffer.NumElements = 50;
+    uavDesc.Buffer.NumElements = 4000;
     mClusterUavIndex = engineDevice.AllocateUAV(mClusterResource.get(), uavDesc);
 }
 
 void Engine::Renderer::Render(const World& world)
 {
+    
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
     std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
     int frameIndex = engineDevice.GetFrameIndex();
 
-    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
-
+    
     //GET WORLD
     const auto optionalEntityCameraPair = world.GetRenderer().GetMainCamera();
     ASSERT_LOG(optionalEntityCameraPair.has_value(), "DX12 draw requests have been made, but they cannot be cleared as there is no camera to draw them to");
@@ -113,13 +114,26 @@ void Engine::Renderer::Render(const World& world)
     //UPDATE CAMERA
     const auto camera = optionalEntityCameraPair->second;
     InfoStruct::DXMatrixInfo matrixInfo;
-    //matrixInfo.pm = camera.GetProjection();
     matrixInfo.pm = glm::transpose(glm::scale(camera.GetProjection(), glm::vec3(1.f, -1.f, 1.f)));
     matrixInfo.vm = glm::transpose(camera.GetView());
 
     matrixInfo.ipm = glm::inverse(matrixInfo.pm);
     matrixInfo.ivm = glm::inverse(matrixInfo.vm);
     mConstBuffers[CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
+
+    if (glm::vec2(ImGui::GetContentRegionAvail()) != screenSize) {
+        screenSize = ImGui::GetContentRegionAvail();
+        updateClusterGrid = true;
+    }
+
+    if (updateClusterGrid) {
+        CalculateClusterGrid(camera);
+        engineDevice.WaitForFence();
+        updateClusterGrid = false;
+    }
+
+    commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
+    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 
     //UPDATE LIGHTS
     const auto pointLightView = world.GetRegistry().View<const PointLightComponent, const TransformComponent>();
@@ -262,6 +276,39 @@ Engine::MetaType Engine::Renderer::Reflect()
     return MetaType{ MetaType::T<Renderer>{}, "Renderer", MetaType::Base<System>{} };
 }
 
-void Engine::Renderer::CalculateClusterGrid()
+void Engine::Renderer::CalculateClusterGrid(const CameraComponent& camera)
 {
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    int frameIndex = engineDevice.GetFrameIndex();
+
+    InfoStruct::Clustering::DXCluster clusterInfo;
+    clusterInfo.mNumClustersX = 16;
+    clusterInfo.mNumClustersY = 8;
+    clusterInfo.mNumClustersZ = 24;
+    clusterInfo.mMaxLightsInCluster = 50;
+    mConstBuffers[CLUSTER_INFO_CB]->Update(&clusterInfo, sizeof(InfoStruct::Clustering::DXCluster), 0, frameIndex);
+
+    InfoStruct::Clustering::DXCameraClustering clusteringCam;
+    clusteringCam.mFarPlane = camera.mFar;
+    clusteringCam.mNearPlane = camera.mNear;
+    clusteringCam.mDepthSliceScale = (float)clusterInfo.mNumClustersZ / std::log2f(clusteringCam.mFarPlane / clusteringCam.mNearPlane);
+    clusteringCam.mDepthSliceBias = -((float)clusterInfo.mNumClustersZ * std::log2f(clusteringCam.mNearPlane) / std::log2f(clusteringCam.mFarPlane / clusteringCam.mNearPlane));
+    clusteringCam.mLinearDepthCoefficient.x = clusteringCam.mFarPlane / (clusteringCam.mNearPlane - clusteringCam.mFarPlane);
+    clusteringCam.mLinearDepthCoefficient.y = (clusteringCam.mNearPlane * clusteringCam.mFarPlane) / (clusteringCam.mNearPlane - clusteringCam.mFarPlane);
+    clusteringCam.mScreenDimensions = screenSize;
+    clusteringCam.mTileSize =  glm::vec2(clusteringCam.mScreenDimensions.x / clusterInfo.mNumClustersX, clusteringCam.mScreenDimensions.y /  clusterInfo.mNumClustersY);
+    mConstBuffers[CLUSTERING_CAM_CB]->Update(&clusteringCam, sizeof(InfoStruct::Clustering::DXCameraClustering), 0, frameIndex);
+    
+    commandList->SetComputeRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
+    commandList->SetPipelineState(mClusterGridPipeline->GetPipeline().Get());
+    ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
+    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+    mConstBuffers[CLUSTER_INFO_CB]->BindToCompute(commandList, 0, 0, frameIndex);
+    mConstBuffers[CAM_MATRIX_CB]->BindToCompute(commandList, 1, 0, frameIndex);
+    mConstBuffers[CLUSTERING_CAM_CB]->BindToCompute(commandList, 2, 0, frameIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 6, mClusterUavIndex);
+
+    commandList->Dispatch(clusterInfo.mNumClustersX, clusterInfo.mNumClustersY, clusterInfo.mNumClustersZ);
 }

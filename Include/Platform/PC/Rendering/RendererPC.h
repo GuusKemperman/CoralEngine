@@ -13,6 +13,7 @@ class DXDescHeap;
 namespace Engine
 {
     class World;
+    class CameraComponent;
 
     class Renderer final :
         public System
@@ -29,7 +30,7 @@ namespace Engine
         }
 
     private:
-        void CalculateClusterGrid();
+        void CalculateClusterGrid(const CameraComponent& camera);
 
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
         std::unique_ptr<DXPipeline> mPBRPipeline;
@@ -39,7 +40,9 @@ namespace Engine
 
         std::unique_ptr<DXResource> mClusterResource;
         unsigned int mClusterUavIndex = 0;
-
+        glm::vec2 screenSize = glm::vec2(1.f, 1.f);
+        bool updateClusterGrid = false;
+        
     private:
         friend ReflectAccess;
         static MetaType Reflect();

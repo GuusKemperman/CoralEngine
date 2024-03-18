@@ -33,15 +33,6 @@ namespace Engine::InfoStruct
         DXDirLightInfo mDirLights[MAX_LIGHTS];
     };
 
-    struct DXClusterInfo
-    {
-        glm::vec4 numClusters;
-        glm::vec2 screenDimesions;
-        float sizeClusters;
-        float zFar;
-        float zNear;
-    };
-
     struct DXMaterialInfo
     {
         glm::vec4 colorFactor;
@@ -65,6 +56,15 @@ namespace Engine::InfoStruct
 
     namespace Clustering
     {
+        // Number of threads for cluster culling.
+        // Each lane processes a 2x2 block.
+        static const unsigned int sClusterCullingGroupSize = 8;
+        static const unsigned int sClusterCullingBlockSize = sClusterCullingGroupSize * 2;
+
+        // Maximum amount of threads that can run in parallel when assining lights to clusters
+        // This limits the amount of lights that one cluster can store.
+        static const unsigned int sLightAssignmentThreadCount = 1024;
+
         struct DXAABB
         {
             glm::vec4 min;
