@@ -139,6 +139,7 @@ namespace Engine
 		float GetWorldScaleUniform() const { const glm::vec3 scale = GetWorldScale(); return (scale.x + scale.y + scale.z) * (1.0f / 3.0f); }
 	
 		void SetLocalScale(const float xyz) { mLocalScale = glm::vec3{ xyz }; }
+		void SetLocalScaleRightForward(const float scale) { mLocalScale = glm::vec3{ scale, mLocalScale.y, scale }; }
 		void SetLocalScale(const glm::vec3 scale) { mLocalScale = scale; }
 		void SetLocalScale(const glm::vec2 scale) { mLocalScale = To3DRightForward(scale, mLocalScale[Axis::Up]); }
 		
