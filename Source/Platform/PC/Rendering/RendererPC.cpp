@@ -311,7 +311,7 @@ void Engine::Renderer::Render(const World& world)
         mConstBuffers[MODEL_INDEX_CB]->Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
         mConstBuffers[MODEL_INDEX_CB]->Bind(commandList, 3, meshCounter, frameIndex);
 
-        engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 15, materialHeapSlot);
+        engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, materialHeapSlot);
 
         //DRAW THE MESH
             staticMeshComponent.mStaticMesh->DrawMesh();
