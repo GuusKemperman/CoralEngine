@@ -521,7 +521,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Assets\Animation.cpp" />
-    <ClCompile Include="Source\Assets\Importers\AnimationImporter.cpp" />
+    <ClCompile Include="Source\Assets\Importers\AnimationImporter.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Components\Animation\Bone.cpp" />
     <ClCompile Include="Source\Components\Animation\BoneInfo.cpp" />
     <ClCompile Include="Source\Components\Abilities\ProjectileComponent.cpp" />
