@@ -16,10 +16,6 @@ body:
     attributes:
       label: Expected behavior
       description: What should have happened?
-      value: |
-        1. ...
-        2. ...
-        3. ...
     validations:
       required: true
   - type: textarea
@@ -27,6 +23,10 @@ body:
     attributes:
       label: Reproduction steps
       description: How can we encounter the bug again?
+      value: |
+        1. ...
+        2. ...
+        3. ...
     validations:
       required: false
   - type: textarea
