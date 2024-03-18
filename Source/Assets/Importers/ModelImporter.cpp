@@ -560,8 +560,7 @@ Engine::MetaType Engine::ModelImporter::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<ModelImporter>{}, "ModelImporter", MetaType::Base<Importer>{} };
 
-	// Added tangents
-	SetClassVersion(type, 1);
+	SetClassVersion(type, 2);
 
 	return type;
 }
