@@ -359,7 +359,7 @@ namespace Engine
 	template<typename T>
 	void AssetEditorSystem<T>::ShowSaveButton()
 	{
-		if (ImGui::Button("Save"))
+		if (ImGui::Button(ICON_FA_FLOPPY_O))
 		{
 			// If you're looking at this because
 			// you want to run logic before saving, look at ApplyChangesToAsset

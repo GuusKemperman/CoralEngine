@@ -9,10 +9,12 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/Events.h"
 #include "Meta/MetaType.h"
-#include "Components/UtililtyAi/EnemyAiControllerComponent.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 namespace Engine
 {
+	class EnemyAiControllerComponent;
+
 	static const MetaType* GetUnitTestScript()
 	{
 		return MetaManager::Get().TryGetType("UnitTestScript");
@@ -274,19 +276,19 @@ UNIT_TEST(Events, CollisionEvents)
 {
 	using namespace Engine;
 
-	World world{ true };
+	World world{true};
 	const entt::entity owner = InitTest(world);
 
 	Registry& reg = world.GetRegistry();
 
 	reg.AddComponent<TransformComponent>(owner);
-	reg.AddComponent<PhysicsBody2DComponent>(owner).mMotionType = MotionType::Static;
+	reg.AddComponent<PhysicsBody2DComponent>(owner).mIsAffectedByForces = false;
 	reg.AddComponent<DiskColliderComponent>(owner);
 
 	const entt::entity other = reg.Create();
 
 	TransformComponent& otherTransform = reg.AddComponent<TransformComponent>(other);
-	reg.AddComponent<PhysicsBody2DComponent>(other).mMotionType = MotionType::Static;
+	reg.AddComponent<PhysicsBody2DComponent>(other).mIsAffectedByForces = false;
 	reg.AddComponent<DiskColliderComponent>(other);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 0));
@@ -311,7 +313,7 @@ UNIT_TEST(Events, CollisionEvents)
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 3));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
-	otherTransform.SetWorldPosition(glm::vec2{ 100000.0f });
+	otherTransform.SetWorldPosition(glm::vec2{100000.0f});
 
 	world.Tick(1 / 60.0f);
 
@@ -321,4 +323,3 @@ UNIT_TEST(Events, CollisionEvents)
 
 	return UnitTest::Success;
 }
-

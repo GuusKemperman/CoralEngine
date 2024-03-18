@@ -64,8 +64,6 @@ namespace Engine
 			mTypeTraits(typeTraits),
 			mName(name) {}
 
-		constexpr operator TypeTraits() const { return mTypeTraits; }
-
 		bool operator==(const MetaFuncNamedParam& other) const { return mTypeTraits == other.mTypeTraits && mName == other.mName; };
 		bool operator!=(const MetaFuncNamedParam& other) const { return mTypeTraits != other.mTypeTraits || mName != other.mName; };
 

@@ -157,6 +157,8 @@ void Engine::ScriptEditorSystem::DrawCanvasObjects()
 
 	const ImRect& canvasRect = ax::NodeEditor::GetCanvasRect();
 
+	const bool bringPinsToFront = Input::Get().HasFocus();
+
 	for (const auto& [pinId, inspectPos] : pinsToInspect)
 	{
 		ScriptPin& pin = currentFunc.GetPin(pinId);
@@ -176,6 +178,12 @@ void Engine::ScriptEditorSystem::DrawCanvasObjects()
 			| ImGuiWindowFlags_NoBackground
 			| ImGuiWindowFlags_AlwaysAutoResize))
 		{
+			if (bringPinsToFront)
+			{
+				ImGuiWindow* window = ImGui::GetCurrentWindow();
+				ImGui::BringWindowToDisplayFront(window);
+			}
+
 			InspectPin(currentFunc, pin);
 		}
 
@@ -344,33 +352,70 @@ void Engine::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 		ImGui::SetKeyboardFocusHere(0);
 	}
 
-	std::string prevQuery = mCurrentQuery;
 	ImGui::InputTextWithHint("##SearchBar", "Search", &mCurrentQuery);
-	const bool searchTermChanged = prevQuery != mCurrentQuery;
 
 	ImGui::SameLine();
+	ImGui::Checkbox("Context sensitive", &sContextSensitive);
 
-	if (ImGui::Checkbox("Context sensitive", &sContextSensitive))
+	const bool isThreadReady = mThreadOutputData.mIsReady;
+
+	if (isThreadReady)
 	{
-		UpdateSimilarityToQuery();
+		mQueryThread.join();
+		std::swap(mLastUpToDateQueryData, mThreadOutputData);
+		ClearQuery(mThreadOutputData);
+
+		mThreadOutputData.mIsRunning = false;
+
+		// Open the categories if there are interesting items inside
+		for (auto first = mLastUpToDateQueryData.mNodesThatCanBeCreated.begin(), last = first; first != mLastUpToDateQueryData.mNodesThatCanBeCreated.end(); first = last)
+		{
+			last = std::find_if(first, mLastUpToDateQueryData.mNodesThatCanBeCreated.end(),
+				[&first](const NodeTheUserCanAdd& node)
+				{
+					return node.mCategory != first->mCategory;
+				});
+
+			ImGui::TreeNodeSetOpen(ImGui::GetCurrentWindow()->GetID(first->mCategory.data()),
+
+				// Close all the tabs after clearing the query
+				mLastUpToDateQueryData.mCurrentQuery.empty() ? false :
+
+				// If any of the nodes inside the category match the search term,
+				// we open the category
+				std::find_if(first, last,
+					[this](const NodeTheUserCanAdd& node)
+					{
+						return ShouldShowUserNode(node);
+					}) != last);
+		}
 	}
 
-	if (searchTermChanged)
+	if (!mThreadOutputData.mIsRunning // We can't relaunch the thread if it's still running
+		&& (sContextSensitive != mLastUpToDateQueryData.mIsContextSensitive // Check if any of the variables are out of date
+		|| mCurrentQuery != mLastUpToDateQueryData.mCurrentQuery))
 	{
-		UpdateSimilarityToQuery();
+		mThreadOutputData.mNodesThatCanBeCreated = mLastUpToDateQueryData.mNodesThatCanBeCreated;
+		mThreadOutputData.mCurrentQuery = mCurrentQuery;
+		mThreadOutputData.mIsReady = false;
+		mThreadOutputData.mIsRunning = true;
+		mThreadOutputData.mIsContextSensitive = sContextSensitive;
+
+		mQueryThread = std::thread{ [this]{ UpdateSimilarityToQuery(mThreadOutputData); } };
+
 	}
 
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
 	const ScriptNode* createdNode = nullptr;
 
-	if (!mRecommendedNodesBasedOnQuery.empty()
+	if (!mLastUpToDateQueryData.mRecommendedNodesBasedOnQuery.empty()
 		&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Enter))
 	{
-		createdNode = &mRecommendedNodesBasedOnQuery[0].get().mAddNode(currentFunc);
+		createdNode = &mLastUpToDateQueryData.mRecommendedNodesBasedOnQuery[0].get().mAddNode(currentFunc);
 	}
 
 	// Show the nodes with the highest similarity to the search string
-	for (const NodeTheUserCanAdd& recommendedNode : mRecommendedNodesBasedOnQuery)
+	for (const NodeTheUserCanAdd& recommendedNode : mLastUpToDateQueryData.mRecommendedNodesBasedOnQuery)
 	{
 		if (ImGui::SmallButton(Format("{} ({})", recommendedNode.mName, recommendedNode.mCategory).data()))
 		{
@@ -379,9 +424,9 @@ void Engine::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 	}
 
 	size_t indexOfCategoryScore{};
-	for (auto first = mNodesThatCanBeCreated.begin(), last = first; first != mNodesThatCanBeCreated.end(); first = last, indexOfCategoryScore++)
+	for (auto first = mLastUpToDateQueryData.mNodesThatCanBeCreated.begin(), last = first; first != mLastUpToDateQueryData.mNodesThatCanBeCreated.end(); first = last, indexOfCategoryScore++)
 	{
-		last = std::find_if(first, mNodesThatCanBeCreated.end(),
+		last = std::find_if(first, mLastUpToDateQueryData.mNodesThatCanBeCreated.end(),
 			[&first](const NodeTheUserCanAdd& node)
 			{
 				return node.mCategory != first->mCategory;
@@ -408,6 +453,7 @@ void Engine::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 			{
 				createdNode = &it->mAddNode(currentFunc);
 			}
+				
 		}
 
 		ImGui::TreePop();
@@ -416,8 +462,23 @@ void Engine::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 	if (createdNode != nullptr)
 	{
 		ImGui::CloseCurrentPopup();
+		// Close all the categories if they were opened during searching
+		if (!mLastUpToDateQueryData.mCurrentQuery.empty())
+		{
+			for (auto first = mLastUpToDateQueryData.mNodesThatCanBeCreated.begin(), last = first; first != mLastUpToDateQueryData.mNodesThatCanBeCreated.end(); first = last)
+			{
+				last = std::find_if(first, mLastUpToDateQueryData.mNodesThatCanBeCreated.end(),
+					[&first](const NodeTheUserCanAdd& node)
+					{
+						return node.mCategory != first->mCategory;
+					});
 
-		ClearQuery();
+				ImGui::TreeNodeSetOpen(ImGui::GetCurrentWindow()->GetID(first->mCategory.data()), false);
+			}
+		}
+
+		ClearQuery(mLastUpToDateQueryData);
+		mCurrentQuery.clear();
 
 		ax::NodeEditor::SetNodePosition(createdNode->GetId(), *mCreateNodePopUpPosition);
 		mCreateNodePopUpPosition.reset();
@@ -626,7 +687,8 @@ void Engine::ScriptEditorSystem::DisplayCommentNode(CommentScriptNode& node)
 
 	ImGui::TextUnformatted(node.GetComment().c_str());
 
-	ax::NodeEditor::Group(ImMax({ 300.0f, 200.0f }, ImVec2{ node.GetSize() }));
+	const ImVec2 nodeDesiredSize = ImMax({ 50.0f, 50.0f }, ImVec2{ node.GetSize() });
+	ax::NodeEditor::Group(nodeDesiredSize);
 	ImGui::PopID();
 	ax::NodeEditor::EndNode();
 	ax::NodeEditor::PopStyleColor(2);
@@ -780,10 +842,31 @@ bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const NodeTheUserCanAdd& n
 
 bool Engine::ScriptEditorSystem::ShouldShowUserNode(const NodeTheUserCanAdd& node) const
 {
-	return DoesNodeMatchContext(node) && (mCurrentQuery.empty() || node.mSimilarityToQuery > sSimilarityCuttOff);
+	return DoesNodeMatchContext(node) && (mCurrentQuery.empty() || node.mSimilarityToQuery >= mLastUpToDateQueryData.mSimilarityCutOff);
 }
 
-std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorSystem::GetALlNodesTheUserCanAdd() const
+std::string Engine::ScriptEditorSystem::PrepareStringForFuzzySearch(const std::string& string)
+{
+	std::string result;
+	for (const char c : string)
+	{
+		if (std::isupper(c))
+		{
+			if (!result.empty() && result.back() != ' ')
+			{
+				result.push_back(' ');
+			}
+			result.push_back(static_cast<char>(std::tolower(c)));
+		}
+		else
+		{
+			result.push_back(c);
+		}
+	}
+	return result;
+}
+
+std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorSystem::GetAllNodesTheUserCanAdd() const
 {
 	std::vector<NodeTheUserCanAdd> returnValue{};
 
@@ -828,18 +911,23 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 		},
 		[this](const ScriptPin& contextPin) -> bool
 		{
-			const ScriptFunc& currentFunc = *TryGetSelectedFunc();
+			const ScriptFunc* const currentFunc = TryGetSelectedFunc();
+
+			if (currentFunc == nullptr)
+			{
+				return false;
+			}
 
 			// The entry node is the only node that has multiple output pins,
 			// so we iterate over all of them
-			for (const ScriptVariableTypeData& param : currentFunc.GetParameters(true))
+			for (const ScriptVariableTypeData& param : currentFunc->GetParameters(true))
 			{
 				if (param.TryGetType() == nullptr)
 				{
 					continue;
 				}
 
-				if (DoesNodeMatchContext(contextPin, { param.TryGetType()->GetTypeId(), param.GetTypeForm() }, {}, currentFunc.IsPure()))
+				if (DoesNodeMatchContext(contextPin, { param.TryGetType()->GetTypeId(), param.GetTypeForm() }, {}, currentFunc->IsPure()))
 				{
 					return true;
 				}
@@ -855,9 +943,14 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 		},
 		[this](const ScriptPin& contextPin) -> bool
 		{
-			const ScriptFunc& currentFunc = *TryGetSelectedFunc();
+			const ScriptFunc* const currentFunc = TryGetSelectedFunc();
 
-			const std::optional<ScriptVariableTypeData>& returnType = currentFunc.GetReturnType();
+			if (currentFunc == nullptr)
+			{
+				return false;
+			}
+
+			const std::optional<ScriptVariableTypeData>& returnType = currentFunc->GetReturnType();
 
 			if (!returnType.has_value()
 				|| returnType->TryGetType() == nullptr)
@@ -865,7 +958,7 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 				return false;
 			}
 
-			return DoesNodeMatchContext(contextPin, {}, { { returnType->TryGetType()->GetTypeId(), returnType->GetTypeForm() } }, currentFunc.IsPure());
+			return DoesNodeMatchContext(contextPin, {}, { { returnType->TryGetType()->GetTypeId(), returnType->GetTypeForm() } }, currentFunc->IsPure());
 		});
 
 	returnValue.emplace_back("", "Comment",
@@ -895,9 +988,19 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 				[&metaFunc](const ScriptPin& contextPin) -> bool
 				{
 					return DoesNodeMatchContext(contextPin,
-					metaFunc.GetReturnType(),
-					std::vector<TypeTraits>(metaFunc.GetParameters().data(),
-					metaFunc.GetParameters().data() + metaFunc.GetParameters().size()),
+					metaFunc.GetReturnType().mTypeTraits,
+					[&]
+					{
+						std::vector<TypeTraits> params{};
+						params.reserve(metaFunc.GetParameters().size());
+
+						for (const MetaFuncNamedParam& namedParam : metaFunc.GetParameters())
+						{
+							params.emplace_back(namedParam.mTypeTraits);
+						}
+
+						return params;
+					}(),
 					IsFunctionPure(metaFunc));
 				});
 		}
@@ -967,35 +1070,24 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 	return returnValue;
 }
 
-void Engine::ScriptEditorSystem::UpdateSimilarityToQuery()
+void Engine::ScriptEditorSystem::UpdateSimilarityToQuery(QueryData& queryData) const
 {
-	std::string tmp = std::move(mCurrentQuery);
-	ClearQuery();
-	mCurrentQuery = std::move(tmp);
+	std::string tmp = queryData.mCurrentQuery;
+	ClearQuery(queryData);
+	queryData.mCurrentQuery = std::move(tmp);
 
-	Search::CachedScorer scorer(mCurrentQuery);
+	const std::string preparedQuery = PrepareStringForFuzzySearch(queryData.mCurrentQuery);
+	rapidfuzz::fuzz::CachedPartialTokenSortRatio<char> scorer1(preparedQuery);
+	rapidfuzz::fuzz::CachedRatio<char> scorer2(preparedQuery);
 
-	for (NodeTheUserCanAdd& node : mNodesThatCanBeCreated)
+	for (NodeTheUserCanAdd& node : queryData.mNodesThatCanBeCreated)
 	{
-		// Checking the context is generally cheaper than
-		// doing the similarity comparison
-		if (DoesNodeMatchContext(node))
-		{
-			// I dont know how to spell synonym
-			std::string nameWithSynonyms = std::string{ node.mName }.append(" ").append(node.mCategory);
-			node.mSimilarityToQuery = scorer.similarity(nameWithSynonyms);
-		}
-		else
-		{
-			node.mSimilarityToQuery = 0.0;
-		}
+		node.mSimilarityToQuery = (scorer1.similarity(node.mQueryComparisonString, sMinSimilarityCutoff) + scorer2.similarity(node.mQueryComparisonString, sMinSimilarityCutoff)) * .5;
 	}
 
-	ImGuiWindow* window = ImGui::GetCurrentWindow();
-
-	for (auto first = mNodesThatCanBeCreated.begin(), last = first; first != mNodesThatCanBeCreated.end(); first = last)
+	for (auto first = queryData.mNodesThatCanBeCreated.begin(), last = first; first != queryData.mNodesThatCanBeCreated.end(); first = last)
 	{
-		last = std::find_if(first, mNodesThatCanBeCreated.end(),
+		last = std::find_if(first, queryData.mNodesThatCanBeCreated.end(),
 			[&first](const NodeTheUserCanAdd& node)
 			{
 				return node.mCategory != first->mCategory;
@@ -1010,64 +1102,56 @@ void Engine::ScriptEditorSystem::UpdateSimilarityToQuery()
 				it->mSimilarityToQuery *= sBiasTowardsNodesFromThisScript;
 			}
 		}
-
-		ImGui::TreeNodeSetOpen(window->GetID(first->mCategory.data()),
-
-			// Close all the tabs after clearing the query
-			mCurrentQuery.empty() ? false :
-
-			// If any of the nodes inside the category match the search term,
-			// we open the category
-			std::find_if(first, last,
-				[this](const NodeTheUserCanAdd& node)
-				{
-					return ShouldShowUserNode(node);
-				}) != last);
 	}
 
 	std::vector<uint32> sortedIndices{};
-	sortedIndices.resize(mNodesThatCanBeCreated.size());
+	sortedIndices.resize(queryData.mNodesThatCanBeCreated.size());
 	std::iota(sortedIndices.begin(), sortedIndices.end(), 0);
 
 	std::sort(sortedIndices.begin(), sortedIndices.end(),
-		[this](uint32 lhs, uint32 rhs)
+		[&queryData](uint32 lhs, uint32 rhs)
 		{
-			return mNodesThatCanBeCreated[lhs].mSimilarityToQuery > mNodesThatCanBeCreated[rhs].mSimilarityToQuery;
+			const double simLhs = queryData.mNodesThatCanBeCreated[lhs].mSimilarityToQuery;
+			const double simRhs = queryData.mNodesThatCanBeCreated[rhs].mSimilarityToQuery;
+			if (simLhs == simRhs)
+			{
+				return queryData.mNodesThatCanBeCreated[lhs].mQueryComparisonString > queryData.mNodesThatCanBeCreated[rhs].mQueryComparisonString;
+			}
+			return simLhs > simRhs;
 		});
 
 	for (uint32 i = 0; i < sMaxNumOfRecommendedNodesDuringQuery; i++)
 	{
-		mRecommendedNodesBasedOnQuery.emplace_back(mNodesThatCanBeCreated[sortedIndices[i]]);
+		queryData.mRecommendedNodesBasedOnQuery.emplace_back(queryData.mNodesThatCanBeCreated[sortedIndices[i]]);
 	}
 
-	if (mCurrentQuery.empty())
+	const double similaritySum = std::accumulate(queryData.mNodesThatCanBeCreated.begin(), queryData.mNodesThatCanBeCreated.end(), 0.0,
+		[](double curr, const NodeTheUserCanAdd& node)
+		{
+			return curr + node.mSimilarityToQuery;
+		});
+
+	const double avgSimilarity = similaritySum / static_cast<double>(queryData.mNodesThatCanBeCreated.size());
+
+	queryData.mSimilarityCutOff = std::clamp(avgSimilarity * sCutOffStrength, sMinSimilarityCutoff, 100.0);
+	printf("%f\n", queryData.mSimilarityCutOff);
+
+	if (queryData.mCurrentQuery.empty())
 	{
-		ClearQuery();
+		ClearQuery(queryData);
 	}
+
+	queryData.mIsReady = true;
 }
 
-void Engine::ScriptEditorSystem::ClearQuery()
+void Engine::ScriptEditorSystem::ClearQuery(QueryData& queryData)
 {
-	if (!mCurrentQuery.empty())
-	{
-		ImGuiWindow* window = ImGui::GetCurrentWindow();
+	queryData.mCurrentQuery.clear();
+	queryData.mRecommendedNodesBasedOnQuery.clear();
+	queryData.mSimilarityCutOff = 0.0;
+	queryData.mIsReady = false;
 
-		for (auto first = mNodesThatCanBeCreated.begin(), last = first; first != mNodesThatCanBeCreated.end(); first = last)
-		{
-			last = std::find_if(first, mNodesThatCanBeCreated.end(),
-				[&first](const NodeTheUserCanAdd& node)
-				{
-					return node.mCategory != first->mCategory;
-				});
-
-			// Close all the nodes after we finish searching
-			ImGui::TreeNodeSetOpen(window->GetID(first->mCategory.data()), false);
-		}
-	}
-	mCurrentQuery.clear();
-	mRecommendedNodesBasedOnQuery.clear();
-
-	for (NodeTheUserCanAdd& node : mNodesThatCanBeCreated)
+	for (NodeTheUserCanAdd& node : queryData.mNodesThatCanBeCreated)
 	{
 		node.mSimilarityToQuery = 100.0;
 	}

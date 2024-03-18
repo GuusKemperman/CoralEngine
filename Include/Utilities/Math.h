@@ -140,6 +140,33 @@ namespace Engine
 			return vec;
 		}
 
+		static glm::vec2 QuatToDirectionXZ(const glm::quat& quat)
+		{
+			const glm::vec3 direction3D = glm::vec3(0.f, 0.f, 1.f) * quat;
+			return normalize(glm::vec2(-direction3D.x, direction3D.z));
+		}
+
+		static glm::vec2 QuatToDirection(const glm::quat& quat)
+		{
+			const glm::vec3 direction3D = glm::vec3(0.f, 0.f, 1.f) * quat;
+			return normalize(glm::vec3(-direction3D.x, direction3D.y, direction3D.z));
+		}
+
+		static glm::quat Direction2DToXZQuatOrientation(const glm::vec2& v)
+		{
+			const glm::vec2 direction2D = glm::normalize(v);
+			const glm::vec3 direction3D(direction2D.x, 0.0f, direction2D.y);
+			// Calculate angle based on direction
+			float angle = acos(glm::dot(glm::normalize(direction3D), { 0.0f, 0.0f, 1.0f }));
+			// Determine the rotation direction (clockwise or counterclockwise)
+			if (direction3D.x < 0)
+				angle = -angle;
+			// Create quaternion for rotation around Y-axis
+			const glm::quat rotation = glm::angleAxis(angle, glm::vec3(0.0f, 1.0f, 0.0f));
+
+			return rotation;
+		}
+
 	private:
 		// Function needed for line-line intersection
 		static bool onSegment(const glm::vec2& p, const glm::vec2& q, const glm::vec2& r)

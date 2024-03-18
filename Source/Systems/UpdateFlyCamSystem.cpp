@@ -26,9 +26,11 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	glm::vec3 movementInput{};
 
-	movementInput[Axis::Forward] = Input::Get().GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S);
-	movementInput[Axis::Up] = Input::Get().GetKeyboardAxis(Input::KeyboardKey::E, Input::KeyboardKey::Q);
-	movementInput[Axis::Right] =  Input::Get().GetKeyboardAxis(Input::KeyboardKey::D, Input::KeyboardKey::A);
+	Input& input = Input::Get();
+
+	movementInput[Axis::Forward] = input.GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S) + -input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftY);
+	movementInput[Axis::Up] = input.GetKeyboardAxis(Input::KeyboardKey::E, Input::KeyboardKey::Q);;
+	movementInput[Axis::Right] =  input.GetKeyboardAxis(Input::KeyboardKey::D, Input::KeyboardKey::A) + input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftX);
 
 	const glm::vec3 timeScaledMovementInput = movementInput * dt;
 
@@ -40,8 +42,8 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	const glm::vec2 rotationInput
 	{
-		Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp),
-		Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowRight, Input::KeyboardKey::ArrowLeft)
+		input.GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp) + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightY),
+		input.GetKeyboardAxis(Input::KeyboardKey::ArrowRight, Input::KeyboardKey::ArrowLeft) + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightX),
 	};
 
 	const glm::vec2 timeScaledRotationInput = rotationInput * dt;

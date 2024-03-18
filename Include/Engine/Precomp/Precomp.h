@@ -87,6 +87,8 @@ namespace Engine
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_stdlib.h"
+#include "imgui/IconsFontAwesome.h"
+
 #endif // EDITOR
 
 template<bool flag = false> void static_no_match() { static_assert(flag, "No match, see surrounding code for the possible cause."); }

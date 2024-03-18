@@ -60,9 +60,22 @@ bool Engine::IsFunctionPure(const MetaFunc& func)
 		return *isPure;
 	}
 
-	return IsFunctionPure(std::vector<TypeTraits>{ func.GetParameters().data(), 
-		func.GetParameters().data() + func.GetParameters().size() },
-		func.GetReturnType());
+
+
+	return IsFunctionPure(
+		[&]
+		{
+			std::vector<TypeTraits> params{};
+			params.reserve(func.GetParameters().size());
+
+			for (const MetaFuncNamedParam& namedParam : func.GetParameters())
+			{
+				params.emplace_back(namedParam.mTypeTraits);
+			}
+
+			return params;
+		}(),
+		func.GetReturnType().mTypeTraits);
 }
 
 bool Engine::WasTypeCreatedByScript(const MetaType& type)
@@ -143,7 +156,8 @@ namespace Engine
 {
 	static bool CanMemberBeSetOrGetThroughScripts(const MetaField& field)
 	{
-		return CanTypeBeUsedInScripts(field.GetType(), TypeForm::Value);
+		return CanTypeBeUsedInScripts(field.GetType(), TypeForm::Value)
+			&& field.GetProperties().Has(Props::sIsScriptableTag);
 	}
 }
 
@@ -174,11 +188,6 @@ bool Engine::CanCreateLink(const ScriptPin& a, const ScriptPin& b)
 		|| b.TryGetType() == nullptr)
 	{
 		return false;
-	}
-
-	if (a.TryGetType() == b.TryGetType())
-	{
-		return true;
 	}
 
 	const ScriptPin& input = a.IsInput() ? a : b;

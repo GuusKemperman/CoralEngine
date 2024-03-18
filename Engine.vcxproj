@@ -521,14 +521,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\Abilities\ProjectileComponent.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\Clustering***REMOVED***.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\BaseIdleState.cpp" />
     <ClCompile Include="Source\Utilities\AbilityFunctionality.cpp" />
     <ClCompile Include="Source\Assets\Ability.cpp" />
     <ClCompile Include="Source\Components\Abilities\AbilitiesOnCharacterComponent.cpp" />
@@ -1415,7 +1414,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Utilities\StaticReflection\AddTypeComponent.cpp" />
+    <ClCompile Include="Source\Utilities\StaticReflection\ReflectComponentType.cpp" />
     <ClCompile Include="Source\World\Archiver.cpp" />
     <ClCompile Include="source\World\World.cpp" />
     <ClCompile Include="Source\World\Registry.cpp" />
@@ -1424,8 +1423,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Components\Abilities\ProjectileComponent.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\BaseIdleState.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\EnemyAiControllerComponent.h" />
     <ClCompile Include="Source\Platform\PC\Rendering\TexturePC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -1435,6 +1432,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Platform\PC\Rendering\InfoStruct.h" />
+    <ClInclude Include="Include\Components\UtilityAi\EnemyAiControllerComponent.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Clustering***REMOVED***.h" />
     <ClInclude Include="Include\Assets\Ability.h" />
     <ClInclude Include="Include\Components\Abilities\AbilitiesOnCharacterComponent.h" />

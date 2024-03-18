@@ -1,0 +1,38 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: ["bug"]
+
+body:
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current behavior
+      description: What is the current behavior?
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Reproduction steps
+      description: How can we encounter the bug again?
+      value: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: false
+  - type: textarea
+    id: possible-solutions
+    attributes:
+      label: Possible solutions
+      description: Do you already have any possible solutions in mind? Put them here!
+    validations:
+      required: false

@@ -3,6 +3,8 @@
 #include "Meta/MetaReflect.h"
 #include "Systems/System.h"
 #include "Platform/PC/Rendering/InfoStruct.h"
+#include "glm/glm.hpp"
+#include "Assets/StaticMesh.h"
 
 class DXResource;
 class DXConstBuffer;
@@ -29,10 +31,17 @@ namespace Engine
             return traits;
         }
 
+        enum DXStructuredBuffers {
+            MODEL_MAT_SB,
+            MATERIAL_SB
+        };
+
+
     private:
         void CalculateClusterGrid(const CameraComponent& camera);
 
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
+        std::unique_ptr<DXResource> mStructuredBuffers[3];
         std::unique_ptr<DXPipeline> mPBRPipeline;
         std::unique_ptr<DXPipeline> mClusterGridPipeline;
         std::unique_ptr<DXPipeline> mZPipeline;
@@ -43,6 +52,8 @@ namespace Engine
         glm::vec2 screenSize = glm::vec2(1.f, 1.f);
         bool updateClusterGrid = false;
         
+        unsigned int materialHeapSlot = 0;
+        std::vector<InfoStruct::DXMaterialInfo> materials;
     private:
         friend ReflectAccess;
         static MetaType Reflect();
