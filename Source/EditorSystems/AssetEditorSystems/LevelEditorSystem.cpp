@@ -50,7 +50,7 @@ void Engine::LevelEditorSystem::LoadState(std::istream& fromStream)
 
 	if (!savedState.LoadFromBinary(fromStream))
 	{
-		LOG(LogEditor, Warning, "Failed to load level editor saved state");
+		LOG(LogEditor, Warning, "Failed to load level editor saved state, which may be fine if this level was an older format (pre 18/03/2024)");
 		return;
 	}
 

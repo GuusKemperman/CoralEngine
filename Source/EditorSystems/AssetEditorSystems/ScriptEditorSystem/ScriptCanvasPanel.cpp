@@ -866,7 +866,7 @@ std::string Engine::ScriptEditorSystem::PrepareStringForFuzzySearch(const std::s
 	return result;
 }
 
-std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorSystem::GetALlNodesTheUserCanAdd() const
+std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorSystem::GetAllNodesTheUserCanAdd() const
 {
 	std::vector<NodeTheUserCanAdd> returnValue{};
 
