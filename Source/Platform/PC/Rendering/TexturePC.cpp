@@ -40,25 +40,23 @@ std::optional<int> Engine::Texture::GetIndex() const
 	{
 		return mHeapSlot;
 	}
-
-	if (!mLoadThread.joinable()
-		|| mLoadedPixels == nullptr
-		|| mLoadedPixels->mPixels == nullptr)
-	{
-		return std::nullopt;
-	}
-
-	Texture& self = const_cast<Texture&>(*this);
-	self.RetrieveResultsFromLoadThread();
-
-	return GetIndex();
+	return std::nullopt;
 }
 
-void Engine::Texture::RetrieveResultsFromLoadThread()
+bool Engine::Texture::IsReadyToSendToGPU() const
+{
+	return mLoadedPixels != nullptr
+		&& mLoadedPixels->mPixels != nullptr
+		&& mLoadThread.joinable();
+}
+
+void Engine::Texture::SendToGPU() const
 {
 	ASSERT(mLoadThread.joinable());
 
-	mLoadThread.join();
+	Texture& self = const_cast<Texture&>(*this);
+
+	self.mLoadThread.join();
 
 	if (mLoadedPixels == nullptr
 		|| mLoadedPixels->mPixels == nullptr)
@@ -67,8 +65,8 @@ void Engine::Texture::RetrieveResultsFromLoadThread()
 		return;
 	}
 
-	const bool textureLoaded = LoadTexture(mLoadedPixels->mPixels, mLoadedPixels->mWidth, mLoadedPixels->mHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
-	mLoadedPixels.reset();
+	const bool textureLoaded = self.LoadTexture(mLoadedPixels->mPixels, mLoadedPixels->mWidth, mLoadedPixels->mHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
+	self.mLoadedPixels.reset();
 
 	if (!textureLoaded)
 	{

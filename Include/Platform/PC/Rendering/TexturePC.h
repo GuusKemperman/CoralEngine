@@ -25,16 +25,12 @@ namespace Engine
 			Texture& operator=(Texture&&) = delete;
 			Texture& operator=(const Texture&) = delete;
 
-			/**
-			 * \brief Gets the index, but only if it's ready.
-			 *
-			 * GetIndex will finalise the loading process if the thread has completed it's work.
-			 */
 			std::optional<int> GetIndex() const;
 
-		private:
-			void RetrieveResultsFromLoadThread();
+			bool IsReadyToSendToGPU() const;
+			void SendToGPU() const;
 
+		private:
 			bool LoadTexture(const unsigned char* fileContents, unsigned int width, unsigned int height, unsigned int format);
 			int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 
