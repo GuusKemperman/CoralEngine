@@ -1,0 +1,12 @@
+## Related task/issue
+// If relevant, link to your related task or issue
+
+## Description
+// Fill in any additional information here, to describe the changes (Using screenshots/GIFs for visual changes is appreciated)
+
+## Checklist
+- [ ] My code follows the style guidelines of this project
+- [ ] I have performed a self-review of my code
+- [ ] New and existing unit tests pass locally with my changes
+- [ ] Should be tested on another device on PC 
+- [ ] Should be tested on another device on ***REMOVED***
