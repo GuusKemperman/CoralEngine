@@ -33,13 +33,13 @@ namespace Engine
 			std::optional<Span<const glm::vec2>> textureCoordinates,
 			std::optional<Span<const glm::ivec4>> boneIds,
 			std::optional<Span<const glm::vec4>> boneWeights,
-			std::optional<std::map<std::string, BoneInfo>> boneMap);
+			std::optional<std::unordered_map<std::string, BoneInfo>> boneMap);
 
 		std::vector<std::filesystem::path> CanImportExtensions() const override
 		{
 			// We can import anything assimp can, so this list can be significantly expanded
+			// Assimp does not support .blend version 3.1.2
 			return {
-			".obj", ".gltf", ".glb"
 			};
 		}
 

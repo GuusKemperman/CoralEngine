@@ -1,0 +1,195 @@
+OnTick {
+	result = 1
+	time = 0
+	duration = 0
+}
+OnFixedTick {
+	result = 1
+	time = 0
+	duration = 0
+}
+OnConstruct {
+	result = 1
+	time = 0
+	duration = 0
+}
+OnBeginPlay {
+	result = 1
+	time = 0
+	duration = 0
+}
+OnBeginPlayWhenAddedAfterWorldBeginsPlay {
+	result = 1
+	time = 0
+	duration = 0
+}
+OnDestructEntireWorld {
+	result = 1
+	time = 0
+	duration = 0
+}
+OnDestructRemoveComponent {
+	result = 1
+	time = 0
+	duration = 0
+}
+OnDestructDestroyEntity {
+	result = 1
+	time = 0
+	duration = 0
+}
+OnAiTick {
+	result = 1
+	time = 0
+	duration = 0
+}
+OnAiEvaluate {
+	result = 1
+	time = 0
+	duration = 0
+}
+CollisionEvents {
+	result = 1
+	time = 0
+	duration = 0
+}
+NoPrefabsLevelSerialization {
+	result = 1
+	time = 0
+	duration = 0
+}
+PrefabsSerialization {
+	result = 1
+	time = 0
+	duration = 0
+}
+EmptyEntityLevelSerialization {
+	result = 1
+	time = 0
+	duration = 0
+}
+EmptyComponentLevelSerialization {
+	result = 1
+	time = 0
+	duration = 0
+}
+EmptyEntityPrefabSerialization {
+	result = 1
+	time = 0
+	duration = 0
+}
+PrefabAddComponent {
+	result = 1
+	time = 0
+	duration = 0
+}
+PrefabRemoveComponent {
+	result = 1
+	time = 0
+	duration = 0
+}
+PrefabAddChild {
+	result = 1
+	time = 0
+	duration = 0
+}
+PrefabRemoveChild {
+	result = 1
+	time = 0
+	duration = 0
+}
+FunctionHash {
+	result = 1
+	time = 0
+	duration = 0
+}
+CollisionCheckDiskDisk {
+	result = 1
+	time = 0
+	duration = 0
+}
+CollisionCheckDiskPolygon {
+	result = 1
+	time = 0
+	duration = 0
+}
+DoesEachAssetHaveLoadInfoConstructor {
+	result = 1
+	time = 0
+	duration = 0
+}
+DoesEachAssetHaveStringViewConstructor {
+	result = 1
+	time = 0
+	duration = 0
+}
+DoesEachSystemHaveDefaultConstructor {
+	result = 1
+	time = 0
+	duration = 0
+}
+ParamsAndReturn {
+	result = 1
+	time = 0
+	duration = 0
+}
+NonStaticFunctions {
+	result = 1
+	time = 0
+	duration = 0
+}
+SimpleWhileLoop {
+	result = 1
+	time = 0
+	duration = 0
+}
+SimpleForLoop {
+	result = 1
+	time = 0
+	duration = 0
+}
+NestedForLoop {
+	result = 1
+	time = 0
+	duration = 0
+}
+BreakWhileLoop {
+	result = 1
+	time = 0
+	duration = 0
+}
+BreakForLoop {
+	result = 1
+	time = 0
+	duration = 0
+}
+BreakNestedLoop {
+	result = 1
+	time = 0
+	duration = 0
+}
+IsNullTest {
+	result = 1
+	time = 0
+	duration = 0
+}
+EqualStreams {
+	result = 1
+	time = 0
+	duration = 0
+}
+NotEqualStreams {
+	result = 1
+	time = 0
+	duration = 0
+}
+DifferentLengthStreams {
+	result = 1
+	time = 0
+	duration = 0
+}
+LongStreams {
+	result = 1
+	time = 0
+	duration = 0
+}

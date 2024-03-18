@@ -7,7 +7,7 @@
 #include "Utilities/ClassVersion.h"
 #include "Assets/Core/AssetSaveInfo.h"
 
-#include <cereal/types/map.hpp>
+#include <cereal/types/unordered_map.hpp>
 
 namespace cereal
 {
@@ -46,7 +46,7 @@ bool Engine::SkinnedMesh::OnSave(AssetSaveInfo& saveInfo,
     std::optional<Span<const glm::vec2>> uvs, 
     std::optional<Span<const glm::ivec4>> boneIds, 
     std::optional<Span<const glm::vec4>> boneWeights,
-    std::optional<std::map<std::string, BoneInfo>> boneMap)
+    std::optional<std::unordered_map<std::string, BoneInfo>> boneMap)
 {
     const uint32 numOfIndices = indices.has_value() ? (static_cast<uint32>(std::holds_alternative<Span<const uint16>>(*indices) ?
         std::get<Span<const uint16>>(*indices).size() :

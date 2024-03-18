@@ -89,7 +89,7 @@ void ReadHierarchyForAnimRecursive(const aiNode& node, Engine::AnimNode& dest)
 std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(const std::filesystem::path& file) const
 {
     Assimp::Importer importer{};
-    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
+    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_LimitBoneWeights | aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
 
 	if (***REMOVED***ne == nullptr)
 	{
@@ -249,7 +249,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 		
 		std::optional<std::vector<glm::ivec4>> boneIds{};
 		std::optional<std::vector<glm::vec4>> boneWeights{};
-		std::optional<std::map<std::string, BoneInfo>> boneMap{};
+		std::optional<std::unordered_map<std::string, BoneInfo>> boneMap{};
 		int boneCounter = 0;
 
 		bool isSkinnedMesh = false;
@@ -292,7 +292,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 		{
 			boneIds = std::vector<glm::ivec4>(mesh.mNumVertices, glm::ivec4(-1));
 			boneWeights = std::vector<glm::vec4>(mesh.mNumVertices, glm::vec4(0.0f));
-			boneMap = std::map<std::string, BoneInfo>{};
+			boneMap = std::unordered_map<std::string, BoneInfo>{};
 
 			for (unsigned int boneIndex = 0; boneIndex < mesh.mNumBones; boneIndex++)
 			{
@@ -426,9 +426,6 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 			engineAnim.mBones.push_back(Bone(channel->mNodeName.data, animData));
 		}
 
-		// Import the animation
-
-
 		returnValue.emplace_back(AnimationImporter::Import(file, myVersion, engineAnim));
 
 	}
@@ -470,7 +467,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 
 				if (***REMOVED***ne->mMeshes[node.mMeshes[i]]->HasBones())
 				{
-					SkinnedMeshComponent& meshComponent = reg.AddComponent<SkinnedMeshComponent>(entity);
+					SkinnedMeshComponent& meshComponent = reg.AddComponent<SkinnedMeshComponent>(meshHolder);
 
 					std::shared_ptr<SkinnedMesh> mesh = std::make_shared<SkinnedMesh>(GetMeshName(file, ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str()));
 					meshComponent.mSkinnedMesh = std::move(mesh);
@@ -480,7 +477,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 				}
 				else
 				{
-					StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(entity);
+					StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(meshHolder);
 
 					std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>(GetMeshName(file, ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str()));
 					meshComponent.mStaticMesh = std::move(mesh);
@@ -546,7 +543,7 @@ std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(con
     std::optional<Span<const glm::vec2>> textureCoordinates,
 	std::optional<Span<const glm::ivec4>> boneIds,
 	std::optional<Span<const glm::vec4>> boneWeights,
-	std::optional<std::map<std::string, BoneInfo>> boneMap)
+	std::optional<std::unordered_map<std::string, BoneInfo>> boneMap)
 {
 	const MetaType* const skinnedMeshType = MetaManager::Get().TryGetType<SkinnedMesh>();
 	ASSERT(skinnedMeshType != nullptr);

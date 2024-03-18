@@ -1,7 +1,7 @@
 #pragma once
 #include <optional>
 #include <variant>
-#include <map>
+#include <unordered_map>
 
 #include "DX12Classes/DXDefines.h"
 #include "Assets/Asset.h"
@@ -27,7 +27,7 @@ namespace Engine
 
         void DrawMesh() const;
 
-        const std::map<std::string, BoneInfo>* GetBoneMap() const { return &mBoneInfoMap; };
+        const std::unordered_map<std::string, BoneInfo>* GetBoneMap() const { return &mBoneInfoMap; };
 
         SkinnedMesh& operator=(SkinnedMesh&&) = delete;
         SkinnedMesh& operator=(const SkinnedMesh&) = delete;
@@ -44,7 +44,7 @@ namespace Engine
             std::optional<Span<const glm::vec2>> textureCoordinates,
             std::optional<Span<const glm::ivec4>> boneIds,
             std::optional<Span<const glm::vec4>> boneWeights,
-            std::optional<std::map<std::string, BoneInfo>> boneMap);
+            std::optional<std::unordered_map<std::string, BoneInfo>> boneMap);
         
         friend ReflectAccess;
         static MetaType Reflect();
@@ -67,7 +67,7 @@ namespace Engine
         D3D12_VERTEX_BUFFER_VIEW mBoneWeightBufferView;
         D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
 
-        std::map<std::string, BoneInfo> mBoneInfoMap;
+        std::unordered_map<std::string, BoneInfo> mBoneInfoMap;
 
         int mIndexCount = 0;
         int mVertexCount = 0;

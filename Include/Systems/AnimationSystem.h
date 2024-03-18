@@ -1,6 +1,6 @@
 #pragma once
 #include "Systems/System.h"
-#include <map>
+#include <unordered_map>
 
 namespace Engine
 {
@@ -30,7 +30,7 @@ namespace Engine
 
 		std::shared_ptr<const Animation> mCurrentAnimation;
 		float mCurrentAnimationTime;
-		const std::map<std::string, BoneInfo>* mCurrentBoneMap; 
+		const std::unordered_map<std::string, BoneInfo>* mCurrentBoneMap; 
 		std::vector<glm::mat4x4>* mCurrentFinalBoneMatrices;
 
 		friend ReflectAccess;
