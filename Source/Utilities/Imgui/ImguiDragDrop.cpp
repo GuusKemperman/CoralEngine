@@ -6,7 +6,7 @@
 
 void Engine::DragDrop::SendAsset(const Name assetName)
 {
-	if (ImGui::BeginDragDropSource())
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
 	{
 		const Name::HashType nameHash = assetName.GetHash();
 

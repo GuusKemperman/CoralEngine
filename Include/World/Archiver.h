@@ -20,18 +20,17 @@ namespace Engine
 		 * change in the time between serializing and deserializing,
 		 * use Engine::Level instead.
 		 *
-		 * May lead to unexpected behaviour if the world is not empty,
-		 * and a serialized entity id is already taken.
+		 * Returns the created entities.
 		*/
-		static void Deserialize(World& world, const BinaryGSONObject& serializedWorld);
+		static std::vector<entt::entity> Deserialize(World& world, const BinaryGSONObject& serializedWorld);
 
 		// Will serialize the entire world.
 		static BinaryGSONObject Serialize(const World& world);
 
-		// Will serialize a single entity, optionally it's children as well.
-		static BinaryGSONObject Serialize(const World& world, entt::entity entity, bool serializeChildren);
+		// Will serialize the provided entities, optionally their children as well.
+		static BinaryGSONObject Serialize(const World& world, Span<const entt::entity> entities, bool serializeChildren);
 
 	private:
-		static BinaryGSONObject Serialize(const World& world, std::vector<entt::entity> entitiesToSerialize, bool allEntitiesInWorldAreBeingSerialized);
+		static BinaryGSONObject SerializeInternal(const World& world, std::vector<entt::entity>&& entitiesToSerialize, bool allEntitiesInWorldAreBeingSerialized);
 	};
 }

@@ -38,12 +38,14 @@ void Engine::ContentBrowserEditorSystem::Tick(const float)
 
     ImGui::BeginDisabled(mAssetCreator.has_value());
 
-    if (ImGui::Button("Create new asset"))
+    if (ImGui::Button(ICON_FA_PLUS))
     {
         folders = MakeFolderGraph(AssetManager::Get().GetAllAssets());
         AssetCreator creator{};
         mAssetCreator = creator;
     }
+
+    ImGui::SetItemTooltip("Create a new asset");
 
     ImGui::EndDisabled();
 
@@ -182,9 +184,16 @@ void Engine::ContentBrowserEditorSystem::DisplayDirectory(ContentFolder&& folder
 
 void Engine::ContentBrowserEditorSystem::DisplayAsset(WeakAsset<Asset>&& asset) const
 {
-    if (ImGui::Button(asset.GetName().c_str()))
+    if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetAssetClass().GetTypeId()))
     {
-        OpenAsset(asset);
+        if (ImGui::Button(asset.GetName().c_str()))
+        {
+            OpenAsset(asset);
+        }
+    }
+    else
+    {
+        ImGui::TextUnformatted(asset.GetName().c_str());
     }
 
     // Looks scary because we may end up deleting the asset,

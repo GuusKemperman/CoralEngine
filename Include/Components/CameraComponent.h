@@ -31,10 +31,8 @@ namespace Engine
 		glm::mat4 mViewProjection{};
 		glm::mat4 mInvViewProjection{};
 
-	private:
-		void OnDeserialize(World& world, entt::entity owner, const BinaryGSONObject& deserializeFrom);
-		void OnSerialize(const World& world, entt::entity owner, BinaryGSONObject& serializeTo) const;
 
+	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(CameraComponent);
