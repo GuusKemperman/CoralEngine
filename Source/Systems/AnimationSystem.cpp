@@ -70,12 +70,6 @@ void Engine::AnimationSystem::Update(World& world, float dt)
 	mCurrentFinalBoneMatrices = nullptr;
 }
 
-//void Engine::AnimationSystem::Render(const World& world)
-//{
-//	
-//	// Render bones with debug lines
-//}
-
 Engine::MetaType Engine::AnimationSystem::Reflect()
 {
 	return MetaType{ MetaType::T<AnimationSystem>{}, "AnimationSystem", MetaType::Base<System>{} };
