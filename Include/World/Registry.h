@@ -69,6 +69,9 @@ namespace Engine
 		template<typename ComponentType>
 		void RemoveComponent(entt::entity fromEntity);
 
+		template<typename ComponentType, typename It>
+		void RemoveComponents(It first, It last);
+
 		void RemoveComponentIfEntityHasIt(TypeId componentClassTypeId, entt::entity fromEntity);
 
 		template<typename ComponentType>
@@ -254,7 +257,10 @@ namespace Engine
 	template<typename Type, typename It>
 	void Registry::AddComponents(It first, It last, const Type& value)
 	{
-		mRegistry.insert(std::move(first), std::move(last), value);
+		for (auto curr = first; curr != last; ++curr)
+		{
+			AddComponent<Type>(*curr, value);
+		}
 	}
 
 	template<typename Type>
@@ -306,6 +312,19 @@ namespace Engine
 	{
 		World::PushWorld(mWorld);
 		mRegistry.erase<ComponentType>(fromEntity);
+		World::PopWorld();
+	}
+
+	template <typename ComponentType, typename It>
+	void Registry::RemoveComponents(It first, It last)
+	{
+		World::PushWorld(mWorld);
+
+		for (auto curr = first; curr != last; ++curr)
+		{
+			mRegistry.erase<ComponentType>(*curr);
+		}
+
 		World::PopWorld();
 	}
 

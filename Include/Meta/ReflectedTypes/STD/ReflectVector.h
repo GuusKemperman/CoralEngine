@@ -80,9 +80,9 @@ struct Reflector<std::vector<T>>
 
 					return MetaAny{ v[i] };
 				},
-				"Get (a reference)",
+				"Get",
 				MetaFunc::Return{ MakeTypeTraits<T&>() }, // Return value
-				MetaFunc::Params{ { MakeTypeTraits<std::vector<T>&>(), "Array" }, { MakeTypeTraits<const int32&>(), "Index" } }).GetProperties().Add(Props::sIsScriptableTag);
+				MetaFunc::Params{ { MakeTypeTraits<std::vector<T>&>(), "Array" }, { MakeTypeTraits<const int32&>(), "Index" } }).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 		}
 
