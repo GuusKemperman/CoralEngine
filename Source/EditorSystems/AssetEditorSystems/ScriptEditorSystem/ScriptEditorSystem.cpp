@@ -14,7 +14,7 @@
 Engine::ScriptEditorSystem::ScriptEditorSystem(Script&& asset) :
 	AssetEditorSystem(std::move(asset))
 {
-	mLastUpToDateQueryData.mNodesThatCanBeCreated = GetALlNodesTheUserCanAdd();
+	mLastUpToDateQueryData.mNodesThatCanBeCreated = GetAllNodesTheUserCanAdd();
 	mAsset.PostDeclarationRefresh();
 }
 

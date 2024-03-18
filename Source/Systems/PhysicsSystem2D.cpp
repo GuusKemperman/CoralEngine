@@ -46,9 +46,7 @@ void Engine::PhysicsSystem2D::Update(World& world, float dt)
 {
 	UpdateBodiesAndTransforms(world, dt);
 	UpdateCollisions(world);
-#ifdef _DEBUG
 	DebugDrawing(world);
-#endif
 }
 
 void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
@@ -57,22 +55,14 @@ void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
 	const auto view = reg.View<PhysicsBody2DComponent, TransformComponent>();
 	for (auto [entity, body, transform] : view.each())
 	{
-		switch (body.mMotionType)
+		if (body.mIsAffectedByForces)
 		{
-		case MotionType::Dynamic:
 			body.mLinearVelocity += body.mForce * body.mInvMass * dt;
-		case MotionType::Kinematic:
-			if (body.mLinearVelocity != glm::vec2{})
-			{
-				transform.TranslateWorldPosition(body.mLinearVelocity * dt);
+		}
 
-				// update orientation based on velocity
-				if (reg.TryGet<CharacterComponent>(entity)) // TODO: abstract component away from system
-				{
-					transform.SetLocalOrientation(Math::Direction2DToXZQuatOrientation(body.mLinearVelocity));
-				}
-			}
-		default:;
+		if (body.mLinearVelocity != glm::vec2{})
+		{
+			transform.TranslateWorldPosition(body.mLinearVelocity * dt);
 		}
 	}
 }
@@ -110,24 +100,46 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 				continue;
 			}
 
+			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
+
+			if (response == CollisionResponse::Ignore)
+			{
+				continue;
+			}
+
 			const glm::vec2 entity2Pos = transform2.GetWorldPosition2D();
 
 			if (CollisionCheckDiskDisk(entity1Pos, disk1.mRadius, entity2Pos, disk2.mRadius, collision))
 			{
-				ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
 				RegisterCollision(currentCollisions, collision, entity1, entity2);
+
+				if (response == CollisionResponse::Blocking)
+				{
+					ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
+				}
 			}
 		}
 
 		// disk-polygon collisions
 		for (const auto [entity2, body2, transform2, polygon2] : viewPolygon.each())
 		{
+			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
+
+			if (response == CollisionResponse::Ignore)
+			{
+				continue;
+			}
+
 			const glm::vec2 entity2Pos = transform2.GetWorldPosition2D();
 
 			if (CollisionCheckDiskPolygon(entity1Pos, disk1.mRadius, entity2Pos, polygon2.mPoints, collision))
 			{
-				ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
 				RegisterCollision(currentCollisions, collision, entity1, entity2);
+
+				if (response == CollisionResponse::Blocking)
+				{
+					ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
+				}
 			}
 		}
 
@@ -210,6 +222,11 @@ void Engine::PhysicsSystem2D::CallEvents(World& world, const CollisionDataContai
 
 void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 {
+	if ((DebugRenderer::GetDebugCategoryFlags() & DebugCategory::Physics) == 0)
+	{
+		return;
+	}
+
 	Registry& reg = world.GetRegistry();
 	const auto diskView = reg.View<PhysicsBody2DComponent, DiskColliderComponent, TransformComponent>();
 	const auto& renderer = world.GetDebugRenderer();
@@ -264,8 +281,8 @@ void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
 	glm::vec2& entity1WorldPos,
 	const glm::vec2& entity2WorldPos)
 {
-	const bool isBody1Dynamic = body1.mMotionType == MotionType::Dynamic;
-	const bool isBody2Dynamic = body2.mMotionType == MotionType::Dynamic;
+	const bool isBody1Dynamic = body1.mIsAffectedByForces;
+	const bool isBody2Dynamic = body2.mIsAffectedByForces;
 
 	if (isBody1Dynamic 
 		|| isBody2Dynamic)

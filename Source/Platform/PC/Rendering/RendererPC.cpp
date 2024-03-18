@@ -90,6 +90,49 @@ Engine::Renderer::Renderer()
 
 void Engine::Renderer::Render(const World& world)
 {
+    // I'm not sure why, because I (Guus), know nothing of dx12, but dx12 does not like it
+    // if we are sending textures to the GPU in the RENDERING pass. Soo my solution was to
+    // do it here instead. The only downside is that we have to iterate over the static meshes
+    // twice, but in entt this is surprisingly fast.
+    { 
+        const auto view = world.GetRegistry().View<const StaticMeshComponent>();
+
+        for (auto [entity, staticMeshComponent] : view.each())
+        {
+            // It won't be rendered anyway,
+            // so let's not bother finalising
+            // the loading process.
+            if (staticMeshComponent.mMaterial == nullptr
+                || staticMeshComponent.mStaticMesh == nullptr)
+            {
+                continue;
+            }
+
+            const Material& mat = *staticMeshComponent.mMaterial;
+
+            if (mat.mBaseColorTexture != nullptr)
+            {
+                (void)mat.mBaseColorTexture->GetIndex().has_value();
+            }
+			if (mat.mEmissiveTexture != nullptr)
+			{
+                (void)mat.mEmissiveTexture->GetIndex().has_value();
+			}
+			if (mat.mMetallicRoughnessTexture != nullptr)
+			{
+                (void)mat.mMetallicRoughnessTexture->GetIndex().has_value();
+			}
+			if (mat.mNormalTexture != nullptr)
+			{
+                (void)mat.mNormalTexture->GetIndex().has_value();
+			}
+			if (mat.mOcclusionTexture != nullptr)
+			{
+                (void)mat.mOcclusionTexture->GetIndex().has_value();
+			}
+        }
+    }
+
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
     std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
@@ -179,6 +222,11 @@ void Engine::Renderer::Render(const World& world)
     //RENDERING
     for (auto [entity, staticMeshComponent, transform] : view.each())
     {
+        if (!staticMeshComponent.mStaticMesh)
+        {
+            continue;
+        }
+
         InfoStruct::DXMaterialInfo materialInfo;
         if (staticMeshComponent.mMaterial != nullptr) {
             materialInfo.colorFactor = { staticMeshComponent.mMaterial->mBaseColorFactor.r,
@@ -192,32 +240,32 @@ void Engine::Renderer::Render(const World& world)
             materialInfo.metallicFactor = staticMeshComponent.mMaterial->mMetallicFactor;
             materialInfo.roughnessFactor = staticMeshComponent.mMaterial->mRoughnessFactor;
             materialInfo.normalScale = staticMeshComponent.mMaterial->mNormalScale;
-            materialInfo.useColorTex = staticMeshComponent.mMaterial->mBaseColorTexture != nullptr;
-            materialInfo.useEmissiveTex = staticMeshComponent.mMaterial->mEmissiveTexture != nullptr;
-            materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr;
-            materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr;
-            materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr;
+            materialInfo.useColorTex = staticMeshComponent.mMaterial->mBaseColorTexture != nullptr && staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex().has_value();
+            materialInfo.useEmissiveTex = staticMeshComponent.mMaterial->mEmissiveTexture != nullptr && staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex().has_value();
+            materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr && staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex().has_value();
+            materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr && staticMeshComponent.mMaterial->mNormalTexture->GetIndex().has_value();
+            materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr && staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex().has_value();
 
             //BIND TEXTURES
             if (materialInfo.useColorTex)
             {
-                resourceHeap->BindToGraphics(commandList, 5, staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
+                resourceHeap->BindToGraphics(commandList, 5, *staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
             }
             if (materialInfo.useEmissiveTex)
             {
-                resourceHeap->BindToGraphics(commandList, 6, staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
+                resourceHeap->BindToGraphics(commandList, 6, *staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
             }
             if (materialInfo.useMetallicRoughnessTex)
             {
-                resourceHeap->BindToGraphics(commandList, 7, staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
+                resourceHeap->BindToGraphics(commandList, 7, *staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
             }
             if (materialInfo.useNormalTex)
             {
-                resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
+                resourceHeap->BindToGraphics(commandList, 8, *staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
             }
             if (materialInfo.useOcclusionTex)
             {
-                resourceHeap->BindToGraphics(commandList, 9, staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
+                resourceHeap->BindToGraphics(commandList, 9, *staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
             }
         }
         else {
@@ -242,9 +290,6 @@ void Engine::Renderer::Render(const World& world)
         mConstBuffers[MODEL_INDEX_CB]->Bind(commandList, 3, meshCounter, frameIndex);
 
         engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 15, materialHeapSlot);
-
-        if (!staticMeshComponent.mStaticMesh)
-            continue;
 
         //DRAW THE MESH
         staticMeshComponent.mStaticMesh->DrawMesh();
