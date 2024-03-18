@@ -251,7 +251,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 }
 
 void Engine::PhysicsSystem2D::CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage,
-                                        entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint)
+        entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint)
 {
 	static_assert(std::is_same_v<decltype(sCollisionEntryEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
 	static_assert(std::is_same_v<decltype(sCollisionStayEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
@@ -269,7 +269,7 @@ void Engine::PhysicsSystem2D::CallEvent(const CollisionEvent& event, World& worl
 	}
 	else
 	{
-		MetaAny component{event.mComponentType, storage.value(owner), false};
+		MetaAny component{ event.mComponentType, storage.value(owner), false };
 		event.mEvent.get().InvokeUncheckedUnpacked(component, world, owner, otherEntity, depth, normal, contactPoint);
 	}
 }
@@ -347,14 +347,13 @@ bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(const glm::vec2& center1, f
 	// compute collision details
 	result.mNormalFor1 = normalize(diff);
 	result.mDepth = r - sqrt(l2);
-	//result.mDepth = r - l2;
 	result.mContactPoint = center2 + result.mNormalFor1 * radius2;
 
 	return true;
 }
 
-bool Engine::PhysicsSystem2D::CollisionCheckDiskPolygon(const glm::vec2& diskCenter, float diskRadius,
-		const glm::vec2& polygonPos, const std::vector<glm::vec2>& polygonPoints, CollisionData& result)
+bool Engine::PhysicsSystem2D::CollisionCheckDiskPolygon(const glm::vec2& diskCenter, float diskRadius, const glm::vec2& polygonPos, const std::vector<glm::vec2>& polygonPoints,
+		CollisionData& result)
 {
 	const glm::vec2& nearest = GetNearestPointOnPolygonBoundary(diskCenter - polygonPos, polygonPoints) + polygonPos;
 	const glm::vec2 diff(diskCenter - nearest);
@@ -389,16 +388,14 @@ bool Engine::PhysicsSystem2D::IsPointInsidePolygon(const glm::vec2& point, const
 	for (i = 0, j = n - 1; i < n; j = i++)
 	{
 		if ((polygon[i].y > point.y != polygon[j].y > point.y) &&
-			(point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) +
-				polygon[i].x))
+			(point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x))
 			inside = !inside;
 	}
 
 	return inside;
 }
 
-glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnPolygonBoundary(const glm::vec2& point, 
-		const std::vector<glm::vec2>& polygon)
+glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnPolygonBoundary(const glm::vec2& point, const std::vector<glm::vec2>& polygon)
 {
 	float bestDist = std::numeric_limits<float>::max();
 	glm::vec2 bestNearest(0.f, 0.f);
