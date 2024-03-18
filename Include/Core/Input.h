@@ -487,7 +487,7 @@ struct Engine::EnumStringPairsImpl<Engine::Input::GamepadButton>
 template<>
 struct Engine::EnumStringPairsImpl<Engine::Input::MouseButton>
 {
-    static constexpr EnumStringPairs<Input::MouseButton, 14> value = {
+    static constexpr EnumStringPairs<Input::MouseButton, 3> value = {
         EnumStringPair<Input::MouseButton>{ Input::MouseButton::Left, "Left" },
         { Input::MouseButton::Right, "Right" },
         { Input::MouseButton::Middle, "Middle" },
