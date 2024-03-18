@@ -520,6 +520,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\Abilities\AOEComponent.cpp" />
     <ClCompile Include="Source\Components\Abilities\ProjectileComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\Clustering***REMOVED***.cpp">
@@ -1422,6 +1423,7 @@
     <ClCompile Include="Source\Systems\UtilityAiSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\Abilities\AOEComponent.h" />
     <ClInclude Include="Include\Components\Abilities\ProjectileComponent.h" />
     <ClCompile Include="Source\Platform\PC\Rendering\TexturePC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
