@@ -47,7 +47,6 @@ Engine::Renderer::Renderer()
     mPBRPipeline = std::make_unique<DXPipeline>();
     CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
-    rast.CullMode = D3D12_CULL_MODE_FRONT;
 
     mPBRPipeline = std::make_unique<DXPipeline>();
     mPBRPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
@@ -99,8 +98,8 @@ Engine::Renderer::Renderer()
     materials = std::vector<InfoStruct::DXMaterialInfo>(MAX_MESHES + 2);
 
     //CREATE UAVS
-    auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mClusterResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "CLUSTER RESULT BUFFER");
 
     D3D12_UNORDERED_ACCESS_VIEW_DESC  uavDesc = {};
