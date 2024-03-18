@@ -322,7 +322,7 @@ void Engine::VirtualMachine::DestroyAllTypesCreatedThroughScripts()
 		if (WasTypeCreatedByScript(type))
 		{
 			LOG(LogScripting, Verbose, "Type {} will be destroyed", type.GetName());
-			UnreflectComponentType(type);
+			Internal::UnreflectComponentType(type);
 			typesToRemove.push_back(type.GetTypeId());
 		}
 	}

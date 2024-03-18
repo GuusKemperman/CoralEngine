@@ -139,11 +139,13 @@ namespace Engine
 		static void DisplaySingle(Registry& registry,
 		                          entt::entity entity,
 			std::vector<entt::entity>& selectedEntities,
-			TransformComponent* transformComponent = nullptr);
+			TransformComponent* transformComponent);
 
 		// Nullopt to unparent them
 		static void ReceiveDragDropOntoParent(Registry& registry,
 			std::optional<entt::entity> parentAllToThisEntity);
+
+		static void DisplayRightClickPopUp(World& world, std::vector<entt::entity>& selectedEntities);
 	};
 }
 #endif // EDITOR

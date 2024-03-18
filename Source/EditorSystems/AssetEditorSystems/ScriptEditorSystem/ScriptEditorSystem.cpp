@@ -413,7 +413,7 @@ void Engine::ScriptEditorSystem::DeleteSelection()
 	ax::NodeEditor::EndDelete();
 }
 
-static constexpr std::string_view sClipboardScriptIdentifier = "ZZZ";
+static constexpr std::string_view sClipboardScriptIdentifier = "A0B1ZZ";
 
 void Engine::ScriptEditorSystem::CopySelection()
 {
