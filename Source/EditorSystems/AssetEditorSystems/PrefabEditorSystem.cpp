@@ -91,7 +91,7 @@ void Engine::PrefabEditorSystem::LoadState(std::istream& fromStream)
 
 	if (!savedState.LoadFromBinary(fromStream))
 	{
-		LOG(LogEditor, Verbose, "Failed to load level editor saved state");
+		LOG(LogEditor, Warning, "Failed to load prefab editor saved state, which may be fine if this prefab was an older format (pre 18/03/2024)");
 		return;
 	}
 
