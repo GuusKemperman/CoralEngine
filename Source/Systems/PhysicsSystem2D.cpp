@@ -27,17 +27,17 @@ Engine::PhysicsSystem2D::PhysicsSystem2D()
 
 		if (entry != nullptr)
 		{
-			mOnCollisionEntryEvents.emplace_back(CollisionEvent{type, *entry, entry->GetProperties().Has(Props::sIsEventStaticTag)});
+			mOnCollisionEntryEvents.emplace_back(CollisionEvent{ type, *entry, entry->GetProperties().Has(Props::sIsEventStaticTag) });
 		}
 
 		if (stay != nullptr)
 		{
-			mOnCollisionStayEvents.emplace_back(CollisionEvent{type, *stay, stay->GetProperties().Has(Props::sIsEventStaticTag)});
+			mOnCollisionStayEvents.emplace_back(CollisionEvent{ type, *stay, stay->GetProperties().Has(Props::sIsEventStaticTag) });
 		}
 
 		if (exit != nullptr)
 		{
-			mOnCollisionExitEvents.emplace_back(CollisionEvent{type, *exit, exit->GetProperties().Has(Props::sIsEventStaticTag)});
+			mOnCollisionExitEvents.emplace_back(CollisionEvent{ type, *exit, exit->GetProperties().Has(Props::sIsEventStaticTag) });
 		}
 	}
 }
@@ -399,8 +399,8 @@ bool Engine::PhysicsSystem2D::IsPointInsidePolygon(const glm::vec2& point, const
 	return inside;
 }
 
-glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnPolygonBoundary(const glm::vec2& point,
-        const std::vector<glm::vec2>& polygon)
+glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnPolygonBoundary(const glm::vec2& point, 
+		const std::vector<glm::vec2>& polygon)
 {
 	float bestDist = std::numeric_limits<float>::max();
 	glm::vec2 bestNearest(0.f, 0.f);
