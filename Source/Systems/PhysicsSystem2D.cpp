@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Systems/PhysicsSystem2D.h"
 
-#include "Components/ComponentFiler.h"
+#include "Components/ComponentFilter.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Meta/MetaType.h"
 #include "Components/TransformComponent.h"

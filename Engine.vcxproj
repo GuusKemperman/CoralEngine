@@ -521,6 +521,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\Abilities\ProjectileComponent.cpp" />
+    <ClCompile Include="Source\Components\UIButtonComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\Clustering***REMOVED***.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
@@ -528,6 +529,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Systems\UISystem.cpp" />
     <ClCompile Include="Source\Utilities\AbilityFunctionality.cpp" />
     <ClCompile Include="Source\Assets\Ability.cpp" />
     <ClCompile Include="Source\Components\Abilities\AbilitiesOnCharacterComponent.cpp" />
@@ -1431,6 +1433,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\UIButtonComponent.h" />
     <ClInclude Include="Include\Components\UtilityAi\EnemyAiControllerComponent.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Clustering***REMOVED***.h" />
     <ClInclude Include="Include\Assets\Ability.h" />
@@ -1538,7 +1541,6 @@
     <ClInclude Include="include\BasicDataTypes\Bezier.h" />
     <ClInclude Include="include\BasicDataTypes\Name.h" />
     <ClInclude Include="Include\Components\Abilities\CharacterComponent.h" />
-    <ClInclude Include="Include\Components\ComponentFiler.h" />
     <ClInclude Include="Include\Components\ComponentFilter.h" />
     <ClInclude Include="Include\Components\EventTestingComponent.h" />
     <ClInclude Include="Include\Components\IsDestroyedTag.h" />
@@ -1666,6 +1668,7 @@
     <ClInclude Include="Include\Systems\EventsSystem.h" />
     <ClInclude Include="Include\Systems\NavigationSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />
+    <ClInclude Include="Include\Systems\UISystem.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
     <ClInclude Include="Include\Utilities\AbilityFunctionality.h" />
     <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
