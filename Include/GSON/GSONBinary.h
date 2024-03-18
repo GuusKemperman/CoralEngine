@@ -45,11 +45,8 @@ namespace Engine
 		using GSONObjectBase::GSONObjectBase;
 
 		void SaveToBinary(std::ostream& ostream) const;
-		void SaveToHex(std::ostream& ostream) const;
 
 		// Returns true on success
 		bool LoadFromBinary(std::istream& ostream);
-
-		void LoadFromHex(std::istream& ostream);
 	};
 }

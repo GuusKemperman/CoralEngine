@@ -1422,7 +1422,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Utilities\StaticReflection\AddTypeComponent.cpp" />
+    <ClCompile Include="Source\Utilities\StaticReflection\ReflectComponentType.cpp" />
     <ClCompile Include="Source\World\Archiver.cpp" />
     <ClCompile Include="source\World\World.cpp" />
     <ClCompile Include="Source\World\Registry.cpp" />

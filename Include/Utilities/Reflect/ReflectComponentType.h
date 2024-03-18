@@ -14,19 +14,16 @@ namespace Engine
 		{
 			return Format("Add {}", componentTypeName);
 		}
+
+		void ReflectComponentType(MetaType& type, bool isEmpty);
+
+		// Removes the functions added during ReflectComponentType
+		void UnreflectComponentType(MetaType& type);
 	}
 
 	/*
 	Adds the functions needed to Add, Get or Remove a component through scripts.
 	*/
-	template<typename T>
-	void ReflectComponentType(MetaType& type);
-
-	void ReflectComponentType(MetaType& type, bool isEmpty = false);
-
-	// Removes the functions added during ReflectComponentType
-	void UnreflectComponentType(MetaType& type);
-
 	template<typename T>
 	void ReflectComponentType(MetaType& type)
 	{
@@ -69,6 +66,6 @@ namespace Engine
 			addComponentFunc.GetProperties().Add(Props::sIsScriptableTag);
 		}
 
-		ReflectComponentType(type, isEmpty);
+		Internal::ReflectComponentType(type, isEmpty);
 	}
 }
