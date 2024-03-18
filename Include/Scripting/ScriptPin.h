@@ -89,8 +89,6 @@ namespace Engine
 		const std::string& GetTypeName() const { return mParamInfo.GetTypeName(); }
 		const ScriptVariableTypeData& GetParamInfo() const { return mParamInfo; }
 
-
-		void RemoveME(TypeForm form) { mParamInfo.SetTypeForm(form); }
 		void SetName(std::string_view name) { mParamInfo.SetName(name); }
 
 		uint32 HowManyLinksCanBeConnectedToThisPin() const;

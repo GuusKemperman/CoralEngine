@@ -320,7 +320,7 @@ Engine::MetaType Engine::World::Reflect()
 			}
 
 			return returnValue;
-		}, "Get all entities").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Get all entities").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([]
 		{

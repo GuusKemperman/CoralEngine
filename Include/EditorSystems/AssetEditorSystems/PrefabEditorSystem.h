@@ -17,6 +17,10 @@ namespace Engine
 
 		void Tick(float deltaTime) override;
 
+		void SaveState(std::ostream& toStream) const override;
+
+		void LoadState(std::istream& fromStream) override;
+
 	private:
 		void ApplyChangesToAsset() override;
 
@@ -27,6 +31,7 @@ namespace Engine
 		std::unique_ptr<WorldInspectHelper> mWorldHelper{};
 
 		entt::entity mPrefabInstance{};
+		entt::entity mCameraInstance{};
 	};
 }
 #endif // EDITOR
