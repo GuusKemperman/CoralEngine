@@ -180,30 +180,7 @@ Engine::SkinnedMesh::SkinnedMesh(AssetLoadInfo& loadInfo) :
     }
 }
 
-Engine::SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) noexcept:
-	Asset(std::move(other))
-{
-	mVertexBuffer = other.mVertexBuffer;
-	mNormalBuffer = other.mNormalBuffer;
-	mTangentBuffer = other.mTangentBuffer;
-	mTexCoordBuffer = other.mTexCoordBuffer;
-	mIndexBuffer = other.mIndexBuffer;
-    mBoneIdBuffer = other.mBoneIdBuffer;
-    mBoneWeightBuffer = other.mBoneWeightBuffer;
-
-	mVertexBufferView = other.mVertexBufferView;
-	mNormalBufferView = other.mNormalBufferView;
-	mTexCoordBufferView = other.mTexCoordBufferView;
-	mTangentBufferView = other.mTangentBufferView;
-	mIndexBufferView = other.mIndexBufferView;
-    mBoneIdBufferView = other.mBoneIdBufferView;
-    mBoneWeightBufferView = other.mBoneWeightBufferView;
-
-	mIndexCount = other.mIndexCount;
-	mVertexCount = other.mVertexCount;
-	mIndexFormat = other.mIndexFormat;
-
-}
+Engine::SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) noexcept = default;
 
 void Engine::SkinnedMesh::DrawMesh() const
 {

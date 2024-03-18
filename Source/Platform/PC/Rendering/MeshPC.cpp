@@ -130,26 +130,7 @@ Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
     }
 }
 
-Engine::StaticMesh::StaticMesh(StaticMesh&& other) noexcept:
-	Asset(std::move(other))
-{
-	mVertexBuffer = other.mVertexBuffer;
-	mNormalBuffer = other.mNormalBuffer;
-	mTangentBuffer = other.mTangentBuffer;
-	mTexCoordBuffer = other.mTexCoordBuffer;
-	mIndexBuffer = other.mIndexBuffer;
-
-	mVertexBufferView = other.mVertexBufferView;
-	mNormalBufferView = other.mNormalBufferView;
-	mTexCoordBufferView = other.mTexCoordBufferView;
-	mTangentBufferView = other.mTangentBufferView;
-	mIndexBufferView = other.mIndexBufferView;
-
-	mIndexCount = other.mIndexCount;
-	mVertexCount = other.mVertexCount;
-	mIndexFormat = other.mIndexFormat;
-
-}
+Engine::StaticMesh::StaticMesh(StaticMesh&& other) noexcept = default;
 
 void Engine::StaticMesh::DrawMesh() const
 {
