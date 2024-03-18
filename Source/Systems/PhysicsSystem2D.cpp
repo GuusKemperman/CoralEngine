@@ -27,23 +27,17 @@ Engine::PhysicsSystem2D::PhysicsSystem2D()
 
 		if (entry != nullptr)
 		{
-			mOnCollisionEntryEvents.emplace_back(CollisionEvent{
-				type, *entry, entry->GetProperties().Has(Props::sIsEventStaticTag)
-			});
+			mOnCollisionEntryEvents.emplace_back(CollisionEvent{type, *entry, entry->GetProperties().Has(Props::sIsEventStaticTag)});
 		}
 
 		if (stay != nullptr)
 		{
-			mOnCollisionStayEvents.emplace_back(CollisionEvent{
-				type, *stay, stay->GetProperties().Has(Props::sIsEventStaticTag)
-			});
+			mOnCollisionStayEvents.emplace_back(CollisionEvent{type, *stay, stay->GetProperties().Has(Props::sIsEventStaticTag)});
 		}
 
 		if (exit != nullptr)
 		{
-			mOnCollisionExitEvents.emplace_back(CollisionEvent{
-				type, *exit, exit->GetProperties().Has(Props::sIsEventStaticTag)
-			});
+			mOnCollisionExitEvents.emplace_back(CollisionEvent{type, *exit, exit->GetProperties().Has(Props::sIsEventStaticTag)});
 		}
 	}
 }
@@ -238,7 +232,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 	Registry& reg = world.GetRegistry();
 	const auto diskView = reg.View<PhysicsBody2DComponent, DiskColliderComponent, TransformComponent>();
 	const auto& renderer = world.GetDebugRenderer();
-	constexpr glm::vec4 color = {1.f, 0.f, 0.f, 1.f};
+	constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
 	for (auto [entity, body, disk, transformComponent] : diskView.each())
 	{
 		renderer.AddCircle(DebugCategory::Physics, transformComponent.GetWorldPosition(), disk.mRadius + 0.1f, color);
@@ -253,22 +247,17 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 		{
 			const glm::vec2 from = poly.mPoints[i] + worldPos;
 			const glm::vec2 to = poly.mPoints[(i + 1) % pointCount] + worldPos;
-			renderer.AddLine(DebugCategory::Physics, glm::vec3(from.x, 1.1f, from.y), glm::vec3(to.x, 1.1f, to.y),
-			                 color);
+			renderer.AddLine(DebugCategory::Physics, glm::vec3(from.x, 1.1f, from.y), glm::vec3(to.x, 1.1f, to.y), color);
 		}
 	}
 }
 
 void Engine::PhysicsSystem2D::CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage,
-                                        entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal,
-                                        glm::vec2 contactPoint)
+                                        entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint)
 {
-	static_assert(std::is_same_v<decltype(sCollisionEntryEvent), const Event<void(
-		                             World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
-	static_assert(std::is_same_v<decltype(sCollisionStayEvent), const Event<void(
-		                             World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
-	static_assert(std::is_same_v<decltype(sCollisionExitEvent), const Event<void(
-		                             World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
+	static_assert(std::is_same_v<decltype(sCollisionEntryEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
+	static_assert(std::is_same_v<decltype(sCollisionStayEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
+	static_assert(std::is_same_v<decltype(sCollisionExitEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
 
 	// Tombstone check, is needed
 	if (!storage.contains(owner))
@@ -288,16 +277,16 @@ void Engine::PhysicsSystem2D::CallEvent(const CollisionEvent& event, World& worl
 }
 
 void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
-                                               PhysicsBody2DComponent& body1,
-                                               PhysicsBody2DComponent& body2,
-                                               TransformComponent& transform2,
-                                               glm::vec2& entity1WorldPos,
-                                               const glm::vec2& entity2WorldPos)
+		PhysicsBody2DComponent& body1,
+		PhysicsBody2DComponent& body2,
+		TransformComponent& transform2,
+		glm::vec2& entity1WorldPos,
+		const glm::vec2& entity2WorldPos)
 {
 	const bool isBody1Dynamic = body1.mIsAffectedByForces;
 	const bool isBody2Dynamic = body2.mIsAffectedByForces;
 
-	if (isBody1Dynamic
+	if (isBody1Dynamic 
 		|| isBody2Dynamic)
 	{
 		// displace the objects to resolve overlap
@@ -309,15 +298,12 @@ void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
 			// entity1WorldPos is applied to the transform
 			// outside of the loop that iterates over all the entity2's,
 			// see UpdateCollisions.
-			//entity1WorldPos += collision.mNormalFor1 * (collision.mDepth * (body1.mInvMass / (body1.mInvMass + body2.mInvMass)));
 			entity1WorldPos += dist * body1.mInvMass;
 		}
 
 		if (isBody2Dynamic)
 		{
 			transform2.SetWorldPosition(entity2WorldPos - dist * body2.mInvMass);
-			//const glm::vec2 newPos = collision.mNormalFor1 * collision.mDepth * (body2.mInvMass / (body2.mInvMass + body1.mInvMass)));
-			//transform2.SetWorldPosition(entity2WorldPos + newPos);
 		}
 
 		// compute and apply impulses
@@ -343,7 +329,7 @@ void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
 }
 
 void Engine::PhysicsSystem2D::RegisterCollision(std::vector<CollisionData>& currentCollisions,
-                                                CollisionData& collision, entt::entity entity1, entt::entity entity2)
+		CollisionData& collision, entt::entity entity1, entt::entity entity2)
 {
 	collision.mEntity1 = entity1;
 	collision.mEntity2 = entity2;
@@ -352,7 +338,7 @@ void Engine::PhysicsSystem2D::RegisterCollision(std::vector<CollisionData>& curr
 
 
 bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(const glm::vec2& center1, float radius1, const glm::vec2& center2,
-                                                     float radius2, CollisionData& result)
+		float radius2, CollisionData& result)
 {
 	// check for overlap
 	const glm::vec2 diff(center1 - center2);
@@ -370,9 +356,7 @@ bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(const glm::vec2& center1, f
 }
 
 bool Engine::PhysicsSystem2D::CollisionCheckDiskPolygon(const glm::vec2& diskCenter, float diskRadius,
-                                                        const glm::vec2& polygonPos,
-                                                        const std::vector<glm::vec2>& polygonPoints,
-                                                        CollisionData& result)
+		const glm::vec2& polygonPos, const std::vector<glm::vec2>& polygonPoints, CollisionData& result)
 {
 	const glm::vec2& nearest = GetNearestPointOnPolygonBoundary(diskCenter - polygonPos, polygonPoints) + polygonPos;
 	const glm::vec2 diff(diskCenter - nearest);
@@ -416,7 +400,7 @@ bool Engine::PhysicsSystem2D::IsPointInsidePolygon(const glm::vec2& point, const
 }
 
 glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnPolygonBoundary(const glm::vec2& point,
-                                                                    const std::vector<glm::vec2>& polygon)
+        const std::vector<glm::vec2>& polygon)
 {
 	float bestDist = std::numeric_limits<float>::max();
 	glm::vec2 bestNearest(0.f, 0.f);
@@ -436,8 +420,7 @@ glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnPolygonBoundary(const glm::v
 	return bestNearest;
 }
 
-glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnLineSegment(const glm::vec2& p, const glm::vec2& segmentA,
-                                                                const glm::vec2& segmentB)
+glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnLineSegment(const glm::vec2& p, const glm::vec2& segmentA, const glm::vec2& segmentB)
 {
 	const float t = dot(p - segmentA, segmentB - segmentA) / distance2(segmentA, segmentB);
 	if (t <= 0) return segmentA;
@@ -447,5 +430,5 @@ glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnLineSegment(const glm::vec2&
 
 Engine::MetaType Engine::PhysicsSystem2D::Reflect()
 {
-	return MetaType{MetaType::T<PhysicsSystem2D>{}, "PhysicsSystem2D", MetaType::Base<System>{}};
+	return MetaType{ MetaType::T<PhysicsSystem2D>{}, "PhysicsSystem2D", MetaType::Base<System>{} };
 }
