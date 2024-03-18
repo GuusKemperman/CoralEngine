@@ -290,9 +290,9 @@ void Engine::PhysicsSystem2D::CallEvent(const CollisionEvent& event, World& worl
 void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
                                                PhysicsBody2DComponent& body1,
                                                PhysicsBody2DComponent& body2,
-                                               TransformComponent&,
-                                               glm::vec2&,
-                                               const glm::vec2&)
+                                               TransformComponent& transform2,
+                                               glm::vec2& entity1WorldPos,
+                                               const glm::vec2& entity2WorldPos)
 {
 	const bool isBody1Dynamic = body1.mIsAffectedByForces;
 	const bool isBody2Dynamic = body2.mIsAffectedByForces;
@@ -304,21 +304,21 @@ void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
 		const float totalInvMass = body1.mInvMass + body2.mInvMass;
 		const glm::vec2 dist = (collision.mDepth / totalInvMass) * collision.mNormalFor1;
 
-		//if (isBody1Dynamic)
-		//{
-		//	// entity1WorldPos is applied to the transform
-		//	// outside of the loop that iterates over all the entity2's,
-		//	// see UpdateCollisions.
-		//	//entity1WorldPos += collision.mNormalFor1 * (collision.mDepth * (body1.mInvMass / (body1.mInvMass + body2.mInvMass)));
-		//	entity1WorldPos += dist * body1.mInvMass;
-		//}
+		if (isBody1Dynamic)
+		{
+			// entity1WorldPos is applied to the transform
+			// outside of the loop that iterates over all the entity2's,
+			// see UpdateCollisions.
+			//entity1WorldPos += collision.mNormalFor1 * (collision.mDepth * (body1.mInvMass / (body1.mInvMass + body2.mInvMass)));
+			entity1WorldPos += dist * body1.mInvMass;
+		}
 
-		//if (isBody2Dynamic)
-		//{
-		//	transform2.SetWorldPosition(entity2WorldPos - dist * body2.mInvMass);
-		//	//const glm::vec2 newPos = collision.mNormalFor1 * collision.mDepth * (body2.mInvMass / (body2.mInvMass + body1.mInvMass)));
-		//	//transform2.SetWorldPosition(entity2WorldPos + newPos);
-		//}
+		if (isBody2Dynamic)
+		{
+			transform2.SetWorldPosition(entity2WorldPos - dist * body2.mInvMass);
+			//const glm::vec2 newPos = collision.mNormalFor1 * collision.mDepth * (body2.mInvMass / (body2.mInvMass + body1.mInvMass)));
+			//transform2.SetWorldPosition(entity2WorldPos + newPos);
+		}
 
 		// compute and apply impulses
 		const float dotProduct = dot(body1.mLinearVelocity - body2.mLinearVelocity, collision.mNormalFor1);
@@ -362,8 +362,8 @@ bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(const glm::vec2& center1, f
 
 	// compute collision details
 	result.mNormalFor1 = normalize(diff);
-	//result.mDepth = r - sqrt(l2);
-	result.mDepth = r - l2;
+	result.mDepth = r - sqrt(l2);
+	//result.mDepth = r - l2;
 	result.mContactPoint = center2 + result.mNormalFor1 * radius2;
 
 	return true;
