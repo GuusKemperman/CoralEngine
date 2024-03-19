@@ -35,31 +35,38 @@ namespace Engine
             MODEL_MAT_SB,
             MATERIAL_SB,
             CLUSTER_GRID_SB,
-            ACTIVE_CLUSTER_SB
+            ACTIVE_CLUSTER_SB,
+            COMPACT_CLUSTER_SB,
+            COUNTER_BUFFER
         };
 
         enum DXPipelines {
             PBR_PIPELINE,
             CLUSTER_GRID_PIPELINE,
-            CULL_CLUSTER_PIPELINE
+            CULL_CLUSTER_PIPELINE,
+            COMPACT_CLUSTER_PIPELINE
         };
 
 
     private:
         void CalculateClusterGrid(const CameraComponent& camera);
         void CullClusters(const World& world);
+        void CompactClusters();
 
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
-        std::unique_ptr<DXResource> mStructuredBuffers[4];
-        std::unique_ptr<DXPipeline> mPipelines[3];
+        std::unique_ptr<DXResource> mStructuredBuffers[6];
+        std::unique_ptr<DXPipeline> mPipelines[4];
         InfoStruct::DXLightInfo mLights;
 
-        unsigned int mClusterUavIndex = 0;
-        unsigned int mClusterSrvIndex = 0;
-        unsigned int mActiveClusterUavIndex = 0;
-        D3D12_VERTEX_BUFFER_VIEW clusterView;
+        unsigned int mClusterUAVIndex = 0;
+        unsigned int mClusterSRVIndex = 0;
+        unsigned int mCompactClusterUAVIndex = 0;
+        unsigned int mCompactClusterSRVIndex = 0;
+        unsigned int mActiveClusterUAVIndex = 0;
+        unsigned int mActiveClusterSRVIndex = 0;
         glm::vec2 screenSize = glm::vec2(1.f, 1.f);
         bool updateClusterGrid = false;
+        int mNumberOfTiles = 0;
         
         unsigned int materialHeapSlot = 0;
         std::vector<InfoStruct::DXMaterialInfo> materials;

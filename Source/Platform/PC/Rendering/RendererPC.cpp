@@ -64,6 +64,12 @@ Engine::Renderer::Renderer()
     mPipelines[CLUSTER_GRID_PIPELINE]->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
     mPipelines[CLUSTER_GRID_PIPELINE]->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"CLUSTER GRID COMPUTE SHADER");
 
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CompactClustersCS.hlsl");
+    cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0", true);
+    mPipelines[COMPACT_CLUSTER_PIPELINE] = std::make_unique<DXPipeline>();
+    mPipelines[COMPACT_CLUSTER_PIPELINE]->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
+    mPipelines[COMPACT_CLUSTER_PIPELINE]->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"COMPACT CLUSTER COMPUTE SHADER");
+
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CullClustersVS.hlsl");
     v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CullClustersPS.hlsl");
@@ -84,9 +90,24 @@ Engine::Renderer::Renderer()
     //CREATE STRUCTURED BUFFERS
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
     auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-    mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "MATERIAL STRUCTURED BUFFER");
-    mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXMaterialInfo)* (MAX_MESHES + 2), 0);
+    mStructuredBuffers[MATERIAL_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "MATERIAL STRUCTURED BUFFER");
+    mStructuredBuffers[MATERIAL_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXMaterialInfo)* (MAX_MESHES + 2), 0);
+    
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    mStructuredBuffers[CLUSTER_GRID_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "CLUSTER GRID BUFFER");
+    
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    mStructuredBuffers[ACTIVE_CLUSTER_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "ACTIVE CLUSTER BUFFER");
+    mStructuredBuffers[ACTIVE_CLUSTER_SB]->CreateUploadBuffer(device, sizeof(uint32) * 4000, 0);
 
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(unsigned int) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    mStructuredBuffers[COMPACT_CLUSTER_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER BUFFER");
+    mStructuredBuffers[COMPACT_CLUSTER_SB]->CreateUploadBuffer(device, sizeof(unsigned int) * 4000, 0);
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(unsigned int), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    mStructuredBuffers[COUNTER_BUFFER] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER COUNTER BUFFER");
+
+    //CREATE SRVS
+    //Materials
     D3D12_SHADER_RESOURCE_VIEW_DESC  srvDesc = {};
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     srvDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -95,23 +116,10 @@ Engine::Renderer::Renderer()
     srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXMaterialInfo);
     srvDesc.Buffer.NumElements = MAX_MESHES +2;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    materialHeapSlot = engineDevice.AllocateTexture(mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB].get(), srvDesc);
+    materialHeapSlot = engineDevice.AllocateTexture(mStructuredBuffers[MATERIAL_SB].get(), srvDesc);
     materials = std::vector<InfoStruct::DXMaterialInfo>(MAX_MESHES + 2);
-
-    //CREATE UAVS
+   
     //AABB Clusters
-    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-    mStructuredBuffers[DXStructuredBuffers::CLUSTER_GRID_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "CLUSTER GRID BUFFER");
-
-    D3D12_UNORDERED_ACCESS_VIEW_DESC  uavDesc = {};
-    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-    uavDesc.Format = DXGI_FORMAT_UNKNOWN;
-    uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
-    uavDesc.Buffer.FirstElement = 0;
-    uavDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXAABB);
-    uavDesc.Buffer.NumElements = 4000;
-    mClusterUavIndex = engineDevice.AllocateUAV(mStructuredBuffers[DXStructuredBuffers::CLUSTER_GRID_SB].get(), uavDesc);
-
     srvDesc = {};
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     srvDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -120,19 +128,33 @@ Engine::Renderer::Renderer()
     srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXAABB);
     srvDesc.Buffer.NumElements = 4000;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    mClusterSrvIndex = engineDevice.AllocateTexture(mStructuredBuffers[DXStructuredBuffers::CLUSTER_GRID_SB].get(), srvDesc);
+    mClusterSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[CLUSTER_GRID_SB].get(), srvDesc);
 
     //Active clusters
-    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-    mStructuredBuffers[DXStructuredBuffers::ACTIVE_CLUSTER_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "ACTIVE CLUSTER BUFFER");
-    mStructuredBuffers[DXStructuredBuffers::ACTIVE_CLUSTER_SB]->CreateUploadBuffer(device, sizeof(uint32) * 4000, 0);
+    srvDesc.Buffer.StructureByteStride = sizeof(uint32);
+    mActiveClusterSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[ACTIVE_CLUSTER_SB].get(), srvDesc); 
 
+    //Compact clusters
+    mCompactClusterSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[COMPACT_CLUSTER_SB].get(), srvDesc); 
+
+    //CREATE UAVS
+    //AABB Clusters
+    D3D12_UNORDERED_ACCESS_VIEW_DESC  uavDesc = {};
+    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+    uavDesc.Format = DXGI_FORMAT_UNKNOWN;
+    uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+    uavDesc.Buffer.FirstElement = 0;
+    uavDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXAABB);
+    uavDesc.Buffer.NumElements = 4000;
+    mClusterUAVIndex = engineDevice.AllocateUAV(mStructuredBuffers[CLUSTER_GRID_SB].get(), uavDesc);
+
+    //Active clusters
     uavDesc.Buffer.StructureByteStride = sizeof(uint32);
-    mActiveClusterUavIndex = engineDevice.AllocateUAV(mStructuredBuffers[DXStructuredBuffers::ACTIVE_CLUSTER_SB].get(), uavDesc); 
+    mActiveClusterUAVIndex = engineDevice.AllocateUAV(mStructuredBuffers[ACTIVE_CLUSTER_SB].get(), uavDesc); 
 
-    clusterView.BufferLocation = mStructuredBuffers[DXStructuredBuffers::CLUSTER_GRID_SB]->Get()->GetGPUVirtualAddress();
-    clusterView.SizeInBytes = sizeof(float) * 3 * 4000;
-    clusterView.StrideInBytes = sizeof(float) * 3;
+    //Compact clusters
+    uavDesc.Buffer.CounterOffsetInBytes = 0;
+    mCompactClusterUAVIndex = engineDevice.AllocateUAV(mStructuredBuffers[COMPACT_CLUSTER_SB].get(), uavDesc, mStructuredBuffers[COUNTER_BUFFER].get()); 
 }
 
 void Engine::Renderer::Render(const World& world)
@@ -347,6 +369,8 @@ void Engine::Renderer::Render(const World& world)
     {
         CalculateClusterGrid(camera);
         engineDevice.WaitForFence();
+        CompactClusters();
+        engineDevice.WaitForFence();
         //updateClusterGrid = false;
         commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
     }
@@ -367,6 +391,7 @@ void Engine::Renderer::CalculateClusterGrid(const CameraComponent& camera)
     clusterInfo.mNumClustersX = 16;
     clusterInfo.mNumClustersY = 8;
     clusterInfo.mNumClustersZ = 24;
+    mNumberOfTiles = 16 * 8 * 24;
     clusterInfo.mMaxLightsInCluster = 50;
     mConstBuffers[CLUSTER_INFO_CB]->Update(&clusterInfo, sizeof(InfoStruct::Clustering::DXCluster), 0, frameIndex);
 
@@ -389,7 +414,7 @@ void Engine::Renderer::CalculateClusterGrid(const CameraComponent& camera)
     mConstBuffers[CLUSTER_INFO_CB]->BindToCompute(commandList, 0, 0, frameIndex);
     mConstBuffers[CAM_MATRIX_CB]->BindToCompute(commandList, 1, 0, frameIndex);
     mConstBuffers[CLUSTERING_CAM_CB]->BindToCompute(commandList, 2, 0, frameIndex);
-    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 6, mClusterUavIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 6, mClusterUAVIndex);
 
     commandList->Dispatch(clusterInfo.mNumClustersX, clusterInfo.mNumClustersY, clusterInfo.mNumClustersZ);
 }
@@ -400,12 +425,12 @@ void Engine::Renderer::CullClusters(const World& world)
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
     int frameIndex = engineDevice.GetFrameIndex();
 
-    //std::vector<uint32> activeClusters = std::vector<uint32>(4000, 0);
-    //D3D12_SUBRESOURCE_DATA data;
-    //data.pData = activeClusters.data();
-    //data.RowPitch = sizeof(uint32);
-    //data.SlicePitch = sizeof(uint32) * 4000;
-    //mStructuredBuffers[DXStructuredBuffers::ACTIVE_CLUSTER_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+    std::vector<uint32> activeClusters = std::vector<uint32>(4000, 0);
+    D3D12_SUBRESOURCE_DATA data;
+    data.pData = activeClusters.data();
+    data.RowPitch = sizeof(uint32);
+    data.SlicePitch = sizeof(uint32) * 4000;
+    mStructuredBuffers[DXStructuredBuffers::ACTIVE_CLUSTER_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
     commandList->SetPipelineState(mPipelines[CULL_CLUSTER_PIPELINE]->GetPipeline().Get());
@@ -416,8 +441,8 @@ void Engine::Renderer::CullClusters(const World& world)
     mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 1, 0, frameIndex);
     mConstBuffers[CLUSTERING_CAM_CB]->Bind(commandList, 2, 0, frameIndex);
     
-    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 8, mClusterSrvIndex);
-    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 7, mActiveClusterUavIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 8, mClusterSRVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 7, mActiveClusterUAVIndex);
 
     int meshCounter = 0;
     const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
@@ -435,4 +460,20 @@ void Engine::Renderer::CullClusters(const World& world)
         meshCounter++;
     }
 
+}
+
+void Engine::Renderer::CompactClusters()
+{
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+
+    commandList->SetComputeRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
+    commandList->SetPipelineState(mPipelines[COMPACT_CLUSTER_PIPELINE]->GetPipeline().Get());
+    ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
+    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 6, mCompactClusterUAVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 8, mActiveClusterSRVIndex);
+
+    commandList->Dispatch(mNumberOfTiles, 1, 1);
 }

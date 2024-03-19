@@ -567,9 +567,13 @@ int Engine::Device::AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE
     return mHeapResourceCount - 1;
 }
 
-int Engine::Device::AllocateUAV(DXResource* rsc, const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc)
+int Engine::Device::AllocateUAV(DXResource* rsc, const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc, DXResource* counterRsc)
 {
-    mDevice->CreateUnorderedAccessView(rsc->Get(), nullptr, &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(mHeapResourceCount));
+    if(!counterRsc)
+      mDevice->CreateUnorderedAccessView(rsc->Get(), nullptr, &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(mHeapResourceCount));
+    else
+      mDevice->CreateUnorderedAccessView(rsc->Get(), counterRsc->Get(), &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(mHeapResourceCount));
+
     mHeapResourceCount++;
 
     return mHeapResourceCount - 1;
