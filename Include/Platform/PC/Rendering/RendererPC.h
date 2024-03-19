@@ -33,22 +33,31 @@ namespace Engine
 
         enum DXStructuredBuffers {
             MODEL_MAT_SB,
-            MATERIAL_SB
+            MATERIAL_SB,
+            CLUSTER_GRID_SB,
+            ACTIVE_CLUSTER_SB
+        };
+
+        enum DXPipelines {
+            PBR_PIPELINE,
+            CLUSTER_GRID_PIPELINE,
+            CULL_CLUSTER_PIPELINE
         };
 
 
     private:
         void CalculateClusterGrid(const CameraComponent& camera);
+        void CullClusters(const World& world);
 
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
-        std::unique_ptr<DXResource> mStructuredBuffers[3];
-        std::unique_ptr<DXPipeline> mPBRPipeline;
-        std::unique_ptr<DXPipeline> mClusterGridPipeline;
-        std::unique_ptr<DXPipeline> mZPipeline;
+        std::unique_ptr<DXResource> mStructuredBuffers[4];
+        std::unique_ptr<DXPipeline> mPipelines[3];
         InfoStruct::DXLightInfo mLights;
 
-        std::unique_ptr<DXResource> mClusterResource;
         unsigned int mClusterUavIndex = 0;
+        unsigned int mClusterSrvIndex = 0;
+        unsigned int mActiveClusterUavIndex = 0;
+        D3D12_VERTEX_BUFFER_VIEW clusterView;
         glm::vec2 screenSize = glm::vec2(1.f, 1.f);
         bool updateClusterGrid = false;
         

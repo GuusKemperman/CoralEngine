@@ -44,33 +44,34 @@ Engine::Renderer::Renderer()
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
     ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0");
 
-    mPBRPipeline = std::make_unique<DXPipeline>();
+    mPipelines[PBR_PIPELINE] = std::make_unique<DXPipeline>();
     CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
 
-    mPBRPipeline = std::make_unique<DXPipeline>();
-    mPBRPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
-    mPBRPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
-    mPBRPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
-    mPBRPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
-    mPBRPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
-    mPBRPipeline->SetDepthState(depth);
-    mPBRPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
-    mPBRPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
+    mPipelines[PBR_PIPELINE] = std::make_unique<DXPipeline>();
+    mPipelines[PBR_PIPELINE]->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
+    mPipelines[PBR_PIPELINE]->AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1);
+    mPipelines[PBR_PIPELINE]->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
+    mPipelines[PBR_PIPELINE]->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
+    mPipelines[PBR_PIPELINE]->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
+    mPipelines[PBR_PIPELINE]->SetDepthState(depth);
+    mPipelines[PBR_PIPELINE]->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
+    mPipelines[PBR_PIPELINE]->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
     
-    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
-    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
-    mZPipeline = std::make_unique<DXPipeline>();
-    mZPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
-    mZPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
-    mZPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
-    mZPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
-
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/ClusterGridCS.hlsl");
     ComPtr<ID3DBlob> cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0", true);
-    mClusterGridPipeline = std::make_unique<DXPipeline>();
-    mClusterGridPipeline->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
-    mClusterGridPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"CLUSTER GRID COMPUTE SHADER");
+    mPipelines[CLUSTER_GRID_PIPELINE] = std::make_unique<DXPipeline>();
+    mPipelines[CLUSTER_GRID_PIPELINE]->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
+    mPipelines[CLUSTER_GRID_PIPELINE]->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"CLUSTER GRID COMPUTE SHADER");
+
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CullClustersVS.hlsl");
+    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CullClustersPS.hlsl");
+    p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0");
+    mPipelines[CULL_CLUSTER_PIPELINE] = std::make_unique<DXPipeline>();
+    mPipelines[CULL_CLUSTER_PIPELINE]->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
+    mPipelines[CULL_CLUSTER_PIPELINE]->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
+    mPipelines[CULL_CLUSTER_PIPELINE]->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"ACTIVE CLUSTER PIPELINE");
 
     //CREATE CONSTANT BUFFERS
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
@@ -98,9 +99,9 @@ Engine::Renderer::Renderer()
     materials = std::vector<InfoStruct::DXMaterialInfo>(MAX_MESHES + 2);
 
     //CREATE UAVS
-    heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+    //AABB Clusters
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-    mClusterResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "CLUSTER RESULT BUFFER");
+    mStructuredBuffers[DXStructuredBuffers::CLUSTER_GRID_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "CLUSTER GRID BUFFER");
 
     D3D12_UNORDERED_ACCESS_VIEW_DESC  uavDesc = {};
     uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
@@ -109,8 +110,29 @@ Engine::Renderer::Renderer()
     uavDesc.Buffer.FirstElement = 0;
     uavDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXAABB);
     uavDesc.Buffer.NumElements = 4000;
-    mClusterUavIndex = engineDevice.AllocateUAV(mClusterResource.get(), uavDesc);
+    mClusterUavIndex = engineDevice.AllocateUAV(mStructuredBuffers[DXStructuredBuffers::CLUSTER_GRID_SB].get(), uavDesc);
 
+    srvDesc = {};
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+    srvDesc.Buffer.FirstElement = 0;
+    srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXAABB);
+    srvDesc.Buffer.NumElements = 4000;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    mClusterSrvIndex = engineDevice.AllocateTexture(mStructuredBuffers[DXStructuredBuffers::CLUSTER_GRID_SB].get(), srvDesc);
+
+    //Active clusters
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    mStructuredBuffers[DXStructuredBuffers::ACTIVE_CLUSTER_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "ACTIVE CLUSTER BUFFER");
+    mStructuredBuffers[DXStructuredBuffers::ACTIVE_CLUSTER_SB]->CreateUploadBuffer(device, sizeof(uint32) * 4000, 0);
+
+    uavDesc.Buffer.StructureByteStride = sizeof(uint32);
+    mActiveClusterUavIndex = engineDevice.AllocateUAV(mStructuredBuffers[DXStructuredBuffers::ACTIVE_CLUSTER_SB].get(), uavDesc); 
+
+    clusterView.BufferLocation = mStructuredBuffers[DXStructuredBuffers::CLUSTER_GRID_SB]->Get()->GetGPUVirtualAddress();
+    clusterView.SizeInBytes = sizeof(float) * 3 * 4000;
+    clusterView.StrideInBytes = sizeof(float) * 3;
 }
 
 void Engine::Renderer::Render(const World& world)
@@ -183,7 +205,6 @@ void Engine::Renderer::Render(const World& world)
         updateClusterGrid = true;
     }
 
-    commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 
     //UPDATE LIGHTS
@@ -218,8 +239,13 @@ void Engine::Renderer::Render(const World& world)
         }
         dirLightCounter++;
     }
-
     mConstBuffers[LIGHT_CB]->Update(&mLights, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
+
+    //USING CLUSTER CULLING AS A Z PRE PASS AS WELL
+    CullClusters(world);
+
+    commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
+    commandList->SetPipelineState(mPipelines[PBR_PIPELINE]->GetPipeline().Get());
 
     //BIND CONSTANT BUFFERS
     mConstBuffers[LIGHT_CB]->Bind(commandList, 1, 0, frameIndex);
@@ -231,24 +257,6 @@ void Engine::Renderer::Render(const World& world)
 
     const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
     int meshCounter = 0;
-    commandList->SetPipelineState(mZPipeline->GetPipeline().Get());
-
-    //DEPTH PRE PASS
-    for (auto [entity, staticMeshComponent, transform] : view.each()) {
-        glm::mat4x4 modelMatrices[2]{};
-        modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-        modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-        mConstBuffers[MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
-        mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
-
-        if (!staticMeshComponent.mStaticMesh)
-            continue;
-
-        staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
-        meshCounter++;
-    }
-
-    commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
 
     meshCounter = 0;
     //RENDERING
@@ -339,7 +347,7 @@ void Engine::Renderer::Render(const World& world)
     {
         CalculateClusterGrid(camera);
         engineDevice.WaitForFence();
-        updateClusterGrid = false;
+        //updateClusterGrid = false;
         commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
     }
 }
@@ -374,7 +382,7 @@ void Engine::Renderer::CalculateClusterGrid(const CameraComponent& camera)
     mConstBuffers[CLUSTERING_CAM_CB]->Update(&clusteringCam, sizeof(InfoStruct::Clustering::DXCameraClustering), 0, frameIndex);
     
     commandList->SetComputeRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
-    commandList->SetPipelineState(mClusterGridPipeline->GetPipeline().Get());
+    commandList->SetPipelineState(mPipelines[CLUSTER_GRID_PIPELINE]->GetPipeline().Get());
     ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
@@ -384,4 +392,47 @@ void Engine::Renderer::CalculateClusterGrid(const CameraComponent& camera)
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 6, mClusterUavIndex);
 
     commandList->Dispatch(clusterInfo.mNumClustersX, clusterInfo.mNumClustersY, clusterInfo.mNumClustersZ);
+}
+
+void Engine::Renderer::CullClusters(const World& world)
+{
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    int frameIndex = engineDevice.GetFrameIndex();
+
+    //std::vector<uint32> activeClusters = std::vector<uint32>(4000, 0);
+    //D3D12_SUBRESOURCE_DATA data;
+    //data.pData = activeClusters.data();
+    //data.RowPitch = sizeof(uint32);
+    //data.SlicePitch = sizeof(uint32) * 4000;
+    //mStructuredBuffers[DXStructuredBuffers::ACTIVE_CLUSTER_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
+    commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
+    commandList->SetPipelineState(mPipelines[CULL_CLUSTER_PIPELINE]->GetPipeline().Get());
+    ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
+    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+    commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
+
+    mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 1, 0, frameIndex);
+    mConstBuffers[CLUSTERING_CAM_CB]->Bind(commandList, 2, 0, frameIndex);
+    
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 8, mClusterSrvIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 7, mActiveClusterUavIndex);
+
+    int meshCounter = 0;
+    const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
+    for (auto [entity, staticMeshComponent, transform] : view.each()) {
+        glm::mat4x4 modelMatrices[2]{};
+        modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
+        modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
+        mConstBuffers[MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+        mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 4, meshCounter, frameIndex);
+
+        if (!staticMeshComponent.mStaticMesh)
+            continue;
+
+        staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
+        meshCounter++;
+    }
+
 }

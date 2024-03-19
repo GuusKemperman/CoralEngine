@@ -76,6 +76,11 @@ void DXPipeline::SetDepthState(const CD3DX12_DEPTH_STENCIL_DESC& depthStencil)
 	mDepth = depthStencil;
 }
 
+void DXPipeline::SetDepthFormat(const DXGI_FORMAT& format)
+{
+	mDepthFormat = format;
+}
+
 void DXPipeline::SetVertexAndPixelShaders(LPVOID vsBuffer, SIZE_T vsSize, LPVOID psBuffer, SIZE_T psSize)
 {
 	mVertexShaderBuffer = vsBuffer;

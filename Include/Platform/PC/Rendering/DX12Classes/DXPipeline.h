@@ -18,6 +18,7 @@ public:
 	void SetRasterizer(const CD3DX12_RASTERIZER_DESC& rasterizer);
 	void SetBlendState(const CD3DX12_BLEND_DESC& blend);
 	void SetDepthState(const CD3DX12_DEPTH_STENCIL_DESC& depth);
+	void SetDepthFormat(const DXGI_FORMAT& format);
 	void SetVertexAndPixelShaders(LPVOID vsBuffer, SIZE_T vsSize, LPVOID psBuffer, SIZE_T psSize);
 	void SetComputeShader(LPVOID computeShaderBuffer, SIZE_T computeShaderSize);
 	void SetMsaaCountAndQuality(uint count, uint quality);
