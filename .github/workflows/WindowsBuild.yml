@@ -44,5 +44,13 @@ jobs:
         $exePath = "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe"
         $workingDirectory = Get-Location
 
-        Start-Process -FilePath $exePath -WorkingDirectory $workingDirectory
+        $proc = Start-Process -FilePath $exePath -WorkingDirectory $workingDirectory
+        $handle = $proc.Handle # cache proc.Handle
+        $proc.WaitForExit();
+
+        if ($proc.ExitCode -ne 0) 
+        {
+            Write-Warning "$_ exited with status code $($proc.ExitCode)"
+        }
+        exit $proc.ExitCode
       

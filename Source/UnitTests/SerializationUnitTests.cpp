@@ -11,6 +11,15 @@
 
 using namespace Engine;
 
+UNIT_TEST(Test, TEst)
+{
+#ifdef _DEBUG
+	ABORT;
+#endif
+	return UnitTest::Failure;
+}
+
+
 // Was too slow, removed for now
 //UNIT_TET(Serialization, AllAssetSerialization)
 //{
