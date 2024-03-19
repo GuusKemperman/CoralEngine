@@ -11,12 +11,6 @@
 
 using namespace Engine;
 
-UNIT_TEST(TEst, RemoveMe)
-{
-	ABORT;
-	return UnitTest::Failure;
-}
-
 // Was too slow, removed for now
 //UNIT_TET(Serialization, AllAssetSerialization)
 //{
