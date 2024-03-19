@@ -1,7 +1,4 @@
 #pragma once
-#include <optional>
-#include <variant>
-#include <unordered_map>
 
 #include "DX12Classes/DXDefines.h"
 #include "Assets/Asset.h"
@@ -27,7 +24,7 @@ namespace Engine
 
         void DrawMesh() const;
 
-        const std::unordered_map<std::string, BoneInfo>* GetBoneMap() const { return &mBoneInfoMap; };
+        const std::unordered_map<std::string, BoneInfo>& GetBoneMap() const { return mBoneInfoMap; };
 
         SkinnedMesh& operator=(SkinnedMesh&&) = delete;
         SkinnedMesh& operator=(const SkinnedMesh&) = delete;
@@ -72,6 +69,6 @@ namespace Engine
         int mIndexCount = 0;
         int mVertexCount = 0;
         DXGI_FORMAT mIndexFormat;
-        bool beenUpdated = false;
+        bool mBeenUpdated = false;
     };
 }

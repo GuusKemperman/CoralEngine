@@ -376,6 +376,11 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 	{
 		const aiAnimation& aiAnim = ****REMOVED***ne->mAnimations[animIndex];
 		
+		if (aiAnim.mNumChannels <= 0 )
+		{
+			continue;
+		}
+		
 		Animation engineAnim{ GetAnimName(file, aiAnim.mName.C_Str()) };
 		engineAnim.mDuration = static_cast<float>(aiAnim.mDuration);
 		engineAnim.mTickPerSecond = static_cast<float>(aiAnim.mTicksPerSecond);
@@ -391,9 +396,9 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 
 			// Create bone
 			AnimData animData{};
-			animData.mPositions = std::vector<KeyPosition>();
-			animData.mRotations = std::vector<KeyRotation>();
-			animData.mScales = std::vector<KeyScale>();
+			animData.mPositions.resize(channel->mNumPositionKeys);
+			animData.mRotations.resize(channel->mNumRotationKeys);
+			animData.mScales.resize(channel->mNumScalingKeys);
 
 			unsigned int numPositions = channel->mNumPositionKeys;
 			unsigned int numRotations = channel->mNumRotationKeys;
@@ -404,7 +409,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 				KeyPosition data{};
 				data.position = GetGLMVec(channel->mPositionKeys[positionIndex].mValue);
 				data.timeStamp = static_cast<float>(channel->mPositionKeys[positionIndex].mTime);
-				animData.mPositions->push_back(data);
+				animData.mPositions[positionIndex] = data;
 			}
 
 			for (unsigned int rotationIndex = 0; rotationIndex < numRotations; rotationIndex++)
@@ -412,7 +417,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 				KeyRotation data{};
 				data.orientation = GetGLMQuat(channel->mRotationKeys[rotationIndex].mValue);
 				data.timeStamp = static_cast<float>(channel->mRotationKeys[rotationIndex].mTime);
-				animData.mRotations->push_back(data);
+				animData.mRotations[rotationIndex] = data;
 			}
 
 			for (unsigned int scaleIndex = 0; scaleIndex < numScalings; scaleIndex++)
@@ -420,7 +425,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 				KeyScale data{};
 				data.scale = GetGLMVec(channel->mScalingKeys[scaleIndex].mValue);
 				data.timeStamp = static_cast<float>(channel->mScalingKeys[scaleIndex].mTime);
-				animData.mScales->push_back(data);
+				animData.mScales[scaleIndex] = data;
 			}
 
 			engineAnim.mBones.push_back(Bone(channel->mNodeName.data, animData));

@@ -1,7 +1,6 @@
 #pragma once
 #ifdef EDITOR
 #include "Assets/Importers/Importer.h"
-#include <map>
 
 namespace Engine
 {

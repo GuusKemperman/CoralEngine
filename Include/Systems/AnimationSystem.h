@@ -5,7 +5,7 @@
 namespace Engine
 {
 	class Animation;
-	class SkinnedMesh;
+	class SkinnedMeshComponent;
 	struct AnimNode;
 	struct BoneInfo;
 
@@ -15,22 +15,14 @@ namespace Engine
 	public:
 		void Update(World& world, float dt) override;
 
-		void CalculateBoneTransform(const Engine::AnimNode& node, const glm::mat4& parenTransform);
-
-		SystemStaticTraits GetStaticTraits() const override
-		{
-			SystemStaticTraits traits {};
-			traits.mShouldTickBeforeBeginPlay = false;
-			traits.mShouldTickWhilstPaused = false;
-			return traits;
-		}
+		void CalculateBoneTransform(const AnimNode& node, 
+	const glm::mat4& parenTransform, 
+	const std::unordered_map<std::string, BoneInfo>& boneMap,
+	const SkinnedMeshComponent& mesh,
+	const std::shared_ptr<const Animation> animation, 
+	std::vector<glm::mat4x4>& finalBoneMatrices);
 
 	private:
-
-		std::shared_ptr<const Animation> mCurrentAnimation;
-		float mCurrentAnimationTime;
-		const std::unordered_map<std::string, BoneInfo>* mCurrentBoneMap; 
-		std::vector<glm::mat4x4>* mCurrentFinalBoneMatrices;
 
 		friend ReflectAccess;
 		static MetaType Reflect();

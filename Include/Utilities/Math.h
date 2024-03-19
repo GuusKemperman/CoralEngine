@@ -167,6 +167,15 @@ namespace Engine
 			return rotation;
 		}
 
+		static std::optional<std::vector<glm::vec3>> CalculateTangents(
+        const void* const indices,
+        const size_t numOfIndices,
+        const bool areIndices16Bit,
+        const glm::vec3* const positions,
+        const glm::vec3* const normals,
+        const glm::vec2* const texCoords,
+        const size_t numOfVertices);
+
 	private:
 		// Function needed for line-line intersection
 		static bool onSegment(const glm::vec2& p, const glm::vec2& q, const glm::vec2& r)

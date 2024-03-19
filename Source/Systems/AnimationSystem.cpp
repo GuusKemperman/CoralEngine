@@ -13,29 +13,34 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
-void Engine::AnimationSystem::CalculateBoneTransform(const AnimNode& node, const glm::mat4& parenTransform)
+void Engine::AnimationSystem::CalculateBoneTransform(const AnimNode& node, 
+	const glm::mat4& parenTransform, 
+	const std::unordered_map<std::string, BoneInfo>& boneMap,
+	const SkinnedMeshComponent& mesh,
+	const std::shared_ptr<const Animation> animation, 
+	std::vector<glm::mat4x4>& finalBoneMatrices)
 {
-	const Bone* bone = mCurrentAnimation->FindBone(node.mName);
+	const Bone* bone = animation->FindBone(node.mName);
 
 	glm::mat4x4 nodeTransform = node.mTransform;
 	
 	if (bone)
 	{
-		nodeTransform = bone->GetInterpolatedTransform(mCurrentAnimationTime);
+		nodeTransform = bone->GetInterpolatedTransform(mesh.mCurrentTime);
 	}
 
 	glm::mat4x4 globalTransform = parenTransform * nodeTransform;
 
-	if (mCurrentBoneMap->find(node.mName) != mCurrentBoneMap->end())
+	if (boneMap.find(node.mName) != boneMap.end())
 	{
-		int index = mCurrentBoneMap->at(node.mName).mId;
+		int index = boneMap.at(node.mName).mId;
 		
-		mCurrentFinalBoneMatrices->at(index) = globalTransform * mCurrentBoneMap->at(node.mName).mOffset;
+		finalBoneMatrices.at(index) = globalTransform * boneMap.at(node.mName).mOffset;
 	}
 
 	for (size_t i = 0; i < node.mChildren.size(); i++)
 	{
-		CalculateBoneTransform(node.mChildren[i], globalTransform);
+		CalculateBoneTransform(node.mChildren[i], globalTransform, boneMap, mesh, mesh.mAnimation, finalBoneMatrices);
 	}
 }
 
@@ -52,22 +57,11 @@ void Engine::AnimationSystem::Update(World& world, float dt)
 			continue;
 		}
 
-		mCurrentAnimation = skinnedMesh.mAnimation;
-		mCurrentFinalBoneMatrices = &skinnedMesh.mFinalBoneMatrices;
-
 		skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * dt;
 		skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
 
-		mCurrentAnimationTime = skinnedMesh.mCurrentTime;
-		mCurrentBoneMap = skinnedMesh.mSkinnedMesh->GetBoneMap();
-
-		CalculateBoneTransform(skinnedMesh.mAnimation->mRootNode, glm::mat4x4(1.0f));
+		CalculateBoneTransform(skinnedMesh.mAnimation->mRootNode, glm::mat4x4(1.0f), skinnedMesh.mSkinnedMesh->GetBoneMap(), skinnedMesh, skinnedMesh.mAnimation, skinnedMesh.mFinalBoneMatrices);
 	}
-
-	mCurrentAnimation = nullptr;
-	mCurrentAnimationTime = 0.0f;
-	mCurrentBoneMap = nullptr;
-	mCurrentFinalBoneMatrices = nullptr;
 }
 
 Engine::MetaType Engine::AnimationSystem::Reflect()

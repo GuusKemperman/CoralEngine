@@ -22,9 +22,9 @@ namespace Engine
 
 	struct AnimData
 	{
-		std::optional<std::vector<KeyPosition>> mPositions;
-		std::optional<std::vector<KeyRotation>> mRotations;
-		std::optional<std::vector<KeyScale>> mScales;
+		std::vector<KeyPosition> mPositions;
+		std::vector<KeyRotation> mRotations;
+		std::vector<KeyScale> mScales;
 	};
 
 	class Bone
@@ -37,9 +37,9 @@ namespace Engine
 
 		std::string mName{};
 
-		std::optional<std::vector<KeyPosition>> mPositions{};
-		std::optional<std::vector<KeyRotation>> mRotations{};
-		std::optional<std::vector<KeyScale>> mScales{};
+		std::vector<KeyPosition> mPositions{};
+		std::vector<KeyRotation> mRotations{};
+		std::vector<KeyScale> mScales{};
 
 		int GetPositionIndex(float timeStamp) const;
 		int GetRotationIndex(float timeStamp) const;
@@ -53,7 +53,3 @@ namespace Engine
 		glm::mat4x4 InterpolateScale(float timeStamp) const;
 	};
 }
-
-#include <cereal/types/vector.hpp>
-#include "cereal/archives/binary.hpp"
-
