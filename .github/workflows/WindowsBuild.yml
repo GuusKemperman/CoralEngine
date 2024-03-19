@@ -41,9 +41,15 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       timeout-minutes: 5
       run:  |
-        $exePath = "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe"
-        $workingDirectory = Get-Location
+        $output = & "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe" run_tests 2>&1 -WorkingDirectory $pwd
+                
+        REM Output the stdout and stderr to the test result
+        echo "Executable Output:"
+        echo $output
         
-        $proc = Start-Process -FilePath $exePath -WorkingDirectory $workingDirectory -PassThru -Wait
-        exit $process.ExitCode
-      
+        REM Output the exit code
+        echo "Exit Code: "
+        echo %ERRORLEVEL%
+
+        REM Exit with the same exit code as the executable
+        exit %ERRORLEVEL%

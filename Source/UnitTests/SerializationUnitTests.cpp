@@ -13,13 +13,10 @@ using namespace Engine;
 
 UNIT_TEST(Test, TEst)
 {
-#if defined(EDITOR) && defined(_DEBUG)
-	return UnitTest::Success;
-#elif defined(_DEBUG)
-	ABORT;
-#else
-	return UnitTest::Failure;
+#if defined(_DEBUG) && defined(EDITOR) 
+	ABORT
 #endif
+	return UnitTest::Failure;
 }
 
 
