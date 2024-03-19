@@ -9,6 +9,7 @@
 #include "Core/Input.h"
 #include "Core/Editor.h"
 #include "Core/VirtualMachine.h"
+#include "Core/JobManager.h"
 #include "Meta/MetaManager.h"
 #include "Core/UnitTests.h"
 #include "Assets/Level.h"
@@ -22,6 +23,7 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
 
+	JobManager::StartUp();
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
 
@@ -93,6 +95,7 @@ Engine::EngineClass::~EngineClass()
 
 	Logger::ShutDown();
 	FileIO::ShutDown();
+	JobManager::ShutDown();
 }
 
 void Engine::EngineClass::Run()
