@@ -522,8 +522,9 @@
   <ItemGroup>
     <ClCompile Include="Source\Components\Abilities\AOEComponent.cpp" />
     <ClCompile Include="Source\Components\Abilities\ProjectileComponent.cpp" />
-    <ClCompile Include="Source\Components\UIButtonComponent.cpp" />
+    <ClCompile Include="Source\Components\UI\UIButtonComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
+    <ClCompile Include="Source\Platform\PC\Rendering\UIRendererPC.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\Clustering***REMOVED***.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1439,10 +1440,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClInclude Include="Include\Core\UIRenderer.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\UIRendererPC.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\UIRenderer***REMOVED***.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\Components\UIButtonComponent.h" />
+    <ClInclude Include="Include\Components\UI\UIButtonComponent.h" />
     <ClInclude Include="Include\Components\UtilityAi\EnemyAiControllerComponent.h" />
     <ClInclude Include="Include\Core\JobManager.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Clustering***REMOVED***.h" />

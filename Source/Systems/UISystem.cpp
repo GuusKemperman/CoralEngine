@@ -2,7 +2,7 @@
 #include "Systems/UISystem.h"
 
 #include "World/Registry.h"
-#include "Components/UIButtonComponent.h"
+#include "Components/UI/UIButtonComponent.h"
 #include "Core/Input.h"
 
 void Engine::UISystem::Update(World& world, float dt)
