@@ -9,6 +9,7 @@
 #include "Meta/MetaType.h"
 #include "Utilities/ClassVersion.h"
 #include "Core/Editor.h"
+#include "Utilities/StringFunctions.h"
 
 Engine::AssetManager::AssetManager()
 {
@@ -630,6 +631,127 @@ std::pair<Engine::TypeId, const Engine::Importer*> Engine::AssetManager::TryGetI
 
 	return { 0, nullptr };
 }
+
+void Engine::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
+{
+	Editor::Get().Refresh({ Editor::RefreshRequest::Volatile,
+		[this, assetName = asset.GetName()]()
+		{
+			LOG(LogAssets, Verbose, "Asset {} will be erased. Any WeakAssets referencing it will now be dangling", assetName);
+
+			std::optional<WeakAsset<Asset>> asset = TryGetWeakAsset(assetName);
+
+			if (!asset.has_value())
+			{
+				return;
+			}
+
+
+			if (asset->GetFileOfOrigin().has_value())
+			{
+				std::error_code err{};
+				std::filesystem::remove(*asset->GetFileOfOrigin(), err);
+
+				if (err)
+				{
+					LOG(LogAssets, Error, "Asset {} was removed from the asset manager, but deleting {} failed ({}). Asset will be present again on next startup",
+						assetName,
+						asset->GetFileOfOrigin()->string(),
+						err.message());
+				}
+			}
+
+			mAssets.erase(Name::HashString(asset->GetName()));
+		}
+		});
+}
+
+void Engine::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
+{
+	Editor::Get().Refresh({
+		Editor::RefreshRequest::Volatile,
+		[this, oldName = asset.GetName(), newName = std::string{newName}]()
+	{
+		std::optional<WeakAsset<Asset>> asset = TryGetWeakAsset(oldName);
+
+		if (!asset.has_value())
+		{
+			return;
+		}
+
+		if (TryGetWeakAsset(newName).has_value())
+		{
+			LOG(LogAssets, Error, "Cannot rename asset {} to {}, there is already an asset with this name", oldName, newName);
+			return;
+		}
+
+
+		AssetFileMetaData newMetaData = asset->mAssetInternal.get().mMetaData;
+		newMetaData.mAssetName = newName;
+
+		if (asset->GetFileOfOrigin().has_value())
+		{
+			const std::filesystem::path oldPath = *asset->mAssetInternal.get().mFileOfOrigin;
+			const std::filesystem::path newPath = std::filesystem::path{ oldPath }.replace_filename(newName).replace_extension(sAssetExtension);
+
+			std::error_code err{};
+			std::filesystem::rename(oldPath, newPath, err);
+
+			if (err)
+			{
+				LOG(LogAssets, Error, "Cannot rename asset {}, could not rename file {} to {} - {}", 
+					asset->GetName(), 
+					oldPath.string(),
+					newPath.string(),
+					err.message());
+				return;
+			}
+
+			std::string fileContents{};
+
+			{
+				std::ifstream file{ newPath, std::ifstream::binary };
+
+				if (!file.is_open())
+				{
+					LOG(LogAssets, Error, "Cannot rename asset {}, could not open file {} for read", asset->GetName(), newPath.string());
+					return;
+				}
+
+				(void)AssetFileMetaData::ReadMetaData(file);
+
+				fileContents = StringFunctions::StreamToString(file);
+			}
+
+
+			{
+				std::ofstream file{ newPath, std::ofstream::binary };
+
+				if (!file.is_open())
+				{
+					LOG(LogAssets, Error, "Cannot rename asset {}, could not open file {} for writing", oldName, newPath.string());
+					return;
+				}
+
+				newMetaData.WriteMetaData(file);
+				file.write(fileContents.c_str(), fileContents.size());
+			}
+
+			asset->mAssetInternal.get().mFileOfOrigin = newPath;
+		}
+
+		asset->mAssetInternal.get().mMetaData = newMetaData;
+		auto extractedAsset = mAssets.extract(Name::HashString(oldName));
+		extractedAsset.key() = Name::HashString(newName);
+		auto insertResult = mAssets.insert(std::move(extractedAsset));
+
+		if (!insertResult.inserted)
+		{
+			LOG(LogAssets, Error, "Cannot rename asset {}, inesrtion somehow failed. Assets is deleted from memory, but still exists on file", oldName);
+		}
+	}
+		});
+}
 #endif // EDITOR
 
 bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesystem::path& toLocation)
@@ -639,6 +761,15 @@ bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesyst
 		LOG(LogAssets, Error, "Failed to move asset {} to {}: This asset was generated at runtime, there is no original file to copy from.",
 			asset.GetVersion(),
 			toLocation.string());
+		return false;
+	}
+
+	if (toLocation.extension() != sAssetExtension)
+	{
+		LOG(LogAssets, Error, "Failed to move asset {} to {}: The destination extension was not {}.",
+			asset.GetVersion(),
+			toLocation.string(),
+			sAssetExtension);
 		return false;
 	}
 
@@ -674,25 +805,135 @@ bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesyst
 	return true;
 }
 
-void Engine::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
+std::optional<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::Duplicate(WeakAsset<Engine::Asset> asset, const std::filesystem::path& copyPath)
 {
-	LOG(LogAssets, Verbose, "Asset {} will be erased. Any WeakAssets referencing it will now be dangling", asset.GetName());
-
-	if (asset.GetFileOfOrigin().has_value())
+	if (!asset.GetFileOfOrigin().has_value())
 	{
-		std::error_code err{};
-		std::filesystem::remove(*asset.GetFileOfOrigin(), err);
-
-		if (err)
-		{
-			LOG(LogAssets, Error, "Asset {} was removed from the asset manager, but deleting {} failed ({}). Asset will be present again on next startup",
-				asset.GetName(),
-				asset.GetFileOfOrigin()->string(),
-				err.message());
-		}
+		LOG(LogAssets, Error, "Cannot duplicate asset {}, as it did not come from a file", asset.GetName());
+		return std::nullopt;
 	}
 
-	mAssets.erase(Name::HashString(asset.GetName()));
+	if (std::filesystem::exists(copyPath))
+	{
+		LOG(LogAssets, Error, "Cannot duplicate asset {}, as there is already a file {}", asset.GetName(), copyPath.string());
+		return std::nullopt;
+	}
+
+	if (copyPath.extension() != sAssetExtension)
+	{
+		LOG(LogAssets, Error, "Cannot duplicate asset {} to {}, the extension was not {}", asset.GetName(), copyPath.string(), sAssetExtension);
+		return std::nullopt;
+	}
+
+	const std::string copyName = copyPath.filename().replace_extension().string();
+
+	if (TryGetWeakAsset(copyName).has_value())
+	{
+		LOG(LogAssets, Error, "Cannot duplicate asset {}, as there is already an asset with this name", asset.GetName());
+		return std::nullopt;
+	}
+
+	std::string fileContents{};
+
+	{
+		std::ifstream file{ *asset.mAssetInternal.get().mFileOfOrigin, std::ifstream::binary };
+
+		if (!file.is_open())
+		{
+			LOG(LogAssets, Error, "Cannot duplicate asset {}, could not open file {}", asset.GetName(), asset.mAssetInternal.get().mFileOfOrigin->string());
+			return std::nullopt;
+		}
+
+		(void)AssetFileMetaData::ReadMetaData(file);
+
+		fileContents = StringFunctions::StreamToString(file);
+	}
+
+
+	AssetFileMetaData newMetaData{ copyName, asset.GetAssetClass(), asset.GetVersion() };
+
+	{
+		std::ofstream file{ copyPath, std::ofstream::binary };
+
+		if (!file.is_open())
+		{
+			LOG(LogAssets, Error, "Cannot duplicate asset {}, could not open file {}", asset.GetName(), copyPath.string());
+			return std::nullopt;
+		}
+
+		newMetaData.WriteMetaData(file);
+		file.write(fileContents.c_str(), fileContents.size());
+	}
+
+	const AssetInternal* const constructedAsset = TryConstruct(copyPath.string());
+
+	if (constructedAsset == nullptr)
+	{
+		LOG(LogAssets, Error, "Cannot duplicate asset {}, could not construct asset. File was duplicated however, see {}", asset.GetName(), copyPath.string());
+		return std::nullopt;
+	}
+
+	return TryGetWeakAsset(copyName);
+}
+
+std::optional<Engine::WeakAsset<>> Engine::AssetManager::NewAsset(const MetaType& assetClass,
+	const std::filesystem::path& path)
+{
+	const std::string assetName = path.filename().replace_extension().string();
+
+	if (AssetManager::Get().TryGetWeakAsset(Name{ assetName }).has_value())
+	{
+		LOG(LogAssets, Error, "Cannot create new asset {}, there is already an asset with this name", assetName);
+		return std::nullopt;
+	}
+
+	if (std::filesystem::exists(path))
+	{
+		LOG(LogAssets, Error, "Cannot create new asset {} at {}, there is already a file at this location", assetName, path.string());
+		return std::nullopt;
+	}
+
+	if (path.extension() != sAssetExtension)
+	{
+		LOG(LogAssets, Error, "Cannot duplicate asset {} to {}, the extension was not {}", assetName, path.string(), sAssetExtension);
+		return std::nullopt;
+	}
+
+	const std::string_view strView{ assetName };
+	FuncResult constructResult = assetClass.Construct(strView);
+
+	if (constructResult.HasError())
+	{
+		LOG(LogAssets, Error, "Failed to create new asset of type {} - {}", assetClass.GetName(), constructResult.Error());
+		return std::nullopt;
+	}
+
+	const Asset* const asset = constructResult.GetReturnValue().As<Asset>();
+
+	if (asset == nullptr)
+	{
+		LOG(LogAssets, Error, "Failed to create new asset of type {} - Construct result was not an asset", assetClass.GetName());
+		return std::nullopt;
+	}
+
+	const AssetSaveInfo saveInfo = asset->Save();
+	const bool success = saveInfo.SaveToFile(path);
+
+	if (!success)
+	{
+		LOG(LogAssets, Error, "Failed to create new asset, the file {} could not be saved to", path.string());
+		return std::nullopt;
+	}
+
+	const AssetInternal* const constructedAsset = TryConstruct(path);
+
+	if (constructedAsset == nullptr)
+	{
+		LOG(LogAssets, Error, "Cannot duplicate asset {}, could not construct asset. File was duplicated however, see {}", assetName, path.string());
+		return std::nullopt;
+	}
+
+	return TryGetWeakAsset(assetName);
 }
 
 std::optional<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::AddAsset(const std::filesystem::path& path)
