@@ -10,6 +10,7 @@
 #include "World/World.h"
 #include "Core/Input.h"
 #include "Assets/Script.h"
+#include "Components/Abilities/AOEComponent.h"
 #include "Components/Abilities/ProjectileComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 
@@ -28,6 +29,15 @@ void Engine::AbilitySystem::Update(World& world, float dt)
 	    }
     }
 
+    auto viewAOE = reg.View<AOEComponent>();
+    for (auto [entity, aoe] : viewAOE.each())
+    {
+        aoe.mCurrentDuration += dt;
+        if (aoe.mCurrentDuration >= aoe.mDuration)
+        {
+            reg.Destroy(entity);
+        }
+    }
     auto viewCharacters = reg.View<CharacterComponent>();
     const auto& input = Input::Get();
     for (auto [entity, characterData] : viewCharacters.each())
