@@ -1,6 +1,6 @@
 #pragma once
 #include "Assets/Asset.h"
-#include "Components/Animation/BoneInfo.h"
+#include "Assets/Animation/BoneInfo.h"
 
 namespace Engine
 {

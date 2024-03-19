@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Components/Animation/Bone.h"
+#include "Assets/Animation/Bone.h"
 
 Engine::Bone::Bone(const std::string_view name, const AnimData& animData)
 {

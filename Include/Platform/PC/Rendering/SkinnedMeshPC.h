@@ -2,7 +2,7 @@
 
 #include "DX12Classes/DXDefines.h"
 #include "Assets/Asset.h"
-#include "components/Animation/BoneInfo.h"
+#include "Assets/Animation/BoneInfo.h"
 
 class DXResource;
 

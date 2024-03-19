@@ -1,7 +1,7 @@
 #include "Precomp.h"
-#include "Assets/Animation.h"
+#include "Assets/Animation/Animation.h"
 #include "Assets/SkinnedMesh.h"
-#include "Components/Animation/Bone.h"
+#include "Assets/Animation/Bone.h"
 
 #include "Meta/MetaType.h"
 #include "Utilities/StringFunctions.h"
