@@ -13,6 +13,7 @@ using namespace Engine;
 
 UNIT_TEST(TEst, RemoveMe)
 {
+	ABORT;
 	return UnitTest::Failure;
 }
 
