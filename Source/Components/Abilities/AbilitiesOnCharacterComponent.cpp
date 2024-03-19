@@ -33,19 +33,21 @@ static bool isPlayer = true; // little hack to inspect the component conditional
 void Engine::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
 {
 	auto& reg = world.GetRegistry();
-	for (auto entity : entities)
+	if (entities.size() > 1)
 	{
-		auto& abilities = reg.Get<AbilitiesOnCharacterComponent>(entity);
-		ShowInspectUI("mIsPlayer", abilities.mIsPlayer);
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::BeginTooltip();
-			ImGui::Text("Check this box if the entity this component is attached to is a player.\nThis defines whether an ability needs input.");
-			ImGui::EndTooltip();
-		}
-		isPlayer = abilities.mIsPlayer;
-		ShowInspectUI("Abilities", abilities.mAbilitiesToInput);
+		LOG(LogInspect, Warning, "Abilities On Character Component cannot be edited for multiple entities at the same time. Please only select one entity.");
+		return;
 	}
+	auto& abilities = reg.Get<AbilitiesOnCharacterComponent>(entities[0]);
+	ShowInspectUI("mIsPlayer", abilities.mIsPlayer);
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text("Check this box if the entity this component is attached to is a player.\nThis defines whether an ability needs input.");
+		ImGui::EndTooltip();
+	}
+	isPlayer = abilities.mIsPlayer;
+	ShowInspectUI("Abilities", abilities.mAbilitiesToInput);
 }
 #endif // EDITOR
 

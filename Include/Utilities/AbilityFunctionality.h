@@ -30,6 +30,7 @@ namespace Engine
 
 		static void ApplyInstantEffect(World& world, entt::entity affectedEntity, Stat stat = Stat::Health, float amount = 0.f, FlatOrPercentage flatOrPercentage = FlatOrPercentage::Flat, IncreaseOrDecrease increaseOrDecrease = IncreaseOrDecrease::Decrease);
 		static entt::entity SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy);
+		static entt::entity SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy); // area of attack
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);
