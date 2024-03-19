@@ -23,6 +23,7 @@ namespace Engine
         SkinnedMesh(const SkinnedMesh&) = delete;
 
         void DrawMesh() const;
+        void DrawMeshVertexOnly() const;
 
         const std::unordered_map<std::string, BoneInfo>& GetBoneMap() const { return mBoneInfoMap; };
 

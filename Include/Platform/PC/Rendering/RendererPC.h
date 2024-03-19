@@ -76,13 +76,13 @@ namespace Engine
             MATERIAL_SB
         };
 
-
     private:
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
         std::unique_ptr<DXResource> mStructuredBuffers[3];
         std::unique_ptr<DXPipeline> mPBRPipeline;
         std::unique_ptr<DXPipeline> mPBRSkinnedPipeline;
         std::unique_ptr<DXPipeline> mZPipeline;
+        std::unique_ptr<DXPipeline> mZSkinnedPipeline;
         InfoStruct::DXLightInfo  lights;
 
         unsigned int materialHeapSlot = 0;
