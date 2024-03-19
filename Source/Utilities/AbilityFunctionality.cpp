@@ -3,8 +3,10 @@
 
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/ActiveAbilityComponent.h"
+#include "Components/Abilities/AOEComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/ProjectileComponent.h"
+#include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
@@ -41,6 +43,22 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 			return SpawnProjectile(*world, *prefab, castBy);
 
 		}, "SpawnProjectile", MetaFunc::ExplicitParams<
+		const std::shared_ptr<const Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](const std::shared_ptr<const Prefab>& prefab, entt::entity castBy) -> entt::entity
+		{
+			if (prefab == nullptr)
+			{
+				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
+				return entt::null;
+			}
+
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			return SpawnAOE(*world, *prefab, castBy);
+
+		}, "SpawnAOE", MetaFunc::ExplicitParams<
 		const std::shared_ptr<const Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	return metaType;
@@ -112,6 +130,37 @@ entt::entity Engine::AbilityFunctionality::SpawnProjectile(World& world, const P
 	prefabTransform->SetLocalPosition(characterWorldPos);
 	auto characterDirection = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
 	prefabPhysicsBody->mLinearVelocity = characterDirection * prejectileComponent->mSpeed;
+
+	return prefabEntity;
+}
+
+entt::entity Engine::AbilityFunctionality::SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy)
+{
+	auto& reg = world.GetRegistry();
+	auto prefabEntity = reg.CreateFromPrefab(prefab);
+
+	auto activeAbility = reg.TryGet<ActiveAbilityComponent>(prefabEntity);
+	if (activeAbility == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "The prefab does not have an ActiveAbilityComponent attached.")
+			return{};
+	}
+	auto prefabTransform = reg.TryGet<TransformComponent>(prefabEntity);
+	if (prefabTransform == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "The prefab does not have a TransformComponent attached.")
+			return{};
+	}
+	auto characterTransform = reg.TryGet<TransformComponent>(castBy);
+	if (characterTransform == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "The cast-by character does not have a TransformComponent attached.")
+			return{};
+	}
+
+	activeAbility->mCastByCharacter = castBy;
+	auto characterWorldPos = characterTransform->GetWorldPosition();
+	prefabTransform->SetLocalPosition(characterWorldPos);
 
 	return prefabEntity;
 }

@@ -67,11 +67,13 @@ namespace Engine
 	static constexpr CollisionPreset sDefaultCollisionPreset
 	{
 			"WorldDynamic",
-			CollisionLayer::WorldDynamic,
 			{
-				CollisionResponse::Blocking, // WorldStatic
-				CollisionResponse::Blocking, // WorldDynamic
-				CollisionResponse::Blocking, // Character
+				CollisionLayer::WorldDynamic,
+				{
+					CollisionResponse::Blocking, // WorldStatic
+					CollisionResponse::Blocking, // WorldDynamic
+					CollisionResponse::Blocking, // Character
+				}
 			}
 	};
 
@@ -81,29 +83,35 @@ namespace Engine
 		CollisionPreset
 		{
 			"Character",
-			CollisionLayer::Character,
 			{
-				CollisionResponse::Blocking, // WorldStatic
-				CollisionResponse::Blocking, // WorldDynamic
-				CollisionResponse::Blocking, // Character
+				CollisionLayer::Character,
+				{
+					CollisionResponse::Blocking, // WorldStatic
+					CollisionResponse::Blocking, // WorldDynamic
+					CollisionResponse::Blocking, // Character
+				}
 			}
 		},
 		{
 			"CharacterTrigger",
-			CollisionLayer::WorldStatic,
 			{
-				CollisionResponse::Ignore, // WorldStatic
-				CollisionResponse::Ignore, // WorldDynamic
-				CollisionResponse::Overlap, // Character
+				CollisionLayer::WorldStatic,
+				{
+					CollisionResponse::Ignore, // WorldStatic
+					CollisionResponse::Ignore, // WorldDynamic
+					CollisionResponse::Overlap, // Character
+				}
 			}
 		},
 		{
 			"WorldStatic",
-			CollisionLayer::WorldStatic,
 			{
-				CollisionResponse::Ignore, // WorldStatic
-				CollisionResponse::Blocking, // WorldDynamic
-				CollisionResponse::Blocking, // Character
+				CollisionLayer::WorldStatic,
+				{
+					CollisionResponse::Ignore, // WorldStatic
+					CollisionResponse::Blocking, // WorldDynamic
+					CollisionResponse::Blocking, // Character
+				}
 			}
 		}
 	};

@@ -12,78 +12,50 @@
 #include "Utilities/Reflect/ReflectAssetType.h"
 
 #include "Core/Device.h"
+#include "Core/JobManager.h"
 
 Engine::Texture::Texture(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo),
-	mLoadedPixels(std::make_shared<STBIPixels>()),
-	mLoadThread([data = StringFunctions::StreamToString(loadInfo.GetStream()), buffer = mLoadedPixels]()
+	mLoadedPixels(std::make_shared<STBIPixels>())
+{
+	JobManager::Get().AddWork([data = StringFunctions::StreamToString(loadInfo.GetStream()), buffer = mLoadedPixels]()
 		{
 			int channels{};
 			buffer->mPixels = stbi_load_from_memory(reinterpret_cast<const unsigned char*>(data.data()), static_cast<int>(data.size()), &buffer->mWidth, &buffer->mHeight, &channels, 4);
-		})
-{
+		});
 }
 
 Engine::Texture::Texture(Texture&& other) noexcept = default;
 
-Engine::Texture::~Texture()
+Engine::Texture::~Texture() = default;
+
+bool Engine::Texture::IsReadyToSendToGPU() const
 {
-	if (mLoadThread.joinable())
-	{
-		mLoadThread.detach();
-	}
+	return mHeapSlot == sAwaitingSendToGPU
+		&& mLoadedPixels != nullptr
+		&& mLoadedPixels->mPixels != nullptr;
 }
 
-std::optional<int> Engine::Texture::GetIndex() const
+void Engine::Texture::SendToGPU() const
 {
-	if (mHeapSlot != -1)
+	if (!IsReadyToSendToGPU())
 	{
-		return mHeapSlot;
-	}
-
-	if (!mLoadThread.joinable()
-		|| mLoadedPixels == nullptr
-		|| mLoadedPixels->mPixels == nullptr)
-	{
-		return std::nullopt;
-	}
-
-	Texture& self = const_cast<Texture&>(*this);
-	self.RetrieveResultsFromLoadThread();
-
-	return GetIndex();
-}
-
-void Engine::Texture::RetrieveResultsFromLoadThread()
-{
-	ASSERT(mLoadThread.joinable());
-
-	mLoadThread.join();
-
-	if (mLoadedPixels == nullptr
-		|| mLoadedPixels->mPixels == nullptr)
-	{
-		LOG(LogAssets, Error, "Invalid texture {}", GetName());
+		LOG(LogAssets, Error, "{} is not ready to be send to GPU", GetName());
 		return;
 	}
 
-	const bool textureLoaded = LoadTexture(mLoadedPixels->mPixels, mLoadedPixels->mWidth, mLoadedPixels->mHeight, DXGI_FORMAT_R8G8B8A8_UNORM);
-	mLoadedPixels.reset();
+	Texture& self = const_cast<Texture&>(*this);
 
-	if (!textureLoaded)
+	if (mLoadedPixels == nullptr
+		|| mLoadedPixels->mPixels == nullptr
+		|| mLoadedPixels->mWidth <= 0
+		|| mLoadedPixels->mHeight <= 0
+		|| Device::IsHeadless())
 	{
-		LOG(LogAssets, Error, "Invalid texture {}", GetName());
-	}
-}
-
-bool Engine::Texture::LoadTexture(const unsigned char* fileContents, const unsigned int width, const unsigned int height, const unsigned int format)
-{
-	if (Device::IsHeadless()
-		|| fileContents == nullptr 
-		|| width <= 0 
-		|| height <= 0) 
-	{
-		return false;
+		LOG(LogAssets, Error, "Invalid texture {}, or device was running headless mode", GetName());
+		self.mLoadedPixels.reset();
+		self.mHeapSlot = sFailedToSendToGPU;
+		return;
 	}
 
 	Device& engineDevice = Device::Get();
@@ -92,30 +64,30 @@ bool Engine::Texture::LoadTexture(const unsigned char* fileContents, const unsig
 
 	engineDevice.StartUploadCommands();
 
-	DXGI_FORMAT dxgiformat = (DXGI_FORMAT)format;
+	DXGI_FORMAT dxgiformat = (DXGI_FORMAT)DXGI_FORMAT_R8G8B8A8_UNORM;
 	CD3DX12_RESOURCE_DESC resourceDescription = {};
 	resourceDescription.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	resourceDescription.Alignment = 0;
-	resourceDescription.Width = width; 
-	resourceDescription.Height = height;
+	resourceDescription.Width = mLoadedPixels->mWidth;
+	resourceDescription.Height = mLoadedPixels->mHeight;
 	resourceDescription.DepthOrArraySize = 1;
 	resourceDescription.MipLevels = 1;
-	resourceDescription.Format = dxgiformat; 
-	resourceDescription.SampleDesc.Count = 1; 
+	resourceDescription.Format = dxgiformat;
+	resourceDescription.SampleDesc.Count = 1;
 	resourceDescription.SampleDesc.Quality = 0;
 	resourceDescription.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	resourceDescription.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	mTextureBuffer = std::make_shared<DXResource>(device, heapProperties, resourceDescription, nullptr, "Texture Buffer Resource Heap");
+	self.mTextureBuffer = std::make_shared<DXResource>(device, heapProperties, resourceDescription, nullptr, "Texture Buffer Resource Heap");
 
 	UINT64 textureUploadBufferSize;
 	device->GetCopyableFootprints(&resourceDescription, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
 
-	int bytesPerRow = (width * GetDXGIFormatBitsPerPixel(resourceDescription.Format)) / 8; // number of bytes in each row of the image data
+	int bytesPerRow = (mLoadedPixels->mWidth * self.GetDXGIFormatBitsPerPixel(resourceDescription.Format)) / 8; // number of bytes in each row of the image data
 
 	D3D12_SUBRESOURCE_DATA textureData = {};
-	textureData.pData = reinterpret_cast<const void*>(fileContents); // pointer to our image data
+	textureData.pData = mLoadedPixels->mPixels; // pointer to our image data
 	textureData.RowPitch = bytesPerRow; // size of all our triangle vertex data
 	textureData.SlicePitch = bytesPerRow * resourceDescription.Height; // also the size of our triangle vertex data
 
@@ -128,9 +100,20 @@ bool Engine::Texture::LoadTexture(const unsigned char* fileContents, const unsig
 	srvDesc.Texture2D.MipLevels = 1;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	mHeapSlot = engineDevice.AllocateTexture(mTextureBuffer.get(), srvDesc);
+	self.mHeapSlot = engineDevice.AllocateTexture(mTextureBuffer.get(), srvDesc);
 	engineDevice.SubmitUploadCommands();
-	return true;
+
+	self.mLoadedPixels.reset();
+}
+
+int Engine::Texture::GetIndex() const
+{
+	if (!WasSendToGPU())
+	{
+		LOG(LogCore, Error, "Attempted to GetIndex of texture that was not yet send to GPU. Check using WasSendToGPU first.");
+	}
+
+	return mHeapSlot;
 }
 
 int Engine::Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
@@ -158,4 +141,3 @@ Engine::Texture::STBIPixels::~STBIPixels()
 {
 	stbi_image_free(mPixels);
 }
-
