@@ -1434,6 +1434,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Components\UtilityAi\EnemyAiControllerComponent.h" />
+    <ClInclude Include="Include\Core\JobManager.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Clustering***REMOVED***.h" />
     <ClInclude Include="Include\Assets\Ability.h" />
     <ClInclude Include="Include\Components\Abilities\AbilitiesOnCharacterComponent.h" />

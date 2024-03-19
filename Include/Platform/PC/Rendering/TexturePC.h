@@ -25,21 +25,21 @@ namespace Engine
 			Texture& operator=(Texture&&) = delete;
 			Texture& operator=(const Texture&) = delete;
 
-			/**
-			 * \brief Gets the index, but only if it's ready.
-			 *
-			 * GetIndex will finalise the loading process if the thread has completed it's work.
-			 */
-			std::optional<int> GetIndex() const;
+			bool IsReadyToSendToGPU() const;
+			void SendToGPU() const;
+			bool WasSendToGPU() const { return mHeapSlot >= 0; }
+
+			int GetIndex() const;
 
 		private:
-			void RetrieveResultsFromLoadThread();
-
-			bool LoadTexture(const unsigned char* fileContents, unsigned int width, unsigned int height, unsigned int format);
 			int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 
 			std::shared_ptr<DXResource> mTextureBuffer{};
-			int mHeapSlot = -1;
+
+			static constexpr int sAwaitingSendToGPU = -2;
+			static constexpr int sFailedToSendToGPU = -1;
+
+			int mHeapSlot = sAwaitingSendToGPU;
 
 			struct STBIPixels
 			{
@@ -52,7 +52,6 @@ namespace Engine
 			// After the texture has been sent to the GPU,
 			// this value will be reset to nullptr.
 			std::shared_ptr<STBIPixels> mLoadedPixels{};
-			std::thread mLoadThread{};
 
 			friend ReflectAccess;
 			static MetaType Reflect();
