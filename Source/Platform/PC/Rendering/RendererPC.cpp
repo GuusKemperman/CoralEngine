@@ -88,6 +88,8 @@ Engine::Renderer::Renderer()
     materials = std::vector<InfoStruct::DXMaterialInfo>(MAX_MESHES + 2);
 }
 
+static void SendMaterialToGPUIfReady(const Engine::Material& mat);
+
 void Engine::Renderer::Render(const World& world)
 {
     // I'm not sure why, because I (Guus), know nothing of dx12, but dx12 does not like it
@@ -102,34 +104,11 @@ void Engine::Renderer::Render(const World& world)
             // It won't be rendered anyway,
             // so let's not bother finalising
             // the loading process.
-            if (staticMeshComponent.mMaterial == nullptr
-                || staticMeshComponent.mStaticMesh == nullptr)
+            if (staticMeshComponent.mMaterial != nullptr
+                && staticMeshComponent.mStaticMesh != nullptr)
             {
-                continue;
+                SendMaterialToGPUIfReady(*staticMeshComponent.mMaterial);
             }
-
-            const Material& mat = *staticMeshComponent.mMaterial;
-
-            if (mat.mBaseColorTexture != nullptr)
-            {
-                (void)mat.mBaseColorTexture->GetIndex().has_value();
-            }
-			if (mat.mEmissiveTexture != nullptr)
-			{
-                (void)mat.mEmissiveTexture->GetIndex().has_value();
-			}
-			if (mat.mMetallicRoughnessTexture != nullptr)
-			{
-                (void)mat.mMetallicRoughnessTexture->GetIndex().has_value();
-			}
-			if (mat.mNormalTexture != nullptr)
-			{
-                (void)mat.mNormalTexture->GetIndex().has_value();
-			}
-			if (mat.mOcclusionTexture != nullptr)
-			{
-                (void)mat.mOcclusionTexture->GetIndex().has_value();
-			}
         }
     }
 
@@ -240,32 +219,32 @@ void Engine::Renderer::Render(const World& world)
             materialInfo.metallicFactor = staticMeshComponent.mMaterial->mMetallicFactor;
             materialInfo.roughnessFactor = staticMeshComponent.mMaterial->mRoughnessFactor;
             materialInfo.normalScale = staticMeshComponent.mMaterial->mNormalScale;
-            materialInfo.useColorTex = staticMeshComponent.mMaterial->mBaseColorTexture != nullptr && staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex().has_value();
-            materialInfo.useEmissiveTex = staticMeshComponent.mMaterial->mEmissiveTexture != nullptr && staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex().has_value();
-            materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr && staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex().has_value();
-            materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr && staticMeshComponent.mMaterial->mNormalTexture->GetIndex().has_value();
-            materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr && staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex().has_value();
+            materialInfo.useColorTex = staticMeshComponent.mMaterial->mBaseColorTexture != nullptr && staticMeshComponent.mMaterial->mBaseColorTexture->WasSendToGPU();
+            materialInfo.useEmissiveTex = staticMeshComponent.mMaterial->mEmissiveTexture != nullptr && staticMeshComponent.mMaterial->mEmissiveTexture->WasSendToGPU();
+            materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr && staticMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSendToGPU();
+            materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr && staticMeshComponent.mMaterial->mNormalTexture->WasSendToGPU();
+            materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr && staticMeshComponent.mMaterial->mOcclusionTexture->WasSendToGPU();
 
             //BIND TEXTURES
             if (materialInfo.useColorTex)
             {
-                resourceHeap->BindToGraphics(commandList, 5, *staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
+                resourceHeap->BindToGraphics(commandList, 5, staticMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
             }
             if (materialInfo.useEmissiveTex)
             {
-                resourceHeap->BindToGraphics(commandList, 6, *staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
+                resourceHeap->BindToGraphics(commandList, 6, staticMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
             }
             if (materialInfo.useMetallicRoughnessTex)
             {
-                resourceHeap->BindToGraphics(commandList, 7, *staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
+                resourceHeap->BindToGraphics(commandList, 7, staticMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
             }
             if (materialInfo.useNormalTex)
             {
-                resourceHeap->BindToGraphics(commandList, 8, *staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
+                resourceHeap->BindToGraphics(commandList, 8, staticMeshComponent.mMaterial->mNormalTexture->GetIndex());
             }
             if (materialInfo.useOcclusionTex)
             {
-                resourceHeap->BindToGraphics(commandList, 9, *staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
+                resourceHeap->BindToGraphics(commandList, 9, staticMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
             }
         }
         else {
@@ -309,3 +288,33 @@ Engine::MetaType Engine::Renderer::Reflect()
 {
     return MetaType{ MetaType::T<Renderer>{}, "Renderer", MetaType::Base<System>{} };
 }
+
+void SendMaterialToGPUIfReady(const Engine::Material& mat)
+{
+    if (mat.mBaseColorTexture != nullptr
+        && mat.mBaseColorTexture->IsReadyToSendToGPU())
+    {
+        mat.mBaseColorTexture->SendToGPU();
+    }
+    if (mat.mEmissiveTexture != nullptr
+        && mat.mEmissiveTexture->IsReadyToSendToGPU())
+    {
+        mat.mEmissiveTexture->SendToGPU();
+    }
+    if (mat.mMetallicRoughnessTexture != nullptr
+        && mat.mMetallicRoughnessTexture->IsReadyToSendToGPU())
+    {
+        mat.mMetallicRoughnessTexture->SendToGPU();
+    }
+    if (mat.mNormalTexture != nullptr
+        && mat.mNormalTexture->IsReadyToSendToGPU())
+    {
+        mat.mNormalTexture->SendToGPU();
+    }
+    if (mat.mOcclusionTexture != nullptr
+        && mat.mOcclusionTexture->IsReadyToSendToGPU())
+    {
+        mat.mOcclusionTexture->SendToGPU();
+    }
+}
+
