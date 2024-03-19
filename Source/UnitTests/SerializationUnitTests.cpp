@@ -11,6 +11,11 @@
 
 using namespace Engine;
 
+UNIT_TEST(TEst, RemoveMe)
+{
+	return UnitTest::Failure;
+}
+
 // Was too slow, removed for now
 //UNIT_TET(Serialization, AllAssetSerialization)
 //{
