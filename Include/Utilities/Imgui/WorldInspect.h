@@ -70,6 +70,9 @@ namespace Engine
 
 		float mViewportWidth = .75f;
 		float mHierarchyAndDetailsWidth = .25f;
+
+		static constexpr float sRunningAveragePreservePercentage = .97f;
+		float mDeltaTimeRunningAverage = 1.0f / 60.0f;
 	};
 
 	class WorldViewport
@@ -95,7 +98,6 @@ namespace Engine
 
 	private:
 		static void ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities);
-		static void ShowTransformGizmos();
 		static void SetGizmoRect(glm::vec2 windowPos, const glm::vec2& windowSize);
 
 		static void GizmoManipulateSelectedTransforms(World& world,

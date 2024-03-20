@@ -103,6 +103,8 @@ Engine::World& Engine::WorldInspectHelper::EndPlay()
 
 void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 {
+	mDeltaTimeRunningAverage = mDeltaTimeRunningAverage * sRunningAveragePreservePercentage + deltaTime * (1.0f - sRunningAveragePreservePercentage);
+
 	ImGui::Splitter(true, &mViewportWidth, &mHierarchyAndDetailsWidth);
 
 	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, 0.0f }))
@@ -115,6 +117,51 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		drawList->ChannelsSplit(2);
 
 		drawList->ChannelsSetCurrent(1);
+
+		if (!mSelectedEntities.empty())
+		{
+
+			if (ImGui::RadioButton("Translate", sGuizmoOperation == ImGuizmo::TRANSLATE))
+				sGuizmoOperation = ImGuizmo::TRANSLATE;
+			ImGui::SameLine();
+			if (ImGui::RadioButton("Rotate", sGuizmoOperation == ImGuizmo::ROTATE))
+				sGuizmoOperation = ImGuizmo::ROTATE;
+			ImGui::SameLine();
+			if (ImGui::RadioButton("Scale", sGuizmoOperation == ImGuizmo::SCALE))
+				sGuizmoOperation = ImGuizmo::SCALE;
+
+
+			if (sGuizmoOperation != ImGuizmo::SCALE)
+			{
+				if (ImGui::RadioButton("Local", sGuizmoMode == ImGuizmo::LOCAL))
+					sGuizmoMode = ImGuizmo::LOCAL;
+				ImGui::SameLine();
+				if (ImGui::RadioButton("World", sGuizmoMode == ImGuizmo::WORLD))
+					sGuizmoMode = ImGuizmo::WORLD;
+			}
+
+			ImGui::Checkbox("Snap", &sShouldGuizmoSnap);
+			ImGui::SameLine();
+
+			if (sShouldGuizmoSnap)
+			{
+				switch (sGuizmoOperation)
+				{
+				case ImGuizmo::TRANSLATE:
+					ImGui::InputFloat3("Snap", value_ptr(sSnapTo));
+					break;
+				case ImGuizmo::ROTATE:
+					ImGui::InputFloat("Angle Snap", value_ptr(sSnapTo));
+					break;
+				case ImGuizmo::SCALE:
+					ImGui::InputFloat("Scale Snap", value_ptr(sSnapTo));
+					break;
+				default:
+					break;
+				}
+			}
+		}
+
 		ImGui::SetCursorPos(beginPlayPos);
 
 		if (!GetWorld().HasBegunPlay())
@@ -158,19 +205,24 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			ImGui::SetItemTooltip("Stop");
 		}
 
+		const glm::vec2 fpsCursorPos = { viewportPos.x + mViewportWidth - 90.0f, 0.0f };
+		ImGui::SetCursorPos(fpsCursorPos);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, .7f);
+		ImGui::TextUnformatted(Format("FPS: {:.1f}", 1.0f / mDeltaTimeRunningAverage).data());
+		ImGui::PopStyleVar();
+
 		{
-			auto possibleCamerasView = GetWorld().GetRegistry().View<CameraComponent>();
+			const auto possibleCamerasView = GetWorld().GetRegistry().View<CameraComponent>();
 
 			if (possibleCamerasView.size() > 1)
 			{
-				auto cam = GetWorld().GetRenderer().GetMainCamera();
+				const auto cam = GetWorld().GetRenderer().GetMainCamera();
 
-				entt::entity cameraEntity = cam.has_value() ? cam->first : entt::null;
+				const entt::entity cameraEntity = cam.has_value() ? cam->first : entt::null;
 
-				ImGui::SameLine();
+				ImGui::SetCursorPos({ fpsCursorPos.x - ImGui::CalcTextSize(ICON_FA_CAMERA).x - 10.0f, fpsCursorPos.y });
 
-				ImGui::SetCursorPosY(0.0f);
-				ImGui::SetCursorPosX(viewportPos.x + mViewportWidth - ImGui::CalcTextSize(ICON_FA_CAMERA).x - 10.0f);
 				if (ImGui::Button(ICON_FA_CAMERA))
 				{
 					ImGui::OpenPopup("CameraSelectPopUp");
@@ -335,15 +387,6 @@ void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<
 {
 	Registry& reg = world.GetRegistry();
 
-	// Transform gizmos are hardcoded here,
-	// since they are already tightly coupled
-	// with the displaying of the world
-	// hierarchy, and because there is
-	// additional UI in place for switching
-	// between translating, scaling,
-	// rotating and snapping.
-	ShowTransformGizmos();
-
 	for (auto&& [typeHash,storage] : reg.Storage())
 	{
 		const MetaType* const type = MetaManager::Get().TryGetType(typeHash);
@@ -382,48 +425,6 @@ void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<
 	}
 }
 
-void Engine::WorldViewport::ShowTransformGizmos()
-{
-	if (ImGui::RadioButton("Translate", sGuizmoOperation == ImGuizmo::TRANSLATE))
-		sGuizmoOperation = ImGuizmo::TRANSLATE;
-	ImGui::SameLine();
-	if (ImGui::RadioButton("Rotate", sGuizmoOperation == ImGuizmo::ROTATE))
-		sGuizmoOperation = ImGuizmo::ROTATE;
-	ImGui::SameLine();
-	if (ImGui::RadioButton("Scale", sGuizmoOperation == ImGuizmo::SCALE))
-		sGuizmoOperation = ImGuizmo::SCALE;
-
-
-	if (sGuizmoOperation != ImGuizmo::SCALE)
-	{
-		if (ImGui::RadioButton("Local", sGuizmoMode == ImGuizmo::LOCAL))
-			sGuizmoMode = ImGuizmo::LOCAL;
-		ImGui::SameLine();
-		if (ImGui::RadioButton("World", sGuizmoMode == ImGuizmo::WORLD))
-			sGuizmoMode = ImGuizmo::WORLD;
-	}
-
-	ImGui::Checkbox("Snap", &sShouldGuizmoSnap);
-	ImGui::SameLine();
-
-	if (sShouldGuizmoSnap)
-	{
-		switch (sGuizmoOperation)
-		{
-		case ImGuizmo::TRANSLATE:
-			ImGui::InputFloat3("Snap", value_ptr(sSnapTo));
-			break;
-		case ImGuizmo::ROTATE:
-			ImGui::InputFloat("Angle Snap", value_ptr(sSnapTo));
-			break;
-		case ImGuizmo::SCALE:
-			ImGui::InputFloat("Scale Snap", value_ptr(sSnapTo));
-			break;
-		default:
-			break;
-		}
-	}
-}
 
 void Engine::WorldViewport::SetGizmoRect(const glm::vec2 windowPos, const glm::vec2& windowSize)
 {
