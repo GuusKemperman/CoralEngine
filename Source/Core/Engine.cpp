@@ -98,7 +98,7 @@ Engine::EngineClass::~EngineClass()
 	JobManager::ShutDown();
 }
 
-void Engine::EngineClass::Run()
+void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 {
 	if (Device::IsHeadless())
 	{
@@ -106,8 +106,7 @@ void Engine::EngineClass::Run()
 	}
 
 #ifndef EDITOR
-	// TODO level name is hardcoded
-	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>("MainMenu");
+	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>(starterLevel);
 
 	if (level == nullptr)
 	{

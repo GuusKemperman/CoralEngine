@@ -8,6 +8,6 @@ namespace Engine
 		EngineClass(int argc, char* argv[], std::string_view gameDir);
 		~EngineClass();
 
-		void Run();
+		void Run(Name starterLevel);
 	};
 }

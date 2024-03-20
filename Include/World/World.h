@@ -63,7 +63,7 @@ namespace Engine
 		 * \brief Will request a transition to a different level.
 		 *
 		 * Transitioning to a different level involves the destruction of the current world, and the
-		 * creation of a new one. This is done at the end of the OnTick. All systems will be restarted.
+		 * creation of a new one. This is done at the end of the World::Tick. All systems will be restarted.
 		 *
 		 * \param level The level to transition to.
 		 */
