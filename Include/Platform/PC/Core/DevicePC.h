@@ -98,9 +98,9 @@ namespace Engine
         UINT64 mFenceValue[FRAME_BUFFER_COUNT];
         UINT64 mUploadFenceValue;
         int mHeapResourceCount = TEX_START;
-        int frameBufferCount = RT_COUNT;
-        int depthStencilCount = 1;
-        std::vector<ComPtr<ID3D12Resource>> resourcesToDeallocate;
+        int mFrameBufferCount = RT_COUNT;
+        int mDepthStencilCount = 1;
+        std::vector<ComPtr<ID3D12Resource>> mResourcesToDeallocate;
 
         ComPtr<IDXGISwapChain3> mSwapChain;
         ComPtr<ID3D12Device5> mDevice;

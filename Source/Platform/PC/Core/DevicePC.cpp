@@ -255,7 +255,6 @@ void Engine::Device::InitializeDevice()
         }
         mResources[i]->SetResource(res);
         mRenderTargetHandles[i] = mDescriptorHeaps[RT_HEAP]->AllocateRenderTarget(mResources[i].get(), mDevice.Get(), nullptr);
-       // mDevice->CreateRenderTargetView(mResources[i]->Get(), nullptr, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(i));
         mResources[i]->GetResource()->SetName(L"RENDER TARGET");
     }
 
@@ -440,15 +439,17 @@ void Engine::Device::EndFrame()
 
     WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
 
-    if (mUpdateWindow) {
+    if (mUpdateWindow)
+    {
         mResources[0] = nullptr;
         mResources[1] = nullptr;
         mResources[DEPTH_STENCIL_RSC] = nullptr;
     }
 
-    resourcesToDeallocate.clear();
+    mResourcesToDeallocate.clear();
 
-    if (mUpdateWindow) {
+    if (mUpdateWindow)
+    {
         int otherFrameIndex = mFrameIndex == 0 ? 1 : 0;
         mFenceValue[otherFrameIndex]++;
         mCommandQueue->Signal(mFence[otherFrameIndex].Get(), mFenceValue[otherFrameIndex]);
@@ -528,7 +529,7 @@ void Engine::Device::SubmitUploadCommands()
 
 void Engine::Device::AddToDeallocation(ComPtr<ID3D12Resource>&& res)
 {
-    resourcesToDeallocate.emplace_back(std::move(res));
+    mResourcesToDeallocate.emplace_back(std::move(res));
 }
 
 void Engine::Device::CreateImguiContext()
