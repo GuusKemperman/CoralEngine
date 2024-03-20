@@ -44,12 +44,10 @@ namespace Engine
 
 		entt::entity CreateFromFactory(const PrefabEntityFactory& factory, bool createChildren, entt::entity hint = entt::null);
 
-		void Destroy(entt::entity entity);
+		void Destroy(entt::entity entity, bool destroyChildren);
 		
 		template<typename It>
-		void Destroy(It first, It last);
-
-		void DestroyAlongWithChildren(entt::entity entity);
+		void Destroy(It first, It last, bool destroyChildren);
 
 		void RemovedDestroyed();
 
@@ -343,11 +341,11 @@ namespace Engine
 	}
 
 	template<typename It>
-	void Registry::Destroy(It first, It last)
+	void Registry::Destroy(It first, It last, bool destroyChildren)
 	{
 		for (auto it = first; it != last; ++it)
 		{
-			Destroy(*it);
+			Destroy(*it, destroyChildren);
 		}
 	}
 

@@ -61,7 +61,7 @@ void Engine::ParticleLifeTimeSystem::Update(World& world, float dt)
 			{
 				if (emitter.mDestroyOnFinish)
 				{
-					reg.Destroy(entity);
+					reg.Destroy(entity, true);
 				}
 				continue;
 			}

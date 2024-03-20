@@ -37,11 +37,12 @@ namespace
 	void RemoveInvalidEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities);
 
 	void DeleteEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities);
-	void CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities);
+	std::string CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities);
 	void CutToClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities);
-	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities);
+	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipboardData);
 	void Duplicate(Engine::World& world, std::vector<entt::entity>& selectedEntities);
-	bool DoesClipboardContainEntities();
+	std::optional<std::string_view> GetSerializedEntitiesInClipboard();
+	bool IsStringFromCopyToClipBoard(std::string_view string);
 
 	void CheckShortcuts(Engine::World& world, std::vector<entt::entity>& selectedEntities);
 	void ReceiveDragDrops(Engine::World& world);
@@ -1046,9 +1047,10 @@ void Engine::WorldHierarchy::DisplayRightClickPopUp(World& world, std::vector<en
 		CopyToClipBoard(world, selectedEntities);
 	}
 
-	if (ImGui::MenuItem("Paste", "Ctrl+V", nullptr, DoesClipboardContainEntities()))
+	std::optional<std::string_view> clipboardData = GetSerializedEntitiesInClipboard();
+	if (ImGui::MenuItem("Paste", "Ctrl+V", nullptr, clipboardData.has_value()))
 	{
-		PasteClipBoard(world, selectedEntities);
+		PasteClipBoard(world, selectedEntities, *clipboardData);
 	}
 
 	ImGui::EndPopup();
@@ -1067,7 +1069,7 @@ namespace
 
 	void DeleteEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities)
 	{
-		world.GetRegistry().Destroy(selectedEntities.begin(), selectedEntities.end());
+		world.GetRegistry().Destroy(selectedEntities.begin(), selectedEntities.end(), true);
 		selectedEntities.clear();
 	}
 
@@ -1086,13 +1088,13 @@ namespace
 		}
 	};
 
-	void CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities)
+	std::string CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities)
 	{
 		using namespace Engine;
 
 		if (selectedEntities.empty())
 		{
-			return;
+			return {};
 		}
 
 		// Const_cast is fine, we remove the changes immediately afterwards.
@@ -1112,6 +1114,7 @@ namespace
 		// \0 character, we convert it to HEX first
 		const std::string clipBoardData = std::string{ sCopiedEntitiesId } + StringFunctions::BinaryToHex(strStream.str());
 		ImGui::SetClipboardText(clipBoardData.c_str());
+		return clipBoardData;
 	}
 
 	void CutToClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities)
@@ -1120,9 +1123,9 @@ namespace
 		DeleteEntities(world, selectedEntities);
 	}
 
-	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipBoardData)
 	{
-		if (!DoesClipboardContainEntities())
+		if (!IsStringFromCopyToClipBoard(clipBoardData))
 		{
 			return;
 		}
@@ -1135,7 +1138,6 @@ namespace
 		BinaryGSONObject object{};
 
 		{
-			const std::string_view clipBoardData = ImGui::GetClipboardText();
 			const std::string binaryCopiedEntities = StringFunctions::HexToBinary(clipBoardData.substr(sCopiedEntitiesId.size()));
 			view_istream stream{ binaryCopiedEntities };
 
@@ -1165,22 +1167,32 @@ namespace
 
 	void Duplicate(Engine::World& world, std::vector<entt::entity>& selectedEntities)
 	{
-		CopyToClipBoard(world, selectedEntities);
-		PasteClipBoard(world, selectedEntities);
+		std::string clipboardData = CopyToClipBoard(world, selectedEntities);
+		PasteClipBoard(world, selectedEntities, clipboardData);
 	}
 
-	bool DoesClipboardContainEntities()
+	std::optional<std::string_view> GetSerializedEntitiesInClipboard()
 	{
 		const char* clipBoardDataCStr = ImGui::GetClipboardText();
 
 		if (clipBoardDataCStr == nullptr)
 		{
-			return false;
+			return std::nullopt;
 		}
 
 		const std::string_view clipBoardData{ clipBoardDataCStr };
 
-		return clipBoardData.substr(0, sCopiedEntitiesId.size()) == sCopiedEntitiesId;
+		if (IsStringFromCopyToClipBoard(clipBoardData))
+		{
+			return clipBoardData;
+		}
+
+		return std::nullopt;
+	}
+
+	bool IsStringFromCopyToClipBoard(std::string_view string)
+	{
+		return string.substr(0, sCopiedEntitiesId.size()) == sCopiedEntitiesId;
 	}
 
 	void CheckShortcuts(Engine::World& world, std::vector<entt::entity>& selectedEntities)
@@ -1202,9 +1214,11 @@ namespace
 				CopyToClipBoard(world, selectedEntities);
 			}
 
-			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
+			std::optional<std::string_view> copiedEntities = GetSerializedEntitiesInClipboard();
+			if (copiedEntities.has_value()
+				&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
 			{
-				PasteClipBoard(world, selectedEntities);
+				PasteClipBoard(world, selectedEntities, *copiedEntities);
 			}
 
 			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::X))
