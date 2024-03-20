@@ -25,22 +25,22 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
 
-	JobManager::StartUp();
-	FileIO::StartUp(argc, argv, gameDir);
-	Logger::StartUp();
-
-	if (!Device::IsHeadless())
-	{
-		Device::StartUp();
-	}
-
-	Input::StartUp();
-#ifdef EDITOR
-	if (!Device::IsHeadless())
-	{
-		Device::Get().CreateImguiContext();
-	}
-#endif
+//	JobManager::StartUp();
+//	FileIO::StartUp(argc, argv, gameDir);
+//	Logger::StartUp();
+//
+//	if (!Device::IsHeadless())
+//	{
+//		Device::StartUp();
+//	}
+//
+//	Input::StartUp();
+//#ifdef EDITOR
+//	if (!Device::IsHeadless())
+//	{
+//		Device::Get().CreateImguiContext();
+//	}
+//#endif
 	//MetaManager::StartUp();
 	//AssetManager::StartUp();
 	//VirtualMachine::StartUp();
