@@ -222,7 +222,7 @@ UNIT_TEST(Events, OnDestructDestroyEntity)
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfDestructs", 0));
 
-	world.GetRegistry().Destroy(owner);
+	world.GetRegistry().Destroy(owner, false);
 	world.GetRegistry().RemovedDestroyed();
 
 	// I guess we can't really test the num of destructs if the instance were destroyed..
