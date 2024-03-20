@@ -43,13 +43,10 @@ jobs:
       run:  |
         $output = & "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe" run_tests 2>&1 -WorkingDirectory $pwd
                 
-        REM Output the stdout and stderr to the test result
         echo "Executable Output:"
         echo $output
         
-        REM Output the exit code
         echo "Exit Code: "
         echo %ERRORLEVEL%
 
-        REM Exit with the same exit code as the executable
         exit %ERRORLEVEL%
