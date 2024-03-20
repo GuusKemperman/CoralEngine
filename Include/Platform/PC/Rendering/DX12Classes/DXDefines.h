@@ -59,8 +59,7 @@ using namespace Microsoft::WRL;
 #define NUM_CBS FINAL_BONE_MATRIX_CB+	1
 
 //RESOURCE HEAP SLOTS
-#define  MODEL_MAT_SB_SLOT			0
-#define  TEXTURE_START				1
+#define  RESOURCE_START				4
 
 //DEBUG RENDERER
 #define MAX_LINES 32760
