@@ -131,7 +131,6 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			if (ImGui::RadioButton("Scale", sGuizmoOperation == ImGuizmo::SCALE))
 				sGuizmoOperation = ImGuizmo::SCALE;
 
-
 			if (sGuizmoOperation != ImGuizmo::SCALE)
 			{
 				if (ImGui::RadioButton("Local", sGuizmoMode == ImGuizmo::LOCAL))
@@ -248,11 +247,6 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 		GetWorld().Tick(deltaTime);
 		WorldViewport::Display(GetWorld(), *mViewportFrameBuffer, &mSelectedEntities);
-
-		if (const std::shared_ptr<const Level> nextLevel = GetWorld().GetNextLevel(); nextLevel != nullptr)
-		{
-			GetWorld() = nextLevel->CreateWorld(true);
-		}
 
 		drawList->ChannelsMerge();
 	}

@@ -107,7 +107,7 @@ void Engine::EngineClass::Run()
 
 #ifndef EDITOR
 	// TODO level name is hardcoded
-	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>("DemoLevel");
+	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>("MainMenu");
 
 	if (level == nullptr)
 	{
@@ -153,11 +153,6 @@ void Engine::EngineClass::Run()
 #else
 		world.Tick(deltaTime);
 		world.GetRenderer().Render();
-
-		if (const std::shared_ptr<const Level> nextLevel = world.GetNextLevel(); nextLevel != nullptr)
-		{
-			world = nextLevel->CreateWorld(true);
-		}
 #endif  // EDITOR
 
 		device.EndFrame();

@@ -28,8 +28,10 @@ Engine::World::World(const bool beginPlayImmediately)
 Engine::World::World(World&& other) noexcept :
 	mRegistry(std::move(other.mRegistry)),
 	mRenderer(std::move(other.mRenderer)),
+	mLevelToTransitionTo(std::move(other.mLevelToTransitionTo)),
 	mTime(other.mTime),
 	mHasBegunPlay(other.mHasBegunPlay)
+
 {
 	mRegistry->mWorld = *this;
 	mRenderer->mWorld = *this;
@@ -50,6 +52,11 @@ Engine::World& Engine::World::operator=(World&& other) noexcept
 {
 	mRegistry = std::move(other.mRegistry);
 	mRenderer = std::move(other.mRenderer);
+	mLevelToTransitionTo = std::move(other.mLevelToTransitionTo);
+
+	mRegistry->mWorld = *this;
+	mRenderer->mWorld = *this;
+
 	mTime = other.mTime;
 	mHasBegunPlay = other.mHasBegunPlay;
 
@@ -64,6 +71,11 @@ void Engine::World::Tick(const float unscaledDeltaTime)
 
 	GetRegistry().UpdateSystems(unscaledDeltaTime);
 	GetRegistry().RemovedDestroyed();
+
+	if (GetNextLevel() != nullptr)
+	{
+		*this = GetNextLevel()->CreateWorld(true);
+	}
 
 	PopWorld();
 }

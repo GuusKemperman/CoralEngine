@@ -46,7 +46,7 @@ namespace Engine
 
 		void SetTimeScale(float timeScale) { mTime.mTimescale = timeScale; }
 
-		bool IsPaused() { return mTime.mIsPaused; }
+		bool IsPaused() const { return mTime.mIsPaused; }
 
 		void Pause() { mTime.mIsPaused = true; }
 
@@ -62,9 +62,8 @@ namespace Engine
 		/**
 		 * \brief Will request a transition to a different level.
 		 *
-		 * The owner of the world is responsible for performing this transition at a stage where it is safe to do so.
-		 * In most cases, transitioning to a different level involves the destruction of the current world, and the
-		 * creation of a new one. All systems will be restarted.
+		 * Transitioning to a different level involves the destruction of the current world, and the
+		 * creation of a new one. This is done at the end of the OnTick. All systems will be restarted.
 		 *
 		 * \param level The level to transition to.
 		 */
