@@ -33,7 +33,7 @@ namespace Engine
 	private:
 		void DoWork(bool& isFinished);
 
-		static constexpr size_t sMaxThreads = 8;
+		static constexpr int sMaxThreads = 8;
 		static constexpr int sMinNumOfJobsPerThread = 1;
 
 		std::queue<std::function<void()>> mJobs{};

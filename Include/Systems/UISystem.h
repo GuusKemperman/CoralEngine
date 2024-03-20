@@ -1,10 +1,11 @@
 #pragma once
-#include "Components/UIButtonComponent.h"
 #include "Systems/System.h"
 #include "Core/Input.h"
 
 namespace Engine
 {
+	class UIButtonComponent;
+
 	class UISystem final :
 		public System
 	{
