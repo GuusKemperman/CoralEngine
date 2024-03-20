@@ -381,8 +381,10 @@ void Engine::Device::NewFrame() {
         mUpdateWindow = true;
     }
 
+#ifdef EDITOR
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
+#endif // EDITOR
 
     StartRecordingCommands();
 
@@ -395,10 +397,12 @@ void Engine::Device::NewFrame() {
         mUpdateWindow = false;
     }
 
+#ifdef EDITOR
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
+#endif // EDITOR
 
     mCommandList->RSSetViewports(1, &mViewport); 
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
@@ -421,6 +425,8 @@ void Engine::Device::EndFrame()
 
     auto* desc_ptr = mDescriptorHeaps[RESOURCE_HEAP]->Get();
     mCommandList->SetDescriptorHeaps(1, &desc_ptr);
+
+#ifdef EDITOR
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
 
@@ -434,6 +440,7 @@ void Engine::Device::EndFrame()
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
+#endif // EDITOR
 
     glfwSwapBuffers(mWindow);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_PRESENT);
@@ -445,7 +452,9 @@ void Engine::Device::EndFrame()
         LOG(LogCore, Fatal, "Failded to present");
     }
 
+#ifdef EDITOR
     ImGui::EndFrame();
+#endif // EDITOR
 
     WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
 
@@ -514,6 +523,7 @@ void Engine::Device::SubmitUploadCommands()
     }
 }
 
+#ifdef EDITOR
 void Engine::Device::CreateImguiContext()
 {
     LOG(LogCore, Verbose, "Creating imgui context");
@@ -540,6 +550,7 @@ void Engine::Device::CreateImguiContext()
     std::filesystem::create_directories("Intermediate/Layout");
     ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
 }
+#endif // EDITOR
 
 int Engine::Device::AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
 {

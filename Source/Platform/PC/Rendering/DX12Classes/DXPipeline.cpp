@@ -2,6 +2,10 @@
 #include "../Include/Platform/PC/Rendering/DX12Classes/DxPipeline.h"
 #include "../Include/Platform/PC/Rendering/DX12Classes/DXSignature.h"
 
+#ifdef _MSC_VER
+#pragma comment(lib, "d3dcompiler") // Automatically link with d3dcompiler.lib as we are using D3DCompile() below.
+#endif
+
 void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature* root, LPCWSTR name)
 {
 	HRESULT hr;

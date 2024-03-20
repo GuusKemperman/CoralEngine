@@ -47,6 +47,5 @@ jobs:
         echo $output
         
         echo "Exit Code: "
-        echo %ERRORLEVEL%
-
-        exit %ERRORLEVEL%
+        echo $LASTEXITCODE
+        exit $LASTEXITCODE
