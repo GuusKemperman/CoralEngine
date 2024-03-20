@@ -167,6 +167,11 @@ namespace Engine
 			return rotation;
 		}
 
+		static bool AreFloatsEqual(float a, float b, float epsilon = 1e-5f)
+		{
+			return std::fabs(a - b) < epsilon;
+		}
+
 	private:
 		// Function needed for line-line intersection
 		static bool onSegment(const glm::vec2& p, const glm::vec2& q, const glm::vec2& r)
