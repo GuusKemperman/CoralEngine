@@ -39,7 +39,7 @@ jobs:
 
     - name: Run Unit Tests
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      timeout-minutes: 5
+      timeout-minutes: 1
       run:  |
         $output = & "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe" run_tests 2>&1 -WorkingDirectory $pwd
                 
