@@ -3,14 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
-	<ItemDefinitionGroup>
-		<Link>
-			<AdditionalLibraryDirectories>$(EngineDir)External\assimp\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-		</Link>
-		<Link>
-			<AdditionalDependencies>assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-		</Link>
-	</ItemDefinitionGroup>
+	<ItemDefinitionGroup />
   <ItemGroup />
 </Project>
 
