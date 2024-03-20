@@ -167,6 +167,11 @@ namespace Engine
 			return rotation;
 		}
 
+		static bool AreFloatsEqual(float a, float b, float epsilon = 1e-5f)
+		{
+			return std::fabs(a - b) < epsilon;
+		}
+		
 		static std::optional<std::vector<glm::vec3>> CalculateTangents(
         const void* const indices,
         const size_t numOfIndices,
