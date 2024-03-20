@@ -6,6 +6,11 @@
 
 using namespace Engine;
 
+static_assert(CollisionPresets::sWorldDynamic.mRules.GetResponse(CollisionPresets::sWorldStatic.mRules) == CollisionResponse::Blocking);
+static_assert(CollisionPresets::sWorldStatic.mRules.GetResponse(CollisionPresets::sWorldStatic.mRules) == CollisionResponse::Ignore);
+static_assert(CollisionPresets::sWorldStatic.mRules.GetResponse(CollisionPresets::sCharacter.mRules) == CollisionResponse::Blocking);
+static_assert(CollisionPresets::sWorldDynamic.mRules.GetResponse(CollisionPresets::sWorldStatic.mRules) == CollisionPresets::sWorldStatic.mRules.GetResponse(CollisionPresets::sWorldDynamic.mRules));
+
 struct Physics2DUnitTestAccess
 {
 	static bool CollisionCheckDiskDiskUnitTest(const glm::vec2& center1, float radius1, const glm::vec2& center2, float radius2)
