@@ -205,11 +205,11 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			ImGui::SetItemTooltip("Stop");
 		}
 
-		const glm::vec2 fpsCursorPos = { viewportPos.x + mViewportWidth - 90.0f, 0.0f };
+		const glm::vec2 fpsCursorPos = { viewportPos.x + mViewportWidth - 60.0f, 0.0f };
 		ImGui::SetCursorPos(fpsCursorPos);
 
-		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, .7f);
-		ImGui::TextUnformatted(Format("FPS: {:.1f}", 1.0f / mDeltaTimeRunningAverage).data());
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.3f);
+		ImGui::TextUnformatted(Format("FPS {:.1f}", 1.0f / mDeltaTimeRunningAverage).data());
 		ImGui::PopStyleVar();
 
 		{
