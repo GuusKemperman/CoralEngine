@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Utilities/AbilityFunctionality.h>
+#include "Utilities/AbilityFunctionality.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 
 namespace Engine
@@ -30,7 +30,6 @@ namespace Engine
 	{
 	public:
 		std::vector<DurationalEffect> mDurationalEffects{};
-		//std::vector<OverTimeEffect> mOverTimeEffects{};
 
 	private:
 		friend ReflectAccess;
