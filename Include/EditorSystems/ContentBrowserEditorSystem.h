@@ -36,20 +36,22 @@ namespace Engine
 
 		void OpenAsset(WeakAsset<Asset> asset) const;
 
-		struct AssetCreator
+		static bool DisplayNameUI(std::string& name);
+
+		struct FilePathUIResult
 		{
-			const MetaType* mClass{};
-			std::string mAssetName{};
-			std::string mFolderRelativeToRoot{};
-
-			// Determines whether the asset is saved in the
-			// EngineAssets folder or GameAssets folder
-			bool mIsEngineAsset{};
+			std::filesystem::path mActualFullPath{};
+			std::filesystem::path mPathToShowUser{};
+			bool mAnyErrors{};
 		};
-		std::optional<AssetCreator> mAssetCreator{};
-		void DisplayAssetCreator();
 
-		static void CreateNewAsset(const AssetCreator& assetCreator, const std::filesystem::path& toFile);
+		static FilePathUIResult DisplayFilepathUI(std::string& folderRelativeToRoot, bool& isEngineAsset, const std::string& assetName);
+
+		static void PushError();
+		static void PopError();
+
+		void DisplayAssetCreatorPopUp();
+		void DisplayAssetRightClickPopUp();
 
 		friend ReflectAccess;
 		static MetaType Reflect();
