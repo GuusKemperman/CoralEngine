@@ -3,7 +3,7 @@
 
 #include <stack>
 
-#include "Components/ComponentFiler.h"
+#include "Components/ComponentFilter.h"
 #include "Components/NameComponent.h"
 #include "Meta/MetaProps.h"
 #include "World/Registry.h"
