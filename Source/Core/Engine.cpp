@@ -43,11 +43,11 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	AssetManager::StartUp();
 	VirtualMachine::StartUp();
 
-#ifdef EDITOR
-	Editor::StartUp();
-#endif // !EDITOR
-
-	UnitTestManager::StartUp();
+//#ifdef EDITOR
+//	Editor::StartUp();
+//#endif // !EDITOR
+//
+//	UnitTestManager::StartUp();
 
 	//if (Device::sIsHeadless)
 	//{
@@ -73,6 +73,8 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	//		exit(numFailed + 1);
 	//	}
 	//}
+
+	exit(0);
 }
 
 Engine::EngineClass::~EngineClass()
