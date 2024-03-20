@@ -39,9 +39,9 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 		Device::Get().CreateImguiContext();
 	}
 #endif
-	MetaManager::StartUp();
-	AssetManager::StartUp();
-	VirtualMachine::StartUp();
+	//MetaManager::StartUp();
+	//AssetManager::StartUp();
+	//VirtualMachine::StartUp();
 
 //#ifdef EDITOR
 //	Editor::StartUp();
