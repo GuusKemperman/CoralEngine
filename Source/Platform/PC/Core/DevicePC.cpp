@@ -61,7 +61,8 @@ void Engine::Device::InitializeWindow()
     }
 
     glfwMakeContextCurrent(mWindow);
-
+    glfwShowWindow(mWindow);
+    mIsWindowOpen = true;
 }
 
 void Engine::Device::InitializeDevice()
@@ -382,15 +383,19 @@ void Engine::Device::NewFrame() {
         mUpdateWindow = true;
     }
 
+#ifdef EDITOR
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
+#endif // EDITOR
 
     StartRecordingCommands();
 
+#ifdef EDITOR
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
+#endif // EDITOR
 
     mCommandList->RSSetViewports(1, &mViewport); 
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
@@ -411,6 +416,8 @@ void Engine::Device::EndFrame()
 
     auto* desc_ptr = mDescriptorHeaps[RESOURCE_HEAP]->Get();
     mCommandList->SetDescriptorHeaps(1, &desc_ptr);
+
+#ifdef EDITOR
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
 
@@ -424,6 +431,7 @@ void Engine::Device::EndFrame()
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
+#endif // EDITOR
 
     glfwSwapBuffers(mWindow);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_PRESENT);
@@ -435,7 +443,9 @@ void Engine::Device::EndFrame()
         LOG(LogCore, Fatal, "Failded to present");
     }
 
+#ifdef EDITOR
     ImGui::EndFrame();
+#endif // EDITOR
 
     WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
 
@@ -532,12 +542,10 @@ void Engine::Device::AddToDeallocation(ComPtr<ID3D12Resource>&& res)
     mResourcesToDeallocate.emplace_back(std::move(res));
 }
 
+#ifdef EDITOR
 void Engine::Device::CreateImguiContext()
 {
     LOG(LogCore, Verbose, "Creating imgui context");
-
-    glfwShowWindow(mWindow);
-    mIsWindowOpen = true;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -558,3 +566,4 @@ void Engine::Device::CreateImguiContext()
     std::filesystem::create_directories("Intermediate/Layout");
     ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
 }
+#endif

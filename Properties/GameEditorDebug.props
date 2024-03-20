@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<ImportGroup Label="PropertySheets" />
+	<PropertyGroup Label="UserMacros" />
+	<PropertyGroup />
+	<ItemDefinitionGroup>
+		<Link>
+			<AdditionalLibraryDirectories>$(EngineDir)External\assimp\$(Platform)\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+			<AdditionalDependencies>assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+		</Link>
+		<PostBuildEvent>
+			<Command>
+				IF NOT EXIST "$(TargetDir)assimp-vc143-mtd.dll" COPY /Y "$(EngineDir)External\assimp\$(Platform)\Debug\assimp-vc143-mtd.dll" "$(TargetDir)"
+			</Command>
+		</PostBuildEvent>
+	</ItemDefinitionGroup>
+	<ItemGroup />
+</Project>

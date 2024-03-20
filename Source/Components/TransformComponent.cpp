@@ -92,7 +92,8 @@ void Engine::TransformComponent::SetWorldMatrix(const glm::mat4& matrix)
 
 void Engine::TransformComponent::SetParent(TransformComponent* const parent, const bool preserveWorld)
 {
-	if (mParent == parent)
+	if (mParent == parent
+		|| parent == this)
 	{
 		return;
 	}

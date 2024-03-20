@@ -144,6 +144,13 @@ namespace Engine
 	 */
 	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionExitEvent{ "OnCollisionExit" };
 
+	/**
+	 * \brief Called when the button is pressed. Must be attached to the entity with the UIButtonComponent.
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	static constexpr Event<void(World&, entt::entity)> sButtonPressEvent{ "OnButtonPressed" };
+
 #ifdef EDITOR
 	/**
 	 * \brief For custom inspect logic. You can make calls to ImGui from this event.
@@ -151,7 +158,6 @@ namespace Engine
 	 * \const std::vector<entt::entity>& All the selected entities that have this component AND require inspecting
 	 */
 	static constexpr Event<void(World&, const std::vector<entt::entity>&), false, true> sInspectEvent{ "OnInspect" };
-#endif // EDITOR
 
 	/**
 	 * \brief Implement this event to draw a gizmo if the entity is selected.
@@ -161,6 +167,7 @@ namespace Engine
 	 * \entt::entity The owner of this component.
 	 */
 	static constexpr Event<void(World&, entt::entity)> sDrawGizmoEvent{ "OnDrawGizmo" };
+#endif // EDITOR
 
 	/**
 	 * \brief Binds an event to a type.

@@ -1,6 +1,7 @@
 #include "Precomp.h"
 
 #include "Assets/Core/AssetLoadInfo.h"
+#include "Assets/Core/AssetSaveInfo.h"
 #include "Core/UnitTests.h"
 #include "Core/Editor.h"
 #include "Core/AssetManager.h"
@@ -11,10 +12,9 @@
 
 using namespace Engine;
 
-// Was too slow, removed for now
-//UNIT_TET(Serialization, AllAssetSerialization)
+//UNI_TEST(Serialization, AllAssetSerialization)
 //{
-//
+//#ifdef EDITOR
 //	std::vector<WeakAsset<Asset>> allAssets = AssetManager::Get().GetAllAssets();
 //
 //	UnitTest::Result result = UnitTest::Success;
@@ -49,9 +49,13 @@ using namespace Engine;
 //
 //		std::shared_ptr<const Asset> loadedAsset = asset.MakeShared();
 //
+//		TEST_ASSERT(loadedAsset != nullptr);
+//
 //		savedAsset = loadedAsset->Save().ToString();
 //
 //		std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromStream(std::make_unique<view_istream>(savedAsset));
+//
+//		TEST_ASSERT(loadInfo.has_value());
 //
 //		FuncResult reloadedAssetConstructResult = type.ConstructAt(assetBuffer, *loadInfo);
 //
@@ -83,6 +87,8 @@ using namespace Engine;
 //	}
 //
 //	_aligned_free(assetBuffer);
-//
 //	return result;
+//#else
+//	return UnitTest::Success;
+//#endif
 //}

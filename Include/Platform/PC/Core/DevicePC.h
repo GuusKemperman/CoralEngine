@@ -34,8 +34,12 @@ namespace Engine
         void* GetUploadCommandList() { return mUploadCommandList.Get(); }
         void* GetCommandQueue() { return mCommandQueue.Get(); }
         void* GetSignature() { return mSignature.get(); }
+
+#ifdef EDITOR
         void CreateImguiContext();
-        void StartUploadCommands();
+#endif // EDITOR
+
+		void StartUploadCommands();
         void SubmitUploadCommands();
         void AddToDeallocation(ComPtr<ID3D12Resource>&& res);
 
