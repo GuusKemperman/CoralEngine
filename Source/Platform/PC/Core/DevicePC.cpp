@@ -61,7 +61,8 @@ void Engine::Device::InitializeWindow()
     }
 
     glfwMakeContextCurrent(mWindow);
-
+    glfwShowWindow(mWindow);
+    mIsWindowOpen = true;
 }
 
 void Engine::Device::InitializeDevice()
@@ -528,9 +529,6 @@ void Engine::Device::SubmitUploadCommands()
 void Engine::Device::CreateImguiContext()
 {
     LOG(LogCore, Verbose, "Creating imgui context");
-
-    glfwShowWindow(mWindow);
-    mIsWindowOpen = true;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
