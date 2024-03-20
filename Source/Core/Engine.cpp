@@ -20,6 +20,8 @@
 
 Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
+	std::cout << "Hello world!" << std::endl;
+
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
 
