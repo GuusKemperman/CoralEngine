@@ -49,9 +49,13 @@ UNIT_TEST(Serialization, AllAssetSerialization)
 
 		std::shared_ptr<const Asset> loadedAsset = asset.MakeShared();
 
+		TEST_ASSERT(loadedAsset != nullptr);
+
 		savedAsset = loadedAsset->Save().ToString();
 
 		std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromStream(std::make_unique<view_istream>(savedAsset));
+
+		TEST_ASSERT(loadInfo.has_value());
 
 		FuncResult reloadedAssetConstructResult = type.ConstructAt(assetBuffer, *loadInfo);
 
