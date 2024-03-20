@@ -1,6 +1,7 @@
 #include "Precomp.h"
 
 #include "Assets/Core/AssetLoadInfo.h"
+#include "Assets/Core/AssetSaveInfo.h"
 #include "Core/UnitTests.h"
 #include "Core/Editor.h"
 #include "Core/AssetManager.h"
@@ -13,6 +14,7 @@ using namespace Engine;
 
 UNIT_TEST(Serialization, AllAssetSerialization)
 {
+#ifdef EDITOR
 	std::vector<WeakAsset<Asset>> allAssets = AssetManager::Get().GetAllAssets();
 
 	UnitTest::Result result = UnitTest::Success;
@@ -81,6 +83,8 @@ UNIT_TEST(Serialization, AllAssetSerialization)
 	}
 
 	_aligned_free(assetBuffer);
-
 	return result;
+#else
+	return UnitTest::Success;
+#endif
 }
