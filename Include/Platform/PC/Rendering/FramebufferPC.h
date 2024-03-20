@@ -3,6 +3,7 @@
 #include "DX12Classes/DXDefines.h"
 #include "glm/glm.hpp"
 #include "DX12Classes/DXResource.h"
+#include "DX12Classes/DXHeapHandle.h"
 
 namespace Engine
 {
@@ -28,12 +29,11 @@ namespace Engine
 		size_t GetColorTextureId();
 
 	private:
-		std::unique_ptr<DXResource> resource[FRAME_BUFFER_COUNT];
-		std::unique_ptr<DXResource> depthResource;
-		unsigned int frameBufferIndex[FRAME_BUFFER_COUNT];
-		unsigned int frameBufferRscIndex[FRAME_BUFFER_COUNT];
-		unsigned int depthStencilIndex;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandles[FRAME_BUFFER_COUNT];
+		std::unique_ptr<DXResource> mResource[FRAME_BUFFER_COUNT];
+		std::unique_ptr<DXResource> mDepthResource;
+		DXHeapHandle mFrameBufferHandle[FRAME_BUFFER_COUNT];
+		DXHeapHandle mFrameBufferRscHandle[FRAME_BUFFER_COUNT];
+		DXHeapHandle mDepthStencilHandle;
 
 		glm::vec4 mClearColor{};
 		glm::ivec2 mSize{};
