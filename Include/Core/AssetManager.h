@@ -103,12 +103,7 @@ namespace Engine
 		this is done at the end of the frame.
 		*/
 		void Import(const std::filesystem::path& path);
-
-		/*
-		Will delete the file the asset originated from.
-		The asset can then no longer be found through the asset manager.
-		*/
-		void DeleteAsset(WeakAsset<Asset>&& asset);
+#endif
 
 		/*
 		Rename the asset
@@ -118,7 +113,12 @@ namespace Engine
 		Returns true on success.
 		*/
 		void RenameAsset(WeakAsset<Asset> asset, std::string_view newName);
-#endif
+
+		/*
+		Will delete the file the asset originated from.
+		The asset can then no longer be found through the asset manager.
+		*/
+		void DeleteAsset(WeakAsset<Asset>&& asset);
 
 		/*
 		Move the asset file.
@@ -141,11 +141,6 @@ namespace Engine
 		Will load the asset from the specified path.
 		*/
 		std::optional<WeakAsset<Asset>> NewAsset(const MetaType& assetClass, const std::filesystem::path& path);
-
-		/*
-		Will load the asset from the specified path.
-		*/
-		std::optional<WeakAsset<Asset>> AddAsset(const std::filesystem::path& path);
 
 		/*
 		Add an asset generated at runtime to the asset manager.
@@ -192,6 +187,11 @@ namespace Engine
 		std::unordered_map<Name::HashType, AssetInternal> mAssets{};
 
 		void OpenDirectory(const std::filesystem::path& directory);
+
+		/*
+		Will load the asset from the specified path.
+		*/
+		std::optional<WeakAsset<Asset>> OpenAsset(const std::filesystem::path& path);
 
 		AssetInternal* TryGetAssetInternal(Name key, TypeId typeId);
 		AssetInternal* TryGetLoadedAssetInternal(Name key, TypeId typeId);

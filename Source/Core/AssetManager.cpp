@@ -3,6 +3,7 @@
 
 #include "Core/FileIO.h"
 #include "Assets/Core/AssetLoadInfo.h"
+#include "Assets/Core/AssetSaveInfo.h"
 #include "Assets/Importers/Importer.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaTools.h"
@@ -121,7 +122,7 @@ void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 
 		if (extension == sAssetExtension)
 		{
-			AddAsset(path);
+			OpenAsset(path);
 			continue;
 		}
 
@@ -616,6 +617,7 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 	}
 }
 
+
 std::pair<Engine::TypeId, const Engine::Importer*> Engine::AssetManager::TryGetImporterForExtension(const std::filesystem::path& extension) const
 {
 	for (const auto& [typeId, importer] : mImporters)
@@ -631,11 +633,102 @@ std::pair<Engine::TypeId, const Engine::Importer*> Engine::AssetManager::TryGetI
 
 	return { 0, nullptr };
 }
+#endif // EDITOR
+
+void Engine::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
+{
+	auto renameLambda = [this, oldName = asset.GetName(), newName = std::string{ newName }]()
+		{
+			std::optional<WeakAsset<Asset>> asset = TryGetWeakAsset(oldName);
+
+			if (!asset.has_value())
+			{
+				return;
+			}
+
+			if (TryGetWeakAsset(newName).has_value())
+			{
+				LOG(LogAssets, Error, "Cannot rename asset {} to {}, there is already an asset with this name", oldName, newName);
+				return;
+			}
+
+
+			AssetFileMetaData newMetaData = asset->mAssetInternal.get().mMetaData;
+			newMetaData.mAssetName = newName;
+
+			if (asset->GetFileOfOrigin().has_value())
+			{
+				const std::filesystem::path oldPath = *asset->mAssetInternal.get().mFileOfOrigin;
+				const std::filesystem::path newPath = std::filesystem::path{ oldPath }.replace_filename(newName).replace_extension(sAssetExtension);
+
+				std::error_code err{};
+				std::filesystem::rename(oldPath, newPath, err);
+
+				if (err)
+				{
+					LOG(LogAssets, Error, "Cannot rename asset {}, could not rename file {} to {} - {}",
+						asset->GetName(),
+						oldPath.string(),
+						newPath.string(),
+						err.message());
+					return;
+				}
+
+				std::string fileContents{};
+
+				{
+					std::ifstream file{ newPath, std::ifstream::binary };
+
+					if (!file.is_open())
+					{
+						LOG(LogAssets, Error, "Cannot rename asset {}, could not open file {} for read", asset->GetName(), newPath.string());
+						return;
+					}
+
+					(void)AssetFileMetaData::ReadMetaData(file);
+
+					fileContents = StringFunctions::StreamToString(file);
+				}
+
+
+				{
+					std::ofstream file{ newPath, std::ofstream::binary };
+
+					if (!file.is_open())
+					{
+						LOG(LogAssets, Error, "Cannot rename asset {}, could not open file {} for writing", oldName, newPath.string());
+						return;
+					}
+
+					newMetaData.WriteMetaData(file);
+					file.write(fileContents.c_str(), fileContents.size());
+				}
+
+				asset->mAssetInternal.get().mFileOfOrigin = newPath;
+			}
+
+			asset->mAssetInternal.get().mMetaData = newMetaData;
+			auto extractedAsset = mAssets.extract(Name::HashString(oldName));
+			extractedAsset.key() = Name::HashString(newName);
+			auto insertResult = mAssets.insert(std::move(extractedAsset));
+
+			if (!insertResult.inserted)
+			{
+				LOG(LogAssets, Error, "Cannot rename asset {}, inesrtion somehow failed. Assets is deleted from memory, but still exists on file", oldName);
+			}
+		};
+
+#ifdef EDITOR
+	Editor::Get().Refresh({ Editor::RefreshRequest::Volatile, renameLambda });
+#else
+	LOG(LogAssets, Warning, "Renaming asset {} without the editor. Existing weak assets to this asset will become dangling.", asset.GetName());
+	renameLambda();
+#endif
+}
 
 void Engine::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
 {
-	Editor::Get().Refresh({ Editor::RefreshRequest::Volatile,
-		[this, assetName = asset.GetName()]()
+	auto deleteLambda = [this, assetName = asset.GetName()]()
 		{
 			LOG(LogAssets, Verbose, "Asset {} will be erased. Any WeakAssets referencing it will now be dangling", assetName);
 
@@ -662,97 +755,17 @@ void Engine::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
 			}
 
 			mAssets.erase(Name::HashString(asset->GetName()));
-		}
-		});
+		};
+
+#ifdef EDITOR
+	Editor::Get().Refresh({ Editor::RefreshRequest::Volatile, deleteLambda });
+#else
+	LOG(LogAssets, Warning, "Deleting asset {} without the editor. Existing weak assets to this asset will become dangling.", asset.GetName());
+	deleteLambda();
+#endif
+
+
 }
-
-void Engine::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
-{
-	Editor::Get().Refresh({
-		Editor::RefreshRequest::Volatile,
-		[this, oldName = asset.GetName(), newName = std::string{newName}]()
-	{
-		std::optional<WeakAsset<Asset>> asset = TryGetWeakAsset(oldName);
-
-		if (!asset.has_value())
-		{
-			return;
-		}
-
-		if (TryGetWeakAsset(newName).has_value())
-		{
-			LOG(LogAssets, Error, "Cannot rename asset {} to {}, there is already an asset with this name", oldName, newName);
-			return;
-		}
-
-
-		AssetFileMetaData newMetaData = asset->mAssetInternal.get().mMetaData;
-		newMetaData.mAssetName = newName;
-
-		if (asset->GetFileOfOrigin().has_value())
-		{
-			const std::filesystem::path oldPath = *asset->mAssetInternal.get().mFileOfOrigin;
-			const std::filesystem::path newPath = std::filesystem::path{ oldPath }.replace_filename(newName).replace_extension(sAssetExtension);
-
-			std::error_code err{};
-			std::filesystem::rename(oldPath, newPath, err);
-
-			if (err)
-			{
-				LOG(LogAssets, Error, "Cannot rename asset {}, could not rename file {} to {} - {}", 
-					asset->GetName(), 
-					oldPath.string(),
-					newPath.string(),
-					err.message());
-				return;
-			}
-
-			std::string fileContents{};
-
-			{
-				std::ifstream file{ newPath, std::ifstream::binary };
-
-				if (!file.is_open())
-				{
-					LOG(LogAssets, Error, "Cannot rename asset {}, could not open file {} for read", asset->GetName(), newPath.string());
-					return;
-				}
-
-				(void)AssetFileMetaData::ReadMetaData(file);
-
-				fileContents = StringFunctions::StreamToString(file);
-			}
-
-
-			{
-				std::ofstream file{ newPath, std::ofstream::binary };
-
-				if (!file.is_open())
-				{
-					LOG(LogAssets, Error, "Cannot rename asset {}, could not open file {} for writing", oldName, newPath.string());
-					return;
-				}
-
-				newMetaData.WriteMetaData(file);
-				file.write(fileContents.c_str(), fileContents.size());
-			}
-
-			asset->mAssetInternal.get().mFileOfOrigin = newPath;
-		}
-
-		asset->mAssetInternal.get().mMetaData = newMetaData;
-		auto extractedAsset = mAssets.extract(Name::HashString(oldName));
-		extractedAsset.key() = Name::HashString(newName);
-		auto insertResult = mAssets.insert(std::move(extractedAsset));
-
-		if (!insertResult.inserted)
-		{
-			LOG(LogAssets, Error, "Cannot rename asset {}, inesrtion somehow failed. Assets is deleted from memory, but still exists on file", oldName);
-		}
-	}
-		});
-}
-#endif // EDITOR
 
 bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesystem::path& toLocation)
 {
@@ -936,7 +949,7 @@ std::optional<Engine::WeakAsset<>> Engine::AssetManager::NewAsset(const MetaType
 	return TryGetWeakAsset(assetName);
 }
 
-std::optional<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::AddAsset(const std::filesystem::path& path)
+std::optional<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::OpenAsset(const std::filesystem::path& path)
 {
 	AssetInternal* const internalAsset = TryConstruct(path);
 
