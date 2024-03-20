@@ -20,63 +20,59 @@
 
 Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
-	std::cout << "Hello world!" << std::endl;
-
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
 
-//	JobManager::StartUp();
-//	FileIO::StartUp(argc, argv, gameDir);
-//	Logger::StartUp();
-//
-//	if (!Device::IsHeadless())
-//	{
-//		Device::StartUp();
-//	}
-//
-//	Input::StartUp();
-//#ifdef EDITOR
-//	if (!Device::IsHeadless())
-//	{
-//		Device::Get().CreateImguiContext();
-//	}
-//#endif
-	//MetaManager::StartUp();
-	//AssetManager::StartUp();
-	//VirtualMachine::StartUp();
+	JobManager::StartUp();
+	FileIO::StartUp(argc, argv, gameDir);
+	Logger::StartUp();
 
-//#ifdef EDITOR
-//	Editor::StartUp();
-//#endif // !EDITOR
-//
-//	UnitTestManager::StartUp();
+	if (!Device::IsHeadless())
+	{
+		Device::StartUp();
+	}
 
-	//if (Device::sIsHeadless)
-	//{
-	//	uint32 numFailed = 0;
-	//	for (UnitTest& test : UnitTestManager::Get().GetAllTests())
-	//	{
-	//		test();
-	//		if (test.mResult != UnitTest::Success)
-	//		{
-	//			numFailed++;
-	//		}
-	//	}
+	Input::StartUp();
+#ifdef EDITOR
+	if (!Device::IsHeadless())
+	{
+		Device::Get().CreateImguiContext();
+	}
+#endif
+	MetaManager::StartUp();
+	AssetManager::StartUp();
+	VirtualMachine::StartUp();
 
-	//	// We only exit if numFailed != 0,
-	//	// since maybe theres a crash in
-	//	// the shutdown process and we want
-	//	// to test that as well
-	//	if (numFailed != 0)
-	//	{
-	//		// A lot of exits lead to exit(1).
-	//		// by doing + 1 we can distinguish
-	//		// from those errors
-	//		exit(numFailed + 1);
-	//	}
-	//}
+#ifdef EDITOR
+	Editor::StartUp();
+#endif // !EDITOR
 
-	exit(0);
+	UnitTestManager::StartUp();
+
+	if (Device::sIsHeadless)
+	{
+		uint32 numFailed = 0;
+		for (UnitTest& test : UnitTestManager::Get().GetAllTests())
+		{
+			test();
+			if (test.mResult != UnitTest::Success)
+			{
+				numFailed++;
+			}
+		}
+
+		// We only exit if numFailed != 0,
+		// since maybe theres a crash in
+		// the shutdown process and we want
+		// to test that as well
+		if (numFailed != 0)
+		{
+			// A lot of exits lead to exit(1).
+			// by doing + 1 we can distinguish
+			// from those errors
+			exit(numFailed + 1);
+		}
+	}
 }
 
 Engine::EngineClass::~EngineClass()
