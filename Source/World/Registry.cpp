@@ -198,33 +198,35 @@ entt::entity Engine::Registry::CreateFromFactory(const PrefabEntityFactory& fact
 	return entity;
 }
 
-void Engine::Registry::Destroy(entt::entity entity)
+void Engine::Registry::Destroy(entt::entity entity, bool destroyChildren)
 {
-	if (!HasComponent<IsDestroyedTag>(entity))
+	if (!Valid(entity) 
+		|| HasComponent<IsDestroyedTag>(entity))
 	{
-		AddComponent<IsDestroyedTag>(entity);
-	}
-}
-
-void Engine::Registry::DestroyAlongWithChildren(entt::entity entity)
-{
-	TransformComponent* transform = TryGet<TransformComponent>(entity);
-
-	if (transform == nullptr)
-	{
-		Destroy(entity);
 		return;
 	}
 
-	std::function<void(TransformComponent&)> addToDestroyed = [&](TransformComponent& current)
+	AddComponent<IsDestroyedTag>(entity);
+
+	if (destroyChildren)
+	{
+		TransformComponent* transform = TryGet<TransformComponent>(entity);
+
+		if (transform == nullptr)
 		{
-			for (TransformComponent& child : current.GetChildren())
+			return;
+		}
+
+		std::function<void(TransformComponent&)> addToDestroyed = [&](TransformComponent& current)
 			{
-				addToDestroyed(child);
-			}
-			Destroy(current.GetOwner());
-		};
-	addToDestroyed(*transform);
+				for (TransformComponent& child : current.GetChildren())
+				{
+					addToDestroyed(child);
+					Destroy(child.GetOwner(), true);
+				}
+			};
+		addToDestroyed(*transform);
+	}
 }
 
 void Engine::Registry::RemovedDestroyed()
