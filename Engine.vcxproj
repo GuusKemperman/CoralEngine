@@ -520,6 +520,16 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Assets\Animation\Animation.cpp" />
+    <ClCompile Include="Source\Assets\Importers\AnimationImporter.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Assets\Animation\Bone.cpp" />
     <ClCompile Include="Source\Components\Abilities\AOEComponent.cpp" />
     <ClCompile Include="Source\Components\Abilities\ProjectileComponent.cpp" />
     <ClCompile Include="Source\Components\UI\UIButtonComponent.cpp" />
@@ -537,6 +547,13 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Systems\UISystem.cpp" />
+    <ClCompile Include="Source\Platform\***REMOVED***\Rendering\SkinnedMesh***REMOVED***.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\AnimationSystem.cpp" />
     <ClCompile Include="Source\Utilities\AbilityFunctionality.cpp" />
     <ClCompile Include="Source\Assets\Ability.cpp" />
     <ClCompile Include="Source\Components\Abilities\AbilitiesOnCharacterComponent.cpp" />
@@ -549,8 +566,10 @@
     <ClCompile Include="Source\Systems\AbilitySystem.cpp" />
     <ClCompile Include="Source\Components\Abilities\ActiveAbilityComponent.cpp" />
     <ClCompile Include="External\stb_image\stb_image.cpp" />
+    <ClCompile Include="Source\Assets\SkinnedMesh.cpp" />
     <ClCompile Include="Source\Assets\StaticMesh.cpp" />
     <ClCompile Include="Source\Assets\Texture.cpp" />
+    <ClCompile Include="Source\Components\SkinnedMeshComponent.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\DebugRendererPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -583,6 +602,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Platform\PC\Rendering\RendererPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
@@ -663,6 +684,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\ImGuizmo.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -676,6 +699,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\imgui_curves.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -689,6 +714,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\imgui_demo.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -702,6 +729,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\imgui_draw.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -715,6 +744,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\imgui_impl_glfw.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -728,6 +759,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="External\imgui\imgui_stacklayout.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">NotUsing</PrecompiledHeader>
@@ -746,6 +779,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\imgui_stdlib.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -759,6 +794,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\imgui_tables.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -772,6 +809,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\imgui_widgets.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -785,6 +824,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\implot.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -798,6 +839,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\implot_demo.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -811,6 +854,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="external\imgui\implot_items.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -824,6 +869,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="External\imnodes\crude_json.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">NotUsing</PrecompiledHeader>
@@ -834,6 +881,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="External\imnodes\examples\blueprints-example\utilities\builders.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">NotUsing</PrecompiledHeader>
@@ -874,6 +923,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="External\imnodes\imgui_node_editor.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">NotUsing</PrecompiledHeader>
@@ -888,6 +939,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="External\imnodes\imgui_node_editor_api.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">NotUsing</PrecompiledHeader>
@@ -898,6 +951,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="External\predicates\predicates.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">NotUsing</PrecompiledHeader>
@@ -930,6 +985,12 @@
       </ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">
       </ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Platform\PC\Rendering\SkinnedMeshPC.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Components\Abilities\CharacterComponent.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\DebugRenderer***REMOVED***.cpp">
@@ -1438,6 +1499,9 @@
     <ClCompile Include="Source\Components\UI\UISprite.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Assets\Animation\Animation.h" />
+    <ClInclude Include="Include\Assets\Importers\AnimationImporter.h" />
+    <ClInclude Include="Include\Assets\Animation\BoneInfo.h" />
     <ClInclude Include="Include\Components\Abilities\AOEComponent.h" />
     <ClInclude Include="Include\Components\Abilities\ProjectileComponent.h" />
     <ClCompile Include="Source\Platform\PC\Rendering\TexturePC.cpp">
@@ -1453,6 +1517,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Components\UI\UIButtonComponent.h" />
+    <ClInclude Include="Include\Assets\SkinnedMesh.h" />
+    <ClInclude Include="Include\Components\SkinnedMeshComponent.h" />
     <ClInclude Include="Include\Components\UtilityAi\EnemyAiControllerComponent.h" />
     <ClInclude Include="Include\Core\JobManager.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Clustering***REMOVED***.h" />
@@ -1631,6 +1697,7 @@
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectSmartPtr.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectString.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectVector.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\SkinnedMeshPC.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Core\address_sanitizer_utils.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1663,6 +1730,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Include\Platform\***REMOVED***\Rendering\SkinnedMesh***REMOVED***.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\StaticMesh***REMOVED***.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1685,6 +1758,8 @@
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
     <ClInclude Include="Include\Systems\AbilitySystem.h" />
     <ClInclude Include="Include\Scripting\ScriptEvents.h" />
+    <ClInclude Include="Include\Assets\Animation\Bone.h" />
+    <ClInclude Include="Include\Systems\AnimationSystem.h" />
     <ClInclude Include="Include\Systems\EventsSystem.h" />
     <ClInclude Include="Include\Systems\NavigationSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />

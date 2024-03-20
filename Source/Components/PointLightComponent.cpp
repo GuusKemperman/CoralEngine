@@ -37,7 +37,9 @@ Engine::MetaType Engine::PointLightComponent::Reflect()
 	metaType.AddField(&PointLightComponent::mIntensity, "mIntensity").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&PointLightComponent::mRange, "mRange").GetProperties().Add(Props::sIsScriptableTag);
 
+#ifdef EDITOR
 	BindEvent(metaType, sDrawGizmoEvent, &PointLightComponent::OnDrawGizmos);
+#endif // EDITOR
 
 	ReflectComponentType<PointLightComponent>(metaType);
 

@@ -554,7 +554,20 @@ Engine::BinaryGSONObject Engine::Level::GenerateCurrentStateOfPrefabs(const Bina
 {
 	BinaryGSONObject prefabsObject{ "Prefabs" };
 
-	std::unordered_map<const PrefabEntityFactory*, std::vector<entt::entity>> idsPerFactory{};
+	struct SortPrefabs
+	{
+		bool operator()(const PrefabEntityFactory* a, const PrefabEntityFactory* b) const
+		{
+			if (a->GetPrefab().GetName() == b->GetPrefab().GetName())
+			{
+				return a->GetId() > b->GetId();
+			}
+
+			return a->GetPrefab().GetName() > b->GetPrefab().GetName();
+		}
+	};
+
+	std::map<const PrefabEntityFactory*, std::vector<entt::entity>, SortPrefabs> idsPerFactory{};
 
 	const MetaType& prefabOriginType = MetaManager::Get().GetType<PrefabOriginComponent>();
 
@@ -601,13 +614,16 @@ Engine::BinaryGSONObject Engine::Level::GenerateCurrentStateOfPrefabs(const Bina
 		}
 	}
 
-	for (const auto& [factory, prefabIdsPair] : idsPerFactory)
+	for (auto& [factory, prefabIdsPair] : idsPerFactory)
 	{
 		BinaryGSONObject& serializedPrefab = GetOrAddSerializedPrefabObject(prefabsObject, factory->GetPrefab());
 		BinaryGSONObject& serializedFactory = GetSerializedPrefabFactory(serializedPrefab, *factory);
+
+		std::sort(prefabIdsPair.begin(), prefabIdsPair.end());
+
 		serializedFactory.AddGSONMember("IDS") << prefabIdsPair;
 	}
-	
+
 	return prefabsObject;
 }
 

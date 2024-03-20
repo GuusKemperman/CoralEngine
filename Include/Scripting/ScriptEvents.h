@@ -37,26 +37,17 @@ namespace Engine
 		bool mIsPure{};
 	};
 
-	class ScriptOnConstructEvent final :
+	class ScriptOnlyPassComponentEvent :
 		public ScriptEvent
 	{
 	public:
-		ScriptOnConstructEvent();
+		template<typename EventT>
+		ScriptOnlyPassComponentEvent(const EventT& event) :
+			ScriptEvent(event, {}, std::nullopt) {}
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
-	};
-
-	class ScriptOnBeginPlayEvent final :
-		public ScriptEvent
-	{
-	public:
-		ScriptOnBeginPlayEvent();
-
-	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+			const std::shared_ptr<const Script>& script) const override;
 	};
 
 	class ScriptTickEvent final :
@@ -75,17 +66,6 @@ namespace Engine
 	{
 	public:
 		ScriptFixedTickEvent();
-
-	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
-	};
-
-	class ScriptDestructEvent final :
-		public ScriptEvent
-	{
-	public:
-		ScriptDestructEvent();
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
@@ -114,36 +94,6 @@ namespace Engine
 		                                   const std::shared_ptr<const Script>& script) const override;
 	};
 
-	class ScriptAITransitionEvent :
-		public ScriptEvent
-	{
-	public:
-		template <typename EventT>
-		ScriptAITransitionEvent(const EventT& event);
-
-	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
-	};
-
-	class ScriptAIEnterStateEvent final :
-		public ScriptAITransitionEvent
-	{
-	public:
-		ScriptAIEnterStateEvent() : ScriptAITransitionEvent(sAIStateEnterEvent)
-		{
-		}
-	};
-
-	class ScriptAIExitStateEvent final :
-		public ScriptAITransitionEvent
-	{
-	public:
-		ScriptAIExitStateEvent() : ScriptAITransitionEvent(sAIStateExitEvent)
-		{
-		}
-	};
-
 	class ScriptAbilityActivateEvent final :
 		public ScriptEvent
 	{
@@ -167,32 +117,6 @@ namespace Engine
 		                                   const std::shared_ptr<const Script>& script) const override;
 	};
 
-	class ScriptCollisionEntryEvent final :
-		public CollisionEvent
-	{
-	public:
-		ScriptCollisionEntryEvent() : CollisionEvent(sCollisionEntryEvent)
-		{
-		}
-	};
-
-	class ScriptCollisionStayEvent final :
-		public CollisionEvent
-	{
-	public:
-		ScriptCollisionStayEvent() : CollisionEvent(sCollisionStayEvent)
-		{
-		}
-	};
-
-	class ScriptCollisionExitEvent final :
-		public CollisionEvent
-	{
-	public:
-		ScriptCollisionExitEvent() : CollisionEvent(sCollisionExitEvent)
-		{
-		}
-	};
 
 	template <typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
 	ScriptEvent::ScriptEvent(const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event,
@@ -208,12 +132,6 @@ namespace Engine
 	}
 
 	template <typename EventT>
-	ScriptAITransitionEvent::ScriptAITransitionEvent(const EventT& event) :
-		ScriptEvent(event, {}, std::nullopt)
-	{
-	}
-
-	template <typename EventT>
 	CollisionEvent::CollisionEvent(const EventT& event) :
 		ScriptEvent(event, {
 			            {MakeTypeTraits<entt::entity>(), "Other"},
@@ -224,21 +142,22 @@ namespace Engine
 	{
 	}
 
-	static const ScriptOnConstructEvent sOnConstructScriptEvent{};
-	static const ScriptOnBeginPlayEvent sOnBeginPlayScriptEvent{};
+	static const ScriptOnlyPassComponentEvent sOnConstructScriptEvent{ sConstructEvent };
+	static const ScriptOnlyPassComponentEvent sOnBeginPlayScriptEvent{ sBeginPlayEvent };
 	static const ScriptTickEvent sOnTickScriptEvent{};
 	static const ScriptFixedTickEvent sOnFixedTickScriptEvent{};
-	static const ScriptDestructEvent sOnDestructScriptEvent{};
-	static const ScriptAIEnterStateEvent sOnAIStateEnterScriptEvent{};
+	static const ScriptOnlyPassComponentEvent sOnDestructScriptEvent{ sDestructEvent };
+	static const ScriptOnlyPassComponentEvent sOnAIStateEnterScriptEvent{ sAIStateEnterEvent };
 	static const ScriptAITickEvent sOnAITickScriptEvent{};
-	static const ScriptAIExitStateEvent sOnAIStateExitScriptEvent{};
+	static const ScriptOnlyPassComponentEvent sOnAIStateExitScriptEvent{ sAIStateExitEvent };
 	static const ScriptAIEvaluateEvent sAIEvaluateScriptEvent{};
 	static const ScriptAbilityActivateEvent sScriptAbilityActivateEvent{};
-	static const ScriptCollisionEntryEvent sOnCollisionEntryScriptEvent{};
-	static const ScriptCollisionStayEvent sOnCollisionStayScriptEvent{};
-	static const ScriptCollisionExitEvent sOnCollisionExitScriptEvent{};
+	static const CollisionEvent sOnCollisionEntryScriptEvent{ sCollisionEntryEvent };
+	static const CollisionEvent sOnCollisionStayScriptEvent{ sCollisionStayEvent };
+	static const CollisionEvent sOnCollisionExitScriptEvent{ sCollisionExitEvent };
+	static const ScriptOnlyPassComponentEvent sOnButtonPressedScriptEvent{ sButtonPressEvent };
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 13> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 14> sAllScriptableEvents
 	{
 		sOnConstructScriptEvent,
 		sOnDestructScriptEvent,
@@ -252,6 +171,7 @@ namespace Engine
 		sScriptAbilityActivateEvent,
 		sOnCollisionEntryScriptEvent,
 		sOnCollisionStayScriptEvent,
-		sOnCollisionExitScriptEvent
+		sOnCollisionExitScriptEvent,
+		sOnButtonPressedScriptEvent
 	};
 }

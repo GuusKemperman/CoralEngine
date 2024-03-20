@@ -70,6 +70,51 @@ void Engine::UISystem::Update(World& world, float dt)
 		Input::GamepadAxis::StickLeftX,
 		Input::GamepadAxis::StickRightX,
 		false);
+
+
+	Input& input = Input::Get();
+
+
+	if (selectedEntity == entt::null
+		|| (!input.WasKeyboardKeyPressed(Input::KeyboardKey::Enter)
+			&& !input.WasKeyboardKeyPressed(Input::KeyboardKey::NumpadEnter)))
+	{
+		return;
+	}
+
+
+	for (auto&& [typeId, storage] : reg.Storage())
+	{
+		if (!storage.contains(selectedEntity))
+		{
+			continue;
+		}
+
+		const MetaType* const metaType = MetaManager::Get().TryGetType(typeId);
+
+		if (metaType == nullptr)
+		{
+			continue;
+		}
+
+		const MetaFunc* const pressedEvent = TryGetEvent(*metaType, sButtonPressEvent);
+
+		if (pressedEvent == nullptr)
+		{
+			continue;
+		}
+
+		if (pressedEvent->GetProperties().Has(Props::sIsEventStaticTag))
+		{
+			pressedEvent->InvokeUncheckedUnpacked(world, selectedEntity);
+		}
+		else
+		{
+			MetaAny component{ *metaType, storage.value(selectedEntity), false };
+			pressedEvent->InvokeUncheckedUnpacked(component, world, selectedEntity);
+		}
+	}
+
 }
 
 entt::entity Engine::UISystem::CheckNavigation(World& world, 
