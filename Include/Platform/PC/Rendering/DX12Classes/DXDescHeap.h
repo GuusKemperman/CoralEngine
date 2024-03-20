@@ -15,23 +15,9 @@ public:
 		return variable;
 	}
 
-	DXDescHeap(DXDescHeap&& other) {
-		mDescriptorHeap = std::move(other.mDescriptorHeap);
-		mDescriptorSize = other.mDescriptorSize; other.mDescriptorSize = 0;
-		mType = other.mType; other.mType = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES;
-		mMaxResources = other.mMaxResources; other.mMaxResources = 0;
-		mResourceCount = other.mResourceCount; other.mResourceCount = 0;
-		mClearList = std::move(other.mClearList);
-	}
+	DXDescHeap(DXDescHeap&& other) = default;
 
-	DXDescHeap& operator=(DXDescHeap&& other) noexcept {
-		mDescriptorHeap = std::move(other.mDescriptorHeap);
-		mDescriptorSize = other.mDescriptorSize; other.mDescriptorSize = 0;
-		mType = other.mType; other.mType = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES;
-		mMaxResources = other.mMaxResources; other.mMaxResources = 0;
-		mResourceCount = other.mResourceCount; other.mResourceCount = 0;
-		mClearList = std::move(other.mClearList);
-	}
+	DXDescHeap& operator=(DXDescHeap&&) noexcept = default
 
 
 	//DONOT USE THIS, USE DXHeapHandle::Construct!!!!!!
