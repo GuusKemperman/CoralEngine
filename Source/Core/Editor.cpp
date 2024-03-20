@@ -159,9 +159,6 @@ Engine::Editor::~Editor()
 
 void Engine::Editor::Tick(const float deltaTime)
 {
-	Device& device = Device::Get();
-	device.NewFrame();
-
 	DestroyRequestedSystems();
 	DisplayMainMenuBar();
 
@@ -173,6 +170,7 @@ void Engine::Editor::Tick(const float deltaTime)
 	{
 		mSystems[i].second->Tick(deltaTime);
 	}
+
 	DestroyRequestedSystems();
 
 	if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)
@@ -181,10 +179,6 @@ void Engine::Editor::Tick(const float deltaTime)
 	{
 		SaveAll();
 	}
-
-	device.EndFrame();
-
-	FullFillRefreshRequests();
 }
 
 void Engine::Editor::FullFillRefreshRequests()

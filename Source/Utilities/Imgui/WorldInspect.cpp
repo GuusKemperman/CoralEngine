@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Utilities/Imgui/WorldInspect.h"
 
+#include "Assets/Level.h"
 #include "imgui/ImGuizmo.h"
 #include "imgui/imgui_internal.h"
 
@@ -194,6 +195,11 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 		GetWorld().Tick(deltaTime);
 		WorldViewport::Display(GetWorld(), *mViewportFrameBuffer, &mSelectedEntities);
+
+		if (const std::shared_ptr<const Level> nextLevel = GetWorld().GetNextLevel(); nextLevel != nullptr)
+		{
+			GetWorld() = nextLevel->CreateWorld(true);
+		}
 
 		drawList->ChannelsMerge();
 	}

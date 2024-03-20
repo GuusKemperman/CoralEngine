@@ -121,29 +121,56 @@ void Engine::EngineClass::Run()
 	Input& input = Input::Get();
 	Device& device = Device::Get();
 
-	float timeElapsedSinceLastGarbageCollect{};
-	static constexpr float garbageCollectInterval = 5.0f;
+#ifdef EDITOR
+	Editor& editor = Editor::Get();
+#endif // EDITOR
 
-	[[maybe_unused]] float deltaTime;
+	float timeElapsedSinceLastGarbageCollect{};
+	static constexpr float garbageCollectInterval = 30.0f;
+
 	std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	std::chrono::high_resolution_clock::time_point t2{};
 
 	while (!device.ShouldClose())
 	{
 		t2 = std::chrono::high_resolution_clock::now();
-		deltaTime = (std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1)).count();
+		float deltaTime = (std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1)).count();
+
+		// Check if we hit a breakpoint or something else
+		// that interrupted the program for an extended duration
+		if (deltaTime > 5.0f)
+		{
+			deltaTime = 1.0f / 60.0f;
+		}
+
 		t1 = t2;
 
 		input.NewFrame();
+		device.NewFrame();
 
 #ifdef EDITOR
-		Editor::Get().Tick(deltaTime);
+		editor.Tick(deltaTime);
 #else
-		device.NewFrame();
 		world.Tick(deltaTime);
 		world.GetRenderer().Render();
-		device.EndFrame();
+
+		if (const std::shared_ptr<const Level> nextLevel = world.GetNextLevel(); nextLevel != nullptr)
+		{
+			world = nextLevel->CreateWorld(true);
+		}
 #endif  // EDITOR
+
+		device.EndFrame();
+
+#ifdef EDITOR
+		// TODO
+		// Has to be done after EndFrame for some dx12 reasons,
+		// as you are not allowed to free resources in between NewFrame and EndFrame.
+		// In the future this will be fixed by having some queue of destroy requests
+		// that the device will free after EndFrame, and then we can move FullFillRefreshRequests
+		// back to Editor::Tick.
+		editor.FullFillRefreshRequests();
+#endif
 
 		timeElapsedSinceLastGarbageCollect += deltaTime;
 

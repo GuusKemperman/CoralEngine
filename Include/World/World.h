@@ -4,6 +4,7 @@
 
 namespace Engine
 {
+	class Level;
 	class Registry;
 	class WorldRenderer;
 	class DebugRenderer;
@@ -58,6 +59,19 @@ namespace Engine
 
 		static World* TryGetWorldAtTopOfStack();
 
+		/**
+		 * \brief Will request a transition to a different level.
+		 *
+		 * The owner of the world is responsible for performing this transition at a stage where it is safe to do so.
+		 * In most cases, transitioning to a different level involves the destruction of the current world, and the
+		 * creation of a new one. All systems will be restarted.
+		 *
+		 * \param level The level to transition to.
+		 */
+		void RequestTransitionToLevel(const std::shared_ptr<const Level>& level);
+
+		const std::shared_ptr<const Level>& GetNextLevel() const { return mLevelToTransitionTo; }
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
@@ -65,6 +79,8 @@ namespace Engine
 
 		std::unique_ptr<Registry> mRegistry{};
 		std::unique_ptr<WorldRenderer> mRenderer{};
+
+		std::shared_ptr<const Level> mLevelToTransitionTo{};
 
 		ScalableTimer mTime{};
 

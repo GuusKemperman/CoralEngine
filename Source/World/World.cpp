@@ -10,6 +10,7 @@
 #include "World/WorldRenderer.h"
 #include "Utilities/DebugRenderer.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
+#include "Assets/Level.h"
 
 Engine::World::World(const bool beginPlayImmediately)
 {
@@ -163,6 +164,14 @@ Engine::World* Engine::World::TryGetWorldAtTopOfStack()
 	return &sWorldStack.top().get();
 }
 
+void Engine::World::RequestTransitionToLevel(const std::shared_ptr<const Level>& level)
+{
+	if (GetNextLevel() == nullptr)
+	{
+		mLevelToTransitionTo = level;
+	}
+}
+
 namespace
 {
 	std::vector<entt::entity> FindAllEntitiesWithComponents(const Engine::World& world, const std::vector<Engine::ComponentFilter>& components, bool returnAfterFirstFound)
@@ -297,7 +306,18 @@ Engine::MetaType Engine::World::Reflect()
 			return world->HasBegunPlay();
 		}, "HasBegunPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	// We hide the distinction between the registry and the world from the designers
+	type.AddFunc([](const std::shared_ptr<const Level>& level)
+		{
+			World* world = TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+			world->RequestTransitionToLevel(level);
+		},
+		// We have a different name for the function in scripting context,
+		// because in every scripting context we fullfill the transition request.
+		// So instead of RequestTransitionToLevel
+		"TransitionToLevel", 
+		MetaFunc::ExplicitParams<const std::shared_ptr<const Level>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
 	type.AddFunc([]
 		{
 			const World* world = TryGetWorldAtTopOfStack();
