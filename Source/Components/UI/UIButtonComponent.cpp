@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Components/UIButtonComponent.h"
+#include "Components/UI/UIButtonComponent.h"
 
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Registry.h"
