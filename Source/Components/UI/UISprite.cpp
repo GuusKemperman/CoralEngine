@@ -6,7 +6,7 @@
 
 Engine::MetaType Engine::UISprite::Reflect()
 {
-	MetaType type = MetaType{ MetaType::T<UISprite>{}, "UISprite" };
+	MetaType type = MetaType{ MetaType::T<UISprite>{}, "UISpriteComponent" };
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
 	type.AddField(&UISprite::mColor, "mColor").GetProperties().Add(Props::sIsScriptableTag);
