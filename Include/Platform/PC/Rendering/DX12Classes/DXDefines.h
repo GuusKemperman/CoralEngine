@@ -30,6 +30,7 @@ using namespace Microsoft::WRL;
 #define FRAME_BUFFER_COUNT 2
 #define MAX_LIGHTS 20
 #define MAX_MESHES 65000
+#define MAX_SKINNED_MESHES 1024
 
 //DESCRIPTOR HEAPS
 #define RT_HEAP						0
@@ -50,11 +51,12 @@ using namespace Microsoft::WRL;
 #define TEX_START 4
 
 //CONSTANT BUFFERS
-#define CAM_MATRIX_CB			0
-#define MODEL_INDEX_CB			1
-#define LIGHT_CB				2
-#define MODEL_MATRIX_CB			3
-#define NUM_CBS MODEL_MATRIX_CB+1
+#define CAM_MATRIX_CB					0
+#define MODEL_INDEX_CB					1
+#define LIGHT_CB						2
+#define MODEL_MATRIX_CB					3
+#define FINAL_BONE_MATRIX_CB			4
+#define NUM_CBS FINAL_BONE_MATRIX_CB+	1
 
 //RESOURCE HEAP SLOTS
 #define  MODEL_MAT_SB_SLOT			0

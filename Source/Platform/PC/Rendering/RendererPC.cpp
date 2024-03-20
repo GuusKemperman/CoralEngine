@@ -10,6 +10,7 @@
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkinnedMeshComponent.h"
 #include "Components/TransformComponent.h"
 #include "World/Registry.h"
 #include "World/World.h"
@@ -23,6 +24,7 @@
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
 #include "Assets/StaticMesh.h"
+#include "Assets/SkinnedMesh.h"
 #include "Utilities/DebugRenderer.h"
 
 Engine::Renderer::Renderer()
@@ -55,6 +57,23 @@ Engine::Renderer::Renderer()
     mPBRPipeline->SetDepthState(depth);
     mPBRPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
     mPBRPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
+
+    //CREATE PBR SKINNED PIPELINE
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRVertexSkinned.hlsl");
+    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
+    p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
+    mPBRSkinnedPipeline = std::make_unique<DXPipeline>();
+    mPBRSkinnedPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
+    mPBRSkinnedPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1);
+    mPBRSkinnedPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
+    mPBRSkinnedPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
+    mPBRSkinnedPipeline->AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 4);
+    mPBRSkinnedPipeline->AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 5);
+    mPBRSkinnedPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
+    mPBRSkinnedPipeline->SetDepthState(depth);
+    mPBRSkinnedPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
+    mPBRSkinnedPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR SKINNED RENDER PIPELINE");
     
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
     v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
@@ -64,12 +83,22 @@ Engine::Renderer::Renderer()
     mZPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
     mZPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
 
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZSkinnedVertex.hlsl");
+    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    mZSkinnedPipeline = std::make_unique<DXPipeline>();
+    mZSkinnedPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
+    mZSkinnedPipeline->AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1);
+    mZSkinnedPipeline->AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2);
+    mZSkinnedPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
+    mZSkinnedPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
+    mZSkinnedPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
+
     //CREATE CONSTANT BUFFERS
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_INDEX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(int), MAX_MESHES + 2, "Model index", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
-
+    mConstBuffers[FINAL_BONE_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * MAX_BONES, MAX_SKINNED_MESHES, "Skinned Mesh Bone Matrices", FRAME_BUFFER_COUNT);
     //CREATE STRUCTURED BUFFERS
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
     auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
@@ -107,8 +136,25 @@ void Engine::Renderer::Render(const World& world)
             if (staticMeshComponent.mMaterial != nullptr
                 && staticMeshComponent.mStaticMesh != nullptr)
             {
-                SendMaterialToGPUIfReady(*staticMeshComponent.mMaterial);
+                SendMaterialToGPUIfReady(*staticMeshComponent.mMaterial);            
             }
+        }
+    }
+
+    {
+        const auto view = world.GetRegistry().View<const SkinnedMeshComponent>();
+
+        for (auto [entity, skinnedMeshComponent] : view.each())
+        {
+            // It won't be rendered anyway,
+            // so let's not bother finalising
+            // the loading process.
+            if (skinnedMeshComponent.mMaterial != nullptr
+                && skinnedMeshComponent.mSkinnedMesh != nullptr)
+            {
+            SendMaterialToGPUIfReady(*skinnedMeshComponent.mMaterial);
+            }
+
         }
     }
 
@@ -176,12 +222,13 @@ void Engine::Renderer::Render(const World& world)
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-    const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
     int meshCounter = 0;
     commandList->SetPipelineState(mZPipeline->GetPipeline().Get());
 
-    //DEPTH PRE PASS
-    for (auto [entity, staticMeshComponent, transform] : view.each()) {
+    {
+        const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
+        //DEPTH PRE PASS
+        for (auto [entity, staticMeshComponent, transform] : view.each()) {
         glm::mat4x4 modelMatrices[2]{};
         modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
         modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
@@ -193,11 +240,39 @@ void Engine::Renderer::Render(const World& world)
 
         staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
         meshCounter++;
+        }
+    }
+
+    commandList->SetPipelineState(mZSkinnedPipeline->GetPipeline().Get());
+
+    {
+        const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
+
+        for (auto [entity, skinnedMeshComponent, transform] : view.each()) 
+        {
+            glm::mat4x4 modelMatrices[2]{};
+            modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
+            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
+            mConstBuffers[MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+            mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
+
+            const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
+            mConstBuffers[FINAL_BONE_MATRIX_CB]->Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
+            mConstBuffers[FINAL_BONE_MATRIX_CB]->Bind(commandList, 5, meshCounter, frameIndex);
+
+            if (!skinnedMeshComponent.mSkinnedMesh)
+                continue;
+
+            skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
+            meshCounter++;
+        }
     }
 
     commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
 
     meshCounter = 0;
+    {
+    const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
     //RENDERING
     for (auto [entity, staticMeshComponent, transform] : view.each())
     {
@@ -268,11 +343,99 @@ void Engine::Renderer::Render(const World& world)
         mConstBuffers[MODEL_INDEX_CB]->Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
         mConstBuffers[MODEL_INDEX_CB]->Bind(commandList, 3, meshCounter, frameIndex);
 
-        engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 15, materialHeapSlot);
+        engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, materialHeapSlot);
 
         //DRAW THE MESH
-        staticMeshComponent.mStaticMesh->DrawMesh();
-        meshCounter++;
+            staticMeshComponent.mStaticMesh->DrawMesh();
+            meshCounter++;
+    }
+    }
+    
+    //RENDER SKINNED MESHES
+
+    commandList->SetPipelineState(mPBRSkinnedPipeline->GetPipeline().Get());
+
+    {
+        const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
+        
+        for (auto [entity, skinnedMeshComponent, transform] : view.each())
+        {
+            if (!skinnedMeshComponent.mSkinnedMesh)
+            {
+                continue;
+            }
+
+            //UPDATE AND BIND MATERIAL INFO
+            InfoStruct::DXMaterialInfo materialInfo;
+            if (skinnedMeshComponent.mMaterial != nullptr) {
+                materialInfo.colorFactor = { skinnedMeshComponent.mMaterial->mBaseColorFactor.r,
+                    skinnedMeshComponent.mMaterial->mBaseColorFactor.g,
+                    skinnedMeshComponent.mMaterial->mBaseColorFactor.b,
+                    0.f };
+                materialInfo.emissiveFactor = { skinnedMeshComponent.mMaterial->mEmissiveFactor.r,
+                    skinnedMeshComponent.mMaterial->mEmissiveFactor.g,
+                    skinnedMeshComponent.mMaterial->mEmissiveFactor.b,
+                    0.f };
+                materialInfo.metallicFactor = skinnedMeshComponent.mMaterial->mMetallicFactor;
+                materialInfo.roughnessFactor = skinnedMeshComponent.mMaterial->mRoughnessFactor;
+                materialInfo.normalScale = skinnedMeshComponent.mMaterial->mNormalScale;
+            materialInfo.useColorTex = skinnedMeshComponent.mMaterial->mBaseColorTexture != nullptr && skinnedMeshComponent.mMaterial->mBaseColorTexture->WasSendToGPU();
+            materialInfo.useEmissiveTex = skinnedMeshComponent.mMaterial->mEmissiveTexture != nullptr && skinnedMeshComponent.mMaterial->mEmissiveTexture->WasSendToGPU();
+            materialInfo.useMetallicRoughnessTex = skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr && skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSendToGPU();
+            materialInfo.useNormalTex = skinnedMeshComponent.mMaterial->mNormalTexture != nullptr && skinnedMeshComponent.mMaterial->mNormalTexture->WasSendToGPU();
+            materialInfo.useOcclusionTex = skinnedMeshComponent.mMaterial->mOcclusionTexture != nullptr && skinnedMeshComponent.mMaterial->mOcclusionTexture->WasSendToGPU();
+
+            
+                //BIND TEXTURES
+                if (materialInfo.useColorTex)
+                {
+                    resourceHeap->BindToGraphics(commandList, 6, skinnedMeshComponent.mMaterial->mBaseColorTexture->GetIndex());
+                }
+                if (materialInfo.useEmissiveTex)
+                {
+                    resourceHeap->BindToGraphics(commandList, 7, skinnedMeshComponent.mMaterial->mEmissiveTexture->GetIndex());
+                }
+                if (materialInfo.useMetallicRoughnessTex)
+                {
+                    resourceHeap->BindToGraphics(commandList, 8, skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->GetIndex());
+                }
+                if (materialInfo.useNormalTex)
+                {
+                    resourceHeap->BindToGraphics(commandList, 9, skinnedMeshComponent.mMaterial->mNormalTexture->GetIndex());
+                }
+                if (materialInfo.useOcclusionTex)
+                {
+                    resourceHeap->BindToGraphics(commandList, 10, skinnedMeshComponent.mMaterial->mOcclusionTexture->GetIndex());
+                }
+            }
+            else {
+                materialInfo.colorFactor = {0.f, 0.f, 0.f, 0.f };
+                materialInfo.emissiveFactor = {0.f, 0.f, 0.f, 0.f };
+                materialInfo.metallicFactor = 0.f;
+                materialInfo.roughnessFactor = 0.f;
+                materialInfo.normalScale = 0.f;
+                materialInfo.useColorTex = false;
+                materialInfo.useEmissiveTex = false;
+                materialInfo.useMetallicRoughnessTex = false;
+                materialInfo.useNormalTex = false;
+                materialInfo.useOcclusionTex = false;
+            }
+            materials[meshCounter] = materialInfo;
+
+            mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
+
+            mConstBuffers[FINAL_BONE_MATRIX_CB]->Bind(commandList, 5, meshCounter, frameIndex);
+
+            //UPDATE AND BIND MATERIAL INFO
+            mConstBuffers[MODEL_INDEX_CB]->Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
+            mConstBuffers[MODEL_INDEX_CB]->Bind(commandList, 3, meshCounter, frameIndex);
+
+            engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, materialHeapSlot);
+
+            skinnedMeshComponent.mSkinnedMesh->DrawMesh();
+
+            meshCounter++;
+        }
     }
 
     D3D12_SUBRESOURCE_DATA data;
@@ -301,20 +464,22 @@ void SendMaterialToGPUIfReady(const Engine::Material& mat)
     {
         mat.mEmissiveTexture->SendToGPU();
     }
+
     if (mat.mMetallicRoughnessTexture != nullptr
         && mat.mMetallicRoughnessTexture->IsReadyToSendToGPU())
     {
         mat.mMetallicRoughnessTexture->SendToGPU();
     }
+
     if (mat.mNormalTexture != nullptr
         && mat.mNormalTexture->IsReadyToSendToGPU())
     {
         mat.mNormalTexture->SendToGPU();
     }
+
     if (mat.mOcclusionTexture != nullptr
         && mat.mOcclusionTexture->IsReadyToSendToGPU())
     {
         mat.mOcclusionTexture->SendToGPU();
     }
 }
-
