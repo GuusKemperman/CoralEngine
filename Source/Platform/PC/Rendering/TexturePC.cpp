@@ -31,7 +31,7 @@ Engine::Texture::~Texture() = default;
 
 bool Engine::Texture::IsReadyToSendToGPU() const
 {
-	return mHeapSlot == sAwaitingSendToGPU
+	return mHeapSlot.ReadyToBeSentToGpu()
 		&& mLoadedPixels != nullptr
 		&& mLoadedPixels->mPixels != nullptr;
 }
@@ -54,7 +54,7 @@ void Engine::Texture::SendToGPU() const
 	{
 		LOG(LogAssets, Error, "Invalid texture {}, or device was running headless mode", GetName());
 		self.mLoadedPixels.reset();
-		self.mHeapSlot = sFailedToSendToGPU;
+		self.mHeapSlot.SetFailedToSend();
 		return;
 	}
 
@@ -100,20 +100,21 @@ void Engine::Texture::SendToGPU() const
 	srvDesc.Texture2D.MipLevels = 1;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	self.mHeapSlot = engineDevice.AllocateTexture(mTextureBuffer.get(), srvDesc);
+	self.mHeapSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mTextureBuffer.get(), &srvDesc);
 	engineDevice.SubmitUploadCommands();
 
 	self.mLoadedPixels.reset();
 }
 
-int Engine::Texture::GetIndex() const
+void Engine::Texture::BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
 {
-	if (!WasSendToGPU())
-	{
-		LOG(LogCore, Error, "Attempted to GetIndex of texture that was not yet send to GPU. Check using WasSendToGPU first.");
-	}
+	commandList->SetGraphicsRootDescriptorTable(rootSlot, mHeapSlot.GetAddressGPU());
 
-	return mHeapSlot;
+}
+
+void Engine::Texture::BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
+{
+	commandList->SetComputeRootDescriptorTable(rootSlot, mHeapSlot.GetAddressGPU());
 }
 
 int Engine::Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)

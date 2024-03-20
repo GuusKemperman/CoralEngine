@@ -2,6 +2,7 @@
 #include <thread>
 
 #include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
+#include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
 #include "Assets/Asset.h"
 #include "Meta/MetaReflect.h"
 
@@ -27,19 +28,17 @@ namespace Engine
 
 			bool IsReadyToSendToGPU() const;
 			void SendToGPU() const;
-			bool WasSendToGPU() const { return mHeapSlot >= 0; }
+			bool WasSendToGPU() const { return mHeapSlot.WasSentToGpu(); }
 
-			int GetIndex() const;
+			void BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
+			void BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
 
 		private:
 			int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 
 			std::shared_ptr<DXResource> mTextureBuffer{};
 
-			static constexpr int sAwaitingSendToGPU = -2;
-			static constexpr int sFailedToSendToGPU = -1;
-
-			int mHeapSlot = sAwaitingSendToGPU;
+			DXHeapHandle mHeapSlot;
 
 			struct STBIPixels
 			{
