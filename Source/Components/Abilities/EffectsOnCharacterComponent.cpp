@@ -5,6 +5,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
+#include "Utilities/Math.h"
 
 Engine::MetaType Engine::EffectsOnCharacterComponent::Reflect()
 {
