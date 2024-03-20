@@ -26,9 +26,9 @@ namespace Engine
 			Texture& operator=(Texture&&) = delete;
 			Texture& operator=(const Texture&) = delete;
 
-			bool IsReadyToSendToGPU() const;
-			void SendToGPU() const;
-			bool WasSendToGPU() const { return mHeapSlot.WasSentToGpu(); }
+			bool IsReadyToBeSentToGpu() const;
+			bool WasSentToGpu() const { return mHeapSlot.has_value(); }
+			void SentToGPU() const;
 
 			void BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
 			void BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
@@ -38,7 +38,8 @@ namespace Engine
 
 			std::shared_ptr<DXResource> mTextureBuffer{};
 
-			DXHeapHandle mHeapSlot;
+
+			std::optional<DXHeapHandle> mHeapSlot;
 
 			struct STBIPixels
 			{

@@ -41,11 +41,7 @@ public:
         FreeResource();
     }
 
-    bool ReadyToBeSentToGpu() const { return mIndex == sAwaitingSendToGPU; }
-    bool WasSentToGpu() const { return mIndex >= 0; }
-    void SetFailedToSend() { mIndex = sFailedToSendToGPU; }
-
-    // Delete the copy constructor
+	// Delete the copy constructor
     DXHeapHandle(const DXHeapHandle&) = delete;
     DXHeapHandle& operator=(const DXHeapHandle&) = delete;
 
@@ -53,8 +49,9 @@ private:
     DXHeapHandle(uint32_t index, std::weak_ptr<DXDescHeap> descHeap)
         : mIndex(index), mDescHeap(descHeap) {};
 
-    void FreeResource() {
-        if (mIndex == sAwaitingSendToGPU || mIndex == sFailedToSendToGPU)
+    void FreeResource()
+	{
+        if (mIndex == -1)
             return;
 
 
@@ -63,10 +60,7 @@ private:
         }
     };
 
-    static constexpr int sAwaitingSendToGPU = -2;
-    static constexpr int sFailedToSendToGPU = -1;
-
-    int mIndex = sAwaitingSendToGPU;
+    int mIndex = -1;
     std::weak_ptr<DXDescHeap> mDescHeap;
 };
 

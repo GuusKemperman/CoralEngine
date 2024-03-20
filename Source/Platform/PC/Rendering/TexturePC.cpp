@@ -29,16 +29,16 @@ Engine::Texture::Texture(Texture&& other) noexcept = default;
 
 Engine::Texture::~Texture() = default;
 
-bool Engine::Texture::IsReadyToSendToGPU() const
+bool Engine::Texture::IsReadyToBeSentToGpu() const
 {
-	return mHeapSlot.ReadyToBeSentToGpu()
+	return !mHeapSlot.has_value()
 		&& mLoadedPixels != nullptr
 		&& mLoadedPixels->mPixels != nullptr;
 }
 
-void Engine::Texture::SendToGPU() const
+void Engine::Texture::SentToGPU() const
 {
-	if (!IsReadyToSendToGPU())
+	if (!IsReadyToBeSentToGpu())
 	{
 		LOG(LogAssets, Error, "{} is not ready to be send to GPU", GetName());
 		return;
@@ -54,7 +54,6 @@ void Engine::Texture::SendToGPU() const
 	{
 		LOG(LogAssets, Error, "Invalid texture {}, or device was running headless mode", GetName());
 		self.mLoadedPixels.reset();
-		self.mHeapSlot.SetFailedToSend();
 		return;
 	}
 
@@ -108,34 +107,53 @@ void Engine::Texture::SendToGPU() const
 
 void Engine::Texture::BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
 {
-	commandList->SetGraphicsRootDescriptorTable(rootSlot, mHeapSlot.GetAddressGPU());
+	if (!mHeapSlot.has_value())
+	{
+		LOG(LogAssets, Error, "{} has not been send to GPU", GetName());
+		return;
+	}
 
+	commandList->SetGraphicsRootDescriptorTable(rootSlot, mHeapSlot->GetAddressGPU());
 }
 
 void Engine::Texture::BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
 {
-	commandList->SetComputeRootDescriptorTable(rootSlot, mHeapSlot.GetAddressGPU());
+	if (!mHeapSlot.has_value())
+	{
+		LOG(LogAssets, Error, "{} has not been send to GPU", GetName());
+		return;
+	}
+
+	commandList->SetComputeRootDescriptorTable(rootSlot, mHeapSlot->GetAddressGPU());
 }
 
 int Engine::Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 {
-	if (dxgiFormat == DXGI_FORMAT_R32G32B32A32_FLOAT) return 128;
-	else if (dxgiFormat == DXGI_FORMAT_R16G16B16A16_FLOAT) return 64;
-	else if (dxgiFormat == DXGI_FORMAT_R16G16B16A16_UNORM) return 64;
-	else if (dxgiFormat == DXGI_FORMAT_R8G8B8A8_UNORM) return 32;
-	else if (dxgiFormat == DXGI_FORMAT_B8G8R8A8_UNORM) return 32;
-	else if (dxgiFormat == DXGI_FORMAT_B8G8R8X8_UNORM) return 32;
-	else if (dxgiFormat == DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM) return 32;
-
-	else if (dxgiFormat == DXGI_FORMAT_R10G10B10A2_UNORM) return 32;
-	else if (dxgiFormat == DXGI_FORMAT_B5G5R5A1_UNORM) return 16;
-	else if (dxgiFormat == DXGI_FORMAT_B5G6R5_UNORM) return 16;
-	else if (dxgiFormat == DXGI_FORMAT_R32_FLOAT) return 32;
-	else if (dxgiFormat == DXGI_FORMAT_R16_FLOAT) return 16;
-	else if (dxgiFormat == DXGI_FORMAT_R16_UNORM) return 16;
-	else if (dxgiFormat == DXGI_FORMAT_R8_UNORM) return 8;
-	else if (dxgiFormat == DXGI_FORMAT_A8_UNORM) return 8;
-	else return 0;
+	switch (dxgiFormat)
+	{
+	case DXGI_FORMAT_R32G32B32A32_FLOAT:
+		return 128;
+	case DXGI_FORMAT_R16G16B16A16_FLOAT:
+	case DXGI_FORMAT_R16G16B16A16_UNORM:
+		return 64;
+	case DXGI_FORMAT_R8G8B8A8_UNORM:
+	case DXGI_FORMAT_B8G8R8A8_UNORM:
+	case DXGI_FORMAT_B8G8R8X8_UNORM:
+	case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM:
+	case DXGI_FORMAT_R10G10B10A2_UNORM:
+	case DXGI_FORMAT_R32_FLOAT:
+		return 32;
+	case DXGI_FORMAT_B5G5R5A1_UNORM:
+	case DXGI_FORMAT_B5G6R5_UNORM:
+	case DXGI_FORMAT_R16_FLOAT:
+	case DXGI_FORMAT_R16_UNORM:
+		return 16;
+	case DXGI_FORMAT_R8_UNORM:
+	case DXGI_FORMAT_A8_UNORM:
+		return 8;
+	default:
+		return 0;
+	}
 }
 
 Engine::Texture::STBIPixels::~STBIPixels()
