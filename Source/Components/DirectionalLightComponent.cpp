@@ -45,7 +45,9 @@ Engine::MetaType Engine::DirectionalLightComponent::Reflect()
 	metaType.AddField(&DirectionalLightComponent::mColor, "mColor").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&DirectionalLightComponent::mIntensity, "mIntensity").GetProperties().Add(Props::sIsScriptableTag);
 
+#ifdef EDITOR
 	BindEvent(metaType, sDrawGizmoEvent, &DirectionalLightComponent::OnDrawGizmos);
+#endif // EDITOR
 
 	ReflectComponentType<DirectionalLightComponent>(metaType);
 

@@ -36,35 +36,7 @@ void Engine::ScriptEvent::Define(MetaFunc& metaFunc, const ScriptFunc& scriptFun
 	return metaFunc.RedirectFunction(GetScriptInvoker(scriptFunc, script));
 }
 
-Engine::ScriptOnConstructEvent::ScriptOnConstructEvent() :
-	ScriptEvent(sConstructEvent, {}, std::nullopt)
-{
-}
-
-Engine::MetaFunc::InvokeT  Engine::ScriptOnConstructEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
-{
-	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
-	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
-		{
-			World& world = *args[1].As<World>();
-			World::PushWorld(world);
-
-			// The component already has the world
-			// and it's owner
-			Span<MetaAny, 1> scriptArgs{ &args[0], 1 };
-			FuncResult result = VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
-
-			World::PopWorld();
-			return result;
-		};
-}
-
-Engine::ScriptOnBeginPlayEvent::ScriptOnBeginPlayEvent() :
-	ScriptEvent(sBeginPlayEvent, {}, std::nullopt)
-{}
-
-Engine::MetaFunc::InvokeT  Engine::ScriptOnBeginPlayEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+Engine::MetaFunc::InvokeT Engine::ScriptOnlyPassComponentEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
 	const std::shared_ptr<const Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
@@ -116,29 +88,6 @@ Engine::MetaFunc::InvokeT  Engine::ScriptFixedTickEvent::GetScriptInvoker(const 
 		};
 }
 
-Engine::ScriptDestructEvent::ScriptDestructEvent() :
-	ScriptEvent(sDestructEvent, {}, std::nullopt)
-{
-}
-
-Engine::MetaFunc::InvokeT Engine::ScriptDestructEvent::GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const
-{
-	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
-		(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
-		{
-			World& world = *args[1].As<World>();
-			World::PushWorld(world);
-
-			// The component already has the world
-			// and it's owner
-			Span<MetaAny, 1> scriptArgs{ &args[0], 1 };
-			FuncResult result = VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
-
-			World::PopWorld();
-			return result;
-		};
-}
-
 Engine::ScriptAITickEvent::ScriptAITickEvent() :
 	ScriptEvent(sAITickEvent, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt)
 {
@@ -162,19 +111,6 @@ Engine::ScriptAIEvaluateEvent::ScriptAIEvaluateEvent() :
 }
 
 Engine::MetaFunc::InvokeT  Engine::ScriptAIEvaluateEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
-{
-	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
-	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
-		{
-			// The component already has the world
-			// and it's owner
-			Span<MetaAny, 1> scriptArgs{ &args[0], 1 };
-			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
-		};
-}
-
-Engine::MetaFunc::InvokeT Engine::ScriptAITransitionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
 	const std::shared_ptr<const Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
