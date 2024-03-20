@@ -26,7 +26,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
         projectile.mCurrentRange += glm::length(physicsBody.mLinearVelocity) * dt;
 	    if (projectile.mCurrentRange >= projectile.mRange)
 	    {
-            reg.Destroy(entity);
+            reg.Destroy(entity, true);
 	    }
     }
 
@@ -36,7 +36,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
         aoe.mCurrentDuration += dt;
         if (aoe.mCurrentDuration >= aoe.mDuration)
         {
-            reg.Destroy(entity);
+            reg.Destroy(entity, true);
         }
     }
 

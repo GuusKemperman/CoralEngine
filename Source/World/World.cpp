@@ -3,7 +3,7 @@
 
 #include <stack>
 
-#include "Components/ComponentFiler.h"
+#include "Components/ComponentFilter.h"
 #include "Components/NameComponent.h"
 #include "Meta/MetaProps.h"
 #include "World/Registry.h"
@@ -348,12 +348,12 @@ Engine::MetaType Engine::World::Reflect()
 			return world->GetRegistry().CreateFromPrefab(*prefab);
 		}, "Spawn prefab", MetaFunc::ExplicitParams<const std::shared_ptr<const Prefab>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const entt::entity& entity)
+	type.AddFunc([](const entt::entity& entity, bool destroyChildren)
 		{
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			world->GetRegistry().DestroyAlongWithChildren(entity);
-		}, "Destroy entity", MetaFunc::ExplicitParams<const entt::entity&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			world->GetRegistry().Destroy(entity, destroyChildren);
+		}, "Destroy entity", MetaFunc::ExplicitParams<const entt::entity&, bool>{}, "Entity", "DestroyChildren").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const std::string& name) -> entt::entity
 		{

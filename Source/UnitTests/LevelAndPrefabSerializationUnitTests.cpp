@@ -340,7 +340,7 @@ UNIT_TEST(Serialization, PrefabRemoveChild)
 					TEST_ASSERT(reg.Valid(childTransform.GetOwner()));
 					TEST_ASSERT(reg.Storage<entt::entity>().in_use() == 2);
 
-					reg.Destroy(childTransform.GetOwner());
+					reg.Destroy(childTransform.GetOwner(), false);
 					reg.RemovedDestroyed();
 
 					TEST_ASSERT(reg.Storage<entt::entity>().in_use() == 1);

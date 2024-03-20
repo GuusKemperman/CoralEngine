@@ -64,56 +64,54 @@ namespace Engine
 		CollisionRules mRules{};
 	};
 
-	static constexpr CollisionPreset sDefaultCollisionPreset
+	namespace CollisionPresets
 	{
+		static constexpr CollisionPreset sWorldDynamic
+		{
 			"WorldDynamic",
 			{
 				CollisionLayer::WorldDynamic,
 				{
-					CollisionResponse::Blocking, // WorldStatic
-					CollisionResponse::Blocking, // WorldDynamic
-					CollisionResponse::Blocking, // Character
+					CollisionResponse::Blocking,	// WorldStatic
+					CollisionResponse::Blocking,	// WorldDynamic
+					CollisionResponse::Blocking,	// Character
 				}
 			}
-	};
+		};
 
-	static constexpr std::array<CollisionPreset, 4> sCollisionPresets
-	{
-		sDefaultCollisionPreset,
-		CollisionPreset
-		{
-			"Character",
-			{
-				CollisionLayer::Character,
-				{
-					CollisionResponse::Blocking, // WorldStatic
-					CollisionResponse::Blocking, // WorldDynamic
-					CollisionResponse::Blocking, // Character
-				}
-			}
-		},
-		{
-			"CharacterTrigger",
-			{
-				CollisionLayer::WorldStatic,
-				{
-					CollisionResponse::Ignore, // WorldStatic
-					CollisionResponse::Ignore, // WorldDynamic
-					CollisionResponse::Overlap, // Character
-				}
-			}
-		},
+		static constexpr CollisionPreset sWorldStatic
 		{
 			"WorldStatic",
 			{
 				CollisionLayer::WorldStatic,
 				{
-					CollisionResponse::Ignore, // WorldStatic
-					CollisionResponse::Blocking, // WorldDynamic
-					CollisionResponse::Blocking, // Character
+					CollisionResponse::Ignore,		// WorldStatic
+					CollisionResponse::Blocking,	// WorldDynamic
+					CollisionResponse::Blocking,	// Character
 				}
 			}
-		}
+		};
+
+		static constexpr CollisionPreset sCharacter
+		{
+			"Character",
+			{
+				CollisionLayer::Character,
+				{
+					CollisionResponse::Blocking,	// WorldStatic
+					CollisionResponse::Blocking,	// WorldDynamic
+					CollisionResponse::Blocking,	// Character
+				}
+			}
+		};
+	}
+
+	static constexpr std::array<CollisionPreset, 3> sCollisionPresets
+	{
+		CollisionPresets::sWorldDynamic,
+		CollisionPresets::sWorldStatic,
+		CollisionPresets::sCharacter,
+
 	};
 
 	class PhysicsBody2DComponent
@@ -126,7 +124,7 @@ namespace Engine
 			mInvMass = mass == 0.f ? 0.f : (1.f / mass);
 		}
 
-		CollisionRules mRules = sDefaultCollisionPreset.mRules;
+		CollisionRules mRules = CollisionPresets::sWorldDynamic.mRules;
 
 		float mInvMass = 1.f;
 		float mRestitution = 1.f;

@@ -61,7 +61,8 @@ void Engine::Device::InitializeWindow()
     }
 
     glfwMakeContextCurrent(mWindow);
-
+    glfwShowWindow(mWindow);
+    mIsWindowOpen = true;
 }
 
 void Engine::Device::InitializeDevice()
@@ -265,21 +266,22 @@ void Engine::Device::InitializeDevice()
     mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX);//2
     mSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL);//3
     mSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL);//4
+    mSignature->AddCBuffer(5, D3D12_SHADER_VISIBILITY_VERTEX);//5
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);//5
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);//6
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);//7
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//8
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//9
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);//6
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);//7
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);//8
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//9
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//10
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);//10
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);//11
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);//12
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4);//13
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);//11
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);//12
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);//13
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4);//14
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);//14
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//15
-    mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//16
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);//15
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//16
+    mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//17
     mSignature->CreateSignature(mDevice, L"MAIN ROOT SIGNATURE");
 
 
@@ -381,8 +383,10 @@ void Engine::Device::NewFrame() {
         mUpdateWindow = true;
     }
 
+#ifdef EDITOR
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
+#endif // EDITOR
 
     StartRecordingCommands();
 
@@ -395,10 +399,12 @@ void Engine::Device::NewFrame() {
         mUpdateWindow = false;
     }
 
+#ifdef EDITOR
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
+#endif // EDITOR
 
     mCommandList->RSSetViewports(1, &mViewport); 
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
@@ -421,6 +427,8 @@ void Engine::Device::EndFrame()
 
     auto* desc_ptr = mDescriptorHeaps[RESOURCE_HEAP]->Get();
     mCommandList->SetDescriptorHeaps(1, &desc_ptr);
+
+#ifdef EDITOR
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
 
@@ -434,6 +442,7 @@ void Engine::Device::EndFrame()
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
+#endif // EDITOR
 
     glfwSwapBuffers(mWindow);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_PRESENT);
@@ -445,7 +454,9 @@ void Engine::Device::EndFrame()
         LOG(LogCore, Fatal, "Failded to present");
     }
 
+#ifdef EDITOR
     ImGui::EndFrame();
+#endif // EDITOR
 
     WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
 
@@ -514,12 +525,10 @@ void Engine::Device::SubmitUploadCommands()
     }
 }
 
+#ifdef EDITOR
 void Engine::Device::CreateImguiContext()
 {
     LOG(LogCore, Verbose, "Creating imgui context");
-
-    glfwShowWindow(mWindow);
-    mIsWindowOpen = true;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -540,6 +549,7 @@ void Engine::Device::CreateImguiContext()
     std::filesystem::create_directories("Intermediate/Layout");
     ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
 }
+#endif // EDITOR
 
 int Engine::Device::AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
 {

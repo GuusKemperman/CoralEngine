@@ -33,7 +33,7 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	}
 
 	Input::StartUp();
-#ifdef PLATFORM_WINDOWS
+#ifdef EDITOR
 	if (!Device::IsHeadless())
 	{
 		Device::Get().CreateImguiContext();
