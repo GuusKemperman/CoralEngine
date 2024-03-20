@@ -33,8 +33,12 @@ namespace Engine
         void* GetUploadCommandList() { return mUploadCommandList.Get(); }
         void* GetCommandQueue() { return mCommandQueue.Get(); }
         void* GetSignature() { return mSignature.get(); }
+
+#ifdef EDITOR
         void CreateImguiContext();
-        void StartUploadCommands();
+#endif // EDITOR
+
+		void StartUploadCommands();
         void SubmitUploadCommands();
 
         glm::vec2 GetDisplaySize() { return glm::vec2(mViewport.Width, mViewport.Height); }

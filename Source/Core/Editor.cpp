@@ -21,6 +21,11 @@ namespace
 
 void Engine::Editor::PostConstruct()
 {
+	if (Device::IsHeadless())
+	{
+		return;
+	}
+
 	SetCustomTheme();
 
 	const MetaType* const editorSystemType = MetaManager::Get().TryGetType<EditorSystem>();
