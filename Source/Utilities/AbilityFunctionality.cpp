@@ -75,14 +75,14 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 	return metaType;
 }
 
-float Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease)
+std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease)
 {
 	auto& reg = world.GetRegistry();
 	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
 	if (characterComponent == nullptr)
 	{
 		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} is not a character.", entt::to_integral(affectedEntity));
-		return std::nanf(""); // return NAN (not a number) for early exit
+		return std::nullopt;
 	}
 	auto [base, current] = GetStat(stat, *characterComponent);
 
@@ -99,7 +99,7 @@ float Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entit
 			if (castByCharacterComponent == nullptr)
 			{
 				LOG(LogAbilitySystem, Error, "Apply Effect - CastByEntity {} is not a character.", entt::to_integral(castByEntity));
-				return std::nanf(""); // return NAN (not a number) for early exit
+				return std::nullopt;
 			}
 			const float damageModifier =
 				(castByCharacterComponent->mCurrentDealtDamageModifier + characterComponent->mCurrentReceivedDamageModifier)
@@ -121,8 +121,8 @@ float Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entit
 
 void Engine::AbilityFunctionality::ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, float duration)
 {
-	const float calculatedAmount = ApplyInstantEffect(world, castByEntity, affectedEntity, stat, amount, flatOrPercentage, increaseOrDecrease);
-	if (std::isnan(calculatedAmount))
+	const auto calculatedAmount = ApplyInstantEffect(world, castByEntity, affectedEntity, stat, amount, flatOrPercentage, increaseOrDecrease);
+	if (!calculatedAmount.has_value())
 	{
 		return;
 	}
@@ -133,7 +133,7 @@ void Engine::AbilityFunctionality::ApplyDurationalEffect(World& world, entt::ent
 		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
 		return;
 	}
-	effects->mDurationalEffects.push_back(DurationalEffect{ duration, 0.f, stat, calculatedAmount });
+	effects->mDurationalEffects.push_back(DurationalEffect{ duration, 0.f, stat, calculatedAmount.value() });
 }
 
 void Engine::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& characterComponent, DurationalEffect& durationalEffect)
