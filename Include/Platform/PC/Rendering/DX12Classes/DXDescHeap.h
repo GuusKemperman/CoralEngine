@@ -17,8 +17,7 @@ public:
 
 	DXDescHeap(DXDescHeap&& other) = default;
 
-	DXDescHeap& operator=(DXDescHeap&&) noexcept = default
-
+	DXDescHeap& operator=(DXDescHeap&&) noexcept = default;
 
 	//DONOT USE THIS, USE DXHeapHandle::Construct!!!!!!
 	DXDescHeap(const ComPtr<ID3D12Device5>& device, int numDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE type, LPCWSTR name, D3D12_DESCRIPTOR_HEAP_FLAGS flags);
