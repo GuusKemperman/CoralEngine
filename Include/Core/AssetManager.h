@@ -106,6 +106,21 @@ namespace Engine
 #endif
 
 		/*
+		Rename the asset
+
+		Will fail if there is already an asset with this name.
+
+		Returns true on success.
+		*/
+		void RenameAsset(WeakAsset<Asset> asset, std::string_view newName);
+
+		/*
+		Will delete the file the asset originated from.
+		The asset can then no longer be found through the asset manager.
+		*/
+		void DeleteAsset(WeakAsset<Asset>&& asset);
+
+		/*
 		Move the asset file.
 
 		Will fail if there is already an asset at the specified location, or if the
@@ -116,9 +131,16 @@ namespace Engine
 		bool MoveAsset(WeakAsset<Asset> asset, const std::filesystem::path& toFile);
 
 		/*
+		Duplicates the asset.
+
+		Returns the duplicated asset on success.
+		*/
+		std::optional<WeakAsset<Asset>> Duplicate(WeakAsset<Asset> asset, const std::filesystem::path& copyPath);
+
+		/*
 		Will load the asset from the specified path.
 		*/
-		std::optional<WeakAsset<Asset>> AddAsset(const std::filesystem::path& path);
+		std::optional<WeakAsset<Asset>> NewAsset(const MetaType& assetClass, const std::filesystem::path& path);
 
 		/*
 		Add an asset generated at runtime to the asset manager.
@@ -131,17 +153,6 @@ namespace Engine
 		*/
 		template<typename T>
 		std::shared_ptr<const T> AddAsset(T&& generatedAsset);
-
-		/*
-		Will delete the file the asset originated from.
-		The asset can then no longer be found through the asset manager.
-
-		WARNING: All WeakAssets referencing this asset, including the one passed
-		in as an argument, will be invalidated and become dangling.
-
-		Existing Shared pointers will not be invalided.
-		*/
-		void DeleteAsset(WeakAsset<Asset>&& asset);
 
 		static inline constexpr std::string_view sAssetExtension = ".asset";
 
@@ -176,6 +187,11 @@ namespace Engine
 		std::unordered_map<Name::HashType, AssetInternal> mAssets{};
 
 		void OpenDirectory(const std::filesystem::path& directory);
+
+		/*
+		Will load the asset from the specified path.
+		*/
+		std::optional<WeakAsset<Asset>> OpenAsset(const std::filesystem::path& path);
 
 		AssetInternal* TryGetAssetInternal(Name key, TypeId typeId);
 		AssetInternal* TryGetLoadedAssetInternal(Name key, TypeId typeId);
@@ -257,6 +273,8 @@ namespace Engine
 			const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = mAssetInternal.get().mMetaData.GetImporterInfo();
 			return importerInfo.has_value() ? importerInfo->mImporterVersion : std::optional<uint32>{};
 		}
+
+		std::optional<AssetFileMetaData::ImporterInfo> GetImporterInfo() const { return mAssetInternal.get().mMetaData.GetImporterInfo(); }
 
 	private:
 		std::reference_wrapper<AssetManager::AssetInternal> mAssetInternal;
