@@ -1496,7 +1496,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Components\UI\UISprite.cpp" />
+    <ClCompile Include="Source\Components\UI\UISpriteComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Assets\Animation\Animation.h" />
@@ -1513,7 +1513,7 @@
     <ClInclude Include="Include\Core\UIRenderer.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\UIRendererPC.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\UIRenderer***REMOVED***.h" />
-    <ClInclude Include="Include\Components\UI\UISprite.h" />
+    <ClInclude Include="Include\Components\UI\UISpriteComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Components\UI\UIButtonComponent.h" />

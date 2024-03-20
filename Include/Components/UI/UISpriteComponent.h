@@ -6,7 +6,7 @@ namespace Engine
 {
 	class Texture;
 
-	class UISprite
+	class UISpriteComponent
 	{
 	public:
 		LinearColor mColor{ 1.0f };
@@ -15,6 +15,6 @@ namespace Engine
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(UISprite);
+		REFLECT_AT_START_UP(UISpriteComponent);
 	};
 }
