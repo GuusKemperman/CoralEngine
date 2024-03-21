@@ -159,9 +159,6 @@ Engine::Editor::~Editor()
 
 void Engine::Editor::Tick(const float deltaTime)
 {
-	Device& device = Device::Get();
-	device.NewFrame();
-
 	DestroyRequestedSystems();
 	DisplayMainMenuBar();
 
@@ -173,6 +170,7 @@ void Engine::Editor::Tick(const float deltaTime)
 	{
 		mSystems[i].second->Tick(deltaTime);
 	}
+
 	DestroyRequestedSystems();
 
 	if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)
@@ -181,10 +179,6 @@ void Engine::Editor::Tick(const float deltaTime)
 	{
 		SaveAll();
 	}
-
-	device.EndFrame();
-
-	FullFillRefreshRequests();
 }
 
 void Engine::Editor::FullFillRefreshRequests()
@@ -757,11 +751,11 @@ namespace
 		ImGui::GetStyle().GrabRounding = 4.0f;
 
 		static constexpr float brightness = .8f;
-		static constexpr glm::vec4 accent = glm::vec4(0.14f, 0.51f, 0.50f, 1.00f) * brightness;
-		static constexpr glm::vec4 hovered = glm::vec4(0.18f, 0.66f, 0.63f, 1.00f) * brightness;
-		static constexpr glm::vec4 active = glm::vec4(0.22f, 0.77f, 0.74f, 1.00f) * brightness;
-		static constexpr glm::vec4 unfocused = accent * .8f;
-		static constexpr glm::vec4 unfocusedActive = accent * .9f;
+		static constexpr glm::vec4 accent = glm::vec4(0.14f * brightness, 0.51f * brightness, 0.50f * brightness, 1.00f);
+		static constexpr glm::vec4 hovered = glm::vec4(0.18f * brightness, 0.66f * brightness, 0.63f * brightness, 1.00f);
+		static constexpr glm::vec4 active = glm::vec4(0.22f * brightness, 0.77f * brightness, 0.74f * brightness, 1.00f);
+		static constexpr glm::vec4 unfocused = glm::vec4(accent.x * .8f, accent.y * .8f, accent.z * .8f, accent.w);
+		static constexpr glm::vec4 unfocusedActive = glm::vec4(accent.x * .9f, accent.y * .9f, accent.z * .9f, accent.w);
 
 		ImVec4* colors = ImGui::GetStyle().Colors;
 		colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
@@ -775,7 +769,7 @@ namespace
 		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.12f, 0.20f, 0.28f, 1.00f);
 		colors[ImGuiCol_FrameBgActive] = ImVec4(0.09f, 0.12f, 0.14f, 1.00f);
 		colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.12f, 0.14f, 0.65f);
-		colors[ImGuiCol_TitleBgActive] = active * .7f;
+		colors[ImGuiCol_TitleBgActive] = glm::vec4(accent.x * .7f, accent.y * .7f, accent.z * .7f, accent.w);
 		colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
 		colors[ImGuiCol_MenuBarBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
 		colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.39f);
