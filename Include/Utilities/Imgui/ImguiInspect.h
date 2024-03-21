@@ -79,6 +79,39 @@ namespace ImGui
 		}
 		static constexpr bool sIsSpecialized = true;
 	};
+
+	template<typename T>
+	struct Auto_t<std::optional<T>>
+	{
+		static void Auto(std::optional<T>& var, const std::string& name)
+		{
+			bool hasValue = var.has_value();
+
+			if (ImGui::TreeNode(name.c_str()))
+			{
+				if (ImGui::Checkbox("HasValue", &hasValue))
+				{
+					if (var.has_value())
+					{
+						var.reset();
+					}
+					else
+					{
+						var.emplace();
+					}
+				}
+
+				if (var.has_value())
+				{
+					ImGui::Auto(*var, name);
+				}
+
+				ImGui::TreePop();
+			}
+		}
+		static constexpr bool sIsSpecialized = true;
+	};
+	
 }
 
 #endif // EDITOR
