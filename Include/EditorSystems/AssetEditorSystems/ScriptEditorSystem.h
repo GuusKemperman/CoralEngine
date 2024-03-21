@@ -208,7 +208,7 @@ namespace Engine
 		static constexpr double sMinSimilarityCutoff = 40.0;
 		// This makes it more likely to show functions and fields from
 		// this script when searching.
-		static constexpr double sBiasTowardsNodesFromThisScript = 1.1f;
+		static constexpr double sBiasTowardsNodesFromThisScript = 1.25f;
 		static constexpr uint32 sMaxNumOfRecommendedNodesDuringQuery = 7;
 
 		ax::NodeEditor::PinId mPinTheUserRightClicked{};

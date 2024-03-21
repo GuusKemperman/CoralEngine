@@ -336,22 +336,19 @@ Engine::MetaType* Engine::Script::DeclareMetaType()
 
 	MetaType& metaType = MetaManager::Get().AddType({ ourTypeInfo, GetName() });
 
-	metaType.GetProperties().Set(sWasTypeCreatedFromScriptProperty, true);
-	metaType.GetProperties().Add(Props::sIsScriptableTag);
-	metaType.GetProperties().Set(Props::sComponentTag, true);
+	metaType.GetProperties().Add(Props::sIsFromScriptsTag).Add(Props::sIsScriptableTag).Add(Props::sComponentTag);
 
 	for (MemberToAdd& memberToAdd : membersToAdd)
 	{
 		MetaField& newMember = metaType.AddField(memberToAdd.mType, memberToAdd.mOffset, memberToAdd.mName);
 		MetaProps& memberProperties = newMember.GetProperties();
 
-		memberProperties.Add(Props::sIsScriptableTag);
+		memberProperties.Add(Props::sIsScriptableTag).Add(Props::sIsFromScriptsTag);
 
 		if (newMember.GetName() == sNameOfOwnerField.StringView())
 		{
 			// Don't allow the user to inspect it
-			memberProperties.Set(Props::sNoInspectTag, true);
-			memberProperties.Set(Props::sNoSerializeTag, true);
+			memberProperties.Add(Props::sNoInspectTag).Add(Props::sNoSerializeTag).Add(Props::sIsScriptReadOnlyTag);
 		}
 	}
 
