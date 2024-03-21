@@ -70,6 +70,12 @@ Engine::Renderer::Renderer()
     mPipelines[COMPACT_CLUSTER_PIPELINE]->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
     mPipelines[COMPACT_CLUSTER_PIPELINE]->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"COMPACT CLUSTER COMPUTE SHADER");
 
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/AssignLightsCS.hlsl");
+    cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0", true);
+    mPipelines[ASSIGN_LIGHTS_PIPELINE] = std::make_unique<DXPipeline>();
+    mPipelines[ASSIGN_LIGHTS_PIPELINE]->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
+    mPipelines[ASSIGN_LIGHTS_PIPELINE]->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"ASSIGN LIGHTS COMPUTE SHADER");
+
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CullClustersVS.hlsl");
     v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CullClustersPS.hlsl");
@@ -78,6 +84,7 @@ Engine::Renderer::Renderer()
     mPipelines[CULL_CLUSTER_PIPELINE]->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
     mPipelines[CULL_CLUSTER_PIPELINE]->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
     mPipelines[CULL_CLUSTER_PIPELINE]->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"ACTIVE CLUSTER PIPELINE");
+
 
     //CREATE CONSTANT BUFFERS
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
@@ -475,7 +482,7 @@ void Engine::Renderer::CullClusters(const World& world)
     mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 1, 0, frameIndex);
     mConstBuffers[CLUSTERING_CAM_CB]->Bind(commandList, 2, 0, frameIndex);
     
-    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 8, mClusterSRVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 9, mClusterSRVIndex);
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 7, mActiveClusterUAVIndex);
 
     int meshCounter = 0;
@@ -507,7 +514,7 @@ void Engine::Renderer::CompactClusters()
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 6, mCompactClusterUAVIndex);
-    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 8, mActiveClusterSRVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 9, mActiveClusterSRVIndex);
 
     commandList->Dispatch(mNumberOfTiles, 1, 1);
 }
