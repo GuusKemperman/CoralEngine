@@ -9,7 +9,7 @@ namespace Engine
 	{
 	public:
 		float mDuration; // how long the ability should be alive - you need this even if you want it to be instant so that it stays on screen more than one frame
-		float mCurrentDuration; // how long is has been alive for
+		float mDurationTimer; // how long is has been alive for
 
 	private:
 		friend ReflectAccess;

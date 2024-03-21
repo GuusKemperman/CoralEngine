@@ -9,7 +9,7 @@ namespace Engine
 	struct DurationalEffect
 	{
 		float mDuration{}; // the amount of time after which the effect will get reverted
-		float mCurrentDuration{}; // the amount of time after which the effect will get reverted
+		float mDurationTimer{}; // the amount of time after which the effect will get reverted
 		AbilityFunctionality::Stat mStatAffected{}; // which stat has been modified
 		float mAmount{}; // the amount with which the stat has been modified and will be inverse reverted
 

@@ -22,7 +22,7 @@ Engine::MetaType Engine::EffectsOnCharacterComponent::Reflect()
 bool Engine::DurationalEffect::operator==(const DurationalEffect& other) const
 {
 	return Math::AreFloatsEqual(mDuration, other.mDuration) &&
-		Math::AreFloatsEqual(mCurrentDuration, other.mCurrentDuration) &&
+		Math::AreFloatsEqual(mDurationTimer, other.mDurationTimer) &&
 		mStatAffected == other.mStatAffected &&
 		Math::AreFloatsEqual(mAmount, other.mAmount);
 }
@@ -36,7 +36,7 @@ bool Engine::DurationalEffect::operator!=(const DurationalEffect& other) const
 void Engine::DurationalEffect::DisplayWidget()
 {
 	ImGui::TextWrapped("mDuration: %f", mDuration);
-	ImGui::TextWrapped("mCurrentDuration: %f", mCurrentDuration);
+	ImGui::TextWrapped("mDurationTimer: %f", mDurationTimer);
 }
 #endif // EDITOR
 
@@ -46,7 +46,7 @@ Engine::MetaType Engine::DurationalEffect::Reflect()
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
 	metaType.AddField(&DurationalEffect::mDuration, "mDuration").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
-	metaType.AddField(&DurationalEffect::mCurrentDuration, "mCurrentDuration").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&DurationalEffect::mDurationTimer, "mDurationTimer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&DurationalEffect::mStatAffected, "mStatAffected").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&DurationalEffect::mAmount, "mAmount").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 
