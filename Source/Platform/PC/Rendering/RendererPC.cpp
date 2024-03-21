@@ -389,23 +389,23 @@ void Engine::Renderer::Render(const World& world)
                 //BIND TEXTURES
                 if (materialInfo.useColorTex)
                 {
-                    skinnedMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 5);
+                    skinnedMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 6);
                 }
                 if (materialInfo.useEmissiveTex)
                 {
-                    skinnedMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 6);
+                    skinnedMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 7);
                 }
                 if (materialInfo.useMetallicRoughnessTex)
                 {
-                    skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 7);
+                    skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 8);
                 }
                 if (materialInfo.useNormalTex)
                 {
-                    skinnedMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 8);
+                    skinnedMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 9);
                 }
                 if (materialInfo.useOcclusionTex)
                 {
-                    skinnedMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 9);
+                    skinnedMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 10);
                 }
             }
             else {
