@@ -36,7 +36,7 @@ void Game::AttackingState::OnAiTick(Engine::World& world, entt::entity owner, fl
 
 	if (navMeshAgent == nullptr) { return; }
 
-	if (navMeshAgent->GetTargetPosition().has_value())
+	if (navMeshAgent->IsChasing())
 	{
 		navMeshAgent->StopNavMesh();
 	}

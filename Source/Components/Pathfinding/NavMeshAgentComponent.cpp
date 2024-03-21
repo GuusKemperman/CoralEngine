@@ -7,11 +7,6 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-float Engine::NavMeshAgentComponent::GetSpeed() const
-{
-	return mSpeed;
-}
-
 std::optional<glm::vec2> Engine::NavMeshAgentComponent::GetTargetPosition() const
 {
 	return mTargetPosition;
@@ -19,24 +14,32 @@ std::optional<glm::vec2> Engine::NavMeshAgentComponent::GetTargetPosition() cons
 
 void Engine::NavMeshAgentComponent::SetTarget(glm::vec2 targetPosition)
 {
+	mIsChasing = true;
 	mTargetPosition = targetPosition;
 }
 
 void Engine::NavMeshAgentComponent::SetTarget(const TransformComponent& transformComponent)
 {
+	mIsChasing = true;
 	mTargetPosition = {transformComponent.GetWorldPosition().x, transformComponent.GetWorldPosition().z};
 }
 
 void Engine::NavMeshAgentComponent::StopNavMesh()
 {
-	mTargetPosition.reset();
+	mIsChasing = false;
+}
+
+bool Engine::NavMeshAgentComponent::IsChasing() const
+{
+	return mIsChasing;
 }
 
 Engine::MetaType Engine::NavMeshAgentComponent::Reflect()
 {
 	auto metaType = MetaType{MetaType::T<NavMeshAgentComponent>{}, "NavMeshAgentComponent"};
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&NavMeshAgentComponent::mSpeed, "Speed").GetProperties().Add(Props::sIsScriptableTag);
+	//metaType.AddField(&NavMeshAgentComponent::mTargetPosition, "mTargetPosition").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&NavMeshAgentComponent::mIsChasing, "mIsChasing").GetProperties().Add(Props::sIsScriptableTag);
 	Engine::ReflectComponentType<NavMeshAgentComponent>(metaType);
 
 	return metaType;

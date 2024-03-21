@@ -12,7 +12,7 @@ void Game::IdleState::OnAiTick(Engine::World& world, entt::entity owner, float)
 
 	if (navMeshAgent == nullptr) { return; }
 
-	if (navMeshAgent->GetTargetPosition().has_value())
+	if (navMeshAgent->IsChasing())
 	{
 		navMeshAgent->StopNavMesh();
 	}

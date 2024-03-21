@@ -8,11 +8,6 @@ namespace Engine
 	class NavMeshAgentComponent
 	{
 	public:
-		/**
-		 * \brief Getter to grab the speed of the NavMeshAgent
-		 * \return The speed of the agent as a float
-		 */
-		[[nodiscard]] float GetSpeed() const;
 
 		[[nodiscard]] std::optional<glm::vec2> GetTargetPosition() const;
 
@@ -21,12 +16,14 @@ namespace Engine
 
 		void StopNavMesh();
 
+		bool IsChasing() const;
+
 		/// \brief The quickest path from the NavMeshAgent to the KeyboardControl component
 		std::vector<glm::vec2> mPathFound = {};
 
 	private:
-		float mSpeed = 0;
 		std::optional<glm::vec2> mTargetPosition{};
+		bool mIsChasing = true;
 
 		friend ReflectAccess;
 		static MetaType Reflect();
