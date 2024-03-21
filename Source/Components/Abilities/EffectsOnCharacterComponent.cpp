@@ -61,8 +61,7 @@ bool Engine::OverTimeEffect::operator==(const OverTimeEffect& other) const
 		Math::AreFloatsEqual(mDurationTimer, other.mDurationTimer) &&
 		mTicks == other.mTicks &&
 		mTicksCounter == other.mTicksCounter &&
-		mStatAffected == other.mStatAffected &&
-		Math::AreFloatsEqual(mAmount, other.mAmount) &&
+		mEffectSettings == other.mEffectSettings &&
 		Math::AreFloatsEqual(mDealtDamageModifierOfCastByCharacter, 
 			other.mDealtDamageModifierOfCastByCharacter);
 }
@@ -79,7 +78,7 @@ void Engine::OverTimeEffect::DisplayWidget()
 	ImGui::TextWrapped("mDurationTimer: %f", mDurationTimer);
 	ImGui::TextWrapped("mTicks: %d", mTicks);
 	ImGui::TextWrapped("mTicksCounter: %d", mTicksCounter);
-	ImGui::TextWrapped("mAmount: %f", mAmount);
+	ImGui::TextWrapped("Effect");
 }
 #endif // EDITOR
 
@@ -88,12 +87,11 @@ Engine::MetaType Engine::OverTimeEffect::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<OverTimeEffect>{}, "OverTimeEffect" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddField(&OverTimeEffect::mDuration, "mDuration").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&OverTimeEffect::mDuration, "mDuration").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&OverTimeEffect::mDurationTimer, "mDurationTimer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&OverTimeEffect::mTicks, "mTicks").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&OverTimeEffect::mTicksCounter, "mTicksCounter").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
-	metaType.AddField(&OverTimeEffect::mStatAffected, "mStatAffected").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
-	metaType.AddField(&OverTimeEffect::mAmount, "mAmount").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&OverTimeEffect::mEffectSettings, "mEffectSettings").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&OverTimeEffect::mDealtDamageModifierOfCastByCharacter, "mDealtDamageModifierOfCastByCharacter").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 
 	return metaType;

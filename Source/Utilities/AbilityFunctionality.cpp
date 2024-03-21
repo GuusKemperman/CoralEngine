@@ -14,6 +14,7 @@
 #include "Utilities/Reflect/ReflectFieldType.h"
 #include "World/Registry.h"
 #include "World/World.h"
+#include "Utilities/Math.h"
 
 Engine::MetaType Engine::AbilityFunctionality::Reflect()
 {
@@ -39,6 +40,16 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 
 		}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
 		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, float>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, float duration, int ticks)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			ApplyOverTimeEffect(*world, castByEntity, affectedEntity, stat, amount, flatOrPercentage, increaseOrDecrease, duration, ticks);
+
+		}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
+		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, float, int>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	metaType.AddFunc([](const std::shared_ptr<const Prefab>& prefab, entt::entity castBy) -> entt::entity
 		{
@@ -140,6 +151,25 @@ void Engine::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& ch
 {
 	float& currentStat = GetStat(durationalEffect.mStatAffected, characterComponent).second;
 	currentStat -= durationalEffect.mAmount;
+}
+
+void Engine::AbilityFunctionality::ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, float duration, int ticks)
+{
+	auto& reg = world.GetRegistry();
+	auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
+	if (effects == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
+		return;
+	}
+	auto castByEntityCharacterComponent = reg.TryGet<CharacterComponent>(castByEntity);
+	if (castByEntityCharacterComponent == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} is not a character.", entt::to_integral(castByEntity));
+		return;
+	}
+
+	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{stat, amount, flatOrPercentage, increaseOrDecrease}, castByEntityCharacterComponent->mCurrentDealtDamageModifier });
 }
 
 entt::entity Engine::AbilityFunctionality::SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy)
@@ -276,4 +306,33 @@ Engine::MetaType Reflector<Engine::AbilityFunctionality::IncreaseOrDecrease>::Re
 	ReflectFieldType<T>(type);
 
 	return type;
+}
+
+bool Engine::AbilityFunctionality::EffectSettings::operator==(const EffectSettings& other) const
+{
+	return mStat == other.mStat &&
+		Math::AreFloatsEqual(mAmount, other.mAmount) &&
+		mFlatOrPercentage == other.mFlatOrPercentage &&
+		mIncreaseOrDecrease == other.mIncreaseOrDecrease;
+}
+
+bool Engine::AbilityFunctionality::EffectSettings::operator!=(const EffectSettings& other) const
+{
+	return mStat != other.mStat ||
+		!Math::AreFloatsEqual(mAmount, other.mAmount) ||
+		mFlatOrPercentage != other.mFlatOrPercentage ||
+		mIncreaseOrDecrease != other.mIncreaseOrDecrease;
+}
+
+Engine::MetaType Engine::AbilityFunctionality::EffectSettings::Reflect()
+{
+	MetaType metaType = MetaType{ MetaType::T<EffectSettings>{}, "EffectSettings" };
+	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+
+	metaType.AddField(&EffectSettings::mStat, "mStat").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&EffectSettings::mAmount, "mAmount").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&EffectSettings::mFlatOrPercentage, "mFlatOrPercentage").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&EffectSettings::mIncreaseOrDecrease, "mIncreaseOrDecrease").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+
+	return metaType;
 }

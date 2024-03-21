@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Meta/MetaReflect.h"
 #include "Utilities/AbilityFunctionality.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 
@@ -20,6 +21,7 @@ namespace Engine
 		void DisplayWidget();
 #endif // EDITOR
 
+	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(DurationalEffect);
@@ -32,8 +34,7 @@ namespace Engine
 		float mDurationTimer{}; // how long it has been since the last tick
 		int mTicks{}; // how many times the effect should be applied
 		int mTicksCounter{}; // how many ticks have passed
-		AbilityFunctionality::Stat mStatAffected{}; // which stat has been modified
-		float mAmount{}; // the amount to apply
+		AbilityFunctionality::EffectSettings mEffectSettings{}; // effect to apply
 		// this is needed only if the effect is health decrease (damage)
 		// it needs to be stored because the dealt damage modifer of the character that cast the ability
 		// might have changed in the meantime, but we only want to apply the initial value when the ability was cast
@@ -46,6 +47,7 @@ namespace Engine
 		void DisplayWidget();
 #endif // EDITOR
 
+	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(OverTimeEffect);

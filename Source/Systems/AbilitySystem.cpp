@@ -44,7 +44,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
     const auto& input = Input::Get();
     for (auto [entity, characterData, effects] : viewCharacters.each())
     {
-        // update effects
+        // update durational effects
         auto& durationalEffects = effects.mDurationalEffects;
         for (auto it = durationalEffects.begin(); it != durationalEffects.end();)
         {
@@ -53,6 +53,27 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             {
                 AbilityFunctionality::RevertDurationalEffect(characterData, *it);
                 it = durationalEffects.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        // update over time effects
+        auto& overTimeEffects = effects.mOverTimeEffects;
+        for (auto it = overTimeEffects.begin(); it != overTimeEffects.end();)
+        {
+            it->mDurationTimer += dt;
+            if (it->mDurationTimer >= it->mDuration)
+            {
+                it->mTicksCounter++;
+            	it->mDurationTimer = 0.f;
+                // TODO: apply effect
+            }
+            if (it->mTicksCounter >= it->mTicks)
+            {
+                it = overTimeEffects.erase(it);
             }
             else
             {
