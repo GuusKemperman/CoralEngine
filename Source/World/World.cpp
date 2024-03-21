@@ -176,7 +176,7 @@ Engine::World* Engine::World::TryGetWorldAtTopOfStack()
 	return &sWorldStack.top().get();
 }
 
-void Engine::World::RequestTransitionToLevel(const std::shared_ptr<const Level>& level)
+void Engine::World::TransitionToLevel(const std::shared_ptr<const Level>& level)
 {
 	if (GetNextLevel() == nullptr)
 	{
@@ -322,11 +322,8 @@ Engine::MetaType Engine::World::Reflect()
 		{
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			world->RequestTransitionToLevel(level);
+			world->TransitionToLevel(level);
 		},
-		// We have a different name for the function in scripting context,
-		// because in every scripting context we fullfill the transition request.
-		// So instead of RequestTransitionToLevel
 		"TransitionToLevel", 
 		MetaFunc::ExplicitParams<const std::shared_ptr<const Level>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 

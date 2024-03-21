@@ -67,7 +67,7 @@ namespace Engine
 		 *
 		 * \param level The level to transition to.
 		 */
-		void RequestTransitionToLevel(const std::shared_ptr<const Level>& level);
+		void TransitionToLevel(const std::shared_ptr<const Level>& level);
 
 		const std::shared_ptr<const Level>& GetNextLevel() const { return mLevelToTransitionTo; }
 
