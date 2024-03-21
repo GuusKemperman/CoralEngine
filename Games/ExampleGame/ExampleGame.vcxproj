@@ -104,6 +104,7 @@
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\GamePC.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\GameDebugPC.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">
@@ -112,8 +113,10 @@
     <Import Project="..\..\Properties\Game***REMOVED***.props" />
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\Game***REMOVED***Debug.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">
+    <Import Project="..\..\Properties\Game***REMOVED***Release.props" />
     <Import Project="..\..\Properties\Game***REMOVED***.props" />
     <Import Project="..\..\Properties\EngineAndGame***REMOVED***.props" />
     <Import Project="..\..\Properties\EngineAndGameRelease.props" />
@@ -129,6 +132,7 @@
     <Import Project="..\..\Properties\EngineAndGameRelease.props" />
     <Import Project="..\..\Properties\GamePC.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\GameReleasePC.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -137,6 +141,7 @@
     <Import Project="..\..\Properties\EngineAndGameRelease.props" />
     <Import Project="..\..\Properties\GamePC.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\GameReleasePC.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">
     <Import Project="..\..\Properties\GameEditorDebug.props" />
@@ -147,6 +152,7 @@
     <Import Project="..\..\Properties\EngineAndGamePC.props" />
     <Import Project="..\..\Properties\GamePC.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\GameDebugPC.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -154,11 +160,17 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">
+    <OutDir>$(GameDir)Build/$(Platform)/$(Configuration)/</OutDir>
+    <IntDir>$(GameDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">
+    <OutDir>$(GameDir)Build/$(Platform)/$(Configuration)/</OutDir>
+    <IntDir>$(GameDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <SDLCheck>true</SDLCheck>

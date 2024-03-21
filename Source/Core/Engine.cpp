@@ -17,11 +17,16 @@
 #include "World/WorldRenderer.h"
 #include "Utilities/Benchmark.h"
 #include "World/Registry.h"
+#include <../External/fmod/fmod.hpp>
+
 
 Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
+
+	FMOD::System* system{};
+	FMOD::System_Create(&system);
 
 	JobManager::StartUp();
 	FileIO::StartUp(argc, argv, gameDir);
