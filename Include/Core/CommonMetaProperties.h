@@ -122,6 +122,23 @@ namespace Engine::Props
 
 	/*
 	Use on:
+		Fields
+
+	Description:
+		Makes the variable read-only, it can not be modified through the editor.
+
+		This is implemented by disabling all interaction with the widget. This
+		means this may not work for more complex widgets, such as vectors, as
+		the user also won't be able to open the collapsing header to view the
+		vector.
+
+	Example:
+		field.GetProperties().Add(Props::sIsEditorReadOnlyTag);
+	*/
+	static constexpr std::string_view sIsEditorReadOnlyTag = "sIsEditorReadOnlyTag";
+
+	/*
+	Use on:
 		Classes deriving from Engine::EditorSystem. The class must be default constructible.
 
 	Description:
