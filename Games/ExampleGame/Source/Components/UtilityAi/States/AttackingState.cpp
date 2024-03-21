@@ -13,6 +13,9 @@
 
 void Game::AttackingState::OnAiTick(Engine::World& world, entt::entity owner, float)
 {
+	auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
+	mTargetEntity = targetEntity;
+
 	const auto characterData = world.GetRegistry().TryGet<Engine::CharacterComponent>(owner);
 	if (characterData == nullptr)
 	{
@@ -36,27 +39,33 @@ void Game::AttackingState::OnAiTick(Engine::World& world, entt::entity owner, fl
 
 	if (navMeshAgent == nullptr) { return; }
 
-	if (navMeshAgent->IsChasing())
+	if (mTargetEntity != entt::null)
 	{
-		navMeshAgent->StopNavMesh();
+		const auto* transformComponent = world.GetRegistry().TryGet<Engine::TransformComponent>(mTargetEntity);
+
+		if (transformComponent == nullptr) { return; }
+
+		navMeshAgent->UpdateTargetPosition(*transformComponent);
 	}
 }
 
 float Game::AttackingState::OnAiEvaluate(const Engine::World& world, entt::entity owner) const
 {
-	auto [score, entity] = GetHighestScore(world, owner);
+	auto [score, entity] = GetBestScoreAndTarget(world, owner);
 	return score;
 }
 
-void Game::AttackingState::OnAIStateEnterEvent(const Engine::World& world, entt::entity owner)
+void Game::AttackingState::OnAIStateEnterEvent(Engine::World& world, entt::entity owner)
 {
-	auto [score, targetEntity] = GetHighestScore(world, owner);
-	mTargetEntity = targetEntity;
+	auto* navMeshAgent = world.GetRegistry().TryGet<Engine::NavMeshAgentComponent>(owner);
+
+	if (navMeshAgent == nullptr) { return; }
+
+	navMeshAgent->StopNavMesh();
 }
 
-
-std::pair<float, entt::entity> Game::AttackingState::GetHighestScore(const Engine::World& world,
-                                                                     entt::entity owner) const
+std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const Engine::World& world,
+                                                                           entt::entity owner) const
 {
 	const auto targetsView = world.GetRegistry().View<Engine::NavMeshTargetTag, Engine::TransformComponent>();
 	const auto* transformComponent = world.GetRegistry().TryGet<Engine::TransformComponent>(owner);

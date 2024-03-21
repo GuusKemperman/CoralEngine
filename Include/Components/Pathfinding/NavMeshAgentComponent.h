@@ -11,8 +11,11 @@ namespace Engine
 
 		[[nodiscard]] std::optional<glm::vec2> GetTargetPosition() const;
 
-		void SetTarget(glm::vec2 targetPosition);
-		void SetTarget(const TransformComponent& transformComponent);
+		void SetTargetPosition(glm::vec2 targetPosition);
+		void SetTargetPosition(const TransformComponent& transformComponent);
+
+		void UpdateTargetPosition(glm::vec2 targetPosition);
+		void UpdateTargetPosition(const TransformComponent& transformComponent);
 
 		void StopNavMesh();
 

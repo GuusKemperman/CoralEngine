@@ -131,9 +131,12 @@ void Engine::AIEvaluateSystem::Update(World& world, float)
 			}
 		}
 
-		CallTransitionEvent(sAIStateExitEvent, currentAIController.mCurrentState, world, entity);
-		currentAIController.mCurrentState = bestType;
-		CallTransitionEvent(sAIStateEnterEvent, currentAIController.mCurrentState, world, entity);
+		if (currentAIController.mCurrentState != bestType)
+		{
+			CallTransitionEvent(sAIStateExitEvent, currentAIController.mCurrentState, world, entity);
+			currentAIController.mCurrentState = bestType;
+			CallTransitionEvent(sAIStateEnterEvent, currentAIController.mCurrentState, world, entity);
+		}
 	}
 }
 

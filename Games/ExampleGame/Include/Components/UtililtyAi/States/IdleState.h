@@ -13,6 +13,7 @@ namespace Game
 	public:
 		static void OnAiTick(Engine::World& world, entt::entity owner, float dt);
 		static float OnAiEvaluate(const Engine::World& world, entt::entity owner);
+		static void OnAIStateEnterEvent(Engine::World& world, entt::entity owner);
 
 	private:
 		friend Engine::ReflectAccess;
