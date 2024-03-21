@@ -92,5 +92,12 @@ namespace Engine::InfoStruct
             float mDepthSliceScale;
             float mDepthSliceBias;
         };
+
+        struct DXLightGridElement
+        {
+            uint32 mOffset;
+            uint32 mCount;
+            uint32 offset[2];
+        };
     }
 }

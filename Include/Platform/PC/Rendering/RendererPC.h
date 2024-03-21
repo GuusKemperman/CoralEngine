@@ -40,6 +40,9 @@ namespace Engine
             ACTIVE_CLUSTER_SB,
             COMPACT_CLUSTER_SB,
             CLUSTER_COUNTER_BUFFER,
+            LIGHT_GRID_SB,
+            POINT_LIGHT_COUNTER,
+            LIGHT_INDICES,
             NUM_SB
         };
 
@@ -76,6 +79,10 @@ namespace Engine
         unsigned int mClusterUAVIndex = 0;
         unsigned int mClusterSRVIndex = 0;
         unsigned int mCompactClusterUAVIndex = 0;
+        unsigned int mLightGridUAVIndex = 0;
+        unsigned int mPointLightCounterUAVIndex = 0;
+        unsigned int mLightIndicesUAVIndex = 0;
+
         unsigned int mCompactClusterSRVIndex = 0;
         unsigned int mActiveClusterUAVIndex = 0;
         unsigned int mActiveClusterSRVIndex = 0;

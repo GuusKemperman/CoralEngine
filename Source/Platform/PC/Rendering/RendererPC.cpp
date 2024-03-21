@@ -103,6 +103,15 @@ Engine::Renderer::Renderer()
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[CLUSTER_GRID_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "CLUSTER GRID BUFFER");
     
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXLightGridElement) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    mStructuredBuffers[LIGHT_GRID_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "LIGHT GRID BUFFER");
+
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    mStructuredBuffers[POINT_LIGHT_COUNTER] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "POINT LIGHT COUNTER BUFFER");
+
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    mStructuredBuffers[LIGHT_INDICES] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "LIGHTI INDICES BUFFER");
+
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[ACTIVE_CLUSTER_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "ACTIVE CLUSTER BUFFER");
     mStructuredBuffers[ACTIVE_CLUSTER_SB]->CreateUploadBuffer(device, sizeof(uint32) * 4000, 0);
@@ -174,13 +183,21 @@ Engine::Renderer::Renderer()
     uavDesc.Buffer.NumElements = 4000;
     mClusterUAVIndex = engineDevice.AllocateUAV(mStructuredBuffers[CLUSTER_GRID_SB].get(), uavDesc);
 
+    //Light grid
+    uavDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXLightGridElement);
+    mLightGridUAVIndex = engineDevice.AllocateUAV(mStructuredBuffers[LIGHT_GRID_SB].get(), uavDesc);
+
     //Active clusters
     uavDesc.Buffer.StructureByteStride = sizeof(uint32);
     mActiveClusterUAVIndex = engineDevice.AllocateUAV(mStructuredBuffers[ACTIVE_CLUSTER_SB].get(), uavDesc); 
+    mLightIndicesUAVIndex = engineDevice.AllocateUAV(mStructuredBuffers[LIGHT_INDICES].get(), uavDesc); 
 
     //Compact clusters
     uavDesc.Buffer.CounterOffsetInBytes = 0;
     mCompactClusterUAVIndex = engineDevice.AllocateUAV(mStructuredBuffers[COMPACT_CLUSTER_SB].get(), uavDesc, mStructuredBuffers[CLUSTER_COUNTER_BUFFER].get()); 
+
+    uavDesc.Buffer.NumElements = 1;
+    mPointLightCounterUAVIndex =  engineDevice.AllocateUAV(mStructuredBuffers[POINT_LIGHT_COUNTER].get(), uavDesc); 
 }
 
 void Engine::Renderer::Render(const World& world)
