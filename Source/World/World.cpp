@@ -10,6 +10,7 @@
 #include "World/WorldRenderer.h"
 #include "Utilities/DebugRenderer.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
+#include "Assets/Level.h"
 
 Engine::World::World(const bool beginPlayImmediately)
 {
@@ -27,8 +28,10 @@ Engine::World::World(const bool beginPlayImmediately)
 Engine::World::World(World&& other) noexcept :
 	mRegistry(std::move(other.mRegistry)),
 	mRenderer(std::move(other.mRenderer)),
+	mLevelToTransitionTo(std::move(other.mLevelToTransitionTo)),
 	mTime(other.mTime),
 	mHasBegunPlay(other.mHasBegunPlay)
+
 {
 	mRegistry->mWorld = *this;
 	mRenderer->mWorld = *this;
@@ -49,6 +52,11 @@ Engine::World& Engine::World::operator=(World&& other) noexcept
 {
 	mRegistry = std::move(other.mRegistry);
 	mRenderer = std::move(other.mRenderer);
+	mLevelToTransitionTo = std::move(other.mLevelToTransitionTo);
+
+	mRegistry->mWorld = *this;
+	mRenderer->mWorld = *this;
+
 	mTime = other.mTime;
 	mHasBegunPlay = other.mHasBegunPlay;
 
@@ -63,6 +71,11 @@ void Engine::World::Tick(const float unscaledDeltaTime)
 
 	GetRegistry().UpdateSystems(unscaledDeltaTime);
 	GetRegistry().RemovedDestroyed();
+
+	if (GetNextLevel() != nullptr)
+	{
+		*this = GetNextLevel()->CreateWorld(true);
+	}
 
 	PopWorld();
 }
@@ -161,6 +174,14 @@ Engine::World* Engine::World::TryGetWorldAtTopOfStack()
 		return nullptr;
 	}
 	return &sWorldStack.top().get();
+}
+
+void Engine::World::TransitionToLevel(const std::shared_ptr<const Level>& level)
+{
+	if (GetNextLevel() == nullptr)
+	{
+		mLevelToTransitionTo = level;
+	}
 }
 
 namespace
@@ -297,7 +318,15 @@ Engine::MetaType Engine::World::Reflect()
 			return world->HasBegunPlay();
 		}, "HasBegunPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	// We hide the distinction between the registry and the world from the designers
+	type.AddFunc([](const std::shared_ptr<const Level>& level)
+		{
+			World* world = TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+			world->TransitionToLevel(level);
+		},
+		"TransitionToLevel", 
+		MetaFunc::ExplicitParams<const std::shared_ptr<const Level>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
 	type.AddFunc([]
 		{
 			const World* world = TryGetWorldAtTopOfStack();
