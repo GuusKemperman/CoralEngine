@@ -74,6 +74,12 @@ namespace Engine
         void SubmitCommands();
         void StartRecordingCommands();
 
+        enum DXResources {
+            RT,
+            DEPTH_STENCIL_RSC = FRAME_BUFFER_COUNT,
+            NUM_RESOURCES = FRAME_BUFFER_COUNT + 1
+        };
+
     private:
         bool mIsWindowOpen{};
 
@@ -104,8 +110,8 @@ namespace Engine
         HANDLE mUploadFenceEvent;
         UINT64 mFenceValue[FRAME_BUFFER_COUNT];
         UINT64 mUploadFenceValue;
-        int mHeapResourceCount = TEX_START;
-        int frameBufferCount = RT_COUNT;
+        int mHeapResourceCount = 4;
+        int frameBufferCount = FRAME_BUFFER_COUNT;
         int depthStencilCount = 1;
 
         ComPtr<IDXGISwapChain3> mSwapChain;

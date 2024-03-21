@@ -29,8 +29,9 @@ namespace Engine::InfoStruct
 
     struct DXLightInfo
     {
-        DXPointLightInfo mPointLights[MAX_LIGHTS];
-        DXDirLightInfo mDirLights[MAX_LIGHTS];
+        uint32 numDirLights = 0;
+        uint32 numPointLights = 0;
+        uint32 padding[2];
     };
 
     struct DXMaterialInfo

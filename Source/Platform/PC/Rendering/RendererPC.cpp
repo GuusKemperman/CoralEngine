@@ -81,7 +81,7 @@ Engine::Renderer::Renderer()
 
     //CREATE CONSTANT BUFFERS
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
-    mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
+    mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Light info buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_INDEX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(int), MAX_MESHES + 2, "Model index", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
     mConstBuffers[CLUSTER_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::Clustering::DXCluster), 1, "Cluster creation data", FRAME_BUFFER_COUNT);
@@ -104,7 +104,17 @@ Engine::Renderer::Renderer()
     mStructuredBuffers[COMPACT_CLUSTER_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER BUFFER");
     mStructuredBuffers[COMPACT_CLUSTER_SB]->CreateUploadBuffer(device, sizeof(unsigned int) * 4000, 0);
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(unsigned int), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-    mStructuredBuffers[COUNTER_BUFFER] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER COUNTER BUFFER");
+    mStructuredBuffers[CLUSTER_COUNTER_BUFFER] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER COUNTER BUFFER");
+
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXPointLightInfo) * MAX_LIGHTS, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    mStructuredBuffers[POINT_LIGHT_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "POINT LIGHT STRUCTURED BUFFER");
+    mStructuredBuffers[POINT_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXPointLightInfo) * MAX_LIGHTS, 0);
+    mPointLights.resize(MAX_LIGHTS);
+
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXDirLightInfo) * MAX_LIGHTS, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    mStructuredBuffers[DIRECTIONAL_LIGHT_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "DIRECTIONAL LIGHT STRUCTURED BUFFER");
+    mStructuredBuffers[DIRECTIONAL_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXDirLightInfo) * MAX_LIGHTS, 0);
+    mDirectionalLights.resize(MAX_LIGHTS);
 
     //CREATE SRVS
     //Materials
@@ -117,8 +127,17 @@ Engine::Renderer::Renderer()
     srvDesc.Buffer.NumElements = MAX_MESHES +2;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     materialHeapSlot = engineDevice.AllocateTexture(mStructuredBuffers[MATERIAL_SB].get(), srvDesc);
-    materials = std::vector<InfoStruct::DXMaterialInfo>(MAX_MESHES + 2);
-   
+    mMaterialVec = std::vector<InfoStruct::DXMaterialInfo>(MAX_MESHES + 2);
+
+    //Point lights
+    srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXPointLightInfo);
+    srvDesc.Buffer.NumElements = MAX_LIGHTS;
+    mPointLightSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[POINT_LIGHT_SB].get(), srvDesc);
+
+    //Directional lights
+    srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXDirLightInfo);
+    mDirectionalLightsSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[DIRECTIONAL_LIGHT_SB].get(), srvDesc);
+
     //AABB Clusters
     srvDesc = {};
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
@@ -154,7 +173,7 @@ Engine::Renderer::Renderer()
 
     //Compact clusters
     uavDesc.Buffer.CounterOffsetInBytes = 0;
-    mCompactClusterUAVIndex = engineDevice.AllocateUAV(mStructuredBuffers[COMPACT_CLUSTER_SB].get(), uavDesc, mStructuredBuffers[COUNTER_BUFFER].get()); 
+    mCompactClusterUAVIndex = engineDevice.AllocateUAV(mStructuredBuffers[COMPACT_CLUSTER_SB].get(), uavDesc, mStructuredBuffers[CLUSTER_COUNTER_BUFFER].get()); 
 }
 
 void Engine::Renderer::Render(const World& world)
@@ -234,9 +253,12 @@ void Engine::Renderer::Render(const World& world)
     int pointLightCounter = 0;
     for (auto [entity, lightComponent, transform] : pointLightView.each()) {
         if (pointLightCounter < MAX_LIGHTS) {
-            mLights.mPointLights[pointLightCounter].mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
-            mLights.mPointLights[pointLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
-            mLights.mPointLights[pointLightCounter].mRadius = lightComponent.mRange;
+
+            InfoStruct::DXPointLightInfo pointLight;
+            pointLight.mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
+            pointLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+            pointLight.mRadius = lightComponent.mRange;
+            mPointLights[pointLightCounter] = pointLight;
         }
         else {
             LOG(LogCore, Warning, ("Maximum (%i) of point lights has been surpassed.", MAX_LIGHTS));
@@ -252,8 +274,10 @@ void Engine::Renderer::Render(const World& world)
             glm::vec3 baseDir = glm::vec3(0, 0, 1);
             glm::vec3 lightDirection = quatRotation * baseDir;
 
-            mLights.mDirLights[dirLightCounter].mDir = glm::vec4(lightDirection, 1.f);
-            mLights.mDirLights[dirLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+            InfoStruct::DXDirLightInfo dirLight;
+            dirLight.mDir = glm::vec4(lightDirection, 1.f);
+            dirLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+            mDirectionalLights[dirLightCounter] = dirLight;
         }
         else {
             LOG(LogCore, Warning, ("Maximum (%i) of directional lights has been surpassed.", MAX_LIGHTS));
@@ -261,7 +285,20 @@ void Engine::Renderer::Render(const World& world)
         }
         dirLightCounter++;
     }
-    mConstBuffers[LIGHT_CB]->Update(&mLights, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
+    mLightInfo.numDirLights = dirLightCounter;
+    mLightInfo.numPointLights = pointLightCounter;
+    mConstBuffers[LIGHT_CB]->Update(&mLightInfo, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
+
+    D3D12_SUBRESOURCE_DATA data;
+    data.pData = mDirectionalLights.data();
+    data.RowPitch = sizeof(InfoStruct::DXDirLightInfo);
+    data.SlicePitch = sizeof(InfoStruct::DXDirLightInfo) * dirLightCounter;
+    mStructuredBuffers[DIRECTIONAL_LIGHT_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
+    data.pData = mPointLights.data();
+    data.RowPitch = sizeof(InfoStruct::DXPointLightInfo);
+    data.SlicePitch = sizeof(InfoStruct::DXPointLightInfo) * pointLightCounter;
+    mStructuredBuffers[POINT_LIGHT_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
     //USING CLUSTER CULLING AS A Z PRE PASS AS WELL
     CullClusters(world);
@@ -273,6 +310,8 @@ void Engine::Renderer::Render(const World& world)
     mConstBuffers[LIGHT_CB]->Bind(commandList, 1, 0, frameIndex);
     mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 0, 0, frameIndex);
     mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 4, 0, frameIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, mDirectionalLightsSRVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 17, mPointLightSRVIndex);
 
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
@@ -343,7 +382,7 @@ void Engine::Renderer::Render(const World& world)
             materialInfo.useOcclusionTex = false;
 
         }
-        materials[meshCounter] = materialInfo;
+        mMaterialVec[meshCounter] = materialInfo;
 
         mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
 
@@ -358,12 +397,13 @@ void Engine::Renderer::Render(const World& world)
         meshCounter++;
     }
 
-    D3D12_SUBRESOURCE_DATA data;
-    data.pData = materials.data();
+    data.pData = mMaterialVec.data();
     data.RowPitch = sizeof(InfoStruct::DXMaterialInfo);
     data.SlicePitch = sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2);
     mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
-    memset(materials.data(), 0, sizeof(InfoStruct::DXMaterialInfo) * materials.size());
+    memset(mMaterialVec.data(), 0, sizeof(InfoStruct::DXMaterialInfo) * mMaterialVec.size());
+    memset(mDirectionalLights.data(), 0, sizeof(InfoStruct::DXDirLightInfo) * mDirectionalLights.size());
+    memset(mPointLights.data(), 0, sizeof(InfoStruct::DXPointLightInfo) * mPointLights.size());
 
     if (updateClusterGrid)
     {

@@ -34,17 +34,32 @@ namespace Engine
         enum DXStructuredBuffers {
             MODEL_MAT_SB,
             MATERIAL_SB,
+            DIRECTIONAL_LIGHT_SB,
+            POINT_LIGHT_SB,
             CLUSTER_GRID_SB,
             ACTIVE_CLUSTER_SB,
             COMPACT_CLUSTER_SB,
-            COUNTER_BUFFER
+            CLUSTER_COUNTER_BUFFER,
+            NUM_SB
         };
 
         enum DXPipelines {
             PBR_PIPELINE,
             CLUSTER_GRID_PIPELINE,
             CULL_CLUSTER_PIPELINE,
-            COMPACT_CLUSTER_PIPELINE
+            COMPACT_CLUSTER_PIPELINE,
+            ASSIGN_LIGHTS_PIPELINE,
+            NUM_PIPELINES
+        };
+
+        enum DXConstantBuffers {
+            CAM_MATRIX_CB,
+            LIGHT_CB,
+            MODEL_INDEX_CB,
+            MODEL_MATRIX_CB,
+            CLUSTER_INFO_CB,
+            CLUSTERING_CAM_CB,
+            NUM_CBS
         };
 
 
@@ -54,9 +69,8 @@ namespace Engine
         void CompactClusters();
 
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
-        std::unique_ptr<DXResource> mStructuredBuffers[6];
-        std::unique_ptr<DXPipeline> mPipelines[4];
-        InfoStruct::DXLightInfo mLights;
+        std::unique_ptr<DXResource> mStructuredBuffers[NUM_SB];
+        std::unique_ptr<DXPipeline> mPipelines[NUM_PIPELINES];
 
         unsigned int mClusterUAVIndex = 0;
         unsigned int mClusterSRVIndex = 0;
@@ -64,12 +78,20 @@ namespace Engine
         unsigned int mCompactClusterSRVIndex = 0;
         unsigned int mActiveClusterUAVIndex = 0;
         unsigned int mActiveClusterSRVIndex = 0;
+        unsigned int mDirectionalLightsSRVIndex = 0;
+        unsigned int mPointLightSRVIndex = 0;
+
         glm::vec2 screenSize = glm::vec2(1.f, 1.f);
         bool updateClusterGrid = false;
         int mNumberOfTiles = 0;
         
         unsigned int materialHeapSlot = 0;
-        std::vector<InfoStruct::DXMaterialInfo> materials;
+        std::vector<InfoStruct::DXMaterialInfo> mMaterialVec;
+        std::vector<InfoStruct::DXDirLightInfo> mDirectionalLights;
+        std::vector<InfoStruct::DXPointLightInfo> mPointLights;
+        InfoStruct::DXLightInfo mLightInfo;
+
+
     private:
         friend ReflectAccess;
         static MetaType Reflect();
