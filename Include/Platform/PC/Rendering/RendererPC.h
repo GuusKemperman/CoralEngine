@@ -67,6 +67,7 @@ namespace Engine
         void CalculateClusterGrid(const CameraComponent& camera);
         void CullClusters(const World& world);
         void CompactClusters();
+        void UpdateLights(int numDirLights, int numPointLights);
 
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
         std::unique_ptr<DXResource> mStructuredBuffers[NUM_SB];

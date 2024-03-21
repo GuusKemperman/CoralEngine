@@ -106,15 +106,15 @@ Engine::Renderer::Renderer()
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(unsigned int), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[CLUSTER_COUNTER_BUFFER] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER COUNTER BUFFER");
 
-    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXPointLightInfo) * MAX_LIGHTS, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXPointLightInfo) * 100, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[POINT_LIGHT_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "POINT LIGHT STRUCTURED BUFFER");
-    mStructuredBuffers[POINT_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXPointLightInfo) * MAX_LIGHTS, 0);
-    mPointLights.resize(MAX_LIGHTS);
+    mStructuredBuffers[POINT_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXPointLightInfo) * 100, 0);
+    mPointLights.resize(100);
 
-    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXDirLightInfo) * MAX_LIGHTS, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXDirLightInfo) * 100, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[DIRECTIONAL_LIGHT_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "DIRECTIONAL LIGHT STRUCTURED BUFFER");
-    mStructuredBuffers[DIRECTIONAL_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXDirLightInfo) * MAX_LIGHTS, 0);
-    mDirectionalLights.resize(MAX_LIGHTS);
+    mStructuredBuffers[DIRECTIONAL_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXDirLightInfo) * 100, 0);
+    mDirectionalLights.resize(100);
 
     //CREATE SRVS
     //Materials
@@ -131,7 +131,7 @@ Engine::Renderer::Renderer()
 
     //Point lights
     srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXPointLightInfo);
-    srvDesc.Buffer.NumElements = MAX_LIGHTS;
+    srvDesc.Buffer.NumElements = 100;
     mPointLightSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[POINT_LIGHT_SB].get(), srvDesc);
 
     //Directional lights
@@ -250,55 +250,48 @@ void Engine::Renderer::Render(const World& world)
 
     //UPDATE LIGHTS
     const auto pointLightView = world.GetRegistry().View<const PointLightComponent, const TransformComponent>();
-    int pointLightCounter = 0;
-    for (auto [entity, lightComponent, transform] : pointLightView.each()) {
-        if (pointLightCounter < MAX_LIGHTS) {
-
-            InfoStruct::DXPointLightInfo pointLight;
-            pointLight.mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
-            pointLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
-            pointLight.mRadius = lightComponent.mRange;
-            mPointLights[pointLightCounter] = pointLight;
-        }
-        else {
-            LOG(LogCore, Warning, ("Maximum (%i) of point lights has been surpassed.", MAX_LIGHTS));
-            break;
-        }
-        pointLightCounter++;
-    }
     const auto dirLightView = world.GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
+    int pointLightCounter = 0;
     int dirLightCounter = 0;
-    for (auto [entity, lightComponent, transform] : dirLightView.each()) {
-        if (dirLightCounter < MAX_LIGHTS) {
-            glm::quat quatRotation = transform.GetLocalOrientation();
-            glm::vec3 baseDir = glm::vec3(0, 0, 1);
-            glm::vec3 lightDirection = quatRotation * baseDir;
 
-            InfoStruct::DXDirLightInfo dirLight;
-            dirLight.mDir = glm::vec4(lightDirection, 1.f);
-            dirLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
-            mDirectionalLights[dirLightCounter] = dirLight;
+    for (auto [entity, lightComponent, transform] : pointLightView.each()) {
+        if(pointLightCounter >= mPointLights.size())
+        {
+            mPointLights.resize(mPointLights.size() + 100);
+            mStructuredBuffers[POINT_LIGHT_SB]->mResizeBuffer = true;
         }
-        else {
-            LOG(LogCore, Warning, ("Maximum (%i) of directional lights has been surpassed.", MAX_LIGHTS));
-            break;
+
+        InfoStruct::DXPointLightInfo pointLight;
+        pointLight.mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
+        pointLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+        pointLight.mRadius = lightComponent.mRange;
+        mPointLights[pointLightCounter] = pointLight;
+        pointLightCounter++;
+
+        
+    }
+
+    for (auto [entity, lightComponent, transform] : dirLightView.each()) {
+
+        if(dirLightCounter >= mDirectionalLights.size())
+        {
+            mDirectionalLights.resize(mDirectionalLights.size() + 100);
+            mStructuredBuffers[DIRECTIONAL_LIGHT_SB]->mResizeBuffer = true;
         }
+
+        glm::quat quatRotation = transform.GetLocalOrientation();
+        glm::vec3 baseDir = glm::vec3(0, 0, 1);
+        glm::vec3 lightDirection = quatRotation * baseDir;
+
+        InfoStruct::DXDirLightInfo dirLight;
+        dirLight.mDir = glm::vec4(lightDirection, 1.f);
+        dirLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+        mDirectionalLights[dirLightCounter] = dirLight;
+
         dirLightCounter++;
     }
-    mLightInfo.numDirLights = dirLightCounter;
-    mLightInfo.numPointLights = pointLightCounter;
-    mConstBuffers[LIGHT_CB]->Update(&mLightInfo, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
 
-    D3D12_SUBRESOURCE_DATA data;
-    data.pData = mDirectionalLights.data();
-    data.RowPitch = sizeof(InfoStruct::DXDirLightInfo);
-    data.SlicePitch = sizeof(InfoStruct::DXDirLightInfo) * dirLightCounter;
-    mStructuredBuffers[DIRECTIONAL_LIGHT_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
-
-    data.pData = mPointLights.data();
-    data.RowPitch = sizeof(InfoStruct::DXPointLightInfo);
-    data.SlicePitch = sizeof(InfoStruct::DXPointLightInfo) * pointLightCounter;
-    mStructuredBuffers[POINT_LIGHT_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+    UpdateLights(dirLightCounter, pointLightCounter);
 
     //USING CLUSTER CULLING AS A Z PRE PASS AS WELL
     CullClusters(world);
@@ -397,6 +390,7 @@ void Engine::Renderer::Render(const World& world)
         meshCounter++;
     }
 
+    D3D12_SUBRESOURCE_DATA data;
     data.pData = mMaterialVec.data();
     data.RowPitch = sizeof(InfoStruct::DXMaterialInfo);
     data.SlicePitch = sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2);
@@ -516,4 +510,59 @@ void Engine::Renderer::CompactClusters()
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 8, mActiveClusterSRVIndex);
 
     commandList->Dispatch(mNumberOfTiles, 1, 1);
+}
+
+void Engine::Renderer::UpdateLights(int numDirLights, int numPointLights)
+{
+    Device& engineDevice = Device::Get();
+    ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    int frameIndex = engineDevice.GetFrameIndex();
+    auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+
+    D3D12_SHADER_RESOURCE_VIEW_DESC  srvDesc = {};
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+    srvDesc.Buffer.FirstElement = 0;
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+
+    mLightInfo.numDirLights = numDirLights;
+    mLightInfo.numPointLights = numPointLights;
+    mConstBuffers[LIGHT_CB]->Update(&mLightInfo, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
+
+    if (mStructuredBuffers[DIRECTIONAL_LIGHT_SB]->mResizeBuffer)
+    {
+        auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXDirLightInfo) * static_cast<uint>(mDirectionalLights.size()), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+        mStructuredBuffers[DIRECTIONAL_LIGHT_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "DIRECTIONAL LIGHT STRUCTURED BUFFER");
+        mStructuredBuffers[DIRECTIONAL_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXDirLightInfo) * static_cast<uint>(mDirectionalLights.size()), 0);
+        srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXDirLightInfo);
+        srvDesc.Buffer.NumElements =static_cast<uint>(mDirectionalLights.size());
+        mDirectionalLightsSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[DIRECTIONAL_LIGHT_SB].get(), srvDesc);
+        mStructuredBuffers[DIRECTIONAL_LIGHT_SB]->mResizeBuffer = false;
+    }
+
+    if (mStructuredBuffers[POINT_LIGHT_SB]->mResizeBuffer) {
+        auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXPointLightInfo) * static_cast<uint>(mPointLights.size()), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+        mStructuredBuffers[POINT_LIGHT_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "POINT LIGHT STRUCTURED BUFFER");
+        mStructuredBuffers[POINT_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXPointLightInfo) *static_cast<uint>(mPointLights.size()), 0);
+        srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXPointLightInfo);
+        srvDesc.Buffer.NumElements = static_cast<uint>(mPointLights.size());
+        mPointLightSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[POINT_LIGHT_SB].get(), srvDesc);
+        mStructuredBuffers[POINT_LIGHT_SB]->mResizeBuffer = false;
+    }
+    
+    D3D12_SUBRESOURCE_DATA data;
+    data.pData = mDirectionalLights.data();
+    data.RowPitch = sizeof(InfoStruct::DXDirLightInfo);
+    data.SlicePitch = sizeof(InfoStruct::DXDirLightInfo) * numDirLights;
+    mStructuredBuffers[DIRECTIONAL_LIGHT_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
+    data.pData = mPointLights.data();
+    data.RowPitch = sizeof(InfoStruct::DXPointLightInfo);
+    data.SlicePitch = sizeof(InfoStruct::DXPointLightInfo) * numPointLights;
+    mStructuredBuffers[POINT_LIGHT_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
+
 }

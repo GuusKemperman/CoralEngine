@@ -28,7 +28,6 @@ using namespace Microsoft::WRL;
 #include "GLFW/glfw3native.h"
 
 #define FRAME_BUFFER_COUNT 2
-#define MAX_LIGHTS 20
 #define MAX_MESHES 65000
 
 //DESCRIPTOR HEAPS
