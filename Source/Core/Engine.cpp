@@ -157,12 +157,8 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 		device.EndFrame();
 
 #ifdef EDITOR
-		// TODO
 		// Has to be done after EndFrame for some dx12 reasons,
 		// as you are not allowed to free resources in between NewFrame and EndFrame.
-		// In the future this will be fixed by having some queue of destroy requests
-		// that the device will free after EndFrame, and then we can move FullFillRefreshRequests
-		// back to Editor::Tick.
 		editor.FullFillRefreshRequests();
 #endif
 
