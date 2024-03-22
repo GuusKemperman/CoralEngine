@@ -26,7 +26,7 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyInstantEffect(*world, castByEntity, affectedEntity, stat, amount, flatOrPercentage, increaseOrDecrease);
+			ApplyInstantEffect(*world, castByEntity, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease });
 
 		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
 		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
@@ -36,7 +36,7 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyDurationalEffect(*world, castByEntity, affectedEntity, stat, amount, flatOrPercentage, increaseOrDecrease, duration);
+			ApplyDurationalEffect(*world, castByEntity, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease }, duration);
 
 		}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
 		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, float>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
@@ -46,7 +46,7 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyOverTimeEffect(*world, castByEntity, affectedEntity, stat, amount, flatOrPercentage, increaseOrDecrease, duration, ticks);
+			ApplyOverTimeEffect(*world, castByEntity, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease }, duration, ticks);
 
 		}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
 		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, float, int>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
@@ -83,10 +83,10 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 		}, "SpawnAOE", MetaFunc::ExplicitParams<
 		const std::shared_ptr<const Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	return metaType;
+						return metaType;
 }
 
-std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease)
+std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect)
 {
 	auto& reg = world.GetRegistry();
 	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
@@ -95,16 +95,16 @@ std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& wor
 		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} is not a character.", entt::to_integral(affectedEntity));
 		return std::nullopt;
 	}
-	auto [base, current] = GetStat(stat, *characterComponent);
+	auto [base, current] = GetStat(effect.mStat, *characterComponent);
 
-	if (flatOrPercentage == FlatOrPercentage::Percentage)
+	if (effect.mFlatOrPercentage == FlatOrPercentage::Percentage)
 	{
-		amount = amount * 0.01f * base;
+		effect.mAmount = effect.mAmount * 0.01f * base;
 	}
 
-	if (increaseOrDecrease == IncreaseOrDecrease::Decrease)
+	if (effect.mIncreaseOrDecrease == IncreaseOrDecrease::Decrease)
 	{
-		if (stat == Stat::Health)
+		if (effect.mStat == Stat::Health)
 		{
 			auto castByCharacterComponent = reg.TryGet<CharacterComponent>(castByEntity);
 			if (castByCharacterComponent == nullptr)
@@ -115,24 +115,24 @@ std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& wor
 			const float damageModifier =
 				(castByCharacterComponent->mCurrentDealtDamageModifier + characterComponent->mCurrentReceivedDamageModifier)
 				* 0.01f;
-			amount += amount * damageModifier;
+			effect.mAmount += effect.mAmount * damageModifier;
 		}
 
-		amount = -amount;
+		effect.mAmount = -effect.mAmount;
 	}
 
 	// apply
-	current += amount;
+	current += effect.mAmount;
 	//current = std::max(current, 0.0f);
 	//if (ability.clampToMax)
 		//current = std::min(current, base);
 
-	return amount;
+	return effect.mAmount;
 }
 
-void Engine::AbilityFunctionality::ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, float duration)
+void Engine::AbilityFunctionality::ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration)
 {
-	const auto calculatedAmount = ApplyInstantEffect(world, castByEntity, affectedEntity, stat, amount, flatOrPercentage, increaseOrDecrease);
+	const auto calculatedAmount = ApplyInstantEffect(world, castByEntity, affectedEntity, effect);
 	if (!calculatedAmount.has_value())
 	{
 		return;
@@ -144,7 +144,7 @@ void Engine::AbilityFunctionality::ApplyDurationalEffect(World& world, entt::ent
 		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
 		return;
 	}
-	effects->mDurationalEffects.push_back(DurationalEffect{ duration, 0.f, stat, calculatedAmount.value() });
+	effects->mDurationalEffects.push_back(DurationalEffect{ duration, 0.f, effect.mStat, calculatedAmount.value() });
 }
 
 void Engine::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& characterComponent, DurationalEffect& durationalEffect)
@@ -153,7 +153,7 @@ void Engine::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& ch
 	currentStat -= durationalEffect.mAmount;
 }
 
-void Engine::AbilityFunctionality::ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, float duration, int ticks)
+void Engine::AbilityFunctionality::ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration, int ticks)
 {
 	auto& reg = world.GetRegistry();
 	auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
@@ -169,10 +169,10 @@ void Engine::AbilityFunctionality::ApplyOverTimeEffect(World& world, entt::entit
 		return;
 	}
 
-	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{stat, amount, flatOrPercentage, increaseOrDecrease}, castByEntityCharacterComponent->mCurrentDealtDamageModifier });
+	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease}, castByEntityCharacterComponent->mCurrentDealtDamageModifier });
 }
 
-void Engine::AbilityFunctionality::ApplyInstantEffectForOverTimeEffect(World& world, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, float dealtDamageModifierOfCastByCharacter)
+void Engine::AbilityFunctionality::ApplyInstantEffectForOverTimeEffect(World& world, entt::entity affectedEntity, EffectSettings effect, float dealtDamageModifierOfCastByCharacter)
 {
 	auto& reg = world.GetRegistry();
 	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
@@ -181,28 +181,28 @@ void Engine::AbilityFunctionality::ApplyInstantEffectForOverTimeEffect(World& wo
 		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} is not a character.", entt::to_integral(affectedEntity));
 		return;
 	}
-	auto [base, current] = GetStat(stat, *characterComponent);
+	auto [base, current] = GetStat(effect.mStat, *characterComponent);
 
-	if (flatOrPercentage == FlatOrPercentage::Percentage)
+	if (effect.mFlatOrPercentage == FlatOrPercentage::Percentage)
 	{
-		amount = amount * 0.01f * base;
+		effect.mAmount = effect.mAmount * 0.01f * base;
 	}
 
-	if (increaseOrDecrease == IncreaseOrDecrease::Decrease)
+	if (effect.mIncreaseOrDecrease == IncreaseOrDecrease::Decrease)
 	{
-		if (stat == Stat::Health)
+		if (effect.mStat == Stat::Health)
 		{
 			const float damageModifier =
 				(dealtDamageModifierOfCastByCharacter + characterComponent->mCurrentReceivedDamageModifier)
 				* 0.01f;
-			amount += amount * damageModifier;
+			effect.mAmount += effect.mAmount * damageModifier;
 		}
 
-		amount = -amount;
+		effect.mAmount = -effect.mAmount;
 	}
 
 	// apply
-	current += amount;
+	current += effect.mAmount;
 }
 
 entt::entity Engine::AbilityFunctionality::SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy)
@@ -228,7 +228,7 @@ entt::entity Engine::AbilityFunctionality::SpawnProjectile(World& world, const P
 		LOG(LogAbilitySystem, Error, "The prefab does not have a TransformComponent attached.")
 			return{};
 	}
-	auto prefabPhysicsBody= reg.TryGet<PhysicsBody2DComponent>(prefabEntity);
+	auto prefabPhysicsBody = reg.TryGet<PhysicsBody2DComponent>(prefabEntity);
 	if (prefabPhysicsBody == nullptr)
 	{
 		LOG(LogAbilitySystem, Error, "The prefab does not have a PhysicsBody2DComponent attached.")
@@ -283,7 +283,7 @@ entt::entity Engine::AbilityFunctionality::SpawnAOE(World& world, const Prefab& 
 
 std::pair<float&, float&> Engine::AbilityFunctionality::GetStat(Stat stat, CharacterComponent& characterComponent)
 {
-	switch(stat)
+	switch (stat)
 	{
 	case Health:
 		return { characterComponent.mBaseHealth, characterComponent.mCurrentHealth };
