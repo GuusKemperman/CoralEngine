@@ -62,7 +62,6 @@ void Engine::MetaFuncScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptF
 
 void Engine::MetaFuncScriptNode::PostDeclarationRefresh(ScriptFunc& scriptFunc)
 {
-
 	const MetaType* const type = MetaManager::Get().TryGetType(mTypeName);
 
 	if (type == nullptr)

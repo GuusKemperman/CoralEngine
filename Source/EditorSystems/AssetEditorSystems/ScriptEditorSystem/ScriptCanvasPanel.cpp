@@ -1007,7 +1007,7 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 
 		for (const MetaField& field : type.GetDirectFields())
 		{
-			if (CanBeGetThroughScripts(field))
+			if (CanBeGetThroughScripts(field, false))
 			{
 				returnValue.emplace_back(std::string{ type.GetName() }, GetterScriptNode::GetTitle(field.GetName(), true),
 					[&field](ScriptFunc& func) -> decltype(auto)
@@ -1018,7 +1018,10 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 					{
 						return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId(), TypeForm::Value }, { { field.GetOuterType().GetTypeId(), TypeForm::ConstRef } }, true);
 					});
+			}
 
+			if (CanBeGetThroughScripts(field, true))
+			{
 				returnValue.emplace_back(std::string{ type.GetName() }, GetterScriptNode::GetTitle(field.GetName(), false),
 					[&field](ScriptFunc& func) -> decltype(auto)
 					{
@@ -1134,7 +1137,6 @@ void Engine::ScriptEditorSystem::UpdateSimilarityToQuery(QueryData& queryData) c
 	const double avgSimilarity = similaritySum / static_cast<double>(queryData.mNodesThatCanBeCreated.size());
 
 	queryData.mSimilarityCutOff = std::clamp(avgSimilarity * sCutOffStrength, sMinSimilarityCutoff, 100.0);
-	printf("%f\n", queryData.mSimilarityCutOff);
 
 	if (queryData.mCurrentQuery.empty())
 	{

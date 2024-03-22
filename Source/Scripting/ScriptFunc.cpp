@@ -115,11 +115,11 @@ void Engine::ScriptFunc::DeclareMetaFunc(MetaType& addToType)
 			metaParams
 		);
 
-		declaredFunc->GetProperties().Set(Props::sIsScriptPure, IsPure()).Add(Props::sIsScriptableTag);;
+		declaredFunc->GetProperties().Set(Props::sIsScriptPure, IsPure());
 		
 	}
 	
-	declaredFunc->GetProperties().Set(Script::sWasTypeCreatedFromScriptProperty, true);
+	declaredFunc->GetProperties().Add(Props::sIsScriptableTag);
 }
 
 void Engine::ScriptFunc::DefineMetaFunc(MetaFunc& func)
