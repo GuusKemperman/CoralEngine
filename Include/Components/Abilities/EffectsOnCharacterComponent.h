@@ -30,9 +30,9 @@ namespace Engine
 	// effect that gets applied every X seconds (like a DOT)
 	struct OverTimeEffect
 	{
-		float mDuration{}; // tick duration
+		float mTickDuration{}; // interval at which the effect will be applied
 		float mDurationTimer{}; // how long it has been since the last tick
-		int mTicks{}; // how many times the effect should be applied
+		int mNumberOfTicks{}; // how many times the effect should be applied
 		int mTicksCounter{}; // how many ticks have passed
 		AbilityFunctionality::EffectSettings mEffectSettings{}; // effect to apply
 		// this is needed only if the effect is health decrease (damage)

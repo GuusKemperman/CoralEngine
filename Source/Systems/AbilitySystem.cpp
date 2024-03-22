@@ -66,13 +66,13 @@ void Engine::AbilitySystem::Update(World& world, float dt)
         for (auto it = overTimeEffects.begin(); it != overTimeEffects.end();)
         {
             it->mDurationTimer += dt;
-            if (it->mDurationTimer >= it->mDuration)
+            if (it->mDurationTimer >= it->mTickDuration)
             {
                 it->mTicksCounter++;
             	it->mDurationTimer = 0.f;
                 AbilityFunctionality::ApplyInstantEffectForOverTimeEffect(world, entity, it->mEffectSettings, it->mDealtDamageModifierOfCastByCharacter);
             }
-            if (it->mTicksCounter >= it->mTicks)
+            if (it->mTicksCounter >= it->mNumberOfTicks)
             {
                 it = overTimeEffects.erase(it);
             }
