@@ -172,6 +172,39 @@ void Engine::AbilityFunctionality::ApplyOverTimeEffect(World& world, entt::entit
 	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{stat, amount, flatOrPercentage, increaseOrDecrease}, castByEntityCharacterComponent->mCurrentDealtDamageModifier });
 }
 
+void Engine::AbilityFunctionality::ApplyInstantEffectForOverTimeEffect(World& world, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, float dealtDamageModifierOfCastByCharacter)
+{
+	auto& reg = world.GetRegistry();
+	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
+	if (characterComponent == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} is not a character.", entt::to_integral(affectedEntity));
+		return;
+	}
+	auto [base, current] = GetStat(stat, *characterComponent);
+
+	if (flatOrPercentage == FlatOrPercentage::Percentage)
+	{
+		amount = amount * 0.01f * base;
+	}
+
+	if (increaseOrDecrease == IncreaseOrDecrease::Decrease)
+	{
+		if (stat == Stat::Health)
+		{
+			const float damageModifier =
+				(dealtDamageModifierOfCastByCharacter + characterComponent->mCurrentReceivedDamageModifier)
+				* 0.01f;
+			amount += amount * damageModifier;
+		}
+
+		amount = -amount;
+	}
+
+	// apply
+	current += amount;
+}
+
 entt::entity Engine::AbilityFunctionality::SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy)
 {
 	auto& reg = world.GetRegistry();

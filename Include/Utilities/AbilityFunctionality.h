@@ -51,6 +51,7 @@ namespace Engine
 		static void ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat = Stat::Health, float amount = 0.f, FlatOrPercentage flatOrPercentage = FlatOrPercentage::Flat, IncreaseOrDecrease increaseOrDecrease = IncreaseOrDecrease::Decrease, float duration = 0.f);
 		static void RevertDurationalEffect(CharacterComponent& characterComponent, DurationalEffect& durationalEffect);
 		static void ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat = Stat::Health, float amount = 0.f, FlatOrPercentage flatOrPercentage = FlatOrPercentage::Flat, IncreaseOrDecrease increaseOrDecrease = IncreaseOrDecrease::Decrease, float duration = 0.f, int ticks = 1);
+		static void ApplyInstantEffectForOverTimeEffect(World& world, entt::entity affectedEntity, Stat stat = Stat::Health, float amount = 0.f, FlatOrPercentage flatOrPercentage = FlatOrPercentage::Flat, IncreaseOrDecrease increaseOrDecrease = IncreaseOrDecrease::Decrease, float dealtDamageModifierOfCastByCharacter = 0.f);
 		static entt::entity SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy);
 		static entt::entity SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy); // area of attack
 

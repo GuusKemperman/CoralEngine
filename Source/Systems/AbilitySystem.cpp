@@ -14,6 +14,7 @@
 #include "Components/Abilities/EffectsOnCharacterComponent.h"
 #include "Components/Abilities/ProjectileComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Utilities/AbilityFunctionality.h"
 
 void Engine::AbilitySystem::Update(World& world, float dt)
 {
@@ -69,7 +70,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             {
                 it->mTicksCounter++;
             	it->mDurationTimer = 0.f;
-                // TODO: apply effect
+                AbilityFunctionality::ApplyInstantEffectForOverTimeEffect(world, entity, it->mEffectSettings.mStat, it->mEffectSettings.mAmount, it->mEffectSettings.mFlatOrPercentage, it->mEffectSettings.mIncreaseOrDecrease, it->mDealtDamageModifierOfCastByCharacter);
             }
             if (it->mTicksCounter >= it->mTicks)
             {
