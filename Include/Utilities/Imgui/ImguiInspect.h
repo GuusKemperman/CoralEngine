@@ -37,6 +37,14 @@ namespace Engine
 		return valueBefore != value;
 	}
 
+	template<typename T>
+	void ShowInspectUIReadOnly(const std::string& label, T& value)
+	{
+		ImGui::BeginDisabled();
+		ImGui::Auto(value, label);
+		ImGui::EndDisabled();
+	}
+
 	static inline constexpr Name sShowInspectUIFuncName = "Inspect"_Name;
 
 	class MetaAny;
