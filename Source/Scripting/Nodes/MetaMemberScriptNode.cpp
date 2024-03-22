@@ -13,20 +13,6 @@ Engine::NodeInvolvingMetaMember::NodeInvolvingMetaMember(const ScriptNodeType ty
 	mTypeName(field.GetOuterType().GetName()),
 	mMemberName(field.GetName())
 {
-	if (type == ScriptNodeType::Setter)
-	{
-		ASSERT_LOG(CanBeSetThroughScripts(field),
-			"{}::{} cannot be set through scripts; Check using CanBeSetThroughScripts first",
-			field.GetOuterType().GetName(),
-			field.GetName());
-	}
-	else
-	{
-		ASSERT_LOG(CanBeGetThroughScripts(field),
-			"{}::{} cannot be gotten through scripts; Check using CanBeSetThroughScripts first",
-			field.GetOuterType().GetName(),
-			field.GetName());
-	}
 }
 
 void Engine::NodeInvolvingMetaMember::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
@@ -69,11 +55,23 @@ void Engine::NodeInvolvingMetaMember::PostDeclarationRefresh(ScriptFunc& scriptF
 	FunctionLikeNode::PostDeclarationRefresh(scriptFunc);
 }
 
+Engine::SetterScriptNode::SetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field):
+	NodeInvolvingMetaMember(ScriptNodeType::Setter, scriptFunc, field)
+{
+	ASSERT_LOG(CanBeSetThroughScripts(field),
+	           "{}::{} cannot be set through scripts; Check using CanBeSetThroughScripts first",
+	           field.GetOuterType().GetName(),
+	           field.GetName());
+
+	ConstructExpectedPins(scriptFunc);
+}
+
 std::optional<Engine::FunctionLikeNode::InputsOutputs> Engine::SetterScriptNode::GetExpectedInputsOutputs(const ScriptFunc&) const
 {
 	const MetaField* const originalMemberData = TryGetOriginalMemberData();
 
-	if (originalMemberData == nullptr)
+	if (originalMemberData == nullptr
+		|| !CanBeSetThroughScripts(*originalMemberData))
 	{
 		return std::nullopt;
 	}
@@ -101,6 +99,18 @@ std::optional<Engine::FunctionLikeNode::InputsOutputs> Engine::SetterScriptNode:
 	insOuts.mOutputs.emplace_back(TypeTraits{ originalMemberData->GetType().GetTypeId(), TypeForm::Ref });
 
 	return insOuts;
+}
+
+Engine::GetterScriptNode::GetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field, bool returnsCopy):
+	NodeInvolvingMetaMember(ScriptNodeType::Getter, scriptFunc, field),
+	mReturnsCopy(returnsCopy)
+{
+	ASSERT_LOG(CanBeGetThroughScripts(field, !returnsCopy),
+		"{}::{} cannot be gotten through scripts; Check using CanBeSetThroughScripts first",
+		field.GetOuterType().GetName(),
+		field.GetName());
+
+	ConstructExpectedPins(scriptFunc);
 }
 
 std::string Engine::GetterScriptNode::GetTitle(std::string_view memberName, bool returnsCopy)
@@ -144,7 +154,8 @@ std::optional<Engine::FunctionLikeNode::InputsOutputs> Engine::GetterScriptNode:
 {
 	const MetaField* const originalMemberData = TryGetOriginalMemberData();
 
-	if (originalMemberData == nullptr)
+	if (originalMemberData == nullptr
+		|| !CanBeGetThroughScripts(*originalMemberData, !mReturnsCopy))
 	{
 		return std::nullopt;
 	}

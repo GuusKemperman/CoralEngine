@@ -41,7 +41,6 @@ namespace Engine
 		std::string mTypeName{};
 		std::string mMemberName{};
 	};
-	
 
 	class SetterScriptNode final :
 		public NodeInvolvingMetaMember
@@ -54,11 +53,7 @@ namespace Engine
 		SetterScriptNode() :
 			NodeInvolvingMetaMember(ScriptNodeType::Setter) {};
 	public:
-		SetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field) :
-			NodeInvolvingMetaMember(ScriptNodeType::Setter, scriptFunc, field)
-		{
-			ConstructExpectedPins(scriptFunc);
-		}
+		SetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field);
 
 		static std::string GetTitle(std::string_view memberName)
 		{
@@ -82,12 +77,7 @@ namespace Engine
 		GetterScriptNode() :
 			NodeInvolvingMetaMember(ScriptNodeType::Getter) {};
 	public:
-		GetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field, bool returnsCopy) :
-			NodeInvolvingMetaMember(ScriptNodeType::Getter, scriptFunc, field),
-			mReturnsCopy(returnsCopy)
-		{
-			ConstructExpectedPins(scriptFunc);
-		}
+		GetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field, bool returnsCopy);
 
 		static std::string GetTitle(std::string_view memberName, bool returnsCopy);
 
@@ -105,6 +95,5 @@ namespace Engine
 		// Whether this gets a copy
 		// or a reference
 		bool mReturnsCopy{};
-
 	};
 }
