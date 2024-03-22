@@ -36,9 +36,10 @@ bool Engine::DurationalEffect::operator!=(const DurationalEffect& other) const
 #ifdef EDITOR
 void Engine::DurationalEffect::DisplayWidget()
 {
-	ImGui::TextWrapped("mDuration: %f", mDuration);
-	ImGui::TextWrapped("mDurationTimer: %f", mDurationTimer);
-	ImGui::TextWrapped("mAmount: %f", mAmount);
+	ShowInspectUIReadOnly("mDuration", mDuration);
+	ShowInspectUIReadOnly("mDurationTimer", mDurationTimer);
+	ShowInspectUIReadOnly("mStatAffected", mStatAffected);
+	ShowInspectUIReadOnly("mAmount", mAmount);
 }
 #endif // EDITOR
 
@@ -74,11 +75,14 @@ bool Engine::OverTimeEffect::operator!=(const OverTimeEffect& other) const
 #ifdef EDITOR
 void Engine::OverTimeEffect::DisplayWidget()
 {
-	ImGui::TextWrapped("mDuration: %f", mDuration);
-	ImGui::TextWrapped("mDurationTimer: %f", mDurationTimer);
-	ImGui::TextWrapped("mTicks: %d", mTicks);
-	ImGui::TextWrapped("mTicksCounter: %d", mTicksCounter);
-	ImGui::TextWrapped("Effect");
+	ShowInspectUIReadOnly("mDuration", mDuration);
+	ShowInspectUIReadOnly("mDurationTimer", mDurationTimer);
+	ShowInspectUIReadOnly("mTicks", mTicks);
+	ShowInspectUIReadOnly("mTicksCounter", mTicksCounter);
+	ShowInspectUIReadOnly("mStatAffected", mEffectSettings.mStat);
+	ShowInspectUIReadOnly("mAmount", mEffectSettings.mAmount);
+	ShowInspectUIReadOnly("mFlatOrPercentage", mEffectSettings.mFlatOrPercentage);
+	ShowInspectUIReadOnly("mIncreaseOrDecrease", mEffectSettings.mIncreaseOrDecrease);
 }
 #endif // EDITOR
 
@@ -87,7 +91,7 @@ Engine::MetaType Engine::OverTimeEffect::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<OverTimeEffect>{}, "OverTimeEffect" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddField(&OverTimeEffect::mDuration, "mDuration").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&OverTimeEffect::mDuration, "mDuration").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&OverTimeEffect::mDurationTimer, "mDurationTimer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&OverTimeEffect::mTicks, "mTicks").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&OverTimeEffect::mTicksCounter, "mTicksCounter").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
