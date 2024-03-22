@@ -83,7 +83,7 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 		}, "SpawnAOE", MetaFunc::ExplicitParams<
 		const std::shared_ptr<const Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-						return metaType;
+	return metaType;
 }
 
 std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect)
