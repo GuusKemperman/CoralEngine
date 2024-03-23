@@ -1,0 +1,31 @@
+#pragma once
+#include "Systems/System.h"
+#include <unordered_map>
+
+namespace Engine
+{
+	class Animation;
+	class SkinnedMeshComponent;
+	struct AnimNode;
+	struct BoneInfo;
+
+	class AnimationSystem final :
+		public System
+	{
+	public:
+		void Update(World& world, float dt) override;
+
+		void CalculateBoneTransform(const AnimNode& node, 
+	const glm::mat4& parenTransform, 
+	const std::unordered_map<std::string, BoneInfo>& boneMap,
+	const SkinnedMeshComponent& mesh,
+	const std::shared_ptr<const Animation> animation, 
+	std::vector<glm::mat4x4>& finalBoneMatrices);
+
+	private:
+
+		friend ReflectAccess;
+		static MetaType Reflect();
+		REFLECT_AT_START_UP(AnimationSystem);
+	};
+}

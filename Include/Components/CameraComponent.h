@@ -13,6 +13,7 @@ namespace Engine
 		const glm::mat4& GetViewProjection() const { return mViewProjection; }
 		const glm::mat4& GetView() const { return mView; }
 		const glm::mat4& GetProjection() const { return mProjection; }
+		const glm::mat4& GetOrthographicProjection() const { return mOrthographicProjection; }
 
 		void UpdateView(glm::vec3 position, glm::vec3 forward, glm::vec3 up, bool recalulateViewProjection = true);
 		void UpdateView(const TransformComponent& transform, bool recalulateViewProjection = true);
@@ -28,13 +29,12 @@ namespace Engine
 
 		glm::mat4 mView{};
 		glm::mat4 mProjection{};
+		glm::mat4 mOrthographicProjection{};
 		glm::mat4 mViewProjection{};
 		glm::mat4 mInvViewProjection{};
 
-	private:
-		void OnDeserialize(World& world, entt::entity owner, const BinaryGSONObject& deserializeFrom);
-		void OnSerialize(const World& world, entt::entity owner, BinaryGSONObject& serializeTo) const;
 
+	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(CameraComponent);

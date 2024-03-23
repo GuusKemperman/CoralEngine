@@ -81,6 +81,14 @@ namespace Engine
             const glm::vec3& halfExtends, 
             const glm::vec4& color) const;
 
+        void AddCylinder(
+            DebugCategory::Enum category, 
+            const glm::vec3& from, 
+            const glm::vec3& to, 
+            float radius, 
+            uint32 segments, 
+            const glm::vec4& color) const;
+
         void AddPolygon(
             DebugCategory::Enum category, 
             const std::vector<glm::vec3>& points, 
@@ -94,6 +102,8 @@ namespace Engine
 
         static void SetDebugCategoryFlags(DebugCategory::Enum flags) { sDebugCategoryFlags = flags; }
         static DebugCategory::Enum GetDebugCategoryFlags() { return sDebugCategoryFlags; }
+
+        static bool IsCategoryVisible(DebugCategory::Enum flags) { return sDebugCategoryFlags & flags; }
 
     private:
         class Impl;

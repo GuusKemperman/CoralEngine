@@ -4,6 +4,7 @@
 
 namespace Engine
 {
+	class Level;
 	class Registry;
 	class WorldRenderer;
 	class DebugRenderer;
@@ -45,7 +46,7 @@ namespace Engine
 
 		void SetTimeScale(float timeScale) { mTime.mTimescale = timeScale; }
 
-		bool IsPaused() { return mTime.mIsPaused; }
+		bool IsPaused() const { return mTime.mIsPaused; }
 
 		void Pause() { mTime.mIsPaused = true; }
 
@@ -58,6 +59,18 @@ namespace Engine
 
 		static World* TryGetWorldAtTopOfStack();
 
+		/**
+		 * \brief Will request a transition to a different level.
+		 *
+		 * Transitioning to a different level involves the destruction of the current world, and the
+		 * creation of a new one. This is done at the end of the World::Tick. All systems will be restarted.
+		 *
+		 * \param level The level to transition to.
+		 */
+		void TransitionToLevel(const std::shared_ptr<const Level>& level);
+
+		const std::shared_ptr<const Level>& GetNextLevel() const { return mLevelToTransitionTo; }
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
@@ -65,6 +78,8 @@ namespace Engine
 
 		std::unique_ptr<Registry> mRegistry{};
 		std::unique_ptr<WorldRenderer> mRenderer{};
+
+		std::shared_ptr<const Level> mLevelToTransitionTo{};
 
 		ScalableTimer mTime{};
 

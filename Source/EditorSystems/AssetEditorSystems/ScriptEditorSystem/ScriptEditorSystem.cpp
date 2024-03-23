@@ -12,21 +12,23 @@
 #include "Utilities/StringFunctions.h"
 
 Engine::ScriptEditorSystem::ScriptEditorSystem(Script&& asset) :
-	AssetEditorSystem(std::move(asset)),
-	mNodesThatCanBeCreated(GetALlNodesTheUserCanAdd())
+	AssetEditorSystem(std::move(asset))
 {
+	mLastUpToDateQueryData.mNodesThatCanBeCreated = GetAllNodesTheUserCanAdd();
 	mAsset.PostDeclarationRefresh();
 }
 
 Engine::ScriptEditorSystem::~ScriptEditorSystem()
 {
+	if (mQueryThread.joinable())
+	{
+		mQueryThread.join();
+	}
 	SelectFunction(nullptr);
 }
 
 void Engine::ScriptEditorSystem::Tick(const float deltaTime)
 {
-
-
 	if (!Begin(ImGuiWindowFlags_MenuBar))
 	{
 		End();
@@ -34,14 +36,24 @@ void Engine::ScriptEditorSystem::Tick(const float deltaTime)
 	}
 
 	AssetEditorSystem::Tick(deltaTime);
+	ax::NodeEditor::SetCurrentEditor(mContext);
 
 	if (ImGui::BeginMenuBar())
 	{
 		ShowSaveButton();
+
+		ImGui::BeginDisabled(mContext == nullptr);
+
+		if (ImGui::Button(ICON_FA_SEARCH_PLUS))
+		{
+			ax::NodeEditor::NavigateToContent();
+		}
+		ImGui::SetItemTooltip("Zoom to fit function contents");
+
+		ImGui::EndDisabled();
+
 		ImGui::EndMenuBar();
 	}
-
-	ax::NodeEditor::SetCurrentEditor(mContext);
 
 	ImGui::Splitter(true, &mOverviewPanelWidth, &mCanvasPlusDetailsWidth);
 
@@ -158,7 +170,12 @@ void Engine::ScriptEditorSystem::SelectFunction(ScriptFunc* func)
 		return;
 	}
 
-	DeselectCurrentFieldOrFunc();
+	SaveFunctionState();
+	DestroyEditor(mContext);
+	mContext = nullptr;
+	mIndexOfCurrentFunc = std::numeric_limits<uint32>::max();
+	mNavigateToLocationAtEndOfFrame.first = -1;
+	ax::NodeEditor::SetCurrentEditor(nullptr);
 
 	if (func == nullptr)
 	{
@@ -197,7 +214,7 @@ void Engine::ScriptEditorSystem::SelectField(ScriptField* field)
 		return;
 	}
 
-	DeselectCurrentFieldOrFunc();
+	mIndexOfCurrentField = std::numeric_limits<uint32>::max();
 
 	for (uint32 i = 0; i < mAsset.GetFields().size(); i++)
 	{
@@ -208,17 +225,6 @@ void Engine::ScriptEditorSystem::SelectField(ScriptField* field)
 		}
 	}
 	ASSERT(TryGetSelectedField() == field);
-}
-
-void Engine::ScriptEditorSystem::DeselectCurrentFieldOrFunc()
-{
-	SaveFunctionState();
-	DestroyEditor(mContext);
-	mContext = nullptr;
-	mIndexOfCurrentField = std::numeric_limits<uint32>::max();
-	mIndexOfCurrentFunc = std::numeric_limits<uint32>::max();
-	mNavigateToLocationAtEndOfFrame.first = -1;
-	ax::NodeEditor::SetCurrentEditor(nullptr);
 }
 
 void Engine::ScriptEditorSystem::SaveState(std::ostream& toStream) const
@@ -413,7 +419,7 @@ void Engine::ScriptEditorSystem::DeleteSelection()
 	ax::NodeEditor::EndDelete();
 }
 
-static constexpr std::string_view sClipboardScriptIdentifier = "ZZZ";
+static constexpr std::string_view sClipboardScriptIdentifier = "A0B1ZZ";
 
 void Engine::ScriptEditorSystem::CopySelection()
 {

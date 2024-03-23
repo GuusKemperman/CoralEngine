@@ -14,8 +14,20 @@
 #include "Containers/view_istream.h"
 #include "GSON/GSONBinary.h"
 
+namespace
+{
+	void SetCustomTheme();
+}
+
 void Engine::Editor::PostConstruct()
 {
+	if (Device::IsHeadless())
+	{
+		return;
+	}
+
+	SetCustomTheme();
+
 	const MetaType* const editorSystemType = MetaManager::Get().TryGetType<EditorSystem>();
 
 	if (editorSystemType == nullptr)
@@ -147,9 +159,6 @@ Engine::Editor::~Editor()
 
 void Engine::Editor::Tick(const float deltaTime)
 {
-	Device& device = Device::Get();
-	device.NewFrame();
-
 	DestroyRequestedSystems();
 	DisplayMainMenuBar();
 
@@ -161,6 +170,7 @@ void Engine::Editor::Tick(const float deltaTime)
 	{
 		mSystems[i].second->Tick(deltaTime);
 	}
+
 	DestroyRequestedSystems();
 
 	if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)
@@ -169,10 +179,6 @@ void Engine::Editor::Tick(const float deltaTime)
 	{
 		SaveAll();
 	}
-
-	device.EndFrame();
-
-	FullFillRefreshRequests();
 }
 
 void Engine::Editor::FullFillRefreshRequests()
@@ -593,17 +599,19 @@ void Engine::Editor::DisplayMainMenuBar()
 {
 	if (ImGui::BeginMainMenuBar())
 	{
-		if (ImGui::SmallButton("RefreshAll"))
+		if (ImGui::SmallButton(ICON_FA_REFRESH))
 		{
 			Refresh({ RefreshRequest::Volatile });
 		}
+		ImGui::SetItemTooltip("Refresh all open windows");
 
-		if (ImGui::SmallButton("Save all"))
+		if (ImGui::SmallButton(ICON_FA_FLOPPY_O))
 		{
 			SaveAll();
 		}
+		ImGui::SetItemTooltip("Save all open assets");
 
-		if (ImGui::BeginMenu("View"))
+		if (ImGui::BeginMenu(ICON_FA_WINDOW_RESTORE))
 		{
 			std::function<void(const MetaType&)> recursivelyDisplayAsOption = [this, &recursivelyDisplayAsOption](const MetaType& type)
 				{
@@ -643,8 +651,12 @@ void Engine::Editor::DisplayMainMenuBar()
 
 			ImGui::EndMenu();
 		}
+		else
+		{
+			ImGui::SetItemTooltip("Select which windows are open");
+		}
 
-		if (ImGui::BeginMenu("DebugDrawing"))
+		if (ImGui::BeginMenu(ICON_FA_EYE))
 		{
 			unsigned int flags = DebugRenderer::GetDebugCategoryFlags();
 
@@ -700,6 +712,108 @@ void Engine::Editor::DisplayMainMenuBar()
 
 			ImGui::EndMenu();
 		}
+		else
+		{
+			ImGui::SetItemTooltip("Specify which debug categories to draw");
+		}
 	}
 	ImGui::EndMainMenuBar();
+}
+
+namespace
+{
+	void SetCustomTheme()
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		const std::string fontPath = Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::EngineAssets, "Fonts/Roboto-Regular.ttf");
+		const std::string iconsPath = Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::EngineAssets, "Fonts/fontawesome-webfont.ttf");
+
+		ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 16.0f);
+
+		if (font == nullptr)
+		{
+			LOG(LogEditor, Warning, "Failed to load custom font {}. Using ImGui's default font instead", fontPath.c_str());
+			io.Fonts->AddFontDefault();
+		}
+		else
+		{
+			io.FontDefault = font;
+		}
+
+		// Merge icons into default font
+		ImFontConfig config;
+		config.MergeMode = true;
+		config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
+		static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+		io.Fonts->AddFontFromFileTTF(iconsPath.c_str(), 13.0f, &config, icon_ranges);
+
+		ImGui::GetStyle().FrameRounding = 4.0f;
+		ImGui::GetStyle().GrabRounding = 4.0f;
+
+		static constexpr float brightness = .8f;
+		static constexpr glm::vec4 accent = glm::vec4(0.14f * brightness, 0.51f * brightness, 0.50f * brightness, 1.00f);
+		static constexpr glm::vec4 hovered = glm::vec4(0.18f * brightness, 0.66f * brightness, 0.63f * brightness, 1.00f);
+		static constexpr glm::vec4 active = glm::vec4(0.22f * brightness, 0.77f * brightness, 0.74f * brightness, 1.00f);
+		static constexpr glm::vec4 unfocused = glm::vec4(accent.x * .8f, accent.y * .8f, accent.z * .8f, accent.w);
+		static constexpr glm::vec4 unfocusedActive = glm::vec4(accent.x * .9f, accent.y * .9f, accent.z * .9f, accent.w);
+
+		ImVec4* colors = ImGui::GetStyle().Colors;
+		colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
+		colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.42f, 0.47f, 1.00f);
+		colors[ImGuiCol_WindowBg] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+		colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
+		colors[ImGuiCol_PopupBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
+		colors[ImGuiCol_Border] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);;
+		colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+		colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.12f, 0.20f, 0.28f, 1.00f);
+		colors[ImGuiCol_FrameBgActive] = ImVec4(0.09f, 0.12f, 0.14f, 1.00f);
+		colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.12f, 0.14f, 0.65f);
+		colors[ImGuiCol_TitleBgActive] = glm::vec4(accent.x * .7f, accent.y * .7f, accent.z * .7f, accent.w);
+		colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
+		colors[ImGuiCol_MenuBarBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
+		colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.39f);
+		colors[ImGuiCol_ScrollbarGrab] = accent;
+		colors[ImGuiCol_ScrollbarGrabHovered] = hovered;
+		colors[ImGuiCol_ScrollbarGrabActive] = active;
+		colors[ImGuiCol_CheckMark] = active;
+		colors[ImGuiCol_SliderGrab] = accent;
+		colors[ImGuiCol_SliderGrabActive] = active;
+		colors[ImGuiCol_Button] = accent;
+		colors[ImGuiCol_ButtonHovered] = hovered;
+		colors[ImGuiCol_ButtonActive] = active;
+		colors[ImGuiCol_Header] = accent;
+		colors[ImGuiCol_HeaderHovered] = hovered;
+		colors[ImGuiCol_HeaderActive] = active;
+		colors[ImGuiCol_Separator] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);;
+		colors[ImGuiCol_SeparatorHovered] = hovered;
+		colors[ImGuiCol_SeparatorActive] = active;
+		colors[ImGuiCol_ResizeGrip] = accent;
+		colors[ImGuiCol_ResizeGripHovered] = hovered;
+		colors[ImGuiCol_ResizeGripActive] = active;
+		colors[ImGuiCol_Tab] = accent;
+		colors[ImGuiCol_TabHovered] = hovered;
+		colors[ImGuiCol_TabActive] = active;
+		colors[ImGuiCol_TabUnfocused] = unfocused;
+		colors[ImGuiCol_TabUnfocusedActive] = unfocusedActive;
+		colors[ImGuiCol_DockingPreview] = hovered;
+		colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
+		colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+		colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+		colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+		colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+		colors[ImGuiCol_TableHeaderBg] = ImVec4(0.19f, 0.19f, 0.20f, 1.00f);
+		colors[ImGuiCol_TableBorderStrong] = ImVec4(0.31f, 0.31f, 0.35f, 1.00f);
+		colors[ImGuiCol_TableBorderLight] = ImVec4(0.23f, 0.23f, 0.25f, 1.00f);
+		colors[ImGuiCol_TableRowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+		colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
+		colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
+		colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
+		colors[ImGuiCol_NavHighlight] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+		colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
+		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
+		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+	}
+
+
 }

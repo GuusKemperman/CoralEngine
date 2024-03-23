@@ -61,7 +61,8 @@ void Engine::Device::InitializeWindow()
     }
 
     glfwMakeContextCurrent(mWindow);
-
+    glfwShowWindow(mWindow);
+    mIsWindowOpen = true;
 }
 
 void Engine::Device::InitializeDevice()
@@ -238,10 +239,10 @@ void Engine::Device::InitializeDevice()
     mSwapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
 
     //CREATE DESCRIPTOR HEAPS
-    mDescriptorHeaps[RT_HEAP] = std::make_unique<DXDescHeap>(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
-    mDescriptorHeaps[DEPTH_HEAP] = std::make_unique<DXDescHeap>(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
-    mDescriptorHeaps[RESOURCE_HEAP] = std::make_unique<DXDescHeap>(mDevice, 5000, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"RESOURCE HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-    mDescriptorHeaps[SAMPLER_HEAP] = std::make_unique<DXDescHeap>(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, L"SAMPLER HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    mDescriptorHeaps[RT_HEAP] = DXDescHeap::Construct(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
+    mDescriptorHeaps[DEPTH_HEAP] = DXDescHeap::Construct(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
+    mDescriptorHeaps[RESOURCE_HEAP] = DXDescHeap::Construct(mDevice, 5000, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"RESOURCE HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    mDescriptorHeaps[SAMPLER_HEAP] = DXDescHeap::Construct(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, L"SAMPLER HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     //CREATE RENDER TARGETS
     for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
@@ -254,7 +255,7 @@ void Engine::Device::InitializeDevice()
             LOG(LogCore, Fatal, "Failed to get swapchain buffer");
         }
         mResources[i]->SetResource(res);
-        mDevice->CreateRenderTargetView(mResources[i]->Get(), nullptr, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(i));
+        mRenderTargetHandles[i] = mDescriptorHeaps[RT_HEAP]->AllocateRenderTarget(mResources[i].get(), mDevice.Get(), nullptr);
         mResources[i]->GetResource()->SetName(L"RENDER TARGET");
     }
 
@@ -265,21 +266,22 @@ void Engine::Device::InitializeDevice()
     mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX);//2
     mSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL);//3
     mSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL);//4
+    mSignature->AddCBuffer(5, D3D12_SHADER_VISIBILITY_VERTEX);//5
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);//5
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);//6
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);//7
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//8
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//9
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);//6
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);//7
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);//8
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//9
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//10
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);//10
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);//11
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);//12
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4);//13
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);//11
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);//12
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);//13
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4);//14
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);//14
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//15
-    mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//16
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);//15
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//16
+    mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//17
     mSignature->CreateSignature(mDevice, L"MAIN ROOT SIGNATURE");
 
 
@@ -299,7 +301,7 @@ void Engine::Device::InitializeDevice()
 
     mResources[DEPTH_STENCIL_RSC] = std::make_unique<DXResource>(mDevice, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
     mResources[DEPTH_STENCIL_RSC]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    mDevice->CreateDepthStencilView(mResources[DEPTH_STENCIL_RSC]->Get(), &depthStencilDesc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0));
+    mDepthHandle = mDescriptorHeaps[DEPTH_HEAP]->AllocateDepthStencil(mResources[DEPTH_STENCIL_RSC].get(), mDevice.Get(), &depthStencilDesc);
     SubmitCommands();
 }
 
@@ -341,7 +343,7 @@ void Engine::Device::UpdateRenderTarget()
             LOG(LogCore, Fatal, "Failed to get swapchain buffer");
         }
         mResources[i]->SetResource(res);
-        mDevice->CreateRenderTargetView(mResources[i]->Get(), nullptr, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(i));
+        mRenderTargetHandles[i] = mDescriptorHeaps[RT_HEAP]->AllocateRenderTarget(mResources[i].get(), mDevice.Get(), nullptr);
         mResources[i]->GetResource()->SetName(L"RENDER TARGET");
     }
 
@@ -360,7 +362,7 @@ void Engine::Device::UpdateRenderTarget()
 
     mResources[DEPTH_STENCIL_RSC] = std::make_unique<DXResource>(mDevice, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
     mResources[DEPTH_STENCIL_RSC]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    mDevice->CreateDepthStencilView(mResources[DEPTH_STENCIL_RSC]->Get(), &depthStencilDesc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0));
+    mDepthHandle = mDescriptorHeaps[DEPTH_HEAP]->AllocateDepthStencil(mResources[DEPTH_STENCIL_RSC].get(), mDevice.Get(), &depthStencilDesc);
 
     mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
 }
@@ -381,24 +383,19 @@ void Engine::Device::NewFrame() {
         mUpdateWindow = true;
     }
 
+#ifdef EDITOR
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
+#endif // EDITOR
 
     StartRecordingCommands();
 
-    if (mUpdateWindow) {
-        int otherFrameIndex = mFrameIndex == 0 ? 1 : 0;
-        mFenceValue[otherFrameIndex]++;
-        mCommandQueue->Signal(mFence[otherFrameIndex].Get(), mFenceValue[otherFrameIndex]);
-        WaitForFence(mFence[otherFrameIndex], mFenceValue[otherFrameIndex], mFenceEvent);
-        UpdateRenderTarget();
-        mUpdateWindow = false;
-    }
-
+#ifdef EDITOR
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
+#endif // EDITOR
 
     mCommandList->RSSetViewports(1, &mViewport); 
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
@@ -407,20 +404,20 @@ void Engine::Device::NewFrame() {
 
     glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0);
-    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
-    mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mFrameIndex, &clearColor[0]);
-    mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, 0);
+    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mRenderTargetHandles[mFrameIndex], mDepthHandle);
+    mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mRenderTargetHandles[mFrameIndex], &clearColor[0]);
+    mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, mDepthHandle);
 
 }
 
 void Engine::Device::EndFrame()
 {   
-    CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0);
-    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
+    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mRenderTargetHandles[mFrameIndex], mDepthHandle);
 
     auto* desc_ptr = mDescriptorHeaps[RESOURCE_HEAP]->Get();
     mCommandList->SetDescriptorHeaps(1, &desc_ptr);
+
+#ifdef EDITOR
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
 
@@ -434,6 +431,7 @@ void Engine::Device::EndFrame()
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
+#endif // EDITOR
 
     glfwSwapBuffers(mWindow);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_PRESENT);
@@ -445,11 +443,33 @@ void Engine::Device::EndFrame()
         LOG(LogCore, Fatal, "Failded to present");
     }
 
+#ifdef EDITOR
     ImGui::EndFrame();
+#endif // EDITOR
 
     WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
 
-   // StartUploadCommands();
+    if (mUpdateWindow)
+    {
+        mResources[0] = nullptr;
+        mResources[1] = nullptr;
+        mResources[DEPTH_STENCIL_RSC] = nullptr;
+    }
+
+    mResourcesToDeallocate.clear();
+
+    if (mUpdateWindow)
+    {
+        int otherFrameIndex = mFrameIndex == 0 ? 1 : 0;
+        mFenceValue[otherFrameIndex]++;
+        mCommandQueue->Signal(mFence[otherFrameIndex].Get(), mFenceValue[otherFrameIndex]);
+        WaitForFence(mFence[otherFrameIndex], mFenceValue[otherFrameIndex], mFenceEvent);
+        StartRecordingCommands();
+        UpdateRenderTarget();
+        SubmitCommands();
+        WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
+        mUpdateWindow = false;
+    }
 }
 
 void Engine::Device::SubmitCommands()
@@ -486,6 +506,7 @@ void Engine::Device::StartRecordingCommands()
 
 void Engine::Device::StartUploadCommands()
 {
+
     if (FAILED(mUploadCommandAllocator->Reset())) 
     {
         LOG(LogCore, Fatal, "Failed to reset upload command allocator");
@@ -512,14 +533,19 @@ void Engine::Device::SubmitUploadCommands()
     {
         LOG(LogCore, Fatal, "Failed to signal upload fence");
     }
+
+    WaitForFence(mUploadFence, mUploadFenceValue, mUploadFenceEvent);
 }
 
+void Engine::Device::AddToDeallocation(ComPtr<ID3D12Resource>&& res)
+{
+    mResourcesToDeallocate.emplace_back(std::move(res));
+}
+
+#ifdef EDITOR
 void Engine::Device::CreateImguiContext()
 {
     LOG(LogCore, Verbose, "Creating imgui context");
-
-    glfwShowWindow(mWindow);
-    mIsWindowOpen = true;
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -530,8 +556,8 @@ void Engine::Device::CreateImguiContext()
 
     ImGui_ImplDX12_Init(mDevice.Get(), FRAME_BUFFER_COUNT,
         DXGI_FORMAT_R8G8B8A8_UNORM, mDescriptorHeaps[RESOURCE_HEAP]->Get(),
-        mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(0),
-        mDescriptorHeaps[RESOURCE_HEAP]->GetGPUHandle(0));
+        mDescriptorHeaps[RESOURCE_HEAP]->Get()->GetCPUDescriptorHandleForHeapStart(),
+        mDescriptorHeaps[RESOURCE_HEAP]->Get()->GetGPUDescriptorHandleForHeapStart());
     ImGui_ImplGlfw_InitForOther(mWindow, true);
     ImGui_ImplGlfw_SetCallbacksChainForAllWindows(true);
 
@@ -540,42 +566,4 @@ void Engine::Device::CreateImguiContext()
     std::filesystem::create_directories("Intermediate/Layout");
     ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
 }
-
-int Engine::Device::AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
-{
-    mDevice->CreateShaderResourceView(rsc->Get(), &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(mHeapResourceCount));
-    mHeapResourceCount++;
-
-    return mHeapResourceCount - 1;
-}
-
-void Engine::Device::AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, unsigned int slot)
-{
-    mDevice->CreateShaderResourceView(rsc->Get(), &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(slot));
-}
-
-int Engine::Device::AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc)
-{
-    mDevice->CreateRenderTargetView(rsc->Get(), &desc, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(frameBufferCount));
-    frameBufferCount++;
-
-    return frameBufferCount-1;
-}
-
-int Engine::Device::AllocateDepthStencil(DXResource* rsc, const D3D12_DEPTH_STENCIL_VIEW_DESC& desc)
-{
-    mDevice->CreateDepthStencilView(rsc->Get(), &desc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(depthStencilCount));
-    depthStencilCount++;
-
-    return depthStencilCount-1;
-}
-
-void Engine::Device::AllocateDepthStencil(DXResource* rsc, const D3D12_DEPTH_STENCIL_VIEW_DESC& desc, unsigned int slot)
-{
-    mDevice->CreateDepthStencilView(rsc->Get(), &desc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(slot));
-}
-
-void Engine::Device::AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc, unsigned int slot)
-{
-    mDevice->CreateRenderTargetView(rsc->Get(), &desc, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(slot));
-}
+#endif

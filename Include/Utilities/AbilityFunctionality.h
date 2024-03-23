@@ -3,6 +3,7 @@
 
 namespace Engine
 {
+	struct DurationalEffect;
 	class Prefab;
 	class CharacterComponent;
 	class World;
@@ -13,7 +14,9 @@ namespace Engine
 		enum Stat
 		{
 			Health,
-			MovementSpeed
+			MovementSpeed,
+			DealtDamageModifier,
+			ReceivedDamageModifier
 		};
 
 		enum FlatOrPercentage
@@ -28,8 +31,11 @@ namespace Engine
 			Increase
 		};
 
-		static void ApplyInstantEffect(World& world, entt::entity affectedEntity, Stat stat = Stat::Health, float amount = 0.f, FlatOrPercentage flatOrPercentage = FlatOrPercentage::Flat, IncreaseOrDecrease increaseOrDecrease = IncreaseOrDecrease::Decrease);
+		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat = Stat::Health, float amount = 0.f, FlatOrPercentage flatOrPercentage = FlatOrPercentage::Flat, IncreaseOrDecrease increaseOrDecrease = IncreaseOrDecrease::Decrease);
+		static void ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat = Stat::Health, float amount = 0.f, FlatOrPercentage flatOrPercentage = FlatOrPercentage::Flat, IncreaseOrDecrease increaseOrDecrease = IncreaseOrDecrease::Decrease, float duration = 0.f);
+		static void RevertDurationalEffect(CharacterComponent& characterComponent, DurationalEffect& durationalEffect);
 		static entt::entity SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy);
+		static entt::entity SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy); // area of attack
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);
@@ -50,9 +56,11 @@ struct Reflector<Engine::AbilityFunctionality::Stat>
 template<>
 struct Engine::EnumStringPairsImpl<Engine::AbilityFunctionality::Stat>
 {
-	static constexpr EnumStringPairs<AbilityFunctionality::Stat, 2> value = {
+	static constexpr EnumStringPairs<AbilityFunctionality::Stat, 4> value = {
 		EnumStringPair<AbilityFunctionality::Stat>{ AbilityFunctionality::Stat::Health, "Health" },
 		{ AbilityFunctionality::Stat::MovementSpeed, "MovementSpeed" },
+		{ AbilityFunctionality::Stat::DealtDamageModifier, "DealtDamageModifier" },
+		{ AbilityFunctionality::Stat::ReceivedDamageModifier, "ReceivedDamageModifier" },
 	};
 };
 

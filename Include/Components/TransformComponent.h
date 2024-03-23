@@ -139,17 +139,15 @@ namespace Engine
 		float GetWorldScaleUniform() const { const glm::vec3 scale = GetWorldScale(); return (scale.x + scale.y + scale.z) * (1.0f / 3.0f); }
 	
 		void SetLocalScale(const float xyz) { mLocalScale = glm::vec3{ xyz }; }
+		void SetLocalScaleRightForward(const float scale) { mLocalScale = glm::vec3{ scale, mLocalScale.y, scale }; }
 		void SetLocalScale(const glm::vec3 scale) { mLocalScale = scale; }
 		void SetLocalScale(const glm::vec2 scale) { mLocalScale = To3DRightForward(scale, mLocalScale[Axis::Up]); }
 		
-		void SetWorldSclae(const float xyz) { SetWorldScale(glm::vec3{ xyz }); }
+		void SetWorldScale(const float xyz) { SetWorldScale(glm::vec3{ xyz }); }
 		void SetWorldScale(glm::vec3 scale);
 		void SetWorldScale(const glm::vec2 scale) { SetWorldScale(To3DRightForward(scale, GetWorldScale()[Axis::Up])); }
 		
 	private:
-		void OnDeserialize(World& world, entt::entity owner, const BinaryGSONObject& deserializeFrom);
-		void OnSerialize(const World& world, entt::entity owner, BinaryGSONObject& serializeTo) const;
-
 		static glm::vec2 To2DRightForward(glm::vec3 v3)
 		{
 			return { v3[Axis::Right], v3[Axis::Forward] };

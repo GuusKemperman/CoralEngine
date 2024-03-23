@@ -44,12 +44,10 @@ namespace Engine
 
 		entt::entity CreateFromFactory(const PrefabEntityFactory& factory, bool createChildren, entt::entity hint = entt::null);
 
-		void Destroy(entt::entity entity);
+		void Destroy(entt::entity entity, bool destroyChildren);
 		
 		template<typename It>
-		void Destroy(It first, It last);
-
-		void DestroyAlongWithChildren(entt::entity entity);
+		void Destroy(It first, It last, bool destroyChildren);
 
 		void RemovedDestroyed();
 
@@ -68,6 +66,9 @@ namespace Engine
 
 		template<typename ComponentType>
 		void RemoveComponent(entt::entity fromEntity);
+
+		template<typename ComponentType, typename It>
+		void RemoveComponents(It first, It last);
 
 		void RemoveComponentIfEntityHasIt(TypeId componentClassTypeId, entt::entity fromEntity);
 
@@ -254,7 +255,10 @@ namespace Engine
 	template<typename Type, typename It>
 	void Registry::AddComponents(It first, It last, const Type& value)
 	{
-		mRegistry.insert(std::move(first), std::move(last), value);
+		for (auto curr = first; curr != last; ++curr)
+		{
+			AddComponent<Type>(*curr, value);
+		}
 	}
 
 	template<typename Type>
@@ -309,6 +313,19 @@ namespace Engine
 		World::PopWorld();
 	}
 
+	template <typename ComponentType, typename It>
+	void Registry::RemoveComponents(It first, It last)
+	{
+		World::PushWorld(mWorld);
+
+		for (auto curr = first; curr != last; ++curr)
+		{
+			mRegistry.erase<ComponentType>(*curr);
+		}
+
+		World::PopWorld();
+	}
+
 	template<typename ComponentType>
 	void Registry::RemoveComponentIfEntityHasIt(entt::entity fromEntity)
 	{
@@ -324,11 +341,11 @@ namespace Engine
 	}
 
 	template<typename It>
-	void Registry::Destroy(It first, It last)
+	void Registry::Destroy(It first, It last, bool destroyChildren)
 	{
 		for (auto it = first; it != last; ++it)
 		{
-			Destroy(*it);
+			Destroy(*it, destroyChildren);
 		}
 	}
 

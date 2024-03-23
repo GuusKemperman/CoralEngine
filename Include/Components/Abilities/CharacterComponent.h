@@ -17,6 +17,12 @@ namespace Engine
 		float mBaseMovementSpeed = 10.f;
 		float mCurrentMovementSpeed = mBaseMovementSpeed;
 
+		float mBaseDealtDamageModifier = 0.f;
+		float mCurrentDealtDamageModifier = mBaseDealtDamageModifier;
+
+		float mBaseReceivedDamageModifier = 0.f;
+		float mCurrentReceivedDamageModifier = mBaseReceivedDamageModifier;
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();

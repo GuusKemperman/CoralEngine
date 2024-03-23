@@ -22,7 +22,7 @@ namespace
 	}
 }
 
-void Engine::ReflectComponentType(MetaType& type, bool isEmpty)
+void Engine::Internal::ReflectComponentType(MetaType& type, bool isEmpty)
 {
 	type.GetProperties().Add(Props::sComponentTag);
 
@@ -113,7 +113,7 @@ void Engine::ReflectComponentType(MetaType& type, bool isEmpty)
 	).GetProperties().Add(Props::sIsScriptableTag);
 }
 
-void Engine::UnreflectComponentType(MetaType& type)
+void Engine::Internal::UnreflectComponentType(MetaType& type)
 {
 	MetaType& entityType = MetaManager::Get().GetType<entt::entity>();
 

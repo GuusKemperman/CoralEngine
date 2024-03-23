@@ -10,6 +10,8 @@
 #include "World/World.h"
 #include "Core/Input.h"
 #include "Assets/Script.h"
+#include "Components/Abilities/AOEComponent.h"
+#include "Components/Abilities/EffectsOnCharacterComponent.h"
 #include "Components/Abilities/ProjectileComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 
@@ -24,19 +26,47 @@ void Engine::AbilitySystem::Update(World& world, float dt)
         projectile.mCurrentRange += glm::length(physicsBody.mLinearVelocity) * dt;
 	    if (projectile.mCurrentRange >= projectile.mRange)
 	    {
-            reg.Destroy(entity);
+            reg.Destroy(entity, true);
 	    }
     }
 
-    auto viewCharacters = reg.View<CharacterComponent>();
-    const auto& input = Input::Get();
-    for (auto [entity, characterData] : viewCharacters.each())
+    auto viewAOE = reg.View<AOEComponent>();
+    for (auto [entity, aoe] : viewAOE.each())
     {
+        aoe.mCurrentDuration += dt;
+        if (aoe.mCurrentDuration >= aoe.mDuration)
+        {
+            reg.Destroy(entity, true);
+        }
+    }
+
+    auto viewCharacters = reg.View<CharacterComponent, EffectsOnCharacterComponent>();
+    const auto& input = Input::Get();
+    for (auto [entity, characterData, effects] : viewCharacters.each())
+    {
+        // update effects
+        auto& durationalEffects = effects.mDurationalEffects;
+        for (auto it = durationalEffects.begin(); it != durationalEffects.end();)
+        {
+            it->mCurrentDuration += dt;
+            if (it->mCurrentDuration >= it->mDuration)
+            {
+                AbilityFunctionality::RevertDurationalEffect(characterData, *it);
+                it = durationalEffects.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        // update GDC
         if (characterData.mGlobalCooldownTimer > 0.f)
         {
             characterData.mGlobalCooldownTimer -= dt;
         }
 
+        // abilities
         auto abilities = reg.TryGet<AbilitiesOnCharacterComponent>(entity);
         if (abilities == nullptr)
         {

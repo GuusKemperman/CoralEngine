@@ -31,6 +31,11 @@ void Engine::CameraComponent::UpdateProjection(const float aspectRatio, bool rec
 {
 	mProjection = glm::perspective(mFOV, aspectRatio, mNear, mFar);
 
+	// Calculating the orthographic projection is a matter to discuss and look into further, 
+	// since it may not work as well on different resolutions
+	float halfAspectRatio = aspectRatio * 0.5f;
+	mOrthographicProjection = glm::ortho(-halfAspectRatio, halfAspectRatio, -halfAspectRatio, halfAspectRatio, -1.0f, 1.0f);
+
 	if (recalculateViewProjection)
 	{
 		RecalculateViewProjection();
@@ -41,25 +46,6 @@ void Engine::CameraComponent::RecalculateViewProjection()
 {
 	mViewProjection = mProjection * mView;
 	mInvViewProjection = inverse(mViewProjection);
-}
-
-void Engine::CameraComponent::OnDeserialize(World& world, entt::entity owner, const BinaryGSONObject&)
-{
-	// This only gets called if we serialized something
-	// during OnSerialize.
-	// And we only serialize if we are the active camera.
-	world.GetRenderer().SetMainCamera(owner);
-}
-
-void Engine::CameraComponent::OnSerialize(const World& world, entt::entity owner, BinaryGSONObject& serializeTo) const
-{
-	auto cam = world.GetRenderer().GetMainCamera();
-
-	if (cam.has_value()
-		&& cam->first == owner)
-	{
-		serializeTo.AddGSONMember("active");
-	}
 }
 
 Engine::MetaType Engine::CameraComponent::Reflect()
@@ -73,13 +59,10 @@ Engine::MetaType Engine::CameraComponent::Reflect()
 	type.AddFunc(&CameraComponent::GetViewProjection, "GetViewProjection", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&CameraComponent::GetView, "GetView", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&CameraComponent::GetProjection, "GetProjection", "").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&CameraComponent::GetOrthographicProjection, "GetOrthographicProjection", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&CameraComponent::RecalculateViewProjection, "RecalculateViewProjection", "").GetProperties().Add(Props::sIsScriptableTag);
 
-	BindEvent(type, sSerializeEvent, &CameraComponent::OnSerialize);
-	BindEvent(type, sDeserializeEvent, &CameraComponent::OnDeserialize);
-
 	ReflectComponentType<CameraComponent>(type);
-
 
 	return type;
 }

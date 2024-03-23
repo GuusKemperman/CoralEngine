@@ -3,6 +3,7 @@
 
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/TransformComponent.h"
+#include "Components/Abilities/CharacterComponent.h"
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Components/Pathfinding/NavMeshComponent.h"
 #include "Components/Pathfinding/NavMeshTargetComponent.h"
@@ -15,7 +16,8 @@ using namespace Engine;
 
 void NavigationSystem::Update(World& world, float dt)
 {
-	const auto navMeshComponentView = world.GetRegistry().View<NavMeshComponent>();
+	auto& registry = world.GetRegistry();
+	const auto navMeshComponentView = registry.View<NavMeshComponent>();
 
 	for (const auto navMeshId : navMeshComponentView)
 	{
@@ -33,34 +35,41 @@ void NavigationSystem::Update(World& world, float dt)
 		return;
 	}
 
-	//// Get the navmesh agent entities
-	const auto agentsView = world.GetRegistry().View<
+	// Get the navmesh agent entities
+	const auto agentsView = registry.View<
 		NavMeshAgentComponent, TransformComponent, PhysicsBody2DComponent>();
-
-	//// There is only one entity with keyboard control
-	//const auto targetsView = world.GetRegistry().View<NavMeshTargetTag, TransformComponent>();
 
 	if (navMeshComponentView.empty()) { return; }
 
 	auto [naveMesh] = navMeshComponentView.get(navMeshComponentView.front());
 
-	//// Iterate over the target entity
-	//for (auto [targetId, targetTransform] : targetsView.each())
-	//{
-	//glm::vec2 targetWorldPosition = {targetTransform.GetWorldPosition().x, targetTransform.GetWorldPosition().z};
-
 	// Iterate over the entities that have NavMeshAgent, Transform, and Physics::Body components simultaneously
 	for (auto [agentId, navMeshAgent, agentTransform, agentBody] : agentsView.each())
 	{
 		glm::vec2 agentWorldPosition = {agentTransform.GetWorldPosition().x, agentTransform.GetWorldPosition().z};
+		std::optional<glm::vec2> targetPosition = navMeshAgent.GetTargetPosition();
 
-		// Check if the agent's position is different from the target's position
-		if (!navMeshAgent.GetTargetPosition().has_value() || agentWorldPosition == navMeshAgent.GetTargetPosition().
-			value())
+		// set orientation
+		if (targetPosition.has_value())
+		{
+			const glm::vec2 orientation2D = glm::normalize(targetPosition.value() - agentWorldPosition);
+			const glm::quat orientationQuat = Math::Direction2DToXZQuatOrientation(orientation2D);
+			agentTransform.SetLocalOrientation(orientationQuat);
+		}
+
+		if (!targetPosition.has_value() || !navMeshAgent.IsChasing())
 		{
 			agentBody.mLinearVelocity = {0.0f, 0.0f};
 			continue;
 		}
+
+		auto characterComponent = registry.TryGet<CharacterComponent>(agentId);
+		if (characterComponent == nullptr)
+		{
+			LOG(LogNavigationSystem, Warning, "NavMesh Agent with entity ID {} does not have a character component attached to get the movement speed.", entt::to_integral(agentId))
+			continue;
+		}
+		float speed = characterComponent->mCurrentMovementSpeed;
 
 		// Find a path from the agent's position to the target's position
 		navMeshAgent.mPathFound = naveMesh.FindQuickestPath(agentWorldPosition,
@@ -76,7 +85,7 @@ void NavigationSystem::Update(World& world, float dt)
 
 			if (distance > 0)
 			{
-				const float step = navMeshAgent.GetSpeed() * dt;
+				const float step = speed * dt;
 				if (step >= distance)
 				{
 					// If the step is larger than the remaining distance, move directly to the target position
@@ -86,7 +95,7 @@ void NavigationSystem::Update(World& world, float dt)
 				else
 				{
 					// Calculate the new direction using linear interpolation
-					const float ratio = navMeshAgent.GetSpeed() / distance;
+					const float ratio = speed / distance;
 					agentBody.mLinearVelocity = ratio * dVec2;
 				}
 			}

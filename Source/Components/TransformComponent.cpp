@@ -32,31 +32,6 @@ void Engine::TransformComponent::OnConstruct(World&, entt::entity owner)
 	mOwner = owner;
 }
 
-void Engine::TransformComponent::OnDeserialize(World& world, const entt::entity, const BinaryGSONObject& deserializeFrom)
-{
-	entt::entity parentEntity;
-
-	// It's safe to use Get instead of TryGet, since if we did not serialize a parent, 
-	// the object we serialized to was completely empty and will not have been saved to file.
-	ASSERT(deserializeFrom.GetGSONMembers().size() == 1);
-	deserializeFrom.GetGSONMembers()[0] >> parentEntity;
-
-	TransformComponent* parent = world.GetRegistry().TryGet<TransformComponent>(parentEntity);
-	SetParent(parent);
-}
-
-void Engine::TransformComponent::OnSerialize(const World&, const entt::entity, BinaryGSONObject& serializeTo) const
-{
-	if (mParent != nullptr)
-	{
-		// Since the parent/children are stored through a raw ptr they
-		// are trickier to serialize. Since this is the only place where
-		// storing a raw pointer to a component makes sense, we're not going
-		// to bother with making a system that allows serializing component pointers
-		serializeTo.AddGSONMember("") << mParent->GetOwner();
-	}
-}
-
 glm::mat4 Engine::TransformComponent::ToMatrix(const glm::vec3 position, const glm::vec3 scale, const glm::quat orientation)
 {
 	// Scales first, rotates second, translates last.
@@ -117,7 +92,8 @@ void Engine::TransformComponent::SetWorldMatrix(const glm::mat4& matrix)
 
 void Engine::TransformComponent::SetParent(TransformComponent* const parent, const bool preserveWorld)
 {
-	if (mParent == parent)
+	if (mParent == parent
+		|| parent == this)
 	{
 		return;
 	}
@@ -327,8 +303,6 @@ Engine::MetaType Engine::TransformComponent::Reflect()
 	type.AddFunc(static_cast<void (TransformComponent::*)(glm::vec3)>(&TransformComponent::SetWorldScale), "SetWorldScale", "", "scale").GetProperties().Add(Props::sIsScriptableTag);
 
 	BindEvent(type, sConstructEvent, &TransformComponent::OnConstruct);
-	BindEvent(type, sSerializeEvent, &TransformComponent::OnSerialize);
-	BindEvent(type, sDeserializeEvent, &TransformComponent::OnDeserialize);
 
 	ReflectComponentType<TransformComponent>(type);
 	return type;

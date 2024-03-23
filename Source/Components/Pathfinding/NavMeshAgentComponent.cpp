@@ -6,37 +6,51 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
-
-float Engine::NavMeshAgentComponent::GetSpeed() const
-{
-	return mSpeed;
-}
+#include "Meta/ReflectedTypes/STD/ReflectOptional.h"
 
 std::optional<glm::vec2> Engine::NavMeshAgentComponent::GetTargetPosition() const
 {
 	return mTargetPosition;
 }
 
-void Engine::NavMeshAgentComponent::SetTarget(glm::vec2 targetPosition)
+void Engine::NavMeshAgentComponent::SetTargetPosition(glm::vec2 targetPosition)
+{
+	mIsChasing = true;
+	mTargetPosition = targetPosition;
+}
+
+void Engine::NavMeshAgentComponent::SetTargetPosition(const TransformComponent& transformComponent)
+{
+	mIsChasing = true;
+	mTargetPosition = {transformComponent.GetWorldPosition().x, transformComponent.GetWorldPosition().z};
+}
+
+void Engine::NavMeshAgentComponent::UpdateTargetPosition(glm::vec2 targetPosition)
 {
 	mTargetPosition = targetPosition;
 }
 
-void Engine::NavMeshAgentComponent::SetTarget(const TransformComponent& transformComponent)
+void Engine::NavMeshAgentComponent::UpdateTargetPosition(const TransformComponent& transformComponent)
 {
-	mTargetPosition = {transformComponent.GetWorldPosition().x, transformComponent.GetWorldPosition().z};
+	mTargetPosition = { transformComponent.GetWorldPosition().x, transformComponent.GetWorldPosition().z };
 }
 
 void Engine::NavMeshAgentComponent::StopNavMesh()
 {
-	mTargetPosition.reset();
+	mIsChasing = false;
+}
+
+bool Engine::NavMeshAgentComponent::IsChasing() const
+{
+	return mIsChasing;
 }
 
 Engine::MetaType Engine::NavMeshAgentComponent::Reflect()
 {
 	auto metaType = MetaType{MetaType::T<NavMeshAgentComponent>{}, "NavMeshAgentComponent"};
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&NavMeshAgentComponent::mSpeed, "Speed").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&NavMeshAgentComponent::mTargetPosition, "mTargetPosition").GetProperties();
+	metaType.AddField(&NavMeshAgentComponent::mIsChasing, "mIsChasing").GetProperties().Add(Props::sIsScriptableTag);
 	Engine::ReflectComponentType<NavMeshAgentComponent>(metaType);
 
 	return metaType;

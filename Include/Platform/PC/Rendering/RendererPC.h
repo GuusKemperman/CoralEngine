@@ -5,6 +5,7 @@
 #include "Systems/System.h"
 #include "glm/glm.hpp"
 #include "Assets/StaticMesh.h"
+#include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
 
 class DXResource;
 class DXConstBuffer;
@@ -76,15 +77,16 @@ namespace Engine
             MATERIAL_SB
         };
 
-
     private:
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
         std::unique_ptr<DXResource> mStructuredBuffers[3];
         std::unique_ptr<DXPipeline> mPBRPipeline;
+        std::unique_ptr<DXPipeline> mPBRSkinnedPipeline;
         std::unique_ptr<DXPipeline> mZPipeline;
+        std::unique_ptr<DXPipeline> mZSkinnedPipeline;
         InfoStruct::DXLightInfo  lights;
 
-        unsigned int materialHeapSlot = 0;
+        DXHeapHandle materialHeapSlot;
         std::vector<InfoStruct::DXMaterialInfo> materials;
     private:
         friend ReflectAccess;

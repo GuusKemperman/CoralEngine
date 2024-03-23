@@ -80,7 +80,7 @@ bool Engine::IsFunctionPure(const MetaFunc& func)
 
 bool Engine::WasTypeCreatedByScript(const MetaType& type)
 {
-	return type.GetProperties().Has(Name{ Script::sWasTypeCreatedFromScriptProperty });
+	return type.GetProperties().Has(Props::sIsFromScriptsTag);
 }
 
 std::shared_ptr<const Engine::Script> Engine::TryGetScriptResponsibleForCreatingType(const MetaType& type)
@@ -163,12 +163,14 @@ namespace Engine
 
 bool Engine::CanBeSetThroughScripts(const MetaField& field)
 {
-	return CanMemberBeSetOrGetThroughScripts(field);
+	return !field.GetProperties().Has(Props::sIsScriptReadOnlyTag)
+		&& CanMemberBeSetOrGetThroughScripts(field);
 }
 
-bool Engine::CanBeGetThroughScripts(const MetaField& field)
+bool Engine::CanBeGetThroughScripts(const MetaField& field, bool byReference)
 {
-	return CanMemberBeSetOrGetThroughScripts(field);
+	return (!byReference || !field.GetProperties().Has(Props::sIsScriptReadOnlyTag))
+		&& CanMemberBeSetOrGetThroughScripts(field);
 }
 
 bool Engine::CanCreateLink(const ScriptPin& a, const ScriptPin& b)
@@ -188,11 +190,6 @@ bool Engine::CanCreateLink(const ScriptPin& a, const ScriptPin& b)
 		|| b.TryGetType() == nullptr)
 	{
 		return false;
-	}
-
-	if (a.TryGetType() == b.TryGetType())
-	{
-		return true;
 	}
 
 	const ScriptPin& input = a.IsInput() ? a : b;

@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Systems/PhysicsSystem2D.h"
 
-#include "Components/ComponentFiler.h"
+#include "Components/ComponentFilter.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Meta/MetaType.h"
 #include "Components/TransformComponent.h"
@@ -46,9 +46,7 @@ void Engine::PhysicsSystem2D::Update(World& world, float dt)
 {
 	UpdateBodiesAndTransforms(world, dt);
 	UpdateCollisions(world);
-#ifdef _DEBUG
 	DebugDrawing(world);
-#endif
 }
 
 void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
@@ -57,22 +55,14 @@ void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
 	const auto view = reg.View<PhysicsBody2DComponent, TransformComponent>();
 	for (auto [entity, body, transform] : view.each())
 	{
-		switch (body.mMotionType)
+		if (body.mIsAffectedByForces)
 		{
-		case MotionType::Dynamic:
 			body.mLinearVelocity += body.mForce * body.mInvMass * dt;
-		case MotionType::Kinematic:
-			if (body.mLinearVelocity != glm::vec2{})
-			{
-				transform.TranslateWorldPosition(body.mLinearVelocity * dt);
+		}
 
-				// update orientation based on velocity
-				if (reg.TryGet<CharacterComponent>(entity)) // TODO: abstract component away from system
-				{
-					transform.SetLocalOrientation(Math::Direction2DToXZQuatOrientation(body.mLinearVelocity));
-				}
-			}
-		default:;
+		if (body.mLinearVelocity != glm::vec2{})
+		{
+			transform.TranslateWorldPosition(body.mLinearVelocity * dt);
 		}
 	}
 }
@@ -110,24 +100,46 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 				continue;
 			}
 
+			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
+
+			if (response == CollisionResponse::Ignore)
+			{
+				continue;
+			}
+
 			const glm::vec2 entity2Pos = transform2.GetWorldPosition2D();
 
 			if (CollisionCheckDiskDisk(entity1Pos, disk1.mRadius, entity2Pos, disk2.mRadius, collision))
 			{
-				ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
 				RegisterCollision(currentCollisions, collision, entity1, entity2);
+
+				if (response == CollisionResponse::Blocking)
+				{
+					ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
+				}
 			}
 		}
 
 		// disk-polygon collisions
 		for (const auto [entity2, body2, transform2, polygon2] : viewPolygon.each())
 		{
+			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
+
+			if (response == CollisionResponse::Ignore)
+			{
+				continue;
+			}
+
 			const glm::vec2 entity2Pos = transform2.GetWorldPosition2D();
 
 			if (CollisionCheckDiskPolygon(entity1Pos, disk1.mRadius, entity2Pos, polygon2.mPoints, collision))
 			{
-				ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
 				RegisterCollision(currentCollisions, collision, entity1, entity2);
+
+				if (response == CollisionResponse::Blocking)
+				{
+					ResolveCollision(collision, body1, body2, transform2, entity1Pos, entity2Pos);
+				}
 			}
 		}
 
@@ -145,11 +157,11 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 	for (const CollisionData& currFrame : currentCollisions)
 	{
 		const bool wasCollidingPrevFrame = std::any_of(mPreviousCollisions.begin(), mPreviousCollisions.end(),
-			[&currFrame](const CollisionData& prevFrame)
-			{
-				return currFrame.mEntity1 == prevFrame.mEntity1
-					&& currFrame.mEntity2 == prevFrame.mEntity2;
-			});
+		                                               [&currFrame](const CollisionData& prevFrame)
+		                                               {
+			                                               return currFrame.mEntity1 == prevFrame.mEntity1
+				                                               && currFrame.mEntity2 == prevFrame.mEntity2;
+		                                               });
 
 		if (!wasCollidingPrevFrame)
 		{
@@ -160,11 +172,11 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 	for (const CollisionData& prevFrame : mPreviousCollisions)
 	{
 		const bool isCollidingNow = std::any_of(currentCollisions.begin(), currentCollisions.end(),
-			[&prevFrame](const CollisionData& currFrame)
-			{
-				return currFrame.mEntity1 == prevFrame.mEntity1
-					&& currFrame.mEntity2 == prevFrame.mEntity2;
-			});
+		                                        [&prevFrame](const CollisionData& currFrame)
+		                                        {
+			                                        return currFrame.mEntity1 == prevFrame.mEntity1
+				                                        && currFrame.mEntity2 == prevFrame.mEntity2;
+		                                        });
 
 		if (!isCollidingNow)
 		{
@@ -182,7 +194,7 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 
 template <typename CollisionDataContainer>
 void Engine::PhysicsSystem2D::CallEvents(World& world, const CollisionDataContainer& collisions,
-	const std::vector<CollisionEvent>& events)
+                                         const std::vector<CollisionEvent>& events)
 {
 	if (collisions.empty())
 	{
@@ -210,6 +222,11 @@ void Engine::PhysicsSystem2D::CallEvents(World& world, const CollisionDataContai
 
 void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 {
+	if ((DebugRenderer::GetDebugCategoryFlags() & DebugCategory::Physics) == 0)
+	{
+		return;
+	}
+
 	Registry& reg = world.GetRegistry();
 	const auto diskView = reg.View<PhysicsBody2DComponent, DiskColliderComponent, TransformComponent>();
 	const auto& renderer = world.GetDebugRenderer();
@@ -234,7 +251,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 }
 
 void Engine::PhysicsSystem2D::CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage,
-	entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint)
+        entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint)
 {
 	static_assert(std::is_same_v<decltype(sCollisionEntryEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
 	static_assert(std::is_same_v<decltype(sCollisionStayEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
@@ -257,15 +274,15 @@ void Engine::PhysicsSystem2D::CallEvent(const CollisionEvent& event, World& worl
 	}
 }
 
-void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision, 
-	PhysicsBody2DComponent& body1, 
-	PhysicsBody2DComponent& body2, 
-	TransformComponent& transform2,			
-	glm::vec2& entity1WorldPos,
-	const glm::vec2& entity2WorldPos)
+void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
+		PhysicsBody2DComponent& body1,
+		PhysicsBody2DComponent& body2,
+		TransformComponent& transform2,
+		glm::vec2& entity1WorldPos,
+		const glm::vec2& entity2WorldPos)
 {
-	const bool isBody1Dynamic = body1.mMotionType == MotionType::Dynamic;
-	const bool isBody2Dynamic = body2.mMotionType == MotionType::Dynamic;
+	const bool isBody1Dynamic = body1.mIsAffectedByForces;
+	const bool isBody2Dynamic = body2.mIsAffectedByForces;
 
 	if (isBody1Dynamic 
 		|| isBody2Dynamic)
@@ -284,16 +301,16 @@ void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
 
 		if (isBody2Dynamic)
 		{
-			transform2.SetWorldPosition(entity2WorldPos + dist * body2.mInvMass);
+			transform2.SetWorldPosition(entity2WorldPos - dist * body2.mInvMass);
 		}
 
 		// compute and apply impulses
-		const float dotProduct = glm::dot(body1.mLinearVelocity - body2.mLinearVelocity, collision.mNormalFor1);
+		const float dotProduct = dot(body1.mLinearVelocity - body2.mLinearVelocity, collision.mNormalFor1);
 
 		if (dotProduct <= 0)
 		{
-			const float restitution = std::min(body1.mRestitution, body2.mRestitution);
-			const float j = -(1 + restitution) * dotProduct / totalInvMass;
+			const float restitution = (body1.mRestitution + body2.mRestitution);
+			const float j = -(1 + restitution * 0.5f) * dotProduct / (1 / body1.mInvMass + 1 / body2.mInvMass);
 			const glm::vec2 impulse = j * collision.mNormalFor1;
 
 			if (isBody1Dynamic)
@@ -310,7 +327,7 @@ void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
 }
 
 void Engine::PhysicsSystem2D::RegisterCollision(std::vector<CollisionData>& currentCollisions,
-	CollisionData& collision, entt::entity entity1, entt::entity entity2)
+		CollisionData& collision, entt::entity entity1, entt::entity entity2)
 {
 	collision.mEntity1 = entity1;
 	collision.mEntity2 = entity2;
@@ -318,7 +335,8 @@ void Engine::PhysicsSystem2D::RegisterCollision(std::vector<CollisionData>& curr
 }
 
 
-bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(const glm::vec2& center1, float radius1, const glm::vec2& center2, float radius2, CollisionData& result)
+bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(const glm::vec2& center1, float radius1, const glm::vec2& center2,
+		float radius2, CollisionData& result)
 {
 	// check for overlap
 	const glm::vec2 diff(center1 - center2);
@@ -335,7 +353,7 @@ bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(const glm::vec2& center1, f
 }
 
 bool Engine::PhysicsSystem2D::CollisionCheckDiskPolygon(const glm::vec2& diskCenter, float diskRadius, const glm::vec2& polygonPos, const std::vector<glm::vec2>& polygonPoints,
-	CollisionData& result)
+		CollisionData& result)
 {
 	const glm::vec2& nearest = GetNearestPointOnPolygonBoundary(diskCenter - polygonPos, polygonPoints) + polygonPos;
 	const glm::vec2 diff(diskCenter - nearest);

@@ -222,7 +222,7 @@ UNIT_TEST(Events, OnDestructDestroyEntity)
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfDestructs", 0));
 
-	world.GetRegistry().Destroy(owner);
+	world.GetRegistry().Destroy(owner, false);
 	world.GetRegistry().RemovedDestroyed();
 
 	// I guess we can't really test the num of destructs if the instance were destroyed..
@@ -282,13 +282,13 @@ UNIT_TEST(Events, CollisionEvents)
 	Registry& reg = world.GetRegistry();
 
 	reg.AddComponent<TransformComponent>(owner);
-	reg.AddComponent<PhysicsBody2DComponent>(owner).mMotionType = MotionType::Static;
+	reg.AddComponent<PhysicsBody2DComponent>(owner).mIsAffectedByForces = false;
 	reg.AddComponent<DiskColliderComponent>(owner);
 
 	const entt::entity other = reg.Create();
 
 	TransformComponent& otherTransform = reg.AddComponent<TransformComponent>(other);
-	reg.AddComponent<PhysicsBody2DComponent>(other).mMotionType = MotionType::Static;
+	reg.AddComponent<PhysicsBody2DComponent>(other).mIsAffectedByForces = false;
 	reg.AddComponent<DiskColliderComponent>(other);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 0));
