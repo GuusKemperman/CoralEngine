@@ -36,9 +36,7 @@ namespace Engine
 		private:
 			int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 
-			std::shared_ptr<DXResource> mTextureBuffer{};
-
-
+			std::unique_ptr<DXResource> mTextureBuffer{};
 			std::optional<DXHeapHandle> mHeapSlot;
 
 			struct STBIPixels

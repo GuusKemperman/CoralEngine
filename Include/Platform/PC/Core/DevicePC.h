@@ -5,6 +5,8 @@
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 #include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
 #include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
+#include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
+#include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
 
 struct GLFWwindow;
 struct GLFWmonitor;
@@ -71,6 +73,14 @@ namespace Engine
         void SubmitCommands();
         void StartRecordingCommands();
 
+        struct DXGenerateMips {
+            uint32_t SrcMipLevel;           // Texture level of source mip
+            uint32_t NumMipLevels;          // Number of OutMips to write: [1-4]
+            uint32_t SrcDimension;          // Width and height of the source texture are even or odd.
+            uint32_t IsSRGB;                // Must apply gamma correction to sRGB textures.
+            DirectX::XMFLOAT2 TexelSize;    // 1.0 / OutMip1.Dimensions
+        };
+
     private:
         bool mIsWindowOpen{};
 
@@ -95,6 +105,7 @@ namespace Engine
 
         std::shared_ptr<DXDescHeap> mDescriptorHeaps[NUM_DESC_HEAPS];
         std::unique_ptr<DXResource> mResources[NUM_RESOURCES];
+        std::unique_ptr<DXConstBuffer> mGenMipsCB;
         const DXGI_FORMAT mDepthFormat = DXGI_FORMAT_D32_FLOAT;
 
         HANDLE mFenceEvent;
@@ -109,6 +120,8 @@ namespace Engine
         ComPtr<IDXGISwapChain3> mSwapChain;
         ComPtr<ID3D12Device5> mDevice;
         std::unique_ptr<DXSignature> mSignature;
+        std::unique_ptr<DXSignature> mComputeSignature;
+        std::unique_ptr<DXPipeline> mGenMipmapsPipeline;
 
         DXHeapHandle mRenderTargetHandles[FRAME_BUFFER_COUNT];
         DXHeapHandle mDepthHandle;

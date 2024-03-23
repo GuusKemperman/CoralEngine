@@ -284,6 +284,24 @@ void Engine::Device::InitializeDevice()
     mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//17
     mSignature->CreateSignature(mDevice, L"MAIN ROOT SIGNATURE");
 
+    //COMPUTE ROOT SIGNATURE
+    //CREATE COMPUTE ROOT SIGNATURE
+    mComputeSignature = std::make_unique<DXSignature>(8);
+    mComputeSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL); // Cluster info 0
+    mComputeSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_ALL); // Camera info 1
+    mComputeSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_ALL); // Cluster camera info 2
+    mComputeSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_ALL); // Light info 3
+    mComputeSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_ALL); // Model matrices 4
+    mComputeSignature->AddCBuffer(5, D3D12_SHADER_VISIBILITY_ALL); // Pixel color for cluster culling 5
+    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //6
+    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1); //7
+    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2); //8
+    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3); //9
+    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); //10
+    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1); //11
+    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2); //12
+    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); //13
+    mComputeSignature->CreateSignature(mDevice, L"COMPUTE ROOT SIGNATURE");
 
     //CREATE DEPTH STENCIL
     D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -302,6 +320,8 @@ void Engine::Device::InitializeDevice()
     mResources[DEPTH_STENCIL_RSC] = std::make_unique<DXResource>(mDevice, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
     mResources[DEPTH_STENCIL_RSC]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
     mDepthHandle = mDescriptorHeaps[DEPTH_HEAP]->AllocateDepthStencil(mResources[DEPTH_STENCIL_RSC].get(), mDevice.Get(), &depthStencilDesc);
+
+    mGenMipsCB = std::make_unique<DXConstBuffer>(mDevice, sizeof(DXGenerateMips), 1, "GENERATE MIPS CONST BUFFER", FRAME_BUFFER_COUNT);
     SubmitCommands();
 }
 

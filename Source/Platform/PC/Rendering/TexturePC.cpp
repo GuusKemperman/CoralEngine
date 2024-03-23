@@ -78,7 +78,7 @@ void Engine::Texture::SentToGPU() const
 	resourceDescription.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	self.mTextureBuffer = std::make_shared<DXResource>(device, heapProperties, resourceDescription, nullptr, "Texture Buffer Resource Heap");
+	self.mTextureBuffer = std::make_unique<DXResource>(device, heapProperties, resourceDescription, nullptr, "Texture Buffer Resource Heap");
 
 	UINT64 textureUploadBufferSize;
 	device->GetCopyableFootprints(&resourceDescription, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
