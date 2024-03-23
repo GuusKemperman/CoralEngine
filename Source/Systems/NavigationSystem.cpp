@@ -26,7 +26,7 @@ void NavigationSystem::Update(World& world, float dt)
 		// ToDo Replace mNavMesh Needs with OnConstruct
 		if (navMeshComponent.mNavMeshNeedsUpdate)
 		{
-			navMeshComponent.SetNavMesh(world);
+			navMeshComponent.GenerateNavMesh(world);
 		}
 	}
 
@@ -52,9 +52,15 @@ void NavigationSystem::Update(World& world, float dt)
 		// set orientation
 		if (targetPosition.has_value())
 		{
-			const glm::vec2 orientation2D = glm::normalize(targetPosition.value() - agentWorldPosition);
-			const glm::quat orientationQuat = Math::Direction2DToXZQuatOrientation(orientation2D);
-			agentTransform.SetLocalOrientation(orientationQuat);
+			const glm::vec2 deltaPos = targetPosition.value() - agentWorldPosition;
+			const float length = glm::length(deltaPos);
+
+			if (length != 0.0f)
+			{
+				const glm::vec2 orientation2D = deltaPos / length;
+				const glm::quat orientationQuat = Math::Direction2DToXZQuatOrientation(orientation2D);
+				agentTransform.SetLocalOrientation(orientationQuat);
+			}
 		}
 
 		if (!targetPosition.has_value() || !navMeshAgent.IsChasing())
@@ -73,35 +79,33 @@ void NavigationSystem::Update(World& world, float dt)
 
 		// Find a path from the agent's position to the target's position
 		navMeshAgent.mPathFound = naveMesh.FindQuickestPath(agentWorldPosition,
-		                                                    navMeshAgent.GetTargetPosition().value());
+			targetPosition.value());
 
-		if (!navMeshAgent.mPathFound.empty())
+		if (navMeshAgent.mPathFound.empty())
 		{
-			// Calculate the difference in X and Y coordinates
-			const glm::vec2 dVec2 = navMeshAgent.mPathFound[1] - agentWorldPosition;
+			continue;
+		}
 
-			// Calculate the distance between the agent and the next waypoint
-			const float distance = std::sqrt(dVec2.x * dVec2.x + dVec2.y * dVec2.y);
+		// Calculate the difference in X and Y coordinates
+		const glm::vec2 dVec2 = navMeshAgent.mPathFound[1] - agentWorldPosition;
 
-			if (distance > 0)
-			{
-				const float step = speed * dt;
-				if (step >= distance)
-				{
-					// If the step is larger than the remaining distance, move directly to the target position
-					agentTransform.SetWorldPosition(
-						glm::vec3(navMeshAgent.mPathFound[1].x, 0, navMeshAgent.mPathFound[1].y));
-				}
-				else
-				{
-					// Calculate the new direction using linear interpolation
-					const float ratio = speed / distance;
-					agentBody.mLinearVelocity = ratio * dVec2;
-				}
-			}
+		// Calculate the distance between the agent and the next waypoint
+		const float distance = glm::length(dVec2);
+
+		if (distance == 0.0f)
+		{
+			continue;
+		}
+
+		if (speed * dt >= distance)
+		{
+			agentBody.mLinearVelocity = dVec2 / dt;
+		}
+		else
+		{
+			agentBody.mLinearVelocity = (dVec2 / distance) * speed;
 		}
 	}
-	//}
 }
 
 void NavigationSystem::Render(const World& world)

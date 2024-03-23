@@ -26,7 +26,6 @@ namespace Engine
 		 */
 		float GetHeightAtPosition(glm::vec2 position2D) const;
 
-
 		/**
 		 * \brief The max height difference that kinematic/dynamic objects are able to traverse
 		 *
@@ -35,6 +34,8 @@ namespace Engine
 		 * Otherwise, the object stays at point B.
 		 */
 		static constexpr float sMaxTraversableHeightDifference = 1.0f;
+
+		static bool IsHeightDifferenceTraversable(float heightDiff) { return fabsf(heightDiff) <= sMaxTraversableHeightDifference; }
 
 	private:
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.

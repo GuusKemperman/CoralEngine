@@ -24,7 +24,6 @@ namespace Engine
 		{
 			SystemStaticTraits traits{};
 			traits.mPriority = static_cast<int>(TickPriorities::PostPhysics);
-			traits.mFixedTickInterval = 0.2f;
 			traits.mShouldTickBeforeBeginPlay = true;
 			traits.mShouldTickWhilstPaused = true;
 			return traits;

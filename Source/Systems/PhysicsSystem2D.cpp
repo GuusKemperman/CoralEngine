@@ -462,7 +462,7 @@ glm::vec3 Engine::PhysicsSystem2D::GetAllowedWorldPos(const Physics& physics,
 	const float heightAtDesiredPos = physics.GetHeightAtPosition(desiredWorldPos2D);
 	const float dtHeight = heightAtDesiredPos - heightAtCurrPos;
 
-	if (fabsf(dtHeight) <= Physics::sMaxTraversableHeightDifference)
+	if (Physics::IsHeightDifferenceTraversable(dtHeight))
 	{
 		return To3DRightForward(desiredWorldPos2D, currentWorldPos[Axis::Up] + dtHeight);
 	}

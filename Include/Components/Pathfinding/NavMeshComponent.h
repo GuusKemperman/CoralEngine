@@ -11,7 +11,7 @@ namespace Engine
 	class NavMeshComponent
 	{
 	public:
-		void SetNavMesh(const World& world);
+		void GenerateNavMesh(const World& world);
 
 		/**
 		 * \brief
@@ -23,9 +23,9 @@ namespace Engine
 		 */
 		[[nodiscard]] std::vector<glm::vec2> FindQuickestPath(glm::vec2 startPos, glm::vec2 endPos) const;
 
-		[[nodiscard]] Engine::PolygonList GetCleanedPolygonList() const;
+		[[nodiscard]] const PolygonList& GetCleanedPolygonList() const { return mCleanedPolygonList; }
 
-		[[nodiscard]] Engine::PolygonList GetPolygonDataNavMesh() const;
+		[[nodiscard]] const PolygonList& GetPolygonDataNavMesh() const { return mPolygonDataNavMesh; }
 
 		/// \brief DebugDrawNavMesh, draws the NavMesh in order to be able to debug it
 		/// \param world the current World in the ***REMOVED***ne
@@ -33,32 +33,34 @@ namespace Engine
 
 		bool mNavMeshNeedsUpdate = true;
 
-		Engine::Polygon mBorderCorners{};
-
 	private:
 		/// \brief The A* Graph object.
 		Graph mAStarGraph{};
 
 		/// \brief The PolygonList that contains the walkable area. Only used for debugging.
-		Engine::PolygonList mCleanedPolygonList;
+		PolygonList mCleanedPolygonList;
 
 		/// \brief The PolygonList that contains the triangles for the NavMesh after some CDT clean up.
-		Engine::PolygonList mPolygonDataNavMesh;
+		PolygonList mPolygonDataNavMesh;
 
 		/**
 		 * \brief Load the info from the given file in order to create the navmesh properly
 		 * \return The walkable and obstacle areas
 		 */
-		[[nodiscard]] std::vector<Engine::PolygonList> LoadNavMeshData(const World& world) const;
+		struct NavMeshData
+		{
+			PolygonList mWalkable{};
+			PolygonList mObstacles{};
+		};
+		[[nodiscard]] NavMeshData GenerateNavMeshData(const World& world) const;
 
 		/**
 		 * \brief
 		 * Cleans up all the polygons through the use of the Clipper2 library, by getting the difference
 		 * of the unions of the walkable polygons and the obstacle polygons. In order to get it ready for
 		 * it to be triangulated.
-		 * \param dirtyPolygonList The walkable and obstacle areas
 		 */
-		void CleanupGeometry(const std::vector<Engine::PolygonList>& dirtyPolygonList);
+		static PolygonList GetDifferences(const PolygonList& walkable, const PolygonList& obstacles);
 
 		/**
 		 * \brief Triangulates the polygonList provided and sets up the dual graph between the nav mesh and the A* graph
