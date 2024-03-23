@@ -24,8 +24,53 @@ float Engine::Physics::GetHeightAtPosition(glm::vec2 position2D) const
 	return highestHeight;
 }
 
+void Engine::Physics::Teleport(TransformComponent& transform, glm::vec2 toPosition) const
+{
+	const glm::vec3 currentPos = transform.GetWorldPosition();
+
+	float currHeight = GetHeightAtPosition(To2DRightForward(currentPos));
+	float destHeight = GetHeightAtPosition(toPosition);
+
+	glm::vec3 targetPosition = To3DRightForward(toPosition);
+
+	if (currHeight == -std::numeric_limits<float>::infinity())
+	{
+		currHeight = currentPos[Axis::Up];
+	}
+
+	if (destHeight == -std::numeric_limits<float>::infinity())
+	{
+		destHeight = currentPos[Axis::Up];
+	}
+
+	targetPosition[Axis::Up] = currentPos[Axis::Up] + destHeight - currHeight;
+	transform.SetWorldPosition(targetPosition);
+}
+
+Engine::MetaType Engine::Physics::Reflect()
+{
+	MetaType type = MetaType{ MetaType::T<Physics>{}, "Physics" };
+	type.GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](TransformComponent& transform, glm::vec2 toPosition)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+			world->GetPhysics().Teleport(transform, toPosition);
+		}, "Teleport", MetaFunc::ExplicitParams<TransformComponent&, glm::vec2>{}, "Transform", "ToPosition").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	type.AddFunc([](glm::vec2 pos)
+	{
+		World* world = World::TryGetWorldAtTopOfStack();
+		ASSERT(world != nullptr);
+		return world->GetPhysics().GetHeightAtPosition(pos);
+	}, "GetHeightAtPosition", MetaFunc::ExplicitParams<glm::vec2>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
+	return type;
+}
+
 bool Engine::Physics::IsPointInsideCollider(glm::vec2 point, glm::vec2 colliderPos,
-	const DiskColliderComponent& diskCollider)
+                                            const DiskColliderComponent& diskCollider)
 {
 	return IsPointInsideDisk(point, colliderPos, diskCollider.mRadius);
 }
