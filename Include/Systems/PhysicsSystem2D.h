@@ -18,6 +18,8 @@ namespace Engine
 
 		void Update(World& world, float dt) override;
 
+		void Render(const World& world) override;
+
 		SystemStaticTraits GetStaticTraits() const override
 		{
 			SystemStaticTraits traits{};
@@ -52,7 +54,7 @@ namespace Engine
 		void UpdateBodiesAndTransforms(World& world, float dt);
 
 		void UpdateCollisions(World& world);
-		void DebugDrawing(World& world);
+		void DebugDrawing(const World& world);
 
 		struct CollisionEvent
 		{
@@ -72,24 +74,17 @@ namespace Engine
 			PhysicsBody2DComponent& body2,
 			TransformComponent& transform2,
 			glm::vec2& entity1WorldPos,
-			const glm::vec2& entity2WorldPos);
+			glm::vec2 entity2WorldPos);
 
 		void RegisterCollision(std::vector<CollisionData>& currentCollisions,
 			CollisionData& collision, entt::entity entity1, entt::entity entity2);
 
-		static bool CollisionCheckDiskDisk(const glm::vec2& center1, float radius1, const glm::vec2& center2,
+		static bool CollisionCheckDiskDisk(glm::vec2 center1, float radius1, glm::vec2 center2,
 			float radius2, CollisionData& result);
 
-		static bool CollisionCheckDiskPolygon(const glm::vec2& diskCenter, float diskRadius,
-			const glm::vec2& polygonPos, const std::vector<glm::vec2>& polygonPoints,
+		static bool CollisionCheckDiskPolygon(glm::vec2 diskCenter, float diskRadius,
+			glm::vec2 polygonPos, const std::vector<glm::vec2>& polygonPoints,
 			CollisionData& result);
-
-		static bool IsPointInsidePolygon(const glm::vec2& point, const std::vector<glm::vec2>& polygon);
-
-		static glm::vec2 GetNearestPointOnPolygonBoundary(const glm::vec2& point, const std::vector<glm::vec2>& polygon);
-
-		static glm::vec2 GetNearestPointOnLineSegment(const glm::vec2& p, const glm::vec2& segmentA,
-			const glm::vec2& segmentB);
 
 		std::vector<CollisionData> mPreviousCollisions{};
 

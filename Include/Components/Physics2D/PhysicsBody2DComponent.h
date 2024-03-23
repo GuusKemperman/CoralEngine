@@ -136,12 +136,12 @@ namespace Engine
 		 */
 		bool mIsAffectedByForces = true;
 
-		void AddForce(const glm::vec2& force)
+		void AddForce(glm::vec2 force)
 		{
 			if (mIsAffectedByForces) mForce += force;
 		}
 
-		void ApplyImpulse(const glm::vec2& imp)
+		void ApplyImpulse(glm::vec2 imp)
 		{
 			if (mIsAffectedByForces) mLinearVelocity += imp * mInvMass;
 		}

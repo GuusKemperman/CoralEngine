@@ -13,13 +13,13 @@ static_assert(CollisionPresets::sWorldDynamic.mRules.GetResponse(CollisionPreset
 
 struct Physics2DUnitTestAccess
 {
-	static bool CollisionCheckDiskDiskUnitTest(const glm::vec2& center1, float radius1, const glm::vec2& center2, float radius2)
+	static bool CollisionCheckDiskDiskUnitTest(glm::vec2 center1, float radius1, glm::vec2 center2, float radius2)
 	{
 		PhysicsSystem2D::CollisionData collision;
 		return PhysicsSystem2D::CollisionCheckDiskDisk(center1, radius1, center2, radius2, collision);
 	}
 
-	static bool CollisionCheckDiskPolygonUnitTest(const glm::vec2& diskCenter, float diskRadius, const glm::vec2& polygonPos, const std::vector<glm::vec2>& polygonPoints)
+	static bool CollisionCheckDiskPolygonUnitTest(glm::vec2 diskCenter, float diskRadius, glm::vec2 polygonPos, const std::vector<glm::vec2>& polygonPoints)
 	{
 		PhysicsSystem2D::CollisionData collision;
 		return PhysicsSystem2D::CollisionCheckDiskPolygon(diskCenter, diskRadius, polygonPos, polygonPoints, collision);

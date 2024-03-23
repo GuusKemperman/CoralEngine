@@ -5,12 +5,13 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Meta/MetaType.h"
 #include "Components/TransformComponent.h"
-#include "Components/Abilities/CharacterComponent.h"
+#include "Components/Pathfinding/Geometry2d.hpp"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Utilities/DebugRenderer.h"
+#include "World/Physics.h"
 
 Engine::PhysicsSystem2D::PhysicsSystem2D()
 {
@@ -46,6 +47,10 @@ void Engine::PhysicsSystem2D::Update(World& world, float dt)
 {
 	UpdateBodiesAndTransforms(world, dt);
 	UpdateCollisions(world);
+}
+
+void Engine::PhysicsSystem2D::Render(const World& world)
+{
 	DebugDrawing(world);
 }
 
@@ -73,6 +78,10 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 
 	const auto& viewDisk = reg.View<PhysicsBody2DComponent, TransformComponent, DiskColliderComponent>();
 	const auto& viewPolygon = reg.View<PhysicsBody2DComponent, TransformComponent, PolygonColliderComponent>();
+
+	static_assert(sNumOfDifferentColliderTypes == 2,
+		"This is one more place you need to account for the new collider type."
+		"Increment the number after ==, after you finish you accounting for the new collider.");
 
 	CollisionData collision;
 
@@ -220,32 +229,60 @@ void Engine::PhysicsSystem2D::CallEvents(World& world, const CollisionDataContai
 	}
 }
 
-void Engine::PhysicsSystem2D::DebugDrawing(World& world)
+void Engine::PhysicsSystem2D::DebugDrawing(const World& world)
 {
-	if ((DebugRenderer::GetDebugCategoryFlags() & DebugCategory::Physics) == 0)
-	{
-		return;
-	}
-
-	Registry& reg = world.GetRegistry();
-	const auto diskView = reg.View<PhysicsBody2DComponent, DiskColliderComponent, TransformComponent>();
 	const auto& renderer = world.GetDebugRenderer();
-	constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
-	for (auto [entity, body, disk, transformComponent] : diskView.each())
+
+	if (DebugRenderer::GetDebugCategoryFlags() & DebugCategory::Physics)
 	{
-		renderer.AddCircle(DebugCategory::Physics, transformComponent.GetWorldPosition(), disk.mRadius + 0.1f, color);
+		const Registry& reg = world.GetRegistry();
+		const auto diskView = reg.View<const DiskColliderComponent, const TransformComponent>();
+		constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
+		for (auto [entity, disk, transformComponent] : diskView.each())
+		{
+			renderer.AddCircle(DebugCategory::Physics, transformComponent.GetWorldPosition(), disk.mRadius + 0.1f, color);
+		}
+
+		const auto polyView = reg.View<const PolygonColliderComponent, const TransformComponent>();
+		for (auto [entity, poly, transformComponent] : polyView.each())
+		{
+			const glm::vec2 worldPos = transformComponent.GetWorldPosition2D();
+			const size_t pointCount = poly.mPoints.size();
+			for (size_t i = 0; i < pointCount; ++i)
+			{
+				const glm::vec2 from = poly.mPoints[i] + worldPos;
+				const glm::vec2 to = poly.mPoints[(i + 1) % pointCount] + worldPos;
+				renderer.AddLine(DebugCategory::Physics, glm::vec3(from.x, 1.1f, from.y), glm::vec3(to.x, 1.1f, to.y), color);
+			}
+		}
 	}
 
-	const auto polyView = reg.View<PhysicsBody2DComponent, PolygonColliderComponent, TransformComponent>();
-	for (auto [entity, body, poly, transformComponent] : polyView.each())
+	if (DebugRenderer::GetDebugCategoryFlags() & DebugCategory::TerrainHeight)
 	{
-		const glm::vec2 worldPos = transformComponent.GetWorldPosition2D();
-		const size_t pointCount = poly.mPoints.size();
-		for (size_t i = 0; i < pointCount; ++i)
+		const Physics& physics = world.GetPhysics();
+
+		constexpr float range = 25.0f;
+		constexpr float spacing = 3.0f;
+		for (float x = -range; x < range; x += spacing)
 		{
-			const glm::vec2 from = poly.mPoints[i] + worldPos;
-			const glm::vec2 to = poly.mPoints[(i + 1) % pointCount] + worldPos;
-			renderer.AddLine(DebugCategory::Physics, glm::vec3(from.x, 1.1f, from.y), glm::vec3(to.x, 1.1f, to.y), color);
+			for (float y = -range; y < range; y += spacing)
+			{
+				const float height = physics.GetHeightAtPosition({ x, y });
+
+				if (height == -std::numeric_limits<float>::infinity())
+				{
+					continue;
+				}
+
+				constexpr float maxExpectedHeight = range * .5f;
+				const float colorT = Math::lerpInv(-maxExpectedHeight, maxExpectedHeight, glm::clamp(height, -maxExpectedHeight, maxExpectedHeight));
+
+				constexpr glm::vec4 minColor = { 0.0f, 0.0f, 5.0f, 1.0f };
+				constexpr glm::vec4 maxColor = { 5.0f, 0.0f, 0.0f, 1.0f };
+				const glm::vec4 color = Math::lerp(minColor, maxColor, colorT);
+
+				renderer.AddSquare(DebugCategory::TerrainHeight, To3DRightForward({ x, y }, height), spacing, color);
+			}
 		}
 	}
 }
@@ -279,7 +316,7 @@ void Engine::PhysicsSystem2D::ResolveCollision(const CollisionData& collision,
 		PhysicsBody2DComponent& body2,
 		TransformComponent& transform2,
 		glm::vec2& entity1WorldPos,
-		const glm::vec2& entity2WorldPos)
+		glm::vec2 entity2WorldPos)
 {
 	const bool isBody1Dynamic = body1.mIsAffectedByForces;
 	const bool isBody2Dynamic = body2.mIsAffectedByForces;
@@ -335,7 +372,7 @@ void Engine::PhysicsSystem2D::RegisterCollision(std::vector<CollisionData>& curr
 }
 
 
-bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(const glm::vec2& center1, float radius1, const glm::vec2& center2,
+bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(glm::vec2 center1, float radius1, glm::vec2 center2,
 		float radius2, CollisionData& result)
 {
 	// check for overlap
@@ -352,10 +389,10 @@ bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(const glm::vec2& center1, f
 	return true;
 }
 
-bool Engine::PhysicsSystem2D::CollisionCheckDiskPolygon(const glm::vec2& diskCenter, float diskRadius, const glm::vec2& polygonPos, const std::vector<glm::vec2>& polygonPoints,
+bool Engine::PhysicsSystem2D::CollisionCheckDiskPolygon(glm::vec2 diskCenter, float diskRadius, glm::vec2 polygonPos, const std::vector<glm::vec2>& polygonPoints,
 		CollisionData& result)
 {
-	const glm::vec2& nearest = GetNearestPointOnPolygonBoundary(diskCenter - polygonPos, polygonPoints) + polygonPos;
+	glm::vec2 nearest = GetNearestPointOnPolygonBoundary(diskCenter - polygonPos, polygonPoints) + polygonPos;
 	const glm::vec2 diff(diskCenter - nearest);
 	const float l2 = length2(diff);
 
@@ -375,52 +412,6 @@ bool Engine::PhysicsSystem2D::CollisionCheckDiskPolygon(const glm::vec2& diskCen
 	result.mDepth = diskRadius - l;
 	result.mContactPoint = nearest;
 	return true;
-}
-
-bool Engine::PhysicsSystem2D::IsPointInsidePolygon(const glm::vec2& point, const std::vector<glm::vec2>& polygon)
-{
-	// Adapted from: https://wrfranklin.org/Research/Short_Notes/pnpoly.html
-
-	size_t i, j;
-	const size_t n = polygon.size();
-	bool inside = false;
-
-	for (i = 0, j = n - 1; i < n; j = i++)
-	{
-		if ((polygon[i].y > point.y != polygon[j].y > point.y) &&
-			(point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x))
-			inside = !inside;
-	}
-
-	return inside;
-}
-
-glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnPolygonBoundary(const glm::vec2& point, const std::vector<glm::vec2>& polygon)
-{
-	float bestDist = std::numeric_limits<float>::max();
-	glm::vec2 bestNearest(0.f, 0.f);
-
-	const size_t n = polygon.size();
-	for (size_t i = 0; i < n; ++i)
-	{
-		const glm::vec2& nearest = GetNearestPointOnLineSegment(point, polygon[i], polygon[(i + 1) % n]);
-		const float dist = distance2(point, nearest);
-		if (dist < bestDist)
-		{
-			bestDist = dist;
-			bestNearest = nearest;
-		}
-	}
-
-	return bestNearest;
-}
-
-glm::vec2 Engine::PhysicsSystem2D::GetNearestPointOnLineSegment(const glm::vec2& p, const glm::vec2& segmentA, const glm::vec2& segmentB)
-{
-	const float t = dot(p - segmentA, segmentB - segmentA) / distance2(segmentA, segmentB);
-	if (t <= 0) return segmentA;
-	if (t >= 1) return segmentB;
-	return (1 - t) * segmentA + t * segmentB;
 }
 
 Engine::MetaType Engine::PhysicsSystem2D::Reflect()

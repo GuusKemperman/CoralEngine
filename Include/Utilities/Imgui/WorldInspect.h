@@ -98,7 +98,7 @@ namespace Engine
 
 	private:
 		static void ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities);
-		static void SetGizmoRect(glm::vec2 windowPos, const glm::vec2& windowSize);
+		static void SetGizmoRect(glm::vec2 windowPos, glm::vec2 windowSize);
 
 		static void GizmoManipulateSelectedTransforms(World& world,
 			const std::vector<entt::entity>& selectedEntities,

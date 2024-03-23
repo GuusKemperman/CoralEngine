@@ -21,11 +21,11 @@ namespace Engine
 		 * \param endPos ending position
 		 * \return Returns all the coordinates of the quickest path found as a vector of glm::vec2
 		 */
-		[[nodiscard]] std::vector<glm::vec2> FindQuickestPath(const glm::vec2& startPos, const glm::vec2& endPos) const;
+		[[nodiscard]] std::vector<glm::vec2> FindQuickestPath(glm::vec2 startPos, glm::vec2 endPos) const;
 
-		[[nodiscard]] geometry2d::PolygonList GetCleanedPolygonList() const;
+		[[nodiscard]] Engine::PolygonList GetCleanedPolygonList() const;
 
-		[[nodiscard]] geometry2d::PolygonList GetPolygonDataNavMesh() const;
+		[[nodiscard]] Engine::PolygonList GetPolygonDataNavMesh() const;
 
 		/// \brief DebugDrawNavMesh, draws the NavMesh in order to be able to debug it
 		/// \param world the current World in the ***REMOVED***ne
@@ -33,23 +33,23 @@ namespace Engine
 
 		bool mNavMeshNeedsUpdate = true;
 
-		geometry2d::Polygon mBorderCorners{};
+		Engine::Polygon mBorderCorners{};
 
 	private:
 		/// \brief The A* Graph object.
 		Graph mAStarGraph{};
 
 		/// \brief The PolygonList that contains the walkable area. Only used for debugging.
-		geometry2d::PolygonList mCleanedPolygonList;
+		Engine::PolygonList mCleanedPolygonList;
 
 		/// \brief The PolygonList that contains the triangles for the NavMesh after some CDT clean up.
-		geometry2d::PolygonList mPolygonDataNavMesh;
+		Engine::PolygonList mPolygonDataNavMesh;
 
 		/**
 		 * \brief Load the info from the given file in order to create the navmesh properly
 		 * \return The walkable and obstacle areas
 		 */
-		[[nodiscard]] std::vector<geometry2d::PolygonList> LoadNavMeshData(const World& world) const;
+		[[nodiscard]] std::vector<Engine::PolygonList> LoadNavMeshData(const World& world) const;
 
 		/**
 		 * \brief
@@ -58,13 +58,13 @@ namespace Engine
 		 * it to be triangulated.
 		 * \param dirtyPolygonList The walkable and obstacle areas
 		 */
-		void CleanupGeometry(const std::vector<geometry2d::PolygonList>& dirtyPolygonList);
+		void CleanupGeometry(const std::vector<Engine::PolygonList>& dirtyPolygonList);
 
 		/**
 		 * \brief Triangulates the polygonList provided and sets up the dual graph between the nav mesh and the A* graph
 		 * \param polygonList The walkable area / CleanedPolygonList
 		 */
-		void Triangulation(const geometry2d::PolygonList& polygonList);
+		void Triangulation(const Engine::PolygonList& polygonList);
 
 		/**
 		 * \brief Computes the shortest path within a list of triangles from the A* search function using funnel algorithm.
@@ -73,12 +73,12 @@ namespace Engine
 		 * \param goal Ending position
 		 * \return The new optimised quickest path found as a vector of glm::vec2
 		 */
-		[[nodiscard]] std::vector<glm::vec2> FunnelAlgorithm(const std::vector<geometry2d::Polygon>& triangles,
-		                                                     const glm::vec2& start, const glm::vec2& goal) const;
+		[[nodiscard]] std::vector<glm::vec2> FunnelAlgorithm(const std::vector<Engine::Polygon>& triangles,
+		                                                     glm::vec2 start, glm::vec2 goal) const;
 		void UpdateNavMesh();
 
-		std::vector<glm::vec2> CleanupPathfinding(const std::vector<geometry2d::Polygon>& triangles,
-		                                          const glm::vec2& start, const glm::vec2& goal) const;
+		std::vector<glm::vec2> CleanupPathfinding(const std::vector<Engine::Polygon>& triangles,
+		                                          glm::vec2 start, glm::vec2 goal) const;
 
 		friend ReflectAccess;
 		static MetaType Reflect();

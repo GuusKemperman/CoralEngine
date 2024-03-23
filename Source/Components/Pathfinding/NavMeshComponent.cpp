@@ -26,9 +26,7 @@
 #include "World/World.h"
 #include "Utilities/DebugRenderer.h"
 
-using namespace Engine;
-
-void NavMeshComponent::SetNavMesh(const World& world)
+void Engine::NavMeshComponent::SetNavMesh(const World& world)
 {
 	mPolygonDataNavMesh = {};
 	mCleanedPolygonList = {};
@@ -39,14 +37,14 @@ void NavMeshComponent::SetNavMesh(const World& world)
 	mNavMeshNeedsUpdate = false;
 }
 
-std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const World& world) const
+std::vector<Engine::PolygonList> Engine::NavMeshComponent::LoadNavMeshData(const World& world) const
 {
 	//// initialize a vector to store the messy polygons
-	std::vector<geometry2d::PolygonList> messypolygons;
+	std::vector<PolygonList> messypolygons;
 
 	// initialize lists to store walkable and obstacle polygons
-	geometry2d::PolygonList walkablelist = {};
-	geometry2d::PolygonList obstaclelist = {};
+	PolygonList walkablelist = {};
+	PolygonList obstaclelist = {};
 
 	const auto& polygonView = world.GetRegistry().View<
 		PolygonColliderComponent, PhysicsBody2DComponent, TransformComponent, NavMeshObstacleTag>();
@@ -55,7 +53,7 @@ std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const Wor
 	for (const auto& polygonId : polygonView)
 	{
 		const auto& [polygonCollider, rigidBody, transform] = polygonView.get(polygonId);
-		geometry2d::Polygon polygon;
+		Polygon polygon;
 
 		const glm::vec2 pos = transform.GetWorldPosition2D();
 		for (const auto& coordinate : polygonCollider.mPoints)
@@ -68,7 +66,7 @@ std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const Wor
 	for (const auto& diskId : diskView)
 	{
 		const auto& [diskCollider, transform] = diskView.get(diskId);
-		geometry2d::Polygon polygon;
+		Polygon polygon;
 
 		const glm::vec2 pos = transform.GetWorldPosition2D();
 
@@ -89,14 +87,14 @@ std::vector<geometry2d::PolygonList> NavMeshComponent::LoadNavMeshData(const Wor
 	return messypolygons;
 }
 
-void NavMeshComponent::CleanupGeometry(const std::vector<geometry2d::PolygonList>& dirtyPolygonList)
+void Engine::NavMeshComponent::CleanupGeometry(const std::vector<Engine::PolygonList>& dirtyPolygonList)
 {
 	// Initialize temporary variables
-	geometry2d::PolygonList tempPolygonList;
+	PolygonList tempPolygonList;
 
 	// Extract walkable and obstacle polygons from the input
-	const geometry2d::PolygonList& walkables = dirtyPolygonList[0];
-	const geometry2d::PolygonList& obstacles = dirtyPolygonList[1];
+	const PolygonList& walkables = dirtyPolygonList[0];
+	const PolygonList& obstacles = dirtyPolygonList[1];
 
 	// Initialize Clipper2Lib data structures for polygon operations
 	Clipper2Lib::PathD doublePolygon;
@@ -134,7 +132,7 @@ void NavMeshComponent::CleanupGeometry(const std::vector<geometry2d::PolygonList
 	                                                            Clipper2Lib::FillRule::NonZero, 2);
 
 	// Initialize a temporary polygon for conversion
-	geometry2d::Polygon floatPolygon;
+	Polygon floatPolygon;
 
 	// Process remaining polygons after cleanup
 	for (const auto& polygonListElement : remainingDifference)
@@ -153,7 +151,7 @@ void NavMeshComponent::CleanupGeometry(const std::vector<geometry2d::PolygonList
 	mCleanedPolygonList = tempPolygonList;
 }
 
-void NavMeshComponent::Triangulation(const geometry2d::PolygonList& polygonList)
+void Engine::NavMeshComponent::Triangulation(const Engine::PolygonList& polygonList)
 {
 	// Initialize a constrained Delaunay triangulation (CDT) object
 	CDT::Triangulation<float> cdt;
@@ -199,7 +197,7 @@ void NavMeshComponent::Triangulation(const geometry2d::PolygonList& polygonList)
 	// Extract triangles from the CDT and add them to PolygonDataNavMesh
 	for (const auto& [vertices, neighbors] : cdt.triangles)
 	{
-		geometry2d::Polygon polygon = {
+		Polygon polygon = {
 			{cdt.vertices[vertices[0]].x, cdt.vertices[vertices[0]].y},
 			{cdt.vertices[vertices[1]].x, cdt.vertices[vertices[1]].y},
 			{cdt.vertices[vertices[2]].x, cdt.vertices[vertices[2]].y}
@@ -207,7 +205,7 @@ void NavMeshComponent::Triangulation(const geometry2d::PolygonList& polygonList)
 		mPolygonDataNavMesh.push_back(polygon);
 
 		// Calculate the center of the triangle and add it as a node to AStarGraph
-		const glm::vec2 centerOfTriangle = geometry2d::ComputeCenterOfPolygon(polygon);
+		const glm::vec2 centerOfTriangle = ComputeCenterOfPolygon(polygon);
 		mAStarGraph.AddNode(centerOfTriangle.x, centerOfTriangle.y);
 	}
 
@@ -224,8 +222,8 @@ void NavMeshComponent::Triangulation(const geometry2d::PolygonList& polygonList)
 	}
 }
 
-std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geometry2d::Polygon>& triangles,
-                                                         const glm::vec2& start, const glm::vec2& goal) const
+std::vector<glm::vec2> Engine::NavMeshComponent::FunnelAlgorithm(const std::vector<Polygon>& triangles,
+                                                         glm::vec2 start, glm::vec2 goal) const
 {
 	std::vector<glm::vec2> path{};
 	std::vector<glm::vec2> funnelRight{};
@@ -269,7 +267,7 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 	const glm::vec2 middlePoint = (overlappingVertexes[1] + overlappingVertexes[0]) / 2.0f;
 
 	// Determine the initial funnel edges of each side based on start position and overlapping vertices    
-	if (geometry2d::IsPointLeftOfLine(overlappingVertexes[0], start, middlePoint))
+	if (IsPointLeftOfLine(overlappingVertexes[0], start, middlePoint))
 	{
 		funnelLeft.push_back(overlappingVertexes[0]);
 		funnelRight.push_back(overlappingVertexes[1]);
@@ -311,7 +309,7 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 		}
 
 		bool goesIntoTheLeft = false;
-		glm::vec2 vertexToCheck;
+		glm::vec2 vertexToCheck{};
 
 		// Determine if the path goes into the left or right funnel
 		for (uint32 j = 0; j < overlappingVertexes.size(); j++)
@@ -332,7 +330,7 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 		if (goesIntoTheLeft)
 		{
 			// Adjust the left funnel edge
-			while (funnelLeft.size() > 1 && geometry2d::IsPointRightOfLine(
+			while (funnelLeft.size() > 1 && IsPointRightOfLine(
 				vertexToCheck, path.back(), funnelLeft[funnelLeft.size() - 2]))
 			{
 				funnelLeft.pop_back();
@@ -340,7 +338,7 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 
 			funnelLeft.push_back(vertexToCheck);
 
-			while (geometry2d::IsPointLeftOfLine(funnelRight.front(), path.back(), funnelLeft.back()) &&
+			while (IsPointLeftOfLine(funnelRight.front(), path.back(), funnelLeft.back()) &&
 				funnelRight.size() > 1)
 			{
 				path.push_back(funnelRight.front());
@@ -350,7 +348,7 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 		else
 		{
 			// Adjust the right funnel edge
-			while (funnelRight.size() > 1 && geometry2d::IsPointLeftOfLine(
+			while (funnelRight.size() > 1 && IsPointLeftOfLine(
 				vertexToCheck, path.back(), funnelRight[funnelRight.size() - 2]))
 			{
 				funnelRight.pop_back();
@@ -358,7 +356,7 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 
 			funnelRight.push_back(vertexToCheck);
 
-			while (geometry2d::IsPointRightOfLine(funnelLeft.front(), path.back(), funnelRight.back()) &&
+			while (IsPointRightOfLine(funnelLeft.front(), path.back(), funnelRight.back()) &&
 				funnelLeft.size() > 1)
 			{
 				path.push_back(funnelLeft.front());
@@ -400,13 +398,13 @@ std::vector<glm::vec2> NavMeshComponent::FunnelAlgorithm(const std::vector<geome
 	return path;
 }
 
-void NavMeshComponent::UpdateNavMesh()
+void Engine::NavMeshComponent::UpdateNavMesh()
 {
 	mNavMeshNeedsUpdate = true;
 }
 
-std::vector<glm::vec2> NavMeshComponent::CleanupPathfinding(const std::vector<geometry2d::Polygon>& triangles,
-                                                            const glm::vec2& start, const glm::vec2& goal) const
+std::vector<glm::vec2> Engine::NavMeshComponent::CleanupPathfinding(const std::vector<Polygon>& triangles,
+                                                            glm::vec2 start, glm::vec2 goal) const
 {
 	std::vector<glm::vec2> path{};
 
@@ -478,7 +476,7 @@ std::vector<glm::vec2> NavMeshComponent::CleanupPathfinding(const std::vector<ge
 	return path;
 }
 
-MetaType NavMeshComponent::Reflect()
+Engine::MetaType Engine::NavMeshComponent::Reflect()
 {
 	auto type = MetaType{MetaType::T<NavMeshComponent>{}, "NavMeshComponent"};
 	MetaProps& props = type.GetProperties();
@@ -490,7 +488,7 @@ MetaType NavMeshComponent::Reflect()
 	return type;
 }
 
-std::vector<glm::vec2> NavMeshComponent::FindQuickestPath(const glm::vec2& startPos, const glm::vec2& endPos) const
+std::vector<glm::vec2> Engine::NavMeshComponent::FindQuickestPath(glm::vec2 startPos, glm::vec2 endPos) const
 {
 	// Initialize pointers to the start and end nodes
 	const Node* startNode = nullptr;
@@ -499,11 +497,11 @@ std::vector<glm::vec2> NavMeshComponent::FindQuickestPath(const glm::vec2& start
 	// Find the start and end nodes based on their positions
 	for (int i = 0; i < static_cast<int>(mPolygonDataNavMesh.size()); i++)
 	{
-		if (geometry2d::IsPointInsidePolygon({startPos[0], startPos[1]}, mPolygonDataNavMesh[i]))
+		if (IsPointInsidePolygon({startPos[0], startPos[1]}, mPolygonDataNavMesh[i]))
 		{
 			startNode = &mAStarGraph.ListOfNodes[i];
 		}
-		if (geometry2d::IsPointInsidePolygon({endPos[0], endPos[1]}, mPolygonDataNavMesh[i]))
+		if (IsPointInsidePolygon({endPos[0], endPos[1]}, mPolygonDataNavMesh[i]))
 		{
 			endNode = &mAStarGraph.ListOfNodes[i];
 		}
@@ -523,7 +521,7 @@ std::vector<glm::vec2> NavMeshComponent::FindQuickestPath(const glm::vec2& start
 
 	// Initialize a vector to store the node path found by the A* algorithm
 	std::vector<const Node*> nodePathFound;
-	std::vector<geometry2d::Polygon> trianglePathFound; // This stores the polygons corresponding to the node path
+	std::vector<Polygon> trianglePathFound; // This stores the polygons corresponding to the node path
 
 	// Perform A* search if start and end nodes are different
 	if (startNode != endNode)
@@ -548,7 +546,7 @@ std::vector<glm::vec2> NavMeshComponent::FindQuickestPath(const glm::vec2& start
 
 	/*for (auto& triangle : trianglePathFound)
 	{
-		pathFound.emplace_back(geometry2d::ComputeCenterOfPolygon(triangle));
+		pathFound.emplace_back(ComputeCenterOfPolygon(triangle));
 	}*/
 
 	pathFound = CleanupPathfinding(trianglePathFound, startPos, endPos);
@@ -560,7 +558,7 @@ std::vector<glm::vec2> NavMeshComponent::FindQuickestPath(const glm::vec2& start
 	// // Convert polygons to glm::vec2 positions (centers of polygons)
 	// for (const auto& triangle : trianglePathFound)
 	// {
-	//     pathFound.push_back(bee::geometry2d::ComputeCenterOfPolygon(triangle));
+	//     pathFound.push_back(bee::ComputeCenterOfPolygon(triangle));
 	// }
 
 	// Modify the pathFound vector as needed
@@ -586,17 +584,17 @@ std::vector<glm::vec2> NavMeshComponent::FindQuickestPath(const glm::vec2& start
 	return pathFound;
 }
 
-geometry2d::PolygonList NavMeshComponent::GetCleanedPolygonList() const
+Engine::PolygonList Engine::NavMeshComponent::GetCleanedPolygonList() const
 {
 	return mCleanedPolygonList;
 }
 
-geometry2d::PolygonList NavMeshComponent::GetPolygonDataNavMesh() const
+Engine::PolygonList Engine::NavMeshComponent::GetPolygonDataNavMesh() const
 {
 	return mPolygonDataNavMesh;
 }
 
-void NavMeshComponent::DebugDrawNavMesh(const World& world) const
+void Engine::NavMeshComponent::DebugDrawNavMesh(const World& world) const
 {
 	const auto& view = world.GetRegistry().View<NavMeshComponent>();
 	if (view.empty()) { return; }

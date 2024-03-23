@@ -56,7 +56,7 @@ void Engine::Bezier::DisplayWidget(const char* label)
 		}
 
 		std::sort(mControlPoints.begin(), mControlPoints.end(),
-			[](const glm::vec2& l, const glm::vec2& r)
+			[](glm::vec2 l, glm::vec2 r)
 			{
 				if (l.x >= 0.0f
 					&& r.x >= 0.0f)
