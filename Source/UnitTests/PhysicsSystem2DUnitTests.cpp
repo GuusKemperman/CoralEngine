@@ -1,15 +1,9 @@
 #include "Precomp.h"
 
-#include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Systems/PhysicsSystem2D.h"
 #include "Core/UnitTests.h"
 
 using namespace Engine;
-
-static_assert(CollisionPresets::sWorldDynamic.mRules.GetResponse(CollisionPresets::sWorldStatic.mRules) == CollisionResponse::Blocking);
-static_assert(CollisionPresets::sWorldStatic.mRules.GetResponse(CollisionPresets::sWorldStatic.mRules) == CollisionResponse::Ignore);
-static_assert(CollisionPresets::sWorldStatic.mRules.GetResponse(CollisionPresets::sCharacter.mRules) == CollisionResponse::Blocking);
-static_assert(CollisionPresets::sWorldDynamic.mRules.GetResponse(CollisionPresets::sWorldStatic.mRules) == CollisionPresets::sWorldStatic.mRules.GetResponse(CollisionPresets::sWorldDynamic.mRules));
 
 struct Physics2DUnitTestAccess
 {

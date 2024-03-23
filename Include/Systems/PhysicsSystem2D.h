@@ -6,6 +6,7 @@ struct Physics2DUnitTestAccess;
 
 namespace Engine
 {
+	class Physics;
 	class Registry;
 	class MetaFunc;
 	class PhysicsBody2DComponent;
@@ -63,18 +64,18 @@ namespace Engine
 			bool mIsStatic{};
 		};
 
-
 		template<typename CollisionDataContainer>
 		static void CallEvents(World& world, const CollisionDataContainer& collisions, const std::vector<CollisionEvent>& events);
 
 		static void CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage, entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint);
 
-		static void ResolveCollision(const CollisionData& collision, 
+		static void ResolveCollision(const Physics& physics,
+			const CollisionData& collision, 
 			PhysicsBody2DComponent& body1,
 			PhysicsBody2DComponent& body2,
 			TransformComponent& transform2,
-			glm::vec2& entity1WorldPos,
-			glm::vec2 entity2WorldPos);
+			glm::vec3& entity1WorldPos,
+			glm::vec3 entity2WorldPos);
 
 		void RegisterCollision(std::vector<CollisionData>& currentCollisions,
 			CollisionData& collision, entt::entity entity1, entt::entity entity2);
@@ -86,6 +87,11 @@ namespace Engine
 			glm::vec2 polygonPos, const std::vector<glm::vec2>& polygonPoints,
 			CollisionData& result);
 
+		static glm::vec3 GetAllowedWorldPos(const Physics& physics, 
+			const PhysicsBody2DComponent& body, 
+			glm::vec3 currentWorldPos, 
+			glm::vec2 translation);
+
 		std::vector<CollisionData> mPreviousCollisions{};
 
 		std::vector<CollisionEvent> mOnCollisionEntryEvents{};
@@ -96,6 +102,4 @@ namespace Engine
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(PhysicsSystem2D);
 	};
-
-
 }
