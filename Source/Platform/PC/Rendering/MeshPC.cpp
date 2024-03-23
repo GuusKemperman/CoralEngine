@@ -100,7 +100,7 @@ Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
             tangentsStorage = std::move(*optTangents);
             tangents = tangentsStorage.data();
         }
-    //}
+    }
 
     bool meshLoaded = LoadMesh(indices.data(),
         numOfIndices,
