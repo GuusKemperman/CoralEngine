@@ -732,7 +732,21 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 				continue;
 			}
 
-			if (!ShowInspectUI(std::string{ field.GetName() }, newValue.GetReturnValue()))
+			/*
+			Makes the variable read-only, it can not be modified through the editor.
+
+			This is implemented by disabling all interaction with the widget. This
+			means this may not work for more complex widgets, such as vectors, as
+			the user also won't be able to open the collapsing header to view the
+			vector.
+			*/
+			ImGui::BeginDisabled(field.GetProperties().Has(Props::sIsEditorReadOnlyTag));
+
+			const bool wasChanged = ShowInspectUI(std::string{ field.GetName() }, newValue.GetReturnValue());
+
+			ImGui::EndDisabled();
+
+			if (!wasChanged)
 			{
 				continue;
 			}
