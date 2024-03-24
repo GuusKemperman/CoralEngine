@@ -101,19 +101,19 @@ void Engine::Texture::SendToGPU() const
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	self.mHeapSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mTextureBuffer.get(), &srvDesc);
 
-	for (int i = 0; i < 4; i++) {
+	for (int i = 1; i < 4; i++) {
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 		uavDesc.Format = resourceDescription.Format;
 		uavDesc.Texture2D.MipSlice = i;
 		uavDesc.Texture2D.PlaneSlice = 0;
 
-		self.mUAVslots[i] = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mTextureBuffer.get(), &uavDesc);
+		self.mUAVslots[i-1] = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mTextureBuffer.get(), &uavDesc);
 	}
 
 	GenerateMipmaps();
 
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 3; i++) {
 		self.mUAVslots[i].reset();
 	}
 
@@ -247,7 +247,7 @@ void Engine::Texture::GenerateMipmaps() const
 	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 6, *mUAVslots[0]);
 	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 7, *mUAVslots[1]);
 	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 8, *mUAVslots[2]);
-	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 9, *mUAVslots[3]);
+	//engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 9, *mUAVslots[3]);
 
 	uploadCmdList->Dispatch(dstWidth /8, dstHeight / 8,  1);
 }

@@ -42,7 +42,7 @@ namespace Engine
 			std::unique_ptr<DXResource> mTextureBuffer{};
 			std::optional<DXHeapHandle> mHeapSlot;
 
-			std::optional<DXHeapHandle> mUAVslots[4];
+			std::optional<DXHeapHandle> mUAVslots[3];
 			std::unique_ptr<DXConstBuffer> mMipmapCB;
 
 			struct STBIPixels
