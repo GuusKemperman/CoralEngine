@@ -36,6 +36,8 @@ namespace Engine
         void* GetUploadCommandList() { return mUploadCommandList.Get(); }
         void* GetCommandQueue() { return mCommandQueue.Get(); }
         void* GetSignature() { return mSignature.get(); }
+        void* GetComputeSignature() { return mComputeSignature.get(); }
+        void* GetMipmapPipeline() { return mGenMipmapsPipeline.get(); }
 
 #ifdef EDITOR
         void CreateImguiContext();
@@ -59,6 +61,7 @@ namespace Engine
     public:
         std::shared_ptr<DXDescHeap> GetDescriptorHeap(int heap) { return mDescriptorHeaps[heap]; }
         int GetFrameIndex() { return mFrameIndex; }
+ 
 
     private:
         friend EngineClass;
@@ -73,13 +76,6 @@ namespace Engine
         void SubmitCommands();
         void StartRecordingCommands();
 
-        struct DXGenerateMips {
-            uint32_t SrcMipLevel;           // Texture level of source mip
-            uint32_t NumMipLevels;          // Number of OutMips to write: [1-4]
-            uint32_t SrcDimension;          // Width and height of the source texture are even or odd.
-            uint32_t IsSRGB;                // Must apply gamma correction to sRGB textures.
-            glm::vec2 TexelSize;    // 1.0 / OutMip1.Dimensions
-        };
 
     private:
         bool mIsWindowOpen{};
@@ -105,7 +101,6 @@ namespace Engine
 
         std::shared_ptr<DXDescHeap> mDescriptorHeaps[NUM_DESC_HEAPS];
         std::unique_ptr<DXResource> mResources[NUM_RESOURCES];
-        std::unique_ptr<DXConstBuffer> mGenMipsCB;
         const DXGI_FORMAT mDepthFormat = DXGI_FORMAT_D32_FLOAT;
 
         HANDLE mFenceEvent;

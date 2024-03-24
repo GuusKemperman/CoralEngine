@@ -323,8 +323,6 @@ void Engine::Device::InitializeDevice()
     mResources[DEPTH_STENCIL_RSC]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
     mDepthHandle = mDescriptorHeaps[DEPTH_HEAP]->AllocateDepthStencil(mResources[DEPTH_STENCIL_RSC].get(), mDevice.Get(), &depthStencilDesc);
 
-    mGenMipsCB = std::make_unique<DXConstBuffer>(mDevice, sizeof(DXGenerateMips), 1, "GENERATE MIPS CONST BUFFER", FRAME_BUFFER_COUNT);
-
     FileIO& fileIO = FileIO::Get();
     std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/MipmapGen.hlsl");
     mGenMipmapsPipeline = std::make_unique<DXPipeline>();

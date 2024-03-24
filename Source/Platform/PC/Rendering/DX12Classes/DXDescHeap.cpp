@@ -102,6 +102,38 @@ DXHeapHandle DXDescHeap::AllocateResource(DXResource* resource, D3D12_SHADER_RES
 	return DXHeapHandle(slot, shared_from_this());
 }
 
+DXHeapHandle DXDescHeap::AllocateUAV(DXResource* resource, D3D12_UNORDERED_ACCESS_VIEW_DESC* desc)
+{
+	int slot = -1;
+
+	if (mType != D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) {
+		LOG(LogCore, Warning, "Trying to allocate an SRV in the wrong heap");
+		assert(false && "Trying to allocate an SRV in the wrong heap");
+		return DXHeapHandle();
+	}
+	if (mClearList.size() > 0) {
+		slot = mClearList[0];
+		mClearList.erase(mClearList.begin());
+	}
+	else if (mResourceCount <= mMaxResources) {
+		slot = mResourceCount;
+		mResourceCount++;
+	}
+	else {
+		LOG(LogCore, Fatal, "Descriptor heap maximum reached");
+		assert(false && "Descriptor heap maximum reached");
+		return DXHeapHandle();
+	}
+
+	Engine::Device& engineDevice = Engine::Device::Get();
+	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), slot, mDescriptorSize);
+	device->CreateUnorderedAccessView(resource->Get(), nullptr, desc, handle);
+
+
+	return DXHeapHandle(slot, shared_from_this());
+}
+
 DXHeapHandle DXDescHeap::AllocateRenderTarget(DXResource* resource, D3D12_RENDER_TARGET_VIEW_DESC* desc)
 {
 	int slot = -1;
