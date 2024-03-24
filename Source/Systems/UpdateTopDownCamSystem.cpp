@@ -86,8 +86,8 @@ void Engine::UpdateTopDownCamSystem::Render(const World& world)
 			continue;
 		}
 
-		world.GetDebugRenderer().AddBox(DebugCategory::Gameplay, topdown.mTargetLocation, glm::vec3(0.1f), glm::vec4(1.0f));
-		world.GetDebugRenderer().AddLine(DebugCategory::Gameplay, target->GetWorldPosition(), topdown.mTargetLocation, glm::vec4(1.0f));
+		world.GetDebugRenderer().AddBox(world, DebugCategory::Gameplay, topdown.mTargetLocation, glm::vec3(0.1f), glm::vec4(1.0f));
+		world.GetDebugRenderer().AddLine(world, DebugCategory::Gameplay, target->GetWorldPosition(), topdown.mTargetLocation, glm::vec4(1.0f));
 	}
 }
 

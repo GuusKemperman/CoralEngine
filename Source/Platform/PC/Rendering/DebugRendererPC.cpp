@@ -6,34 +6,21 @@
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 #include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
-#include "Platform/PC/Rendering/RendererPC.h"
-#include "World/World.h"
-#include "World/WorldRenderer.h"
-#include "World/Registry.h"
-#include "Components/CameraComponent.h"
-#include <memory>
 
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
+#include "Rendering/GPUWorld.h"
 
 class Engine::DebugRenderer::Impl
 {
 public:
 	Impl() = default;
-    bool AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color);
-    void Render(const glm::mat4& view, const glm::mat4& projection);
-
-	D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
-    std::vector<glm::mat4x4> mModelMats;
-    std::vector<glm::vec4> mColors;
+    bool AddLine(const World& world, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color);
+    void Render(GPUWorld& gpuWorld);
 
 	std::unique_ptr<DXPipeline> mDebugPipeline;
-	std::unique_ptr<DXResource> mVertexBuffer;
-	std::unique_ptr<DXConstBuffer> mLineColorBuffer;
-	std::unique_ptr<DXConstBuffer> mLineMatrixBuffer;
-	std::unique_ptr<DXConstBuffer> mCameraMatrixBuffer;
 };
 
 Engine::DebugRenderer::DebugRenderer()
@@ -48,7 +35,6 @@ Engine::DebugRenderer::DebugRenderer()
 
 	FileIO& fileIO = FileIO::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
-	ID3D12GraphicsCommandList4* uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetUploadCommandList());
 
 	std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/DebugVertex.hlsl");
 	ComPtr<ID3DBlob> v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
@@ -58,60 +44,26 @@ Engine::DebugRenderer::DebugRenderer()
 	mImpl->mDebugPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
 	mImpl->mDebugPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
 	mImpl->mDebugPipeline->SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
-	mImpl->mDebugPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"SKYBOX SIGNATURE");
-
-	std::vector<glm::vec3> positions(2);
-	positions[0] = glm::vec3(0.f, 0.f, 0.f);
-	positions[1] = glm::vec3(1.f, 0.f, 0.f);
-
-	engineDevice.StartUploadCommands();
-	int vertexCount = 2;
-	int vBufferSize = sizeof(float) * vertexCount * 3;
-
-	mImpl->mVertexBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(vBufferSize), nullptr, "Line Vertex resource buffer");
-	
-	D3D12_SUBRESOURCE_DATA vData = {};
-	vData.pData = positions.data();
-	vData.RowPitch = sizeof(float) * 3;
-	vData.SlicePitch = vBufferSize;
-
-	mImpl->mVertexBuffer->CreateUploadBuffer(device, vBufferSize, 0);
-	mImpl->mVertexBuffer->Update(uploadCmdList, vData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
-
-	mImpl->mVertexBufferView.BufferLocation = mImpl->mVertexBuffer->GetResource()->GetGPUVirtualAddress();
-	mImpl->mVertexBufferView.StrideInBytes = sizeof(float) * 3;
-	mImpl->mVertexBufferView.SizeInBytes = vBufferSize;
-
-	mImpl->mLineColorBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::vec4), MAX_LINES, "Lines color const buffer", FRAME_BUFFER_COUNT);
-	mImpl->mLineMatrixBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4), MAX_LINES, "Lines matrix const buffer", FRAME_BUFFER_COUNT);
-	mImpl->mCameraMatrixBuffer = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
-
-	engineDevice.SubmitUploadCommands();
+	mImpl->mDebugPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"Debug line pipeline");
 }
 
 Engine::DebugRenderer::~DebugRenderer() = default;
 
-void Engine::DebugRenderer::AddLine(DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) const
+void Engine::DebugRenderer::AddLine(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) const
 {
 	if (!Device::IsHeadless()
 		&& (sDebugCategoryFlags & category) != 0)
 	{
-		mImpl->AddLine(from, to, color);
+		mImpl->AddLine(world, from, to, color);
 	}
 }
 
 void Engine::DebugRenderer::Render(const World& world)
 {
-    const auto cameraView = world.GetRegistry().View<const TransformComponent, const CameraComponent>();
-
-	const auto optionalEntityCameraPair = world.GetRenderer().GetMainCamera();
-    ASSERT_LOG(optionalEntityCameraPair.has_value(), "DX12 draw requests have been made, but they cannot be cleared as there is no camera to draw them to");
-
-	const auto camera = optionalEntityCameraPair->second;
-    mImpl->Render(camera.GetView(), camera.GetProjection());
+    mImpl->Render(world.GetGPUWorld());
 }
 
-bool Engine::DebugRenderer::Impl::AddLine(const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
+bool Engine::DebugRenderer::Impl::AddLine(const World& world, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
 {
 	// Calculate the scale as the distance between 'from' and 'to'
 	float scaleLength = glm::length(to - from);
@@ -135,13 +87,16 @@ bool Engine::DebugRenderer::Impl::AddLine(const glm::vec3& from, const glm::vec3
 	// Combine transformations: T * R * S
 	glm::mat4 modelMatrix = translateMat * rotationMat * scaleMat;
 
-	mModelMats.push_back(glm::transpose(modelMatrix));
-	mColors.push_back(color);
+	GPUWorld& gpuWorld = world.GetGPUWorld();
+	GPUWorld::DebugRenderingData& data = gpuWorld.GetDebugRenderingData();
+
+	data.mModelMats.push_back(glm::transpose(modelMatrix));
+	data.mColors.push_back(color);
 
     return true;
 }
 
-void Engine::DebugRenderer::Impl::Render(const glm::mat4& view, const glm::mat4& projection)
+void Engine::DebugRenderer::Impl::Render(GPUWorld& gpuWorld)
 {
 	Device& engineDevice = Device::Get();
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -151,27 +106,22 @@ void Engine::DebugRenderer::Impl::Render(const glm::mat4& view, const glm::mat4&
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST); 
 	commandList->SetPipelineState(mDebugPipeline->GetPipeline().Get());
 
-	//UPDATE CAMERA
-	InfoStruct::DXMatrixInfo matrixInfo;
-	matrixInfo.pm = glm::transpose(projection);
-	matrixInfo.vm = glm::transpose(view);
-	matrixInfo.ipm = glm::inverse(matrixInfo.pm);
-	matrixInfo.ivm = glm::inverse(matrixInfo.vm);
-	mCameraMatrixBuffer->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
+	gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
 
-	//BIND CONSTANT BUFFERS
-	mCameraMatrixBuffer->Bind(commandList, 0, 0, frameIndex);
+	GPUWorld::DebugRenderingData& data = gpuWorld.GetDebugRenderingData();
 
-	for (size_t i = 0; i < mModelMats.size(); i++) {
-		mLineMatrixBuffer->Update(&mModelMats[i], sizeof(glm::mat4x4), static_cast<int>(i), frameIndex);
-		mLineMatrixBuffer->Bind(commandList, 2, static_cast<int>(i), frameIndex);
+	for (size_t i = 0; i < data.mModelMats.size(); i++)
+	{
+		data.mLineMatrixBuffer->Update(&data.mModelMats[i], sizeof(glm::mat4x4), static_cast<int>(i), frameIndex);
+		data.mLineMatrixBuffer->Bind(commandList, 2, static_cast<int>(i), frameIndex);
 
-		mLineColorBuffer->Update(&mColors[i], sizeof(glm::vec4), static_cast<int>(i), frameIndex);
-		mLineColorBuffer->Bind(commandList, 1, static_cast<int>(i), frameIndex);
+		data.mLineColorBuffer->Update(&data.mColors[i], sizeof(glm::vec4), static_cast<int>(i), frameIndex);
+		data.mLineColorBuffer->Bind(commandList, 1, static_cast<int>(i), frameIndex);
 
-		commandList->IASetVertexBuffers(0, 1, &mVertexBufferView);
+		commandList->IASetVertexBuffers(0, 1, &data.mVertexBufferView);
 		commandList->DrawInstanced(2, 1, 0, 0);
 	}
-	mModelMats.clear();
-	mColors.clear();
+
+	data.mModelMats.clear();
+	data.mColors.clear();
 }

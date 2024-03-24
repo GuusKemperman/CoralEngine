@@ -7,6 +7,7 @@ namespace Engine
 	class Level;
 	class Registry;
 	class WorldRenderer;
+	class GPUWorld;
 	class DebugRenderer;
 	class BinaryGSONObject;
 
@@ -33,6 +34,8 @@ namespace Engine
 		WorldRenderer& GetRenderer() { ASSERT(mRenderer != nullptr); return *mRenderer; };
 		const WorldRenderer& GetRenderer() const { ASSERT(mRenderer != nullptr); return *mRenderer; };
 		const DebugRenderer& GetDebugRenderer() const;
+
+		GPUWorld& GetGPUWorld() const { return *mGPUWorld; }; // TODO Const
 
 		bool HasBegunPlay() const { return mHasBegunPlay; }
 
@@ -78,6 +81,7 @@ namespace Engine
 
 		std::unique_ptr<Registry> mRegistry{};
 		std::unique_ptr<WorldRenderer> mRenderer{};
+		std::unique_ptr<GPUWorld> mGPUWorld{};
 
 		std::shared_ptr<const Level> mLevelToTransitionTo{};
 

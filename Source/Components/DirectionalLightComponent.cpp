@@ -29,6 +29,7 @@ void Engine::DirectionalLightComponent::OnDrawGizmos(World& world, entt::entity 
 	const glm::vec3 drawToPosition = worldPos + transform->GetWorldForward() * length;
 
 	world.GetDebugRenderer().AddCylinder(
+		world,
 		category,
 		worldPos,
 		drawToPosition,

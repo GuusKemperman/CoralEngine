@@ -11,6 +11,8 @@
 #include "Systems/System.h"
 #include "Utilities/DebugRenderer.h"
 
+#include "Rendering/GPUWorld.h"
+
 Engine::WorldRenderer::WorldRenderer(const World& world) :
 	mWorld(world),
 	mDebugRenderer(std::make_unique<DebugRenderer>()),
@@ -158,6 +160,7 @@ void Engine::WorldRenderer::RenderAtSize(glm::vec2 size)
 	mLastRenderedAtPos = ImGui::GetCursorScreenPos();
 #endif // EDITOR
 
+	mWorld.get().GetGPUWorld().Update(mWorld);
 	GetWorld().GetRegistry().RenderSystems();
     mDebugRenderer->Render(mWorld);
 }

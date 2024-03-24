@@ -113,7 +113,7 @@ void NavigationSystem::Render(const World& world)
 		{
 			for (size_t i = 0; i < n.mPathFound.size() - 1; i++)
 			{
-				world.GetDebugRenderer().AddLine(DebugCategory::AINavigation, n.mPathFound[i], n.mPathFound[i + 1],
+				world.GetDebugRenderer().AddLine(world, DebugCategory::AINavigation, n.mPathFound[i], n.mPathFound[i + 1],
 				                                 {1.f, 0.f, 0.f, 1.f});
 			}
 		}

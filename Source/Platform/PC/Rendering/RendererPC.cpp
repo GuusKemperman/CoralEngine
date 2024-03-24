@@ -16,8 +16,9 @@
 #include "World/World.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
+#include "Meta/MetaReflect.h"
 
-#include "World/WorldRenderer.h"
+#include "Rendering/GPUWorld.h"
 #include "Components/CameraComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/DirectionalLightComponent.h"
@@ -35,7 +36,6 @@ Engine::Renderer::Renderer()
     }
 
     Device& engineDevice = Device::Get();
-
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
     //CREATE PBR PIPELINE
@@ -92,133 +92,22 @@ Engine::Renderer::Renderer()
     mZSkinnedPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
     mZSkinnedPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
     mZSkinnedPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
-
-    //CREATE CONSTANT BUFFERS
-    mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
-    mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
-    mConstBuffers[MODEL_INDEX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(int), MAX_MESHES + 2, "Model index", FRAME_BUFFER_COUNT);
-    mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
-    mConstBuffers[FINAL_BONE_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * MAX_BONES, MAX_SKINNED_MESHES, "Skinned Mesh Bone Matrices", FRAME_BUFFER_COUNT);
-    //CREATE STRUCTURED BUFFERS
-    auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-    mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "MATERIAL STRUCTURED BUFFER");
-    mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXMaterialInfo)* (MAX_MESHES + 2), 0);
-
-    D3D12_SHADER_RESOURCE_VIEW_DESC  srvDesc = {};
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-    srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-    srvDesc.Buffer.FirstElement = 0;
-    srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXMaterialInfo);
-    srvDesc.Buffer.NumElements = MAX_MESHES +2;
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    materialHeapSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB].get(), &srvDesc);
-    materials = std::vector<InfoStruct::DXMaterialInfo>(MAX_MESHES + 2);
 }
-
-static void SendMaterialToGPUIfReady(const Engine::Material& mat);
 
 void Engine::Renderer::Render(const World& world)
 {
-    // I'm not sure why, because I (Guus), know nothing of dx12, but dx12 does not like it
-    // if we are sending textures to the GPU in the RENDERING pass. Soo my solution was to
-    // do it here instead. The only downside is that we have to iterate over the static meshes
-    // twice, but in entt this is surprisingly fast.
-    { 
-        const auto view = world.GetRegistry().View<const StaticMeshComponent>();
-
-        for (auto [entity, staticMeshComponent] : view.each())
-        {
-            // It won't be rendered anyway,
-            // so let's not bother finalising
-            // the loading process.
-            if (staticMeshComponent.mMaterial != nullptr
-                && staticMeshComponent.mStaticMesh != nullptr)
-            {
-                SendMaterialToGPUIfReady(*staticMeshComponent.mMaterial);            
-            }
-        }
-    }
-
-    {
-        const auto view = world.GetRegistry().View<const SkinnedMeshComponent>();
-
-        for (auto [entity, skinnedMeshComponent] : view.each())
-        {
-            // It won't be rendered anyway,
-            // so let's not bother finalising
-            // the loading process.
-            if (skinnedMeshComponent.mMaterial != nullptr
-                && skinnedMeshComponent.mSkinnedMesh != nullptr)
-            {
-            SendMaterialToGPUIfReady(*skinnedMeshComponent.mMaterial);
-            }
-
-        }
-    }
-
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
     std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
+    GPUWorld& gpuWorld = world.GetGPUWorld();
     int frameIndex = engineDevice.GetFrameIndex();
 
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 
-    //GET WORLD
-    const auto optionalEntityCameraPair = world.GetRenderer().GetMainCamera();
-    ASSERT_LOG(optionalEntityCameraPair.has_value(), "DX12 draw requests have been made, but they cannot be cleared as there is no camera to draw them to");
-
-
-    //UPDATE CAMERA
-    const auto camera = optionalEntityCameraPair->second;
-    InfoStruct::DXMatrixInfo matrixInfo;
-    matrixInfo.pm = glm::transpose(camera.GetProjection());
-    matrixInfo.vm = glm::transpose(camera.GetView());
-
-    matrixInfo.ipm = glm::inverse(matrixInfo.pm);
-    matrixInfo.ivm = glm::inverse(matrixInfo.vm);
-    mConstBuffers[CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
-
-    //UPDATE LIGHTS
-    const auto pointLightView = world.GetRegistry().View<const PointLightComponent, const TransformComponent>();
-    int pointLightCounter = 0;
-    for (auto [entity, lightComponent, transform] : pointLightView.each()) {
-        if (pointLightCounter < MAX_LIGHTS) {
-            lights.mPointLights[pointLightCounter].mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
-            lights.mPointLights[pointLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
-            lights.mPointLights[pointLightCounter].mRadius = lightComponent.mRange;
-        }
-        else {
-            LOG(LogCore, Warning, ("Maximum (%i) of point lights has been surpassed.", MAX_LIGHTS));
-            break;
-        }
-        pointLightCounter++;
-    }
-    const auto dirLightView = world.GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
-    int dirLightCounter = 0;
-    for (auto [entity, lightComponent, transform] : dirLightView.each()) {
-        if (dirLightCounter < MAX_LIGHTS) {
-            glm::quat quatRotation = transform.GetLocalOrientation();
-            glm::vec3 baseDir = glm::vec3(0, 0, 1);
-            glm::vec3 lightDirection = quatRotation * baseDir;
-
-            lights.mDirLights[dirLightCounter].mDir = glm::vec4(lightDirection, 1.f);
-            lights.mDirLights[dirLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
-        }
-        else {
-            LOG(LogCore, Warning, ("Maximum (%i) of directional lights has been surpassed.", MAX_LIGHTS));
-            break;
-        }
-        dirLightCounter++;
-    }
-
-    mConstBuffers[LIGHT_CB]->Update(&lights, sizeof(InfoStruct::DXLightInfo), 0, frameIndex);
-
-    //BIND CONSTANT BUFFERS
-    mConstBuffers[LIGHT_CB]->Bind(commandList, 1, 0, frameIndex);
-    mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 0, 0, frameIndex);
-    mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 4, 0, frameIndex);
+    // Bind constant buffers
+    gpuWorld.GetLightBuffer().Bind(commandList, 1, 0, frameIndex);
+    gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
+    gpuWorld.GetCameraBuffer().Bind(commandList, 4, 0, frameIndex);
 
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
@@ -226,21 +115,25 @@ void Engine::Renderer::Render(const World& world)
     int meshCounter = 0;
     commandList->SetPipelineState(mZPipeline->GetPipeline().Get());
 
+    // Depth pre-pass
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
-        //DEPTH PRE PASS
-        for (auto [entity, staticMeshComponent, transform] : view.each()) {
-        glm::mat4x4 modelMatrices[2]{};
-        modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-        modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-        mConstBuffers[MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
-        mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
+        
+        for (auto [entity, staticMeshComponent, transform] : view.each()) 
+        {
+            if (!staticMeshComponent.mStaticMesh)
+            {
+                continue;
+            }
 
-        if (!staticMeshComponent.mStaticMesh)
-            continue;
+            glm::mat4x4 modelMatrices[2]{};
+            modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
+            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
+            gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
 
-        staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
-        meshCounter++;
+            staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
+            meshCounter++;
         }
     }
 
@@ -251,18 +144,20 @@ void Engine::Renderer::Render(const World& world)
 
         for (auto [entity, skinnedMeshComponent, transform] : view.each()) 
         {
+            if (!skinnedMeshComponent.mSkinnedMesh)
+            {
+                continue;
+            }
+
             glm::mat4x4 modelMatrices[2]{};
             modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
             modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-            mConstBuffers[MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
-            mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
+            gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
 
             const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
-            mConstBuffers[FINAL_BONE_MATRIX_CB]->Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
-            mConstBuffers[FINAL_BONE_MATRIX_CB]->Bind(commandList, 5, meshCounter, frameIndex);
-
-            if (!skinnedMeshComponent.mSkinnedMesh)
-                continue;
+            gpuWorld.GetBoneMatrixBuffer().Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
+            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
 
             skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
             meshCounter++;
@@ -270,90 +165,59 @@ void Engine::Renderer::Render(const World& world)
     }
 
     commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
-
     meshCounter = 0;
+
     {
-    const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
-    //RENDERING
-    for (auto [entity, staticMeshComponent, transform] : view.each())
-    {
-        if (!staticMeshComponent.mStaticMesh)
+        const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
+        //RENDERING
+        for (auto [entity, staticMeshComponent, transform] : view.each())
         {
-            continue;
-        }
-
-        InfoStruct::DXMaterialInfo materialInfo;
-        if (staticMeshComponent.mMaterial != nullptr) {
-            materialInfo.colorFactor = { staticMeshComponent.mMaterial->mBaseColorFactor.r,
-                staticMeshComponent.mMaterial->mBaseColorFactor.g,
-                staticMeshComponent.mMaterial->mBaseColorFactor.b,
-                0.f };
-            materialInfo.emissiveFactor = { staticMeshComponent.mMaterial->mEmissiveFactor.r,
-                staticMeshComponent.mMaterial->mEmissiveFactor.g,
-                staticMeshComponent.mMaterial->mEmissiveFactor.b,
-                0.f };
-            materialInfo.metallicFactor = staticMeshComponent.mMaterial->mMetallicFactor;
-            materialInfo.roughnessFactor = staticMeshComponent.mMaterial->mRoughnessFactor;
-            materialInfo.normalScale = staticMeshComponent.mMaterial->mNormalScale;
-            materialInfo.useColorTex = staticMeshComponent.mMaterial->mBaseColorTexture != nullptr && staticMeshComponent.mMaterial->mBaseColorTexture->WasSentToGpu();
-            materialInfo.useEmissiveTex = staticMeshComponent.mMaterial->mEmissiveTexture != nullptr && staticMeshComponent.mMaterial->mEmissiveTexture->WasSentToGpu();
-            materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr && staticMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSentToGpu();
-            materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr && staticMeshComponent.mMaterial->mNormalTexture->WasSentToGpu();
-            materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr && staticMeshComponent.mMaterial->mOcclusionTexture->WasSentToGpu();
-
-            //BIND TEXTURES
-            if (materialInfo.useColorTex)
+            if (!staticMeshComponent.mStaticMesh)
             {
-                staticMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 6);
+                continue;
             }
-            if (materialInfo.useEmissiveTex)
+
+            // Bind textures
+            const InfoStruct::DXMaterialInfo& materialInfo = gpuWorld.GetMaterial(meshCounter);
+            if (staticMeshComponent.mMaterial)
             {
-                staticMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 7);
+                if (materialInfo.useColorTex)
+                {
+                    staticMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 6);
+                }
+                if (materialInfo.useEmissiveTex)
+                {
+                    staticMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 7);
+                }
+                if (materialInfo.useMetallicRoughnessTex)
+                {
+                    staticMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 8);
+                }
+                if (materialInfo.useNormalTex)
+                {
+                    staticMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 9);
+                }
+                if (materialInfo.useOcclusionTex)
+                {
+                    staticMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 10);
+                }
             }
-            if (materialInfo.useMetallicRoughnessTex)
-            {
-                staticMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 8);
-            }
-            if (materialInfo.useNormalTex)
-            {
-                staticMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 9);
-            }
-            if (materialInfo.useOcclusionTex)
-            {
-                staticMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 10);
-            }
-        }
-        else {
-            materialInfo.colorFactor = { 0.f, 0.f, 0.f, 0.f };
-            materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
-            materialInfo.metallicFactor = 0.f;
-            materialInfo.roughnessFactor = 0.f;
-            materialInfo.normalScale = 0.f;
-            materialInfo.useColorTex = false;
-            materialInfo.useEmissiveTex = false;
-            materialInfo.useMetallicRoughnessTex = false;
-            materialInfo.useNormalTex = false;
-            materialInfo.useOcclusionTex = false;
 
-        }
-        materials[meshCounter] = materialInfo;
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
 
-        mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
+            //UPDATE AND BIND MATERIAL INFO
+            gpuWorld.GetModelIndexBuffer().Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
+            gpuWorld.GetModelIndexBuffer().Bind(commandList, 3, meshCounter, frameIndex);
 
-        //UPDATE AND BIND MATERIAL INFO
-        mConstBuffers[MODEL_INDEX_CB]->Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
-        mConstBuffers[MODEL_INDEX_CB]->Bind(commandList, 3, meshCounter, frameIndex);
+            engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, gpuWorld.GetMaterialHeapSlot());
 
-        engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, materialHeapSlot);
-
-        //DRAW THE MESH
+            //DRAW THE MESH
             staticMeshComponent.mStaticMesh->DrawMesh();
             meshCounter++;
-    }
+        }
     }
     
-    //RENDER SKINNED MESHES
-
+    // Render skinned meshes
     commandList->SetPipelineState(mPBRSkinnedPipeline->GetPipeline().Get());
 
     {
@@ -366,28 +230,10 @@ void Engine::Renderer::Render(const World& world)
                 continue;
             }
 
-            //UPDATE AND BIND MATERIAL INFO
-            InfoStruct::DXMaterialInfo materialInfo;
-            if (skinnedMeshComponent.mMaterial != nullptr) {
-                materialInfo.colorFactor = { skinnedMeshComponent.mMaterial->mBaseColorFactor.r,
-                    skinnedMeshComponent.mMaterial->mBaseColorFactor.g,
-                    skinnedMeshComponent.mMaterial->mBaseColorFactor.b,
-                    0.f };
-                materialInfo.emissiveFactor = { skinnedMeshComponent.mMaterial->mEmissiveFactor.r,
-                    skinnedMeshComponent.mMaterial->mEmissiveFactor.g,
-                    skinnedMeshComponent.mMaterial->mEmissiveFactor.b,
-                    0.f };
-                materialInfo.metallicFactor = skinnedMeshComponent.mMaterial->mMetallicFactor;
-                materialInfo.roughnessFactor = skinnedMeshComponent.mMaterial->mRoughnessFactor;
-                materialInfo.normalScale = skinnedMeshComponent.mMaterial->mNormalScale;
-
-                materialInfo.useColorTex = skinnedMeshComponent.mMaterial->mBaseColorTexture != nullptr && skinnedMeshComponent.mMaterial->mBaseColorTexture->WasSentToGpu();
-                materialInfo.useEmissiveTex = skinnedMeshComponent.mMaterial->mEmissiveTexture != nullptr && skinnedMeshComponent.mMaterial->mEmissiveTexture->WasSentToGpu();
-                materialInfo.useMetallicRoughnessTex = skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr && skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSentToGpu();
-                materialInfo.useNormalTex = skinnedMeshComponent.mMaterial->mNormalTexture != nullptr && skinnedMeshComponent.mMaterial->mNormalTexture->WasSentToGpu();
-                materialInfo.useOcclusionTex = skinnedMeshComponent.mMaterial->mOcclusionTexture != nullptr && skinnedMeshComponent.mMaterial->mOcclusionTexture->WasSentToGpu();
-
-                //BIND TEXTURES
+            // Bind textures
+            const InfoStruct::DXMaterialInfo& materialInfo = gpuWorld.GetMaterial(meshCounter);
+            if (skinnedMeshComponent.mMaterial)
+            {
                 if (materialInfo.useColorTex)
                 {
                     skinnedMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 6);
@@ -409,29 +255,15 @@ void Engine::Renderer::Render(const World& world)
                     skinnedMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 10);
                 }
             }
-            else {
-                materialInfo.colorFactor = {0.f, 0.f, 0.f, 0.f };
-                materialInfo.emissiveFactor = {0.f, 0.f, 0.f, 0.f };
-                materialInfo.metallicFactor = 0.f;
-                materialInfo.roughnessFactor = 0.f;
-                materialInfo.normalScale = 0.f;
-                materialInfo.useColorTex = false;
-                materialInfo.useEmissiveTex = false;
-                materialInfo.useMetallicRoughnessTex = false;
-                materialInfo.useNormalTex = false;
-                materialInfo.useOcclusionTex = false;
-            }
-            materials[meshCounter] = materialInfo;
 
-            mConstBuffers[MODEL_MATRIX_CB]->Bind(commandList, 2, meshCounter, frameIndex);
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
+            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
 
-            mConstBuffers[FINAL_BONE_MATRIX_CB]->Bind(commandList, 5, meshCounter, frameIndex);
+            // Update mesh index
+            gpuWorld.GetModelIndexBuffer().Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
+            gpuWorld.GetModelIndexBuffer().Bind(commandList, 3, meshCounter, frameIndex);
 
-            //UPDATE AND BIND MATERIAL INFO
-            mConstBuffers[MODEL_INDEX_CB]->Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
-            mConstBuffers[MODEL_INDEX_CB]->Bind(commandList, 3, meshCounter, frameIndex);
-
-            engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, materialHeapSlot);
+            engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, gpuWorld.GetMaterialHeapSlot());
 
             skinnedMeshComponent.mSkinnedMesh->DrawMesh();
 
@@ -439,49 +271,10 @@ void Engine::Renderer::Render(const World& world)
         }
     }
 
-    D3D12_SUBRESOURCE_DATA data;
-    data.pData = materials.data();
-    data.RowPitch = sizeof(InfoStruct::DXMaterialInfo);
-    data.SlicePitch = sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2);
-    mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
-
-    memset(materials.data(), 0, sizeof(InfoStruct::DXMaterialInfo) * materials.size());
+    gpuWorld.UpdateMaterials();
 }
 
 Engine::MetaType Engine::Renderer::Reflect()
 {
     return MetaType{ MetaType::T<Renderer>{}, "Renderer", MetaType::Base<System>{} };
-}
-
-void SendMaterialToGPUIfReady(const Engine::Material& mat)
-{
-    if (mat.mBaseColorTexture != nullptr
-        && mat.mBaseColorTexture->IsReadyToBeSentToGpu())
-    {
-        mat.mBaseColorTexture->SentToGPU();
-    }
-
-    if (mat.mEmissiveTexture != nullptr
-        && mat.mEmissiveTexture->IsReadyToBeSentToGpu())
-    {
-        mat.mEmissiveTexture->SentToGPU();
-    }
-
-    if (mat.mMetallicRoughnessTexture != nullptr
-        && mat.mMetallicRoughnessTexture->IsReadyToBeSentToGpu())
-    {
-        mat.mMetallicRoughnessTexture->SentToGPU();
-    }
-
-    if (mat.mNormalTexture != nullptr
-        && mat.mNormalTexture->IsReadyToBeSentToGpu())
-    {
-        mat.mNormalTexture->SentToGPU();
-    }
-
-    if (mat.mOcclusionTexture != nullptr
-        && mat.mOcclusionTexture->IsReadyToBeSentToGpu())
-    {
-        mat.mOcclusionTexture->SentToGPU();
-    }
 }

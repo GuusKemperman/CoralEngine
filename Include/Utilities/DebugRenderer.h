@@ -43,12 +43,14 @@ namespace Engine
         void Render(const World& world);
 
         void AddLine(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& from, 
             const glm::vec3& to, 
             const glm::vec4& color) const;
 
         void AddLine(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec2& from, 
             const glm::vec2& to, 
@@ -56,6 +58,7 @@ namespace Engine
             Plane::Enum plane = Plane::XZ) const;
 
         void AddCircle(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& center, 
             float radius, 
@@ -63,12 +66,14 @@ namespace Engine
             Plane::Enum plane = Plane::XZ) const;
 
         void AddSphere(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& center, 
             float radius, 
             const glm::vec4& color) const;
 
         void AddSquare(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& center, 
             float size, 
@@ -76,12 +81,14 @@ namespace Engine
             Plane::Enum plane = Plane::XZ) const;
 
         void AddBox(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& center, 
             const glm::vec3& halfExtends, 
             const glm::vec4& color) const;
 
         void AddCylinder(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& from, 
             const glm::vec3& to, 
@@ -90,11 +97,13 @@ namespace Engine
             const glm::vec4& color) const;
 
         void AddPolygon(
+            const World& world,
             DebugCategory::Enum category, 
             const std::vector<glm::vec3>& points, 
             const glm::vec4& color) const;
 
         void AddPolygon(
+            const World& world,
             DebugCategory::Enum category, 
             const std::vector<glm::vec2>& points, 
             const glm::vec4& color, 

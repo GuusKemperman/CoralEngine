@@ -233,7 +233,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 	constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
 	for (auto [entity, body, disk, transformComponent] : diskView.each())
 	{
-		renderer.AddCircle(DebugCategory::Physics, transformComponent.GetWorldPosition(), disk.mRadius + 0.1f, color);
+		renderer.AddCircle(world, DebugCategory::Physics, transformComponent.GetWorldPosition(), disk.mRadius + 0.1f, color);
 	}
 
 	const auto polyView = reg.View<PhysicsBody2DComponent, PolygonColliderComponent, TransformComponent>();
@@ -245,7 +245,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(World& world)
 		{
 			const glm::vec2 from = poly.mPoints[i] + worldPos;
 			const glm::vec2 to = poly.mPoints[(i + 1) % pointCount] + worldPos;
-			renderer.AddLine(DebugCategory::Physics, glm::vec3(from.x, 1.1f, from.y), glm::vec3(to.x, 1.1f, to.y), color);
+			renderer.AddLine(world, DebugCategory::Physics, glm::vec3(from.x, 1.1f, from.y), glm::vec3(to.x, 1.1f, to.y), color);
 		}
 	}
 }

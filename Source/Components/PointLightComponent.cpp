@@ -22,6 +22,7 @@ void Engine::PointLightComponent::OnDrawGizmos(World& world, entt::entity owner)
 	}
 
 	world.GetDebugRenderer().AddSphere(
+		world,
 		category,
 		transform->GetWorldPosition(),
 		mRange,

@@ -520,6 +520,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Platform\PC\Rendering\GPUWorldPC.cpp" />
     <ClCompile Include="Source\Components\Abilities\EffectsOnCharacterComponent.cpp" />
     <ClCompile Include="Source\Assets\Animation\Animation.cpp" />
     <ClCompile Include="Source\Assets\Importers\AnimationImporter.cpp">
@@ -1500,6 +1501,7 @@
     <ClCompile Include="Source\Components\UI\UISpriteComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Platform\PC\Rendering\GPUWorldPC.h" />
     <ClInclude Include="Include\Assets\Animation\Animation.h" />
     <ClInclude Include="Include\Assets\Importers\AnimationImporter.h" />
     <ClInclude Include="Include\Assets\Animation\BoneInfo.h" />
@@ -1757,6 +1759,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Include\Rendering\GPUWorld.h" />
+    <ClInclude Include="Include\Rendering\IGPUWorld.h" />
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
     <ClInclude Include="Include\Systems\AbilitySystem.h" />

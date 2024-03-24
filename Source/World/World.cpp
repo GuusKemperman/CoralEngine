@@ -11,11 +11,13 @@
 #include "Utilities/DebugRenderer.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Assets/Level.h"
+#include "Rendering/GPUWorld.h"
 
 Engine::World::World(const bool beginPlayImmediately)
 {
 	mRenderer = std::make_unique<WorldRenderer>(*this);
 	mRegistry = std::make_unique<Registry>(*this);
+	mGPUWorld = std::make_unique<GPUWorld>();
 
 	LOG(LogCore, Verbose, "World is awaiting begin play..");
 
@@ -28,6 +30,7 @@ Engine::World::World(const bool beginPlayImmediately)
 Engine::World::World(World&& other) noexcept :
 	mRegistry(std::move(other.mRegistry)),
 	mRenderer(std::move(other.mRenderer)),
+	mGPUWorld(std::move(other.mGPUWorld)),
 	mLevelToTransitionTo(std::move(other.mLevelToTransitionTo)),
 	mTime(other.mTime),
 	mHasBegunPlay(other.mHasBegunPlay)
