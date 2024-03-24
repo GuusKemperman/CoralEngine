@@ -247,7 +247,6 @@ void Engine::Texture::GenerateMipmaps() const
 	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 6, *mUAVslots[0]);
 	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 7, *mUAVslots[1]);
 	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 8, *mUAVslots[2]);
-	//engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 9, *mUAVslots[3]);
 
 	uploadCmdList->Dispatch(dstWidth /8, dstHeight / 8,  1);
 }
