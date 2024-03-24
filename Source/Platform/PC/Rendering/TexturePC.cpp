@@ -36,7 +36,7 @@ bool Engine::Texture::IsReadyToBeSentToGpu() const
 		&& mLoadedPixels->mPixels != nullptr;
 }
 
-void Engine::Texture::SentToGPU() const
+void Engine::Texture::SendToGPU() const
 {
 	if (!IsReadyToBeSentToGpu())
 	{
@@ -101,6 +101,8 @@ void Engine::Texture::SentToGPU() const
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	self.mHeapSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mTextureBuffer.get(), &srvDesc);
 	engineDevice.SubmitUploadCommands();
+
+
 
 	self.mLoadedPixels.reset();
 }

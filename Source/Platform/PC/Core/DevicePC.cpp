@@ -1,5 +1,6 @@
 #include "Precomp.h"
 #include "Platform/PC/Core/DevicePC.h"
+#include "Core/FileIO.h"
 
 #pragma warning(push)
 #pragma warning(disable: 4189)
@@ -301,6 +302,7 @@ void Engine::Device::InitializeDevice()
     mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1); //11
     mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2); //12
     mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); //13
+    mComputeSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_ALL, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_FILTER_MIN_MAG_MIP_LINEAR);//14
     mComputeSignature->CreateSignature(mDevice, L"COMPUTE ROOT SIGNATURE");
 
     //CREATE DEPTH STENCIL
@@ -322,6 +324,15 @@ void Engine::Device::InitializeDevice()
     mDepthHandle = mDescriptorHeaps[DEPTH_HEAP]->AllocateDepthStencil(mResources[DEPTH_STENCIL_RSC].get(), mDevice.Get(), &depthStencilDesc);
 
     mGenMipsCB = std::make_unique<DXConstBuffer>(mDevice, sizeof(DXGenerateMips), 1, "GENERATE MIPS CONST BUFFER", FRAME_BUFFER_COUNT);
+
+    FileIO& fileIO = FileIO::Get();
+    std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/MipmapGen.hlsl");
+    mGenMipmapsPipeline = std::make_unique<DXPipeline>();
+    ComPtr<ID3DBlob> cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
+    mGenMipmapsPipeline = std::make_unique<DXPipeline>();
+    mGenMipmapsPipeline->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
+    mGenMipmapsPipeline->CreatePipeline(mDevice, mComputeSignature.get(), L"GENERATE MIPMAPS COMPUTE SHADER");
+
     SubmitCommands();
 }
 

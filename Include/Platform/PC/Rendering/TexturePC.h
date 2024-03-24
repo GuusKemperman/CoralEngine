@@ -28,7 +28,7 @@ namespace Engine
 
 			bool IsReadyToBeSentToGpu() const;
 			bool WasSentToGpu() const { return mHeapSlot.has_value(); }
-			void SentToGPU() const;
+			void SendToGPU() const;
 
 			void BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
 			void BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
@@ -38,6 +38,9 @@ namespace Engine
 
 			std::unique_ptr<DXResource> mTextureBuffer{};
 			std::optional<DXHeapHandle> mHeapSlot;
+
+			std::optional<DXHeapHandle> UAVslots[4];
+			std::optional<DXHeapHandle> SRVslots[4];
 
 			struct STBIPixels
 			{
