@@ -1513,6 +1513,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClInclude Include="Include\Core\UIRenderer.h" />
+    <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectOptional.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\UIRendererPC.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\UIRenderer***REMOVED***.h" />
     <ClInclude Include="Include\Components\UI\UISpriteComponent.h" />

@@ -122,6 +122,51 @@ namespace Engine::Props
 
 	/*
 	Use on:
+		Fields
+
+	Description:
+		Makes the variable read-only, it can not be modified through the editor.
+
+		This is implemented by disabling all interaction with the widget. This
+		means this may not work for more complex widgets, such as vectors, as
+		the user also won't be able to open the collapsing header to view the
+		vector.
+
+	Example:
+		field.GetProperties().Add(Props::sIsEditorReadOnlyTag);
+	*/
+	static constexpr std::string_view sIsEditorReadOnlyTag = "sIsEditorReadOnlyTag";
+
+	/*
+	Use on:
+		Fields
+
+	Description:
+		Makes the variable read-only, it can not be modified through scripts.
+
+		The variable can still be gotten through scripts.
+
+	Example:
+		field.GetProperties().Add(Props::sIsScriptReadOnlyTag);
+	*/
+	static constexpr std::string_view sIsScriptReadOnlyTag = "sIsScriptReadOnlyTag";
+
+	// If a type has a property with this name, it was created from a script
+
+	/*
+	Use on:
+		Types, Functions, Fields
+
+	Description:
+		Can be used to find out whether a type, function or field originates from a
+		reflected C++ equivalent, or if it was created at runtime based on a visual
+		script. Each type, function and field created based on a script will have
+		this tag.
+	*/
+	static constexpr std::string_view sIsFromScriptsTag = "sIsFromScriptsTag";
+
+	/*
+	Use on:
 		Classes deriving from Engine::EditorSystem. The class must be default constructible.
 
 	Description:
