@@ -16,7 +16,7 @@ namespace Engine
 		void Update(World& world, float dt) override;
 
 		void CalculateBoneTransform(const AnimNode& node, 
-	const glm::mat4& parenTransform, 
+	const glm::mat4x4& parenTransform, 
 	const std::unordered_map<std::string, BoneInfo>& boneMap,
 	const SkinnedMeshComponent& mesh,
 	const std::shared_ptr<const Animation> animation, 

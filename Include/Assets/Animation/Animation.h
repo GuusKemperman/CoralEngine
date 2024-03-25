@@ -9,7 +9,7 @@ namespace Engine
 	struct AnimNode
 	{
 		std::string mName;
-		glm::mat4 mTransform;
+		glm::mat4x4 mTransform;
 		std::vector<AnimNode> mChildren;
 	};
 
