@@ -55,6 +55,11 @@ namespace Engine
             unsigned int useNormalTex;
             unsigned int useOcclusionTex;
         };
+
+        struct DXColorMultiplierInfo {
+            glm::vec4 colorMult;
+            glm::vec4 colorAdd;
+        };
     }
 
 
