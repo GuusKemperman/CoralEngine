@@ -121,8 +121,6 @@ void Engine::Texture::SendToGPU() const
 
 	engineDevice.SubmitUploadCommands();
 
-
-
 	self.mLoadedPixels.reset();
 }
 
