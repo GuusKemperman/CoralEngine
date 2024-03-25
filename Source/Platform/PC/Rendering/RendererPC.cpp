@@ -51,8 +51,8 @@ Engine::Renderer::Renderer()
 
     mPBRPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
     mPBRPipeline->AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1);
-    mPBRPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 2);
-    mPBRPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3);
+    mPBRPipeline->AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 2);
+    mPBRPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 3);
     mPBRPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
     mPBRPipeline->SetDepthState(depth);
     mPBRPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
@@ -168,6 +168,7 @@ void Engine::Renderer::Render(const World& world)
     //GET WORLD
     const auto optionalEntityCameraPair = world.GetRenderer().GetMainCamera();
     ASSERT_LOG(optionalEntityCameraPair.has_value(), "DX12 draw requests have been made, but they cannot be cleared as there is no camera to draw them to");
+
 
     //UPDATE CAMERA
     const auto camera = optionalEntityCameraPair->second;
@@ -346,8 +347,8 @@ void Engine::Renderer::Render(const World& world)
         engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, materialHeapSlot);
 
         //DRAW THE MESH
-            staticMeshComponent.mStaticMesh->DrawMesh();
-            meshCounter++;
+        staticMeshComponent.mStaticMesh->DrawMesh();
+        meshCounter++;
     }
     }
     
@@ -457,30 +458,30 @@ void SendMaterialToGPUIfReady(const Engine::Material& mat)
     if (mat.mBaseColorTexture != nullptr
         && mat.mBaseColorTexture->IsReadyToBeSentToGpu())
     {
-        mat.mBaseColorTexture->SentToGPU();
+        mat.mBaseColorTexture->SendToGPU();
     }
 
     if (mat.mEmissiveTexture != nullptr
         && mat.mEmissiveTexture->IsReadyToBeSentToGpu())
     {
-        mat.mEmissiveTexture->SentToGPU();
+        mat.mEmissiveTexture->SendToGPU();
     }
 
     if (mat.mMetallicRoughnessTexture != nullptr
         && mat.mMetallicRoughnessTexture->IsReadyToBeSentToGpu())
     {
-        mat.mMetallicRoughnessTexture->SentToGPU();
+        mat.mMetallicRoughnessTexture->SendToGPU();
     }
 
     if (mat.mNormalTexture != nullptr
         && mat.mNormalTexture->IsReadyToBeSentToGpu())
     {
-        mat.mNormalTexture->SentToGPU();
+        mat.mNormalTexture->SendToGPU();
     }
 
     if (mat.mOcclusionTexture != nullptr
         && mat.mOcclusionTexture->IsReadyToBeSentToGpu())
     {
-        mat.mOcclusionTexture->SentToGPU();
+        mat.mOcclusionTexture->SendToGPU();
     }
 }
