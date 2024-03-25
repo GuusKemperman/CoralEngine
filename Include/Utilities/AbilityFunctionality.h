@@ -33,22 +33,6 @@ namespace Engine
 
 		struct EffectSettings
 		{
-			EffectSettings()
-				:
-				mStat(Health),
-				mAmount(0.0f),
-				mFlatOrPercentage(Flat),
-				mIncreaseOrDecrease(Decrease)
-			{}
-
-			EffectSettings(Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease)
-				:
-				mStat(stat),
-				mAmount(amount),
-				mFlatOrPercentage(flatOrPercentage),
-				mIncreaseOrDecrease(increaseOrDecrease)
-			{}
-
 			Stat mStat = Health;
 			float mAmount{};
 			FlatOrPercentage mFlatOrPercentage = Flat;
@@ -63,11 +47,11 @@ namespace Engine
 			REFLECT_AT_START_UP(EffectSettings);
 		};
 
-		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect = {});
-		static void ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect = {}, float duration = 0.f);
+		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect);
+		static void ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f);
 		static void RevertDurationalEffect(CharacterComponent& characterComponent, DurationalEffect& durationalEffect);
-		static void ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect = {}, float duration = 0.f, int ticks = 1);
-		static void ApplyInstantEffectForOverTimeEffect(World& world, entt::entity affectedEntity, EffectSettings effect = {}, float dealtDamageModifierOfCastByCharacter = 0.f);
+		static void ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f, int ticks = 1);
+		static void ApplyInstantEffectForOverTimeEffect(World& world, entt::entity affectedEntity, EffectSettings effect, float dealtDamageModifierOfCastByCharacter = 0.f);
 		static entt::entity SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy);
 		static entt::entity SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy); // area of attack
 
