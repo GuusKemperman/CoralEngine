@@ -200,9 +200,13 @@ bool Engine::CanCreateLink(const ScriptPin& a, const ScriptPin& b)
 
 bool Engine::DoesPinRequireLink(const ScriptFunc& func, const ScriptPin& pin)
 {
-	if (pin.GetTypeForm() == TypeForm::Value
+	const MetaType* const type = pin.TryGetType();
+
+	if (type != nullptr 
+		&& CanTypeBeOwnedByScripts(*type)
+		&& (pin.GetTypeForm() == TypeForm::Value
 		|| pin.GetTypeForm() == TypeForm::ConstRef
-		|| pin.GetTypeForm() == TypeForm::ConstPtr)
+		|| pin.GetTypeForm() == TypeForm::ConstPtr))
 	{
 		return func.GetNode(pin.GetNodeId()).GetType() == ScriptNodeType::Rerout;
 	}
