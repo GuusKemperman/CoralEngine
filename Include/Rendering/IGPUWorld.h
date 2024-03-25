@@ -10,7 +10,17 @@ namespace Engine
 	/// </summary>
 	class IGPUWorld
 	{
+		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so
+		friend class World;
+
 	public:
-		virtual void Update(const World& world) = 0;
+		IGPUWorld(const World& world)
+			:
+			mWorld(world)
+		{}
+		virtual void Update() = 0;
+
+	protected:
+		std::reference_wrapper<const World> mWorld;
 	};
 }

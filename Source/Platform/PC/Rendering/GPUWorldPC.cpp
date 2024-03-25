@@ -56,7 +56,9 @@ Engine::DebugRenderingData::DebugRenderingData()
 
 Engine::DebugRenderingData::~DebugRenderingData() = default;
 
-Engine::GPUWorld::GPUWorld()
+Engine::GPUWorld::GPUWorld(const World& world)
+    :
+    IGPUWorld::IGPUWorld(world)
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
@@ -88,13 +90,13 @@ Engine::GPUWorld::GPUWorld()
 
 Engine::GPUWorld::~GPUWorld() = default;
 
-void Engine::GPUWorld::Update(const World& world)
+void Engine::GPUWorld::Update()
 {
     Device& engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
 
     // Get main camera
-    const auto optionalEntityCameraPair = world.GetViewport().GetMainCamera();
+    const auto optionalEntityCameraPair = mWorld.get().GetViewport().GetMainCamera();
     ASSERT_LOG(optionalEntityCameraPair.has_value(), "DX12 draw requests have been made, but they cannot be cleared as there is no camera to draw them to");
 
     // Update camera
@@ -108,7 +110,7 @@ void Engine::GPUWorld::Update(const World& world)
     mConstBuffers[CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
 
     // Update lights
-    const auto pointLightView = world.GetRegistry().View<const PointLightComponent, const TransformComponent>();
+    const auto pointLightView = mWorld.get().GetRegistry().View<const PointLightComponent, const TransformComponent>();
     int pointLightCounter = 0;
     for (auto [entity, lightComponent, transform] : pointLightView.each()) 
     {
@@ -127,7 +129,7 @@ void Engine::GPUWorld::Update(const World& world)
         pointLightCounter++;
     }
 
-    const auto dirLightView = world.GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
+    const auto dirLightView = mWorld.get().GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
     int dirLightCounter = 0;
     for (auto [entity, lightComponent, transform] : dirLightView.each()) 
     {
@@ -162,7 +164,7 @@ void Engine::GPUWorld::Update(const World& world)
 
     {
         // We get transform to make sure the mesh count is correct, since the user can have a mesh without a transform
-        const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
+        const auto view = mWorld.get().GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
 
         for (auto [entity, staticMeshComponent, transformComponent] : view.each())
         {
@@ -217,7 +219,7 @@ void Engine::GPUWorld::Update(const World& world)
 
     {
         // We get transform to make sure the mesh count is correct, since the user can have a mesh without a transform
-        const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
+        const auto view = mWorld.get().GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
 
         for (auto [entity, skinnedMeshComponent, transformComponent] : view.each())
         {

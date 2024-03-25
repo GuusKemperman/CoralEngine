@@ -80,9 +80,9 @@ namespace Engine
 		public IGPUWorld
 	{
 	public:
-        GPUWorld();
+        GPUWorld(const World& world);
 		~GPUWorld();
-		void Update(const World& world) override;
+		void Update() override;
 
         /// <summary>
         /// Updating the material buffer has to happen after the mesh rendering commands have completed.

@@ -31,10 +31,10 @@ namespace Engine
 		Registry& GetRegistry() { ASSERT(mRegistry != nullptr); return *mRegistry; };
 		const Registry& GetRegistry() const { ASSERT(mRegistry != nullptr); return *mRegistry; };
 
-		WorldViewport& GetViewport() { ASSERT(mRenderer != nullptr); return *mRenderer; };
-		const WorldViewport& GetViewport() const { ASSERT(mRenderer != nullptr); return *mRenderer; };
+		WorldViewport& GetViewport() { ASSERT(mViewport != nullptr); return *mViewport; };
+		const WorldViewport& GetViewport() const { ASSERT(mViewport != nullptr); return *mViewport; };
 
-		GPUWorld& GetGPUWorld() const { return *mGPUWorld; }; // TODO Const
+		GPUWorld& GetGPUWorld() const { return *mGPUWorld; };
 
 		bool HasBegunPlay() const { return mHasBegunPlay; }
 
@@ -79,7 +79,7 @@ namespace Engine
 		REFLECT_AT_START_UP(World);
 
 		std::unique_ptr<Registry> mRegistry{};
-		std::unique_ptr<WorldViewport> mRenderer{};
+		std::unique_ptr<WorldViewport> mViewport{};
 		std::unique_ptr<GPUWorld> mGPUWorld{};
 
 		std::shared_ptr<const Level> mLevelToTransitionTo{};

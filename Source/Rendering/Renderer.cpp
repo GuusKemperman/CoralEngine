@@ -66,7 +66,7 @@ void Engine::Renderer::Render(const World& world, glm::vec2 viewportSize)
 
 	// We run the rendering systems for the world and update the data to be used in the renderers later on
 	world.GetRegistry().RenderSystems();
-	world.GetGPUWorld().Update(world);
+	world.GetGPUWorld().Update();
 
 	mMeshRenderer->Render(world);
 	mDebugRenderer->Render(world);
