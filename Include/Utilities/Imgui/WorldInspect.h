@@ -71,7 +71,7 @@ namespace Engine
 		float mViewportWidth = .75f;
 		float mHierarchyAndDetailsWidth = .25f;
 
-		static constexpr float sRunningAveragePreservePercentage = .99f;
+		static constexpr float sRunningAveragePreservePercentage = .95f;
 		float mDeltaTimeRunningAverage = 1.0f / 60.0f;
 	};
 
