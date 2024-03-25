@@ -18,26 +18,30 @@ namespace Engine
     class DebugRenderer;
     class World;
     namespace InfoStruct {
-        struct DXMatrixInfo {
+        struct DXMatrixInfo
+        {
             glm::mat4x4 vm;
             glm::mat4x4 pm;
             glm::mat4x4 ivm;
             glm::mat4x4 ipm;
         };
 
-        struct DXDirLightInfo {
+        struct DXDirLightInfo
+        {
             glm::vec4 mDir = { 0.f, 0.0f, 0.0f, 0.f };
             glm::vec4 mColorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
         };
 
-        struct DXPointLightInfo {
+        struct DXPointLightInfo
+        {
             glm::vec4 mPosition = { 0.f, 0.0f, 0.0f, 0.f };
             glm::vec4 mColorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
             float mRadius = 0.f;
             float padding[3];
         };
 
-        struct DXLightInfo {
+        struct DXLightInfo
+        {
             DXPointLightInfo mPointLights[MAX_LIGHTS];
             DXDirLightInfo mDirLights[MAX_LIGHTS];
         };
@@ -56,7 +60,8 @@ namespace Engine
             unsigned int useOcclusionTex;
         };
 
-        struct DXColorMultiplierInfo {
+        struct DXColorMultiplierInfo
+        {
             glm::vec4 colorMult;
             glm::vec4 colorAdd;
         };
