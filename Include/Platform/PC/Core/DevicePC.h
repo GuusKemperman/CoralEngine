@@ -5,6 +5,8 @@
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 #include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
 #include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
+#include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
+#include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
 
 struct GLFWwindow;
 struct GLFWmonitor;
@@ -34,6 +36,8 @@ namespace Engine
         void* GetUploadCommandList() { return mUploadCommandList.Get(); }
         void* GetCommandQueue() { return mCommandQueue.Get(); }
         void* GetSignature() { return mSignature.get(); }
+        void* GetComputeSignature() { return mComputeSignature.get(); }
+        void* GetMipmapPipeline() { return mGenMipmapsPipeline.get(); }
 
 #ifdef EDITOR
         void CreateImguiContext();
@@ -57,6 +61,7 @@ namespace Engine
     public:
         std::shared_ptr<DXDescHeap> GetDescriptorHeap(int heap) { return mDescriptorHeaps[heap]; }
         int GetFrameIndex() { return mFrameIndex; }
+ 
 
     private:
         friend EngineClass;
@@ -70,6 +75,7 @@ namespace Engine
         void UpdateRenderTarget();
         void SubmitCommands();
         void StartRecordingCommands();
+
 
     private:
         bool mIsWindowOpen{};
@@ -109,6 +115,8 @@ namespace Engine
         ComPtr<IDXGISwapChain3> mSwapChain;
         ComPtr<ID3D12Device5> mDevice;
         std::unique_ptr<DXSignature> mSignature;
+        std::unique_ptr<DXSignature> mComputeSignature;
+        std::unique_ptr<DXPipeline> mGenMipmapsPipeline;
 
         DXHeapHandle mRenderTargetHandles[FRAME_BUFFER_COUNT];
         DXHeapHandle mDepthHandle;
