@@ -12,6 +12,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/TransformComponent.h"
+#include "Components/MeshColorComponent.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
@@ -202,13 +203,14 @@ void Engine::MeshRenderer::Render(const World& world)
 
             gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
 
-            //UPDATE AND BIND MATERIAL INFO
+            // Update mesh index
             gpuWorld.GetModelIndexBuffer().Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
             gpuWorld.GetModelIndexBuffer().Bind(commandList, 3, meshCounter, frameIndex);
 
             engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, gpuWorld.GetMaterialHeapSlot());
 
-            //DRAW THE MESH
+            HandleColorComponent(world, entity, meshCounter, frameIndex);
+
             staticMeshComponent.mStaticMesh->DrawMesh();
             meshCounter++;
         }
@@ -262,6 +264,8 @@ void Engine::MeshRenderer::Render(const World& world)
 
             engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, gpuWorld.GetMaterialHeapSlot());
 
+            HandleColorComponent(world, entity, meshCounter, frameIndex);
+
             skinnedMeshComponent.mSkinnedMesh->DrawMesh();
 
             meshCounter++;
@@ -269,4 +273,29 @@ void Engine::MeshRenderer::Render(const World& world)
     }
 
     gpuWorld.UpdateMaterials();
+}
+
+void Engine::MeshRenderer::HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex)
+{
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    DXConstBuffer& meshColorBuffer = world.GetGPUWorld().GetMeshColorBuffer();
+
+    auto colorComponent = world.GetRegistry().TryGet<MeshColorComponent>(entity);
+    if (colorComponent)
+    {
+        InfoStruct::DXColorMultiplierInfo info;
+        info.colorAdd = glm::vec4(colorComponent->colorAddition, 0.f);
+        info.colorMult = glm::vec4(colorComponent->colorMultiplier, 0.f);
+        meshColorBuffer.Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
+    }
+    else
+    {
+        InfoStruct::DXColorMultiplierInfo info;
+        info.colorAdd = glm::vec4(0.f);
+        info.colorMult = glm::vec4(1.f);
+        meshColorBuffer.Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
+    }
+
+    meshColorBuffer.Bind(commandList, 17, meshCounter, frameIndex);
 }

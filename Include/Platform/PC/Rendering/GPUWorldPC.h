@@ -55,6 +55,12 @@ namespace Engine
             unsigned int useOcclusionTex;
         };
 
+        struct DXColorMultiplierInfo
+        {
+            glm::vec4 colorMult;
+            glm::vec4 colorAdd;
+        };
+
         enum DXStructuredBuffers 
         {
             MODEL_MAT_SB,
@@ -94,6 +100,7 @@ namespace Engine
         const DXConstBuffer& GetLightBuffer() const { return *mConstBuffers[LIGHT_CB]; };
         DXConstBuffer& GetModelMatrixBuffer() const { return *mConstBuffers[MODEL_MATRIX_CB]; };
         DXConstBuffer& GetBoneMatrixBuffer() const { return *mConstBuffers[FINAL_BONE_MATRIX_CB]; };
+        DXConstBuffer& GetMeshColorBuffer() const { return *mConstBuffers[COLOR_CB]; };
 
         const InfoStruct::DXMaterialInfo& GetMaterial(int meshIndex) const { return mMaterials[meshIndex]; };
         const DXHeapHandle& GetMaterialHeapSlot() const { return mMaterialHeapSlot; };

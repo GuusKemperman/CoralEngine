@@ -100,7 +100,6 @@ Engine::Renderer::Renderer()
     mConstBuffers[MODEL_INDEX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(int), MAX_MESHES + 2, "Model index", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
     mConstBuffers[FINAL_BONE_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * MAX_BONES, MAX_SKINNED_MESHES, "Skinned Mesh Bone Matrices", FRAME_BUFFER_COUNT);
-    mConstBuffers[COLOR_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXColorMultiplierInfo), MAX_MESHES, "COLOR MULTIPLIER", FRAME_BUFFER_COUNT);
     
     //CREATE STRUCTURED BUFFERS
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -491,28 +490,4 @@ void SendMaterialToGPUIfReady(const Engine::Material& mat)
     {
         mat.mOcclusionTexture->SendToGPU();
     }
-}
-
-void Engine::Renderer::HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex)
-{
-    Device& engineDevice = Device::Get();
-    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
-
-    auto colorComponent = world.GetRegistry().TryGet<MeshColorComponent>(entity);
-    if (colorComponent)
-    {
-        InfoStruct::DXColorMultiplierInfo info;
-        info.colorAdd = glm::vec4(colorComponent->colorAddition, 0.f);
-        info.colorMult = glm::vec4(colorComponent->colorMultiplier, 0.f);
-        mConstBuffers[COLOR_CB]->Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
-    }
-    else
-    {
-        InfoStruct::DXColorMultiplierInfo info;
-        info.colorAdd = glm::vec4(0.f);
-        info.colorMult = glm::vec4(1.f);
-        mConstBuffers[COLOR_CB]->Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
-    }
-
-    mConstBuffers[COLOR_CB]->Bind(commandList, 17, meshCounter, frameIndex);
 }

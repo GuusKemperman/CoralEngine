@@ -68,12 +68,13 @@ Engine::GPUWorld::GPUWorld(const World& world)
     mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_INDEX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(int), MAX_MESHES + 2, "Model index", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
-    mConstBuffers[FINAL_BONE_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * MAX_BONES, MAX_SKINNED_MESHES, "Skinned Mesh Bone Matrices", FRAME_BUFFER_COUNT);
+    mConstBuffers[FINAL_BONE_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * MAX_BONES, MAX_SKINNED_MESHES, "Skinned mesh bone matrices", FRAME_BUFFER_COUNT);
+    mConstBuffers[COLOR_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXColorMultiplierInfo), MAX_MESHES, "Color multiplier", FRAME_BUFFER_COUNT);
 
     // Create structured buffers
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
     auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-    mStructuredBuffers[InfoStruct::DXStructuredBuffers::MATERIAL_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "MATERIAL STRUCTURED BUFFER");
+    mStructuredBuffers[InfoStruct::DXStructuredBuffers::MATERIAL_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "Material structured buffer");
     mStructuredBuffers[InfoStruct::DXStructuredBuffers::MATERIAL_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2), 0);
 
     D3D12_SHADER_RESOURCE_VIEW_DESC  srvDesc = {};
@@ -293,30 +294,30 @@ void Engine::GPUWorld::SendMaterialTexturesToGPU(const Engine::Material& mat)
     if (mat.mBaseColorTexture != nullptr
         && mat.mBaseColorTexture->IsReadyToBeSentToGpu())
     {
-        mat.mBaseColorTexture->SentToGPU();
+        mat.mBaseColorTexture->SendToGPU();
     }
 
     if (mat.mEmissiveTexture != nullptr
         && mat.mEmissiveTexture->IsReadyToBeSentToGpu())
     {
-        mat.mEmissiveTexture->SentToGPU();
+        mat.mEmissiveTexture->SendToGPU();
     }
 
     if (mat.mMetallicRoughnessTexture != nullptr
         && mat.mMetallicRoughnessTexture->IsReadyToBeSentToGpu())
     {
-        mat.mMetallicRoughnessTexture->SentToGPU();
+        mat.mMetallicRoughnessTexture->SendToGPU();
     }
 
     if (mat.mNormalTexture != nullptr
         && mat.mNormalTexture->IsReadyToBeSentToGpu())
     {
-        mat.mNormalTexture->SentToGPU();
+        mat.mNormalTexture->SendToGPU();
     }
 
     if (mat.mOcclusionTexture != nullptr
         && mat.mOcclusionTexture->IsReadyToBeSentToGpu())
     {
-        mat.mOcclusionTexture->SentToGPU();
+        mat.mOcclusionTexture->SendToGPU();
     }
 }
