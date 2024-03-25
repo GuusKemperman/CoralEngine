@@ -10,7 +10,7 @@ Engine::MetaType Engine::AOEComponent::Reflect()
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
 	metaType.AddField(&AOEComponent::mDuration, "mDuration").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&AOEComponent::mCurrentDuration, "mCurrentDuration").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&AOEComponent::mDurationTimer, "mDurationTimer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 
 #ifdef EDITOR
 	BindEvent(metaType, sInspectEvent, &AOEComponent::OnInspect);

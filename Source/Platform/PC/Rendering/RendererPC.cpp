@@ -369,8 +369,8 @@ void Engine::Renderer::Render(const World& world)
 
 
         //DRAW THE MESH
-            staticMeshComponent.mStaticMesh->DrawMesh();
-            meshCounter++;
+        staticMeshComponent.mStaticMesh->DrawMesh();
+        meshCounter++;
     }
     }
     
@@ -499,30 +499,30 @@ void SendMaterialToGPUIfReady(const Engine::Material& mat)
     if (mat.mBaseColorTexture != nullptr
         && mat.mBaseColorTexture->IsReadyToBeSentToGpu())
     {
-        mat.mBaseColorTexture->SentToGPU();
+        mat.mBaseColorTexture->SendToGPU();
     }
 
     if (mat.mEmissiveTexture != nullptr
         && mat.mEmissiveTexture->IsReadyToBeSentToGpu())
     {
-        mat.mEmissiveTexture->SentToGPU();
+        mat.mEmissiveTexture->SendToGPU();
     }
 
     if (mat.mMetallicRoughnessTexture != nullptr
         && mat.mMetallicRoughnessTexture->IsReadyToBeSentToGpu())
     {
-        mat.mMetallicRoughnessTexture->SentToGPU();
+        mat.mMetallicRoughnessTexture->SendToGPU();
     }
 
     if (mat.mNormalTexture != nullptr
         && mat.mNormalTexture->IsReadyToBeSentToGpu())
     {
-        mat.mNormalTexture->SentToGPU();
+        mat.mNormalTexture->SendToGPU();
     }
 
     if (mat.mOcclusionTexture != nullptr
         && mat.mOcclusionTexture->IsReadyToBeSentToGpu())
     {
-        mat.mOcclusionTexture->SentToGPU();
+        mat.mOcclusionTexture->SendToGPU();
     }
 }
