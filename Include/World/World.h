@@ -1,4 +1,5 @@
 #pragma once
+#include "Physics.h"
 #include "BasicDataTypes/ScalableTimer.h"
 #include "Meta/MetaReflect.h"
 
@@ -27,8 +28,11 @@ namespace Engine
 		void BeginPlay();
 		void EndPlay();
 
-		Registry& GetRegistry() { ASSERT(mRegistry != nullptr); return *mRegistry; };
-		const Registry& GetRegistry() const { ASSERT(mRegistry != nullptr); return *mRegistry; };
+		Registry& GetRegistry() { return *mRegistry; }
+		const Registry& GetRegistry() const { return *mRegistry; };
+
+		Physics& GetPhysics() { return *mPhysics; }
+		const Physics& GetPhysics() const { return *mPhysics; }
 
 		WorldRenderer& GetRenderer() { ASSERT(mRenderer != nullptr); return *mRenderer; };
 		const WorldRenderer& GetRenderer() const { ASSERT(mRenderer != nullptr); return *mRenderer; };
@@ -77,6 +81,7 @@ namespace Engine
 		REFLECT_AT_START_UP(World);
 
 		std::unique_ptr<Registry> mRegistry{};
+		std::unique_ptr<Physics> mPhysics{};
 		std::unique_ptr<WorldRenderer> mRenderer{};
 
 		std::shared_ptr<const Level> mLevelToTransitionTo{};

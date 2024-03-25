@@ -12,11 +12,11 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Assets/Level.h"
 
-Engine::World::World(const bool beginPlayImmediately)
+Engine::World::World(const bool beginPlayImmediately) :
+	mRegistry(std::make_unique<Registry>(*this)),
+	mPhysics(std::make_unique<Physics>(*this)),
+	mRenderer(std::make_unique<WorldRenderer>(*this))
 {
-	mRenderer = std::make_unique<WorldRenderer>(*this);
-	mRegistry = std::make_unique<Registry>(*this);
-
 	LOG(LogCore, Verbose, "World is awaiting begin play..");
 
 	if (beginPlayImmediately)
@@ -27,13 +27,14 @@ Engine::World::World(const bool beginPlayImmediately)
 
 Engine::World::World(World&& other) noexcept :
 	mRegistry(std::move(other.mRegistry)),
+	mPhysics(std::move(other.mPhysics)),
 	mRenderer(std::move(other.mRenderer)),
 	mLevelToTransitionTo(std::move(other.mLevelToTransitionTo)),
 	mTime(other.mTime),
 	mHasBegunPlay(other.mHasBegunPlay)
-
 {
 	mRegistry->mWorld = *this;
+	mPhysics->mWorld = *this;
 	mRenderer->mWorld = *this;
 }
 
@@ -55,6 +56,7 @@ Engine::World& Engine::World::operator=(World&& other) noexcept
 	mLevelToTransitionTo = std::move(other.mLevelToTransitionTo);
 
 	mRegistry->mWorld = *this;
+	mPhysics->mWorld = *this;
 	mRenderer->mWorld = *this;
 
 	mTime = other.mTime;
@@ -453,12 +455,12 @@ Engine::MetaType Engine::World::Reflect()
 			return FindAllEntitiesWithComponents(*world, components, false);
 		}, "Find all entities with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const glm::vec2& screenPosition, float distanceFromCamera)
+	type.AddFunc([](glm::vec2 screenPosition, float distanceFromCamera)
 		{
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 			return world->GetRenderer().ScreenToWorld(screenPosition, distanceFromCamera);
-		}, "ScreenToWorld", MetaFunc::ExplicitParams<const glm::vec2&, float>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "ScreenToWorld", MetaFunc::ExplicitParams<glm::vec2, float>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	return type;
 }

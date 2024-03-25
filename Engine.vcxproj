@@ -520,6 +520,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\MeshColorComponent.cpp" />
     <ClCompile Include="Source\Components\Abilities\EffectsOnCharacterComponent.cpp" />
     <ClCompile Include="Source\Assets\Animation\Animation.cpp" />
     <ClCompile Include="Source\Assets\Importers\AnimationImporter.cpp">
@@ -1007,7 +1008,6 @@
     <ClCompile Include="Source\Components\Pathfinding\Graph.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshAgentComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshComponent.cpp" />
-    <ClCompile Include="Source\Components\Pathfinding\NavMeshObstacleTag.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshTargetComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\Node.cpp" />
     <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
@@ -1487,6 +1487,7 @@
     </ClCompile>
     <ClCompile Include="Source\Utilities\StaticReflection\ReflectComponentType.cpp" />
     <ClCompile Include="Source\World\Archiver.cpp" />
+    <ClCompile Include="Source\World\Physics.cpp" />
     <ClCompile Include="source\World\World.cpp" />
     <ClCompile Include="Source\World\Registry.cpp" />
     <ClCompile Include="Source\World\WorldRenderer.cpp" />
@@ -1500,6 +1501,7 @@
     <ClCompile Include="Source\Components\UI\UISpriteComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\MeshColorComponent.h" />
     <ClInclude Include="Include\Assets\Animation\Animation.h" />
     <ClInclude Include="Include\Assets\Importers\AnimationImporter.h" />
     <ClInclude Include="Include\Assets\Animation\BoneInfo.h" />
@@ -1639,7 +1641,6 @@
     <ClInclude Include="Include\Components\Pathfinding\Graph.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshAgentComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshComponent.h" />
-    <ClInclude Include="Include\Components\Pathfinding\NavMeshObstacleTag.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshTargetComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\Node.h" />
     <ClInclude Include="Include\Components\Physics2D\DiskColliderComponent.h" />
@@ -1871,6 +1872,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Include\World\Archiver.h" />
+    <ClInclude Include="Include\World\Physics.h" />
     <ClInclude Include="include\World\World.h" />
     <ClInclude Include="Include\World\Registry.h" />
     <ClInclude Include="Include\World\WorldRenderer.h" />
