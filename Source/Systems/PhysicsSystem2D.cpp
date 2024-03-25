@@ -450,13 +450,13 @@ glm::vec3 Engine::PhysicsSystem2D::GetAllowedWorldPos(const Physics& physics,
 	glm::vec3 currentWorldPos,
 	glm::vec2 translation)
 {
-	if (body.mRules.GetResponseIncludingTerrain(CollisionPresets::sTerrain.mRules) != CollisionResponse::Blocking)
-	{
-		return To3DRightForward(translation, currentWorldPos[Axis::Up]);
-	}
-
 	const glm::vec2 currentWorldPos2D = To2DRightForward(currentWorldPos);
 	const glm::vec2 desiredWorldPos2D = currentWorldPos2D + translation;
+
+	if (body.mRules.GetResponseIncludingTerrain(CollisionPresets::sTerrain.mRules) != CollisionResponse::Blocking)
+	{
+		return To3DRightForward(desiredWorldPos2D, currentWorldPos[Axis::Up]);
+	}
 
 	const float heightAtCurrPos = physics.GetHeightAtPosition(currentWorldPos2D);
 	const float heightAtDesiredPos = physics.GetHeightAtPosition(desiredWorldPos2D);
