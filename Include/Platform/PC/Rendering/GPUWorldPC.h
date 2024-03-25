@@ -62,20 +62,24 @@ namespace Engine
         };
     }
 
+    class DebugRenderingData
+    {
+    public:
+        DebugRenderingData();
+        ~DebugRenderingData();
+
+        D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
+        std::unique_ptr<DXResource> mVertexBuffer;
+        std::unique_ptr<DXConstBuffer> mLineColorBuffer;
+        std::unique_ptr<DXConstBuffer> mLineMatrixBuffer;
+        std::vector<glm::mat4x4> mModelMats;
+        std::vector<glm::vec4> mColors;
+    };
+
 	class GPUWorld final : 
 		public IGPUWorld
 	{
 	public:
-        struct DebugRenderingData
-        {
-            D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
-            std::unique_ptr<DXResource> mVertexBuffer;
-            std::unique_ptr<DXConstBuffer> mLineColorBuffer;
-            std::unique_ptr<DXConstBuffer> mLineMatrixBuffer;
-            std::vector<glm::mat4x4> mModelMats;
-            std::vector<glm::vec4> mColors;
-        };
-
         GPUWorld();
 		~GPUWorld();
 		void Update(const World& world) override;
@@ -97,8 +101,6 @@ namespace Engine
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
 
 	private:
-        void InitializeMeshRenderingData();
-        void InitializeDebugRenderingData();
         void SendMaterialTexturesToGPU(const Material& mat);
 
 		std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];

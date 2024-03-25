@@ -16,7 +16,7 @@
 class Engine::DebugRenderer::Impl
 {
 public:
-	Impl() = default;
+	Impl();
 	~Impl() = default;
     bool AddLine(const World& world, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color);
     void Render(GPUWorld& gpuWorld);
@@ -26,9 +26,14 @@ public:
 
 Engine::DebugRenderer::DebugRenderer()
 {
-	Device& engineDevice = Device::Get();
 	mImpl = std::make_unique<Impl>();
+}
 
+Engine::DebugRenderer::~DebugRenderer() = default;
+
+Engine::DebugRenderer::Impl::Impl()
+{
+	Device& engineDevice = Device::Get();
 	FileIO& fileIO = FileIO::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
@@ -36,14 +41,12 @@ Engine::DebugRenderer::DebugRenderer()
 	ComPtr<ID3DBlob> v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
 	shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/DebugPixel.hlsl");
 	ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
-	mImpl->mDebugPipeline = std::make_unique<DXPipeline>();
-	mImpl->mDebugPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
-	mImpl->mDebugPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
-	mImpl->mDebugPipeline->SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
-	mImpl->mDebugPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"Debug line pipeline");
+	mDebugPipeline = std::make_unique<DXPipeline>();
+	mDebugPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
+	mDebugPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
+	mDebugPipeline->SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
+	mDebugPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"Debug line pipeline");
 }
-
-Engine::DebugRenderer::~DebugRenderer() = default;
 
 void Engine::DebugRenderer::AddLine(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) const
 {
@@ -83,7 +86,7 @@ bool Engine::DebugRenderer::Impl::AddLine(const World& world, const glm::vec3& f
 	glm::mat4 modelMatrix = translateMat * rotationMat * scaleMat;
 
 	GPUWorld& gpuWorld = world.GetGPUWorld();
-	GPUWorld::DebugRenderingData& data = gpuWorld.GetDebugRenderingData();
+	DebugRenderingData& data = gpuWorld.GetDebugRenderingData();
 
 	data.mModelMats.push_back(glm::transpose(modelMatrix));
 	data.mColors.push_back(color);
@@ -103,7 +106,7 @@ void Engine::DebugRenderer::Impl::Render(GPUWorld& gpuWorld)
 
 	gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
 
-	GPUWorld::DebugRenderingData& data = gpuWorld.GetDebugRenderingData();
+	DebugRenderingData& data = gpuWorld.GetDebugRenderingData();
 
 	for (size_t i = 0; i < data.mModelMats.size(); i++)
 	{
