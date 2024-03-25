@@ -349,24 +349,7 @@ void Engine::Renderer::Render(const World& world)
 
         engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, materialHeapSlot);
 
-        auto colorComponent = world.GetRegistry().TryGet<MeshColorComponent>(entity);
-        if (colorComponent)
-        {
-            InfoStruct::DXColorMultiplierInfo info;
-            info.colorAdd = glm::vec4(colorComponent->colorAddition, 0.f);
-            info.colorMult = glm::vec4(colorComponent->colorMultiplier, 0.f);
-            mConstBuffers[COLOR_CB]->Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
-        }
-        else
-        {
-            InfoStruct::DXColorMultiplierInfo info;
-            info.colorAdd = glm::vec4(0.f);
-            info.colorMult = glm::vec4(1.f);
-            mConstBuffers[COLOR_CB]->Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
-        }
-
-        mConstBuffers[COLOR_CB]->Bind(commandList, 17, meshCounter, frameIndex);
-
+        HandleColorComponent(world, entity, meshCounter, frameIndex);
 
         //DRAW THE MESH
             staticMeshComponent.mStaticMesh->DrawMesh();
@@ -455,24 +438,7 @@ void Engine::Renderer::Render(const World& world)
 
             engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, materialHeapSlot);
 
-            auto colorComponent = world.GetRegistry().TryGet<MeshColorComponent>(entity);
-            if (colorComponent)
-            {
-                InfoStruct::DXColorMultiplierInfo info;
-                info.colorAdd = glm::vec4(colorComponent->colorAddition, 0.f);
-                info.colorMult = glm::vec4(colorComponent->colorMultiplier, 0.f);
-                mConstBuffers[COLOR_CB]->Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
-            }
-            else
-            {
-                InfoStruct::DXColorMultiplierInfo info;
-                info.colorAdd = glm::vec4(0.f);
-                info.colorMult = glm::vec4(1.f);
-                mConstBuffers[COLOR_CB]->Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
-            }
-
-            mConstBuffers[COLOR_CB]->Bind(commandList, 17, meshCounter, frameIndex);
-
+            HandleColorComponent(world, entity, meshCounter, frameIndex);
 
             skinnedMeshComponent.mSkinnedMesh->DrawMesh();
 
@@ -525,4 +491,28 @@ void SendMaterialToGPUIfReady(const Engine::Material& mat)
     {
         mat.mOcclusionTexture->SentToGPU();
     }
+}
+
+void Engine::Renderer::HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex)
+{
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+
+    auto colorComponent = world.GetRegistry().TryGet<MeshColorComponent>(entity);
+    if (colorComponent)
+    {
+        InfoStruct::DXColorMultiplierInfo info;
+        info.colorAdd = glm::vec4(colorComponent->colorAddition, 0.f);
+        info.colorMult = glm::vec4(colorComponent->colorMultiplier, 0.f);
+        mConstBuffers[COLOR_CB]->Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
+    }
+    else
+    {
+        InfoStruct::DXColorMultiplierInfo info;
+        info.colorAdd = glm::vec4(0.f);
+        info.colorMult = glm::vec4(1.f);
+        mConstBuffers[COLOR_CB]->Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
+    }
+
+    mConstBuffers[COLOR_CB]->Bind(commandList, 17, meshCounter, frameIndex);
 }

@@ -88,6 +88,8 @@ namespace Engine
         };
 
     private:
+        void HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex);
+
         std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
         std::unique_ptr<DXResource> mStructuredBuffers[3];
         std::unique_ptr<DXPipeline> mPBRPipeline;
