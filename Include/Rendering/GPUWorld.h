@@ -3,5 +3,5 @@
 #ifdef PLATFORM_WINDOWS
 #include "Platform/PC/Rendering/GPUWorldPC.h"
 #elif PLATFORM_***REMOVED***
-// TODO
+#include "Platform/***REMOVED***/Rendering/GPUWorld***REMOVED***.h"
 #endif
