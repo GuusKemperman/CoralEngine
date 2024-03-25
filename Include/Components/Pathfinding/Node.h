@@ -14,7 +14,7 @@ namespace Engine
 		 * \param id The node's id
 		 * \param position The node's position on the graph
 		 */
-		Node(int id, const glm::vec2& position);
+		Node(int id, glm::vec2 position);
 
 		/// \brief 
 		/// Adds an edge to the node, which connects to another node.

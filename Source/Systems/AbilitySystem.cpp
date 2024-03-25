@@ -14,6 +14,7 @@
 #include "Components/Abilities/EffectsOnCharacterComponent.h"
 #include "Components/Abilities/ProjectileComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Utilities/AbilityFunctionality.h"
 
 void Engine::AbilitySystem::Update(World& world, float dt)
 {
@@ -33,8 +34,8 @@ void Engine::AbilitySystem::Update(World& world, float dt)
     auto viewAOE = reg.View<AOEComponent>();
     for (auto [entity, aoe] : viewAOE.each())
     {
-        aoe.mCurrentDuration += dt;
-        if (aoe.mCurrentDuration >= aoe.mDuration)
+        aoe.mDurationTimer += dt;
+        if (aoe.mDurationTimer >= aoe.mDuration)
         {
             reg.Destroy(entity, true);
         }
@@ -44,15 +45,36 @@ void Engine::AbilitySystem::Update(World& world, float dt)
     const auto& input = Input::Get();
     for (auto [entity, characterData, effects] : viewCharacters.each())
     {
-        // update effects
+        // update durational effects
         auto& durationalEffects = effects.mDurationalEffects;
         for (auto it = durationalEffects.begin(); it != durationalEffects.end();)
         {
-            it->mCurrentDuration += dt;
-            if (it->mCurrentDuration >= it->mDuration)
+            it->mDurationTimer += dt;
+            if (it->mDurationTimer >= it->mDuration)
             {
                 AbilityFunctionality::RevertDurationalEffect(characterData, *it);
                 it = durationalEffects.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        // update over time effects
+        auto& overTimeEffects = effects.mOverTimeEffects;
+        for (auto it = overTimeEffects.begin(); it != overTimeEffects.end();)
+        {
+            it->mDurationTimer += dt;
+            if (it->mDurationTimer >= it->mTickDuration)
+            {
+                it->mTicksCounter++;
+            	it->mDurationTimer = 0.f;
+                AbilityFunctionality::ApplyInstantEffectForOverTimeEffect(world, entity, it->mEffectSettings, it->mDealtDamageModifierOfCastByCharacter);
+            }
+            if (it->mTicksCounter >= it->mNumberOfTicks)
+            {
+                it = overTimeEffects.erase(it);
             }
             else
             {

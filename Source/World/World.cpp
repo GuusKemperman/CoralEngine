@@ -13,12 +13,12 @@
 #include "Assets/Level.h"
 #include "Rendering/GPUWorld.h"
 
-Engine::World::World(const bool beginPlayImmediately)
+Engine::World::World(const bool beginPlayImmediately) :
+	mRegistry(std::make_unique<Registry>(*this)),
+	mPhysics(std::make_unique<Physics>(*this)),
+	mViewport(std::make_unique<WorldViewport>(*this)),
+	mGPUWorld(std::make_unique<GPUWorld>(*this))
 {
-	mViewport = std::make_unique<WorldViewport>(*this);
-	mRegistry = std::make_unique<Registry>(*this);
-	mGPUWorld = std::make_unique<GPUWorld>(*this);
-
 	LOG(LogCore, Verbose, "World is awaiting begin play..");
 
 	if (beginPlayImmediately)
@@ -30,14 +30,15 @@ Engine::World::World(const bool beginPlayImmediately)
 Engine::World::World(World&& other) noexcept :
 	mRegistry(std::move(other.mRegistry)),
 	mViewport(std::move(other.mViewport)),
+	mPhysics(std::move(other.mPhysics)),
 	mGPUWorld(std::move(other.mGPUWorld)),
 	mLevelToTransitionTo(std::move(other.mLevelToTransitionTo)),
 	mTime(other.mTime),
 	mHasBegunPlay(other.mHasBegunPlay)
-
 {
 	mRegistry->mWorld = *this;
 	mViewport->mWorld = *this;
+	mPhysics->mWorld = *this;
 	mGPUWorld->mWorld = *this;
 }
 
@@ -61,8 +62,9 @@ Engine::World& Engine::World::operator=(World&& other) noexcept
 
 	mRegistry->mWorld = *this;
 	mViewport->mWorld = *this;
+	mPhysics->mWorld = *this;
 	mGPUWorld->mWorld = *this;
-
+	
 	mTime = other.mTime;
 	mHasBegunPlay = other.mHasBegunPlay;
 
@@ -453,12 +455,12 @@ Engine::MetaType Engine::World::Reflect()
 			return FindAllEntitiesWithComponents(*world, components, false);
 		}, "Find all entities with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const glm::vec2& screenPosition, float distanceFromCamera)
+	type.AddFunc([](glm::vec2 screenPosition, float distanceFromCamera)
 		{
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 			return world->GetViewport().ScreenToWorld(screenPosition, distanceFromCamera);
-		}, "ScreenToWorld", MetaFunc::ExplicitParams<const glm::vec2&, float>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "ScreenToWorld", MetaFunc::ExplicitParams<glm::vec2, float>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	return type;
 }

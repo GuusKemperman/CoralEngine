@@ -1,5 +1,5 @@
 #pragma once
-#include "Meta/Fwd/MetaReflectFwd.h"
+#include "Meta/MetaReflect.h"
 
 namespace Engine
 {
@@ -31,9 +31,27 @@ namespace Engine
 			Increase
 		};
 
-		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat = Stat::Health, float amount = 0.f, FlatOrPercentage flatOrPercentage = FlatOrPercentage::Flat, IncreaseOrDecrease increaseOrDecrease = IncreaseOrDecrease::Decrease);
-		static void ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat = Stat::Health, float amount = 0.f, FlatOrPercentage flatOrPercentage = FlatOrPercentage::Flat, IncreaseOrDecrease increaseOrDecrease = IncreaseOrDecrease::Decrease, float duration = 0.f);
+		struct EffectSettings
+		{
+			Stat mStat = Health;
+			float mAmount{};
+			FlatOrPercentage mFlatOrPercentage = Flat;
+			IncreaseOrDecrease mIncreaseOrDecrease = Decrease;
+
+			bool operator==(const EffectSettings& effectSettings) const;
+			bool operator!=(const EffectSettings& effectSettings) const;
+
+		private:
+			friend ReflectAccess;
+			static MetaType Reflect();
+			REFLECT_AT_START_UP(EffectSettings);
+		};
+
+		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect = {});
+		static void ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect = {}, float duration = 0.f);
 		static void RevertDurationalEffect(CharacterComponent& characterComponent, DurationalEffect& durationalEffect);
+		static void ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect = {}, float duration = 0.f, int ticks = 1);
+		static void ApplyInstantEffectForOverTimeEffect(World& world, entt::entity affectedEntity, EffectSettings effect = {}, float dealtDamageModifierOfCastByCharacter = 0.f);
 		static entt::entity SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy);
 		static entt::entity SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy); // area of attack
 
@@ -44,6 +62,12 @@ namespace Engine
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AbilityFunctionality);
 	};
+
+	template<class Archive>
+	void serialize([[maybe_unused]] Archive& ar, [[maybe_unused]] const AbilityFunctionality::EffectSettings& value)
+	{
+		// We don't need to actually serialize it, but otherwise we get a compilation error
+	}
 }
 
 template<>

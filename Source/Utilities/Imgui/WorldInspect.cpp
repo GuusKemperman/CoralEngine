@@ -422,7 +422,7 @@ void Engine::WorldViewportPanel::ShowComponentGizmos(World& world, const std::ve
 }
 
 
-void Engine::WorldViewportPanel::SetGizmoRect(const glm::vec2 windowPos, const glm::vec2& windowSize)
+void Engine::WorldViewportPanel::SetGizmoRect(const glm::vec2 windowPos, glm::vec2 windowSize)
 {
 	ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
 }

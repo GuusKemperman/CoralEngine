@@ -703,6 +703,10 @@ void Engine::Editor::DisplayMainMenuBar()
 			{
 				flags ^= DebugCategory::Particles;
 			}
+			if (ImGui::MenuItem("TerrainHeight", nullptr, flags & DebugCategory::TerrainHeight))
+			{
+				flags ^= DebugCategory::TerrainHeight;
+			}
 			if (ImGui::MenuItem("All", nullptr, flags & DebugCategory::All))
 			{
 				flags ^= DebugCategory::All;

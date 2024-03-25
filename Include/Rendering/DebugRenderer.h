@@ -19,6 +19,7 @@ namespace Engine
             Editor = 1 << 7,
             AccelStructs = 1 << 8,
             Particles = 1 << 9,
+            TerrainHeight = 1 << 10,
             All = 0xFFFFFFFF
         };
     };
@@ -50,8 +51,8 @@ namespace Engine
         void AddLine(
             const World& world,
             DebugCategory::Enum category, 
-            const glm::vec2& from, 
-            const glm::vec2& to, 
+            glm::vec2 from, 
+            glm::vec2 to, 
             const glm::vec4& color,
             Plane::Enum plane = Plane::XZ) const;
 

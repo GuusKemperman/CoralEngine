@@ -1,11 +1,10 @@
 #pragma once
-#include "World.h"
+#include "World/World.h"
 #include "Systems/System.h"
 #include "Utilities/MemFunctions.h"
 #include "Meta/MetaFunc.h"
 #include "Meta/MetaManager.h"
 #include "Utilities/Events.h"
-
 
 namespace Engine
 {
@@ -288,7 +287,7 @@ namespace Engine
 		if (World::TryGetWorldAtTopOfStack() == nullptr)
 		{
 			UNLIKELY;
-			LOG(LogWorld, Error, "A componentw as destroyed from a function that did not push/pop a world. The destruct event cannot be invoked. Trace callstack and figure out where to place Push/PopWorld");
+			LOG(LogWorld, Error, "A component was destroyed from a function that did not push/pop a world. The destruct event cannot be invoked. Trace callstack and figure out where to place Push/PopWorld");
 			return;
 		}
 
