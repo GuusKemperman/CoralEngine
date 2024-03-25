@@ -35,8 +35,6 @@ namespace Engine
 
     class DebugRenderer
     {
-        friend class WorldRenderer;
-        
     public:
         DebugRenderer();
         ~DebugRenderer();

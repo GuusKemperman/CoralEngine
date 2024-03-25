@@ -2,13 +2,13 @@
 #include "World/Registry.h"
 #include "Assets/Script.h"
 #include "World/World.h"
+#include "World/WorldViewport.h"
 #include "Assets/Prefabs/ComponentFactory.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/Prefabs/PrefabEntityFactory.h"
 #include "Components/IsDestroyedTag.h"
 #include "Components/PrefabOriginComponent.h"
 #include "Components/TransformComponent.h"
-#include "World/WorldRenderer.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaAny.h"
@@ -113,7 +113,7 @@ void Engine::Registry::UpdateSystems(float dt)
 
 void Engine::Registry::RenderSystems() const
 {
-	if (!mWorld.get().GetRenderer().GetMainCamera().has_value())
+	if (!mWorld.get().GetViewport().GetMainCamera().has_value())
 	{
 		LOG(LogTemp, Message, "No camera to render to");
 		return;

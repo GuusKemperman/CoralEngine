@@ -8,11 +8,12 @@
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
-#include "Utilities/DebugRenderer.h"
+#include "Rendering/Renderer.h"
+#include "Rendering/DebugRenderer.h"
 
 void Engine::ParticleDebugVisualizationSystem::Render(const World& world)
 {
-	const DebugRenderer& debugRenderer = world.GetDebugRenderer();
+	const DebugRenderer& debugRenderer = Renderer::Get().GetDebugRenderer();
 
 	if ((debugRenderer.GetDebugCategoryFlags() & DebugCategory::Particles) == 0)
 	{

@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Utilities/DebugRenderer.h"
+#include "Rendering/DebugRenderer.h"
 #include "Core/FileIO.h"
 #include "Core/Device.h"
 #include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
@@ -17,6 +17,7 @@ class Engine::DebugRenderer::Impl
 {
 public:
 	Impl() = default;
+	~Impl() = default;
     bool AddLine(const World& world, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color);
     void Render(GPUWorld& gpuWorld);
 
@@ -25,11 +26,6 @@ public:
 
 Engine::DebugRenderer::DebugRenderer()
 {
-	if (Device::IsHeadless())
-	{
-		return;
-	}
-
 	Device& engineDevice = Device::Get();
 	mImpl = std::make_unique<Impl>();
 
@@ -51,8 +47,7 @@ Engine::DebugRenderer::~DebugRenderer() = default;
 
 void Engine::DebugRenderer::AddLine(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) const
 {
-	if (!Device::IsHeadless()
-		&& (sDebugCategoryFlags & category) != 0)
+	if ((sDebugCategoryFlags & category) != 0)
 	{
 		mImpl->AddLine(world, from, to, color);
 	}

@@ -5,7 +5,8 @@
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Components/Pathfinding/NavMeshTargetComponent.h"
 #include "Meta/MetaType.h"
-#include "Utilities/DebugRenderer.h"
+#include "Rendering/Renderer.h"
+#include "Rendering/DebugRenderer.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
@@ -80,7 +81,7 @@ void Game::ChasingState::DebugRender(Engine::World& world, entt::entity owner) c
 		return;
 	}
 
-	world.GetDebugRenderer().AddCircle(
+	Engine::Renderer::Get().GetDebugRenderer().AddCircle(
 		world, Engine::DebugCategory::Gameplay, 
 		transformComponent->GetWorldPosition(),
 	    mRadius, {0.f, 0.f, 1.f, 1.f});

@@ -7,15 +7,15 @@
 #include "Components/NameComponent.h"
 #include "Meta/MetaProps.h"
 #include "World/Registry.h"
-#include "World/WorldRenderer.h"
-#include "Utilities/DebugRenderer.h"
+#include "World/WorldViewport.h"
+#include "Rendering/DebugRenderer.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Assets/Level.h"
 #include "Rendering/GPUWorld.h"
 
 Engine::World::World(const bool beginPlayImmediately)
 {
-	mRenderer = std::make_unique<WorldRenderer>(*this);
+	mRenderer = std::make_unique<WorldViewport>(*this);
 	mRegistry = std::make_unique<Registry>(*this);
 	mGPUWorld = std::make_unique<GPUWorld>();
 
@@ -147,12 +147,6 @@ void Engine::World::EndPlay()
 	LOG(LogCore, Verbose, "World has just ended play");
 
 	mHasBegunPlay = false;
-}
-
-
-const Engine::DebugRenderer& Engine::World::GetDebugRenderer() const
-{
-	return *mRenderer->mDebugRenderer;
 }
 
 static inline std::stack<std::reference_wrapper<Engine::World>> sWorldStack{};
@@ -460,7 +454,7 @@ Engine::MetaType Engine::World::Reflect()
 		{
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return world->GetRenderer().ScreenToWorld(screenPosition, distanceFromCamera);
+			return world->GetViewport().ScreenToWorld(screenPosition, distanceFromCamera);
 		}, "ScreenToWorld", MetaFunc::ExplicitParams<const glm::vec2&, float>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	return type;

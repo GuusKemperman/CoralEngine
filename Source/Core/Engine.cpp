@@ -14,9 +14,9 @@
 #include "Core/UnitTests.h"
 #include "Assets/Level.h"
 #include "World/World.h"
-#include "World/WorldRenderer.h"
 #include "Utilities/Benchmark.h"
 #include "World/Registry.h"
+#include "Rendering/Renderer.h"
 
 Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
@@ -30,6 +30,7 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	if (!Device::IsHeadless())
 	{
 		Device::StartUp();
+		Renderer::StartUp();
 	}
 
 	Input::StartUp();
@@ -90,6 +91,7 @@ Engine::EngineClass::~EngineClass()
 
 	if (!Device::IsHeadless())
 	{
+		Renderer::ShutDown();
 		Device::ShutDown();
 	}
 
@@ -151,7 +153,7 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 		editor.Tick(deltaTime);
 #else
 		world.Tick(deltaTime);
-		world.GetRenderer().Render();
+		Renderer::Get().Render(world);
 #endif  // EDITOR
 
 		device.EndFrame();

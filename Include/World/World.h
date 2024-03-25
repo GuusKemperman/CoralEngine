@@ -6,7 +6,7 @@ namespace Engine
 {
 	class Level;
 	class Registry;
-	class WorldRenderer;
+	class WorldViewport;
 	class GPUWorld;
 	class DebugRenderer;
 	class BinaryGSONObject;
@@ -31,9 +31,8 @@ namespace Engine
 		Registry& GetRegistry() { ASSERT(mRegistry != nullptr); return *mRegistry; };
 		const Registry& GetRegistry() const { ASSERT(mRegistry != nullptr); return *mRegistry; };
 
-		WorldRenderer& GetRenderer() { ASSERT(mRenderer != nullptr); return *mRenderer; };
-		const WorldRenderer& GetRenderer() const { ASSERT(mRenderer != nullptr); return *mRenderer; };
-		const DebugRenderer& GetDebugRenderer() const;
+		WorldViewport& GetViewport() { ASSERT(mRenderer != nullptr); return *mRenderer; };
+		const WorldViewport& GetViewport() const { ASSERT(mRenderer != nullptr); return *mRenderer; };
 
 		GPUWorld& GetGPUWorld() const { return *mGPUWorld; }; // TODO Const
 
@@ -80,7 +79,7 @@ namespace Engine
 		REFLECT_AT_START_UP(World);
 
 		std::unique_ptr<Registry> mRegistry{};
-		std::unique_ptr<WorldRenderer> mRenderer{};
+		std::unique_ptr<WorldViewport> mRenderer{};
 		std::unique_ptr<GPUWorld> mGPUWorld{};
 
 		std::shared_ptr<const Level> mLevelToTransitionTo{};

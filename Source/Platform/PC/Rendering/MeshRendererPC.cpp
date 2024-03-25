@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Platform/PC/Rendering/RendererPC.h"
+#include "Platform/PC/Rendering/MeshRendererPC.h"
 #include "Core/Device.h"
 #include "Core/FileIO.h"
 
@@ -26,15 +26,10 @@
 #include "Assets/Texture.h"
 #include "Assets/StaticMesh.h"
 #include "Assets/SkinnedMesh.h"
-#include "Utilities/DebugRenderer.h"
+#include "Rendering/DebugRenderer.h"
 
-Engine::Renderer::Renderer()
+Engine::MeshRenderer::MeshRenderer()
 {
-    if (Device::IsHeadless())
-    {
-        return;
-    }
-
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
@@ -94,7 +89,9 @@ Engine::Renderer::Renderer()
     mZSkinnedPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
 }
 
-void Engine::Renderer::Render(const World& world)
+Engine::MeshRenderer::~MeshRenderer() = default;
+
+void Engine::MeshRenderer::Render(const World& world)
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -272,9 +269,4 @@ void Engine::Renderer::Render(const World& world)
     }
 
     gpuWorld.UpdateMaterials();
-}
-
-Engine::MetaType Engine::Renderer::Reflect()
-{
-    return MetaType{ MetaType::T<Renderer>{}, "Renderer", MetaType::Base<System>{} };
 }

@@ -2,7 +2,7 @@
 #include "Platform/PC/Rendering/GPUWorldPC.h"
 
 #include "World/World.h"
-#include "World/WorldRenderer.h"
+#include "World/WorldViewport.h"
 #include "World/Registry.h"
 
 #include "Assets/Material.h"
@@ -35,7 +35,7 @@ void Engine::GPUWorld::Update(const World& world)
     int frameIndex = engineDevice.GetFrameIndex();
 
     // Get main camera
-    const auto optionalEntityCameraPair = world.GetRenderer().GetMainCamera();
+    const auto optionalEntityCameraPair = world.GetViewport().GetMainCamera();
     ASSERT_LOG(optionalEntityCameraPair.has_value(), "DX12 draw requests have been made, but they cannot be cleared as there is no camera to draw them to");
 
     // Update camera
