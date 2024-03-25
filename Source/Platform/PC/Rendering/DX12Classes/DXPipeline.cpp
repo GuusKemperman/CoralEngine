@@ -111,7 +111,7 @@ ComPtr<ID3DBlob> DXPipeline::ShaderToBlob(const char* path, const char* shaderVe
 {
 	ComPtr<ID3DBlob> shader; // d3d blob for holding vertex shader bytecode
 	ComPtr<ID3DBlob> errorBuff;
-
+	
 	wchar_t* wString = new wchar_t[4096];
 	MultiByteToWideChar(CP_ACP, 0, path, -1, wString, 4096);
 	HRESULT hr;

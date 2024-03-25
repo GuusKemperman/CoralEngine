@@ -2,7 +2,7 @@
 #include "Utilities/DebugRenderer.h"
 #include "glm/gtx/rotate_vector.hpp"
 
-void Engine::DebugRenderer::AddLine(DebugCategory::Enum category, const glm::vec2& from, const glm::vec2& to, const glm::vec4& color, Plane::Enum plane) const
+void Engine::DebugRenderer::AddLine(DebugCategory::Enum category, glm::vec2 from, glm::vec2 to, const glm::vec4& color, Plane::Enum plane) const
 {
     if (!IsCategoryVisible(category)) return;
 

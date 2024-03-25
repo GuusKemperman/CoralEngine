@@ -87,10 +87,10 @@ void DXSignature::AddTable(D3D12_SHADER_VISIBILITY shader, D3D12_DESCRIPTOR_RANG
 	parameters.push_back(par);
 }
 
-void DXSignature::AddSampler(const uint shaderRegister, D3D12_SHADER_VISIBILITY shader, D3D12_TEXTURE_ADDRESS_MODE mode)
+void DXSignature::AddSampler(const uint shaderRegister, D3D12_SHADER_VISIBILITY shader, D3D12_TEXTURE_ADDRESS_MODE mode, D3D12_FILTER filter)
 {
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
-	sampler.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+	sampler.Filter = filter;
 	sampler.AddressU = mode;
 	sampler.AddressV = mode;
 	sampler.AddressW = mode;
