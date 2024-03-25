@@ -286,7 +286,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(const World& world)
 		const glm::vec2 cameraPos2D = To2DRightForward(cameraWorldPos);
 
 		constexpr float range = 50.0f;
-		constexpr float spacing = 2.0f;
+		constexpr float spacing = 5.0f;
 		for (float x = -range; x < range; x += spacing)
 		{
 			for (float y = -range; y < range; y += spacing)

@@ -49,20 +49,6 @@ void NavigationSystem::Update(World& world, float dt)
 		glm::vec2 agentWorldPosition = {agentTransform.GetWorldPosition().x, agentTransform.GetWorldPosition().z};
 		std::optional<glm::vec2> targetPosition = navMeshAgent.GetTargetPosition();
 
-		// set orientation
-		if (targetPosition.has_value())
-		{
-			const glm::vec2 deltaPos = targetPosition.value() - agentWorldPosition;
-			const float length = glm::length(deltaPos);
-
-			if (length != 0.0f)
-			{
-				const glm::vec2 orientation2D = deltaPos / length;
-				const glm::quat orientationQuat = Math::Direction2DToXZQuatOrientation(orientation2D);
-				agentTransform.SetLocalOrientation(orientationQuat);
-			}
-		}
-
 		if (!targetPosition.has_value() || !navMeshAgent.IsChasing())
 		{
 			agentBody.mLinearVelocity = {0.0f, 0.0f};
@@ -105,6 +91,9 @@ void NavigationSystem::Update(World& world, float dt)
 		{
 			agentBody.mLinearVelocity = (dVec2 / distance) * speed;
 		}
+
+		const glm::quat orientationQuat = Math::Direction2DToXZQuatOrientation(dVec2 / distance);
+		agentTransform.SetLocalOrientation(orientationQuat);
 	}
 }
 
