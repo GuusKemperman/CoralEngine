@@ -69,11 +69,13 @@ namespace Engine
 	template<class Archive>
 	void serialize([[maybe_unused]] Archive& ar, [[maybe_unused]] const DurationalEffect& value)
 	{
+		// We don't need to actually serialize it, but otherwise we get a compilation error
 	}
 
 	template<class Archive>
 	void serialize([[maybe_unused]] Archive& ar, [[maybe_unused]] const OverTimeEffect& value)
 	{
+		// We don't need to actually serialize it, but otherwise we get a compilation error
 	}
 }
 

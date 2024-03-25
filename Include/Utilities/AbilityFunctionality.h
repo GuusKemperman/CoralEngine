@@ -66,6 +66,7 @@ namespace Engine
 	template<class Archive>
 	void serialize([[maybe_unused]] Archive& ar, [[maybe_unused]] const AbilityFunctionality::EffectSettings& value)
 	{
+		// We don't need to actually serialize it, but otherwise we get a compilation error
 	}
 }
 
