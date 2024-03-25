@@ -101,7 +101,8 @@ void Engine::Texture::SendToGPU() const
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	self.mHeapSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mTextureBuffer.get(), &srvDesc);
 
-	for (int i = 1; i < 4; i++) {
+	for (int i = 1; i < 4; i++)
+	{
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 		uavDesc.Format = resourceDescription.Format;
@@ -113,7 +114,8 @@ void Engine::Texture::SendToGPU() const
 
 	GenerateMipmaps();
 
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 3; i++)
+	{
 		self.mUAVslots[i].reset();
 	}
 

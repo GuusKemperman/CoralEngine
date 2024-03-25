@@ -53,7 +53,8 @@ namespace Engine
 				int mHeight{};
 			};
 
-			struct DXGenerateMips {
+			struct DXGenerateMips
+			{
 				uint32_t SrcMipLevel;           // Texture level of source mip
 				uint32_t NumMipLevels;          // Number of OutMips to write: [1-4]
 				uint32_t SrcDimension;          // Width and height of the source texture are even or odd.
