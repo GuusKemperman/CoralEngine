@@ -26,6 +26,7 @@ void Engine::Renderer::Render(const World& world)
 	Render(world, Device::Get().GetDisplaySize());
 }
 
+#ifdef EDITOR
 void Engine::Renderer::RenderToFrameBuffer(
 	const World& world, 
 	FrameBuffer& buffer, 
@@ -48,6 +49,7 @@ void Engine::Renderer::RenderToFrameBuffer(
 
 	buffer.Unbind();
 }
+#endif // EDITOR
 
 void Engine::Renderer::Render(const World& world, glm::vec2 viewportSize)
 {

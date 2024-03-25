@@ -3,6 +3,7 @@
 
 namespace Engine
 {
+	class EngineClass;
 	class World;
 	class FrameBuffer;
 	class MeshRenderer;
@@ -21,11 +22,13 @@ namespace Engine
 	public:
 		void Render(const World& world);
 
+#ifdef EDITOR
 		void RenderToFrameBuffer(
 			const World& world,
 			FrameBuffer& buffer, 
 			std::optional<glm::vec2> firstResizeBufferTo = {},
 			bool clearBufferFirst = true);
+#endif // EDITOR
 
 		const DebugRenderer& GetDebugRenderer() const { return *mDebugRenderer; };
 
