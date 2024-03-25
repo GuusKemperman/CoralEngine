@@ -153,7 +153,10 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 		editor.Tick(deltaTime);
 #else
 		world.Tick(deltaTime);
-		Renderer::Get().Render(world);
+		if (!Device::IsHeadless())
+		{
+			Renderer::Get().Render(world);
+		}
 #endif  // EDITOR
 
 		device.EndFrame();

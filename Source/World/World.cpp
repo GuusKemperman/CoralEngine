@@ -3,12 +3,12 @@
 
 #include <stack>
 
+#include "Core/Device.h"
 #include "Components/ComponentFilter.h"
 #include "Components/NameComponent.h"
 #include "Meta/MetaProps.h"
 #include "World/Registry.h"
 #include "World/WorldViewport.h"
-#include "Rendering/DebugRenderer.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Assets/Level.h"
 #include "Rendering/GPUWorld.h"
@@ -16,10 +16,14 @@
 Engine::World::World(const bool beginPlayImmediately) :
 	mRegistry(std::make_unique<Registry>(*this)),
 	mViewport(std::make_unique<WorldViewport>(*this)),
-	mGPUWorld(std::make_unique<GPUWorld>(*this)),
 	mPhysics(std::make_unique<Physics>(*this))
 {
 	LOG(LogCore, Verbose, "World is awaiting begin play..");
+
+	if (!Device::IsHeadless())
+	{
+		mGPUWorld = std::make_unique<GPUWorld>(*this);
+	}
 
 	if (beginPlayImmediately)
 	{
