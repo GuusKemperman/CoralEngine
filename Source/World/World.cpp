@@ -15,9 +15,9 @@
 
 Engine::World::World(const bool beginPlayImmediately) :
 	mRegistry(std::make_unique<Registry>(*this)),
-	mPhysics(std::make_unique<Physics>(*this)),
 	mViewport(std::make_unique<WorldViewport>(*this)),
-	mGPUWorld(std::make_unique<GPUWorld>(*this))
+	mGPUWorld(std::make_unique<GPUWorld>(*this)),
+	mPhysics(std::make_unique<Physics>(*this))
 {
 	LOG(LogCore, Verbose, "World is awaiting begin play..");
 
@@ -30,8 +30,8 @@ Engine::World::World(const bool beginPlayImmediately) :
 Engine::World::World(World&& other) noexcept :
 	mRegistry(std::move(other.mRegistry)),
 	mViewport(std::move(other.mViewport)),
-	mPhysics(std::move(other.mPhysics)),
 	mGPUWorld(std::move(other.mGPUWorld)),
+	mPhysics(std::move(other.mPhysics)),
 	mLevelToTransitionTo(std::move(other.mLevelToTransitionTo)),
 	mTime(other.mTime),
 	mHasBegunPlay(other.mHasBegunPlay)
@@ -58,6 +58,7 @@ Engine::World& Engine::World::operator=(World&& other) noexcept
 	mRegistry = std::move(other.mRegistry);
 	mViewport = std::move(other.mViewport);
 	mGPUWorld = std::move(other.mGPUWorld);
+	mPhysics = std::move(other.mPhysics);
 	mLevelToTransitionTo = std::move(other.mLevelToTransitionTo);
 
 	mRegistry->mWorld = *this;

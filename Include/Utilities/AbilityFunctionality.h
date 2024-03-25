@@ -33,6 +33,22 @@ namespace Engine
 
 		struct EffectSettings
 		{
+			EffectSettings()
+				:
+				mStat(Health),
+				mAmount(0.0f),
+				mFlatOrPercentage(Flat),
+				mIncreaseOrDecrease(Decrease)
+			{}
+
+			EffectSettings(Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease)
+				:
+				mStat(stat),
+				mAmount(amount),
+				mFlatOrPercentage(flatOrPercentage),
+				mIncreaseOrDecrease(increaseOrDecrease)
+			{}
+
 			Stat mStat = Health;
 			float mAmount{};
 			FlatOrPercentage mFlatOrPercentage = Flat;
