@@ -146,7 +146,7 @@ namespace Engine
 			return normalize(glm::vec2(-direction3D.x, direction3D.z));
 		}
 
-		static glm::vec2 QuatToDirection(const glm::quat& quat)
+		static glm::vec3 QuatToDirection(const glm::quat& quat)
 		{
 			const glm::vec3 direction3D = glm::vec3(0.f, 0.f, 1.f) * quat;
 			return normalize(glm::vec3(-direction3D.x, direction3D.y, direction3D.z));
