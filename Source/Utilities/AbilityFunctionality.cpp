@@ -241,11 +241,23 @@ entt::entity Engine::AbilityFunctionality::SpawnProjectile(World& world, const P
 			return{};
 	}
 
+	// set the cast-by character for effect calculations and team checks
 	activeAbility->mCastByCharacter = castBy;
-	auto characterWorldPos = characterTransform->GetWorldPosition();
-	prefabTransform->SetLocalPosition(characterWorldPos);
-	auto characterDirection = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
-	prefabPhysicsBody->mLinearVelocity = characterDirection * prejectileComponent->mSpeed;
+
+	// calculate the 2D orientation of the character
+	const glm::vec3 characterWorldPos = characterTransform->GetWorldPosition();
+	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+
+	// translate the spawn position by a certain amount so that the projectile does not spawn inside the character mesh
+	const glm::vec2 projectileTranslation = characterDir * (characterTransform->GetWorldScale2D() + 1.f); // + 1.f arbitrary value
+	const glm::vec3 projectileTranslation3D = { projectileTranslation.x, 0.f, projectileTranslation.y };
+	const glm::vec3 projectileSpawnPos = characterWorldPos + projectileTranslation3D;
+
+	// set the position
+	prefabTransform->SetLocalPosition(projectileSpawnPos);
+
+	// set the velocity
+	prefabPhysicsBody->mLinearVelocity = characterDir * prejectileComponent->mSpeed;
 
 	return prefabEntity;
 }
@@ -274,9 +286,11 @@ entt::entity Engine::AbilityFunctionality::SpawnAOE(World& world, const Prefab& 
 			return{};
 	}
 
+	// set the cast-by character for effect calculations and team checks
 	activeAbility->mCastByCharacter = castBy;
-	auto characterWorldPos = characterTransform->GetWorldPosition();
-	prefabTransform->SetLocalPosition(characterWorldPos);
+
+	// set the position
+	prefabTransform->SetLocalPosition(characterTransform->GetWorldPosition());
 
 	return prefabEntity;
 }
