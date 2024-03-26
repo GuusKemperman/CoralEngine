@@ -35,10 +35,10 @@ Engine::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
 
 	// And ofcourse some light
 	{
-		const entt::entity light = reg.Create();
-		reg.AddComponent<NameComponent>(light, "Light");
-		reg.AddComponent<DirectionalLightComponent>(light);
-		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({DEG2RAD(17.0f), DEG2RAD(-63.0f), 0.0f });
+		mLightInstance = reg.Create();
+		reg.AddComponent<NameComponent>(mLightInstance, "Light");
+		reg.AddComponent<DirectionalLightComponent>(mLightInstance);
+		reg.AddComponent<TransformComponent>(mLightInstance).SetLocalOrientation({DEG2RAD(17.0f), DEG2RAD(-63.0f), 0.0f });
 	}
 }
 
@@ -126,6 +126,24 @@ void Engine::PrefabEditorSystem::LoadState(std::istream& fromStream)
 
 void Engine::PrefabEditorSystem::ApplyChangesToAsset()
 {
+	const Registry& reg = mWorldHelper->GetWorldBeforeBeginPlay().GetRegistry();
+
+	if (!reg.Valid(mPrefabInstance))
+	{
+		// See if there's a new instance
+		const auto* entityStorage = reg.Storage<entt::entity>();
+		
+		for (const auto [entity] : entityStorage->each())
+		{
+			if (entity != mLightInstance
+				&& entity != mCameraInstance)
+			{
+				mPrefabInstance = entity;
+				break;
+			}
+		}
+	}
+
 	mAsset.CreateFromEntity(mWorldHelper->GetWorldBeforeBeginPlay(), mPrefabInstance);
 }
 
