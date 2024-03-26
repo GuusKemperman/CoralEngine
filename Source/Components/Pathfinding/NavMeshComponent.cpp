@@ -23,7 +23,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "World/Registry.h"
 #include "World/World.h"
-#include "Utilities/DebugRenderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 
 void Engine::NavMeshComponent::GenerateNavMesh(const World& world)
 {
@@ -651,8 +651,6 @@ void Engine::NavMeshComponent::DebugDrawNavMesh(const World& world) const
 		return;
 	}
 
-	const DebugRenderer& debugRenderer = world.GetDebugRenderer();
-
 	const auto& view = world.GetRegistry().View<NavMeshComponent>();
 	if (view.empty())
 	{
@@ -675,21 +673,21 @@ void Engine::NavMeshComponent::DebugDrawNavMesh(const World& world) const
 				if (j + 1 == static_cast<int>(cleanedPolygonList[h].mPoints.size()))
 				{
 					// Draw a line connecting the last vertex to the first vertex
-					debugRenderer.AddLine(DebugCategory::AINavigation,
-					                                 {cleanedPolygonList[h].mPoints[j].x, 0, cleanedPolygonList[h].mPoints[j].y},
-					                                 {cleanedPolygonList[h].mPoints[0].x, 0, cleanedPolygonList[h].mPoints[0].y},
-					                                 colour);
+					DrawDebugLine(world, DebugCategory::AINavigation,
+						{ cleanedPolygonList[h].mPoints[j].x, 0, cleanedPolygonList[h].mPoints[j].y },
+						{ cleanedPolygonList[h].mPoints[0].x, 0, cleanedPolygonList[h].mPoints[0].y },
+						colour);
 				}
 				else
 				{
 					// Draw a line connecting two consecutive vertices
-					debugRenderer.AddLine(DebugCategory::AINavigation,
-					                                 {cleanedPolygonList[h].mPoints[j].x, 0, cleanedPolygonList[h].mPoints[j].y},
-					                                 {
-						                                 cleanedPolygonList[h].mPoints[j + 1].x, 0,
-						                                 cleanedPolygonList[h].mPoints[j + 1].y
-					                                 },
-					                                 colour);
+					DrawDebugLine(world, DebugCategory::AINavigation,
+						{ cleanedPolygonList[h].mPoints[j].x, 0, cleanedPolygonList[h].mPoints[j].y },
+													 {
+														 cleanedPolygonList[h].mPoints[j + 1].x, 0,
+														 cleanedPolygonList[h].mPoints[j + 1].y
+													 },
+						colour);
 				}
 			}
 		}
@@ -701,15 +699,12 @@ void Engine::NavMeshComponent::DebugDrawNavMesh(const World& world) const
 			const PolygonPoints& points = polygon.mPoints;
 
 			// Draw the edges of each triangle with a blue color
-			debugRenderer.AddLine(DebugCategory::AINavigation, {points[0].x, 0, points[0].y},
-			                                 {points[1].x, 0, points[1].y},
-			                                 {0.f, 0.f, 1.f, 1.f});
-			debugRenderer.AddLine(DebugCategory::AINavigation, {points[1].x, 0, points[1].y},
-			                                 {points[2].x, 0, points[2].y},
-			                                 {0.f, 0.f, 1.f, 1.f});
-			debugRenderer.AddLine(DebugCategory::AINavigation, {points[2].x, 0, points[2].y},
-			                                 {points[0].x, 0, points[0].y},
-			                                 {0.f, 0.f, 1.f, 1.f});
+			DrawDebugLine(world, DebugCategory::AINavigation, { points[0].x, 0, points[0].y }, { points[1].x, 0, points[1].y }, {0.f, 0.f, 1.f, 1.f});
+
+			DrawDebugLine(world, DebugCategory::AINavigation, { points[1].x, 0, points[1].y }, { points[2].x, 0, points[2].y },
+				{0.f, 0.f, 1.f, 1.f});
+
+			DrawDebugLine(world, DebugCategory::AINavigation, { points[2].x, 0, points[2].y }, { points[0].x, 0, points[0].y }, glm::vec4{0.f, 0.f, 1.f, 1.f});
 		}
 	}
 

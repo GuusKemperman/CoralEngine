@@ -1,7 +1,6 @@
 #include "Precomp.h"
-#include "World/WorldRenderer.h"
+#include "World/WorldViewport.h"
 
-#include "Utilities/FrameBuffer.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/CameraComponent.h"
@@ -9,47 +8,14 @@
 #include "Core/Input.h"
 #include "Core/Device.h"
 #include "Systems/System.h"
-#include "Utilities/DebugRenderer.h"
 
-Engine::WorldRenderer::WorldRenderer(const World& world) :
+Engine::WorldViewport::WorldViewport(const World& world) :
 	mWorld(world),
-	mDebugRenderer(std::make_unique<DebugRenderer>()),
 	mLastRenderedAtSize(Device::IsHeadless() ? glm::vec2{} : Device::Get().GetDisplaySize())
 {
 }
 
-Engine::WorldRenderer::~WorldRenderer() = default;
-
-void Engine::WorldRenderer::NewFrame()
-{
-
-}
-
-void Engine::WorldRenderer::Render()
-{
-	RenderAtSize(Device::Get().GetDisplaySize());
-}
-
-#ifdef EDITOR
-void Engine::WorldRenderer::Render(FrameBuffer& buffer, std::optional<glm::vec2> firstResizeBufferTo, const bool clearBufferFirst)
-{
-    if (firstResizeBufferTo.has_value())
-    {
-        buffer.Resize(static_cast<glm::ivec2>(*firstResizeBufferTo));
-    }
-
-	buffer.Bind();
-
-	if (clearBufferFirst)
-	{
-		buffer.Clear();
-	}
-
-	RenderAtSize(buffer.GetSize());
-
-	buffer.Unbind();
-}
-#endif // EDITOR
+Engine::WorldViewport::~WorldViewport() = default;
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -58,7 +24,7 @@ void Engine::WorldRenderer::Render(FrameBuffer& buffer, std::optional<glm::vec2>
 #pragma warning(disable : 4702)
 #endif
 
-std::optional<std::pair<entt::entity, const Engine::CameraComponent&>> Engine::WorldRenderer::GetMainCamera() const
+std::optional<std::pair<entt::entity, const Engine::CameraComponent&>> Engine::WorldViewport::GetMainCamera() const
 {
 	using ReturnPair = std::pair<entt::entity, const CameraComponent&>;
 	const Registry& reg = mWorld.get().GetRegistry();
@@ -91,9 +57,9 @@ std::optional<std::pair<entt::entity, const Engine::CameraComponent&>> Engine::W
 #pragma warning(pop)
 #endif
 
-std::optional<std::pair<entt::entity, Engine::CameraComponent&>> Engine::WorldRenderer::GetMainCamera()
+std::optional<std::pair<entt::entity, Engine::CameraComponent&>> Engine::WorldViewport::GetMainCamera()
 {
-	const auto constPair = const_cast<const WorldRenderer*>(this)->GetMainCamera();
+	const auto constPair = const_cast<const WorldViewport*>(this)->GetMainCamera();
 
 	if (constPair.has_value())
 	{
@@ -102,7 +68,7 @@ std::optional<std::pair<entt::entity, Engine::CameraComponent&>> Engine::WorldRe
 	return {};
 }
 
-glm::vec3 Engine::WorldRenderer::GetScreenToWorldDirection(glm::vec2 screenPosition) const
+glm::vec3 Engine::WorldViewport::GetScreenToWorldDirection(glm::vec2 screenPosition) const
 {
 	const auto camera = GetMainCamera();
 
@@ -124,7 +90,7 @@ glm::vec3 Engine::WorldRenderer::GetScreenToWorldDirection(glm::vec2 screenPosit
 	return normalize(dir);
 }
 
-glm::vec3 Engine::WorldRenderer::ScreenToWorld(glm::vec2 screenPosition, float distanceFromCamera) const
+glm::vec3 Engine::WorldViewport::ScreenToWorld(glm::vec2 screenPosition, float distanceFromCamera) const
 {
 	const auto camera = GetMainCamera();
 	if (!camera.has_value())
@@ -148,7 +114,7 @@ glm::vec3 Engine::WorldRenderer::ScreenToWorld(glm::vec2 screenPosition, float d
 
 }
 
-void Engine::WorldRenderer::RenderAtSize(glm::vec2 size)
+void Engine::WorldViewport::UpdateSize(glm::vec2 size)
 {
 	mLastRenderedAtSize = size;
 
@@ -157,7 +123,4 @@ void Engine::WorldRenderer::RenderAtSize(glm::vec2 size)
 #ifdef EDITOR
 	mLastRenderedAtPos = ImGui::GetCursorScreenPos();
 #endif // EDITOR
-
-	GetWorld().GetRegistry().RenderSystems();
-    mDebugRenderer->Render(mWorld);
 }

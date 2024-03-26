@@ -69,8 +69,8 @@ bool Engine::AbilityInstance::operator!=(const AbilityInstance& other) const
 void Engine::AbilityInstance::DisplayWidget()
 {
 	ShowInspectUI("mAbilityAsset", mAbilityAsset);
-	ImGui::Text("mRequirementCounter: %f", mRequirementCounter);
-	ImGui::Text("mChargesCounter: %d", mChargesCounter);
+	ShowInspectUIReadOnly("mRequirementCounter", mRequirementCounter);
+	ShowInspectUIReadOnly("mChargesCounter", mChargesCounter);
 	if (isPlayer)
 	{
 		ShowInspectUI("mKeyboardKeys", mKeyboardKeys);

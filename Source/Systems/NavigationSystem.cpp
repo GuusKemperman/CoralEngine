@@ -10,7 +10,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
-#include "Utilities/DebugRenderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 
 using namespace Engine;
 
@@ -49,16 +49,14 @@ void NavigationSystem::Update(World& world, float dt)
 		glm::vec2 agentWorldPosition = {agentTransform.GetWorldPosition().x, agentTransform.GetWorldPosition().z};
 		std::optional<glm::vec2> targetPosition = navMeshAgent.GetTargetPosition();
 
-		// set orientation
 		if (targetPosition.has_value())
 		{
-			const glm::vec2 deltaPos = targetPosition.value() - agentWorldPosition;
-			const float length = glm::length(deltaPos);
+			const glm::vec2 toTarget = *targetPosition - agentWorldPosition;
+			const float length2 = glm::length2(toTarget);
 
-			if (length != 0.0f)
+			if (length2 != 0.0f)
 			{
-				const glm::vec2 orientation2D = deltaPos / length;
-				const glm::quat orientationQuat = Math::Direction2DToXZQuatOrientation(orientation2D);
+				const glm::quat orientationQuat = Math::Direction2DToXZQuatOrientation(toTarget / glm::sqrt(length2));
 				agentTransform.SetLocalOrientation(orientationQuat);
 			}
 		}
@@ -117,8 +115,12 @@ void NavigationSystem::Render(const World& world)
 		{
 			for (size_t i = 0; i < n.mPathFound.size() - 1; i++)
 			{
-				world.GetDebugRenderer().AddLine(DebugCategory::AINavigation, n.mPathFound[i], n.mPathFound[i + 1],
-				                                 {1.f, 0.f, 0.f, 1.f});
+				DrawDebugLine(
+					world, 
+					DebugCategory::AINavigation, 
+					To3DRightForward(n.mPathFound[i]), 
+					To3DRightForward(n.mPathFound[i + 1]),
+				    {1.f, 0.f, 0.f, 1.f});
 			}
 		}
 	}

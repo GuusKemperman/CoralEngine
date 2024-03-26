@@ -12,7 +12,7 @@ public:
 	void Add32BitConstant(const uint shaderRegister, D3D12_SHADER_VISIBILITY shader, int num32BitValues);
 	void AddCBuffer(const uint shaderRegister, D3D12_SHADER_VISIBILITY shader);
 	void AddTable(D3D12_SHADER_VISIBILITY shader, D3D12_DESCRIPTOR_RANGE_TYPE rangeType, int numDescriptors, int shaderRegister);
-	void AddSampler(const uint shaderRegister, D3D12_SHADER_VISIBILITY shader, D3D12_TEXTURE_ADDRESS_MODE mode);
+	void AddSampler(const uint shaderRegister, D3D12_SHADER_VISIBILITY shader, D3D12_TEXTURE_ADDRESS_MODE mode, D3D12_FILTER filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT);
 
 	ComPtr<ID3D12RootSignature> GetSignature() const { return signature; }
 

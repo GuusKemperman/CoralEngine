@@ -1,26 +1,26 @@
 #include "Precomp.h"
-#include "Utilities/DebugRenderer.h"
+#include "Rendering/DebugRenderer.h"
 #include "glm/gtx/rotate_vector.hpp"
 
-void Engine::DebugRenderer::AddLine(DebugCategory::Enum category, glm::vec2 from, glm::vec2 to, const glm::vec4& color, Plane::Enum plane) const
+void Engine::DebugRenderer::AddLine(const World& world, DebugCategory::Enum category, glm::vec2 from, glm::vec2 to, const glm::vec4& color, Plane::Enum plane) const
 {
     if (!IsCategoryVisible(category)) return;
 
     switch (plane)
     {
     case Plane::XY:
-        AddLine(category, glm::vec3(from.x, from.y, 0.0f), glm::vec3(to.x, to.y, 0.0f), color);
+        AddLine(world, category, glm::vec3(from.x, from.y, 0.0f), glm::vec3(to.x, to.y, 0.0f), color);
         break;
     case Plane::XZ:
-        AddLine(category, glm::vec3(from.x, 0.0f, from.y), glm::vec3(to.x, 0.0f, to.y), color);
+        AddLine(world, category, glm::vec3(from.x, 0.0f, from.y), glm::vec3(to.x, 0.0f, to.y), color);
         break;
     case Plane::YZ:
-        AddLine(category, glm::vec3(0.0f, from.x, from.y), glm::vec3(0.0f, to.x, to.y), color);
+        AddLine(world, category, glm::vec3(0.0f, from.x, from.y), glm::vec3(0.0f, to.x, to.y), color);
         break;
     }
 }
 
-void Engine::DebugRenderer::AddCircle(DebugCategory::Enum category, const glm::vec3& center, float radius, const glm::vec4& color, Plane::Enum plane) const
+void Engine::DebugRenderer::AddCircle(const World& world, DebugCategory::Enum category, const glm::vec3& center, float radius, const glm::vec4& color, Plane::Enum plane) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -37,7 +37,7 @@ void Engine::DebugRenderer::AddCircle(DebugCategory::Enum category, const glm::v
 
         {
 	        glm::vec3 v1(center.x + radius * cos(t + dt), center.y + radius * sin(t + dt), center.z);
-            AddLine(category, v0, v1, color);
+            AddLine(world, category, v0, v1, color);
             v0 = v1;
         }
         break;
@@ -48,7 +48,7 @@ void Engine::DebugRenderer::AddCircle(DebugCategory::Enum category, const glm::v
         for (; t < glm::two_pi<float>() - dt; t += dt)
         {
 	        glm::vec3 v1(center.x + radius * cos(t + dt), center.y, center.z + radius * sin(t + dt));
-            AddLine(category, v0, v1, color);
+            AddLine(world, category, v0, v1, color);
             v0 = v1;
         }
         break;
@@ -61,7 +61,7 @@ void Engine::DebugRenderer::AddCircle(DebugCategory::Enum category, const glm::v
 
         {
 	        glm::vec3 v1(center.x, center.y + radius * cos(t + dt), center.z + radius * sin(t + dt));
-            AddLine(category, v0, v1, color);
+            AddLine(world, category, v0, v1, color);
             v0 = v1;
         }
 
@@ -69,7 +69,7 @@ void Engine::DebugRenderer::AddCircle(DebugCategory::Enum category, const glm::v
     }
 }
 
-void Engine::DebugRenderer::AddSphere(DebugCategory::Enum category, const glm::vec3& center, float radius, const glm::vec4& color) const
+void Engine::DebugRenderer::AddSphere(const World& world, DebugCategory::Enum category, const glm::vec3& center, float radius, const glm::vec4& color) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -82,7 +82,7 @@ void Engine::DebugRenderer::AddSphere(DebugCategory::Enum category, const glm::v
     for (; t < glm::two_pi<float>() - dt; t += dt)
     {
 	    glm::vec3 v1(center.x + radius * cos(t + dt), center.y + radius * sin(t + dt), center.z);
-        AddLine(category, v0, v1, color);
+        AddLine(world, category, v0, v1, color);
         v0 = v1;
     }
     // xz
@@ -91,7 +91,7 @@ void Engine::DebugRenderer::AddSphere(DebugCategory::Enum category, const glm::v
     for (; t < glm::two_pi<float>() - dt; t += dt)
     {
 	    glm::vec3 v1(center.x + radius * cos(t + dt), center.y, center.z + radius * sin(t + dt));
-        AddLine(category, v0, v1, color);
+        AddLine(world, category, v0, v1, color);
         v0 = v1;
     }
     // yz
@@ -100,12 +100,12 @@ void Engine::DebugRenderer::AddSphere(DebugCategory::Enum category, const glm::v
     for (; t < glm::two_pi<float>() - dt; t += dt)
     {
 	    glm::vec3 v1(center.x, center.y + radius * cos(t + dt), center.z + radius * sin(t + dt));
-        AddLine(category, v0, v1, color);
+        AddLine(world, category, v0, v1, color);
         v0 = v1;
     }
 }
 
-void Engine::DebugRenderer::AddRectangle(DebugCategory::Enum category, const glm::vec3& center, glm::vec2 halfExtends, const glm::vec4& color, Plane::Enum plane) const
+void Engine::DebugRenderer::AddRectangle(const World& world, DebugCategory::Enum category, const glm::vec3& center, glm::vec2 halfExtends, const glm::vec4& color, Plane::Enum plane) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -133,13 +133,13 @@ void Engine::DebugRenderer::AddRectangle(DebugCategory::Enum category, const glm
         break;
     }
 
-    AddLine(category, A, B, color);
-    AddLine(category, B, C, color);
-    AddLine(category, C, D, color);
-    AddLine(category, D, A, color);
+    AddLine(world, category, A, B, color);
+    AddLine(world, category, B, C, color);
+    AddLine(world, category, C, D, color);
+    AddLine(world, category, D, A, color);
 }
 
-void Engine::DebugRenderer::AddBox(DebugCategory::Enum category, const glm::vec3& center, const glm::vec3& halfExtents, const glm::vec4& color) const
+void Engine::DebugRenderer::AddBox(const World& world, DebugCategory::Enum category, const glm::vec3& center, const glm::vec3& halfExtents, const glm::vec4& color) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -151,25 +151,25 @@ void Engine::DebugRenderer::AddBox(DebugCategory::Enum category, const glm::vec3
 
     // Generate the lines for the box
     // Front face
-    AddLine(category, glm::vec3(minCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, minCorner.y, minCorner.z), color);
-    AddLine(category, glm::vec3(maxCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), color);
-    AddLine(category, glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, maxCorner.y, minCorner.z), color);
-    AddLine(category, glm::vec3(minCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, minCorner.y, minCorner.z), color);
+    AddLine(world, category, glm::vec3(minCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, minCorner.y, minCorner.z), color);
+    AddLine(world, category, glm::vec3(maxCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), color);
+    AddLine(world, category, glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, maxCorner.y, minCorner.z), color);
+    AddLine(world, category, glm::vec3(minCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, minCorner.y, minCorner.z), color);
 
     // Back face
-    AddLine(category, glm::vec3(minCorner.x, minCorner.y, maxCorner.z), glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), color);
-    AddLine(category, glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), color);
-    AddLine(category, glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), color);
-    AddLine(category, glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), glm::vec3(minCorner.x, minCorner.y, maxCorner.z), color);
+    AddLine(world, category, glm::vec3(minCorner.x, minCorner.y, maxCorner.z), glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), color);
+    AddLine(world, category, glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), color);
+    AddLine(world, category, glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), color);
+    AddLine(world, category, glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), glm::vec3(minCorner.x, minCorner.y, maxCorner.z), color);
 
     // Connecting lines between the front and back faces
-    AddLine(category, glm::vec3(minCorner.x, minCorner.y, minCorner.z), glm::vec3(minCorner.x, minCorner.y, maxCorner.z), color);
-    AddLine(category, glm::vec3(maxCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), color);
-    AddLine(category, glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), color);
-    AddLine(category, glm::vec3(minCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), color);
+    AddLine(world, category, glm::vec3(minCorner.x, minCorner.y, minCorner.z), glm::vec3(minCorner.x, minCorner.y, maxCorner.z), color);
+    AddLine(world, category, glm::vec3(maxCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), color);
+    AddLine(world, category, glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), color);
+    AddLine(world, category, glm::vec3(minCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), color);
 }
 
-void Engine::DebugRenderer::AddCylinder(DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, float radius, uint32 segments, const glm::vec4& color) const
+void Engine::DebugRenderer::AddCylinder(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, float radius, uint32 segments, const glm::vec4& color) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -206,9 +206,9 @@ void Engine::DebugRenderer::AddCylinder(DebugCategory::Enum category, const glm:
         glm::vec3 p2 = segment + from;
         glm::vec3 p4 = segment + to;
         
-        AddLine(category, p2, p4, color);
-        AddLine(category, p1, p2, color);
-        AddLine(category, p3, p4, color);
+        AddLine(world, category, p2, p4, color);
+        AddLine(world, category, p1, p2, color);
+        AddLine(world, category, p3, p4, color);
 
         p1 = p2;
         p3 = p4;
@@ -216,18 +216,18 @@ void Engine::DebugRenderer::AddCylinder(DebugCategory::Enum category, const glm:
     }
 }
 
-void Engine::DebugRenderer::AddPolygon(DebugCategory::Enum category, const std::vector<glm::vec3>& points, const glm::vec4& color) const
+void Engine::DebugRenderer::AddPolygon(const World& world, DebugCategory::Enum category, const std::vector<glm::vec3>& points, const glm::vec4& color) const
 {
     if (!IsCategoryVisible(category)) return;
 
     const size_t pointCount = points.size();
     for (size_t i = 0; i < pointCount; i++)
     {
-        AddLine(category, points[i], points[(i + 1) % pointCount], color);
+        AddLine(world, category, points[i], points[(i + 1) % pointCount], color);
     }
 }
 
-void Engine::DebugRenderer::AddPolygon(DebugCategory::Enum category, const std::vector<glm::vec2>& points, const glm::vec4& color, Plane::Enum plane) const
+void Engine::DebugRenderer::AddPolygon(const World& world, DebugCategory::Enum category, const std::vector<glm::vec2>& points, const glm::vec4& color, Plane::Enum plane) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -239,21 +239,21 @@ void Engine::DebugRenderer::AddPolygon(DebugCategory::Enum category, const std::
         for (size_t i = 0; i < pointCount; i++)
         {
             const size_t nextPointIndex = (i + 1) % pointCount;
-            AddLine(category, { points[i].x, points[i].y, 0.f }, { points[nextPointIndex].x, points[nextPointIndex].y, 0.f }, color);
+            AddLine(world, category, { points[i].x, points[i].y, 0.f }, { points[nextPointIndex].x, points[nextPointIndex].y, 0.f }, color);
         }
         break;
     case Plane::XZ:
         for (size_t i = 0; i < pointCount; i++)
         {
             const size_t nextPointIndex = (i + 1) % pointCount;
-            AddLine(category, { points[i].x, 0.f, points[i].y }, { points[nextPointIndex].x, 0.f , points[nextPointIndex].y}, color);
+            AddLine(world, category, { points[i].x, 0.f, points[i].y }, { points[nextPointIndex].x, 0.f , points[nextPointIndex].y}, color);
         }
         break;
     case Plane::YZ:
         for (size_t i = 0; i < pointCount; i++)
         {
             const size_t nextPointIndex = (i + 1) % pointCount;
-            AddLine(category, { 0.f, points[i].x, points[i].y }, { 0.f, points[nextPointIndex].x, points[nextPointIndex].y }, color);
+            AddLine(world, category, { 0.f, points[i].x, points[i].y }, { 0.f, points[nextPointIndex].x, points[nextPointIndex].y }, color);
         }
         break;
     }

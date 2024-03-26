@@ -9,7 +9,7 @@
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Meta/MetaTools.h"
 #include "Meta/MetaProps.h"
-#include "Utilities/DebugRenderer.h"
+#include "Rendering/DebugRenderer.h"
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
 #include "Containers/view_istream.h"
 #include "GSON/GSONBinary.h"

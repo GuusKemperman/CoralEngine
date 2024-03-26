@@ -3,19 +3,19 @@
 
 #include "World/World.h"
 #include "World/Registry.h"
-#include "World/WorldRenderer.h"
+#include "World/WorldViewport.h"
 #include "Components/TransformComponent.h"
 #include "Components/TopDownCamControllerComponent.h"
 #include "Core/Input.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
-#include "Utilities/DebugRenderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 
 void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 {
 	auto& registry = world.GetRegistry();
 
-	auto activeCamera = world.GetRenderer().GetMainCamera();
+	auto activeCamera = world.GetViewport().GetMainCamera();
 	const entt::entity activeCameraOwner = activeCamera.has_value() ? activeCamera->first : entt::null;
 	TopDownCamControllerComponent* const topDownController = registry.TryGet<TopDownCamControllerComponent>(activeCameraOwner);
 	TransformComponent* const transform = registry.TryGet<TransformComponent>(activeCameraOwner);
@@ -40,7 +40,7 @@ void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 	const float rotationInput = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowRight, Input::KeyboardKey::ArrowLeft) + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickRightX);
 	const float timeScaledRotation = rotationInput * dt;
 
-	glm::vec2 cursorDistanceScreenCenter = (world.GetRenderer().GetViewportSize() * 0.5f - Input::Get().GetMousePosition()) / world.GetRenderer().GetViewportSize();
+	glm::vec2 cursorDistanceScreenCenter = (world.GetViewport().GetViewportSize() * 0.5f - Input::Get().GetMousePosition()) / world.GetViewport().GetViewportSize();
 	cursorDistanceScreenCenter.y *= -1.0f;
 
 	const bool emptyRotation = timeScaledRotation == 0;
@@ -86,8 +86,8 @@ void Engine::UpdateTopDownCamSystem::Render(const World& world)
 			continue;
 		}
 
-		world.GetDebugRenderer().AddBox(DebugCategory::Gameplay, topdown.mTargetLocation, glm::vec3(0.1f), glm::vec4(1.0f));
-		world.GetDebugRenderer().AddLine(DebugCategory::Gameplay, target->GetWorldPosition(), topdown.mTargetLocation, glm::vec4(1.0f));
+		DrawDebugBox(world, DebugCategory::Gameplay, topdown.mTargetLocation, glm::vec3(0.1f), glm::vec4(1.0f));
+		DrawDebugLine(world, DebugCategory::Gameplay, target->GetWorldPosition(), topdown.mTargetLocation, glm::vec4(1.0f));
 	}
 }
 

@@ -2,7 +2,7 @@
 #include "Components/DirectionalLightComponent.h"
 
 #include "Components/TransformComponent.h"
-#include "Utilities/DebugRenderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
 void Engine::DirectionalLightComponent::OnDrawGizmos(World& world, entt::entity owner) const
@@ -28,7 +28,8 @@ void Engine::DirectionalLightComponent::OnDrawGizmos(World& world, entt::entity 
 
 	const glm::vec3 drawToPosition = worldPos + transform->GetWorldForward() * length;
 
-	world.GetDebugRenderer().AddCylinder(
+	DrawDebugCylinder(
+		world,
 		category,
 		worldPos,
 		drawToPosition,

@@ -50,7 +50,7 @@ Engine::MetaType Engine::NavMeshAgentComponent::Reflect()
 	auto metaType = MetaType{MetaType::T<NavMeshAgentComponent>{}, "NavMeshAgentComponent"};
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&NavMeshAgentComponent::mTargetPosition, "mTargetPosition").GetProperties();
-	metaType.AddField(&NavMeshAgentComponent::mIsChasing, "mIsChasing").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&NavMeshAgentComponent::mIsChasing, "mIsChasing").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
 	Engine::ReflectComponentType<NavMeshAgentComponent>(metaType);
 
 	return metaType;

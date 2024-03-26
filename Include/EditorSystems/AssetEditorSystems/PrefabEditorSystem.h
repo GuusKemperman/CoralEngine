@@ -32,6 +32,7 @@ namespace Engine
 
 		entt::entity mPrefabInstance{};
 		entt::entity mCameraInstance{};
+		entt::entity mLightInstance{};
 	};
 }
 #endif // EDITOR
