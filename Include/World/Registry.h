@@ -1,11 +1,10 @@
 #pragma once
-#include "World.h"
+#include "World/World.h"
 #include "Systems/System.h"
 #include "Utilities/MemFunctions.h"
 #include "Meta/MetaFunc.h"
 #include "Meta/MetaManager.h"
 #include "Utilities/Events.h"
-
 
 namespace Engine
 {
@@ -44,12 +43,10 @@ namespace Engine
 
 		entt::entity CreateFromFactory(const PrefabEntityFactory& factory, bool createChildren, entt::entity hint = entt::null);
 
-		void Destroy(entt::entity entity);
+		void Destroy(entt::entity entity, bool destroyChildren);
 		
 		template<typename It>
-		void Destroy(It first, It last);
-
-		void DestroyAlongWithChildren(entt::entity entity);
+		void Destroy(It first, It last, bool destroyChildren);
 
 		void RemovedDestroyed();
 
@@ -290,7 +287,7 @@ namespace Engine
 		if (World::TryGetWorldAtTopOfStack() == nullptr)
 		{
 			UNLIKELY;
-			LOG(LogWorld, Error, "A componentw as destroyed from a function that did not push/pop a world. The destruct event cannot be invoked. Trace callstack and figure out where to place Push/PopWorld");
+			LOG(LogWorld, Error, "A component was destroyed from a function that did not push/pop a world. The destruct event cannot be invoked. Trace callstack and figure out where to place Push/PopWorld");
 			return;
 		}
 
@@ -343,11 +340,11 @@ namespace Engine
 	}
 
 	template<typename It>
-	void Registry::Destroy(It first, It last)
+	void Registry::Destroy(It first, It last, bool destroyChildren)
 	{
 		for (auto it = first; it != last; ++it)
 		{
-			Destroy(*it);
+			Destroy(*it, destroyChildren);
 		}
 	}
 

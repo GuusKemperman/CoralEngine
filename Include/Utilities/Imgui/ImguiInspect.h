@@ -16,7 +16,7 @@
 namespace Engine
 {
 	/*
-	Used ImGui::Auto to inspect the element, possibly changing it's value.
+	Used ImGui::Auto to inspect the element, possibly changing its value.
 		
 	This function is meant for each individual data-member; not the entire component itself:
 
@@ -35,6 +35,15 @@ namespace Engine
 		T valueBefore = value;
 		ImGui::Auto(value, label);
 		return valueBefore != value;
+	}
+
+	// Same as ShowInspectUI() but does not allow the user to change the value
+	template<typename T>
+	void ShowInspectUIReadOnly(const std::string& label, T& value)
+	{
+		ImGui::BeginDisabled();
+		ImGui::Auto(value, label);
+		ImGui::EndDisabled();
 	}
 
 	static inline constexpr Name sShowInspectUIFuncName = "Inspect"_Name;
@@ -79,6 +88,39 @@ namespace ImGui
 		}
 		static constexpr bool sIsSpecialized = true;
 	};
+
+	template<typename T>
+	struct Auto_t<std::optional<T>>
+	{
+		static void Auto(std::optional<T>& var, const std::string& name)
+		{
+			bool hasValue = var.has_value();
+
+			if (ImGui::TreeNode(name.c_str()))
+			{
+				if (ImGui::Checkbox("HasValue", &hasValue))
+				{
+					if (var.has_value())
+					{
+						var.reset();
+					}
+					else
+					{
+						var.emplace();
+					}
+				}
+
+				if (var.has_value())
+				{
+					ImGui::Auto(*var, name);
+				}
+
+				ImGui::TreePop();
+			}
+		}
+		static constexpr bool sIsSpecialized = true;
+	};
+	
 }
 
 #endif // EDITOR

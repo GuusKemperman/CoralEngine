@@ -32,6 +32,10 @@ MetaType Reflector<T>::Reflect()
 		{
 			return Math::QuatToDirection(n);
 		}, "QuatToDirection (vec3)", MetaFunc::ExplicitParams<const glm::quat&>{}).GetProperties().Add(Props::sIsScriptableTag);
+		type.AddFunc([](glm::vec2 n)
+			{
+				return Math::Direction2DToXZQuatOrientation(n);
+			}, "Direction2DToXZQuatOrientation", MetaFunc::ExplicitParams<glm::vec2>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddFunc([](T& n, const T& l) -> T& { n *= l; return n; }, OperatorType::multiplies_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 

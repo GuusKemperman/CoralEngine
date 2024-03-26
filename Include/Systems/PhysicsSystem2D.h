@@ -6,6 +6,7 @@ struct Physics2DUnitTestAccess;
 
 namespace Engine
 {
+	class Physics;
 	class Registry;
 	class MetaFunc;
 	class PhysicsBody2DComponent;
@@ -17,6 +18,8 @@ namespace Engine
 		PhysicsSystem2D();
 
 		void Update(World& world, float dt) override;
+
+		void Render(const World& world) override;
 
 		SystemStaticTraits GetStaticTraits() const override
 		{
@@ -52,7 +55,7 @@ namespace Engine
 		void UpdateBodiesAndTransforms(World& world, float dt);
 
 		void UpdateCollisions(World& world);
-		void DebugDrawing(World& world);
+		void DebugDrawing(const World& world);
 
 		struct CollisionEvent
 		{
@@ -61,35 +64,33 @@ namespace Engine
 			bool mIsStatic{};
 		};
 
-
 		template<typename CollisionDataContainer>
 		static void CallEvents(World& world, const CollisionDataContainer& collisions, const std::vector<CollisionEvent>& events);
 
 		static void CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage, entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint);
 
-		static void ResolveCollision(const CollisionData& collision, 
+		static void ResolveCollision(const Physics& physics,
+			const CollisionData& collision, 
 			PhysicsBody2DComponent& body1,
 			PhysicsBody2DComponent& body2,
 			TransformComponent& transform2,
-			glm::vec2& entity1WorldPos,
-			const glm::vec2& entity2WorldPos);
+			glm::vec3& entity1WorldPos,
+			glm::vec3 entity2WorldPos);
 
 		void RegisterCollision(std::vector<CollisionData>& currentCollisions,
 			CollisionData& collision, entt::entity entity1, entt::entity entity2);
 
-		static bool CollisionCheckDiskDisk(const glm::vec2& center1, float radius1, const glm::vec2& center2,
+		static bool CollisionCheckDiskDisk(glm::vec2 center1, float radius1, glm::vec2 center2,
 			float radius2, CollisionData& result);
 
-		static bool CollisionCheckDiskPolygon(const glm::vec2& diskCenter, float diskRadius,
-			const glm::vec2& polygonPos, const std::vector<glm::vec2>& polygonPoints,
+		static bool CollisionCheckDiskPolygon(glm::vec2 diskCenter, float diskRadius,
+			glm::vec2 polygonPos, const std::vector<glm::vec2>& polygonPoints,
 			CollisionData& result);
 
-		static bool IsPointInsidePolygon(const glm::vec2& point, const std::vector<glm::vec2>& polygon);
-
-		static glm::vec2 GetNearestPointOnPolygonBoundary(const glm::vec2& point, const std::vector<glm::vec2>& polygon);
-
-		static glm::vec2 GetNearestPointOnLineSegment(const glm::vec2& p, const glm::vec2& segmentA,
-			const glm::vec2& segmentB);
+		static glm::vec3 GetAllowedWorldPos(const Physics& physics, 
+			const PhysicsBody2DComponent& body, 
+			glm::vec3 currentWorldPos, 
+			glm::vec2 translation);
 
 		std::vector<CollisionData> mPreviousCollisions{};
 
@@ -101,6 +102,4 @@ namespace Engine
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(PhysicsSystem2D);
 	};
-
-
 }

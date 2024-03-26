@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Components/ComponentFiler.h"
+#include "Components/ComponentFilter.h"
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"

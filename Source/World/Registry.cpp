@@ -2,13 +2,13 @@
 #include "World/Registry.h"
 #include "Assets/Script.h"
 #include "World/World.h"
+#include "World/WorldViewport.h"
 #include "Assets/Prefabs/ComponentFactory.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/Prefabs/PrefabEntityFactory.h"
 #include "Components/IsDestroyedTag.h"
 #include "Components/PrefabOriginComponent.h"
 #include "Components/TransformComponent.h"
-#include "World/WorldRenderer.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaAny.h"
@@ -113,7 +113,7 @@ void Engine::Registry::UpdateSystems(float dt)
 
 void Engine::Registry::RenderSystems() const
 {
-	if (!mWorld.get().GetRenderer().GetMainCamera().has_value())
+	if (!mWorld.get().GetViewport().GetMainCamera().has_value())
 	{
 		LOG(LogTemp, Message, "No camera to render to");
 		return;
@@ -198,33 +198,35 @@ entt::entity Engine::Registry::CreateFromFactory(const PrefabEntityFactory& fact
 	return entity;
 }
 
-void Engine::Registry::Destroy(entt::entity entity)
+void Engine::Registry::Destroy(entt::entity entity, bool destroyChildren)
 {
-	if (!HasComponent<IsDestroyedTag>(entity))
+	if (!Valid(entity) 
+		|| HasComponent<IsDestroyedTag>(entity))
 	{
-		AddComponent<IsDestroyedTag>(entity);
-	}
-}
-
-void Engine::Registry::DestroyAlongWithChildren(entt::entity entity)
-{
-	TransformComponent* transform = TryGet<TransformComponent>(entity);
-
-	if (transform == nullptr)
-	{
-		Destroy(entity);
 		return;
 	}
 
-	std::function<void(TransformComponent&)> addToDestroyed = [&](TransformComponent& current)
+	AddComponent<IsDestroyedTag>(entity);
+
+	if (destroyChildren)
+	{
+		TransformComponent* transform = TryGet<TransformComponent>(entity);
+
+		if (transform == nullptr)
 		{
-			for (TransformComponent& child : current.GetChildren())
+			return;
+		}
+
+		std::function<void(TransformComponent&)> addToDestroyed = [&](TransformComponent& current)
 			{
-				addToDestroyed(child);
-			}
-			Destroy(current.GetOwner());
-		};
-	addToDestroyed(*transform);
+				for (TransformComponent& child : current.GetChildren())
+				{
+					addToDestroyed(child);
+					Destroy(child.GetOwner(), true);
+				}
+			};
+		addToDestroyed(*transform);
+	}
 }
 
 void Engine::Registry::RemovedDestroyed()

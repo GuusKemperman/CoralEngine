@@ -5,20 +5,19 @@
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Components/Pathfinding/NavMeshTargetComponent.h"
 #include "Meta/MetaType.h"
-#include "Utilities/DebugRenderer.h"
+#include "Rendering/Renderer.h"
+#include "Rendering/DebugRenderer.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
 void Game::ChasingState::OnAiTick(Engine::World& world, entt::entity owner, float)
 {
+	auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
+	mTargetEntity = targetEntity;
+
 	auto* navMeshAgent = world.GetRegistry().TryGet<Engine::NavMeshAgentComponent>(owner);
 
 	if (navMeshAgent == nullptr) { return; }
-
-	if (mChosenTargetEntity == entt::null)
-	{
-		mChosenTargetEntity = mTargetEntity;
-	}
 
 	if (mTargetEntity != entt::null)
 	{
@@ -26,24 +25,17 @@ void Game::ChasingState::OnAiTick(Engine::World& world, entt::entity owner, floa
 
 		if (transformComponent == nullptr) { return; }
 
-		navMeshAgent->SetTarget(*transformComponent);
+		navMeshAgent->SetTargetPosition(*transformComponent);
 	}
 }
 
 float Game::ChasingState::OnAiEvaluate(const Engine::World& world, entt::entity owner) const
 {
-	auto [score, entity] = GetHighestScore(world, owner);
+	auto [score, entity] = GetBestScoreAndTarget(world, owner);
 	return score;
 }
 
-void Game::ChasingState::OnAIStateEnterEvent(const Engine::World& world, entt::entity owner)
-{
-	auto [score, targetEntity] = GetHighestScore(world, owner);
-
-	mTargetEntity = targetEntity;
-}
-
-std::pair<float, entt::entity> Game::ChasingState::GetHighestScore(const Engine::World& world, entt::entity owner) const
+std::pair<float, entt::entity> Game::ChasingState::GetBestScoreAndTarget(const Engine::World& world, entt::entity owner) const
 {
 	const auto targetsView = world.GetRegistry().View<Engine::NavMeshTargetTag, Engine::TransformComponent>();
 	const auto* transformComponent = world.GetRegistry().TryGet<Engine::TransformComponent>(owner);
@@ -53,15 +45,15 @@ std::pair<float, entt::entity> Game::ChasingState::GetHighestScore(const Engine:
 		return {0.0f, entt::null};
 	}
 
-	float highestScore = 0.0f;
-	entt::entity entityId = entt::null;
+	float highestScore{};
+	entt::entity entityId{};
 
 	for (auto [targetId, targetTransform] : targetsView.each())
 	{
 		const float distance = glm::distance(transformComponent->GetWorldPosition(),
 		                                     targetTransform.GetWorldPosition());
 
-		float score = 0.0f;
+		float score{};
 
 		if (distance < mRadius)
 		{
@@ -89,8 +81,10 @@ void Game::ChasingState::DebugRender(Engine::World& world, entt::entity owner) c
 		return;
 	}
 
-	world.GetDebugRenderer().AddCircle(Engine::DebugCategory::Gameplay, transformComponent->GetWorldPosition(),
-	                                   mRadius, {0.f, 0.f, 1.f, 1.f});
+	Engine::Renderer::Get().GetDebugRenderer().AddCircle(
+		world, Engine::DebugCategory::Gameplay, 
+		transformComponent->GetWorldPosition(),
+	    mRadius, {0.f, 0.f, 1.f, 1.f});
 }
 
 Engine::MetaType Game::ChasingState::Reflect()
@@ -102,7 +96,6 @@ Engine::MetaType Game::ChasingState::Reflect()
 
 	BindEvent(type, Engine::sAITickEvent, &ChasingState::OnAiTick);
 	BindEvent(type, Engine::sAIEvaluateEvent, &ChasingState::OnAiEvaluate);
-	BindEvent(type, Engine::sAIStateEnterEvent, &ChasingState::OnAIStateEnterEvent);
 
 	Engine::ReflectComponentType<ChasingState>(type);
 	return type;

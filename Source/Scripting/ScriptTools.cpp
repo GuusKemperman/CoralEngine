@@ -80,7 +80,7 @@ bool Engine::IsFunctionPure(const MetaFunc& func)
 
 bool Engine::WasTypeCreatedByScript(const MetaType& type)
 {
-	return type.GetProperties().Has(Name{ Script::sWasTypeCreatedFromScriptProperty });
+	return type.GetProperties().Has(Props::sIsFromScriptsTag);
 }
 
 std::shared_ptr<const Engine::Script> Engine::TryGetScriptResponsibleForCreatingType(const MetaType& type)
@@ -163,12 +163,14 @@ namespace Engine
 
 bool Engine::CanBeSetThroughScripts(const MetaField& field)
 {
-	return CanMemberBeSetOrGetThroughScripts(field);
+	return !field.GetProperties().Has(Props::sIsScriptReadOnlyTag)
+		&& CanMemberBeSetOrGetThroughScripts(field);
 }
 
-bool Engine::CanBeGetThroughScripts(const MetaField& field)
+bool Engine::CanBeGetThroughScripts(const MetaField& field, bool byReference)
 {
-	return CanMemberBeSetOrGetThroughScripts(field);
+	return (!byReference || !field.GetProperties().Has(Props::sIsScriptReadOnlyTag))
+		&& CanMemberBeSetOrGetThroughScripts(field);
 }
 
 bool Engine::CanCreateLink(const ScriptPin& a, const ScriptPin& b)
@@ -198,9 +200,13 @@ bool Engine::CanCreateLink(const ScriptPin& a, const ScriptPin& b)
 
 bool Engine::DoesPinRequireLink(const ScriptFunc& func, const ScriptPin& pin)
 {
-	if (pin.GetTypeForm() == TypeForm::Value
+	const MetaType* const type = pin.TryGetType();
+
+	if (type != nullptr 
+		&& CanTypeBeOwnedByScripts(*type)
+		&& (pin.GetTypeForm() == TypeForm::Value
 		|| pin.GetTypeForm() == TypeForm::ConstRef
-		|| pin.GetTypeForm() == TypeForm::ConstPtr)
+		|| pin.GetTypeForm() == TypeForm::ConstPtr))
 	{
 		return func.GetNode(pin.GetNodeId()).GetType() == ScriptNodeType::Rerout;
 	}

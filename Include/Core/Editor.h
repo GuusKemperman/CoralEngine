@@ -74,6 +74,15 @@ namespace Engine
 		*/
 		void Refresh(RefreshRequest&& refreshMethod);
 
+		/**
+		 * \brief A dangerous function, do not call unless you know what you're doing.
+		 *
+		 * Will destroy and recreate pretty much everything that you have open on screen.
+		 * Calling this from a system that is owned by the editor will lead to undefined behaviour.
+		 *
+		 */
+		void FullFillRefreshRequests();
+
 		/*
 		Saves all the editors currently being edited to file.
 		*/
@@ -138,8 +147,6 @@ namespace Engine
 		Maybe if it handles that logic as well, it could be exposed in the public API.
 		*/
 		EditorSystem* TryGetSystemInternal(TypeId typeId);
-
-		void FullFillRefreshRequests();
 
 		void DisplayMainMenuBar();
 

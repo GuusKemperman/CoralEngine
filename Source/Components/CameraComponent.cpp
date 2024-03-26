@@ -5,7 +5,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "World/WorldRenderer.h"
+#include "World/WorldViewport.h"
 
 void Engine::CameraComponent::UpdateView(const glm::vec3 position, const glm::vec3 forward, const glm::vec3 up, bool recalulateViewProjection)
 {
@@ -31,6 +31,11 @@ void Engine::CameraComponent::UpdateProjection(const float aspectRatio, bool rec
 {
 	mProjection = glm::perspective(mFOV, aspectRatio, mNear, mFar);
 
+	// Calculating the orthographic projection is a matter to discuss and look into further, 
+	// since it may not work as well on different resolutions
+	float halfAspectRatio = aspectRatio * 0.5f;
+	mOrthographicProjection = glm::ortho(-halfAspectRatio, halfAspectRatio, -halfAspectRatio, halfAspectRatio, -1.0f, 1.0f);
+
 	if (recalculateViewProjection)
 	{
 		RecalculateViewProjection();
@@ -54,6 +59,7 @@ Engine::MetaType Engine::CameraComponent::Reflect()
 	type.AddFunc(&CameraComponent::GetViewProjection, "GetViewProjection", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&CameraComponent::GetView, "GetView", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&CameraComponent::GetProjection, "GetProjection", "").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&CameraComponent::GetOrthographicProjection, "GetOrthographicProjection", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&CameraComponent::RecalculateViewProjection, "RecalculateViewProjection", "").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectComponentType<CameraComponent>(type);

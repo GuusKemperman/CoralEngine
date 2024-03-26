@@ -3,7 +3,7 @@
 /// <summary>
 /// A namespace containing functions related to 2D geometry.
 /// </summary>
-namespace geometry2d
+namespace Engine
 {
 	// Input data types
 	using Polygon = std::vector<glm::vec2>;
@@ -19,7 +19,7 @@ namespace geometry2d
 		glm::vec2 m_max;
 
 	public:
-		AABB(const glm::vec2& minPos, const glm::vec2& maxPos) : m_min(minPos), m_max(maxPos)
+		AABB(glm::vec2 minPos, glm::vec2 maxPos) : m_min(minPos), m_max(maxPos)
 		{
 		}
 
@@ -42,8 +42,8 @@ namespace geometry2d
 		/// <returns></returns>
 		glm::vec2 ComputeSize() const { return m_max - m_min; }
 
-		const glm::vec2& GetMin() const { return m_min; }
-		const glm::vec2& GetMax() const { return m_max; }
+		glm::vec2 GetMin() const { return m_min; }
+		glm::vec2 GetMax() const { return m_max; }
 	};
 
 	/// <summary>
@@ -54,7 +54,7 @@ namespace geometry2d
 	/// <param name="line2">A second point on the query line.</param>
 	/// <returns>true if "point" lies strictly to the left of the infinite directed line through line1 and line2;
 	/// false otherwise (i.e. if the point lies on or to the right of the line).</return>
-	bool IsPointLeftOfLine(const glm::vec2& point, const glm::vec2& line1, const glm::vec2& line2);
+	bool IsPointLeftOfLine(glm::vec2 point, glm::vec2 line1, glm::vec2 line2);
 
 	/// <summary>
 	/// Checks and returns whether a 2D point lies strictly to the right of an infinite directed line.
@@ -64,7 +64,7 @@ namespace geometry2d
 	/// <param name="line2">A second point on the query line.</param>
 	/// <returns>true if "point" lies strictly to the right of the infinite directed line through line1 and line2;
 	/// false otherwise (i.e. if the point lies on or to the left of the line).</return>
-	bool IsPointRightOfLine(const glm::vec2& point, const glm::vec2& line1, const glm::vec2& line2);
+	bool IsPointRightOfLine(glm::vec2 point, glm::vec2 line1, glm::vec2 line2);
 
 	/// <summary>
 	/// Checks and returns whether the points of a simple 2D polygon are given in clockwise order.
@@ -79,7 +79,9 @@ namespace geometry2d
 	/// <param name="point">A query point.</param>
 	/// <param name="polygon">A simple 2D polygon.</param>
 	/// <returns>true if the point lies inside the polygon, false otherwise.</return>
-	bool IsPointInsidePolygon(const glm::vec2& point, const Polygon& polygon);
+	bool IsPointInsidePolygon(glm::vec2 point, const Polygon& polygon);
+
+	bool IsPointInsideDisk(glm::vec2 point, glm::vec2 diskCentre, float diskRadius);
 
 	/// <summary>
 	/// Computes and returns the centroid of a given polygon (= the average of its boundary points).
@@ -93,5 +95,7 @@ namespace geometry2d
 	/// <param name="segmentA">The first endpoint of a line segment.</param>
 	/// <param name="segmentB">The second endpoint of a line segment.</param>
 	/// <returns>The point on the line segment segmentA-segmentB that is closest to p.</returns>
-	glm::vec2 GetNearestPointOnLineSegment(const glm::vec2& p, const glm::vec2& segmentA, const glm::vec2& segmentB);
-}; // namespace bee::geometry2d
+	glm::vec2 GetNearestPointOnLineSegment(glm::vec2 p, glm::vec2 segmentA, glm::vec2 segmentB);
+
+	glm::vec2 GetNearestPointOnPolygonBoundary(glm::vec2 point, const std::vector<glm::vec2>& polygon);
+}

@@ -4,6 +4,9 @@
 #include "glm/glm.hpp"
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 #include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
+#include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
+#include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
+#include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
 
 struct GLFWwindow;
 struct GLFWmonitor;
@@ -34,9 +37,15 @@ namespace Engine
         void* GetCommandQueue() { return mCommandQueue.Get(); }
         void* GetSignature() { return mSignature.get(); }
         void* GetComputeSignature() { return mComputeSignature.get(); }
+        void* GetMipmapPipeline() { return mGenMipmapsPipeline.get(); }
+
+#ifdef EDITOR
         void CreateImguiContext();
-        void StartUploadCommands();
+#endif // EDITOR
+
+		void StartUploadCommands();
         void SubmitUploadCommands();
+        void AddToDeallocation(ComPtr<ID3D12Resource>&& res);
 
         glm::vec2 GetDisplaySize() { return glm::vec2(mViewport.Width, mViewport.Height); }
 
@@ -51,15 +60,9 @@ namespace Engine
     //Platform specific heap
     public:
         std::shared_ptr<DXDescHeap> GetDescriptorHeap(int heap) { return mDescriptorHeaps[heap]; }
-        int AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc);
-        int AllocateUAV(DXResource* rsc, const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc, DXResource* counterRsc = nullptr);
-        void AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, unsigned int slot);
-        int AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc);
-        int AllocateDepthStencil(DXResource* rsc, const D3D12_DEPTH_STENCIL_VIEW_DESC& desc);
-        void AllocateDepthStencil(DXResource* rsc, const D3D12_DEPTH_STENCIL_VIEW_DESC& desc, unsigned int slot);
-        void AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc, unsigned int slot);
         int GetFrameIndex() { return mFrameIndex; }
         void WaitForFence();
+
 
     private:
         friend EngineClass;
@@ -113,11 +116,16 @@ namespace Engine
         int mHeapResourceCount = 4;
         int frameBufferCount = FRAME_BUFFER_COUNT;
         int depthStencilCount = 1;
+        std::vector<ComPtr<ID3D12Resource>> mResourcesToDeallocate;
 
         ComPtr<IDXGISwapChain3> mSwapChain;
         ComPtr<ID3D12Device5> mDevice;
         std::unique_ptr<DXSignature> mSignature;
         std::unique_ptr<DXSignature> mComputeSignature;
+        std::unique_ptr<DXPipeline> mGenMipmapsPipeline;
+
+        DXHeapHandle mRenderTargetHandles[FRAME_BUFFER_COUNT];
+        DXHeapHandle mDepthHandle;
 
         bool mUpdateWindow = false;
     };

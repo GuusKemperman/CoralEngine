@@ -1,5 +1,6 @@
 #include "Precomp.h"
-#include "../Include/Platform/PC/Rendering/DX12Classes/DXResource.h"
+#include "Platform/PC/Rendering/DX12Classes/DXResource.h"
+#include "Core/Device.h"
 
 DXResource::DXResource(const ComPtr<ID3D12Device5>& device, const CD3DX12_HEAP_PROPERTIES& heapProperties, const CD3DX12_RESOURCE_DESC& descr, D3D12_CLEAR_VALUE* clearValue, const char* name, D3D12_RESOURCE_STATES state)
 {
@@ -33,6 +34,9 @@ DXResource::~DXResource()
 	for (size_t i = 0; i < mUploadBuffers.size(); i++) {
 		mUploadBuffers[i] = nullptr;
 	}
+
+	Engine::Device& engineDevice = Engine::Device::Get();
+	engineDevice.AddToDeallocation(std::move(resource));
 }
 
 void DXResource::ChangeState(const ComPtr<ID3D12GraphicsCommandList>& list, D3D12_RESOURCE_STATES dstState)

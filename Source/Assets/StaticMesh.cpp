@@ -80,6 +80,7 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
     if (uvs.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasUVs);
     if (tangents.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasTangents);
 
+
     str.write(reinterpret_cast<const char*>(&flags), sizeof(StaticMeshFlags));
 
     str.write(reinterpret_cast<const char*>(&numOfPositions), sizeof(numOfPositions));

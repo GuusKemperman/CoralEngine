@@ -9,29 +9,32 @@
 #include "Core/Input.h"
 #include "Core/Editor.h"
 #include "Core/VirtualMachine.h"
+#include "Core/JobManager.h"
 #include "Meta/MetaManager.h"
 #include "Core/UnitTests.h"
 #include "Assets/Level.h"
 #include "World/World.h"
-#include "World/WorldRenderer.h"
 #include "Utilities/Benchmark.h"
 #include "World/Registry.h"
+#include "Rendering/Renderer.h"
 
 Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
 
+	JobManager::StartUp();
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
 
 	if (!Device::IsHeadless())
 	{
 		Device::StartUp();
+		Renderer::StartUp();
 	}
 
 	Input::StartUp();
-#ifdef PLATFORM_WINDOWS
+#ifdef EDITOR
 	if (!Device::IsHeadless())
 	{
 		Device::Get().CreateImguiContext();
@@ -88,14 +91,16 @@ Engine::EngineClass::~EngineClass()
 
 	if (!Device::IsHeadless())
 	{
+		Renderer::ShutDown();
 		Device::ShutDown();
 	}
 
 	Logger::ShutDown();
 	FileIO::ShutDown();
+	JobManager::ShutDown();
 }
 
-void Engine::EngineClass::Run()
+void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 {
 	if (Device::IsHeadless())
 	{
@@ -103,8 +108,7 @@ void Engine::EngineClass::Run()
 	}
 
 #ifndef EDITOR
-	// TODO level name is hardcoded
-	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>("DemoLevel");
+	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>(starterLevel);
 
 	if (level == nullptr)
 	{
@@ -118,29 +122,50 @@ void Engine::EngineClass::Run()
 	Input& input = Input::Get();
 	Device& device = Device::Get();
 
-	float timeElapsedSinceLastGarbageCollect{};
-	static constexpr float garbageCollectInterval = 5.0f;
+#ifdef EDITOR
+	Editor& editor = Editor::Get();
+#endif // EDITOR
 
-	[[maybe_unused]] float deltaTime;
+	float timeElapsedSinceLastGarbageCollect{};
+	static constexpr float garbageCollectInterval = 30.0f;
+
 	std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	std::chrono::high_resolution_clock::time_point t2{};
 
 	while (!device.ShouldClose())
 	{
 		t2 = std::chrono::high_resolution_clock::now();
-		deltaTime = (std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1)).count();
+		float deltaTime = (std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1)).count();
+
+		// Check if we hit a breakpoint or something else
+		// that interrupted the program for an extended duration
+		if (deltaTime > 5.0f)
+		{
+			deltaTime = 1.0f / 60.0f;
+		}
+
 		t1 = t2;
 
 		input.NewFrame();
+		device.NewFrame();
 
 #ifdef EDITOR
-		Editor::Get().Tick(deltaTime);
+		editor.Tick(deltaTime);
 #else
-		device.NewFrame();
 		world.Tick(deltaTime);
-		world.GetRenderer().Render();
-		device.EndFrame();
+		if (!Device::IsHeadless())
+		{
+			Renderer::Get().Render(world);
+		}
 #endif  // EDITOR
+
+		device.EndFrame();
+
+#ifdef EDITOR
+		// Has to be done after EndFrame for some dx12 reasons,
+		// as you are not allowed to free resources in between NewFrame and EndFrame.
+		editor.FullFillRefreshRequests();
+#endif
 
 		timeElapsedSinceLastGarbageCollect += deltaTime;
 

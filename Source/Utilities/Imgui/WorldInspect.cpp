@@ -1,13 +1,14 @@
 #include "Precomp.h"
 #include "Utilities/Imgui/WorldInspect.h"
 
+#include "Assets/Level.h"
 #include "imgui/ImGuizmo.h"
 #include "imgui/imgui_internal.h"
 
 #include "World/World.h"
-#include "World/WorldRenderer.h"
+#include "World/WorldViewport.h"
 #include "World/Registry.h"
-#include "Utilities/FrameBuffer.h"
+#include "Rendering/FrameBuffer.h"
 #include "Core/Input.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
@@ -26,6 +27,7 @@
 #include "Utilities/StringFunctions.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Archiver.h"
+#include "Rendering/Renderer.h"
 
 namespace
 {
@@ -37,11 +39,12 @@ namespace
 	void RemoveInvalidEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities);
 
 	void DeleteEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities);
-	void CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities);
+	std::string CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities);
 	void CutToClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities);
-	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities);
+	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipboardData);
 	void Duplicate(Engine::World& world, std::vector<entt::entity>& selectedEntities);
-	bool DoesClipboardContainEntities();
+	std::optional<std::string_view> GetSerializedEntitiesInClipboard();
+	bool IsStringFromCopyToClipBoard(std::string_view string);
 
 	void CheckShortcuts(Engine::World& world, std::vector<entt::entity>& selectedEntities);
 	void ReceiveDragDrops(Engine::World& world);
@@ -102,6 +105,8 @@ Engine::World& Engine::WorldInspectHelper::EndPlay()
 
 void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 {
+	mDeltaTimeRunningAverage = mDeltaTimeRunningAverage * sRunningAveragePreservePercentage + deltaTime * (1.0f - sRunningAveragePreservePercentage);
+
 	ImGui::Splitter(true, &mViewportWidth, &mHierarchyAndDetailsWidth);
 
 	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, 0.0f }))
@@ -114,6 +119,50 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		drawList->ChannelsSplit(2);
 
 		drawList->ChannelsSetCurrent(1);
+
+		if (!mSelectedEntities.empty())
+		{
+
+			if (ImGui::RadioButton("Translate", sGuizmoOperation == ImGuizmo::TRANSLATE))
+				sGuizmoOperation = ImGuizmo::TRANSLATE;
+			ImGui::SameLine();
+			if (ImGui::RadioButton("Rotate", sGuizmoOperation == ImGuizmo::ROTATE))
+				sGuizmoOperation = ImGuizmo::ROTATE;
+			ImGui::SameLine();
+			if (ImGui::RadioButton("Scale", sGuizmoOperation == ImGuizmo::SCALE))
+				sGuizmoOperation = ImGuizmo::SCALE;
+
+			if (sGuizmoOperation != ImGuizmo::SCALE)
+			{
+				if (ImGui::RadioButton("Local", sGuizmoMode == ImGuizmo::LOCAL))
+					sGuizmoMode = ImGuizmo::LOCAL;
+				ImGui::SameLine();
+				if (ImGui::RadioButton("World", sGuizmoMode == ImGuizmo::WORLD))
+					sGuizmoMode = ImGuizmo::WORLD;
+			}
+
+			ImGui::Checkbox("Snap", &sShouldGuizmoSnap);
+			ImGui::SameLine();
+
+			if (sShouldGuizmoSnap)
+			{
+				switch (sGuizmoOperation)
+				{
+				case ImGuizmo::TRANSLATE:
+					ImGui::InputFloat3("Snap", value_ptr(sSnapTo));
+					break;
+				case ImGuizmo::ROTATE:
+					ImGui::InputFloat("Angle Snap", value_ptr(sSnapTo));
+					break;
+				case ImGuizmo::SCALE:
+					ImGui::InputFloat("Scale Snap", value_ptr(sSnapTo));
+					break;
+				default:
+					break;
+				}
+			}
+		}
+
 		ImGui::SetCursorPos(beginPlayPos);
 
 		if (!GetWorld().HasBegunPlay())
@@ -157,19 +206,24 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			ImGui::SetItemTooltip("Stop");
 		}
 
+		const glm::vec2 fpsCursorPos = { viewportPos.x + mViewportWidth - 60.0f, 0.0f };
+		ImGui::SetCursorPos(fpsCursorPos);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.3f);
+		ImGui::TextUnformatted(Format("FPS {:.1f}", 1.0f / mDeltaTimeRunningAverage).data());
+		ImGui::PopStyleVar();
+
 		{
-			auto possibleCamerasView = GetWorld().GetRegistry().View<CameraComponent>();
+			const auto possibleCamerasView = GetWorld().GetRegistry().View<CameraComponent>();
 
 			if (possibleCamerasView.size() > 1)
 			{
-				auto cam = GetWorld().GetRenderer().GetMainCamera();
+				const auto cam = GetWorld().GetViewport().GetMainCamera();
 
-				entt::entity cameraEntity = cam.has_value() ? cam->first : entt::null;
+				const entt::entity cameraEntity = cam.has_value() ? cam->first : entt::null;
 
-				ImGui::SameLine();
+				ImGui::SetCursorPos({ fpsCursorPos.x - ImGui::CalcTextSize(ICON_FA_CAMERA).x - 10.0f, fpsCursorPos.y });
 
-				ImGui::SetCursorPosY(0.0f);
-				ImGui::SetCursorPosX(viewportPos.x + mViewportWidth - ImGui::CalcTextSize(ICON_FA_CAMERA).x - 10.0f);
 				if (ImGui::Button(ICON_FA_CAMERA))
 				{
 					ImGui::OpenPopup("CameraSelectPopUp");
@@ -181,7 +235,7 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 					{
 						if (ImGui::MenuItem(NameComponent::GetDisplayName(GetWorld().GetRegistry(), possibleCamera).c_str(), nullptr, possibleCamera == cameraEntity))
 						{
-							GetWorld().GetRenderer().SetMainCamera(possibleCamera);
+							GetWorld().GetViewport().SetMainCamera(possibleCamera);
 						}
 					}
 					ImGui::EndPopup();
@@ -193,7 +247,7 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		ImGui::SetCursorPos(viewportPos);
 
 		GetWorld().Tick(deltaTime);
-		WorldViewport::Display(GetWorld(), *mViewportFrameBuffer, &mSelectedEntities);
+		WorldViewportPanel::Display(GetWorld(), *mViewportFrameBuffer, &mSelectedEntities);
 
 		drawList->ChannelsMerge();
 	}
@@ -229,7 +283,7 @@ void Engine::WorldInspectHelper::SaveState(BinaryGSONObject& state)
 	state.AddGSONMember("viewportWidth") << mViewportWidth;
 	state.AddGSONMember("hierarchyAndDetailsWidth") << mHierarchyAndDetailsWidth;
 
-	auto activeCamera = GetWorld().GetRenderer().GetMainCamera();
+	auto activeCamera = GetWorld().GetViewport().GetMainCamera();
 
 	if (activeCamera.has_value())
 	{
@@ -267,11 +321,11 @@ void Engine::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
 	{
 		entt::entity cameraEntity{};
 		*activeCamera >> cameraEntity;
-		GetWorld().GetRenderer().SetMainCamera(cameraEntity);
+		GetWorld().GetViewport().SetMainCamera(cameraEntity);
 	}
 }
 
-void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
+void Engine::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 	std::vector<entt::entity>* selectedEntities)
 {
 	const glm::vec2 windowPos = ImGui::GetWindowPos();
@@ -292,7 +346,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 
 	RemoveInvalidEntities(world, *selectedEntities);
 
-	const auto cameraPair = world.GetRenderer().GetMainCamera();
+	const auto cameraPair = world.GetViewport().GetMainCamera();
 
 	if (!cameraPair.has_value())
 	{
@@ -303,7 +357,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 	ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
 	SetGizmoRect(windowPos + contentMin, contentSize);
 
-	world.GetRenderer().Render(frameBuffer, contentSize);
+	Renderer::Get().RenderToFrameBuffer(world, frameBuffer, contentSize);
 
 	ImGui::SetCursorPos(contentMin);
 
@@ -325,18 +379,9 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 	}
 }
 
-void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
+void Engine::WorldViewportPanel::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
 {
 	Registry& reg = world.GetRegistry();
-
-	// Transform gizmos are hardcoded here,
-	// since they are already tightly coupled
-	// with the displaying of the world
-	// hierarchy, and because there is
-	// additional UI in place for switching
-	// between translating, scaling,
-	// rotating and snapping.
-	ShowTransformGizmos();
 
 	for (auto&& [typeHash,storage] : reg.Storage())
 	{
@@ -376,55 +421,13 @@ void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<
 	}
 }
 
-void Engine::WorldViewport::ShowTransformGizmos()
-{
-	if (ImGui::RadioButton("Translate", sGuizmoOperation == ImGuizmo::TRANSLATE))
-		sGuizmoOperation = ImGuizmo::TRANSLATE;
-	ImGui::SameLine();
-	if (ImGui::RadioButton("Rotate", sGuizmoOperation == ImGuizmo::ROTATE))
-		sGuizmoOperation = ImGuizmo::ROTATE;
-	ImGui::SameLine();
-	if (ImGui::RadioButton("Scale", sGuizmoOperation == ImGuizmo::SCALE))
-		sGuizmoOperation = ImGuizmo::SCALE;
 
-
-	if (sGuizmoOperation != ImGuizmo::SCALE)
-	{
-		if (ImGui::RadioButton("Local", sGuizmoMode == ImGuizmo::LOCAL))
-			sGuizmoMode = ImGuizmo::LOCAL;
-		ImGui::SameLine();
-		if (ImGui::RadioButton("World", sGuizmoMode == ImGuizmo::WORLD))
-			sGuizmoMode = ImGuizmo::WORLD;
-	}
-
-	ImGui::Checkbox("Snap", &sShouldGuizmoSnap);
-	ImGui::SameLine();
-
-	if (sShouldGuizmoSnap)
-	{
-		switch (sGuizmoOperation)
-		{
-		case ImGuizmo::TRANSLATE:
-			ImGui::InputFloat3("Snap", value_ptr(sSnapTo));
-			break;
-		case ImGuizmo::ROTATE:
-			ImGui::InputFloat("Angle Snap", value_ptr(sSnapTo));
-			break;
-		case ImGuizmo::SCALE:
-			ImGui::InputFloat("Scale Snap", value_ptr(sSnapTo));
-			break;
-		default:
-			break;
-		}
-	}
-}
-
-void Engine::WorldViewport::SetGizmoRect(const glm::vec2 windowPos, const glm::vec2& windowSize)
+void Engine::WorldViewportPanel::SetGizmoRect(const glm::vec2 windowPos, glm::vec2 windowSize)
 {
 	ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
 }
 
-void Engine::WorldViewport::GizmoManipulateSelectedTransforms(World& world,
+void Engine::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 	const std::vector<entt::entity>& selectedEntities,
 	const CameraComponent& camera)
 {
@@ -730,7 +733,21 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 				continue;
 			}
 
-			if (!ShowInspectUI(std::string{ field.GetName() }, newValue.GetReturnValue()))
+			/*
+			Makes the variable read-only, it can not be modified through the editor.
+
+			This is implemented by disabling all interaction with the widget. This
+			means this may not work for more complex widgets, such as vectors, as
+			the user also won't be able to open the collapsing header to view the
+			vector.
+			*/
+			ImGui::BeginDisabled(field.GetProperties().Has(Props::sIsEditorReadOnlyTag));
+
+			const bool wasChanged = ShowInspectUI(std::string{ field.GetName() }, newValue.GetReturnValue());
+
+			ImGui::EndDisabled();
+
+			if (!wasChanged)
 			{
 				continue;
 			}
@@ -1046,9 +1063,10 @@ void Engine::WorldHierarchy::DisplayRightClickPopUp(World& world, std::vector<en
 		CopyToClipBoard(world, selectedEntities);
 	}
 
-	if (ImGui::MenuItem("Paste", "Ctrl+V", nullptr, DoesClipboardContainEntities()))
+	std::optional<std::string_view> clipboardData = GetSerializedEntitiesInClipboard();
+	if (ImGui::MenuItem("Paste", "Ctrl+V", nullptr, clipboardData.has_value()))
 	{
-		PasteClipBoard(world, selectedEntities);
+		PasteClipBoard(world, selectedEntities, *clipboardData);
 	}
 
 	ImGui::EndPopup();
@@ -1067,7 +1085,7 @@ namespace
 
 	void DeleteEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities)
 	{
-		world.GetRegistry().Destroy(selectedEntities.begin(), selectedEntities.end());
+		world.GetRegistry().Destroy(selectedEntities.begin(), selectedEntities.end(), true);
 		selectedEntities.clear();
 	}
 
@@ -1086,13 +1104,13 @@ namespace
 		}
 	};
 
-	void CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities)
+	std::string CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities)
 	{
 		using namespace Engine;
 
 		if (selectedEntities.empty())
 		{
-			return;
+			return {};
 		}
 
 		// Const_cast is fine, we remove the changes immediately afterwards.
@@ -1112,6 +1130,7 @@ namespace
 		// \0 character, we convert it to HEX first
 		const std::string clipBoardData = std::string{ sCopiedEntitiesId } + StringFunctions::BinaryToHex(strStream.str());
 		ImGui::SetClipboardText(clipBoardData.c_str());
+		return clipBoardData;
 	}
 
 	void CutToClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities)
@@ -1120,9 +1139,9 @@ namespace
 		DeleteEntities(world, selectedEntities);
 	}
 
-	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipBoardData)
 	{
-		if (!DoesClipboardContainEntities())
+		if (!IsStringFromCopyToClipBoard(clipBoardData))
 		{
 			return;
 		}
@@ -1135,7 +1154,6 @@ namespace
 		BinaryGSONObject object{};
 
 		{
-			const std::string_view clipBoardData = ImGui::GetClipboardText();
 			const std::string binaryCopiedEntities = StringFunctions::HexToBinary(clipBoardData.substr(sCopiedEntitiesId.size()));
 			view_istream stream{ binaryCopiedEntities };
 
@@ -1165,22 +1183,32 @@ namespace
 
 	void Duplicate(Engine::World& world, std::vector<entt::entity>& selectedEntities)
 	{
-		CopyToClipBoard(world, selectedEntities);
-		PasteClipBoard(world, selectedEntities);
+		std::string clipboardData = CopyToClipBoard(world, selectedEntities);
+		PasteClipBoard(world, selectedEntities, clipboardData);
 	}
 
-	bool DoesClipboardContainEntities()
+	std::optional<std::string_view> GetSerializedEntitiesInClipboard()
 	{
 		const char* clipBoardDataCStr = ImGui::GetClipboardText();
 
 		if (clipBoardDataCStr == nullptr)
 		{
-			return false;
+			return std::nullopt;
 		}
 
 		const std::string_view clipBoardData{ clipBoardDataCStr };
 
-		return clipBoardData.substr(0, sCopiedEntitiesId.size()) == sCopiedEntitiesId;
+		if (IsStringFromCopyToClipBoard(clipBoardData))
+		{
+			return clipBoardData;
+		}
+
+		return std::nullopt;
+	}
+
+	bool IsStringFromCopyToClipBoard(std::string_view string)
+	{
+		return string.substr(0, sCopiedEntitiesId.size()) == sCopiedEntitiesId;
 	}
 
 	void CheckShortcuts(Engine::World& world, std::vector<entt::entity>& selectedEntities)
@@ -1202,9 +1230,11 @@ namespace
 				CopyToClipBoard(world, selectedEntities);
 			}
 
-			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
+			std::optional<std::string_view> copiedEntities = GetSerializedEntitiesInClipboard();
+			if (copiedEntities.has_value()
+				&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
 			{
-				PasteClipBoard(world, selectedEntities);
+				PasteClipBoard(world, selectedEntities, *copiedEntities);
 			}
 
 			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::X))

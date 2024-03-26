@@ -10,6 +10,6 @@
 int main(int argc, char* argv[])
 {
 	Engine::EngineClass engine{ argc, argv, GAME_DIR };
-	engine.Run();
+	engine.Run("KayLevel");
 	return 0;
 }

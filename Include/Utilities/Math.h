@@ -39,7 +39,7 @@ namespace Engine
 		}
 
 		// In radians
-		static float Vec2ToAngle(const glm::vec2& vec)
+		static float Vec2ToAngle(glm::vec2 vec)
 		{
 			return std::atan2(vec.y, vec.x);
 		}
@@ -146,13 +146,13 @@ namespace Engine
 			return normalize(glm::vec2(-direction3D.x, direction3D.z));
 		}
 
-		static glm::vec2 QuatToDirection(const glm::quat& quat)
+		static glm::vec3 QuatToDirection(const glm::quat& quat)
 		{
 			const glm::vec3 direction3D = glm::vec3(0.f, 0.f, 1.f) * quat;
 			return normalize(glm::vec3(-direction3D.x, direction3D.y, direction3D.z));
 		}
 
-		static glm::quat Direction2DToXZQuatOrientation(const glm::vec2& v)
+		static glm::quat Direction2DToXZQuatOrientation(glm::vec2 v)
 		{
 			const glm::vec2 direction2D = glm::normalize(v);
 			const glm::vec3 direction3D(direction2D.x, 0.0f, direction2D.y);
@@ -167,15 +167,29 @@ namespace Engine
 			return rotation;
 		}
 
+		static bool AreFloatsEqual(float a, float b, float epsilon = 1e-5f)
+		{
+			return std::fabs(a - b) < epsilon;
+		}
+		
+		static std::optional<std::vector<glm::vec3>> CalculateTangents(
+        const void* const indices,
+        const size_t numOfIndices,
+        const bool areIndices16Bit,
+        const glm::vec3* const positions,
+        const glm::vec3* const normals,
+        const glm::vec2* const texCoords,
+        const size_t numOfVertices);
+
 	private:
 		// Function needed for line-line intersection
-		static bool onSegment(const glm::vec2& p, const glm::vec2& q, const glm::vec2& r)
+		static bool onSegment(glm::vec2 p, glm::vec2 q, glm::vec2 r)
 		{
 			return q.x <= (glm::max)(p.x, r.x) && q.x >= (glm::min)(p.x, r.x) &&
 				q.y <= (glm::max)(p.y, r.y) && q.y >= (glm::min)(p.y, r.y);
 		}
 		// Function needed for line-line intersection
-		static int orientation(const glm::vec2& p, const glm::vec2& q, const glm::vec2& r)
+		static int orientation(glm::vec2 p, glm::vec2 q, glm::vec2 r)
 		{
 			const float val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 			return val == 0 ? 0 : ((val > 0) ? 1 : 2);

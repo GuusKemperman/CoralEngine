@@ -9,7 +9,7 @@
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Meta/MetaTools.h"
 #include "Meta/MetaProps.h"
-#include "Utilities/DebugRenderer.h"
+#include "Rendering/DebugRenderer.h"
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
 #include "Containers/view_istream.h"
 #include "GSON/GSONBinary.h"
@@ -21,6 +21,11 @@ namespace
 
 void Engine::Editor::PostConstruct()
 {
+	if (Device::IsHeadless())
+	{
+		return;
+	}
+
 	SetCustomTheme();
 
 	const MetaType* const editorSystemType = MetaManager::Get().TryGetType<EditorSystem>();
@@ -154,9 +159,6 @@ Engine::Editor::~Editor()
 
 void Engine::Editor::Tick(const float deltaTime)
 {
-	Device& device = Device::Get();
-	device.NewFrame();
-
 	DestroyRequestedSystems();
 	DisplayMainMenuBar();
 
@@ -168,6 +170,7 @@ void Engine::Editor::Tick(const float deltaTime)
 	{
 		mSystems[i].second->Tick(deltaTime);
 	}
+
 	DestroyRequestedSystems();
 
 	if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)
@@ -176,10 +179,6 @@ void Engine::Editor::Tick(const float deltaTime)
 	{
 		SaveAll();
 	}
-
-	device.EndFrame();
-
-	FullFillRefreshRequests();
 }
 
 void Engine::Editor::FullFillRefreshRequests()
@@ -704,6 +703,10 @@ void Engine::Editor::DisplayMainMenuBar()
 			{
 				flags ^= DebugCategory::Particles;
 			}
+			if (ImGui::MenuItem("TerrainHeight", nullptr, flags & DebugCategory::TerrainHeight))
+			{
+				flags ^= DebugCategory::TerrainHeight;
+			}
 			if (ImGui::MenuItem("All", nullptr, flags & DebugCategory::All))
 			{
 				flags ^= DebugCategory::All;
@@ -751,46 +754,53 @@ namespace
 		ImGui::GetStyle().FrameRounding = 4.0f;
 		ImGui::GetStyle().GrabRounding = 4.0f;
 
+		static constexpr float brightness = .8f;
+		static constexpr glm::vec4 accent = glm::vec4(0.14f * brightness, 0.51f * brightness, 0.50f * brightness, 1.00f);
+		static constexpr glm::vec4 hovered = glm::vec4(0.18f * brightness, 0.66f * brightness, 0.63f * brightness, 1.00f);
+		static constexpr glm::vec4 active = glm::vec4(0.22f * brightness, 0.77f * brightness, 0.74f * brightness, 1.00f);
+		static constexpr glm::vec4 unfocused = glm::vec4(accent.x * .8f, accent.y * .8f, accent.z * .8f, accent.w);
+		static constexpr glm::vec4 unfocusedActive = glm::vec4(accent.x * .9f, accent.y * .9f, accent.z * .9f, accent.w);
+
 		ImVec4* colors = ImGui::GetStyle().Colors;
 		colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
 		colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.42f, 0.47f, 1.00f);
 		colors[ImGuiCol_WindowBg] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
 		colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
-		colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-		colors[ImGuiCol_Border] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
+		colors[ImGuiCol_PopupBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
+		colors[ImGuiCol_Border] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);;
 		colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
 		colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
 		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.12f, 0.20f, 0.28f, 1.00f);
 		colors[ImGuiCol_FrameBgActive] = ImVec4(0.09f, 0.12f, 0.14f, 1.00f);
 		colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.12f, 0.14f, 0.65f);
-		colors[ImGuiCol_TitleBgActive] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
+		colors[ImGuiCol_TitleBgActive] = glm::vec4(accent.x * .7f, accent.y * .7f, accent.z * .7f, accent.w);
 		colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
 		colors[ImGuiCol_MenuBarBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
 		colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.39f);
-		colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
-		colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.18f, 0.22f, 0.25f, 1.00f);
-		colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.09f, 0.21f, 0.31f, 1.00f);
-		colors[ImGuiCol_CheckMark] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
-		colors[ImGuiCol_SliderGrab] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
-		colors[ImGuiCol_SliderGrabActive] = ImVec4(0.37f, 0.61f, 1.00f, 1.00f);
-		colors[ImGuiCol_Button] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
-		colors[ImGuiCol_ButtonHovered] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
-		colors[ImGuiCol_ButtonActive] = ImVec4(0.06f, 0.53f, 0.98f, 1.00f);
-		colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.29f, 0.55f);
-		colors[ImGuiCol_HeaderHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
-		colors[ImGuiCol_HeaderActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-		colors[ImGuiCol_Separator] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
-		colors[ImGuiCol_SeparatorHovered] = ImVec4(0.10f, 0.40f, 0.75f, 0.78f);
-		colors[ImGuiCol_SeparatorActive] = ImVec4(0.10f, 0.40f, 0.75f, 1.00f);
-		colors[ImGuiCol_ResizeGrip] = ImVec4(0.26f, 0.59f, 0.98f, 0.25f);
-		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
-		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
-		colors[ImGuiCol_Tab] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
-		colors[ImGuiCol_TabHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
-		colors[ImGuiCol_TabActive] = ImVec4(0.23f, 0.29f, 0.34f, 1.00f);
-		colors[ImGuiCol_TabUnfocused] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
-		colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.17f, 0.23f, 0.26f, 1.00f);
-		colors[ImGuiCol_DockingPreview] = ImVec4(0.26f, 0.59f, 0.98f, 0.70f);
+		colors[ImGuiCol_ScrollbarGrab] = accent;
+		colors[ImGuiCol_ScrollbarGrabHovered] = hovered;
+		colors[ImGuiCol_ScrollbarGrabActive] = active;
+		colors[ImGuiCol_CheckMark] = active;
+		colors[ImGuiCol_SliderGrab] = accent;
+		colors[ImGuiCol_SliderGrabActive] = active;
+		colors[ImGuiCol_Button] = accent;
+		colors[ImGuiCol_ButtonHovered] = hovered;
+		colors[ImGuiCol_ButtonActive] = active;
+		colors[ImGuiCol_Header] = accent;
+		colors[ImGuiCol_HeaderHovered] = hovered;
+		colors[ImGuiCol_HeaderActive] = active;
+		colors[ImGuiCol_Separator] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);;
+		colors[ImGuiCol_SeparatorHovered] = hovered;
+		colors[ImGuiCol_SeparatorActive] = active;
+		colors[ImGuiCol_ResizeGrip] = accent;
+		colors[ImGuiCol_ResizeGripHovered] = hovered;
+		colors[ImGuiCol_ResizeGripActive] = active;
+		colors[ImGuiCol_Tab] = accent;
+		colors[ImGuiCol_TabHovered] = hovered;
+		colors[ImGuiCol_TabActive] = active;
+		colors[ImGuiCol_TabUnfocused] = unfocused;
+		colors[ImGuiCol_TabUnfocusedActive] = unfocusedActive;
+		colors[ImGuiCol_DockingPreview] = hovered;
 		colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
 		colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
 		colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);

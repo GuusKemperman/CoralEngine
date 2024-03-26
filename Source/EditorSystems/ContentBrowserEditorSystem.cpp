@@ -1,10 +1,13 @@
 #include "Precomp.h"
 #include "EditorSystems/ContentBrowserEditorSystem.h"
 
+#include <imgui/imgui_internal.h>
+
 #include "Assets/Asset.h"
 #include "Core/AssetManager.h"
 #include "Core/Editor.h"
 #include "Core/FileIO.h"
+#include "Core/Input.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Search.h"
@@ -12,12 +15,26 @@
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
 
-// The index inside the rootfolder when calling MakeFolderGraph
-static constexpr uint32 sIndexOfEngineAssets = 0;
-static constexpr uint32 sIndexOfGameAssets = 1;
+namespace
+{
+    // The index inside the rootfolder when calling MakeFolderGraph
+    constexpr uint32 sIndexOfEngineAssets = 0;
+    constexpr uint32 sIndexOfGameAssets = 1;
 
-static constexpr std::string_view sEngineAssetsDisplayName = "EngineAssets";
-static constexpr std::string_view sGameAssetsDisplayName = "GameAssets";
+    constexpr std::string_view sEngineAssetsDisplayName = "EngineAssets";
+    constexpr std::string_view sGameAssetsDisplayName = "GameAssets";
+
+    constexpr std::string_view sAssetCreatorImGuiId = "AssetCreator";
+    constexpr std::string_view sAssetRightClickPopUpImGuiId = "AssetContext";
+
+    std::string sRightClickedAsset{};
+    bool sWasAssetJustRightClicked{};
+
+    std::string sPopUpFolderRelativeToRoot{};
+    std::string sPopUpNewAssetName{};
+    bool sPopUpIsEngineAsset{};
+    const Engine::MetaType* sPopUpAssetClass{};
+}
 
 Engine::ContentBrowserEditorSystem::ContentBrowserEditorSystem() :
 	EditorSystem("ContentBrowser")
@@ -32,26 +49,17 @@ void Engine::ContentBrowserEditorSystem::Tick(const float)
         return;
     }
 
-    // Don't initialize it yet; we only need it the user presses Create new asset
-    // or if they are not searching for a specific asset.
-    std::vector<ContentFolder> folders{};
-
-    ImGui::BeginDisabled(mAssetCreator.has_value());
-
     if (ImGui::Button(ICON_FA_PLUS))
     {
-        folders = MakeFolderGraph(AssetManager::Get().GetAllAssets());
-        AssetCreator creator{};
-        mAssetCreator = creator;
+        ImGui::OpenPopup(sAssetCreatorImGuiId.data());
     }
 
     ImGui::SetItemTooltip("Create a new asset");
 
-    ImGui::EndDisabled();
-
     ImGui::SameLine();
 
     static std::string searchFor{};
+
 	Search::DisplaySearchBar(searchFor);
 
     if (!searchFor.empty())
@@ -68,13 +76,21 @@ void Engine::ContentBrowserEditorSystem::Tick(const float)
         return;
     }
 
-    folders = MakeFolderGraph(AssetManager::Get().GetAllAssets());
-    DisplayAssetCreator();
+    std::vector<ContentFolder> folders = MakeFolderGraph(AssetManager::Get().GetAllAssets());
+    sWasAssetJustRightClicked = false;
 
     for (ContentFolder& folder : folders)
     {
         DisplayDirectory(std::move(folder));
     }
+
+    if (sWasAssetJustRightClicked)
+    {
+        ImGui::OpenPopup(sAssetRightClickPopUpImGuiId.data());
+    }
+
+    DisplayAssetCreatorPopUp();
+    DisplayAssetRightClickPopUp();
 
     End();
 }
@@ -196,6 +212,13 @@ void Engine::ContentBrowserEditorSystem::DisplayAsset(WeakAsset<Asset>&& asset) 
         ImGui::TextUnformatted(asset.GetName().c_str());
     }
 
+
+    if (ImGui::IsItemClicked(1))
+    {
+        sRightClickedAsset = asset.GetName();
+        sWasAssetJustRightClicked = true;
+    }
+
     // Looks scary because we may end up deleting the asset,
     // but a user can't drag an asset at the same time as they
     // click the delete button
@@ -224,23 +247,6 @@ void Engine::ContentBrowserEditorSystem::DisplayAsset(WeakAsset<Asset>&& asset) 
         ImGui::Text("NumOfReferences: %d", static_cast<int>(asset.NumOfReferences()));
         ImGui::EndTooltip();
     }
-
-    if (ImGui::BeginPopupContextItem(std::string{ asset.GetName() }.append("##ContextItem").c_str()))
-    {
-        if (const std::optional<std::filesystem::path> importedFromFile = asset.GetImportedFromFile();
-            importedFromFile.has_value()
-            && ImGui::Button("Reimport"))
-        {
-            AssetManager::Get().Import(importedFromFile.value());
-        }
-
-        if (ImGui::Button("Delete"))
-        {
-            AssetManager::Get().DeleteAsset(std::move(asset));
-        }
-
-        ImGui::EndPopup();
-    }
 }
 
 void Engine::ContentBrowserEditorSystem::OpenAsset(WeakAsset<Asset> asset) const
@@ -248,153 +254,235 @@ void Engine::ContentBrowserEditorSystem::OpenAsset(WeakAsset<Asset> asset) const
     Editor::Get().TryOpenAssetForEdit(asset);
 }
 
-void Engine::ContentBrowserEditorSystem::DisplayAssetCreator()
+bool Engine::ContentBrowserEditorSystem::DisplayNameUI(std::string& assetName)
 {
-    if (!mAssetCreator.has_value())
+    ShowInspectUI("Name", assetName);
+
+    bool anyErrors = false;
+    PushError();
+
+    if (assetName.empty())
+    {
+        ImGui::TextUnformatted("Name is empty");
+        anyErrors = true;
+    }
+
+    if (AssetManager::Get().TryGetWeakAsset(Name{ assetName }).has_value())
+    {
+    	ImGui::Text("There is already an asset with the name %s", assetName.c_str());
+        anyErrors = true;
+    }
+	PopError();
+    return anyErrors;
+}
+
+Engine::ContentBrowserEditorSystem::FilePathUIResult Engine::ContentBrowserEditorSystem::DisplayFilepathUI(std::string& folderRelativeToRoot, bool& isEngineAsset,
+	const std::string& assetName)
+{
+    ShowInspectUI("IsEngineAsset", sPopUpIsEngineAsset);
+    ShowInspectUI("File location", folderRelativeToRoot);
+
+    std::filesystem::path outputRootFolder = folderRelativeToRoot;
+
+    while (outputRootFolder.has_parent_path())
+    {
+        outputRootFolder = outputRootFolder.parent_path();
+    }
+
+    const std::filesystem::path actualOutputFile =
+        Format("{}{}{}{}{}",
+            isEngineAsset ? FileIO::Get().GetPath(FileIO::Directory::EngineAssets, "") : FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""),
+            folderRelativeToRoot,
+            folderRelativeToRoot.empty() ? "" : "/",
+            assetName,
+            AssetManager::sAssetExtension);
+
+    // Gaslight our users
+    const std::string outputFileToDisplay =
+        Format("{}/{}{}{}{}",
+            isEngineAsset ? sEngineAssetsDisplayName : sGameAssetsDisplayName,
+            folderRelativeToRoot,
+            folderRelativeToRoot.empty() ? "" : "/",
+            assetName,
+            AssetManager::sAssetExtension);
+
+    bool anyErrors = false;
+	PushError();
+
+    if (std::filesystem::exists(actualOutputFile))
+    {
+        ImGui::Text("There is already a file at %s", outputFileToDisplay.c_str());
+        anyErrors = true;
+    }
+
+	PopError();
+
+    return { actualOutputFile, outputFileToDisplay, anyErrors };
+}
+
+void Engine::ContentBrowserEditorSystem::PushError()
+{
+    ImGui::PushStyleColor(ImGuiCol_Text, { 1.0f, 0.0f, 0.0f, 1.0f });
+}
+
+void Engine::ContentBrowserEditorSystem::PopError()
+{
+    ImGui::PopStyleColor();
+}
+
+void Engine::ContentBrowserEditorSystem::DisplayAssetCreatorPopUp()
+{
+    if (!ImGui::BeginPopup(sAssetCreatorImGuiId.data()))
     {
         return;
     }
 
-    bool isOpen = true;
-    if (ImGui::Begin("Asset creator", &isOpen))
+	if (ImGui::BeginCombo("Type", sPopUpAssetClass == nullptr ? "None" : sPopUpAssetClass->GetName().c_str()))
+	{
+	    std::function<void(const MetaType&)> displayChildren =
+	        [&](const MetaType& type)
+	        {
+	            for (const MetaType& child : type.GetDirectDerivedClasses())
+	            {
+	                if (ImGui::Button(child.GetName().c_str()))
+	                {
+	                    sPopUpAssetClass = &child;
+	                }
+	                displayChildren(child);
+	            }
+	        };
+	    const MetaType* const assetType = MetaManager::Get().TryGetType<Asset>();
+	    ASSERT(assetType != nullptr);
+	    displayChildren(*assetType);
+
+	    ImGui::EndCombo();
+	}
+
+	bool anyErrors = false;
+    anyErrors |= DisplayNameUI(sPopUpNewAssetName);
+
+    const FilePathUIResult fileUIResult = DisplayFilepathUI(sPopUpFolderRelativeToRoot, sPopUpIsEngineAsset, sPopUpNewAssetName);
+
+    anyErrors |= fileUIResult.mAnyErrors;
+
+    PushError();
+
+	if (sPopUpAssetClass == nullptr)
+	{
+	    ImGui::TextUnformatted("No type selected.");
+        anyErrors = true;
+	}
+	else if (sPopUpAssetClass->IsExactly(MakeTypeId<Asset>())
+	    || !sPopUpAssetClass->IsDerivedFrom<Asset>())
+	{
+	    ImGui::Text("%s is not a valid type.", sPopUpAssetClass->GetName().c_str());
+	    anyErrors = true;
+	}
+
+    PopError();
+
+	ImGui::BeginDisabled(anyErrors);
+
+	if (ImGui::Button(Format("Save to {}", fileUIResult.mPathToShowUser.string()).c_str()))
+	{
+        std::optional<WeakAsset<Asset>> newAsset = AssetManager::Get().NewAsset(*sPopUpAssetClass, fileUIResult.mActualFullPath);
+
+        if (newAsset.has_value())
+        {
+            Editor::Get().TryOpenAssetForEdit(*newAsset);
+        }
+	}
+
+	ImGui::EndDisabled();
+
+
+	ImGui::EndPopup();
+}
+
+void Engine::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
+{
+    if (!ImGui::BeginPopup(sAssetRightClickPopUpImGuiId.data()))
     {
-        if (ImGui::BeginCombo("Type", mAssetCreator->mClass == nullptr ? "None" : mAssetCreator->mClass->GetName().c_str()))
+        return;
+    }
+
+    std::optional<WeakAsset<Asset>> asset = AssetManager::Get().TryGetWeakAsset(sRightClickedAsset);
+
+    if (!asset.has_value())
+    {
+        ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+        return;
+    }
+
+    const Input& input = Input::Get();
+
+    if (ImGui::BeginMenu("Rename##Menu"))
+    {
+        PushError();
+
+        ImGui::TextUnformatted("This will break all existing references to the asset!");
+
+        PopError();
+
+        const bool anyErrors = DisplayNameUI(sPopUpNewAssetName);
+
+
+        ImGui::BeginDisabled(anyErrors);
+
+        if (ImGui::Button("Rename"))
         {
-            std::function<void(const MetaType&)> displayChildren =
-                [&](const MetaType& type)
-                {
-                    for (const MetaType& child : type.GetDirectDerivedClasses())
-                    {
-                        if (ImGui::Button(child.GetName().c_str()))
-                        {
-                            mAssetCreator->mClass = &child;
-                        }
-                        displayChildren(child);
-                    }
-                };
-            const MetaType* const assetType = MetaManager::Get().TryGetType<Asset>();
-            ASSERT(assetType != nullptr);
-            displayChildren(*assetType);
-
-            ImGui::EndCombo();
-        }
-
-        ShowInspectUI("Name", mAssetCreator->mAssetName);
-        ShowInspectUI("File location", mAssetCreator->mFolderRelativeToRoot);
-        ShowInspectUI("IsEngineAsset", mAssetCreator->mIsEngineAsset);
-
-        ImGui::PushStyleColor(ImGuiCol_Text, { 1.0f, 0.0f, 0.0f, 1.0f });
-
-        const MetaType* const assetClass = mAssetCreator->mClass;
-
-        bool canCreate = true;
-
-        if (assetClass == nullptr)
-        {
-            ImGui::TextUnformatted("No type selected.");
-            canCreate = false;
-        }
-        else if (assetClass->IsExactly(MakeTypeId<Asset>())
-            || !assetClass->IsDerivedFrom<Asset>())
-        {
-            ImGui::Text("%s is not a valid type.", assetClass->GetName().c_str());
-            canCreate = false;
-        }
-
-        if (AssetManager::Get().TryGetWeakAsset(Name{ mAssetCreator->mAssetName }).has_value())
-        {
-            ImGui::Text("There is already an asset with the name %s", mAssetCreator->mAssetName.c_str());
-            canCreate = false;
-        }
-
-        std::filesystem::path outputRootFolder = mAssetCreator->mFolderRelativeToRoot;
-
-        while (outputRootFolder.has_parent_path())
-        {
-            outputRootFolder = outputRootFolder.parent_path();
-        }
-
-        const std::filesystem::path actualOutputFile =
-            Format("{}{}{}{}{}",
-                mAssetCreator->mIsEngineAsset ? FileIO::Get().GetPath(FileIO::Directory::EngineAssets, "") : FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""),
-                mAssetCreator->mFolderRelativeToRoot,
-                mAssetCreator->mFolderRelativeToRoot.empty() ? "" : "/",
-                mAssetCreator->mAssetName,
-                AssetManager::sAssetExtension);
-
-        // Gaslight our users
-        const std::string outputFileToDisplay =
-            Format("{}/{}{}{}{}",
-                mAssetCreator->mIsEngineAsset ? sEngineAssetsDisplayName : sGameAssetsDisplayName,
-                mAssetCreator->mFolderRelativeToRoot,
-                mAssetCreator->mFolderRelativeToRoot.empty() ? "" : "/",
-                mAssetCreator->mAssetName,
-                AssetManager::sAssetExtension);
-
-        if (std::filesystem::exists(actualOutputFile))
-        {
-            ImGui::Text("There is already a file at %s", outputFileToDisplay.c_str());
-            canCreate = false;
-        }
-
-        ImGui::PopStyleColor();
-
-        ImGui::BeginDisabled(!canCreate);
-
-        if (ImGui::Button(Format("Save to {}", outputFileToDisplay).c_str()))
-        {
-            CreateNewAsset(*mAssetCreator, actualOutputFile);
-            isOpen = false;
+            AssetManager::Get().RenameAsset(*asset, sPopUpNewAssetName);
         }
 
         ImGui::EndDisabled();
+
+        ImGui::EndMenu();
     }
 
-    ImGui::End();
 
-    if (!isOpen)
+    if (ImGui::BeginMenu("Duplicate##Menu"))
     {
-        mAssetCreator.reset();
+        bool anyErrors = false;
+        anyErrors |= DisplayNameUI(sPopUpNewAssetName);
+        FilePathUIResult fileUIResult = DisplayFilepathUI(sPopUpFolderRelativeToRoot, sPopUpIsEngineAsset, sPopUpNewAssetName);
+        anyErrors |= fileUIResult.mAnyErrors;
+
+        ImGui::BeginDisabled(anyErrors);
+
+        if (ImGui::Button("Duplicate"))
+        {
+            std::optional<WeakAsset<Asset>> newAsset = AssetManager::Get().Duplicate(*asset, fileUIResult.mActualFullPath);
+
+            if (newAsset.has_value())
+            {
+                Editor::Get().TryOpenAssetForEdit(*newAsset);
+            }
+        }
+
+
+        ImGui::EndDisabled();
+
+        ImGui::EndMenu();
     }
-}
 
-void Engine::ContentBrowserEditorSystem::CreateNewAsset(const AssetCreator& assetCreator, const std::filesystem::path& toFile)
-{
-    const std::string_view assetName = assetCreator.mAssetName;
-    FuncResult constructResult = assetCreator.mClass->Construct(assetName);
 
-    if (constructResult.HasError())
+    if (const std::optional<std::filesystem::path> importedFromFile = asset->GetImportedFromFile();
+        importedFromFile.has_value()
+        && ImGui::MenuItem("Reimport"))
     {
-        LOG(LogEditor, Error, "Failed to create new asset of type {} - {}", assetCreator.mClass->GetName(), constructResult.Error());
-        return;
+        AssetManager::Get().Import(importedFromFile.value());
     }
 
-    const Asset* const asset = constructResult.GetReturnValue().As<Asset>();
 
-    if (asset == nullptr)
+    if (ImGui::MenuItem("Delete", "Del")
+        || input.WasKeyboardKeyPressed(Input::KeyboardKey::Delete))
     {
-        LOG(LogEditor, Error, "Failed to create new asset of type {} - Construct result was not an asset", assetCreator.mClass->GetName());
-        return;
+        AssetManager::Get().DeleteAsset(std::move(*asset));
+        ImGui::CloseCurrentPopup();
     }
 
-    const AssetSaveInfo saveInfo = asset->Save();
-	const bool success = saveInfo.SaveToFile(toFile);
-
-    if (!success)
-    {
-        LOG(LogEditor, Error, "Failed to create new asset, the file {} could not be saved to", toFile.string());
-        return;
-    }
-
-    std::optional<WeakAsset<Asset>> newAsset = AssetManager::Get().AddAsset(toFile);
-
-    if (!newAsset.has_value())
-    {
-        LOG(LogEditor, Error, "Failed to add new asset to asset manager");
-        return;
-    }
-
-	Editor::Get().TryOpenAssetForEdit(*newAsset);
+    ImGui::EndPopup();
 }
 
 Engine::MetaType Engine::ContentBrowserEditorSystem::Reflect()

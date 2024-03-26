@@ -1,8 +1,9 @@
 #pragma once
-#include "Meta/Fwd/MetaReflectFwd.h"
+#include "Meta/MetaReflect.h"
 
 namespace Engine
 {
+	struct DurationalEffect;
 	class Prefab;
 	class CharacterComponent;
 	class World;
@@ -13,7 +14,9 @@ namespace Engine
 		enum Stat
 		{
 			Health,
-			MovementSpeed
+			MovementSpeed,
+			DealtDamageModifier,
+			ReceivedDamageModifier
 		};
 
 		enum FlatOrPercentage
@@ -28,8 +31,29 @@ namespace Engine
 			Increase
 		};
 
-		static void ApplyInstantEffect(World& world, entt::entity affectedEntity, Stat stat = Stat::Health, float amount = 0.f, FlatOrPercentage flatOrPercentage = FlatOrPercentage::Flat, IncreaseOrDecrease increaseOrDecrease = IncreaseOrDecrease::Decrease);
+		struct EffectSettings
+		{
+			Stat mStat = Health;
+			float mAmount{};
+			FlatOrPercentage mFlatOrPercentage = Flat;
+			IncreaseOrDecrease mIncreaseOrDecrease = Decrease;
+
+			bool operator==(const EffectSettings& effectSettings) const;
+			bool operator!=(const EffectSettings& effectSettings) const;
+
+		private:
+			friend ReflectAccess;
+			static MetaType Reflect();
+			REFLECT_AT_START_UP(EffectSettings);
+		};
+
+		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect);
+		static void ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f);
+		static void RevertDurationalEffect(CharacterComponent& characterComponent, DurationalEffect& durationalEffect);
+		static void ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f, int ticks = 1);
+		static void ApplyInstantEffectForOverTimeEffect(World& world, entt::entity affectedEntity, EffectSettings effect, float dealtDamageModifierOfCastByCharacter = 0.f);
 		static entt::entity SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy);
+		static entt::entity SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy); // area of attack
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);
@@ -38,6 +62,12 @@ namespace Engine
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AbilityFunctionality);
 	};
+
+	template<class Archive>
+	void serialize([[maybe_unused]] Archive& ar, [[maybe_unused]] const AbilityFunctionality::EffectSettings& value)
+	{
+		// We don't need to actually serialize it, but otherwise we get a compilation error
+	}
 }
 
 template<>
@@ -50,9 +80,11 @@ struct Reflector<Engine::AbilityFunctionality::Stat>
 template<>
 struct Engine::EnumStringPairsImpl<Engine::AbilityFunctionality::Stat>
 {
-	static constexpr EnumStringPairs<AbilityFunctionality::Stat, 2> value = {
+	static constexpr EnumStringPairs<AbilityFunctionality::Stat, 4> value = {
 		EnumStringPair<AbilityFunctionality::Stat>{ AbilityFunctionality::Stat::Health, "Health" },
 		{ AbilityFunctionality::Stat::MovementSpeed, "MovementSpeed" },
+		{ AbilityFunctionality::Stat::DealtDamageModifier, "DealtDamageModifier" },
+		{ AbilityFunctionality::Stat::ReceivedDamageModifier, "ReceivedDamageModifier" },
 	};
 };
 

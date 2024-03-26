@@ -1,11 +1,14 @@
 #pragma once
+#include "Physics.h"
 #include "BasicDataTypes/ScalableTimer.h"
 #include "Meta/MetaReflect.h"
 
 namespace Engine
 {
+	class Level;
 	class Registry;
-	class WorldRenderer;
+	class WorldViewport;
+	class GPUWorld;
 	class DebugRenderer;
 	class BinaryGSONObject;
 
@@ -26,12 +29,16 @@ namespace Engine
 		void BeginPlay();
 		void EndPlay();
 
-		Registry& GetRegistry() { ASSERT(mRegistry != nullptr); return *mRegistry; };
-		const Registry& GetRegistry() const { ASSERT(mRegistry != nullptr); return *mRegistry; };
+		Registry& GetRegistry() { return *mRegistry; }
+		const Registry& GetRegistry() const { return *mRegistry; };
 
-		WorldRenderer& GetRenderer() { ASSERT(mRenderer != nullptr); return *mRenderer; };
-		const WorldRenderer& GetRenderer() const { ASSERT(mRenderer != nullptr); return *mRenderer; };
-		const DebugRenderer& GetDebugRenderer() const;
+		Physics& GetPhysics() { return *mPhysics; }
+		const Physics& GetPhysics() const { return *mPhysics; }
+
+		WorldViewport& GetViewport() { ASSERT(mViewport != nullptr); return *mViewport; };
+		const WorldViewport& GetViewport() const { ASSERT(mViewport != nullptr); return *mViewport; };
+
+		GPUWorld& GetGPUWorld() const { return *mGPUWorld; };
 
 		bool HasBegunPlay() const { return mHasBegunPlay; }
 
@@ -45,7 +52,7 @@ namespace Engine
 
 		void SetTimeScale(float timeScale) { mTime.mTimescale = timeScale; }
 
-		bool IsPaused() { return mTime.mIsPaused; }
+		bool IsPaused() const { return mTime.mIsPaused; }
 
 		void Pause() { mTime.mIsPaused = true; }
 
@@ -58,13 +65,29 @@ namespace Engine
 
 		static World* TryGetWorldAtTopOfStack();
 
+		/**
+		 * \brief Will request a transition to a different level.
+		 *
+		 * Transitioning to a different level involves the destruction of the current world, and the
+		 * creation of a new one. This is done at the end of the World::Tick. All systems will be restarted.
+		 *
+		 * \param level The level to transition to.
+		 */
+		void TransitionToLevel(const std::shared_ptr<const Level>& level);
+
+		const std::shared_ptr<const Level>& GetNextLevel() const { return mLevelToTransitionTo; }
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(World);
 
 		std::unique_ptr<Registry> mRegistry{};
-		std::unique_ptr<WorldRenderer> mRenderer{};
+		std::unique_ptr<WorldViewport> mViewport{};
+		std::unique_ptr<GPUWorld> mGPUWorld{};
+		std::unique_ptr<Physics> mPhysics{};
+
+		std::shared_ptr<const Level> mLevelToTransitionTo{};
 
 		ScalableTimer mTime{};
 

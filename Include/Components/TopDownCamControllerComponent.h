@@ -8,8 +8,8 @@ namespace Engine
 	class TopDownCamControllerComponent
 	{
 	public:
-		void ApplyTranslation(TransformComponent& transform, const glm::vec3& targe, const glm::vec2& cursorDistanceFromScreenCentert) const;
-		void UpdateRotation(TransformComponent& transform, const glm::vec3& target, const glm::vec2& cursorDistanceFromScreenCenter);
+		void ApplyTranslation(TransformComponent& transform, const glm::vec3& targe, glm::vec2 cursorDistanceFromScreenCentert) const;
+		void UpdateRotation(TransformComponent& transform, const glm::vec3& target, glm::vec2 cursorDistanceFromScreenCenter);
 
 		void AdjustZoom(const float scrollDelta);
 		void RotateCameraAroundTarget(const float angle);

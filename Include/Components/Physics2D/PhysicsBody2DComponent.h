@@ -27,9 +27,9 @@ namespace Engine
 	enum class CollisionLayer : uint8
 	{
 		/**
-		 * \brief The terrain, all objects that will never move. Used for pathfinding
+		 * \brief All obstacles that will never move. Used for pathfinding
 		 */
-		WorldStatic,
+		StaticObstacles,
 
 		/**
 		 * \brief All obstacles that can be moved, whether that be through physics or by setting the position.
@@ -40,6 +40,11 @@ namespace Engine
 		 * \brief The players and enemies
 		 */
 		Character,
+
+		/**
+		 * \brief The terrain, determines the height at a given point. Used for pathfinding
+		 */
+		Terrain,
 
 		NUM_OF_LAYERS
 	};
@@ -54,6 +59,16 @@ namespace Engine
 
 		constexpr CollisionResponse GetResponse(const CollisionRules& other) const;
 
+		// Since there is always terrain beneath us (hopefully),
+		// it would always be registered as a collision, since
+		// from a 2D top-down perspective, the terrain and the object
+		// occupy the same space. But we are kinda 'hacking' 3D,
+		// where the object is placed above the terrain. Collision with
+		// the terrain is therefore handled more primitively, we simply modify
+		// the height in the same step in which we apply the velocity.
+		// Because of this, for most purposes, we ignore the terrain.
+		constexpr CollisionResponse GetResponseIncludingTerrain(const CollisionRules& other) const;
+
 		CollisionLayer mLayer{};
 		std::array<CollisionResponse, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> mResponses{};
 	};
@@ -64,48 +79,72 @@ namespace Engine
 		CollisionRules mRules{};
 	};
 
-	static constexpr CollisionPreset sDefaultCollisionPreset
+	namespace CollisionPresets
 	{
+		static constexpr CollisionPreset sWorldDynamic
+		{
 			"WorldDynamic",
-			CollisionLayer::WorldDynamic,
 			{
-				CollisionResponse::Blocking, // WorldStatic
-				CollisionResponse::Blocking, // WorldDynamic
-				CollisionResponse::Blocking, // Character
+				CollisionLayer::WorldDynamic,
+				{
+					CollisionResponse::Blocking,	// WorldStatic
+					CollisionResponse::Blocking,	// WorldDynamic
+					CollisionResponse::Blocking,	// Character
+					CollisionResponse::Blocking,	// Terrain
+				}
 			}
-	};
+		};
+
+		static constexpr CollisionPreset sStaticObstacles
+		{
+			"Static Obstacles",
+			{
+				CollisionLayer::StaticObstacles,
+				{
+					CollisionResponse::Ignore,		// WorldStatic
+					CollisionResponse::Blocking,	// WorldDynamic
+					CollisionResponse::Blocking,	// Character
+					CollisionResponse::Ignore,		// Terrain
+				}
+			}
+		};
+
+		static constexpr CollisionPreset sTerrain
+		{
+			"Terrain",
+			{
+				CollisionLayer::Terrain,
+				{
+					CollisionResponse::Ignore,		// WorldStatic
+					CollisionResponse::Blocking,	// WorldDynamic
+					CollisionResponse::Blocking,	// Character
+					CollisionResponse::Ignore,		// Terrain
+				}
+			}
+		};
+
+		static constexpr CollisionPreset sCharacter
+		{
+			"Character",
+			{
+				CollisionLayer::Character,
+				{
+					CollisionResponse::Blocking,	// WorldStatic
+					CollisionResponse::Blocking,	// WorldDynamic
+					CollisionResponse::Blocking,	// Character
+					CollisionResponse::Blocking,	// Terrain
+				}
+			}
+		};
+	}
 
 	static constexpr std::array<CollisionPreset, 4> sCollisionPresets
 	{
-		sDefaultCollisionPreset,
-		CollisionPreset
-		{
-			"Character",
-			CollisionLayer::Character,
-			{
-				CollisionResponse::Blocking, // WorldStatic
-				CollisionResponse::Blocking, // WorldDynamic
-				CollisionResponse::Blocking, // Character
-			}
-		},
-		{
-			"CharacterTrigger",
-			CollisionLayer::WorldStatic,
-			{
-				CollisionResponse::Ignore, // WorldStatic
-				CollisionResponse::Ignore, // WorldDynamic
-				CollisionResponse::Overlap, // Character
-			}
-		},
-		{
-			"WorldStatic",
-			CollisionLayer::WorldStatic,
-			{
-				CollisionResponse::Ignore, // WorldStatic
-				CollisionResponse::Blocking, // WorldDynamic
-				CollisionResponse::Blocking, // Character
-			}
-		}
+		CollisionPresets::sTerrain,
+		CollisionPresets::sWorldDynamic,
+		CollisionPresets::sStaticObstacles,
+		CollisionPresets::sCharacter,
+
 	};
 
 	class PhysicsBody2DComponent
@@ -118,7 +157,7 @@ namespace Engine
 			mInvMass = mass == 0.f ? 0.f : (1.f / mass);
 		}
 
-		CollisionRules mRules = sDefaultCollisionPreset.mRules;
+		CollisionRules mRules = CollisionPresets::sWorldDynamic.mRules;
 
 		float mInvMass = 1.f;
 		float mRestitution = 1.f;
@@ -130,12 +169,12 @@ namespace Engine
 		 */
 		bool mIsAffectedByForces = true;
 
-		void AddForce(const glm::vec2& force)
+		void AddForce(glm::vec2 force)
 		{
 			if (mIsAffectedByForces) mForce += force;
 		}
 
-		void ApplyImpulse(const glm::vec2& imp)
+		void ApplyImpulse(glm::vec2 imp)
 		{
 			if (mIsAffectedByForces) mLinearVelocity += imp * mInvMass;
 		}
@@ -151,6 +190,16 @@ namespace Engine
 	};
 
 	constexpr CollisionResponse CollisionRules::GetResponse(const CollisionRules& other) const
+	{
+		if (mLayer == CollisionLayer::Terrain
+			|| other.mLayer == CollisionLayer::Terrain)
+		{
+			return CollisionResponse::Ignore;
+		}
+		return GetResponseIncludingTerrain(other);
+	}
+
+	constexpr CollisionResponse CollisionRules::GetResponseIncludingTerrain(const CollisionRules& other) const
 	{
 		return static_cast<CollisionResponse>(std::min(static_cast<std::underlying_type_t<CollisionResponse>>(mResponses[static_cast<std::underlying_type_t<CollisionLayer>>(other.mLayer)]),
 			static_cast<std::underlying_type_t<CollisionResponse>>(other.mResponses[static_cast<std::underlying_type_t<CollisionLayer>>(mLayer)])));
@@ -189,7 +238,8 @@ struct Engine::EnumStringPairsImpl<Engine::CollisionLayer>
 {
 	static constexpr EnumStringPairs<CollisionLayer, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> value = 
 	{
-		EnumStringPair<CollisionLayer>{ CollisionLayer::WorldStatic, "WorldStatic" },
+		EnumStringPair<CollisionLayer>{ CollisionLayer::Terrain, "Terrain" },
+		{ CollisionLayer::StaticObstacles, "StaticObstacles" },
 		{ CollisionLayer::WorldDynamic, "WorldDynamic" },
 		{ CollisionLayer::Character, "Character" },
 	};

@@ -3,23 +3,16 @@
 namespace Engine
 {
 	class World;
-	class DebugRenderer;
 	class FrameBuffer;
 	class CameraComponent;
 
-	class WorldRenderer
+	class WorldViewport
 	{
 	public:
-		WorldRenderer(const World& world);
-		~WorldRenderer();
+		WorldViewport(const World& world);
+		~WorldViewport();
 
-		void NewFrame();
-		void Render();
-
-#ifdef EDITOR
-		void Render(FrameBuffer& buffer, std::optional<glm::vec2> firstResizeBufferTo = {},
-		            bool clearBufferFirst = true);
-#endif // EDITOR
+		void UpdateSize(glm::vec2 size);
 
 		const World& GetWorld() const { return mWorld; }
 
@@ -34,12 +27,9 @@ namespace Engine
 		glm::vec3 ScreenToWorld(glm::vec2 screenPosition, float distanceFromCamera) const;
 
 	private:
-		void RenderAtSize(glm::vec2 size);
-
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
 		friend class World;
 		std::reference_wrapper<const World> mWorld;
-		std::unique_ptr<DebugRenderer> mDebugRenderer{};
 
 		// In pixels
 		glm::vec2 mLastRenderedAtSize{};

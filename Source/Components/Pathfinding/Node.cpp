@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Components/Pathfinding/Node.h"
 
-Engine::Node::Node(const int id, const glm::vec2& position) : mId(id), mPosition(position)
+Engine::Node::Node(const int id, glm::vec2 position) : mId(id), mPosition(position)
 {
 }
 
