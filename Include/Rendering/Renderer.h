@@ -6,9 +6,8 @@ namespace Engine
 	class EngineClass;
 	class World;
 	class FrameBuffer;
-	class MeshRenderer;
-	class UIRenderer;
 	class DebugRenderer;
+	class ISubRenderer;
 
 	class Renderer final :
 		public EngineSubsystem<Renderer>
@@ -35,8 +34,8 @@ namespace Engine
 	private:
 		void Render(const World& world, glm::vec2 viewportSize);
 
-		std::unique_ptr<MeshRenderer> mMeshRenderer;
-		std::unique_ptr<UIRenderer> mUIRenderer;
+		std::unique_ptr<ISubRenderer> mMeshRenderer;
+		std::unique_ptr<ISubRenderer> mUIRenderer;
 		std::unique_ptr<DebugRenderer> mDebugRenderer;
 	};
 }
