@@ -23,7 +23,8 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "World/Registry.h"
 #include "World/World.h"
-#include "Utilities/DebugRenderer.h"
+#include "Rendering/Renderer.h"
+#include "Rendering/DebugRenderer.h"
 
 void Engine::NavMeshComponent::GenerateNavMesh(const World& world)
 {
@@ -639,7 +640,7 @@ void Engine::NavMeshComponent::DebugDrawNavMesh(const World& world) const
 		return;
 	}
 
-	const DebugRenderer& debugRenderer = world.GetDebugRenderer();
+	const DebugRenderer& debugRenderer = Renderer::Get().GetDebugRenderer();
 
 	const auto& view = world.GetRegistry().View<NavMeshComponent>();
 	if (view.empty())
@@ -663,7 +664,7 @@ void Engine::NavMeshComponent::DebugDrawNavMesh(const World& world) const
 				if (j + 1 == static_cast<int>(cleanedPolygonList[h].size()))
 				{
 					// Draw a line connecting the last vertex to the first vertex
-					debugRenderer.AddLine(DebugCategory::AINavigation,
+					debugRenderer.AddLine(world, DebugCategory::AINavigation,
 					                                 {cleanedPolygonList[h][j].x, 0, cleanedPolygonList[h][j].y},
 					                                 {cleanedPolygonList[h][0].x, 0, cleanedPolygonList[h][0].y},
 					                                 colour);
@@ -671,7 +672,7 @@ void Engine::NavMeshComponent::DebugDrawNavMesh(const World& world) const
 				else
 				{
 					// Draw a line connecting two consecutive vertices
-					debugRenderer.AddLine(DebugCategory::AINavigation,
+					debugRenderer.AddLine(world, DebugCategory::AINavigation,
 					                                 {cleanedPolygonList[h][j].x, 0, cleanedPolygonList[h][j].y},
 					                                 {
 						                                 cleanedPolygonList[h][j + 1].x, 0,
@@ -687,15 +688,17 @@ void Engine::NavMeshComponent::DebugDrawNavMesh(const World& world) const
 		for (const auto& polygonList : polygonDataNavMesh)
 		{
 			// Draw the edges of each triangle with a blue color
-			debugRenderer.AddLine(DebugCategory::AINavigation, {polygonList[0].x, 0, polygonList[0].y},
-			                                 {polygonList[1].x, 0, polygonList[1].y},
-			                                 {0.f, 0.f, 1.f, 1.f});
-			debugRenderer.AddLine(DebugCategory::AINavigation, {polygonList[1].x, 0, polygonList[1].y},
-			                                 {polygonList[2].x, 0, polygonList[2].y},
-			                                 {0.f, 0.f, 1.f, 1.f});
-			debugRenderer.AddLine(DebugCategory::AINavigation, {polygonList[2].x, 0, polygonList[2].y},
-			                                 {polygonList[0].x, 0, polygonList[0].y},
-			                                 {0.f, 0.f, 1.f, 1.f});
+			debugRenderer.AddLine(world, DebugCategory::AINavigation, {polygonList[0].x, 0, polygonList[0].y},
+				{polygonList[1].x, 0, polygonList[1].y},
+				{0.f, 0.f, 1.f, 1.f});
+
+			debugRenderer.AddLine(world, DebugCategory::AINavigation, {polygonList[1].x, 0, polygonList[1].y},
+				{polygonList[2].x, 0, polygonList[2].y},
+				{0.f, 0.f, 1.f, 1.f});
+
+			debugRenderer.AddLine(world, DebugCategory::AINavigation, {polygonList[2].x, 0, polygonList[2].y},
+				{polygonList[0].x, 0, polygonList[0].y},
+				{0.f, 0.f, 1.f, 1.f});
 		}
 	}
 

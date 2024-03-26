@@ -27,12 +27,12 @@ void DXConstBuffer::Update(const void* data, size_t dataSize, int offsetIndex, i
 	memcpy(mBufferGPUAddress[frameIndex] + (mBufferPerObjectAlignedSize * offsetIndex), data, dataSize);
 }
 
-void DXConstBuffer::Bind(const ComPtr<ID3D12GraphicsCommandList4>& commandList, int rootParameterIndex, int offsetIndex, int frameIndex)
+void DXConstBuffer::Bind(const ComPtr<ID3D12GraphicsCommandList4>& commandList, int rootParameterIndex, int offsetIndex, int frameIndex) const
 {
 	commandList->SetGraphicsRootConstantBufferView(rootParameterIndex, mBuffers[frameIndex]->GetResource()->GetGPUVirtualAddress() + (mBufferPerObjectAlignedSize * offsetIndex));
 }
 
-void DXConstBuffer::BindToCompute(const ComPtr<ID3D12GraphicsCommandList4>& command, int rootParameterIndex, int offsetIndex, int frameIndex)
+void DXConstBuffer::BindToCompute(const ComPtr<ID3D12GraphicsCommandList4>& command, int rootParameterIndex, int offsetIndex, int frameIndex) const
 {
 	command->SetComputeRootConstantBufferView(rootParameterIndex, mBuffers[frameIndex]->GetResource()->GetGPUVirtualAddress() + (mBufferPerObjectAlignedSize * offsetIndex));
 }

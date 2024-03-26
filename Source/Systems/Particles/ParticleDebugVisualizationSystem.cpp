@@ -8,11 +8,12 @@
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
-#include "Utilities/DebugRenderer.h"
+#include "Rendering/Renderer.h"
+#include "Rendering/DebugRenderer.h"
 
 void Engine::ParticleDebugVisualizationSystem::Render(const World& world)
 {
-	const DebugRenderer& debugRenderer = world.GetDebugRenderer();
+	const DebugRenderer& debugRenderer = Renderer::Get().GetDebugRenderer();
 
 	if ((debugRenderer.GetDebugCategoryFlags() & DebugCategory::Particles) == 0)
 	{
@@ -49,23 +50,23 @@ void Engine::ParticleDebugVisualizationSystem::Render(const World& world)
 				const glm::vec3 lineEnd = particlePos + velocities[i];
 				constexpr glm::vec4 color = glm::vec4{ 1.0f };
 
-				debugRenderer.AddLine(DebugCategory::Particles, particlePos, lineEnd, color);
+				debugRenderer.AddLine(world, DebugCategory::Particles, particlePos, lineEnd, color);
 			}
 
 			const glm::vec3 forward = Math::RotateVector(sForward, orientations[i]);
 			const glm::vec3 right = Math::RotateVector(sRight, orientations[i]);
 			const glm::vec3 up = cross(forward, -right);
 
-			debugRenderer.AddLine(DebugCategory::Particles, particlePos, particlePos + forward, glm::vec4{0.0f, 0.0f, 1.0f, 1.0f});
-			debugRenderer.AddLine(DebugCategory::Particles, particlePos, particlePos + right, glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
-			debugRenderer.AddLine(DebugCategory::Particles, particlePos, particlePos + up, glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
+			debugRenderer.AddLine(world, DebugCategory::Particles, particlePos, particlePos + forward, glm::vec4{0.0f, 0.0f, 1.0f, 1.0f});
+			debugRenderer.AddLine(world, DebugCategory::Particles, particlePos, particlePos + right, glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
+			debugRenderer.AddLine(world, DebugCategory::Particles, particlePos, particlePos + up, glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
 		}
 
 		if (boundingBoxMin.x != INFINITY)
 		{
 			const glm::vec3 halfExtends = (boundingBoxMax - boundingBoxMin) * .5f;
 			const glm::vec3 centre = boundingBoxMin + halfExtends;
-			debugRenderer.AddBox(DebugCategory::Particles, centre, halfExtends, glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
+			debugRenderer.AddBox(world, DebugCategory::Particles, centre, halfExtends, glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
 		}
 	}
 }
