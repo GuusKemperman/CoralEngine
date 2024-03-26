@@ -105,12 +105,15 @@ Engine::Renderer::Renderer()
     
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXLightGridElement) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[LIGHT_GRID_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "LIGHT GRID BUFFER");
+    mStructuredBuffers[LIGHT_GRID_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::Clustering::DXLightGridElement) * 4000, 0);
 
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[POINT_LIGHT_COUNTER] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "POINT LIGHT COUNTER BUFFER");
+    mStructuredBuffers[POINT_LIGHT_COUNTER]->CreateUploadBuffer(device, sizeof(uint32), 0);
 
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[LIGHT_INDICES] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "LIGHTI INDICES BUFFER");
+    mStructuredBuffers[LIGHT_INDICES]->CreateUploadBuffer(device, sizeof(uint32) * 4000, 0);
 
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[ACTIVE_CLUSTER_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "ACTIVE CLUSTER BUFFER");
@@ -282,6 +285,26 @@ void Engine::Renderer::Render(const World& world)
     int pointLightCounter = 0;
     int dirLightCounter = 0;
 
+    std::vector<uint32> lightIndicesClear(4000, 0);
+    D3D12_SUBRESOURCE_DATA data;
+    data.pData = lightIndicesClear.data();
+    data.RowPitch = sizeof(uint32);
+    data.SlicePitch = sizeof(uint32) * 4000;
+    mStructuredBuffers[LIGHT_INDICES]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
+    uint32 counterValue = 0;
+    data.pData = &counterValue;
+    data.RowPitch = sizeof(uint32);
+    data.SlicePitch = sizeof(uint32);
+    mStructuredBuffers[POINT_LIGHT_COUNTER]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
+    std::vector<InfoStruct::Clustering::DXLightGridElement> lightGridClear(4000, InfoStruct::Clustering::DXLightGridElement{});
+    data.pData = lightGridClear.data();
+    data.RowPitch = sizeof(InfoStruct::Clustering::DXLightGridElement);
+    data.SlicePitch = sizeof(InfoStruct::Clustering::DXLightGridElement) * 4000;
+    mStructuredBuffers[LIGHT_GRID_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
+
     for (auto [entity, lightComponent, transform] : pointLightView.each()) {
         if(pointLightCounter >= mPointLights.size())
         {
@@ -335,7 +358,7 @@ void Engine::Renderer::Render(const World& world)
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, mDirectionalLightsSRVIndex);
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 17, mPointLightSRVIndex);
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 18, mLightGridSRVIndex);
-    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 19, mLightIndicesUAVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 19, mLightIndicesSRVIndex);
 
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
@@ -421,11 +444,13 @@ void Engine::Renderer::Render(const World& world)
         meshCounter++;
     }
 
-    D3D12_SUBRESOURCE_DATA data;
     data.pData = mMaterialVec.data();
     data.RowPitch = sizeof(InfoStruct::DXMaterialInfo);
     data.SlicePitch = sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2);
     mStructuredBuffers[DXStructuredBuffers::MATERIAL_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
+
+
     memset(mMaterialVec.data(), 0, sizeof(InfoStruct::DXMaterialInfo) * mMaterialVec.size());
     memset(mDirectionalLights.data(), 0, sizeof(InfoStruct::DXDirLightInfo) * mDirectionalLights.size());
     memset(mPointLights.data(), 0, sizeof(InfoStruct::DXPointLightInfo) * mPointLights.size());
