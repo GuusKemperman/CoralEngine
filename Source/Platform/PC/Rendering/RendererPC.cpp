@@ -59,19 +59,19 @@ Engine::Renderer::Renderer()
     mPipelines[PBR_PIPELINE]->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
     
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/ClusterGridCS.hlsl");
-    ComPtr<ID3DBlob> cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0", true);
+    ComPtr<ID3DBlob> cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
     mPipelines[CLUSTER_GRID_PIPELINE] = std::make_unique<DXPipeline>();
     mPipelines[CLUSTER_GRID_PIPELINE]->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
     mPipelines[CLUSTER_GRID_PIPELINE]->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"CLUSTER GRID COMPUTE SHADER");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CompactClustersCS.hlsl");
-    cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0", true);
+    cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
     mPipelines[COMPACT_CLUSTER_PIPELINE] = std::make_unique<DXPipeline>();
     mPipelines[COMPACT_CLUSTER_PIPELINE]->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
     mPipelines[COMPACT_CLUSTER_PIPELINE]->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"COMPACT CLUSTER COMPUTE SHADER");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/AssignLightsCS.hlsl");
-    cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0", true);
+    cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
     mPipelines[ASSIGN_LIGHTS_PIPELINE] = std::make_unique<DXPipeline>();
     mPipelines[ASSIGN_LIGHTS_PIPELINE]->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
     mPipelines[ASSIGN_LIGHTS_PIPELINE]->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"ASSIGN LIGHTS COMPUTE SHADER");
@@ -165,9 +165,13 @@ Engine::Renderer::Renderer()
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     mClusterSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[CLUSTER_GRID_SB].get(), srvDesc);
 
+    srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXLightGridElement);
+    mLightGridSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[LIGHT_GRID_SB].get(), srvDesc);
+
     //Active clusters
     srvDesc.Buffer.StructureByteStride = sizeof(uint32);
     mActiveClusterSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[ACTIVE_CLUSTER_SB].get(), srvDesc); 
+    mLightIndicesSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[LIGHT_INDICES].get(), srvDesc); 
 
     //Compact clusters
     mCompactClusterSRVIndex = engineDevice.AllocateTexture(mStructuredBuffers[COMPACT_CLUSTER_SB].get(), srvDesc); 
@@ -327,8 +331,11 @@ void Engine::Renderer::Render(const World& world)
     mConstBuffers[LIGHT_CB]->Bind(commandList, 1, 0, frameIndex);
     mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 0, 0, frameIndex);
     mConstBuffers[CAM_MATRIX_CB]->Bind(commandList, 4, 0, frameIndex);
+    mConstBuffers[CLUSTERING_CAM_CB]->Bind(commandList, 20, 0, frameIndex);
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, mDirectionalLightsSRVIndex);
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 17, mPointLightSRVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 18, mLightGridSRVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 19, mLightIndicesUAVIndex);
 
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
@@ -429,7 +436,6 @@ void Engine::Renderer::Render(const World& world)
         engineDevice.WaitForFence();
         CompactClusters();
         engineDevice.WaitForFence();
-        //updateClusterGrid = false;
         commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
     }
 }

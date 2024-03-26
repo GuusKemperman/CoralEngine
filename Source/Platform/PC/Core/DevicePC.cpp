@@ -259,7 +259,7 @@ void Engine::Device::InitializeDevice()
     }
 
     //CREATE ROOT SIGNATURE
-    mSignature = std::make_unique<DXSignature>(13);
+    mSignature = std::make_unique<DXSignature>(15);
     mSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX);//0
     mSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL);//1
     mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX);//2
@@ -281,6 +281,10 @@ void Engine::Device::InitializeDevice()
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//15
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7);//16
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8);//17
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 9);//18
+    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 10);//19
+    mSignature->AddCBuffer(5, D3D12_SHADER_VISIBILITY_PIXEL);//20
+
     mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//18
     mSignature->CreateSignature(mDevice, L"MAIN ROOT SIGNATURE");
 

@@ -88,6 +88,8 @@ namespace Engine
         unsigned int mActiveClusterSRVIndex = 0;
         unsigned int mDirectionalLightsSRVIndex = 0;
         unsigned int mPointLightSRVIndex = 0;
+        unsigned int mLightIndicesSRVIndex = 0;
+        unsigned int mLightGridSRVIndex = 0;
 
         glm::vec2 screenSize = glm::vec2(1.f, 1.f);
         bool updateClusterGrid = false;

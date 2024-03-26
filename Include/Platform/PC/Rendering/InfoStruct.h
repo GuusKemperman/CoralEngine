@@ -95,9 +95,9 @@ namespace Engine::InfoStruct
 
         struct DXLightGridElement
         {
-            uint32 mOffset;
-            uint32 mCount;
-            uint32 offset[2];
+            uint32 mOffset =0;
+            uint32 mCount = 0;
+            uint32 padding[2] = { 0,0 };
         };
     }
 }

@@ -1,14 +1,16 @@
 #include "Precomp.h"
-#include "Platform/PC/Rendering/DX12Classes/DxPipeline.h"
-#include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
-#include <d3dcompiler.h>
+#include "../Include/Platform/PC/Rendering/DX12Classes/DxPipeline.h"
+#include "../Include/Platform/PC/Rendering/DX12Classes/DXSignature.h"
+
+#ifdef _MSC_VER
+#pragma comment(lib, "d3dcompiler") // Automatically link with d3dcompiler.lib as we are using D3DCompile() below.
+#endif
 
 void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature* root, LPCWSTR name)
 {
 	HRESULT hr;
 
-	if (mComputeShaderBuffer == nullptr) 
-	{
+	if (mComputeShaderBuffer == nullptr) {
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.InputLayout.NumElements = static_cast<UINT>(mInputs.size());
 		psoDesc.InputLayout.pInputElementDescs = mInputs.data();
@@ -38,15 +40,14 @@ void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature*
 		psoDesc.DepthStencilState = mDepth;
 		hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPipeline));
 	}
-	else 
-	{
+	else {
 		D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.pRootSignature = root->GetSignature().Get();
 		psoDesc.CS = { reinterpret_cast<UINT8*>(mComputeShaderBuffer), mComputeShaderSize };
 		hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&mPipeline));
 	}
 
-	if (FAILED(hr)) 
+	if (FAILED(hr))
 	{
 		MessageBox(NULL, L"Failed to create pipeline", L"FATAL ERROR!", MB_ICONERROR | MB_OK);
 		assert(false && "Failed to create pipeline");
@@ -74,11 +75,6 @@ void DXPipeline::SetBlendState(const CD3DX12_BLEND_DESC& blendState)
 void DXPipeline::SetDepthState(const CD3DX12_DEPTH_STENCIL_DESC& depthStencil)
 {
 	mDepth = depthStencil;
-}
-
-void DXPipeline::SetDepthFormat(const DXGI_FORMAT& format)
-{
-	mDepthFormat = format;
 }
 
 void DXPipeline::SetVertexAndPixelShaders(LPVOID vsBuffer, SIZE_T vsSize, LPVOID psBuffer, SIZE_T psSize)
@@ -111,24 +107,19 @@ void DXPipeline::SetPrimitiveTopology(const D3D12_PRIMITIVE_TOPOLOGY_TYPE& topol
 	mTopology = topology;
 }
 
-ComPtr<ID3DBlob> DXPipeline::ShaderToBlob(const char* path, const char* shaderVersion, bool library, const char* functionName)
+ComPtr<ID3DBlob> DXPipeline::ShaderToBlob(const char* path, const char* shaderVersion, const char* functionName)
 {
 	ComPtr<ID3DBlob> shader; // d3d blob for holding vertex shader bytecode
 	ComPtr<ID3DBlob> errorBuff;
-
+	
 	wchar_t* wString = new wchar_t[4096];
 	MultiByteToWideChar(CP_ACP, 0, path, -1, wString, 4096);
 	HRESULT hr;
 
-	if (!library) {
-		if(functionName != nullptr)
-			hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, functionName, shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
-		else
-			hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
-	}
-	else {
-		hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "cs_5_0", D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
-	}
+	if(functionName != nullptr)
+		hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, functionName, shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
+	else
+		hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
 
 	if (FAILED(hr))
 	{
