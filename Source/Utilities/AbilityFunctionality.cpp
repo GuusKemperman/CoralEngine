@@ -86,7 +86,7 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 	return metaType;
 }
 
-std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect)
+std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, bool forOverTimeEffect, float dealtDamageModifierOfCastByCharacter)
 {
 	auto& reg = world.GetRegistry();
 	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
@@ -106,16 +106,22 @@ std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& wor
 	{
 		if (effect.mStat == Stat::Health)
 		{
-			auto castByCharacterComponent = reg.TryGet<CharacterComponent>(castByEntity);
-			if (castByCharacterComponent == nullptr)
+			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
+			if (forOverTimeEffect == false)
 			{
-				LOG(LogAbilitySystem, Error, "Apply Effect - CastByEntity {} is not a character.", entt::to_integral(castByEntity));
-				return std::nullopt;
+				auto castByCharacterComponent = reg.TryGet<CharacterComponent>(castByEntity);
+				if (castByCharacterComponent == nullptr)
+				{
+					LOG(LogAbilitySystem, Error, "Apply Effect - CastByEntity {} is not a character.", entt::to_integral(castByEntity));
+					return std::nullopt;
+				}
+				damageModifier += castByCharacterComponent->mCurrentDealtDamageModifier;
 			}
-			const float damageModifier =
-				(castByCharacterComponent->mCurrentDealtDamageModifier + characterComponent->mCurrentReceivedDamageModifier)
-				* 0.01f;
-			effect.mAmount += effect.mAmount * damageModifier;
+			else
+			{
+				damageModifier += dealtDamageModifierOfCastByCharacter;
+			}
+			effect.mAmount += effect.mAmount * damageModifier * 0.01f;
 		}
 
 		effect.mAmount = -effect.mAmount;
@@ -170,39 +176,6 @@ void Engine::AbilityFunctionality::ApplyOverTimeEffect(World& world, entt::entit
 	}
 
 	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease}, castByEntityCharacterComponent->mCurrentDealtDamageModifier });
-}
-
-void Engine::AbilityFunctionality::ApplyInstantEffectForOverTimeEffect(World& world, entt::entity affectedEntity, EffectSettings effect, float dealtDamageModifierOfCastByCharacter)
-{
-	auto& reg = world.GetRegistry();
-	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
-	if (characterComponent == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} is not a character.", entt::to_integral(affectedEntity));
-		return;
-	}
-	auto [base, current] = GetStat(effect.mStat, *characterComponent);
-
-	if (effect.mFlatOrPercentage == FlatOrPercentage::Percentage)
-	{
-		effect.mAmount = effect.mAmount * 0.01f * base;
-	}
-
-	if (effect.mIncreaseOrDecrease == IncreaseOrDecrease::Decrease)
-	{
-		if (effect.mStat == Stat::Health)
-		{
-			const float damageModifier =
-				(dealtDamageModifierOfCastByCharacter + characterComponent->mCurrentReceivedDamageModifier)
-				* 0.01f;
-			effect.mAmount += effect.mAmount * damageModifier;
-		}
-
-		effect.mAmount = -effect.mAmount;
-	}
-
-	// apply
-	current += effect.mAmount;
 }
 
 entt::entity Engine::AbilityFunctionality::SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy)

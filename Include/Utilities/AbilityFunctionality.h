@@ -58,11 +58,10 @@ namespace Engine
 			REFLECT_AT_START_UP(EffectSettings);
 		};
 
-		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect);
+		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, bool forOverTimeEffect = false, float dealtDamageModifierOfCastByCharacter = 0.f);
 		static void ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f);
 		static void RevertDurationalEffect(CharacterComponent& characterComponent, DurationalEffect& durationalEffect);
 		static void ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f, int ticks = 1);
-		static void ApplyInstantEffectForOverTimeEffect(World& world, entt::entity affectedEntity, EffectSettings effect, float dealtDamageModifierOfCastByCharacter = 0.f);
 		static entt::entity SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy);
 		static entt::entity SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy); // area of attack
 
