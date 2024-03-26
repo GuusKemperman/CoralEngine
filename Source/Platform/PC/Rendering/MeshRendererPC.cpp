@@ -27,7 +27,6 @@
 #include "Assets/Texture.h"
 #include "Assets/StaticMesh.h"
 #include "Assets/SkinnedMesh.h"
-#include "Rendering/DebugRenderer.h"
 
 Engine::MeshRenderer::MeshRenderer()
 {
