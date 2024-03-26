@@ -285,8 +285,8 @@ void Engine::MeshRenderer::HandleColorComponent(const World& world, const entt::
     if (colorComponent)
     {
         InfoStruct::DXColorMultiplierInfo info;
-        info.colorAdd = glm::vec4(colorComponent->colorAddition, 0.f);
-        info.colorMult = glm::vec4(colorComponent->colorMultiplier, 0.f);
+        info.colorAdd = glm::vec4(colorComponent->mColorAddition, 0.f);
+        info.colorMult = glm::vec4(colorComponent->mColorMultiplier, 0.f);
         meshColorBuffer.Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
     }
     else

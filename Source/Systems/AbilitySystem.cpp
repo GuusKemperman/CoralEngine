@@ -10,6 +10,7 @@
 #include "World/World.h"
 #include "Core/Input.h"
 #include "Assets/Script.h"
+#include "Components/MeshColorComponent.h"
 #include "Components/Abilities/AOEComponent.h"
 #include "Components/Abilities/EffectsOnCharacterComponent.h"
 #include "Components/Abilities/ProjectileComponent.h"
@@ -70,7 +71,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             {
                 it->mTicksCounter++;
             	it->mDurationTimer = 0.f;
-                AbilityFunctionality::ApplyInstantEffect(world, entt::null, entity, it->mEffectSettings, true, it->mDealtDamageModifierOfCastByCharacter);
+                AbilityFunctionality::ApplyInstantEffect(world, entt::null, entity, it->mEffectSettings, AbilityFunctionality::EffectOverTime, it->mDealtDamageModifierOfCastByCharacter);
             }
             if (it->mTicksCounter >= it->mNumberOfTicks)
             {
@@ -79,6 +80,43 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             else
             {
                 ++it;
+            }
+        }
+
+        // visual effects
+        auto& visualEffects = effects.mVisualEffects;
+        if (visualEffects.empty() == false)
+        {
+            if (auto meshColor = reg.TryGet<MeshColorComponent>(entity); meshColor == nullptr)
+            {
+                LOG(LogAbilitySystem, Error, "Character with entity id {} does not have a MeshColorComponent attached - visual effects of abilities cannot be displayed.", entt::to_integral(entity));
+            }
+            else
+            {
+                for (auto it = visualEffects.begin(); it != visualEffects.end();)
+                {
+                    meshColor->mColorAddition = it->mColor;
+                    it->mDurationTimer += dt;
+                    if (it->mDurationTimer >= it->mDuration)
+                    {
+                        it = visualEffects.erase(it);
+                        if (visualEffects.empty() == false)
+                        {
+                            meshColor->mColorAddition = visualEffects.back().mColor;
+                            // Use the last visual effect in the vector,
+                            // otherwise it will not have a color for one frame
+                            // if the erased visual effect was the last in the vector.
+                        }
+                        else
+                        {
+                            meshColor->mColorAddition = {};
+                        }
+                    }
+                    else
+                    {
+                        ++it;
+                    }
+                }
             }
         }
 

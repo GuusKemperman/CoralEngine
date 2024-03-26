@@ -42,12 +42,20 @@ namespace Engine
 			Increase
 		};
 
+		enum ApplyType
+		{
+			Instant,
+			Durational,
+			EffectOverTime
+		};
+
 		struct EffectSettings
 		{
 			Stat mStat = Health;
 			float mAmount{};
 			FlatOrPercentage mFlatOrPercentage = Flat;
 			IncreaseOrDecrease mIncreaseOrDecrease = Decrease;
+			bool mClampToMax = true;
 
 			bool operator==(const EffectSettings& effectSettings) const;
 			bool operator!=(const EffectSettings& effectSettings) const;
@@ -58,26 +66,27 @@ namespace Engine
 			REFLECT_AT_START_UP(EffectSettings);
 		};
 
-		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, bool forOverTimeEffect = false, float dealtDamageModifierOfCastByCharacter = 0.f);
+		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, ApplyType applyType = Instant, float dealtDamageModifierOfCastByCharacter = 0.f);
 		static void ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f);
-		static void RevertDurationalEffect(CharacterComponent& characterComponent, DurationalEffect& durationalEffect);
+		static void RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect);
 		static void ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f, int ticks = 1);
 		static entt::entity SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy);
 		static entt::entity SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy); // area of attack
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);
+		static glm::vec3 GetEffectColor(Stat stat, IncreaseOrDecrease increaseOrDecrease);
 
-		std::unordered_map<std::pair<std::optional<Stat>, IncreaseOrDecrease>, glm::vec4, PairOfOptionalAndValueHash>
+		inline static std::unordered_map<std::pair<std::optional<Stat>, IncreaseOrDecrease>, glm::vec3, PairOfOptionalAndValueHash>
 			mEffectColors = {
-		{{std::nullopt, Increase}, {1.f, 1.f, 1.f, 1.f}},               // Default increase - white
-		{{std::nullopt, Decrease}, {0.05f, 0.05f, 0.05f, 1.f}},         // Default decrease - black
-		{{Health, Increase}, {0.f, 1.f, 0.f, 1.0f}},                    // green
-		{{Health, Decrease}, {1.f, 0.f, 0.f, 1.0f}},                    // red
-		{{MovementSpeed, Increase}, {1.f, 0.5f, 0.f, 1.0f}},            // orange
-		{{MovementSpeed, Decrease}, {0.25f, 0.25f, 1.f, 1.0f}},         // blue
-		{{DealtDamageModifier, Increase}, {0.75f, 0.25f, 0.75f, 1.0f}}, // purple
-		{{ReceivedDamageModifier, Increase}, {1.f, 1.f, 0.25f, 1.0f}},  // yellow
+		{{std::nullopt, Increase}, {1.f, 1.f, 1.f}},               // Default increase - white
+		{{std::nullopt, Decrease}, {0.05f, 0.05f, 0.05f}},         // Default decrease - black
+		{{Health, Increase}, {0.f, 1.f, 0.f}},                    // green
+		{{Health, Decrease}, {1.f, 0.f, 0.f}},                    // red
+		{{MovementSpeed, Increase}, {1.f, 0.5f, 0.f}},            // orange
+		{{MovementSpeed, Decrease}, {0.25f, 0.25f, 1.f}},         // blue
+		{{DealtDamageModifier, Increase}, {0.75f, 0.25f, 0.75f}}, // purple
+		{{ReceivedDamageModifier, Increase}, {1.f, 1.f, 0.25f}},  // yellow
 		};
 
 		friend ReflectAccess;

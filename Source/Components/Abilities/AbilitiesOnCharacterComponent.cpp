@@ -35,7 +35,7 @@ void Engine::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::v
 	auto& reg = world.GetRegistry();
 	if (entities.size() > 1)
 	{
-		LOG(LogInspect, Warning, "Abilities On Character Component cannot be edited for multiple entities at the same time. Please only select one entity.");
+		ImGui::TextWrapped("Cannot inspect more than one Abilities On Character Component at a time.");
 		return;
 	}
 	auto& abilities = reg.Get<AbilitiesOnCharacterComponent>(entities[0]);

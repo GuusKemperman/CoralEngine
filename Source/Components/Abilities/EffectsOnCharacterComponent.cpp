@@ -124,7 +124,7 @@ bool Engine::VisualEffect::operator!=(const VisualEffect& other) const
 void Engine::VisualEffect::DisplayWidget()
 {
 	ShowInspectUIReadOnly("mColor", mColor);
-	ShowInspectUIReadOnly("mDurationTimer", mDurationTimer);
+	ShowInspectUIReadOnly("mDuration", mDuration);
 	ShowInspectUIReadOnly("mDurationTimer", mDurationTimer);
 }
 #endif // EDITOR
