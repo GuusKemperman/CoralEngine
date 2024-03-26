@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 #include "World/World.h"
-#include "Rendering/DrawDebugHelpers.h"
+#include "Utilities/DrawDebugHelpers.h"
 
 namespace Engine
 {

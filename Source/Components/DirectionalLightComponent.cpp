@@ -2,7 +2,7 @@
 #include "Components/DirectionalLightComponent.h"
 
 #include "Components/TransformComponent.h"
-#include "Rendering/DrawDebugHelpers.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
 void Engine::DirectionalLightComponent::OnDrawGizmos(World& world, entt::entity owner) const

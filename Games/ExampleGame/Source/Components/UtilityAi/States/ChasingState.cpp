@@ -5,7 +5,7 @@
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Components/Pathfinding/NavMeshTargetComponent.h"
 #include "Meta/MetaType.h"
-#include "Rendering/DrawDebugHelpers.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 

@@ -8,7 +8,7 @@
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
-#include "Rendering/DrawDebugHelpers.h"
+#include "Utilities/DrawDebugHelpers.h"
 
 void Engine::ParticleDebugVisualizationSystem::Render(const World& world)
 {

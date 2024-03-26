@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Rendering/DrawDebugHelpers.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "Rendering/Renderer.h"
 
 void Engine::DrawDebugLine(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)

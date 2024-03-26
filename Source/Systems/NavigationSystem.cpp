@@ -10,7 +10,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
-#include "Rendering/DrawDebugHelpers.h"
+#include "Utilities/DrawDebugHelpers.h"
 
 using namespace Engine;
 

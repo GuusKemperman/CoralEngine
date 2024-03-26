@@ -23,7 +23,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "World/Registry.h"
 #include "World/World.h"
-#include "Rendering/DrawDebugHelpers.h"
+#include "Utilities/DrawDebugHelpers.h"
 
 void Engine::NavMeshComponent::GenerateNavMesh(const World& world)
 {
