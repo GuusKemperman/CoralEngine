@@ -1514,7 +1514,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClInclude Include="Include\Components\Physics2D\AABBColliderComponent.h" />
-    <ClInclude Include="Include\Components\Physics2D\BoxColliderComponent.h" />
     <ClInclude Include="Include\Core\UIRenderer.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectOptional.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\UIRendererPC.h" />

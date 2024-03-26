@@ -161,6 +161,7 @@ namespace Engine
 
 		float mInvMass = 1.f;
 		float mRestitution = 1.f;
+		float mFriction = 1.0f;
 		glm::vec2 mLinearVelocity{};
 		glm::vec2 mForce{};
 

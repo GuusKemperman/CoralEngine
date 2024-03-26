@@ -81,6 +81,7 @@ void Engine::PhysicsSystem::ApplyVelocities(World& world, float dt)
 		if (body.mIsAffectedByForces)
 		{
 			body.mLinearVelocity += body.mForce * body.mInvMass * dt;
+			//body.mLinearVelocity *= powf(body.mFriction, dt);
 		}
 
 		if (body.mLinearVelocity == glm::vec2{})
@@ -102,7 +103,7 @@ void Engine::PhysicsSystem::UpdateCollisions(World& world)
 	Registry& reg = world.GetRegistry();
 	const Physics& physics = world.GetPhysics();
 
-	const auto viewDisk = reg.View<TransformComponent, PhysicsBody2DComponent, const DiskColliderComponent, TransformedDiskColliderComponent>();
+	const auto viewDisk = reg.View<TransformComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>();
 	const auto viewPolygon = reg.View<const PhysicsBody2DComponent, const TransformedPolygonColliderComponent>();
 	const auto viewAABB = reg.View<const PhysicsBody2DComponent, const TransformedAABBColliderComponent>();
 
@@ -118,7 +119,7 @@ void Engine::PhysicsSystem::UpdateCollisions(World& world)
 	for (auto it1 = viewDisk.begin(); it1 != viewDisk.end(); ++it1)
 	{
 		const entt::entity entity1 = *it1;
-		auto [transform1, body1, disk1, TransformedDiskColliderComponent1] = viewDisk.get<TransformComponent, PhysicsBody2DComponent, DiskColliderComponent, TransformedDiskColliderComponent>(entity1);
+		auto [transform1, body1, transformedDiskCollider1] = viewDisk.get<TransformComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>(entity1);
 
 		// Can be modified by ResolveCollision. Is only actually applied
 		// to the transform at the end of this loop, for performance
@@ -127,18 +128,19 @@ void Engine::PhysicsSystem::UpdateCollisions(World& world)
 		const glm::vec3 entity1PosAtStart = entity1Pos;
 		glm::vec2 entity1TotalImpulse{};
 
-		auto resolveCollisionFor1 = [&TransformedDiskColliderComponent1, &entity1Pos, &entity1TotalImpulse](ResolvedCollision resolvedCollision)
+		auto resolveCollisionFor1 = [&transformedDiskCollider1, &entity1Pos, &entity1TotalImpulse](ResolvedCollision resolvedCollision)
 			{
 				entity1TotalImpulse += resolvedCollision.mImpulse;
 				entity1Pos = resolvedCollision.mResolvedPosition;
-				TransformedDiskColliderComponent1.mCentre = entity1Pos;
+				transformedDiskCollider1.mCentre = To2DRightForward(entity1Pos);
 			};
 
 		// disk-disk collisions
 		for (auto it2 = [&it1]{ auto tmp = it1; ++tmp; return tmp; }(); it2 != viewDisk.end(); ++it2)
 		{
 			const entt::entity entity2 = *it2;
-			auto [transform2, body2, disk2, TransformedDiskColliderComponent2] = viewDisk.get<TransformComponent, PhysicsBody2DComponent, DiskColliderComponent, TransformedDiskColliderComponent>(entity1);
+			ASSERT(entity1 != entity2);
+			auto [transform2, body2, transformedDiskCollider2] = viewDisk.get<TransformComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>(entity2);
 
 			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
 
@@ -149,7 +151,7 @@ void Engine::PhysicsSystem::UpdateCollisions(World& world)
 
 			const glm::vec3 entity2Pos = transform2.GetWorldPosition();
 
-			if (CollisionCheckDiskDisk(TransformedDiskColliderComponent1, TransformedDiskColliderComponent2, collision))
+			if (CollisionCheckDiskDisk(transformedDiskCollider1, transformedDiskCollider2, collision))
 			{
 				RegisterCollision(currentCollisions, collision, entity1, entity2);
 
@@ -165,14 +167,14 @@ void Engine::PhysicsSystem::UpdateCollisions(World& world)
 						auto [newEntity2Pos, entity2Impulse] = ResolveDiskCollision(physics, collision, body2, body1, entity2Pos, -1.0f);
 						body2.ApplyImpulse(entity2Impulse);
 						transform2.SetWorldPosition(newEntity2Pos);
-						TransformedDiskColliderComponent2.mCentre = newEntity2Pos;
+						transformedDiskCollider2.mCentre = To2DRightForward(newEntity2Pos);
 					}
 				}
 			}
 		}
 
 		// disk-polygon collisions
-		for (const auto [entity2, body2, TransformedPolygonColliderComponent2] : viewPolygon.each())
+		for (const auto [entity2, body2, transformedPolygonCollider] : viewPolygon.each())
 		{
 			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
 
@@ -181,7 +183,7 @@ void Engine::PhysicsSystem::UpdateCollisions(World& world)
 				continue;
 			}
 
-			if (CollisionCheckDiskPolygon(TransformedDiskColliderComponent1, TransformedPolygonColliderComponent2, collision))
+			if (CollisionCheckDiskPolygon(transformedDiskCollider1, transformedPolygonCollider, collision))
 			{
 				RegisterCollision(currentCollisions, collision, entity1, entity2);
 
@@ -194,7 +196,7 @@ void Engine::PhysicsSystem::UpdateCollisions(World& world)
 		}
 
 		// disk-aabb collisions
-		for (const auto [entity2, body2, TransformedAABBColliderComponent2] : viewAABB.each())
+		for (const auto [entity2, body2, transformedAABBCollider] : viewAABB.each())
 		{
 			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
 
@@ -203,7 +205,7 @@ void Engine::PhysicsSystem::UpdateCollisions(World& world)
 				continue;
 			}
 
-			if (CollisionCheckDiskAABB(TransformedDiskColliderComponent1, TransformedAABBColliderComponent2, collision))
+			if (CollisionCheckDiskAABB(transformedDiskCollider1, transformedAABBCollider, collision))
 			{
 				RegisterCollision(currentCollisions, collision, entity1, entity2);
 
@@ -443,8 +445,8 @@ Engine::PhysicsSystem::ResolvedCollision Engine::PhysicsSystem::ResolveDiskColli
 
 	if (dotProduct <= 0)
 	{
-		const float restitution = (bodyToMove.mRestitution + otherBody.mRestitution);
-		const float j = -(1 + restitution * 0.5f) * dotProduct / (1 / bodyToMove.mInvMass + 1 / otherBody.mInvMass);
+		const float restitution = bodyToMove.mRestitution + otherBody.mRestitution;
+		const float j = -(1.0f + restitution * 0.5f) * dotProduct / (1.0f / bodyToMove.mInvMass + 1.0f / otherBody.mInvMass);
 		impulse = multiplicant * j * collisionToResolve.mNormalFor1;
 	}
 
@@ -459,6 +461,7 @@ void Engine::PhysicsSystem::RegisterCollision(std::vector<CollisionData>& curren
 	currentCollisions.emplace_back(collision);
 }
 
+static constexpr glm::vec2 sDefaultNormal =  glm::vec2{ 0.707107f };
 
 bool Engine::PhysicsSystem::CollisionCheckDiskDisk(TransformedDiskColliderComponent disk1, TransformedDiskColliderComponent disk2, CollisionData& result)
 {
@@ -466,11 +469,26 @@ bool Engine::PhysicsSystem::CollisionCheckDiskDisk(TransformedDiskColliderCompon
 	const glm::vec2 diff(disk1.mCentre - disk2.mCentre);
 	const float l2 = length2(diff);
 	const float r = disk1.mRadius + disk2.mRadius;
-	if (l2 > r * r) return false;
+
+	if (l2 > r * r)
+	{
+		return false;
+	}
+
+	const float l = sqrt(l2);
 
 	// compute collision details
-	result.mNormalFor1 = normalize(diff);
-	result.mDepth = r - sqrt(l2);
+	result.mDepth = r - l;
+
+	if (l != 0.0f)
+	{
+		result.mNormalFor1 = diff / l;
+	}
+	else
+	{
+		result.mNormalFor1 = sDefaultNormal;
+	}
+
 	result.mContactPoint = disk2.mCentre + result.mNormalFor1 * disk2.mRadius;
 
 	return true;
@@ -490,7 +508,16 @@ bool Engine::PhysicsSystem::CollisionCheckDiskPolygon(TransformedDiskColliderCom
 	if (AreOverlapping(disk.mCentre, polygon))
 	{
 		const float l = sqrt(l2);
-		result.mNormalFor1 = -diff / l;
+
+		if (l != 0.0f)
+		{
+			result.mNormalFor1 = -diff / l;
+		}
+		else
+		{
+			result.mNormalFor1 = sDefaultNormal;
+		}
+
 		result.mDepth = l + disk.mRadius;
 		return true;
 	}
@@ -499,7 +526,16 @@ bool Engine::PhysicsSystem::CollisionCheckDiskPolygon(TransformedDiskColliderCom
 
 	// compute collision details
 	const float l = sqrt(l2);
-	result.mNormalFor1 = diff / l;
+
+	if (l != 0.0f)
+	{
+		result.mNormalFor1 = diff / l;
+	}
+	else
+	{
+		result.mNormalFor1 = sDefaultNormal;
+	}
+
 	result.mDepth = disk.mRadius - l;
 	result.mContactPoint = nearest;
 	return true;
@@ -511,8 +547,6 @@ bool Engine::PhysicsSystem::CollisionCheckDiskAABB(TransformedDiskColliderCompon
 	{
 		return false;
 	}
-
-	const glm::vec2 size = aabb.GetSize();
 
 	return CollisionCheckDiskPolygon(disk, aabb.GetAsPolygon(), result);
 }
