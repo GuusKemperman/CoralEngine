@@ -5,10 +5,7 @@
 
 #include <glm/gtx/norm.hpp>
 
-using namespace geometry2d;
-using namespace glm;
-
-bool geometry2d::IsPointLeftOfLine(const vec2& point, const vec2& line1, const vec2& line2)
+bool Engine::IsPointLeftOfLine(glm::vec2 point, glm::vec2 line1, glm::vec2 line2)
 {
 	double p[2] = {point.x, point.y};
 	double la[2] = {line1.x, line1.y};
@@ -16,7 +13,7 @@ bool geometry2d::IsPointLeftOfLine(const vec2& point, const vec2& line1, const v
 	return RobustPredicates::orient2d(p, la, lb) > 0;
 }
 
-bool geometry2d::IsPointRightOfLine(const vec2& point, const vec2& line1, const vec2& line2)
+bool Engine::IsPointRightOfLine(glm::vec2 point, glm::vec2 line1, glm::vec2 line2)
 {
 	double p[2] = {point.x, point.y};
 	double la[2] = {line1.x, line1.y};
@@ -24,7 +21,7 @@ bool geometry2d::IsPointRightOfLine(const vec2& point, const vec2& line1, const 
 	return RobustPredicates::orient2d(p, la, lb) < 0;
 }
 
-bool geometry2d::IsClockwise(const Polygon& polygon)
+bool Engine::IsClockwise(const Polygon& polygon)
 {
 	size_t n = polygon.size();
 	assert(n > 2);
@@ -44,36 +41,60 @@ bool geometry2d::IsClockwise(const Polygon& polygon)
 	return signedArea < 0.f;
 }
 
-bool geometry2d::IsPointInsidePolygon(const vec2& point, const Polygon& polygon)
+bool Engine::IsPointInsidePolygon(glm::vec2 point, const Polygon& polygon)
 {
 	// Adapted from: https://wrfranklin.org/Research/Short_Notes/pnpoly.html
 
 	size_t i, j;
-	size_t n = polygon.size();
+	const size_t n = polygon.size();
 	bool inside = false;
 
 	for (i = 0, j = n - 1; i < n; j = i++)
 	{
 		if ((polygon[i].y > point.y != polygon[j].y > point.y) &&
-			(point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) +
-				polygon[i].x))
+			(point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) + polygon[i].x))
 			inside = !inside;
 	}
 
 	return inside;
 }
 
-vec2 geometry2d::GetNearestPointOnLineSegment(const vec2& p, const vec2& segmentA, const vec2& segmentB)
+bool Engine::IsPointInsideDisk(glm::vec2 point, glm::vec2 diskCentre, float diskRadius)
 {
-	float t = dot(p - segmentA, segmentB - segmentA) / distance2(segmentA, segmentB);
+	return glm::distance2(point, diskCentre) < diskRadius * diskRadius;
+}
+
+glm::vec2 Engine::GetNearestPointOnLineSegment(glm::vec2 p, glm::vec2 segmentA, glm::vec2 segmentB)
+{
+	const float t = dot(p - segmentA, segmentB - segmentA) / distance2(segmentA, segmentB);
 	if (t <= 0) return segmentA;
 	if (t >= 1) return segmentB;
 	return (1 - t) * segmentA + t * segmentB;
 }
 
-vec2 geometry2d::ComputeCenterOfPolygon(const Polygon& polygon)
+glm::vec2 Engine::ComputeCenterOfPolygon(const Polygon& polygon)
 {
-	vec2 total(0, 0);
-	for (const vec2& p : polygon) total += p;
+	glm::vec2 total(0, 0);
+	for (glm::vec2 p : polygon) total += p;
 	return total / static_cast<float>(polygon.size());
+}
+
+glm::vec2 Engine::GetNearestPointOnPolygonBoundary(glm::vec2 point, const std::vector<glm::vec2>& polygon)
+{
+	float bestDist = std::numeric_limits<float>::max();
+	glm::vec2 bestNearest(0.f, 0.f);
+
+	const size_t n = polygon.size();
+	for (size_t i = 0; i < n; ++i)
+	{
+		glm::vec2 nearest = GetNearestPointOnLineSegment(point, polygon[i], polygon[(i + 1) % n]);
+		const float dist = distance2(point, nearest);
+		if (dist < bestDist)
+		{
+			bestDist = dist;
+			bestNearest = nearest;
+		}
+	}
+
+	return bestNearest;
 }

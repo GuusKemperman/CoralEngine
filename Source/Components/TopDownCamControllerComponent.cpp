@@ -6,7 +6,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void Engine::TopDownCamControllerComponent::ApplyTranslation(TransformComponent& transform,  const glm::vec3& target, const glm::vec2& CD) const
+void Engine::TopDownCamControllerComponent::ApplyTranslation(TransformComponent& transform,  const glm::vec3& target, glm::vec2 CD) const
 {
 	const float sn = sin(glm::radians(mAngle - 90.0f));
 	const float cs = cos(glm::radians(mAngle - 90.0f));
@@ -21,7 +21,7 @@ void Engine::TopDownCamControllerComponent::ApplyTranslation(TransformComponent&
 	transform.SetWorldPosition(totalTranslation);
 }
 
-void Engine::TopDownCamControllerComponent::UpdateRotation(TransformComponent& transform, const glm::vec3& target, const glm::vec2& CD)
+void Engine::TopDownCamControllerComponent::UpdateRotation(TransformComponent& transform, const glm::vec3& target, glm::vec2 CD)
 {
 	mTargetLocation = target;
 

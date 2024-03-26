@@ -134,7 +134,7 @@ namespace Engine
 
 		// In order to distinquish between overloads, you may have to cast it to the correct signature first.
 		// This is not specifically related to the MetaFunc class, but a restraint enforced by C++ itself.
-		MetaFunc func5{static_cast<float(*)(const glm::vec2&, const glm::vec2&)>(&glm::dot), "Dot" };
+		MetaFunc func5{static_cast<float(*)(glm::vec2, glm::vec2)>(&glm::dot), "Dot" };
 	*/
 	class MetaFunc
 	{
