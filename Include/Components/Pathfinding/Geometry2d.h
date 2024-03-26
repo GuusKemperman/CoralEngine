@@ -3,6 +3,8 @@
 namespace Engine
 {
 	using PolygonPoints = std::vector<glm::vec2>;
+	struct TransformedPolygon;
+	struct TransformedDisk;
 
 	struct Line
 	{
@@ -14,6 +16,7 @@ namespace Engine
 	{
 		float SignedDistance(glm::vec2 toPoint) const;
 
+		TransformedPolygon GetAsPolygon() const;
 		TransformedAABB GetBoundingBox() const { return *this; }
 
 		void CombineWith(TransformedAABB aabb)
@@ -34,6 +37,7 @@ namespace Engine
 	{
 		float SignedDistance(glm::vec2 toPoint) const;
 
+		TransformedPolygon GetAsPolygon() const;
 		TransformedAABB GetBoundingBox() const { return { glm::vec2{mCentre.x - mRadius, mCentre.y - mRadius}, glm::vec2{mCentre.x + mRadius, mCentre.y + mRadius} }; }
 		glm::vec2 GetCentre() const { return mCentre; }
 
@@ -45,8 +49,10 @@ namespace Engine
 	{
 		TransformedPolygon() = default;
 		TransformedPolygon(PolygonPoints&& transformedPoints);
+		TransformedPolygon(PolygonPoints&& transformedPoints, TransformedAABB boundingBox);
 
 		float SignedDistance(glm::vec2 toPoint) const;
+		const TransformedPolygon& GetAsPolygon() const { return *this; }
 		const TransformedAABB& GetBoundingBox() const { return mBoundingBox; }
 		glm::vec2 GetCentre() const;
 

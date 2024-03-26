@@ -53,8 +53,8 @@ namespace Engine
 		 */
 		struct NavMeshData
 		{
-			std::vector<PolygonPoints> mWalkable{};
-			std::vector<PolygonPoints> mObstacles{};
+			std::vector<TransformedPolygon> mWalkable{};
+			std::vector<TransformedPolygon> mObstacles{};
 		};
 		[[nodiscard]] NavMeshData GenerateNavMeshData(const World& world) const;
 
@@ -64,7 +64,7 @@ namespace Engine
 		 * of the unions of the walkable polygons and the obstacle polygons. In order to get it ready for
 		 * it to be triangulated.
 		 */
-		static std::vector<TransformedPolygon> GetDifferences(const std::vector<PolygonPoints>& walkable, const std::vector<PolygonPoints>& obstacles);
+		static std::vector<TransformedPolygon> GetDifferences(const NavMeshData& navMeshData);
 
 		/**
 		 * \brief Triangulates the polygonList provided and sets up the dual graph between the nav mesh and the A* graph

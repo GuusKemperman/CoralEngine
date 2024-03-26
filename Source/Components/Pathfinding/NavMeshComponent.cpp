@@ -15,7 +15,6 @@
 #endif
 
 #include "clipper2/clipper.h"
-#include "Components/TransformComponent.h"
 #include "Components/Physics2D/AABBColliderComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
@@ -33,7 +32,7 @@ void Engine::NavMeshComponent::GenerateNavMesh(const World& world)
 	mAStarGraph = {};
 
 	NavMeshData navMeshData = GenerateNavMeshData(world);
-	mCleanedPolygonList = GetDifferences(navMeshData.mWalkable, navMeshData.mObstacles);
+	mCleanedPolygonList = GetDifferences(navMeshData);
 	Triangulation(mCleanedPolygonList);
 	mNavMeshNeedsUpdate = false;
 }
@@ -48,7 +47,7 @@ Engine::NavMeshComponent::NavMeshData Engine::NavMeshComponent::GenerateNavMeshD
 		const auto& polygonView = world.GetRegistry().View<TransformedPolygonColliderComponent, PhysicsBody2DComponent>();
 		for (const auto [entity, polygonCollider, body] : polygonView.each())
 		{
-			std::vector<PolygonPoints>* partOfList{};
+			std::vector<TransformedPolygon>* partOfList{};
 
 			if (body.mRules.mLayer == CollisionLayer::StaticObstacles)
 			{
@@ -64,13 +63,13 @@ Engine::NavMeshComponent::NavMeshData Engine::NavMeshComponent::GenerateNavMeshD
 				continue;
 			}
 
-			partOfList->emplace_back(polygonCollider.mPoints);
+			partOfList->emplace_back(polygonCollider);
 		}
 
 		const auto& diskView = world.GetRegistry().View<TransformedDiskColliderComponent, PhysicsBody2DComponent>();
 		for (const auto [entity, diskCollider, body] : diskView.each())
 		{
-			std::vector<PolygonPoints>* partOfList{};
+			std::vector<TransformedPolygon>* partOfList{};
 
 			if (body.mRules.mLayer == CollisionLayer::StaticObstacles)
 			{
@@ -86,48 +85,30 @@ Engine::NavMeshComponent::NavMeshData Engine::NavMeshComponent::GenerateNavMeshD
 				continue;
 			}
 
-			PolygonPoints polygon;
-
-			constexpr float dt = glm::two_pi<float>() / 16.0f;
-
-			for (float t = 0.0f; t < glm::two_pi<float>() - dt; t += dt)
-			{
-				polygon.emplace_back(diskCollider.mCentre.x + diskCollider.mRadius * cos(t + dt), diskCollider.mCentre.y + diskCollider.mRadius * sin(t + dt));
-			}
-
-			partOfList->emplace_back(std::move(polygon));
+			partOfList->emplace_back(diskCollider.GetAsPolygon());
 		}
 
-		//const auto& aabbView = world.GetRegistry().View<TransformedAABBColliderComponent, PhysicsBody2DComponent>();
-		//for (const auto [entity, aabbCollider, body] : aabbView.each())
-		//{
-		//	std::vector<PolygonPoints>* partOfList{};
+		const auto& aabbView = world.GetRegistry().View<TransformedAABBColliderComponent, PhysicsBody2DComponent>();
+		for (const auto [entity, aabbCollider, body] : aabbView.each())
+		{
+			std::vector<TransformedPolygon>* partOfList{};
 
-		//	if (body.mRules.mLayer == CollisionLayer::StaticObstacles)
-		//	{
-		//		partOfList = &data.mObstacles;
-		//	}
-		//	else if (body.mRules.mLayer == CollisionLayer::Terrain)
-		//	{
-		//		partOfList = &data.mWalkable;
-		//		terrainStart = aabbCollider.GetCentre();
-		//	}
-		//	else
-		//	{
-		//		continue;
-		//	}
+			if (body.mRules.mLayer == CollisionLayer::StaticObstacles)
+			{
+				partOfList = &data.mObstacles;
+			}
+			else if (body.mRules.mLayer == CollisionLayer::Terrain)
+			{
+				partOfList = &data.mWalkable;
+				terrainStart = aabbCollider.GetCentre();
+			}
+			else
+			{
+				continue;
+			}
 
-		//	PolygonPoints polygon;
-
-		//	constexpr float dt = glm::two_pi<float>() / 16.0f;
-
-		//	for (float t = 0.0f; t < glm::two_pi<float>() - dt; t += dt)
-		//	{
-		//		polygon.emplace_back(diskCollider.mCentre.x + diskCollider.mRadius * cos(t + dt), diskCollider.mCentre.y + diskCollider.mRadius * sin(t + dt));
-		//	}
-
-		//	partOfList->emplace_back(std::move(polygon));
-		//}
+			partOfList->emplace_back(aabbCollider.GetAsPolygon());
+		}
 	}
 
 
@@ -200,7 +181,7 @@ Engine::NavMeshComponent::NavMeshData Engine::NavMeshComponent::GenerateNavMeshD
 	return data;
 }
 
-std::vector<Engine::TransformedPolygon> Engine::NavMeshComponent::GetDifferences(const std::vector<PolygonPoints>& walkables, const std::vector<PolygonPoints>& obstacles)
+std::vector<Engine::TransformedPolygon> Engine::NavMeshComponent::GetDifferences(const NavMeshData& navMeshData)
 {
 	std::vector<TransformedPolygon> differences;
 
@@ -209,9 +190,9 @@ std::vector<Engine::TransformedPolygon> Engine::NavMeshComponent::GetDifferences
 	Clipper2Lib::PathsD walkableUnion;
 
 	// Process walkable polygons
-	for (const auto& polygonListElement : walkables)
+	for (const auto& polygonListElement : navMeshData.mWalkable)
 	{
-		for (const auto& polygonElementVertex : polygonListElement)
+		for (const auto& polygonElementVertex : polygonListElement.mPoints)
 		{
 			doublePolygon.push_back(Clipper2Lib::PointD(polygonElementVertex.x, polygonElementVertex.y));
 		}
@@ -224,10 +205,10 @@ std::vector<Engine::TransformedPolygon> Engine::NavMeshComponent::GetDifferences
 	Clipper2Lib::PathsD obstacleUnion;
 
 	// Process obstacle polygons
-	for (const auto& polygonListElement : obstacles)
+	for (const auto& polygonListElement : navMeshData.mObstacles)
 	{
 		doublePolygon.clear();
-		for (const auto& polygonElementVertex : polygonListElement)
+		for (const auto& polygonElementVertex : polygonListElement.mPoints)
 		{
 			doublePolygon.push_back(Clipper2Lib::PointD(polygonElementVertex.x, polygonElementVertex.y));
 		}

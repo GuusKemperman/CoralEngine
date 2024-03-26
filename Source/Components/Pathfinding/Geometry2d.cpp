@@ -14,10 +14,37 @@ float Engine::TransformedAABB::SignedDistance(glm::vec2 toPoint) const
 	return glm::length(glm::max(d, 0.0f)) + glm::min(glm::max(d.x, d.y), 0.0f);
 }
 
+Engine::TransformedPolygon Engine::TransformedAABB::GetAsPolygon() const
+{
+	return {
+	{
+		mMin,
+		glm::vec2{ mMax.x, mMin.y },
+		mMax,
+		glm::vec2{ mMin.x, mMax.y }
+	},
+	*this
+	};
+}
+
 float Engine::TransformedDisk::SignedDistance(const glm::vec2 toPoint) const
 {
 	const float dist = glm::distance(mCentre, toPoint);
 	return dist - mRadius;
+}
+
+Engine::TransformedPolygon Engine::TransformedDisk::GetAsPolygon() const
+{
+	constexpr float dt = glm::two_pi<float>() / 16.0f;
+
+	PolygonPoints points{};
+
+	for (float t = 0.0f; t < glm::two_pi<float>() - dt; t += dt)
+	{
+		points.emplace_back(mCentre.x + mRadius * cos(t + dt), mCentre.y + mRadius * sin(t + dt));
+	}
+
+	return TransformedPolygon{ std::move(points), { mCentre - glm::vec2{mRadius}, mCentre + glm::vec2{mRadius} } };
 }
 
 
@@ -58,13 +85,31 @@ glm::vec2 Engine::TransformedPolygon::GetCentre() const
 Engine::TransformedPolygon::TransformedPolygon(PolygonPoints&& transformedPoints):
 	mPoints(std::move(transformedPoints))
 {
-	for (uint32 i = 0; i < mPoints.size(); ++i)
+	for (const glm::vec2 point : mPoints)
 	{
-		mBoundingBox.mMin.x = glm::min(mBoundingBox.mMin.x, mPoints[i].x);
-		mBoundingBox.mMin.y = glm::min(mBoundingBox.mMin.y, mPoints[i].y);
-		mBoundingBox.mMax.x = glm::max(mBoundingBox.mMax.x, mPoints[i].x);
-		mBoundingBox.mMax.y = glm::max(mBoundingBox.mMax.y, mPoints[i].y);
+		mBoundingBox.mMin.x = glm::min(mBoundingBox.mMin.x, point.x);
+		mBoundingBox.mMin.y = glm::min(mBoundingBox.mMin.y, point.y);
+		mBoundingBox.mMax.x = glm::max(mBoundingBox.mMax.x, point.x);
+		mBoundingBox.mMax.y = glm::max(mBoundingBox.mMax.y, point.y);
 	}
+}
+
+Engine::TransformedPolygon::TransformedPolygon(PolygonPoints&& transformedPoints, TransformedAABB boundingBox) :
+	mPoints(std::move(transformedPoints)),
+	mBoundingBox(boundingBox)
+{
+#ifdef LOGGING_ENABLED
+	for (const glm::vec2 point : mPoints)
+	{
+		if (!AreOverlapping(boundingBox, point))
+		{
+			LOG(LogCore, Error, "Invalid bounding box provided: {}, {} was not in boxMin {}, {} boxMax {}, {}", 
+				point.x, point.y,
+				boundingBox.mMin.x, boundingBox.mMin.y,
+				boundingBox.mMax.x, boundingBox.mMax.y);
+		}
+	}
+#endif
 }
 
 bool Engine::IsPointLeftOfLine(glm::vec2 point, glm::vec2 line1, glm::vec2 line2)

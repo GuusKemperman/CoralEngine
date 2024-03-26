@@ -274,9 +274,12 @@ void Engine::PhysicsSystem::UpdateTransformedColliders(World& world)
 	const auto collidersWithoutTransformed = reg.View<Collider>(entt::exclude_t<TransformedCollider>{});
 	reg.AddComponents<TransformedCollider>(collidersWithoutTransformed.begin(), collidersWithoutTransformed.end());
 
-	const auto diskView = reg.View<TransformComponent, Collider, TransformedCollider>();
+	const auto transformedWithoutColliders = reg.View<TransformedCollider>(entt::exclude_t<Collider>{});
+	reg.RemoveComponents<TransformedCollider>(transformedWithoutColliders.begin(), transformedWithoutColliders.end());
 
-	for (auto [entity, transform, collider, transformedCollider] : diskView.each())
+	const auto colliderView = reg.View<TransformComponent, Collider, TransformedCollider>();
+
+	for (auto [entity, transform, collider, transformedCollider] : colliderView.each())
 	{
 		transformedCollider = collider.CreateTransformedCollider(transform);
 	}
@@ -475,7 +478,7 @@ bool Engine::PhysicsSystem::CollisionCheckDiskDisk(TransformedDiskColliderCompon
 
 bool Engine::PhysicsSystem::CollisionCheckDiskPolygon(TransformedDiskColliderComponent disk, const TransformedPolygonColliderComponent& polygon, CollisionData& result)
 {
-	if (AreOverlapping(disk, polygon.mBoundingBox))
+	if (!AreOverlapping(disk, polygon.mBoundingBox))
 	{
 		return false;
 	}
@@ -504,22 +507,14 @@ bool Engine::PhysicsSystem::CollisionCheckDiskPolygon(TransformedDiskColliderCom
 
 bool Engine::PhysicsSystem::CollisionCheckDiskAABB(TransformedDiskColliderComponent disk, TransformedAABBColliderComponent aabb, CollisionData& result)
 {
-	if (AreOverlapping(disk, aabb))
+	if (!AreOverlapping(disk, aabb))
 	{
 		return false;
 	}
 
 	const glm::vec2 size = aabb.GetSize();
 
-	return CollisionCheckDiskPolygon(disk,
-		TransformedPolygonColliderComponent{
-			{
-				aabb.mMin,
-				glm::vec2{ aabb.mMin.x + size.x, aabb.mMin.y },
-				aabb.mMin + size,
-				glm::vec2{ aabb.mMin.x, aabb.mMin.y + size.y }
-			}
-		}, result);
+	return CollisionCheckDiskPolygon(disk, aabb.GetAsPolygon(), result);
 }
 
 glm::vec3 Engine::PhysicsSystem::GetAllowedWorldPos(const Physics& physics, 
