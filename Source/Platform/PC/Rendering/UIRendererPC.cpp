@@ -2,7 +2,6 @@
 #include "Platform/PC/Rendering/UIRendererPC.h"
 #include "Core/FileIO.h"
 #include "Core/Device.h"
-#include "Meta/MetaType.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Components/UI/UISpriteComponent.h"
@@ -80,9 +79,4 @@ void Engine::UIRenderer::Render(const World& world)
 
         gpuWorld.GetUIRenderingData().RenderData(commandList);
     }
-}
-
-Engine::MetaType Engine::UIRenderer::Reflect()
-{
-	return MetaType{ MetaType::T<UIRenderer>{}, "UIRendererSystem", MetaType::Base<System>{} };
 }

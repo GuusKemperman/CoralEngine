@@ -38,8 +38,5 @@ namespace Engine
 
     private:
         std::unique_ptr<DXPipeline> mPipeline;
-
-        friend ReflectAccess;
-        static MetaType Reflect();
     };
 }
