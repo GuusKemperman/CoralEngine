@@ -22,8 +22,7 @@ void Engine::SpawnerSystem::Update(World& world, float dt)
 			entt::entity spawnedPrefab = reg.CreateFromPrefab(*spawnerComponent.mEnemyPrefab);
 
 			auto* spawnedTransform = reg.TryGet<TransformComponent>(spawnedPrefab);
-
-			spawnedTransform->SetWorldPosition(spawnedTransform->GetWorldPosition());
+			spawnedTransform->SetWorldPosition(spawnerTransform.GetWorldPosition());
 			spawnerComponent.mCurrentTimer = 0;
 		}
 	}
