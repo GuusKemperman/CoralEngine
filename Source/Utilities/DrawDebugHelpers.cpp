@@ -2,6 +2,7 @@
 #include "Utilities/DrawDebugHelpers.h"
 #include "Rendering/Renderer.h"
 
+#ifdef EDITOR
 void Engine::DrawDebugLine(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
 {
 	const DebugRenderer& renderer = Renderer::Get().GetDebugRenderer();
@@ -55,3 +56,4 @@ void Engine::DrawDebugPolygon(const World& world, DebugCategory::Enum category, 
 	const DebugRenderer& renderer = Renderer::Get().GetDebugRenderer();
 	renderer.AddPolygon(world, category, points, color, plane);
 }
+#endif // EDITOR
