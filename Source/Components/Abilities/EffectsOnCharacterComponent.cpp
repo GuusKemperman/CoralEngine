@@ -14,6 +14,7 @@ Engine::MetaType Engine::EffectsOnCharacterComponent::Reflect()
 
 	metaType.AddField(&EffectsOnCharacterComponent::mDurationalEffects, "mDurationalEffects").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoSerializeTag);
 	metaType.AddField(&EffectsOnCharacterComponent::mOverTimeEffects, "mOverTimeEffects").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoSerializeTag);
+	metaType.AddField(&EffectsOnCharacterComponent::mVisualEffects, "mVisualEffects").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoSerializeTag);
 
 	ReflectComponentType<EffectsOnCharacterComponent>(metaType);
 
@@ -98,5 +99,44 @@ Engine::MetaType Engine::OverTimeEffect::Reflect()
 	metaType.AddField(&OverTimeEffect::mEffectSettings, "mEffectSettings").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&OverTimeEffect::mDealtDamageModifierOfCastByCharacter, "mDealtDamageModifierOfCastByCharacter").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 
+	return metaType;
+}
+
+bool Engine::VisualEffect::operator==(const VisualEffect& other) const
+{
+	return Math::AreFloatsEqual(mColor.x, other.mColor.x) && 
+		Math::AreFloatsEqual(mColor.y, other.mColor.y) &&
+		Math::AreFloatsEqual(mColor.z, other.mColor.z) &&
+		Math::AreFloatsEqual(mDuration, other.mDuration) &&
+		Math::AreFloatsEqual(mDurationTimer, other.mDurationTimer);
+}
+
+bool Engine::VisualEffect::operator!=(const VisualEffect& other) const
+{
+	return !Math::AreFloatsEqual(mColor.x, other.mColor.x) ||
+		!Math::AreFloatsEqual(mColor.y, other.mColor.y) ||
+		!Math::AreFloatsEqual(mColor.z, other.mColor.z) ||
+		!Math::AreFloatsEqual(mDuration, other.mDuration) ||
+		!Math::AreFloatsEqual(mDurationTimer, other.mDurationTimer);
+}
+
+#ifdef EDITOR
+void Engine::VisualEffect::DisplayWidget()
+{
+	ShowInspectUIReadOnly("mColor", mColor);
+	ShowInspectUIReadOnly("mDurationTimer", mDurationTimer);
+	ShowInspectUIReadOnly("mDurationTimer", mDurationTimer);
+}
+#endif // EDITOR
+
+Engine::MetaType Engine::VisualEffect::Reflect()
+{
+	MetaType metaType = MetaType{ MetaType::T<VisualEffect>{}, "VisualEffect" };
+	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+
+	metaType.AddField(&VisualEffect::mColor, "mColor").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&VisualEffect::mDuration, "mDuration").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&VisualEffect::mDurationTimer, "mDurationTimer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	
 	return metaType;
 }
