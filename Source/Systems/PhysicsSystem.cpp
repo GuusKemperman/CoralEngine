@@ -1,11 +1,12 @@
 #include "Precomp.h"
-#include "Systems/PhysicsSystem2D.h"
+#include "Systems/PhysicsSystem.h"
 
 #include "Components/ComponentFilter.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Meta/MetaType.h"
 #include "Components/TransformComponent.h"
-#include "Components/Pathfinding/Geometry2d.hpp"
+#include "Components/Pathfinding/Geometry2d.h"
+#include "Components/Physics2D/AABBColliderComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "World/Registry.h"
@@ -14,7 +15,7 @@
 #include "World/Physics.h"
 #include "World/WorldRenderer.h"
 
-Engine::PhysicsSystem2D::PhysicsSystem2D()
+Engine::PhysicsSystem::PhysicsSystem()
 {
 	for (const MetaType& type : MetaManager::Get().EachType())
 	{
@@ -44,18 +45,32 @@ Engine::PhysicsSystem2D::PhysicsSystem2D()
 	}
 }
 
-void Engine::PhysicsSystem2D::Update(World& world, float dt)
+void Engine::PhysicsSystem::Update(World& world, float dt)
 {
-	UpdateBodiesAndTransforms(world, dt);
-	UpdateCollisions(world);
+	if (world.HasBegunPlay()
+		&& !world.IsPaused())
+	{
+		ApplyVelocities(world, dt);
+	}
+
+	UpdateTransformedColliders<DiskColliderComponent, TransformedDiskColliderComponent>(world);
+	UpdateTransformedColliders<AABBColliderComponnet, TransformedAABBColliderComponent>(world);
+	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(world);
+
+	if (world.HasBegunPlay()
+		&& !world.IsPaused())
+	{
+		UpdateCollisions(world);
+	}
+
 }
 
-void Engine::PhysicsSystem2D::Render(const World& world)
+void Engine::PhysicsSystem::Render(const World& world)
 {
 	DebugDrawing(world);
 }
 
-void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
+void Engine::PhysicsSystem::ApplyVelocities(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
 	const Physics& physics = world.GetPhysics();
@@ -82,13 +97,14 @@ void Engine::PhysicsSystem2D::UpdateBodiesAndTransforms(World& world, float dt)
 	}
 }
 
-void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
+void Engine::PhysicsSystem::UpdateCollisions(World& world)
 {
 	Registry& reg = world.GetRegistry();
 	const Physics& physics = world.GetPhysics();
 
-	const auto& viewDisk = reg.View<PhysicsBody2DComponent, TransformComponent, DiskColliderComponent>();
-	const auto& viewPolygon = reg.View<PhysicsBody2DComponent, TransformComponent, PolygonColliderComponent>();
+	const auto viewDisk = reg.View<TransformComponent, PhysicsBody2DComponent, const DiskColliderComponent, TransformedDiskColliderComponent>();
+	const auto viewPolygon = reg.View<const PhysicsBody2DComponent, const TransformedPolygonColliderComponent>();
+	const auto viewAABB = reg.View<const PhysicsBody2DComponent, const TransformedAABBColliderComponent>();
 
 	CollisionData collision;
 
@@ -99,22 +115,30 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 	currentCollisions.clear();
 
 	// collisions between a dynamic and static/kinematic body are only resolved if the dynamic body is a disk
-	for (auto [entity1, body1, transform1, disk1] : viewDisk.each())
+	for (auto it1 = viewDisk.begin(); it1 != viewDisk.end(); ++it1)
 	{
+		const entt::entity entity1 = *it1;
+		auto [transform1, body1, disk1, TransformedDiskColliderComponent1] = viewDisk.get<TransformComponent, PhysicsBody2DComponent, DiskColliderComponent, TransformedDiskColliderComponent>(entity1);
+
 		// Can be modified by ResolveCollision. Is only actually applied
 		// to the transform at the end of this loop, for performance
 		// reasons.
 		glm::vec3 entity1Pos = transform1.GetWorldPosition();
 		const glm::vec3 entity1PosAtStart = entity1Pos;
+		glm::vec2 entity1TotalImpulse{};
+
+		auto resolveCollisionFor1 = [&TransformedDiskColliderComponent1, &entity1Pos, &entity1TotalImpulse](ResolvedCollision resolvedCollision)
+			{
+				entity1TotalImpulse += resolvedCollision.mImpulse;
+				entity1Pos = resolvedCollision.mResolvedPosition;
+				TransformedDiskColliderComponent1.mCentre = entity1Pos;
+			};
 
 		// disk-disk collisions
-		for (auto [entity2, body2, transform2, disk2] : viewDisk.each())
+		for (auto it2 = [&it1]{ auto tmp = it1; ++tmp; return tmp; }(); it2 != viewDisk.end(); ++it2)
 		{
-			// Avoid duplicate collision checks
-			if (entity1 >= entity2)
-			{
-				continue;
-			}
+			const entt::entity entity2 = *it2;
+			auto [transform2, body2, disk2, TransformedDiskColliderComponent2] = viewDisk.get<TransformComponent, PhysicsBody2DComponent, DiskColliderComponent, TransformedDiskColliderComponent>(entity1);
 
 			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
 
@@ -125,19 +149,30 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 
 			const glm::vec3 entity2Pos = transform2.GetWorldPosition();
 
-			if (CollisionCheckDiskDisk(To2DRightForward(entity1Pos), disk1.mRadius, To2DRightForward(entity2Pos), disk2.mRadius, collision))
+			if (CollisionCheckDiskDisk(TransformedDiskColliderComponent1, TransformedDiskColliderComponent2, collision))
 			{
 				RegisterCollision(currentCollisions, collision, entity1, entity2);
 
 				if (response == CollisionResponse::Blocking)
 				{
-					ResolveCollision(physics, collision, body1, body2, transform2, entity1Pos, entity2Pos);
+					if (body1.mIsAffectedByForces)
+					{
+						resolveCollisionFor1(ResolveDiskCollision(physics, collision, body1, body2, entity1Pos));
+					}
+
+					if (body2.mIsAffectedByForces)
+					{
+						auto [newEntity2Pos, entity2Impulse] = ResolveDiskCollision(physics, collision, body2, body1, entity2Pos, -1.0f);
+						body2.ApplyImpulse(entity2Impulse);
+						transform2.SetWorldPosition(newEntity2Pos);
+						TransformedDiskColliderComponent2.mCentre = newEntity2Pos;
+					}
 				}
 			}
 		}
 
 		// disk-polygon collisions
-		for (const auto [entity2, body2, transform2, polygon2] : viewPolygon.each())
+		for (const auto [entity2, body2, TransformedPolygonColliderComponent2] : viewPolygon.each())
 		{
 			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
 
@@ -146,23 +181,47 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 				continue;
 			}
 
-			const glm::vec3 entity2Pos = transform2.GetWorldPosition();
-
-			if (CollisionCheckDiskPolygon(To2DRightForward(entity1Pos), disk1.mRadius, To2DRightForward(entity2Pos), polygon2.mPoints, collision))
+			if (CollisionCheckDiskPolygon(TransformedDiskColliderComponent1, TransformedPolygonColliderComponent2, collision))
 			{
 				RegisterCollision(currentCollisions, collision, entity1, entity2);
 
-				if (response == CollisionResponse::Blocking)
+				if (response == CollisionResponse::Blocking
+					&& body1.mIsAffectedByForces)
 				{
-					ResolveCollision(physics, collision, body1, body2, transform2, entity1Pos, entity2Pos);
+					resolveCollisionFor1(ResolveDiskCollision(physics, collision, body1, body2, entity1Pos));
 				}
 			}
 		}
+
+		// disk-aabb collisions
+		for (const auto [entity2, body2, TransformedAABBColliderComponent2] : viewAABB.each())
+		{
+			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
+
+			if (response == CollisionResponse::Ignore)
+			{
+				continue;
+			}
+
+			if (CollisionCheckDiskAABB(TransformedDiskColliderComponent1, TransformedAABBColliderComponent2, collision))
+			{
+				RegisterCollision(currentCollisions, collision, entity1, entity2);
+
+				if (response == CollisionResponse::Blocking
+					&& body1.mIsAffectedByForces)
+				{
+					resolveCollisionFor1(ResolveDiskCollision(physics, collision, body1, body2, entity1Pos));
+				}
+			}
+		}
+
 
 		if (entity1Pos != entity1PosAtStart)
 		{
 			transform1.SetWorldPosition(GetAllowedWorldPos(physics, body1, entity1PosAtStart, To2DRightForward(entity1Pos - entity1PosAtStart)));
 		}
+
+		body1.ApplyImpulse(entity1TotalImpulse);
 	}
 
 	static std::vector<std::reference_wrapper<const CollisionData>> enters{};
@@ -208,8 +267,23 @@ void Engine::PhysicsSystem2D::UpdateCollisions(World& world)
 	std::swap(mPreviousCollisions, currentCollisions);
 }
 
+template <typename Collider, typename TransformedCollider>
+void Engine::PhysicsSystem::UpdateTransformedColliders(World& world)
+{
+	Registry& reg = world.GetRegistry();
+	const auto collidersWithoutTransformed = reg.View<Collider>(entt::exclude_t<TransformedCollider>{});
+	reg.AddComponents<TransformedCollider>(collidersWithoutTransformed.begin(), collidersWithoutTransformed.end());
+
+	const auto diskView = reg.View<TransformComponent, Collider, TransformedCollider>();
+
+	for (auto [entity, transform, collider, transformedCollider] : diskView.each())
+	{
+		transformedCollider = collider.CreateTransformedCollider(transform);
+	}
+}
+
 template <typename CollisionDataContainer>
-void Engine::PhysicsSystem2D::CallEvents(World& world, const CollisionDataContainer& collisions,
+void Engine::PhysicsSystem::CallEvents(World& world, const CollisionDataContainer& collisions,
                                          const std::vector<CollisionEvent>& events)
 {
 	if (collisions.empty())
@@ -236,31 +310,38 @@ void Engine::PhysicsSystem2D::CallEvents(World& world, const CollisionDataContai
 	}
 }
 
-void Engine::PhysicsSystem2D::DebugDrawing(const World& world)
+void Engine::PhysicsSystem::DebugDrawing(const World& world)
 {
 	const auto& renderer = world.GetDebugRenderer();
 	const Registry& reg = world.GetRegistry();
 
 	if (DebugRenderer::GetDebugCategoryFlags() & DebugCategory::Physics)
 	{
-		const auto diskView = reg.View<const DiskColliderComponent, const TransformComponent>();
+		const auto diskView = reg.View<const TransformedDiskColliderComponent, const TransformComponent>();
 		constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
-		for (auto [entity, disk, transformComponent] : diskView.each())
+		for (auto [entity, disk, transform] : diskView.each())
 		{
-			renderer.AddCircle(DebugCategory::Physics, transformComponent.GetWorldPosition(), disk.mRadius + 0.1f, color);
+			renderer.AddCircle(DebugCategory::Physics, To3DRightForward(disk.mCentre, transform.GetWorldPosition()[Axis::Up]), disk.mRadius + 0.00001f, color);
 		}
 
-		const auto polyView = reg.View<const PolygonColliderComponent, const TransformComponent>();
-		for (auto [entity, poly, transformComponent] : polyView.each())
+		const auto polyView = reg.View<const TransformedPolygonColliderComponent, const TransformComponent>();
+		for (auto [entity, poly, transform] : polyView.each())
 		{
-			const glm::vec2 worldPos = transformComponent.GetWorldPosition2D();
+			float height = transform.GetWorldPosition()[Axis::Up];
+
 			const size_t pointCount = poly.mPoints.size();
 			for (size_t i = 0; i < pointCount; ++i)
 			{
-				const glm::vec2 from = poly.mPoints[i] + worldPos;
-				const glm::vec2 to = poly.mPoints[(i + 1) % pointCount] + worldPos;
-				renderer.AddLine(DebugCategory::Physics, glm::vec3(from.x, 1.1f, from.y), glm::vec3(to.x, 1.1f, to.y), color);
+				const glm::vec2 from = poly.mPoints[i];
+				const glm::vec2 to = poly.mPoints[(i + 1) % pointCount];
+				renderer.AddLine(DebugCategory::Physics, To3DRightForward(from, height), To3DRightForward(to, height), color);
 			}
+		}
+
+		const auto aabbView = reg.View<const TransformedAABBColliderComponent, const TransformComponent>();
+		for (auto [entity, aabb, transform] : aabbView.each())
+		{
+			renderer.AddRectangle(DebugCategory::Physics, To3DRightForward(aabb.GetCentre(), transform.GetWorldPosition()[Axis::Up]), aabb.GetSize() * .5f, color);
 		}
 	}
 
@@ -311,13 +392,13 @@ void Engine::PhysicsSystem2D::DebugDrawing(const World& world)
 				constexpr glm::vec4 maxColor = { 5.0f, 0.0f, 0.0f, 1.0f };
 				const glm::vec4 color = Math::lerp(minColor, maxColor, colorT);
 
-				renderer.AddSquare(DebugCategory::TerrainHeight, To3DRightForward(worldPos2D, height), spacing, color);
+				renderer.AddRectangle(DebugCategory::TerrainHeight, To3DRightForward(worldPos2D, height), glm::vec2{ spacing }, color);
 			}
 		}
 	}
 }
 
-void Engine::PhysicsSystem2D::CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage,
+void Engine::PhysicsSystem::CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage,
         entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint)
 {
 	static_assert(std::is_same_v<decltype(sCollisionEntryEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
@@ -341,61 +422,34 @@ void Engine::PhysicsSystem2D::CallEvent(const CollisionEvent& event, World& worl
 	}
 }
 
-void Engine::PhysicsSystem2D::ResolveCollision(const Physics& physics, 
-		const CollisionData& collision,
-		PhysicsBody2DComponent& body1,
-		PhysicsBody2DComponent& body2,
-		TransformComponent& transform2,
-		glm::vec3& entity1WorldPos,
-		glm::vec3 entity2WorldPos)
+Engine::PhysicsSystem::ResolvedCollision Engine::PhysicsSystem::ResolveDiskCollision(const Physics& physics,
+	const CollisionData& collisionToResolve, const PhysicsBody2DComponent& bodyToMove,
+	const PhysicsBody2DComponent& otherBody, const glm::vec3& bodyPosition, float multiplicant)
 {
-	const bool isBody1Dynamic = body1.mIsAffectedByForces;
-	const bool isBody2Dynamic = body2.mIsAffectedByForces;
+	// displace the objects to resolve overlap
+	const float totalInvMass = bodyToMove.mInvMass + otherBody.mInvMass;
+	const glm::vec2 dist = (collisionToResolve.mDepth / totalInvMass) * collisionToResolve.mNormalFor1;
 
-	if (isBody1Dynamic 
-		|| isBody2Dynamic)
+	glm::vec3 resolvedPos = GetAllowedWorldPos(physics, bodyToMove, bodyPosition, multiplicant * dist * bodyToMove.mInvMass);
+
+
+	// compute and apply impulses
+	const float dotProduct = dot(bodyToMove.mLinearVelocity - otherBody.mLinearVelocity, collisionToResolve.mNormalFor1);
+
+	glm::vec2 impulse{};
+
+	if (dotProduct <= 0)
 	{
-		// displace the objects to resolve overlap
-		const float totalInvMass = body1.mInvMass + body2.mInvMass;
-		const glm::vec2 dist = (collision.mDepth / totalInvMass) * collision.mNormalFor1;
-
-		if (isBody1Dynamic)
-		{
-			// entity1WorldPos is applied to the transform
-			// outside of the loop that iterates over all the entity2's,
-			// see UpdateCollisions.
-			entity1WorldPos = GetAllowedWorldPos(physics, body1, entity1WorldPos, dist * body1.mInvMass);
-		}
-
-		if (isBody2Dynamic)
-		{
-			transform2.SetWorldPosition(GetAllowedWorldPos(physics, body2, entity2WorldPos, -dist * body2.mInvMass));
-		}
-
-		// compute and apply impulses
-		const float dotProduct = dot(body1.mLinearVelocity - body2.mLinearVelocity, collision.mNormalFor1);
-
-		if (dotProduct <= 0)
-		{
-			const float restitution = (body1.mRestitution + body2.mRestitution);
-			const float j = -(1 + restitution * 0.5f) * dotProduct / (1 / body1.mInvMass + 1 / body2.mInvMass);
-			const glm::vec2 impulse = j * collision.mNormalFor1;
-
-			if (isBody1Dynamic)
-			{
-				body1.ApplyImpulse(impulse);
-			}
-
-			if (isBody2Dynamic)
-			{
-				body2.ApplyImpulse(-impulse);
-			}
-		}
+		const float restitution = (bodyToMove.mRestitution + otherBody.mRestitution);
+		const float j = -(1 + restitution * 0.5f) * dotProduct / (1 / bodyToMove.mInvMass + 1 / otherBody.mInvMass);
+		impulse = multiplicant * j * collisionToResolve.mNormalFor1;
 	}
+
+	return { resolvedPos, impulse };
 }
 
-void Engine::PhysicsSystem2D::RegisterCollision(std::vector<CollisionData>& currentCollisions,
-		CollisionData& collision, entt::entity entity1, entt::entity entity2)
+void Engine::PhysicsSystem::RegisterCollision(std::vector<CollisionData>& currentCollisions,
+                                                CollisionData& collision, entt::entity entity1, entt::entity entity2)
 {
 	collision.mEntity1 = entity1;
 	collision.mEntity2 = entity2;
@@ -403,60 +457,83 @@ void Engine::PhysicsSystem2D::RegisterCollision(std::vector<CollisionData>& curr
 }
 
 
-bool Engine::PhysicsSystem2D::CollisionCheckDiskDisk(glm::vec2 center1, float radius1, glm::vec2 center2,
-		float radius2, CollisionData& result)
+bool Engine::PhysicsSystem::CollisionCheckDiskDisk(TransformedDiskColliderComponent disk1, TransformedDiskColliderComponent disk2, CollisionData& result)
 {
 	// check for overlap
-	const glm::vec2 diff(center1 - center2);
+	const glm::vec2 diff(disk1.mCentre - disk2.mCentre);
 	const float l2 = length2(diff);
-	const float r = radius1 + radius2;
+	const float r = disk1.mRadius + disk2.mRadius;
 	if (l2 > r * r) return false;
 
 	// compute collision details
 	result.mNormalFor1 = normalize(diff);
 	result.mDepth = r - sqrt(l2);
-	result.mContactPoint = center2 + result.mNormalFor1 * radius2;
+	result.mContactPoint = disk2.mCentre + result.mNormalFor1 * disk2.mRadius;
 
 	return true;
 }
 
-bool Engine::PhysicsSystem2D::CollisionCheckDiskPolygon(glm::vec2 diskCenter, float diskRadius, glm::vec2 polygonPos, const std::vector<glm::vec2>& polygonPoints,
-		CollisionData& result)
+bool Engine::PhysicsSystem::CollisionCheckDiskPolygon(TransformedDiskColliderComponent disk, const TransformedPolygonColliderComponent& polygon, CollisionData& result)
 {
-	glm::vec2 nearest = GetNearestPointOnPolygonBoundary(diskCenter - polygonPos, polygonPoints) + polygonPos;
-	const glm::vec2 diff(diskCenter - nearest);
+	if (AreOverlapping(disk, polygon.mBoundingBox))
+	{
+		return false;
+	}
+
+	glm::vec2 nearest = GetNearestPointOnPolygonBoundary(disk.mCentre, polygon.mPoints);
+	const glm::vec2 diff(disk.mCentre - nearest);
 	const float l2 = length2(diff);
 
-	if (IsPointInsidePolygon(diskCenter - polygonPos, polygonPoints))
+	if (AreOverlapping(disk.mCentre, polygon))
 	{
 		const float l = sqrt(l2);
 		result.mNormalFor1 = -diff / l;
-		result.mDepth = l + diskRadius;
+		result.mDepth = l + disk.mRadius;
 		return true;
 	}
 
-	if (l2 > diskRadius * diskRadius) return false;
+	if (l2 > disk.mRadius * disk.mRadius) return false;
 
 	// compute collision details
 	const float l = sqrt(l2);
 	result.mNormalFor1 = diff / l;
-	result.mDepth = diskRadius - l;
+	result.mDepth = disk.mRadius - l;
 	result.mContactPoint = nearest;
 	return true;
 }
 
-glm::vec3 Engine::PhysicsSystem2D::GetAllowedWorldPos(const Physics& physics, 
-	const PhysicsBody2DComponent& body, 
-	glm::vec3 currentWorldPos,
-	glm::vec2 translation)
+bool Engine::PhysicsSystem::CollisionCheckDiskAABB(TransformedDiskColliderComponent disk, TransformedAABBColliderComponent aabb, CollisionData& result)
 {
-	if (body.mRules.GetResponseIncludingTerrain(CollisionPresets::sTerrain.mRules) != CollisionResponse::Blocking)
+	if (AreOverlapping(disk, aabb))
 	{
-		return To3DRightForward(translation, currentWorldPos[Axis::Up]);
+		return false;
 	}
 
+	const glm::vec2 size = aabb.GetSize();
+
+	return CollisionCheckDiskPolygon(disk,
+		TransformedPolygonColliderComponent{
+			{
+				aabb.mMin,
+				glm::vec2{ aabb.mMin.x + size.x, aabb.mMin.y },
+				aabb.mMin + size,
+				glm::vec2{ aabb.mMin.x, aabb.mMin.y + size.y }
+			}
+		}, result);
+}
+
+glm::vec3 Engine::PhysicsSystem::GetAllowedWorldPos(const Physics& physics, 
+                                                      const PhysicsBody2DComponent& body, 
+                                                      glm::vec3 currentWorldPos,
+                                                      glm::vec2 translation)
+{
 	const glm::vec2 currentWorldPos2D = To2DRightForward(currentWorldPos);
 	const glm::vec2 desiredWorldPos2D = currentWorldPos2D + translation;
+
+	if (body.mRules.GetResponseIncludingTerrain(CollisionPresets::sTerrain.mRules) != CollisionResponse::Blocking)
+	{
+		return To3DRightForward(desiredWorldPos2D, currentWorldPos[Axis::Up]);
+	}
 
 	const float heightAtCurrPos = physics.GetHeightAtPosition(currentWorldPos2D);
 	const float heightAtDesiredPos = physics.GetHeightAtPosition(desiredWorldPos2D);
@@ -469,7 +546,7 @@ glm::vec3 Engine::PhysicsSystem2D::GetAllowedWorldPos(const Physics& physics,
 	return currentWorldPos;
 }
 
-Engine::MetaType Engine::PhysicsSystem2D::Reflect()
+Engine::MetaType Engine::PhysicsSystem::Reflect()
 {
-	return MetaType{ MetaType::T<PhysicsSystem2D>{}, "PhysicsSystem2D", MetaType::Base<System>{} };
+	return MetaType{ MetaType::T<PhysicsSystem>{}, "PhysicsSystem", MetaType::Base<System>{} };
 }
