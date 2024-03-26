@@ -26,7 +26,7 @@ Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
     std::istream& str = loadInfo.GetStream();
 
     StaticMeshFlags flags{};
-    str.read(reinterpret_cast<char*>(&flags), sizeof(flags));
+    str.read(reinterpret_cast<char*>(&flags), sizeof(StaticMeshFlags));
 
     uint32 numOfVertices{};
     str.read(reinterpret_cast<char*>(&numOfVertices), sizeof(numOfVertices));
@@ -130,8 +130,8 @@ void Engine::StaticMesh::DrawMesh() const
 
 	commandList->IASetVertexBuffers(0, 1, &mVertexBufferView);
 	commandList->IASetVertexBuffers(1, 1, &mNormalBufferView);
-	commandList->IASetVertexBuffers(2, 1, &mTexCoordBufferView);
-	commandList->IASetVertexBuffers(3, 1, &mTangentBufferView);
+    commandList->IASetVertexBuffers(2, 1, &mTangentBufferView);
+	commandList->IASetVertexBuffers(3, 1, &mTexCoordBufferView);
 	commandList->IASetIndexBuffer(&mIndexBufferView);
 	commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
 }

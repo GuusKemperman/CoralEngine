@@ -36,7 +36,7 @@ bool Engine::Texture::IsReadyToBeSentToGpu() const
 		&& mLoadedPixels->mPixels != nullptr;
 }
 
-void Engine::Texture::SentToGPU() const
+void Engine::Texture::SendToGPU() const
 {
 	if (!IsReadyToBeSentToGpu())
 	{
@@ -70,7 +70,7 @@ void Engine::Texture::SentToGPU() const
 	resourceDescription.Width = mLoadedPixels->mWidth;
 	resourceDescription.Height = mLoadedPixels->mHeight;
 	resourceDescription.DepthOrArraySize = 1;
-	resourceDescription.MipLevels = 1;
+	resourceDescription.MipLevels = 4;
 	resourceDescription.Format = dxgiformat;
 	resourceDescription.SampleDesc.Count = 1;
 	resourceDescription.SampleDesc.Quality = 0;
@@ -78,7 +78,7 @@ void Engine::Texture::SentToGPU() const
 	resourceDescription.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	self.mTextureBuffer = std::make_shared<DXResource>(device, heapProperties, resourceDescription, nullptr, "Texture Buffer Resource Heap");
+	self.mTextureBuffer = std::make_unique<DXResource>(device, heapProperties, resourceDescription, nullptr, "Texture Buffer Resource Heap");
 
 	UINT64 textureUploadBufferSize;
 	device->GetCopyableFootprints(&resourceDescription, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
@@ -96,10 +96,31 @@ void Engine::Texture::SentToGPU() const
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format = resourceDescription.Format;
-	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MipLevels = 4;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	self.mHeapSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mTextureBuffer.get(), &srvDesc);
+
+	for (int i = 1; i < 4; i++)
+	{
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+		uavDesc.Format = resourceDescription.Format;
+		uavDesc.Texture2D.MipSlice = i;
+		uavDesc.Texture2D.PlaneSlice = 0;
+
+		self.mUAVslots[i-1] = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mTextureBuffer.get(), &uavDesc);
+	}
+
+	GenerateMipmaps();
+
+	for (int i = 0; i < 3; i++)
+	{
+		self.mUAVslots[i].reset();
+	}
+
+	self.mMipmapCB = nullptr;
+
 	engineDevice.SubmitUploadCommands();
 
 	self.mLoadedPixels.reset();
@@ -154,6 +175,80 @@ int Engine::Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 	default:
 		return 0;
 	}
+}
+
+void Engine::Texture::GenerateMipmaps() const
+{
+	//FROM: https://www.3dgep.com/learning-directx-12-4/#Generate_Mipmaps_Compute_Shader
+	//TODO: Do the required steps if resource does not support UAVs
+	Texture& self = const_cast<Texture&>(*this);
+
+	Device& engineDevice = Device::Get();
+	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
+	ID3D12GraphicsCommandList4* uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetUploadCommandList());
+
+	DXGenerateMips generateMipsCB;
+	generateMipsCB.IsSRGB = false; //TODO: check if format is SRGB
+
+	auto resource = self.mTextureBuffer->GetResource();
+	auto resourceDesc = resource->GetDesc();
+
+	if (resourceDesc.Width <= 4 || resourceDesc.Height <=4)
+		return;
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = resourceDesc.Format;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;  // Only 2D textures are supported (this was checked in the calling function).
+	srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
+
+	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	self.mMipmapCB = std::make_unique<DXConstBuffer>(device, sizeof(DXGenerateMips), 1, "MIPMAP CREATION INFO BUFFER", FRAME_BUFFER_COUNT);
+
+
+	uint64_t srcWidth = resourceDesc.Width;
+	uint32_t srcHeight = resourceDesc.Height;
+	uint32_t dstWidth = static_cast<uint32_t>(srcWidth >> 1);
+	uint32_t dstHeight = srcHeight >> 1;
+
+	// 0b00(0): Both width and height are even.
+	// 0b01(1): Width is odd, height is even.
+	// 0b10(2): Width is even, height is odd.
+	// 0b11(3): Both width and height are odd.
+	generateMipsCB.SrcDimension = ( srcHeight & 1 ) << 1 | ( srcWidth & 1 );
+	DWORD mipCount = 4;
+
+	// The number of times we can half the size of the texture and get
+	// exactly a 50% reduction in size.
+	// A 1 bit in the width or height indicates an odd dimension.
+	// The case where either the width or the height is exactly 1 is handled
+	// as a special case (as the dimension does not require reduction).
+	_BitScanForward( &mipCount, ( dstWidth == 1 ? dstHeight : dstWidth ) | 
+		( dstHeight == 1 ? dstWidth : dstHeight ) );
+
+	// Dimensions should not reduce to 0.
+	// This can happen if the width and height are not the same.
+	dstWidth = std::max<DWORD>( 1, dstWidth );
+	dstHeight = std::max<DWORD>( 1, dstHeight );
+
+	generateMipsCB.SrcMipLevel = 0;
+	generateMipsCB.NumMipLevels = mipCount;
+	generateMipsCB.TexelSize.x = 1.0f / (float)dstWidth;
+	generateMipsCB.TexelSize.y = 1.0f / (float)dstHeight;
+	self.mMipmapCB->Update(&generateMipsCB, sizeof(DXGenerateMips), 0, engineDevice.GetFrameIndex());
+
+	uploadCmdList->SetPipelineState(reinterpret_cast<DXPipeline*>(engineDevice.GetMipmapPipeline())->GetPipeline().Get());
+	uploadCmdList->SetComputeRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
+	ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
+	uploadCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+	self.mMipmapCB->BindToCompute(uploadCmdList, 0, 0, engineDevice.GetFrameIndex());
+	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 10, *mHeapSlot);
+	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 6, *mUAVslots[0]);
+	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 7, *mUAVslots[1]);
+	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 8, *mUAVslots[2]);
+
+	uploadCmdList->Dispatch(dstWidth /8, dstHeight / 8,  1);
 }
 
 Engine::Texture::STBIPixels::~STBIPixels()

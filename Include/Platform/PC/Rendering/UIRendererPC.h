@@ -1,26 +1,14 @@
 #pragma once
-
-#include "Systems/System.h"
+#include "Rendering/ISubRenderer.h"
 
 namespace Engine
 {
     class UIRenderer final :
-        public System
+        public ISubRenderer
     {
     public:
         UIRenderer();
-        ~UIRenderer() override;
+        ~UIRenderer();
         void Render(const World& world) override;
-
-        SystemStaticTraits GetStaticTraits() const override
-        {
-            SystemStaticTraits traits{};
-            traits.mPriority = static_cast<int>(TickPriorities::PostRender) + (TickPriorityStepSize >> 1);
-            return traits;
-        }
-
-    private:
-        friend ReflectAccess;
-        static MetaType Reflect();
     };
 }

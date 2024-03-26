@@ -10,7 +10,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
-#include "Utilities/DebugRenderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 
 using namespace Engine;
 
@@ -26,7 +26,7 @@ void NavigationSystem::Update(World& world, float dt)
 		// ToDo Replace mNavMesh Needs with OnConstruct
 		if (navMeshComponent.mNavMeshNeedsUpdate)
 		{
-			navMeshComponent.SetNavMesh(world);
+			navMeshComponent.GenerateNavMesh(world);
 		}
 	}
 
@@ -49,12 +49,16 @@ void NavigationSystem::Update(World& world, float dt)
 		glm::vec2 agentWorldPosition = {agentTransform.GetWorldPosition().x, agentTransform.GetWorldPosition().z};
 		std::optional<glm::vec2> targetPosition = navMeshAgent.GetTargetPosition();
 
-		// set orientation
 		if (targetPosition.has_value())
 		{
-			const glm::vec2 orientation2D = glm::normalize(targetPosition.value() - agentWorldPosition);
-			const glm::quat orientationQuat = Math::Direction2DToXZQuatOrientation(orientation2D);
-			agentTransform.SetLocalOrientation(orientationQuat);
+			const glm::vec2 toTarget = *targetPosition - agentWorldPosition;
+			const float length2 = glm::length2(toTarget);
+
+			if (length2 != 0.0f)
+			{
+				const glm::quat orientationQuat = Math::Direction2DToXZQuatOrientation(toTarget / glm::sqrt(length2));
+				agentTransform.SetLocalOrientation(orientationQuat);
+			}
 		}
 
 		if (!targetPosition.has_value() || !navMeshAgent.IsChasing())
@@ -73,35 +77,33 @@ void NavigationSystem::Update(World& world, float dt)
 
 		// Find a path from the agent's position to the target's position
 		navMeshAgent.mPathFound = naveMesh.FindQuickestPath(agentWorldPosition,
-		                                                    navMeshAgent.GetTargetPosition().value());
+			targetPosition.value());
 
-		if (!navMeshAgent.mPathFound.empty())
+		if (navMeshAgent.mPathFound.empty())
 		{
-			// Calculate the difference in X and Y coordinates
-			const glm::vec2 dVec2 = navMeshAgent.mPathFound[1] - agentWorldPosition;
+			continue;
+		}
 
-			// Calculate the distance between the agent and the next waypoint
-			const float distance = std::sqrt(dVec2.x * dVec2.x + dVec2.y * dVec2.y);
+		// Calculate the difference in X and Y coordinates
+		const glm::vec2 dVec2 = navMeshAgent.mPathFound[1] - agentWorldPosition;
 
-			if (distance > 0)
-			{
-				const float step = speed * dt;
-				if (step >= distance)
-				{
-					// If the step is larger than the remaining distance, move directly to the target position
-					agentTransform.SetWorldPosition(
-						glm::vec3(navMeshAgent.mPathFound[1].x, 0, navMeshAgent.mPathFound[1].y));
-				}
-				else
-				{
-					// Calculate the new direction using linear interpolation
-					const float ratio = speed / distance;
-					agentBody.mLinearVelocity = ratio * dVec2;
-				}
-			}
+		// Calculate the distance between the agent and the next waypoint
+		const float distance = glm::length(dVec2);
+
+		if (distance == 0.0f)
+		{
+			continue;
+		}
+
+		if (speed * dt >= distance)
+		{
+			agentBody.mLinearVelocity = dVec2 / dt;
+		}
+		else
+		{
+			agentBody.mLinearVelocity = (dVec2 / distance) * speed;
 		}
 	}
-	//}
 }
 
 void NavigationSystem::Render(const World& world)
@@ -113,8 +115,12 @@ void NavigationSystem::Render(const World& world)
 		{
 			for (size_t i = 0; i < n.mPathFound.size() - 1; i++)
 			{
-				world.GetDebugRenderer().AddLine(DebugCategory::AINavigation, n.mPathFound[i], n.mPathFound[i + 1],
-				                                 {1.f, 0.f, 0.f, 1.f});
+				DrawDebugLine(
+					world, 
+					DebugCategory::AINavigation, 
+					To3DRightForward(n.mPathFound[i]), 
+					To3DRightForward(n.mPathFound[i + 1]),
+				    {1.f, 0.f, 0.f, 1.f});
 			}
 		}
 	}

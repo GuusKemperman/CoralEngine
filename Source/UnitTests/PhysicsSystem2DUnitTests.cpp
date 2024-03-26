@@ -1,25 +1,19 @@
 #include "Precomp.h"
 
-#include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Systems/PhysicsSystem2D.h"
 #include "Core/UnitTests.h"
 
 using namespace Engine;
 
-static_assert(CollisionPresets::sWorldDynamic.mRules.GetResponse(CollisionPresets::sWorldStatic.mRules) == CollisionResponse::Blocking);
-static_assert(CollisionPresets::sWorldStatic.mRules.GetResponse(CollisionPresets::sWorldStatic.mRules) == CollisionResponse::Ignore);
-static_assert(CollisionPresets::sWorldStatic.mRules.GetResponse(CollisionPresets::sCharacter.mRules) == CollisionResponse::Blocking);
-static_assert(CollisionPresets::sWorldDynamic.mRules.GetResponse(CollisionPresets::sWorldStatic.mRules) == CollisionPresets::sWorldStatic.mRules.GetResponse(CollisionPresets::sWorldDynamic.mRules));
-
 struct Physics2DUnitTestAccess
 {
-	static bool CollisionCheckDiskDiskUnitTest(const glm::vec2& center1, float radius1, const glm::vec2& center2, float radius2)
+	static bool CollisionCheckDiskDiskUnitTest(glm::vec2 center1, float radius1, glm::vec2 center2, float radius2)
 	{
 		PhysicsSystem2D::CollisionData collision;
 		return PhysicsSystem2D::CollisionCheckDiskDisk(center1, radius1, center2, radius2, collision);
 	}
 
-	static bool CollisionCheckDiskPolygonUnitTest(const glm::vec2& diskCenter, float diskRadius, const glm::vec2& polygonPos, const std::vector<glm::vec2>& polygonPoints)
+	static bool CollisionCheckDiskPolygonUnitTest(glm::vec2 diskCenter, float diskRadius, glm::vec2 polygonPos, const std::vector<glm::vec2>& polygonPoints)
 	{
 		PhysicsSystem2D::CollisionData collision;
 		return PhysicsSystem2D::CollisionCheckDiskPolygon(diskCenter, diskRadius, polygonPos, polygonPoints, collision);

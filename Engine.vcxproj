@@ -520,6 +520,21 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Utilities\DrawDebugHelpers.cpp" />
+    <ClCompile Include="Source\Rendering\Renderer.cpp" />
+    <ClCompile Include="Source\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Platform\PC\Rendering\GPUWorldPC.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Components\MeshColorComponent.cpp" />
     <ClCompile Include="Source\Components\Abilities\EffectsOnCharacterComponent.cpp" />
     <ClCompile Include="Source\Assets\Animation\Animation.cpp" />
     <ClCompile Include="Source\Assets\Importers\AnimationImporter.cpp">
@@ -606,7 +621,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Platform\PC\Rendering\RendererPC.cpp">
+    <ClCompile Include="Source\Platform\PC\Rendering\MeshRendererPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
@@ -1007,7 +1022,6 @@
     <ClCompile Include="Source\Components\Pathfinding\Graph.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshAgentComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshComponent.cpp" />
-    <ClCompile Include="Source\Components\Pathfinding\NavMeshObstacleTag.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshTargetComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\Node.cpp" />
     <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
@@ -1019,7 +1033,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Platform\***REMOVED***\Rendering\Renderer***REMOVED***.cpp">
+    <ClCompile Include="Source\Platform\***REMOVED***\Rendering\MeshRenderer***REMOVED***.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
@@ -1240,7 +1254,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Meta\MetaFuncId.cpp" />
-    <ClCompile Include="Source\Utilities\DebugRenderer.cpp" />
+    <ClCompile Include="Source\Rendering\DebugRenderer.cpp" />
     <ClCompile Include="Source\Utilities\Random.cpp" />
     <ClCompile Include="Source\Systems\System.cpp" />
     <ClCompile Include="Source\Assets\Importers\Importer.cpp">
@@ -1487,9 +1501,10 @@
     </ClCompile>
     <ClCompile Include="Source\Utilities\StaticReflection\ReflectComponentType.cpp" />
     <ClCompile Include="Source\World\Archiver.cpp" />
+    <ClCompile Include="Source\World\Physics.cpp" />
     <ClCompile Include="source\World\World.cpp" />
     <ClCompile Include="Source\World\Registry.cpp" />
-    <ClCompile Include="Source\World\WorldRenderer.cpp" />
+    <ClCompile Include="Source\World\WorldViewport.cpp" />
     <ClCompile Include="Source\Systems\UtilityAiSystem.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\UIRenderer***REMOVED***.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
@@ -1502,6 +1517,9 @@
     <ClCompile Include="Source\Systems\SpawnerSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\GPUWorldPC.h" />
+    <ClInclude Include="Include\Components\MeshColorComponent.h" />
     <ClInclude Include="Include\Assets\Animation\Animation.h" />
     <ClInclude Include="Include\Assets\Importers\AnimationImporter.h" />
     <ClInclude Include="Include\Assets\Animation\BoneInfo.h" />
@@ -1514,7 +1532,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClInclude Include="Include\Core\UIRenderer.h" />
+    <ClInclude Include="Include\Utilities\DrawDebugHelpers.h" />
+    <ClInclude Include="Include\Rendering\UIRenderer.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectOptional.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\UIRendererPC.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\UIRenderer***REMOVED***.h" />
@@ -1533,7 +1552,7 @@
     <ClInclude Include="Include\Components\Abilities\AbilitiesOnCharacterComponent.h" />
     <ClInclude Include="Include\Components\Abilities\ActiveAbilityComponent.h" />
     <ClInclude Include="Include\Components\TopDownCamControllerComponent.h" />
-    <ClInclude Include="Include\Core\Renderer.h" />
+    <ClInclude Include="Include\Rendering\MeshRenderer.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\FramebufferPC.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -1643,7 +1662,6 @@
     <ClInclude Include="Include\Components\Pathfinding\Graph.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshAgentComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshComponent.h" />
-    <ClInclude Include="Include\Components\Pathfinding\NavMeshObstacleTag.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshTargetComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\Node.h" />
     <ClInclude Include="Include\Components\Physics2D\DiskColliderComponent.h" />
@@ -1717,7 +1735,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Renderer***REMOVED***.h">
+    <ClInclude Include="Include\Platform\***REMOVED***\Rendering\MeshRenderer***REMOVED***.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
@@ -1761,6 +1779,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Include\Rendering\GPUWorld.h" />
+    <ClInclude Include="Include\Rendering\IGPUWorld.h" />
+    <ClInclude Include="Include\Rendering\ISubRenderer.h" />
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
     <ClInclude Include="Include\Systems\AbilitySystem.h" />
@@ -1776,7 +1797,7 @@
     <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
     <ClInclude Include="Include\Utilities\CPP20\Span.h" />
     <ClInclude Include="Include\Utilities\CPP20\STDAliases.h" />
-    <ClInclude Include="Include\Utilities\DebugRenderer.h" />
+    <ClInclude Include="Include\Rendering\DebugRenderer.h" />
     <ClInclude Include="Include\Utilities\Events.h" />
     <ClInclude Include="Include\Utilities\MemFunctions.h" />
     <ClInclude Include="Include\Utilities\IterableRange.h" />
@@ -1805,7 +1826,7 @@
     <ClInclude Include="Include\Utilities\ClassVersion.h" />
     <ClInclude Include="Include\Utilities\EnumString.h" />
     <ClInclude Include="Include\Utilities\Expected.h" />
-    <ClInclude Include="Include\Utilities\FrameBuffer.h" />
+    <ClInclude Include="Include\Rendering\FrameBuffer.h" />
     <ClInclude Include="Include\Utilities\Benchmark.h" />
     <ClInclude Include="include\Containers\view_istream.h" />
     <ClInclude Include="include\core\ecs.h" />
@@ -1875,16 +1896,18 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Include\World\Archiver.h" />
+    <ClInclude Include="Include\World\Physics.h" />
     <ClInclude Include="include\World\World.h" />
     <ClInclude Include="Include\World\Registry.h" />
-    <ClInclude Include="Include\World\WorldRenderer.h" />
-    <ClInclude Include="Include\Platform\PC\Rendering\RendererPC.h">
+    <ClInclude Include="Include\World\WorldViewport.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\MeshRendererPC.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Include\Components\PointLightComponent.h" />
+    <ClInclude Include="Include\Rendering\Renderer.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />

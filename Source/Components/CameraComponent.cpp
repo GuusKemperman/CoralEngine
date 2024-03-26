@@ -5,7 +5,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "World/WorldRenderer.h"
+#include "World/WorldViewport.h"
 
 void Engine::CameraComponent::UpdateView(const glm::vec3 position, const glm::vec3 forward, const glm::vec3 up, bool recalulateViewProjection)
 {

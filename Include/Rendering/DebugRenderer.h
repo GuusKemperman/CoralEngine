@@ -1,10 +1,12 @@
 #pragma once
 
+#include "ISubRenderer.h"
 #include "glm/glm.hpp"
-#include "World/World.h"
 
 namespace Engine 
 {
+    class World;
+
     struct DebugCategory
     {
         enum Enum
@@ -19,6 +21,7 @@ namespace Engine
             Editor = 1 << 7,
             AccelStructs = 1 << 8,
             Particles = 1 << 9,
+            TerrainHeight = 1 << 10,
             All = 0xFFFFFFFF
         };
     };
@@ -27,35 +30,37 @@ namespace Engine
     {
         enum Enum
         {
-            XY = 0,
+            XY,
             XZ,
             YZ
         };
     };
 
-    class DebugRenderer
+    class DebugRenderer final :
+        public ISubRenderer
     {
-        friend class WorldRenderer;
-        
     public:
         DebugRenderer();
-        ~DebugRenderer();
-        void Render(const World& world);
+        ~DebugRenderer() override;
+        void Render(const World& world) override;
 
         void AddLine(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& from, 
             const glm::vec3& to, 
             const glm::vec4& color) const;
 
         void AddLine(
+            const World& world,
             DebugCategory::Enum category, 
-            const glm::vec2& from, 
-            const glm::vec2& to, 
+            glm::vec2 from, 
+            glm::vec2 to, 
             const glm::vec4& color,
             Plane::Enum plane = Plane::XZ) const;
 
         void AddCircle(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& center, 
             float radius, 
@@ -63,12 +68,14 @@ namespace Engine
             Plane::Enum plane = Plane::XZ) const;
 
         void AddSphere(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& center, 
             float radius, 
             const glm::vec4& color) const;
 
         void AddSquare(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& center, 
             float size, 
@@ -76,12 +83,14 @@ namespace Engine
             Plane::Enum plane = Plane::XZ) const;
 
         void AddBox(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& center, 
             const glm::vec3& halfExtends, 
             const glm::vec4& color) const;
 
         void AddCylinder(
+            const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& from, 
             const glm::vec3& to, 
@@ -90,11 +99,13 @@ namespace Engine
             const glm::vec4& color) const;
 
         void AddPolygon(
+            const World& world,
             DebugCategory::Enum category, 
             const std::vector<glm::vec3>& points, 
             const glm::vec4& color) const;
 
         void AddPolygon(
+            const World& world,
             DebugCategory::Enum category, 
             const std::vector<glm::vec2>& points, 
             const glm::vec4& color, 

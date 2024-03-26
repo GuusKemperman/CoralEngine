@@ -9,7 +9,7 @@
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Meta/MetaTools.h"
 #include "Meta/MetaProps.h"
-#include "Utilities/DebugRenderer.h"
+#include "Rendering/DebugRenderer.h"
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
 #include "Containers/view_istream.h"
 #include "GSON/GSONBinary.h"
@@ -702,6 +702,10 @@ void Engine::Editor::DisplayMainMenuBar()
 			if (ImGui::MenuItem("Particles", nullptr, flags & DebugCategory::Particles))
 			{
 				flags ^= DebugCategory::Particles;
+			}
+			if (ImGui::MenuItem("TerrainHeight", nullptr, flags & DebugCategory::TerrainHeight))
+			{
+				flags ^= DebugCategory::TerrainHeight;
 			}
 			if (ImGui::MenuItem("All", nullptr, flags & DebugCategory::All))
 			{

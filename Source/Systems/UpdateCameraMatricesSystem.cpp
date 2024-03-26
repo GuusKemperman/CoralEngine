@@ -3,7 +3,7 @@
 
 #include "World/World.h"
 #include "World/Registry.h"
-#include "World/WorldRenderer.h"
+#include "World/WorldViewport.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h" 
 #include "Meta/MetaType.h"
@@ -11,7 +11,7 @@
 
 void Engine::UpdateCameraMatricesSystem::Update(World& world, float)
 {
-	const glm::vec2 viewportSize = world.GetRenderer().GetViewportSize();
+	const glm::vec2 viewportSize = world.GetViewport().GetViewportSize();
 	const float aspectRatio = viewportSize.x / viewportSize.y;
 
 	const auto viewWithTransform = world.GetRegistry().View<CameraComponent, const TransformComponent>();

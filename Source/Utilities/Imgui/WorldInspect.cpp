@@ -6,9 +6,9 @@
 #include "imgui/imgui_internal.h"
 
 #include "World/World.h"
-#include "World/WorldRenderer.h"
+#include "World/WorldViewport.h"
 #include "World/Registry.h"
-#include "Utilities/FrameBuffer.h"
+#include "Rendering/FrameBuffer.h"
 #include "Core/Input.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
@@ -27,6 +27,7 @@
 #include "Utilities/StringFunctions.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Archiver.h"
+#include "Rendering/Renderer.h"
 
 namespace
 {
@@ -217,7 +218,7 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 			if (possibleCamerasView.size() > 1)
 			{
-				const auto cam = GetWorld().GetRenderer().GetMainCamera();
+				const auto cam = GetWorld().GetViewport().GetMainCamera();
 
 				const entt::entity cameraEntity = cam.has_value() ? cam->first : entt::null;
 
@@ -234,7 +235,7 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 					{
 						if (ImGui::MenuItem(NameComponent::GetDisplayName(GetWorld().GetRegistry(), possibleCamera).c_str(), nullptr, possibleCamera == cameraEntity))
 						{
-							GetWorld().GetRenderer().SetMainCamera(possibleCamera);
+							GetWorld().GetViewport().SetMainCamera(possibleCamera);
 						}
 					}
 					ImGui::EndPopup();
@@ -246,7 +247,7 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		ImGui::SetCursorPos(viewportPos);
 
 		GetWorld().Tick(deltaTime);
-		WorldViewport::Display(GetWorld(), *mViewportFrameBuffer, &mSelectedEntities);
+		WorldViewportPanel::Display(GetWorld(), *mViewportFrameBuffer, &mSelectedEntities);
 
 		drawList->ChannelsMerge();
 	}
@@ -282,7 +283,7 @@ void Engine::WorldInspectHelper::SaveState(BinaryGSONObject& state)
 	state.AddGSONMember("viewportWidth") << mViewportWidth;
 	state.AddGSONMember("hierarchyAndDetailsWidth") << mHierarchyAndDetailsWidth;
 
-	auto activeCamera = GetWorld().GetRenderer().GetMainCamera();
+	auto activeCamera = GetWorld().GetViewport().GetMainCamera();
 
 	if (activeCamera.has_value())
 	{
@@ -320,11 +321,11 @@ void Engine::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
 	{
 		entt::entity cameraEntity{};
 		*activeCamera >> cameraEntity;
-		GetWorld().GetRenderer().SetMainCamera(cameraEntity);
+		GetWorld().GetViewport().SetMainCamera(cameraEntity);
 	}
 }
 
-void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
+void Engine::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 	std::vector<entt::entity>* selectedEntities)
 {
 	const glm::vec2 windowPos = ImGui::GetWindowPos();
@@ -345,7 +346,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 
 	RemoveInvalidEntities(world, *selectedEntities);
 
-	const auto cameraPair = world.GetRenderer().GetMainCamera();
+	const auto cameraPair = world.GetViewport().GetMainCamera();
 
 	if (!cameraPair.has_value())
 	{
@@ -356,7 +357,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 	ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
 	SetGizmoRect(windowPos + contentMin, contentSize);
 
-	world.GetRenderer().Render(frameBuffer, contentSize);
+	Renderer::Get().RenderToFrameBuffer(world, frameBuffer, contentSize);
 
 	ImGui::SetCursorPos(contentMin);
 
@@ -378,7 +379,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 	}
 }
 
-void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
+void Engine::WorldViewportPanel::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
 {
 	Registry& reg = world.GetRegistry();
 
@@ -421,12 +422,12 @@ void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<
 }
 
 
-void Engine::WorldViewport::SetGizmoRect(const glm::vec2 windowPos, const glm::vec2& windowSize)
+void Engine::WorldViewportPanel::SetGizmoRect(const glm::vec2 windowPos, glm::vec2 windowSize)
 {
 	ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
 }
 
-void Engine::WorldViewport::GizmoManipulateSelectedTransforms(World& world,
+void Engine::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 	const std::vector<entt::entity>& selectedEntities,
 	const CameraComponent& camera)
 {

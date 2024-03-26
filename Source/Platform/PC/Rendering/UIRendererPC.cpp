@@ -11,8 +11,3 @@ Engine::UIRenderer::~UIRenderer()
 
 void Engine::UIRenderer::Render(const World&)
 {}
-
-Engine::MetaType Engine::UIRenderer::Reflect()
-{
-	return MetaType{ MetaType::T<UIRenderer>{}, "UIRendererSystem", MetaType::Base<System>{} };
-}

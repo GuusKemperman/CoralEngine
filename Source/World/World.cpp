@@ -3,21 +3,27 @@
 
 #include <stack>
 
+#include "Core/Device.h"
 #include "Components/ComponentFilter.h"
 #include "Components/NameComponent.h"
 #include "Meta/MetaProps.h"
 #include "World/Registry.h"
-#include "World/WorldRenderer.h"
-#include "Utilities/DebugRenderer.h"
+#include "World/WorldViewport.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Assets/Level.h"
+#include "Rendering/GPUWorld.h"
 
-Engine::World::World(const bool beginPlayImmediately)
+Engine::World::World(const bool beginPlayImmediately) :
+	mRegistry(std::make_unique<Registry>(*this)),
+	mViewport(std::make_unique<WorldViewport>(*this)),
+	mPhysics(std::make_unique<Physics>(*this))
 {
-	mRenderer = std::make_unique<WorldRenderer>(*this);
-	mRegistry = std::make_unique<Registry>(*this);
-
 	LOG(LogCore, Verbose, "World is awaiting begin play..");
+
+	if (!Device::IsHeadless())
+	{
+		mGPUWorld = std::make_unique<GPUWorld>(*this);
+	}
 
 	if (beginPlayImmediately)
 	{
@@ -27,14 +33,17 @@ Engine::World::World(const bool beginPlayImmediately)
 
 Engine::World::World(World&& other) noexcept :
 	mRegistry(std::move(other.mRegistry)),
-	mRenderer(std::move(other.mRenderer)),
+	mViewport(std::move(other.mViewport)),
+	mGPUWorld(std::move(other.mGPUWorld)),
+	mPhysics(std::move(other.mPhysics)),
 	mLevelToTransitionTo(std::move(other.mLevelToTransitionTo)),
 	mTime(other.mTime),
 	mHasBegunPlay(other.mHasBegunPlay)
-
 {
 	mRegistry->mWorld = *this;
-	mRenderer->mWorld = *this;
+	mViewport->mWorld = *this;
+	mPhysics->mWorld = *this;
+	mGPUWorld->mWorld = *this;
 }
 
 Engine::World::~World()
@@ -44,19 +53,23 @@ Engine::World::~World()
 	{
 		mRegistry->Clear();
 		mRegistry.reset();
-		mRenderer.reset();
+		mViewport.reset();
 	}
 }
 
 Engine::World& Engine::World::operator=(World&& other) noexcept
 {
 	mRegistry = std::move(other.mRegistry);
-	mRenderer = std::move(other.mRenderer);
+	mViewport = std::move(other.mViewport);
+	mGPUWorld = std::move(other.mGPUWorld);
+	mPhysics = std::move(other.mPhysics);
 	mLevelToTransitionTo = std::move(other.mLevelToTransitionTo);
 
 	mRegistry->mWorld = *this;
-	mRenderer->mWorld = *this;
-
+	mViewport->mWorld = *this;
+	mPhysics->mWorld = *this;
+	mGPUWorld->mWorld = *this;
+	
 	mTime = other.mTime;
 	mHasBegunPlay = other.mHasBegunPlay;
 
@@ -144,12 +157,6 @@ void Engine::World::EndPlay()
 	LOG(LogCore, Verbose, "World has just ended play");
 
 	mHasBegunPlay = false;
-}
-
-
-const Engine::DebugRenderer& Engine::World::GetDebugRenderer() const
-{
-	return *mRenderer->mDebugRenderer;
 }
 
 static inline std::stack<std::reference_wrapper<Engine::World>> sWorldStack{};
@@ -453,12 +460,12 @@ Engine::MetaType Engine::World::Reflect()
 			return FindAllEntitiesWithComponents(*world, components, false);
 		}, "Find all entities with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const glm::vec2& screenPosition, float distanceFromCamera)
+	type.AddFunc([](glm::vec2 screenPosition, float distanceFromCamera)
 		{
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return world->GetRenderer().ScreenToWorld(screenPosition, distanceFromCamera);
-		}, "ScreenToWorld", MetaFunc::ExplicitParams<const glm::vec2&, float>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+			return world->GetViewport().ScreenToWorld(screenPosition, distanceFromCamera);
+		}, "ScreenToWorld", MetaFunc::ExplicitParams<glm::vec2, float>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	return type;
 }
