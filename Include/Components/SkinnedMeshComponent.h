@@ -17,7 +17,7 @@ namespace Engine
         std::shared_ptr<const Material> mMaterial{};
 
         std::vector<glm::mat4x4> mFinalBoneMatrices{128, glm::mat4x4(1.0f)};
-        float mCurrentTime = 0.0;
+        float mCurrentTime = 0.0f;
 
     private:
         friend ReflectAccess;
