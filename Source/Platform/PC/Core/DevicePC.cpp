@@ -536,6 +536,8 @@ void Engine::Device::SubmitUploadCommands()
     mUploadFenceValue++;
     HRESULT hr = mUploadCommandQueue->Signal(mUploadFence.Get(), mUploadFenceValue);
 
+    WaitForFence(mUploadFence, mUploadFenceValue, mUploadFenceEvent);
+    
     if (FAILED(hr)) 
     {
         LOG(LogCore, Fatal, "Failed to signal upload fence");

@@ -285,26 +285,6 @@ void Engine::Renderer::Render(const World& world)
     int pointLightCounter = 0;
     int dirLightCounter = 0;
 
-    std::vector<uint32> lightIndicesClear(4000, 0);
-    D3D12_SUBRESOURCE_DATA data;
-    data.pData = lightIndicesClear.data();
-    data.RowPitch = sizeof(uint32);
-    data.SlicePitch = sizeof(uint32) * 4000;
-    mStructuredBuffers[LIGHT_INDICES]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
-
-    uint32 counterValue = 0;
-    data.pData = &counterValue;
-    data.RowPitch = sizeof(uint32);
-    data.SlicePitch = sizeof(uint32);
-    mStructuredBuffers[POINT_LIGHT_COUNTER]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
-
-    std::vector<InfoStruct::Clustering::DXLightGridElement> lightGridClear(4000, InfoStruct::Clustering::DXLightGridElement{});
-    data.pData = lightGridClear.data();
-    data.RowPitch = sizeof(InfoStruct::Clustering::DXLightGridElement);
-    data.SlicePitch = sizeof(InfoStruct::Clustering::DXLightGridElement) * 4000;
-    mStructuredBuffers[LIGHT_GRID_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
-
-
     for (auto [entity, lightComponent, transform] : pointLightView.each()) {
         if(pointLightCounter >= mPointLights.size())
         {
@@ -444,6 +424,27 @@ void Engine::Renderer::Render(const World& world)
         meshCounter++;
     }
 
+    std::vector<uint32> lightIndicesClear(4000, 0);
+    D3D12_SUBRESOURCE_DATA data;
+    data.pData = lightIndicesClear.data();
+    data.RowPitch = sizeof(uint32);
+    data.SlicePitch = sizeof(uint32) * 4000;
+    mStructuredBuffers[LIGHT_INDICES]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
+    uint32 counterValue = 0;
+    data.pData = &counterValue;
+    data.RowPitch = sizeof(uint32);
+    data.SlicePitch = sizeof(uint32);
+    mStructuredBuffers[POINT_LIGHT_COUNTER]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
+    std::vector<InfoStruct::Clustering::DXLightGridElement> lightGridClear(4000, InfoStruct::Clustering::DXLightGridElement{});
+    data.pData = lightGridClear.data();
+    data.RowPitch = sizeof(InfoStruct::Clustering::DXLightGridElement);
+    data.SlicePitch = sizeof(InfoStruct::Clustering::DXLightGridElement) * 4000;
+    mStructuredBuffers[LIGHT_GRID_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
+
+
     data.pData = mMaterialVec.data();
     data.RowPitch = sizeof(InfoStruct::DXMaterialInfo);
     data.SlicePitch = sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2);
@@ -460,6 +461,8 @@ void Engine::Renderer::Render(const World& world)
         CalculateClusterGrid(camera);
         engineDevice.WaitForFence();
         CompactClusters();
+        engineDevice.WaitForFence();
+        AssignLights();
         engineDevice.WaitForFence();
         commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
     }
@@ -565,6 +568,32 @@ void Engine::Renderer::CompactClusters()
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 9, mActiveClusterSRVIndex);
 
     commandList->Dispatch(mNumberOfTiles, 1, 1);
+}
+
+void Engine::Renderer::AssignLights()
+{
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    int frameIndex = engineDevice.GetFrameIndex();
+
+    commandList->SetComputeRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
+    commandList->SetPipelineState(mPipelines[ASSIGN_LIGHTS_PIPELINE]->GetPipeline().Get());
+    ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
+    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+    mConstBuffers[LIGHT_CB]->BindToCompute(commandList, 3, 0, frameIndex);
+    mConstBuffers[CAM_MATRIX_CB]->BindToCompute(commandList, 1, 0, frameIndex);
+    mConstBuffers[CLUSTER_INFO_CB]->BindToCompute(commandList, 0, 0, frameIndex);
+
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 9, mClusterSRVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 10, mCompactClusterSRVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 12, mPointLightSRVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 6, mPointLightCounterUAVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 7, mLightGridUAVIndex);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 8, mLightIndicesUAVIndex);
+
+    commandList->Dispatch(mNumberOfTiles, 1, 1);
+
 }
 
 void Engine::Renderer::UpdateLights(int numDirLights, int numPointLights)
