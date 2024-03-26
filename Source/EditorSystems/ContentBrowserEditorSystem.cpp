@@ -37,7 +37,8 @@ namespace
 }
 
 Engine::ContentBrowserEditorSystem::ContentBrowserEditorSystem() :
-	EditorSystem("ContentBrowser")
+	EditorSystem("ContentBrowser"),
+	mFolderGraph(MakeFolderGraph(AssetManager::Get().GetAllAssets()))
 {
 }
 
@@ -76,10 +77,9 @@ void Engine::ContentBrowserEditorSystem::Tick(const float)
         return;
     }
 
-    std::vector<ContentFolder> folders = MakeFolderGraph(AssetManager::Get().GetAllAssets());
     sWasAssetJustRightClicked = false;
 
-    for (ContentFolder& folder : folders)
+    for (const ContentFolder& folder : mFolderGraph)
     {
         DisplayDirectory(std::move(folder));
     }
@@ -166,7 +166,7 @@ std::vector<Engine::ContentBrowserEditorSystem::ContentFolder> Engine::ContentBr
     return rootFolder.mChildren;
 }
 
-void Engine::ContentBrowserEditorSystem::DisplayDirectory(ContentFolder&& folder)
+void Engine::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folder)
 {
     const bool isOpen = ImGui::TreeNode(folder.mPath.filename().string().c_str());
 
@@ -181,14 +181,14 @@ void Engine::ContentBrowserEditorSystem::DisplayDirectory(ContentFolder&& folder
 
     if (isOpen)
     {
-        for (ContentFolder& child : folder.mChildren)
+        for (const ContentFolder& child : folder.mChildren)
         {
             DisplayDirectory(std::move(child));
         }
 
         ImGui::Indent();
 
-        for (WeakAsset<Asset>& asset : folder.mContent)
+        for (const WeakAsset<Asset>& asset : folder.mContent)
         {
             DisplayAsset(std::move(asset));
         }
@@ -198,7 +198,7 @@ void Engine::ContentBrowserEditorSystem::DisplayDirectory(ContentFolder&& folder
     }
 }
 
-void Engine::ContentBrowserEditorSystem::DisplayAsset(WeakAsset<Asset>&& asset) const
+void Engine::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& asset) const
 {
     if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetAssetClass().GetTypeId()))
     {
