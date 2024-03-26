@@ -8,11 +8,11 @@
 #include "Core/Input.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
-#include "World/WorldRenderer.h"
+#include "World/WorldViewport.h"
 
 void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 {
-	auto activeCamera = world.GetRenderer().GetMainCamera();
+	auto activeCamera = world.GetViewport().GetMainCamera();
 	const entt::entity activeCameraOwner = activeCamera.has_value() ? activeCamera->first : entt::null;
 
 	FlyCamControllerComponent* const flyCam = world.GetRegistry().TryGet<FlyCamControllerComponent>(activeCameraOwner);
