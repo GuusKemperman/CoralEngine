@@ -9,11 +9,12 @@
 #include "Components/Physics2D/AABBColliderComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
+#include "Rendering/DebugRenderer.h"
 #include "World/Registry.h"
 #include "World/World.h"
-#include "Utilities/DebugRenderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "World/Physics.h"
-#include "World/WorldRenderer.h"
+#include "World/WorldViewport.h"
 
 Engine::PhysicsSystem::PhysicsSystem()
 {
@@ -317,16 +318,15 @@ void Engine::PhysicsSystem::CallEvents(World& world, const CollisionDataContaine
 
 void Engine::PhysicsSystem::DebugDrawing(const World& world)
 {
-	const auto& renderer = world.GetDebugRenderer();
 	const Registry& reg = world.GetRegistry();
 
-	if (DebugRenderer::GetDebugCategoryFlags() & DebugCategory::Physics)
+	if (DebugRenderer::IsCategoryVisible(DebugCategory::Physics))
 	{
 		const auto diskView = reg.View<const TransformedDiskColliderComponent, const TransformComponent>();
 		constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
 		for (auto [entity, disk, transform] : diskView.each())
 		{
-			renderer.AddCircle(DebugCategory::Physics, To3DRightForward(disk.mCentre, transform.GetWorldPosition()[Axis::Up]), disk.mRadius + 0.00001f, color);
+			DrawDebugCircle(world, DebugCategory::Physics, To3DRightForward(disk.mCentre, transform.GetWorldPosition()[Axis::Up]), disk.mRadius + 0.00001f, color);
 		}
 
 		const auto polyView = reg.View<const TransformedPolygonColliderComponent, const TransformComponent>();
@@ -339,14 +339,14 @@ void Engine::PhysicsSystem::DebugDrawing(const World& world)
 			{
 				const glm::vec2 from = poly.mPoints[i];
 				const glm::vec2 to = poly.mPoints[(i + 1) % pointCount];
-				renderer.AddLine(DebugCategory::Physics, To3DRightForward(from, height), To3DRightForward(to, height), color);
+				DrawDebugLine(world, DebugCategory::Physics, To3DRightForward(from, height), To3DRightForward(to, height), color);
 			}
 		}
 
 		const auto aabbView = reg.View<const TransformedAABBColliderComponent, const TransformComponent>();
 		for (auto [entity, aabb, transform] : aabbView.each())
 		{
-			renderer.AddRectangle(DebugCategory::Physics, To3DRightForward(aabb.GetCentre(), transform.GetWorldPosition()[Axis::Up]), aabb.GetSize() * .5f, color);
+			DrawDebugRectangle(world, DebugCategory::Physics, To3DRightForward(aabb.GetCentre(), transform.GetWorldPosition()[Axis::Up]), aabb.GetSize() * .5f, color);
 		}
 	}
 
@@ -354,7 +354,7 @@ void Engine::PhysicsSystem::DebugDrawing(const World& world)
 	{
 		const Physics& physics = world.GetPhysics();
 
-		auto optCamera = world.GetRenderer().GetMainCamera();
+		auto optCamera = world.GetViewport().GetMainCamera();
 
 		if (!optCamera.has_value())
 		{
@@ -397,7 +397,7 @@ void Engine::PhysicsSystem::DebugDrawing(const World& world)
 				constexpr glm::vec4 maxColor = { 5.0f, 0.0f, 0.0f, 1.0f };
 				const glm::vec4 color = Math::lerp(minColor, maxColor, colorT);
 
-				renderer.AddRectangle(DebugCategory::TerrainHeight, To3DRightForward(worldPos2D, height), glm::vec2{ spacing }, color);
+				DrawDebugRectangle(world, DebugCategory::TerrainHeight, To3DRightForward(worldPos2D, height), glm::vec2{ spacing }, color);
 			}
 		}
 	}
