@@ -19,6 +19,8 @@ Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
 	metaType.AddField(&AbilitiesOnCharacterComponent::mIsPlayer, "mIsPlayer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&AbilitiesOnCharacterComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties().Add(Props::sNoInspectTag);
 
+	BindEvent(metaType, sBeginPlayEvent, &AbilitiesOnCharacterComponent::OnBeginPlay);
+
 #ifdef EDITOR
 	BindEvent(metaType, sInspectEvent, &AbilitiesOnCharacterComponent::OnInspect);
 #endif // EDITOR
@@ -26,6 +28,19 @@ Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
 	ReflectComponentType<AbilitiesOnCharacterComponent>(metaType);
 
 	return metaType;
+}
+
+void Engine::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity entity)
+{
+	auto& abilities = world.GetRegistry().Get<AbilitiesOnCharacterComponent>(entity);
+	for (auto& ability : abilities.mAbilitiesToInput)
+	{
+		// Make all the cooldown abilities available on being play.
+		if (ability.mAbilityAsset->mRequirementType == Ability::Cooldown)
+		{
+			ability.mRequirementCounter = ability.mAbilityAsset->mRequirementToUse;
+		}
+	}
 }
 
 #ifdef EDITOR

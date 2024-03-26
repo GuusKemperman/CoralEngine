@@ -42,11 +42,11 @@ void Engine::AbilitySystem::Update(World& world, float dt)
         }
     }
 
-    auto viewCharacters = reg.View<CharacterComponent, EffectsOnCharacterComponent>();
+    auto viewCharacters = reg.View<CharacterComponent, AbilitiesOnCharacterComponent, EffectsOnCharacterComponent>();
     const auto& input = Input::Get();
-    for (auto [entity, characterData, effects] : viewCharacters.each())
+    for (auto [entity, characterData, abilities, effects] : viewCharacters.each())
     {
-        // update durational effects
+        // Durational effects
         auto& durationalEffects = effects.mDurationalEffects;
         for (auto it = durationalEffects.begin(); it != durationalEffects.end();)
         {
@@ -62,7 +62,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             }
         }
 
-        // update over time effects
+        // Over time effects
         auto& overTimeEffects = effects.mOverTimeEffects;
         for (auto it = overTimeEffects.begin(); it != overTimeEffects.end();)
         {
@@ -83,7 +83,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             }
         }
 
-        // visual effects
+        // Visual effects
         auto& visualEffects = effects.mVisualEffects;
         if (visualEffects.empty() == false)
         {
@@ -120,23 +120,16 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             }
         }
 
-        // update GDC
+        // Update GDC
         if (characterData.mGlobalCooldownTimer > 0.f)
         {
             characterData.mGlobalCooldownTimer -= dt;
         }
 
-        // abilities
-        auto abilities = reg.TryGet<AbilitiesOnCharacterComponent>(entity);
-        if (abilities == nullptr)
+        // Create abilities
+        for (auto& ability : abilities.mAbilitiesToInput)
         {
-	        continue;
-        }
-
-        // create abilities
-        for (auto& ability : abilities->mAbilitiesToInput)
-        {
-            // update counter
+            // Update counter
             switch (ability.mAbilityAsset->mRequirementType)
             {
             case Ability::Cooldown:
@@ -149,13 +142,14 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             }
             case Ability::Mana:
             {
+                // Custom functionality
                 break;
             }
             }
-            // check if ability can be used
+            // Check if ability can be used
             if (CanAbilityBeActivated(characterData, ability))
             {
-                if (abilities->mIsPlayer) // player
+                if (abilities.mIsPlayer)
                 {
                     for (auto& key : ability.mKeyboardKeys)
                     {
@@ -166,7 +160,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
                     }
                     for (auto& button : ability.mGamepadButtons)
                     {
-                        // TODO: replace zero with player id by separating abilities on player and abilities on AI
+                        // TODO: replace zero with player id
                         if (input.WasGamepadButtonPressed(0, button))
                         {
                             ActivateAbility(world, entity, characterData, ability);
@@ -189,12 +183,12 @@ void Engine::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, C
 {
     if (!CanAbilityBeActivated(characterData, ability))
     {
-        // for the player, this will get checked twice,
-        // but it is a small tradeoff for safety in the AI usage
+        // For the player, this will get checked twice,
+        // but it is a small tradeoff for safety in the AI usage.
         return;
     }
 
-    // ability activate event
+    // Ability activate event
     if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mScript->GetName()))
     {
 	    if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
