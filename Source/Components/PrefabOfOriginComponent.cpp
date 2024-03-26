@@ -39,6 +39,8 @@ Engine::MetaType Engine::PrefabOriginComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<PrefabOriginComponent>{}, "PrefabOriginComponent" };
 
+	metaType.GetProperties().Add(Props::sNoInspectTag);
+
 	metaType.AddField(&PrefabOriginComponent::mHashedPrefabName, "mHashedPrefabName").GetProperties().Add(Props::sNoInspectTag);
 	metaType.AddField(&PrefabOriginComponent::mFactoryId, "mFactoryId").GetProperties().Add(Props::sNoInspectTag);
 
