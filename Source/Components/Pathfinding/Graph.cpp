@@ -5,8 +5,7 @@
 #include <unordered_map>
 
 #include "World/World.h"
-#include "Rendering/Renderer.h"
-#include "Rendering/DebugRenderer.h"
+#include "Rendering/DrawDebugHelpers.h"
 
 namespace Engine
 {
@@ -117,12 +116,12 @@ namespace Engine
 	{
 		for (const auto& n : ListOfNodes)
 		{
-			Renderer::Get().GetDebugRenderer().AddCircle(world, DebugCategory::Gameplay, glm::vec3{n.GetPosition().x, 0, n.GetPosition().y},
+			DrawDebugCircle(world, DebugCategory::Gameplay, glm::vec3{n.GetPosition().x, 0, n.GetPosition().y},
 			                              0.2f,
 			                              {1.f, 0.f, 0.f, 1.f});
 			for (const auto& m : n.GetConnectingEdges())
 			{
-				Renderer::Get().GetDebugRenderer().AddLine(world, DebugCategory::Gameplay, glm::vec3{n.GetPosition().x, 0, n.GetPosition().y},
+				DrawDebugLine(world, DebugCategory::Gameplay, glm::vec3{n.GetPosition().x, 0, n.GetPosition().y},
 				                            glm::vec3{
 					                            m.GetToNode()->GetPosition().x, 0, m.GetToNode()->GetPosition().y
 				                            }, {0.f, 1.f, 0.f, 1.f});

@@ -1,10 +1,12 @@
 #pragma once
 
+#include "ISubRenderer.h"
 #include "glm/glm.hpp"
-#include "World/World.h"
 
 namespace Engine 
 {
+    class World;
+
     struct DebugCategory
     {
         enum Enum
@@ -28,18 +30,19 @@ namespace Engine
     {
         enum Enum
         {
-            XY = 0,
+            XY,
             XZ,
             YZ
         };
     };
 
-    class DebugRenderer
+    class DebugRenderer final :
+        public ISubRenderer
     {
     public:
         DebugRenderer();
-        ~DebugRenderer();
-        void Render(const World& world);
+        ~DebugRenderer() override;
+        void Render(const World& world) override;
 
         void AddLine(
             const World& world,

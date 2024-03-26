@@ -10,8 +10,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
-#include "Rendering/Renderer.h"
-#include "Rendering/DebugRenderer.h"
+#include "Rendering/DrawDebugHelpers.h"
 
 using namespace Engine;
 
@@ -116,7 +115,7 @@ void NavigationSystem::Render(const World& world)
 		{
 			for (size_t i = 0; i < n.mPathFound.size() - 1; i++)
 			{
-				Renderer::Get().GetDebugRenderer().AddLine(world, DebugCategory::AINavigation, n.mPathFound[i], n.mPathFound[i + 1],
+				DrawDebugLine(world, DebugCategory::AINavigation, n.mPathFound[i], n.mPathFound[i + 1],
 				                                 {1.f, 0.f, 0.f, 1.f});
 			}
 		}

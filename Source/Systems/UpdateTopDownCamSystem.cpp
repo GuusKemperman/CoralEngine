@@ -9,8 +9,7 @@
 #include "Core/Input.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
-#include "Rendering/Renderer.h"
-#include "Rendering/DebugRenderer.h"
+#include "Rendering/DrawDebugHelpers.h"
 
 void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 {
@@ -87,8 +86,8 @@ void Engine::UpdateTopDownCamSystem::Render(const World& world)
 			continue;
 		}
 
-		Renderer::Get().GetDebugRenderer().AddBox(world, DebugCategory::Gameplay, topdown.mTargetLocation, glm::vec3(0.1f), glm::vec4(1.0f));
-		Renderer::Get().GetDebugRenderer().AddLine(world, DebugCategory::Gameplay, target->GetWorldPosition(), topdown.mTargetLocation, glm::vec4(1.0f));
+		DrawDebugBox(world, DebugCategory::Gameplay, topdown.mTargetLocation, glm::vec3(0.1f), glm::vec4(1.0f));
+		DrawDebugLine(world, DebugCategory::Gameplay, target->GetWorldPosition(), topdown.mTargetLocation, glm::vec4(1.0f));
 	}
 }
 

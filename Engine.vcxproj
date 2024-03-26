@@ -520,6 +520,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Rendering\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Rendering\Renderer.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
@@ -1529,6 +1530,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClInclude Include="Include\Rendering\DrawDebugHelpers.h" />
     <ClInclude Include="Include\Rendering\UIRenderer.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectOptional.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\UIRendererPC.h" />
