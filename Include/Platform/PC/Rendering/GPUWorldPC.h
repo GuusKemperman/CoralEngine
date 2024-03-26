@@ -66,6 +66,13 @@ namespace Engine
             MODEL_MAT_SB,
             MATERIAL_SB
         };
+
+        struct ColorInfo
+        {
+            glm::vec4 mColor;
+            uint32 mUseTexture;
+            uint32 mPadding[3];
+        };
     }
 
     class DebugRenderingData
@@ -80,6 +87,23 @@ namespace Engine
         std::unique_ptr<DXConstBuffer> mLineMatrixBuffer;
         std::vector<glm::mat4x4> mModelMats;
         std::vector<glm::vec4> mColors;
+    };
+
+    class UIRenderingData {
+    public:
+        UIRenderingData();
+        void RenderData(ID3D12GraphicsCommandList4* commandList);
+
+        std::unique_ptr<DXResource> mQuadVResource;
+        std::unique_ptr<DXResource> mQuadUVResource;
+        std::unique_ptr<DXResource> mIndicesResource;
+
+        std::unique_ptr<DXConstBuffer> mModelMatBuffer;
+        std::unique_ptr<DXConstBuffer> mColorBuffer;
+
+        D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
+        D3D12_VERTEX_BUFFER_VIEW mTexCoordBufferView;
+        D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
     };
 
 	class GPUWorld final : 
@@ -106,6 +130,7 @@ namespace Engine
         const DXHeapHandle& GetMaterialHeapSlot() const { return mMaterialHeapSlot; };
 
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
+        UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
 
 	private:
         void SendMaterialTexturesToGPU(const Material& mat);
@@ -117,6 +142,7 @@ namespace Engine
 		std::vector<InfoStruct::DXMaterialInfo> mMaterials;
 
         DebugRenderingData mDebugRenderingData;
+        UIRenderingData mUIRenderingData;
 	};
 }
 
