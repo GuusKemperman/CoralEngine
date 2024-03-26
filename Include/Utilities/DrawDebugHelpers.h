@@ -104,12 +104,12 @@ namespace Engine
         const glm::vec4&) {};
 
     inline void DrawDebugRectangle(
-        const World& world,
-        DebugCategory::Enum category,
-        const glm::vec3& center,
-        glm::vec2 halfExtends,
-        const glm::vec4& color,
-        Plane::Enum plane = Plane::XZ) {};
+        const World&,
+        DebugCategory::Enum,
+        const glm::vec3&,
+        glm::vec2,
+        const glm::vec4&,
+        Plane::Enum = Plane::XZ) {};
 
     inline void DrawDebugBox(
         const World&,
