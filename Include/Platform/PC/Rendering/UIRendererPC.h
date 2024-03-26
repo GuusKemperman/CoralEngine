@@ -34,8 +34,6 @@ namespace Engine
             glm::mat4 mTransposed;
         };
 
-
-
     private:
         std::unique_ptr<DXPipeline> mPipeline;
     };
