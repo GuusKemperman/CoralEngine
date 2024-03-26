@@ -204,6 +204,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BuildStlModules>true</BuildStlModules>
       <WarningLevel>Level4</WarningLevel>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -279,6 +280,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BuildStlModules>true</BuildStlModules>
       <WarningLevel>Level4</WarningLevel>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
