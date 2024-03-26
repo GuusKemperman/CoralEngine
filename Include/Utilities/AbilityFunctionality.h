@@ -3,6 +3,17 @@
 
 namespace Engine
 {
+	struct PairOfOptionalAndValueHash // to use a key in std::unordered_map
+	{
+		template <class T1, class T2>
+		std::size_t operator() (const std::pair<T1, T2>& pair) const
+		{
+			auto hash1 = pair.first ? std::hash<T1>{}(*pair.first) : 0; // Hash of std::optional of first value
+			auto hash2 = std::hash<T2>{}(pair.second); // Hash of second value
+			return hash1 ^ (hash2 << 1); // Combine hashes
+		}
+	};
+
 	struct DurationalEffect;
 	class Prefab;
 	class CharacterComponent;
@@ -57,6 +68,18 @@ namespace Engine
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);
+
+		std::unordered_map<std::pair<std::optional<Stat>, IncreaseOrDecrease>, glm::vec4, PairOfOptionalAndValueHash>
+			mEffectColors = {
+		{{std::nullopt, Increase}, {1.f, 1.f, 1.f, 1.f}},               // Default increase - white
+		{{std::nullopt, Decrease}, {0.05f, 0.05f, 0.05f, 1.f}},         // Default decrease - black
+		{{Health, Increase}, {0.f, 1.f, 0.f, 1.0f}},                    // green
+		{{Health, Decrease}, {1.f, 0.f, 0.f, 1.0f}},                    // red
+		{{MovementSpeed, Increase}, {1.f, 0.5f, 0.f, 1.0f}},            // orange
+		{{MovementSpeed, Decrease}, {0.25f, 0.25f, 1.f, 1.0f}},         // blue
+		{{DealtDamageModifier, Increase}, {0.75f, 0.25f, 0.75f, 1.0f}}, // purple
+		{{ReceivedDamageModifier, Increase}, {1.f, 1.f, 0.25f, 1.0f}},  // yellow
+		};
 
 		friend ReflectAccess;
 		static MetaType Reflect();
