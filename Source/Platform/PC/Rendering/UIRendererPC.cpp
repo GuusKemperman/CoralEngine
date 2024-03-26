@@ -5,7 +5,6 @@
 #include "Meta/MetaType.h"
 #include "World/Registry.h"
 #include "World/World.h"
-#include "World/WorldRenderer.h"
 #include "Components/UI/UISpriteComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"

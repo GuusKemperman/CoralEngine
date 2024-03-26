@@ -19,12 +19,12 @@ namespace Engine
         ~UIRenderer();
         void Render(const World& world) override;
 
-        SystemStaticTraits GetStaticTraits() const override
-        {
-            SystemStaticTraits traits{};
-            traits.mPriority = static_cast<int>(TickPriorities::PostRender) + (TickPriorityStepSize >> 1);
-            return traits;
-        }
+        //SystemStaticTraits GetStaticTraits() const override
+        //{
+        //    SystemStaticTraits traits{};
+        //    traits.mPriority = static_cast<int>(TickPriorities::PostRender) + (TickPriorityStepSize >> 1);
+        //    return traits;
+        //}
 
     private:
         struct QuadVertex
