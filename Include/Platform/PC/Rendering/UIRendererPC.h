@@ -5,17 +5,18 @@
 #include "DX12Classes/DXPipeline.h"
 #include "DX12Classes/DXConstBuffer.h"
 
+#include "Rendering/ISubRenderer.h"
 
 namespace Engine
 {
     class Texture;
 
     class UIRenderer final :
-        public System
+        public ISubRenderer
     {
     public:
         UIRenderer();
-        ~UIRenderer() override;
+        ~UIRenderer();
         void Render(const World& world) override;
 
         SystemStaticTraits GetStaticTraits() const override
@@ -46,8 +47,6 @@ namespace Engine
             uint32 mUseTexture;
             uint32 mPadding[3];
         };
-
-        void DrawQuad(const glm::mat4& transform, const glm::vec4& color, std::shared_ptr<const Texture> texture);
 
     private:
         std::unique_ptr<DXPipeline> mPipeline;
