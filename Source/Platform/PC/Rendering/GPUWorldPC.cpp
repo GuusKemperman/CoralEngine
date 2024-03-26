@@ -393,12 +393,3 @@ void Engine::GPUWorld::SendMaterialTexturesToGPU(const Engine::Material& mat)
         mat.mOcclusionTexture->SendToGPU();
     }
 }
-
-void Engine::UIRenderingData::RenderData(ID3D12GraphicsCommandList4* commandList)
-{
-    commandList->IASetVertexBuffers(0, 1, &mVertexBufferView);
-    commandList->IASetVertexBuffers(1, 1, &mTexCoordBufferView);
-    commandList->IASetIndexBuffer(&mIndexBufferView);
-    commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-
-}

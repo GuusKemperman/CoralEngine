@@ -44,6 +44,7 @@ void Engine::UIRenderer::Render(const World& world)
     std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
     int frameIndex = engineDevice.GetFrameIndex();
     GPUWorld& gpuWorld = world.GetGPUWorld();
+    UIRenderingData& renderingData = gpuWorld.GetUIRenderingData();
 
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 
@@ -61,8 +62,8 @@ void Engine::UIRenderer::Render(const World& world)
         ModelMat modelMat;
         modelMat.mModel = glm::transpose(transform.GetWorldMatrix());
         modelMat.mTransposed = glm::transpose(modelMat.mModel);
-        gpuWorld.GetUIRenderingData().mModelMatBuffer->Update(&modelMat, sizeof(ModelMat), spriteCount, frameIndex);
-        gpuWorld.GetUIRenderingData().mModelMatBuffer->Bind(commandList, 0, spriteCount, frameIndex);
+        renderingData.mModelMatBuffer->Update(&modelMat, sizeof(ModelMat), spriteCount, frameIndex);
+        renderingData.mModelMatBuffer->Bind(commandList, 0, spriteCount, frameIndex);
 
         InfoStruct::ColorInfo colorInfo;
         colorInfo.mColor = sprite.mColor;
@@ -74,9 +75,12 @@ void Engine::UIRenderer::Render(const World& world)
         else
             colorInfo.mUseTexture = false;
 
-        gpuWorld.GetUIRenderingData().mColorBuffer->Update(&colorInfo, sizeof(InfoStruct::ColorInfo), spriteCount, frameIndex);
-        gpuWorld.GetUIRenderingData().mColorBuffer->Bind(commandList, 1, spriteCount, frameIndex);
+        renderingData.mColorBuffer->Update(&colorInfo, sizeof(InfoStruct::ColorInfo), spriteCount, frameIndex);
+        renderingData.mColorBuffer->Bind(commandList, 1, spriteCount, frameIndex);
 
-        gpuWorld.GetUIRenderingData().RenderData(commandList);
+        commandList->IASetVertexBuffers(0, 1, &renderingData.mVertexBufferView);
+        commandList->IASetVertexBuffers(1, 1, &renderingData.mTexCoordBufferView);
+        commandList->IASetIndexBuffer(&renderingData.mIndexBufferView);
+        commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
     }
 }

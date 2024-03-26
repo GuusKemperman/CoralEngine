@@ -92,7 +92,6 @@ namespace Engine
     class UIRenderingData {
     public:
         UIRenderingData();
-        void RenderData(ID3D12GraphicsCommandList4* commandList);
 
         std::unique_ptr<DXResource> mQuadVResource;
         std::unique_ptr<DXResource> mQuadUVResource;
