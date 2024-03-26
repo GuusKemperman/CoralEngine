@@ -265,7 +265,7 @@ bool Engine::AreOverlapping(const TransformedAABB aabb, const TransformedDisk di
 	glm::vec2 closest = aabbCentre + clamped;
 	// retrieve vector between center disk and closest point AABB and check if length <= radius
 	difference = closest - disk.mCentre;
-	return glm::length(difference) < disk.mRadius;
+	return glm::length(difference) <= disk.mRadius;
 }
 
 // Function needed for line-line intersection
