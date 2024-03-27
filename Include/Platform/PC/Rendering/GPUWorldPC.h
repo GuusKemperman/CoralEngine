@@ -43,16 +43,16 @@ namespace Engine
 
         struct DXMaterialInfo
         {
-            glm::vec4 colorFactor;
-            glm::vec4 emissiveFactor;
-            float metallicFactor;
-            float roughnessFactor;
-            float normalScale;
-            unsigned int useColorTex;
-            unsigned int useEmissiveTex;
-            unsigned int useMetallicRoughnessTex;
-            unsigned int useNormalTex;
-            unsigned int useOcclusionTex;
+            glm::vec4 colorFactor =  glm::vec4(1.f);
+            glm::vec4 emissiveFactor = glm::vec4(1.f);
+            float metallicFactor = 1;
+            float roughnessFactor = 1;
+            float normalScale = 1;
+            unsigned int useColorTex = 0;
+            unsigned int useEmissiveTex = 0;
+            unsigned int useMetallicRoughnessTex= 0;
+            unsigned int useNormalTex= 0;
+            unsigned int useOcclusionTex= 0;
         };
 
         struct DXColorMultiplierInfo
@@ -64,7 +64,6 @@ namespace Engine
         enum DXStructuredBuffers 
         {
             MODEL_MAT_SB,
-            MATERIAL_SB
         };
 
         struct ColorInfo
@@ -115,20 +114,12 @@ namespace Engine
 		~GPUWorld();
 		void Update() override;
 
-        /// <summary>
-        /// Updating the material buffer has to happen after the mesh rendering commands have completed.
-        /// </summary>
-        void UpdateMaterials();
-
         const DXConstBuffer& GetCameraBuffer() const { return *mConstBuffers[CAM_MATRIX_CB]; };
-        DXConstBuffer& GetModelIndexBuffer() const { return *mConstBuffers[MODEL_INDEX_CB]; };
+        DXConstBuffer& GetMaterialInfoBuffer() const { return *mConstBuffers[MATERIAL_INFO_CB]; };
         const DXConstBuffer& GetLightBuffer() const { return *mConstBuffers[LIGHT_CB]; };
         DXConstBuffer& GetModelMatrixBuffer() const { return *mConstBuffers[MODEL_MATRIX_CB]; };
         DXConstBuffer& GetBoneMatrixBuffer() const { return *mConstBuffers[FINAL_BONE_MATRIX_CB]; };
         DXConstBuffer& GetMeshColorBuffer() const { return *mConstBuffers[COLOR_CB]; };
-
-        const InfoStruct::DXMaterialInfo& GetMaterial(int meshIndex) const { return mMaterials[meshIndex]; };
-        const DXHeapHandle& GetMaterialHeapSlot() const { return mMaterialHeapSlot; };
 
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
         UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
@@ -137,10 +128,7 @@ namespace Engine
         void SendMaterialTexturesToGPU(const Material& mat);
 
 		std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
-		std::unique_ptr<DXResource> mStructuredBuffers[3];
 		InfoStruct::DXLightInfo mLights;
-		DXHeapHandle mMaterialHeapSlot;
-		std::vector<InfoStruct::DXMaterialInfo> mMaterials;
 
         DebugRenderingData mDebugRenderingData;
         UIRenderingData mUIRenderingData;
