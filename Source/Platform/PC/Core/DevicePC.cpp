@@ -284,6 +284,7 @@ void Engine::Device::InitializeDevice()
     mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//16
     mSignature->AddCBuffer(6, D3D12_SHADER_VISIBILITY_PIXEL);//17
     mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
+
     mSignature->CreateSignature(mDevice, L"MAIN ROOT SIGNATURE");
 
     //COMPUTE ROOT SIGNATURE

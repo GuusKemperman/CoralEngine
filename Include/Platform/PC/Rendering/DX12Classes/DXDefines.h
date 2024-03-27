@@ -57,8 +57,7 @@ using namespace Microsoft::WRL;
 #define MODEL_MATRIX_CB					3
 #define FINAL_BONE_MATRIX_CB			4
 #define COLOR_CB						5
-#define UI_MODEL_MAT_CB					6
-#define NUM_CBS				UI_MODEL_MAT_CB+	1
+#define NUM_CBS				COLOR_CB+	1
 
 //RESOURCE HEAP SLOTS
 #define  RESOURCE_START				4
