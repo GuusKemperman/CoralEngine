@@ -65,3 +65,4 @@ using namespace Microsoft::WRL;
 
 //DEBUG RENDERER
 #define MAX_LINES 32760
+#define MAX_LINE_VERTICES MAX_LINES * 2
