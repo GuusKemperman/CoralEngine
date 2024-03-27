@@ -12,8 +12,9 @@ Engine::MetaType Game::SpawnerComponent::Reflect()
 	auto type = Engine::MetaType{Engine::MetaType::T<SpawnerComponent>{}, "SpawnerComponent"};
 	Engine::MetaProps& props = type.GetProperties();
 	props.Add(Engine::Props::sIsScriptableTag);
-	type.AddField(&SpawnerComponent::mSpawningTimer, "SpawningTimer").GetProperties().Add(
-		Engine::Props::sIsScriptableTag);
+
+	type.AddField(&SpawnerComponent::mCurrentTimer, "mCurrentTimer").GetProperties().Add(Engine::Props::sIsScriptableTag);
+	type.AddField(&SpawnerComponent::mSpawningTimer, "SpawningTimer").GetProperties().Add(Engine::Props::sIsScriptableTag);
 	type.AddField(&SpawnerComponent::mPrefab, "Prefab").GetProperties().Add(Engine::Props::sIsScriptableTag);
 	Engine::ReflectComponentType<SpawnerComponent>(type);
 	return type;
