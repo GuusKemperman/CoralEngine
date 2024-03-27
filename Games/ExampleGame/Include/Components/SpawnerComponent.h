@@ -11,7 +11,7 @@ namespace Game
 	class SpawnerComponent
 	{
 	public:
-		std::shared_ptr<const Engine::Prefab> mPrefab{};
+		std::shared_ptr<const Engine::Prefab> mEnemyPrefab{};
 
 		float mCurrentTimer = 0;
 		float mSpawningTimer = 5.00000;

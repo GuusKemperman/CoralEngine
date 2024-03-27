@@ -14,7 +14,7 @@ Engine::MetaType Game::SpawnerComponent::Reflect()
 	props.Add(Engine::Props::sIsScriptableTag);
 	type.AddField(&SpawnerComponent::mSpawningTimer, "SpawningTimer").GetProperties().Add(
 		Engine::Props::sIsScriptableTag);
-	type.AddField(&SpawnerComponent::mPrefab, "Prefab").GetProperties().Add(Engine::Props::sIsScriptableTag);
+	type.AddField(&SpawnerComponent::mEnemyPrefab, "EnemyPrefab").GetProperties().Add(Engine::Props::sIsScriptableTag);
 	Engine::ReflectComponentType<SpawnerComponent>(type);
 	return type;
 }
