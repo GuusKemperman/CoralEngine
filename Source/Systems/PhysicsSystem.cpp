@@ -123,7 +123,7 @@ void Engine::PhysicsSystem::UpdateCollisions(World& world)
 		auto [transform1, body1, transformedDiskCollider1] = viewDisk.get<TransformComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>(entity1);
 
 		// Workaround, because ***REMOVED*** doesn't like it otherwise
-		Engine::TransformedDiskColliderComponent* pointerToTransformedDiskCollider1 = &transformedDiskCollider1;
+		TransformedDiskColliderComponent* pointerToTransformedDiskCollider1 = &transformedDiskCollider1;
 
 		// Can be modified by ResolveCollision. Is only actually applied
 		// to the transform at the end of this loop, for performance
