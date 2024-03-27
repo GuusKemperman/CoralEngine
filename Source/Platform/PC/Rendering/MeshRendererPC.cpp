@@ -101,6 +101,8 @@ void Engine::MeshRenderer::Render(const World& world)
 
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 
+    commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
+
     // Bind constant buffers
     gpuWorld.GetLightBuffer().Bind(commandList, 1, 0, frameIndex);
     gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
@@ -162,6 +164,11 @@ void Engine::MeshRenderer::Render(const World& world)
     }
 
     commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
+
+    resourceHeap->BindToGraphics(commandList, 18, gpuWorld.GetDirLightHeapSlot());
+    resourceHeap->BindToGraphics(commandList, 19, gpuWorld.GetPointLigthHeapSlot());
+    resourceHeap->BindToGraphics(commandList, 16, gpuWorld.GetMaterialHeapSlot());
+
     meshCounter = 0;
 
     {
@@ -205,8 +212,6 @@ void Engine::MeshRenderer::Render(const World& world)
             // Update mesh index
             gpuWorld.GetModelIndexBuffer().Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
             gpuWorld.GetModelIndexBuffer().Bind(commandList, 3, meshCounter, frameIndex);
-
-            engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, gpuWorld.GetMaterialHeapSlot());
 
             HandleColorComponent(world, entity, meshCounter, frameIndex);
 
@@ -260,8 +265,6 @@ void Engine::MeshRenderer::Render(const World& world)
             // Update mesh index
             gpuWorld.GetModelIndexBuffer().Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
             gpuWorld.GetModelIndexBuffer().Bind(commandList, 3, meshCounter, frameIndex);
-
-            engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, gpuWorld.GetMaterialHeapSlot());
 
             HandleColorComponent(world, entity, meshCounter, frameIndex);
 

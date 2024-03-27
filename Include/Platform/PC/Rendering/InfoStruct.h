@@ -41,18 +41,52 @@ namespace Engine::InfoStruct
         float metallicFactor;
         float roughnessFactor;
         float normalScale;
-        float padding1; // Padding to align the next bools
+        uint32 useColorTex;
+        uint32 useEmissiveTex;
+        uint32 useMetallicRoughnessTex;
+        uint32 useNormalTex;
+        uint32 useOcclusionTex;
+    };
 
-        // Grouping bools together for efficient packing, and adding padding to ensure
-        // the struct ends on a 16-byte boundary. Even though individual bools are treated
-        // as 4 bytes in HLSL, aligning them like this without additional padding will not align
-        // the struct size since the total size becomes 60 bytes, which is not a multiple of 16.
-        bool useColorTex;
-        bool useEmissiveTex;
-        bool useMetallicRoughnessTex;
-        bool useNormalTex;
-        bool useOcclusionTex;
-        char padding2[11]; // Additional padding to align the struct size to a multiple of 16 bytes        
+    struct DXColorMultiplierInfo
+    {
+        glm::vec4 colorMult;
+        glm::vec4 colorAdd;
+    };
+
+    struct ColorInfo
+    {
+        glm::vec4 mColor;
+        uint32 mUseTexture;
+        uint32 mPadding[3];
+    };
+
+    enum DXStructuredBuffers {
+        MODEL_MAT_SB,
+        MATERIAL_SB,
+        DIRECTIONAL_LIGHT_SB,
+        POINT_LIGHT_SB,
+        CLUSTER_GRID_SB,
+        ACTIVE_CLUSTER_SB,
+        COMPACT_CLUSTER_SB,
+        CLUSTER_COUNTER_BUFFER,
+        LIGHT_GRID_SB,
+        POINT_LIGHT_COUNTER,
+        LIGHT_INDICES,
+        NUM_SB
+    };
+
+    enum DXConstantBuffers {
+        CAM_MATRIX_CB,
+        LIGHT_CB,
+        MODEL_INDEX_CB,
+        MODEL_MATRIX_CB,
+        CLUSTER_INFO_CB,
+        CLUSTERING_CAM_CB,
+        FINAL_BONE_MATRIX_CB,
+        COLOR_CB,
+        UI_MODEL_MAT_CB,
+        NUM_CBS
     };
 
     namespace Clustering

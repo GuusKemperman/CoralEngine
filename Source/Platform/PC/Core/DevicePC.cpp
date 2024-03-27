@@ -577,8 +577,6 @@ void Engine::Device::SubmitUploadCommands()
     {
         LOG(LogCore, Fatal, "Failed to signal upload fence");
     }
-
-    WaitForFence(mUploadFence, mUploadFenceValue, mUploadFenceEvent);
 }
 
 void Engine::Device::AddToDeallocation(ComPtr<ID3D12Resource>&& res)

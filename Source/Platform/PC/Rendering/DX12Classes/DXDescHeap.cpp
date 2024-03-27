@@ -15,7 +15,7 @@ DXDescHeap::DXDescHeap(const ComPtr<ID3D12Device5>& device, int numDescriptors, 
 
 	//Leaving space for ImGUI resources
 	if (mType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
-		mResourceCount = RESOURCE_START;
+		mResourceCount = 4;
 
 	HRESULT hr = device->CreateDescriptorHeap(&renderTargetDesc, IID_PPV_ARGS(&mDescriptorHeap));
 	if (FAILED(hr))
