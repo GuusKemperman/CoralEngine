@@ -112,7 +112,6 @@ void Engine::FrameBuffer::Resize(glm::ivec2 newSize)
 	mScissorRect.right = static_cast<LONG>(mViewport.Width);
 	mScissorRect.bottom = static_cast<LONG>(mViewport.Height);
 
-
 	Device& engineDevice = Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 

@@ -405,6 +405,4 @@ void Engine::MeshRenderer::AssignLights(const GPUWorld& gpuWorld, int numberOfCo
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 7, gpuWorld.GetLigthGridUAVSlot());
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 8, gpuWorld.GetLightIndicesUAVSlot());
     commandList->Dispatch(numberOfCompactClusters, 1, 1);
-
-
 }
