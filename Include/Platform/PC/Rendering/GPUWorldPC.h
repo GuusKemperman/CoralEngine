@@ -56,7 +56,6 @@ namespace Engine
         /// <summary>
         /// Updating the material buffer has to happen after the mesh rendering commands have completed.
         /// </summary>
-        void UpdateMaterials();
         void UpdateLights(int numDirLights, int numPointLights);
         void ClearClusterData();
 
@@ -69,8 +68,6 @@ namespace Engine
         DXConstBuffer& GetMeshColorBuffer() const { return *mConstBuffers[InfoStruct::COLOR_CB]; };
         DXResource& GetStructuredBuffer(InfoStruct::DXStructuredBuffers structuredBuffer) const { return *mStructuredBuffers[structuredBuffer]; }
 
-        const InfoStruct::DXMaterialInfo& GetMaterial(int meshIndex) const { return mMaterials[meshIndex]; };
-        const DXHeapHandle& GetMaterialHeapSlot() const { return mMaterialHeapSlot; };
         const DXHeapHandle& GetDirLightHeapSlot() const { return mDirectionalLightsSRVSlot; };
         const DXHeapHandle& GetPointLigthHeapSlot() const { return mPointLightsSRVSlot; };
         const DXHeapHandle& GetCompactClusterSRVSlot() const { return mCompactClusterSRVSlot; };
@@ -100,14 +97,12 @@ namespace Engine
 		std::unique_ptr<DXConstBuffer> mConstBuffers[InfoStruct::NUM_CBS];
 		std::unique_ptr<DXResource> mStructuredBuffers[InfoStruct::NUM_SB];
 		InfoStruct::DXLightInfo mLights;
-		std::vector<InfoStruct::DXMaterialInfo> mMaterials;
         std::vector<InfoStruct::DXDirLightInfo> mDirectionalLights;
         std::vector<InfoStruct::DXPointLightInfo> mPointLights;
         InfoStruct::DXLightInfo mLightInfo;
         int mNumberOfClusters = 0;
         glm::ivec3 mClusterGrid;
 
-        DXHeapHandle mMaterialHeapSlot;
         DXHeapHandle mDirectionalLightsSRVSlot;
         DXHeapHandle mPointLightsSRVSlot;
         DXHeapHandle mCompactClusterSRVSlot;
@@ -122,8 +117,6 @@ namespace Engine
         DXHeapHandle mLightGridUAVSlot;
         DXHeapHandle mPointLightCounterUAVSlot;
         DXHeapHandle mLightIndicesUAVSlot;
-
-
 
         DebugRenderingData mDebugRenderingData;
         UIRenderingData mUIRenderingData;

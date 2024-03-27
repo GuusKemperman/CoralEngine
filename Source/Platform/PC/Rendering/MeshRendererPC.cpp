@@ -132,7 +132,6 @@ void Engine::MeshRenderer::Render(const World& world)
     gpuWorld.GetConstantBuffer(InfoStruct::CLUSTERING_CAM_CB).Bind(commandList, 22, 0, frameIndex);
     resourceHeap->BindToGraphics(commandList, 18, gpuWorld.GetDirLightHeapSlot());
     resourceHeap->BindToGraphics(commandList, 19, gpuWorld.GetPointLigthHeapSlot());
-    resourceHeap->BindToGraphics(commandList, 16, gpuWorld.GetMaterialHeapSlot());
     resourceHeap->BindToGraphics(commandList, 20, gpuWorld.GetLigthGridSRVSlot());
     resourceHeap->BindToGraphics(commandList, 21, gpuWorld.GetLightIndicesSRVSlot());
 

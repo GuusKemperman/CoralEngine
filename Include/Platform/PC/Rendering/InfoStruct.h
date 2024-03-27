@@ -63,7 +63,6 @@ namespace Engine::InfoStruct
 
     enum DXStructuredBuffers {
         MODEL_MAT_SB,
-        MATERIAL_SB,
         DIRECTIONAL_LIGHT_SB,
         POINT_LIGHT_SB,
         CLUSTER_GRID_SB,
@@ -80,7 +79,7 @@ namespace Engine::InfoStruct
     enum DXConstantBuffers {
         CAM_MATRIX_CB,
         LIGHT_CB,
-        MODEL_INDEX_CB,
+        MATERIAL_INFO_CB,
         MODEL_MATRIX_CB,
         CLUSTER_INFO_CB,
         CLUSTERING_CAM_CB,

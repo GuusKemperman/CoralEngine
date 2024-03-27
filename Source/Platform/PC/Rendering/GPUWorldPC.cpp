@@ -140,11 +140,7 @@ Engine::GPUWorld::GPUWorld(const World& world)
     
     // Create structured buffers
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-    mStructuredBuffers[InfoStruct::DXStructuredBuffers::MATERIAL_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "Material structured buffer");
-    mStructuredBuffers[InfoStruct::DXStructuredBuffers::MATERIAL_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2), 0);
-
-    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXDirLightInfo) * 100, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXDirLightInfo) * 100, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "DIRECTIONAL LIGHT STRUCTURED BUFFER");
     mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXDirLightInfo) * 100, 0);
     mDirectionalLights.resize(100);
@@ -189,13 +185,7 @@ Engine::GPUWorld::GPUWorld(const World& world)
     srvDesc.Format = DXGI_FORMAT_UNKNOWN;
     srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
     srvDesc.Buffer.FirstElement = 0;
-    srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXMaterialInfo);
-    srvDesc.Buffer.NumElements = MAX_MESHES + 2;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    mMaterialHeapSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::DXStructuredBuffers::MATERIAL_SB].get(), &srvDesc);
-    mMaterials = std::vector<InfoStruct::DXMaterialInfo>(MAX_MESHES + 2);
-
-    //Point lights
     srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXPointLightInfo);
     srvDesc.Buffer.NumElements = 100;
     mPointLightsSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::POINT_LIGHT_SB].get(), &srvDesc);
@@ -380,7 +370,7 @@ void Engine::GPUWorld::Update()
 
             }
 
-            mConstBuffers[MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
+            mConstBuffers[InfoStruct::MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
             meshCounter++;
         }
     }
@@ -436,7 +426,7 @@ void Engine::GPUWorld::Update()
                 materialInfo.useOcclusionTex = false;
             }
 
-            mConstBuffers[MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
+            mConstBuffers[InfoStruct::MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
             meshCounter++;
         }
     }
