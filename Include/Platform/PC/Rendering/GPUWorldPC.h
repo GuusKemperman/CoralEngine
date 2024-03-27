@@ -107,22 +107,6 @@ namespace Engine
         D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
     };
 
-    class UIRenderingData {
-    public:
-        UIRenderingData();
-
-        std::unique_ptr<DXResource> mQuadVResource;
-        std::unique_ptr<DXResource> mQuadUVResource;
-        std::unique_ptr<DXResource> mIndicesResource;
-
-        std::unique_ptr<DXConstBuffer> mModelMatBuffer;
-        std::unique_ptr<DXConstBuffer> mColorBuffer;
-
-        D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
-        D3D12_VERTEX_BUFFER_VIEW mTexCoordBufferView;
-        D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
-    };
-
 	class GPUWorld final : 
 		public IGPUWorld
 	{
