@@ -90,7 +90,8 @@ namespace Engine
         uint32 mLineCount = 0;
     };
 
-    class UIRenderingData {
+    class UIRenderingData 
+    {
     public:
         UIRenderingData();
 
