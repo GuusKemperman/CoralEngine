@@ -6,8 +6,8 @@ namespace Engine
 	class MeshColorComponent
 	{
 		public:
-			glm::vec3 colorMultiplier = glm::vec3(1.f);
-			glm::vec3 colorAddition = glm::vec3(0.f);
+			glm::vec3 mColorMultiplier = glm::vec3(1.f);
+			glm::vec3 mColorAddition = glm::vec3(0.f);
 
 		private:
 			friend ReflectAccess;

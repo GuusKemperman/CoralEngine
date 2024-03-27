@@ -211,6 +211,11 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.3f);
 		ImGui::TextUnformatted(Format("FPS {:.1f}", 1.0f / mDeltaTimeRunningAverage).data());
+
+		const std::string viewportSizeText = Format("{}x{}", static_cast<int>(GetWorld().GetViewport().GetViewportSize().x), static_cast<int>(GetWorld().GetViewport().GetViewportSize().y));
+		ImGui::SetCursorPosX(viewportPos.x + mViewportWidth - ImGui::CalcTextSize(viewportSizeText.c_str()).x - 10.0f);
+
+		ImGui::TextUnformatted(viewportSizeText.c_str());
 		ImGui::PopStyleVar();
 
 		{

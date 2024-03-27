@@ -17,7 +17,9 @@ Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 	
 	metaType.AddField(&AbilitiesOnCharacterComponent::mIsPlayer, "mIsPlayer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
-	metaType.AddField(&AbilitiesOnCharacterComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties().Add(Props::sNoInspectTag);
+	metaType.AddField(&AbilitiesOnCharacterComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties().Add(Props::sNoInspectTag).Add(Props::sIsScriptableTag);
+
+	BindEvent(metaType, sBeginPlayEvent, &AbilitiesOnCharacterComponent::OnBeginPlay);
 
 #ifdef EDITOR
 	BindEvent(metaType, sInspectEvent, &AbilitiesOnCharacterComponent::OnInspect);
@@ -28,6 +30,19 @@ Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
 	return metaType;
 }
 
+void Engine::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity entity)
+{
+	auto& abilities = world.GetRegistry().Get<AbilitiesOnCharacterComponent>(entity);
+	for (auto& ability : abilities.mAbilitiesToInput)
+	{
+		// Make all the cooldown abilities available on being play.
+		if (ability.mAbilityAsset->mRequirementType == Ability::Cooldown)
+		{
+			ability.mRequirementCounter = ability.mAbilityAsset->mRequirementToUse;
+		}
+	}
+}
+
 #ifdef EDITOR
 static bool isPlayer = true; // little hack to inspect the component conditionally
 void Engine::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
@@ -35,7 +50,7 @@ void Engine::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::v
 	auto& reg = world.GetRegistry();
 	if (entities.size() > 1)
 	{
-		LOG(LogInspect, Warning, "Abilities On Character Component cannot be edited for multiple entities at the same time. Please only select one entity.");
+		ImGui::TextWrapped("Cannot inspect more than one Abilities On Character Component at a time.");
 		return;
 	}
 	auto& abilities = reg.Get<AbilitiesOnCharacterComponent>(entities[0]);
@@ -106,5 +121,6 @@ Engine::MetaType Engine::AbilityInstance::Reflect()
 
 		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<const AbilityInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
+	ReflectFieldType<AbilityInstance>(metaType);
 	return metaType;
 }
