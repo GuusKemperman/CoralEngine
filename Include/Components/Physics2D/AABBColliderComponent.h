@@ -7,7 +7,7 @@ namespace Engine
 	class TransformComponent;
 
 	// Will completely ignore all rotations
-	class AABBColliderComponnet
+	class AABBColliderComponent
 	{
 	public:
 		TransformedAABB CreateTransformedCollider(const TransformComponent& transform) const;
@@ -17,7 +17,7 @@ namespace Engine
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(AABBColliderComponnet);
+		REFLECT_AT_START_UP(AABBColliderComponent);
 	};
 
 	using TransformedAABBColliderComponent = TransformedAABB;

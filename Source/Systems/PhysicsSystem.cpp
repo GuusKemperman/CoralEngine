@@ -55,7 +55,7 @@ void Engine::PhysicsSystem::Update(World& world, float dt)
 	}
 
 	UpdateTransformedColliders<DiskColliderComponent, TransformedDiskColliderComponent>(world);
-	UpdateTransformedColliders<AABBColliderComponnet, TransformedAABBColliderComponent>(world);
+	UpdateTransformedColliders<AABBColliderComponent, TransformedAABBColliderComponent>(world);
 	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(world);
 
 	if (world.HasBegunPlay()
