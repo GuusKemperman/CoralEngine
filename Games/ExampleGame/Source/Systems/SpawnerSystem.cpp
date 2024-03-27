@@ -11,7 +11,7 @@ void Game::SpawnerSystem::Update(Engine::World& world, float dt)
 	auto spawnerView = reg.View<SpawnerComponent, Engine::TransformComponent>();
 	for (auto [spawnerID, spawnerComponent, spawnerTransform] : spawnerView.each())
 	{
-		if (spawnerComponent.mEnemyPrefab == nullptr)
+		if (spawnerComponent.mPrefab == nullptr)
 		{
 			continue;
 		}
@@ -19,7 +19,7 @@ void Game::SpawnerSystem::Update(Engine::World& world, float dt)
 		spawnerComponent.mCurrentTimer += dt;
 		if (spawnerComponent.mCurrentTimer >= spawnerComponent.mSpawningTimer)
 		{
-			const entt::entity spawnedPrefab = reg.CreateFromPrefab(*spawnerComponent.mEnemyPrefab);
+			const entt::entity spawnedPrefab = reg.CreateFromPrefab(*spawnerComponent.mPrefab);
 
 			auto* spawnedTransform = reg.TryGet<Engine::TransformComponent>(spawnedPrefab);
 			spawnedTransform->SetWorldPosition(spawnerTransform.GetWorldPosition());
