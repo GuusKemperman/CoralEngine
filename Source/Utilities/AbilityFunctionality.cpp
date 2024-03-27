@@ -107,7 +107,7 @@ std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& wor
 		if (effect.mStat == Stat::Health)
 		{
 			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
-			if (applyType != EffectOverTime)
+			if (applyType != ApplyType::EffectOverTime)
 			{
 				auto castByCharacterComponent = reg.TryGet<CharacterComponent>(castByEntity);
 				if (castByCharacterComponent == nullptr)
@@ -148,7 +148,7 @@ std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& wor
 
 void Engine::AbilityFunctionality::ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration)
 {
-	const auto calculatedAmount = ApplyInstantEffect(world, castByEntity, affectedEntity, effect, Durational);
+	const auto calculatedAmount = ApplyInstantEffect(world, castByEntity, affectedEntity, effect, ApplyType::Durational);
 	if (!calculatedAmount.has_value())
 	{
 		return;
@@ -281,13 +281,13 @@ std::pair<float&, float&> Engine::AbilityFunctionality::GetStat(Stat stat, Chara
 {
 	switch (stat)
 	{
-	case Health:
+	case Stat::Health:
 		return { characterComponent.mBaseHealth, characterComponent.mCurrentHealth };
-	case MovementSpeed:
+	case Stat::MovementSpeed:
 		return { characterComponent.mBaseMovementSpeed, characterComponent.mCurrentMovementSpeed };
-	case DealtDamageModifier:
+	case Stat::DealtDamageModifier:
 		return { characterComponent.mBaseDealtDamageModifier, characterComponent.mCurrentDealtDamageModifier };
-	case ReceivedDamageModifier:
+	case Stat::ReceivedDamageModifier:
 		return { characterComponent.mBaseReceivedDamageModifier, characterComponent.mCurrentReceivedDamageModifier };
 	}
 
@@ -298,14 +298,14 @@ std::pair<float&, float&> Engine::AbilityFunctionality::GetStat(Stat stat, Chara
 glm::vec3 Engine::AbilityFunctionality::GetEffectColor(Stat stat, IncreaseOrDecrease increaseOrDecrease)
 {
 	glm::vec3 color;
-	if (const auto it = mEffectColors.find(std::make_pair(stat, increaseOrDecrease));
-		it != mEffectColors.end())
+	if (const auto it = sDefaultEffectColors.find(std::make_pair(stat, increaseOrDecrease));
+		it != sDefaultEffectColors.end())
 	{
 		color = it->second;
 	}
 	else
 	{
-		color = mEffectColors[std::make_pair(std::nullopt, increaseOrDecrease)];
+		color = sDefaultEffectColors[std::make_pair(std::nullopt, increaseOrDecrease)];
 	}
 	return color;
 }

@@ -3,17 +3,6 @@
 
 namespace Engine
 {
-	struct PairOfOptionalAndValueHash // to use a key in std::unordered_map
-	{
-		template <class T1, class T2>
-		std::size_t operator() (const std::pair<T1, T2>& pair) const
-		{
-			auto hash1 = pair.first ? std::hash<T1>{}(*pair.first) : 0; // Hash of std::optional of first value
-			auto hash2 = std::hash<T2>{}(pair.second); // Hash of second value
-			return hash1 ^ (hash2 << 1); // Combine hashes
-		}
-	};
-
 	struct DurationalEffect;
 	class Prefab;
 	class CharacterComponent;
@@ -22,7 +11,8 @@ namespace Engine
 	class AbilityFunctionality
 	{
 	public:
-		enum Stat
+
+		enum class Stat
 		{
 			Health,
 			MovementSpeed,
@@ -30,19 +20,19 @@ namespace Engine
 			ReceivedDamageModifier
 		};
 
-		enum FlatOrPercentage
+		enum class FlatOrPercentage
 		{
 			Flat,
 			Percentage
 		};
 
-		enum IncreaseOrDecrease
+		enum class IncreaseOrDecrease
 		{
 			Decrease,
 			Increase
 		};
 
-		enum ApplyType
+		enum class ApplyType
 		{
 			Instant,
 			Durational,
@@ -51,10 +41,10 @@ namespace Engine
 
 		struct EffectSettings
 		{
-			Stat mStat = Health;
+			Stat mStat = Stat::Health;
 			float mAmount{};
-			FlatOrPercentage mFlatOrPercentage = Flat;
-			IncreaseOrDecrease mIncreaseOrDecrease = Decrease;
+			FlatOrPercentage mFlatOrPercentage = FlatOrPercentage::Flat;
+			IncreaseOrDecrease mIncreaseOrDecrease = IncreaseOrDecrease::Decrease;
 			bool mClampToMax = true;
 
 			bool operator==(const EffectSettings& effectSettings) const;
@@ -66,7 +56,7 @@ namespace Engine
 			REFLECT_AT_START_UP(EffectSettings);
 		};
 
-		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, ApplyType applyType = Instant, float dealtDamageModifierOfCastByCharacter = 0.f);
+		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, ApplyType applyType = ApplyType::Instant, float dealtDamageModifierOfCastByCharacter = 0.f);
 		static void ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f);
 		static void RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect);
 		static void ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f, int ticks = 1);
@@ -77,16 +67,27 @@ namespace Engine
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);
 		static glm::vec3 GetEffectColor(Stat stat, IncreaseOrDecrease increaseOrDecrease);
 
+		struct PairOfOptionalAndValueHash // to use a key in std::unordered_map
+		{
+			template <class T1, class T2>
+			std::size_t operator() (const std::pair<T1, T2>& pair) const
+			{
+				auto hash1 = pair.first ? std::hash<T1>{}(*pair.first) : 0; // Hash of std::optional of first value
+				auto hash2 = std::hash<T2>{}(pair.second); // Hash of second value
+				return hash1 ^ (hash2 << 1); // Combine hashes
+			}
+		};
+
 		inline static std::unordered_map<std::pair<std::optional<Stat>, IncreaseOrDecrease>, glm::vec3, PairOfOptionalAndValueHash>
-			mEffectColors = {
-		{{std::nullopt, Increase}, {1.f, 1.f, 1.f}},               // Default increase - white
-		{{std::nullopt, Decrease}, {0.05f, 0.05f, 0.05f}},         // Default decrease - black
-		{{Health, Increase}, {0.f, 1.f, 0.f}},                    // green
-		{{Health, Decrease}, {1.f, 0.f, 0.f}},                    // red
-		{{MovementSpeed, Increase}, {1.f, 0.5f, 0.f}},            // orange
-		{{MovementSpeed, Decrease}, {0.25f, 0.25f, 1.f}},         // blue
-		{{DealtDamageModifier, Increase}, {0.75f, 0.25f, 0.75f}}, // purple
-		{{ReceivedDamageModifier, Increase}, {1.f, 1.f, 0.25f}},  // yellow
+			sDefaultEffectColors = {
+		{{std::nullopt, IncreaseOrDecrease::Increase}, {1.f, 1.f, 1.f}},               // Default increase - white
+		{{std::nullopt, IncreaseOrDecrease::Decrease}, {0.05f, 0.05f, 0.05f}},         // Default decrease - black
+		{{Stat::Health, IncreaseOrDecrease::Increase}, {0.f, 1.f, 0.f}},                    // green
+		{{Stat::Health, IncreaseOrDecrease::Decrease}, {1.f, 0.f, 0.f}},                    // red
+		{{Stat::MovementSpeed, IncreaseOrDecrease::Increase}, {1.f, 0.5f, 0.f}},            // orange
+		{{Stat::MovementSpeed, IncreaseOrDecrease::Decrease}, {0.25f, 0.25f, 1.f}},         // blue
+		{{Stat::DealtDamageModifier, IncreaseOrDecrease::Increase}, {0.75f, 0.25f, 0.75f}}, // purple
+		{{Stat::ReceivedDamageModifier, IncreaseOrDecrease::Increase}, {1.f, 1.f, 0.25f}},  // yellow
 		};
 
 		friend ReflectAccess;

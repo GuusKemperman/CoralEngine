@@ -71,7 +71,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             {
                 it->mTicksCounter++;
             	it->mDurationTimer = 0.f;
-                AbilityFunctionality::ApplyInstantEffect(world, entt::null, entity, it->mEffectSettings, AbilityFunctionality::EffectOverTime, it->mDealtDamageModifierOfCastByCharacter);
+                AbilityFunctionality::ApplyInstantEffect(world, entt::null, entity, it->mEffectSettings, AbilityFunctionality::ApplyType::EffectOverTime, it->mDealtDamageModifierOfCastByCharacter);
             }
             if (it->mTicksCounter >= it->mNumberOfTicks)
             {
