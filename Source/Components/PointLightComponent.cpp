@@ -2,8 +2,7 @@
 #include "Components/PointLightComponent.h"
 
 #include "Components/TransformComponent.h"
-#include "Rendering/Renderer.h"
-#include "Rendering/DebugRenderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
 void Engine::PointLightComponent::OnDrawGizmos(World& world, entt::entity owner) const
@@ -22,7 +21,7 @@ void Engine::PointLightComponent::OnDrawGizmos(World& world, entt::entity owner)
 		return;
 	}
 
-	Renderer::Get().GetDebugRenderer().AddSphere(
+	DrawDebugSphere(
 		world,
 		category,
 		transform->GetWorldPosition(),
