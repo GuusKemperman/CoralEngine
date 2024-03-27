@@ -130,28 +130,11 @@ Engine::GPUWorld::GPUWorld(const World& world)
     // Create constant buffers
     mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
-    mConstBuffers[MODEL_INDEX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(int), MAX_MESHES + 2, "Model index", FRAME_BUFFER_COUNT);
+    mConstBuffers[MATERIAL_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Model material info", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
     mConstBuffers[FINAL_BONE_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * MAX_BONES, MAX_SKINNED_MESHES, "Skinned mesh bone matrices", FRAME_BUFFER_COUNT);
     mConstBuffers[COLOR_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXColorMultiplierInfo), MAX_MESHES, "Color multiplier", FRAME_BUFFER_COUNT);
     mConstBuffers[UI_MODEL_MAT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "UI MODEL MATRICES", FRAME_BUFFER_COUNT);
-
-    // Create structured buffers
-    auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
-    mStructuredBuffers[InfoStruct::DXStructuredBuffers::MATERIAL_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "Material structured buffer");
-    mStructuredBuffers[InfoStruct::DXStructuredBuffers::MATERIAL_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2), 0);
-
-    D3D12_SHADER_RESOURCE_VIEW_DESC  srvDesc = {};
-    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-    srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-    srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-    srvDesc.Buffer.FirstElement = 0;
-    srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXMaterialInfo);
-    srvDesc.Buffer.NumElements = MAX_MESHES + 2;
-    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    mMaterialHeapSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::DXStructuredBuffers::MATERIAL_SB].get(), &srvDesc);
-    mMaterials = std::vector<InfoStruct::DXMaterialInfo>(MAX_MESHES + 2);
 }
 
 Engine::GPUWorld::~GPUWorld() = default;
@@ -269,7 +252,7 @@ void Engine::GPUWorld::Update()
                 materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
                 materialInfo.metallicFactor = 0.f;
                 materialInfo.roughnessFactor = 0.f;
-                materialInfo.normalScale = 0.f;
+                materialInfo.normalScale = 1.f;
                 materialInfo.useColorTex = false;
                 materialInfo.useEmissiveTex = false;
                 materialInfo.useMetallicRoughnessTex = false;
@@ -278,7 +261,7 @@ void Engine::GPUWorld::Update()
 
             }
 
-            mMaterials[meshCounter] = materialInfo;
+            mConstBuffers[MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
             meshCounter++;
         }
     }
@@ -326,7 +309,7 @@ void Engine::GPUWorld::Update()
                 materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
                 materialInfo.metallicFactor = 0.f;
                 materialInfo.roughnessFactor = 0.f;
-                materialInfo.normalScale = 0.f;
+                materialInfo.normalScale = 1.f;
                 materialInfo.useColorTex = false;
                 materialInfo.useEmissiveTex = false;
                 materialInfo.useMetallicRoughnessTex = false;
@@ -334,24 +317,10 @@ void Engine::GPUWorld::Update()
                 materialInfo.useOcclusionTex = false;
             }
 
-            mMaterials[meshCounter] = materialInfo;
+            mConstBuffers[MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
             meshCounter++;
         }
     }
-}
-
-void Engine::GPUWorld::UpdateMaterials()
-{
-    Device& engineDevice = Device::Get();
-    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
-
-    D3D12_SUBRESOURCE_DATA data{};
-    data.pData = mMaterials.data();
-    data.RowPitch = sizeof(InfoStruct::DXMaterialInfo);
-    data.SlicePitch = sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2);
-    mStructuredBuffers[InfoStruct::DXStructuredBuffers::MATERIAL_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
-
-    memset(mMaterials.data(), 0, sizeof(InfoStruct::DXMaterialInfo) * mMaterials.size());
 }
 
 void Engine::GPUWorld::SendMaterialTexturesToGPU(const Engine::Material& mat)
