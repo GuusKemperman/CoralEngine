@@ -124,7 +124,7 @@ Engine::MetaFunc::InvokeT  Engine::ScriptAIEvaluateEvent::GetScriptInvoker(const
 }
 
 Engine::ScriptAbilityActivateEvent::ScriptAbilityActivateEvent() :
-	ScriptEvent(sAbilityActivateEvent, { { MakeTypeTraits<entt::entity>(), "Ability user" } }, std::nullopt)
+	ScriptEvent(sAbilityActivateEvent, { { MakeTypeTraits<entt::entity>(), "CastByEntity" } }, std::nullopt)
 {
 }
 
