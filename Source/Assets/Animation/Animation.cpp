@@ -178,7 +178,7 @@ Engine::MetaType Engine::Animation::Reflect()
 	return type;
 }
 
-const Engine::Bone* Engine::Animation::FindBone(std::string_view name) const
+const Engine::Bone* Engine::Animation::FindBone(const std::string_view name) const
 {
 	auto iter = std::find_if(mBones.begin(), mBones.end(),
 		[&](const Engine::Bone& bone)
