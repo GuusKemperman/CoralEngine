@@ -17,13 +17,19 @@ void Game::SpawnerSystem::Update(Engine::World& world, float dt)
 		}
 
 		spawnerComponent.mCurrentTimer += dt;
-		if (spawnerComponent.mCurrentTimer >= spawnerComponent.mSpawningTimer)
+		if (spawnerComponent.mCurrentTimer < spawnerComponent.mSpawningTimer)
 		{
-			const entt::entity spawnedPrefab = reg.CreateFromPrefab(*spawnerComponent.mPrefab);
+			continue;
+		}
+		
+		const entt::entity spawnedPrefab = reg.CreateFromPrefab(*spawnerComponent.mPrefab);
+		spawnerComponent.mCurrentTimer = 0;
 
-			auto* spawnedTransform = reg.TryGet<Engine::TransformComponent>(spawnedPrefab);
+		const TransformComponent* const spawnedTransform = reg.TryGet<Engine::TransformComponent>(spawnedPrefab);
+
+		if (spawnedTransform != nullptr)
+		{
 			spawnedTransform->SetWorldPosition(spawnerTransform.GetWorldPosition());
-			spawnerComponent.mCurrentTimer = 0;
 		}
 	}
 }
