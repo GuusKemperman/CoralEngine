@@ -1,6 +1,5 @@
 #pragma once
 #include "Meta/MetaReflect.h"
-#include "BasicDataTypes/Colors/LinearColor.h"
 
 namespace Engine
 {
@@ -9,7 +8,7 @@ namespace Engine
 	class UISpriteComponent
 	{
 	public:
-		LinearColor mColor{ 1.0f };
+		glm::vec4 mColor{ 1.0f };
 		std::shared_ptr<const Texture> mTexture{};
 
 	private:

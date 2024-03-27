@@ -149,36 +149,32 @@ void Engine::MeshRenderer::Render(const World& world)
             }
 
             // Bind textures
-            const InfoStruct::DXMaterialInfo& materialInfo = gpuWorld.GetMaterial(meshCounter);
             if (staticMeshComponent.mMaterial)
             {
-                if (materialInfo.useColorTex)
+                if (staticMeshComponent.mMaterial->mBaseColorTexture && staticMeshComponent.mMaterial->mBaseColorTexture->WasSentToGpu())
                 {
                     staticMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 6);
                 }
-                if (materialInfo.useEmissiveTex)
+                if (staticMeshComponent.mMaterial->mEmissiveTexture && staticMeshComponent.mMaterial->mEmissiveTexture->WasSentToGpu())
                 {
                     staticMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 7);
                 }
-                if (materialInfo.useMetallicRoughnessTex)
+                if (staticMeshComponent.mMaterial->mMetallicRoughnessTexture && staticMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSentToGpu())
                 {
                     staticMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 8);
                 }
-                if (materialInfo.useNormalTex)
+                if (staticMeshComponent.mMaterial->mNormalTexture && staticMeshComponent.mMaterial->mNormalTexture->WasSentToGpu())
                 {
                     staticMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 9);
                 }
-                if (materialInfo.useOcclusionTex)
+                if (staticMeshComponent.mMaterial->mOcclusionTexture && staticMeshComponent.mMaterial->mOcclusionTexture->WasSentToGpu())
                 {
                     staticMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 10);
                 }
             }
 
             gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
-
-            // Update mesh index
-            gpuWorld.GetModelIndexBuffer().Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
-            gpuWorld.GetModelIndexBuffer().Bind(commandList, 3, meshCounter, frameIndex);
+            gpuWorld.GetMaterialInfoBuffer().Bind(commandList, 3, meshCounter, frameIndex);
 
             HandleColorComponent(world, entity, meshCounter, frameIndex);
 
@@ -201,26 +197,25 @@ void Engine::MeshRenderer::Render(const World& world)
             }
 
             // Bind textures
-            const InfoStruct::DXMaterialInfo& materialInfo = gpuWorld.GetMaterial(meshCounter);
             if (skinnedMeshComponent.mMaterial)
             {
-                if (materialInfo.useColorTex)
+                if (skinnedMeshComponent.mMaterial->mBaseColorTexture && skinnedMeshComponent.mMaterial->mBaseColorTexture->WasSentToGpu())
                 {
                     skinnedMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 6);
                 }
-                if (materialInfo.useEmissiveTex)
+                if (skinnedMeshComponent.mMaterial->mEmissiveTexture && skinnedMeshComponent.mMaterial->mEmissiveTexture->WasSentToGpu())
                 {
                     skinnedMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 7);
                 }
-                if (materialInfo.useMetallicRoughnessTex)
+                if (skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture && skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSentToGpu())
                 {
                     skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 8);
                 }
-                if (materialInfo.useNormalTex)
+                if (skinnedMeshComponent.mMaterial->mNormalTexture && skinnedMeshComponent.mMaterial->mNormalTexture->WasSentToGpu())
                 {
                     skinnedMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 9);
                 }
-                if (materialInfo.useOcclusionTex)
+                if (skinnedMeshComponent.mMaterial->mOcclusionTexture && skinnedMeshComponent.mMaterial->mOcclusionTexture->WasSentToGpu())
                 {
                     skinnedMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 10);
                 }
@@ -228,10 +223,7 @@ void Engine::MeshRenderer::Render(const World& world)
 
             gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
             gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
-
-            // Update mesh index
-            gpuWorld.GetModelIndexBuffer().Update(&meshCounter, sizeof(int), meshCounter, frameIndex);
-            gpuWorld.GetModelIndexBuffer().Bind(commandList, 3, meshCounter, frameIndex);
+            gpuWorld.GetMaterialInfoBuffer().Bind(commandList, 3, meshCounter, frameIndex);
 
             HandleColorComponent(world, entity, meshCounter, frameIndex);
 
@@ -240,8 +232,6 @@ void Engine::MeshRenderer::Render(const World& world)
             meshCounter++;
         }
     }
-
-    gpuWorld.UpdateMaterials();
     gpuWorld.ClearClusterData();
 
     CalculateClusterGrid(gpuWorld);
@@ -264,8 +254,8 @@ void Engine::MeshRenderer::HandleColorComponent(const World& world, const entt::
     if (colorComponent)
     {
         InfoStruct::DXColorMultiplierInfo info;
-        info.colorAdd = glm::vec4(colorComponent->colorAddition, 0.f);
-        info.colorMult = glm::vec4(colorComponent->colorMultiplier, 0.f);
+        info.colorAdd = glm::vec4(colorComponent->mColorAddition, 0.f);
+        info.colorMult = glm::vec4(colorComponent->mColorMultiplier, 0.f);
         meshColorBuffer.Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
     }
     else

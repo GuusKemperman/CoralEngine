@@ -135,8 +135,16 @@ void Engine::PrefabEditorSystem::ApplyChangesToAsset()
 		
 		for (const auto [entity] : entityStorage->each())
 		{
-			if (entity != mLightInstance
-				&& entity != mCameraInstance)
+			if (entity == mLightInstance
+				|| entity == mCameraInstance)
+			{
+				continue;
+			}
+
+			const TransformComponent* const transform = reg.TryGet<TransformComponent>(entity);
+
+			if (transform == nullptr
+				|| transform->GetParent() == nullptr)
 			{
 				mPrefabInstance = entity;
 				break;

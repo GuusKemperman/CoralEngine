@@ -105,32 +105,31 @@ void Engine::DebugRenderer::AddSphere(const World& world, DebugCategory::Enum ca
     }
 }
 
-void Engine::DebugRenderer::AddSquare(const World& world, DebugCategory::Enum category, const glm::vec3& center, float size, const glm::vec4& color, Plane::Enum plane) const
+void Engine::DebugRenderer::AddRectangle(const World& world, DebugCategory::Enum category, const glm::vec3& center, glm::vec2 halfExtends, const glm::vec4& color, Plane::Enum plane) const
 {
     if (!IsCategoryVisible(category)) return;
 
-    const float s = size * 0.5f;
     glm::vec3 A{}, B{}, C{}, D{};
 
     switch (plane)
     {
     case Plane::XY:
-        A = center + glm::vec3(-s, -s, 0.f);
-        B = center + glm::vec3(-s, s, 0.f);
-        C = center + glm::vec3(s, s, 0.f);
-        D = center + glm::vec3(s, -s, 0.f);
+        A = center + glm::vec3(-halfExtends.x, -halfExtends.y, 0.f);
+        B = center + glm::vec3(-halfExtends.x, halfExtends.y, 0.f);
+        C = center + glm::vec3(halfExtends.x, halfExtends.y, 0.f);
+        D = center + glm::vec3(halfExtends.x, -halfExtends.y, 0.f);
         break;
     case Plane::XZ:
-        A = center + glm::vec3(-s, 0.f, -s);
-        B = center + glm::vec3(-s, 0.f, s);
-        C = center + glm::vec3(s, 0.f, s);
-        D = center + glm::vec3(s, 0.f, -s);
+        A = center + glm::vec3(-halfExtends.x, 0.f, -halfExtends.y);
+        B = center + glm::vec3(-halfExtends.x, 0.f, halfExtends.y);
+        C = center + glm::vec3(halfExtends.x, 0.f, halfExtends.y);
+        D = center + glm::vec3(halfExtends.x, 0.f, -halfExtends.y);
         break;
     case Plane::YZ:
-        A = center + glm::vec3(0.f, -s, -s);
-        B = center + glm::vec3(0.f, -s, s);
-        C = center + glm::vec3(0.f, s, s);
-        D = center + glm::vec3(0.f, s, -s);
+        A = center + glm::vec3(0.f, -halfExtends.x, -halfExtends.y);
+        B = center + glm::vec3(0.f, -halfExtends.x, halfExtends.y);
+        C = center + glm::vec3(0.f, halfExtends.x, halfExtends.y);
+        D = center + glm::vec3(0.f, halfExtends.x, -halfExtends.y);
         break;
     }
 

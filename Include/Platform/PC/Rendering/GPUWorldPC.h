@@ -19,15 +19,17 @@ namespace Engine
         DebugRenderingData();
         ~DebugRenderingData();
 
-        D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
-        std::unique_ptr<DXResource> mVertexBuffer;
-        std::unique_ptr<DXConstBuffer> mLineColorBuffer;
-        std::unique_ptr<DXConstBuffer> mLineMatrixBuffer;
-        std::vector<glm::mat4x4> mModelMats;
-        std::vector<glm::vec4> mColors;
+        D3D12_VERTEX_BUFFER_VIEW mVertexPositionBufferView;
+        D3D12_VERTEX_BUFFER_VIEW mVertexColorBufferView;
+        std::unique_ptr<DXResource> mVertexPositionBuffer;
+        std::unique_ptr<DXResource> mVertexColorBuffer;
+        std::vector<glm::vec3> mPositions{};
+        std::vector<glm::vec4> mColors{};
+        uint32 mLineCount = 0;
     };
 
-    class UIRenderingData {
+    class UIRenderingData 
+    {
     public:
         UIRenderingData();
 
@@ -60,7 +62,7 @@ namespace Engine
 
         const DXConstBuffer& GetConstantBuffer(InfoStruct::DXConstantBuffers constantBuffer) const { return *mConstBuffers[constantBuffer]; }
         const DXConstBuffer& GetCameraBuffer() const { return *mConstBuffers[InfoStruct::CAM_MATRIX_CB]; };
-        DXConstBuffer& GetModelIndexBuffer() const { return *mConstBuffers[InfoStruct::MODEL_INDEX_CB]; };
+        DXConstBuffer& GetMaterialInfoBuffer() const { return *mConstBuffers[InfoStruct::MATERIAL_INFO_CB]; };
         const DXConstBuffer& GetLightBuffer() const { return *mConstBuffers[InfoStruct::LIGHT_CB]; };
         DXConstBuffer& GetModelMatrixBuffer() const { return *mConstBuffers[InfoStruct::MODEL_MATRIX_CB]; };
         DXConstBuffer& GetBoneMatrixBuffer() const { return *mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]; };

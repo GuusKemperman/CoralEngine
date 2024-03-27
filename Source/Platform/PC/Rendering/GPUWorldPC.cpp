@@ -25,34 +25,27 @@ Engine::DebugRenderingData::DebugRenderingData()
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
-    ID3D12GraphicsCommandList4* uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetUploadCommandList());
 
-    std::vector<glm::vec3> positions(2);
-    positions[0] = glm::vec3(0.f, 0.f, 0.f);
-    positions[1] = glm::vec3(1.f, 0.f, 0.f);
+    uint bufferSize = sizeof(glm::vec3) * MAX_LINE_VERTICES;
+    mVertexPositionBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
+        CD3DX12_RESOURCE_DESC::Buffer(bufferSize), nullptr, "Line vertex position buffer");
+    mVertexPositionBuffer->CreateUploadBuffer(device, bufferSize, 0);
 
-    engineDevice.StartUploadCommands();
-    int vertexCount = 2;
-    int vBufferSize = sizeof(float) * vertexCount * 3;
+    mVertexPositionBufferView.BufferLocation = mVertexPositionBuffer->GetResource()->GetGPUVirtualAddress();
+    mVertexPositionBufferView.StrideInBytes = sizeof(glm::vec3);
+    mVertexPositionBufferView.SizeInBytes = bufferSize;
 
-    mVertexBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(vBufferSize), nullptr, "Line Vertex resource buffer");
+    bufferSize = sizeof(glm::vec4) * MAX_LINE_VERTICES;
+    mVertexColorBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
+        CD3DX12_RESOURCE_DESC::Buffer(bufferSize), nullptr, "Line vertex color buffer");
+    mVertexColorBuffer->CreateUploadBuffer(device, bufferSize, 0);
 
-    D3D12_SUBRESOURCE_DATA vData = {};
-    vData.pData = positions.data();
-    vData.RowPitch = sizeof(float) * 3;
-    vData.SlicePitch = vBufferSize;
+    mVertexColorBufferView.BufferLocation = mVertexColorBuffer->GetResource()->GetGPUVirtualAddress();
+    mVertexColorBufferView.StrideInBytes = sizeof(glm::vec4);
+    mVertexColorBufferView.SizeInBytes = bufferSize;
 
-    mVertexBuffer->CreateUploadBuffer(device, vBufferSize, 0);
-    mVertexBuffer->Update(uploadCmdList, vData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
-
-    mVertexBufferView.BufferLocation = mVertexBuffer->GetResource()->GetGPUVirtualAddress();
-    mVertexBufferView.StrideInBytes = sizeof(float) * 3;
-    mVertexBufferView.SizeInBytes = vBufferSize;
-
-    mLineColorBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::vec4), MAX_LINES, "Lines color const buffer", FRAME_BUFFER_COUNT);
-    mLineMatrixBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4), MAX_LINES, "Lines matrix const buffer", FRAME_BUFFER_COUNT);
-
-    engineDevice.SubmitUploadCommands();
+    mPositions.resize(MAX_LINE_VERTICES);
+    mColors.resize(MAX_LINE_VERTICES);
 }
 
 Engine::DebugRenderingData::~DebugRenderingData() = default;
@@ -137,7 +130,7 @@ Engine::GPUWorld::GPUWorld(const World& world)
     // Create constant buffers
     mConstBuffers[InfoStruct::CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
-    mConstBuffers[InfoStruct::MODEL_INDEX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(int), MAX_MESHES + 2, "Model index", FRAME_BUFFER_COUNT);
+    mConstBuffers[InfoStruct::MATERIAL_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Model material info", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * MAX_BONES, MAX_SKINNED_MESHES, "Skinned mesh bone matrices", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::COLOR_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXColorMultiplierInfo), MAX_MESHES, "Color multiplier", FRAME_BUFFER_COUNT);
@@ -378,7 +371,7 @@ void Engine::GPUWorld::Update()
                 materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
                 materialInfo.metallicFactor = 0.f;
                 materialInfo.roughnessFactor = 0.f;
-                materialInfo.normalScale = 0.f;
+                materialInfo.normalScale = 1.f;
                 materialInfo.useColorTex = false;
                 materialInfo.useEmissiveTex = false;
                 materialInfo.useMetallicRoughnessTex = false;
@@ -387,7 +380,7 @@ void Engine::GPUWorld::Update()
 
             }
 
-            mMaterials[meshCounter] = materialInfo;
+            mConstBuffers[MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
             meshCounter++;
         }
     }
@@ -435,7 +428,7 @@ void Engine::GPUWorld::Update()
                 materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
                 materialInfo.metallicFactor = 0.f;
                 materialInfo.roughnessFactor = 0.f;
-                materialInfo.normalScale = 0.f;
+                materialInfo.normalScale = 1.f;
                 materialInfo.useColorTex = false;
                 materialInfo.useEmissiveTex = false;
                 materialInfo.useMetallicRoughnessTex = false;
@@ -443,26 +436,12 @@ void Engine::GPUWorld::Update()
                 materialInfo.useOcclusionTex = false;
             }
 
-            mMaterials[meshCounter] = materialInfo;
+            mConstBuffers[MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
             meshCounter++;
         }
     }
 
     UpdateClusterData(camera);
-}
-
-void Engine::GPUWorld::UpdateMaterials()
-{
-    Device& engineDevice = Device::Get();
-    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
-
-    D3D12_SUBRESOURCE_DATA data{};
-    data.pData = mMaterials.data();
-    data.RowPitch = sizeof(InfoStruct::DXMaterialInfo);
-    data.SlicePitch = sizeof(InfoStruct::DXMaterialInfo) * (MAX_MESHES + 2);
-    mStructuredBuffers[InfoStruct::DXStructuredBuffers::MATERIAL_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
-
-    memset(mMaterials.data(), 0, sizeof(InfoStruct::DXMaterialInfo) * mMaterials.size());
 }
 
 uint32 Engine::GPUWorld::ReadCompactClusterCounter() const
