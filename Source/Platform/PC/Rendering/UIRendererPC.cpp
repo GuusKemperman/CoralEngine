@@ -34,11 +34,21 @@ Engine::UIRenderer::UIRenderer()
     mPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"UI RENDER PIPELINE");
 }
 
-Engine::UIRenderer::~UIRenderer()
-{}
+Engine::UIRenderer::~UIRenderer() = default;
 
 void Engine::UIRenderer::Render(const World& world)
 {
+    const Registry& reg = world.GetRegistry();
+
+    for (const auto [entity, sprite] : reg.View<const UISpriteComponent>().each())
+    {
+	    if (sprite.mTexture != nullptr
+            && sprite.mTexture->IsReadyToBeSentToGpu())
+	    {
+            sprite.mTexture->SendToGPU();
+	    }
+    }
+
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
     std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
@@ -67,7 +77,8 @@ void Engine::UIRenderer::Render(const World& world)
 
         InfoStruct::ColorInfo colorInfo;
         colorInfo.mColor = sprite.mColor;
-        if (sprite.mTexture)
+        if (sprite.mTexture != nullptr
+            && sprite.mTexture->WasSentToGpu())
         {
             colorInfo.mUseTexture = true;
             sprite.mTexture->BindToGraphics(commandList, 6);
