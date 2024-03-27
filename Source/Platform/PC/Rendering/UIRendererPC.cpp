@@ -40,14 +40,36 @@ void Engine::UIRenderer::Render(const World& world)
 {
     const Registry& reg = world.GetRegistry();
 
-    for (const auto [entity, sprite] : reg.View<const UISpriteComponent>().each())
+    struct DrawRequest
     {
-	    if (sprite.mTexture != nullptr
-            && sprite.mTexture->IsReadyToBeSentToGpu())
+        entt::entity mEntity{};
+        float mDepth{};
+    };
+    std::vector<DrawRequest> drawRequests{};
+
+    for (const auto [entity, transform, sprite] : reg.View<const TransformComponent, const UISpriteComponent>().each())
+    {
+	    if (sprite.mTexture == nullptr)
+	    {
+            continue;
+	    }
+
+		if (sprite.mTexture->IsReadyToBeSentToGpu())
 	    {
             sprite.mTexture->SendToGPU();
 	    }
+
+        if (sprite.mTexture->WasSentToGpu())
+        {
+            drawRequests.emplace_back(DrawRequest{ entity, transform.GetWorldPosition()[Axis::Forward] });
+        }
     }
+
+    std::sort(drawRequests.begin(), drawRequests.end(),
+        [](const DrawRequest& lhs, const DrawRequest& rhs)
+        {
+            return lhs.mDepth > rhs.mDepth;
+        });
 
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -58,22 +80,24 @@ void Engine::UIRenderer::Render(const World& world)
 
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 
-    const auto spriteView = world.GetRegistry().View<const TransformComponent, const UISpriteComponent>();
-    int spriteCount = 0;
 
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     commandList->SetPipelineState(mPipeline->GetPipeline().Get());
     commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
-    
-    for (auto [entity, transform, sprite] : spriteView.each())
+
+    for (int i = 0; i < drawRequests.size(); i++)
     {
+        const entt::entity entity = drawRequests[i].mEntity;
+        const TransformComponent& transform = reg.Get<const TransformComponent>(entity);
+        const UISpriteComponent& sprite = reg.Get<const UISpriteComponent>(entity);
+
         ModelMat modelMat;
         modelMat.mModel = glm::transpose(transform.GetWorldMatrix());
         modelMat.mTransposed = glm::transpose(modelMat.mModel);
-        renderingData.mModelMatBuffer->Update(&modelMat, sizeof(ModelMat), spriteCount, frameIndex);
-        renderingData.mModelMatBuffer->Bind(commandList, 0, spriteCount, frameIndex);
+        renderingData.mModelMatBuffer->Update(&modelMat, sizeof(ModelMat), i, frameIndex);
+        renderingData.mModelMatBuffer->Bind(commandList, 0, i, frameIndex);
 
         InfoStruct::ColorInfo colorInfo;
         colorInfo.mColor = sprite.mColor;
@@ -84,15 +108,16 @@ void Engine::UIRenderer::Render(const World& world)
             sprite.mTexture->BindToGraphics(commandList, 6);
         }
         else
+        {
             colorInfo.mUseTexture = false;
+        }
 
-        renderingData.mColorBuffer->Update(&colorInfo, sizeof(InfoStruct::ColorInfo), spriteCount, frameIndex);
-        renderingData.mColorBuffer->Bind(commandList, 1, spriteCount, frameIndex);
+        renderingData.mColorBuffer->Update(&colorInfo, sizeof(InfoStruct::ColorInfo), i, frameIndex);
+        renderingData.mColorBuffer->Bind(commandList, 1, i, frameIndex);
 
         commandList->IASetVertexBuffers(0, 1, &renderingData.mVertexBufferView);
         commandList->IASetVertexBuffers(1, 1, &renderingData.mTexCoordBufferView);
         commandList->IASetIndexBuffer(&renderingData.mIndexBufferView);
         commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-        spriteCount++;
     }
 }
