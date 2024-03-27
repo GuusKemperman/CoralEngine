@@ -96,9 +96,17 @@ void Engine::FrameBuffer::Unbind()
 
 void Engine::FrameBuffer::Resize(glm::ivec2 newSize)
 {
-	mSize = newSize;
-	if (mSize.x <= 0 || mSize.y <= 0)
+	if (mSize == newSize)
+	{
 		return;
+	}
+
+	mSize = newSize;
+
+	if (mSize.x <= 0 || mSize.y <= 0)
+	{
+		return;
+	}
 
 	mViewport.Width = static_cast<FLOAT>(mSize.x);
 	mViewport.Height = static_cast<FLOAT>(mSize.y);
