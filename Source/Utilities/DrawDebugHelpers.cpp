@@ -27,10 +27,14 @@ void Engine::DrawDebugSphere(const World& world, DebugCategory::Enum category, c
 	renderer.AddSphere(world, category, center, radius, color);
 }
 
-void Engine::DrawDebugSquare(const World& world, DebugCategory::Enum category, const glm::vec3& center, float size, const glm::vec4& color, Plane::Enum plane)
+void Engine::DrawDebugRectangle(const World& world, DebugCategory::Enum category,
+	const glm::vec3& center,
+	glm::vec2 halfExtends,
+	const glm::vec4& color,
+	Plane::Enum plane)
 {
 	const DebugRenderer& renderer = Renderer::Get().GetDebugRenderer();
-	renderer.AddSquare(world, category, center, size, color, plane);
+	renderer.AddRectangle(world, category, center, halfExtends, color, plane);
 }
 
 void Engine::DrawDebugBox(const World& world, DebugCategory::Enum category, const glm::vec3& center, const glm::vec3& halfExtends, const glm::vec4& color)

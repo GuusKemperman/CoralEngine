@@ -4,8 +4,6 @@
 namespace Engine
 {
 	class World;
-	class DiskColliderComponent;
-	class PolygonColliderComponent;
 	class TransformComponent;
 
 	/**
@@ -52,9 +50,6 @@ namespace Engine
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
 		friend class World;
 		std::reference_wrapper<World> mWorld;
-
-		static bool IsPointInsideCollider(glm::vec2 point, glm::vec2 colliderPos, const DiskColliderComponent& diskCollider);
-		static bool IsPointInsideCollider(glm::vec2 point, glm::vec2 worldPos, const PolygonColliderComponent& polygonCollider);
 
 		template<typename ColliderType>
 		void GetHeightAtPosition(glm::vec2 position, float& highestHeight) const;

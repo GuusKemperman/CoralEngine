@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Core/UnitTests.h"
 
+#include "Core/AssetManager.h"
 #include "GSON/GSONReadable.h"
 #include "Core/FileIO.h"
 
@@ -158,13 +159,17 @@ bool Engine::Internal::RegisterUnitTest(std::string_view category, std::string_v
 void Engine::UnitTest::operator()()
 {
 	mTimeLastRan = std::chrono::system_clock::now();
+	LOG(LogUnitTests, Message, "Running {}::{}", mCategory, mName);
 	mResult = mFunc();
-	mLastTestDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - mTimeLastRan);
 
 	if (mResult == Failure)
 	{
 		LOG(LogUnitTest, Error, "Unit test {} failed", mName);
 	}
+
+	LOG(LogUnitTests, Message, "Finished {}::{}", mCategory, mName);
+
+	mLastTestDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - mTimeLastRan);
 }
 
 void Engine::UnitTest::Clear()

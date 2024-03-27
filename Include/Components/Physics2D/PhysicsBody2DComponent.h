@@ -5,7 +5,7 @@
 namespace Engine
 {
 	class World;
-	class PhysicsSystem2D;
+	class PhysicsSystem;
 
 	enum class CollisionResponse : uint8
 	{
@@ -184,7 +184,7 @@ namespace Engine
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(PhysicsBody2DComponent);
 
-		friend PhysicsSystem2D;
+		friend PhysicsSystem;
 
 		void ClearForces() { mForce = {}; }
 	};
