@@ -12,7 +12,7 @@ DXResource::DXResource(const ComPtr<ID3D12Device5>& device, const CD3DX12_HEAP_P
 		clearValue,
 		IID_PPV_ARGS(&mResource)
 	);
-	state = state;
+	mState = state;
 	mDesc = descr;
 
 	if (FAILED(hr)) assert(false && "Resource creation failed");

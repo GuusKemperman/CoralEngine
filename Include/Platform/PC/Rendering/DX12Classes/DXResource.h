@@ -17,6 +17,7 @@ public:
 	void SetResource(ComPtr<ID3D12Resource> res) { mResource = res; }
 
 	CD3DX12_RESOURCE_DESC GetDesc() const { return mDesc; }
+	D3D12_RESOURCE_STATES GetState() const { return mState; }
 
 	void ChangeState(const ComPtr<ID3D12GraphicsCommandList>& list, D3D12_RESOURCE_STATES dstState);
 	void CreateUploadBuffer(const ComPtr<ID3D12Device5>& device, int dataSize, int currentSubresource);

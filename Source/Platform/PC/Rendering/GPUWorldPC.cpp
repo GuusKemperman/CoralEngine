@@ -469,11 +469,14 @@ uint32 Engine::GPUWorld::ReadCompactClusterCounter() const
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    D3D12_RESOURCE_STATES prevState = mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->GetState();
 
-    mStructuredBuffers[InfoStruct::READBACK_RESOURCE]->ChangeState(commandList, D3D12_RESOURCE_STATE_COPY_DEST);
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->ChangeState(commandList, D3D12_RESOURCE_STATE_COPY_SOURCE);
-
     commandList->CopyResource(mStructuredBuffers[InfoStruct::READBACK_RESOURCE]->Get(), mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->Get());
+
+    engineDevice.WaitForFence();
+
+    mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->ChangeState(commandList, prevState);
 
     engineDevice.WaitForFence();
 
