@@ -11,7 +11,7 @@ class DXDescHeap;
 namespace Engine
 {
     class Material;
-
+    class CameraComponent;
 
     class DebugRenderingData
     {
@@ -56,8 +56,9 @@ namespace Engine
         /// </summary>
         void UpdateMaterials();
         void UpdateLights(int numDirLights, int numPointLights);
+        void ClearClusterData();
 
-        const DXConstBuffer& GetConstantBuffer(InfoStruct::DXConstantBuffers constantBuffer) { return *mConstBuffers[constantBuffer]; }
+        const DXConstBuffer& GetConstantBuffer(InfoStruct::DXConstantBuffers constantBuffer) const { return *mConstBuffers[constantBuffer]; }
         const DXConstBuffer& GetCameraBuffer() const { return *mConstBuffers[InfoStruct::CAM_MATRIX_CB]; };
         DXConstBuffer& GetModelIndexBuffer() const { return *mConstBuffers[InfoStruct::MODEL_INDEX_CB]; };
         const DXConstBuffer& GetLightBuffer() const { return *mConstBuffers[InfoStruct::LIGHT_CB]; };
@@ -66,27 +67,59 @@ namespace Engine
         DXConstBuffer& GetMeshColorBuffer() const { return *mConstBuffers[InfoStruct::COLOR_CB]; };
 
         const InfoStruct::DXMaterialInfo& GetMaterial(int meshIndex) const { return mMaterials[meshIndex]; };
+
         const DXHeapHandle& GetMaterialHeapSlot() const { return mMaterialHeapSlot; };
         const DXHeapHandle& GetDirLightHeapSlot() const { return mDirectionalLightsSRVSlot; };
         const DXHeapHandle& GetPointLigthHeapSlot() const { return mPointLightsSRVSlot; };
+        const DXHeapHandle& GetCompactClusterSRVSlot() const { return mCompactClusterSRVSlot; };
+        const DXHeapHandle& GetClusterSRVSlot() const { return mClusterSRVSlot; };
+        const DXHeapHandle& GetActiveClusterSRVSlot() const { return mActiveClusterSRVSlot; };
+        const DXHeapHandle& GetLightIndicesSRVSlot() const { return mLightIndicesSRVSlot; };
+        const DXHeapHandle& GetLigthGridSRVSlot() const { return mLightGridSRVSlot; };
+
+        const DXHeapHandle& GetCompactClusterUAVSlot() const { return mCompactClusterUAVSlot; };
+        const DXHeapHandle& GetClusterUAVSlot() const { return mClusterUAVSlot; };
+        const DXHeapHandle& GetActiveClusterUAVSlot() const { return mActiveClusterUAVSlot; };
+        const DXHeapHandle& GetLightIndicesUAVSlot() const { return mLightIndicesUAVSlot; };
+        const DXHeapHandle& GetLigthGridUAVSlot() const { return mLightGridUAVSlot; };
+        const DXHeapHandle& GetPointLightCounterUAVSlot() const { return mPointLightCounterUAVSlot; };
 
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
         UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
 
+        glm::ivec3 GetClusterGrid() const { return mClusterGrid; }
+        int GetNumberOfClusters() const { return mNumberOfClusters; }
 	private:
         void SendMaterialTexturesToGPU(const Material& mat);
+        void UpdateClusterData(const CameraComponent& camera);
 
 		std::unique_ptr<DXConstBuffer> mConstBuffers[InfoStruct::NUM_CBS];
 		std::unique_ptr<DXResource> mStructuredBuffers[InfoStruct::NUM_SB];
 		InfoStruct::DXLightInfo mLights;
-		DXHeapHandle mMaterialHeapSlot;
 		std::vector<InfoStruct::DXMaterialInfo> mMaterials;
         std::vector<InfoStruct::DXDirLightInfo> mDirectionalLights;
         std::vector<InfoStruct::DXPointLightInfo> mPointLights;
         InfoStruct::DXLightInfo mLightInfo;
+        int mNumberOfClusters = 0;
+        glm::ivec3 mClusterGrid;
 
+        DXHeapHandle mMaterialHeapSlot;
         DXHeapHandle mDirectionalLightsSRVSlot;
         DXHeapHandle mPointLightsSRVSlot;
+        DXHeapHandle mCompactClusterSRVSlot;
+        DXHeapHandle mClusterSRVSlot;
+        DXHeapHandle mActiveClusterSRVSlot;
+        DXHeapHandle mLightIndicesSRVSlot;
+        DXHeapHandle mLightGridSRVSlot;
+
+        DXHeapHandle mClusterUAVSlot;
+        DXHeapHandle mActiveClusterUAVSlot;
+        DXHeapHandle mCompactClusterUAVSlot;
+        DXHeapHandle mLightGridUAVSlot;
+        DXHeapHandle mPointLightCounterUAVSlot;
+        DXHeapHandle mLightIndicesUAVSlot;
+
+
 
         DebugRenderingData mDebugRenderingData;
         UIRenderingData mUIRenderingData;
