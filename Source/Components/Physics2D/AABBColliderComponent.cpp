@@ -6,7 +6,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::TransformedAABB Engine::AABBColliderComponnet::CreateTransformedCollider(const TransformComponent& transform) const
+Engine::TransformedAABB Engine::AABBColliderComponent::CreateTransformedCollider(const TransformComponent& transform) const
 {
 	const glm::vec2 worldPosition = transform.GetWorldPosition2D();
 	const glm::vec2 scale = transform.GetWorldScale2D();
@@ -14,14 +14,14 @@ Engine::TransformedAABB Engine::AABBColliderComponnet::CreateTransformedCollider
 	return { worldPosition - scaledHalfExtends, worldPosition + scaledHalfExtends };
 }
 
-Engine::MetaType Engine::AABBColliderComponnet::Reflect()
+Engine::MetaType Engine::AABBColliderComponent::Reflect()
 {
-	MetaType metaType = MetaType{ MetaType::T<AABBColliderComponnet>{}, "AABBColliderComponnet" };
+	MetaType metaType = MetaType{ MetaType::T<AABBColliderComponent>{}, "AABBColliderComponnet" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
 
-	metaType.AddField(&AABBColliderComponnet::mHalfExtends, "mHalfExtends").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&AABBColliderComponent::mHalfExtends, "mHalfExtends").GetProperties().Add(Props::sIsScriptableTag);
 
-	ReflectComponentType<AABBColliderComponnet>(metaType);
+	ReflectComponentType<AABBColliderComponent>(metaType);
 
 	return metaType;
 }
