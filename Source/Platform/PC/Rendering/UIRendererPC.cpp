@@ -93,5 +93,6 @@ void Engine::UIRenderer::Render(const World& world)
         commandList->IASetVertexBuffers(1, 1, &renderingData.mTexCoordBufferView);
         commandList->IASetIndexBuffer(&renderingData.mIndexBufferView);
         commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+        spriteCount++;
     }
 }
