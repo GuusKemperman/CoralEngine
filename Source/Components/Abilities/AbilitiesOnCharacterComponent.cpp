@@ -17,7 +17,7 @@ Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 	
 	metaType.AddField(&AbilitiesOnCharacterComponent::mIsPlayer, "mIsPlayer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
-	metaType.AddField(&AbilitiesOnCharacterComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties().Add(Props::sNoInspectTag);
+	metaType.AddField(&AbilitiesOnCharacterComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties().Add(Props::sNoInspectTag).Add(Props::sIsScriptableTag);
 
 #ifdef EDITOR
 	BindEvent(metaType, sInspectEvent, &AbilitiesOnCharacterComponent::OnInspect);
@@ -106,5 +106,6 @@ Engine::MetaType Engine::AbilityInstance::Reflect()
 
 		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<const AbilityInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
+	ReflectFieldType<AbilityInstance>(metaType);
 	return metaType;
 }
