@@ -3,6 +3,7 @@
 
 namespace Engine
 {
+	class AbilitiesOnCharacterComponent;
 	struct AbilityInstance;
 	class AbilitySystem;
 	class Texture;
@@ -24,6 +25,7 @@ namespace Engine
 	private:
 		friend AbilitySystem;
 		friend AbilityInstance;
+		friend AbilitiesOnCharacterComponent;
 
         void OnSave(AssetSaveInfo& saveInfo) const override;
 

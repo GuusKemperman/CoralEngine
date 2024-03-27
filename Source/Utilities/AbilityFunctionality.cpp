@@ -21,35 +21,35 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<AbilityFunctionality>{}, "AbilityFunctionality" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddFunc([](entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease)
+	metaType.AddFunc([](entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyInstantEffect(*world, castByEntity, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease });
+			ApplyInstantEffect(*world, castByEntity, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax });
 
 		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
-		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	metaType.AddFunc([](entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, float duration)
+	metaType.AddFunc([](entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyDurationalEffect(*world, castByEntity, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease }, duration);
+			ApplyDurationalEffect(*world, castByEntity, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration);
 
 		}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
-		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, float>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	metaType.AddFunc([](entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, float duration, int ticks)
+	metaType.AddFunc([](entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration, int ticks)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyOverTimeEffect(*world, castByEntity, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease }, duration, ticks);
+			ApplyOverTimeEffect(*world, castByEntity, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration, ticks);
 
 		}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
-		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, float, int>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float, int>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	metaType.AddFunc([](const std::shared_ptr<const Prefab>& prefab, entt::entity castBy) -> entt::entity
 		{
@@ -86,7 +86,7 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 	return metaType;
 }
 
-std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect)
+std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, ApplyType applyType, float dealtDamageModifierOfCastByCharacter)
 {
 	auto& reg = world.GetRegistry();
 	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
@@ -106,16 +106,22 @@ std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& wor
 	{
 		if (effect.mStat == Stat::Health)
 		{
-			auto castByCharacterComponent = reg.TryGet<CharacterComponent>(castByEntity);
-			if (castByCharacterComponent == nullptr)
+			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
+			if (applyType != ApplyType::EffectOverTime)
 			{
-				LOG(LogAbilitySystem, Error, "Apply Effect - CastByEntity {} is not a character.", entt::to_integral(castByEntity));
-				return std::nullopt;
+				auto castByCharacterComponent = reg.TryGet<CharacterComponent>(castByEntity);
+				if (castByCharacterComponent == nullptr)
+				{
+					LOG(LogAbilitySystem, Error, "Apply Effect - CastByEntity {} is not a character.", entt::to_integral(castByEntity));
+					return std::nullopt;
+				}
+				damageModifier += castByCharacterComponent->mCurrentDealtDamageModifier;
 			}
-			const float damageModifier =
-				(castByCharacterComponent->mCurrentDealtDamageModifier + characterComponent->mCurrentReceivedDamageModifier)
-				* 0.01f;
-			effect.mAmount += effect.mAmount * damageModifier;
+			else
+			{
+				damageModifier += dealtDamageModifierOfCastByCharacter;
+			}
+			effect.mAmount += effect.mAmount * damageModifier * 0.01f;
 		}
 
 		effect.mAmount = -effect.mAmount;
@@ -123,31 +129,40 @@ std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& wor
 
 	// apply
 	current += effect.mAmount;
-	//current = std::max(current, 0.0f);
-	//if (ability.clampToMax)
-		//current = std::min(current, base);
+	if (effect.mClampToMax)
+	{
+		current = std::min(current, base);
+	}
+
+	// visual effect
+	auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
+	if (effects == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
+		return std::nullopt;
+	}
+	effects->mVisualEffects.push_back(VisualEffect{ GetEffectColor(effect.mStat, effect.mIncreaseOrDecrease)});
 
 	return effect.mAmount;
 }
 
 void Engine::AbilityFunctionality::ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration)
 {
-	const auto calculatedAmount = ApplyInstantEffect(world, castByEntity, affectedEntity, effect);
+	const auto calculatedAmount = ApplyInstantEffect(world, castByEntity, affectedEntity, effect, ApplyType::Durational);
 	if (!calculatedAmount.has_value())
 	{
 		return;
 	}
+
 	auto& reg = world.GetRegistry();
-	auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
-	if (effects == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
-		return;
-	}
-	effects->mDurationalEffects.push_back(DurationalEffect{ duration, 0.f, effect.mStat, calculatedAmount.value() });
+	// we do a Get() here because we have already checked for this component in ApplyInstantEffect()
+	auto& effects = reg.Get<EffectsOnCharacterComponent>(affectedEntity);
+
+	effects.mDurationalEffects.push_back(DurationalEffect{ duration, 0.f, effect.mStat, calculatedAmount.value() });
+	effects.mVisualEffects.back().mDuration = duration;
 }
 
-void Engine::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& characterComponent, DurationalEffect& durationalEffect)
+void Engine::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect)
 {
 	float& currentStat = GetStat(durationalEffect.mStatAffected, characterComponent).second;
 	currentStat -= durationalEffect.mAmount;
@@ -170,39 +185,6 @@ void Engine::AbilityFunctionality::ApplyOverTimeEffect(World& world, entt::entit
 	}
 
 	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease}, castByEntityCharacterComponent->mCurrentDealtDamageModifier });
-}
-
-void Engine::AbilityFunctionality::ApplyInstantEffectForOverTimeEffect(World& world, entt::entity affectedEntity, EffectSettings effect, float dealtDamageModifierOfCastByCharacter)
-{
-	auto& reg = world.GetRegistry();
-	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
-	if (characterComponent == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} is not a character.", entt::to_integral(affectedEntity));
-		return;
-	}
-	auto [base, current] = GetStat(effect.mStat, *characterComponent);
-
-	if (effect.mFlatOrPercentage == FlatOrPercentage::Percentage)
-	{
-		effect.mAmount = effect.mAmount * 0.01f * base;
-	}
-
-	if (effect.mIncreaseOrDecrease == IncreaseOrDecrease::Decrease)
-	{
-		if (effect.mStat == Stat::Health)
-		{
-			const float damageModifier =
-				(dealtDamageModifierOfCastByCharacter + characterComponent->mCurrentReceivedDamageModifier)
-				* 0.01f;
-			effect.mAmount += effect.mAmount * damageModifier;
-		}
-
-		effect.mAmount = -effect.mAmount;
-	}
-
-	// apply
-	current += effect.mAmount;
 }
 
 entt::entity Engine::AbilityFunctionality::SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy)
@@ -299,18 +281,33 @@ std::pair<float&, float&> Engine::AbilityFunctionality::GetStat(Stat stat, Chara
 {
 	switch (stat)
 	{
-	case Health:
+	case Stat::Health:
 		return { characterComponent.mBaseHealth, characterComponent.mCurrentHealth };
-	case MovementSpeed:
+	case Stat::MovementSpeed:
 		return { characterComponent.mBaseMovementSpeed, characterComponent.mCurrentMovementSpeed };
-	case DealtDamageModifier:
+	case Stat::DealtDamageModifier:
 		return { characterComponent.mBaseDealtDamageModifier, characterComponent.mCurrentDealtDamageModifier };
-	case ReceivedDamageModifier:
+	case Stat::ReceivedDamageModifier:
 		return { characterComponent.mBaseReceivedDamageModifier, characterComponent.mCurrentReceivedDamageModifier };
 	}
 
 	// because of the stupid warning "not all control paths return a value"
 	return { characterComponent.mBaseHealth, characterComponent.mCurrentHealth };
+}
+
+glm::vec3 Engine::AbilityFunctionality::GetEffectColor(Stat stat, IncreaseOrDecrease increaseOrDecrease)
+{
+	glm::vec3 color;
+	if (const auto it = sDefaultEffectColors.find(std::make_pair(stat, increaseOrDecrease));
+		it != sDefaultEffectColors.end())
+	{
+		color = it->second;
+	}
+	else
+	{
+		color = sDefaultEffectColors[std::make_pair(std::nullopt, increaseOrDecrease)];
+	}
+	return color;
 }
 
 Engine::MetaType Reflector<Engine::AbilityFunctionality::Stat>::Reflect()
@@ -360,7 +357,8 @@ bool Engine::AbilityFunctionality::EffectSettings::operator==(const EffectSettin
 	return mStat == other.mStat &&
 		Math::AreFloatsEqual(mAmount, other.mAmount) &&
 		mFlatOrPercentage == other.mFlatOrPercentage &&
-		mIncreaseOrDecrease == other.mIncreaseOrDecrease;
+		mIncreaseOrDecrease == other.mIncreaseOrDecrease && 
+		mClampToMax == other.mClampToMax;
 }
 
 bool Engine::AbilityFunctionality::EffectSettings::operator!=(const EffectSettings& other) const
@@ -368,7 +366,8 @@ bool Engine::AbilityFunctionality::EffectSettings::operator!=(const EffectSettin
 	return mStat != other.mStat ||
 		!Math::AreFloatsEqual(mAmount, other.mAmount) ||
 		mFlatOrPercentage != other.mFlatOrPercentage ||
-		mIncreaseOrDecrease != other.mIncreaseOrDecrease;
+		mIncreaseOrDecrease != other.mIncreaseOrDecrease ||
+		mClampToMax != other.mClampToMax;
 }
 
 Engine::MetaType Engine::AbilityFunctionality::EffectSettings::Reflect()
@@ -376,10 +375,11 @@ Engine::MetaType Engine::AbilityFunctionality::EffectSettings::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<EffectSettings>{}, "EffectSettings" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddField(&EffectSettings::mStat, "mStat").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
-	metaType.AddField(&EffectSettings::mAmount, "mAmount").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
-	metaType.AddField(&EffectSettings::mFlatOrPercentage, "mFlatOrPercentage").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
-	metaType.AddField(&EffectSettings::mIncreaseOrDecrease, "mIncreaseOrDecrease").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&EffectSettings::mStat, "mStat").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
+	metaType.AddField(&EffectSettings::mAmount, "mAmount").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
+	metaType.AddField(&EffectSettings::mFlatOrPercentage, "mFlatOrPercentage").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
+	metaType.AddField(&EffectSettings::mIncreaseOrDecrease, "mIncreaseOrDecrease").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
+	metaType.AddField(&EffectSettings::mClampToMax, "mClampToMax").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
 
 	return metaType;
 }
