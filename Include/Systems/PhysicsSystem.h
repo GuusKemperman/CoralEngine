@@ -1,5 +1,7 @@
 #pragma once
-#include "Components/TransformComponent.h"
+#include "Components/Physics2D/AABBColliderComponent.h"
+#include "Components/Physics2D/DiskColliderComponent.h"
+#include "Components/Physics2D/PolygonColliderComponent.h"
 #include "Systems/System.h"
 
 struct Physics2DUnitTestAccess;
@@ -11,11 +13,11 @@ namespace Engine
 	class MetaFunc;
 	class PhysicsBody2DComponent;
 
-	class PhysicsSystem2D final :
+	class PhysicsSystem final :
 		public System
 	{
 	public:
-		PhysicsSystem2D();
+		PhysicsSystem();
 
 		void Update(World& world, float dt) override;
 
@@ -25,10 +27,17 @@ namespace Engine
 		{
 			SystemStaticTraits traits{};
 			traits.mPriority = static_cast<int>(TickPriorities::Physics);
+			traits.mShouldTickBeforeBeginPlay = true;
+			traits.mShouldTickWhilstPaused = true;
 			return traits;
 		}
 
 	private:
+		void ApplyVelocities(World& world, float dt);
+
+		template<typename Collider, typename TransformedCollider>
+		void UpdateTransformedColliders(World& world);
+
 		friend Physics2DUnitTestAccess;
 
 		/// <summary>
@@ -52,8 +61,6 @@ namespace Engine
 			glm::vec2 mContactPoint{};
 		};
 
-		void UpdateBodiesAndTransforms(World& world, float dt);
-
 		void UpdateCollisions(World& world);
 		void DebugDrawing(const World& world);
 
@@ -69,23 +76,26 @@ namespace Engine
 
 		static void CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage, entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint);
 
-		static void ResolveCollision(const Physics& physics,
-			const CollisionData& collision, 
-			PhysicsBody2DComponent& body1,
-			PhysicsBody2DComponent& body2,
-			TransformComponent& transform2,
-			glm::vec3& entity1WorldPos,
-			glm::vec3 entity2WorldPos);
+		struct ResolvedCollision
+		{
+			glm::vec3 mResolvedPosition{};
+			glm::vec2 mImpulse{};
+		};
+		static ResolvedCollision ResolveDiskCollision(const Physics& physics,
+			const CollisionData& collisionToResolve,
+			const PhysicsBody2DComponent& bodyToMove,
+			const PhysicsBody2DComponent& otherBody,
+			const glm::vec3& bodyPosition,
+			float multiplicant = 1.0f);
 
 		void RegisterCollision(std::vector<CollisionData>& currentCollisions,
 			CollisionData& collision, entt::entity entity1, entt::entity entity2);
 
-		static bool CollisionCheckDiskDisk(glm::vec2 center1, float radius1, glm::vec2 center2,
-			float radius2, CollisionData& result);
+		static bool CollisionCheckDiskDisk(TransformedDiskColliderComponent disk1, TransformedDiskColliderComponent disk2, CollisionData& result);
 
-		static bool CollisionCheckDiskPolygon(glm::vec2 diskCenter, float diskRadius,
-			glm::vec2 polygonPos, const std::vector<glm::vec2>& polygonPoints,
-			CollisionData& result);
+		static bool CollisionCheckDiskPolygon(TransformedDiskColliderComponent disk, const TransformedPolygonColliderComponent& polygon, CollisionData& result);
+
+		static bool CollisionCheckDiskAABB(TransformedDiskColliderComponent disk, TransformedAABBColliderComponent aabb, CollisionData& result);
 
 		static glm::vec3 GetAllowedWorldPos(const Physics& physics, 
 			const PhysicsBody2DComponent& body, 
@@ -100,6 +110,6 @@ namespace Engine
 
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(PhysicsSystem2D);
+		REFLECT_AT_START_UP(PhysicsSystem);
 	};
 }

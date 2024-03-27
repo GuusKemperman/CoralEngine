@@ -11,8 +11,8 @@ Engine::MetaType Engine::MeshColorComponent::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<MeshColorComponent>{}, "MeshColorComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
 
-	metaType.AddField(&MeshColorComponent::colorMultiplier, "mColorMultiplier").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&MeshColorComponent::colorAddition, "mColorAddition").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&MeshColorComponent::mColorMultiplier, "mColorMultiplier").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&MeshColorComponent::mColorAddition, "mColorAddition").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectComponentType<MeshColorComponent>(metaType);
 

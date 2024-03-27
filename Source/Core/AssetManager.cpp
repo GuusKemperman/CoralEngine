@@ -763,8 +763,6 @@ void Engine::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
 	LOG(LogAssets, Warning, "Deleting asset {} without the editor. Existing weak assets to this asset will become dangling.", asset.GetName());
 	deleteLambda();
 #endif
-
-
 }
 
 bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesystem::path& toLocation)

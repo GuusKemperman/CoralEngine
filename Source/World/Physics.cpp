@@ -2,7 +2,8 @@
 #include "World/Physics.h"
 
 #include "Components/TransformComponent.h"
-#include "Components/Pathfinding/Geometry2d.hpp"
+#include "Components/Pathfinding/Geometry2d.h"
+#include "Components/Physics2D/AABBColliderComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
@@ -18,8 +19,9 @@ float Engine::Physics::GetHeightAtPosition(glm::vec2 position2D) const
 {
 	float highestHeight = -std::numeric_limits<float>::infinity();
 
-	GetHeightAtPosition<DiskColliderComponent>(position2D, highestHeight);
-	GetHeightAtPosition<PolygonColliderComponent>(position2D, highestHeight);
+	GetHeightAtPosition<TransformedDiskColliderComponent>(position2D, highestHeight);
+	GetHeightAtPosition<TransformedAABBColliderComponent>(position2D, highestHeight);
+	GetHeightAtPosition<TransformedPolygonColliderComponent>(position2D, highestHeight);
 
 	return highestHeight;
 }
@@ -69,19 +71,6 @@ Engine::MetaType Engine::Physics::Reflect()
 	return type;
 }
 
-bool Engine::Physics::IsPointInsideCollider(glm::vec2 point, glm::vec2 colliderPos,
-                                            const DiskColliderComponent& diskCollider)
-{
-	return IsPointInsideDisk(point, colliderPos, diskCollider.mRadius);
-}
-
-bool Engine::Physics::IsPointInsideCollider(glm::vec2 point, glm::vec2 worldPos,
-	const PolygonColliderComponent& polygonCollider)
-{
-	point -= worldPos;
-	return IsPointInsidePolygon(point, polygonCollider.mPoints);
-}
-
 template <typename ColliderType>
 void Engine::Physics::GetHeightAtPosition(glm::vec2 position, float& highestHeight) const
 {
@@ -101,10 +90,9 @@ void Engine::Physics::GetHeightAtPosition(glm::vec2 position, float& highestHeig
 
 		const glm::vec3 worldPos = view.template get<const TransformComponent>(entity).GetWorldPosition();
 		const float height = worldPos[Axis::Up];
-		const glm::vec2 worldPos2D = To2DRightForward(worldPos);
 
 		if (height > highestHeight
-			&& IsPointInsideCollider(position, worldPos2D, view.template get<const ColliderType>(entity)))
+			&& AreOverlapping(view.template get<const ColliderType>(entity), position))
 		{
 			highestHeight = height;
 		}
