@@ -1530,6 +1530,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClInclude Include="Include\Rendering\SkinnedMeshDefines.h" />
     <ClInclude Include="Include\Utilities\DrawDebugHelpers.h" />
     <ClInclude Include="Include\Rendering\UIRenderer.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectOptional.h" />
