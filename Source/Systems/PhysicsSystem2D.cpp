@@ -12,8 +12,7 @@
 #include "World/World.h"
 #include "World/WorldViewport.h"
 #include "World/Physics.h"
-#include "Rendering/Renderer.h"
-#include "Rendering/DebugRenderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 
 Engine::PhysicsSystem2D::PhysicsSystem2D()
 {
@@ -239,7 +238,6 @@ void Engine::PhysicsSystem2D::CallEvents(World& world, const CollisionDataContai
 
 void Engine::PhysicsSystem2D::DebugDrawing(const World& world)
 {
-	const auto& renderer = Renderer::Get().GetDebugRenderer();
 	const Registry& reg = world.GetRegistry();
 
 	if (DebugRenderer::GetDebugCategoryFlags() & DebugCategory::Physics)
@@ -248,7 +246,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(const World& world)
 		constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
 		for (auto [entity, disk, transformComponent] : diskView.each())
 		{
-			renderer.AddCircle(world, DebugCategory::Physics, transformComponent.GetWorldPosition(), disk.mRadius + 0.1f, color);
+			DrawDebugCircle(world, DebugCategory::Physics, transformComponent.GetWorldPosition(), disk.mRadius + 0.1f, color);
 		}
 
 		const auto polyView = reg.View<const PolygonColliderComponent, const TransformComponent>();
@@ -260,7 +258,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(const World& world)
 			{
 				const glm::vec2 from = poly.mPoints[i] + worldPos;
 				const glm::vec2 to = poly.mPoints[(i + 1) % pointCount] + worldPos;
-				renderer.AddLine(world, DebugCategory::Physics, glm::vec3(from.x, 1.1f, from.y), glm::vec3(to.x, 1.1f, to.y), color);
+				DrawDebugLine(world, DebugCategory::Physics, glm::vec3(from.x, 1.1f, from.y), glm::vec3(to.x, 1.1f, to.y), color);
 			}
 		}
 	}
@@ -312,7 +310,7 @@ void Engine::PhysicsSystem2D::DebugDrawing(const World& world)
 				constexpr glm::vec4 maxColor = { 5.0f, 0.0f, 0.0f, 1.0f };
 				const glm::vec4 color = Math::lerp(minColor, maxColor, colorT);
 
-				renderer.AddSquare(world, DebugCategory::TerrainHeight, To3DRightForward(worldPos2D, height), spacing, color);
+				DrawDebugSquare(world, DebugCategory::TerrainHeight, To3DRightForward(worldPos2D, height), spacing, color);
 			}
 		}
 	}

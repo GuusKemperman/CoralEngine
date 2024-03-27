@@ -9,7 +9,6 @@
 #include "Components/SkinnedMeshComponent.h"
 #include "Assets/Animation/Animation.h"
 #include "Assets/Animation/Bone.h"
-#include "Rendering/DebugRenderer.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 

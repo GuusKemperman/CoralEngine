@@ -1,7 +1,6 @@
 #include "Precomp.h"
 #include "World/WorldViewport.h"
 
-#include "Rendering/FrameBuffer.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/CameraComponent.h"
@@ -9,9 +8,6 @@
 #include "Core/Input.h"
 #include "Core/Device.h"
 #include "Systems/System.h"
-#include "Rendering/DebugRenderer.h"
-
-#include "Rendering/GPUWorld.h"
 
 Engine::WorldViewport::WorldViewport(const World& world) :
 	mWorld(world),
