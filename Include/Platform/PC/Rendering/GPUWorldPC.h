@@ -65,9 +65,9 @@ namespace Engine
         DXConstBuffer& GetModelMatrixBuffer() const { return *mConstBuffers[InfoStruct::MODEL_MATRIX_CB]; };
         DXConstBuffer& GetBoneMatrixBuffer() const { return *mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]; };
         DXConstBuffer& GetMeshColorBuffer() const { return *mConstBuffers[InfoStruct::COLOR_CB]; };
+        DXResource& GetStructuredBuffer(InfoStruct::DXStructuredBuffers structuredBuffer) const { return *mStructuredBuffers[structuredBuffer]; }
 
         const InfoStruct::DXMaterialInfo& GetMaterial(int meshIndex) const { return mMaterials[meshIndex]; };
-
         const DXHeapHandle& GetMaterialHeapSlot() const { return mMaterialHeapSlot; };
         const DXHeapHandle& GetDirLightHeapSlot() const { return mDirectionalLightsSRVSlot; };
         const DXHeapHandle& GetPointLigthHeapSlot() const { return mPointLightsSRVSlot; };
@@ -89,6 +89,8 @@ namespace Engine
 
         glm::ivec3 GetClusterGrid() const { return mClusterGrid; }
         int GetNumberOfClusters() const { return mNumberOfClusters; }
+        uint32 ReadCompactClusterCounter() const;
+
 	private:
         void SendMaterialTexturesToGPU(const Material& mat);
         void UpdateClusterData(const CameraComponent& camera);

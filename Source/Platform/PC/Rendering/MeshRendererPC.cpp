@@ -129,9 +129,12 @@ void Engine::MeshRenderer::Render(const World& world)
     gpuWorld.GetLightBuffer().Bind(commandList, 1, 0, frameIndex);
     gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
     gpuWorld.GetCameraBuffer().Bind(commandList, 4, 0, frameIndex);
+    gpuWorld.GetConstantBuffer(InfoStruct::CLUSTERING_CAM_CB).Bind(commandList, 22, 0, frameIndex);
     resourceHeap->BindToGraphics(commandList, 18, gpuWorld.GetDirLightHeapSlot());
     resourceHeap->BindToGraphics(commandList, 19, gpuWorld.GetPointLigthHeapSlot());
     resourceHeap->BindToGraphics(commandList, 16, gpuWorld.GetMaterialHeapSlot());
+    resourceHeap->BindToGraphics(commandList, 20, gpuWorld.GetLigthGridSRVSlot());
+    resourceHeap->BindToGraphics(commandList, 21, gpuWorld.GetLightIndicesSRVSlot());
 
     int meshCounter = 0;
 
@@ -245,7 +248,8 @@ void Engine::MeshRenderer::Render(const World& world)
     engineDevice.WaitForFence();
     CompactClusters(gpuWorld);
     engineDevice.WaitForFence();
-    AssignLights(gpuWorld);
+    uint32 numOfCompactClusters = gpuWorld.ReadCompactClusterCounter();
+    AssignLights(gpuWorld, numOfCompactClusters);
     engineDevice.WaitForFence();
     commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
 }
@@ -302,6 +306,13 @@ void Engine::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuW
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
     int frameIndex = engineDevice.GetFrameIndex();
 
+    std::vector<uint32> activeClusters = std::vector<uint32>(4000, 0);
+    D3D12_SUBRESOURCE_DATA data;
+    data.pData = activeClusters.data();
+    data.RowPitch = sizeof(uint32);
+    data.SlicePitch = sizeof(uint32) * 4000;
+    gpuWorld.GetStructuredBuffer(InfoStruct::ACTIVE_CLUSTER_SB).Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+
     commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
     commandList->SetPipelineState(mCullClusterPipeline->GetPipeline().Get());
     ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
@@ -310,8 +321,9 @@ void Engine::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuW
 
     gpuWorld.GetConstantBuffer(InfoStruct::CAM_MATRIX_CB).Bind(commandList, 1, 0, frameIndex);
     gpuWorld.GetConstantBuffer(InfoStruct::CLUSTERING_CAM_CB).Bind(commandList, 2, 0, frameIndex);
+    gpuWorld.GetConstantBuffer(InfoStruct::CLUSTER_INFO_CB).Bind(commandList, 0, 0, frameIndex);
 
-    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 9, gpuWorld.GetClusterSRVSlot());
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 10, gpuWorld.GetClusterSRVSlot());
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 7, gpuWorld.GetActiveClusterUAVSlot());
 
     int meshCounter = 0;
@@ -366,12 +378,12 @@ void Engine::MeshRenderer::CompactClusters(const GPUWorld& gpuWorld)
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 6, gpuWorld.GetCompactClusterUAVSlot());
-    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 9, gpuWorld.GetActiveClusterSRVSlot());
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 10, gpuWorld.GetActiveClusterSRVSlot());
 
     commandList->Dispatch(gpuWorld.GetNumberOfClusters(), 1, 1);
 }
 
-void Engine::MeshRenderer::AssignLights(const GPUWorld& gpuWorld)
+void Engine::MeshRenderer::AssignLights(const GPUWorld& gpuWorld, int numberOfCompactClusters)
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -386,13 +398,13 @@ void Engine::MeshRenderer::AssignLights(const GPUWorld& gpuWorld)
     gpuWorld.GetConstantBuffer(InfoStruct::CAM_MATRIX_CB).BindToCompute(commandList, 1, 0, frameIndex);
     gpuWorld.GetConstantBuffer(InfoStruct::CLUSTER_INFO_CB).BindToCompute(commandList, 0, 0, frameIndex);
 
-    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 9, gpuWorld.GetClusterSRVSlot());
-    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 10, gpuWorld.GetCompactClusterSRVSlot());
-    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 12, gpuWorld.GetPointLigthHeapSlot());
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 10, gpuWorld.GetClusterSRVSlot());
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 11, gpuWorld.GetCompactClusterSRVSlot());
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 13, gpuWorld.GetPointLigthHeapSlot());
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 6, gpuWorld.GetPointLightCounterUAVSlot());
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 7, gpuWorld.GetLigthGridUAVSlot());
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 8, gpuWorld.GetLightIndicesUAVSlot());
-    commandList->Dispatch(gpuWorld.GetNumberOfClusters(), 1, 1);
+    commandList->Dispatch(numberOfCompactClusters, 1, 1);
 
 
 }

@@ -21,7 +21,7 @@ namespace Engine
         void CalculateClusterGrid(const GPUWorld& gpuWorld);
         void CullClusters(const World& world, const GPUWorld& gpuWorld);
         void CompactClusters(const GPUWorld& gpuWorld);
-        void AssignLights(const GPUWorld& gpuWorld);
+        void AssignLights(const GPUWorld& gpuWorld, int numberOfCompactClusters);
 
         std::unique_ptr<DXPipeline> mPBRPipeline;
         std::unique_ptr<DXPipeline> mPBRSkinnedPipeline;
