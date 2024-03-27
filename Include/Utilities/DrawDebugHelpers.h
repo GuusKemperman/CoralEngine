@@ -36,11 +36,11 @@ namespace Engine
         float radius,
         const glm::vec4& color);
 
-    void DrawDebugSquare(
+    void DrawDebugRectangle(
         const World& world,
         DebugCategory::Enum category,
         const glm::vec3& center,
-        float size,
+        glm::vec2 halfExtends,
         const glm::vec4& color,
         Plane::Enum plane = Plane::XZ);
 
@@ -103,11 +103,11 @@ namespace Engine
         float,
         const glm::vec4&) {};
 
-    inline void DrawDebugSquare(
+    inline void DrawDebugRectangle(
         const World&,
         DebugCategory::Enum,
         const glm::vec3&,
-        float,
+        glm::vec2,
         const glm::vec4&,
         Plane::Enum = Plane::XZ) {};
 
