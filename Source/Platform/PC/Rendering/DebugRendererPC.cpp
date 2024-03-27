@@ -109,14 +109,14 @@ void Engine::DebugRenderer::Impl::Render(GPUWorld& gpuWorld)
 	positionData.RowPitch = sizeof(glm::vec3);
 	positionData.SlicePitch = sizeof(glm::vec3) * vertexCount;
 
-	data.mVertexPositionBuffer->Update(uploadCmdList, positionData, D3D12_RESOURCE_STATE_COMMON, 0, 1);
+	data.mVertexPositionBuffer->Update(uploadCmdList, positionData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 
 	D3D12_SUBRESOURCE_DATA colorData{};
 	colorData.pData = data.mColors.data();
 	colorData.RowPitch = sizeof(glm::vec4);
 	colorData.SlicePitch = sizeof(glm::vec4) * vertexCount;
 
-	data.mVertexColorBuffer->Update(uploadCmdList, colorData, D3D12_RESOURCE_STATE_COMMON, 0, 1);
+	data.mVertexColorBuffer->Update(uploadCmdList, colorData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 
 	engineDevice.SubmitUploadCommands();
 
