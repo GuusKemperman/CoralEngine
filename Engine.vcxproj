@@ -204,6 +204,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BuildStlModules>true</BuildStlModules>
       <WarningLevel>Level4</WarningLevel>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -279,6 +280,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BuildStlModules>true</BuildStlModules>
       <WarningLevel>Level4</WarningLevel>
+      <SupportJustMyCode>false</SupportJustMyCode>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -548,6 +550,7 @@
     <ClCompile Include="Source\Assets\Animation\Bone.cpp" />
     <ClCompile Include="Source\Components\Abilities\AOEComponent.cpp" />
     <ClCompile Include="Source\Components\Abilities\ProjectileComponent.cpp" />
+    <ClCompile Include="Source\Components\Physics2D\AABBColliderComponent.cpp" />
     <ClCompile Include="Source\Components\UI\UIButtonComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\UIRendererPC.cpp">
@@ -562,6 +565,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Systems\PhysicsSystem.cpp" />
     <ClCompile Include="Source\Systems\UISystem.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\SkinnedMesh***REMOVED***.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
@@ -1058,7 +1062,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Systems\NavigationSystem.cpp" />
-    <ClCompile Include="Source\Systems\PhysicsSystem2D.cpp" />
     <ClCompile Include="Source\Components\IsDestroyedTag.cpp" />
     <ClCompile Include="Source\Components\NameComponent.cpp" />
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
@@ -1530,6 +1533,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClInclude Include="Include\Components\Physics2D\AABBColliderComponent.h" />
     <ClInclude Include="Include\Utilities\DrawDebugHelpers.h" />
     <ClInclude Include="Include\Rendering\UIRenderer.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectOptional.h" />
@@ -1654,7 +1658,6 @@
     <ClInclude Include="Include\Components\IsDestroyedTag.h" />
     <ClInclude Include="Include\Components\NameComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\Edge.h" />
-    <ClInclude Include="Include\Components\Pathfinding\Geometry2d.hpp" />
     <ClInclude Include="Include\Components\Pathfinding\Graph.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshAgentComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshComponent.h" />
@@ -1786,7 +1789,7 @@
     <ClInclude Include="Include\Systems\AnimationSystem.h" />
     <ClInclude Include="Include\Systems\EventsSystem.h" />
     <ClInclude Include="Include\Systems\NavigationSystem.h" />
-    <ClInclude Include="Include\Systems\PhysicsSystem2D.h" />
+    <ClInclude Include="Include\Systems\PhysicsSystem.h" />
     <ClInclude Include="Include\Systems\UISystem.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
     <ClInclude Include="Include\Utilities\AbilityFunctionality.h" />

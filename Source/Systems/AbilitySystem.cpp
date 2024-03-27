@@ -10,6 +10,8 @@
 #include "World/World.h"
 #include "Core/Input.h"
 #include "Assets/Script.h"
+#include "Components/MeshColorComponent.h"
+#include "Components/TransformComponent.h"
 #include "Components/Abilities/AOEComponent.h"
 #include "Components/Abilities/EffectsOnCharacterComponent.h"
 #include "Components/Abilities/ProjectileComponent.h"
@@ -41,11 +43,11 @@ void Engine::AbilitySystem::Update(World& world, float dt)
         }
     }
 
-    auto viewCharacters = reg.View<CharacterComponent, EffectsOnCharacterComponent>();
+    auto viewCharacters = reg.View<CharacterComponent, AbilitiesOnCharacterComponent, EffectsOnCharacterComponent>();
     const auto& input = Input::Get();
-    for (auto [entity, characterData, effects] : viewCharacters.each())
+    for (auto [entity, characterData, abilities, effects] : viewCharacters.each())
     {
-        // update durational effects
+        // Durational effects
         auto& durationalEffects = effects.mDurationalEffects;
         for (auto it = durationalEffects.begin(); it != durationalEffects.end();)
         {
@@ -61,7 +63,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             }
         }
 
-        // update over time effects
+        // Over time effects
         auto& overTimeEffects = effects.mOverTimeEffects;
         for (auto it = overTimeEffects.begin(); it != overTimeEffects.end();)
         {
@@ -70,7 +72,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             {
                 it->mTicksCounter++;
             	it->mDurationTimer = 0.f;
-                AbilityFunctionality::ApplyInstantEffectForOverTimeEffect(world, entity, it->mEffectSettings, it->mDealtDamageModifierOfCastByCharacter);
+                AbilityFunctionality::ApplyInstantEffect(world, entt::null, entity, it->mEffectSettings, AbilityFunctionality::ApplyType::EffectOverTime, it->mDealtDamageModifierOfCastByCharacter);
             }
             if (it->mTicksCounter >= it->mNumberOfTicks)
             {
@@ -82,23 +84,86 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             }
         }
 
-        // update GDC
+        // Visual effects
+        auto& visualEffects = effects.mVisualEffects;
+        if (visualEffects.empty() == false)
+        {
+            // Get the effect color
+            glm::vec3 color{};
+            for (auto it = visualEffects.begin(); it != visualEffects.end();)
+            {
+                color = it->mColor;
+                it->mDurationTimer += dt;
+                if (it->mDurationTimer >= it->mDuration)
+                {
+                    it = visualEffects.erase(it);
+                    if (visualEffects.empty() == false)
+                    {
+                        color = visualEffects.back().mColor;
+                        // Use the last visual effect in the vector,
+                        // otherwise it will not have a color for one frame
+                        // if the erased visual effect was the last in the vector.
+                    }
+                    else
+                    {
+                        color = {};
+                    }
+                }
+                else
+                {
+                    ++it;
+                }
+            }
+
+            bool changedMeshColor = false;
+
+            // Set color for the entity if it has a MeshColorComponent
+            auto meshColor = reg.TryGet<MeshColorComponent>(entity);
+            if (meshColor != nullptr)
+            {
+                meshColor->mColorAddition = color;
+                changedMeshColor = true;
+            }
+
+            // Set mesh color for all children that have a MeshColorComponent
+            const TransformComponent* transform = reg.TryGet<TransformComponent>(entity);
+            if (transform == nullptr)
+            {
+                LOG(LogAbilitySystem, Error, "Character with entity id {} does not have a TransformComponent attached.", entt::to_integral(entity));
+            }
+            else
+            {
+                std::function<void(const TransformComponent&)> SetMeshColor = [&reg, &color, &changedMeshColor](const TransformComponent& parent)
+                    {
+                        for (const auto& child : parent.GetChildren())
+                        {
+                            auto meshColor = reg.TryGet<MeshColorComponent>(child.get().GetOwner());
+                            if (meshColor != nullptr)
+                            {
+                                meshColor->mColorAddition = color;
+                                changedMeshColor = true;
+                            }
+                        }
+                    };
+                SetMeshColor(*transform);
+            }
+
+            if (changedMeshColor == false)
+            {
+                LOG(LogAbilitySystem, Error, "Character with entity id {} or any of its children do not have a MeshColorComponent attached - visual effects of abilities cannot be displayed.", entt::to_integral(entity));
+            }
+        }
+
+        // Update GDC
         if (characterData.mGlobalCooldownTimer > 0.f)
         {
             characterData.mGlobalCooldownTimer -= dt;
         }
 
-        // abilities
-        auto abilities = reg.TryGet<AbilitiesOnCharacterComponent>(entity);
-        if (abilities == nullptr)
+        // Create abilities
+        for (auto& ability : abilities.mAbilitiesToInput)
         {
-	        continue;
-        }
-
-        // create abilities
-        for (auto& ability : abilities->mAbilitiesToInput)
-        {
-            // update counter
+            // Update counter
             switch (ability.mAbilityAsset->mRequirementType)
             {
             case Ability::Cooldown:
@@ -111,13 +176,14 @@ void Engine::AbilitySystem::Update(World& world, float dt)
             }
             case Ability::Mana:
             {
+                // Custom functionality
                 break;
             }
             }
-            // check if ability can be used
+            // Check if ability can be used
             if (CanAbilityBeActivated(characterData, ability))
             {
-                if (abilities->mIsPlayer) // player
+                if (abilities.mIsPlayer)
                 {
                     for (auto& key : ability.mKeyboardKeys)
                     {
@@ -128,7 +194,7 @@ void Engine::AbilitySystem::Update(World& world, float dt)
                     }
                     for (auto& button : ability.mGamepadButtons)
                     {
-                        // TODO: replace zero with player id by separating abilities on player and abilities on AI
+                        // TODO: replace zero with player id
                         if (input.WasGamepadButtonPressed(0, button))
                         {
                             ActivateAbility(world, entity, characterData, ability);
@@ -151,12 +217,12 @@ void Engine::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, C
 {
     if (!CanAbilityBeActivated(characterData, ability))
     {
-        // for the player, this will get checked twice,
-        // but it is a small tradeoff for safety in the AI usage
+        // For the player, this will get checked twice,
+        // but it is a small tradeoff for safety in the AI usage.
         return;
     }
 
-    // ability activate event
+    // Ability activate event
     if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mScript->GetName()))
     {
 	    if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))

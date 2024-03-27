@@ -27,6 +27,7 @@ namespace Engine
 		void DisplayWidget();
 #endif // EDITOR
 
+	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AbilityInstance);
@@ -41,6 +42,7 @@ namespace Engine
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
+		static void OnBeginPlay(World&, entt::entity);
 #ifdef EDITOR
 		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
 #endif // EDITOR

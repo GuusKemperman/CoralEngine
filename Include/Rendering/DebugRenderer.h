@@ -74,11 +74,11 @@ namespace Engine
             float radius, 
             const glm::vec4& color) const;
 
-        void AddSquare(
+        void AddRectangle(
             const World& world,
             DebugCategory::Enum category, 
             const glm::vec3& center, 
-            float size, 
+            glm::vec2 halfExtends, 
             const glm::vec4& color,
             Plane::Enum plane = Plane::XZ) const;
 
