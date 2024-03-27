@@ -290,7 +290,9 @@ entt::entity Engine::AbilityFunctionality::SpawnAOE(World& world, const Prefab& 
 	activeAbility->mCastByCharacter = castBy;
 
 	// set the position
-	prefabTransform->SetLocalPosition(characterTransform->GetWorldPosition());
+	const Physics& physics = world.GetPhysics();
+	const glm::vec2 pos2D = characterTransform->GetWorldPosition2D();
+	prefabTransform->SetLocalPosition(To3DRightForward(pos2D, physics.GetHeightAtPosition(pos2D)));
 
 	return prefabEntity;
 }
