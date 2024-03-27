@@ -25,7 +25,7 @@ void Game::SpawnerSystem::Update(Engine::World& world, float dt)
 		const entt::entity spawnedPrefab = reg.CreateFromPrefab(*spawnerComponent.mPrefab);
 		spawnerComponent.mCurrentTimer = 0;
 
-		const TransformComponent* const spawnedTransform = reg.TryGet<Engine::TransformComponent>(spawnedPrefab);
+		Engine::TransformComponent* const spawnedTransform = reg.TryGet<Engine::TransformComponent>(spawnedPrefab);
 
 		if (spawnedTransform != nullptr)
 		{
