@@ -94,7 +94,7 @@ void Engine::PhysicsSystem::ApplyVelocities(World& world, float dt)
 		const glm::vec3 oldPos = transform.GetWorldPosition();
 		const glm::vec3 newPos = GetAllowedWorldPos(physics, body, oldPos, translation);
 
-		body.mLinearVelocity = To2DRightForward(newPos - oldPos);
+		body.mLinearVelocity = To2DRightForward(newPos - oldPos) / dt;
 		transform.SetWorldPosition(newPos);
 	}
 }
