@@ -1,5 +1,4 @@
 #pragma once
-#include "Systems/System.h"
 
 namespace Engine
 {
@@ -13,8 +12,8 @@ namespace Game
 	public:
 		std::shared_ptr<const Engine::Prefab> mPrefab{};
 
-		float mCurrentTimer = 0;
-		float mSpawningTimer = 5.00000;
+		float mCurrentTimer = 0.0f;
+		float mSpawningTimer = 5.0f;
 
 	private:
 		friend Engine::ReflectAccess;
