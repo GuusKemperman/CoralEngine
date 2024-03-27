@@ -122,6 +122,9 @@ void Engine::PhysicsSystem::UpdateCollisions(World& world)
 		const entt::entity entity1 = *it1;
 		auto [transform1, body1, transformedDiskCollider1] = viewDisk.get<TransformComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>(entity1);
 
+		// Workaround, because ***REMOVED*** doesn't like it otherwise
+		Engine::TransformedDiskColliderComponent* pointerToTransformedDiskCollider1 = &transformedDiskCollider1;
+
 		// Can be modified by ResolveCollision. Is only actually applied
 		// to the transform at the end of this loop, for performance
 		// reasons.
@@ -129,11 +132,11 @@ void Engine::PhysicsSystem::UpdateCollisions(World& world)
 		const glm::vec3 entity1PosAtStart = entity1Pos;
 		glm::vec2 entity1TotalImpulse{};
 
-		auto resolveCollisionFor1 = [&transformedDiskCollider1, &entity1Pos, &entity1TotalImpulse](ResolvedCollision resolvedCollision)
+		auto resolveCollisionFor1 = [&pointerToTransformedDiskCollider1, &entity1Pos, &entity1TotalImpulse](ResolvedCollision resolvedCollision)
 			{
 				entity1TotalImpulse += resolvedCollision.mImpulse;
 				entity1Pos = resolvedCollision.mResolvedPosition;
-				transformedDiskCollider1.mCentre = To2DRightForward(entity1Pos);
+				pointerToTransformedDiskCollider1->mCentre = To2DRightForward(entity1Pos);
 			};
 
 		// disk-disk collisions
