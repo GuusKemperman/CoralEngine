@@ -11,6 +11,7 @@
 #include "Core/Input.h"
 #include "Assets/Script.h"
 #include "Components/MeshColorComponent.h"
+#include "Components/TransformComponent.h"
 #include "Components/Abilities/AOEComponent.h"
 #include "Components/Abilities/EffectsOnCharacterComponent.h"
 #include "Components/Abilities/ProjectileComponent.h"
@@ -87,36 +88,69 @@ void Engine::AbilitySystem::Update(World& world, float dt)
         auto& visualEffects = effects.mVisualEffects;
         if (visualEffects.empty() == false)
         {
-            if (auto meshColor = reg.TryGet<MeshColorComponent>(entity); meshColor == nullptr)
+            // Get the effect color
+            glm::vec3 color{};
+            for (auto it = visualEffects.begin(); it != visualEffects.end();)
             {
-                LOG(LogAbilitySystem, Error, "Character with entity id {} does not have a MeshColorComponent attached - visual effects of abilities cannot be displayed.", entt::to_integral(entity));
-            }
-            else
-            {
-                for (auto it = visualEffects.begin(); it != visualEffects.end();)
+                color = it->mColor;
+                it->mDurationTimer += dt;
+                if (it->mDurationTimer >= it->mDuration)
                 {
-                    meshColor->mColorAddition = it->mColor;
-                    it->mDurationTimer += dt;
-                    if (it->mDurationTimer >= it->mDuration)
+                    it = visualEffects.erase(it);
+                    if (visualEffects.empty() == false)
                     {
-                        it = visualEffects.erase(it);
-                        if (visualEffects.empty() == false)
-                        {
-                            meshColor->mColorAddition = visualEffects.back().mColor;
-                            // Use the last visual effect in the vector,
-                            // otherwise it will not have a color for one frame
-                            // if the erased visual effect was the last in the vector.
-                        }
-                        else
-                        {
-                            meshColor->mColorAddition = {};
-                        }
+                        color = visualEffects.back().mColor;
+                        // Use the last visual effect in the vector,
+                        // otherwise it will not have a color for one frame
+                        // if the erased visual effect was the last in the vector.
                     }
                     else
                     {
-                        ++it;
+                        color = {};
                     }
                 }
+                else
+                {
+                    ++it;
+                }
+            }
+
+            bool changedMeshColor = false;
+
+            // Set color for the entity if it has a MeshColorComponent
+            auto meshColor = reg.TryGet<MeshColorComponent>(entity);
+            if (meshColor != nullptr)
+            {
+                meshColor->mColorAddition = color;
+                changedMeshColor = true;
+            }
+
+            // Set mesh color for all children that have a MeshColorComponent
+            const TransformComponent* transform = reg.TryGet<TransformComponent>(entity);
+            if (transform == nullptr)
+            {
+                LOG(LogAbilitySystem, Error, "Character with entity id {} does not have a TransformComponent attached.", entt::to_integral(entity));
+            }
+            else
+            {
+                std::function<void(const TransformComponent&)> SetMeshColor = [&reg, &color, &changedMeshColor](const TransformComponent& parent)
+                    {
+                        for (const auto& child : parent.GetChildren())
+                        {
+                            auto meshColor = reg.TryGet<MeshColorComponent>(child.get().GetOwner());
+                            if (meshColor != nullptr)
+                            {
+                                meshColor->mColorAddition = color;
+                                changedMeshColor = true;
+                            }
+                        }
+                    };
+                SetMeshColor(*transform);
+            }
+
+            if (changedMeshColor == false)
+            {
+                LOG(LogAbilitySystem, Error, "Character with entity id {} or any of its children do not have a MeshColorComponent attached - visual effects of abilities cannot be displayed.", entt::to_integral(entity));
             }
         }
 
