@@ -349,6 +349,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\SpawnerComponent.cpp" />
+    <ClCompile Include="Source\Systems\SpawnerSystem.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\AttackingState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChasingState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\IdleState.cpp" />
@@ -377,10 +379,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\SpawnerComponent.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\AttackingState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\ChasingState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\IdleState.h" />
     <ClInclude Include="Include\ExampleGame\Precomp.h" />
+    <ClInclude Include="Include\Systems\SpawnerSystem.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\UserMem\address_sanitizer_utils.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

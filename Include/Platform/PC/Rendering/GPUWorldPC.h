@@ -66,6 +66,13 @@ namespace Engine
             MODEL_MAT_SB,
             MATERIAL_SB
         };
+
+        struct ColorInfo
+        {
+            glm::vec4 mColor;
+            uint32 mUseTexture;
+            uint32 mPadding[3];
+        };
     }
 
     class DebugRenderingData
@@ -74,12 +81,30 @@ namespace Engine
         DebugRenderingData();
         ~DebugRenderingData();
 
+        D3D12_VERTEX_BUFFER_VIEW mVertexPositionBufferView;
+        D3D12_VERTEX_BUFFER_VIEW mVertexColorBufferView;
+        std::unique_ptr<DXResource> mVertexPositionBuffer;
+        std::unique_ptr<DXResource> mVertexColorBuffer;
+        std::vector<glm::vec3> mPositions{};
+        std::vector<glm::vec4> mColors{};
+        uint32 mLineCount = 0;
+    };
+
+    class UIRenderingData 
+    {
+    public:
+        UIRenderingData();
+
+        std::unique_ptr<DXResource> mQuadVResource;
+        std::unique_ptr<DXResource> mQuadUVResource;
+        std::unique_ptr<DXResource> mIndicesResource;
+
+        std::unique_ptr<DXConstBuffer> mModelMatBuffer;
+        std::unique_ptr<DXConstBuffer> mColorBuffer;
+
         D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
-        std::unique_ptr<DXResource> mVertexBuffer;
-        std::unique_ptr<DXConstBuffer> mLineColorBuffer;
-        std::unique_ptr<DXConstBuffer> mLineMatrixBuffer;
-        std::vector<glm::mat4x4> mModelMats;
-        std::vector<glm::vec4> mColors;
+        D3D12_VERTEX_BUFFER_VIEW mTexCoordBufferView;
+        D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
     };
 
 	class GPUWorld final : 
@@ -106,6 +131,7 @@ namespace Engine
         const DXHeapHandle& GetMaterialHeapSlot() const { return mMaterialHeapSlot; };
 
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
+        UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
 
 	private:
         void SendMaterialTexturesToGPU(const Material& mat);
@@ -117,6 +143,7 @@ namespace Engine
 		std::vector<InfoStruct::DXMaterialInfo> mMaterials;
 
         DebugRenderingData mDebugRenderingData;
+        UIRenderingData mUIRenderingData;
 	};
 }
 
