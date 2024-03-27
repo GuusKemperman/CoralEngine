@@ -70,24 +70,6 @@ Engine::MeshRenderer::MeshRenderer()
     mPBRSkinnedPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
     mPBRSkinnedPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"PBR SKINNED RENDER PIPELINE");
     
-    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
-    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
-    mZPipeline = std::make_unique<DXPipeline>();
-    mZPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
-    mZPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
-    mZPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
-    mZPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
-
-    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZSkinnedVertex.hlsl");
-    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
-    mZSkinnedPipeline = std::make_unique<DXPipeline>();
-    mZSkinnedPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
-    mZSkinnedPipeline->AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1);
-    mZSkinnedPipeline->AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2);
-    mZSkinnedPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
-    mZSkinnedPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
-    mZSkinnedPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
-
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/ClusterGridCS.hlsl");
     ComPtr<ID3DBlob> cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
     mClusterGridPipeline = std::make_unique<DXPipeline>();
@@ -135,66 +117,15 @@ void Engine::MeshRenderer::Render(const World& world)
     GPUWorld& gpuWorld = world.GetGPUWorld();
     int frameIndex = engineDevice.GetFrameIndex();
 
+    CullClusters(world, gpuWorld);
+
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-    int meshCounter = 0;
-    commandList->SetPipelineState(mZPipeline->GetPipeline().Get());
-
-    // Depth pre-pass
-    {
-        const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
-
-        for (auto [entity, staticMeshComponent, transform] : view.each()) 
-        {
-            if (!staticMeshComponent.mStaticMesh)
-            {
-                continue;
-            }
-
-            glm::mat4x4 modelMatrices[2]{};
-            modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-            gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
-            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
-
-            staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
-            meshCounter++;
-        }
-    }
-
-    commandList->SetPipelineState(mZSkinnedPipeline->GetPipeline().Get());
-
-    {
-        const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
-
-        for (auto [entity, skinnedMeshComponent, transform] : view.each()) 
-        {
-            if (!skinnedMeshComponent.mSkinnedMesh)
-            {
-                continue;
-            }
-
-            glm::mat4x4 modelMatrices[2]{};
-            modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-            gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
-            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
-
-            const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
-            gpuWorld.GetBoneMatrixBuffer().Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
-            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
-
-            skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
-            meshCounter++;
-        }
-    }
-
     commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
-
-    // Bind constant buffers
+    commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
     gpuWorld.GetLightBuffer().Bind(commandList, 1, 0, frameIndex);
     gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
     gpuWorld.GetCameraBuffer().Bind(commandList, 4, 0, frameIndex);
@@ -202,7 +133,7 @@ void Engine::MeshRenderer::Render(const World& world)
     resourceHeap->BindToGraphics(commandList, 19, gpuWorld.GetPointLigthHeapSlot());
     resourceHeap->BindToGraphics(commandList, 16, gpuWorld.GetMaterialHeapSlot());
 
-    meshCounter = 0;
+    int meshCounter = 0;
 
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
@@ -399,28 +330,28 @@ void Engine::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuW
         meshCounter++;
     }
 
-    //commandList->SetPipelineState(mCullClusterSkinnedMeshPipeline->GetPipeline().Get());
-    //commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+    commandList->SetPipelineState(mCullClusterSkinnedMeshPipeline->GetPipeline().Get());
+    commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-    //const auto skinnedView = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
-    //for (auto [entity, skinnedMeshComponent, transform] : skinnedView.each()) {
-    //    glm::mat4x4 modelMatrices[2]{};
-    //    modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-    //    modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-    //    gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
-    //    gpuWorld.GetModelMatrixBuffer().Bind(commandList, 4, meshCounter, frameIndex);
+    const auto skinnedView = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
+    for (auto [entity, skinnedMeshComponent, transform] : skinnedView.each()) {
+        glm::mat4x4 modelMatrices[2]{};
+        modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
+        modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
+        gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+        gpuWorld.GetModelMatrixBuffer().Bind(commandList, 4, meshCounter, frameIndex);
 
-    //    const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
-    //    gpuWorld.GetBoneMatrixBuffer().Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
-    //    gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
+        const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
+        gpuWorld.GetBoneMatrixBuffer().Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
+        gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
 
 
-    //    if (!skinnedMeshComponent.mSkinnedMesh)
-    //        continue;
+        if (!skinnedMeshComponent.mSkinnedMesh)
+            continue;
 
-    //    skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
-    //    meshCounter++;
-    //}
+        skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
+        meshCounter++;
+    }
 
 }
 

@@ -25,8 +25,6 @@ namespace Engine
 
         std::unique_ptr<DXPipeline> mPBRPipeline;
         std::unique_ptr<DXPipeline> mPBRSkinnedPipeline;
-        std::unique_ptr<DXPipeline> mZPipeline;
-        std::unique_ptr<DXPipeline> mZSkinnedPipeline;
         std::unique_ptr<DXPipeline> mClusterGridPipeline;
         std::unique_ptr<DXPipeline> mCullClusterPipeline;
         std::unique_ptr<DXPipeline> mCullClusterSkinnedMeshPipeline;
