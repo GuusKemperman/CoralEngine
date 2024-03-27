@@ -3,7 +3,8 @@
 
 namespace Game
 {
-	class SpawnerSystem final : public Engine::System
+	class SpawnerSystem final :
+		public Engine::System
 	{
 	public:
 		void Update(Engine::World& world, float dt) override;
