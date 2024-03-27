@@ -189,7 +189,7 @@ Engine::GPUWorld::GPUWorld(const World& world)
 
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(unsigned int));
     heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
-    mStructuredBuffers[InfoStruct::READBACK_RESOURCE] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER COUNTER BUFFER");
+    mStructuredBuffers[InfoStruct::READBACK_RESOURCE] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER COUNTER BUFFER", D3D12_RESOURCE_STATE_COPY_DEST);
 
     D3D12_SHADER_RESOURCE_VIEW_DESC  srvDesc = {};
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
