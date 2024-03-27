@@ -16,6 +16,7 @@
 #include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Rendering/GPUWorld.h"
 
 #include "Platform/PC/Core/DevicePC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
@@ -24,37 +25,100 @@ Engine::DebugRenderingData::DebugRenderingData()
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
+
+    uint bufferSize = sizeof(glm::vec3) * MAX_LINE_VERTICES;
+    mVertexPositionBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
+        CD3DX12_RESOURCE_DESC::Buffer(bufferSize), nullptr, "Line vertex position buffer");
+    mVertexPositionBuffer->CreateUploadBuffer(device, bufferSize, 0);
+
+    mVertexPositionBufferView.BufferLocation = mVertexPositionBuffer->GetResource()->GetGPUVirtualAddress();
+    mVertexPositionBufferView.StrideInBytes = sizeof(glm::vec3);
+    mVertexPositionBufferView.SizeInBytes = bufferSize;
+
+    bufferSize = sizeof(glm::vec4) * MAX_LINE_VERTICES;
+    mVertexColorBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
+        CD3DX12_RESOURCE_DESC::Buffer(bufferSize), nullptr, "Line vertex color buffer");
+    mVertexColorBuffer->CreateUploadBuffer(device, bufferSize, 0);
+
+    mVertexColorBufferView.BufferLocation = mVertexColorBuffer->GetResource()->GetGPUVirtualAddress();
+    mVertexColorBufferView.StrideInBytes = sizeof(glm::vec4);
+    mVertexColorBufferView.SizeInBytes = bufferSize;
+
+    mPositions.resize(MAX_LINE_VERTICES);
+    mColors.resize(MAX_LINE_VERTICES);
+}
+
+Engine::DebugRenderingData::~DebugRenderingData() = default;
+
+Engine::UIRenderingData::UIRenderingData()
+{
+    Device& engineDevice = Device::Get();
+    ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
     ID3D12GraphicsCommandList4* uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetUploadCommandList());
-
-    std::vector<glm::vec3> positions(2);
-    positions[0] = glm::vec3(0.f, 0.f, 0.f);
-    positions[1] = glm::vec3(1.f, 0.f, 0.f);
-
     engineDevice.StartUploadCommands();
-    int vertexCount = 2;
-    int vBufferSize = sizeof(float) * vertexCount * 3;
 
-    mVertexBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(vBufferSize), nullptr, "Line Vertex resource buffer");
+    std::vector<glm::vec3> positions =
+    {
+        glm::vec3(-0.5f, 0.5f, 0.0f),  // Top Left
+        glm::vec3(0.5f, 0.5f, 0.0f),   // Top Right
+        glm::vec3(-0.5f, -0.5f, 0.0f), // Bottom Left
+        glm::vec3(0.5f, -0.5f, 0.0f),  // Bottom Right
+    };
+    std::vector<glm::vec2> uvs = 
+    {
+        glm::vec2(0.f),
+        glm::vec2(1.f, 0.f),
+        glm::vec2(0.f, 1.f),
+        glm::vec2(1.f, 1.f)
+    };
+    std::vector<uint32> indices = { 0, 1, 2, 3, 2, 1 };
+    int vBufferSize = sizeof(glm::vec3) * static_cast<int>(positions.size());
+    int tBufferSize = sizeof(glm::vec2) * static_cast<int>(uvs.size());
+    int iBufferSize = sizeof(uint32) * static_cast<int>(indices.size());
+
+    mQuadVResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(vBufferSize), nullptr, "UI Vertex resource buffer");
+    mQuadUVResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(tBufferSize), nullptr, "UI UV resource buffer");
+    mIndicesResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(iBufferSize), nullptr, "UI indices resource buffer");
+
+    mQuadVResource->CreateUploadBuffer(device, vBufferSize, 0);
+    mQuadUVResource->CreateUploadBuffer(device, tBufferSize, 0);
+    mIndicesResource->CreateUploadBuffer(device, iBufferSize, 0);
 
     D3D12_SUBRESOURCE_DATA vData = {};
     vData.pData = positions.data();
     vData.RowPitch = sizeof(float) * 3;
     vData.SlicePitch = vBufferSize;
 
-    mVertexBuffer->CreateUploadBuffer(device, vBufferSize, 0);
-    mVertexBuffer->Update(uploadCmdList, vData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+    D3D12_SUBRESOURCE_DATA uData = {};
+    uData.pData = uvs.data();
+    uData.RowPitch = sizeof(float) * 2;
+    uData.SlicePitch = tBufferSize;
 
-    mVertexBufferView.BufferLocation = mVertexBuffer->GetResource()->GetGPUVirtualAddress();
+    D3D12_SUBRESOURCE_DATA iData = {};
+    iData.pData = indices.data();
+    iData.RowPitch = iBufferSize;
+    iData.SlicePitch = iBufferSize;
+
+    mQuadVResource->Update(uploadCmdList, vData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+    mQuadUVResource->Update(uploadCmdList, uData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+    mIndicesResource->Update(uploadCmdList, iData, D3D12_RESOURCE_STATE_INDEX_BUFFER, 0, 1);
+
+    mVertexBufferView.BufferLocation = mQuadVResource->GetResource()->GetGPUVirtualAddress();
     mVertexBufferView.StrideInBytes = sizeof(float) * 3;
     mVertexBufferView.SizeInBytes = vBufferSize;
 
-    mLineColorBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::vec4), MAX_LINES, "Lines color const buffer", FRAME_BUFFER_COUNT);
-    mLineMatrixBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4), MAX_LINES, "Lines matrix const buffer", FRAME_BUFFER_COUNT);
+    mTexCoordBufferView.BufferLocation = mQuadUVResource->GetResource()->GetGPUVirtualAddress();
+    mTexCoordBufferView.StrideInBytes = sizeof(float) * 2;
+    mTexCoordBufferView.SizeInBytes = tBufferSize;
 
+    mIndexBufferView.BufferLocation = mIndicesResource->GetResource()->GetGPUVirtualAddress();
+    mIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+    mIndexBufferView.SizeInBytes = iBufferSize;
+
+    mModelMatBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "UI Mesh matrix data", FRAME_BUFFER_COUNT);
+    mColorBuffer = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::ColorInfo), MAX_MESHES, "UI Mesh color data", FRAME_BUFFER_COUNT);
     engineDevice.SubmitUploadCommands();
 }
-
-Engine::DebugRenderingData::~DebugRenderingData() = default;
 
 Engine::GPUWorld::GPUWorld(const World& world)
     :
@@ -70,6 +134,7 @@ Engine::GPUWorld::GPUWorld(const World& world)
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
     mConstBuffers[FINAL_BONE_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * MAX_BONES, MAX_SKINNED_MESHES, "Skinned mesh bone matrices", FRAME_BUFFER_COUNT);
     mConstBuffers[COLOR_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXColorMultiplierInfo), MAX_MESHES, "Color multiplier", FRAME_BUFFER_COUNT);
+    mConstBuffers[UI_MODEL_MAT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "UI MODEL MATRICES", FRAME_BUFFER_COUNT);
 
     // Create structured buffers
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);

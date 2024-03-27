@@ -29,10 +29,10 @@ namespace Engine
 		static std::vector<ContentFolder> MakeFolderGraph(std::vector<WeakAsset<Asset>>&& assets);
 
 		// Moved in because the assets may be deleted, don't hold onto them.
-		void DisplayDirectory(ContentFolder&& folder);
+		void DisplayDirectory(const ContentFolder& folder);
 
 		// Moved in because the asset may be deleted, don't hold onto it.
-		void DisplayAsset(WeakAsset<Asset>&& asset) const;
+		void DisplayAsset(const WeakAsset<Asset>& asset) const;
 
 		void OpenAsset(WeakAsset<Asset> asset) const;
 
@@ -56,6 +56,8 @@ namespace Engine
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(ContentBrowserEditorSystem);
+
+		std::vector<ContentFolder> mFolderGraph{};
 	};
 }
 #endif // EDITOR
