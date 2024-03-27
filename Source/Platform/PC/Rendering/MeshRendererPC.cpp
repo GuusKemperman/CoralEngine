@@ -177,23 +177,23 @@ void Engine::MeshRenderer::Render(const World& world)
             // Bind textures
             if (staticMeshComponent.mMaterial)
             {
-                if (staticMeshComponent.mMaterial->mBaseColorTexture)
+                if (staticMeshComponent.mMaterial->mBaseColorTexture && staticMeshComponent.mMaterial->mBaseColorTexture->WasSentToGpu())
                 {
                     staticMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 6);
                 }
-                if (staticMeshComponent.mMaterial->mEmissiveTexture)
+                if (staticMeshComponent.mMaterial->mEmissiveTexture && staticMeshComponent.mMaterial->mEmissiveTexture->WasSentToGpu())
                 {
                     staticMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 7);
                 }
-                if (staticMeshComponent.mMaterial->mMetallicRoughnessTexture)
+                if (staticMeshComponent.mMaterial->mMetallicRoughnessTexture && staticMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSentToGpu())
                 {
                     staticMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 8);
                 }
-                if (staticMeshComponent.mMaterial->mNormalTexture)
+                if (staticMeshComponent.mMaterial->mNormalTexture && staticMeshComponent.mMaterial->mNormalTexture->WasSentToGpu())
                 {
                     staticMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 9);
                 }
-                if (staticMeshComponent.mMaterial->mOcclusionTexture)
+                if (staticMeshComponent.mMaterial->mOcclusionTexture && staticMeshComponent.mMaterial->mOcclusionTexture->WasSentToGpu())
                 {
                     staticMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 10);
                 }
@@ -225,23 +225,23 @@ void Engine::MeshRenderer::Render(const World& world)
             // Bind textures
             if (skinnedMeshComponent.mMaterial)
             {
-                if (skinnedMeshComponent.mMaterial->mBaseColorTexture)
+                if (skinnedMeshComponent.mMaterial->mBaseColorTexture && skinnedMeshComponent.mMaterial->mBaseColorTexture->WasSentToGpu())
                 {
                     skinnedMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 6);
                 }
-                if (skinnedMeshComponent.mMaterial->mEmissiveTexture)
+                if (skinnedMeshComponent.mMaterial->mEmissiveTexture && skinnedMeshComponent.mMaterial->mEmissiveTexture->WasSentToGpu())
                 {
                     skinnedMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 7);
                 }
-                if (skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture)
+                if (skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture && skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSentToGpu())
                 {
                     skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 8);
                 }
-                if (skinnedMeshComponent.mMaterial->mNormalTexture)
+                if (skinnedMeshComponent.mMaterial->mNormalTexture && skinnedMeshComponent.mMaterial->mNormalTexture->WasSentToGpu())
                 {
                     skinnedMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 9);
                 }
-                if (skinnedMeshComponent.mMaterial->mOcclusionTexture)
+                if (skinnedMeshComponent.mMaterial->mOcclusionTexture && skinnedMeshComponent.mMaterial->mOcclusionTexture->WasSentToGpu())
                 {
                     skinnedMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 10);
                 }
