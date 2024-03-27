@@ -1,5 +1,8 @@
 #pragma once
 
+#define MAX_BONES 128
+#define MAX_BONE_INFLUENCE 4
+
 #ifdef PLATFORM_WINDOWS
 #include "Platform/PC/Rendering/SkinnedMeshPC.h"
 #elif PLATFORM_***REMOVED***

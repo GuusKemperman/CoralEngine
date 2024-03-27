@@ -3,7 +3,6 @@
 
 #include "World/World.h"
 #include "World/Registry.h"
-#include "World/WorldViewport.h"
 #include "Components/TransformComponent.h"
 #include "Assets/SkinnedMesh.h"
 #include "Components/SkinnedMeshComponent.h"
@@ -12,7 +11,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
-void Engine::AnimationSystem::CalculateBoneTransform(const AnimNode& node, 
+void Engine::AnimationSystem::CalculateBoneTransformRecursive(const AnimNode& node, 
 	const glm::mat4x4& parenTransform, 
 	const std::unordered_map<std::string, BoneInfo>& boneMap,
 	const SkinnedMeshComponent& mesh,
@@ -39,7 +38,7 @@ void Engine::AnimationSystem::CalculateBoneTransform(const AnimNode& node,
 
 	for (size_t i = 0; i < node.mChildren.size(); i++)
 	{
-		CalculateBoneTransform(node.mChildren[i], globalTransform, boneMap, mesh, mesh.mAnimation, finalBoneMatrices);
+		CalculateBoneTransformRecursive(node.mChildren[i], globalTransform, boneMap, mesh, mesh.mAnimation, finalBoneMatrices);
 	}
 }
 
@@ -59,7 +58,7 @@ void Engine::AnimationSystem::Update(World& world, float dt)
 		skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * dt;
 		skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
 
-		CalculateBoneTransform(skinnedMesh.mAnimation->mRootNode, glm::mat4x4(1.0f), skinnedMesh.mSkinnedMesh->GetBoneMap(), skinnedMesh, skinnedMesh.mAnimation, skinnedMesh.mFinalBoneMatrices);
+		CalculateBoneTransformRecursive(skinnedMesh.mAnimation->mRootNode, glm::mat4x4(1.0f), skinnedMesh.mSkinnedMesh->GetBoneMap(), skinnedMesh, skinnedMesh.mAnimation, skinnedMesh.mFinalBoneMatrices);
 	}
 }
 

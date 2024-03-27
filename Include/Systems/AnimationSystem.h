@@ -1,6 +1,5 @@
 #pragma once
 #include "Systems/System.h"
-#include <unordered_map>
 
 namespace Engine
 {
@@ -15,7 +14,7 @@ namespace Engine
 	public:
 		void Update(World& world, float dt) override;
 
-		void CalculateBoneTransform(const AnimNode& node, 
+		void CalculateBoneTransformRecursive(const AnimNode& node, 
 	const glm::mat4x4& parenTransform, 
 	const std::unordered_map<std::string, BoneInfo>& boneMap,
 	const SkinnedMeshComponent& mesh,

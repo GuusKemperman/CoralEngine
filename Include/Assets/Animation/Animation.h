@@ -20,7 +20,7 @@ namespace Engine
 		Animation(const std::string_view name);
 		Animation(AssetLoadInfo& loadInfo);
 
-		const Bone* FindBone(std::string_view name) const;
+		const Bone* FindBone(const std::string_view name) const;
 
 		float mDuration = 0.0;
 		float mTickPerSecond = 0.0;
