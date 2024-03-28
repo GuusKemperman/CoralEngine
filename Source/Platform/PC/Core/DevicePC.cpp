@@ -413,6 +413,10 @@ void Engine::Device::NewFrame() {
         mUpdateWindow = true;
     }
 
+    Device& engineDevice = Device::Get();
+    if (engineDevice.GetDisplaySize().x <= 0 || engineDevice.GetDisplaySize().y <= 0)
+        return;
+
 #ifdef EDITOR
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
