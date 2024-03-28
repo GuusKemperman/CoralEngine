@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Utilities/AbilityFunctionality.h"
 
+#include "Components/NameComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/ActiveAbilityComponent.h"
 #include "Components/Abilities/AOEComponent.h"
@@ -138,6 +139,7 @@ std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& wor
 	auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
 	if (effects == nullptr)
 	{
+		[[maybe_unused]] auto name = reg.TryGet<NameComponent>(affectedEntity);
 		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
 		return std::nullopt;
 	}
