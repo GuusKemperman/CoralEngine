@@ -109,24 +109,24 @@ void DXPipeline::SetPrimitiveTopology(const D3D12_PRIMITIVE_TOPOLOGY_TYPE& topol
 
 ComPtr<ID3DBlob> DXPipeline::ShaderToBlob(const char* path, const char* shaderVersion, const char* functionName)
 {
-	ComPtr<ID3DBlob> shader; // d3d blob for holding vertex shader bytecode
-	ComPtr<ID3DBlob> errorBuff;
-	
-	wchar_t* wString = new wchar_t[4096];
-	MultiByteToWideChar(CP_ACP, 0, path, -1, wString, 4096);
-	HRESULT hr;
+    ComPtr<ID3DBlob> shader; // d3d blob for holding vertex shader bytecode
+    ComPtr<ID3DBlob> errorBuff;
+    
+    wchar_t* wString = new wchar_t[4096];
+    MultiByteToWideChar(CP_ACP, 0, path, -1, wString, 4096);
+    HRESULT hr;
 
-	if(functionName != nullptr)
-		hr = D3DCompileFromFile(wString, nullptr, nullptr, functionName, shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
-	else
-		hr = D3DCompileFromFile(wString, nullptr, nullptr, "main", shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
+    if(functionName != nullptr)
+        hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, functionName, shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
+    else
+        hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
 
-	if (FAILED(hr))
-	{
-		LOG(LogAssets, Fatal, "Error while compiling HLSL shader: {}", (const char*)errorBuff->GetBufferPointer());
-	}
+    if (FAILED(hr))
+    {
+        LOG(LogAssets, Fatal, "Error while compiling HLSL shader: {}", (const char*)errorBuff->GetBufferPointer());
+    }
 
-	delete[] wString;
+    delete[] wString;
 
-	return shader;
+    return shader;
 }
