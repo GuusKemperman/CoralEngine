@@ -1,7 +1,6 @@
 #include "Precomp.h"
 #include "Platform/PC/Rendering/SkinnedMeshPC.h"
 #include "Assets/Core/AssetLoadInfo.h"
-#include "Assets/Core/AssetSaveInfo.h"
 #include "Assets/Asset.h"
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
