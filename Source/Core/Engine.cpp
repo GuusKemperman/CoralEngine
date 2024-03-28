@@ -134,6 +134,7 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 
 	while (!device.ShouldClose())
 	{
+
 		t2 = std::chrono::high_resolution_clock::now();
 		float deltaTime = (std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1)).count();
 
@@ -148,6 +149,10 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 
 		input.NewFrame();
 		device.NewFrame();
+
+		Device& engineDevice = Device::Get();
+		if (engineDevice.GetDisplaySize().x <= 0 || engineDevice.GetDisplaySize().y <= 0)
+			continue;
 
 #ifdef EDITOR
 		editor.Tick(deltaTime);
