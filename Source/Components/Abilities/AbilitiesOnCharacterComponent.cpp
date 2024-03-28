@@ -30,10 +30,9 @@ Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
 	return metaType;
 }
 
-void Engine::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity entity)
+void Engine::AbilitiesOnCharacterComponent::OnBeginPlay(World&, entt::entity)
 {
-	auto& abilities = world.GetRegistry().Get<AbilitiesOnCharacterComponent>(entity);
-	for (auto& ability : abilities.mAbilitiesToInput)
+	for (auto& ability : mAbilitiesToInput)
 	{
 		// Make all the cooldown abilities available on being play.
 		if (ability.mAbilityAsset->mRequirementType == Ability::Cooldown)
