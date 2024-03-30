@@ -1669,8 +1669,7 @@
     <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
     <ClInclude Include="Include\Components\PrefabOriginComponent.h" />
     <ClInclude Include="include\Containers\ManyStrings.h" />
-    <ClInclude Include="Include\Core\CommonMetaProperties.h" />
-    <ClInclude Include="include\core\Packager.h" />
+    <ClInclude Include="Include\Utilities\CommonMetaProperties.h" />
     <ClInclude Include="Include\Core\VirtualMachine.h" />
     <ClInclude Include="Include\EditorSystems\AssetEditorSystems\AbilityEditorSystem.h" />
     <ClInclude Include="Include\EditorSystems\AssetEditorSystems\AssetEditorSystem.h" />

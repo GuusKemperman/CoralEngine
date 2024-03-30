@@ -10,13 +10,19 @@
 #include "imgui/ImGuizmo.h"
 #pragma warning(pop)
 
+#include <stb_image/stb_image.h>
+
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
+#include "Utilities/StringFunctions.h"
 
 Engine::Device::Device()
 {
     InitializeWindow();
 	InitializeDevice();
 }
+
+static constexpr size_t sNumOfIcons = 3;
+static constexpr std::array<std::string_view, sNumOfIcons> GetEmbeddedIcons();
 
 void Engine::Device::InitializeWindow()
 {
@@ -43,22 +49,56 @@ void Engine::Device::InitializeWindow()
     mPreviousHeight = 1080;
 
     mFullscreen = false;
+    std::string applicationName{};
 
+#ifdef EDITOR
+    applicationName = "Coral Engine - ";
+#endif
+
+    const std::filesystem::path thisExe = FileIO::Get().GetPath(FileIO::Directory::ThisExecutable, "");
+    applicationName += thisExe.filename().replace_extension().string();
+    if (applicationName.empty())
+    {
+        applicationName += "Unnamed application";
+    }
     if (mFullscreen)
     {
         mViewport.Width = static_cast<FLOAT>(maxScreenWidth);
         mViewport.Height = static_cast<FLOAT>(maxScreenHeight);
-        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "General engine", mMonitor, nullptr);
+        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), applicationName.c_str(), mMonitor, nullptr);
     }
     else
     {
         glfwWindowHint(GLFW_RESIZABLE, 1);
-        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "General engine", nullptr, nullptr);
+        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), applicationName.c_str(), nullptr, nullptr);
     }
 
     if (mWindow == nullptr)
     {
         LOG(LogCore, Fatal, "GLFW window could not be created");
+    }
+
+    const std::array<std::string_view, sNumOfIcons> iconsHex = GetEmbeddedIcons();
+    std::array<GLFWimage, sNumOfIcons> glfwImages{};
+
+    for (size_t i = 0; i < sNumOfIcons; i++)
+    {
+        GLFWimage& image = glfwImages[i];
+        const std::string data = StringFunctions::HexToBinary(iconsHex[i]);
+        int channels;
+        image.pixels = stbi_load_from_memory(reinterpret_cast<const uint8*>(data.data()), static_cast<int>(data.size()), &image.width, &image.height, &channels, 4);
+
+        if (image.pixels == nullptr)
+        {
+            LOG(LogCore, Error, "Failed to load embedded icon {} for the application", i);
+        }
+    }
+
+    glfwSetWindowIcon(mWindow, sNumOfIcons, glfwImages.data());
+
+    for (size_t i = 0; i < sNumOfIcons; i++)
+    {
+        stbi_image_free(glfwImages[i].pixels);
     }
 
     glfwMakeContextCurrent(mWindow);
@@ -601,3 +641,72 @@ void Engine::Device::CreateImguiContext()
     ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
 }
 #endif
+
+constexpr std::array<std::string_view, sNumOfIcons> GetEmbeddedIcons()
+{
+    return
+    {
+        std::string_view
+        {
+            // 48x48
+            "89504E470D0A1A0A0000000D49484452"
+            "000000300000003001030000006DCC6B"
+            "C4000000017352474200AECE1CE90000"
+            "000467414D410000B18F0BFC61050000"
+            "0006504C54453EDED9FFFFFFF630CE2B"
+            "000000097048597300000EC200000EC2"
+            "0115284A80000000E84944415428CF75"
+            "D0B18AC2401006E07F19D86D02692DA2"
+            "D75D9DED52C8F92A81F49AE38A6B2C56"
+            "52D8C8D56773BE8290C6721FC087D860"
+            "61A7011B0FCED399A0A5D37CB00C3BF3"
+            "0F9ED44BDB71FD1728C48E8DA1029300"
+            "259329973125ADF9019ED61A50BEA80C"
+            "F7BBA2220742515B07AD8B3AF51DF088"
+            "F4A44E7244AF937AC87CEE4ED31CBD8F"
+            "6697A7E8954D1584F7D98179B3DFC2C0"
+            "6E04D8F398C96DE85AAC174676B54D11"
+            "8D96AB057FA62ED51F83ABA061E66719"
+            "4B5F3C96CCEF8FE29566970D6FA67CBF"
+            "255EDEC7AD960C264492C80449949820"
+            "F962D3485ADA1F25FBFD128FBB3C29E0"
+            "0633F14FAA8F44058B0000000049454E"
+            "44AE426082"
+        },
+        {
+            // 32x32
+            "89504E470D0A1A0A0000000D49484452"
+            "0000002000000020010300000049B4E8"
+            "B7000000017352474200AECE1CE90000"
+            "000467414D410000B18F0BFC61050000"
+            "0006504C54453EDED9FFFFFFF630CE2B"
+            "000000097048597300000EC200000EC2"
+            "0115284A80000000874944415418D363"
+            "60606C60606060DE0023929BE1C46603"
+            "063628C1C0C096BF5986412D7FB30D43"
+            "F9E3CF350CC50F1F2730143C6C7EC050"
+            "50D8F88EC1CE70C63B0639C31DEF1818"
+            "0C7FE43124183E004A181E78C0606F38"
+            "FF0C83FDCCF93D0C8C7F9BFF3030FC07"
+            "11ECED3F18D898FB808C9FF3800EF8BB"
+            "03689BEC0720C10F22D81FC089070C00"
+            "150931AC364E68230000000049454E44"
+            "AE426082"
+        },
+        {
+            // 16x16
+            "89504E470D0A1A0A0000000D49484452"
+            "00000010000000100103000000253D6D"
+            "22000000017352474200AECE1CE90000"
+            "000467414D410000B18F0BFC61050000"
+            "0006504C54453EDED9FFFFFFF630CE2B"
+            "000000097048597300000EC200000EC2"
+            "0115284A80000000374944415418D363"
+            "00024E0106CE1006CD0006ED3006C929"
+            "0CBE520CA95E0CAC33184AB318E49731"
+            "38CB30D81630B01F60606E60606E0000"
+            "A71F084E8E1D12830000000049454E44"
+            "AE426082"
+        }
+    };
+}
