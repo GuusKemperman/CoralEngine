@@ -522,6 +522,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Platform\PC\Rendering\DirectionalLightComponentPC.cpp" />
     <ClCompile Include="Source\Utilities\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Rendering\Renderer.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.cpp">

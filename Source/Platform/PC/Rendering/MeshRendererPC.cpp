@@ -258,6 +258,8 @@ void Engine::MeshRenderer::Render(const World& world)
             meshCounter++;
         }
     }
+
+    RenderShadowMapsStaticMesh(world, gpuWorld);
 }
 
 void Engine::MeshRenderer::HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex)
@@ -283,4 +285,49 @@ void Engine::MeshRenderer::HandleColorComponent(const World& world, const entt::
     }
 
     meshColorBuffer.Bind(commandList, 17, meshCounter, frameIndex);
+}
+
+void Engine::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const GPUWorld& gpuWorld)
+{
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    int frameIndex = engineDevice.GetFrameIndex();
+
+    const auto dirLightView = world.GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
+
+    commandList->SetPipelineState(mZPipeline->GetPipeline().Get());
+
+    int lightCounter = 1;
+
+    for (auto [entity, lightComponent, transform] : dirLightView.each()) {        
+
+        lightComponent.BindDepthResource();
+        gpuWorld.GetCameraBuffer().Bind(commandList, 0, lightCounter, frameIndex);
+
+        {
+            const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
+            int meshCounter = 0;
+            for (auto [entity2, staticMeshComponent, transform2] : view.each()) 
+            {
+                if (!staticMeshComponent.mStaticMesh)
+                {
+                    continue;
+                }
+
+                glm::mat4x4 modelMatrices[2]{};
+                modelMatrices[0] = glm::transpose(transform2.GetWorldMatrix());
+                modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
+                gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+                gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
+
+                staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
+                meshCounter++;
+            }
+        }
+
+        lightCounter++;
+
+    }
+
+
 }

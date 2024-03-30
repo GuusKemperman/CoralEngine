@@ -128,7 +128,8 @@ Engine::GPUWorld::GPUWorld(const World& world)
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
     // Create constant buffers
-    mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
+    //TODO: Increase number of buffer capability depending on number of directional lights
+    mConstBuffers[CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 2001, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[MATERIAL_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Model material info", FRAME_BUFFER_COUNT);
     mConstBuffers[MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
@@ -157,6 +158,9 @@ void Engine::GPUWorld::Update()
     matrixInfo.ipm = glm::inverse(matrixInfo.pm);
     matrixInfo.ivm = glm::inverse(matrixInfo.vm);
     mConstBuffers[CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
+
+    float nearPlane = camera.mNear;
+    float farPlane = camera.mFar;
 
     // Update lights
     const auto pointLightView = mWorld.get().GetRegistry().View<const PointLightComponent, const TransformComponent>();
@@ -190,6 +194,16 @@ void Engine::GPUWorld::Update()
 
             mLights.mDirLights[dirLightCounter].mDir = glm::vec4(lightDirection, 1.f);
             mLights.mDirLights[dirLightCounter].mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+            float extent = lightComponent.mExtent;
+
+            InfoStruct::DXMatrixInfo lightCameraMap;
+            lightCameraMap.pm = glm::transpose(glm::orthoLH_ZO(extent * -0.5f, extent * 0.5f, extent * -0.5f, extent * 0.5f, nearPlane, farPlane));
+            //glm::vec3 directionalLightDir = transform.GetWorldOrientationEuler();
+            //glm::vec3 position = glm::transpose(matrixInfo.ivm)[3];
+            lightCameraMap.vm = matrixInfo.vm;
+
+            mConstBuffers[CAM_MATRIX_CB]->Update(&lightCameraMap, sizeof(InfoStruct::DXMatrixInfo), dirLightCounter+1, frameIndex);
+
         }
         else 
         {
