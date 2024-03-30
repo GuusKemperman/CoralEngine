@@ -8,7 +8,7 @@
 #include "Utilities/ClassVersion.h"
 #include "Meta/MetaType.h"
 
-std::optional<std::vector<Engine::ImportedAsset>> Engine::TextureImporter::Import(const std::filesystem::path& path) const
+std::optional<std::vector<CE::ImportedAsset>> CE::TextureImporter::Import(const std::filesystem::path& path) const
 {
 	int width, height, channels;
 	stbi_set_flip_vertically_on_load(false);
@@ -43,7 +43,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::TextureImporter::Impor
 }
 
 
-std::optional<Engine::ImportedAsset> Engine::TextureImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
+std::optional<CE::ImportedAsset> CE::TextureImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
 	const std::string& name,
 	const uint32 importerVersion,
 	const Span<const char> buffers,
@@ -89,7 +89,7 @@ std::optional<Engine::ImportedAsset> Engine::TextureImporter::ImportFromMemory(c
 	return texture;
 }
 
-Engine::MetaType Engine::TextureImporter::Reflect()
+CE::MetaType CE::TextureImporter::Reflect()
 {
 	MetaType type = MetaType{MetaType::T<TextureImporter>{}, "TextureImporter", MetaType::Base<Importer>{} };
 	return type;

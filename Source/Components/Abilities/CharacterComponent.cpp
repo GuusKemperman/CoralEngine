@@ -5,7 +5,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::MetaType Engine::CharacterComponent::Reflect()
+CE::MetaType CE::CharacterComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<CharacterComponent>{}, "CharacterComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);

@@ -11,7 +11,7 @@
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Scripting/Nodes/CommentScriptNode.h"
 
-namespace Engine
+namespace CE
 {
 	struct ParamWrapper
 	{
@@ -27,9 +27,9 @@ namespace Engine
 	};
 }
 
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::ParamWrapper, var.DisplayInspectUI(name);)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::ParamWrapper, var.DisplayInspectUI(name);)
 
-void Engine::ScriptEditorSystem::DisplayDetailsPanel()
+void CE::ScriptEditorSystem::DisplayDetailsPanel()
 {
 	ScriptFunc* func = TryGetSelectedFunc();
 	ScriptField* field = TryGetSelectedField();
@@ -64,7 +64,7 @@ void Engine::ScriptEditorSystem::DisplayDetailsPanel()
 }
 
 
-void Engine::ScriptEditorSystem::DisplayFunctionDetails(ScriptFunc& func)
+void CE::ScriptEditorSystem::DisplayFunctionDetails(ScriptFunc& func)
 {
 	std::string funcName = func.GetName();
 
@@ -139,7 +139,7 @@ void Engine::ScriptEditorSystem::DisplayFunctionDetails(ScriptFunc& func)
 	}
 }
 
-void Engine::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
+void CE::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
 {
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
 
@@ -179,7 +179,7 @@ void Engine::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
 	ImGui::PopStyleColor();
 }
 
-void Engine::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
+void CE::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
 {
 	// Reduce code reptition
 	std::string memberName = field.GetName();
@@ -202,7 +202,7 @@ void Engine::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
 	ShowInspectUI("Default value", field.GetDefaultValue());
 }
 
-void Engine::ParamWrapper::DisplayInspectUI(const std::string&)
+void CE::ParamWrapper::DisplayInspectUI(const std::string&)
 {
 	std::string paramName = mParam.GetName();
 	if (ShowInspectUI("Name", paramName))

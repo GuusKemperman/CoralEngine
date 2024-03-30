@@ -4,7 +4,7 @@
 #include "Utilities/AbilityFunctionality.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 
-namespace Engine
+namespace CE
 {
 	// Effects that get reverted after the specified duration.
 	struct DurationalEffect
@@ -130,7 +130,7 @@ namespace Engine
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::DurationalEffect, var.DisplayWidget(); (void)name;)
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::OverTimeEffect, var.DisplayWidget(); (void)name;)
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::VisualEffect, var.DisplayWidget(); (void)name;)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::DurationalEffect, var.DisplayWidget(); (void)name;)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::OverTimeEffect, var.DisplayWidget(); (void)name;)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::VisualEffect, var.DisplayWidget(); (void)name;)
 #endif // EDITOR

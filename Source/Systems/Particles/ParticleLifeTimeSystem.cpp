@@ -8,7 +8,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
-void Engine::ParticleLifeTimeSystem::Update(World& world, float dt)
+void CE::ParticleLifeTimeSystem::Update(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
 
@@ -141,7 +141,7 @@ void Engine::ParticleLifeTimeSystem::Update(World& world, float dt)
 #endif
 }
 
-Engine::MetaType Engine::ParticleLifeTimeSystem::Reflect()
+CE::MetaType CE::ParticleLifeTimeSystem::Reflect()
 {
 	return MetaType{ MetaType::T<ParticleLifeTimeSystem>{}, "ParticleLifeTimeSystem", MetaType::Base<System>{} };
 }

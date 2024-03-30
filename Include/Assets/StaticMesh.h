@@ -6,4 +6,4 @@
 #include "Platform/***REMOVED***/Rendering/StaticMesh***REMOVED***.h"
 #endif
 
-REFLECT_AT_START_UP(StaticMesh, Engine::StaticMesh);
+REFLECT_AT_START_UP(StaticMesh, CE::StaticMesh);

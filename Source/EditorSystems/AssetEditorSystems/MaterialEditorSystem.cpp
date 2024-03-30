@@ -4,14 +4,14 @@
 #include "Meta/MetaManager.h"
 #include "Meta/MetaTools.h"
 
-Engine::MaterialEditorSystem::MaterialEditorSystem(Material&& asset) :
+CE::MaterialEditorSystem::MaterialEditorSystem(Material&& asset) :
 	AssetEditorSystem(std::move(asset))
 {
 }
 
-Engine::MaterialEditorSystem::~MaterialEditorSystem() = default;
+CE::MaterialEditorSystem::~MaterialEditorSystem() = default;
 
-void Engine::MaterialEditorSystem::Tick(const float deltaTime)
+void CE::MaterialEditorSystem::Tick(const float deltaTime)
 {
 	if (!Begin(ImGuiWindowFlags_MenuBar))
 	{
@@ -40,7 +40,7 @@ void Engine::MaterialEditorSystem::Tick(const float deltaTime)
 	End();
 }
 
-Engine::MetaType Engine::MaterialEditorSystem::Reflect()
+CE::MetaType CE::MaterialEditorSystem::Reflect()
 {
 	return { MetaType::T<MaterialEditorSystem>{}, "MaterialEditorSystem", 
 		MetaType::Base<AssetEditorSystem<Material>>{},

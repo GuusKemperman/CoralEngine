@@ -7,7 +7,7 @@
 #include "Utilities/Reflect/ReflectFieldType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
-using namespace Engine;
+using namespace CE;
 using namespace glm;
 using T = mat4;
 

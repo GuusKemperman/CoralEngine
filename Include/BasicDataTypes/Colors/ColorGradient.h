@@ -2,7 +2,7 @@
 #include "LinearColor.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 
-namespace Engine
+namespace CE
 {
 	class ColorGradient
 	{
@@ -35,5 +35,5 @@ void load(Archive& ar, ColorGradient& value)
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::ColorGradient, ImGui::Auto(var.mPoints, name);)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::ColorGradient, ImGui::Auto(var.mPoints, name);)
 #endif // EDITOR

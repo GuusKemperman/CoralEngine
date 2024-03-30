@@ -11,7 +11,7 @@ namespace ax::NodeEditor::Utilities
 	struct BlueprintNodeBuilder;
 }
 
-namespace Engine
+namespace CE
 {
 	class RerouteScriptNode;
 	class CommentScriptNode;

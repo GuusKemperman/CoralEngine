@@ -9,11 +9,11 @@
 #include "World/World.h"
 #include "World/Registry.h"
 
-using namespace Engine;
+using namespace CE;
 using namespace entt;
 using T = entity;
 
-bool sDummy = Engine::Internal::ReflectAtStartup<std::vector<T>>::sDummy;
+bool sDummy = CE::Internal::ReflectAtStartup<std::vector<T>>::sDummy;
 
 MetaType Reflector<T>::Reflect()
 {

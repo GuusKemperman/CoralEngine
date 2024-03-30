@@ -4,7 +4,7 @@
 #include "MetaTypeTraitsFwd.h"
 #include "MetaTypeIdFwd.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaProps;
 	class MetaManager;
@@ -14,7 +14,7 @@ namespace Engine
 	about its members and functions. This class is used throughout
 	the engine for inspecting components, serialization and scripting.
 
-	An instance of type can be retrieved through Engine::MetaManager::TryGetType.
+	An instance of type can be retrieved through CE::MetaManager::TryGetType.
 	*/
 	class MetaType
 	{

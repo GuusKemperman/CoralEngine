@@ -16,19 +16,19 @@ namespace
 
 
 
-std::string Engine::Search::DisplaySearchBar(std::string_view label, std::string_view hint)
+std::string CE::Search::DisplaySearchBar(std::string_view label, std::string_view hint)
 {
     std::string str{};
     DisplaySearchBar(str, label, hint);
     return str;
 }
 
-void Engine::Search::DisplaySearchBar(std::string& searchTerm, std::string_view label, std::string_view hint)
+void CE::Search::DisplaySearchBar(std::string& searchTerm, std::string_view label, std::string_view hint)
 {
     ImGui::InputTextWithHint(label.data(), hint.data(), &searchTerm);
 }
 
-bool Engine::Search::BeginSearchCombo(std::string_view label, std::string_view hint)
+bool CE::Search::BeginSearchCombo(std::string_view label, std::string_view hint)
 {
     const bool isComboOpen = IsComboAlreadyOpen(label);
 
@@ -46,7 +46,7 @@ bool Engine::Search::BeginSearchCombo(std::string_view label, std::string_view h
     return true;
 }
 
-void Engine::Search::EndSearchCombo(bool wasItemSelected)
+void CE::Search::EndSearchCombo(bool wasItemSelected)
 {
     if (wasItemSelected)
     {

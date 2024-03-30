@@ -5,7 +5,7 @@
 #include "Meta/MetaTypeTraits.h"
 #include "Meta/MetaFuncId.h"
 
-namespace Engine::Internal
+namespace CE::Internal
 {
 	template<typename T>
 	struct ValidNumOfParams
@@ -29,7 +29,7 @@ namespace Engine::Internal
 }
 
 template<typename Ret, typename... ParamsT, typename... ParamAndRetNames>
-Engine::MetaFunc::MetaFunc(std::function<Ret(ParamsT...)>&& func,
+CE::MetaFunc::MetaFunc(std::function<Ret(ParamsT...)>&& func,
 	const NameOrTypeInit typeOrName,
 	ParamAndRetNames&&... paramAndRetNames) :
 	MetaFunc(
@@ -66,35 +66,35 @@ Engine::MetaFunc::MetaFunc(std::function<Ret(ParamsT...)>&& func,
 }
 
 template <typename Ret, typename Obj, typename ... ParamsT, typename ... ParamAndRetNames>
-Engine::MetaFunc::MetaFunc(Ret(Obj::* func)(ParamsT...), const NameOrTypeInit typeOrName,
+CE::MetaFunc::MetaFunc(Ret(Obj::* func)(ParamsT...), const NameOrTypeInit typeOrName,
 	ParamAndRetNames&&... paramAndRetNames) :
 	MetaFunc(std::function<Ret(Obj&, ParamsT...)>{ func }, typeOrName, std::forward<ParamAndRetNames>(paramAndRetNames)...)
 {}
 
 template <typename Ret, typename Obj, typename ... ParamsT, typename ... ParamAndRetNames>
-Engine::MetaFunc::MetaFunc(Ret(Obj::* func)(ParamsT...) const, const NameOrTypeInit typeOrName,
+CE::MetaFunc::MetaFunc(Ret(Obj::* func)(ParamsT...) const, const NameOrTypeInit typeOrName,
 	ParamAndRetNames&&... paramAndRetNames) :
 	MetaFunc(std::function<Ret(const Obj&, ParamsT...)>{ func }, typeOrName, std::forward<ParamAndRetNames>(paramAndRetNames)...)
 {}
 
 template <typename Ret, typename ... ParamsT, typename ... ParamAndRetNames>
-Engine::MetaFunc::MetaFunc(Ret(*func)(ParamsT...), const NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames) :
+CE::MetaFunc::MetaFunc(Ret(*func)(ParamsT...), const NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames) :
 	MetaFunc(std::function<Ret(ParamsT...)>{ func }, typeOrName, std::forward<ParamAndRetNames>(paramAndRetNames)...)
 {}
 
 template <typename T, typename ... ParamAndRetNames, std::enable_if_t<std::is_invocable_v<T>, bool>>
-Engine::MetaFunc::MetaFunc(const T& functor, const NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames) :
+CE::MetaFunc::MetaFunc(const T& functor, const NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames) :
 	MetaFunc(std::function<decltype(functor())()>{ functor }, typeOrName, std::forward<ParamAndRetNames>(paramAndRetNames)...)
 {}
 
 template <typename T, typename ... ParamsT, typename ... ParamAndRetNames>
-Engine::MetaFunc::MetaFunc(const T& functor, const NameOrTypeInit typeOrName, const ExplicitParams<ParamsT...>,
+CE::MetaFunc::MetaFunc(const T& functor, const NameOrTypeInit typeOrName, const ExplicitParams<ParamsT...>,
                            ParamAndRetNames&&... paramAndRetNames) :
 	MetaFunc(std::function<std::invoke_result_t<T, ParamsT...>(ParamsT...)>{ functor }, typeOrName, std::forward<ParamAndRetNames>(paramAndRetNames)...)
 {
 }
 
-namespace Engine::Internal
+namespace CE::Internal
 {
 	template<typename T>
 	T UnpackSingle(MetaAny& any)
@@ -174,19 +174,19 @@ namespace Engine::Internal
 }
 
 template <typename ... Args>
-Engine::FuncResult Engine::MetaFunc::operator()(Args&&... args) const
+CE::FuncResult CE::MetaFunc::operator()(Args&&... args) const
 {
 	return InvokeCheckedUnpackedWithRVO(nullptr, std::forward<Args>(args)...);
 }
 
 template <typename ... Args>
-Engine::FuncResult Engine::MetaFunc::InvokeCheckedUnpacked(Args&&... args) const
+CE::FuncResult CE::MetaFunc::InvokeCheckedUnpacked(Args&&... args) const
 {
 	return InvokeCheckedUnpackedWithRVO(nullptr, std::forward<Args>(args)...);
 }
 
 template <typename ... Args>
-Engine::FuncResult Engine::MetaFunc::InvokeCheckedUnpackedWithRVO(RVOBuffer rvoBuffer, Args&&... args) const
+CE::FuncResult CE::MetaFunc::InvokeCheckedUnpackedWithRVO(RVOBuffer rvoBuffer, Args&&... args) const
 {
 	static constexpr uint32 numOfArgs = sizeof...(Args);
 	std::pair<std::array<MetaAny, numOfArgs>, std::array<TypeForm, numOfArgs>> packedArgs = Pack(std::forward<Args>(args)...);
@@ -194,13 +194,13 @@ Engine::FuncResult Engine::MetaFunc::InvokeCheckedUnpackedWithRVO(RVOBuffer rvoB
 }
 
 template <typename ... Args>
-Engine::FuncResult Engine::MetaFunc::InvokeUncheckedUnpacked(Args&&... args) const
+CE::FuncResult CE::MetaFunc::InvokeUncheckedUnpacked(Args&&... args) const
 {
 	return InvokeUncheckedUnpackedWithRVO(nullptr, std::forward<Args>(args)...);
 }
 
 template <typename ... Args>
-Engine::FuncResult Engine::MetaFunc::InvokeUncheckedUnpackedWithRVO(RVOBuffer rvoBuffer, Args&&... args) const
+CE::FuncResult CE::MetaFunc::InvokeUncheckedUnpackedWithRVO(RVOBuffer rvoBuffer, Args&&... args) const
 {
 	static constexpr uint32 numOfArgs = sizeof...(Args);
 	std::pair<std::array<MetaAny, numOfArgs>, std::array<TypeForm, numOfArgs>> packedArgs = Pack(std::forward<Args>(args)...);
@@ -208,7 +208,7 @@ Engine::FuncResult Engine::MetaFunc::InvokeUncheckedUnpackedWithRVO(RVOBuffer rv
 }
 
 template<typename Ret, typename... ParamsT>
-Engine::FuncResult Engine::MetaFunc::DefaultInvoke(const std::function<Ret(ParamsT...)>& functionToInvoke,
+CE::FuncResult CE::MetaFunc::DefaultInvoke(const std::function<Ret(ParamsT...)>& functionToInvoke,
 	DynamicArgs runtimeArgs, RVOBuffer rvoBuffer)
 {
 	[[maybe_unused]] size_t argIndex = Internal::GetUnpackStart(sizeof...(ParamsT));
@@ -225,13 +225,13 @@ Engine::FuncResult Engine::MetaFunc::DefaultInvoke(const std::function<Ret(Param
 }
 
 template <typename Arg>
-Engine::MetaAny Engine::MetaFunc::PackSingle(Arg&& arg)
+CE::MetaAny CE::MetaFunc::PackSingle(Arg&& arg)
 {
 	return MetaAny{ std::forward<Arg>(arg) };
 }
 
 template <typename ... Args>
-std::pair<std::array<Engine::MetaAny, sizeof...(Args)>, std::array<Engine::TypeForm, sizeof...(Args)>> Engine::MetaFunc::Pack(Args&&... args)
+std::pair<std::array<CE::MetaAny, sizeof...(Args)>, std::array<CE::TypeForm, sizeof...(Args)>> CE::MetaFunc::Pack(Args&&... args)
 {
 #ifdef PLATFORM_***REMOVED***
 	// ***REMOVED*** has a bug where their std::array implementation

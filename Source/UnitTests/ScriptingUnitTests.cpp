@@ -8,7 +8,7 @@
 #include "Assets/StaticMesh.h"
 #include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
-using namespace Engine;
+using namespace CE;
 
 template<typename... Args>
 static FuncResult CallScriptFuncChecked(const Name scriptName, const Name funcName, Args&&... args)

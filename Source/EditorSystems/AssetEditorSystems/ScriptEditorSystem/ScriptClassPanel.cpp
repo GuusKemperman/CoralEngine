@@ -8,14 +8,14 @@
 
 #include "Utilities/Imgui/ImguiHelpers.h"
 
-void Engine::ScriptEditorSystem::DisplayClassPanel()
+void CE::ScriptEditorSystem::DisplayClassPanel()
 {
 	DisplayEventsOverview();
 	DisplayFunctionsOverview();
 	DisplayMembersOverview();
 }
 
-void Engine::ScriptEditorSystem::DisplayEventsOverview()
+void CE::ScriptEditorSystem::DisplayEventsOverview()
 {
 	std::vector<Name> functionNames{};
 
@@ -68,7 +68,7 @@ void Engine::ScriptEditorSystem::DisplayEventsOverview()
 	}
 }
 
-void Engine::ScriptEditorSystem::DisplayFunctionsOverview()
+void CE::ScriptEditorSystem::DisplayFunctionsOverview()
 {
 	std::vector<Name> functionNames{};
 
@@ -110,7 +110,7 @@ void Engine::ScriptEditorSystem::DisplayFunctionsOverview()
 	}
 }
 
-void Engine::ScriptEditorSystem::DisplayMembersOverview()
+void CE::ScriptEditorSystem::DisplayMembersOverview()
 {
 	std::vector<Name> memberNames{};
 
@@ -149,7 +149,7 @@ void Engine::ScriptEditorSystem::DisplayMembersOverview()
 	}
 }
 
-Engine::ScriptEditorSystem::OverviewResult Engine::ScriptEditorSystem::DisplayOverview(const char* label,
+CE::ScriptEditorSystem::OverviewResult CE::ScriptEditorSystem::DisplayOverview(const char* label,
 	std::vector<Name> names,
 	const std::optional<Name> nameOfCurrentlySelected)
 {

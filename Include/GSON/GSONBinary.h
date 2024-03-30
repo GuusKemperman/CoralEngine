@@ -3,7 +3,7 @@
 
 #include "Utilities/BinarySerialization.h"
 
-namespace Engine
+namespace CE
 {
 	class BinaryGSONMember :
 		public GSONMemberBase<BinaryGSONMember>

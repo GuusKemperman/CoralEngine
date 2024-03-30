@@ -6,7 +6,7 @@
 #include "GSON/GSONBinary.h"
 #include "Utilities/ClassVersion.h"
 
-Engine::AssetFileMetaData::AssetFileMetaData(std::string_view name, const MetaType& assetClass, uint32 version,
+CE::AssetFileMetaData::AssetFileMetaData(std::string_view name, const MetaType& assetClass, uint32 version,
 	const std::optional<ImporterInfo>& importerInfo) :
 	mAssetVersion(version == std::numeric_limits<uint32>::max() ? GetClassVersion(assetClass) : version),
 	mAssetName(name),
@@ -31,7 +31,7 @@ static std::optional<T> TryRead(std::istream& fromStream)
 }
 
 
-std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData(std::istream& fromStream)
+std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaData(std::istream& fromStream)
 {
 	std::optional<uint32> version = TryRead<uint32>(fromStream);
 
@@ -53,7 +53,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 	}
 }
 
-std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaDataV0(std::istream& fromStream)
+std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV0(std::istream& fromStream)
 {
 	// In earlier versions, every asset version was 0.
 	// we did not save the metadata version yet.
@@ -146,7 +146,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 	return AssetFileMetaData{ name, *assetClass, assetVersion, ImporterInfo{ filePath, *importerVersion } };
 }
 
-std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaDataV1(std::istream& fromStream)
+std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV1(std::istream& fromStream)
 {
 	BinaryGSONObject obj{};
 
@@ -215,7 +215,7 @@ std::optional<Engine::AssetFileMetaData> Engine::AssetFileMetaData::ReadMetaData
 	return AssetFileMetaData{ std::move(assetName), *assetClass, assetVersion };
 }
 
-void Engine::AssetFileMetaData::WriteMetaData(std::ostream& toStream) const
+void CE::AssetFileMetaData::WriteMetaData(std::ostream& toStream) const
 {
 	toStream.write(reinterpret_cast<const char*>(&sMetaDataVersion), sizeof(sMetaDataVersion));
 

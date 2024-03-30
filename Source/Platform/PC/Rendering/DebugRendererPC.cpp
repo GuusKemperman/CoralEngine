@@ -13,7 +13,7 @@
 #include "Components/CameraComponent.h"
 #include "Rendering/GPUWorld.h"
 
-class Engine::DebugRenderer::Impl
+class CE::DebugRenderer::Impl
 {
 public:
 	Impl();
@@ -24,14 +24,14 @@ public:
 	std::unique_ptr<DXPipeline> mDebugPipeline;
 };
 
-Engine::DebugRenderer::DebugRenderer()
+CE::DebugRenderer::DebugRenderer()
 {
 	mImpl = std::make_unique<Impl>();
 }
 
-Engine::DebugRenderer::~DebugRenderer() = default;
+CE::DebugRenderer::~DebugRenderer() = default;
 
-Engine::DebugRenderer::Impl::Impl()
+CE::DebugRenderer::Impl::Impl()
 {
 	Device& engineDevice = Device::Get();
 	FileIO& fileIO = FileIO::Get();
@@ -49,7 +49,7 @@ Engine::DebugRenderer::Impl::Impl()
 	mDebugPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"Debug line pipeline");
 }
 
-void Engine::DebugRenderer::AddLine(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) const
+void CE::DebugRenderer::AddLine(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) const
 {
 	if ((sDebugCategoryFlags & category) != 0)
 	{
@@ -57,12 +57,12 @@ void Engine::DebugRenderer::AddLine(const World& world, DebugCategory::Enum cate
 	}
 }
 
-void Engine::DebugRenderer::Render(const World& world)
+void CE::DebugRenderer::Render(const World& world)
 {
     mImpl->Render(world.GetGPUWorld());
 }
 
-bool Engine::DebugRenderer::Impl::AddLine(const World& world, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
+bool CE::DebugRenderer::Impl::AddLine(const World& world, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
 {
 	GPUWorld& gpuWorld = world.GetGPUWorld();
 	DebugRenderingData& data = gpuWorld.GetDebugRenderingData();
@@ -84,7 +84,7 @@ bool Engine::DebugRenderer::Impl::AddLine(const World& world, const glm::vec3& f
     return false;
 }
 
-void Engine::DebugRenderer::Impl::Render(GPUWorld& gpuWorld)
+void CE::DebugRenderer::Impl::Render(GPUWorld& gpuWorld)
 {
 	DebugRenderingData& data = gpuWorld.GetDebugRenderingData();
 

@@ -15,7 +15,7 @@
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 #include "Utilities/StringFunctions.h"
 
-Engine::Device::Device()
+CE::Device::Device()
 {
     InitializeWindow();
 	InitializeDevice();
@@ -24,7 +24,7 @@ Engine::Device::Device()
 static constexpr size_t sNumOfIcons = 3;
 static constexpr std::array<std::string_view, sNumOfIcons> GetEmbeddedIcons();
 
-void Engine::Device::InitializeWindow()
+void CE::Device::InitializeWindow()
 {
     LOG(LogCore, Verbose, "Initializing GLFW");
 
@@ -106,7 +106,7 @@ void Engine::Device::InitializeWindow()
     mIsWindowOpen = true;
 }
 
-void Engine::Device::InitializeDevice()
+void CE::Device::InitializeDevice()
 {
     //DEBUG LAYERS
 #if defined(_DEBUG)
@@ -375,7 +375,7 @@ void Engine::Device::InitializeDevice()
     SubmitCommands();
 }
 
-void Engine::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent)
+void CE::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent)
 {
     UINT64 completedValue = fence->GetCompletedValue();
     if (completedValue < fenceValue)
@@ -389,7 +389,7 @@ void Engine::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue,
     fenceValue++;
 }
 
-void Engine::Device::UpdateRenderTarget()
+void CE::Device::UpdateRenderTarget()
 {
     if (mViewport.Width <= 0 || mViewport.Height <= 0)
         return;
@@ -437,7 +437,7 @@ void Engine::Device::UpdateRenderTarget()
     mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
 }
 
-void Engine::Device::NewFrame() {
+void CE::Device::NewFrame() {
 
     int width, height;
     mIsWindowOpen = !glfwWindowShouldClose(mWindow);
@@ -484,7 +484,7 @@ void Engine::Device::NewFrame() {
 
 }
 
-void Engine::Device::EndFrame()
+void CE::Device::EndFrame()
 {   
     mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mRenderTargetHandles[mFrameIndex], mDepthHandle);
 
@@ -546,7 +546,7 @@ void Engine::Device::EndFrame()
     }
 }
 
-void Engine::Device::SubmitCommands()
+void CE::Device::SubmitCommands()
 {
     //CLOSE COMMAND LIST
     mCommandList->Close();
@@ -563,7 +563,7 @@ void Engine::Device::SubmitCommands()
 
 }
 
-void Engine::Device::StartRecordingCommands()
+void CE::Device::StartRecordingCommands()
 {
     mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
 
@@ -578,7 +578,7 @@ void Engine::Device::StartRecordingCommands()
     }
 }
 
-void Engine::Device::StartUploadCommands()
+void CE::Device::StartUploadCommands()
 {
 
     if (FAILED(mUploadCommandAllocator->Reset())) 
@@ -593,7 +593,7 @@ void Engine::Device::StartUploadCommands()
 
 }
 
-void Engine::Device::SubmitUploadCommands()
+void CE::Device::SubmitUploadCommands()
 {
     //CLOSE COMMAND LIST
     mUploadCommandList->Close();
@@ -611,13 +611,13 @@ void Engine::Device::SubmitUploadCommands()
     WaitForFence(mUploadFence, mUploadFenceValue, mUploadFenceEvent);
 }
 
-void Engine::Device::AddToDeallocation(ComPtr<ID3D12Resource>&& res)
+void CE::Device::AddToDeallocation(ComPtr<ID3D12Resource>&& res)
 {
     mResourcesToDeallocate.emplace_back(std::move(res));
 }
 
 #ifdef EDITOR
-void Engine::Device::CreateImguiContext()
+void CE::Device::CreateImguiContext()
 {
     LOG(LogCore, Verbose, "Creating imgui context");
 

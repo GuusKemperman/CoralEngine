@@ -10,7 +10,7 @@
 #include "Meta/MetaManager.h"
 #include "World/WorldViewport.h"
 
-void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
+void CE::UpdateFlyCamSystem::Update(World& world, float dt)
 {
 	auto activeCamera = world.GetViewport().GetMainCamera();
 	const entt::entity activeCameraOwner = activeCamera.has_value() ? activeCamera->first : entt::null;
@@ -68,7 +68,7 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 	}
 }
 
-Engine::MetaType Engine::UpdateFlyCamSystem::Reflect()
+CE::MetaType CE::UpdateFlyCamSystem::Reflect()
 {
 	return MetaType{ MetaType::T<UpdateFlyCamSystem>{}, "UpdateFlyCamSystem", MetaType::Base<System>{} };
 }

@@ -70,7 +70,8 @@ void _CheckFrameBuffer(const char* f, int l);
 #define CheckFrameBuffer()
 #endif // OPEN_GL
 
-namespace Engine
+// Coral Engine
+namespace CE
 {
 	using EntityType = std::underlying_type_t<entt::entity>;
 }

@@ -6,7 +6,7 @@
 #include "Core/Input.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 	class Ability;
@@ -63,5 +63,5 @@ namespace Engine
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::AbilityInstance, var.DisplayWidget(); (void)name;)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::AbilityInstance, var.DisplayWidget(); (void)name;)
 #endif // EDITOR

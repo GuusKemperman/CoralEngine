@@ -3,7 +3,7 @@
 
 #if LOGGING_ENABLED
 
-#define LOG(channel, severity, formatString, ...) Engine::Logger::Get().Log(Engine::Format(#formatString, ##__VA_ARGS__), #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
+#define LOG(channel, severity, formatString, ...) CE::Logger::Get().Log(CE::Format(#formatString, ##__VA_ARGS__), #channel, severity, CE::SourceLocation::current( __LINE__, __FILE__ ));
 
 // If logging is enabled, we replace assert with a fatal log entry.
 // This will instruct the logger to dump the current log contents to
@@ -65,7 +65,7 @@ enum LogSeverity
 	NUM_OF_SEVERITIES
 };
 
-namespace Engine
+namespace CE
 {
 	class ManyStrings;
 

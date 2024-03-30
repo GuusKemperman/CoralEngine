@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace CE
 {
 	template<typename Derived>
 	class GSONMemberBase

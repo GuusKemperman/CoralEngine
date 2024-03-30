@@ -1,7 +1,7 @@
 #pragma once
 #include "AssetSaveInfo.h"
 
-namespace Engine
+namespace CE
 {
 	class ImportedAsset :
 		public AssetSaveInfo

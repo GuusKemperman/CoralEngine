@@ -1,7 +1,7 @@
 #pragma once
 #include "Scripting/ScriptNode.h"
 
-namespace Engine
+namespace CE
 {
 	class RerouteScriptNode final :
 		public ScriptNode

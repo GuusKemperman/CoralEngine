@@ -2,13 +2,13 @@
 #include "Meta/Fwd/MetaTypeIdFwd.h"
 
 template<typename T>
-CONSTEVAL Engine::TypeId Engine::MakeTypeId()
+CONSTEVAL CE::TypeId CE::MakeTypeId()
 {
 	return entt::type_hash<T>::value();
 }
 
 template<typename T>
-CONSTEVAL std::string_view Engine::MakeTypeName()
+CONSTEVAL std::string_view CE::MakeTypeName()
 {
 	return entt::type_name<T>::value();
 }

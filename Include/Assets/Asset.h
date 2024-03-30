@@ -8,7 +8,7 @@ namespace cereal
 	class BinaryInputArchive;
 }
 
-namespace Engine
+namespace CE
 {
 	class AssetLoadInfo;
 	class AssetSaveInfo;
@@ -94,11 +94,11 @@ namespace Engine
 namespace ImGui
 {
 	template<typename AssetT>
-	struct Auto_t<std::shared_ptr<const AssetT>, std::enable_if_t<Engine::sIsAssetType<AssetT>>>
+	struct Auto_t<std::shared_ptr<const AssetT>, std::enable_if_t<CE::sIsAssetType<AssetT>>>
 	{
 		static void Auto(std::shared_ptr<const AssetT>& var, const std::string& name)
 		{
-			Engine::InspectAsset(name, reinterpret_cast<std::shared_ptr<const Engine::Asset>&>(var), Engine::MakeTypeId<AssetT>());
+			CE::InspectAsset(name, reinterpret_cast<std::shared_ptr<const CE::Asset>&>(var), CE::MakeTypeId<AssetT>());
 		}
 		static constexpr bool sIsSpecialized = true;
 	};
@@ -107,15 +107,15 @@ namespace ImGui
 
 namespace cereal
 {
-	template<typename AssetT, std::enable_if_t<Engine::sIsAssetType<AssetT>, bool> = true>
+	template<typename AssetT, std::enable_if_t<CE::sIsAssetType<AssetT>, bool> = true>
 	void save(BinaryOutputArchive& ar, const std::shared_ptr<const AssetT>& value)
 	{
-		Engine::SaveAssetReference(ar, value);
+		CE::SaveAssetReference(ar, value);
 	}
 
-	template<typename AssetT, std::enable_if_t<Engine::sIsAssetType<AssetT>, bool> = true>
+	template<typename AssetT, std::enable_if_t<CE::sIsAssetType<AssetT>, bool> = true>
 	void load(BinaryInputArchive& ar, std::shared_ptr<const AssetT>& out)
 	{
-		LoadAssetReference(ar, reinterpret_cast<std::shared_ptr<const Engine::Asset>&>(out));
+		LoadAssetReference(ar, reinterpret_cast<std::shared_ptr<const CE::Asset>&>(out));
 	}
 }

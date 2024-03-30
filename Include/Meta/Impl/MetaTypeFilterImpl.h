@@ -6,14 +6,14 @@
 #include "Meta/MetaType.h"
 
 template <typename Filter>
-Engine::MetaTypeFilter<Filter>::MetaTypeFilter(const MetaType* type) :
+CE::MetaTypeFilter<Filter>::MetaTypeFilter(const MetaType* type) :
 	mValue(type)
 {
 	ASSERT(type == nullptr || IsTypeValid(*type));
 }
 
 template <typename Filter>
-Engine::MetaTypeFilter<Filter>& Engine::MetaTypeFilter<Filter>::operator=(const MetaType* type)
+CE::MetaTypeFilter<Filter>& CE::MetaTypeFilter<Filter>::operator=(const MetaType* type)
 {
 	mValue = type;
 	ASSERT(type == nullptr || IsTypeValid(*type));
@@ -21,20 +21,20 @@ Engine::MetaTypeFilter<Filter>& Engine::MetaTypeFilter<Filter>::operator=(const 
 }
 
 template <typename Filter>
-bool Engine::MetaTypeFilter<Filter>::IsTypeValid(const MetaType& type)
+bool CE::MetaTypeFilter<Filter>::IsTypeValid(const MetaType& type)
 {
 	Filter f{};
 	return f(type);
 }
 
 template<class Archive, typename Filter>
-void Engine::save(Archive& ar, const MetaTypeFilter<Filter>& value)
+void CE::save(Archive& ar, const MetaTypeFilter<Filter>& value)
 {
 	save(ar, value.Get() == nullptr ? 0 : value.Get()->GetTypeId());
 }
 
 template<class Archive, typename Filter>
-void Engine::load(Archive& ar, MetaTypeFilter<Filter>& value)
+void CE::load(Archive& ar, MetaTypeFilter<Filter>& value)
 {
 	TypeId typeId{};
 	load(ar, typeId);
@@ -62,8 +62,8 @@ void Engine::load(Archive& ar, MetaTypeFilter<Filter>& value)
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_BEGIN(template<typename Filter>, Engine::MetaTypeFilter<Filter>)
-using namespace Engine;
+IMGUI_AUTO_DEFINE_BEGIN(template<typename Filter>, CE::MetaTypeFilter<Filter>)
+using namespace CE;
 
 std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>(name, var.Get() == nullptr ? "None" : var.Get()->GetName(),
 	[](const MetaType& type)

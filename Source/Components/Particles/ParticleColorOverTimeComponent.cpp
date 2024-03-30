@@ -5,7 +5,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::MetaType Engine::ParticleColorOverTimeComponent::Reflect()
+CE::MetaType CE::ParticleColorOverTimeComponent::Reflect()
 {
 	MetaType type = MetaType{MetaType::T<ParticleColorOverTimeComponent>{}, "ParticleColorOverTimeComponent" };
 	MetaProps& props = type.GetProperties();

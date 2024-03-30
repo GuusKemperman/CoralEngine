@@ -2,7 +2,7 @@
 #ifdef EDITOR
 #include "Assets/Importers/Importer.h"
 
-namespace Engine
+namespace CE
 {
 	struct BoneInfo;
 

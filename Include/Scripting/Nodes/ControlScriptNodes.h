@@ -1,7 +1,7 @@
 #pragma once
 #include "Scripting/Nodes/FunctionLikeScriptNode.h"
 
-namespace Engine
+namespace CE
 {
 	class ScriptFunc;
 

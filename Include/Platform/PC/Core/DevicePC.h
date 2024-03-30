@@ -12,7 +12,7 @@ struct GLFWwindow;
 struct GLFWmonitor;
 class DXDescHeap;
 
-namespace Engine
+namespace CE
 {
     class EngineClass;
 

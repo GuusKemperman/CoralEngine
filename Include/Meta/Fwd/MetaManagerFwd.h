@@ -5,7 +5,7 @@
 #include "Meta/Fwd/MetaReflectFwd.h"
 #include "Utilities/IterableRange.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 
@@ -23,7 +23,7 @@ namespace Engine
 		MetaType& AddType(MetaType&& type);
 
 		/*
-		Get a metatype by name. Name must include namespaces, e.g., "Engine::TransformComponent".
+		Get a metatype by name. Name must include namespaces, e.g., "CE::TransformComponent".
 
 		Note:
 			If no class exists with this name, this will return nullptr.
@@ -32,7 +32,7 @@ namespace Engine
 		MetaType* TryGetType(Name typeName);
 
 		/*
-		Get a metatype by typeId. The hash function used Engine::MakeTypeId<>.
+		Get a metatype by typeId. The hash function used CE::MakeTypeId<>.
 
 		Returns:
 			If no class exists with this typehash, this will return nullptr.

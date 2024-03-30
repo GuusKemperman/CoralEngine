@@ -12,18 +12,18 @@
 #include "Scripting/Nodes/EntryAndReturnScriptNode.h"
 #include "Scripting/Nodes/ReroutScriptNode.h"
 
-Engine::ScriptNode::ScriptNode(const ScriptNodeType type) :
+CE::ScriptNode::ScriptNode(const ScriptNodeType type) :
 	mType(type)
 {
 }
 
-Engine::ScriptNode::ScriptNode(const ScriptNodeType type, ScriptFunc& scriptFunc) :
+CE::ScriptNode::ScriptNode(const ScriptNodeType type, ScriptFunc& scriptFunc) :
 	mId(static_cast<uint32>(scriptFunc.GetNumOfNodesIncludingRemoved() + 1)),
 	mType(type)
 {
 }
 
-void Engine::ScriptNode::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
+void CE::ScriptNode::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
 {
 	for (const ScriptPin& pin : GetPins(scriptFunc))
 	{
@@ -31,7 +31,7 @@ void Engine::ScriptNode::CollectErrors(ScriptErrorInserter inserter, const Scrip
 	}
 }
 
-void Engine::ScriptNode::SetPins(ScriptFunc& scriptFunc, InputsOutputs&& inputsOutputs)
+void CE::ScriptNode::SetPins(ScriptFunc& scriptFunc, InputsOutputs&& inputsOutputs)
 {
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
 	ClearPins(scriptFunc);
@@ -54,7 +54,7 @@ void Engine::ScriptNode::SetPins(ScriptFunc& scriptFunc, InputsOutputs&& inputsO
 }
 
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
-void Engine::ScriptNode::ClearPins(ScriptFunc& scriptFunc)
+void CE::ScriptNode::ClearPins(ScriptFunc& scriptFunc)
 {
 	if (mFirstPinId != PinId::Invalid)
 	{
@@ -66,7 +66,7 @@ void Engine::ScriptNode::ClearPins(ScriptFunc& scriptFunc)
 }
 
 
-void Engine::ScriptNode::RefreshByComparingPins(ScriptFunc& scriptFunc,
+void CE::ScriptNode::RefreshByComparingPins(ScriptFunc& scriptFunc,
 	const std::vector<ScriptVariableTypeData>& expectedInputs,
 	const std::vector<ScriptVariableTypeData>& expectedOutputs)
 {
@@ -104,12 +104,12 @@ void Engine::ScriptNode::RefreshByComparingPins(ScriptFunc& scriptFunc,
 }
 #endif // REMOVE_FROM_SCRIPTS_ENABLED
 
-bool Engine::ScriptNode::IsPure(const ScriptFunc& scriptFunc) const
+bool CE::ScriptNode::IsPure(const ScriptFunc& scriptFunc) const
 {
 	return mNumOfOutputs == 0 || !GetOutputs(scriptFunc)[0].IsFlow();
 }
 
-void Engine::ScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
+void CE::ScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
 {
 	to.AddGSONMember("type") << mType;
 	to.AddGSONMember("id") << mId.Get();
@@ -128,7 +128,7 @@ void Engine::ScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scr
 	}
 }
 
-std::unique_ptr<Engine::ScriptNode> Engine::ScriptNode::DeserializeFrom(const BinaryGSONObject& from,
+std::unique_ptr<CE::ScriptNode> CE::ScriptNode::DeserializeFrom(const BinaryGSONObject& from,
 	std::back_insert_iterator<std::vector<ScriptPin>> pinInserter, const uint32 version)
 {
 	const BinaryGSONMember* serializedType = from.TryGetGSONMember("type");
@@ -218,13 +218,13 @@ std::unique_ptr<Engine::ScriptNode> Engine::ScriptNode::DeserializeFrom(const Bi
 	return node;
 }
 
-void Engine::ScriptNode::GetReferencesToIds(ScriptIdInserter inserter)
+void CE::ScriptNode::GetReferencesToIds(ScriptIdInserter inserter)
 {
 	inserter = mId;
 	inserter = mFirstPinId;
 }
 
-bool Engine::ScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
+bool CE::ScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 {
 	const BinaryGSONMember* id = from.TryGetGSONMember("id");
 	const BinaryGSONMember* pos = from.TryGetGSONMember("pos");
@@ -247,7 +247,7 @@ bool Engine::ScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 	return true;
 }
 
-void Engine::ScriptNode::GetErrorsByComparingPins(ScriptErrorInserter inserter,
+void CE::ScriptNode::GetErrorsByComparingPins(ScriptErrorInserter inserter,
 	const ScriptFunc& scriptFunc,
 	const std::vector<ScriptVariableTypeData>& expectedInputs,
 	const std::vector<ScriptVariableTypeData>& expectedOutputs) const
@@ -267,7 +267,7 @@ void Engine::ScriptNode::GetErrorsByComparingPins(ScriptErrorInserter inserter,
 	}
 }
 
-Engine::ScriptNode::CompareOutOfDataResult Engine::ScriptNode::CheckIfOutOfDateByComparingPinType(const ScriptFunc& scriptFunc,
+CE::ScriptNode::CompareOutOfDataResult CE::ScriptNode::CheckIfOutOfDateByComparingPinType(const ScriptFunc& scriptFunc,
 	const std::vector<ScriptVariableTypeData>& expectedInputs,
 	const std::vector<ScriptVariableTypeData>& expectedOutputs) const
 {

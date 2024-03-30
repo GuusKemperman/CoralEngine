@@ -5,7 +5,7 @@
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/Prefabs/PrefabEntityFactory.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 	class Prefab;

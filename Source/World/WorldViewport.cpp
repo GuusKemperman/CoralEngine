@@ -9,13 +9,13 @@
 #include "Core/Device.h"
 #include "Systems/System.h"
 
-Engine::WorldViewport::WorldViewport(const World& world) :
+CE::WorldViewport::WorldViewport(const World& world) :
 	mWorld(world),
 	mLastRenderedAtSize(Device::IsHeadless() ? glm::vec2{} : Device::Get().GetDisplaySize())
 {
 }
 
-Engine::WorldViewport::~WorldViewport() = default;
+CE::WorldViewport::~WorldViewport() = default;
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -24,7 +24,7 @@ Engine::WorldViewport::~WorldViewport() = default;
 #pragma warning(disable : 4702)
 #endif
 
-std::optional<std::pair<entt::entity, const Engine::CameraComponent&>> Engine::WorldViewport::GetMainCamera() const
+std::optional<std::pair<entt::entity, const CE::CameraComponent&>> CE::WorldViewport::GetMainCamera() const
 {
 	using ReturnPair = std::pair<entt::entity, const CameraComponent&>;
 	const Registry& reg = mWorld.get().GetRegistry();
@@ -57,7 +57,7 @@ std::optional<std::pair<entt::entity, const Engine::CameraComponent&>> Engine::W
 #pragma warning(pop)
 #endif
 
-std::optional<std::pair<entt::entity, Engine::CameraComponent&>> Engine::WorldViewport::GetMainCamera()
+std::optional<std::pair<entt::entity, CE::CameraComponent&>> CE::WorldViewport::GetMainCamera()
 {
 	const auto constPair = const_cast<const WorldViewport*>(this)->GetMainCamera();
 
@@ -68,7 +68,7 @@ std::optional<std::pair<entt::entity, Engine::CameraComponent&>> Engine::WorldVi
 	return {};
 }
 
-glm::vec3 Engine::WorldViewport::GetScreenToWorldDirection(glm::vec2 screenPosition) const
+glm::vec3 CE::WorldViewport::GetScreenToWorldDirection(glm::vec2 screenPosition) const
 {
 	const auto camera = GetMainCamera();
 
@@ -90,7 +90,7 @@ glm::vec3 Engine::WorldViewport::GetScreenToWorldDirection(glm::vec2 screenPosit
 	return normalize(dir);
 }
 
-glm::vec3 Engine::WorldViewport::ScreenToWorld(glm::vec2 screenPosition, float distanceFromCamera) const
+glm::vec3 CE::WorldViewport::ScreenToWorld(glm::vec2 screenPosition, float distanceFromCamera) const
 {
 	const auto camera = GetMainCamera();
 	if (!camera.has_value())
@@ -114,7 +114,7 @@ glm::vec3 Engine::WorldViewport::ScreenToWorld(glm::vec2 screenPosition, float d
 
 }
 
-void Engine::WorldViewport::UpdateSize(glm::vec2 size)
+void CE::WorldViewport::UpdateSize(glm::vec2 size)
 {
 	mLastRenderedAtSize = size;
 

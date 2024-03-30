@@ -3,7 +3,7 @@
 #include "BasicDataTypes/ScalableTimer.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class Level;
 	class Registry;

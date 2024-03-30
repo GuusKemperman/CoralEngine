@@ -1,11 +1,11 @@
 #include "Precomp.h"
 #include "Components/Pathfinding/Node.h"
 
-Engine::Node::Node(const int id, glm::vec2 position) : mId(id), mPosition(position)
+CE::Node::Node(const int id, glm::vec2 position) : mId(id), mPosition(position)
 {
 }
 
-void Engine::Node::AddEdge(Node* toNode, float cost, const bool biDirectional)
+void CE::Node::AddEdge(Node* toNode, float cost, const bool biDirectional)
 {
 	if (cost < 0)
 	{
@@ -23,17 +23,17 @@ void Engine::Node::AddEdge(Node* toNode, float cost, const bool biDirectional)
 	}
 }
 
-const std::vector<Engine::Edge>& Engine::Node::GetConnectingEdges() const
+const std::vector<CE::Edge>& CE::Node::GetConnectingEdges() const
 {
 	return mConnectingEdges;
 }
 
-glm::vec2 Engine::Node::GetPosition() const
+glm::vec2 CE::Node::GetPosition() const
 {
 	return mPosition;
 }
 
-int Engine::Node::GetId() const
+int CE::Node::GetId() const
 {
 	return mId;
 }

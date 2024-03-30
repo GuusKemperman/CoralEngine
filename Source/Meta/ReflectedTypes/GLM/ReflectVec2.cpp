@@ -8,7 +8,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Utilities/Math.h"
 
-using namespace Engine;
+using namespace CE;
 using namespace glm;
 using T = vec2;
 REFLECT_AT_START_UP(ArrayOfT, std::vector<T>);

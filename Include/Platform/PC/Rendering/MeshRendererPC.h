@@ -3,7 +3,7 @@
 
 class DXPipeline;
 
-namespace Engine
+namespace CE
 {
     class World;
 

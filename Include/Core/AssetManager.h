@@ -8,7 +8,7 @@
 #include "Assets/Importers/Importer.h"
 #include "Utilities/MemFunctions.h"
 
-namespace Engine
+namespace CE
 {
 	template<typename T>
 	class WeakAsset;

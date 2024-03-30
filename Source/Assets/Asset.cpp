@@ -13,19 +13,19 @@
 #include "Meta/MetaManager.h"
 #include "Meta/MetaType.h"
 
-Engine::Asset::Asset(std::string_view name, TypeId myTypeId) :
+CE::Asset::Asset(std::string_view name, TypeId myTypeId) :
 	mName(name),
 	mTypeId(myTypeId)
 {
 }
 
-Engine::Asset::Asset(AssetLoadInfo& loadInfo) :
+CE::Asset::Asset(AssetLoadInfo& loadInfo) :
 	mName(loadInfo.GetName()),
 	mTypeId(loadInfo.GetAssetClass().GetTypeId())
 {
 }
 
-Engine::AssetSaveInfo Engine::Asset::Save(const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo) const
+CE::AssetSaveInfo CE::Asset::Save(const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo) const
 {
 	LOG(LogAssets, Verbose, "Begin saving of: {}", GetName());
 
@@ -40,12 +40,12 @@ Engine::AssetSaveInfo Engine::Asset::Save(const std::optional<AssetFileMetaData:
 	return saveInfo;
 }
 
-void Engine::Asset::OnSave(AssetSaveInfo&) const
+void CE::Asset::OnSave(AssetSaveInfo&) const
 {
 	LOG(LogAssets, Verbose, "OnSave was not overriden for this asset class");
 }
 
-Engine::MetaType Engine::Asset::Reflect()
+CE::MetaType CE::Asset::Reflect()
 {
 	MetaType type = MetaType{MetaType::T<Asset>{}, "Asset", MetaType::Ctor<AssetLoadInfo&>{} };
 	return type;
@@ -55,7 +55,7 @@ Engine::MetaType Engine::Asset::Reflect()
 
 struct NullAsset { };
 
-namespace Engine::Search
+namespace CE::Search
 {
 	template<>
 	struct SearchBarOptionsCollector<NullAsset>
@@ -71,7 +71,7 @@ namespace Engine::Search
 	};
 }
 
-void Engine::InspectAsset(const std::string& name, std::shared_ptr<const Asset>& asset, const TypeId assetClass)
+void CE::InspectAsset(const std::string& name, std::shared_ptr<const Asset>& asset, const TypeId assetClass)
 {
 	auto selectedAsset = Search::DisplayDropDownWithSearchBar<Asset, NullAsset>(name.c_str(), asset == nullptr ? "None" : asset->GetName().data(),
 		[assetClass](const std::variant<WeakAsset<Asset>, NullAsset>& asset)
@@ -102,7 +102,7 @@ void Engine::InspectAsset(const std::string& name, std::shared_ptr<const Asset>&
 
 #endif // EDITOR
 
-void Engine::SaveAssetReference(cereal::BinaryOutputArchive& ar, const std::shared_ptr<const Asset>& asset)
+void CE::SaveAssetReference(cereal::BinaryOutputArchive& ar, const std::shared_ptr<const Asset>& asset)
 {
 	if (asset != nullptr)
 	{
@@ -116,7 +116,7 @@ void Engine::SaveAssetReference(cereal::BinaryOutputArchive& ar, const std::shar
 	}
 }
 
-void Engine::LoadAssetReference(cereal::BinaryInputArchive& ar, std::shared_ptr<const Asset>& asset)
+void CE::LoadAssetReference(cereal::BinaryInputArchive& ar, std::shared_ptr<const Asset>& asset)
 {
 	Name::HashType assetNameHash{};
 	ar(assetNameHash);

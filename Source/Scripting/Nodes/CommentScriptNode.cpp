@@ -3,13 +3,13 @@
 
 #include "GSON/GSONBinary.h"
 
-Engine::CommentScriptNode::CommentScriptNode(ScriptFunc& scriptFunc, const std::string& comment) :
+CE::CommentScriptNode::CommentScriptNode(ScriptFunc& scriptFunc, const std::string& comment) :
 	ScriptNode(ScriptNodeType::Comment, scriptFunc),
 	mComment(comment)
 {
 }
 
-void Engine::CommentScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
+void CE::CommentScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
 {
 	ScriptNode::SerializeTo(to, scriptFunc);
 
@@ -17,7 +17,7 @@ void Engine::CommentScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFu
 	to.AddGSONMember("size") << mSize;
 }
 
-bool Engine::CommentScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
+bool CE::CommentScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 {
 	if (!ScriptNode::DeserializeVirtual(from))
 	{

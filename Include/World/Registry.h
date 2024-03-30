@@ -6,7 +6,7 @@
 #include "Meta/MetaManager.h"
 #include "Utilities/Events.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 	class MetaAny;

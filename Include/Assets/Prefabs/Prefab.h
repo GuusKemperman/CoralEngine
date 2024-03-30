@@ -3,7 +3,7 @@
 
 #include "Assets/Prefabs/PrefabEntityFactory.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 

@@ -18,7 +18,7 @@
 #include "World/Registry.h"
 #include "Rendering/Renderer.h"
 
-Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
+CE::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 {
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
@@ -76,7 +76,7 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	}
 }
 
-Engine::EngineClass::~EngineClass()
+CE::EngineClass::~EngineClass()
 {
 	UnitTestManager::ShutDown();
 
@@ -100,7 +100,7 @@ Engine::EngineClass::~EngineClass()
 	JobManager::ShutDown();
 }
 
-void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
+void CE::EngineClass::Run([[maybe_unused]] Name starterLevel)
 {
 	if (Device::IsHeadless())
 	{

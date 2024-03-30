@@ -3,7 +3,7 @@
 #include "MetaTypeTraitsFwd.h"
 #include "MetaFuncIdFwd.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 	class MetaProps;

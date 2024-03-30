@@ -6,7 +6,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void Engine::TopDownCamControllerComponent::ApplyTranslation(TransformComponent& transform,  const glm::vec3& target, glm::vec2 CD) const
+void CE::TopDownCamControllerComponent::ApplyTranslation(TransformComponent& transform,  const glm::vec3& target, glm::vec2 CD) const
 {
 	const float sn = sin(glm::radians(mAngle - 90.0f));
 	const float cs = cos(glm::radians(mAngle - 90.0f));
@@ -21,7 +21,7 @@ void Engine::TopDownCamControllerComponent::ApplyTranslation(TransformComponent&
 	transform.SetWorldPosition(totalTranslation);
 }
 
-void Engine::TopDownCamControllerComponent::UpdateRotation(TransformComponent& transform, const glm::vec3& target, glm::vec2 CD)
+void CE::TopDownCamControllerComponent::UpdateRotation(TransformComponent& transform, const glm::vec3& target, glm::vec2 CD)
 {
 	mTargetLocation = target;
 
@@ -38,7 +38,7 @@ void Engine::TopDownCamControllerComponent::UpdateRotation(TransformComponent& t
 	transform.SetWorldOrientation(glm::quatLookAtLH(direction, sUp));
 }
 
-void Engine::TopDownCamControllerComponent::AdjustZoom(const float scrollDelta)
+void CE::TopDownCamControllerComponent::AdjustZoom(const float scrollDelta)
 {
 	float multiplier = 1.0f + scrollDelta * mZoomSensitivity;
 
@@ -46,7 +46,7 @@ void Engine::TopDownCamControllerComponent::AdjustZoom(const float scrollDelta)
 	mOffsetHeight = glm::clamp(mOffsetHeight * multiplier, mMinOffsetHeight, mMaxOffsetHeight);
 }
 
-void Engine::TopDownCamControllerComponent::RotateCameraAroundTarget(const float angle)
+void CE::TopDownCamControllerComponent::RotateCameraAroundTarget(const float angle)
 {
 	mAngle = fmod(mAngle + angle * mRotateSensitivity, 360.0f);
 	if (mAngle < 0.0f)
@@ -55,7 +55,7 @@ void Engine::TopDownCamControllerComponent::RotateCameraAroundTarget(const float
 	}
 }
 
-Engine::MetaType Engine::TopDownCamControllerComponent::Reflect()
+CE::MetaType CE::TopDownCamControllerComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<TopDownCamControllerComponent>{}, "TopDownCamControllerComponent"};
 	MetaProps& props = type.GetProperties();

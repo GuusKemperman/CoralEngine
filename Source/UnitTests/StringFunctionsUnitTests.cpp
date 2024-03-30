@@ -3,7 +3,7 @@
 
 #include "Core/UnitTests.h"
 
-using namespace Engine;
+using namespace CE;
 
 UNIT_TEST(StringFunctions, EqualStreams)
 {

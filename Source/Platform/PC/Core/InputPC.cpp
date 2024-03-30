@@ -2,7 +2,7 @@
 #include "Core/Input.h"
 #include "Core/Device.h"
 
-using namespace Engine;
+using namespace CE;
 
 enum KeyAction
 {

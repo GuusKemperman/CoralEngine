@@ -7,7 +7,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/WorldViewport.h"
 
-void Engine::CameraComponent::UpdateView(const glm::vec3 position, const glm::vec3 forward, const glm::vec3 up, bool recalulateViewProjection)
+void CE::CameraComponent::UpdateView(const glm::vec3 position, const glm::vec3 forward, const glm::vec3 up, bool recalulateViewProjection)
 {
 	mView = glm::lookAt(position, position + forward, up);
 
@@ -17,17 +17,17 @@ void Engine::CameraComponent::UpdateView(const glm::vec3 position, const glm::ve
 	}
 }
 
-void Engine::CameraComponent::UpdateView(const TransformComponent& transform, bool recalulateViewProjection)
+void CE::CameraComponent::UpdateView(const TransformComponent& transform, bool recalulateViewProjection)
 {
 	UpdateView(transform.GetWorldPosition(), transform.GetWorldForward(), transform.GetWorldUp(), recalulateViewProjection);
 }
 
-void Engine::CameraComponent::UpdateProjection(const glm::vec2 viewportSize, bool recalculateViewProjection)
+void CE::CameraComponent::UpdateProjection(const glm::vec2 viewportSize, bool recalculateViewProjection)
 {
 	UpdateProjection(viewportSize.x / viewportSize.y, recalculateViewProjection);
 }
 
-void Engine::CameraComponent::UpdateProjection(const float aspectRatio, bool recalculateViewProjection)
+void CE::CameraComponent::UpdateProjection(const float aspectRatio, bool recalculateViewProjection)
 {
 	mProjection = glm::perspective(mFOV, aspectRatio, mNear, mFar);
 
@@ -42,13 +42,13 @@ void Engine::CameraComponent::UpdateProjection(const float aspectRatio, bool rec
 	}
 }
 
-void Engine::CameraComponent::RecalculateViewProjection()
+void CE::CameraComponent::RecalculateViewProjection()
 {
 	mViewProjection = mProjection * mView;
 	mInvViewProjection = inverse(mViewProjection);
 }
 
-Engine::MetaType Engine::CameraComponent::Reflect()
+CE::MetaType CE::CameraComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<CameraComponent>{}, "CameraComponent" };
 	MetaProps& props = type.GetProperties();

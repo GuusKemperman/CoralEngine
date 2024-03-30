@@ -16,7 +16,7 @@
 #include "World/Physics.h"
 #include "World/WorldViewport.h"
 
-Engine::PhysicsSystem::PhysicsSystem()
+CE::PhysicsSystem::PhysicsSystem()
 {
 	for (const MetaType& type : MetaManager::Get().EachType())
 	{
@@ -46,7 +46,7 @@ Engine::PhysicsSystem::PhysicsSystem()
 	}
 }
 
-void Engine::PhysicsSystem::Update(World& world, float dt)
+void CE::PhysicsSystem::Update(World& world, float dt)
 {
 	if (world.HasBegunPlay()
 		&& !world.IsPaused())
@@ -66,12 +66,12 @@ void Engine::PhysicsSystem::Update(World& world, float dt)
 
 }
 
-void Engine::PhysicsSystem::Render(const World& world)
+void CE::PhysicsSystem::Render(const World& world)
 {
 	DebugDrawing(world);
 }
 
-void Engine::PhysicsSystem::ApplyVelocities(World& world, float dt)
+void CE::PhysicsSystem::ApplyVelocities(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
 	const Physics& physics = world.GetPhysics();
@@ -99,7 +99,7 @@ void Engine::PhysicsSystem::ApplyVelocities(World& world, float dt)
 	}
 }
 
-void Engine::PhysicsSystem::UpdateCollisions(World& world)
+void CE::PhysicsSystem::UpdateCollisions(World& world)
 {
 	Registry& reg = world.GetRegistry();
 	const Physics& physics = world.GetPhysics();
@@ -274,7 +274,7 @@ void Engine::PhysicsSystem::UpdateCollisions(World& world)
 }
 
 template <typename Collider, typename TransformedCollider>
-void Engine::PhysicsSystem::UpdateTransformedColliders(World& world)
+void CE::PhysicsSystem::UpdateTransformedColliders(World& world)
 {
 	Registry& reg = world.GetRegistry();
 	const auto collidersWithoutTransformed = reg.View<Collider>(entt::exclude_t<TransformedCollider>{});
@@ -292,7 +292,7 @@ void Engine::PhysicsSystem::UpdateTransformedColliders(World& world)
 }
 
 template <typename CollisionDataContainer>
-void Engine::PhysicsSystem::CallEvents(World& world, const CollisionDataContainer& collisions,
+void CE::PhysicsSystem::CallEvents(World& world, const CollisionDataContainer& collisions,
                                          const std::vector<CollisionEvent>& events)
 {
 	if (collisions.empty())
@@ -319,7 +319,7 @@ void Engine::PhysicsSystem::CallEvents(World& world, const CollisionDataContaine
 	}
 }
 
-void Engine::PhysicsSystem::DebugDrawing(const World& world)
+void CE::PhysicsSystem::DebugDrawing(const World& world)
 {
 	const Registry& reg = world.GetRegistry();
 
@@ -406,7 +406,7 @@ void Engine::PhysicsSystem::DebugDrawing(const World& world)
 	}
 }
 
-void Engine::PhysicsSystem::CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage,
+void CE::PhysicsSystem::CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage,
         entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint)
 {
 	static_assert(std::is_same_v<decltype(sCollisionEntryEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
@@ -430,7 +430,7 @@ void Engine::PhysicsSystem::CallEvent(const CollisionEvent& event, World& world,
 	}
 }
 
-Engine::PhysicsSystem::ResolvedCollision Engine::PhysicsSystem::ResolveDiskCollision(const Physics& physics,
+CE::PhysicsSystem::ResolvedCollision CE::PhysicsSystem::ResolveDiskCollision(const Physics& physics,
 	const CollisionData& collisionToResolve, const PhysicsBody2DComponent& bodyToMove,
 	const PhysicsBody2DComponent& otherBody, const glm::vec3& bodyPosition, float multiplicant)
 {
@@ -456,7 +456,7 @@ Engine::PhysicsSystem::ResolvedCollision Engine::PhysicsSystem::ResolveDiskColli
 	return { resolvedPos, impulse };
 }
 
-void Engine::PhysicsSystem::RegisterCollision(std::vector<CollisionData>& currentCollisions,
+void CE::PhysicsSystem::RegisterCollision(std::vector<CollisionData>& currentCollisions,
                                                 CollisionData& collision, entt::entity entity1, entt::entity entity2)
 {
 	collision.mEntity1 = entity1;
@@ -466,7 +466,7 @@ void Engine::PhysicsSystem::RegisterCollision(std::vector<CollisionData>& curren
 
 static constexpr glm::vec2 sDefaultNormal =  glm::vec2{ 0.707107f };
 
-bool Engine::PhysicsSystem::CollisionCheckDiskDisk(TransformedDiskColliderComponent disk1, TransformedDiskColliderComponent disk2, CollisionData& result)
+bool CE::PhysicsSystem::CollisionCheckDiskDisk(TransformedDiskColliderComponent disk1, TransformedDiskColliderComponent disk2, CollisionData& result)
 {
 	// check for overlap
 	const glm::vec2 diff(disk1.mCentre - disk2.mCentre);
@@ -497,7 +497,7 @@ bool Engine::PhysicsSystem::CollisionCheckDiskDisk(TransformedDiskColliderCompon
 	return true;
 }
 
-bool Engine::PhysicsSystem::CollisionCheckDiskPolygon(TransformedDiskColliderComponent disk, const TransformedPolygonColliderComponent& polygon, CollisionData& result)
+bool CE::PhysicsSystem::CollisionCheckDiskPolygon(TransformedDiskColliderComponent disk, const TransformedPolygonColliderComponent& polygon, CollisionData& result)
 {
 	if (!AreOverlapping(disk, polygon.mBoundingBox))
 	{
@@ -544,7 +544,7 @@ bool Engine::PhysicsSystem::CollisionCheckDiskPolygon(TransformedDiskColliderCom
 	return true;
 }
 
-bool Engine::PhysicsSystem::CollisionCheckDiskAABB(TransformedDiskColliderComponent disk, TransformedAABBColliderComponent aabb, CollisionData& result)
+bool CE::PhysicsSystem::CollisionCheckDiskAABB(TransformedDiskColliderComponent disk, TransformedAABBColliderComponent aabb, CollisionData& result)
 {
 	if (!AreOverlapping(disk, aabb))
 	{
@@ -554,7 +554,7 @@ bool Engine::PhysicsSystem::CollisionCheckDiskAABB(TransformedDiskColliderCompon
 	return CollisionCheckDiskPolygon(disk, aabb.GetAsPolygon(), result);
 }
 
-glm::vec3 Engine::PhysicsSystem::GetAllowedWorldPos(const Physics& physics, 
+glm::vec3 CE::PhysicsSystem::GetAllowedWorldPos(const Physics& physics, 
                                                       const PhysicsBody2DComponent& body, 
                                                       glm::vec3 currentWorldPos,
                                                       glm::vec2 translation)
@@ -578,7 +578,7 @@ glm::vec3 Engine::PhysicsSystem::GetAllowedWorldPos(const Physics& physics,
 	return currentWorldPos;
 }
 
-Engine::MetaType Engine::PhysicsSystem::Reflect()
+CE::MetaType CE::PhysicsSystem::Reflect()
 {
 	return MetaType{ MetaType::T<PhysicsSystem>{}, "PhysicsSystem", MetaType::Base<System>{} };
 }

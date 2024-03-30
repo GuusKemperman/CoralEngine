@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace CE
 {
     // Specialize this struct to have enum-string conversions for your custom enum.
     template<typename EnumType>

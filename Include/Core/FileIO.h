@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace Engine
+namespace CE
 {
 	/// <summary>
 	/// The FileIO class provides a cross-platform way to read and write files.
@@ -81,4 +81,4 @@ namespace Engine
 		std::map<Directory, std::string> mPaths;
 	};
 
-}  // namespace Engine
+}  // namespace CE

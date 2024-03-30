@@ -3,7 +3,7 @@
 #include "Graph.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class TransformComponent;
 	class World;

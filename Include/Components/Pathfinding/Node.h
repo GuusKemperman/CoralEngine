@@ -4,7 +4,7 @@
 
 #include "Edge.h"
 
-namespace Engine
+namespace CE
 {
 	class Node
 	{

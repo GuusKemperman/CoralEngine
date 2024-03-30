@@ -36,30 +36,30 @@ namespace
 	bool sShouldGuizmoSnap{};
 	glm::vec3 sSnapTo{ 1.0f };
 
-	void RemoveInvalidEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities);
+	void RemoveInvalidEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
 
-	void DeleteEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities);
-	std::string CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities);
-	void CutToClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities);
-	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipboardData);
-	void Duplicate(Engine::World& world, std::vector<entt::entity>& selectedEntities);
+	void DeleteEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
+	std::string CopyToClipBoard(const CE::World& world, const std::vector<entt::entity>& selectedEntities);
+	void CutToClipBoard(CE::World& world, std::vector<entt::entity>& selectedEntities);
+	void PasteClipBoard(CE::World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipboardData);
+	void Duplicate(CE::World& world, std::vector<entt::entity>& selectedEntities);
 	std::optional<std::string_view> GetSerializedEntitiesInClipboard();
 	bool IsStringFromCopyToClipBoard(std::string_view string);
 
-	void CheckShortcuts(Engine::World& world, std::vector<entt::entity>& selectedEntities);
-	void ReceiveDragDrops(Engine::World& world);
+	void CheckShortcuts(CE::World& world, std::vector<entt::entity>& selectedEntities);
+	void ReceiveDragDrops(CE::World& world);
 }
 
-Engine::WorldInspectHelper::WorldInspectHelper(World&& worldThatHasNotYetBegunPlay) :
+CE::WorldInspectHelper::WorldInspectHelper(World&& worldThatHasNotYetBegunPlay) :
 	mViewportFrameBuffer(std::make_unique<FrameBuffer>()),
 	mWorldBeforeBeginPlay(std::make_unique<World>(std::move(worldThatHasNotYetBegunPlay)))
 {
 	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay());
 }
 
-Engine::WorldInspectHelper::~WorldInspectHelper() = default;
+CE::WorldInspectHelper::~WorldInspectHelper() = default;
 
-Engine::World& Engine::WorldInspectHelper::GetWorld()
+CE::World& CE::WorldInspectHelper::GetWorld()
 {
 	if (mWorldAfterBeginPlay != nullptr)
 	{
@@ -69,7 +69,7 @@ Engine::World& Engine::WorldInspectHelper::GetWorld()
 	return *mWorldBeforeBeginPlay;
 }
 
-Engine::World& Engine::WorldInspectHelper::BeginPlay()
+CE::World& CE::WorldInspectHelper::BeginPlay()
 {
 	if (mWorldAfterBeginPlay != nullptr)
 	{
@@ -88,7 +88,7 @@ Engine::World& Engine::WorldInspectHelper::BeginPlay()
 	return GetWorld();
 }
 
-Engine::World& Engine::WorldInspectHelper::EndPlay()
+CE::World& CE::WorldInspectHelper::EndPlay()
 {
 	if (mWorldAfterBeginPlay == nullptr)
 	{
@@ -103,7 +103,7 @@ Engine::World& Engine::WorldInspectHelper::EndPlay()
 	return GetWorld();
 }
 
-void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
+void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 {
 	mDeltaTimeRunningAverage = mDeltaTimeRunningAverage * sRunningAveragePreservePercentage + deltaTime * (1.0f - sRunningAveragePreservePercentage);
 
@@ -280,7 +280,7 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 	CheckShortcuts(GetWorld(), mSelectedEntities);
 }
 
-void Engine::WorldInspectHelper::SaveState(BinaryGSONObject& state)
+void CE::WorldInspectHelper::SaveState(BinaryGSONObject& state)
 {
 	state.AddGSONMember("selected") << mSelectedEntities;
 	state.AddGSONMember("hierarchyWidth") << mHierarchyHeight;
@@ -296,7 +296,7 @@ void Engine::WorldInspectHelper::SaveState(BinaryGSONObject& state)
 	}
 }
 
-void Engine::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
+void CE::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
 {
 	const BinaryGSONMember* const selected = state.TryGetGSONMember("selected");
 	const BinaryGSONMember* const hierarchyWidth = state.TryGetGSONMember("hierarchyWidth");
@@ -330,7 +330,7 @@ void Engine::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
 	}
 }
 
-void Engine::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
+void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 	std::vector<entt::entity>* selectedEntities)
 {
 	const glm::vec2 windowPos = ImGui::GetWindowPos();
@@ -384,7 +384,7 @@ void Engine::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 	}
 }
 
-void Engine::WorldViewportPanel::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
+void CE::WorldViewportPanel::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
 {
 	Registry& reg = world.GetRegistry();
 
@@ -427,12 +427,12 @@ void Engine::WorldViewportPanel::ShowComponentGizmos(World& world, const std::ve
 }
 
 
-void Engine::WorldViewportPanel::SetGizmoRect(const glm::vec2 windowPos, glm::vec2 windowSize)
+void CE::WorldViewportPanel::SetGizmoRect(const glm::vec2 windowPos, glm::vec2 windowSize)
 {
 	ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
 }
 
-void Engine::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
+void CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 	const std::vector<entt::entity>& selectedEntities,
 	const CameraComponent& camera)
 {
@@ -508,7 +508,7 @@ void Engine::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 	}
 }
 
-void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& selectedEntities)
+void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selectedEntities)
 {
 	const uint32 numOfSelected = static_cast<uint32>(selectedEntities.size());
 
@@ -812,7 +812,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 	}
 }
 
-void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* selectedEntities)
+void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* selectedEntities)
 {
 	std::vector<entt::entity> dummySelectedEntities{};
 	if (selectedEntities == nullptr)
@@ -908,7 +908,7 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 	ReceiveDragDrops(world);
 }
 
-void Engine::WorldHierarchy::DisplayFamily(Registry& reg,
+void CE::WorldHierarchy::DisplayFamily(Registry& reg,
 	TransformComponent& parentTransform,
 	std::vector<entt::entity>& selectedEntities)
 {
@@ -940,7 +940,7 @@ void Engine::WorldHierarchy::DisplayFamily(Registry& reg,
 	ImGui::PopID();
 }
 
-void Engine::WorldHierarchy::DisplaySingle(Registry& registry,
+void CE::WorldHierarchy::DisplaySingle(Registry& registry,
 	const entt::entity owner,
 	std::vector<entt::entity>& selectedEntities,
 	TransformComponent* const transformComponent)
@@ -1006,7 +1006,7 @@ void Engine::WorldHierarchy::DisplaySingle(Registry& registry,
 	}
 }
 
-void Engine::WorldHierarchy::ReceiveDragDropOntoParent(Registry& registry,
+void CE::WorldHierarchy::ReceiveDragDropOntoParent(Registry& registry,
 	std::optional<entt::entity> parentAllToThisEntity)
 {
 	const std::optional<std::vector<entt::entity>> receivedEntities = DragDrop::PeekEntities();
@@ -1041,7 +1041,7 @@ void Engine::WorldHierarchy::ReceiveDragDropOntoParent(Registry& registry,
 	}
 }
 
-void Engine::WorldHierarchy::DisplayRightClickPopUp(World& world, std::vector<entt::entity>& selectedEntities)
+void CE::WorldHierarchy::DisplayRightClickPopUp(World& world, std::vector<entt::entity>& selectedEntities)
 {
 	if (!ImGui::BeginPopup("HierarchyPopUp"))
 	{
@@ -1079,7 +1079,7 @@ void Engine::WorldHierarchy::DisplayRightClickPopUp(World& world, std::vector<en
 
 namespace
 {
-	void RemoveInvalidEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	void RemoveInvalidEntities(CE::World& world, std::vector<entt::entity>& selectedEntities)
 	{
 		selectedEntities.erase(std::remove_if(selectedEntities.begin(), selectedEntities.end(),
 			[&world](const entt::entity& entity)
@@ -1088,7 +1088,7 @@ namespace
 			}), selectedEntities.end());
 	}
 
-	void DeleteEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	void DeleteEntities(CE::World& world, std::vector<entt::entity>& selectedEntities)
 	{
 		world.GetRegistry().Destroy(selectedEntities.begin(), selectedEntities.end(), true);
 		selectedEntities.clear();
@@ -1101,17 +1101,17 @@ namespace
 
 	struct WasRootCopyTag
 	{
-		static Engine::MetaType Reflect()
+		static CE::MetaType Reflect()
 		{
-			Engine::MetaType type{ Engine::MetaType::T<WasRootCopyTag>{}, "WasRootCopyTag" };
-			Engine::ReflectComponentType<WasRootCopyTag>(type);
+			CE::MetaType type{ CE::MetaType::T<WasRootCopyTag>{}, "WasRootCopyTag" };
+			CE::ReflectComponentType<WasRootCopyTag>(type);
 			return type;
 		}
 	};
 
-	std::string CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities)
+	std::string CopyToClipBoard(const CE::World& world, const std::vector<entt::entity>& selectedEntities)
 	{
-		using namespace Engine;
+		using namespace CE;
 
 		if (selectedEntities.empty())
 		{
@@ -1138,20 +1138,20 @@ namespace
 		return clipBoardData;
 	}
 
-	void CutToClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	void CutToClipBoard(CE::World& world, std::vector<entt::entity>& selectedEntities)
 	{
 		CopyToClipBoard(world, selectedEntities);
 		DeleteEntities(world, selectedEntities);
 	}
 
-	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipBoardData)
+	void PasteClipBoard(CE::World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipBoardData)
 	{
 		if (!IsStringFromCopyToClipBoard(clipBoardData))
 		{
 			return;
 		}
 
-		using namespace Engine;
+		using namespace CE;
 
 		// Force reflection, if it hasn't been already
 		(void)MetaManager::Get().GetType<WasRootCopyTag>();
@@ -1186,7 +1186,7 @@ namespace
 		reg.RemoveComponents<WasRootCopyTag>(selectedEntities.begin(), selectedEntities.end());
 	}
 
-	void Duplicate(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	void Duplicate(CE::World& world, std::vector<entt::entity>& selectedEntities)
 	{
 		std::string clipboardData = CopyToClipBoard(world, selectedEntities);
 		PasteClipBoard(world, selectedEntities, clipboardData);
@@ -1216,9 +1216,9 @@ namespace
 		return string.substr(0, sCopiedEntitiesId.size()) == sCopiedEntitiesId;
 	}
 
-	void CheckShortcuts(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	void CheckShortcuts(CE::World& world, std::vector<entt::entity>& selectedEntities)
 	{
-		using namespace Engine;
+		using namespace CE;
 
 		RemoveInvalidEntities(world, selectedEntities);
 
@@ -1280,9 +1280,9 @@ namespace
 		}
 	}
 
-	void ReceiveDragDrops(Engine::World& world)
+	void ReceiveDragDrops(CE::World& world)
 	{
-		using namespace Engine;
+		using namespace CE;
 
 		std::optional<WeakAsset<Prefab>> receivedPrefab = DragDrop::PeekAsset<Prefab>();
 

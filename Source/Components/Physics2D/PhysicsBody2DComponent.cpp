@@ -7,7 +7,7 @@
 #include "Utilities/Reflect/ReflectFieldType.h"
 
 #ifdef EDITOR
-void Engine::CollisionRules::DisplayWidget(const std::string& name)
+void CE::CollisionRules::DisplayWidget(const std::string& name)
 {
 	if (ImGui::TreeNode(name.c_str()))
 	{
@@ -74,7 +74,7 @@ void Engine::CollisionRules::DisplayWidget(const std::string& name)
 }
 #endif // EDITOR
 
-Engine::MetaType Engine::PhysicsBody2DComponent::Reflect()
+CE::MetaType CE::PhysicsBody2DComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<PhysicsBody2DComponent>{}, "PhysicsBody2DComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
@@ -93,9 +93,9 @@ Engine::MetaType Engine::PhysicsBody2DComponent::Reflect()
 	return metaType;
 }
 
-Engine::MetaType Reflector<Engine::CollisionLayer>::Reflect()
+CE::MetaType Reflector<CE::CollisionLayer>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	using T = CollisionLayer;
 	MetaType type{ MetaType::T<T>{}, "CollisionLayer" };
 
@@ -107,20 +107,20 @@ Engine::MetaType Reflector<Engine::CollisionLayer>::Reflect()
 	return type;
 }
 
-Engine::MetaType Reflector<Engine::CollisionRules>::Reflect()
+CE::MetaType Reflector<CE::CollisionRules>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	MetaType type{ MetaType::T<CollisionRules>{}, "CollisionRules" };
 	ReflectFieldType<CollisionRules>(type);
 	return type;
 }
 
-void cereal::save(BinaryOutputArchive& ar, const Engine::CollisionRules& value)
+void cereal::save(BinaryOutputArchive& ar, const CE::CollisionRules& value)
 {
 	ar(value.mLayer, value.mResponses);
 }
 
-void cereal::load(BinaryInputArchive& ar, Engine::CollisionRules& value)
+void cereal::load(BinaryInputArchive& ar, CE::CollisionRules& value)
 {
 	ar(value.mLayer, value.mResponses);
 }

@@ -7,7 +7,7 @@
 #include "World/World.h"
 #include "Utilities/DrawDebugHelpers.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 

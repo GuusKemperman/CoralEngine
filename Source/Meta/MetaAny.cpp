@@ -5,19 +5,19 @@
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
 
-Engine::MetaAny::MetaAny(const MetaType& type, nullptr_t) :
+CE::MetaAny::MetaAny(const MetaType& type, nullptr_t) :
 	MetaAny(type, nullptr, false)
 {
 }
 
-Engine::MetaAny::MetaAny(const MetaType& type, void* const data, const bool isOwnerOfObject) :
+CE::MetaAny::MetaAny(const MetaType& type, void* const data, const bool isOwnerOfObject) :
 	mTypeInfo(type.GetTypeInfo()),
 	mData(data)
 {
 	mTypeInfo.mFlags |= isOwnerOfObject ? TypeInfo::UserBit : 0;
 }
 
-Engine::MetaAny::MetaAny(TypeInfo typeInfo, void* const data, bool isOwnerOfObject) :
+CE::MetaAny::MetaAny(TypeInfo typeInfo, void* const data, bool isOwnerOfObject) :
 	mTypeInfo(typeInfo),
 	mData(data)
 {
@@ -31,7 +31,7 @@ Engine::MetaAny::MetaAny(TypeInfo typeInfo, void* const data, bool isOwnerOfObje
 	}
 }
 
-Engine::MetaAny::MetaAny(MetaAny&& other) noexcept :
+CE::MetaAny::MetaAny(MetaAny&& other) noexcept :
 	mTypeInfo(other.mTypeInfo),
 	mData(other.mData)
 {
@@ -39,24 +39,24 @@ Engine::MetaAny::MetaAny(MetaAny&& other) noexcept :
 	other.mTypeInfo.mFlags &= ~TypeInfo::UserBit;
 }
 
-Engine::MetaAny::~MetaAny()
+CE::MetaAny::~MetaAny()
 {
 	DestructAndFree();
 }
 
-Engine::MetaAny& Engine::MetaAny::operator=(MetaAny&& other) noexcept
+CE::MetaAny& CE::MetaAny::operator=(MetaAny&& other) noexcept
 {
 	MoveAssign<true>(std::move(other));
 	return *this;
 }
 
-void Engine::MetaAny::AssignFromAnyOfDifferentType(MetaAny&& other)
+void CE::MetaAny::AssignFromAnyOfDifferentType(MetaAny&& other)
 {
 	MoveAssign<false>(std::move(other));
 }
 
 template <bool CheckIfTypesMatch>
-void Engine::MetaAny::MoveAssign(MetaAny&& other)
+void CE::MetaAny::MoveAssign(MetaAny&& other)
 {
 	DestructAndFree();
 
@@ -76,17 +76,17 @@ void Engine::MetaAny::MoveAssign(MetaAny&& other)
 	other.mTypeInfo.mFlags &= ~TypeInfo::UserBit;
 }
 
-bool Engine::MetaAny::IsExactly(const uint32 typeId) const
+bool CE::MetaAny::IsExactly(const uint32 typeId) const
 {
 	return mTypeInfo.mTypeId == typeId;
 }
 
-const Engine::MetaType* Engine::MetaAny::TryGetType() const
+const CE::MetaType* CE::MetaAny::TryGetType() const
 {
 	return MetaManager::Get().TryGetType(mTypeInfo.mTypeId);
 }
 
-void* Engine::MetaAny::Release()
+void* CE::MetaAny::Release()
 {
 	void* tmp = mData;
 	mTypeInfo.mFlags &= ~TypeInfo::UserBit;
@@ -94,14 +94,14 @@ void* Engine::MetaAny::Release()
 	return tmp;
 }
 
-Engine::MetaType Engine::MetaAny::Reflect()
+CE::MetaType CE::MetaAny::Reflect()
 {
 	MetaType type = MetaType{ MakeTypeInfo<MetaAny>(), "Any" };
 	type.GetProperties().Add(Props::sIsScriptableTag);
 	return type;
 }
 
-void Engine::MetaAny::DestructAndFree()
+void CE::MetaAny::DestructAndFree()
 {
 	if (mData == nullptr
 		|| !IsOwner())
@@ -126,7 +126,7 @@ void Engine::MetaAny::DestructAndFree()
 	MetaType::Free(mData);
 }
 
-bool Engine::MetaAny::IsDerivedFrom(const TypeId typeId) const
+bool CE::MetaAny::IsDerivedFrom(const TypeId typeId) const
 {
 	if (IsExactly(typeId))
 	{

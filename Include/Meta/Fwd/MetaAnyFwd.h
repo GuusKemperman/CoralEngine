@@ -3,7 +3,7 @@
 #include "MetaTypeTraitsFwd.h"
 #include "MetaReflectFwd.h"
 
-namespace Engine
+namespace CE
 {
     class MetaType;
 

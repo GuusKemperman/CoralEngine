@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Utilities/Math.h"
 
-//glm::vec2 Engine::Math::GLFWPixelToClipSpace(const glm::ivec2& pixelPosition)
+//glm::vec2 CE::Math::GLFWPixelToClipSpace(const glm::ivec2& pixelPosition)
 //{
 //	glm::vec2 openGLPos = { pixelPosition.x == 0 ? -1.0f : static_cast<float>(pixelPosition.x % static_cast<int>(sHalfWindowWidth)),
 //		pixelPosition.y == 0 ? -1.0f : static_cast<float>(pixelPosition.y % static_cast<int>(sHalfWindowHeight)) };
@@ -30,7 +30,7 @@
 //}
 
 // Stolen from http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-17-quaternion
-glm::quat Engine::Math::CalculateOrientationTowards(glm::quat current, const glm::quat& target, const float maxAngle)
+glm::quat CE::Math::CalculateOrientationTowards(glm::quat current, const glm::quat& target, const float maxAngle)
 {
 	if (maxAngle == 0.0f)
 	{
@@ -73,7 +73,7 @@ glm::quat Engine::Math::CalculateOrientationTowards(glm::quat current, const glm
 	return res;
 }
 
-glm::quat Engine::Math::CalculateRotationBetweenOrientations(glm::vec3 start, glm::vec3 dest)
+glm::quat CE::Math::CalculateRotationBetweenOrientations(glm::vec3 start, glm::vec3 dest)
 {
 	if (start == glm::vec3(0.0f, 0.0f, 0.0f)
 		|| dest == glm::vec3(0.0f, 0.0f, 0.0f))
@@ -115,19 +115,19 @@ glm::quat Engine::Math::CalculateRotationBetweenOrientations(glm::vec3 start, gl
 	);
 }
 
-glm::quat Engine::Math::CalculateRotationBetweenOrientations(glm::quat start, glm::quat end)
+glm::quat CE::Math::CalculateRotationBetweenOrientations(glm::quat start, glm::quat end)
 {
 	return end * inverse(start);
 }
 
 // Stolen from https://stackoverflow.com/questions/44705398/about-glm-quaternion-rotation
-glm::vec3 Engine::Math::RotateVector(const glm::vec3& v, const glm::quat& q)
+glm::vec3 CE::Math::RotateVector(const glm::vec3& v, const glm::quat& q)
 {
 	const glm::vec3 quatAsVector = { q.x, q.y, q.z };
 	return v * (q.w * q.w - dot(quatAsVector, quatAsVector)) + 2.0f * quatAsVector * dot(quatAsVector, v) + 2.0f * q.w * cross(quatAsVector, v);
 }
 
-std::optional<std::vector<glm::vec3>> Engine::Math::CalculateTangents(
+std::optional<std::vector<glm::vec3>> CE::Math::CalculateTangents(
 	const void* const indices,
 	const size_t numOfIndices,
 	const bool areIndices16Bit,

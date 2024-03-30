@@ -7,7 +7,7 @@
 #include "Assets/Prefabs/Prefab.h"
 #include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
-Engine::MetaType Engine::ParticleSpawnPrefabOnDeathComponent::Reflect()
+CE::MetaType CE::ParticleSpawnPrefabOnDeathComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<ParticleSpawnPrefabOnDeathComponent>{}, "ParticleSpawnPrefabOnDeathComponent" };
 	MetaProps& props = type.GetProperties();

@@ -13,7 +13,7 @@
 #include "Assets/Level.h"
 #include "Rendering/GPUWorld.h"
 
-Engine::World::World(const bool beginPlayImmediately) :
+CE::World::World(const bool beginPlayImmediately) :
 	mRegistry(std::make_unique<Registry>(*this)),
 	mViewport(std::make_unique<WorldViewport>(*this)),
 	mPhysics(std::make_unique<Physics>(*this))
@@ -31,7 +31,7 @@ Engine::World::World(const bool beginPlayImmediately) :
 	}
 }
 
-Engine::World::World(World&& other) noexcept :
+CE::World::World(World&& other) noexcept :
 	mRegistry(std::move(other.mRegistry)),
 	mViewport(std::move(other.mViewport)),
 	mGPUWorld(std::move(other.mGPUWorld)),
@@ -46,7 +46,7 @@ Engine::World::World(World&& other) noexcept :
 	mGPUWorld->mWorld = *this;
 }
 
-Engine::World::~World()
+CE::World::~World()
 {
 	// Mightve been moved out
 	if (mRegistry != nullptr)
@@ -57,7 +57,7 @@ Engine::World::~World()
 	}
 }
 
-Engine::World& Engine::World::operator=(World&& other) noexcept
+CE::World& CE::World::operator=(World&& other) noexcept
 {
 	mRegistry = std::move(other.mRegistry);
 	mViewport = std::move(other.mViewport);
@@ -76,7 +76,7 @@ Engine::World& Engine::World::operator=(World&& other) noexcept
 	return *this;
 }
 
-void Engine::World::Tick(const float unscaledDeltaTime)
+void CE::World::Tick(const float unscaledDeltaTime)
 {
 	PushWorld(*this);
 
@@ -93,7 +93,7 @@ void Engine::World::Tick(const float unscaledDeltaTime)
 	PopWorld();
 }
 
-void Engine::World::BeginPlay()
+void CE::World::BeginPlay()
 {
 	if (HasBegunPlay())
 	{
@@ -147,7 +147,7 @@ void Engine::World::BeginPlay()
 
 }
 
-void Engine::World::EndPlay()
+void CE::World::EndPlay()
 {
 	if (!HasBegunPlay())
 	{
@@ -159,14 +159,14 @@ void Engine::World::EndPlay()
 	mHasBegunPlay = false;
 }
 
-static inline std::stack<std::reference_wrapper<Engine::World>> sWorldStack{};
+static inline std::stack<std::reference_wrapper<CE::World>> sWorldStack{};
 
-void Engine::World::PushWorld(World& world)
+void CE::World::PushWorld(World& world)
 {
 	sWorldStack.push(world);
 }
 
-void Engine::World::PopWorld(uint32 amountToPop)
+void CE::World::PopWorld(uint32 amountToPop)
 {
 	for (uint32 i = 0; i < amountToPop; i++)
 	{
@@ -174,7 +174,7 @@ void Engine::World::PopWorld(uint32 amountToPop)
 	}
 }
 
-Engine::World* Engine::World::TryGetWorldAtTopOfStack()
+CE::World* CE::World::TryGetWorldAtTopOfStack()
 {
 	if (sWorldStack.empty())
 	{
@@ -183,7 +183,7 @@ Engine::World* Engine::World::TryGetWorldAtTopOfStack()
 	return &sWorldStack.top().get();
 }
 
-void Engine::World::TransitionToLevel(const std::shared_ptr<const Level>& level)
+void CE::World::TransitionToLevel(const std::shared_ptr<const Level>& level)
 {
 	if (GetNextLevel() == nullptr)
 	{
@@ -193,9 +193,9 @@ void Engine::World::TransitionToLevel(const std::shared_ptr<const Level>& level)
 
 namespace
 {
-	std::vector<entt::entity> FindAllEntitiesWithComponents(const Engine::World& world, const std::vector<Engine::ComponentFilter>& components, bool returnAfterFirstFound)
+	std::vector<entt::entity> FindAllEntitiesWithComponents(const CE::World& world, const std::vector<CE::ComponentFilter>& components, bool returnAfterFirstFound)
 	{
-		using namespace Engine;
+		using namespace CE;
 
 		std::vector<std::reference_wrapper<const entt::sparse_set>> storages{};
 
@@ -251,7 +251,7 @@ namespace
 
 }
 
-Engine::MetaType Engine::World::Reflect()
+CE::MetaType CE::World::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<World>{}, "World" };
 	type.GetProperties().Add(Props::sIsScriptableTag);

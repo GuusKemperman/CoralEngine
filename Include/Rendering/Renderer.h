@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/EngineSubsystem.h"
 
-namespace Engine
+namespace CE
 {
 	class EngineClass;
 	class World;

@@ -6,7 +6,7 @@
 #include "Meta/MetaAny.h"
 #include "Meta/MetaProps.h"
 
-Engine::MetaField::MetaField(const MetaType& outerType,
+CE::MetaField::MetaField(const MetaType& outerType,
 	const MetaType& type,
 	const uint32 offset,
 	std::string_view name) :
@@ -18,20 +18,20 @@ Engine::MetaField::MetaField(const MetaType& outerType,
 {
 }
 
-Engine::MetaField::MetaField(MetaField&&) noexcept = default;
-Engine::MetaField::~MetaField() = default;
+CE::MetaField::MetaField(MetaField&&) noexcept = default;
+CE::MetaField::~MetaField() = default;
 
-bool Engine::MetaField::operator==(const MetaField& other) const
+bool CE::MetaField::operator==(const MetaField& other) const
 {
 	return mName == other.mName && mOuterType.get() == other.mOuterType.get();
 }
 
-bool Engine::MetaField::operator!=(const MetaField& other) const
+bool CE::MetaField::operator!=(const MetaField& other) const
 {
 	return mName != other.mName || mOuterType.get() != other.mOuterType.get();
 }
 
-Engine::MetaAny Engine::MetaField::MakeRef(MetaAny& object) const
+CE::MetaAny CE::MetaField::MakeRef(MetaAny& object) const
 {
 	ASSERT(mOuterType.get().IsBaseClassOf(object.GetTypeId()));
 
@@ -46,7 +46,7 @@ Engine::MetaAny Engine::MetaField::MakeRef(MetaAny& object) const
 }
 
 #ifdef ASSERTS_ENABLED
-void Engine::MetaField::AssertThatOuterMatches(TypeId expectedTypeId) const
+void CE::MetaField::AssertThatOuterMatches(TypeId expectedTypeId) const
 {
 	ASSERT_LOG(GetOuterType().GetTypeId() == expectedTypeId, "Field {} does not belong to type {}", mName, GetOuterType().GetName());
 }

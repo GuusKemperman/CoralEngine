@@ -1,7 +1,7 @@
 #pragma once
 #include "Assets/Prefabs/ComponentFactory.h"
 
-namespace Engine
+namespace CE
 {
 	class Prefab;
 	class World;
