@@ -15,6 +15,7 @@ void CE::CommentScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& 
 
 	to.AddGSONMember("comment") << mComment;
 	to.AddGSONMember("size") << mSize;
+	to.AddGSONMember("col") << mColour;
 }
 
 bool CE::CommentScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
@@ -38,6 +39,13 @@ bool CE::CommentScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 
 	*comment >> mComment;
 	*size >> mSize;
+
+	const BinaryGSONMember* colour = from.TryGetGSONMember("col");
+
+	if (colour != nullptr)
+	{
+		*colour >> mColour;
+	}
 
 	return true;
 }

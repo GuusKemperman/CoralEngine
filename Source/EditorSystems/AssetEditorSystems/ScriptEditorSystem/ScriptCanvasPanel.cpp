@@ -679,8 +679,8 @@ bool CE::ScriptEditorSystem::CanAnyPinsBeInspected() const
 void CE::ScriptEditorSystem::DisplayCommentNode(CommentScriptNode& node)
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.75f);
-	PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, ImColor(255, 255, 255, 64));
-	PushStyleColor(ax::NodeEditor::StyleColor_NodeBorder, ImColor(255, 255, 255, 64));
+	PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, node.GetColour());
+	PushStyleColor(ax::NodeEditor::StyleColor_NodeBorder, node.GetColour() * .7f);
 
 	ax::NodeEditor::BeginNode(node.GetId());
 	ImGui::PushID(static_cast<int32>(node.GetId().Get()));
@@ -714,12 +714,12 @@ void CE::ScriptEditorSystem::DisplayCommentNode(CommentScriptNode& node)
 		drawList->AddRectFilled(
 			hintFrameBounds.GetTL(),
 			hintFrameBounds.GetBR(),
-			IM_COL32(255, 255, 255, 64 * bgAlpha / 255), 4.0f);
+			IM_COL32(255, 255, 255, 32 * bgAlpha / 255), 4.0f);
 
 		drawList->AddRect(
 			hintFrameBounds.GetTL(),
 			hintFrameBounds.GetBR(),
-			IM_COL32(255, 255, 255, 128 * bgAlpha / 255), 4.0f);
+			IM_COL32(255, 255, 255, 64 * bgAlpha / 255), 4.0f);
 	}
 	ax::NodeEditor::EndGroupHint();
 }
