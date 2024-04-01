@@ -56,6 +56,8 @@ void CE::ScriptEditorSystem::DisplayCanvas()
 		ax::NodeEditor::NavigateToRect(ImRect{ 0.0f, 0.0f, 100.0f, 100.0f });
 	}
 
+	mMousePosInCanvasSpace = ImGui::GetMousePos();
+
 	TryGetSelectedFunc()->PostDeclarationRefresh();
 
 	DrawCanvasObjects();
@@ -278,6 +280,41 @@ void CE::ScriptEditorSystem::TryLetUserCreateLink()
 	ax::NodeEditor::EndCreate();
 }
 
+void CE::ScriptEditorSystem::AddNewNode(const NodeTheUserCanAdd& nodeToAdd)
+{
+	ImGui::ClosePopupsOverWindow(ImGui::GetCurrentWindow(), true);
+	ScriptFunc* currentFunc = TryGetSelectedFunc();
+
+	if (currentFunc == nullptr)
+	{
+		return;
+	}
+
+	ClearQuery(mLastUpToDateQueryData);
+	mCurrentQuery.clear();
+
+	ScriptNode& node = nodeToAdd.mAddNode(*currentFunc);
+	node.SetPosition(mCreateNodePopUpPosition.value_or(mMousePosInCanvasSpace));
+	ax::NodeEditor::SetNodePosition(node.GetId(), node.GetPosition());
+	mCreateNodePopUpPosition.reset();
+	if (const ScriptPin* startPin = currentFunc->TryGetPin(mPinTheUserIsTryingToLink);
+		startPin != nullptr)
+	{
+		const Span<const ScriptPin> pins = startPin->IsOutput() ? node.GetInputs(*currentFunc) : node.GetOutputs(*currentFunc);
+
+		for (const ScriptPin& pin : pins)
+		{
+			if (currentFunc->TryAddLink(*startPin, pin) != nullptr)
+			{
+				break;
+			}
+		}
+	}
+
+	mPinTheUserIsTryingToLink = ax::NodeEditor::PinId::Invalid;
+}
+
+
 void CE::ScriptEditorSystem::DeleteRequestedItems()
 {
 	if (ax::NodeEditor::BeginDelete())
@@ -305,8 +342,6 @@ void CE::ScriptEditorSystem::DeleteRequestedItems()
 
 void CE::ScriptEditorSystem::DisplayCanvasPopUps()
 {
-	const ImVec2 openPopupPosition = ImGui::GetMousePos();
-
 	ax::NodeEditor::Suspend();
 
 	if (ax::NodeEditor::ShowPinContextMenu(&mPinTheUserRightClicked))
@@ -330,7 +365,7 @@ void CE::ScriptEditorSystem::DisplayCanvasPopUps()
 
 	if (ImGui::BeginPopup("Create New Node"))
 	{
-		DisplayCreateNewNowPopUp(openPopupPosition);
+		DisplayCreateNewNowPopUp(mMousePosInCanvasSpace);
 		ImGui::EndPopup();
 	}
 	else
@@ -405,13 +440,12 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 
 	}
 
-	ScriptFunc& currentFunc = *TryGetSelectedFunc();
-	const ScriptNode* createdNode = nullptr;
+	const NodeTheUserCanAdd* nodeToCreate{};
 
 	if (!mLastUpToDateQueryData.mRecommendedNodesBasedOnQuery.empty()
 		&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Enter))
 	{
-		createdNode = &mLastUpToDateQueryData.mRecommendedNodesBasedOnQuery[0].get().mAddNode(currentFunc);
+		nodeToCreate = &mLastUpToDateQueryData.mRecommendedNodesBasedOnQuery[0].get();
 	}
 
 	// Show the nodes with the highest similarity to the search string
@@ -419,7 +453,7 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 	{
 		if (ImGui::SmallButton(Format("{} ({})", recommendedNode.mName, recommendedNode.mCategory).data()))
 		{
-			createdNode = &recommendedNode.mAddNode(currentFunc);
+			nodeToCreate = &recommendedNode;
 		}
 	}
 
@@ -431,6 +465,7 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 			{
 				return node.mCategory != first->mCategory;
 			});
+
 
 		if (std::find_if(first, last,
 			[this](const NodeTheUserCanAdd& node)
@@ -451,7 +486,7 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 			if (ShouldShowUserNode(*it)
 				&& ImGui::Button(it->mName.data()))
 			{
-				createdNode = &it->mAddNode(currentFunc);
+				nodeToCreate = &*it;
 			}
 				
 		}
@@ -459,9 +494,8 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 		ImGui::TreePop();
 	}
 
-	if (createdNode != nullptr)
+	if (nodeToCreate != nullptr)
 	{
-		ImGui::CloseCurrentPopup();
 		// Close all the categories if they were opened during searching
 		if (!mLastUpToDateQueryData.mCurrentQuery.empty())
 		{
@@ -477,26 +511,7 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 			}
 		}
 
-		ClearQuery(mLastUpToDateQueryData);
-		mCurrentQuery.clear();
-
-		ax::NodeEditor::SetNodePosition(createdNode->GetId(), *mCreateNodePopUpPosition);
-		mCreateNodePopUpPosition.reset();
-		if (const ScriptPin* startPin = currentFunc.TryGetPin(mPinTheUserIsTryingToLink);
-			startPin != nullptr)
-		{
-			const Span<const ScriptPin> pins = startPin->IsOutput() ? createdNode->GetInputs(currentFunc) : createdNode->GetOutputs(currentFunc);
-
-			for (const ScriptPin& pin : pins)
-			{
-				if (currentFunc.TryAddLink(*startPin, pin) != nullptr)
-				{
-					break;
-				}
-			}
-		}
-
-		mPinTheUserIsTryingToLink = ax::NodeEditor::PinId::Invalid;
+		AddNewNode(*nodeToCreate);
 	}
 }
 
@@ -879,7 +894,8 @@ std::vector<CE::ScriptEditorSystem::NodeTheUserCanAdd> CE::ScriptEditorSystem::G
 		{
 			return contextPin.IsFlow()
 				|| (contextPin.TryGetType() != nullptr && contextPin.TryGetType()->GetTypeId() == MakeTypeId<bool>() && contextPin.IsOutput());
-		});
+		},
+		Input::KeyboardKey::B);
 
 
 	returnValue.emplace_back("", std::string{ ForLoopScriptNode::sForLoopNodeName },
@@ -969,7 +985,8 @@ std::vector<CE::ScriptEditorSystem::NodeTheUserCanAdd> CE::ScriptEditorSystem::G
 		[](const ScriptPin&) -> bool
 		{
 			return true;
-		});
+		},
+		Input::KeyboardKey::C);
 
 	for (const MetaType& type : MetaManager::Get().EachType())
 	{

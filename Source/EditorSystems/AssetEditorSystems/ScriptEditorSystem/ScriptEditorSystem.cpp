@@ -373,27 +373,39 @@ void CE::ScriptEditorSystem::ReadInput()
 		return;
 	}
 
-	if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl) || Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
+	const Input& input = Input::Get();
+
+	if (input.IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl) || input.IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
 	{
-		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::C))
+		if (input.WasKeyboardKeyPressed(Input::KeyboardKey::C))
 		{
 			CopySelection();
 		}
-		else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
+		else if (input.WasKeyboardKeyPressed(Input::KeyboardKey::V))
 		{
 			Paste();
 		}
-		else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::D))
+		else if (input.WasKeyboardKeyPressed(Input::KeyboardKey::D))
 		{
 			DuplicateSelection();
 		}
-		else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::X))
+		else if (input.WasKeyboardKeyPressed(Input::KeyboardKey::X))
 		{
 			CutSelection();
 		}
+
+		for (const NodeTheUserCanAdd& node : mLastUpToDateQueryData.mNodesThatCanBeCreated)
+		{
+			if (node.mShortCut.has_value()
+				&& input.WasKeyboardKeyPressed(*node.mShortCut))
+			{
+				AddNewNode(node);
+			}
+		}
+
 	}
 
-	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Delete))
+	if (input.WasKeyboardKeyPressed(Input::KeyboardKey::Delete))
 	{
 		DeleteSelection();
 	}
