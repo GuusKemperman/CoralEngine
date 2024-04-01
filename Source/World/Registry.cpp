@@ -253,7 +253,7 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 			{
 				LOG(LogWorld, Error, "Failed to add component {} to {} - This class was created through scripts, and because of a programmer error it does not have all the functionality a component needs. My bad!",
 					componentClass.GetName(),
-					static_cast<EntityType>(toEntity));
+					entt::to_integral(toEntity));
 				return { componentClass, nullptr, false };
 			}
 
@@ -313,7 +313,7 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 	{
 		LOG(LogWorld, Error, "Failed to add component {} to {}: ReflectComponentType was never called for this type",
 			componentClass.GetName(),
-			static_cast<EntityType>(toEntity));
+			entt::to_integral(toEntity));
 		return MetaAny{ componentClass.GetTypeInfo(), nullptr };
 	}
 
@@ -327,7 +327,7 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 	{
 		LOG(LogWorld, Error, "Failed to add component {} to {}: Invoking {} failed - {}",
 			componentClass.GetName(),
-			static_cast<EntityType>(toEntity),
+			entt::to_integral(toEntity),
 			addComponentFuncName,
 			result.Error());
 		return MetaAny{ componentClass.GetTypeInfo(), nullptr };

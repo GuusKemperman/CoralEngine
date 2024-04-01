@@ -655,7 +655,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 					{
 						LOG(LogEditor, Error, "Error invoking {}::{} on entity {} - {}",
 							componentClass.GetName(), func.GetDesignerFriendlyName(),
-							static_cast<EntityType>(entity),
+							entt::to_integral(entity),
 							result.Error());
 					}
 				}
@@ -971,7 +971,7 @@ void CE::WorldHierarchy::DisplaySingle(Registry& registry,
 		}
 	}
 
-	ImGui::SetItemTooltip(Format("Entity {}", static_cast<EntityType>(owner)).c_str());
+	ImGui::SetItemTooltip(Format("Entity {}", entt::to_integral(owner)).c_str());
 
 	// Only objects with transforms can accept children
 	if (!transformComponent)

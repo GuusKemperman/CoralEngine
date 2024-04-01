@@ -51,7 +51,7 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const entt::entity& entity)
 		{
-			return std::to_string(static_cast<EntityType>(entity));
+			return std::to_string(entt::to_integral(entity));
 		}, "ToString", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 

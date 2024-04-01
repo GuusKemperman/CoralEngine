@@ -46,7 +46,7 @@ std::optional<std::pair<entt::entity, const CE::CameraComponent&>> CE::WorldView
 	for (auto [entity, camera] : camerasView.each())
 	{
 		mMainCamera = entity;
-		LOG(LogTemp, Verbose, "Switched to camera {}", static_cast<EntityType>(entity));
+		LOG(LogTemp, Verbose, "Switched to camera {}", entt::to_integral(entity));
 		return ReturnPair{ mMainCamera, camera };
 	}
 

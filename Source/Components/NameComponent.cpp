@@ -9,7 +9,7 @@
 std::string CE::NameComponent::GetDisplayName(const Registry& registry, entt::entity entity)
 {
 	const NameComponent* nameComponent = registry.TryGet<const NameComponent>(entity);
-	return nameComponent == nullptr ? Format("Unnamed entity {}", static_cast<EntityType>(entity)) : nameComponent->mName;
+	return nameComponent == nullptr ? Format("Unnamed entity {}", entt::to_integral(entity)) : nameComponent->mName;
 }
 
 CE::MetaType CE::NameComponent::Reflect()

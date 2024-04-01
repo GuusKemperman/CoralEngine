@@ -52,7 +52,7 @@ void CE::Internal::ReflectComponentType(MetaType& type, bool isEmpty)
 				if (existingComponent != nullptr)
 				{
 					return Format("Could not add {} to entity {} - this entity already has a component of this type",
-						type.GetName(), static_cast<EntityType>(entity));
+						type.GetName(), entt::to_integral(entity));
 				}
 
 				return world->GetRegistry().AddComponent(type, entity);

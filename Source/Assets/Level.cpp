@@ -306,11 +306,11 @@ CE::World CE::Level::CreateWorld(const bool callBeginPlayImmediately) const
 	return world;
 }
 
-std::vector<CE::EntityType> GetIds(const CE::BinaryGSONObject& serializedFactory)
+std::vector<entt::entity> GetIds(const CE::BinaryGSONObject& serializedFactory)
 {
 	const CE::BinaryGSONMember* serializedIds = serializedFactory.TryGetGSONMember("IDS");
 
-	std::vector<CE::EntityType> ids;
+	std::vector<entt::entity> ids;
 	if (serializedIds != nullptr)
 	{
 		*serializedIds >> ids;
