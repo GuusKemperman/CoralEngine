@@ -117,7 +117,7 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 
 		if (!registry.Valid(owner))
 		{
-			LOG(LogAssets, Error, "Component has owner {}, but this entity does not exist", static_cast<EntityType>(owner));
+			LOG(LogAssets, Error, "{} has owner {}, but this entity does not exist", componentClass->GetName(), static_cast<EntityType>(owner));
 			continue;
 		}
 
