@@ -11,7 +11,7 @@ CE::MetaFunc& CE::ScriptEvent::Declare(TypeId selfTypeId, MetaType& toType) cons
 
 	if (!mIsStatic)
 	{
-		metaParams.emplace_back(TypeTraits{ selfTypeId, mIsPure ? TypeForm::ConstRef : TypeForm::Ref });
+		metaParams.emplace_back(TypeTraits{ selfTypeId, TypeForm::Ref });
 	}
 	metaParams.insert(metaParams.end(), mEventParams.begin(), mEventParams.end());
 
@@ -26,7 +26,7 @@ CE::MetaFunc& CE::ScriptEvent::Declare(TypeId selfTypeId, MetaType& toType) cons
 		std::move(metaParams)
 	);
 
-	func.GetProperties().Add(Internal::sIsEventProp).Set(Props::sIsScriptPure, mIsPure);
+	func.GetProperties().Add(Internal::sIsEventProp);
 
 	return func;
 }
