@@ -101,7 +101,6 @@ void CE::AnimationSystem::Update(World& world, float dt)
 			SwitchAnimationRecursive(reg, entity, animationRoot.mWantedAnimation, animationRoot.mWantedTimeStamp);
 			animationRoot.mSwitchAnimation = false;
 		}
-
 	}
 }
 

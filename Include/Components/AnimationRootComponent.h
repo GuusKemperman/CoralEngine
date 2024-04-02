@@ -8,7 +8,6 @@ namespace CE
 	class AnimationRootComponent
 	{
 	public:
-
 		void SwitchAnimation();
 		void SwitchAnimation(const std::shared_ptr<const Animation>& animation, float timeStamp);
 
@@ -21,5 +20,4 @@ namespace CE
         static MetaType Reflect();
         REFLECT_AT_START_UP(AnimationRootComponent);
 	};
-
 }
