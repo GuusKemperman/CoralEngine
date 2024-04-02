@@ -29,7 +29,6 @@ void CE::UIButtonComponent::Deselect(World& world)
 	for (auto [entity] : view.each())
 	{
 		entitiesWithTag.emplace_back(entity);
-
 	}
 
 	for (const entt::entity entity : entitiesWithTag)

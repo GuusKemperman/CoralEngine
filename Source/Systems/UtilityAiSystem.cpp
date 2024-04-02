@@ -57,18 +57,18 @@ CE::MetaType CE::AITickSystem::Reflect()
 
 void CE::AIEvaluateSystem::Update(World& world, float)
 {
-	const Registry& reg = world.GetRegistry();
+	Registry& reg = world.GetRegistry();
 
 	struct StateToEvaluate
 	{
-		std::reference_wrapper<const entt::sparse_set> mStorage;
+		std::reference_wrapper<entt::sparse_set> mStorage;
 		std::reference_wrapper<const MetaType> mType;
 		std::reference_wrapper<const MetaFunc> mEvaluate;
 		bool mAreEventsStatic{};
 	};
 	std::vector<StateToEvaluate> statesToEvaluate{};
 
-	for (const auto&& [typeId, storage] : reg.Storage())
+	for (auto&& [typeId, storage] : reg.Storage())
 	{
 		const MetaType* const state = MetaManager::Get().TryGetType(typeId);
 
@@ -116,8 +116,7 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 			}
 			else
 			{
-				// const_cast is fine since we are assigning it to a const MetaAny
-				MetaAny component{ state.mType, const_cast<void*>(state.mStorage.get().value(entity)), false };
+				MetaAny component{ state.mType, state.mStorage.get().value(entity), false };
 				evalResult = state.mEvaluate.get().InvokeUncheckedUnpackedWithRVO(&score, component, world, entity);
 			}
 
