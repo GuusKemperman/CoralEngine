@@ -576,8 +576,8 @@ CE::MetaType CE::NavMeshComponent::Reflect()
 std::vector<glm::vec2> CE::NavMeshComponent::FindQuickestPath(glm::vec2 startPos, glm::vec2 endPos) const
 {
 	// Initialize pointers to the start and end nodes
-	const Node* startNode = nullptr;
-	const Node* endNode = nullptr;
+	const Pathfinding::Node* startNode = nullptr;
+	const Pathfinding::Node* endNode = nullptr;
 
 	// Find the start and end nodes based on their positions
 	for (int i = 0; i < static_cast<int>(mPolygonDataNavMesh.size()); i++)
@@ -605,7 +605,7 @@ std::vector<glm::vec2> CE::NavMeshComponent::FindQuickestPath(glm::vec2 startPos
 	}
 
 	// Initialize a vector to store the node path found by the A* algorithm
-	std::vector<const Node*> nodePathFound;
+	std::vector<const Pathfinding::Node*> nodePathFound;
 	std::vector<TransformedPolygon> trianglePathFound; // This stores the polygons corresponding to the node path
 
 	// Perform A* search if start and end nodes are different

@@ -39,7 +39,7 @@ namespace CE
 
 	private:
 		/// \brief The A* Graph object.
-		Graph mAStarGraph{};
+		Pathfinding::Graph mAStarGraph{};
 
 		/// \brief The std::vector<PolygonPoints> that contains the walkable area. Only used for debugging.
 		std::vector<TransformedPolygon> mCleanedPolygonList;
