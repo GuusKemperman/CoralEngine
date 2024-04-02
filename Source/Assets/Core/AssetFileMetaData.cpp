@@ -6,9 +6,9 @@
 #include "GSON/GSONBinary.h"
 #include "Utilities/ClassVersion.h"
 
-CE::AssetFileMetaData::AssetFileMetaData(std::string_view name, const MetaType& assetClass, uint32 version,
+CE::AssetFileMetaData::AssetFileMetaData(std::string_view name, const MetaType& assetClass, uint32 assetVersion,
 	const std::optional<ImporterInfo>& importerInfo) :
-	mAssetVersion(version == std::numeric_limits<uint32>::max() ? GetClassVersion(assetClass) : version),
+	mAssetVersion(assetVersion == std::numeric_limits<uint32>::max() ? GetClassVersion(assetClass) : assetVersion),
 	mAssetName(name),
 	mClass(assetClass),
 	mImporterInfo(importerInfo)
@@ -30,7 +30,6 @@ static std::optional<T> TryRead(std::istream& fromStream)
 	return tmp;
 }
 
-
 std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaData(std::istream& fromStream)
 {
 	std::optional<uint32> version = TryRead<uint32>(fromStream);
@@ -44,16 +43,17 @@ std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaData(std::is
 	switch(*version)
 	{
 	case 0: 
-		return ReadMetaDataV0(fromStream);
+		return ReadMetaDataV0(fromStream, *version);
 	case 1:
-		return ReadMetaDataV1(fromStream);
+	case 2:
+		return ReadMetaDataV1V2(fromStream, *version);
 	default:
 		LOG(LogAssets, Message, "Asset metadata version {} is not recognised and not supported", *version);
 		return std::nullopt;
 	}
 }
 
-std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV0(std::istream& fromStream)
+std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV0(std::istream& fromStream, uint32)
 {
 	// In earlier versions, every asset version was 0.
 	// we did not save the metadata version yet.
@@ -146,7 +146,7 @@ std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV0(std::
 	return AssetFileMetaData{ name, *assetClass, assetVersion, ImporterInfo{ filePath, *importerVersion } };
 }
 
-std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV1(std::istream& fromStream)
+std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV1V2(std::istream& fromStream, uint32 version)
 {
 	BinaryGSONObject obj{};
 
@@ -193,6 +193,8 @@ std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV1(std::
 	const BinaryGSONMember* const savedImporterVersion = obj.TryGetGSONMember("iv");
 	const BinaryGSONMember* const savedImportedFromFile = obj.TryGetGSONMember("iff");
 
+	std::optional<ImporterInfo> importerInfo{};
+
 	if (savedImporterVersion != nullptr
 		|| savedImportedFromFile != nullptr)
 	{
@@ -203,16 +205,40 @@ std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV1(std::
 			return std::nullopt;
 		}
 
-		uint32 importerVersion{};
+		importerInfo.emplace();
+
+		*savedImporterVersion >> importerInfo->mImporterVersion;
+
 		std::string importedFromFile{};
+		*savedImportedFromFile >> importedFromFile;;
+		importerInfo->mImportedFile = importedFromFile;
 
-		*savedImporterVersion >> importerVersion;
-		*savedImportedFromFile >> importedFromFile;
+		if (version >= 2)
+		{
+			const BinaryGSONMember* const savedWriteTime = obj.TryGetGSONMember("wt");
+			const BinaryGSONMember* const savedEditsAfterImporting = obj.TryGetGSONMember("ed");
 
-		return AssetFileMetaData{ std::move(assetName), *assetClass, assetVersion, ImporterInfo{ std::move(importedFromFile), importerVersion } };
+			if (savedWriteTime == nullptr
+				|| savedEditsAfterImporting == nullptr)
+			{
+				LOG(LogAssets, Message, "Asset metadata was corrupted");
+				return std::nullopt;
+			}
+
+			using TimeSinceEpoch = decltype(importerInfo->mImportedFromFileWriteTimeAtTimeOfImporting.time_since_epoch());
+			using Count = decltype(importerInfo->mImportedFromFileWriteTimeAtTimeOfImporting.time_since_epoch().count());
+			Count serialisedTimeSinceEpoch{};
+			*savedWriteTime >> serialisedTimeSinceEpoch;
+			const TimeSinceEpoch sinceEpoch{ serialisedTimeSinceEpoch };
+			importerInfo->mImportedFromFileWriteTimeAtTimeOfImporting = decltype(importerInfo->mImportedFromFileWriteTimeAtTimeOfImporting){ sinceEpoch };
+
+			*savedEditsAfterImporting >> importerInfo->mWereEditsMadeAfterImporting;
+		}
 	}
 
-	return AssetFileMetaData{ std::move(assetName), *assetClass, assetVersion };
+	AssetFileMetaData metaData{ std::move(assetName), *assetClass, assetVersion, std::move(importerInfo) };
+	metaData.mMetaDataVersion = version;
+	return metaData;
 }
 
 void CE::AssetFileMetaData::WriteMetaData(std::ostream& toStream) const
@@ -229,43 +255,10 @@ void CE::AssetFileMetaData::WriteMetaData(std::ostream& toStream) const
 	{
 		obj.AddGSONMember("iv") << mImporterInfo->mImporterVersion;
 		obj.AddGSONMember("iff") << mImporterInfo->mImportedFile.string();
+		obj.AddGSONMember("wt") << mImporterInfo->mImportedFromFileWriteTimeAtTimeOfImporting.time_since_epoch().count();
+		obj.AddGSONMember("ed") << mImporterInfo->mWereEditsMadeAfterImporting;
 	}
 
 	obj.SaveToBinary(toStream);
-
-	//std::string str{};
-
-	//str = ToBinary(sMetaDataVersion);
-	//toStream.write(str.c_str(), str.size());
-
-	//{ // Write version
-	//	toStream.write(reinterpret_cast<const char*>(&mAssetVersion), sizeof(mAssetVersion));
-	//}
-
-	//{ // Write class hash
-	//	const TypeId classTypeId = mClass.get().GetTypeId();
-	//	toStream.write(reinterpret_cast<const char*>(&classTypeId), sizeof(classTypeId));
-	//}
-
-	//{ // Write asset name
-	//	ASSERT(mAssetName.size() < std::numeric_limits<uint16>::max());
-	//	const uint16 nameLength = static_cast<uint16>(mAssetName.size());
-	//	toStream.write(reinterpret_cast<const char*>(&nameLength), sizeof(nameLength));
-	//	toStream.write(mAssetName.data(), nameLength);
-	//}
-
-	//const bool hasImporterInfo = mImporterInfo.has_value();
-	//toStream.write(reinterpret_cast<const char*>(&hasImporterInfo), sizeof(hasImporterInfo));
-
-	//if (mImporterInfo.has_value())
-	//{
-	//	toStream.write(reinterpret_cast<const char*>(&mImporterInfo->mImporterVersion), sizeof(mImporterInfo->mImporterVersion));
-
-	//	const std::string importedFromFile = mImporterInfo->mImportedFile.string();
-	//	ASSERT(importedFromFile.size() < std::numeric_limits<uint16>::max());
-	//	const uint16 filePathLength = static_cast<uint16>(importedFromFile.size());
-	//	toStream.write(reinterpret_cast<const char*>(&filePathLength), sizeof(filePathLength));
-	//	toStream.write(importedFromFile.data(), filePathLength);
-	//}
 }
 

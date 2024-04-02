@@ -59,7 +59,7 @@ namespace CE
 			std::optional<WeakAsset<Level>> autoSave = AssetManager::Get().TryGetWeakAsset<Level>("AutoSave"_Name);
 
 			if (!autoSave.has_value() // We can test to see if an asset exists without having to load it in.
-				|| autoSave->GetVersion() < ClassVersion_v<Level>) // We have access to some metadata without having to load it in.
+				|| autoSave->GetAssetVersion() < ClassVersion_v<Level>) // We have access to some metadata without having to load it in.
 			{
 				LOG(LogGame, Warning, "Autosave does not exist or is out of date");
 				return;
@@ -246,7 +246,7 @@ namespace CE
 
 		size_t NumOfReferences() const { return mAssetInternal.get().mAsset.use_count(); }
 
-		uint32 GetVersion() const { return mAssetInternal.get().mMetaData.GetVersion(); }
+		uint32 GetVersion() const { return mAssetInternal.get().mMetaData.GetAssetVersion(); }
 
 		std::shared_ptr<const T> MakeShared() const
 		{

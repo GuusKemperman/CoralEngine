@@ -23,7 +23,7 @@ namespace CE::Props
 
 	Description:
 		Set the class version. Can be used for assets that were saved in an old format.
-		See AssetLoadInfo::GetVersion()
+		See AssetLoadInfo::GetAssetVersion()
 
 	Example:
 		type.GetProperties().Set(Props::sVersion, 5)
