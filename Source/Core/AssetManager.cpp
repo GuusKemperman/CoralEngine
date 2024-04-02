@@ -181,7 +181,18 @@ void CE::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 				break;
 			}
 
-			if (std::filesystem::last_write_time(*assetInternal.mFileOfOrigin) < importableAssetLastWriteTime)
+			if (assetInternal.mMetaData.mMetaDataVersion != AssetFileMetaData::GetCurrentMetaDataVersion())
+			{
+				LOG(LogAssets, Message, "Asset {} is out-of-date, metadata version is {} (current is {}). The asset will be re-imported from {}",
+					assetInternal.mMetaData.GetName(),
+					assetInternal.mMetaData.mMetaDataVersion,
+					AssetFileMetaData::GetCurrentMetaDataVersion(),
+					importableAsset.string());
+				ImportInternal(importableAsset, false);
+				break;
+			}
+
+			if (assetInternal.mMetaData.mImporterInfo->mImportedFromFileWriteTimeAtTimeOfImporting < importableAssetLastWriteTime)
 			{
 				LOG(LogAssets, Message, "Changes to {} detected. Reimporting...",
 					importableAsset.string());
@@ -407,7 +418,8 @@ void CE::AssetManager::ImportInternal(const std::filesystem::path& path, bool re
 
 					errorsEncountered = true;
 				}
-				else if (existingAssetWithSameName->mAsset.use_count() > 1)
+
+				if (existingAssetWithSameName->mAsset.use_count() > 1)
 				{
 					LOG(LogAssets, Error, "Importing failed: Importing {} means replacing existing asset {}, but this asset is still referenced in memory {} time(s).",
 						path.string(), existingAssetWithSameName->mMetaData.GetName(), existingAssetWithSameName->mAsset.use_count() - 1);
@@ -435,6 +447,16 @@ void CE::AssetManager::ImportInternal(const std::filesystem::path& path, bool re
 				// We can safely dereference the mFileOfOrigin,
 				// because assets generated at runtime do not have an mImporterInfo.
 				const std::filesystem::path& existingImportedAssetFile = *assetInternal.mFileOfOrigin;
+
+				if (assetInternal.mMetaData.GetImporterInfo()->mWereEditsMadeAfterImporting)
+				{
+					LOG(LogAssets, Error, "Reimporting {} would undo all the changes made to {}. Delete the file {} before reimporting.", 
+						path.string(),
+						assetInternal.mMetaData.mAssetName,
+						existingImportedAssetFile.string());
+					errorsEncountered = true;
+					continue;
+				}
 
 				// Delete existing files that were generated the last time we imported this asset
 				if (std::filesystem::exists(existingImportedAssetFile))
@@ -1013,7 +1035,7 @@ CE::AssetManager::AssetInternal* CE::AssetManager::TryConstruct(const std::optio
 	const uint32 currentVersion = GetClassVersion(constructedAssetInternal.mMetaData.GetClass());
 	if (constructedAssetInternal.mMetaData.mAssetVersion != currentVersion)
 	{
-		LOG(LogAssets, Message, "Asset {} is out of date: version is {} (current is {}). If the loader still supports this version, you have nothing to worry about.",
+		LOG(LogAssets, Verbose, "Asset {} is out of date: version is {} (current is {}). If the loader still supports this version, you have nothing to worry about.",
 			constructedAssetInternal.mMetaData.mAssetName,
 			constructedAssetInternal.mMetaData.mAssetVersion,
 			currentVersion);
