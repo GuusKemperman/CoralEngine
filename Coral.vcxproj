@@ -1022,7 +1022,7 @@
     <ClCompile Include="Source\Scripting\ScriptEvents.cpp" />
     <ClCompile Include="Source\Components\PointLightComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\Edge.cpp" />
-    <ClCompile Include="Source\Components\Pathfinding\Geometry2d.cpp" />
+    <ClCompile Include="Source\Utilities\Geometry2d.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\Graph.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshAgentComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshComponent.cpp" />
@@ -1518,7 +1518,7 @@
     <ClCompile Include="Source\Components\UI\UISpriteComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\Components\Pathfinding\Geometry2d.h" />
+    <ClInclude Include="Include\Utilities\Geometry2d.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\GPUWorldPC.h" />
     <ClInclude Include="Include\Components\MeshColorComponent.h" />
