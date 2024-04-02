@@ -282,6 +282,7 @@ void CE::ScriptEditorSystem::TryLetUserCreateLink()
 
 void CE::ScriptEditorSystem::AddNewNode(const NodeTheUserCanAdd& nodeToAdd)
 {
+	ImGui::ClosePopupsOverWindow(ImGui::GetCurrentWindow(), true);
 	ScriptFunc* currentFunc = TryGetSelectedFunc();
 
 	if (currentFunc == nullptr)
