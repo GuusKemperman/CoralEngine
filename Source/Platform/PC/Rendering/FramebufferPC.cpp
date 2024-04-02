@@ -6,7 +6,7 @@
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 #include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
 
-Engine::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
+CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 {
 	if (Device::IsHeadless())
 	{
@@ -75,9 +75,9 @@ Engine::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 	mDepthStencilHandle = engineDevice.GetDescriptorHeap(DEPTH_HEAP)->AllocateDepthStencil(mDepthResource.get(), &depthStencilDesc);
 }
 
-Engine::FrameBuffer::~FrameBuffer() = default;
+CE::FrameBuffer::~FrameBuffer() = default;
 
-void Engine::FrameBuffer::Bind()
+void CE::FrameBuffer::Bind()
 {
 	Device& engineDevice = Device::Get();
 	std::shared_ptr<DXDescHeap> rtHeap = engineDevice.GetDescriptorHeap(RT_HEAP);
@@ -89,12 +89,12 @@ void Engine::FrameBuffer::Bind()
 	rtHeap->BindRenderTargets(commandList, &mFrameBufferHandle[engineDevice.GetFrameIndex()], mDepthStencilHandle);
 }
 
-void Engine::FrameBuffer::Unbind()
+void CE::FrameBuffer::Unbind()
 {
 
 }
 
-void Engine::FrameBuffer::Resize(glm::ivec2 newSize)
+void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 {
 	if (mSize == newSize)
 	{
@@ -171,7 +171,7 @@ void Engine::FrameBuffer::Resize(glm::ivec2 newSize)
 	mDepthStencilHandle = engineDevice.GetDescriptorHeap(DEPTH_HEAP)->AllocateDepthStencil(mDepthResource.get(), &depthStencilDesc);
 }
 
-void Engine::FrameBuffer::Clear()
+void CE::FrameBuffer::Clear()
 {
 	Device& engineDevice = Device::Get();
 	std::shared_ptr<DXDescHeap> rtHeap = engineDevice.GetDescriptorHeap(RT_HEAP);
@@ -181,7 +181,7 @@ void Engine::FrameBuffer::Clear()
 	depthHeap->ClearDepthStencil(commandList, mDepthStencilHandle);
 }
 
-size_t Engine::FrameBuffer::GetColorTextureId()
+size_t CE::FrameBuffer::GetColorTextureId()
 {
 	Device& engineDevice = Device::Get();
 	return mFrameBufferRscHandle[engineDevice.GetFrameIndex()].GetAddressGPU().ptr;

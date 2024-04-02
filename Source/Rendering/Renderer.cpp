@@ -12,22 +12,22 @@
 #include "Rendering/UIRenderer.h"
 #include "Rendering/DebugRenderer.h"
 
-Engine::Renderer::Renderer()
+CE::Renderer::Renderer()
 {
 	mMeshRenderer = std::make_unique<MeshRenderer>();
 	mUIRenderer = std::make_unique<UIRenderer>();
 	mDebugRenderer = std::make_unique<DebugRenderer>();
 }
 
-Engine::Renderer::~Renderer() = default;
+CE::Renderer::~Renderer() = default;
 
-void Engine::Renderer::Render(const World& world)
+void CE::Renderer::Render(const World& world)
 {
 	Render(world, Device::Get().GetDisplaySize());
 }
 
 #ifdef EDITOR
-void Engine::Renderer::RenderToFrameBuffer(
+void CE::Renderer::RenderToFrameBuffer(
 	const World& world, 
 	FrameBuffer& buffer, 
 	std::optional<glm::vec2> firstResizeBufferTo, 
@@ -51,7 +51,7 @@ void Engine::Renderer::RenderToFrameBuffer(
 }
 #endif // EDITOR
 
-void Engine::Renderer::Render(const World& world, glm::vec2 viewportSize)
+void CE::Renderer::Render(const World& world, glm::vec2 viewportSize)
 {
 	// Casting const away :(
 	WorldViewport& worldViewport = const_cast<WorldViewport&>(world.GetViewport());

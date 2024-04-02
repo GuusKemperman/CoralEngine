@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 
-namespace Engine
+namespace CE
 {
 	class StringFunctions
 	{

@@ -2,7 +2,7 @@
 #include "Components/Pathfinding/Geometry2d.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class TransformComponent;
 
@@ -26,8 +26,8 @@ namespace Engine
 }
 
 template<>
-struct Reflector<Engine::TransformedDiskColliderComponent>
+struct Reflector<CE::TransformedDiskColliderComponent>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(TransformedDiskColliderComponent, Engine::TransformedDiskColliderComponent);
+}; REFLECT_AT_START_UP(TransformedDiskColliderComponent, CE::TransformedDiskColliderComponent);

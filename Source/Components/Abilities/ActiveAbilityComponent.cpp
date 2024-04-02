@@ -5,7 +5,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::MetaType Engine::ActiveAbilityComponent::Reflect()
+CE::MetaType CE::ActiveAbilityComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<ActiveAbilityComponent>{}, "ActiveAbilityComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);

@@ -6,14 +6,14 @@
 #include "Meta/MetaTypeTraits.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine::Internal
+namespace CE::Internal
 {
     // Prevents having to include MetaManager.h
     bool DoesTypeExist(TypeId typeId);
 }
 
 template <typename T>
-Engine::MetaAny::MetaAny(T&& anyObject, void* const buffer)
+CE::MetaAny::MetaAny(T&& anyObject, void* const buffer)
 {
     static constexpr TypeTraits traits = MakeTypeTraits<T>();
     static constexpr TypeInfo info = MakeTypeInfo<T>();
@@ -74,25 +74,25 @@ Engine::MetaAny::MetaAny(T&& anyObject, void* const buffer)
 }
 
 template<typename T>
-bool Engine::MetaAny::IsExactly() const
+bool CE::MetaAny::IsExactly() const
 {
     return IsExactly(MakeTypeId<T>());
 }
 
 template<typename T>
-T* Engine::MetaAny::As()
+T* CE::MetaAny::As()
 {
     return IsDerivedFrom<T>() ? static_cast<T*>(mData) : nullptr;
 }
 
 template<typename T>
-const T* Engine::MetaAny::As() const
+const T* CE::MetaAny::As() const
 {
     return IsDerivedFrom<T>() ? static_cast<const T*>(mData) : nullptr;
 }
 
 template<typename T>
-bool Engine::MetaAny::IsDerivedFrom() const
+bool CE::MetaAny::IsDerivedFrom() const
 {
     return IsDerivedFrom(MakeTypeId<T>());
 }

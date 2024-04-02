@@ -6,7 +6,7 @@
 #include "World/World.h"
 #include "Meta/MetaType.h"
 
-void Engine::AITickSystem::Update(World& world, float dt)
+void CE::AITickSystem::Update(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
 	const auto& enemyAIControllerView = reg.View<EnemyAiControllerComponent>();
@@ -50,12 +50,12 @@ void Engine::AITickSystem::Update(World& world, float dt)
 	}
 }
 
-Engine::MetaType Engine::AITickSystem::Reflect()
+CE::MetaType CE::AITickSystem::Reflect()
 {
 	return MetaType{ MetaType::T<AITickSystem>{}, "AITickSystem", MetaType::Base<System>{} };
 }
 
-void Engine::AIEvaluateSystem::Update(World& world, float)
+void CE::AIEvaluateSystem::Update(World& world, float)
 {
 	const Registry& reg = world.GetRegistry();
 
@@ -157,7 +157,7 @@ void Engine::AIEvaluateSystem::Update(World& world, float)
 }
 
 template <typename EventT>
-void Engine::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const MetaType* type, World& world,
+void CE::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const MetaType* type, World& world,
 	entt::entity owner)
 {
 	if (type == nullptr)
@@ -191,7 +191,7 @@ void Engine::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const Me
 	}
 }
 
-Engine::MetaType Engine::AIEvaluateSystem::Reflect()
+CE::MetaType CE::AIEvaluateSystem::Reflect()
 {
 	return MetaType{ MetaType::T<AIEvaluateSystem>{}, "AIEvaluateSystem", MetaType::Base<System>{} };
 }

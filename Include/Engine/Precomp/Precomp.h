@@ -70,7 +70,8 @@ void _CheckFrameBuffer(const char* f, int l);
 #define CheckFrameBuffer()
 #endif // OPEN_GL
 
-namespace Engine
+// Coral Engine
+namespace CE
 {
 	using EntityType = std::underlying_type_t<entt::entity>;
 }
@@ -95,7 +96,6 @@ template<bool flag = false> void static_no_match() { static_assert(flag, "No mat
 
 template <class> constexpr bool AlwaysFalse = false;
 
-#include "Core/CommonMetaProperties.h"
-
+#include "Utilities/CommonMetaProperties.h"
 #include "Utilities/EnumString.h"
 

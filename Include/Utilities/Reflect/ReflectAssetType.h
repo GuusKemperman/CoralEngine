@@ -4,7 +4,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
-namespace Engine
+namespace CE
 {
 	// Makes sure the type receives all the functionality that an Asset requires.
 	template<typename AssetT>

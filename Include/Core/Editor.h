@@ -8,7 +8,7 @@
 #include "EditorSystems/EditorSystem.h"
 #include "Meta/MetaTypeId.h"
 
-namespace Engine
+namespace CE
 {
 	class AssetLoadInfo;
 

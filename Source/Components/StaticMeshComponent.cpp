@@ -8,7 +8,7 @@
 #include "Assets/Material.h"
 #include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
-Engine::MetaType Engine::StaticMeshComponent::Reflect()
+CE::MetaType CE::StaticMeshComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<StaticMeshComponent>{}, "StaticMeshComponent" };
 	MetaProps& props = type.GetProperties();

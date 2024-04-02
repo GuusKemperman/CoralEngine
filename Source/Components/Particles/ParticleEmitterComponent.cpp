@@ -7,7 +7,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Math.h"
 
-void Engine::ParticleEmitterComponent::OnParticleSpawn(const size_t i, 
+void CE::ParticleEmitterComponent::OnParticleSpawn(const size_t i, 
                                                        const glm::quat emitterWorldOrientaton, 
                                                        const glm::vec3 emitterWorldScale, 
                                                        const glm::mat4& emitterMatrix)
@@ -23,7 +23,7 @@ void Engine::ParticleEmitterComponent::OnParticleSpawn(const size_t i,
 	mParticlesSpawnedDuringLastStep.push_back(i);
 }
 
-void Engine::ParticleEmitterComponent::PlayFromStart()
+void CE::ParticleEmitterComponent::PlayFromStart()
 {
 	mCurrentTime = 0.0f;
 	mNumOfParticlesToSpawnNextFrame = 0.0f;
@@ -37,7 +37,7 @@ void Engine::ParticleEmitterComponent::PlayFromStart()
 	}
 }
 
-Engine::MetaType Engine::ParticleEmitterComponent::Reflect()
+CE::MetaType CE::ParticleEmitterComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<ParticleEmitterComponent>{}, "ParticleEmitterComponent" };
 	MetaProps& props = type.GetProperties();

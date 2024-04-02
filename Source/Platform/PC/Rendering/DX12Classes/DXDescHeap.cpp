@@ -98,7 +98,7 @@ DXHeapHandle DXDescHeap::AllocateResource(DXResource* resource, D3D12_SHADER_RES
 		return DXHeapHandle();
 	}
 
-	Engine::Device& engineDevice = Engine::Device::Get();
+	CE::Device& engineDevice = CE::Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), slot, mDescriptorSize);
 	device->CreateShaderResourceView(resource->Get(), desc, handle);
@@ -134,7 +134,7 @@ DXHeapHandle DXDescHeap::AllocateUAV(DXResource* resource, D3D12_UNORDERED_ACCES
 		return DXHeapHandle();
 	}
 
-	Engine::Device& engineDevice = Engine::Device::Get();
+	CE::Device& engineDevice = CE::Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), slot, mDescriptorSize);
 	device->CreateUnorderedAccessView(resource->Get(), nullptr, desc, handle);
@@ -171,7 +171,7 @@ DXHeapHandle DXDescHeap::AllocateRenderTarget(DXResource* resource, D3D12_RENDER
 		return DXHeapHandle();
 	}
 
-	Engine::Device& engineDevice = Engine::Device::Get();
+	CE::Device& engineDevice = CE::Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), slot, mDescriptorSize);
@@ -242,7 +242,7 @@ DXHeapHandle DXDescHeap::AllocateDepthStencil(DXResource* resource, D3D12_DEPTH_
 		return DXHeapHandle();
 	}
 
-	Engine::Device& engineDevice = Engine::Device::Get();
+	CE::Device& engineDevice = CE::Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), slot, mDescriptorSize);

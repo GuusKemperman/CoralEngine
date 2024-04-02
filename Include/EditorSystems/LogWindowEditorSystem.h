@@ -1,7 +1,7 @@
 #ifdef EDITOR
 #include "EditorSystems/EditorSystem.h"
 
-namespace Engine
+namespace CE
 {
 	class LogWindow final :
 		public EditorSystem

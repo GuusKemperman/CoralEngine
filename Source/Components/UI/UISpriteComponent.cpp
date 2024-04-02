@@ -4,7 +4,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::MetaType Engine::UISpriteComponent::Reflect()
+CE::MetaType CE::UISpriteComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<UISpriteComponent>{}, "UISpriteComponent" };
 	MetaProps& props = type.GetProperties();

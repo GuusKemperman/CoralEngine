@@ -4,7 +4,7 @@
 #include "Meta/MetaFunc.h"
 #include "Meta/MetaType.h"
 
-namespace Engine
+namespace CE
 {
 	// Make sure it the type receives all the functions that a data field requires
 	template<typename T>

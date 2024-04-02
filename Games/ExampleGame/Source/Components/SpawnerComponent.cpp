@@ -7,15 +7,15 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 
 
-Engine::MetaType Game::SpawnerComponent::Reflect()
+CE::MetaType Game::SpawnerComponent::Reflect()
 {
-	auto type = Engine::MetaType{Engine::MetaType::T<SpawnerComponent>{}, "SpawnerComponent"};
-	Engine::MetaProps& props = type.GetProperties();
-	props.Add(Engine::Props::sIsScriptableTag);
+	auto type = CE::MetaType{CE::MetaType::T<SpawnerComponent>{}, "SpawnerComponent"};
+	CE::MetaProps& props = type.GetProperties();
+	props.Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&SpawnerComponent::mCurrentTimer, "mCurrentTimer").GetProperties().Add(Engine::Props::sIsScriptableTag);
-	type.AddField(&SpawnerComponent::mSpawningTimer, "SpawningTimer").GetProperties().Add(Engine::Props::sIsScriptableTag);
-	type.AddField(&SpawnerComponent::mPrefab, "Prefab").GetProperties().Add(Engine::Props::sIsScriptableTag);
-	Engine::ReflectComponentType<SpawnerComponent>(type);
+	type.AddField(&SpawnerComponent::mCurrentTimer, "mCurrentTimer").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&SpawnerComponent::mSpawningTimer, "SpawningTimer").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&SpawnerComponent::mPrefab, "Prefab").GetProperties().Add(CE::Props::sIsScriptableTag);
+	CE::ReflectComponentType<SpawnerComponent>(type);
 	return type;
 }

@@ -3,7 +3,7 @@
 #include <queue>
 #include <thread>
 
-namespace Engine
+namespace CE
 {
 	/**
 	 * \brief Runs jobs fully asynchronously from the engine. Does not keep threads

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace CE
 {
 	/**
 	 * \brief Uses the fastest available option on the target platform for allocating aligned memory.

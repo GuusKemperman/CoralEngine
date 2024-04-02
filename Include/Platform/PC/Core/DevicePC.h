@@ -12,9 +12,9 @@ struct GLFWwindow;
 struct GLFWmonitor;
 class DXDescHeap;
 
-namespace Engine
+namespace CE
 {
-    class EngineClass;
+    class Engine;
 
 	class Device final : 
         public EngineSubsystem<Device>
@@ -64,9 +64,9 @@ namespace Engine
  
 
     private:
-        friend EngineClass;
+        friend Engine;
 
-        // Set to true by EngineClass if in unit_test mode.
+        // Set to true by Engine if in unit_test mode.
         static inline bool sIsHeadless{};
 
         void InitializeWindow();

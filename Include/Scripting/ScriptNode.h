@@ -6,7 +6,7 @@
 #include "Meta/MetaFunc.h"
 #include "Scripting/ScriptConfig.h"
 
-namespace Engine
+namespace CE
 {
 	class ScriptIdGenerator;
 	class ScriptFunc;
@@ -135,32 +135,32 @@ namespace Engine
 	};
 }
 
-inline Engine::Span<const Engine::ScriptPin> Engine::ScriptNode::GetInputs(const ScriptFunc& scriptFunc) const
+inline CE::Span<const CE::ScriptPin> CE::ScriptNode::GetInputs(const ScriptFunc& scriptFunc) const
 {
 	return { mFirstPinId.IsValid() ? &scriptFunc.GetPin(mFirstPinId) : nullptr, mNumOfInputs };
 }
 
-inline Engine::Span<Engine::ScriptPin> Engine::ScriptNode::GetInputs(ScriptFunc& scriptFunc)
+inline CE::Span<CE::ScriptPin> CE::ScriptNode::GetInputs(ScriptFunc& scriptFunc)
 {
 	return { mFirstPinId.IsValid() ? &scriptFunc.GetPin(mFirstPinId) : nullptr, mNumOfInputs };
 }
 
-inline Engine::Span<const Engine::ScriptPin> Engine::ScriptNode::GetOutputs(const ScriptFunc& scriptFunc) const
+inline CE::Span<const CE::ScriptPin> CE::ScriptNode::GetOutputs(const ScriptFunc& scriptFunc) const
 {
 	return { mFirstPinId.IsValid() ? &scriptFunc.GetPin(mFirstPinId) + mNumOfInputs : nullptr, mNumOfOutputs };
 }
 
-inline Engine::Span<Engine::ScriptPin> Engine::ScriptNode::GetOutputs(ScriptFunc& scriptFunc)
+inline CE::Span<CE::ScriptPin> CE::ScriptNode::GetOutputs(ScriptFunc& scriptFunc)
 {
 	return { mFirstPinId.IsValid() ? &scriptFunc.GetPin(mFirstPinId) + mNumOfInputs : nullptr , mNumOfOutputs };
 }
 
-inline Engine::Span<const Engine::ScriptPin> Engine::ScriptNode::GetPins(const ScriptFunc& scriptFunc) const
+inline CE::Span<const CE::ScriptPin> CE::ScriptNode::GetPins(const ScriptFunc& scriptFunc) const
 {
 	return { mFirstPinId.IsValid() ? &scriptFunc.GetPin(mFirstPinId) : nullptr, mNumOfInputs + mNumOfOutputs };
 }
 
-inline Engine::Span<Engine::ScriptPin> Engine::ScriptNode::GetPins(ScriptFunc& scriptFunc)
+inline CE::Span<CE::ScriptPin> CE::ScriptNode::GetPins(ScriptFunc& scriptFunc)
 {
 	return { mFirstPinId.IsValid() ? &scriptFunc.GetPin(mFirstPinId) : nullptr, mNumOfInputs + mNumOfOutputs };
 }

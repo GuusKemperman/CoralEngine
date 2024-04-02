@@ -4,12 +4,12 @@
 #include "Core/Editor.h"
 #include "Meta/MetaType.h"
 
-Engine::EditorSystem::EditorSystem(const std::string_view name) :
+CE::EditorSystem::EditorSystem(const std::string_view name) :
 	mName(name)
 {
 }
 
-bool Engine::EditorSystem::Begin(ImGuiWindowFlags flags)
+bool CE::EditorSystem::Begin(ImGuiWindowFlags flags)
 {
 	bool open = true;
 
@@ -24,7 +24,7 @@ bool Engine::EditorSystem::Begin(ImGuiWindowFlags flags)
 	return !isCollapsed && open;
 }
 
-Engine::MetaType Engine::EditorSystem::Reflect()
+CE::MetaType CE::EditorSystem::Reflect()
 {
 	return MetaType{ MetaType::T<EditorSystem>{}, "EditorSystem" };
 }

@@ -12,7 +12,7 @@
 #include "Core/AssetManager.h"
 #include "Scripting/ScriptNode.h"
 
-bool Engine::CanFunctionBeTurnedIntoNode(const MetaFunc& func)
+bool CE::CanFunctionBeTurnedIntoNode(const MetaFunc& func)
 {
 	if (!func.GetProperties().Has(Props::sIsScriptableTag))
 	{
@@ -51,7 +51,7 @@ bool Engine::CanFunctionBeTurnedIntoNode(const MetaFunc& func)
 	return true;
 }
 
-bool Engine::IsFunctionPure(const MetaFunc& func)
+bool CE::IsFunctionPure(const MetaFunc& func)
 {
 	const std::optional<bool> isPure = func.GetProperties().TryGetValue<bool>(Props::sIsScriptPure);
 
@@ -78,12 +78,12 @@ bool Engine::IsFunctionPure(const MetaFunc& func)
 		func.GetReturnType().mTypeTraits);
 }
 
-bool Engine::WasTypeCreatedByScript(const MetaType& type)
+bool CE::WasTypeCreatedByScript(const MetaType& type)
 {
 	return type.GetProperties().Has(Props::sIsFromScriptsTag);
 }
 
-std::shared_ptr<const Engine::Script> Engine::TryGetScriptResponsibleForCreatingType(const MetaType& type)
+std::shared_ptr<const CE::Script> CE::TryGetScriptResponsibleForCreatingType(const MetaType& type)
 {
 	if (!WasTypeCreatedByScript(type))
 	{
@@ -93,7 +93,7 @@ std::shared_ptr<const Engine::Script> Engine::TryGetScriptResponsibleForCreating
 	return AssetManager::Get().TryGetAsset<Script>(type.GetName());
 }
 
-bool Engine::IsFunctionPure(const std::vector<TypeTraits>& functionParameters, const TypeTraits returnValue)
+bool CE::IsFunctionPure(const std::vector<TypeTraits>& functionParameters, const TypeTraits returnValue)
 {
 	if (returnValue.mStrippedTypeId == MakeTypeId<void>())
 	{
@@ -118,12 +118,12 @@ bool Engine::IsFunctionPure(const std::vector<TypeTraits>& functionParameters, c
 	return true;
 }
 
-bool Engine::CanTypeBeReferencedInScripts(const MetaType& type)
+bool CE::CanTypeBeReferencedInScripts(const MetaType& type)
 {
 	return type.GetProperties().Has(Props::sIsScriptableTag);
 }
 
-bool Engine::CanTypeBeOwnedByScripts(const MetaType& type)
+bool CE::CanTypeBeOwnedByScripts(const MetaType& type)
 {
 	const bool hasTags = type.GetProperties().Has(Props::sIsScriptableTag) && type.GetProperties().Has(Props::sIsScriptOwnableTag);
 
@@ -147,12 +147,12 @@ bool Engine::CanTypeBeOwnedByScripts(const MetaType& type)
 	return hasTags && hasFunctionsNeeded;
 }
 
-bool Engine::CanTypeBeUsedInScripts(const MetaType& type, const TypeForm inForm)
+bool CE::CanTypeBeUsedInScripts(const MetaType& type, const TypeForm inForm)
 {
 	return inForm == TypeForm::Value ? CanTypeBeOwnedByScripts(type) : CanTypeBeReferencedInScripts(type);
 }
 
-namespace Engine
+namespace CE
 {
 	static bool CanMemberBeSetOrGetThroughScripts(const MetaField& field)
 	{
@@ -161,19 +161,19 @@ namespace Engine
 	}
 }
 
-bool Engine::CanBeSetThroughScripts(const MetaField& field)
+bool CE::CanBeSetThroughScripts(const MetaField& field)
 {
 	return !field.GetProperties().Has(Props::sIsScriptReadOnlyTag)
 		&& CanMemberBeSetOrGetThroughScripts(field);
 }
 
-bool Engine::CanBeGetThroughScripts(const MetaField& field, bool byReference)
+bool CE::CanBeGetThroughScripts(const MetaField& field, bool byReference)
 {
 	return (!byReference || !field.GetProperties().Has(Props::sIsScriptReadOnlyTag))
 		&& CanMemberBeSetOrGetThroughScripts(field);
 }
 
-bool Engine::CanCreateLink(const ScriptPin& a, const ScriptPin& b)
+bool CE::CanCreateLink(const ScriptPin& a, const ScriptPin& b)
 {
 	if (a.GetKind() == b.GetKind()
 		|| a.GetNodeId() == b.GetNodeId())
@@ -198,7 +198,7 @@ bool Engine::CanCreateLink(const ScriptPin& a, const ScriptPin& b)
 	return !MetaFunc::CanArgBePassedIntoParam({ output.TryGetType()->GetTypeId(), output.GetTypeForm() }, { input.TryGetType()->GetTypeId(), input.GetTypeForm() }).has_value();
 }
 
-bool Engine::DoesPinRequireLink(const ScriptFunc& func, const ScriptPin& pin)
+bool CE::DoesPinRequireLink(const ScriptFunc& func, const ScriptPin& pin)
 {
 	const MetaType* const type = pin.TryGetType();
 
@@ -215,7 +215,7 @@ bool Engine::DoesPinRequireLink(const ScriptFunc& func, const ScriptPin& pin)
 
 #ifdef EDITOR
 
-bool Engine::CanInspectPin(const ScriptFunc& func, const ScriptPin& pin)
+bool CE::CanInspectPin(const ScriptFunc& func, const ScriptPin& pin)
 {
 	if (pin.IsInput()
 		&& !pin.IsLinked()
@@ -233,7 +233,7 @@ bool Engine::CanInspectPin(const ScriptFunc& func, const ScriptPin& pin)
 	return false;
 }
 
-void Engine::InspectPin(const ScriptFunc& func, ScriptPin& pin)
+void CE::InspectPin(const ScriptFunc& func, ScriptPin& pin)
 {
 	if (!CanInspectPin(func, pin)) 
 	{

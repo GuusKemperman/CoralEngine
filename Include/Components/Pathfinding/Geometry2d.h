@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace CE
 {
 	using PolygonPoints = std::vector<glm::vec2>;
 	struct TransformedPolygon;

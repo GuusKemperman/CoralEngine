@@ -3,7 +3,7 @@
 
 #include "GSON/GSONReadable.h"
 
-namespace Engine
+namespace CE
 {
 	template <typename Readable>
 	MetaProps& MetaProps::Set(const Name name, const Readable& value)

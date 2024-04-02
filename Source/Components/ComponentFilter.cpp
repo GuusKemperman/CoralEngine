@@ -6,16 +6,16 @@
 #include "Utilities/Reflect/ReflectFieldType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
-bool Engine::Internal::ComponentTypeFilterFunctor::operator()(const MetaType& type) const
+bool CE::Internal::ComponentTypeFilterFunctor::operator()(const MetaType& type) const
 {
 	return type.GetProperties().Has(Props::sComponentTag);
 }
 
-REFLECT_AT_START_UP(ArrayOfComponentFilter, std::vector<Engine::ComponentFilter>)
+REFLECT_AT_START_UP(ArrayOfComponentFilter, std::vector<CE::ComponentFilter>)
 
-Engine::MetaType Reflector<Engine::ComponentFilter>::Reflect()
+CE::MetaType Reflector<CE::ComponentFilter>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	using T = ComponentFilter;
 
 	std::vector<ComponentFilter> vec1{};

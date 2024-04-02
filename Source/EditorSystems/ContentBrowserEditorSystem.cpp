@@ -33,16 +33,16 @@ namespace
     std::string sPopUpFolderRelativeToRoot{};
     std::string sPopUpNewAssetName{};
     bool sPopUpIsEngineAsset{};
-    const Engine::MetaType* sPopUpAssetClass{};
+    const CE::MetaType* sPopUpAssetClass{};
 }
 
-Engine::ContentBrowserEditorSystem::ContentBrowserEditorSystem() :
+CE::ContentBrowserEditorSystem::ContentBrowserEditorSystem() :
 	EditorSystem("ContentBrowser"),
 	mFolderGraph(MakeFolderGraph(AssetManager::Get().GetAllAssets()))
 {
 }
 
-void Engine::ContentBrowserEditorSystem::Tick(const float)
+void CE::ContentBrowserEditorSystem::Tick(const float)
 {
     if (!Begin())
     {
@@ -96,7 +96,7 @@ void Engine::ContentBrowserEditorSystem::Tick(const float)
 }
 
 // Generated using chatgpt, but tbh it was so broken i am going to claim 50% of the credit
-std::vector<Engine::ContentBrowserEditorSystem::ContentFolder> Engine::ContentBrowserEditorSystem::MakeFolderGraph(std::vector<WeakAsset<Asset>>&& assets)
+std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEditorSystem::MakeFolderGraph(std::vector<WeakAsset<Asset>>&& assets)
 {
     // Create the root folder to hold the top-level directories and files
     ContentFolder rootFolder{};
@@ -166,7 +166,7 @@ std::vector<Engine::ContentBrowserEditorSystem::ContentFolder> Engine::ContentBr
     return rootFolder.mChildren;
 }
 
-void Engine::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folder)
+void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folder)
 {
     const bool isOpen = ImGui::TreeNode(folder.mPath.filename().string().c_str());
 
@@ -198,7 +198,7 @@ void Engine::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& f
     }
 }
 
-void Engine::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& asset) const
+void CE::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& asset) const
 {
     if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetAssetClass().GetTypeId()))
     {
@@ -249,12 +249,12 @@ void Engine::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& as
     }
 }
 
-void Engine::ContentBrowserEditorSystem::OpenAsset(WeakAsset<Asset> asset) const
+void CE::ContentBrowserEditorSystem::OpenAsset(WeakAsset<Asset> asset) const
 {
     Editor::Get().TryOpenAssetForEdit(asset);
 }
 
-bool Engine::ContentBrowserEditorSystem::DisplayNameUI(std::string& assetName)
+bool CE::ContentBrowserEditorSystem::DisplayNameUI(std::string& assetName)
 {
     ShowInspectUI("Name", assetName);
 
@@ -276,7 +276,7 @@ bool Engine::ContentBrowserEditorSystem::DisplayNameUI(std::string& assetName)
     return anyErrors;
 }
 
-Engine::ContentBrowserEditorSystem::FilePathUIResult Engine::ContentBrowserEditorSystem::DisplayFilepathUI(std::string& folderRelativeToRoot, bool& isEngineAsset,
+CE::ContentBrowserEditorSystem::FilePathUIResult CE::ContentBrowserEditorSystem::DisplayFilepathUI(std::string& folderRelativeToRoot, bool& isEngineAsset,
 	const std::string& assetName)
 {
     ShowInspectUI("IsEngineAsset", sPopUpIsEngineAsset);
@@ -320,17 +320,17 @@ Engine::ContentBrowserEditorSystem::FilePathUIResult Engine::ContentBrowserEdito
     return { actualOutputFile, outputFileToDisplay, anyErrors };
 }
 
-void Engine::ContentBrowserEditorSystem::PushError()
+void CE::ContentBrowserEditorSystem::PushError()
 {
     ImGui::PushStyleColor(ImGuiCol_Text, { 1.0f, 0.0f, 0.0f, 1.0f });
 }
 
-void Engine::ContentBrowserEditorSystem::PopError()
+void CE::ContentBrowserEditorSystem::PopError()
 {
     ImGui::PopStyleColor();
 }
 
-void Engine::ContentBrowserEditorSystem::DisplayAssetCreatorPopUp()
+void CE::ContentBrowserEditorSystem::DisplayAssetCreatorPopUp()
 {
     if (!ImGui::BeginPopup(sAssetCreatorImGuiId.data()))
     {
@@ -399,7 +399,7 @@ void Engine::ContentBrowserEditorSystem::DisplayAssetCreatorPopUp()
 	ImGui::EndPopup();
 }
 
-void Engine::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
+void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
 {
     if (!ImGui::BeginPopup(sAssetRightClickPopUpImGuiId.data()))
     {
@@ -485,7 +485,7 @@ void Engine::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
     ImGui::EndPopup();
 }
 
-Engine::MetaType Engine::ContentBrowserEditorSystem::Reflect()
+CE::MetaType CE::ContentBrowserEditorSystem::Reflect()
 {
     MetaType type{MetaType::T<ContentBrowserEditorSystem>{}, "ContentBrowserEditorSystem", MetaType::Base<EditorSystem>{} };
     type.GetProperties().Add(Props::sEditorSystemDefaultOpenTag);

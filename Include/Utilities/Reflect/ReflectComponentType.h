@@ -6,7 +6,7 @@
 #include "Meta/MetaProps.h"
 #include "Meta/MetaAny.h"
 
-namespace Engine
+namespace CE
 {
 	namespace Internal
 	{

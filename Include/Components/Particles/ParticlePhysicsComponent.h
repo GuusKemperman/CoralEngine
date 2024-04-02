@@ -2,7 +2,7 @@
 #include "Assets/Texture.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class ParticlePhysicsComponent
 	{

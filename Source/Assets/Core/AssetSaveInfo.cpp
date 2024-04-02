@@ -6,14 +6,14 @@
 #include "Meta/MetaType.h"
 #include "Utilities/ClassVersion.h"
 
-Engine::AssetSaveInfo::AssetSaveInfo(const std::string& name, const MetaType& assetClass) :
+CE::AssetSaveInfo::AssetSaveInfo(const std::string& name, const MetaType& assetClass) :
 	mStream(std::ostringstream::binary)
 {
 	const AssetFileMetaData metaData{  name, assetClass, GetClassVersion(assetClass) };
 	metaData.WriteMetaData(mStream);
 }
 
-Engine::AssetSaveInfo::AssetSaveInfo(const std::string& name, const MetaType& assetClass,
+CE::AssetSaveInfo::AssetSaveInfo(const std::string& name, const MetaType& assetClass,
 	const std::filesystem::path& importedFromFile, uint32 importerVersion) :
 	mStream(std::ostringstream::binary)
 {
@@ -21,18 +21,18 @@ Engine::AssetSaveInfo::AssetSaveInfo(const std::string& name, const MetaType& as
 	metaData.WriteMetaData(mStream);
 }
 
-Engine::AssetSaveInfo::AssetSaveInfo(AssetSaveInfo&& other) noexcept :
+CE::AssetSaveInfo::AssetSaveInfo(AssetSaveInfo&& other) noexcept :
 	mStream(std::move(other.mStream))
 {
 }
 
-Engine::AssetSaveInfo& Engine::AssetSaveInfo::operator=(AssetSaveInfo&& other) noexcept
+CE::AssetSaveInfo& CE::AssetSaveInfo::operator=(AssetSaveInfo&& other) noexcept
 {
 	mStream = std::move(other.mStream);
 	return *this;
 }
 
-bool Engine::AssetSaveInfo::SaveToFile(const std::filesystem::path& path) const
+bool CE::AssetSaveInfo::SaveToFile(const std::filesystem::path& path) const
 {
 	if (path.extension() != AssetManager::sAssetExtension)
 	{
@@ -62,7 +62,7 @@ bool Engine::AssetSaveInfo::SaveToFile(const std::filesystem::path& path) const
 	return true;
 }
 
-bool Engine::AssetSaveInfo::IsEmpty() const
+bool CE::AssetSaveInfo::IsEmpty() const
 {
 	std::stringstream readStream{ mStream.str(), std::istringstream::binary };
 	[[maybe_unused]] const std::optional<AssetFileMetaData> metaData = AssetFileMetaData::ReadMetaData(readStream);
@@ -72,7 +72,7 @@ bool Engine::AssetSaveInfo::IsEmpty() const
 	return const_cast<std::ostringstream&>(mStream).tellp() - readStream.tellp() == 0;
 }
 
-std::string Engine::AssetSaveInfo::ToString() const
+std::string CE::AssetSaveInfo::ToString() const
 {
 	return mStream.str();
 }

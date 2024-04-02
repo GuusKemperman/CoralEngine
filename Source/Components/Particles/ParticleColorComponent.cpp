@@ -5,7 +5,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::MetaType Engine::ParticleColorComponent::Reflect()
+CE::MetaType CE::ParticleColorComponent::Reflect()
 {
 	MetaType type = MetaType{MetaType::T<ParticleColorComponent>{}, "ParticleColorComponent" };
 	MetaProps& props = type.GetProperties();

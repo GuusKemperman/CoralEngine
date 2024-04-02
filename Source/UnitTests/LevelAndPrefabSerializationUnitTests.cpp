@@ -16,7 +16,7 @@
 #include "Components/TransformComponent.h"
 #include "World/Archiver.h"
 
-using namespace Engine;
+using namespace CE;
 
 static constexpr std::string_view sTestLevelName = "__TestLevel__";
 static constexpr std::string_view sTestPrefabName = "__TestPrefab__";

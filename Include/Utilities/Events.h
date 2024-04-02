@@ -3,7 +3,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 
@@ -185,7 +185,7 @@ namespace Engine
 	 *		void OnTick(World& world, entt::entity owner, float dt);
 	 *	};
 	 *  
-	 *	Engine::MetaType Engine::EventTestingComponent::Reflect()
+	 *	CE::MetaType CE::EventTestingComponent::Reflect()
 	 *	{
 	 *		MetaType type = MetaType{ MetaType::T<EventTestingComponent>{}, "EventTestingComponent" };
 	 *

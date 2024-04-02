@@ -11,7 +11,7 @@
 #include "Assets/Texture.h"
 #include "Rendering/GPUWorld.h"
 
-Engine::UIRenderer::UIRenderer()
+CE::UIRenderer::UIRenderer()
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
@@ -34,9 +34,9 @@ Engine::UIRenderer::UIRenderer()
     mPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"UI RENDER PIPELINE");
 }
 
-Engine::UIRenderer::~UIRenderer() = default;
+CE::UIRenderer::~UIRenderer() = default;
 
-void Engine::UIRenderer::Render(const World& world)
+void CE::UIRenderer::Render(const World& world)
 {
     const Registry& reg = world.GetRegistry();
 

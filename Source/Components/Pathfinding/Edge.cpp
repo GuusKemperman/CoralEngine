@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Components/Pathfinding/Edge.h"
 
-using namespace Engine;
+using namespace CE;
 
 Edge::Edge(const float cost, Node* toNode) : mCost(cost), mToNode(toNode)
 {

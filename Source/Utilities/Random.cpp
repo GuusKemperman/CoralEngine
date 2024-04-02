@@ -4,7 +4,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 
-Engine::MetaType Engine::Random::Reflect()
+CE::MetaType CE::Random::Reflect()
 {
     MetaType type{ MetaType::T<Random>{}, "Random" };
     type.AddFunc(&SetSeed, "SetSeed").GetProperties().Add(Props::sIsScriptableTag);

@@ -2,7 +2,7 @@
 #include "BasicDataTypes/Bezier.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class ParticleEmitterComponent
 	{

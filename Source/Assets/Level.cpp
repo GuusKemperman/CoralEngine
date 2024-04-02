@@ -21,7 +21,7 @@
 #include "Meta/MetaManager.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 
-namespace Engine
+namespace CE
 {
 	static void EraseSerializedComponents(BinaryGSONObject& serializedWorld,
 		const std::string& nameOfClassToErase,
@@ -40,7 +40,7 @@ namespace Engine
 		uint32 factoryId);
 }
 
-Engine::Level::Level(std::string_view name) :
+CE::Level::Level(std::string_view name) :
 	Asset(name, MakeTypeId<Level>()),
 	mSerializedComponents(std::make_unique<BinaryGSONObject>())
 {
@@ -65,7 +65,7 @@ Engine::Level::Level(std::string_view name) :
 	CreateFromWorld(world);
 }
 
-Engine::Level::Level(AssetLoadInfo& loadInfo) :
+CE::Level::Level(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {
 	BinaryGSONObject savedData{};
@@ -245,11 +245,11 @@ Engine::Level::Level(AssetLoadInfo& loadInfo) :
 	}
 }
 
-Engine::Level::Level(Level&&) noexcept = default;
+CE::Level::Level(Level&&) noexcept = default;
 
-Engine::Level::~Level() = default;
+CE::Level::~Level() = default;
 
-void Engine::Level::OnSave(AssetSaveInfo& saveInfo) const
+void CE::Level::OnSave(AssetSaveInfo& saveInfo) const
 {
 	if (mSerializedComponents == nullptr)
 	{
@@ -277,12 +277,12 @@ void Engine::Level::OnSave(AssetSaveInfo& saveInfo) const
 	*mSerializedComponents = std::move(children[0]);
 }
 
-void Engine::Level::CreateFromWorld(const World& world)
+void CE::Level::CreateFromWorld(const World& world)
 {
 	mSerializedComponents = std::make_unique<BinaryGSONObject>(Archiver::Serialize(world));
 }
 
-Engine::World Engine::Level::CreateWorld(const bool callBeginPlayImmediately) const
+CE::World CE::Level::CreateWorld(const bool callBeginPlayImmediately) const
 {
 	World world{ false };
 
@@ -305,11 +305,11 @@ Engine::World Engine::Level::CreateWorld(const bool callBeginPlayImmediately) co
 	return world;
 }
 
-std::vector<Engine::EntityType> GetIds(const Engine::BinaryGSONObject& serializedFactory)
+std::vector<CE::EntityType> GetIds(const CE::BinaryGSONObject& serializedFactory)
 {
-	const Engine::BinaryGSONMember* serializedIds = serializedFactory.TryGetGSONMember("IDS");
+	const CE::BinaryGSONMember* serializedIds = serializedFactory.TryGetGSONMember("IDS");
 
-	std::vector<Engine::EntityType> ids;
+	std::vector<CE::EntityType> ids;
 	if (serializedIds != nullptr)
 	{
 		*serializedIds >> ids;
@@ -317,7 +317,7 @@ std::vector<Engine::EntityType> GetIds(const Engine::BinaryGSONObject& serialize
 	return ids;
 }
 
-void Engine::EraseSerializedComponents(BinaryGSONObject& serializedWorld,
+void CE::EraseSerializedComponents(BinaryGSONObject& serializedWorld,
 	const std::string& nameOfClassToErase,
 	const std::vector<entt::entity>& eraseFromIds)
 {
@@ -339,7 +339,7 @@ void Engine::EraseSerializedComponents(BinaryGSONObject& serializedWorld,
 	}
 }
 
-void Engine::EraseSerializedFactory(BinaryGSONObject& serializedWorld,
+void CE::EraseSerializedFactory(BinaryGSONObject& serializedWorld,
 	const BinaryGSONObject& serializedFactory,
 	const std::string& prefabName)
 {
@@ -390,14 +390,14 @@ void Engine::EraseSerializedFactory(BinaryGSONObject& serializedWorld,
 	}
 }
 
-namespace Engine
+namespace CE
 {
 	BinaryGSONObject& GetSerializedPrefabFactory(BinaryGSONObject& prefabObject, const PrefabEntityFactory& prefabFactory);
 
 	BinaryGSONObject& GetOrAddSerializedPrefabObject(BinaryGSONObject& prefabsObject, const Prefab& prefab);
 }
 
-Engine::Level::DiffedPrefabFactory Engine::Level::DiffPrefabFactory(const BinaryGSONObject& serializedFactory, 
+CE::Level::DiffedPrefabFactory CE::Level::DiffPrefabFactory(const BinaryGSONObject& serializedFactory, 
 	const PrefabEntityFactory& currentVersion)
 {
 	DiffedPrefabFactory returnValue{ currentVersion, serializedFactory };
@@ -453,7 +453,7 @@ Engine::Level::DiffedPrefabFactory Engine::Level::DiffPrefabFactory(const Binary
 	return returnValue;
 }
 
-Engine::Level::DiffedPrefab Engine::Level::DiffPrefab(const BinaryGSONObject& serializedPrefab)
+CE::Level::DiffedPrefab CE::Level::DiffPrefab(const BinaryGSONObject& serializedPrefab)
 {
 	const std::string& prefabName = serializedPrefab.GetName();
 	DiffedPrefab returnValue{ serializedPrefab.GetName() };
@@ -550,7 +550,7 @@ Engine::Level::DiffedPrefab Engine::Level::DiffPrefab(const BinaryGSONObject& se
 	return returnValue;
 }
 
-Engine::BinaryGSONObject Engine::Level::GenerateCurrentStateOfPrefabs(const BinaryGSONObject& serializedWorld)
+CE::BinaryGSONObject CE::Level::GenerateCurrentStateOfPrefabs(const BinaryGSONObject& serializedWorld)
 {
 	BinaryGSONObject prefabsObject{ "Prefabs" };
 
@@ -627,7 +627,7 @@ Engine::BinaryGSONObject Engine::Level::GenerateCurrentStateOfPrefabs(const Bina
 	return prefabsObject;
 }
 
-std::vector<entt::entity> Engine::GetAllEntitiesCreatedUsingFactory(const BinaryGSONObject& serializedWorld,
+std::vector<entt::entity> CE::GetAllEntitiesCreatedUsingFactory(const BinaryGSONObject& serializedWorld,
 	const std::string& prefabName,
 	const uint32 factoryId)
 {
@@ -669,7 +669,7 @@ std::vector<entt::entity> Engine::GetAllEntitiesCreatedUsingFactory(const Binary
 	return ids;
 }
 
-std::vector<entt::entity> Engine::GetIds(const BinaryGSONObject& serializedFactory)
+std::vector<entt::entity> CE::GetIds(const BinaryGSONObject& serializedFactory)
 {
 	const BinaryGSONMember* serializedIds = serializedFactory.TryGetGSONMember("IDS");
 
@@ -681,7 +681,7 @@ std::vector<entt::entity> Engine::GetIds(const BinaryGSONObject& serializedFacto
 	return ids;
 }
 
-std::vector<std::reference_wrapper<const Engine::BinaryGSONObject>> Engine::GetSerializedChildFactories(const BinaryGSONObject& serializedFactory)
+std::vector<std::reference_wrapper<const CE::BinaryGSONObject>> CE::GetSerializedChildFactories(const BinaryGSONObject& serializedFactory)
 {
 	std::vector<std::reference_wrapper<const BinaryGSONObject>> returnValue{};
 
@@ -708,7 +708,7 @@ std::vector<std::reference_wrapper<const Engine::BinaryGSONObject>> Engine::GetS
 	return returnValue;
 }
 
-Engine::BinaryGSONObject& Engine::GetSerializedPrefabFactory(BinaryGSONObject& prefabObject, const PrefabEntityFactory& prefabFactory)
+CE::BinaryGSONObject& CE::GetSerializedPrefabFactory(BinaryGSONObject& prefabObject, const PrefabEntityFactory& prefabFactory)
 {
 	std::function<BinaryGSONObject*(BinaryGSONObject&, std::string_view)> findRecursive = [&findRecursive](BinaryGSONObject& current, std::string_view toFind) -> BinaryGSONObject*
 		{
@@ -742,7 +742,7 @@ Engine::BinaryGSONObject& Engine::GetSerializedPrefabFactory(BinaryGSONObject& p
 	return *obj;
 }
 
-Engine::BinaryGSONObject& Engine::GetOrAddSerializedPrefabObject(BinaryGSONObject& prefabsObject, const Prefab& prefab)
+CE::BinaryGSONObject& CE::GetOrAddSerializedPrefabObject(BinaryGSONObject& prefabsObject, const Prefab& prefab)
 {
 	const std::string& prefabName = prefab.GetName();
 	BinaryGSONObject* serializedPrefab = prefabsObject.TryGetGSONObject(prefabName);
@@ -775,7 +775,7 @@ Engine::BinaryGSONObject& Engine::GetOrAddSerializedPrefabObject(BinaryGSONObjec
 	return *serializedPrefab;
 }
 
-Engine::MetaType Engine::Level::Reflect()
+CE::MetaType CE::Level::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Level>{}, "Level", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 	ReflectAssetType<Level>(type);

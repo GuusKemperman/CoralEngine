@@ -2,7 +2,7 @@
 #include "Assets/Asset.h"
 #include "Assets/Animation/BoneInfo.h"
 
-namespace Engine
+namespace CE
 {
 	class Bone;
 
@@ -47,13 +47,13 @@ namespace cereal
 	class BinaryOutputArchive;
 	class BinaryInputArchive;
 
-	inline void save(BinaryOutputArchive& ar, const Engine::AnimNode& node)
+	inline void save(BinaryOutputArchive& ar, const CE::AnimNode& node)
 	{
-		ar.saveBinary(&node, sizeof(Engine::AnimNode));
+		ar.saveBinary(&node, sizeof(CE::AnimNode));
 	}
 
-	inline void load(BinaryInputArchive& ar, Engine::AnimNode& node)
+	inline void load(BinaryInputArchive& ar, CE::AnimNode& node)
 	{
-		ar.loadBinary(&node, sizeof(Engine::AnimNode));
+		ar.loadBinary(&node, sizeof(CE::AnimNode));
 	}
 }

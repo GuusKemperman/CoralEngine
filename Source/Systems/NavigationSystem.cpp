@@ -12,7 +12,7 @@
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
 
-using namespace Engine;
+using namespace CE;
 
 void NavigationSystem::Update(World& world, float dt)
 {

@@ -3,7 +3,7 @@
 #include "ISubRenderer.h"
 #include "glm/glm.hpp"
 
-namespace Engine 
+namespace CE 
 {
     class World;
 

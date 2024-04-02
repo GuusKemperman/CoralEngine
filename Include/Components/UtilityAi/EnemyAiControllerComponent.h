@@ -1,7 +1,7 @@
 #pragma once
 #include "Systems/System.h"
 
-namespace Engine
+namespace CE
 {
 	class EnemyAiControllerComponent
 	{

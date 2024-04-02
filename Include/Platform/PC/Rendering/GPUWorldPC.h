@@ -7,7 +7,7 @@ class DXResource;
 class DXConstBuffer;
 class DXDescHeap;
 
-namespace Engine
+namespace CE
 {
     class Material;
 

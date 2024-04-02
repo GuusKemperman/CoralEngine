@@ -4,7 +4,7 @@
 #include <ostream>
 #include <sstream>
 
-namespace Engine
+namespace CE
 {
 	class ReadableGSONMember :
 		public GSONMemberBase<ReadableGSONMember>

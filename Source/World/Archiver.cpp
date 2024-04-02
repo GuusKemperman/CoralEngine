@@ -13,7 +13,7 @@
 #include "Meta/MetaProps.h"
 #include "World/World.h"
 
-namespace Engine
+namespace CE
 {
 	static void DeserializeStorage(Registry& registry, const BinaryGSONObject& serializedStorage, const std::unordered_map<entt::entity, entt::entity>& idRemappings);
 
@@ -34,7 +34,7 @@ namespace Engine
 		const ComponentClassSerializeArg& arg);
 }
 
-std::vector<entt::entity> Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& serializedWorld)
+std::vector<entt::entity> CE::Archiver::Deserialize(World& world, const BinaryGSONObject& serializedWorld)
 {
 	Registry& reg = world.GetRegistry();
 
@@ -82,7 +82,7 @@ std::vector<entt::entity> Engine::Archiver::Deserialize(World& world, const Bina
 	return entities;
 }
 
-void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializedStorage, const std::unordered_map<entt::entity, entt::entity>& idRemappings)
+void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializedStorage, const std::unordered_map<entt::entity, entt::entity>& idRemappings)
 {
 	const MetaType* const componentClass = MetaManager::Get().TryGetType(serializedStorage.GetName());
 
@@ -229,7 +229,7 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 	}
 }
 
-Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world)
+CE::BinaryGSONObject CE::Archiver::Serialize(const World& world)
 {
 	std::vector<entt::entity> entitiesToSerialize{};
 	const auto* entityStorage = world.GetRegistry().Storage<entt::entity>();
@@ -248,7 +248,7 @@ Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world)
 	return SerializeInternal(world, std::move(entitiesToSerialize), true);
 }
 
-Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world, Span<const entt::entity> entities, bool serializeChildren)
+CE::BinaryGSONObject CE::Archiver::Serialize(const World& world, Span<const entt::entity> entities, bool serializeChildren)
 {
 	std::vector<entt::entity> entitiesToSerialize{ entities.begin(), entities.end() };
 
@@ -282,7 +282,7 @@ Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world, Span<co
 	return SerializeInternal(world, std::move(entitiesToSerialize), false);
 }
 
-Engine::BinaryGSONObject Engine::Archiver::SerializeInternal(const World& world, std::vector<entt::entity>&& entitiesToSerialize,
+CE::BinaryGSONObject CE::Archiver::SerializeInternal(const World& world, std::vector<entt::entity>&& entitiesToSerialize,
                                                      bool allEntitiesInWorldAreBeingSerialized)
 {
 	const Registry& reg = world.GetRegistry();
@@ -340,7 +340,7 @@ Engine::BinaryGSONObject Engine::Archiver::SerializeInternal(const World& world,
 	return save;
 }
 
-std::optional<Engine::ComponentClassSerializeArg> Engine::GetComponentClassSerializeArg(const entt::sparse_set& storage)
+std::optional<CE::ComponentClassSerializeArg> CE::GetComponentClassSerializeArg(const entt::sparse_set& storage)
 {
 	const MetaType* const componentClass = MetaManager::Get().TryGetType(storage.type().hash());
 
@@ -407,7 +407,7 @@ std::optional<Engine::ComponentClassSerializeArg> Engine::GetComponentClassSeria
 	};
 }
 
-void Engine::SerializeSingleComponent(const Registry& registry,
+void CE::SerializeSingleComponent(const Registry& registry,
 	BinaryGSONObject& parentObject,
 	const entt::entity entity,
 	const ComponentClassSerializeArg& arg)

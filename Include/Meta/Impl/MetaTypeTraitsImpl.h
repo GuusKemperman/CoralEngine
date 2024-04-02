@@ -3,19 +3,19 @@
 
 #include "Meta/MetaTypeId.h"
 
-constexpr uint32 Engine::TypeTraits::Hash() const
+constexpr uint32 CE::TypeTraits::Hash() const
 {
 	uint64 asUint64 = mStrippedTypeId | (static_cast<uint64>(mForm) << 32);
 	return static_cast<uint32>(asUint64 % 4294967291);
 }
 
-constexpr Engine::TypeInfo::TypeInfo(TypeId typeId, uint32 flags) :
+constexpr CE::TypeInfo::TypeInfo(TypeId typeId, uint32 flags) :
 	mTypeId(typeId),
 	mFlags(flags)
 {
 }
 
-constexpr Engine::TypeInfo::TypeInfo(TypeId typeId, uint32 size, uint32 allignment, bool isTriviallyDefaultConstructible,
+constexpr CE::TypeInfo::TypeInfo(TypeId typeId, uint32 size, uint32 allignment, bool isTriviallyDefaultConstructible,
 	bool isTriviallyMoveConstructible, bool isTriviallyCopyConstructible, bool isTriviallyCopyAssignable,
 	bool isTriviallyMoveAssignable, bool isDefaultConstructible, bool isMoveConstructible,
 	bool isCopyConstructible, bool isCopyAssignable, bool isMoveAssignable, bool isTriviallyDestructible,
@@ -40,19 +40,19 @@ constexpr Engine::TypeInfo::TypeInfo(TypeId typeId, uint32 size, uint32 allignme
 	ASSERT(allignment < sMaxAlign);
 }
 
-constexpr bool Engine::CanFormBeNullable(TypeForm form)
+constexpr bool CE::CanFormBeNullable(TypeForm form)
 {
 	return form == TypeForm::Ptr || form == TypeForm::ConstPtr;
 }
 
 template<typename T>
-CONSTEVAL Engine::TypeTraits Engine::MakeTypeTraits()
+CONSTEVAL CE::TypeTraits CE::MakeTypeTraits()
 {
 	return { MakeStrippedTypeId<T>(), MakeTypeForm<T>() };
 }
 
 template <typename TNonStripped>
-CONSTEVAL Engine::TypeInfo Engine::MakeTypeInfo()
+CONSTEVAL CE::TypeInfo CE::MakeTypeInfo()
 {
 	using StrippedT = std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<TNonStripped>>>;
 
@@ -89,7 +89,7 @@ CONSTEVAL Engine::TypeInfo Engine::MakeTypeInfo()
 }
 
 template <typename T>
-CONSTEVAL Engine::TypeForm Engine::MakeTypeForm()
+CONSTEVAL CE::TypeForm CE::MakeTypeForm()
 {
 	if constexpr (std::is_rvalue_reference_v<T>)
 	{
@@ -113,13 +113,13 @@ CONSTEVAL Engine::TypeForm Engine::MakeTypeForm()
 }
 
 template <typename T>
-CONSTEVAL Engine::TypeId Engine::MakeStrippedTypeId()
+CONSTEVAL CE::TypeId CE::MakeStrippedTypeId()
 {
 	return MakeTypeId<std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>>();
 }
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::TypeForm>
+struct CE::EnumStringPairsImpl<CE::TypeForm>
 {
 	static constexpr EnumStringPairs<TypeForm, 137> value = {
 		EnumStringPair<TypeForm> { TypeForm::Value, "Value" },
@@ -138,12 +138,12 @@ namespace cereal
 	class BinaryOutputArchive;
 	class BinaryInputArchive;
 
-	inline void save(BinaryOutputArchive& ar, const Engine::TypeTraits& traits)
+	inline void save(BinaryOutputArchive& ar, const CE::TypeTraits& traits)
 	{
 		ar.saveBinary(&traits, sizeof(traits));
 	}
 
-	inline void load(BinaryInputArchive& ar, Engine::TypeTraits& traits)
+	inline void load(BinaryInputArchive& ar, CE::TypeTraits& traits)
 	{
 		ar.loadBinary(&traits, sizeof(traits));
 	}

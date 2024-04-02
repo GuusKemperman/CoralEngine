@@ -2,7 +2,7 @@
 #include "Meta/MetaReflect.h"
 #include "Utilities/Math.h"
 
-namespace Engine
+namespace CE
 {	
 	class World;
 	class BinaryGSONObject;
@@ -187,14 +187,14 @@ namespace Engine
 }
 
 template<>
-struct entt::component_traits<Engine::TransformComponent, void>
+struct entt::component_traits<CE::TransformComponent, void>
 {
-	using type = Engine::TransformComponent;
+	using type = CE::TransformComponent;
 
 	// TransformComponent is often accessed in random order so we get little 
 	// benefit from compact arrangements. But we do VERY often access our parent,
 	// so not having to look up the adress each time is very useful.
 	static constexpr bool in_place_delete = true;
 
-	static constexpr std::size_t page_size = internal::page_size<Engine::TransformComponent>::value;
+	static constexpr std::size_t page_size = internal::page_size<CE::TransformComponent>::value;
 };

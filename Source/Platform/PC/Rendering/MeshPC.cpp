@@ -20,7 +20,7 @@ enum StaticMeshFlags : uint8
     hasTangents = 1 << 5
 };
 
-Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
+CE::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
     Asset(loadInfo)
 {
     std::istream& str = loadInfo.GetStream();
@@ -118,9 +118,9 @@ Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
     }
 }
 
-Engine::StaticMesh::StaticMesh(StaticMesh&& other) noexcept = default;
+CE::StaticMesh::StaticMesh(StaticMesh&& other) noexcept = default;
 
-void Engine::StaticMesh::DrawMesh() const
+void CE::StaticMesh::DrawMesh() const
 {
     if (mVertexBuffer == nullptr)
         return;
@@ -136,7 +136,7 @@ void Engine::StaticMesh::DrawMesh() const
 	commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
 }
 
-void Engine::StaticMesh::DrawMeshVertexOnly() const
+void CE::StaticMesh::DrawMeshVertexOnly() const
 {
     if (mVertexBuffer == nullptr)
         return;
@@ -149,7 +149,7 @@ void Engine::StaticMesh::DrawMeshVertexOnly() const
     commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
 }
 
-bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, unsigned int sizeOfIndexType, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount)
+bool CE::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, unsigned int sizeOfIndexType, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount)
 {
 	if (Device::IsHeadless() ||
 		indices == nullptr ||

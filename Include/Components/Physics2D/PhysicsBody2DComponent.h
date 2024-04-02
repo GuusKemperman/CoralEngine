@@ -2,7 +2,7 @@
 #include "Meta/MetaReflect.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 	class PhysicsSystem;
@@ -211,30 +211,30 @@ namespace cereal
 	class BinaryOutputArchive;
 	class BinaryInputArchive;
 
-	void save(BinaryOutputArchive& ar, const Engine::CollisionRules& value);
-	void load(BinaryInputArchive& ar, Engine::CollisionRules& value);
+	void save(BinaryOutputArchive& ar, const CE::CollisionRules& value);
+	void load(BinaryInputArchive& ar, CE::CollisionRules& value);
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::CollisionRules, var.DisplayWidget(name);)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::CollisionRules, var.DisplayWidget(name);)
 #endif // EDITOR
 
 template<>
-struct Reflector<Engine::CollisionLayer>
+struct Reflector<CE::CollisionLayer>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(collLayer, Engine::CollisionLayer);
+}; REFLECT_AT_START_UP(collLayer, CE::CollisionLayer);
 
 template<>
-struct Reflector<Engine::CollisionRules>
+struct Reflector<CE::CollisionRules>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(collRules, Engine::CollisionRules)
+}; REFLECT_AT_START_UP(collRules, CE::CollisionRules)
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::CollisionLayer>
+struct CE::EnumStringPairsImpl<CE::CollisionLayer>
 {
 	static constexpr EnumStringPairs<CollisionLayer, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> value = 
 	{
@@ -246,7 +246,7 @@ struct Engine::EnumStringPairsImpl<Engine::CollisionLayer>
 };
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::CollisionResponse>
+struct CE::EnumStringPairsImpl<CE::CollisionResponse>
 {
 	static constexpr EnumStringPairs<CollisionResponse, static_cast<size_t>(CollisionResponse::NUM_OF_RESPONSES)> value =
 	{

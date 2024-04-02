@@ -8,12 +8,12 @@
 #include "Utilities/ClassVersion.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 
-Engine::Material::Material(std::string_view name) :
+CE::Material::Material(std::string_view name) :
 	Asset(name, MakeTypeId<Material>())
 {
 }
 
-Engine::Material::Material(AssetLoadInfo& loadInfo) :
+CE::Material::Material(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {
 	switch (loadInfo.GetVersion())
@@ -25,7 +25,7 @@ Engine::Material::Material(AssetLoadInfo& loadInfo) :
 	}
 }
 
-std::shared_ptr<const Engine::Material> Engine::Material::TryGetDefaultMaterial()
+std::shared_ptr<const CE::Material> CE::Material::TryGetDefaultMaterial()
 {
 	std::shared_ptr<const Material> defaultMat = AssetManager::Get().TryGetAsset<Material>(sDefaultMaterialName);
 
@@ -37,7 +37,7 @@ std::shared_ptr<const Engine::Material> Engine::Material::TryGetDefaultMaterial(
 	return defaultMat;
 }
 
-void Engine::Material::OnSave(AssetSaveInfo& saveInfo) const
+void CE::Material::OnSave(AssetSaveInfo& saveInfo) const
 {
 	BinaryGSONObject obj{};
 
@@ -58,7 +58,7 @@ void Engine::Material::OnSave(AssetSaveInfo& saveInfo) const
 	obj.SaveToBinary(saveInfo.GetStream());
 }
 
-void Engine::Material::LoadV0(AssetLoadInfo& loadInfo)
+void CE::Material::LoadV0(AssetLoadInfo& loadInfo)
 {
 	std::istream& str = loadInfo.GetStream();
 
@@ -138,7 +138,7 @@ void Engine::Material::LoadV0(AssetLoadInfo& loadInfo)
 	mEmissiveTexture = getTex(emissiveTextureNameLength);
 }
 
-void Engine::Material::LoadV1V2(AssetLoadInfo& loadInfo)
+void CE::Material::LoadV1V2(AssetLoadInfo& loadInfo)
 {
 	BinaryGSONObject obj{};
 	const bool success = obj.LoadFromBinary(loadInfo.GetStream());
@@ -202,7 +202,7 @@ void Engine::Material::LoadV1V2(AssetLoadInfo& loadInfo)
 	}
 }
 
-Engine::MetaType Engine::Material::Reflect()
+CE::MetaType CE::Material::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Material>{}, "Material", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 

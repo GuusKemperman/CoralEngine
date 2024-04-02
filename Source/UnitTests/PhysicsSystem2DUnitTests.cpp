@@ -3,7 +3,7 @@
 #include "Systems/PhysicsSystem.h"
 #include "Core/UnitTests.h"
 
-using namespace Engine;
+using namespace CE;
 
 struct Physics2DUnitTestAccess
 {

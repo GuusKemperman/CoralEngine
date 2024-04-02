@@ -25,7 +25,7 @@
 #include "World/World.h"
 #include "Utilities/DrawDebugHelpers.h"
 
-void Engine::NavMeshComponent::GenerateNavMesh(const World& world)
+void CE::NavMeshComponent::GenerateNavMesh(const World& world)
 {
 	mPolygonDataNavMesh.clear();
 	mCleanedPolygonList.clear();
@@ -37,7 +37,7 @@ void Engine::NavMeshComponent::GenerateNavMesh(const World& world)
 	mNavMeshNeedsUpdate = false;
 }
 
-Engine::NavMeshComponent::NavMeshData Engine::NavMeshComponent::GenerateNavMeshData(const World& world) const
+CE::NavMeshComponent::NavMeshData CE::NavMeshComponent::GenerateNavMeshData(const World& world) const
 {
 	NavMeshData data{};
 
@@ -181,7 +181,7 @@ Engine::NavMeshComponent::NavMeshData Engine::NavMeshComponent::GenerateNavMeshD
 	return data;
 }
 
-std::vector<Engine::TransformedPolygon> Engine::NavMeshComponent::GetDifferences(const NavMeshData& navMeshData)
+std::vector<CE::TransformedPolygon> CE::NavMeshComponent::GetDifferences(const NavMeshData& navMeshData)
 {
 	std::vector<TransformedPolygon> differences;
 
@@ -238,7 +238,7 @@ std::vector<Engine::TransformedPolygon> Engine::NavMeshComponent::GetDifferences
 	return differences;
 }
 
-void Engine::NavMeshComponent::Triangulation(const std::vector<TransformedPolygon>& polygonList)
+void CE::NavMeshComponent::Triangulation(const std::vector<TransformedPolygon>& polygonList)
 {
 	// Initialize a constrained Delaunay triangulation (CDT) object
 	CDT::Triangulation<float> cdt;
@@ -309,7 +309,7 @@ void Engine::NavMeshComponent::Triangulation(const std::vector<TransformedPolygo
 	}
 }
 
-std::vector<glm::vec2> Engine::NavMeshComponent::FunnelAlgorithm(const std::vector<PolygonPoints>& triangles,
+std::vector<glm::vec2> CE::NavMeshComponent::FunnelAlgorithm(const std::vector<PolygonPoints>& triangles,
                                                          glm::vec2 start, glm::vec2 goal) const
 {
 	std::vector<glm::vec2> path{};
@@ -485,12 +485,12 @@ std::vector<glm::vec2> Engine::NavMeshComponent::FunnelAlgorithm(const std::vect
 	return path;
 }
 
-void Engine::NavMeshComponent::UpdateNavMesh()
+void CE::NavMeshComponent::UpdateNavMesh()
 {
 	mNavMeshNeedsUpdate = true;
 }
 
-std::vector<glm::vec2> Engine::NavMeshComponent::CleanupPathfinding(const std::vector<TransformedPolygon>& triangles,
+std::vector<glm::vec2> CE::NavMeshComponent::CleanupPathfinding(const std::vector<TransformedPolygon>& triangles,
                                                             glm::vec2 start, glm::vec2 goal) const
 {
 	std::vector<glm::vec2> path{};
@@ -560,7 +560,7 @@ std::vector<glm::vec2> Engine::NavMeshComponent::CleanupPathfinding(const std::v
 	return path;
 }
 
-Engine::MetaType Engine::NavMeshComponent::Reflect()
+CE::MetaType CE::NavMeshComponent::Reflect()
 {
 	auto type = MetaType{MetaType::T<NavMeshComponent>{}, "NavMeshComponent"};
 	MetaProps& props = type.GetProperties();
@@ -573,7 +573,7 @@ Engine::MetaType Engine::NavMeshComponent::Reflect()
 	return type;
 }
 
-std::vector<glm::vec2> Engine::NavMeshComponent::FindQuickestPath(glm::vec2 startPos, glm::vec2 endPos) const
+std::vector<glm::vec2> CE::NavMeshComponent::FindQuickestPath(glm::vec2 startPos, glm::vec2 endPos) const
 {
 	// Initialize pointers to the start and end nodes
 	const Node* startNode = nullptr;
@@ -644,7 +644,7 @@ std::vector<glm::vec2> Engine::NavMeshComponent::FindQuickestPath(glm::vec2 star
 	return pathFound;
 }
 
-void Engine::NavMeshComponent::DebugDrawNavMesh(const World& world) const
+void CE::NavMeshComponent::DebugDrawNavMesh(const World& world) const
 {
 	if (!DebugRenderer::IsCategoryVisible(DebugCategory::AINavigation))
 	{

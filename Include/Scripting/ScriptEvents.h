@@ -3,7 +3,7 @@
 #include "Assets/Script.h"
 #include "Utilities/Events.h"
 
-namespace Engine
+namespace CE
 {
 	class Script;
 	class ScriptFunc;

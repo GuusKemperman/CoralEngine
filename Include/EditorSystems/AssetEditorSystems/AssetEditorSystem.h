@@ -12,7 +12,7 @@
 #include "Utilities/DoUndo.h"
 #include "Utilities/StringFunctions.h"
 
-namespace Engine
+namespace CE
 {
 	/*
 	Do not derive from this, derive from the templated class below.

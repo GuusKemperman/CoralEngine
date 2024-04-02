@@ -16,7 +16,7 @@
 #include "Scripting/ScriptTools.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-namespace Engine
+namespace CE
 {
 	class AnyStorage final :
 		public entt::basic_sparse_set<>
@@ -72,7 +72,7 @@ namespace Engine
 	};
 }
 
-Engine::Registry::Registry(World& world) :
+CE::Registry::Registry(World& world) :
 	mWorld(world)
 {
 	const MetaType* const systemType = MetaManager::Get().TryGetType<System>();
@@ -100,7 +100,7 @@ Engine::Registry::Registry(World& world) :
 	registerChildren(*systemType);
 }
 
-void Engine::Registry::UpdateSystems(float dt)
+void CE::Registry::UpdateSystems(float dt)
 {
 	const std::vector<SingleTick> ticksToCall = GetSortedSystemsToUpdate(dt);
 	World& world = GetWorld();
@@ -111,7 +111,7 @@ void Engine::Registry::UpdateSystems(float dt)
 	}
 }
 
-void Engine::Registry::RenderSystems() const
+void CE::Registry::RenderSystems() const
 {
 	if (!mWorld.get().GetViewport().GetMainCamera().has_value())
 	{
@@ -130,17 +130,17 @@ void Engine::Registry::RenderSystems() const
 	}
 }
 
-entt::entity Engine::Registry::Create()
+entt::entity CE::Registry::Create()
 {
 	return mRegistry.create();
 }
 
-entt::entity Engine::Registry::Create(entt::entity hint)
+entt::entity CE::Registry::Create(entt::entity hint)
 {
 	return mRegistry.create(hint);
 }
 
-entt::entity Engine::Registry::CreateFromPrefab(const Prefab& prefab, entt::entity hint)
+entt::entity CE::Registry::CreateFromPrefab(const Prefab& prefab, entt::entity hint)
 {
 	const std::vector<PrefabEntityFactory>& factories = prefab.GetFactories();
 
@@ -154,7 +154,7 @@ entt::entity Engine::Registry::CreateFromPrefab(const Prefab& prefab, entt::enti
 	return CreateFromFactory(factories[0], true, hint);
 }
 
-entt::entity Engine::Registry::CreateFromFactory(const PrefabEntityFactory& factory, bool createChildren, entt::entity hint)
+entt::entity CE::Registry::CreateFromFactory(const PrefabEntityFactory& factory, bool createChildren, entt::entity hint)
 {
 	const entt::entity entity = Create(hint);
 	AddComponent<PrefabOriginComponent>(entity).SetFactoryOfOrigin(factory);
@@ -198,7 +198,7 @@ entt::entity Engine::Registry::CreateFromFactory(const PrefabEntityFactory& fact
 	return entity;
 }
 
-void Engine::Registry::Destroy(entt::entity entity, bool destroyChildren)
+void CE::Registry::Destroy(entt::entity entity, bool destroyChildren)
 {
 	if (!Valid(entity) 
 		|| HasComponent<IsDestroyedTag>(entity))
@@ -229,7 +229,7 @@ void Engine::Registry::Destroy(entt::entity entity, bool destroyChildren)
 	}
 }
 
-void Engine::Registry::RemovedDestroyed()
+void CE::Registry::RemovedDestroyed()
 {
 	World::PushWorld(mWorld);
 	const auto view = View<const IsDestroyedTag>();
@@ -241,7 +241,7 @@ void Engine::Registry::RemovedDestroyed()
 	World::PopWorld();
 }
 
-Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, const entt::entity toEntity)
+CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const entt::entity toEntity)
 {
 	if (WasTypeCreatedByScript(componentClass))
 	{
@@ -340,7 +340,7 @@ Engine::MetaAny Engine::Registry::AddComponent(const MetaType& componentClass, c
 	return MetaAny{ componentClass.GetTypeInfo(), nullptr };
 }
 
-void Engine::Registry::RemoveComponent(const TypeId componentClassTypeId, const entt::entity fromEntity)
+void CE::Registry::RemoveComponent(const TypeId componentClassTypeId, const entt::entity fromEntity)
 {
 	World::PushWorld(mWorld);
 	entt::sparse_set* storage = Storage(componentClassTypeId);
@@ -349,7 +349,7 @@ void Engine::Registry::RemoveComponent(const TypeId componentClassTypeId, const 
 	World::PopWorld();
 }
 
-void Engine::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassTypeId, const entt::entity fromEntity)
+void CE::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassTypeId, const entt::entity fromEntity)
 {
 	entt::sparse_set* storage = Storage(componentClassTypeId);
 
@@ -361,7 +361,7 @@ void Engine::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassT
 	}
 }
 
-std::vector<Engine::MetaAny> Engine::Registry::GetComponents(entt::entity entity)
+std::vector<CE::MetaAny> CE::Registry::GetComponents(entt::entity entity)
 {
 	std::vector<MetaAny> found{};
 
@@ -378,7 +378,7 @@ std::vector<Engine::MetaAny> Engine::Registry::GetComponents(entt::entity entity
 	return found;
 }
 
-Engine::MetaAny Engine::Registry::TryGet(const TypeId componentClassTypeId, entt::entity entity)
+CE::MetaAny CE::Registry::TryGet(const TypeId componentClassTypeId, entt::entity entity)
 {
 	const auto storage = Storage(componentClassTypeId);
 
@@ -390,27 +390,27 @@ Engine::MetaAny Engine::Registry::TryGet(const TypeId componentClassTypeId, entt
 	return MetaAny{ MakeTypeInfo<void>(), nullptr };
 }
 
-Engine::MetaAny Engine::Registry::Get(const TypeId componentClassTypeId, entt::entity entity)
+CE::MetaAny CE::Registry::Get(const TypeId componentClassTypeId, entt::entity entity)
 {
 	const auto storage = Storage(componentClassTypeId);
 	ASSERT(storage != nullptr && storage->contains(entity));
 	return MetaAny{ storage->type().ToGuusTypeInfo<TypeInfo>(), storage->value(entity) };
 }
 
-bool Engine::Registry::HasComponent(TypeId componentClassTypeId, entt::entity entity) const
+bool CE::Registry::HasComponent(TypeId componentClassTypeId, entt::entity entity) const
 {
 	const auto storage = Storage(componentClassTypeId);
 	return storage != nullptr && storage->contains(entity);
 }
 
-void Engine::Registry::Clear()
+void CE::Registry::Clear()
 {
 	World::PushWorld(mWorld);
 	mRegistry.clear();
 	World::PopWorld();
 }
 
-std::vector<Engine::Registry::SingleTick> Engine::Registry::GetSortedSystemsToUpdate(const float dt)
+std::vector<CE::Registry::SingleTick> CE::Registry::GetSortedSystemsToUpdate(const float dt)
 {
 	std::vector<SingleTick> returnValue{};
 
@@ -486,7 +486,7 @@ std::vector<Engine::Registry::SingleTick> Engine::Registry::GetSortedSystemsToUp
 	return returnValue;
 }
 
-void Engine::Registry::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system)
+void CE::Registry::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system)
 {
 	SystemStaticTraits staticTraits = system->GetStaticTraits();
 
@@ -507,7 +507,7 @@ void Engine::Registry::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, 
 	}
 }
 
-Engine::AnyStorage::AnyStorage(const MetaType& type) :
+CE::AnyStorage::AnyStorage(const MetaType& type) :
 	BaseType(GetTypeInfo(), entt::deletion_policy::in_place),
 	mType(type),
 	mOnConstruct(TryGetEvent(type, sConstructEvent)),
@@ -518,35 +518,35 @@ Engine::AnyStorage::AnyStorage(const MetaType& type) :
 	reserve(64);
 }
 
-Engine::AnyStorage::~AnyStorage()
+CE::AnyStorage::~AnyStorage()
 {
 	pop_all();
 	FastFree(mData);
 }
 
-bool Engine::AnyStorage::CanTypeBeUsed(const MetaType& type)
+bool CE::AnyStorage::CanTypeBeUsed(const MetaType& type)
 {
 	return type.IsDefaultConstructible() && type.IsCopyConstructible() && type.IsMoveConstructible();
 }
 
-const void* Engine::AnyStorage::get_at(const std::size_t pos) const
+const void* CE::AnyStorage::get_at(const std::size_t pos) const
 {
 	ASSERT(pos < mCapacity);
 	return &mData[pos * GetType().GetSize()];
 }
 
-void* Engine::AnyStorage::get_at(const std::size_t pos)
+void* CE::AnyStorage::get_at(const std::size_t pos)
 {
 	ASSERT(pos < mCapacity);
 	return &mData[pos * GetType().GetSize()];
 }
 
-Engine::MetaAny Engine::AnyStorage::element_at(const size_t pos)
+CE::MetaAny CE::AnyStorage::element_at(const size_t pos)
 {
 	return MetaAny{ mType, get_at(pos), false };
 }
 
-void Engine::AnyStorage::swap_or_move(const std::size_t from, const std::size_t to)
+void CE::AnyStorage::swap_or_move(const std::size_t from, const std::size_t to)
 {
 	const MetaType& type = GetType();
 
@@ -577,7 +577,7 @@ void Engine::AnyStorage::swap_or_move(const std::size_t from, const std::size_t 
 	}
 }
 
-void Engine::AnyStorage::pop(basic_iterator first, basic_iterator last)
+void CE::AnyStorage::pop(basic_iterator first, basic_iterator last)
 {
 	ASSERT(World::TryGetWorldAtTopOfStack() != nullptr);
 	World& world = *World::TryGetWorldAtTopOfStack();
@@ -597,7 +597,7 @@ void Engine::AnyStorage::pop(basic_iterator first, basic_iterator last)
 	}
 }
 
-void Engine::AnyStorage::pop_all()
+void CE::AnyStorage::pop_all()
 {
 	const MetaType& type = GetType();
 
@@ -612,7 +612,7 @@ void Engine::AnyStorage::pop_all()
 	BaseType::pop_all();
 }
 
-Engine::AnyStorage::BaseType::basic_iterator Engine::AnyStorage::try_emplace(const entt::entity entt, const bool force_back, const void* value)
+CE::AnyStorage::BaseType::basic_iterator CE::AnyStorage::try_emplace(const entt::entity entt, const bool force_back, const void* value)
 {
 	const MetaType& type = GetType();
 	reserve_atleast(size() + 1);
@@ -639,7 +639,7 @@ Engine::AnyStorage::BaseType::basic_iterator Engine::AnyStorage::try_emplace(con
 	return it;
 }
 
-void Engine::AnyStorage::reserve(const size_type cap)
+void CE::AnyStorage::reserve(const size_type cap)
 {
 	BaseType::reserve(cap);
 
@@ -674,7 +674,7 @@ void Engine::AnyStorage::reserve(const size_type cap)
 	mCapacity = cap;
 }
 
-void Engine::AnyStorage::reserve_atleast(const size_type cap)
+void CE::AnyStorage::reserve_atleast(const size_type cap)
 {
 	if (mCapacity < cap)
 	{

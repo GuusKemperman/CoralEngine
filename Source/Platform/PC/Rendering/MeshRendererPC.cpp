@@ -28,7 +28,7 @@
 #include "Assets/StaticMesh.h"
 #include "Assets/SkinnedMesh.h"
 
-Engine::MeshRenderer::MeshRenderer()
+CE::MeshRenderer::MeshRenderer()
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
@@ -89,9 +89,9 @@ Engine::MeshRenderer::MeshRenderer()
     mZSkinnedPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
 }
 
-Engine::MeshRenderer::~MeshRenderer() = default;
+CE::MeshRenderer::~MeshRenderer() = default;
 
-void Engine::MeshRenderer::Render(const World& world)
+void CE::MeshRenderer::Render(const World& world)
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -260,7 +260,7 @@ void Engine::MeshRenderer::Render(const World& world)
     }
 }
 
-void Engine::MeshRenderer::HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex)
+void CE::MeshRenderer::HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex)
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());

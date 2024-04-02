@@ -2,7 +2,7 @@
 #include "BasicDataTypes/Colors/LinearColor.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class ParticleColorComponent
 	{

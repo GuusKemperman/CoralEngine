@@ -11,7 +11,7 @@
 #include "Meta/MetaManager.h"
 #include "Utilities/DrawDebugHelpers.h"
 
-void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
+void CE::UpdateTopDownCamSystem::Update(World& world, float dt)
 {
 	auto& registry = world.GetRegistry();
 
@@ -60,7 +60,7 @@ void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 	topDownController->UpdateRotation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
 }
 
-void Engine::UpdateTopDownCamSystem::Render(const World& world)
+void CE::UpdateTopDownCamSystem::Render(const World& world)
 {
 	auto& registry = world.GetRegistry();
 
@@ -91,7 +91,7 @@ void Engine::UpdateTopDownCamSystem::Render(const World& world)
 	}
 }
 
-Engine::MetaType Engine::UpdateTopDownCamSystem::Reflect()
+CE::MetaType CE::UpdateTopDownCamSystem::Reflect()
 {
 	return MetaType{ MetaType::T<UpdateTopDownCamSystem>{}, "UpdateTopDownCamSystem", MetaType::Base<System>{} };
 }

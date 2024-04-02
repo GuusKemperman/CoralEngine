@@ -6,7 +6,7 @@
 
 struct Physics2DUnitTestAccess;
 
-namespace Engine
+namespace CE
 {
 	class Physics;
 	class Registry;

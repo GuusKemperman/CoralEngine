@@ -6,7 +6,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-Engine::ComponentFactory::ComponentFactory(const MetaType& objectClass, const BinaryGSONObject& serializedComponent) :
+CE::ComponentFactory::ComponentFactory(const MetaType& objectClass, const BinaryGSONObject& serializedComponent) :
 	mProductClass(objectClass)
 {
 	for (const BinaryGSONMember& serializedProperty : serializedComponent.GetGSONMembers())
@@ -73,7 +73,7 @@ Engine::ComponentFactory::ComponentFactory(const MetaType& objectClass, const Bi
 	//}
 }
 
-Engine::MetaAny Engine::ComponentFactory::Construct(Registry& reg, const entt::entity entity) const
+CE::MetaAny CE::ComponentFactory::Construct(Registry& reg, const entt::entity entity) const
 {
 	MetaAny component = reg.AddComponent(mProductClass.get(), entity); 
 
@@ -123,7 +123,7 @@ Engine::MetaAny Engine::ComponentFactory::Construct(Registry& reg, const entt::e
 	return component;
 }
 
-const Engine::MetaAny* Engine::ComponentFactory::GetOverridenDefaultValue(const MetaField& prop) const
+const CE::MetaAny* CE::ComponentFactory::GetOverridenDefaultValue(const MetaField& prop) const
 {
 	const auto it = std::find_if(mOverridenDefaultValues.begin(), mOverridenDefaultValues.end(),
 	                             [&prop](const OverridenValue& value)

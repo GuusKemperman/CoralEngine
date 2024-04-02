@@ -2,7 +2,7 @@
 #pragma once
 #include "EditorSystems/EditorSystem.h"
 
-namespace Engine
+namespace CE
 {
 	class UnitTestEditorSystem final :
 		public EditorSystem

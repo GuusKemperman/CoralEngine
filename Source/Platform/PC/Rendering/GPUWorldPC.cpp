@@ -21,7 +21,7 @@
 #include "Platform/PC/Core/DevicePC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
 
-Engine::DebugRenderingData::DebugRenderingData()
+CE::DebugRenderingData::DebugRenderingData()
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
@@ -48,9 +48,9 @@ Engine::DebugRenderingData::DebugRenderingData()
     mColors.resize(MAX_LINE_VERTICES);
 }
 
-Engine::DebugRenderingData::~DebugRenderingData() = default;
+CE::DebugRenderingData::~DebugRenderingData() = default;
 
-Engine::UIRenderingData::UIRenderingData()
+CE::UIRenderingData::UIRenderingData()
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
@@ -120,7 +120,7 @@ Engine::UIRenderingData::UIRenderingData()
     engineDevice.SubmitUploadCommands();
 }
 
-Engine::GPUWorld::GPUWorld(const World& world)
+CE::GPUWorld::GPUWorld(const World& world)
     :
     IGPUWorld::IGPUWorld(world)
 {
@@ -137,9 +137,9 @@ Engine::GPUWorld::GPUWorld(const World& world)
     mConstBuffers[UI_MODEL_MAT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "UI MODEL MATRICES", FRAME_BUFFER_COUNT);
 }
 
-Engine::GPUWorld::~GPUWorld() = default;
+CE::GPUWorld::~GPUWorld() = default;
 
-void Engine::GPUWorld::Update()
+void CE::GPUWorld::Update()
 {
     Device& engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
@@ -323,7 +323,7 @@ void Engine::GPUWorld::Update()
     }
 }
 
-void Engine::GPUWorld::SendMaterialTexturesToGPU(const Engine::Material& mat)
+void CE::GPUWorld::SendMaterialTexturesToGPU(const CE::Material& mat)
 {
     if (mat.mBaseColorTexture != nullptr
         && mat.mBaseColorTexture->IsReadyToBeSentToGpu())

@@ -7,7 +7,7 @@
 
 #include "Rendering/ISubRenderer.h"
 
-namespace Engine
+namespace CE
 {
     class Texture;
 

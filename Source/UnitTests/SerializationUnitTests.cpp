@@ -10,7 +10,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 
-using namespace Engine;
+using namespace CE;
 
 //UNI_TEST(Serialization, AllAssetSerialization)
 //{

@@ -7,11 +7,11 @@
 template<typename T>
 struct Reflector<std::shared_ptr<const T>>
 {
-	static_assert(Engine::sIsReflectable<T>, "Cannot reflect a shared_ptr of a type that is not reflected");
+	static_assert(CE::sIsReflectable<T>, "Cannot reflect a shared_ptr of a type that is not reflected");
 
-	static Engine::MetaType Reflect()
+	static CE::MetaType Reflect()
 	{
-		using namespace Engine;
+		using namespace CE;
 		const MetaType& basedOnType = MetaManager::Get().GetType<T>();
 		MetaType refType{ MetaType::T<std::shared_ptr<const T>>{},
 			Format("{} Ref", basedOnType.GetName()) };

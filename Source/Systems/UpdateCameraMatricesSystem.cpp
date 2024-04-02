@@ -9,7 +9,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
-void Engine::UpdateCameraMatricesSystem::Update(World& world, float)
+void CE::UpdateCameraMatricesSystem::Update(World& world, float)
 {
 	const glm::vec2 viewportSize = world.GetViewport().GetViewportSize();
 	const float aspectRatio = viewportSize.x / viewportSize.y;
@@ -29,7 +29,7 @@ void Engine::UpdateCameraMatricesSystem::Update(World& world, float)
 	}
 }
 
-Engine::MetaType Engine::UpdateCameraMatricesSystem::Reflect()
+CE::MetaType CE::UpdateCameraMatricesSystem::Reflect()
 {
 	return MetaType{ MetaType::T<UpdateCameraMatricesSystem>{}, "UpdateCameraMatricesSystem", MetaType::Base<System>{} };
 }

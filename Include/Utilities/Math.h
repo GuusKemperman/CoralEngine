@@ -11,7 +11,7 @@ constexpr float LARGE_FLOAT = 1e34f;
 #define DEG2RAD(x) (x*PI)/180
 #define RAD2DEG(x) x*(180/PI)
 
-namespace Engine
+namespace CE
 {
 	class Math
 	{

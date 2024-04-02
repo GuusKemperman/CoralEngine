@@ -3,7 +3,7 @@
 
 #include "Components/Particles/ParticleComponentTraits.h"
 
-namespace Engine
+namespace CE
 {
 	class ParticlePhysicsSystem final :
 		public System

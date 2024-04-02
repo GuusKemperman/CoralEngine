@@ -11,7 +11,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
-void Engine::AnimationSystem::CalculateBoneTransformRecursive(const AnimNode& node, 
+void CE::AnimationSystem::CalculateBoneTransformRecursive(const AnimNode& node, 
 	const glm::mat4x4& parenTransform, 
 	const std::unordered_map<std::string, BoneInfo>& boneMap,
 	const SkinnedMeshComponent& mesh,
@@ -42,7 +42,7 @@ void Engine::AnimationSystem::CalculateBoneTransformRecursive(const AnimNode& no
 	}
 }
 
-void Engine::AnimationSystem::Update(World& world, float dt)
+void CE::AnimationSystem::Update(World& world, float dt)
 {
 	auto& reg = world.GetRegistry();
 
@@ -62,7 +62,7 @@ void Engine::AnimationSystem::Update(World& world, float dt)
 	}
 }
 
-Engine::MetaType Engine::AnimationSystem::Reflect()
+CE::MetaType CE::AnimationSystem::Reflect()
 {
 	return MetaType{ MetaType::T<AnimationSystem>{}, "AnimationSystem", MetaType::Base<System>{} };
 }

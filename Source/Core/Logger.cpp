@@ -9,19 +9,19 @@
 
 static std::filesystem::path GetLogIniPath()
 {
-	return Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::Intermediate, "Editor/Logger.ini");
+	return CE::FileIO::Get().GetPath(CE::FileIO::Directory::Intermediate, "Editor/Logger.ini");
 }
 
 static std::filesystem::path GetCrashLogDir()
 {
-	std::filesystem::path path = Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::Intermediate, "Logs");
+	std::filesystem::path path = CE::FileIO::Get().GetPath(CE::FileIO::Directory::Intermediate, "Logs");
 	std::filesystem::create_directories(path);
 	return path;
 }
 
-Engine::Logger::Logger() = default;
+CE::Logger::Logger() = default;
 
-void Engine::Logger::PostConstruct()
+void CE::Logger::PostConstruct()
 {
 	mEntryContents = std::make_unique<ManyStrings>();
 
@@ -52,7 +52,7 @@ void Engine::Logger::PostConstruct()
 	}
 }
 
-Engine::Logger::~Logger()
+CE::Logger::~Logger()
 {
 	const std::filesystem::path iniPath = GetLogIniPath();
 
@@ -87,7 +87,7 @@ Engine::Logger::~Logger()
 	ofstream.close();
 };
 
-void Engine::Logger::Log(std::string_view message, const std::string_view channel, const LogSeverity severity, SourceLocation&& origin, std::function<void()>&& onClick)
+void CE::Logger::Log(std::string_view message, const std::string_view channel, const LogSeverity severity, SourceLocation&& origin, std::function<void()>&& onClick)
 {
 	Name::HashType channelHash = Name::HashString(channel);
 
@@ -117,14 +117,14 @@ void Engine::Logger::Log(std::string_view message, const std::string_view channe
 	}
 }
 
-void Engine::Logger::Clear()
+void CE::Logger::Clear()
 {
 	mEntries.clear();
 	mEntryContents->Clear();
 	mNumOfEntriesPerSeverity = {};
 }
 
-void Engine::Logger::DumpToCrashLog() const
+void CE::Logger::DumpToCrashLog() const
 {
 	const auto now = std::chrono::system_clock::now();
 	const std::filesystem::path logPath = (GetCrashLogDir() / std::to_string(now.time_since_epoch().count())).replace_extension(".txt");

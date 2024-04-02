@@ -36,7 +36,7 @@ static ImRect ImRect_Expanded(const ImRect& rect, float x, float y)
 	return result;
 }
 
-void Engine::ScriptEditorSystem::DisplayCanvas()
+void CE::ScriptEditorSystem::DisplayCanvas()
 {
 	if (mContext == nullptr)
 	{
@@ -106,7 +106,7 @@ void Engine::ScriptEditorSystem::DisplayCanvas()
 	}
 }
 
-void Engine::ScriptEditorSystem::DrawCanvasObjects()
+void CE::ScriptEditorSystem::DrawCanvasObjects()
 {
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
 
@@ -196,7 +196,7 @@ void Engine::ScriptEditorSystem::DrawCanvasObjects()
 	ax::NodeEditor::Resume();
 }
 
-void Engine::ScriptEditorSystem::TryLetUserCreateLink()
+void CE::ScriptEditorSystem::TryLetUserCreateLink()
 {
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
 
@@ -278,7 +278,7 @@ void Engine::ScriptEditorSystem::TryLetUserCreateLink()
 	ax::NodeEditor::EndCreate();
 }
 
-void Engine::ScriptEditorSystem::DeleteRequestedItems()
+void CE::ScriptEditorSystem::DeleteRequestedItems()
 {
 	if (ax::NodeEditor::BeginDelete())
 	{
@@ -303,7 +303,7 @@ void Engine::ScriptEditorSystem::DeleteRequestedItems()
 	ax::NodeEditor::EndDelete();
 }
 
-void Engine::ScriptEditorSystem::DisplayCanvasPopUps()
+void CE::ScriptEditorSystem::DisplayCanvasPopUps()
 {
 	const ImVec2 openPopupPosition = ImGui::GetMousePos();
 
@@ -342,7 +342,7 @@ void Engine::ScriptEditorSystem::DisplayCanvasPopUps()
 	ax::NodeEditor::Resume();
 }
 
-void Engine::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
+void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 {
 	if (!mCreateNodePopUpPosition.has_value())
 	{
@@ -500,7 +500,7 @@ void Engine::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 	}
 }
 
-void Engine::ScriptEditorSystem::DisplayPinContextPopUp()
+void CE::ScriptEditorSystem::DisplayPinContextPopUp()
 {
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
 	const ScriptPin* pin = currentFunc.TryGetPin(mPinTheUserRightClicked);
@@ -557,7 +557,7 @@ void Engine::ScriptEditorSystem::DisplayPinContextPopUp()
 	}
 }
 
-void Engine::ScriptEditorSystem::DisplayFunctionNode(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
+void CE::ScriptEditorSystem::DisplayFunctionNode(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
 	ScriptNode& node, std::vector<PinToInspect>& pinsToInspect)
 {
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
@@ -588,7 +588,7 @@ void Engine::ScriptEditorSystem::DisplayFunctionNode(ax::NodeEditor::Utilities::
 	builder.End();
 }
 
-bool Engine::ScriptEditorSystem::IsRerouteNodeFlipped(const RerouteScriptNode& node) const
+bool CE::ScriptEditorSystem::IsRerouteNodeFlipped(const RerouteScriptNode& node) const
 {
 	const ScriptFunc& currentFunc = *TryGetSelectedFunc();
 
@@ -616,7 +616,7 @@ bool Engine::ScriptEditorSystem::IsRerouteNodeFlipped(const RerouteScriptNode& n
 	return false;
 }
 
-void Engine::ScriptEditorSystem::DisplayRerouteNode(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
+void CE::ScriptEditorSystem::DisplayRerouteNode(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
 	RerouteScriptNode& node)
 {
 	const ScriptFunc& currentFunc = *TryGetSelectedFunc();
@@ -671,12 +671,12 @@ void Engine::ScriptEditorSystem::DisplayRerouteNode(ax::NodeEditor::Utilities::B
 	ax::NodeEditor::PopStyleColor();
 }
 
-bool Engine::ScriptEditorSystem::CanAnyPinsBeInspected() const
+bool CE::ScriptEditorSystem::CanAnyPinsBeInspected() const
 {
 	return std::abs(ax::NodeEditor::GetCurrentZoom() - 1.0f) < .2f;
 }
 
-void Engine::ScriptEditorSystem::DisplayCommentNode(CommentScriptNode& node)
+void CE::ScriptEditorSystem::DisplayCommentNode(CommentScriptNode& node)
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.75f);
 	PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, ImColor(255, 255, 255, 64));
@@ -725,7 +725,7 @@ void Engine::ScriptEditorSystem::DisplayCommentNode(CommentScriptNode& node)
 }
 
 
-void Engine::ScriptEditorSystem::DisplayPin(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
+void CE::ScriptEditorSystem::DisplayPin(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
 	ScriptPin& pin, std::vector<PinToInspect>& pinsToInspect)
 {
 	const ScriptFunc& currentFunc = *TryGetSelectedFunc();
@@ -800,12 +800,12 @@ void Engine::ScriptEditorSystem::DisplayPin(ax::NodeEditor::Utilities::Blueprint
 	ImGui::PopStyleVar();
 }
 
-bool Engine::ScriptEditorSystem::ShouldWeOnlyShowContextMatchingNodes() const
+bool CE::ScriptEditorSystem::ShouldWeOnlyShowContextMatchingNodes() const
 {
 	return sContextSensitive && TryGetSelectedFunc()->TryGetPin(mPinTheUserIsTryingToLink) != nullptr;
 }
 
-bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const ScriptPin& contextPin,
+bool CE::ScriptEditorSystem::DoesNodeMatchContext(const ScriptPin& contextPin,
 	TypeTraits returnTypeTraits,
 	const std::vector<TypeTraits>& parameters,
 	bool isPure)
@@ -835,17 +835,17 @@ bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const ScriptPin& contextPi
 	return !MetaFunc::CanArgBePassedIntoParam({ returnTypeTraits.mStrippedTypeId, returnTypeTraits.mForm }, contextTraits).has_value();
 }
 
-bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const NodeTheUserCanAdd& node) const
+bool CE::ScriptEditorSystem::DoesNodeMatchContext(const NodeTheUserCanAdd& node) const
 {
 	return !ShouldWeOnlyShowContextMatchingNodes() || node.mMatchesContext(TryGetSelectedFunc()->GetPin(mPinTheUserIsTryingToLink));
 }
 
-bool Engine::ScriptEditorSystem::ShouldShowUserNode(const NodeTheUserCanAdd& node) const
+bool CE::ScriptEditorSystem::ShouldShowUserNode(const NodeTheUserCanAdd& node) const
 {
 	return DoesNodeMatchContext(node) && (mCurrentQuery.empty() || node.mSimilarityToQuery >= mLastUpToDateQueryData.mSimilarityCutOff);
 }
 
-std::string Engine::ScriptEditorSystem::PrepareStringForFuzzySearch(const std::string& string)
+std::string CE::ScriptEditorSystem::PrepareStringForFuzzySearch(const std::string& string)
 {
 	std::string result;
 	for (const char c : string)
@@ -866,7 +866,7 @@ std::string Engine::ScriptEditorSystem::PrepareStringForFuzzySearch(const std::s
 	return result;
 }
 
-std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorSystem::GetAllNodesTheUserCanAdd() const
+std::vector<CE::ScriptEditorSystem::NodeTheUserCanAdd> CE::ScriptEditorSystem::GetAllNodesTheUserCanAdd() const
 {
 	std::vector<NodeTheUserCanAdd> returnValue{};
 
@@ -1073,7 +1073,7 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 	return returnValue;
 }
 
-void Engine::ScriptEditorSystem::UpdateSimilarityToQuery(QueryData& queryData) const
+void CE::ScriptEditorSystem::UpdateSimilarityToQuery(QueryData& queryData) const
 {
 	std::string tmp = queryData.mCurrentQuery;
 	ClearQuery(queryData);
@@ -1146,7 +1146,7 @@ void Engine::ScriptEditorSystem::UpdateSimilarityToQuery(QueryData& queryData) c
 	queryData.mIsReady = true;
 }
 
-void Engine::ScriptEditorSystem::ClearQuery(QueryData& queryData)
+void CE::ScriptEditorSystem::ClearQuery(QueryData& queryData)
 {
 	queryData.mCurrentQuery.clear();
 	queryData.mRecommendedNodesBasedOnQuery.clear();
@@ -1159,7 +1159,7 @@ void Engine::ScriptEditorSystem::ClearQuery(QueryData& queryData)
 	}
 }
 
-ImColor Engine::ScriptEditorSystem::GetIconColor(const ScriptVariableTypeData& typeData) const
+ImColor CE::ScriptEditorSystem::GetIconColor(const ScriptVariableTypeData& typeData) const
 {
 	if (typeData.IsFlow())
 	{
@@ -1198,7 +1198,7 @@ ImColor Engine::ScriptEditorSystem::GetIconColor(const ScriptVariableTypeData& t
 	}
 }
 
-void Engine::ScriptEditorSystem::DrawPinIcon(const ScriptPin& pin, bool connected, int alpha, bool mirrored) const
+void CE::ScriptEditorSystem::DrawPinIcon(const ScriptPin& pin, bool connected, int alpha, bool mirrored) const
 {
 	const ax::Widgets::IconType iconType = pin.IsFlow() ? ax::Widgets::IconType::Flow : ax::Widgets::IconType::Circle;
 

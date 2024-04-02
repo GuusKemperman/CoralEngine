@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine::Props
+namespace CE::Props
 {
 	/*
 	Use on:
@@ -167,7 +167,7 @@ namespace Engine::Props
 
 	/*
 	Use on:
-		Classes deriving from Engine::EditorSystem. The class must be default constructible.
+		Classes deriving from CE::EditorSystem. The class must be default constructible.
 
 	Description:
 		Automatically adds the system the VERY FIRST time the engine starts.

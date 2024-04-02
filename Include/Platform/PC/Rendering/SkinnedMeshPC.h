@@ -6,7 +6,7 @@
 
 class DXResource;
 
-namespace Engine
+namespace CE
 {
     class SkinnedMesh final :
         public Asset
