@@ -296,7 +296,7 @@ void CE::ScriptEditorSystem::AddNewNode(const NodeTheUserCanAdd& nodeToAdd)
 	ScriptNode& node = nodeToAdd.mAddNode(*currentFunc);
 	node.SetPosition(mCreateNodePopUpPosition.value_or(mMousePosInCanvasSpace));
 	ax::NodeEditor::SetNodePosition(node.GetId(), node.GetPosition());
-	mCreateNodePopUpPosition.reset();
+
 	if (const ScriptPin* startPin = currentFunc->TryGetPin(mPinTheUserIsTryingToLink);
 		startPin != nullptr)
 	{
@@ -311,9 +311,9 @@ void CE::ScriptEditorSystem::AddNewNode(const NodeTheUserCanAdd& nodeToAdd)
 		}
 	}
 
+	mCreateNodePopUpPosition.reset();
 	mPinTheUserIsTryingToLink = ax::NodeEditor::PinId::Invalid;
 }
-
 
 void CE::ScriptEditorSystem::DeleteRequestedItems()
 {
@@ -510,6 +510,8 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 				ImGui::TreeNodeSetOpen(ImGui::GetCurrentWindow()->GetID(first->mCategory.data()), false);
 			}
 		}
+
+		ImGui::CloseCurrentPopup();
 
 		AddNewNode(*nodeToCreate);
 	}
