@@ -6,6 +6,7 @@
 #include "Assets/Prefabs/ComponentFactory.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/Prefabs/PrefabEntityFactory.h"
+#include "Components/CameraComponent.h"
 #include "Components/IsDestroyedTag.h"
 #include "Components/PrefabOriginComponent.h"
 #include "Components/TransformComponent.h"
@@ -113,7 +114,7 @@ void CE::Registry::UpdateSystems(float dt)
 
 void CE::Registry::RenderSystems() const
 {
-	if (!mWorld.get().GetViewport().GetMainCamera().has_value())
+	if (CameraComponent::GetSelected(mWorld) == entt::null)
 	{
 		LOG(LogTemp, Message, "No camera to render to");
 		return;

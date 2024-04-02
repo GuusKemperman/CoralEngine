@@ -223,9 +223,7 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 			if (possibleCamerasView.size() > 1)
 			{
-				const auto cam = GetWorld().GetViewport().GetMainCamera();
-
-				const entt::entity cameraEntity = cam.has_value() ? cam->first : entt::null;
+				const entt::entity cameraEntity = CameraComponent::GetSelected(GetWorld());
 
 				ImGui::SetCursorPos({ fpsCursorPos.x - ImGui::CalcTextSize(ICON_FA_CAMERA).x - 10.0f, fpsCursorPos.y });
 
@@ -240,7 +238,7 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 					{
 						if (ImGui::MenuItem(NameComponent::GetDisplayName(GetWorld().GetRegistry(), possibleCamera).c_str(), nullptr, possibleCamera == cameraEntity))
 						{
-							GetWorld().GetViewport().SetMainCamera(possibleCamera);
+							CameraComponent::Select(GetWorld(), possibleCamera);
 						}
 					}
 					ImGui::EndPopup();
@@ -287,13 +285,6 @@ void CE::WorldInspectHelper::SaveState(BinaryGSONObject& state)
 	state.AddGSONMember("detailsWidth") << mDetailsHeight;
 	state.AddGSONMember("viewportWidth") << mViewportWidth;
 	state.AddGSONMember("hierarchyAndDetailsWidth") << mHierarchyAndDetailsWidth;
-
-	auto activeCamera = GetWorld().GetViewport().GetMainCamera();
-
-	if (activeCamera.has_value())
-	{
-		state.AddGSONMember("activeCamera") << activeCamera->first;
-	}
 }
 
 void CE::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
@@ -319,15 +310,6 @@ void CE::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
 	*detailsWidth >> mDetailsHeight;
 	*viewportWidth >> mViewportWidth;
 	*hierarchyAndDetailsWidth >> mHierarchyAndDetailsWidth;
-
-	const BinaryGSONMember* const activeCamera = state.TryGetGSONMember("activeCamera");
-
-	if (activeCamera != nullptr)
-	{
-		entt::entity cameraEntity{};
-		*activeCamera >> cameraEntity;
-		GetWorld().GetViewport().SetMainCamera(cameraEntity);
-	}
 }
 
 void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
@@ -351,9 +333,9 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 
 	RemoveInvalidEntities(world, *selectedEntities);
 
-	const auto cameraPair = world.GetViewport().GetMainCamera();
+	const entt::entity cameraOwner = CameraComponent::GetSelected(world);
 
-	if (!cameraPair.has_value())
+	if (cameraOwner == entt::null)
 	{
 		ImGui::TextUnformatted("No camera");
 		return;
@@ -380,7 +362,7 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 	if (!selectedEntities->empty())
 	{
 		ShowComponentGizmos(world, *selectedEntities);
-		GizmoManipulateSelectedTransforms(world, *selectedEntities, cameraPair->second);
+		GizmoManipulateSelectedTransforms(world, *selectedEntities, world.GetRegistry().Get<CameraComponent>(cameraOwner));
 	}
 }
 

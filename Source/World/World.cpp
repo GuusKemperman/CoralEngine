@@ -264,7 +264,6 @@ namespace
 
 		return returnValue;
 	}
-
 }
 
 CE::MetaType CE::World::Reflect()

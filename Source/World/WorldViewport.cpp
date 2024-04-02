@@ -17,68 +17,19 @@ CE::WorldViewport::WorldViewport(const World& world) :
 
 CE::WorldViewport::~WorldViewport() = default;
 
-#ifdef _MSC_VER
-#pragma warning(push)
-// Disable unreachable code warning, not sure why it's popping 
-// up but im sure i'll learn that the hard way in a few days/hours
-#pragma warning(disable : 4702)
-#endif
-
-std::optional<std::pair<entt::entity, const CE::CameraComponent&>> CE::WorldViewport::GetMainCamera() const
-{
-	using ReturnPair = std::pair<entt::entity, const CameraComponent&>;
-	const Registry& reg = mWorld.get().GetRegistry();
-
-	if (reg.Valid(mMainCamera))
-	{
-		const CameraComponent* const camera = reg.TryGet<const CameraComponent>(mMainCamera);
-
-		if (camera != nullptr)
-		{
-			return ReturnPair{ mMainCamera, *camera };
-		}
-	}
-
-	const auto camerasView = reg.View<const CameraComponent>();
-
-	// MSVC says this is unreachable?
-
-	for (auto [entity, camera] : camerasView.each())
-	{
-		mMainCamera = entity;
-		LOG(LogTemp, Verbose, "Switched to camera {}", entt::to_integral(entity));
-		return ReturnPair{ mMainCamera, camera };
-	}
-
-	return {};
-}
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
-std::optional<std::pair<entt::entity, CE::CameraComponent&>> CE::WorldViewport::GetMainCamera()
-{
-	const auto constPair = const_cast<const WorldViewport*>(this)->GetMainCamera();
-
-	if (constPair.has_value())
-	{
-		return std::pair<entt::entity, CameraComponent&>{ constPair->first, const_cast<CameraComponent&>(constPair->second) };
-	}
-	return {};
-}
-
 glm::vec3 CE::WorldViewport::GetScreenToWorldDirection(glm::vec2 screenPosition) const
 {
-	const auto camera = GetMainCamera();
+	const entt::entity cameraOwner = CameraComponent::GetSelected(mWorld);
 
-    if (!camera.has_value())
+    if (cameraOwner == entt::null)
     {
-        return { 1.0f, 0.0f, 0.0f };
+		return sForward;
     }
 
+	const auto camera = mWorld.get().GetRegistry().Get<CameraComponent>(cameraOwner);
+
 	screenPosition -= mLastRenderedAtPos;
-	const glm::mat4& invMat = camera->second.mInvViewProjection;
+	const glm::mat4& invMat = camera.mInvViewProjection;
 	const glm::vec4 nearVec = glm::vec4((screenPosition.x - (mLastRenderedAtSize.x * .5f)) / (mLastRenderedAtSize.x * .5f), -1 * (screenPosition.y - (mLastRenderedAtSize.y * .5f)) / (mLastRenderedAtSize.y * .5f), -1, 1.0);
 	const glm::vec4 farVec = glm::vec4((screenPosition.x - (mLastRenderedAtSize.x * .5f)) / (mLastRenderedAtSize.x * .5f), -1 * (screenPosition.y - (mLastRenderedAtSize.y * .5f)) / (mLastRenderedAtSize.y * .5f), 1, 1.0);
 	glm::vec4 nearResult = invMat * nearVec;
@@ -92,8 +43,9 @@ glm::vec3 CE::WorldViewport::GetScreenToWorldDirection(glm::vec2 screenPosition)
 
 glm::vec3 CE::WorldViewport::ScreenToWorld(glm::vec2 screenPosition, float distanceFromCamera) const
 {
-	const auto camera = GetMainCamera();
-	if (!camera.has_value())
+	const entt::entity cameraOwner = CameraComponent::GetSelected(mWorld);
+
+	if (cameraOwner == entt::null)
 	{
 		return {};
 	}
@@ -107,11 +59,10 @@ glm::vec3 CE::WorldViewport::ScreenToWorld(glm::vec2 screenPosition, float dista
 		return {};
 	}
 
-	const TransformComponent* transform = mWorld.get().GetRegistry().TryGet<TransformComponent>(camera->first);
+	const TransformComponent* transform = mWorld.get().GetRegistry().TryGet<TransformComponent>(cameraOwner);
 	const glm::vec3 camPosition = transform == nullptr ? glm::vec3{} : transform->GetWorldPosition();
 
 	return camPosition + dir * distanceFromCamera;
-
 }
 
 void CE::WorldViewport::UpdateSize(glm::vec2 size)
