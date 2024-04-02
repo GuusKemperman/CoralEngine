@@ -1,11 +1,64 @@
 #include "Precomp.h"
-#include "Components/Pathfinding/Graph.h"
+#include "Components/Pathfinding/PathfindingInfo.h"
 
 #include <queue>
 #include <unordered_map>
 
 #include "World/World.h"
 #include "Utilities/DrawDebugHelpers.h"
+
+using namespace CE;
+
+Edge::Edge(const float cost, Node* toNode) : mCost(cost), mToNode(toNode)
+{
+}
+
+float Edge::GetCost() const
+{
+	return mCost;
+}
+
+Node* Edge::GetToNode() const
+{
+	return mToNode;
+}
+
+Node::Node(const int id, glm::vec2 position) : mId(id), mPosition(position)
+{
+}
+
+void Node::AddEdge(Node* toNode, float cost, const bool biDirectional)
+{
+	if (cost < 0)
+	{
+		cost = sqrt(powf(toNode->mPosition.x - mPosition.x, 2) +
+			powf(toNode->mPosition.y - mPosition.y, 2));
+	}
+
+	const Edge newEdge = {cost, toNode};
+	mConnectingEdges.push_back(newEdge);
+
+	if (biDirectional)
+	{
+		const auto otherNode = Edge(newEdge.GetCost(), this);
+		newEdge.GetToNode()->mConnectingEdges.push_back(otherNode);
+	}
+}
+
+const std::vector<Edge>& Node::GetConnectingEdges() const
+{
+	return mConnectingEdges;
+}
+
+glm::vec2 Node::GetPosition() const
+{
+	return mPosition;
+}
+
+int Node::GetId() const
+{
+	return mId;
+}
 
 namespace CE
 {
@@ -117,14 +170,14 @@ namespace CE
 		for (const auto& n : ListOfNodes)
 		{
 			DrawDebugCircle(world, DebugCategory::Gameplay, glm::vec3{n.GetPosition().x, 0, n.GetPosition().y},
-			                              0.2f,
-			                              {1.f, 0.f, 0.f, 1.f});
+			                0.2f,
+			                {1.f, 0.f, 0.f, 1.f});
 			for (const auto& m : n.GetConnectingEdges())
 			{
 				DrawDebugLine(world, DebugCategory::Gameplay, glm::vec3{n.GetPosition().x, 0, n.GetPosition().y},
-				                            glm::vec3{
-					                            m.GetToNode()->GetPosition().x, 0, m.GetToNode()->GetPosition().y
-				                            }, {0.f, 1.f, 0.f, 1.f});
+				              glm::vec3{
+					              m.GetToNode()->GetPosition().x, 0, m.GetToNode()->GetPosition().y
+				              }, {0.f, 1.f, 0.f, 1.f});
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 #pragma once
 #include "Utilities/Geometry2d.h"
-#include "Graph.h"
+#include "PathfindingInfo.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE

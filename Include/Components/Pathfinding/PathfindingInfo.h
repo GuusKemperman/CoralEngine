@@ -1,9 +1,83 @@
 #pragma once
 
-#include "Node.h"
-
 namespace CE
 {
+	class Node;
+
+	class Edge
+	{
+	public:
+		/**
+		 * \brief Constructor to initialize the node on the graph
+		 * \param cost The edge's cost
+		 * \param toNode the pointer of the node to which this edge connects to
+		 */
+		Edge(float cost, Node* toNode);
+
+		/**
+		 * \brief Getter to grab the cost of the edge
+		 * \return The cost of the edge as a float
+		 */
+		[[nodiscard]] float GetCost() const;
+
+		/**
+		 * \brief Getter to grab the pointer of the node to which this edge connects to
+		 * \return The node as a pointer
+		 */
+		[[nodiscard]] Node* GetToNode() const;
+
+	private:
+		/// \brief The edge's cost
+		float mCost = 0;
+		/// \brief The pointer of the node to which this edge connects to
+		Node* mToNode = nullptr;
+	};
+
+	class Node
+	{
+	public:
+		/**
+		 * \brief Constructor to initialize the node on the graph
+		 * \param id The node's id
+		 * \param position The node's position on the graph
+		 */
+		Node(int id, glm::vec2 position);
+
+		/// \brief 
+		/// Adds an edge to the node, which connects to another node.
+		/// \param toNode
+		/// The node the edge connects to
+		/// \param cost
+		/// By default, if it's cost is less than 0, it'll calculate the heuristic, if the cost will be that of the given value.
+		/// \param biDirectional
+		/// By default, it'll create an edge in one direction unless otherwise specified, which in that case,
+		/// it'll also create a similar edge but from the other node to the current one, AKA another edge in reverse.
+		void AddEdge(Node* toNode, float cost = -1, bool biDirectional = false);
+
+		/// \brief Getter to grab the connecting edges to the node
+		/// \return The connectingEdges as a vector of Edges
+		[[nodiscard]] const std::vector<Edge>& GetConnectingEdges() const;
+
+
+		/// \brief Getter to grab the position of the node
+		/// \return The position as a vec2
+		[[nodiscard]] glm::vec2 GetPosition() const;
+
+		/// \brief Getter to grab the ID of the node
+		/// \return The ID as an int
+		[[nodiscard]] int GetId() const;
+
+	private:
+		/// \brief The node's Id
+		int mId{};
+
+		/// \brief The connecting edges to the node
+		std::vector<Edge> mConnectingEdges{};
+
+		/// \brief The position of the node
+		glm::vec2 mPosition{};
+	};
+
 	class World;
 
 	class Graph
