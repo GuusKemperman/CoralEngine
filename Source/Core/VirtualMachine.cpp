@@ -291,7 +291,7 @@ void CE::VirtualMachine::PrintCompileErrors() const
 
 void CE::VirtualMachine::PrintError(const ScriptError& error, bool compileError)
 {
-	Logger::Get().Log(error.ToString(true), compileError ? "ScriptCompileError" : "ScriptRuntimeError", Error, SourceLocation::current(__LINE__, __FILE__),
+	Logger::Get().Log(error.ToString(true), compileError ? "ScriptCompileError" : "ScriptRuntimeError", Error, __FILE__, __LINE__,
 #ifdef EDITOR
 		[loc = error.GetOrigin()]
 		{

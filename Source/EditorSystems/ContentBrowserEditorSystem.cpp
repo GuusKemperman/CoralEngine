@@ -475,7 +475,7 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
 
         if (importerSystem != nullptr)
         {
-            importerSystem->Import(*importedFromFile);
+            importerSystem->Import(*importedFromFile, "Requested by user");
         }
         else
         {

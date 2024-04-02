@@ -30,12 +30,13 @@ namespace CE
 		since it's saver to do this when all assets are unreferenced.
 		this is done at the end of the frame.
 		*/
-		void Import(const std::filesystem::path& fileToImport);
+		void Import(const std::filesystem::path& fileToImport, std::string_view reasonForImporting);
 
 	private:
 		struct ImportFuture
 		{
 			std::filesystem::path mFile{};
+			std::string mReasonForImporting{};
 			std::shared_future<std::optional<std::vector<AssetLoadInfo>>> mImportResult{};
 		};
 
@@ -46,18 +47,24 @@ namespace CE
 		};
 
 		void ImportAllOutOfDateFiles();
-		static std::vector<std::filesystem::path> GetAllFilesToImport(DirToWatch& directory);
+
+		struct FileToImport
+		{
+			std::filesystem::path mFile{};
+			std::string mReasonForImporting{};
+		};
+		std::vector<FileToImport> GetAllFilesToImport(DirToWatch& directory);
 
 		static bool WasImportedFrom(const WeakAsset<>& asset, const std::filesystem::path& file);
-		static std::pair<TypeId, std::shared_ptr<const Importer>> TryGetImporterForExtension(const std::filesystem::path& extension);
 
-		static inline std::vector<std::pair<TypeId, std::shared_ptr<Importer>>> mImporters;
+		std::pair<TypeId, std::shared_ptr<const Importer>> TryGetImporterForExtension(const std::filesystem::path& extension);
 
-
+		std::shared_ptr<bool> mWasImportingCancelled{};
+		std::vector<std::pair<TypeId, std::shared_ptr<Importer>>> mImporters{};
 		std::vector<ImportFuture> mImportFutures{};
-
-
 		std::array<DirToWatch, 2> mDirectoriesToWatch{};
+
+		static inline bool sIsOpen;
 
 		friend ReflectAccess;
 		static MetaType Reflect();

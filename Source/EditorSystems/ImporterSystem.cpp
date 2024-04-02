@@ -9,6 +9,7 @@
 
 CE::ImporterSystem::ImporterSystem() :
 	EditorSystem("ImporterSystem"),
+	mWasImportingCancelled(std::make_shared<bool>(false)),
 	mDirectoriesToWatch({
 		DirToWatch{ FileIO::Get().GetPath(FileIO::Directory::EngineAssets, "") },
 		DirToWatch{ FileIO::Get().GetPath(FileIO::Directory::GameAssets, "") }
@@ -94,41 +95,40 @@ void CE::ImporterSystem::Tick(const float)
 {
 	ImportAllOutOfDateFiles();
 
-	if (mImportFutures.empty())
-	{
-		return;
-	}
+	ImGui::SetNextWindowSize({ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
 
-	const bool allReady = !std::any_of(mImportFutures.begin(), mImportFutures.end(),
-		[](const ImportFuture& future)
+	if (!sIsOpen)
+	{
+		// Open the window if all our futures are ready
+		sIsOpen = !std::any_of(mImportFutures.begin(), mImportFutures.end(),
+			[](const ImportFuture& future)
+			{
+				return future.mImportResult.wait_for(std::chrono::seconds{ 0 }) != std::future_status::ready;
+			});
+
+		if (!sIsOpen)
 		{
-			return future.mImportResult.wait_for(std::chrono::seconds{ 0 }) != std::future_status::ready;
-		});
-
-	if (allReady)
-	{
-		ImGui::OpenPopup("Importing");
+			return;
+		}
 	}
 
-	if (!ImGui::BeginPopupModal("Importing"))
+	if (!ImGui::Begin(GetName().c_str(), &sIsOpen))
 	{
+		ImGui::End();
 		return;
 	}
 
-	if (!allReady)
-	{
-		ImGui::CloseCurrentPopup();
-		ImGui::EndPopup();
-		return;
-	}
+	const std::string::size_type numOfDots = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() % 3 + 1;
+	const std::string loadedText = "Loading" + std::string( numOfDots, '.' );
 
 	for (ImportFuture& future : mImportFutures)
 	{
+		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 		if (ImGui::TreeNode(future.mFile.string().c_str()))
 		{
-			if (future.mImportResult.wait_for(std::chrono::seconds{0}) != std::future_status::ready)
+			if (future.mImportResult.wait_for(std::chrono::seconds{ 0 }) != std::future_status::ready)
 			{
-				ImGui::TextUnformatted("Loading...");
+				ImGui::TextUnformatted(loadedText.c_str());
 			}
 			else
 			{
@@ -151,25 +151,28 @@ void CE::ImporterSystem::Tick(const float)
 		}
 	}
 
-	ImGui::EndPopup();
-	
-	// LOG(LogEditor, Message, "Hello!");
-
-	// Check if any of the asset folders have had any recent changes
-
-
-	// If so, start the importing
-
-	// See if the importing is finished
-
-	// If it is, allow the user to configure settings
-
-	// And if the confirm, start the actual importing 
+	ImGui::End();
 }
 
-void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport)
+void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::string_view reasonForImporting)
 {
+	// Check to see if we are already importing this file
+	if (std::find_if(mImportFutures.begin(), mImportFutures.end(),
+		[&fileToImport](const ImportFuture& future)
+		{
+			return future.mFile == fileToImport;
+		}) != mImportFutures.end())
+	{
+		return;
+	}
+
 	const auto [importerTypeId, importer] = TryGetImporterForExtension(fileToImport.extension());
+
+	Logger::Get().Log(Format("Importing {}", fileToImport.string()), "LogEditor", LogSeverity::Message, __FILE__, __LINE__,
+		[]
+		{
+			sIsOpen = true;
+		});
 
 	LOG(LogAssets, Message, "Importing {}", fileToImport.string());
 
@@ -182,8 +185,14 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport)
 		ImportFuture
 		{
 			fileToImport,
-			std::async(std::launch::async, [fileToImport, importer]() -> std::optional<std::vector<AssetLoadInfo>>
+			std::string{ reasonForImporting },
+			std::async(std::launch::async, [fileToImport, importer, isCancelled = mWasImportingCancelled]() -> std::optional<std::vector<AssetLoadInfo>>
 			{
+				if (*isCancelled)
+				{
+					return std::nullopt;
+				}
+
 				std::optional<std::vector<ImportedAsset>> importResult = importer->Import(fileToImport);
 
 				if (!importResult.has_value())
@@ -198,35 +207,28 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport)
 
 void CE::ImporterSystem::ImportAllOutOfDateFiles()
 {
-	std::vector<std::filesystem::path> all = GetAllFilesToImport(mDirectoriesToWatch[0]);
-	std::vector<std::filesystem::path> game = GetAllFilesToImport(mDirectoriesToWatch[1]);
+	std::vector<FileToImport> all = GetAllFilesToImport(mDirectoriesToWatch[0]);
+	std::vector<FileToImport> game = GetAllFilesToImport(mDirectoriesToWatch[1]);
 
 	all.insert(all.end(), std::make_move_iterator(game.begin()), std::make_move_iterator(game.end()));
 
-	for (std::filesystem::path& assetToImport : all)
+	for (const FileToImport& assetToImport : all)
 	{
-		if (std::find_if(mImportFutures.begin(), mImportFutures.end(),
-			[&assetToImport](const ImportFuture& future)
-			{
-				return future.mFile == assetToImport;
-			}) == mImportFutures.end())
-		{
-			Import(assetToImport);
-		}
+		Import(assetToImport.mFile, assetToImport.mReasonForImporting);
 	}
 }
 
-std::vector<std::filesystem::path> CE::ImporterSystem::GetAllFilesToImport(DirToWatch& directory)
+std::vector<CE::ImporterSystem::FileToImport> CE::ImporterSystem::GetAllFilesToImport(DirToWatch& directory)
 {
-	std::vector<std::filesystem::path> importableAssets{};
+	std::vector<FileToImport> importableAssets{};
 
 	const std::filesystem::file_time_type dirWriteTime = std::filesystem::last_write_time(directory.mDirectory);
-	if (directory.mDirWriteTimeWhenLastChecked > dirWriteTime)
+	if (directory.mDirWriteTimeWhenLastChecked >= dirWriteTime)
 	{
 		return importableAssets;
 	}
 
-	directory.mDirWriteTimeWhenLastChecked = dirWriteTime;;
+	directory.mDirWriteTimeWhenLastChecked = dirWriteTime;
 
 	for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(directory.mDirectory))
 	{
@@ -235,7 +237,7 @@ std::vector<std::filesystem::path> CE::ImporterSystem::GetAllFilesToImport(DirTo
 			continue;
 		}
 
-		const std::filesystem::path fileToImport = dirEntry.path();
+		const std::filesystem::path& fileToImport = dirEntry.path();
 
 		const auto [importerTypeId, importer] = TryGetImporterForExtension(fileToImport.extension());
 
@@ -264,10 +266,14 @@ std::vector<std::filesystem::path> CE::ImporterSystem::GetAllFilesToImport(DirTo
 
 			if (assetImporterVersion != GetClassVersion(*importerType))
 			{
-				//LOG(LogAssets, Message, "Asset {} was imported with an older version of the importer ({}). Reimporting...",
-				//	fileToImport.string(),
-				//	assetImporterVersion);
-				//importableAssets.push_back(fileToImport);
+				importableAssets.push_back(
+					{
+						fileToImport,
+						Format("Asset {} was imported with an older version of the importer ({}). Reimporting...",
+						fileToImport.string(),
+						assetImporterVersion)
+					}
+				);
 				break;
 			}
 
@@ -275,39 +281,56 @@ std::vector<std::filesystem::path> CE::ImporterSystem::GetAllFilesToImport(DirTo
 
 			if (asset.GetAssetVersion() != currentAssetVersion)
 			{
-				//LOG(LogAssets, Message, "Asset {} is out-of-date, version is {} (current is {}). The asset will be re-imported from {}",
-				//	asset.GetName(),
-				//	asset.GetAssetVersion(),
-				//	currentAssetVersion,
-				//	fileToImport.string());
-				//importableAssets.push_back(fileToImport);
+				importableAssets.push_back(
+					{
+						fileToImport,
+						Format("Asset {} is out-of-date, version is {} (current is {}). The asset will be re-imported from {}",
+					asset.GetName(),
+					asset.GetAssetVersion(),
+					currentAssetVersion,
+					fileToImport.string())
+					}
+				);
 				break;
 			}
 
 			if (asset.GetMetaDataVersion() != AssetFileMetaData::GetCurrentMetaDataVersion())
 			{
-				//LOG(LogAssets, Message, "Asset {} is out-of-date, metadata version is {} (current is {}). The asset will be re-imported from {}",
-				//	asset.GetName(),
-				//	asset.GetMetaDataVersion(),
-				//	AssetFileMetaData::GetCurrentMetaDataVersion(),
-				//	fileToImport.string());
-				importableAssets.push_back(fileToImport);
+				importableAssets.push_back(
+					{
+						fileToImport,
+						Format("Asset {} is out-of-date, metadata version is {} (current is {}). The asset will be re-imported from {}",
+					asset.GetName(),
+					asset.GetMetaDataVersion(),
+					AssetFileMetaData::GetCurrentMetaDataVersion(),
+					fileToImport.string())
+					}
+				);
 				break;
 			}
 
 			if (asset.GetImporterInfo()->mImportedFromFileWriteTimeAtTimeOfImporting < importableAssetLastWriteTime)
 			{
-				//LOG(LogAssets, Message, "Changes to {} detected. Reimporting...",
-				//	fileToImport.string());
-				importableAssets.push_back(fileToImport);
+				importableAssets.push_back(
+					{
+						fileToImport,
+						Format("Changes to {} detected. Reimporting...",
+					fileToImport.string())
+					}
+				);
 				break;
 			}
 		}
 
 		if (!wasPreviouslyImported)
 		{
-			// LOG(LogAssets, Message, "New content detected at {}. Importing...", fileToImport.string());
-			importableAssets.push_back(fileToImport);
+			importableAssets.push_back(
+				{
+					fileToImport,
+					Format("New content detected at {}. Importing...",
+					fileToImport.string())
+				}
+			);
 		}
 	}
 
@@ -351,9 +374,6 @@ CE::MetaType CE::ImporterSystem::Reflect()
 	type.GetProperties().Add(Props::sEditorSystemAlwaysOpenTag);
 	return type;
 }
-
-
-
 
 /*	auto importLambda = [this, path]
 		{
@@ -447,7 +467,7 @@ CE::MetaType CE::ImporterSystem::Reflect()
 
 				if (assetInternal.mMetaData.GetImporterInfo()->mWereEditsMadeAfterImporting)
 				{
-					LOG(LogAssets, Error, "Reimporting {} would undo all the changes made to {}. Delete the file {} before reimporting.", 
+					LOG(LogAssets, Error, "Reimporting {} would undo all the changes made to {}. Delete the file {} before reimporting.",
 						path.string(),
 						assetInternal.mMetaData.mAssetName,
 						existingImportedAssetFile.string());

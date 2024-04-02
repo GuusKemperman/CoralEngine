@@ -1797,7 +1797,6 @@
     <ClInclude Include="Include\Systems\UISystem.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
     <ClInclude Include="Include\Utilities\AbilityFunctionality.h" />
-    <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
     <ClInclude Include="Include\Utilities\CPP20\Span.h" />
     <ClInclude Include="Include\Utilities\CPP20\STDAliases.h" />
     <ClInclude Include="Include\Rendering\DebugRenderer.h" />
