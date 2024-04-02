@@ -10,6 +10,7 @@ namespace CE
 	public:
 
 		void SwitchAnimation();
+		void SwitchAnimation(const std::shared_ptr<const Animation>& animation, float timeStamp);
 
 		bool mSwitchAnimation = false;
 		float mWantedTimeStamp = 0.0f;
