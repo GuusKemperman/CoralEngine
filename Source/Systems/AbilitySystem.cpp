@@ -223,16 +223,23 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
     }
 
     // Ability activate event
-    if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mScript->GetName()))
+    if (ability.mAbilityAsset->mScript != nullptr)
     {
-	    if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
+        if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mScript->GetName()))
         {
-            metaFunc->InvokeUncheckedUnpacked(world, castBy);
+            if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
+            {
+                metaFunc->InvokeUncheckedUnpacked(world, castBy);
+            }
+        }
+        else
+        {
+            LOG(LogAbilitySystem, Error, "Did not find script {} when trying to activate ability {}", ability.mAbilityAsset->mScript->GetName(), ability.mAbilityAsset->GetName())
         }
     }
     else
     {
-        LOG(LogAbilitySystem, Error, "Unable to call OnAbilityActivate event for ability "{}"", ability.mAbilityAsset->GetName())
+        LOG(LogAbilitySystem, Error, "Ability {} does not have a script selected.", ability.mAbilityAsset->GetName())
     }
     characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
     ability.mChargesCounter++;
