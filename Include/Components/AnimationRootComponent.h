@@ -8,7 +8,6 @@ namespace CE
 	class AnimationRootComponent
 	{
 	public:
-
 		void SwitchAnimation();
 
 		bool mSwitchAnimation = false;
@@ -20,5 +19,4 @@ namespace CE
         static MetaType Reflect();
         REFLECT_AT_START_UP(AnimationRootComponent);
 	};
-
 }
