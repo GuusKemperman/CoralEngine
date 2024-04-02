@@ -213,13 +213,13 @@ bool CE::AbilitySystem::CanAbilityBeActivated(const CharacterComponent& characte
         (ability.mAbilityAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
 }
 
-void CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability)
+bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability)
 {
     if (!CanAbilityBeActivated(characterData, ability))
     {
         // For the player, this will get checked twice,
         // but it is a small tradeoff for safety in the AI usage.
-        return;
+        return false;
     }
 
     // Ability activate event
@@ -241,6 +241,8 @@ void CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
         ability.mChargesCounter = 0;
         ability.mRequirementCounter = 0;
     }
+
+    return true;
 }
 
 CE::MetaType CE::AbilitySystem::Reflect()

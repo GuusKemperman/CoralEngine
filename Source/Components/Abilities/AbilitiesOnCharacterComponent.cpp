@@ -110,7 +110,7 @@ CE::MetaType CE::AbilityInstance::Reflect()
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			AbilitySystem::ActivateAbility(*world, castBy, characterData, ability);
+			return AbilitySystem::ActivateAbility(*world, castBy, characterData, ability);
 
 		}, "ActivateAbility", MetaFunc::ExplicitParams<AbilityInstance&, entt::entity, CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
