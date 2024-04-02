@@ -67,8 +67,12 @@ CE::World& CE::World::operator=(World&& other) noexcept
 	mRegistry->mWorld = *this;
 	mViewport->mWorld = *this;
 	mPhysics->mWorld = *this;
-	mGPUWorld->mWorld = *this;
-	
+
+	if (mGPUWorld != nullptr)
+	{
+		mGPUWorld->mWorld = *this;
+	}
+
 	mTime = other.mTime;
 	mHasBegunPlay = other.mHasBegunPlay;
 
