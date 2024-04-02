@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Components/Pathfinding/NavMeshTargetComponent.h"
+#include "Components/Pathfinding/NavMeshTargetTag.h"
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
