@@ -3,7 +3,7 @@
 
 namespace CE
 {
-	class EngineClass;
+	class Engine;
 	class World;
 	class FrameBuffer;
 	class DebugRenderer;
@@ -13,7 +13,7 @@ namespace CE
 		public EngineSubsystem<Renderer>
 	{
 		friend EngineSubsystem;
-		friend EngineClass;
+		friend Engine;
 
 		Renderer();
 		~Renderer() final override;
