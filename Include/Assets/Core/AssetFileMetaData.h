@@ -16,7 +16,7 @@ namespace CE
 		{
 			std::filesystem::path mImportedFile{};
 			uint32 mImporterVersion{};
-			std::filesystem::file_time_type::clock::time_point mImportedFromFileWriteTimeAtTimeOfImporting{};
+			std::filesystem::file_time_type mImportedFromFileWriteTimeAtTimeOfImporting{};
 			bool mWereEditsMadeAfterImporting{};
 		};
 

@@ -1,7 +1,10 @@
 #ifdef EDITOR
-#include "Core/AssetManager.h"
 #include "EditorSystems/EditorSystem.h"
 
+#include <future>
+
+#include "Core/AssetManager.h"
+#include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Importers/Importer.h"
 #include "Utilities/MemFunctions.h"
 
@@ -27,19 +30,34 @@ namespace CE
 		since it's saver to do this when all assets are unreferenced.
 		this is done at the end of the frame.
 		*/
-		void Import(const std::filesystem::path&) {};
+		void Import(const std::filesystem::path& fileToImport);
 
 	private:
-		static std::vector<std::filesystem::path> GetAllFilesToImport();
-		static std::vector<std::filesystem::path> GetAllFilesToImport(const std::filesystem::path& directory);
+		struct ImportFuture
+		{
+			std::filesystem::path mFile{};
+			std::shared_future<std::optional<std::vector<AssetLoadInfo>>> mImportResult{};
+		};
+
+		struct DirToWatch
+		{
+			std::filesystem::path mDirectory{};
+			std::filesystem::file_time_type mDirWriteTimeWhenLastChecked{};
+		};
+
+		void ImportAllOutOfDateFiles();
+		static std::vector<std::filesystem::path> GetAllFilesToImport(DirToWatch& directory);
 
 		static bool WasImportedFrom(const WeakAsset<>& asset, const std::filesystem::path& file);
-		static std::pair<TypeId, const Importer*> TryGetImporterForExtension(const std::filesystem::path& extension);
+		static std::pair<TypeId, std::shared_ptr<const Importer>> TryGetImporterForExtension(const std::filesystem::path& extension);
 
-		// Importers are created using the runtime reflection system,
-		// which uses placement new for the constructing of objects.
-		// Hence, the custom deleter
-		static inline std::vector<std::pair<TypeId, std::unique_ptr<Importer, InPlaceDeleter<Importer, true>>>> mImporters;
+		static inline std::vector<std::pair<TypeId, std::shared_ptr<Importer>>> mImporters;
+
+
+		std::vector<ImportFuture> mImportFutures{};
+
+
+		std::array<DirToWatch, 2> mDirectoriesToWatch{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();
