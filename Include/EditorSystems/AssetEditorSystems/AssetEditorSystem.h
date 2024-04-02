@@ -3,6 +3,7 @@
 #include "EditorSystems/EditorSystem.h"
 
 #include "Assets/Asset.h"
+#include "Assets/Core/AssetSaveInfo.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Core/AssetManager.h"
 #include "Core/Editor.h"

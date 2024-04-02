@@ -40,9 +40,10 @@ void CE::Editor::PostConstruct()
 
 	std::ifstream editorSavedState{ pathToSavedState };
 
-	std::function<void(const MetaType&)> recursivelyStart = [this, &recursivelyStart](const MetaType& type)
+	std::function<void(const MetaType&)> recursivelyStart = [this, &recursivelyStart, &editorSavedState](const MetaType& type)
 		{
-			if (type.GetProperties().Has(Props::sEditorSystemDefaultOpenTag))
+			if (type.GetProperties().Has(Props::sEditorSystemAlwaysOpenTag)
+				|| (!editorSavedState.is_open() && type.GetProperties().Has(Props::sEditorSystemDefaultOpenTag)))
 			{
 				if (type.IsDefaultConstructible())
 				{
@@ -50,8 +51,7 @@ void CE::Editor::PostConstruct()
 				}
 				else
 				{
-					LOG(LogEditor, Error, "Could not {}, since type {} is not default constructible",
-						Props::sEditorSystemDefaultOpenTag,
+					LOG(LogEditor, Error, "Could not add system, since type {} is not default constructible",
 						type.GetName());
 				}
 			}
@@ -62,9 +62,10 @@ void CE::Editor::PostConstruct()
 			}
 		};
 
+	recursivelyStart(*editorSystemType);
+
 	if (!editorSavedState.is_open())
 	{
-		recursivelyStart(*editorSystemType);
 		return;
 	}
 

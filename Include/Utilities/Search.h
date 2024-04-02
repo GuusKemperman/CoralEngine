@@ -211,20 +211,11 @@ namespace CE::Search
 		template<typename... Types, typename FilterType>
 		static void AddOptions(Choices<Types...>& insertInto, const FilterType& filter)
 		{
-			for (const WeakAsset<Asset>& asset : AssetManager::Get().GetAllAssets())
+			for (const WeakAsset<AssetType> asset : AssetManager::Get().GetAllAssets<AssetType>())
 			{
-				const MetaType& assetClass = asset.GetAssetClass();
-
-				if (!assetClass.IsDerivedFrom<AssetType>())
+				if (filter(asset))
 				{
-					continue;
-				}
-
-				WeakAsset<AssetType> casted = WeakAssetStaticCast<AssetType>(asset);
-
-				if (filter(casted))
-				{
-					insertInto.emplace_back(asset.GetName(), casted);
+					insertInto.emplace_back(asset.GetName(), asset);
 				}
 			}
 		}

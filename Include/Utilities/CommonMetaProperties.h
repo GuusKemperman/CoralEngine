@@ -181,4 +181,16 @@ namespace CE::Props
 		type.GetProperties().Add(Props::sEditorSystemDefaultOpenTag);
 	*/
 	static constexpr std::string_view sEditorSystemDefaultOpenTag = "sEditorSystemDefaultOpenTag";
+
+	/*
+Use on:
+	Classes deriving from CE::EditorSystem. The class must be default constructible.
+
+Description:
+	Automatically adds the system EVERY time the engine starts.
+
+Example:
+	type.GetProperties().Add(Props::sEditorSystemAlwaysOpenTag);
+*/
+	static constexpr std::string_view sEditorSystemAlwaysOpenTag = "sEditorSystemAlwaysOpenTag";
 }

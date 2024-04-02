@@ -8,6 +8,7 @@
 #include "Core/Editor.h"
 #include "Core/FileIO.h"
 #include "Core/Input.h"
+#include "EditorSystems/ImporterSystem.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Search.h"
@@ -38,7 +39,7 @@ namespace
 
 CE::ContentBrowserEditorSystem::ContentBrowserEditorSystem() :
 	EditorSystem("ContentBrowser"),
-	mFolderGraph(MakeFolderGraph(AssetManager::Get().GetAllAssets()))
+	mFolderGraph(MakeFolderGraph())
 {
 }
 
@@ -96,7 +97,7 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 }
 
 // Generated using chatgpt, but tbh it was so broken i am going to claim 50% of the credit
-std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEditorSystem::MakeFolderGraph(std::vector<WeakAsset<Asset>>&& assets)
+std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEditorSystem::MakeFolderGraph()
 {
     // Create the root folder to hold the top-level directories and files
     ContentFolder rootFolder{};
@@ -108,7 +109,7 @@ std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEdi
     const std::string gameAssets = FileIO::Get().GetPath(FileIO::Directory::GameAssets, "");
 
     // Iterate through the provided paths
-    for (auto& asset : assets)
+    for (WeakAsset<> asset : AssetManager::Get().GetAllAssets())
     {
         const std::string fullPath = asset.GetFileOfOrigin().value_or("Generated assets").string();
 
@@ -466,14 +467,21 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
         ImGui::EndMenu();
     }
 
-
     if (const std::optional<std::filesystem::path> importedFromFile = asset->GetImportedFromFile();
         importedFromFile.has_value()
         && ImGui::MenuItem("Reimport"))
     {
-        AssetManager::Get().Import(importedFromFile.value());
-    }
+        ImporterSystem* importerSystem = Editor::Get().TryGetSystem<ImporterSystem>();
 
+        if (importerSystem != nullptr)
+        {
+            importerSystem->Import(*importedFromFile);
+        }
+        else
+        {
+            LOG(LogEditor, Error, "Could not import file, importer system does not exist!");
+        }
+    }
 
     if (ImGui::MenuItem("Delete", "Del")
         || input.WasKeyboardKeyPressed(Input::KeyboardKey::Delete))
