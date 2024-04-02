@@ -148,6 +148,8 @@ void Engine::MeshRenderer::Render(const World& world)
 
     DepthPrePass(world, gpuWorld);
 
+    CullClusters(world, gpuWorld);
+
     commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
     commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
     gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
@@ -481,29 +483,18 @@ void Engine::MeshRenderer::ClusteredShading(const World& world)
     Device& engineDevice = Device::Get();
     GPUWorld& gpuWorld = world.GetGPUWorld();
 
+    engineDevice.WaitForFence();
     gpuWorld.ClearClusterData();
-    //CullClusters(world, gpuWorld);
-    //engineDevice.WaitForFence();
-
     CalculateClusterGrid(gpuWorld);
     engineDevice.WaitForFence();
-
-    std::vector<InfoStruct::Clustering::DXAABB> gridVector(4000, InfoStruct::Clustering::DXAABB{});
-    gpuWorld.ReadGridData(gridVector);
-
-    for (int i = 0; i < gpuWorld.GetNumberOfClusters(); i++) {
-        glm::vec3 min = gridVector[i].min;
-        glm::vec3 max = gridVector[i].max;
-        glm::vec3 center = (min + max) * 0.5f;
-        glm::vec3 halfExtends = (max - min) * 0.5f;
-
-        DrawDebugBox(world, DebugCategory::AccelStructs, center, halfExtends, Colors::Purple);
-    }
-
-    //CompactClusters(gpuWorld);
-    //engineDevice.WaitForFence();
-    //uint32 numOfCompactClusters = gpuWorld.ReadCompactClusterCounter();
-    AssignLights(gpuWorld, gpuWorld.GetNumberOfClusters());
+    CompactClusters(gpuWorld);
     engineDevice.WaitForFence();
-    
+    uint32 numOfCompactClusters = gpuWorld.ReadCompactClusterCounter();
+    if (numOfCompactClusters > 0)
+    {
+        AssignLights(gpuWorld, numOfCompactClusters);
+        engineDevice.WaitForFence();
+    }
+   // AssignLights(gpuWorld, gpuWorld.GetNumberOfClusters());
+
 }
