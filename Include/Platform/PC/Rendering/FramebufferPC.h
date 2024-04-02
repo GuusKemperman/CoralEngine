@@ -28,12 +28,16 @@ namespace Engine
 
 		size_t GetColorTextureId();
 
+	public:
+		void BindDepthStencilResoure() const;
+
 	private:
 		std::unique_ptr<DXResource> mResource[FRAME_BUFFER_COUNT];
 		std::unique_ptr<DXResource> mDepthResource;
 		DXHeapHandle mFrameBufferHandle[FRAME_BUFFER_COUNT];
 		DXHeapHandle mFrameBufferRscHandle[FRAME_BUFFER_COUNT];
 		DXHeapHandle mDepthStencilHandle;
+		DXHeapHandle mDepthStencilSRVHandle;
 
 		glm::vec4 mClearColor{};
 		glm::ivec2 mSize{};

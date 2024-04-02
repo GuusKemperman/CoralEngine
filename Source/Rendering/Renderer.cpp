@@ -74,4 +74,5 @@ void Engine::Renderer::Render(const World& world, glm::vec2 viewportSize, FrameB
 	buffer.Bind();
 	mDebugRenderer->Render(world);
 	mUIRenderer->Render(world);
+
 }

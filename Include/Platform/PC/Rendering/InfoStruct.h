@@ -72,7 +72,8 @@ namespace Engine::InfoStruct
         LIGHT_GRID_SB,
         POINT_LIGHT_COUNTER,
         LIGHT_INDICES,
-        READBACK_RESOURCE,
+        COMPACT_CLUSTER_READBACK_RESOURCE,
+        GRID_READBACK_RESOURCE,
         NUM_SB
     };
 
