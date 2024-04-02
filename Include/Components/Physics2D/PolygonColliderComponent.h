@@ -1,5 +1,5 @@
 #pragma once
-#include "Components/Pathfinding/Geometry2d.h"
+#include "Utilities/Geometry2d.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE

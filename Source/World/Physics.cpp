@@ -2,7 +2,7 @@
 #include "World/Physics.h"
 
 #include "Components/TransformComponent.h"
-#include "Components/Pathfinding/Geometry2d.h"
+#include "Utilities/Geometry2d.h"
 #include "Components/Physics2D/AABBColliderComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
