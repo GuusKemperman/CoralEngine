@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CharacterComponent.h"
 #include "Meta/MetaReflect.h"
 #include "Utilities/AbilityFunctionality.h"
 #include "Utilities/Imgui/ImguiInspect.h"
@@ -55,8 +56,9 @@ namespace CE
 		// This is needed only if the effect is health decrease (damage).
 		// It needs to be stored because the dealt damage modifer of the character
 		// that cast the ability might have changed in the meantime,
-		// but we only want to apply the initial value at the moment the ability was cast.
-		float mDealtDamageModifierOfCastByCharacter{};
+		// but we only want to apply the initial value at the moment the ability was cast
+		// (or the character has died).
+		CharacterComponent mCastByCharacterData{};
 
 		bool operator==(const OverTimeEffect& other) const;
 		bool operator!=(const OverTimeEffect& other) const;

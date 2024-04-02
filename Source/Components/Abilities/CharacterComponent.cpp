@@ -3,7 +3,28 @@
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
+#include "Utilities/Math.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+
+bool CE::CharacterComponent::operator==(const CharacterComponent& other) const
+{
+	return mTeamId == other.mTeamId &&
+		Math::AreFloatsEqual(mGlobalCooldown, other.mGlobalCooldown) &&
+		Math::AreFloatsEqual(mGlobalCooldownTimer, other.mGlobalCooldownTimer) &&
+		Math::AreFloatsEqual(mBaseHealth, other.mBaseHealth) &&
+		Math::AreFloatsEqual(mCurrentHealth, other.mCurrentHealth) &&
+		Math::AreFloatsEqual(mBaseMovementSpeed, other.mBaseMovementSpeed) &&
+		Math::AreFloatsEqual(mCurrentMovementSpeed, other.mCurrentMovementSpeed) &&
+		Math::AreFloatsEqual(mBaseDealtDamageModifier, other.mBaseDealtDamageModifier) &&
+		Math::AreFloatsEqual(mCurrentDealtDamageModifier, other.mCurrentDealtDamageModifier) &&
+		Math::AreFloatsEqual(mBaseReceivedDamageModifier, other.mBaseReceivedDamageModifier) &&
+		Math::AreFloatsEqual(mCurrentReceivedDamageModifier, other.mCurrentReceivedDamageModifier);
+}
+
+bool CE::CharacterComponent::operator!=(const CharacterComponent& other) const
+{
+	return !(*this == other);
+}
 
 CE::MetaType CE::CharacterComponent::Reflect()
 {

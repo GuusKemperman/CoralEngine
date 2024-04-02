@@ -1,12 +1,22 @@
 #pragma once
+#include "CharacterComponent.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE
 {
+	class World;
+
 	class ActiveAbilityComponent
 	{
 	public:
-		entt::entity mCastByCharacter{};
+		CharacterComponent mCastByCharacterData{};
+
+#ifdef EDITOR
+		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
+#endif // EDITOR
+
+		bool operator==(const ActiveAbilityComponent& other) const;
+		bool operator!=(const ActiveAbilityComponent& other) const;
 
 	private:
 		friend ReflectAccess;

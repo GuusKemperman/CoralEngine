@@ -48,7 +48,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
     for (auto [entity, characterData, abilities, effects] : viewCharacters.each())
     {
         // Durational effects
-        auto& durationalEffects = effects.mDurationalEffects;
+        std::vector<DurationalEffect>& durationalEffects = effects.mDurationalEffects;
         for (auto it = durationalEffects.begin(); it != durationalEffects.end();)
         {
             it->mDurationTimer += dt;
@@ -64,7 +64,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
         }
 
         // Over time effects
-        auto& overTimeEffects = effects.mOverTimeEffects;
+        std::vector<OverTimeEffect>& overTimeEffects = effects.mOverTimeEffects;
         for (auto it = overTimeEffects.begin(); it != overTimeEffects.end();)
         {
             it->mDurationTimer += dt;
@@ -72,7 +72,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
             {
                 it->mTicksCounter++;
             	it->mDurationTimer = 0.f;
-                AbilityFunctionality::ApplyInstantEffect(world, entt::null, entity, it->mEffectSettings, AbilityFunctionality::ApplyType::EffectOverTime, it->mDealtDamageModifierOfCastByCharacter);
+                AbilityFunctionality::ApplyInstantEffect(world, it->mCastByCharacterData, entity, it->mEffectSettings);
             }
             if (it->mTicksCounter >= it->mNumberOfTicks)
             {
@@ -85,7 +85,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
         }
 
         // Visual effects
-        auto& visualEffects = effects.mVisualEffects;
+        std::vector<VisualEffect>& visualEffects = effects.mVisualEffects;
         if (visualEffects.empty() == false)
         {
             // Get the effect color
