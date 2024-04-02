@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Components/Pathfinding/PathfindingInfo.h"
+#include "Utilities/PathfindingInfo.h"
 
 #include <queue>
 #include <unordered_map>

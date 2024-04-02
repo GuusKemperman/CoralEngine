@@ -522,7 +522,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Components\Pathfinding\PathfindingInfo.cpp" />
+    <ClCompile Include="Source\Utilities\PathfindingInfo.cpp" />
     <ClCompile Include="Source\Utilities\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Rendering\Renderer.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.cpp">
@@ -1903,7 +1903,7 @@
     </ClInclude>
     <ClInclude Include="Include\Components\PointLightComponent.h" />
     <ClInclude Include="Include\Rendering\Renderer.h" />
-    <ClInclude Include="Include\Components\Pathfinding\PathfindingInfo.h" />
+    <ClInclude Include="Include\Utilities\PathfindingInfo.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />
