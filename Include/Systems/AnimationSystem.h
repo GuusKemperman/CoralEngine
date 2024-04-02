@@ -3,6 +3,7 @@
 
 namespace CE
 {
+	class Registry;
 	class Animation;
 	class SkinnedMeshComponent;
 	struct AnimNode;
@@ -20,6 +21,8 @@ namespace CE
 	const SkinnedMeshComponent& mesh,
 	const std::shared_ptr<const Animation> animation, 
 	std::vector<glm::mat4x4>& finalBoneMatrices);
+
+		void SwitchAnimationRecursive(Registry& reg, const entt::entity entity, const std::shared_ptr<const Animation> animation, float timeStamp);
 
 	private:
 
