@@ -23,10 +23,6 @@ namespace CE
 		float mBaseReceivedDamageModifier = 0.f;
 		float mCurrentReceivedDamageModifier = mBaseReceivedDamageModifier;
 
-
-		bool operator==(const CharacterComponent& other) const;
-		bool operator!=(const CharacterComponent& other) const;
-
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();

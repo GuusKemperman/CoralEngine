@@ -20,16 +20,6 @@ void CE::ActiveAbilityComponent::OnInspect(World& world, const std::vector<entt:
 }
 #endif // EDITOR
 
-bool CE::ActiveAbilityComponent::operator==(const ActiveAbilityComponent& other) const
-{
-	return mCastByCharacterData == other.mCastByCharacterData;
-}
-
-bool CE::ActiveAbilityComponent::operator!=(const ActiveAbilityComponent& other) const
-{
-	return !(*this == other);
-}
-
 CE::MetaType CE::ActiveAbilityComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<ActiveAbilityComponent>{}, "ActiveAbilityComponent" };

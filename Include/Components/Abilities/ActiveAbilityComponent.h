@@ -15,9 +15,6 @@ namespace CE
 		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
 #endif // EDITOR
 
-		bool operator==(const ActiveAbilityComponent& other) const;
-		bool operator!=(const ActiveAbilityComponent& other) const;
-
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
