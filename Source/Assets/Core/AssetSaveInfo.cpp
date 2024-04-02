@@ -3,21 +3,13 @@
 
 #include "Core/AssetManager.h"
 #include "Assets/Core/AssetFileMetaData.h"
-#include "Meta/MetaType.h"
 #include "Utilities/ClassVersion.h"
 
-CE::AssetSaveInfo::AssetSaveInfo(const std::string& name, const MetaType& assetClass) :
-	mStream(std::ostringstream::binary)
-{
-	const AssetFileMetaData metaData{  name, assetClass, GetClassVersion(assetClass) };
-	metaData.WriteMetaData(mStream);
-}
-
 CE::AssetSaveInfo::AssetSaveInfo(const std::string& name, const MetaType& assetClass,
-	const std::filesystem::path& importedFromFile, uint32 importerVersion) :
+	const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo) :
 	mStream(std::ostringstream::binary)
 {
-	const AssetFileMetaData metaData{ name, assetClass, GetClassVersion(assetClass), AssetFileMetaData::ImporterInfo{ importedFromFile, importerVersion } };
+	const AssetFileMetaData metaData{ name, assetClass, GetClassVersion(assetClass), importerInfo };
 	metaData.WriteMetaData(mStream);
 }
 

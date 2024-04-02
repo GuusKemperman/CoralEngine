@@ -31,9 +31,7 @@ CE::AssetSaveInfo CE::Asset::Save(const std::optional<AssetFileMetaData::Importe
 
 	MetaType& metaType = *MetaManager::Get().TryGetType(mTypeId);
 
-	AssetSaveInfo saveInfo = importerInfo.has_value()
-		? AssetSaveInfo{ mName, metaType, importerInfo->mImportedFile, importerInfo->mImporterVersion }
-		: AssetSaveInfo{ mName, metaType };
+	AssetSaveInfo saveInfo{ mName, metaType, importerInfo };
 
 	OnSave(saveInfo);
 	LOG(LogAssets, Verbose, "Finished saving of: {}", GetName());
