@@ -117,7 +117,7 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 			else
 			{
 				// const_cast is fine since we are assigning it to a const MetaAny
-				const MetaAny component{ state.mType, const_cast<void*>(state.mStorage.get().value(entity)), false };
+				MetaAny component{ state.mType, const_cast<void*>(state.mStorage.get().value(entity)), false };
 				evalResult = state.mEvaluate.get().InvokeUncheckedUnpackedWithRVO(&score, component, world, entity);
 			}
 
