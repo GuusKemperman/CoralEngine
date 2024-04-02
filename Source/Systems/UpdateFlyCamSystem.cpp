@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Systems/UpdateFlyCamSystem.h"
 
+#include "Components/CameraComponent.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/TransformComponent.h"
@@ -12,8 +13,7 @@
 
 void CE::UpdateFlyCamSystem::Update(World& world, float dt)
 {
-	auto activeCamera = world.GetViewport().GetMainCamera();
-	const entt::entity activeCameraOwner = activeCamera.has_value() ? activeCamera->first : entt::null;
+	const entt::entity activeCameraOwner = CameraComponent::GetSelected(world);
 
 	FlyCamControllerComponent* const flyCam = world.GetRegistry().TryGet<FlyCamControllerComponent>(activeCameraOwner);
 	TransformComponent* const transform = world.GetRegistry().TryGet<TransformComponent>(activeCameraOwner);

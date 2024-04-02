@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Systems/PhysicsSystem.h"
 
+#include "Components/CameraComponent.h"
 #include "Components/ComponentFilter.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Meta/MetaType.h"
@@ -357,14 +358,14 @@ void CE::PhysicsSystem::DebugDrawing(const World& world)
 	{
 		const Physics& physics = world.GetPhysics();
 
-		auto optCamera = world.GetViewport().GetMainCamera();
+		const entt::entity camera = CameraComponent::GetSelected(world);
 
-		if (!optCamera.has_value())
+		if (camera == entt::null)
 		{
 			return;
 		}
 
-		const TransformComponent* const cameraTransform = world.GetRegistry().TryGet<const TransformComponent>(optCamera->first);
+		const TransformComponent* const cameraTransform = world.GetRegistry().TryGet<const TransformComponent>(camera);
 
 		if (cameraTransform == nullptr)
 		{

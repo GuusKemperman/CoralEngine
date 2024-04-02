@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Rendering/Renderer.h"
 
+#include "Components/CameraComponent.h"
 #include "Core/Device.h"
 #include "World/World.h"
 #include "World/Registry.h"
@@ -56,7 +57,7 @@ void CE::Renderer::Render(const World& world, glm::vec2 viewportSize)
 	// Casting const away :(
 	WorldViewport& worldViewport = const_cast<WorldViewport&>(world.GetViewport());
 
-	if (!worldViewport.GetMainCamera().has_value())
+	if (CameraComponent::GetSelected(world) == entt::null)
 	{
 		LOG(LogTemp, Warning, "No camera to render to!");
 		return;

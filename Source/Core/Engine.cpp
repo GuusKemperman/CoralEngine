@@ -18,7 +18,7 @@
 #include "World/Registry.h"
 #include "Rendering/Renderer.h"
 
-CE::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
+CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 {
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
@@ -39,14 +39,14 @@ CE::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 	{
 		Device::Get().CreateImguiContext();
 	}
-#endif
+#endif // EDITOR
 	MetaManager::StartUp();
 	AssetManager::StartUp();
 	VirtualMachine::StartUp();
 
 #ifdef EDITOR
 	Editor::StartUp();
-#endif // !EDITOR
+#endif // EDITOR
 
 	UnitTestManager::StartUp();
 
@@ -76,7 +76,7 @@ CE::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
 	}
 }
 
-CE::EngineClass::~EngineClass()
+CE::Engine::~Engine()
 {
 	UnitTestManager::ShutDown();
 
@@ -100,7 +100,7 @@ CE::EngineClass::~EngineClass()
 	JobManager::ShutDown();
 }
 
-void CE::EngineClass::Run([[maybe_unused]] Name starterLevel)
+void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 {
 	if (Device::IsHeadless())
 	{
@@ -136,7 +136,7 @@ void CE::EngineClass::Run([[maybe_unused]] Name starterLevel)
 	{
 
 		t2 = std::chrono::high_resolution_clock::now();
-		float deltaTime = (std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1)).count();
+		float deltaTime = std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1).count();
 
 		// Check if we hit a breakpoint or something else
 		// that interrupted the program for an extended duration
@@ -150,14 +150,17 @@ void CE::EngineClass::Run([[maybe_unused]] Name starterLevel)
 		input.NewFrame();
 		device.NewFrame();
 
-		Device& engineDevice = Device::Get();
-		if (engineDevice.GetDisplaySize().x <= 0 || engineDevice.GetDisplaySize().y <= 0)
+		if (device.GetDisplaySize().x <= 0
+			|| device.GetDisplaySize().y <= 0)
+		{
 			continue;
+		}
 
 #ifdef EDITOR
 		editor.Tick(deltaTime);
 #else
 		world.Tick(deltaTime);
+
 		if (!Device::IsHeadless())
 		{
 			Renderer::Get().Render(world);
@@ -170,7 +173,7 @@ void CE::EngineClass::Run([[maybe_unused]] Name starterLevel)
 		// Has to be done after EndFrame for some dx12 reasons,
 		// as you are not allowed to free resources in between NewFrame and EndFrame.
 		editor.FullFillRefreshRequests();
-#endif
+#endif // EDITOR
 
 		timeElapsedSinceLastGarbageCollect += deltaTime;
 
