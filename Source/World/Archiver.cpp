@@ -117,7 +117,7 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 
 		if (!registry.Valid(owner))
 		{
-			LOG(LogAssets, Error, "Component has owner {}, but this entity does not exist", static_cast<EntityType>(owner));
+			LOG(LogAssets, Error, "{} has owner {}, but this entity does not exist", componentClass->GetName(), entt::to_integral(owner));
 			continue;
 		}
 
@@ -329,11 +329,11 @@ CE::BinaryGSONObject CE::Archiver::SerializeInternal(const World& world, std::ve
 		std::sort(serializedComponentClass.GetChildren().begin(), serializedComponentClass.GetChildren().end(),
 			[](const BinaryGSONObject& lhs, const BinaryGSONObject& rhs)
 			{
-				ASSERT(lhs.GetName().size() == sizeof(EntityType));
-				ASSERT(rhs.GetName().size() == sizeof(EntityType));
+				ASSERT(lhs.GetName().size() == sizeof(entt::entity));
+				ASSERT(rhs.GetName().size() == sizeof(entt::entity));
 
 				// Faster than string comparisons
-				return *reinterpret_cast<const EntityType*>(lhs.GetName().c_str()) < *reinterpret_cast<const EntityType*>(rhs.GetName().c_str());
+				return *reinterpret_cast<const entt::entity*>(lhs.GetName().c_str()) < *reinterpret_cast<const entt::entity*>(rhs.GetName().c_str());
 			});
 	}
 

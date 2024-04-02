@@ -24,7 +24,7 @@
 namespace CE
 {
 	static void EraseSerializedComponents(BinaryGSONObject& serializedWorld,
-		const std::string& nameOfClassToErase,
+		const std::optional<std::string>& nameOfClassToErase, // If nullopt, will erase it from all component types
 		const std::vector<entt::entity>& eraseFromIds);
 
 	static void EraseSerializedFactory(BinaryGSONObject& serializedComponents,
@@ -222,9 +222,10 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 
 				for (auto [entity, prefabOrigin] : prefabOriginView.each())
 				{
-					if (prefabOrigin.TryGetFactory() == &diffedFactory.mCurrentFactory.get())
+					if (prefabOrigin.TryGetFactory() == &diffedFactory.mCurrentFactory.get()
+						&& !reg.HasComponent(componentToAdd.GetProductClass().GetTypeId(), entity))
 					{
-						componentToAdd.Construct(world.GetRegistry(), entity);
+						componentToAdd.Construct(reg, entity);
 					}
 				}
 			}
@@ -305,11 +306,11 @@ CE::World CE::Level::CreateWorld(const bool callBeginPlayImmediately) const
 	return world;
 }
 
-std::vector<CE::EntityType> GetIds(const CE::BinaryGSONObject& serializedFactory)
+std::vector<entt::entity> GetIds(const CE::BinaryGSONObject& serializedFactory)
 {
 	const CE::BinaryGSONMember* serializedIds = serializedFactory.TryGetGSONMember("IDS");
 
-	std::vector<CE::EntityType> ids;
+	std::vector<entt::entity> ids;
 	if (serializedIds != nullptr)
 	{
 		*serializedIds >> ids;
@@ -318,12 +319,13 @@ std::vector<CE::EntityType> GetIds(const CE::BinaryGSONObject& serializedFactory
 }
 
 void CE::EraseSerializedComponents(BinaryGSONObject& serializedWorld,
-	const std::string& nameOfClassToErase,
+	const std::optional<std::string>& nameOfClassToErase,
 	const std::vector<entt::entity>& eraseFromIds)
 {
 	for (BinaryGSONObject& serializedComponentClass : serializedWorld.GetChildren())
 	{
-		if (serializedComponentClass.GetName() != nameOfClassToErase)
+		if (nameOfClassToErase.has_value()
+			&& serializedComponentClass.GetName() != nameOfClassToErase)
 		{
 			continue;
 		}
@@ -366,21 +368,7 @@ void CE::EraseSerializedFactory(BinaryGSONObject& serializedWorld,
 
 	*serializedEntities << allEntities;
 
-	const BinaryGSONMember* const serializedComponentNames = serializedFactory.TryGetGSONMember("Components");
-
-	if (serializedComponentNames != nullptr)
-	{
-		std::vector<std::string> componentNames{};
-		*serializedComponentNames >> componentNames;
-
-		for (const std::string& componentName : componentNames)
-		{
-			EraseSerializedComponents(serializedWorld, componentName, entitiesFromThisFactory);
-		}
-	}
-
-	const MetaType& prefabOriginType = MetaManager::Get().GetType<PrefabOriginComponent>();
-	EraseSerializedComponents(serializedWorld, prefabOriginType.GetName(), entitiesFromThisFactory);
+	EraseSerializedComponents(serializedWorld, std::nullopt, entitiesFromThisFactory);
 
 	const auto children = GetSerializedChildFactories(serializedFactory);
 

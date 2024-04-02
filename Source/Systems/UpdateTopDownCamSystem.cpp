@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Systems/UpdateTopDownCamSystem.h"
 
+#include "Components/CameraComponent.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "World/WorldViewport.h"
@@ -15,8 +16,7 @@ void CE::UpdateTopDownCamSystem::Update(World& world, float dt)
 {
 	auto& registry = world.GetRegistry();
 
-	auto activeCamera = world.GetViewport().GetMainCamera();
-	const entt::entity activeCameraOwner = activeCamera.has_value() ? activeCamera->first : entt::null;
+	const entt::entity activeCameraOwner = CameraComponent::GetSelected(world);
 	TopDownCamControllerComponent* const topDownController = registry.TryGet<TopDownCamControllerComponent>(activeCameraOwner);
 	TransformComponent* const transform = registry.TryGet<TransformComponent>(activeCameraOwner);
 

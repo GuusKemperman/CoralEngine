@@ -48,9 +48,10 @@ CE::ScriptFunc::ScriptFunc(const Script& script, const ScriptEvent& event) :
 	mName(event.mBasedOnEvent.get().mName),
 	mNameOfScriptAsset(script.GetName()),
 	mTypeIdOfScript(Name::HashString(script.GetName())),
-	mReturns(event.mReturnValueToShowToUser.has_value() ? std::optional<ScriptVariableTypeData>{ ScriptVariableTypeData{ event.mReturnValueToShowToUser->mTypeTraits, event.mReturnValueToShowToUser->mName } } : std::nullopt),
+	mReturns(event.mReturnValueToShowToUser.has_value() ? 
+		std::optional<ScriptVariableTypeData> { ScriptVariableTypeData{ event.mReturnValueToShowToUser->mTypeTraits, event.mReturnValueToShowToUser->mName } } :
+		std::nullopt),
 	mBasedOnEvent(&event),
-	mIsPure(event.mBasedOnEvent.get().mIsPure),
 	mIsStatic(event.mBasedOnEvent.get().mIsAlwaysStatic)
 {
 	for (const MetaFuncNamedParam& param : event.mParamsToShowToUser)
@@ -69,58 +70,53 @@ CE::ScriptFunc::~ScriptFunc()
 
 void CE::ScriptFunc::DeclareMetaFunc(MetaType& addToType)
 {
-	MetaFunc* declaredFunc{};
-
 	if (IsEvent())
 	{
-		declaredFunc = &mBasedOnEvent->Declare(mTypeIdOfScript, addToType);
+		mBasedOnEvent->Declare(mTypeIdOfScript, addToType);
+		return;
 	}
-	else
+
+	std::vector<MetaFuncNamedParam> metaParams{};
+
+	for (ScriptVariableTypeData& scriptParam : GetParameters(false))
 	{
-		std::vector<MetaFuncNamedParam> metaParams{};
+		scriptParam.RefreshTypePointer();
 
-		for (ScriptVariableTypeData& scriptParam : GetParameters(false))
+		if (scriptParam.TryGetType() == nullptr)
 		{
-			scriptParam.RefreshTypePointer();
-
-			if (scriptParam.TryGetType() == nullptr)
-			{
-				VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, scriptParam.GetTypeName() });
-				continue;
-			}
-
-			metaParams.emplace_back(TypeTraits{ scriptParam.TryGetType()->GetTypeId(), scriptParam.GetTypeForm() }, scriptParam.GetName());
+			VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, scriptParam.GetTypeName() });
+			continue;
 		}
 
-		MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
-
-		if (mReturns.has_value())
-		{
-			if (mReturns->TryGetType() == nullptr)
-			{
-				VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, mReturns->GetTypeName() });
-			}
-			else
-			{
-				metaReturn = { { mReturns->TryGetType()->GetTypeId(), mReturns->GetTypeForm() }, mReturns->GetTypeName() };
-			}
-		}
-
-		declaredFunc = &addToType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
-			{
-				return { "There were unresolved compilation errors" };
-			},
-			mName,
-			metaReturn,
-			metaParams
-		);
-
-		declaredFunc->GetProperties().Set(Props::sIsScriptPure, IsPure());
-		
+		metaParams.emplace_back(TypeTraits{ scriptParam.TryGetType()->GetTypeId(), scriptParam.GetTypeForm() }, scriptParam.GetName());
 	}
-	
-	declaredFunc->GetProperties().Add(Props::sIsScriptableTag);
+
+	MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
+
+	if (mReturns.has_value())
+	{
+		if (mReturns->TryGetType() == nullptr)
+		{
+			VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, mReturns->GetTypeName() });
+		}
+		else
+		{
+			metaReturn = { { mReturns->TryGetType()->GetTypeId(), mReturns->GetTypeForm() }, mReturns->GetTypeName() };
+		}
+	}
+
+	MetaFunc& declaredFunc = addToType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
+		{
+			return { "There were unresolved compilation errors" };
+		},
+		mName,
+		metaReturn,
+		metaParams
+	);
+
+	declaredFunc.GetProperties().Set(Props::sIsScriptPure, IsPure());
 }
+
 
 void CE::ScriptFunc::DefineMetaFunc(MetaFunc& func)
 {
@@ -233,7 +229,7 @@ void CE::ScriptFunc::CollectErrors(ScriptErrorInserter inserter, const Script& o
 			{
 				return event.mBasedOnEvent.get().mName == ourName;
 			}))
-	{ 
+	{
 		inserter = { ScriptError::Type::NameNotUnique, *this, Format("Name {} is reserved for the event of the same name", mName) };
 	}
 
@@ -559,7 +555,6 @@ CE::ScriptLink* CE::ScriptFunc::TryAddLink(const ScriptPin& pinA, const ScriptPi
 	return &mLinks.emplace_back(static_cast<LinkId::ValueType>(mLinks.size() + 1), *inputPin, *outputPin);
 }
 
-
 void CE::ScriptFunc::RemoveNode(NodeId nodeId)
 {
 	ScriptNode* node = TryGetNode(nodeId);
@@ -609,7 +604,6 @@ void CE::ScriptFunc::RemoveLink(LinkId linkId)
 	}
 #endif // ASSERTS_ENABLED
 }
-
 
 void CE::ScriptFunc::FreePins(PinId firstPin, uint32 amount)
 {
@@ -857,4 +851,3 @@ const CE::ScriptPin* CE::ScriptFunc::TryGetPin(PinId id) const
 	auto it = Internal::FindElement(mPins, id);
 	return it == mPins.end() ? nullptr : &*it;
 }
-

@@ -38,7 +38,7 @@ namespace CE
 		WorldViewport& GetViewport() { ASSERT(mViewport != nullptr); return *mViewport; };
 		const WorldViewport& GetViewport() const { ASSERT(mViewport != nullptr); return *mViewport; };
 
-		GPUWorld& GetGPUWorld() const { return *mGPUWorld; };
+		GPUWorld& GetGPUWorld() const;
 
 		bool HasBegunPlay() const { return mHasBegunPlay; }
 

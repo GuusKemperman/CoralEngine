@@ -20,11 +20,6 @@ CE::World::World(const bool beginPlayImmediately) :
 {
 	LOG(LogCore, Verbose, "World is awaiting begin play..");
 
-	if (!Device::IsHeadless())
-	{
-		mGPUWorld = std::make_unique<GPUWorld>(*this);
-	}
-
 	if (beginPlayImmediately)
 	{
 		BeginPlay();
@@ -43,7 +38,11 @@ CE::World::World(World&& other) noexcept :
 	mRegistry->mWorld = *this;
 	mViewport->mWorld = *this;
 	mPhysics->mWorld = *this;
-	mGPUWorld->mWorld = *this;
+
+	if (mGPUWorld != nullptr)
+	{
+		mGPUWorld->mWorld = *this;
+	}
 }
 
 CE::World::~World()
@@ -68,8 +67,12 @@ CE::World& CE::World::operator=(World&& other) noexcept
 	mRegistry->mWorld = *this;
 	mViewport->mWorld = *this;
 	mPhysics->mWorld = *this;
-	mGPUWorld->mWorld = *this;
-	
+
+	if (mGPUWorld != nullptr)
+	{
+		mGPUWorld->mWorld = *this;
+	}
+
 	mTime = other.mTime;
 	mHasBegunPlay = other.mHasBegunPlay;
 
@@ -157,6 +160,23 @@ void CE::World::EndPlay()
 	LOG(LogCore, Verbose, "World has just ended play");
 
 	mHasBegunPlay = false;
+}
+
+CE::GPUWorld& CE::World::GetGPUWorld() const
+{
+	ASSERT_LOG(!Device::IsHeadless(), "Cannot access GPUWorld when device is running in headless mode. Check using Device::IsHeadless.");
+
+	if (mGPUWorld == nullptr)
+	{
+		// The GPU buffers are only allocated when GetGPUWorld is called.
+		// Otherwise, we allocate a looot of resources that are only
+		// freed at the end of the frame, and if we create a lot of worlds
+		// in one frame (such as with unit tests), then we run out of memory.
+		// hence, the const_cast
+		const_cast<World&>(*this).mGPUWorld = std::make_unique<GPUWorld>(*this);
+	}
+
+	return *mGPUWorld;
 }
 
 static inline std::stack<std::reference_wrapper<CE::World>> sWorldStack{};
@@ -248,7 +268,6 @@ namespace
 
 		return returnValue;
 	}
-
 }
 
 CE::MetaType CE::World::Reflect()

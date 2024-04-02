@@ -120,7 +120,7 @@ template<typename Container> bool ImGui::detail::AutoContainerTreeNode(const std
 {
 	//std::size_t size = ImGui::detail::AutoContainerSize(cont);
 	std::size_t size = cont.size();
-	if (ImGui::CollapsingHeader(name.c_str()))
+	if (ImGui::TreeNode(name.c_str()))
 	{
 		return true;
 	}
@@ -142,7 +142,6 @@ template<typename Container> bool ImGui::detail::AutoContainerValues(const std::
 {
 	if (ImGui::detail::AutoContainerTreeNode(name, cont))
 	{
-		ImGui::Indent();
 		ImGui::PushID(name.c_str());
 		std::size_t i = 0;
 		for (auto & elem : cont)
@@ -152,7 +151,7 @@ template<typename Container> bool ImGui::detail::AutoContainerValues(const std::
 			++i;
 		}
 		ImGui::PopID();
-		ImGui::Unindent();
+		ImGui::TreePop();
 		return true;
 	}
 	else return false;
@@ -161,7 +160,6 @@ template<typename Container> bool ImGui::detail::AutoMapContainerValues(const st
 {
 	if (ImGui::detail::AutoContainerTreeNode(name, cont))
 	{
-		ImGui::Indent();
 		std::size_t i = 0;
 		for (auto & elem : cont)
 		{
@@ -170,7 +168,7 @@ template<typename Container> bool ImGui::detail::AutoMapContainerValues(const st
 			ImGui::PopID();
 			++i;
 		}
-		ImGui::Unindent();
+		ImGui::TreePop();
 		return true;
 	}
 	else return false;

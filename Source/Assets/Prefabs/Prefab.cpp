@@ -154,7 +154,7 @@ CE::BinaryGSONObject CE::Prefab::SaveToGSONObject(const std::string& prefabName,
 
 	if (!reg.Valid(rootEntity))
 	{
-		LOG(LogAssets, Error, "Cannot create prefab from entity {}, this entity does not exists", static_cast<EntityType>(rootEntity));
+		LOG(LogAssets, Error, "Cannot create prefab from entity {}, this entity does not exists", entt::to_integral(rootEntity));
 		return {};
 	}
 

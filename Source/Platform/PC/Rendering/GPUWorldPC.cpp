@@ -145,11 +145,16 @@ void CE::GPUWorld::Update()
     int frameIndex = engineDevice.GetFrameIndex();
 
     // Get main camera
-    const auto optionalEntityCameraPair = mWorld.get().GetViewport().GetMainCamera();
-    ASSERT_LOG(optionalEntityCameraPair.has_value(), "DX12 draw requests have been made, but they cannot be cleared as there is no camera to draw them to");
+    entt::entity cameraOwner = CameraComponent::GetSelected(mWorld);
+
+    if (cameraOwner == entt::null)
+    {
+        return;
+    }
+
+    const CameraComponent& camera = mWorld.get().GetRegistry().Get<const CameraComponent>(cameraOwner);
 
     // Update camera
-    const auto camera = optionalEntityCameraPair->second;
     InfoStruct::DXMatrixInfo matrixInfo{};
     matrixInfo.pm = glm::transpose(camera.GetProjection());
     matrixInfo.vm = glm::transpose(camera.GetView());

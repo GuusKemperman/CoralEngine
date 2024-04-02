@@ -3,6 +3,7 @@
 // But the functionality has been divided into seperate .cpp files,
 // since the amount of code made it hard to find what you needed when
 // it was all in one file.
+#include "BasicDataTypes/Colors/LinearColor.h"
 #include "EditorSystems/AssetEditorSystems/ScriptEditorSystem.h"
 
 #include "Core/VirtualMachine.h"
@@ -151,10 +152,19 @@ void CE::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
 
 		std::string comment = asComment.GetComment();
 
-		if (ShowInspectUI("Comment: ", comment))
+		if (ShowInspectUI("Comment", comment))
 		{
 			asComment.SetComment(comment);
 		}
+
+		LinearColor col = asComment.GetColour();
+
+		if (ShowInspectUI("Colour", col))
+		{
+			asComment.SetColour(col);
+		}
+
+		return;
 	}
 
 	for (ScriptPin& inputPin : node.GetInputs(currentFunc))
