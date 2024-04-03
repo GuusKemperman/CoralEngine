@@ -3,29 +3,26 @@
 #include <memory>
 #include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
 
-class DXSignatureBuilder;
 struct ID3D12Device5;
-using uint = unsigned int;
 
-class DXPipeline
+class DXPipelineBuilder
 {
 public:
-	DXPipeline() {};
-	void CreatePipeline(ComPtr<ID3D12Device5> device, const ComPtr<ID3D12RootSignature>& root, LPCWSTR name);
+	DXPipelineBuilder() {};
 
-	void AddInput(LPCSTR name, DXGI_FORMAT format, const uint slot);
-	void SetRasterizer(const CD3DX12_RASTERIZER_DESC& rasterizer);
-	void SetBlendState(const CD3DX12_BLEND_DESC& blend);
-	void SetDepthState(const CD3DX12_DEPTH_STENCIL_DESC& depth);
-	void SetVertexAndPixelShaders(LPVOID vsBuffer, SIZE_T vsSize, LPVOID psBuffer, SIZE_T psSize);
-	void SetComputeShader(LPVOID computeShaderBuffer, SIZE_T computeShaderSize);
-	void SetMsaaCountAndQuality(uint count, uint quality);
-	void AddRenderTarget(DXGI_FORMAT format);
-	void SetPrimitiveTopology(const D3D12_PRIMITIVE_TOPOLOGY_TYPE& topology);
+	DXPipelineBuilder& AddInput(LPCSTR name, DXGI_FORMAT format, const uint32 slot);
+	DXPipelineBuilder& SetRasterizer(const CD3DX12_RASTERIZER_DESC& rasterizer);
+	DXPipelineBuilder& SetBlendState(const CD3DX12_BLEND_DESC& blend);
+	DXPipelineBuilder& SetDepthState(const CD3DX12_DEPTH_STENCIL_DESC& depth);
+	DXPipelineBuilder& SetVertexAndPixelShaders(LPVOID vsBuffer, SIZE_T vsSize, LPVOID psBuffer, SIZE_T psSize);
+	DXPipelineBuilder& SetComputeShader(LPVOID computeShaderBuffer, SIZE_T computeShaderSize);
+	DXPipelineBuilder& SetMsaaCountAndQuality(uint32 count, uint32 quality);
+	DXPipelineBuilder& AddRenderTarget(DXGI_FORMAT format);
+	DXPipelineBuilder& SetPrimitiveTopology(const D3D12_PRIMITIVE_TOPOLOGY_TYPE& topology);
+
+	ComPtr<ID3D12PipelineState> Build(ComPtr<ID3D12Device5> device, const ComPtr<ID3D12RootSignature>& root, LPCWSTR name) const;
 
 	static ComPtr<ID3DBlob> ShaderToBlob(const char* path, const char* shaderVersion, const char* functionName = nullptr);
-
-	ComPtr<ID3D12PipelineState> GetPipeline() const { return mPipeline; }
 
 private:
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputs;
@@ -45,8 +42,7 @@ private:
 	CD3DX12_RASTERIZER_DESC mRast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	CD3DX12_BLEND_DESC mBlend = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	CD3DX12_DEPTH_STENCIL_DESC mDepth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-	uint mMsaaCount = 1;
-	uint mMsaaQuality = 0;
-	ComPtr<ID3D12PipelineState> mPipeline;
+	uint32 mMsaaCount = 1;
+	uint32 mMsaaQuality = 0;
 };
 

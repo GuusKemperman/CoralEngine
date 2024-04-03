@@ -37,7 +37,7 @@ namespace CE
         void* GetCommandQueue() { return mCommandQueue.Get(); }
         void* GetSignature() { return mSignature.Get(); }
         void* GetComputeSignature() { return mComputeSignature.Get(); }
-        void* GetMipmapPipeline() { return mGenMipmapsPipeline.get(); }
+        void* GetMipmapPipeline() { return mGenMipmapsPipeline.Get(); }
 
 #ifdef EDITOR
         void CreateImguiContext();
@@ -116,7 +116,7 @@ namespace CE
         ComPtr<ID3D12Device5> mDevice;
         ComPtr<ID3D12RootSignature> mSignature;
         ComPtr<ID3D12RootSignature> mComputeSignature;
-        std::unique_ptr<DXPipeline> mGenMipmapsPipeline;
+        ComPtr<ID3D12PipelineState> mGenMipmapsPipeline;
 
         DXHeapHandle mRenderTargetHandles[FRAME_BUFFER_COUNT];
         DXHeapHandle mDepthHandle;

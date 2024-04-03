@@ -1,7 +1,8 @@
 #pragma once
 #include "Rendering/ISubRenderer.h"
+#include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
 
-class DXPipeline;
+class DXPipelineBuilder;
 
 namespace CE
 {
@@ -18,9 +19,9 @@ namespace CE
     private:
         void HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex);
 
-        std::unique_ptr<DXPipeline> mPBRPipeline;
-        std::unique_ptr<DXPipeline> mPBRSkinnedPipeline;
-        std::unique_ptr<DXPipeline> mZPipeline;
-        std::unique_ptr<DXPipeline> mZSkinnedPipeline;
+        ComPtr<ID3D12PipelineState> mPBRPipeline;
+        ComPtr<ID3D12PipelineState> mPBRSkinnedPipeline;
+        ComPtr<ID3D12PipelineState> mZPipeline;
+        ComPtr<ID3D12PipelineState> mZSkinnedPipeline;
     };
 }

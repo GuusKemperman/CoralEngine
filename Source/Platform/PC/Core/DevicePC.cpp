@@ -365,11 +365,10 @@ void CE::Device::InitializeDevice()
 
     FileIO& fileIO = FileIO::Get();
     std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/MipmapGen.hlsl");
-    mGenMipmapsPipeline = std::make_unique<DXPipeline>();
-    ComPtr<ID3DBlob> cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
-    mGenMipmapsPipeline = std::make_unique<DXPipeline>();
-    mGenMipmapsPipeline->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
-    mGenMipmapsPipeline->CreatePipeline(mDevice, mComputeSignature, L"GENERATE MIPMAPS COMPUTE SHADER");
+    ComPtr<ID3DBlob> cs = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
+    mGenMipmapsPipeline = DXPipelineBuilder()
+        .SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize())
+        .Build(mDevice, mComputeSignature, L"GENERATE MIPMAPS COMPUTE SHADER");
 
     SubmitCommands();
 }

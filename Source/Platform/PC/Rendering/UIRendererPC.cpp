@@ -18,20 +18,20 @@ CE::UIRenderer::UIRenderer()
 
     FileIO& fileIO = FileIO::Get();
     std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/UIVertex.hlsl");
-    ComPtr<ID3DBlob> v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    ComPtr<ID3DBlob> v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/UIPixel.hlsl");
-    ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0");
+    ComPtr<ID3DBlob> p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0");
 
     CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     depth.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
-    mPipeline = std::make_unique<DXPipeline>();
-    mPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
-    mPipeline->AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 1);
-    mPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
-    mPipeline->SetDepthState(depth);
-    mPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
-    mPipeline->CreatePipeline(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"UI RENDER PIPELINE");
+    mPipeline = DXPipelineBuilder()
+    .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+    .AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 1)
+    .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+    .SetDepthState(depth)
+    .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
+    .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"UI RENDER PIPELINE");
 }
 
 CE::UIRenderer::~UIRenderer() = default;
@@ -84,7 +84,7 @@ void CE::UIRenderer::Render(const World& world)
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-    commandList->SetPipelineState(mPipeline->GetPipeline().Get());
+    commandList->SetPipelineState(mPipeline.Get());
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 
     for (int i = 0; i < drawRequests.size(); i++)
