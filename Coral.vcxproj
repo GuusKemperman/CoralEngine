@@ -522,6 +522,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Utilities\PathfindingInfo.cpp" />
     <ClCompile Include="Source\Utilities\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Rendering\Renderer.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.cpp">
@@ -1021,13 +1022,10 @@
     </ClCompile>
     <ClCompile Include="Source\Scripting\ScriptEvents.cpp" />
     <ClCompile Include="Source\Components\PointLightComponent.cpp" />
-    <ClCompile Include="Source\Components\Pathfinding\Edge.cpp" />
-    <ClCompile Include="Source\Components\Pathfinding\Geometry2d.cpp" />
-    <ClCompile Include="Source\Components\Pathfinding\Graph.cpp" />
+    <ClCompile Include="Source\Utilities\Geometry2d.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshAgentComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshTargetComponent.cpp" />
-    <ClCompile Include="Source\Components\Pathfinding\Node.cpp" />
     <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PhysicsBody2DComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PolygonColliderComponent.cpp" />
@@ -1518,7 +1516,7 @@
     <ClCompile Include="Source\Components\UI\UISpriteComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\Components\Pathfinding\Geometry2d.h" />
+    <ClInclude Include="Include\Utilities\Geometry2d.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\GPUWorldPC.h" />
     <ClInclude Include="Include\Components\MeshColorComponent.h" />
@@ -1659,12 +1657,9 @@
     <ClInclude Include="Include\Components\EventTestingComponent.h" />
     <ClInclude Include="Include\Components\IsDestroyedTag.h" />
     <ClInclude Include="Include\Components\NameComponent.h" />
-    <ClInclude Include="Include\Components\Pathfinding\Edge.h" />
-    <ClInclude Include="Include\Components\Pathfinding\Graph.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshAgentComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshTargetComponent.h" />
-    <ClInclude Include="Include\Components\Pathfinding\Node.h" />
     <ClInclude Include="Include\Components\Physics2D\DiskColliderComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PhysicsBody2DComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
@@ -1908,6 +1903,7 @@
     </ClInclude>
     <ClInclude Include="Include\Components\PointLightComponent.h" />
     <ClInclude Include="Include\Rendering\Renderer.h" />
+    <ClInclude Include="Include\Utilities\PathfindingInfo.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />
