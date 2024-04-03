@@ -549,7 +549,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Assets\Animation\Bone.cpp" />
-    <ClCompile Include="Source\Components\Abilities\AOEComponent.cpp" />
+    <ClCompile Include="Source\Components\Abilities\AbilityLifetimeComponent.cpp" />
     <ClCompile Include="Source\Components\Abilities\ProjectileComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\AABBColliderComponent.cpp" />
     <ClCompile Include="Source\Components\UI\UIButtonComponent.cpp" />
@@ -1523,7 +1523,7 @@
     <ClInclude Include="Include\Assets\Animation\Animation.h" />
     <ClInclude Include="Include\Assets\Importers\AnimationImporter.h" />
     <ClInclude Include="Include\Assets\Animation\BoneInfo.h" />
-    <ClInclude Include="Include\Components\Abilities\AOEComponent.h" />
+    <ClInclude Include="Include\Components\Abilities\AbilityLifetimeComponent.h" />
     <ClInclude Include="Include\Components\Abilities\EffectsOnCharacterComponent.h" />
     <ClInclude Include="Include\Components\Abilities\ProjectileComponent.h" />
     <ClCompile Include="Source\Platform\PC\Rendering\TexturePC.cpp">

@@ -12,7 +12,7 @@
 #include "Assets/Script.h"
 #include "Components/MeshColorComponent.h"
 #include "Components/TransformComponent.h"
-#include "Components/Abilities/AOEComponent.h"
+#include "Components/Abilities/AbilityLifetimeComponent.h"
 #include "Components/Abilities/EffectsOnCharacterComponent.h"
 #include "Components/Abilities/ProjectileComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
@@ -33,11 +33,11 @@ void CE::AbilitySystem::Update(World& world, float dt)
 	    }
     }
 
-    auto viewAOE = reg.View<AOEComponent>();
-    for (auto [entity, aoe] : viewAOE.each())
+    auto viewLifetime = reg.View<AbilityLifetimeComponent>();
+    for (auto [entity, lifetime] : viewLifetime.each())
     {
-        aoe.mDurationTimer += dt;
-        if (aoe.mDurationTimer >= aoe.mDuration && aoe.mUsesProjectileComponent == false)
+        lifetime.mDurationTimer += dt;
+        if (lifetime.mDurationTimer >= lifetime.mDuration)
         {
             reg.Destroy(entity, true);
         }

@@ -3,7 +3,7 @@
 
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/ActiveAbilityComponent.h"
-#include "Components/Abilities/AOEComponent.h"
+#include "Components/Abilities/AbilityLifetimeComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/EffectsOnCharacterComponent.h"
 #include "Components/Abilities/ProjectileComponent.h"
