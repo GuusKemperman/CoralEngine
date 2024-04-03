@@ -6,6 +6,7 @@
 #include "Components/TransformComponent.h"
 #include "Assets/SkinnedMesh.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Components/AnimationRootComponent.h"
 #include "Assets/Animation/Animation.h"
 #include "Assets/Animation/Bone.h"
 #include "Meta/MetaType.h"
@@ -42,23 +43,64 @@ void CE::AnimationSystem::CalculateBoneTransformRecursive(const AnimNode& node,
 	}
 }
 
+void CE::AnimationSystem::SwitchAnimationRecursive(Registry& reg, const entt::entity entity, const std::shared_ptr<const Animation> animation, float timeStamp)
+{
+	auto skinnedMesh = reg.TryGet<SkinnedMeshComponent>(entity);
+
+	if (skinnedMesh != nullptr)
+	{
+		skinnedMesh->mAnimation = animation;
+		skinnedMesh->mCurrentTime = timeStamp;
+	}
+
+	auto transform = reg.TryGet<TransformComponent>(entity);
+
+	if (transform == nullptr)
+	{
+		return;
+	}
+
+	for (const TransformComponent& child : transform->GetChildren())
+	{
+		SwitchAnimationRecursive(reg, child.GetOwner(), animation, timeStamp);
+	}
+}
+
 void CE::AnimationSystem::Update(World& world, float dt)
 {
 	auto& reg = world.GetRegistry();
 
-	const auto& view = reg.View<SkinnedMeshComponent>();
-
-	for (auto [entity, skinnedMesh] : view.each())
 	{
-		if (skinnedMesh.mAnimation == nullptr)
+		const auto& view = reg.View<SkinnedMeshComponent>();
+
+		for (auto [entity, skinnedMesh] : view.each())
 		{
-			continue;
+			if (skinnedMesh.mAnimation == nullptr)
+			{
+				continue;
+			}
+
+			skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * dt;
+			skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
+
+			CalculateBoneTransformRecursive(skinnedMesh.mAnimation->mRootNode, glm::mat4x4(1.0f), skinnedMesh.mSkinnedMesh->GetBoneMap(), skinnedMesh, skinnedMesh.mAnimation, skinnedMesh.mFinalBoneMatrices);
 		}
+	}
 
-		skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * dt;
-		skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
+	{
+		const auto& view = reg.View<AnimationRootComponent>();
 
-		CalculateBoneTransformRecursive(skinnedMesh.mAnimation->mRootNode, glm::mat4x4(1.0f), skinnedMesh.mSkinnedMesh->GetBoneMap(), skinnedMesh, skinnedMesh.mAnimation, skinnedMesh.mFinalBoneMatrices);
+		for (auto [entity, animationRoot] : view.each())
+		{
+			if (animationRoot.mSwitchAnimation == false 
+				|| animationRoot.mWantedAnimation == nullptr)
+			{
+				continue;
+			}
+
+			SwitchAnimationRecursive(reg, entity, animationRoot.mWantedAnimation, animationRoot.mWantedTimeStamp);
+			animationRoot.mSwitchAnimation = false;
+		}
 	}
 }
 

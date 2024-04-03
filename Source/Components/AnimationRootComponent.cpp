@@ -1,0 +1,50 @@
+#include "Precomp.h"
+#include "Components/AnimationRootComponent.h"
+
+#include "Assets/Animation/Animation.h"
+
+#include "Meta/MetaType.h"
+#include "Meta/MetaProps.h"
+#include "Utilities/Reflect/ReflectComponentType.h"
+#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
+
+void CE::AnimationRootComponent::SwitchAnimation()
+{
+	mSwitchAnimation = true;
+}
+
+void CE::AnimationRootComponent::SwitchAnimation(const std::shared_ptr<const Animation>& animation, float timeStamp)
+{
+	mSwitchAnimation = true;
+	mWantedAnimation = animation;
+	mWantedTimeStamp = timeStamp;
+}
+
+CE::MetaType CE::AnimationRootComponent::Reflect()
+{
+	auto type = MetaType{MetaType::T<AnimationRootComponent>{}, "AnimationRootComponent"};
+	MetaProps& props = type.GetProperties();
+	props.Add(Props::sIsScriptableTag);
+
+	type.AddField(&AnimationRootComponent::mWantedAnimation, "mWantedAnimation").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&AnimationRootComponent::mWantedTimeStamp, "mWantedTimeStamp").GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc(static_cast<void (AnimationRootComponent::*)()>(&AnimationRootComponent::SwitchAnimation), "SwitchAnimationEditor").GetProperties().Add(Props::sCallFromEditorTag);
+
+	type.AddFunc([](AnimationRootComponent& animationRoot, const std::shared_ptr<const Animation>& animation, float timeStamp)
+		{
+			if (animation == nullptr)
+			{
+				LOG(LogWorld, Warning, "Attempted to set NULL animation.");
+				return;
+			}
+
+			animationRoot.SwitchAnimation(animation, timeStamp);
+
+		}, "SwitchAnimation", MetaFunc::ExplicitParams<AnimationRootComponent&,
+		const std::shared_ptr<const Animation>&, float>{}, "AnimationRootComponent", "Animation", "Time Stamp").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+
+	ReflectComponentType<AnimationRootComponent>(type);
+	return type;
+}
