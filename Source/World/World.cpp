@@ -486,5 +486,19 @@ CE::MetaType CE::World::Reflect()
 			return world->GetViewport().ScreenToWorld(screenPosition, distanceFromCamera);
 		}, "ScreenToWorld", MetaFunc::ExplicitParams<glm::vec2, float>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
+	type.AddFunc([]()
+		{
+			World* world = TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+			return world->GetScaledDeltaTime();
+		}, "GetScaledDeltaTime", MetaFunc::ExplicitParams<>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
+	type.AddFunc([]()
+		{
+			World* world = TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+			return world->GetRealDeltaTime();
+		}, "GetRealDeltaTime", MetaFunc::ExplicitParams<>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
 	return type;
 }
