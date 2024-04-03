@@ -16,7 +16,6 @@ namespace CE
 		{
 			std::filesystem::path mImportedFile{};
 			uint32 mImporterVersion{};
-			std::filesystem::file_time_type::clock::time_point mImportedFromFileWriteTimeAtTimeOfImporting{};
 			bool mWereEditsMadeAfterImporting{};
 		};
 
@@ -46,9 +45,9 @@ namespace CE
 
 		// Backwards compatibility
 		static std::optional<AssetFileMetaData> ReadMetaDataV0(std::istream& fromStream, uint32 version);
-		static std::optional<AssetFileMetaData> ReadMetaDataV1V2(std::istream& fromStream, uint32 version);
+		static std::optional<AssetFileMetaData> ReadMetaDataV1V2V3(std::istream& fromStream, uint32 version);
 
-		static constexpr uint32 sMetaDataVersion = 2;
+		static constexpr uint32 sMetaDataVersion = 3;
 		uint32 mMetaDataVersion{};
 		uint32 mAssetVersion{};
 		std::string mAssetName{};

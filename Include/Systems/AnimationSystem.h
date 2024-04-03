@@ -3,6 +3,7 @@
 
 namespace CE
 {
+	class Registry;
 	class Animation;
 	class SkinnedMeshComponent;
 	struct AnimNode;
