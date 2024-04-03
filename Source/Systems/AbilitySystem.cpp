@@ -27,7 +27,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
     {
         auto& physicsBody = reg.Get<PhysicsBody2DComponent>(entity);
         projectile.mCurrentRange += glm::length(physicsBody.mLinearVelocity) * dt;
-	    if (projectile.mCurrentRange >= projectile.mRange)
+	    if (projectile.mCurrentRange >= projectile.mRange && projectile.mDestroyOnRangeReached)
 	    {
             reg.Destroy(entity, true);
 	    }
