@@ -53,8 +53,7 @@ namespace CE
 		static void ApplyDurationalEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f);
 		static void RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect);
 		static void ApplyOverTimeEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f, int ticks = 1);
-		static entt::entity SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy);
-		static entt::entity SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy); // area of attack
+		static entt::entity SpawnAbilityPrefab(World& world, const Prefab& prefab, entt::entity castBy);
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);

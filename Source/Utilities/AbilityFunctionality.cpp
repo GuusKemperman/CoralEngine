@@ -62,25 +62,9 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			return SpawnProjectile(*world, *prefab, castBy);
+			return SpawnAbilityPrefab(*world, *prefab, castBy);
 
-		}, "SpawnProjectile", MetaFunc::ExplicitParams<
-		const std::shared_ptr<const Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
-
-	metaType.AddFunc([](const std::shared_ptr<const Prefab>& prefab, entt::entity castBy) -> entt::entity
-		{
-			if (prefab == nullptr)
-			{
-				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
-				return entt::null;
-			}
-
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
-			return SpawnAOE(*world, *prefab, castBy);
-
-		}, "SpawnAOE", MetaFunc::ExplicitParams<
+		}, "SpawnAbilityPrefab", MetaFunc::ExplicitParams<
 		const std::shared_ptr<const Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	return metaType;
@@ -167,72 +151,7 @@ void CE::AbilityFunctionality::ApplyOverTimeEffect(World& world, const Character
 	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease}});
 }
 
-entt::entity CE::AbilityFunctionality::SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy)
-{
-	auto& reg = world.GetRegistry();
-	auto prefabEntity = reg.CreateFromPrefab(prefab);
-
-	auto projectileComponent = reg.TryGet<ProjectileComponent>(prefabEntity);
-	if (projectileComponent == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "The prefab does not have a ProjectileComponent attached.")
-			return{};
-	}
-	auto activeAbility = reg.TryGet<ActiveAbilityComponent>(prefabEntity);
-	if (activeAbility == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "The prefab does not have an ActiveAbilityComponent attached.")
-			return{};
-	}
-	auto prefabTransform = reg.TryGet<TransformComponent>(prefabEntity);
-	if (prefabTransform == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "The prefab does not have a TransformComponent attached.")
-			return{};
-	}
-	auto prefabPhysicsBody = reg.TryGet<PhysicsBody2DComponent>(prefabEntity);
-	if (prefabPhysicsBody == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "The prefab does not have a PhysicsBody2DComponent attached.")
-			return{};
-	}
-	auto characterTransform = reg.TryGet<TransformComponent>(castBy);
-	if (characterTransform == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "The cast-by entity does not have a TransformComponent attached.")
-			return{};
-	}
-	auto characterComponent = reg.TryGet<CharacterComponent>(castBy);
-	if (characterComponent == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "The cast-by entity does not have a CharacterComponent attached.")
-			return{};
-	}
-
-	// Store a copy of the cast-by character's CharacterComponent
-	// so that effect calculations and team checks can be performed even if the character dies in the meantime.
-	activeAbility->mCastByCharacterData = *characterComponent;
-
-	// Calculate the 2D orientation of the character.
-	const glm::vec3 characterWorldPos = characterTransform->GetWorldPosition();
-	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
-
-	// Translate the spawn position by a certain amount
-	// so that the projectile does not spawn inside the character mesh.
-	const glm::vec2 projectileTranslation = characterDir * (characterTransform->GetWorldScale2D() + 1.f); // + 1.f arbitrary value
-	const glm::vec3 projectileTranslation3D = { projectileTranslation.x, 0.f, projectileTranslation.y };
-	const glm::vec3 projectileSpawnPos = characterWorldPos + projectileTranslation3D;
-
-	// Set the position.
-	prefabTransform->SetLocalPosition(projectileSpawnPos);
-
-	// Set the velocity.
-	prefabPhysicsBody->mLinearVelocity = characterDir * projectileComponent->mSpeed;
-
-	return prefabEntity;
-}
-
-entt::entity CE::AbilityFunctionality::SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy)
+entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Prefab& prefab, entt::entity castBy)
 {
 	auto& reg = world.GetRegistry();
 	auto prefabEntity = reg.CreateFromPrefab(prefab);
@@ -285,6 +204,14 @@ entt::entity CE::AbilityFunctionality::SpawnAOE(World& world, const Prefab& pref
 		const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
 		// Set the velocity.
 		prefabPhysicsBody->mLinearVelocity = characterDir * projectileComponent->mSpeed;
+
+		// Translate the spawn position by a certain amount
+		// so that the projectile does not spawn inside the character mesh.
+		//const glm::vec2 projectileTranslation = characterDir * (characterTransform->GetWorldScale2D() + 1.f); // + 1.f arbitrary value
+		//const glm::vec3 projectileTranslation3D = { projectileTranslation.x, 0.f, projectileTranslation.y };
+		//const glm::vec3 projectileSpawnPos = characterTransform->GetWorldPosition() + projectileTranslation3D;
+		//prefabTransform->SetLocalPosition(projectileSpawnPos);
+		// I will leave commented code here for future use
 	}
 
 	return prefabEntity;
