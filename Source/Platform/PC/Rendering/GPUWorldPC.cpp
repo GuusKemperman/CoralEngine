@@ -266,6 +266,8 @@ void CE::GPUWorld::Update()
 
             }
 
+            materialInfo.uvScale = glm::vec4(staticMeshComponent.mTileScale, staticMeshComponent.mTileScale, 1.f, 1.f);
+
             mConstBuffers[MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
             meshCounter++;
         }

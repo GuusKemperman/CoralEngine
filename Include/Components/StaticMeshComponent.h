@@ -13,6 +13,8 @@ namespace CE
 
         std::shared_ptr<const Material> mMaterial{};
 
+        float mTiling = 1;
+
     private:
         friend ReflectAccess;
         static MetaType Reflect();
