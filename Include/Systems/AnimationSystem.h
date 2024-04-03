@@ -22,8 +22,6 @@ namespace CE
 	const std::shared_ptr<const Animation> animation, 
 	std::vector<glm::mat4x4>& finalBoneMatrices);
 
-		void SwitchAnimationRecursive(Registry& reg, const entt::entity entity, const std::shared_ptr<const Animation> animation, float timeStamp);
-
 	private:
 
 		friend ReflectAccess;
