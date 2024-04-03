@@ -1,4 +1,5 @@
 #pragma once
+#include <future>
 #include <thread>
 
 #include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
@@ -34,8 +35,6 @@ namespace CE
 			void BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
 			void BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
 
-			
-
 		private:
 			int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 			void GenerateMipmaps() const;
@@ -47,7 +46,17 @@ namespace CE
 
 			struct STBIPixels
 			{
+				STBIPixels() = default;
+				STBIPixels(STBIPixels&& pixels);
+				STBIPixels(const STBIPixels&) = delete;
+
+				STBIPixels& operator=(STBIPixels&&);
+				STBIPixels& operator=(const STBIPixels&) = delete;
+
 				~STBIPixels();
+
+
+
 				unsigned char* mPixels{};
 				int mWidth{};
 				int mHeight{};
@@ -62,10 +71,7 @@ namespace CE
 				glm::vec2 TexelSize;			// 1.0 / OutMip1.Dimensions
 			};
 
-			// Stores the return value of the load thread
-			// After the texture has been sent to the GPU,
-			// this value will be reset to nullptr.
-			std::shared_ptr<STBIPixels> mLoadedPixels{};
+			std::future<STBIPixels> mLoadedPixels{};
 
 			friend ReflectAccess;
 			static MetaType Reflect();
