@@ -164,6 +164,11 @@ namespace CE
 		template<typename T>
 		std::shared_ptr<const T> AddAsset(T&& generatedAsset);
 
+		/*
+		Will load the asset from the specified path.
+		*/
+		std::optional<WeakAsset<Asset>> OpenAsset(const std::filesystem::path& path);
+
 		static inline constexpr std::string_view sAssetExtension = ".asset";
 
 	private:
@@ -184,10 +189,7 @@ namespace CE
 
 		void OpenDirectory(const std::filesystem::path& directory);
 
-		/*
-		Will load the asset from the specified path.
-		*/
-		std::optional<WeakAsset<Asset>> OpenAsset(const std::filesystem::path& path);
+
 
 		Internal::AssetInternal* TryGetAssetInternal(Name key, TypeId typeId);
 		Internal::AssetInternal* TryGetLoadedAssetInternal(Name key, TypeId typeId);

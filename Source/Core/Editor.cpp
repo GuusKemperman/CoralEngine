@@ -103,7 +103,8 @@ void CE::Editor::PostConstruct()
 			continue;
 		}
 
-		if (typeOfSystem->IsDefaultConstructible())
+		if (typeOfSystem->IsDefaultConstructible()
+			&& !typeOfSystem->GetProperties().Has(Props::sEditorSystemAlwaysOpenTag))
 		{
 			TryAddSystemInternal(*typeOfSystem);
 			continue;

@@ -1,11 +1,13 @@
 #include "Precomp.h"
 #include "EditorSystems/ImporterSystem.h"
 
+#include "Core/Editor.h"
 #include "Core/FileIO.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Meta/MetaTools.h"
 #include "Utilities/ClassVersion.h"
+#include "Utilities/Imgui/ImguiHelpers.h"
 
 CE::ImporterSystem::ImporterSystem() :
 	EditorSystem("ImporterSystem"),
@@ -94,22 +96,24 @@ CE::ImporterSystem::~ImporterSystem() = default;
 void CE::ImporterSystem::Tick(const float)
 {
 	ImportAllOutOfDateFiles();
+	RetrieveImportResultsFromFutures();
 
 	ImGui::SetNextWindowSize({ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
 
-	if (!sIsOpen)
-	{
-		// Open the window if all our futures are ready
-		sIsOpen = !std::any_of(mImportFutures.begin(), mImportFutures.end(),
-			[](const ImportFuture& future)
-			{
-				return future.mImportResult.wait_for(std::chrono::seconds{ 0 }) != std::future_status::ready;
-			});
+	const bool hasContent = !mImportPreview.empty()
+		|| !mFailedFiles.empty()
+		|| !mImportFutures.empty();
 
-		if (!sIsOpen)
-		{
-			return;
-		}
+	if (!mHasWindowPoppedUp 
+		&& hasContent)
+	{
+		sIsOpen = true;
+	}
+
+	if (!sIsOpen
+		|| !hasContent)
+	{
+		return;
 	}
 
 	if (!ImGui::Begin(GetName().c_str(), &sIsOpen))
@@ -118,37 +122,42 @@ void CE::ImporterSystem::Tick(const float)
 		return;
 	}
 
-	const std::string::size_type numOfDots = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() % 3 + 1;
-	const std::string loadedText = "Loading" + std::string( numOfDots, '.' );
+	mHasWindowPoppedUp = true;
 
-	for (ImportFuture& future : mImportFutures)
+	Preview();
+	uint32 numOfConflicts = ShowDuplicateImportedAssetsErrors();
+	numOfConflicts += ShowDuplicateAssetsErrors();
+	numOfConflicts += ShowErrorsToWarnAboutDiscardChanges();
+	numOfConflicts += ShowReadOnlyErrors();
+
+	if (numOfConflicts != 0)
 	{
-		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-		if (ImGui::TreeNode(future.mFile.string().c_str()))
-		{
-			if (future.mImportResult.wait_for(std::chrono::seconds{ 0 }) != std::future_status::ready)
-			{
-				ImGui::TextUnformatted(loadedText.c_str());
-			}
-			else
-			{
-				const auto& result = future.mImportResult.get();
+		ImGui::TextWrapped(Format("{} conflicts found", numOfConflicts).c_str());
+	}
 
-				if (!result.has_value())
-				{
-					ImGui::TextUnformatted("Importing failed, check the output log for more details.");
-				}
-				else
-				{
-					for (const AssetLoadInfo& imported : *result)
-					{
-						ImGui::TextUnformatted(imported.GetMetaData().GetName().c_str());
-					}
-				}
-			}
+	ImGui::BeginDisabled(numOfConflicts != 0 || !mImportFutures.empty());
 
-			ImGui::TreePop();
-		}
+	if(ImGui::Button("Import"))
+	{
+		Editor& editor = Editor::Get();
+
+		std::shared_ptr<std::vector<ImportPreview>> preview = std::make_shared<std::vector<ImportPreview>>(std::move(mImportPreview));
+
+		editor.Refresh(
+			{
+				Editor::RefreshRequest::Volatile,
+				[preview]
+				{
+					FinishImporting(std::move(*preview));
+				}
+			});
+	}
+
+	ImGui::EndDisabled();
+
+	if (!mImportFutures.empty())
+	{
+		ImGui::SetItemTooltip("Wait for the importing to finish");
 	}
 
 	ImGui::End();
@@ -160,7 +169,7 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::
 	if (std::find_if(mImportFutures.begin(), mImportFutures.end(),
 		[&fileToImport](const ImportFuture& future)
 		{
-			return future.mFile == fileToImport;
+			return future.mImportRequest.mFile == fileToImport;
 		}) != mImportFutures.end())
 	{
 		return;
@@ -186,41 +195,34 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::
 		{
 			fileToImport,
 			std::string{ reasonForImporting },
-			std::async(std::launch::async, [fileToImport, importer, isCancelled = mWasImportingCancelled]() -> std::optional<std::vector<AssetLoadInfo>>
+			std::async(std::launch::async, [fileToImport, importer, isCancelled = mWasImportingCancelled]() -> Importer::ImportResult
 			{
 				if (*isCancelled)
 				{
 					return std::nullopt;
 				}
 
-				std::optional<std::vector<ImportedAsset>> importResult = importer->Import(fileToImport);
-
-				if (!importResult.has_value())
-				{
-					return std::nullopt;
-				}
-
-				return std::vector<AssetLoadInfo>{ importResult->data(), importResult->data() + importResult->size() };
+				return importer->Import(fileToImport);
 			})
 		});
 }
 
 void CE::ImporterSystem::ImportAllOutOfDateFiles()
 {
-	std::vector<FileToImport> all = GetAllFilesToImport(mDirectoriesToWatch[0]);
-	std::vector<FileToImport> game = GetAllFilesToImport(mDirectoriesToWatch[1]);
+	std::vector<ImportRequest> all = GetAllFilesToImport(mDirectoriesToWatch[0]);
+	std::vector<ImportRequest> game = GetAllFilesToImport(mDirectoriesToWatch[1]);
 
 	all.insert(all.end(), std::make_move_iterator(game.begin()), std::make_move_iterator(game.end()));
 
-	for (const FileToImport& assetToImport : all)
+	for (const ImportRequest& assetToImport : all)
 	{
 		Import(assetToImport.mFile, assetToImport.mReasonForImporting);
 	}
 }
 
-std::vector<CE::ImporterSystem::FileToImport> CE::ImporterSystem::GetAllFilesToImport(DirToWatch& directory)
+std::vector<CE::ImporterSystem::ImportRequest> CE::ImporterSystem::GetAllFilesToImport(DirToWatch& directory)
 {
-	std::vector<FileToImport> importableAssets{};
+	std::vector<ImportRequest> importableAssets{};
 
 	const std::filesystem::file_time_type dirWriteTime = std::filesystem::last_write_time(directory.mDirectory);
 	if (directory.mDirWriteTimeWhenLastChecked >= dirWriteTime)
@@ -245,8 +247,6 @@ std::vector<CE::ImporterSystem::FileToImport> CE::ImporterSystem::GetAllFilesToI
 		{
 			continue;
 		}
-
-		const std::filesystem::file_time_type importableAssetLastWriteTime = std::filesystem::last_write_time(fileToImport);
 
 		bool wasPreviouslyImported = false;
 
@@ -356,289 +356,389 @@ std::pair<CE::TypeId, std::shared_ptr<const CE::Importer>> CE::ImporterSystem::T
 	return { 0, nullptr };
 }
 
+bool CE::ImporterSystem::WouldAssetBeDeletedOrReplacedOnImporting(const WeakAsset<>& asset) const
+{
+	return WouldAssetBeDeletedOrReplacedOnImporting(asset, mImportPreview);
+}
+
+std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPreview& preview) const
+{
+	return GetPathToSaveAssetTo(preview, mImportPreview);
+}
+
+std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPreview& preview, const std::vector<ImportPreview>& toImport)
+{
+	std::string filename = preview.mImportedAsset.GetMetaData().GetName();
+
+	for (char& ch : filename)
+	{
+		if (ch == '<'
+			|| ch == '>'
+			|| ch == ':'
+			|| ch == '\"'
+			|| ch == '/'
+			|| ch == '\\'
+			|| ch == '|'
+			|| ch == '?'
+			|| ch == '*'
+			|| ch == ' '
+			|| ch == '.'
+			|| ch == ','
+			)
+		{
+			ch = '_';
+		}
+	}
+
+	const size_t numFromThisFile = std::count_if(toImport.begin(), toImport.end(),
+		[&preview](const ImportPreview& other)
+		{
+			return preview.mImportRequest.mFile == other.mImportRequest.mFile;
+		});
+
+	std::filesystem::path dir = preview.mImportRequest.mFile.parent_path();
+
+	if (numFromThisFile)
+	{
+		dir /= preview.mImportRequest.mFile.filename().replace_extension();
+	}
+
+	return dir / filename.append(AssetManager::sAssetExtension);
+}
+
+bool CE::ImporterSystem::WouldAssetBeDeletedOrReplacedOnImporting(const WeakAsset<>& asset, const std::vector<ImportPreview>& toImport)
+{
+	if (!asset.GetMetaData().GetImporterInfo().has_value())
+	{
+		return false;
+	}
+
+	for (auto first = toImport.begin(), last = first; first != toImport.end(); first = last)
+	{
+		last = std::find_if(first, toImport.end(),
+			[&first](const ImportPreview& preview)
+			{
+				return preview.mImportRequest.mFile != first->mImportRequest.mFile;
+			});
+
+		if (first->mImportRequest.mFile == asset.GetMetaData().GetImporterInfo()->mImportedFile)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void CE::ImporterSystem::RetrieveImportResultsFromFutures()
+{
+	for (auto it = mImportFutures.begin(); it != mImportFutures.end();)
+	{
+		if (it->mImportResult.wait_for(std::chrono::seconds{ 0 }) != std::future_status::ready)
+		{
+			++it;
+			continue;
+		}
+
+		Importer::ImportResult result = it->mImportResult.get();
+
+		if (!result.has_value())
+		{
+			mFailedFiles.emplace_back(it->mImportRequest);
+		}
+		else
+		{
+			for (ImportedAsset& imported : *result)
+			{
+				mImportPreview.emplace_back(ImportPreview{ it->mImportRequest, std::move(imported) });
+			}
+		}
+
+		it = mImportFutures.erase(it);
+	}
+}
+
+void CE::ImporterSystem::Preview()
+{
+	if (!mImportFutures.empty())
+	{
+		const std::string::size_type numOfDots = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() % 3 + 1;
+		ImGui::TextWrapped(Format("{} files remaining{}", mImportFutures.size(), std::string(numOfDots, '.')).c_str());
+	}
+
+	ImVec2 childSize = ImGui::GetContentRegionAvail();
+	childSize.y *= .5f;
+
+	if (!ImGui::BeginChild("Preview", childSize))
+	{
+		ImGui::EndChild();
+		return;
+	}
+
+	{
+		bool isOpenAlready{}, shouldDisplay{};
+		for (const ImportRequest& file : mFailedFiles)
+		{
+			if (OpenErrorTab(isOpenAlready, shouldDisplay, "Some files failed to import - see Log"))
+			{
+				ImGui::TextWrapped(file.mFile.string().c_str());
+			}
+		}
+		CloseErrorTab(shouldDisplay);
+	}
+
+	for (auto first = mImportPreview.begin(), last = first; first != mImportPreview.end(); first = last)
+	{
+		last = std::find_if(first, mImportPreview.end(),
+			[&first](const ImportPreview& preview)
+			{
+				return preview.mImportRequest.mFile != first->mImportRequest.mFile;
+			});
+
+		bool removeButtonPressed{};
+
+		const bool isHeaderOpen = ImGui::CollapsingHeaderWithButton(first->mImportRequest.mFile.string().c_str(), "X", &removeButtonPressed);
+
+		if (removeButtonPressed)
+		{
+			last = mImportPreview.erase(first, last);
+			continue;
+		}
+
+		if (!isHeaderOpen)
+		{
+			continue;
+		}
+
+		for (auto it = first; it != last; ++it)
+		{
+			ImGui::TextWrapped(it->mImportedAsset.GetMetaData().GetName().c_str());
+		}
+	}
+
+	ImGui::EndChild();
+}
+
+uint32 CE::ImporterSystem::ShowDuplicateImportedAssetsErrors()
+{
+	uint32 numOfErrors{};
+	std::vector<std::string> duplicateNames{};
+	bool isOpen{}, shouldDisplay{};
+
+	for (auto preview1 = mImportPreview.begin(); preview1 != mImportPreview.end(); ++preview1)
+	{
+		const auto& name = preview1->mImportedAsset.GetMetaData().GetName();
+
+		if (std::find(duplicateNames.begin(), duplicateNames.end(), name) != duplicateNames.end())
+		{
+			continue;
+		}
+
+		for (auto preview2 = preview1 + 1; preview2 != mImportPreview.end(); ++preview2)
+		{
+			if (preview2->mImportedAsset.GetMetaData().GetName() != name)
+			{
+				continue;
+			}
+
+			// Oh noo, we are trying to import multiple assets with the same name
+			if (OpenErrorTab(isOpen, shouldDisplay, "Duplicate names from currently imported"))
+			{
+				ImGui::TextWrapped(Format("The asset {} was imported from both {} amd {}. Choose one of them to exclude from the importing process.",
+					name,
+					preview1->mImportRequest.mFile.string(),
+					preview2->mImportRequest.mFile.string()).c_str());
+			}
+
+			numOfErrors++;
+		}
+	}
+
+	CloseErrorTab(shouldDisplay);
+	return numOfErrors;
+}
+
+uint32 CE::ImporterSystem::ShowDuplicateAssetsErrors()
+{
+	bool isOpenAlready{}, shouldDisplay{};
+	uint32 numOfErrors{};
+
+	for (const ImportPreview& preview : mImportPreview)
+	{
+		const std::string& name = preview.mImportedAsset.GetMetaData().GetName();
+		const std::optional<WeakAsset<Asset>> existingAsset = AssetManager::Get().TryGetWeakAsset(name);
+
+		if (!existingAsset.has_value()
+			|| WasImportedFrom(*existingAsset, preview.mImportRequest.mFile))
+		{
+			continue;
+		}
+
+		if (OpenErrorTab(isOpenAlready, shouldDisplay, "Name was taken"))
+		{
+			ImGui::TextWrapped(Format("Could not import {} from {}, there is already an asset with this name (see {})",
+				name,
+				preview.mImportRequest.mFile.string(),
+				existingAsset->GetFileOfOrigin().value_or("assets generated at runtime").string()).c_str());
+		}
+		++numOfErrors;
+	}
+
+	CloseErrorTab(shouldDisplay);
+	return numOfErrors;
+}
+
+uint32 CE::ImporterSystem::ShowErrorsToWarnAboutDiscardChanges()
+{
+	bool isOpenAlready{}, shouldDisplay{};
+	uint32 numOfErrors{};
+
+	for (const ImportPreview& preview : mImportPreview)
+	{
+		const std::string& name = preview.mImportedAsset.GetMetaData().GetName();
+		const std::optional<WeakAsset<Asset>> existingAsset = AssetManager::Get().TryGetWeakAsset(name);
+
+		if (!existingAsset.has_value()
+			|| !WasImportedFrom(*existingAsset, preview.mImportRequest.mFile)
+			|| !existingAsset->GetMetaData().GetImporterInfo()->mWereEditsMadeAfterImporting
+			|| !WouldAssetBeDeletedOrReplacedOnImporting(*existingAsset))
+		{
+			continue;
+		}
+
+		if (OpenErrorTab(isOpenAlready, shouldDisplay, "Changes would be lost"))
+		{
+			ImGui::TextWrapped(Format("{} from {} has been modified after it was imported. Reimporting it would lead to these changes being lost. Delete the asset to confirm you want these changes to be lost.",
+				name,
+				preview.mImportRequest.mFile.string()).c_str());
+		}
+		++numOfErrors;
+	}
+
+	CloseErrorTab(shouldDisplay);
+	return numOfErrors;
+}
+
+uint32 CE::ImporterSystem::ShowReadOnlyErrors()
+{
+	bool isOpenAlready{}, shouldDisplay{};
+	uint32 numOfErrors{};
+
+	for (WeakAsset<> asset : AssetManager::Get().GetAllAssets())
+	{
+		if (WouldAssetBeDeletedOrReplacedOnImporting(asset)
+			&& std::filesystem::exists(*asset.GetFileOfOrigin())
+			&& (std::filesystem::status(*asset.GetFileOfOrigin()).permissions() & std::filesystem::perms::owner_write) == std::filesystem::perms::none)
+		{
+			if (OpenErrorTab(isOpenAlready, shouldDisplay, "Files are read-only"))
+			{
+				ImGui::TextWrapped(Format("{} is read-only",
+					asset.GetFileOfOrigin()->string()).c_str());
+			}
+
+			++numOfErrors;
+		}
+	}
+
+	CloseErrorTab(shouldDisplay);
+	return numOfErrors;
+}
+
+void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
+{
+	std::vector<WeakAsset<>> assetsToEraseEntirely{};
+
+	AssetManager& assetManager = AssetManager::Get();
+
+	for (WeakAsset<> asset : assetManager.GetAllAssets())
+	{
+		if (!WouldAssetBeDeletedOrReplacedOnImporting(asset, toImport))
+		{
+			continue;
+		}
+
+		const std::filesystem::path& existingImportedAssetFile = *asset.GetFileOfOrigin();
+
+		// Delete existing files that were generated the last time we imported this asset
+		if (std::filesystem::exists(existingImportedAssetFile))
+		{
+			LOG(LogAssets, Message, "Deleting file {} created during previous importation", existingImportedAssetFile.string());
+
+			std::error_code err{};
+			if (!std::filesystem::remove(existingImportedAssetFile, err))
+			{
+				LOG(LogAssets, Error, "Could not delete file {} - {}", existingImportedAssetFile.string(), err.message());
+			}
+		}
+
+		// During out previous importing, we created this asset. But now that we are importing again,
+		// this asset was not produced. We need to remove this asset from our lookup
+		if (std::find_if(toImport.begin(), toImport.end(),
+			[asset](const ImportPreview& toImport)
+			{
+				return toImport.mImportedAsset.GetMetaData().GetName() == asset.GetMetaData().GetName();
+			}) == toImport.end())
+		{
+			assetsToEraseEntirely.push_back(asset);
+		}
+	}
+
+	for (WeakAsset<Asset>& assetToErase : assetsToEraseEntirely)
+	{
+		assetManager.DeleteAsset(std::move(assetToErase));
+	}
+	assetsToEraseEntirely.clear();
+
+	// Finally, we can safely import
+	for (const ImportPreview& imported : toImport)
+	{
+		const std::filesystem::path file = GetPathToSaveAssetTo(imported, toImport);
+
+		if (!imported.mImportedAsset.SaveToFile(file))
+		{
+			LOG(LogAssets, Error, "Importing partially failed: Could not save {} to {}", 
+				imported.mImportedAsset.GetMetaData().GetName(), 
+				file.string());
+			continue;
+		}
+
+		if (assetManager.TryGetWeakAsset(imported.mImportedAsset.GetMetaData().GetName()).has_value())
+		{
+			continue;
+		}
+
+		if (!assetManager.OpenAsset(file).has_value())
+		{
+			LOG(LogAssets, Warning, "Failed to open {} from {}, engine might require restart in order for this asset to show up.",
+				imported.mImportedAsset.GetMetaData().GetName(),
+				file.string());
+		}
+	}
+};
+
+bool CE::ImporterSystem::OpenErrorTab(bool& isOpenAlready, bool& shouldDisplay, std::string_view name)
+{
+	if (isOpenAlready)
+	{
+		return shouldDisplay;
+	}
+
+	shouldDisplay = ImGui::TreeNode(name.data());
+	isOpenAlready = true;
+	return shouldDisplay;
+}
+
+void CE::ImporterSystem::CloseErrorTab(bool shouldClose)
+{
+	if (shouldClose)
+	{
+		ImGui::TreePop();
+	}
+}
+
 CE::MetaType CE::ImporterSystem::Reflect()
 {
 	MetaType type{ MetaType::T<ImporterSystem>{}, "ImporterSystem", MetaType::Base<EditorSystem>{} };
 	type.GetProperties().Add(Props::sEditorSystemAlwaysOpenTag);
 	return type;
 }
-
-/*	auto importLambda = [this, path]
-		{
-
-
-			if (!importedAssets.has_value())
-			{
-				LOG(LogAssets, Error, "Importing failed: Null value returned");
-				return false;
-			}
-
-			const std::vector<AssetLoadInfo> assetsToLoad(importedAssets->begin(), importedAssets->end());
-
-			bool errorsEncountered = false;
-
-			{ // Check to see if our user submitted multiple assets with the same name
-				std::vector<std::string_view> duplicateNames{};
-				for (size_t i = 0; i < assetsToLoad.size(); i++)
-				{
-					const std::string_view name = assetsToLoad[i].GetMetaData().GetName();
-
-					if (std::find(duplicateNames.begin(), duplicateNames.end(), name) != duplicateNames.end())
-					{
-						continue;
-					}
-
-					size_t numWithSameName{};
-					for (size_t j = i + 1; j < assetsToLoad.size(); j++)
-					{
-						numWithSameName += assetsToLoad[i].GetMetaData().GetName() == assetsToLoad[j].GetMetaData().GetName();
-					}
-
-					if (numWithSameName != 0)
-					{
-						LOG(LogAssets, Error, "Importing failed: {} assets were imported with the name {}", numWithSameName, name);
-						duplicateNames.push_back(name);
-					}
-				}
-
-				errorsEncountered |= !duplicateNames.empty();
-			}
-
-			// Check if there are already assets with the submitted names,
-			// and if we would be reimporting assets that are still referenced in memory
-			for (const AssetLoadInfo& loadInfo : assetsToLoad)
-			{
-				const AssetInternal* const existingAssetWithSameName = TryGetAssetInternal(loadInfo.GetMetaData().GetName(), loadInfo.GetMetaData().GetClass().GetTypeId());
-
-				if (existingAssetWithSameName == nullptr)
-				{
-					continue;
-				}
-
-				if (!WasImportedFrom(*existingAssetWithSameName, path))
-				{
-					LOG(LogAssets, Error, "Importing failed: there is already an asset with the name {} (see {})",
-						loadInfo.GetMetaData().GetName(),
-						existingAssetWithSameName->mFileOfOrigin.value_or("assets generated at runtime").string());
-
-					errorsEncountered = true;
-				}
-
-				if (existingAssetWithSameName->mAsset.use_count() > 1)
-				{
-					LOG(LogAssets, Error, "Importing failed: Importing {} means replacing existing asset {}, but this asset is still referenced in memory {} time(s).",
-						path.string(), existingAssetWithSameName->mMetaData.GetMetaData().GetName(), existingAssetWithSameName->mAsset.use_count() - 1);
-					errorsEncountered = true;
-				}
-			}
-
-			if (errorsEncountered)
-			{
-				return false;
-			}
-
-			// Delete old files
-			std::vector<std::pair<std::filesystem::path, std::string>> filesToRestoreInCaseOfErrors{};
-
-			std::vector<WeakAsset<>> assetsToEraseEntirely{};
-
-			for (auto& [key, assetInternal] : mAssets)
-			{
-				if (!WasImportedFrom(assetInternal, path))
-				{
-					continue;
-				}
-
-				// We can safely dereference the mFileOfOrigin,
-				// because assets generated at runtime do not have an mImporterInfo.
-				const std::filesystem::path& existingImportedAssetFile = *assetInternal.mFileOfOrigin;
-
-				if (assetInternal.mMetaData.GetMetaData().GetImporterInfo()->mWereEditsMadeAfterImporting)
-				{
-					LOG(LogAssets, Error, "Reimporting {} would undo all the changes made to {}. Delete the file {} before reimporting.",
-						path.string(),
-						assetInternal.mMetaData.mAssetName,
-						existingImportedAssetFile.string());
-					errorsEncountered = true;
-					continue;
-				}
-
-				// Delete existing files that were generated the last time we imported this asset
-				if (std::filesystem::exists(existingImportedAssetFile))
-				{
-					LOG(LogAssets, Message, "Deleting file {} created during previous importation", existingImportedAssetFile.string());
-
-					std::ifstream fstream{ existingImportedAssetFile, std::ifstream::binary };
-
-					if (fstream.is_open())
-					{
-						std::stringstream sstr{};
-						sstr << fstream.rdbuf();
-						fstream.close();
-
-						filesToRestoreInCaseOfErrors.emplace_back(existingImportedAssetFile, sstr.str());
-					}
-					else
-					{
-						LOG(LogAssets, Warning, "Importing warning: Could not create a temporary backup of {}. If further errors are encountered, this file will not be restored.",
-							existingImportedAssetFile.string());
-					}
-
-					std::error_code err{};
-					if (!std::filesystem::remove(*assetInternal.mFileOfOrigin, err))
-					{
-						LOG(LogAssets, Error, "Importing failed: Could not delete file {} - {}", existingImportedAssetFile.string(), err.message());
-						errorsEncountered = true;
-					}
-				}
-
-				// During out previous importing, we created this asset. But now that we are importing again,
-				// this asset was not produced. We need to remove this asset from our lookup
-				if (std::find_if(assetsToLoad.begin(), assetsToLoad.end(),
-					[keyCpy = key](const AssetLoadInfo& loadInfo)
-					{
-						return Name::HashString(loadInfo.GetMetaData().GetName()) == keyCpy;
-					}) == assetsToLoad.end())
-				{
-					if (assetInternal.mAsset.use_count() == 0)
-					{
-						assetsToEraseEntirely.push_back(assetInternal);
-					}
-					else
-					{
-						LOG(LogAssets, Error, "Importing failed: Importing {} means removing existing asset {}, but this asset is still referenced in memory {} time(s).",
-							path.string(), assetInternal.mMetaData.GetMetaData().GetName(), assetInternal.mAsset.use_count() - 1);
-						errorsEncountered = true;
-					}
-				}
-			}
-
-			if (errorsEncountered)
-			{
-				for (const auto& [fileToRestore, content] : filesToRestoreInCaseOfErrors)
-				{
-					std::ofstream fstream{ fileToRestore, std::ofstream::binary };
-
-					if (fstream.is_open())
-					{
-						fstream << content;
-						LOG(LogAssets, Message, "Restored {}", fileToRestore.string());
-					}
-					else
-					{
-						LOG(LogAssets, Error, "Failed to restore {}", fileToRestore.string());
-					}
-				}
-				return false;
-			}
-
-			for (WeakAsset<Asset>& assetToErase : assetsToEraseEntirely)
-			{
-				DeleteAsset(std::move(assetToErase));
-			}
-
-			// Finally, we can safely import
-			std::filesystem::path outputDirectory = path.parent_path();
-
-			if (assetsToLoad.size() > 1)
-			{
-				const std::filesystem::path folder = std::filesystem::path{ path }.replace_extension();
-
-				if ((exists(folder)
-					&& is_directory(folder))
-					|| create_directory(folder))
-				{
-					outputDirectory = folder;
-				}
-			}
-
-			for (size_t i = 0; i < importedAssets->size(); i++)
-			{
-				const AssetLoadInfo& loadInfo = assetsToLoad[i];
-				const AssetSaveInfo& saveInfo = (*importedAssets)[i];
-
-				AssetInternal* const existingAsset = TryGetAssetInternal(loadInfo.GetMetaData().GetName(), loadInfo.GetMetaData().GetClass().GetTypeId());
-
-				std::filesystem::path fileWeWantToSaveTo{};
-
-				if (existingAsset != nullptr
-					&& existingAsset->mFileOfOrigin.has_value())
-				{
-					fileWeWantToSaveTo = *existingAsset->mFileOfOrigin;
-
-					if (&existingAsset->mMetaData.GetClass() != &loadInfo.GetMetaData().GetClass())
-					{
-						LOG(LogAssets, Warning, "Asset {} is reimported and changed from class {} to {}, existing WeakAssets could now be invalid",
-							loadInfo.GetMetaData().GetName(),
-							existingAsset->mMetaData.GetClass().GetMetaData().GetName(),
-							loadInfo.GetMetaData().GetClass().GetMetaData().GetName());
-					}
-				}
-				else
-				{
-					std::string filename = loadInfo.GetMetaData().GetName();
-
-					for (char& ch : filename)
-					{
-						if (ch == '<'
-							|| ch == '>'
-							|| ch == ':'
-							|| ch == '\"'
-							|| ch == '/'
-							|| ch == '\\'
-							|| ch == '|'
-							|| ch == '?'
-							|| ch == '*'
-							|| ch == ' '
-							|| ch == '.'
-							|| ch == ','
-							)
-						{
-							ch = '_';
-						}
-					}
-
-					fileWeWantToSaveTo = outputDirectory / filename.append(sAssetExtension);
-
-					while (exists(fileWeWantToSaveTo))
-					{
-						fileWeWantToSaveTo.replace_filename(fileWeWantToSaveTo.filename().replace_extension().string().append("_Copy")).replace_extension(sAssetExtension);
-					}
-				}
-
-				const bool success = saveInfo.SaveToFile(fileWeWantToSaveTo);
-
-				if (!success)
-				{
-					LOG(LogAssets, Error, "Importing partially failed: Could not save {} to {}", loadInfo.GetMetaData().GetName(), fileWeWantToSaveTo.string());
-					continue;
-				}
-
-				LOG(LogAssets, Message, "Saved imported asset {} to {}", loadInfo.GetMetaData().GetName(), fileWeWantToSaveTo.string());
-
-				if (existingAsset != nullptr)
-				{
-					existingAsset->mMetaData = std::move(*loadInfo.mMetaData);
-				}
-				else
-				{
-					if (TryConstruct(fileWeWantToSaveTo, std::move(*loadInfo.mMetaData)) == nullptr)
-					{
-						LOG(LogAssets, Error, "Importing partially failed: Could not contruct asset from {}", fileWeWantToSaveTo.string());
-					}
-				}
-			}
-
-			LOG(LogAssets, Message, "Finished importing {}", path.string());
-
-			return true;
-		};
-
-	if (refreshEngine)
-	{
-		Editor::Get().Refresh({ Editor::RefreshRequest::Volatile, importLambda });
-	}
-	else
-	{
-		importLambda();
-	}*/
