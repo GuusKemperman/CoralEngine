@@ -46,13 +46,14 @@ namespace CE
 			std::filesystem::file_time_type mDirWriteTimeWhenLastChecked{};
 		};
 
-		void ImportAllOutOfDateFiles();
-
 		struct FileToImport
 		{
 			std::filesystem::path mFile{};
 			std::string mReasonForImporting{};
 		};
+
+		void ImportAllOutOfDateFiles();
+
 		std::vector<FileToImport> GetAllFilesToImport(DirToWatch& directory);
 
 		static bool WasImportedFrom(const WeakAsset<>& asset, const std::filesystem::path& file);

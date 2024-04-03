@@ -384,7 +384,7 @@ CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>& origin
 		if (!loadInfo.has_value())
 		{
 			LOG(LogEditor, Warning, "Cannot open asset editor for {}, {} did not produce a valid AssetLoadInfo",
-				originalAsset.GetName(),
+				originalAsset.GetMetaData().GetName(),
 				originalAsset.GetFileOfOrigin()->string());
 			return nullptr;
 		}
@@ -409,7 +409,7 @@ static CONSTEVAL CE::TypeForm Test(T&&)
 
 CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadInfo)
 {
-	const MetaType& assetType = loadInfo.GetAssetClass();
+	const MetaType& assetType = loadInfo.GetMetaData().GetClass();
 	FuncResult asset = assetType.Construct(loadInfo);
 
 	if (asset.HasError())

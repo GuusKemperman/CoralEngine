@@ -15,56 +15,26 @@ namespace CE
 	class WeakAsset
 	{
 		friend class AssetManager;
-		WeakAsset(Internal::AssetInternal& assetInternal) : mAssetInternal(assetInternal) {};
+		WeakAsset(Internal::AssetInternal& assetInternal);
 
 	public:
-		WeakAsset(const WeakAsset& other) = default;
-		WeakAsset(WeakAsset&& other) noexcept = default;
+		WeakAsset(const WeakAsset& other);
+		WeakAsset(WeakAsset&& other) noexcept;
 
-		~WeakAsset() = default;
+		~WeakAsset();
 
-		WeakAsset& operator=(const WeakAsset&) = default;
-		WeakAsset& operator=(WeakAsset&&) = default;
+		WeakAsset& operator=(const WeakAsset&);
+		WeakAsset& operator=(WeakAsset&&) noexcept;
 
-		const std::string& GetName() const { return mAssetInternal.get().mMetaData.GetName(); }
+		const AssetFileMetaData& GetMetaData() const;
 
-		const MetaType& GetAssetClass() const { return mAssetInternal.get().mMetaData.GetClass(); }
+		bool IsLoaded() const;
 
-		bool IsLoaded() const { return mAssetInternal.get().mAsset != nullptr; }
+		size_t NumOfReferences() const;
 
-		size_t NumOfReferences() const { return mAssetInternal.get().mAsset.use_count(); }
+		std::shared_ptr<const T> MakeShared() const;
 
-		uint32 GetAssetVersion() const { return mAssetInternal.get().mMetaData.GetAssetVersion(); }
-
-		uint32 GetMetaDataVersion() const { return mAssetInternal.get().mMetaData.GetMetaDataVersion(); }
-
-		std::shared_ptr<const T> MakeShared() const
-		{
-			if (!IsLoaded())
-			{
-				AssetManager::Get().Load(mAssetInternal);
-				ASSERT(IsLoaded());
-			}
-
-			return std::static_pointer_cast<const T>(mAssetInternal.get().mAsset);
-		}
-
-		// May return either a .asset file. Will be nullopt if this was a generated asset.
-		std::optional<std::filesystem::path> GetFileOfOrigin() const { return mAssetInternal.get().mFileOfOrigin; }
-
-		std::optional<std::filesystem::path> GetImportedFromFile() const
-		{
-			const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = mAssetInternal.get().mMetaData.GetImporterInfo();
-			return importerInfo.has_value() ? importerInfo->mImportedFile : std::optional<std::filesystem::path>{};
-		}
-
-		std::optional<uint32> GetImporterVersion() const
-		{
-			const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = mAssetInternal.get().mMetaData.GetImporterInfo();
-			return importerInfo.has_value() ? importerInfo->mImporterVersion : std::optional<uint32>{};
-		}
-
-		std::optional<AssetFileMetaData::ImporterInfo> GetImporterInfo() const { return mAssetInternal.get().mMetaData.GetImporterInfo(); }
+		const std::optional<std::filesystem::path>& GetFileOfOrigin() const;
 
 	private:
 		std::reference_wrapper<Internal::AssetInternal> mAssetInternal;
@@ -72,6 +42,61 @@ namespace CE
 		template<typename To, typename From>
 		friend WeakAsset<To> WeakAssetStaticCast(WeakAsset<From>);
 	};
+
+	template <typename T>
+	WeakAsset<T>::WeakAsset(Internal::AssetInternal& assetInternal): mAssetInternal(assetInternal)
+	{}
+
+	template <typename T>
+	WeakAsset<T>::WeakAsset(const WeakAsset& other) = default;
+
+	template <typename T>
+	WeakAsset<T>::WeakAsset(WeakAsset&& other) noexcept = default;
+
+	template <typename T>
+	WeakAsset<T>::~WeakAsset() = default;
+
+	template <typename T>
+	WeakAsset<T>& WeakAsset<T>::operator=(const WeakAsset&) = default;
+
+	template <typename T>
+	WeakAsset<T>& WeakAsset<T>::operator=(WeakAsset&&) noexcept = default;
+
+	template <typename T>
+	const AssetFileMetaData& WeakAsset<T>::GetMetaData() const
+	{
+		return mAssetInternal.get().mMetaData;
+	}
+
+	template <typename T>
+	bool WeakAsset<T>::IsLoaded() const
+	{
+		return mAssetInternal.get().mAsset != nullptr;
+	}
+
+	template <typename T>
+	size_t WeakAsset<T>::NumOfReferences() const
+	{
+		return mAssetInternal.get().mAsset.use_count();
+	}
+
+	template <typename T>
+	std::shared_ptr<const T> WeakAsset<T>::MakeShared() const
+	{
+		if (!IsLoaded())
+		{
+			AssetManager::Get().Load(mAssetInternal);
+			ASSERT(IsLoaded());
+		}
+
+		return std::static_pointer_cast<const T>(mAssetInternal.get().mAsset);
+	}
+
+	template <typename T>
+	const std::optional<std::filesystem::path>& WeakAsset<T>::GetFileOfOrigin() const
+	{
+		return mAssetInternal.get().mFileOfOrigin;
+	}
 
 	// TODO write dynamic cast as well
 	template<typename To, typename From>

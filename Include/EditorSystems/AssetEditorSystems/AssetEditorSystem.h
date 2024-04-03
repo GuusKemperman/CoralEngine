@@ -263,7 +263,7 @@ namespace CE
 
 		if (const std::optional<WeakAsset<T>> originalAsset = TryGetOriginalAsset(); originalAsset.has_value())
 		{
-			importerInfo = originalAsset->GetImporterInfo();
+			importerInfo = originalAsset->GetMetaData().GetImporterInfo();
 
 			if (importerInfo.has_value())
 			{

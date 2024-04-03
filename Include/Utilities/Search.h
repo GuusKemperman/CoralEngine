@@ -215,7 +215,7 @@ namespace CE::Search
 			{
 				if (filter(asset))
 				{
-					insertInto.emplace_back(asset.GetName(), asset);
+					insertInto.emplace_back(asset.GetMetaData().GetName(), asset);
 				}
 			}
 		}

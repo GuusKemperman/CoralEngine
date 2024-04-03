@@ -142,7 +142,7 @@ void CE::ImporterSystem::Tick(const float)
 				{
 					for (const AssetLoadInfo& imported : *result)
 					{
-						ImGui::TextUnformatted(imported.GetName().c_str());
+						ImGui::TextUnformatted(imported.GetMetaData().GetName().c_str());
 					}
 				}
 			}
@@ -259,7 +259,7 @@ std::vector<CE::ImporterSystem::FileToImport> CE::ImporterSystem::GetAllFilesToI
 
 			wasPreviouslyImported = true;
 
-			const uint32 assetImporterVersion = asset.GetImporterInfo()->mImporterVersion;
+			const uint32 assetImporterVersion = asset.GetMetaData().GetImporterInfo()->mImporterVersion;
 
 			const MetaType* const importerType = MetaManager::Get().TryGetType(importerTypeId);
 			ASSERT(importerType != nullptr);
@@ -277,16 +277,16 @@ std::vector<CE::ImporterSystem::FileToImport> CE::ImporterSystem::GetAllFilesToI
 				break;
 			}
 
-			const uint32 currentAssetVersion = GetClassVersion(asset.GetAssetClass());
+			const uint32 currentAssetVersion = GetClassVersion(asset.GetMetaData().GetClass());
 
-			if (asset.GetAssetVersion() != currentAssetVersion)
+			if (asset.GetMetaData().GetAssetVersion() != currentAssetVersion)
 			{
 				importableAssets.push_back(
 					{
 						fileToImport,
 						Format("Asset {} is out-of-date, version is {} (current is {}). The asset will be re-imported from {}",
-					asset.GetName(),
-					asset.GetAssetVersion(),
+					asset.GetMetaData().GetName(),
+					asset.GetMetaData().GetAssetVersion(),
 					currentAssetVersion,
 					fileToImport.string())
 					}
@@ -294,14 +294,14 @@ std::vector<CE::ImporterSystem::FileToImport> CE::ImporterSystem::GetAllFilesToI
 				break;
 			}
 
-			if (asset.GetMetaDataVersion() != AssetFileMetaData::GetCurrentMetaDataVersion())
+			if (asset.GetMetaData().GetMetaDataVersion() != AssetFileMetaData::GetCurrentMetaDataVersion())
 			{
 				importableAssets.push_back(
 					{
 						fileToImport,
 						Format("Asset {} is out-of-date, metadata version is {} (current is {}). The asset will be re-imported from {}",
-					asset.GetName(),
-					asset.GetMetaDataVersion(),
+					asset.GetMetaData().GetName(),
+					asset.GetMetaData().GetMetaDataVersion(),
 					AssetFileMetaData::GetCurrentMetaDataVersion(),
 					fileToImport.string())
 					}
@@ -309,7 +309,7 @@ std::vector<CE::ImporterSystem::FileToImport> CE::ImporterSystem::GetAllFilesToI
 				break;
 			}
 
-			if (asset.GetImporterInfo()->mImportedFromFileWriteTimeAtTimeOfImporting < importableAssetLastWriteTime)
+			if (asset.GetMetaData().GetImporterInfo()->mImportedFromFileWriteTimeAtTimeOfImporting < importableAssetLastWriteTime)
 			{
 				importableAssets.push_back(
 					{
@@ -339,7 +339,7 @@ std::vector<CE::ImporterSystem::FileToImport> CE::ImporterSystem::GetAllFilesToI
 
 bool CE::ImporterSystem::WasImportedFrom(const WeakAsset<>& asset, const std::filesystem::path& file)
 {
-	return asset.GetImporterInfo().has_value()
+	return asset.GetMetaData().GetImporterInfo().has_value()
 		// We only look at the filename, as the full path may be different.
 		// For example the EngineAssets folder may be moved relative to the
 		// working environment, or may always be different for several projects.
@@ -349,7 +349,7 @@ bool CE::ImporterSystem::WasImportedFrom(const WeakAsset<>& asset, const std::fi
 		// else might save it in C:/Projects/Repos.
 		//
 		// Since neither option is ideal, we only look at the filename.
-		&& asset.GetImportedFromFile()->filename() == file.filename();
+		&& asset.GetMetaData().GetImporterInfo()->mImportedFile.filename() == file.filename();
 }
 
 std::pair<CE::TypeId, std::shared_ptr<const CE::Importer>> CE::ImporterSystem::TryGetImporterForExtension(const std::filesystem::path& extension)
@@ -393,7 +393,7 @@ CE::MetaType CE::ImporterSystem::Reflect()
 				std::vector<std::string_view> duplicateNames{};
 				for (size_t i = 0; i < assetsToLoad.size(); i++)
 				{
-					const std::string_view name = assetsToLoad[i].GetName();
+					const std::string_view name = assetsToLoad[i].GetMetaData().GetName();
 
 					if (std::find(duplicateNames.begin(), duplicateNames.end(), name) != duplicateNames.end())
 					{
@@ -403,7 +403,7 @@ CE::MetaType CE::ImporterSystem::Reflect()
 					size_t numWithSameName{};
 					for (size_t j = i + 1; j < assetsToLoad.size(); j++)
 					{
-						numWithSameName += assetsToLoad[i].GetName() == assetsToLoad[j].GetName();
+						numWithSameName += assetsToLoad[i].GetMetaData().GetName() == assetsToLoad[j].GetMetaData().GetName();
 					}
 
 					if (numWithSameName != 0)
@@ -420,7 +420,7 @@ CE::MetaType CE::ImporterSystem::Reflect()
 			// and if we would be reimporting assets that are still referenced in memory
 			for (const AssetLoadInfo& loadInfo : assetsToLoad)
 			{
-				const AssetInternal* const existingAssetWithSameName = TryGetAssetInternal(loadInfo.GetName(), loadInfo.GetAssetClass().GetTypeId());
+				const AssetInternal* const existingAssetWithSameName = TryGetAssetInternal(loadInfo.GetMetaData().GetName(), loadInfo.GetMetaData().GetClass().GetTypeId());
 
 				if (existingAssetWithSameName == nullptr)
 				{
@@ -430,7 +430,7 @@ CE::MetaType CE::ImporterSystem::Reflect()
 				if (!WasImportedFrom(*existingAssetWithSameName, path))
 				{
 					LOG(LogAssets, Error, "Importing failed: there is already an asset with the name {} (see {})",
-						loadInfo.GetName(),
+						loadInfo.GetMetaData().GetName(),
 						existingAssetWithSameName->mFileOfOrigin.value_or("assets generated at runtime").string());
 
 					errorsEncountered = true;
@@ -439,7 +439,7 @@ CE::MetaType CE::ImporterSystem::Reflect()
 				if (existingAssetWithSameName->mAsset.use_count() > 1)
 				{
 					LOG(LogAssets, Error, "Importing failed: Importing {} means replacing existing asset {}, but this asset is still referenced in memory {} time(s).",
-						path.string(), existingAssetWithSameName->mMetaData.GetName(), existingAssetWithSameName->mAsset.use_count() - 1);
+						path.string(), existingAssetWithSameName->mMetaData.GetMetaData().GetName(), existingAssetWithSameName->mAsset.use_count() - 1);
 					errorsEncountered = true;
 				}
 			}
@@ -465,7 +465,7 @@ CE::MetaType CE::ImporterSystem::Reflect()
 				// because assets generated at runtime do not have an mImporterInfo.
 				const std::filesystem::path& existingImportedAssetFile = *assetInternal.mFileOfOrigin;
 
-				if (assetInternal.mMetaData.GetImporterInfo()->mWereEditsMadeAfterImporting)
+				if (assetInternal.mMetaData.GetMetaData().GetImporterInfo()->mWereEditsMadeAfterImporting)
 				{
 					LOG(LogAssets, Error, "Reimporting {} would undo all the changes made to {}. Delete the file {} before reimporting.",
 						path.string(),
@@ -509,7 +509,7 @@ CE::MetaType CE::ImporterSystem::Reflect()
 				if (std::find_if(assetsToLoad.begin(), assetsToLoad.end(),
 					[keyCpy = key](const AssetLoadInfo& loadInfo)
 					{
-						return Name::HashString(loadInfo.GetName()) == keyCpy;
+						return Name::HashString(loadInfo.GetMetaData().GetName()) == keyCpy;
 					}) == assetsToLoad.end())
 				{
 					if (assetInternal.mAsset.use_count() == 0)
@@ -519,7 +519,7 @@ CE::MetaType CE::ImporterSystem::Reflect()
 					else
 					{
 						LOG(LogAssets, Error, "Importing failed: Importing {} means removing existing asset {}, but this asset is still referenced in memory {} time(s).",
-							path.string(), assetInternal.mMetaData.GetName(), assetInternal.mAsset.use_count() - 1);
+							path.string(), assetInternal.mMetaData.GetMetaData().GetName(), assetInternal.mAsset.use_count() - 1);
 						errorsEncountered = true;
 					}
 				}
@@ -569,7 +569,7 @@ CE::MetaType CE::ImporterSystem::Reflect()
 				const AssetLoadInfo& loadInfo = assetsToLoad[i];
 				const AssetSaveInfo& saveInfo = (*importedAssets)[i];
 
-				AssetInternal* const existingAsset = TryGetAssetInternal(loadInfo.GetName(), loadInfo.GetAssetClass().GetTypeId());
+				AssetInternal* const existingAsset = TryGetAssetInternal(loadInfo.GetMetaData().GetName(), loadInfo.GetMetaData().GetClass().GetTypeId());
 
 				std::filesystem::path fileWeWantToSaveTo{};
 
@@ -578,17 +578,17 @@ CE::MetaType CE::ImporterSystem::Reflect()
 				{
 					fileWeWantToSaveTo = *existingAsset->mFileOfOrigin;
 
-					if (&existingAsset->mMetaData.GetClass() != &loadInfo.GetAssetClass())
+					if (&existingAsset->mMetaData.GetClass() != &loadInfo.GetMetaData().GetClass())
 					{
 						LOG(LogAssets, Warning, "Asset {} is reimported and changed from class {} to {}, existing WeakAssets could now be invalid",
-							loadInfo.GetName(),
-							existingAsset->mMetaData.GetClass().GetName(),
-							loadInfo.GetAssetClass().GetName());
+							loadInfo.GetMetaData().GetName(),
+							existingAsset->mMetaData.GetClass().GetMetaData().GetName(),
+							loadInfo.GetMetaData().GetClass().GetMetaData().GetName());
 					}
 				}
 				else
 				{
-					std::string filename = loadInfo.GetName();
+					std::string filename = loadInfo.GetMetaData().GetName();
 
 					for (char& ch : filename)
 					{
@@ -622,11 +622,11 @@ CE::MetaType CE::ImporterSystem::Reflect()
 
 				if (!success)
 				{
-					LOG(LogAssets, Error, "Importing partially failed: Could not save {} to {}", loadInfo.GetName(), fileWeWantToSaveTo.string());
+					LOG(LogAssets, Error, "Importing partially failed: Could not save {} to {}", loadInfo.GetMetaData().GetName(), fileWeWantToSaveTo.string());
 					continue;
 				}
 
-				LOG(LogAssets, Message, "Saved imported asset {} to {}", loadInfo.GetName(), fileWeWantToSaveTo.string());
+				LOG(LogAssets, Message, "Saved imported asset {} to {}", loadInfo.GetMetaData().GetName(), fileWeWantToSaveTo.string());
 
 				if (existingAsset != nullptr)
 				{

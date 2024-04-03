@@ -28,8 +28,8 @@ using namespace CE;
 //
 //	for (WeakAsset<Asset> asset : allAssets)
 //	{
-//		bufferSize = std::max(asset.GetAssetClass().GetSize(), bufferSize);
-//		bufferAlign = std::max(asset.GetAssetClass().GetAlignment(), bufferAlign);
+//		bufferSize = std::max(asset.GetMetaData().GetClass().GetSize(), bufferSize);
+//		bufferAlign = std::max(asset.GetMetaData().GetClass().GetAlignment(), bufferAlign);
 //	}
 //
 //	TEST_ASSERT(bufferSize != 0 && bufferAlign != 0);
@@ -40,7 +40,7 @@ using namespace CE;
 //
 //	for (WeakAsset<Asset> asset : allAssets)
 //	{
-//		const MetaType& type = asset.GetAssetClass();
+//		const MetaType& type = asset.GetMetaData().GetClass();
 //
 //		if (!Editor::Get().IsThereAnEditorTypeForAssetType(type.GetTypeId()))
 //		{
@@ -61,7 +61,7 @@ using namespace CE;
 //
 //		if (reloadedAssetConstructResult.HasError())
 //		{
-//			LOG(LogUnitTests, Error, "Failed to construct asset {} of type {} with a loadInfo object - {}", asset.GetName(), type.GetName(), reloadedAssetConstructResult.Error());
+//			LOG(LogUnitTests, Error, "Failed to construct asset {} of type {} with a loadInfo object - {}", asset.GetMetaData().GetName(), type.GetMetaData().GetName(), reloadedAssetConstructResult.Error());
 //			result = UnitTest::Failure;
 //			continue;
 //		}
@@ -70,7 +70,7 @@ using namespace CE;
 //
 //		if (reloadedAsset == nullptr)
 //		{
-//			LOG(LogUnitTests, Error, "Construct asset {} of type {} returned an object that, according to MetaAny, is not an asset.", asset.GetName(), type.GetName());
+//			LOG(LogUnitTests, Error, "Construct asset {} of type {} returned an object that, according to MetaAny, is not an asset.", asset.GetMetaData().GetName(), type.GetMetaData().GetName());
 //			result = UnitTest::Failure;
 //			continue;
 //		}
@@ -82,7 +82,7 @@ using namespace CE;
 //			continue;
 //		}
 //
-//		LOG(LogUnitTests, Error, "Asset {} of type {} produced a different save after reloading. Serialization is likely broken", asset.GetName(), type.GetName());
+//		LOG(LogUnitTests, Error, "Asset {} of type {} produced a different save after reloading. Serialization is likely broken", asset.GetMetaData().GetName(), type.GetMetaData().GetName());
 //		result = UnitTest::Failure;
 //	}
 //

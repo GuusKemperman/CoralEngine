@@ -201,34 +201,34 @@ void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folde
 
 void CE::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& asset) const
 {
-    if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetAssetClass().GetTypeId()))
+    if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetMetaData().GetClass().GetTypeId()))
     {
-        if (ImGui::Button(asset.GetName().c_str()))
+        if (ImGui::Button(asset.GetMetaData().GetName().c_str()))
         {
             OpenAsset(asset);
         }
     }
     else
     {
-        ImGui::TextUnformatted(asset.GetName().c_str());
+        ImGui::TextUnformatted(asset.GetMetaData().GetName().c_str());
     }
 
 
     if (ImGui::IsItemClicked(1))
     {
-        sRightClickedAsset = asset.GetName();
+        sRightClickedAsset = asset.GetMetaData().GetName();
         sWasAssetJustRightClicked = true;
     }
 
     // Looks scary because we may end up deleting the asset,
     // but a user can't drag an asset at the same time as they
     // click the delete button
-    DragDrop::SendAsset(asset.GetName());
+    DragDrop::SendAsset(asset.GetMetaData().GetName());
 
     if (ImGui::BeginItemTooltip())
     {
-        ImGui::Text("Name: %s", asset.GetName().c_str());
-        ImGui::Text("Type: %s", asset.GetAssetClass().GetName().c_str());
+        ImGui::Text("Name: %s", asset.GetMetaData().GetName().c_str());
+        ImGui::Text("Type: %s", asset.GetMetaData().GetClass().GetName().c_str());
 
         if (asset.GetFileOfOrigin().has_value())
         {
@@ -239,10 +239,10 @@ void CE::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& asset)
             ImGui::Text("Generated at runtime");
         }
 
-        if (const std::optional<std::filesystem::path> importedFromFile = asset.GetImportedFromFile();
-            importedFromFile.has_value())
+        if (const std::optional<AssetFileMetaData::ImporterInfo> importerInfo = asset.GetMetaData().GetImporterInfo();
+            importerInfo.has_value())
         {
-            ImGui::Text("Imported from: %s", importedFromFile->string().c_str());
+            ImGui::Text("Imported from: %s", importerInfo->mImportedFile.string().c_str());
         }
 
         ImGui::Text("NumOfReferences: %d", static_cast<int>(asset.NumOfReferences()));
@@ -467,15 +467,15 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
         ImGui::EndMenu();
     }
 
-    if (const std::optional<std::filesystem::path> importedFromFile = asset->GetImportedFromFile();
-        importedFromFile.has_value()
+    if (const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = asset->GetMetaData().GetImporterInfo();
+        importerInfo.has_value()
         && ImGui::MenuItem("Reimport"))
     {
         ImporterSystem* importerSystem = Editor::Get().TryGetSystem<ImporterSystem>();
 
         if (importerSystem != nullptr)
         {
-            importerSystem->Import(*importedFromFile, "Requested by user");
+            importerSystem->Import(importerInfo->mImportedFile, "Requested by user");
         }
         else
         {
