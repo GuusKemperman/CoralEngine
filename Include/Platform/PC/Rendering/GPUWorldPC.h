@@ -53,6 +53,7 @@ namespace CE
             unsigned int useMetallicRoughnessTex= 0;
             unsigned int useNormalTex= 0;
             unsigned int useOcclusionTex= 0;
+            glm::vec4 uvScale = glm::vec4(1.f, 1.f, 1.f, 1.f);
         };
 
         struct DXColorMultiplierInfo
