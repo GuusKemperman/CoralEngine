@@ -8,8 +8,13 @@ namespace CE
 	class AOEComponent // Area Of Attack
 	{
 	public:
-		float mDuration; // how long the ability should be alive - you need this even if you want it to be instant so that it stays on screen more than one frame
-		float mDurationTimer; // how long it has been alive for
+		// How long the ability should be alive for.
+		// You need this even if you want it to be instant
+		// so that it stays on screen more than one frame.
+		float mDuration{};
+
+		// How long it has been alive for.
+		float mDurationTimer{};
 
 	private:
 		friend ReflectAccess;

@@ -10,7 +10,7 @@ CE::MetaType CE::AOEComponent::Reflect()
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
 	metaType.AddField(&AOEComponent::mDuration, "mDuration").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&AOEComponent::mDurationTimer, "mDurationTimer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&AOEComponent::mDurationTimer, "mDurationTimer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
 
 #ifdef EDITOR
 	BindEvent(metaType, sInspectEvent, &AOEComponent::OnInspect);
@@ -24,7 +24,7 @@ CE::MetaType CE::AOEComponent::Reflect()
 #ifdef EDITOR
 void CE::AOEComponent::OnInspect([[maybe_unused]] World& world, [[maybe_unused]] const std::vector<entt::entity>& entities)
 {
-	ImGui::TextDisabled("Radius");
+	ImGui::TextDisabled("Radius (?)");
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::BeginTooltip();

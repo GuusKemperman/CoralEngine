@@ -6,10 +6,14 @@ namespace CE
 	class ProjectileComponent
 	{
 	public:
-		float mRange{}; // how far the projectile will travel before it gets destroyed
-		float mCurrentRange{}; // how far the projectile has traveled
+		// How far the projectile will travel before it gets destroyed.
+		float mRange{};
 
-		float mSpeed{}; // initial speed to set the velocity of the physics body
+		// How far the projectile has traveled.
+		float mCurrentRange{};
+
+		// Initial speed to set the velocity of the physics body.
+		float mSpeed{};
 
 	private:
 		friend ReflectAccess;
