@@ -13,6 +13,8 @@ namespace CE
 
         std::shared_ptr<const Material> mMaterial{};
 
+        bool mTilesWithMeshScale = false;
+
         float mTiling = 1;
 
     private:
