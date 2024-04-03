@@ -172,8 +172,8 @@ entt::entity CE::AbilityFunctionality::SpawnProjectile(World& world, const Prefa
 	auto& reg = world.GetRegistry();
 	auto prefabEntity = reg.CreateFromPrefab(prefab);
 
-	auto prejectileComponent = reg.TryGet<ProjectileComponent>(prefabEntity);
-	if (prejectileComponent == nullptr)
+	auto projectileComponent = reg.TryGet<ProjectileComponent>(prefabEntity);
+	if (projectileComponent == nullptr)
 	{
 		LOG(LogAbilitySystem, Error, "The prefab does not have a ProjectileComponent attached.")
 			return{};
@@ -213,7 +213,7 @@ entt::entity CE::AbilityFunctionality::SpawnProjectile(World& world, const Prefa
 	// so that effect calculations and team checks can be performed even if the character dies in the meantime.
 	activeAbility->mCastByCharacterData = *characterComponent;
 
-	// calculate the 2D orientation of the character
+	// Calculate the 2D orientation of the character.
 	const glm::vec3 characterWorldPos = characterTransform->GetWorldPosition();
 	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
 
@@ -227,7 +227,7 @@ entt::entity CE::AbilityFunctionality::SpawnProjectile(World& world, const Prefa
 	prefabTransform->SetLocalPosition(projectileSpawnPos);
 
 	// Set the velocity.
-	prefabPhysicsBody->mLinearVelocity = characterDir * prejectileComponent->mSpeed;
+	prefabPhysicsBody->mLinearVelocity = characterDir * projectileComponent->mSpeed;
 
 	return prefabEntity;
 }
@@ -270,6 +270,22 @@ entt::entity CE::AbilityFunctionality::SpawnAOE(World& world, const Prefab& pref
 	const Physics& physics = world.GetPhysics();
 	const glm::vec2 pos2D = characterTransform->GetWorldPosition2D();
 	prefabTransform->SetLocalPosition(To3DRightForward(pos2D, physics.GetHeightAtPosition(pos2D)));
+
+	// Check for projectile component.
+	auto projectileComponent = reg.TryGet<ProjectileComponent>(prefabEntity);
+	if (projectileComponent != nullptr)
+	{
+		auto prefabPhysicsBody = reg.TryGet<PhysicsBody2DComponent>(prefabEntity);
+		if (prefabPhysicsBody == nullptr)
+		{
+			LOG(LogAbilitySystem, Error, "The prefab does not have a PhysicsBody2DComponent attached.")
+				return{};
+		}
+		// Calculate the 2D orientation of the character.
+		const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+		// Set the velocity.
+		prefabPhysicsBody->mLinearVelocity = characterDir * projectileComponent->mSpeed;
+	}
 
 	return prefabEntity;
 }

@@ -37,7 +37,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
     for (auto [entity, aoe] : viewAOE.each())
     {
         aoe.mDurationTimer += dt;
-        if (aoe.mDurationTimer >= aoe.mDuration)
+        if (aoe.mDurationTimer >= aoe.mDuration && aoe.mUsesProjectileComponent == false)
         {
             reg.Destroy(entity, true);
         }

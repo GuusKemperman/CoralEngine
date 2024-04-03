@@ -9,6 +9,7 @@ CE::MetaType CE::AOEComponent::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<AOEComponent>{}, "AOEComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
+	metaType.AddField(&AOEComponent::mUsesProjectileComponent, "mUsesProjectileComponent").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&AOEComponent::mDuration, "mDuration").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&AOEComponent::mDurationTimer, "mDurationTimer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
 

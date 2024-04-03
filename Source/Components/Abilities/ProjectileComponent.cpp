@@ -10,7 +10,7 @@ CE::MetaType CE::ProjectileComponent::Reflect()
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
 	metaType.AddField(&ProjectileComponent::mRange, "mRange").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&ProjectileComponent::mCurrentRange, "mCurrentRange").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&ProjectileComponent::mCurrentRange, "mCurrentRange").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
 	metaType.AddField(&ProjectileComponent::mSpeed, "mSpeed").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectComponentType<ProjectileComponent>(metaType);
