@@ -17,13 +17,13 @@ struct Reflector<std::shared_ptr<const T>>
 			Format("{} Ref", basedOnType.GetName()) };
 		refType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-		refType.AddFunc(
-		[](const std::shared_ptr<const T>& value, nullptr_t)
-		{
-			return value == nullptr;
-		}, OperatorType::equal, MetaFunc::ExplicitParams<const std::shared_ptr<const T>&, nullptr_t>{});
-
 		ReflectFieldType<std::shared_ptr<const T>>(refType);
+
+		refType.AddFunc(
+			[](const std::shared_ptr<const T>& value, nullptr_t)
+			{
+				return value == nullptr;
+			}, OperatorType::equal, MetaFunc::ExplicitParams<const std::shared_ptr<const T>&, nullptr_t>{});
 
 		return refType;
 	}

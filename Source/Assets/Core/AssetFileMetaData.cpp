@@ -46,7 +46,8 @@ std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaData(std::is
 		return ReadMetaDataV0(fromStream, *version);
 	case 1:
 	case 2:
-		return ReadMetaDataV1V2(fromStream, *version);
+	case 3:
+		return ReadMetaDataV1V2V3(fromStream, *version);
 	default:
 		LOG(LogAssets, Message, "Asset metadata version {} is not recognised and not supported", *version);
 		return std::nullopt;
@@ -146,7 +147,7 @@ std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV0(std::
 	return AssetFileMetaData{ name, *assetClass, assetVersion, ImporterInfo{ filePath, *importerVersion } };
 }
 
-std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV1V2(std::istream& fromStream, uint32 version)
+std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV1V2V3(std::istream& fromStream, uint32 version)
 {
 	BinaryGSONObject obj{};
 
@@ -215,22 +216,13 @@ std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV1V2(std
 
 		if (version >= 2)
 		{
-			const BinaryGSONMember* const savedWriteTime = obj.TryGetGSONMember("wt");
 			const BinaryGSONMember* const savedEditsAfterImporting = obj.TryGetGSONMember("ed");
 
-			if (savedWriteTime == nullptr
-				|| savedEditsAfterImporting == nullptr)
+			if (savedEditsAfterImporting == nullptr)
 			{
 				LOG(LogAssets, Message, "Asset metadata was corrupted");
 				return std::nullopt;
 			}
-
-			using TimeSinceEpoch = decltype(importerInfo->mImportedFromFileWriteTimeAtTimeOfImporting.time_since_epoch());
-			using Count = decltype(importerInfo->mImportedFromFileWriteTimeAtTimeOfImporting.time_since_epoch().count());
-			Count serialisedTimeSinceEpoch{};
-			*savedWriteTime >> serialisedTimeSinceEpoch;
-			const TimeSinceEpoch sinceEpoch{ serialisedTimeSinceEpoch };
-			importerInfo->mImportedFromFileWriteTimeAtTimeOfImporting = decltype(importerInfo->mImportedFromFileWriteTimeAtTimeOfImporting){ sinceEpoch };
 
 			*savedEditsAfterImporting >> importerInfo->mWereEditsMadeAfterImporting;
 		}
@@ -255,7 +247,6 @@ void CE::AssetFileMetaData::WriteMetaData(std::ostream& toStream) const
 	{
 		obj.AddGSONMember("iv") << mImporterInfo->mImporterVersion;
 		obj.AddGSONMember("iff") << mImporterInfo->mImportedFile.string();
-		obj.AddGSONMember("wt") << mImporterInfo->mImportedFromFileWriteTimeAtTimeOfImporting.time_since_epoch().count();
 		obj.AddGSONMember("ed") << mImporterInfo->mWereEditsMadeAfterImporting;
 	}
 
