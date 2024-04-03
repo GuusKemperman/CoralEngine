@@ -308,18 +308,6 @@ std::vector<CE::ImporterSystem::FileToImport> CE::ImporterSystem::GetAllFilesToI
 				);
 				break;
 			}
-
-			if (asset.GetMetaData().GetImporterInfo()->mImportedFromFileWriteTimeAtTimeOfImporting < importableAssetLastWriteTime)
-			{
-				importableAssets.push_back(
-					{
-						fileToImport,
-						Format("Changes to {} detected. Reimporting...",
-					fileToImport.string())
-					}
-				);
-				break;
-			}
 		}
 
 		if (!wasPreviouslyImported)
