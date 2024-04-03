@@ -6,6 +6,7 @@
 #include "Components/TransformComponent.h"
 #include "Assets/SkinnedMesh.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Components/AnimationRootComponent.h"
 #include "Assets/Animation/Animation.h"
 #include "Assets/Animation/Bone.h"
 #include "Meta/MetaType.h"
@@ -46,19 +47,21 @@ void CE::AnimationSystem::Update(World& world, float dt)
 {
 	auto& reg = world.GetRegistry();
 
-	const auto& view = reg.View<SkinnedMeshComponent>();
-
-	for (auto [entity, skinnedMesh] : view.each())
 	{
-		if (skinnedMesh.mAnimation == nullptr)
+		const auto& view = reg.View<SkinnedMeshComponent>();
+
+		for (auto [entity, skinnedMesh] : view.each())
 		{
-			continue;
+			if (skinnedMesh.mAnimation == nullptr)
+			{
+				continue;
+			}
+
+			skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * dt;
+			skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
+
+			CalculateBoneTransformRecursive(skinnedMesh.mAnimation->mRootNode, glm::mat4x4(1.0f), skinnedMesh.mSkinnedMesh->GetBoneMap(), skinnedMesh, skinnedMesh.mAnimation, skinnedMesh.mFinalBoneMatrices);
 		}
-
-		skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * dt;
-		skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
-
-		CalculateBoneTransformRecursive(skinnedMesh.mAnimation->mRootNode, glm::mat4x4(1.0f), skinnedMesh.mSkinnedMesh->GetBoneMap(), skinnedMesh, skinnedMesh.mAnimation, skinnedMesh.mFinalBoneMatrices);
 	}
 }
 

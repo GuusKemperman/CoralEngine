@@ -191,14 +191,6 @@ void CE::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 				ImportInternal(importableAsset, false);
 				break;
 			}
-
-			if (assetInternal.mMetaData.mImporterInfo->mImportedFromFileWriteTimeAtTimeOfImporting < importableAssetLastWriteTime)
-			{
-				LOG(LogAssets, Message, "Changes to {} detected. Reimporting...",
-					importableAsset.string());
-				ImportInternal(importableAsset, false);
-				break;
-			}
 		}
 
 		if (!wasPreviouslyImported)
