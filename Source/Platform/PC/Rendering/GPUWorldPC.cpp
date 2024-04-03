@@ -266,6 +266,17 @@ void CE::GPUWorld::Update()
 
             }
 
+            float uvScale = staticMeshComponent.mTiling;
+
+            if(staticMeshComponent.mTilesWithMeshScale)
+            {
+                float meshScale = transformComponent.GetWorldScaleUniform();
+                float scaleFactor = meshScale < 1 && meshScale >0 ? 1 / meshScale : meshScale;
+                uvScale *= scaleFactor;
+            }
+
+            materialInfo.uvScale = glm::vec4(uvScale, uvScale, 1.f, 1.f);
+
             mConstBuffers[MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
             meshCounter++;
         }
