@@ -3,7 +3,7 @@
 #include <memory>
 #include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
 
-class DXSignature;
+class DXSignatureBuilder;
 struct ID3D12Device5;
 using uint = unsigned int;
 
@@ -11,7 +11,7 @@ class DXPipeline
 {
 public:
 	DXPipeline() {};
-	void CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature* root, LPCWSTR name);
+	void CreatePipeline(ComPtr<ID3D12Device5> device, const ComPtr<ID3D12RootSignature>& root, LPCWSTR name);
 
 	void AddInput(LPCSTR name, DXGI_FORMAT format, const uint slot);
 	void SetRasterizer(const CD3DX12_RASTERIZER_DESC& rasterizer);

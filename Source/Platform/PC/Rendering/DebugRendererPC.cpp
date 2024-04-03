@@ -46,7 +46,7 @@ CE::DebugRenderer::Impl::Impl()
 	mDebugPipeline->AddInput("COLOR", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
 	mDebugPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
 	mDebugPipeline->SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
-	mDebugPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"Debug line pipeline");
+	mDebugPipeline->CreatePipeline(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"Debug line pipeline");
 }
 
 void CE::DebugRenderer::AddLine(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) const

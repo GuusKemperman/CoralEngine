@@ -238,7 +238,7 @@ void CE::Texture::GenerateMipmaps() const
 	self.mMipmapCB->Update(&generateMipsCB, sizeof(DXGenerateMips), 0, engineDevice.GetFrameIndex());
 
 	uploadCmdList->SetPipelineState(reinterpret_cast<DXPipeline*>(engineDevice.GetMipmapPipeline())->GetPipeline().Get());
-	uploadCmdList->SetComputeRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
+	uploadCmdList->SetComputeRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()));
 	ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
 	uploadCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 

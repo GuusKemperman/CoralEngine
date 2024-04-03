@@ -31,7 +31,7 @@ CE::UIRenderer::UIRenderer()
     mPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
     mPipeline->SetDepthState(depth);
     mPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
-    mPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"UI RENDER PIPELINE");
+    mPipeline->CreatePipeline(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"UI RENDER PIPELINE");
 }
 
 CE::UIRenderer::~UIRenderer() = default;
@@ -85,7 +85,7 @@ void CE::UIRenderer::Render(const World& world)
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     commandList->SetPipelineState(mPipeline->GetPipeline().Get());
-    commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
+    commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 
     for (int i = 0; i < drawRequests.size(); i++)
     {

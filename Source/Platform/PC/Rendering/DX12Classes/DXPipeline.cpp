@@ -6,7 +6,7 @@
 #pragma comment(lib, "d3dcompiler") // Automatically link with d3dcompiler.lib as we are using D3DCompile() below.
 #endif
 
-void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature* root, LPCWSTR name)
+void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const ComPtr<ID3D12RootSignature>& root, LPCWSTR name)
 {
 	HRESULT hr;
 
@@ -14,7 +14,7 @@ void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature*
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.InputLayout.NumElements = static_cast<UINT>(mInputs.size());
 		psoDesc.InputLayout.pInputElementDescs = mInputs.data();
-		psoDesc.pRootSignature = root->GetSignature().Get();
+		psoDesc.pRootSignature = root.Get();
 		psoDesc.VS.BytecodeLength = mVertexShaderSize;
 		psoDesc.VS.pShaderBytecode = mVertexShaderBuffer;
 		psoDesc.PS.BytecodeLength = mFragmentShaderSize;
@@ -42,7 +42,7 @@ void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature*
 	}
 	else {
 		D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
-		psoDesc.pRootSignature = root->GetSignature().Get();
+		psoDesc.pRootSignature = root.Get();
 		psoDesc.CS = { reinterpret_cast<UINT8*>(mComputeShaderBuffer), mComputeShaderSize };
 		hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&mPipeline));
 	}
