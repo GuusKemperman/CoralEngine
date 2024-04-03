@@ -398,7 +398,7 @@ std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPrevi
 
 	std::filesystem::path dir = preview.mImportRequest.mFile.parent_path();
 
-	if (numFromThisFile)
+	if (numFromThisFile > 1)
 	{
 		dir /= preview.mImportRequest.mFile.filename().replace_extension();
 	}
@@ -659,6 +659,30 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 
 		const std::filesystem::path& existingImportedAssetFile = *asset.GetFileOfOrigin();
 
+		auto newImport = std::find_if(toImport.begin(), toImport.end(),
+			[asset](const ImportPreview& toImport)
+			{
+				return toImport.mImportedAsset.GetMetaData().GetName() == asset.GetMetaData().GetName();
+			});
+
+		if (newImport == toImport.end())
+		{
+			// During out previous importing, we created this asset. But now that we are importing again,
+			// this asset was not produced.
+			assetsToEraseEntirely.push_back(asset);
+		}
+		else
+		{
+			const std::filesystem::path newAssetFile = GetPathToSaveAssetTo(*newImport, toImport);
+
+			if (newAssetFile != existingImportedAssetFile)
+			{
+				// Update the internal mFileOfOrigin
+				assetManager.MoveAsset(asset, newAssetFile);
+				ASSERT(existingImportedAssetFile == newAssetFile);
+			}
+		}
+
 		// Delete existing files that were generated the last time we imported this asset
 		if (std::filesystem::exists(existingImportedAssetFile))
 		{
@@ -669,17 +693,6 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 			{
 				LOG(LogAssets, Error, "Could not delete file {} - {}", existingImportedAssetFile.string(), err.message());
 			}
-		}
-
-		// During out previous importing, we created this asset. But now that we are importing again,
-		// this asset was not produced. We need to remove this asset from our lookup
-		if (std::find_if(toImport.begin(), toImport.end(),
-			[asset](const ImportPreview& toImport)
-			{
-				return toImport.mImportedAsset.GetMetaData().GetName() == asset.GetMetaData().GetName();
-			}) == toImport.end())
-		{
-			assetsToEraseEntirely.push_back(asset);
 		}
 	}
 
@@ -707,7 +720,14 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 			continue;
 		}
 
-		if (!assetManager.OpenAsset(file).has_value())
+		if (assetManager.OpenAsset(file).has_value())
+		{
+			LOG(LogAssets, Verbose, "Imported {} from {} to {}",
+				imported.mImportedAsset.GetMetaData().GetName(),
+				imported.mImportRequest.mFile.string(),
+				file.string());
+		}
+		else
 		{
 			LOG(LogAssets, Warning, "Failed to open {} from {}, engine might require restart in order for this asset to show up.",
 				imported.mImportedAsset.GetMetaData().GetName(),

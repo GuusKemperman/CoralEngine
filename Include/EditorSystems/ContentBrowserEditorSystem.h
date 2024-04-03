@@ -52,6 +52,8 @@ namespace CE
 		void DisplayAssetCreatorPopUp();
 		void DisplayAssetRightClickPopUp();
 
+		static void Reimport(const WeakAsset<Asset>& asset);
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(ContentBrowserEditorSystem);

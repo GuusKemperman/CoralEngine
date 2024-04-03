@@ -180,6 +180,35 @@ void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folde
         AssetManager::Get().MoveAsset(*receivedAsset, folder.mPath / receivedAsset->GetFileOfOrigin()->filename());
     }
 
+    std::string popUpName = Format("{}RightClickedDir", folder.mPath.string());
+
+    if (ImGui::IsItemClicked(1))
+    {
+        ImGui::OpenPopup(popUpName.c_str());
+    }
+
+    if (ImGui::BeginPopup(popUpName.c_str()))
+    {
+	    if (ImGui::MenuItem("Reimport"))
+	    {
+            std::function<void(const ContentFolder&)> importRecursive = [&importRecursive](const ContentFolder& folder)
+                {
+                    for (const WeakAsset<Asset>& asset : folder.mContent)
+                    {
+                        Reimport(asset);
+                    }
+
+                    for (const ContentFolder& child : folder.mChildren)
+                    {
+                        importRecursive(child);
+                    }
+                };
+            importRecursive(folder);
+	    }
+
+        ImGui::EndPopup();
+    }
+
     if (isOpen)
     {
         for (const ContentFolder& child : folder.mChildren)
@@ -461,7 +490,6 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
             }
         }
 
-
         ImGui::EndDisabled();
 
         ImGui::EndMenu();
@@ -471,16 +499,7 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
         importerInfo.has_value()
         && ImGui::MenuItem("Reimport"))
     {
-        ImporterSystem* importerSystem = Editor::Get().TryGetSystem<ImporterSystem>();
-
-        if (importerSystem != nullptr)
-        {
-            importerSystem->Import(importerInfo->mImportedFile, "Requested by user");
-        }
-        else
-        {
-            LOG(LogEditor, Error, "Could not import file, importer system does not exist!");
-        }
+        Reimport(*asset);
     }
 
     if (ImGui::MenuItem("Delete", "Del")
@@ -491,6 +510,25 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
     }
 
     ImGui::EndPopup();
+}
+
+void CE::ContentBrowserEditorSystem::Reimport(const WeakAsset<Asset>& asset)
+{
+    if (!asset.GetMetaData().GetImporterInfo().has_value())
+    {
+        return;
+    }
+
+    ImporterSystem* importerSystem = Editor::Get().TryGetSystem<ImporterSystem>();
+
+    if (importerSystem != nullptr)
+    {
+        importerSystem->Import(asset.GetMetaData().GetImporterInfo()->mImportedFile, "Requested by user");
+    }
+    else
+    {
+        LOG(LogEditor, Error, "Could not import file, importer system does not exist!");
+    }
 }
 
 CE::MetaType CE::ContentBrowserEditorSystem::Reflect()
