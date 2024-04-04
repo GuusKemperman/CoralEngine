@@ -106,9 +106,6 @@ namespace CE
 
 		static inline bool sExcludeDuplicates{};
 
-		static inline bool sIsOpen{};
-		bool mHasWindowPoppedUp{};
-
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(ImporterSystem);

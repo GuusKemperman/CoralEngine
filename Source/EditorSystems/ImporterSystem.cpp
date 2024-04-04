@@ -104,25 +104,16 @@ void CE::ImporterSystem::Tick(const float)
 		|| !mFailedFiles.empty()
 		|| !mImportFutures.empty();
 
-	if (!mHasWindowPoppedUp 
-		&& hasContent)
-	{
-		sIsOpen = true;
-	}
-
-	if (!sIsOpen
-		|| !hasContent)
+	if (!hasContent)
 	{
 		return;
 	}
 
-	if (!ImGui::Begin(GetName().c_str(), &sIsOpen))
+	if (!ImGui::Begin(GetName().c_str()))
 	{
 		ImGui::End();
 		return;
 	}
-
-	mHasWindowPoppedUp = true;
 
 	Preview();
 	uint32 numOfConflicts = ShowDuplicateAssetsErrors();
@@ -171,18 +162,17 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::
 		[&fileToImport](const ImportFuture& future)
 		{
 			return future.mImportRequest.mFile == fileToImport;
-		}) != mImportFutures.end())
+		}) != mImportFutures.end() ||
+		std::find_if(mImportPreview.begin(), mImportPreview.end(),
+			[&fileToImport](const ImportPreview& future)
+			{
+				return future.mImportRequest.mFile == fileToImport;
+			}) != mImportPreview.end())
 	{
 		return;
 	}
 
 	const auto [importerTypeId, importer] = TryGetImporterForExtension(fileToImport.extension());
-
-	Logger::Get().Log(Format("Importing {}", fileToImport.string()), "LogEditor", LogSeverity::Message, __FILE__, __LINE__,
-		[]
-		{
-			sIsOpen = true;
-		});
 
 	LOG(LogAssets, Message, "Importing {}", fileToImport.string());
 
