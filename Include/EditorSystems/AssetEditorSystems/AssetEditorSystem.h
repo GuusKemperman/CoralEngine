@@ -3,6 +3,7 @@
 #include "EditorSystems/EditorSystem.h"
 
 #include "Assets/Asset.h"
+#include "Assets/Core/AssetSaveInfo.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Core/AssetManager.h"
 #include "Core/Editor.h"
@@ -262,7 +263,12 @@ namespace CE
 
 		if (const std::optional<WeakAsset<T>> originalAsset = TryGetOriginalAsset(); originalAsset.has_value())
 		{
-			importerInfo = originalAsset->GetImporterInfo();
+			importerInfo = originalAsset->GetMetaData().GetImporterInfo();
+
+			if (importerInfo.has_value())
+			{
+				importerInfo->mWereEditsMadeAfterImporting |= !IsSavedToFile();
+			}
 		}
 
 		AssetSaveInfo saveInfo = mAsset.Save(std::move(importerInfo));

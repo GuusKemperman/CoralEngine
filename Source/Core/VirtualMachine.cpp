@@ -34,18 +34,11 @@ void CE::VirtualMachine::Recompile()
 
 	ClearCompilationResult();
 
-	std::vector<WeakAsset<Asset>> allAssets = AssetManager::Get().GetAllAssets();
-
 	std::vector<std::pair<std::reference_wrapper<MetaType>, std::reference_wrapper<Script>>> createdTypes{};
 
-	for (WeakAsset<Asset>& asset : allAssets)
+	for (WeakAsset<Script> asset : AssetManager::Get().GetAllAssets<Script>())
 	{
-		if (!asset.GetAssetClass().IsDerivedFrom<Script>())
-		{
-			continue;
-		}
-
-		Script& script = const_cast<Script&>(*std::static_pointer_cast<const Script>(asset.MakeShared()));
+		Script& script = const_cast<Script&>(*asset.MakeShared());
 		
 		MetaType* type = script.DeclareMetaType();
 
@@ -298,7 +291,7 @@ void CE::VirtualMachine::PrintCompileErrors() const
 
 void CE::VirtualMachine::PrintError(const ScriptError& error, bool compileError)
 {
-	Logger::Get().Log(error.ToString(true), compileError ? "ScriptCompileError" : "ScriptRuntimeError", Error, SourceLocation::current(__LINE__, __FILE__),
+	Logger::Get().Log(error.ToString(true), compileError ? "ScriptCompileError" : "ScriptRuntimeError", Error, __FILE__, __LINE__,
 #ifdef EDITOR
 		[loc = error.GetOrigin()]
 		{

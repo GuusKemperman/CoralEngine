@@ -61,6 +61,7 @@ namespace CE
 			INTERNAL_NAME_CHECK_EXPIRATION
 			return mData;
 		}
+
 		constexpr std::string_view StringView() const
 		{
 			INTERNAL_NAME_CHECK_EXPIRATION

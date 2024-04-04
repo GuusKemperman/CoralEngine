@@ -522,7 +522,13 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Assets\Core\AssetInternal.cpp" />
+    <ClCompile Include="Source\Components\AnimationRootComponent.cpp" />
     <ClCompile Include="Source\Utilities\PathfindingInfo.cpp" />
+    <ClCompile Include="Source\EditorSystems\ImporterSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Utilities\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Rendering\Renderer.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.cpp">
@@ -1516,7 +1522,11 @@
     <ClCompile Include="Source\Components\UI\UISpriteComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Assets\Core\AssetInternal.h" />
+    <ClInclude Include="Include\Assets\Core\WeakAsset.h" />
+    <ClInclude Include="Include\Components\AnimationRootComponent.h" />
     <ClInclude Include="Include\Utilities\Geometry2d.h" />
+    <ClInclude Include="Include\EditorSystems\ImporterSystem.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\GPUWorldPC.h" />
     <ClInclude Include="Include\Components\MeshColorComponent.h" />
@@ -1789,7 +1799,6 @@
     <ClInclude Include="Include\Systems\UISystem.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
     <ClInclude Include="Include\Utilities\AbilityFunctionality.h" />
-    <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
     <ClInclude Include="Include\Utilities\CPP20\Span.h" />
     <ClInclude Include="Include\Utilities\CPP20\STDAliases.h" />
     <ClInclude Include="Include\Rendering\DebugRenderer.h" />

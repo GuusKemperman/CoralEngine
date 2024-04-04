@@ -23,7 +23,7 @@ namespace CE::Props
 
 	Description:
 		Set the class version. Can be used for assets that were saved in an old format.
-		See AssetLoadInfo::GetVersion()
+		See AssetLoadInfo::GetAssetVersion()
 
 	Example:
 		type.GetProperties().Set(Props::sVersion, 5)
@@ -181,4 +181,16 @@ namespace CE::Props
 		type.GetProperties().Add(Props::sEditorSystemDefaultOpenTag);
 	*/
 	static constexpr std::string_view sEditorSystemDefaultOpenTag = "sEditorSystemDefaultOpenTag";
+
+	/*
+Use on:
+	Classes deriving from CE::EditorSystem. The class must be default constructible.
+
+Description:
+	Automatically adds the system EVERY time the engine starts.
+
+Example:
+	type.GetProperties().Add(Props::sEditorSystemAlwaysOpenTag);
+*/
+	static constexpr std::string_view sEditorSystemAlwaysOpenTag = "sEditorSystemAlwaysOpenTag";
 }

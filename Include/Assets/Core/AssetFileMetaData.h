@@ -16,13 +16,12 @@ namespace CE
 		{
 			std::filesystem::path mImportedFile{};
 			uint32 mImporterVersion{};
+			bool mWereEditsMadeAfterImporting{};
 		};
 
-	private:
 		// If no version is provided, the current version is used.
-		AssetFileMetaData(std::string_view name, const MetaType& assetClass, uint32 version = std::numeric_limits<uint32>::max(), const std::optional<ImporterInfo>& importerInfo = std::nullopt);
+		AssetFileMetaData(std::string_view name, const MetaType& assetClass, uint32 assetVersion = std::numeric_limits<uint32>::max(), const std::optional<ImporterInfo>& importerInfo = std::nullopt);
 
-	public:
 		AssetFileMetaData(const AssetFileMetaData&) = default;
 		AssetFileMetaData(AssetFileMetaData&&) noexcept = default;
 
@@ -33,7 +32,10 @@ namespace CE
 
 		const std::string& GetName() const { return mAssetName; }
 		const MetaType& GetClass() const { return mClass; }
-		uint32 GetVersion() const { return mAssetVersion; }
+		uint32 GetAssetVersion() const { return mAssetVersion; }
+		uint32 GetMetaDataVersion() const { return mMetaDataVersion; }
+
+		static constexpr uint32 GetCurrentMetaDataVersion() { return sMetaDataVersion; }
 
 		const std::optional<ImporterInfo>& GetImporterInfo() const { return mImporterInfo; }
 
@@ -42,10 +44,11 @@ namespace CE
 		void WriteMetaData(std::ostream& toStream) const;
 
 		// Backwards compatibility
-		static std::optional<AssetFileMetaData> ReadMetaDataV0(std::istream& fromStream);
-		static std::optional<AssetFileMetaData> ReadMetaDataV1(std::istream& fromStream);
+		static std::optional<AssetFileMetaData> ReadMetaDataV0(std::istream& fromStream, uint32 version);
+		static std::optional<AssetFileMetaData> ReadMetaDataV1V2V3(std::istream& fromStream, uint32 version);
 
-		static constexpr uint32 sMetaDataVersion = 1;
+		static constexpr uint32 sMetaDataVersion = 3;
+		uint32 mMetaDataVersion{};
 		uint32 mAssetVersion{};
 		std::string mAssetName{};
 

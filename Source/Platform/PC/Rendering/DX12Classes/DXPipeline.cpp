@@ -6,15 +6,16 @@
 #pragma comment(lib, "d3dcompiler") // Automatically link with d3dcompiler.lib as we are using D3DCompile() below.
 #endif
 
-void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature* root, LPCWSTR name)
+ComPtr<ID3D12PipelineState> DXPipelineBuilder::Build(ComPtr<ID3D12Device5> device, const ComPtr<ID3D12RootSignature>& root, LPCWSTR name) const
 {
 	HRESULT hr;
+	ComPtr<ID3D12PipelineState> pipeline;
 
 	if (mComputeShaderBuffer == nullptr) {
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.InputLayout.NumElements = static_cast<UINT>(mInputs.size());
 		psoDesc.InputLayout.pInputElementDescs = mInputs.data();
-		psoDesc.pRootSignature = root->GetSignature().Get();
+		psoDesc.pRootSignature = root.Get();
 		psoDesc.VS.BytecodeLength = mVertexShaderSize;
 		psoDesc.VS.pShaderBytecode = mVertexShaderBuffer;
 		psoDesc.PS.BytecodeLength = mFragmentShaderSize;
@@ -38,13 +39,13 @@ void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature*
 		}
 		psoDesc.DSVFormat = mDepthFormat;
 		psoDesc.DepthStencilState = mDepth;
-		hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPipeline));
+		hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipeline));
 	}
 	else {
 		D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
-		psoDesc.pRootSignature = root->GetSignature().Get();
+		psoDesc.pRootSignature = root.Get();
 		psoDesc.CS = { reinterpret_cast<UINT8*>(mComputeShaderBuffer), mComputeShaderSize };
-		hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&mPipeline));
+		hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&pipeline));
 	}
 
 
@@ -52,62 +53,73 @@ void DXPipeline::CreatePipeline(ComPtr<ID3D12Device5> device, const DXSignature*
 		MessageBox(NULL, L"Failed to create default pipeline", L"FATAL ERROR!", MB_ICONERROR | MB_OK);
 		assert(false && "Failed to create default pipeline");
 	}
-	mPipeline->SetName(name);
+	pipeline->SetName(name);
+
+	return pipeline;
 }
 
-void DXPipeline::AddInput(LPCSTR name, DXGI_FORMAT format, const uint slot)
+DXPipelineBuilder& DXPipelineBuilder::AddInput(LPCSTR name, DXGI_FORMAT format, const uint32 slot)
 {
 	D3D12_INPUT_ELEMENT_DESC input;
 	input = { name, 0, format, slot, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	mInputs.push_back(input);
+	return *this;
 }
 
-void DXPipeline::SetRasterizer(const CD3DX12_RASTERIZER_DESC& rasterizer)
+DXPipelineBuilder& DXPipelineBuilder::SetRasterizer(const CD3DX12_RASTERIZER_DESC& rasterizer)
 {
 	mRast = rasterizer;
+	return *this;
 }
 
-void DXPipeline::SetBlendState(const CD3DX12_BLEND_DESC& blendState)
+DXPipelineBuilder& DXPipelineBuilder::SetBlendState(const CD3DX12_BLEND_DESC& blendState)
 {
 	mBlend = blendState;
+	return *this;
 }
 
-void DXPipeline::SetDepthState(const CD3DX12_DEPTH_STENCIL_DESC& depthStencil)
+DXPipelineBuilder& DXPipelineBuilder::SetDepthState(const CD3DX12_DEPTH_STENCIL_DESC& depthStencil)
 {
 	mDepth = depthStencil;
+	return *this;
 }
 
-void DXPipeline::SetVertexAndPixelShaders(LPVOID vsBuffer, SIZE_T vsSize, LPVOID psBuffer, SIZE_T psSize)
+DXPipelineBuilder& DXPipelineBuilder::SetVertexAndPixelShaders(LPVOID vsBuffer, SIZE_T vsSize, LPVOID psBuffer, SIZE_T psSize)
 {
 	mVertexShaderBuffer = vsBuffer;
 	mVertexShaderSize = vsSize;
 	mFragmentShaderBuffer = psBuffer;
 	mFragmentShaderSize = psSize;
+	return *this;
 }
 
-void DXPipeline::SetComputeShader(LPVOID computeShaderB, SIZE_T computeShaderS)
+DXPipelineBuilder& DXPipelineBuilder::SetComputeShader(LPVOID computeShaderB, SIZE_T computeShaderS)
 {
 	mComputeShaderBuffer = computeShaderB;
 	mComputeShaderSize = computeShaderS;
+	return *this;
 }
 
-void DXPipeline::SetMsaaCountAndQuality(uint count, uint quality)
+DXPipelineBuilder& DXPipelineBuilder::SetMsaaCountAndQuality(uint32 count, uint32 quality)
 {
 	mMsaaCount = count;
 	mMsaaQuality = quality;
+	return *this;
 }
 
-void DXPipeline::AddRenderTarget(DXGI_FORMAT format)
+DXPipelineBuilder& DXPipelineBuilder::AddRenderTarget(DXGI_FORMAT format)
 {
 	mRenderTargetFormats.push_back(format);
+	return *this;
 }
 
-void DXPipeline::SetPrimitiveTopology(const D3D12_PRIMITIVE_TOPOLOGY_TYPE& topology)
+DXPipelineBuilder& DXPipelineBuilder::SetPrimitiveTopology(const D3D12_PRIMITIVE_TOPOLOGY_TYPE& topology)
 {
 	mTopology = topology;
+	return *this;
 }
 
-ComPtr<ID3DBlob> DXPipeline::ShaderToBlob(const char* path, const char* shaderVersion, const char* functionName)
+ComPtr<ID3DBlob> DXPipelineBuilder::ShaderToBlob(const char* path, const char* shaderVersion, const char* functionName)
 {
     ComPtr<ID3DBlob> shader; // d3d blob for holding vertex shader bytecode
     ComPtr<ID3DBlob> errorBuff;

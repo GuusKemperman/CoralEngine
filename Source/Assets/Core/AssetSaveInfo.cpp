@@ -3,33 +3,14 @@
 
 #include "Core/AssetManager.h"
 #include "Assets/Core/AssetFileMetaData.h"
-#include "Meta/MetaType.h"
 #include "Utilities/ClassVersion.h"
 
-CE::AssetSaveInfo::AssetSaveInfo(const std::string& name, const MetaType& assetClass) :
-	mStream(std::ostringstream::binary)
-{
-	const AssetFileMetaData metaData{  name, assetClass, GetClassVersion(assetClass) };
-	metaData.WriteMetaData(mStream);
-}
-
 CE::AssetSaveInfo::AssetSaveInfo(const std::string& name, const MetaType& assetClass,
-	const std::filesystem::path& importedFromFile, uint32 importerVersion) :
-	mStream(std::ostringstream::binary)
+	const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo) :
+	mStream(std::ostringstream::binary),
+	mMetaData(name, assetClass, GetClassVersion(assetClass), importerInfo)
 {
-	const AssetFileMetaData metaData{ name, assetClass, GetClassVersion(assetClass), AssetFileMetaData::ImporterInfo{ importedFromFile, importerVersion } };
-	metaData.WriteMetaData(mStream);
-}
-
-CE::AssetSaveInfo::AssetSaveInfo(AssetSaveInfo&& other) noexcept :
-	mStream(std::move(other.mStream))
-{
-}
-
-CE::AssetSaveInfo& CE::AssetSaveInfo::operator=(AssetSaveInfo&& other) noexcept
-{
-	mStream = std::move(other.mStream);
-	return *this;
+	mMetaData.WriteMetaData(mStream);
 }
 
 bool CE::AssetSaveInfo::SaveToFile(const std::filesystem::path& path) const

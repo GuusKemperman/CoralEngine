@@ -8,6 +8,7 @@
 #include "Core/Editor.h"
 #include "Core/FileIO.h"
 #include "Core/Input.h"
+#include "EditorSystems/ImporterSystem.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Search.h"
@@ -38,7 +39,7 @@ namespace
 
 CE::ContentBrowserEditorSystem::ContentBrowserEditorSystem() :
 	EditorSystem("ContentBrowser"),
-	mFolderGraph(MakeFolderGraph(AssetManager::Get().GetAllAssets()))
+	mFolderGraph(MakeFolderGraph())
 {
 }
 
@@ -96,7 +97,7 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 }
 
 // Generated using chatgpt, but tbh it was so broken i am going to claim 50% of the credit
-std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEditorSystem::MakeFolderGraph(std::vector<WeakAsset<Asset>>&& assets)
+std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEditorSystem::MakeFolderGraph()
 {
     // Create the root folder to hold the top-level directories and files
     ContentFolder rootFolder{};
@@ -108,7 +109,7 @@ std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEdi
     const std::string gameAssets = FileIO::Get().GetPath(FileIO::Directory::GameAssets, "");
 
     // Iterate through the provided paths
-    for (auto& asset : assets)
+    for (WeakAsset<> asset : AssetManager::Get().GetAllAssets())
     {
         const std::string fullPath = asset.GetFileOfOrigin().value_or("Generated assets").string();
 
@@ -179,6 +180,35 @@ void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folde
         AssetManager::Get().MoveAsset(*receivedAsset, folder.mPath / receivedAsset->GetFileOfOrigin()->filename());
     }
 
+    std::string popUpName = Format("{}RightClickedDir", folder.mPath.string());
+
+    if (ImGui::IsItemClicked(1))
+    {
+        ImGui::OpenPopup(popUpName.c_str());
+    }
+
+    if (ImGui::BeginPopup(popUpName.c_str()))
+    {
+	    if (ImGui::MenuItem("Reimport"))
+	    {
+            std::function<void(const ContentFolder&)> importRecursive = [&importRecursive](const ContentFolder& folder)
+                {
+                    for (const WeakAsset<Asset>& asset : folder.mContent)
+                    {
+                        Reimport(asset);
+                    }
+
+                    for (const ContentFolder& child : folder.mChildren)
+                    {
+                        importRecursive(child);
+                    }
+                };
+            importRecursive(folder);
+	    }
+
+        ImGui::EndPopup();
+    }
+
     if (isOpen)
     {
         for (const ContentFolder& child : folder.mChildren)
@@ -200,34 +230,34 @@ void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folde
 
 void CE::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& asset) const
 {
-    if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetAssetClass().GetTypeId()))
+    if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetMetaData().GetClass().GetTypeId()))
     {
-        if (ImGui::Button(asset.GetName().c_str()))
+        if (ImGui::Button(asset.GetMetaData().GetName().c_str()))
         {
             OpenAsset(asset);
         }
     }
     else
     {
-        ImGui::TextUnformatted(asset.GetName().c_str());
+        ImGui::TextUnformatted(asset.GetMetaData().GetName().c_str());
     }
 
 
     if (ImGui::IsItemClicked(1))
     {
-        sRightClickedAsset = asset.GetName();
+        sRightClickedAsset = asset.GetMetaData().GetName();
         sWasAssetJustRightClicked = true;
     }
 
     // Looks scary because we may end up deleting the asset,
     // but a user can't drag an asset at the same time as they
     // click the delete button
-    DragDrop::SendAsset(asset.GetName());
+    DragDrop::SendAsset(asset.GetMetaData().GetName());
 
     if (ImGui::BeginItemTooltip())
     {
-        ImGui::Text("Name: %s", asset.GetName().c_str());
-        ImGui::Text("Type: %s", asset.GetAssetClass().GetName().c_str());
+        ImGui::Text("Name: %s", asset.GetMetaData().GetName().c_str());
+        ImGui::Text("Type: %s", asset.GetMetaData().GetClass().GetName().c_str());
 
         if (asset.GetFileOfOrigin().has_value())
         {
@@ -238,10 +268,10 @@ void CE::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& asset)
             ImGui::Text("Generated at runtime");
         }
 
-        if (const std::optional<std::filesystem::path> importedFromFile = asset.GetImportedFromFile();
-            importedFromFile.has_value())
+        if (const std::optional<AssetFileMetaData::ImporterInfo> importerInfo = asset.GetMetaData().GetImporterInfo();
+            importerInfo.has_value())
         {
-            ImGui::Text("Imported from: %s", importedFromFile->string().c_str());
+            ImGui::Text("Imported from: %s", importerInfo->mImportedFile.string().c_str());
         }
 
         ImGui::Text("NumOfReferences: %d", static_cast<int>(asset.NumOfReferences()));
@@ -460,20 +490,17 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
             }
         }
 
-
         ImGui::EndDisabled();
 
         ImGui::EndMenu();
     }
 
-
-    if (const std::optional<std::filesystem::path> importedFromFile = asset->GetImportedFromFile();
-        importedFromFile.has_value()
+    if (const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = asset->GetMetaData().GetImporterInfo();
+        importerInfo.has_value()
         && ImGui::MenuItem("Reimport"))
     {
-        AssetManager::Get().Import(importedFromFile.value());
+        Reimport(*asset);
     }
-
 
     if (ImGui::MenuItem("Delete", "Del")
         || input.WasKeyboardKeyPressed(Input::KeyboardKey::Delete))
@@ -483,6 +510,25 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
     }
 
     ImGui::EndPopup();
+}
+
+void CE::ContentBrowserEditorSystem::Reimport(const WeakAsset<Asset>& asset)
+{
+    if (!asset.GetMetaData().GetImporterInfo().has_value())
+    {
+        return;
+    }
+
+    ImporterSystem* importerSystem = Editor::Get().TryGetSystem<ImporterSystem>();
+
+    if (importerSystem != nullptr)
+    {
+        importerSystem->Import(asset.GetMetaData().GetImporterInfo()->mImportedFile, "Requested by user");
+    }
+    else
+    {
+        LOG(LogEditor, Error, "Could not import file, importer system does not exist!");
+    }
 }
 
 CE::MetaType CE::ContentBrowserEditorSystem::Reflect()
