@@ -4,7 +4,7 @@
 
 #include "Assets/Ability.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 

@@ -3,7 +3,7 @@
 
 #include "Meta/MetaTypeId.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 

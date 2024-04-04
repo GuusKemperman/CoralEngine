@@ -1,12 +1,12 @@
 #pragma once
 
-namespace Engine
+namespace CE
 {
 	template <class Derived>
 	class EngineSubsystem
 	{
 	protected:
-		friend class EngineClass;
+		friend class Engine;
 		EngineSubsystem() = default;  // If you declare a constructor, ALWAYS make it private!
 		virtual ~EngineSubsystem() = default;
 		EngineSubsystem(const EngineSubsystem&) = delete;

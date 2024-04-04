@@ -2,7 +2,7 @@
 #include "BasicDataTypes/Colors/ColorGradient.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class ParticleColorOverTimeComponent
 	{

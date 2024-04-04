@@ -6,7 +6,7 @@
 #include "Meta/MetaAny.h"
 #include "Meta/MetaFunc.h"
 
-namespace Engine
+namespace CE
 {
 	class Script;
 	class ScriptField;

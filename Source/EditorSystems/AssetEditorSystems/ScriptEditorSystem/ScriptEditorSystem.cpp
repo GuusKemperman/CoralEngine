@@ -11,14 +11,14 @@
 #include "Utilities/Imgui/ImguiHelpers.h"
 #include "Utilities/StringFunctions.h"
 
-Engine::ScriptEditorSystem::ScriptEditorSystem(Script&& asset) :
+CE::ScriptEditorSystem::ScriptEditorSystem(Script&& asset) :
 	AssetEditorSystem(std::move(asset))
 {
 	mLastUpToDateQueryData.mNodesThatCanBeCreated = GetAllNodesTheUserCanAdd();
 	mAsset.PostDeclarationRefresh();
 }
 
-Engine::ScriptEditorSystem::~ScriptEditorSystem()
+CE::ScriptEditorSystem::~ScriptEditorSystem()
 {
 	if (mQueryThread.joinable())
 	{
@@ -27,7 +27,7 @@ Engine::ScriptEditorSystem::~ScriptEditorSystem()
 	SelectFunction(nullptr);
 }
 
-void Engine::ScriptEditorSystem::Tick(const float deltaTime)
+void CE::ScriptEditorSystem::Tick(const float deltaTime)
 {
 	if (!Begin(ImGuiWindowFlags_MenuBar))
 	{
@@ -163,7 +163,7 @@ void Engine::ScriptEditorSystem::Tick(const float deltaTime)
 	End();
 }
 
-void Engine::ScriptEditorSystem::SelectFunction(ScriptFunc* func)
+void CE::ScriptEditorSystem::SelectFunction(ScriptFunc* func)
 {
 	if (TryGetSelectedFunc() == func)
 	{
@@ -207,7 +207,7 @@ void Engine::ScriptEditorSystem::SelectFunction(ScriptFunc* func)
 	LoadFunctionState();
 }
 
-void Engine::ScriptEditorSystem::SelectField(ScriptField* field)
+void CE::ScriptEditorSystem::SelectField(ScriptField* field)
 {
 	if (TryGetSelectedField() == field)
 	{
@@ -227,7 +227,7 @@ void Engine::ScriptEditorSystem::SelectField(ScriptField* field)
 	ASSERT(TryGetSelectedField() == field);
 }
 
-void Engine::ScriptEditorSystem::SaveState(std::ostream& toStream) const
+void CE::ScriptEditorSystem::SaveState(std::ostream& toStream) const
 {
 	AssetEditorSystem::SaveState(toStream);
 
@@ -252,7 +252,7 @@ void Engine::ScriptEditorSystem::SaveState(std::ostream& toStream) const
 	object.SaveToBinary(toStream);
 }
 
-void Engine::ScriptEditorSystem::LoadState(std::istream& fromStream)
+void CE::ScriptEditorSystem::LoadState(std::istream& fromStream)
 {
 	AssetEditorSystem::LoadState(fromStream);
 
@@ -285,7 +285,7 @@ void Engine::ScriptEditorSystem::LoadState(std::istream& fromStream)
 	}
 }
 
-void Engine::ScriptEditorSystem::NavigateTo(const ScriptLocation& location)
+void CE::ScriptEditorSystem::NavigateTo(const ScriptLocation& location)
 {
 	if (location.mNameOfScript != mAsset.GetName())
 	{
@@ -321,34 +321,34 @@ void Engine::ScriptEditorSystem::NavigateTo(const ScriptLocation& location)
 	}
 }
 
-const Engine::ScriptFunc* Engine::ScriptEditorSystem::TryGetSelectedFunc() const
+const CE::ScriptFunc* CE::ScriptEditorSystem::TryGetSelectedFunc() const
 {
 	return mIndexOfCurrentFunc < mAsset.GetFunctions().size() ? &mAsset.GetFunctions()[mIndexOfCurrentFunc] : nullptr;
 }
 
-Engine::ScriptFunc* Engine::ScriptEditorSystem::TryGetSelectedFunc()
+CE::ScriptFunc* CE::ScriptEditorSystem::TryGetSelectedFunc()
 {
 	return const_cast<ScriptFunc*>(const_cast<const ScriptEditorSystem&>(*this).TryGetSelectedFunc());
 }
 
-const Engine::ScriptField* Engine::ScriptEditorSystem::TryGetSelectedField() const
+const CE::ScriptField* CE::ScriptEditorSystem::TryGetSelectedField() const
 {
 	return mIndexOfCurrentField < mAsset.GetFields().size() ? &mAsset.GetFields()[mIndexOfCurrentField] : nullptr;
 }
 
-Engine::ScriptField* Engine::ScriptEditorSystem::TryGetSelectedField()
+CE::ScriptField* CE::ScriptEditorSystem::TryGetSelectedField()
 {
 	return const_cast<ScriptField*>(const_cast<const ScriptEditorSystem&>(*this).TryGetSelectedField());
 }
 
-Engine::MetaType Engine::ScriptEditorSystem::Reflect()
+CE::MetaType CE::ScriptEditorSystem::Reflect()
 {
 	return { MetaType::T<ScriptEditorSystem>{}, "ScriptEditorSystem",
 		MetaType::Base<AssetEditorSystem<Script>>{},
 		MetaType::Ctor<Script&&>{} };
 }
 
-std::vector<Engine::NodeId> Engine::ScriptEditorSystem::GetSelectedNodes() const
+std::vector<CE::NodeId> CE::ScriptEditorSystem::GetSelectedNodes() const
 {
 	std::vector<ax::NodeEditor::NodeId> selectedNodes{};
 	selectedNodes.resize(ax::NodeEditor::GetSelectedObjectCount());
@@ -357,7 +357,7 @@ std::vector<Engine::NodeId> Engine::ScriptEditorSystem::GetSelectedNodes() const
 	return { selectedNodes.data(), selectedNodes.data() + selectedNodes.size() };
 }
 
-std::vector<Engine::LinkId> Engine::ScriptEditorSystem::GetSelectedLinks() const
+std::vector<CE::LinkId> CE::ScriptEditorSystem::GetSelectedLinks() const
 {
 	std::vector<ax::NodeEditor::LinkId> selectedLinks{};
 	selectedLinks.resize(ax::NodeEditor::GetSelectedObjectCount());
@@ -366,40 +366,52 @@ std::vector<Engine::LinkId> Engine::ScriptEditorSystem::GetSelectedLinks() const
 	return { selectedLinks.data(), selectedLinks.data() + selectedLinks.size() };
 }
 
-void Engine::ScriptEditorSystem::ReadInput()
+void CE::ScriptEditorSystem::ReadInput()
 {
 	if (TryGetSelectedFunc() == nullptr)
 	{
 		return;
 	}
 
-	if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl) || Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
+	const Input& input = Input::Get();
+
+	if (input.IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl) || input.IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
 	{
-		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::C))
+		if (input.WasKeyboardKeyPressed(Input::KeyboardKey::C))
 		{
 			CopySelection();
 		}
-		else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
+		else if (input.WasKeyboardKeyPressed(Input::KeyboardKey::V))
 		{
 			Paste();
 		}
-		else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::D))
+		else if (input.WasKeyboardKeyPressed(Input::KeyboardKey::D))
 		{
 			DuplicateSelection();
 		}
-		else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::X))
+		else if (input.WasKeyboardKeyPressed(Input::KeyboardKey::X))
 		{
 			CutSelection();
 		}
+
+		for (const NodeTheUserCanAdd& node : mLastUpToDateQueryData.mNodesThatCanBeCreated)
+		{
+			if (node.mShortCut.has_value()
+				&& input.WasKeyboardKeyPressed(*node.mShortCut))
+			{
+				AddNewNode(node);
+			}
+		}
+
 	}
 
-	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Delete))
+	if (input.WasKeyboardKeyPressed(Input::KeyboardKey::Delete))
 	{
 		DeleteSelection();
 	}
 }
 
-void Engine::ScriptEditorSystem::DeleteSelection()
+void CE::ScriptEditorSystem::DeleteSelection()
 {
 	std::vector<NodeId> nodes = GetSelectedNodes();
 	std::vector<LinkId> links = GetSelectedLinks();
@@ -421,7 +433,7 @@ void Engine::ScriptEditorSystem::DeleteSelection()
 
 static constexpr std::string_view sClipboardScriptIdentifier = "A0B1ZZ";
 
-void Engine::ScriptEditorSystem::CopySelection()
+void CE::ScriptEditorSystem::CopySelection()
 {
 	const ScriptFunc* func = TryGetSelectedFunc();
 
@@ -474,19 +486,19 @@ void Engine::ScriptEditorSystem::CopySelection()
 	ImGui::SetClipboardText(clipBoardText.c_str());
 }
 
-void Engine::ScriptEditorSystem::CutSelection()
+void CE::ScriptEditorSystem::CutSelection()
 {
 	CopySelection();
 	DeleteSelection();
 }
 
-void Engine::ScriptEditorSystem::DuplicateSelection()
+void CE::ScriptEditorSystem::DuplicateSelection()
 {
 	CopySelection();
 	Paste(glm::vec2{ 50.0f });
 }
 
-void Engine::ScriptEditorSystem::Paste(std::optional<glm::vec2> offsetToOldPos)
+void CE::ScriptEditorSystem::Paste(std::optional<glm::vec2> offsetToOldPos)
 {
 	ScriptFunc* currentFunc = TryGetSelectedFunc();
 	const char* clipBoardCStr = ImGui::GetClipboardText();
@@ -590,7 +602,7 @@ void Engine::ScriptEditorSystem::Paste(std::optional<glm::vec2> offsetToOldPos)
 	}
 }
 
-void Engine::ScriptEditorSystem::SaveFunctionState() const
+void CE::ScriptEditorSystem::SaveFunctionState() const
 {
 	const ScriptFunc* selectedFunc = TryGetSelectedFunc();
 
@@ -605,7 +617,7 @@ void Engine::ScriptEditorSystem::SaveFunctionState() const
 	mCanvasRect[selectedFunc->GetName()] = { canvasRect.Min.x, canvasRect.Min.y, canvasRect.Max.x, canvasRect.Max.y };
 }
 
-void Engine::ScriptEditorSystem::LoadFunctionState()
+void CE::ScriptEditorSystem::LoadFunctionState()
 {
 	const ScriptFunc* selectedFunc = TryGetSelectedFunc();
 

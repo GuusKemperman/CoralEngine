@@ -1,7 +1,6 @@
 #include "Precomp.h"
 #include "Platform/PC/Rendering/SkinnedMeshPC.h"
 #include "Assets/Core/AssetLoadInfo.h"
-#include "Assets/Core/AssetSaveInfo.h"
 #include "Assets/Asset.h"
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
@@ -12,12 +11,12 @@
 
 namespace cereal
 {
-    inline void save(BinaryOutputArchive& ar, const Engine::BoneInfo& value)
+    inline void save(BinaryOutputArchive& ar, const CE::BoneInfo& value)
     {
         ar(value.mOffset, value.mId);
     }
 
-    inline void load(BinaryInputArchive& ar, Engine::BoneInfo& value)
+    inline void load(BinaryInputArchive& ar, CE::BoneInfo& value)
     {
         ar(value.mOffset, value.mId);
     }
@@ -35,7 +34,7 @@ enum SkinnedMeshFlags : uint8
     hasBoneWeights = 1 << 7
 };
 
-Engine::SkinnedMesh::SkinnedMesh(AssetLoadInfo& loadInfo) :
+CE::SkinnedMesh::SkinnedMesh(AssetLoadInfo& loadInfo) :
     Asset(loadInfo)
 {
     std::istream& str = loadInfo.GetStream();
@@ -168,9 +167,9 @@ Engine::SkinnedMesh::SkinnedMesh(AssetLoadInfo& loadInfo) :
     }
 }
 
-Engine::SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) noexcept = default;
+CE::SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) noexcept = default;
 
-void Engine::SkinnedMesh::DrawMesh() const
+void CE::SkinnedMesh::DrawMesh() const
 {
     if (mVertexBuffer == nullptr)
         return;
@@ -188,7 +187,7 @@ void Engine::SkinnedMesh::DrawMesh() const
 	commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
 }
 
-void Engine::SkinnedMesh::DrawMeshVertexOnly() const
+void CE::SkinnedMesh::DrawMeshVertexOnly() const
 {
     if (mVertexBuffer == nullptr)
         return;
@@ -203,7 +202,7 @@ void Engine::SkinnedMesh::DrawMeshVertexOnly() const
     commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
 }
 
-bool Engine::SkinnedMesh::LoadMesh(const char* indices, unsigned int indexCount, unsigned int sizeOfIndexType, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, const int* boneIds, const float* boneWeights, unsigned int vertexCount)
+bool CE::SkinnedMesh::LoadMesh(const char* indices, unsigned int indexCount, unsigned int sizeOfIndexType, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, const int* boneIds, const float* boneWeights, unsigned int vertexCount)
 {
 	if (indices == nullptr ||
 		indexCount == 0 ||

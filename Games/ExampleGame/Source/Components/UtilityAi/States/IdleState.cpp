@@ -6,33 +6,33 @@
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void Game::IdleState::OnAiTick(Engine::World&, entt::entity, float)
+void Game::IdleState::OnAiTick(CE::World&, entt::entity, float)
 {
 }
 
-float Game::IdleState::OnAiEvaluate(const Engine::World&, entt::entity)
+float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
 {
 	return 1.0f;
 }
 
-void Game::IdleState::OnAIStateEnterEvent(Engine::World& world, entt::entity owner)
+void Game::IdleState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 {
-	auto* navMeshAgent = world.GetRegistry().TryGet<Engine::NavMeshAgentComponent>(owner);
+	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
 	if (navMeshAgent == nullptr) { return; }
 
 	navMeshAgent->StopNavMesh();
 }
 
-Engine::MetaType Game::IdleState::Reflect()
+CE::MetaType Game::IdleState::Reflect()
 {
-	auto type = Engine::MetaType{Engine::MetaType::T<IdleState>{}, "IdleState"};
-	type.GetProperties().Add(Engine::Props::sIsScriptableTag);
+	auto type = CE::MetaType{CE::MetaType::T<IdleState>{}, "IdleState"};
+	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, Engine::sAITickEvent, &IdleState::OnAiTick);
-	BindEvent(type, Engine::sAIEvaluateEvent, &IdleState::OnAiEvaluate);
-	BindEvent(type, Engine::sAIStateEnterEvent, &IdleState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAITickEvent, &IdleState::OnAiTick);
+	BindEvent(type, CE::sAIEvaluateEvent, &IdleState::OnAiEvaluate);
+	BindEvent(type, CE::sAIStateEnterEvent, &IdleState::OnAIStateEnterEvent);
 
-	Engine::ReflectComponentType<IdleState>(type);
+	CE::ReflectComponentType<IdleState>(type);
 	return type;
 }

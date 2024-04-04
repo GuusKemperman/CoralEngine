@@ -1,7 +1,7 @@
 #pragma once
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	// TODO this class is a mess, requires a lot of cleanup
 	class Random

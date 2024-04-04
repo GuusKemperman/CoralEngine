@@ -3,7 +3,7 @@
 
 #include "Meta/MetaType.h"
 
-Engine::MetaType Engine::Importer::Reflect()
+CE::MetaType CE::Importer::Reflect()
 {
     return MetaType{ MetaType::T<Importer>{}, "Importer" };
 }

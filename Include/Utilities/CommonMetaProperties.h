@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine::Props
+namespace CE::Props
 {
 	/*
 	Use on:
@@ -23,7 +23,7 @@ namespace Engine::Props
 
 	Description:
 		Set the class version. Can be used for assets that were saved in an old format.
-		See AssetLoadInfo::GetVersion()
+		See AssetLoadInfo::GetAssetVersion()
 
 	Example:
 		type.GetProperties().Set(Props::sVersion, 5)
@@ -167,7 +167,7 @@ namespace Engine::Props
 
 	/*
 	Use on:
-		Classes deriving from Engine::EditorSystem. The class must be default constructible.
+		Classes deriving from CE::EditorSystem. The class must be default constructible.
 
 	Description:
 		Automatically adds the system the VERY FIRST time the engine starts.

@@ -1,9 +1,10 @@
 #pragma once
 #include "Rendering/ISubRenderer.h"
+#include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
 
-class DXPipeline;
+class DXPipelineBuilder;
 
-namespace Engine
+namespace CE
 {
     class World;
     class GPUWorld;
@@ -30,7 +31,6 @@ namespace Engine
         std::unique_ptr<DXPipeline> mPBRPipeline;
         std::unique_ptr<DXPipeline> mPBRSkinnedPipeline;
         std::unique_ptr<DXPipeline> mClusterGridPipeline;
-       // std::unique_ptr<DXPipeline> mCullClusterCSPipeline;
         std::unique_ptr<DXPipeline> mCullClusterPipeline;
         std::unique_ptr<DXPipeline> mCullClusterSkinnedMeshPipeline;
         std::unique_ptr<DXPipeline> mCompactClusterPipeline;

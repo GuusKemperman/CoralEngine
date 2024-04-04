@@ -6,14 +6,14 @@
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
 
-Engine::LogWindow::LogWindow() :
+CE::LogWindow::LogWindow() :
 	EditorSystem("LogWindow")
 {
 }
 
-Engine::LogWindow::~LogWindow() = default;
+CE::LogWindow::~LogWindow() = default;
 
-void Engine::LogWindow::Tick(const float)
+void CE::LogWindow::Tick(const float)
 {
 	if (Begin(mFlags))
 	{
@@ -24,17 +24,17 @@ void Engine::LogWindow::Tick(const float)
 	End();
 }
 
-void Engine::LogWindow::SaveState(std::ostream& toStream) const
+void CE::LogWindow::SaveState(std::ostream& toStream) const
 {
 	toStream << mAutoScroll;
 }
 
-void Engine::LogWindow::LoadState(std::istream& fromStream)
+void CE::LogWindow::LoadState(std::istream& fromStream)
 {
 	fromStream >> mAutoScroll;
 }
 
-void Engine::LogWindow::DisplayMenuBar()
+void CE::LogWindow::DisplayMenuBar()
 {
 	if (!ImGui::BeginMenuBar())
 	{
@@ -93,7 +93,7 @@ void Engine::LogWindow::DisplayMenuBar()
 	ImGui::EndMenuBar();
 }
 
-void Engine::LogWindow::DisplayWindowContents()
+void CE::LogWindow::DisplayWindowContents()
 {
 	const Logger& logger = Logger::Get();
 
@@ -162,7 +162,7 @@ void Engine::LogWindow::DisplayWindowContents()
 	}
 }
 
-Engine::MetaType Engine::LogWindow::Reflect()
+CE::MetaType CE::LogWindow::Reflect()
 {
 	MetaType type{MetaType::T<LogWindow>{}, "LogWindow", MetaType::Base<EditorSystem>{} };
 	type.GetProperties().Add(Props::sEditorSystemDefaultOpenTag);

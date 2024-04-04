@@ -4,14 +4,14 @@
 namespace Game
 {
 	class SpawnerSystem final :
-		public Engine::System
+		public CE::System
 	{
 	public:
-		void Update(Engine::World& world, float dt) override;
+		void Update(CE::World& world, float dt) override;
 
 	private:
-		friend Engine::ReflectAccess;
-		static Engine::MetaType Reflect();
+		friend CE::ReflectAccess;
+		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(SpawnerSystem);
 	};
 }

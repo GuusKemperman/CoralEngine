@@ -7,7 +7,7 @@
 #include "Utilities/Reflect/ReflectFieldType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
-using namespace Engine;
+using namespace CE;
 using T = uint32;
 REFLECT_AT_START_UP(ArrayOfT, std::vector<T>);
 

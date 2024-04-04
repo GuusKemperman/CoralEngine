@@ -6,7 +6,7 @@
 #ifdef EDITOR
 #include "Utilities/Imgui/ImguiInspect.h"
 
-void Engine::EnemyAiControllerComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
+void CE::EnemyAiControllerComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
 {
 	if (entities.size() > 1)
 	{
@@ -45,7 +45,7 @@ void Engine::EnemyAiControllerComponent::OnInspect(World& world, const std::vect
 }
 #endif // EDITOR
 
-Engine::MetaType Engine::EnemyAiControllerComponent::Reflect()
+CE::MetaType CE::EnemyAiControllerComponent::Reflect()
 {
 	auto type = MetaType{MetaType::T<EnemyAiControllerComponent>{}, "EnemyAIControllerComponent"};
 	MetaProps& props = type.GetProperties();

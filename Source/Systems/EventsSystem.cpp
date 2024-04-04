@@ -6,13 +6,13 @@
 #include "World/Registry.h"
 #include "World/World.h"
 
-namespace Engine
+namespace CE
 {
 	template <typename EventT, typename Functor>
 	static void CallEvent(World& world, const EventT& event, Functor&& functor);
 }
 
-void Engine::TickSystem::Update(World& world, float dt)
+void CE::TickSystem::Update(World& world, float dt)
 {
 	struct TickFunctor
 	{
@@ -39,7 +39,7 @@ void Engine::TickSystem::Update(World& world, float dt)
 	CallEvent(world, sTickEvent, TickFunctor{MetaAny{world}, MetaAny{dt}});
 }
 
-void Engine::FixedTickSystem::Update(World& world, float)
+void CE::FixedTickSystem::Update(World& world, float)
 {
 	struct FixedTickFunctor
 	{
@@ -64,7 +64,7 @@ void Engine::FixedTickSystem::Update(World& world, float)
 }
 
 template <typename EventT, typename Functor>
-void Engine::CallEvent(World& world, const EventT& event, Functor&& functor)
+void CE::CallEvent(World& world, const EventT& event, Functor&& functor)
 {
 	Registry& reg = world.GetRegistry();
 
@@ -122,12 +122,12 @@ void Engine::CallEvent(World& world, const EventT& event, Functor&& functor)
 	}
 }
 
-Engine::MetaType Engine::TickSystem::Reflect()
+CE::MetaType CE::TickSystem::Reflect()
 {
 	return MetaType{MetaType::T<TickSystem>{}, "TickSystem", MetaType::Base<System>{}};
 }
 
-Engine::MetaType Engine::FixedTickSystem::Reflect()
+CE::MetaType CE::FixedTickSystem::Reflect()
 {
 	return MetaType{MetaType::T<FixedTickSystem>{}, "FixedTickSystem", MetaType::Base<System>{}};
 }

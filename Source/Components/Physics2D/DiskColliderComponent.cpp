@@ -6,12 +6,12 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::TransformedDisk Engine::DiskColliderComponent::CreateTransformedCollider(const TransformComponent& transform) const
+CE::TransformedDisk CE::DiskColliderComponent::CreateTransformedCollider(const TransformComponent& transform) const
 {
 	return { transform.GetWorldPosition2D(), transform.GetWorldScaleUniform2D() * mRadius };
 }
 
-Engine::MetaType Engine::DiskColliderComponent::Reflect()
+CE::MetaType CE::DiskColliderComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<DiskColliderComponent>{}, "DiskColliderComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
@@ -39,9 +39,9 @@ Engine::MetaType Engine::DiskColliderComponent::Reflect()
 	return metaType;
 }
 
-Engine::MetaType Reflector<Engine::TransformedDisk>::Reflect()
+CE::MetaType Reflector<CE::TransformedDisk>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 
 	MetaType metaType = MetaType{ MetaType::T<TransformedDiskColliderComponent>{}, "TransformedDiskColliderComponent" };
 	metaType.GetProperties().Add(Props::sNoInspectTag).Add(Props::sNoSerializeTag);

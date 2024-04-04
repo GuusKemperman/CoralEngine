@@ -4,7 +4,7 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::MetaType Engine::ProjectileComponent::Reflect()
+CE::MetaType CE::ProjectileComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<ProjectileComponent>{}, "ProjectileComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);

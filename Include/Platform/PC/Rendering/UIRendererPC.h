@@ -7,7 +7,7 @@
 
 #include "Rendering/ISubRenderer.h"
 
-namespace Engine
+namespace CE
 {
     class Texture;
 
@@ -35,6 +35,6 @@ namespace Engine
         };
 
     private:
-        std::unique_ptr<DXPipeline> mPipeline;
+        ComPtr<ID3D12PipelineState> mPipeline;
     };
 }

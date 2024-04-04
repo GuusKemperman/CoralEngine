@@ -4,7 +4,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 
-using namespace Engine;
+using namespace CE;
 
 namespace
 {

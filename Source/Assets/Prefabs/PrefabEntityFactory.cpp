@@ -6,7 +6,7 @@
 #include "Components/TransformComponent.h"
 #include "Meta/MetaManager.h"
 
-Engine::PrefabEntityFactory::PrefabEntityFactory(Prefab& prefab, const BinaryGSONObject& allSerializedComponents,
+CE::PrefabEntityFactory::PrefabEntityFactory(Prefab& prefab, const BinaryGSONObject& allSerializedComponents,
 	entt::entity entityIdInSerializedComponents, uint32 factoryId, const PrefabEntityFactory* parent,
 	std::vector<std::reference_wrapper<const PrefabEntityFactory>>&& children) :
 	mPrefab(prefab),
@@ -40,7 +40,7 @@ Engine::PrefabEntityFactory::PrefabEntityFactory(Prefab& prefab, const BinaryGSO
 	}
 }
 
-const Engine::ComponentFactory* Engine::PrefabEntityFactory::TryGetComponentFactory(const MetaType& objectClass) const
+const CE::ComponentFactory* CE::PrefabEntityFactory::TryGetComponentFactory(const MetaType& objectClass) const
 {
 	const auto it = std::find_if(mComponentFactories.begin(), mComponentFactories.end(),
 	                             [&objectClass](const ComponentFactory& factory)

@@ -73,20 +73,20 @@ static inline glm::quat GetGLMQuat(const aiQuaternion& pOrientation)
 	return glm::quat(pOrientation.w, pOrientation.x, pOrientation.y, pOrientation.z);
 }
 
-void ReadHierarchyForAnimRecursive(const aiNode& node, Engine::AnimNode& dest)
+void ReadHierarchyForAnimRecursive(const aiNode& node, CE::AnimNode& dest)
 {
 	dest.mName = node.mName.C_Str();
 	dest.mTransform = glm::transpose(reinterpret_cast<const glm::mat4x4&>(node.mTransformation));
 
 	for (size_t j = 0; j < node.mNumChildren; j++)
 	{
-		Engine::AnimNode newNode;
+		CE::AnimNode newNode;
 		ReadHierarchyForAnimRecursive(*node.mChildren[j], newNode);
 		dest.mChildren.push_back(newNode);
 	}
 }
 
-std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(const std::filesystem::path& file) const
+std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const std::filesystem::path& file) const
 {
     Assimp::Importer importer{};
     const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_LimitBoneWeights | aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
@@ -123,7 +123,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 
 		int width{}, height{}, channels{};
 
-		const Engine::Span<char> pixels = { 
+		const CE::Span<char> pixels = { 
 			reinterpret_cast<char*>(stbi_load_from_memory(reinterpret_cast<const unsigned char*>(aiTex.pcData), size, &width, &height, &channels, 4)),
 			static_cast<unsigned int>(width * height * 4)};
 
@@ -518,7 +518,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 	return std::optional<std::vector<ImportedAsset>>{};
 }
 
-std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
+std::optional<CE::ImportedAsset> CE::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
     const std::string& name, 
     const uint32 importerVersion, 
     Span<const glm::vec3> positions, 
@@ -538,7 +538,7 @@ std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(con
     return std::optional<ImportedAsset>();
 }
 
-std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
+std::optional<CE::ImportedAsset> CE::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
     const std::string& name, 
     const uint32 importerVersion, 
     Span<const glm::vec3> positions, 
@@ -561,7 +561,7 @@ std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(con
     return std::optional<ImportedAsset>();
 }
 
-Engine::MetaType Engine::ModelImporter::Reflect()
+CE::MetaType CE::ModelImporter::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<ModelImporter>{}, "ModelImporter", MetaType::Base<Importer>{} };
 

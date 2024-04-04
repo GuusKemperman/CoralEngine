@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-namespace Engine
+namespace CE
 {
 	class ManyStrings
 	{

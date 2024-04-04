@@ -11,12 +11,12 @@
 #include "Systems/AbilitySystem.h"
 #include "World/World.h"
 
-Engine::Ability::Ability(std::string_view name) :
+CE::Ability::Ability(std::string_view name) :
 	Asset(name, MakeTypeId<Ability>())
 {
 }
 
-Engine::Ability::Ability(AssetLoadInfo& loadInfo) :
+CE::Ability::Ability(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {
 	BinaryGSONObject obj{};
@@ -57,7 +57,7 @@ Engine::Ability::Ability(AssetLoadInfo& loadInfo) :
 	*serializedCharges >> mCharges;
 }
 
-void Engine::Ability::OnSave(AssetSaveInfo& saveInfo) const
+void CE::Ability::OnSave(AssetSaveInfo& saveInfo) const
 {
 	BinaryGSONObject obj{};
 
@@ -72,7 +72,7 @@ void Engine::Ability::OnSave(AssetSaveInfo& saveInfo) const
 	obj.SaveToBinary(saveInfo.GetStream());
 }
 
-Engine::MetaType Engine::Ability::Reflect()
+CE::MetaType CE::Ability::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Ability>{}, "Ability", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 
@@ -99,9 +99,9 @@ Engine::MetaType Engine::Ability::Reflect()
 	return type;
 }
 
-Engine::MetaType Reflector<Engine::Ability::RequirementType>::Reflect()
+CE::MetaType Reflector<CE::Ability::RequirementType>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	using T = Ability::RequirementType;
 	MetaType type{ MetaType::T<T>{}, "Ability RequirementType" };
 

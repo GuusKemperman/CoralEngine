@@ -2,7 +2,7 @@
 #include "Assets/Prefabs/Prefab.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class ParticleSpawnPrefabOnDeathComponent
 	{

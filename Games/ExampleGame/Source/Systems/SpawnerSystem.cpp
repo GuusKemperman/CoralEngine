@@ -5,10 +5,10 @@
 #include "Components/TransformComponent.h"
 #include "World/Registry.h"
 
-void Game::SpawnerSystem::Update(Engine::World& world, float dt)
+void Game::SpawnerSystem::Update(CE::World& world, float dt)
 {
-	Engine::Registry& reg = world.GetRegistry();
-	auto spawnerView = reg.View<SpawnerComponent, Engine::TransformComponent>();
+	CE::Registry& reg = world.GetRegistry();
+	auto spawnerView = reg.View<SpawnerComponent, CE::TransformComponent>();
 	for (auto [spawnerID, spawnerComponent, spawnerTransform] : spawnerView.each())
 	{
 		if (spawnerComponent.mPrefab == nullptr)
@@ -25,7 +25,7 @@ void Game::SpawnerSystem::Update(Engine::World& world, float dt)
 		const entt::entity spawnedPrefab = reg.CreateFromPrefab(*spawnerComponent.mPrefab);
 		spawnerComponent.mCurrentTimer = 0;
 
-		Engine::TransformComponent* const spawnedTransform = reg.TryGet<Engine::TransformComponent>(spawnedPrefab);
+		CE::TransformComponent* const spawnedTransform = reg.TryGet<CE::TransformComponent>(spawnedPrefab);
 
 		if (spawnedTransform != nullptr)
 		{
@@ -34,7 +34,7 @@ void Game::SpawnerSystem::Update(Engine::World& world, float dt)
 	}
 }
 
-Engine::MetaType Game::SpawnerSystem::Reflect()
+CE::MetaType Game::SpawnerSystem::Reflect()
 {
-	return Engine::MetaType{Engine::MetaType::T<SpawnerSystem>{}, "SpawnerSystem", Engine::MetaType::Base<System>{}};
+	return CE::MetaType{CE::MetaType::T<SpawnerSystem>{}, "SpawnerSystem", CE::MetaType::Base<System>{}};
 }

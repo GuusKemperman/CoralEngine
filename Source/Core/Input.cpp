@@ -5,7 +5,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-Engine::MetaType Engine::Input::Reflect()
+CE::MetaType CE::Input::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Input>{}, "Input" };
 	type.GetProperties().Add(Props::sIsScriptableTag);
@@ -30,9 +30,9 @@ Engine::MetaType Engine::Input::Reflect()
 	return type;
 }
 
-Engine::MetaType Reflector<Engine::Input::KeyboardKey>::Reflect()
+CE::MetaType Reflector<CE::Input::KeyboardKey>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	using T = Input::KeyboardKey;
 	MetaType type{ MetaType::T<T>{}, "KeyboardKey" };
 
@@ -44,9 +44,9 @@ Engine::MetaType Reflector<Engine::Input::KeyboardKey>::Reflect()
 	return type;
 }
 
-Engine::MetaType Reflector<Engine::Input::GamepadAxis>::Reflect()
+CE::MetaType Reflector<CE::Input::GamepadAxis>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	using T = Input::GamepadAxis;
 	MetaType type{ MetaType::T<T>{}, "GamepadAxis" };
 
@@ -58,9 +58,9 @@ Engine::MetaType Reflector<Engine::Input::GamepadAxis>::Reflect()
 	return type;
 }
 
-Engine::MetaType Reflector<Engine::Input::GamepadButton>::Reflect()
+CE::MetaType Reflector<CE::Input::GamepadButton>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	using T = Input::GamepadButton;
 	MetaType type{ MetaType::T<T>{}, "GamepadButton" };
 
@@ -72,9 +72,9 @@ Engine::MetaType Reflector<Engine::Input::GamepadButton>::Reflect()
 	return type;
 }
 
-Engine::MetaType Reflector<Engine::Input::MouseButton>::Reflect()
+CE::MetaType Reflector<CE::Input::MouseButton>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	using T = Input::MouseButton;
 	MetaType type{ MetaType::T<T>{}, "MouseButton" };
 

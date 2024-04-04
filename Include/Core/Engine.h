@@ -1,12 +1,12 @@
 #pragma once
 
-namespace Engine
+namespace CE
 {
-	class EngineClass
+	class Engine
 	{
 	public:
-		EngineClass(int argc, char* argv[], std::string_view gameDir);
-		~EngineClass();
+		Engine(int argc, char* argv[], std::string_view gameDir);
+		~Engine();
 
 		void Run(Name starterLevel);
 	};

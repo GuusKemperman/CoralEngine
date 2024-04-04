@@ -9,7 +9,7 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Math.h"
 
-void Engine::ParticleColorSystem::Update(World& world, [[maybe_unused]] float dt)
+void CE::ParticleColorSystem::Update(World& world, [[maybe_unused]] float dt)
 {
 	const auto emitterView = world.GetRegistry().View<const ParticleEmitterComponent, ParticleColorComponent>();
 
@@ -29,7 +29,7 @@ void Engine::ParticleColorSystem::Update(World& world, [[maybe_unused]] float dt
 	}
 }
 
-Engine::MetaType Engine::ParticleColorSystem::Reflect()
+CE::MetaType CE::ParticleColorSystem::Reflect()
 {
 	return MetaType{ MetaType::T<ParticleColorSystem>{}, "ParticleColorSystem", MetaType::Base<System>{} };
 }

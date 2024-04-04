@@ -14,7 +14,7 @@
 #include "Core/VirtualMachine.h"
 #include "Scripting/ScriptEvents.h"
 
-namespace Engine::Internal
+namespace CE::Internal
 {
 	template <typename VectorType, typename IdType>
 	auto FindElement(VectorType& vec, IdType id)
@@ -38,19 +38,20 @@ namespace Engine::Internal
 	}
 }
 
-Engine::ScriptFunc::ScriptFunc(const Script& script, const std::string_view name) :
+CE::ScriptFunc::ScriptFunc(const Script& script, const std::string_view name) :
 	mName(name),
 	mNameOfScriptAsset(script.GetName()),
 	mTypeIdOfScript(Name::HashString(script.GetName()))
 {}
 
-Engine::ScriptFunc::ScriptFunc(const Script& script, const ScriptEvent& event) :
+CE::ScriptFunc::ScriptFunc(const Script& script, const ScriptEvent& event) :
 	mName(event.mBasedOnEvent.get().mName),
 	mNameOfScriptAsset(script.GetName()),
 	mTypeIdOfScript(Name::HashString(script.GetName())),
-	mReturns(event.mReturnValueToShowToUser.has_value() ? std::optional<ScriptVariableTypeData>{ ScriptVariableTypeData{ event.mReturnValueToShowToUser->mTypeTraits, event.mReturnValueToShowToUser->mName } } : std::nullopt),
+	mReturns(event.mReturnValueToShowToUser.has_value() ? 
+		std::optional<ScriptVariableTypeData> { ScriptVariableTypeData{ event.mReturnValueToShowToUser->mTypeTraits, event.mReturnValueToShowToUser->mName } } :
+		std::nullopt),
 	mBasedOnEvent(&event),
-	mIsPure(event.mBasedOnEvent.get().mIsPure),
 	mIsStatic(event.mBasedOnEvent.get().mIsAlwaysStatic)
 {
 	for (const MetaFuncNamedParam& param : event.mParamsToShowToUser)
@@ -59,7 +60,7 @@ Engine::ScriptFunc::ScriptFunc(const Script& script, const ScriptEvent& event) :
 	}
 }
 
-Engine::ScriptFunc::~ScriptFunc()
+CE::ScriptFunc::~ScriptFunc()
 {
 	for (ScriptNode& node : mNodes)
 	{
@@ -67,62 +68,57 @@ Engine::ScriptFunc::~ScriptFunc()
 	}
 }
 
-void Engine::ScriptFunc::DeclareMetaFunc(MetaType& addToType)
+void CE::ScriptFunc::DeclareMetaFunc(MetaType& addToType)
 {
-	MetaFunc* declaredFunc{};
-
 	if (IsEvent())
 	{
-		declaredFunc = &mBasedOnEvent->Declare(mTypeIdOfScript, addToType);
+		mBasedOnEvent->Declare(mTypeIdOfScript, addToType);
+		return;
 	}
-	else
+
+	std::vector<MetaFuncNamedParam> metaParams{};
+
+	for (ScriptVariableTypeData& scriptParam : GetParameters(false))
 	{
-		std::vector<MetaFuncNamedParam> metaParams{};
+		scriptParam.RefreshTypePointer();
 
-		for (ScriptVariableTypeData& scriptParam : GetParameters(false))
+		if (scriptParam.TryGetType() == nullptr)
 		{
-			scriptParam.RefreshTypePointer();
-
-			if (scriptParam.TryGetType() == nullptr)
-			{
-				VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, scriptParam.GetTypeName() });
-				continue;
-			}
-
-			metaParams.emplace_back(TypeTraits{ scriptParam.TryGetType()->GetTypeId(), scriptParam.GetTypeForm() }, scriptParam.GetName());
+			VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, scriptParam.GetTypeName() });
+			continue;
 		}
 
-		MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
-
-		if (mReturns.has_value())
-		{
-			if (mReturns->TryGetType() == nullptr)
-			{
-				VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, mReturns->GetTypeName() });
-			}
-			else
-			{
-				metaReturn = { { mReturns->TryGetType()->GetTypeId(), mReturns->GetTypeForm() }, mReturns->GetTypeName() };
-			}
-		}
-
-		declaredFunc = &addToType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
-			{
-				return { "There were unresolved compilation errors" };
-			},
-			mName,
-			metaReturn,
-			metaParams
-		);
-
-		declaredFunc->GetProperties().Set(Props::sIsScriptPure, IsPure());
-		
+		metaParams.emplace_back(TypeTraits{ scriptParam.TryGetType()->GetTypeId(), scriptParam.GetTypeForm() }, scriptParam.GetName());
 	}
-	
-	declaredFunc->GetProperties().Add(Props::sIsScriptableTag);
+
+	MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
+
+	if (mReturns.has_value())
+	{
+		if (mReturns->TryGetType() == nullptr)
+		{
+			VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, mReturns->GetTypeName() });
+		}
+		else
+		{
+			metaReturn = { { mReturns->TryGetType()->GetTypeId(), mReturns->GetTypeForm() }, mReturns->GetTypeName() };
+		}
+	}
+
+	MetaFunc& declaredFunc = addToType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
+		{
+			return { "There were unresolved compilation errors" };
+		},
+		mName,
+		metaReturn,
+		metaParams
+	);
+
+	declaredFunc.GetProperties().Set(Props::sIsScriptPure, IsPure());
 }
 
-void Engine::ScriptFunc::DefineMetaFunc(MetaFunc& func)
+
+void CE::ScriptFunc::DefineMetaFunc(MetaFunc& func)
 {
 	ASSERT(VirtualMachine::Get().GetErrors(*this).empty());
 
@@ -157,7 +153,7 @@ mNameOfScriptAsset);
 	}
 }
 
-std::vector<std::reference_wrapper<Engine::ScriptLink>> Engine::ScriptFunc::GetAllLinksConnectedToPin(PinId id)
+std::vector<std::reference_wrapper<CE::ScriptLink>> CE::ScriptFunc::GetAllLinksConnectedToPin(PinId id)
 {
 	std::vector<std::reference_wrapper<ScriptLink>> returnValue{};
 
@@ -172,7 +168,7 @@ std::vector<std::reference_wrapper<Engine::ScriptLink>> Engine::ScriptFunc::GetA
 	return returnValue;
 }
 
-std::vector<std::reference_wrapper<const Engine::ScriptLink>> Engine::ScriptFunc::GetAllLinksConnectedToPin(PinId id) const
+std::vector<std::reference_wrapper<const CE::ScriptLink>> CE::ScriptFunc::GetAllLinksConnectedToPin(PinId id) const
 {
 	std::vector<std::reference_wrapper<const ScriptLink>> returnValue{};
 
@@ -187,7 +183,7 @@ std::vector<std::reference_wrapper<const Engine::ScriptLink>> Engine::ScriptFunc
 	return returnValue;
 }
 
-std::vector<Engine::ScriptVariableTypeData> Engine::ScriptFunc::GetParameters(bool ignoreObjectInstanceIfMemberFunction) const
+std::vector<CE::ScriptVariableTypeData> CE::ScriptFunc::GetParameters(bool ignoreObjectInstanceIfMemberFunction) const
 {
 	std::vector<ScriptVariableTypeData> params{};
 
@@ -202,7 +198,7 @@ std::vector<Engine::ScriptVariableTypeData> Engine::ScriptFunc::GetParameters(bo
 	return params;
 }
 
-void Engine::ScriptFunc::CollectErrors(ScriptErrorInserter inserter, const Script& owningScript) const
+void CE::ScriptFunc::CollectErrors(ScriptErrorInserter inserter, const Script& owningScript) const
 {
 	ASSERT(owningScript.GetName() == mNameOfScriptAsset);
 
@@ -233,7 +229,7 @@ void Engine::ScriptFunc::CollectErrors(ScriptErrorInserter inserter, const Scrip
 			{
 				return event.mBasedOnEvent.get().mName == ourName;
 			}))
-	{ 
+	{
 		inserter = { ScriptError::Type::NameNotUnique, *this, Format("Name {} is reserved for the event of the same name", mName) };
 	}
 
@@ -288,7 +284,7 @@ void Engine::ScriptFunc::CollectErrors(ScriptErrorInserter inserter, const Scrip
 	}
 }
 
-Expected<std::reference_wrapper<const Engine::ScriptNode>, std::string> Engine::ScriptFunc::GetFirstNode() const
+Expected<std::reference_wrapper<const CE::ScriptNode>, std::string> CE::ScriptFunc::GetFirstNode() const
 {
 	Expected<const FunctionEntryScriptNode*, std::string> entryNode = GetEntryNode();
 
@@ -326,7 +322,7 @@ Expected<std::reference_wrapper<const Engine::ScriptNode>, std::string> Engine::
 	return { *firstNode };
 }
 
-Expected<const Engine::FunctionEntryScriptNode*, std::string> Engine::ScriptFunc::GetEntryNode() const
+Expected<const CE::FunctionEntryScriptNode*, std::string> CE::ScriptFunc::GetEntryNode() const
 {
 	uint32 numOfEntryNodes{};
 	const ScriptNode* funcEntry{};
@@ -350,7 +346,7 @@ Expected<const Engine::FunctionEntryScriptNode*, std::string> Engine::ScriptFunc
 	return { static_cast<const FunctionEntryScriptNode*>(funcEntry) };
 }
 
-std::tuple<Engine::Span<std::reference_wrapper<Engine::ScriptNode>>, Engine::Span<Engine::ScriptLink>, Engine::Span<Engine::ScriptPin>> Engine::ScriptFunc::AddCondensed(std::vector<std::unique_ptr<ScriptNode>>&& nodes,
+std::tuple<CE::Span<std::reference_wrapper<CE::ScriptNode>>, CE::Span<CE::ScriptLink>, CE::Span<CE::ScriptPin>> CE::ScriptFunc::AddCondensed(std::vector<std::unique_ptr<ScriptNode>>&& nodes,
 	std::vector<ScriptLink>&& links, std::vector<ScriptPin>&& pins)
 {
 	std::sort(pins.begin(), pins.end(), [](const ScriptPin& lhs, const ScriptPin& rhs)
@@ -490,7 +486,7 @@ std::tuple<Engine::Span<std::reference_wrapper<Engine::ScriptNode>>, Engine::Spa
 	return { { mNodes.data() + nodeSizeBefore, nodes.size() }, { mLinks.data() + linkSizeBefore, links.size() }, { mPins.data() + pinSizeBefore, pins.size() } };
 }
 
-void Engine::ScriptFunc::PostDeclarationRefresh()
+void CE::ScriptFunc::PostDeclarationRefresh()
 {
 	for (ScriptVariableTypeData& param : mParams)
 	{
@@ -515,7 +511,7 @@ void Engine::ScriptFunc::PostDeclarationRefresh()
 
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
 
-Engine::ScriptLink* Engine::ScriptFunc::TryAddLink(const ScriptPin& pinA, const ScriptPin& pinB)
+CE::ScriptLink* CE::ScriptFunc::TryAddLink(const ScriptPin& pinA, const ScriptPin& pinB)
 {
 	if (!CanCreateLink(pinA, pinB))
 	{
@@ -559,8 +555,7 @@ Engine::ScriptLink* Engine::ScriptFunc::TryAddLink(const ScriptPin& pinA, const 
 	return &mLinks.emplace_back(static_cast<LinkId::ValueType>(mLinks.size() + 1), *inputPin, *outputPin);
 }
 
-
-void Engine::ScriptFunc::RemoveNode(NodeId nodeId)
+void CE::ScriptFunc::RemoveNode(NodeId nodeId)
 {
 	ScriptNode* node = TryGetNode(nodeId);
 
@@ -581,7 +576,7 @@ void Engine::ScriptFunc::RemoveNode(NodeId nodeId)
 #endif // ASSERTS_ENABLED
 }
 
-void Engine::ScriptFunc::RemoveLink(LinkId linkId)
+void CE::ScriptFunc::RemoveLink(LinkId linkId)
 {
 	ScriptLink* link = TryGetLink(linkId);
 
@@ -610,8 +605,7 @@ void Engine::ScriptFunc::RemoveLink(LinkId linkId)
 #endif // ASSERTS_ENABLED
 }
 
-
-void Engine::ScriptFunc::FreePins(PinId firstPin, uint32 amount)
+void CE::ScriptFunc::FreePins(PinId firstPin, uint32 amount)
 {
 	auto it = Internal::FindElement(mPins, firstPin);
 	ASSERT(it != mPins.end());
@@ -648,23 +642,23 @@ void Engine::ScriptFunc::FreePins(PinId firstPin, uint32 amount)
 #endif // ASSERTS_ENABLED
 }
 
-bool Engine::Internal::IsNull(const ScriptLink& link)
+bool CE::Internal::IsNull(const ScriptLink& link)
 {
 	return link.GetId() == LinkId::Invalid;
 }
 
-bool Engine::Internal::IsNull(const ScriptPin& pin)
+bool CE::Internal::IsNull(const ScriptPin& pin)
 {
 	return pin.GetId() == PinId::Invalid;
 }
 
-bool Engine::Internal::IsNull(const ScriptNode& node)
+bool CE::Internal::IsNull(const ScriptNode& node)
 {
 	return node.GetId() == NodeId::Invalid;
 }
 #endif // REMOVE_FROM_SCRIPTS_ENABLED
 
-void Engine::ScriptFunc::SerializeTo(BinaryGSONObject& object) const
+void CE::ScriptFunc::SerializeTo(BinaryGSONObject& object) const
 {
 	if (IsEvent())
 	{
@@ -699,7 +693,7 @@ void Engine::ScriptFunc::SerializeTo(BinaryGSONObject& object) const
 	}
 }
 
-std::optional<Engine::ScriptFunc> Engine::ScriptFunc::DeserializeFrom(const BinaryGSONObject& object, const Script& owningScript, const uint32 version)
+std::optional<CE::ScriptFunc> CE::ScriptFunc::DeserializeFrom(const BinaryGSONObject& object, const Script& owningScript, const uint32 version)
 {
 	const BinaryGSONObject* linksObj = object.TryGetGSONObject("links");
 	const BinaryGSONObject* nodesObj = object.TryGetGSONObject("nodes");
@@ -804,7 +798,7 @@ std::optional<Engine::ScriptFunc> Engine::ScriptFunc::DeserializeFrom(const Bina
 	return returnValue;
 }
 
-Engine::Span<Engine::ScriptPin> Engine::ScriptFunc::AllocPins(NodeId calledFrom,
+CE::Span<CE::ScriptPin> CE::ScriptFunc::AllocPins(NodeId calledFrom,
 	std::vector<ScriptVariableTypeData>&& inputs, std::vector<ScriptVariableTypeData>&& outputs)
 {
 	const size_t currentSize = mPins.size();
@@ -822,39 +816,38 @@ Engine::Span<Engine::ScriptPin> Engine::ScriptFunc::AllocPins(NodeId calledFrom,
 	return { &mPins[currentSize], inputs.size() + outputs.size() };
 }
 
-Engine::ScriptNode* Engine::ScriptFunc::TryGetNode(NodeId id)
+CE::ScriptNode* CE::ScriptFunc::TryGetNode(NodeId id)
 {
 	auto it = Internal::FindElement(mNodes, id);
 	return it == mNodes.end() ? nullptr : &it->get();
 }
 
-const Engine::ScriptNode* Engine::ScriptFunc::TryGetNode(NodeId id) const
+const CE::ScriptNode* CE::ScriptFunc::TryGetNode(NodeId id) const
 {
 	auto it = Internal::FindElement(mNodes, id);
 	return it == mNodes.end() ? nullptr : &it->get();
 }
 
-Engine::ScriptLink* Engine::ScriptFunc::TryGetLink(LinkId id)
+CE::ScriptLink* CE::ScriptFunc::TryGetLink(LinkId id)
 {
 	auto it = Internal::FindElement(mLinks, id);
 	return it == mLinks.end() ? nullptr : &*it;
 }
 
-const Engine::ScriptLink* Engine::ScriptFunc::TryGetLink(LinkId id) const
+const CE::ScriptLink* CE::ScriptFunc::TryGetLink(LinkId id) const
 {
 	auto it = Internal::FindElement(mLinks, id);
 	return it == mLinks.end() ? nullptr : &*it;
 }
 
-Engine::ScriptPin* Engine::ScriptFunc::TryGetPin(PinId id)
+CE::ScriptPin* CE::ScriptFunc::TryGetPin(PinId id)
 {
 	auto it = Internal::FindElement(mPins, id);
 	return it == mPins.end() ? nullptr : &*it;
 }
 
-const Engine::ScriptPin* Engine::ScriptFunc::TryGetPin(PinId id) const
+const CE::ScriptPin* CE::ScriptFunc::TryGetPin(PinId id) const
 {
 	auto it = Internal::FindElement(mPins, id);
 	return it == mPins.end() ? nullptr : &*it;
 }
-

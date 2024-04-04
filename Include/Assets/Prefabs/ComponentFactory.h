@@ -3,7 +3,7 @@
 
 #include "Meta/MetaAny.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaField;
 	class Registry;

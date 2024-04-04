@@ -12,9 +12,9 @@ struct GLFWwindow;
 struct GLFWmonitor;
 class DXDescHeap;
 
-namespace Engine
+namespace CE
 {
-    class EngineClass;
+    class Engine;
 
 	class Device final : 
         public EngineSubsystem<Device>
@@ -35,9 +35,9 @@ namespace Engine
         void* GetCommandList() { return mCommandList.Get(); }
         void* GetUploadCommandList() { return mUploadCommandList.Get(); }
         void* GetCommandQueue() { return mCommandQueue.Get(); }
-        void* GetSignature() { return mSignature.get(); }
-        void* GetComputeSignature() { return mComputeSignature.get(); }
-        void* GetMipmapPipeline() { return mGenMipmapsPipeline.get(); }
+        void* GetSignature() { return mSignature.Get(); }
+        void* GetComputeSignature() { return mComputeSignature.Get(); }
+        void* GetMipmapPipeline() { return mGenMipmapsPipeline.Get(); }
 
 #ifdef EDITOR
         void CreateImguiContext();
@@ -65,9 +65,9 @@ namespace Engine
 
 
     private:
-        friend EngineClass;
+        friend Engine;
 
-        // Set to true by EngineClass if in unit_test mode.
+        // Set to true by Engine if in unit_test mode.
         static inline bool sIsHeadless{};
 
         void InitializeWindow();
@@ -120,9 +120,9 @@ namespace Engine
 
         ComPtr<IDXGISwapChain3> mSwapChain;
         ComPtr<ID3D12Device5> mDevice;
-        std::unique_ptr<DXSignature> mSignature;
-        std::unique_ptr<DXSignature> mComputeSignature;
-        std::unique_ptr<DXPipeline> mGenMipmapsPipeline;
+        ComPtr<ID3D12RootSignature> mSignature;
+        ComPtr<ID3D12RootSignature> mComputeSignature;
+        ComPtr<ID3D12PipelineState> mGenMipmapsPipeline;
 
         DXHeapHandle mRenderTargetHandles[FRAME_BUFFER_COUNT];
         DXHeapHandle mDepthHandle;

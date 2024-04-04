@@ -5,7 +5,7 @@
 #include "DX12Classes/DXResource.h"
 #include "DX12Classes/DXHeapHandle.h"
 
-namespace Engine
+namespace CE
 {
 	class MyShader;
 

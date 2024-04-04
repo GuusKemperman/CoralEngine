@@ -5,7 +5,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-Engine::MetaType Engine::LinearColor::Reflect()
+CE::MetaType CE::LinearColor::Reflect()
 {
     MetaType type = MetaType{ MetaType::T<LinearColor>{}, "LinearColor" };
     type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);

@@ -1,7 +1,8 @@
 #pragma once
 #include "Meta/MetaReflect.h"
+#include "Rendering/SkinnedMeshDefines.h"
 
-namespace Engine
+namespace CE
 {
     class SkinnedMesh;
     class Animation;
@@ -16,8 +17,8 @@ namespace Engine
 
         std::shared_ptr<const Material> mMaterial{};
 
-        std::vector<glm::mat4x4> mFinalBoneMatrices{128, glm::mat4x4(1.0f)};
-        float mCurrentTime = 0.0;
+        std::vector<glm::mat4x4> mFinalBoneMatrices{MAX_BONES, glm::mat4x4(1.0f)};
+        float mCurrentTime = 0.0f;
 
     private:
         friend ReflectAccess;

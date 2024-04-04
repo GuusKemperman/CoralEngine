@@ -3,6 +3,7 @@
 // But the functionality has been divided into seperate .cpp files,
 // since the amount of code made it hard to find what you needed when
 // it was all in one file.
+#include "BasicDataTypes/Colors/LinearColor.h"
 #include "EditorSystems/AssetEditorSystems/ScriptEditorSystem.h"
 
 #include "Core/VirtualMachine.h"
@@ -11,7 +12,7 @@
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Scripting/Nodes/CommentScriptNode.h"
 
-namespace Engine
+namespace CE
 {
 	struct ParamWrapper
 	{
@@ -27,9 +28,9 @@ namespace Engine
 	};
 }
 
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::ParamWrapper, var.DisplayInspectUI(name);)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::ParamWrapper, var.DisplayInspectUI(name);)
 
-void Engine::ScriptEditorSystem::DisplayDetailsPanel()
+void CE::ScriptEditorSystem::DisplayDetailsPanel()
 {
 	ScriptFunc* func = TryGetSelectedFunc();
 	ScriptField* field = TryGetSelectedField();
@@ -64,7 +65,7 @@ void Engine::ScriptEditorSystem::DisplayDetailsPanel()
 }
 
 
-void Engine::ScriptEditorSystem::DisplayFunctionDetails(ScriptFunc& func)
+void CE::ScriptEditorSystem::DisplayFunctionDetails(ScriptFunc& func)
 {
 	std::string funcName = func.GetName();
 
@@ -139,7 +140,7 @@ void Engine::ScriptEditorSystem::DisplayFunctionDetails(ScriptFunc& func)
 	}
 }
 
-void Engine::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
+void CE::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
 {
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
 
@@ -151,10 +152,19 @@ void Engine::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
 
 		std::string comment = asComment.GetComment();
 
-		if (ShowInspectUI("Comment: ", comment))
+		if (ShowInspectUI("Comment", comment))
 		{
 			asComment.SetComment(comment);
 		}
+
+		LinearColor col = asComment.GetColour();
+
+		if (ShowInspectUI("Colour", col))
+		{
+			asComment.SetColour(col);
+		}
+
+		return;
 	}
 
 	for (ScriptPin& inputPin : node.GetInputs(currentFunc))
@@ -179,7 +189,7 @@ void Engine::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
 	ImGui::PopStyleColor();
 }
 
-void Engine::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
+void CE::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
 {
 	// Reduce code reptition
 	std::string memberName = field.GetName();
@@ -202,7 +212,7 @@ void Engine::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
 	ShowInspectUI("Default value", field.GetDefaultValue());
 }
 
-void Engine::ParamWrapper::DisplayInspectUI(const std::string&)
+void CE::ParamWrapper::DisplayInspectUI(const std::string&)
 {
 	std::string paramName = mParam.GetName();
 	if (ShowInspectUI("Name", paramName))

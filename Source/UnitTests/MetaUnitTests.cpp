@@ -8,15 +8,15 @@
 #include "Meta/MetaTypeTraits.h"
 #include "Core/UnitTests.h"
 
-static_assert(Engine::MakeTypeTraits<const void*>().mForm == Engine::TypeForm::ConstPtr);
-static_assert(Engine::MakeTypeTraits<const int&>().mForm == Engine::TypeForm::ConstRef);
-static_assert(Engine::MakeTypeTraits<int>().mForm == Engine::TypeForm::Value);
-static_assert(Engine::MakeTypeTraits<int&&>().mForm == Engine::TypeForm::RValue);
+static_assert(CE::MakeTypeTraits<const void*>().mForm == CE::TypeForm::ConstPtr);
+static_assert(CE::MakeTypeTraits<const int&>().mForm == CE::TypeForm::ConstRef);
+static_assert(CE::MakeTypeTraits<int>().mForm == CE::TypeForm::Value);
+static_assert(CE::MakeTypeTraits<int&&>().mForm == CE::TypeForm::RValue);
 
-static_assert(Engine::MakeFuncId<void(void*)>() == Engine::MakeFuncId<void(void*)>());
-static_assert(Engine::MakeFuncId<void(int)>() == Engine::MakeFuncId<void(int)>());
+static_assert(CE::MakeFuncId<void(void*)>() == CE::MakeFuncId<void(void*)>());
+static_assert(CE::MakeFuncId<void(int)>() == CE::MakeFuncId<void(int)>());
 
-using namespace Engine;
+using namespace CE;
 
 UNIT_TEST(Meta, FunctionHash)
 {
@@ -32,24 +32,24 @@ UNIT_TEST(Meta, FunctionHash)
 		return UnitTest::Failure;
 	}
 
-	if (intType->GetTypeId() != Engine::MakeTypeId<int32>())
+	if (intType->GetTypeId() != CE::MakeTypeId<int32>())
 	{
 		return UnitTest::Failure;
 	}
 
-	if (floatType->GetTypeId() != Engine::MakeTypeId<float32>())
+	if (floatType->GetTypeId() != CE::MakeTypeId<float32>())
 	{
 		return UnitTest::Failure;
 	}
 
-	if (mat4->GetTypeId() != Engine::MakeTypeId<glm::mat4>())
+	if (mat4->GetTypeId() != CE::MakeTypeId<glm::mat4>())
 	{
 		return UnitTest::Failure;
 	}
 
 	const MetaFunc func1{ [](int32, float32) -> glm::mat4 { return {}; }, "func1",  MetaFunc::ExplicitParams<int32, float32>{} };
 
-	if (func1.GetFuncId() != Engine::MakeFuncId<glm::mat4(int32, float32)>())
+	if (func1.GetFuncId() != CE::MakeFuncId<glm::mat4(int32, float32)>())
 	{
 		return UnitTest::Failure;
 	}

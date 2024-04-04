@@ -7,7 +7,7 @@
 #include "Scripting/Nodes/ReroutScriptNode.h"
 #include "GSON/GSONBinary.h"
 
-Engine::ScriptLink::ScriptLink(LinkId id, const ScriptPin& pinA, const ScriptPin& pinB) :
+CE::ScriptLink::ScriptLink(LinkId id, const ScriptPin& pinA, const ScriptPin& pinB) :
 	mId(id),
 	mInput(pinA.IsInput() ? pinA.GetId() : pinB.GetId()),
 	mOutput(pinA.IsOutput() ? pinA.GetId() : pinB.GetId())
@@ -15,7 +15,7 @@ Engine::ScriptLink::ScriptLink(LinkId id, const ScriptPin& pinA, const ScriptPin
 	ASSERT(CanCreateLink(pinA, pinB));
 }
 
-void Engine::ScriptLink::SerializeTo(BinaryGSONObject& dest) const
+void CE::ScriptLink::SerializeTo(BinaryGSONObject& dest) const
 {
 	static_assert(std::is_trivially_copyable_v<LinkId>);
 	dest.AddGSONMember("id") << mId.Get();
@@ -23,7 +23,7 @@ void Engine::ScriptLink::SerializeTo(BinaryGSONObject& dest) const
 	dest.AddGSONMember("output") << mOutput.Get();
 }
 
-std::optional<Engine::ScriptLink> Engine::ScriptLink::DeserializeFrom(const BinaryGSONObject& src)
+std::optional<CE::ScriptLink> CE::ScriptLink::DeserializeFrom(const BinaryGSONObject& src)
 {
 	const BinaryGSONMember* id = src.TryGetGSONMember("id");
 	const BinaryGSONMember* input = src.TryGetGSONMember("input");
@@ -53,7 +53,7 @@ std::optional<Engine::ScriptLink> Engine::ScriptLink::DeserializeFrom(const Bina
 	return link;
 }
 
-void Engine::ScriptLink::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
+void CE::ScriptLink::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
 {
 	const ScriptPin* const inputPin = scriptFunc.TryGetPin(mInput);
 	const ScriptPin* const outputPin = scriptFunc.TryGetPin(mOutput);
@@ -109,7 +109,7 @@ void Engine::ScriptLink::CollectErrors(ScriptErrorInserter inserter, const Scrip
 	}
 }
 
-void Engine::ScriptLink::GetReferencesToIds(ScriptIdInserter inserter)
+void CE::ScriptLink::GetReferencesToIds(ScriptIdInserter inserter)
 {
 	inserter = mId;
 	inserter = mInput;

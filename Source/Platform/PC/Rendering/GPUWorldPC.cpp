@@ -21,13 +21,12 @@
 #include "Platform/PC/Core/DevicePC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
 
-
-Engine::DebugRenderingData::DebugRenderingData()
+CE::DebugRenderingData::DebugRenderingData()
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
-    uint bufferSize = sizeof(glm::vec3) * MAX_LINE_VERTICES;
+    uint32 bufferSize = sizeof(glm::vec3) * MAX_LINE_VERTICES;
     mVertexPositionBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
         CD3DX12_RESOURCE_DESC::Buffer(bufferSize), nullptr, "Line vertex position buffer");
     mVertexPositionBuffer->CreateUploadBuffer(device, bufferSize, 0);
@@ -49,9 +48,9 @@ Engine::DebugRenderingData::DebugRenderingData()
     mColors.resize(MAX_LINE_VERTICES);
 }
 
-Engine::DebugRenderingData::~DebugRenderingData() = default;
+CE::DebugRenderingData::~DebugRenderingData() = default;
 
-Engine::UIRenderingData::UIRenderingData()
+CE::UIRenderingData::UIRenderingData()
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
@@ -121,7 +120,7 @@ Engine::UIRenderingData::UIRenderingData()
     engineDevice.SubmitUploadCommands();
 }
 
-Engine::GPUWorld::GPUWorld(const World& world)
+CE::GPUWorld::GPUWorld(const World& world)
     :
     IGPUWorld::IGPUWorld(world)
 {
@@ -255,19 +254,24 @@ Engine::GPUWorld::GPUWorld(const World& world)
     mClusterGrid = glm::ivec3(16, 8, 24);
 }
 
-Engine::GPUWorld::~GPUWorld() = default;
+CE::GPUWorld::~GPUWorld() = default;
 
-void Engine::GPUWorld::Update()
+void CE::GPUWorld::Update()
 {
     Device& engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
 
     // Get main camera
-    const auto optionalEntityCameraPair = mWorld.get().GetViewport().GetMainCamera();
-    ASSERT_LOG(optionalEntityCameraPair.has_value(), "DX12 draw requests have been made, but they cannot be cleared as there is no camera to draw them to");
+    entt::entity cameraOwner = CameraComponent::GetSelected(mWorld);
+
+    if (cameraOwner == entt::null)
+    {
+        return;
+    }
+
+    const CameraComponent& camera = mWorld.get().GetRegistry().Get<const CameraComponent>(cameraOwner);
 
     // Update camera
-    const auto camera = optionalEntityCameraPair->second;
     InfoStruct::DXMatrixInfo matrixInfo{};
     matrixInfo.pm = glm::transpose(camera.GetProjection());
     matrixInfo.vm = glm::transpose(camera.GetView());
@@ -378,6 +382,17 @@ void Engine::GPUWorld::Update()
                 materialInfo.useOcclusionTex = false;
 
             }
+
+            float uvScale = staticMeshComponent.mTiling;
+
+            if(staticMeshComponent.mTilesWithMeshScale)
+            {
+                float meshScale = transformComponent.GetWorldScaleUniform();
+                float scaleFactor = meshScale < 1 && meshScale >0 ? 1 / meshScale : meshScale;
+                uvScale *= scaleFactor;
+            }
+
+            materialInfo.uvScale = glm::vec4(uvScale, uvScale, 1.f, 1.f);
 
             mConstBuffers[InfoStruct::MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
             meshCounter++;
@@ -491,7 +506,7 @@ void Engine::GPUWorld::ReadGridData(std::vector<InfoStruct::Clustering::DXAABB>&
     mStructuredBuffers[InfoStruct::GRID_READBACK_RESOURCE]->Get()->Unmap(0, nullptr);
 }
 
-void Engine::GPUWorld::SendMaterialTexturesToGPU(const Engine::Material& mat)
+void CE::GPUWorld::SendMaterialTexturesToGPU(const CE::Material& mat)
 {
     if (mat.mBaseColorTexture != nullptr
         && mat.mBaseColorTexture->IsReadyToBeSentToGpu())

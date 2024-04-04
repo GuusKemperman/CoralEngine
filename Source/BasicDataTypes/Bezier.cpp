@@ -5,7 +5,7 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-float Engine::Bezier::GetSurfaceAreaBetweenFast(const float t1, const float t2) const
+float CE::Bezier::GetSurfaceAreaBetweenFast(const float t1, const float t2) const
 {
 	const float v1 = GetValueAt(t1);
 	const float v2 = GetValueAt(t2);
@@ -16,7 +16,7 @@ float Engine::Bezier::GetSurfaceAreaBetweenFast(const float t1, const float t2) 
 	return avg * dt;
 }
 
-float Engine::Bezier::GetSurfaceAreaBetween(float t1, const float t2, const float stepSize) const
+float CE::Bezier::GetSurfaceAreaBetween(float t1, const float t2, const float stepSize) const
 {
 	float total{};
 
@@ -34,7 +34,7 @@ float Engine::Bezier::GetSurfaceAreaBetween(float t1, const float t2, const floa
 #ifdef EDITOR
 
 
-void Engine::Bezier::DisplayWidget(const char* label)
+void CE::Bezier::DisplayWidget(const char* label)
 {
 	if (!ImGui::TreeNode(label))
 	{
@@ -73,7 +73,7 @@ void Engine::Bezier::DisplayWidget(const char* label)
 	ImGui::TreePop();
 }
 
-void Engine::Bezier::DisplayWidget(const char* label) const
+void CE::Bezier::DisplayWidget(const char* label) const
 {
 	if (ImGui::TreeNode(label))
 	{
@@ -83,7 +83,7 @@ void Engine::Bezier::DisplayWidget(const char* label) const
 }
 #endif // EDITOR
 
-Engine::MetaType Engine::Bezier::Reflect()
+CE::MetaType CE::Bezier::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Bezier>{}, "Bezier" };
 	ReflectFieldType<Bezier>(type);

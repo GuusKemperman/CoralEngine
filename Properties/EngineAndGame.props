@@ -3,7 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <EngineOutputDir>Build\$(Platform)\$(Configuration)\</EngineOutputDir>
-    <EngineProjectName>Engine</EngineProjectName>
+    <EngineProjectName>CoralEngine</EngineProjectName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

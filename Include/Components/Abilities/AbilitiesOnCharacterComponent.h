@@ -6,7 +6,7 @@
 #include "Core/Input.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 	class Ability;
@@ -42,7 +42,7 @@ namespace Engine
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		static void OnBeginPlay(World&, entt::entity);
+		void OnBeginPlay(World&, entt::entity);
 #ifdef EDITOR
 		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
 #endif // EDITOR
@@ -63,5 +63,5 @@ namespace Engine
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::AbilityInstance, var.DisplayWidget(); (void)name;)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::AbilityInstance, var.DisplayWidget(); (void)name;)
 #endif // EDITOR

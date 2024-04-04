@@ -5,7 +5,7 @@
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void Engine::DirectionalLightComponent::OnDrawGizmos(World& world, entt::entity owner) const
+void CE::DirectionalLightComponent::OnDrawGizmos(World& world, entt::entity owner) const
 {
 	constexpr DebugCategory::Enum category = DebugCategory::Editor;
 	constexpr float radius = 1.0f;
@@ -38,7 +38,7 @@ void Engine::DirectionalLightComponent::OnDrawGizmos(World& world, entt::entity 
 		Colors::Yellow);
 }
 
-Engine::MetaType Engine::DirectionalLightComponent::Reflect()
+CE::MetaType CE::DirectionalLightComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<DirectionalLightComponent>{}, "DirectionalLightComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);

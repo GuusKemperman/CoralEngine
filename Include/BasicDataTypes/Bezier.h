@@ -3,7 +3,7 @@
 #include "cereal/types/array.hpp"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class Bezier
 	{
@@ -98,6 +98,6 @@ namespace Engine
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::Bezier, var.DisplayWidget(name.c_str());)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::Bezier, var.DisplayWidget(name.c_str());)
 #endif // EDITOR
 

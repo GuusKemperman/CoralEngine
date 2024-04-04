@@ -2,7 +2,7 @@
 #include "Systems/System.h"
 #include "Utilities/Events.h"
 
-namespace Engine
+namespace CE
 {
 	class TickSystem final :
 		public System

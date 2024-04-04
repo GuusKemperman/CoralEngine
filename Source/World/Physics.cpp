@@ -2,7 +2,7 @@
 #include "World/Physics.h"
 
 #include "Components/TransformComponent.h"
-#include "Components/Pathfinding/Geometry2d.h"
+#include "Utilities/Geometry2d.h"
 #include "Components/Physics2D/AABBColliderComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
@@ -10,12 +10,12 @@
 #include "World/World.h"
 #include "World/Registry.h"
 
-Engine::Physics::Physics(World& world) :
+CE::Physics::Physics(World& world) :
 	mWorld(world)
 {
 }
 
-float Engine::Physics::GetHeightAtPosition(glm::vec2 position2D) const
+float CE::Physics::GetHeightAtPosition(glm::vec2 position2D) const
 {
 	float highestHeight = -std::numeric_limits<float>::infinity();
 
@@ -26,7 +26,7 @@ float Engine::Physics::GetHeightAtPosition(glm::vec2 position2D) const
 	return highestHeight;
 }
 
-void Engine::Physics::Teleport(TransformComponent& transform, glm::vec2 toPosition) const
+void CE::Physics::Teleport(TransformComponent& transform, glm::vec2 toPosition) const
 {
 	const glm::vec3 currentPos = transform.GetWorldPosition();
 
@@ -49,7 +49,7 @@ void Engine::Physics::Teleport(TransformComponent& transform, glm::vec2 toPositi
 	transform.SetWorldPosition(targetPosition);
 }
 
-Engine::MetaType Engine::Physics::Reflect()
+CE::MetaType CE::Physics::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Physics>{}, "Physics" };
 	type.GetProperties().Add(Props::sIsScriptableTag);
@@ -72,7 +72,7 @@ Engine::MetaType Engine::Physics::Reflect()
 }
 
 template <typename ColliderType>
-void Engine::Physics::GetHeightAtPosition(glm::vec2 position, float& highestHeight) const
+void CE::Physics::GetHeightAtPosition(glm::vec2 position, float& highestHeight) const
 {
 	const Registry& reg = mWorld.get().GetRegistry();
 

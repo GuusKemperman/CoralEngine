@@ -3,7 +3,7 @@
 
 #include "Meta/MetaType.h"
 
-Engine::MetaType Engine::System::Reflect()
+CE::MetaType CE::System::Reflect()
 {
     return MetaType{ MetaType::T<System>{}, "System" };
 }

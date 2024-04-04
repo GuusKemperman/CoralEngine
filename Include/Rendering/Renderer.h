@@ -1,9 +1,9 @@
 #pragma once
 #include "Core/EngineSubsystem.h"
 
-namespace Engine
+namespace CE
 {
-	class EngineClass;
+	class Engine;
 	class World;
 	class FrameBuffer;
 	class DebugRenderer;
@@ -13,7 +13,7 @@ namespace Engine
 		public EngineSubsystem<Renderer>
 	{
 		friend EngineSubsystem;
-		friend EngineClass;
+		friend Engine;
 
 		Renderer();
 		~Renderer() final override;

@@ -10,7 +10,7 @@
 #include "Meta/MetaManager.h"
 #include "Utilities/DrawDebugHelpers.h"
 
-void Engine::ParticleDebugVisualizationSystem::Render(const World& world)
+void CE::ParticleDebugVisualizationSystem::Render(const World& world)
 {
 	if ((DebugRenderer::GetDebugCategoryFlags() & DebugCategory::Particles) == 0)
 	{
@@ -68,7 +68,7 @@ void Engine::ParticleDebugVisualizationSystem::Render(const World& world)
 	}
 }
 
-Engine::MetaType Engine::ParticleDebugVisualizationSystem::Reflect()
+CE::MetaType CE::ParticleDebugVisualizationSystem::Reflect()
 {
 	return MetaType{ MetaType::T<ParticleDebugVisualizationSystem>{}, "ParticleDebugVisualizationSystem", MetaType::Base<System>{} };
 }

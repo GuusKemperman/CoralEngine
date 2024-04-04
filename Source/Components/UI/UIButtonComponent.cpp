@@ -5,7 +5,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 
-Engine::MetaType Engine::UIButtonSelectedTag::Reflect()
+CE::MetaType CE::UIButtonSelectedTag::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<UIButtonSelectedTag>{}, "UIButtonSelectedTag" };
 	ReflectComponentType<UIButtonSelectedTag>(metaType);
@@ -13,13 +13,13 @@ Engine::MetaType Engine::UIButtonSelectedTag::Reflect()
 	return metaType;
 }
 
-void Engine::UIButtonComponent::Select(World& world, entt::entity buttonOwner)
+void CE::UIButtonComponent::Select(World& world, entt::entity buttonOwner)
 {
 	Deselect(world);
 	world.GetRegistry().AddComponent<UIButtonSelectedTag>(buttonOwner);
 }
 
-void Engine::UIButtonComponent::Deselect(World& world)
+void CE::UIButtonComponent::Deselect(World& world)
 {
 	auto view = world.GetRegistry().View<UIButtonSelectedTag>();
 
@@ -29,7 +29,6 @@ void Engine::UIButtonComponent::Deselect(World& world)
 	for (auto [entity] : view.each())
 	{
 		entitiesWithTag.emplace_back(entity);
-
 	}
 
 	for (const entt::entity entity : entitiesWithTag)
@@ -38,12 +37,12 @@ void Engine::UIButtonComponent::Deselect(World& world)
 	}
 }
 
-bool Engine::UIButtonComponent::IsSelected(const World& world, entt::entity buttonOwner)
+bool CE::UIButtonComponent::IsSelected(const World& world, entt::entity buttonOwner)
 {
 	return world.GetRegistry().HasComponent<UIButtonSelectedTag>(buttonOwner);
 }
 
-Engine::MetaType Engine::UIButtonComponent::Reflect()
+CE::MetaType CE::UIButtonComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<UIButtonComponent>{}, "UIButtonComponent" };
 

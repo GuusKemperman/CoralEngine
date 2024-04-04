@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Core/FileIO.h"
 
-using namespace Engine;
+using namespace CE;
 using namespace std;
 
 FileIO::FileIO(int argc, char* argv[], const std::string_view gameDir)

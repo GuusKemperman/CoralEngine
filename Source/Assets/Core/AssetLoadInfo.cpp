@@ -7,7 +7,7 @@
 #include "Assets/Asset.h"
 #include "Utilities/ClassVersion.h"
 
-bool Engine::AssetLoadInfo::ConstructFromCurrentStream()
+bool CE::AssetLoadInfo::ConstructFromCurrentStream()
 {
 	const std::optional<AssetFileMetaData> metaData = AssetFileMetaData::ReadMetaData(*mStream);
 
@@ -20,7 +20,7 @@ bool Engine::AssetLoadInfo::ConstructFromCurrentStream()
 	return true;
 }
 
-Engine::AssetLoadInfo::AssetLoadInfo(const std::filesystem::path& fromFile) :
+CE::AssetLoadInfo::AssetLoadInfo(const std::filesystem::path& fromFile) :
 	mStream(std::make_unique<std::ifstream>(fromFile, std::ifstream::binary))
 {
 	if (!static_cast<const std::ifstream*>(mStream.get())->is_open())
@@ -35,7 +35,7 @@ Engine::AssetLoadInfo::AssetLoadInfo(const std::filesystem::path& fromFile) :
 	}
 }
 
-Engine::AssetLoadInfo::AssetLoadInfo(std::unique_ptr<std::istream> stream) :
+CE::AssetLoadInfo::AssetLoadInfo(std::unique_ptr<std::istream> stream) :
 	mStream(std::move(stream))
 {
 	if (!ConstructFromCurrentStream())
@@ -44,7 +44,7 @@ Engine::AssetLoadInfo::AssetLoadInfo(std::unique_ptr<std::istream> stream) :
 	}
 }
 
-Engine::AssetLoadInfo::AssetLoadInfo(const AssetSaveInfo& saveInfo)
+CE::AssetLoadInfo::AssetLoadInfo(const AssetSaveInfo& saveInfo)
 {
 	mStream = std::make_unique<std::istringstream>(saveInfo.ToString());
 
@@ -52,7 +52,7 @@ Engine::AssetLoadInfo::AssetLoadInfo(const AssetSaveInfo& saveInfo)
 	ASSERT(success);
 }
 
-Engine::AssetLoadInfo::AssetLoadInfo(const MetaType& assetClass, const std::string_view name) :
+CE::AssetLoadInfo::AssetLoadInfo(const MetaType& assetClass, const std::string_view name) :
 	mStream(std::make_unique<std::istringstream>()),
 	mMetaData(std::make_unique<AssetFileMetaData>(AssetFileMetaData{ name, assetClass, GetClassVersion(assetClass) }))
 {	
@@ -63,7 +63,7 @@ Engine::AssetLoadInfo::AssetLoadInfo(const MetaType& assetClass, const std::stri
 	}
 }
 
-std::optional<Engine::AssetLoadInfo> Engine::AssetLoadInfo::LoadFromFile(const std::filesystem::path& fromFile)
+std::optional<CE::AssetLoadInfo> CE::AssetLoadInfo::LoadFromFile(const std::filesystem::path& fromFile)
 {
 	std::optional<AssetLoadInfo> loadInfo{ AssetLoadInfo{fromFile} };
 
@@ -74,7 +74,7 @@ std::optional<Engine::AssetLoadInfo> Engine::AssetLoadInfo::LoadFromFile(const s
 	return loadInfo;
 }
 
-std::optional<Engine::AssetLoadInfo> Engine::AssetLoadInfo::LoadFromStream(std::unique_ptr<std::istream> stream)
+std::optional<CE::AssetLoadInfo> CE::AssetLoadInfo::LoadFromStream(std::unique_ptr<std::istream> stream)
 {
 	std::optional<AssetLoadInfo> loadInfo{ AssetLoadInfo{std::move(stream)}};
 

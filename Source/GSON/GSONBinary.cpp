@@ -55,7 +55,7 @@ static inline std::optional<size_t> LoadSmallSize(std::istream& istream)
 	return size;
 }
 
-void Engine::BinaryGSONObject::SaveToBinary(std::ostream& ostream) const
+void CE::BinaryGSONObject::SaveToBinary(std::ostream& ostream) const
 {
 	SaveSmallSize(ostream, mName.size());
 	ostream.write(mName.c_str(), mName.size());
@@ -79,7 +79,7 @@ void Engine::BinaryGSONObject::SaveToBinary(std::ostream& ostream) const
 	}
 }
 
-bool Engine::BinaryGSONObject::LoadFromBinary(std::istream& istream)
+bool CE::BinaryGSONObject::LoadFromBinary(std::istream& istream)
 {
 	const std::optional<size_t> myNameSize = LoadSmallSize(istream);
 

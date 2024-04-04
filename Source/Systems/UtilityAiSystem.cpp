@@ -6,7 +6,7 @@
 #include "World/World.h"
 #include "Meta/MetaType.h"
 
-void Engine::AITickSystem::Update(World& world, float dt)
+void CE::AITickSystem::Update(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
 	const auto& enemyAIControllerView = reg.View<EnemyAiControllerComponent>();
@@ -50,25 +50,25 @@ void Engine::AITickSystem::Update(World& world, float dt)
 	}
 }
 
-Engine::MetaType Engine::AITickSystem::Reflect()
+CE::MetaType CE::AITickSystem::Reflect()
 {
 	return MetaType{ MetaType::T<AITickSystem>{}, "AITickSystem", MetaType::Base<System>{} };
 }
 
-void Engine::AIEvaluateSystem::Update(World& world, float)
+void CE::AIEvaluateSystem::Update(World& world, float)
 {
-	const Registry& reg = world.GetRegistry();
+	Registry& reg = world.GetRegistry();
 
 	struct StateToEvaluate
 	{
-		std::reference_wrapper<const entt::sparse_set> mStorage;
+		std::reference_wrapper<entt::sparse_set> mStorage;
 		std::reference_wrapper<const MetaType> mType;
 		std::reference_wrapper<const MetaFunc> mEvaluate;
 		bool mAreEventsStatic{};
 	};
 	std::vector<StateToEvaluate> statesToEvaluate{};
 
-	for (const auto&& [typeId, storage] : reg.Storage())
+	for (auto&& [typeId, storage] : reg.Storage())
 	{
 		const MetaType* const state = MetaManager::Get().TryGetType(typeId);
 
@@ -116,8 +116,7 @@ void Engine::AIEvaluateSystem::Update(World& world, float)
 			}
 			else
 			{
-				// const_cast is fine since we are assigning it to a const MetaAny
-				const MetaAny component{ state.mType, const_cast<void*>(state.mStorage.get().value(entity)), false };
+				MetaAny component{ state.mType, state.mStorage.get().value(entity), false };
 				evalResult = state.mEvaluate.get().InvokeUncheckedUnpackedWithRVO(&score, component, world, entity);
 			}
 
@@ -157,7 +156,7 @@ void Engine::AIEvaluateSystem::Update(World& world, float)
 }
 
 template <typename EventT>
-void Engine::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const MetaType* type, World& world,
+void CE::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const MetaType* type, World& world,
 	entt::entity owner)
 {
 	if (type == nullptr)
@@ -191,7 +190,7 @@ void Engine::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const Me
 	}
 }
 
-Engine::MetaType Engine::AIEvaluateSystem::Reflect()
+CE::MetaType CE::AIEvaluateSystem::Reflect()
 {
 	return MetaType{ MetaType::T<AIEvaluateSystem>{}, "AIEvaluateSystem", MetaType::Base<System>{} };
 }

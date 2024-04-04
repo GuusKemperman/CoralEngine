@@ -3,7 +3,7 @@
 
 #include "Meta/MetaTypeTraits.h"
 
-namespace Engine::Internal
+namespace CE::Internal
 {
 	static constexpr uint32 CombineHashes(uint32 hash1, uint32 hash2)
 	{
@@ -35,7 +35,7 @@ namespace Engine::Internal
 	};
 }
 
-namespace Engine
+namespace CE
 {
 	template<typename T>
 	CONSTEVAL FuncId MakeFuncId()

@@ -10,7 +10,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
-void Engine::ParticlePhysicsSystem::Update(World& world, float dt)
+void CE::ParticlePhysicsSystem::Update(World& world, float dt)
 {
 	const auto emitterView = world.GetRegistry().View<const TransformComponent, ParticleEmitterComponent, ParticlePhysicsComponent>();
 
@@ -64,7 +64,7 @@ void Engine::ParticlePhysicsSystem::Update(World& world, float dt)
 	}
 }
 
-Engine::MetaType Engine::ParticlePhysicsSystem::Reflect()
+CE::MetaType CE::ParticlePhysicsSystem::Reflect()
 {
 	return MetaType{ MetaType::T<ParticlePhysicsSystem>{}, "ParticlePhysicsSystem", MetaType::Base<System>{} };
 }

@@ -12,7 +12,7 @@
 
 #define STATIC_SPECIALIZATION 
 
-namespace Engine
+namespace CE
 {
 	template<typename T, size_t Size = std::dynamic_extent>
 	using Span = std::span<T, Size>;
@@ -57,7 +57,7 @@ namespace Engine
 // MSVC has a bug and does not conform to the standard.
 #define STATIC_SPECIALIZATION static
 #endif
-namespace Engine
+namespace CE
 {
 	template<typename T, size_t Size = tcb::dynamic_extent>
 	using Span = tcb::span<T, Size>;
@@ -72,7 +72,7 @@ namespace Engine
 }
 #endif
 
-namespace Engine
+namespace CE
 {
 #ifdef PLATFORM_***REMOVED***
 

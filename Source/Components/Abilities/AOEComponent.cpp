@@ -4,7 +4,7 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::MetaType Engine::AOEComponent::Reflect()
+CE::MetaType CE::AOEComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<AOEComponent>{}, "AOEComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
@@ -22,7 +22,7 @@ Engine::MetaType Engine::AOEComponent::Reflect()
 }
 
 #ifdef EDITOR
-void Engine::AOEComponent::OnInspect([[maybe_unused]] World& world, [[maybe_unused]] const std::vector<entt::entity>& entities)
+void CE::AOEComponent::OnInspect([[maybe_unused]] World& world, [[maybe_unused]] const std::vector<entt::entity>& entities)
 {
 	ImGui::TextDisabled("Radius");
 	if (ImGui::IsItemHovered())

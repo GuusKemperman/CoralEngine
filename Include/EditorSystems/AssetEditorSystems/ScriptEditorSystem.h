@@ -1,7 +1,8 @@
-#include <thread>
 #ifdef EDITOR
 #pragma once
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
+
+#include <thread>
 
 #include "imnodes/imgui_node_editor.h"
 #include "Assets/Script.h"
@@ -11,7 +12,7 @@ namespace ax::NodeEditor::Utilities
 	struct BlueprintNodeBuilder;
 }
 
-namespace Engine
+namespace CE
 {
 	class RerouteScriptNode;
 	class CommentScriptNode;
@@ -112,12 +113,15 @@ namespace Engine
 			NodeTheUserCanAdd(std::string&& category, 
 				std::string&& name, 
 				std::function<ScriptNode&(ScriptFunc&)>&& addNode,
-				std::function<bool(const ScriptPin&)>&& matchesContext) :
+				std::function<bool(const ScriptPin&)>&& matchesContext,
+				std::optional<Input::KeyboardKey> shortcut = std::nullopt) :
 			mCategory(std::move(category)),
 			mName(std::move(name)),
 			mQueryComparisonString(PrepareStringForFuzzySearch(std::string{ mName }.append(" ").append(mCategory))),
 			mAddNode(std::move(addNode)),
-			mMatchesContext(std::move(matchesContext)) {}
+			mMatchesContext(std::move(matchesContext)),
+			mShortCut(shortcut)
+			{}
 
 			std::string mCategory{};
 			std::string mName{};
@@ -131,6 +135,10 @@ namespace Engine
 			std::function<ScriptNode& (ScriptFunc&)> mAddNode{};
 			std::function<bool(const ScriptPin&)> mMatchesContext{};
 
+			// If CTRL is held, and this key is pressed,
+			// a node of this type is created.
+			std::optional<Input::KeyboardKey> mShortCut;
+
 			// How similar the name of this item is to the string the user is searching for,
 			// in a range from 0.0 to 100.0
 			double mSimilarityToQuery = 100.0;
@@ -139,7 +147,8 @@ namespace Engine
 		void DisplayCanvas();
 		void DrawCanvasObjects();
 		void TryLetUserCreateLink();
-		 
+		void AddNewNode(const NodeTheUserCanAdd& nodeToAdd);
+
 		void DeleteRequestedItems();
 
 		void DisplayCanvasPopUps();
@@ -214,6 +223,7 @@ namespace Engine
 		ax::NodeEditor::PinId mPinTheUserRightClicked{};
 		ax::NodeEditor::PinId mPinTheUserIsTryingToLink{};
 		std::optional<ImVec2> mCreateNodePopUpPosition{};
+		ImVec2 mMousePosInCanvasSpace{};
 
 		// After switching to a different function,
 		// we cannot immediately centre the camera on

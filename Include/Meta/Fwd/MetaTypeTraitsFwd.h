@@ -1,7 +1,7 @@
 #pragma once
 #include "MetaTypeIdFwd.h"
 
-namespace Engine
+namespace CE
 {
 	enum class TypeForm
 	{

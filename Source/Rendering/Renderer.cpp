@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Rendering/Renderer.h"
 
+#include "Components/CameraComponent.h"
 #include "Core/Device.h"
 #include "World/World.h"
 #include "World/Registry.h"
@@ -12,22 +13,22 @@
 #include "Rendering/UIRenderer.h"
 #include "Rendering/DebugRenderer.h"
 
-Engine::Renderer::Renderer()
+CE::Renderer::Renderer()
 {
 	mMeshRenderer = std::make_unique<MeshRenderer>();
 	mUIRenderer = std::make_unique<UIRenderer>();
 	mDebugRenderer = std::make_unique<DebugRenderer>();
 }
 
-Engine::Renderer::~Renderer() = default;
+CE::Renderer::~Renderer() = default;
 
-void Engine::Renderer::Render(const World& world, FrameBuffer& buffer)
+void CE::Renderer::Render(const World& world, FrameBuffer& buffer)
 {
 	Render(world, Device::Get().GetDisplaySize(), buffer);
 }
 
 #ifdef EDITOR
-void Engine::Renderer::RenderToFrameBuffer(
+void CE::Renderer::RenderToFrameBuffer(
 	const World& world, 
 	FrameBuffer& buffer, 
 	std::optional<glm::vec2> firstResizeBufferTo, 
@@ -51,12 +52,12 @@ void Engine::Renderer::RenderToFrameBuffer(
 }
 #endif // EDITOR
 
-void Engine::Renderer::Render(const World& world, glm::vec2 viewportSize, FrameBuffer& buffer)
+void CE::Renderer::Render(const World& world, glm::vec2 viewportSize, FrameBuffer& buffer)
 {
 	// Casting const away :(
 	WorldViewport& worldViewport = const_cast<WorldViewport&>(world.GetViewport());
 
-	if (!worldViewport.GetMainCamera().has_value())
+	if (CameraComponent::GetSelected(world) == entt::null)
 	{
 		LOG(LogTemp, Warning, "No camera to render to!");
 		return;

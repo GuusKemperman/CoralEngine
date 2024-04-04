@@ -4,15 +4,15 @@
 #include "Utilities/Imgui/WorldInspect.h"
 #include "World/World.h"
 
-Engine::LevelEditorSystem::LevelEditorSystem(Level&& asset) :
+CE::LevelEditorSystem::LevelEditorSystem(Level&& asset) :
 	AssetEditorSystem(std::move(asset)),
 	mWorldHelper(std::make_unique<WorldInspectHelper>(mAsset.CreateWorld(false)))
 {
 }
 
-Engine::LevelEditorSystem::~LevelEditorSystem() = default;
+CE::LevelEditorSystem::~LevelEditorSystem() = default;
 
-void Engine::LevelEditorSystem::Tick(const float deltaTime)
+void CE::LevelEditorSystem::Tick(const float deltaTime)
 {
 	if (!Begin(ImGuiWindowFlags_MenuBar))
 	{
@@ -33,7 +33,7 @@ void Engine::LevelEditorSystem::Tick(const float deltaTime)
 	End();
 }
 
-void Engine::LevelEditorSystem::SaveState(std::ostream& toStream) const
+void CE::LevelEditorSystem::SaveState(std::ostream& toStream) const
 {
 	AssetEditorSystem<Level>::SaveState(toStream);
 
@@ -42,7 +42,7 @@ void Engine::LevelEditorSystem::SaveState(std::ostream& toStream) const
 	savedState.SaveToBinary(toStream);
 }
 
-void Engine::LevelEditorSystem::LoadState(std::istream& fromStream)
+void CE::LevelEditorSystem::LoadState(std::istream& fromStream)
 {
 	AssetEditorSystem<Level>::LoadState(fromStream);
 
@@ -57,12 +57,12 @@ void Engine::LevelEditorSystem::LoadState(std::istream& fromStream)
 	mWorldHelper->LoadState(savedState);
 }
 
-void Engine::LevelEditorSystem::ApplyChangesToAsset()
+void CE::LevelEditorSystem::ApplyChangesToAsset()
 {
 	mAsset.CreateFromWorld(mWorldHelper->GetWorldBeforeBeginPlay());
 }
 
-Engine::MetaType Engine::LevelEditorSystem::Reflect()
+CE::MetaType CE::LevelEditorSystem::Reflect()
 {
 	return { MetaType::T<LevelEditorSystem>{}, "LevelEditorSystem",
 		MetaType::Base<AssetEditorSystem<Level>>{},

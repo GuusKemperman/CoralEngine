@@ -12,7 +12,7 @@
 #include "Core/Editor.h"
 #include "Utilities/StringFunctions.h"
 
-Engine::AssetManager::AssetManager()
+CE::AssetManager::AssetManager()
 {
 #ifdef EDITOR
 	const MetaType& importerType = MetaManager::Get().GetType<Importer>();
@@ -90,15 +90,15 @@ Engine::AssetManager::AssetManager()
 #endif // EDITOR
 }
 
-Engine::AssetManager::~AssetManager() = default;
+CE::AssetManager::~AssetManager() = default;
 
-void Engine::AssetManager::PostConstruct()
+void CE::AssetManager::PostConstruct()
 {
 	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""));
 	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""));
 }
 
-void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
+void CE::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 {
 	if (!is_directory(directory))
 	{
@@ -181,9 +181,12 @@ void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 				break;
 			}
 
-			if (std::filesystem::last_write_time(*assetInternal.mFileOfOrigin) < importableAssetLastWriteTime)
+			if (assetInternal.mMetaData.mMetaDataVersion != AssetFileMetaData::GetCurrentMetaDataVersion())
 			{
-				LOG(LogAssets, Message, "Changes to {} detected. Reimporting...",
+				LOG(LogAssets, Message, "Asset {} is out-of-date, metadata version is {} (current is {}). The asset will be re-imported from {}",
+					assetInternal.mMetaData.GetName(),
+					assetInternal.mMetaData.mMetaDataVersion,
+					AssetFileMetaData::GetCurrentMetaDataVersion(),
 					importableAsset.string());
 				ImportInternal(importableAsset, false);
 				break;
@@ -201,13 +204,13 @@ void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 	LOG(LogAssets, Verbose, "Finished constructing assets");
 }
 
-Engine::AssetManager::AssetInternal::AssetInternal(AssetFileMetaData&& metaData, const std::optional<std::filesystem::path>& path) :
+CE::AssetManager::AssetInternal::AssetInternal(AssetFileMetaData&& metaData, const std::optional<std::filesystem::path>& path) :
 	mMetaData(std::move(metaData)),
 	mFileOfOrigin(path)
 {
 }
 
-Engine::AssetManager::AssetInternal* Engine::AssetManager::TryGetAssetInternal(const Name key, const TypeId typeId)
+CE::AssetManager::AssetInternal* CE::AssetManager::TryGetAssetInternal(const Name key, const TypeId typeId)
 {
 	const auto it = mAssets.find(key.GetHash());
 
@@ -219,7 +222,7 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryGetAssetInternal(c
 	return &it->second;
 }
 
-Engine::AssetManager::AssetInternal* Engine::AssetManager::TryGetLoadedAssetInternal(const Name key, const TypeId typeId)
+CE::AssetManager::AssetInternal* CE::AssetManager::TryGetLoadedAssetInternal(const Name key, const TypeId typeId)
 {
 	auto* internalAsset = TryGetAssetInternal(key, typeId);
 
@@ -236,7 +239,7 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryGetLoadedAssetInte
 	return internalAsset;
 }
 
-void Engine::AssetManager::Unload(AssetInternal& asset)
+void CE::AssetManager::Unload(AssetInternal& asset)
 {
 	if (asset.mAsset != nullptr)
 	{
@@ -249,7 +252,7 @@ void Engine::AssetManager::Unload(AssetInternal& asset)
 	}
 }
 
-void Engine::AssetManager::UnloadAllUnusedAssets()
+void CE::AssetManager::UnloadAllUnusedAssets()
 {
 	bool wereAnyUnloaded;
 
@@ -271,7 +274,7 @@ void Engine::AssetManager::UnloadAllUnusedAssets()
 	} while (wereAnyUnloaded); // We might've unloaded an asset that held onto the last reference of another asset
 }
 
-std::vector<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::GetAllAssets()
+std::vector<CE::WeakAsset<CE::Asset>> CE::AssetManager::GetAllAssets()
 {
 	std::vector<WeakAsset<Asset>> returnValue{};
 	returnValue.reserve(mAssets.size());
@@ -284,7 +287,7 @@ std::vector<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::GetAllAssets
 	return returnValue;
 }
 
-void Engine::AssetManager::Load(AssetInternal& internalAsset)
+void CE::AssetManager::Load(AssetInternal& internalAsset)
 {
 	LOG(LogAssets, Verbose, "Asset manager is loading {}", internalAsset.mMetaData.mAssetName);
 
@@ -314,7 +317,7 @@ void Engine::AssetManager::Load(AssetInternal& internalAsset)
 }
 
 #ifdef EDITOR
-bool Engine::AssetManager::WasImportedFrom(const AssetInternal& asset, const std::filesystem::path& file)
+bool CE::AssetManager::WasImportedFrom(const AssetInternal& asset, const std::filesystem::path& file)
 {
 	return asset.mMetaData.mImporterInfo.has_value()
 		// We only look at the filename, as the full path may be different.
@@ -329,12 +332,12 @@ bool Engine::AssetManager::WasImportedFrom(const AssetInternal& asset, const std
 		&& asset.mMetaData.mImporterInfo->mImportedFile.filename() == file.filename();
 }
 
-void Engine::AssetManager::Import(const std::filesystem::path& path)
+void CE::AssetManager::Import(const std::filesystem::path& path)
 {
 	ImportInternal(path, true);
 }
 
-void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, bool refreshEngine)
+void CE::AssetManager::ImportInternal(const std::filesystem::path& path, bool refreshEngine)
 {
 	auto importLambda = [this, path]
 		{
@@ -407,7 +410,8 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 
 					errorsEncountered = true;
 				}
-				else if (existingAssetWithSameName->mAsset.use_count() > 1)
+
+				if (existingAssetWithSameName->mAsset.use_count() > 1)
 				{
 					LOG(LogAssets, Error, "Importing failed: Importing {} means replacing existing asset {}, but this asset is still referenced in memory {} time(s).",
 						path.string(), existingAssetWithSameName->mMetaData.GetName(), existingAssetWithSameName->mAsset.use_count() - 1);
@@ -435,6 +439,16 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 				// We can safely dereference the mFileOfOrigin,
 				// because assets generated at runtime do not have an mImporterInfo.
 				const std::filesystem::path& existingImportedAssetFile = *assetInternal.mFileOfOrigin;
+
+				if (assetInternal.mMetaData.GetImporterInfo()->mWereEditsMadeAfterImporting)
+				{
+					LOG(LogAssets, Error, "Reimporting {} would undo all the changes made to {}. Delete the file {} before reimporting.", 
+						path.string(),
+						assetInternal.mMetaData.mAssetName,
+						existingImportedAssetFile.string());
+					errorsEncountered = true;
+					continue;
+				}
 
 				// Delete existing files that were generated the last time we imported this asset
 				if (std::filesystem::exists(existingImportedAssetFile))
@@ -618,7 +632,7 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 }
 
 
-std::pair<Engine::TypeId, const Engine::Importer*> Engine::AssetManager::TryGetImporterForExtension(const std::filesystem::path& extension) const
+std::pair<CE::TypeId, const CE::Importer*> CE::AssetManager::TryGetImporterForExtension(const std::filesystem::path& extension) const
 {
 	for (const auto& [typeId, importer] : mImporters)
 	{
@@ -635,7 +649,7 @@ std::pair<Engine::TypeId, const Engine::Importer*> Engine::AssetManager::TryGetI
 }
 #endif // EDITOR
 
-void Engine::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
+void CE::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
 {
 	auto renameLambda = [this, oldName = asset.GetName(), newName = std::string{ newName }]()
 		{
@@ -726,7 +740,7 @@ void Engine::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newNa
 #endif
 }
 
-void Engine::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
+void CE::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
 {
 	auto deleteLambda = [this, assetName = asset.GetName()]()
 		{
@@ -765,7 +779,7 @@ void Engine::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
 #endif
 }
 
-bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesystem::path& toLocation)
+bool CE::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesystem::path& toLocation)
 {
 	if (!asset.mAssetInternal.get().mFileOfOrigin.has_value())
 	{
@@ -816,7 +830,7 @@ bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesyst
 	return true;
 }
 
-std::optional<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::Duplicate(WeakAsset<Engine::Asset> asset, const std::filesystem::path& copyPath)
+std::optional<CE::WeakAsset<CE::Asset>> CE::AssetManager::Duplicate(WeakAsset<CE::Asset> asset, const std::filesystem::path& copyPath)
 {
 	if (!asset.GetFileOfOrigin().has_value())
 	{
@@ -887,7 +901,7 @@ std::optional<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::Duplicate(
 	return TryGetWeakAsset(copyName);
 }
 
-std::optional<Engine::WeakAsset<>> Engine::AssetManager::NewAsset(const MetaType& assetClass,
+std::optional<CE::WeakAsset<>> CE::AssetManager::NewAsset(const MetaType& assetClass,
 	const std::filesystem::path& path)
 {
 	const std::string assetName = path.filename().replace_extension().string();
@@ -947,7 +961,7 @@ std::optional<Engine::WeakAsset<>> Engine::AssetManager::NewAsset(const MetaType
 	return TryGetWeakAsset(assetName);
 }
 
-std::optional<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::OpenAsset(const std::filesystem::path& path)
+std::optional<CE::WeakAsset<CE::Asset>> CE::AssetManager::OpenAsset(const std::filesystem::path& path)
 {
 	AssetInternal* const internalAsset = TryConstruct(path);
 
@@ -958,7 +972,7 @@ std::optional<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::OpenAsset(
 	return WeakAsset<Asset>{ *internalAsset };
 }
 
-Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const std::filesystem::path& path)
+CE::AssetManager::AssetInternal* CE::AssetManager::TryConstruct(const std::filesystem::path& path)
 {
 	LOG(LogAssets, Verbose, "Constructing asset from {}", path.string());
 
@@ -990,7 +1004,7 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const st
 	return TryConstruct(path, std::move(*metaData));
 }
 
-Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData)
+CE::AssetManager::AssetInternal* CE::AssetManager::TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData)
 {
 	if (path.has_value()
 		&& path->extension() != sAssetExtension)
@@ -1013,7 +1027,7 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const st
 	const uint32 currentVersion = GetClassVersion(constructedAssetInternal.mMetaData.GetClass());
 	if (constructedAssetInternal.mMetaData.mAssetVersion != currentVersion)
 	{
-		LOG(LogAssets, Message, "Asset {} is out of date: version is {} (current is {}). If the loader still supports this version, you have nothing to worry about.",
+		LOG(LogAssets, Verbose, "Asset {} is out of date: version is {} (current is {}). If the loader still supports this version, you have nothing to worry about.",
 			constructedAssetInternal.mMetaData.mAssetName,
 			constructedAssetInternal.mMetaData.mAssetVersion,
 			currentVersion);

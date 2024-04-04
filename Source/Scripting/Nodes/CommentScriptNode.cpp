@@ -3,21 +3,22 @@
 
 #include "GSON/GSONBinary.h"
 
-Engine::CommentScriptNode::CommentScriptNode(ScriptFunc& scriptFunc, const std::string& comment) :
+CE::CommentScriptNode::CommentScriptNode(ScriptFunc& scriptFunc, const std::string& comment) :
 	ScriptNode(ScriptNodeType::Comment, scriptFunc),
 	mComment(comment)
 {
 }
 
-void Engine::CommentScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
+void CE::CommentScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
 {
 	ScriptNode::SerializeTo(to, scriptFunc);
 
 	to.AddGSONMember("comment") << mComment;
 	to.AddGSONMember("size") << mSize;
+	to.AddGSONMember("col") << mColour;
 }
 
-bool Engine::CommentScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
+bool CE::CommentScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 {
 	if (!ScriptNode::DeserializeVirtual(from))
 	{
@@ -38,6 +39,13 @@ bool Engine::CommentScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 
 	*comment >> mComment;
 	*size >> mSize;
+
+	const BinaryGSONMember* colour = from.TryGetGSONMember("col");
+
+	if (colour != nullptr)
+	{
+		*colour >> mColour;
+	}
 
 	return true;
 }

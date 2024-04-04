@@ -4,7 +4,7 @@
 
 #include "Core/AssetManager.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 

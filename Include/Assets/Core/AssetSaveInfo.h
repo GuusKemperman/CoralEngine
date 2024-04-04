@@ -1,16 +1,16 @@
 #pragma once
 #include <sstream>
 
-namespace Engine
+#include "AssetFileMetaData.h"
+
+namespace CE
 {
 	class MetaType;
 
 	class AssetSaveInfo
 	{
 	public:
-		AssetSaveInfo(const std::string& name, const MetaType& assetClass);
-		AssetSaveInfo(const std::string& name, const MetaType& assetClass, 
-			const std::filesystem::path& importedFromFile, uint32 importerVersion);
+		AssetSaveInfo(const std::string& name, const MetaType& assetClass, const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = std::nullopt);
 		
 		AssetSaveInfo(AssetSaveInfo&& other) noexcept;
 		AssetSaveInfo(const AssetSaveInfo&) = delete;

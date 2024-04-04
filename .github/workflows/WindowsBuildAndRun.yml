@@ -3,7 +3,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: WindowsBuild
+name: WindowsBuildAndRun
 
 on:
   push:
@@ -13,20 +13,18 @@ on:
 
 env:
   # Path to the solution file relative to the root of the project.
-  SOLUTION_FILE_PATH: "Engine.sln"
+  SOLUTION_FILE_PATH: "Coral.sln"
 
 permissions:
   contents: read
 
 jobs:
-    # okay so we also test, but the github rule checks if the "build" job is finished
-    # before allowing a merge, so we can't easily change the name
-  build:
+  build-and-run:
     runs-on: windows-latest
     strategy:
       fail-fast: false # We want to run all configurations to see if the problem is for all of them or not
       matrix:
-        build-configuration: [Debug, EngineDebug, Release, EngineRelease]
+        build-configuration: [Debug, EditorDebug, Release, EditorRelease]
     steps:
     - uses: actions/checkout@v4
 

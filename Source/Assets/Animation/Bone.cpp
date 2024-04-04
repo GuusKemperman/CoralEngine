@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Assets/Animation/Bone.h"
 
-Engine::Bone::Bone(const std::string_view name, const AnimData& animData)
+CE::Bone::Bone(const std::string_view name, const AnimData& animData)
 {
 	mName = name;
 
@@ -10,12 +10,12 @@ Engine::Bone::Bone(const std::string_view name, const AnimData& animData)
 	mScales = animData.mScales;
 }
 
-glm::mat4x4 Engine::Bone::GetInterpolatedTransform(float timeStamp) const
+glm::mat4x4 CE::Bone::GetInterpolatedTransform(float timeStamp) const
 {
 	return InterpolatePosition(timeStamp) * InterpolateRotation(timeStamp) * InterpolateScale(timeStamp);
 }
 
-int Engine::Bone::GetPositionIndex(float timeStamp) const
+int CE::Bone::GetPositionIndex(float timeStamp) const
 {
 	unsigned int numPositions = static_cast<unsigned int>(mPositions.size());
 
@@ -29,7 +29,7 @@ int Engine::Bone::GetPositionIndex(float timeStamp) const
 	return 0;
 }
 
-int Engine::Bone::GetRotationIndex(float timeStamp) const
+int CE::Bone::GetRotationIndex(float timeStamp) const
 {
 	unsigned int numRotations = static_cast<unsigned int>(mRotations.size());
 
@@ -43,7 +43,7 @@ int Engine::Bone::GetRotationIndex(float timeStamp) const
 	return 0;
 }
 
-int Engine::Bone::GetScaleIndex(float timeStamp) const
+int CE::Bone::GetScaleIndex(float timeStamp) const
 {
 	unsigned int numScalings = static_cast<unsigned int>(mScales.size());
 
@@ -57,14 +57,14 @@ int Engine::Bone::GetScaleIndex(float timeStamp) const
 	return 0;
 }
 
-float Engine::Bone::GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float currentTimeStamp) const
+float CE::Bone::GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float currentTimeStamp) const
 {
 	float midWayLength = currentTimeStamp - lastTimeStamp;
 	float framesDiff = nextTimeStamp - lastTimeStamp;
 	return midWayLength / framesDiff;
 }
 
-glm::mat4x4 Engine::Bone::InterpolatePosition(float timeStamp) const
+glm::mat4x4 CE::Bone::InterpolatePosition(float timeStamp) const
 {
 	if (mPositions.size() == 1)
 	{
@@ -81,7 +81,7 @@ glm::mat4x4 Engine::Bone::InterpolatePosition(float timeStamp) const
 	return glm::translate(glm::mat4x4(1.0f),finalPosition);
 }
 
-glm::mat4x4 Engine::Bone::InterpolateRotation(float timeStamp) const
+glm::mat4x4 CE::Bone::InterpolateRotation(float timeStamp) const
 {
 	if (mRotations.size() == 1)
 	{
@@ -98,7 +98,7 @@ glm::mat4x4 Engine::Bone::InterpolateRotation(float timeStamp) const
 	return glm::toMat4(glm::normalize(finalRotation));
 }
 
-glm::mat4x4 Engine::Bone::InterpolateScale(float timeStamp) const
+glm::mat4x4 CE::Bone::InterpolateScale(float timeStamp) const
 {
 	if (mScales.size() == 1)
 	{

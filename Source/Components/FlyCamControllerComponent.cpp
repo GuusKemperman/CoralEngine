@@ -6,7 +6,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void Engine::FlyCamControllerComponent::ApplyTranslation(TransformComponent& transform, const glm::vec3& timeScaledMovementInput) const
+void CE::FlyCamControllerComponent::ApplyTranslation(TransformComponent& transform, const glm::vec3& timeScaledMovementInput) const
 {
 	const glm::vec3 scaledMovementInput = timeScaledMovementInput * mMovementSpeed;
 
@@ -19,14 +19,14 @@ void Engine::FlyCamControllerComponent::ApplyTranslation(TransformComponent& tra
 	transform.TranslateWorldPosition(totalTranslation);
 }
 
-void Engine::FlyCamControllerComponent::ApplyRotation(TransformComponent& transform, const std::array<glm::quat, 2>& timeScaledRotations) const
+void CE::FlyCamControllerComponent::ApplyRotation(TransformComponent& transform, const std::array<glm::quat, 2>& timeScaledRotations) const
 {
 	glm::quat orientation = transform.GetWorldOrientation();
 	orientation = (timeScaledRotations[1] * mRotationSpeed) * orientation * (timeScaledRotations[0] * mRotationSpeed);
 	transform.SetWorldOrientation(orientation);
 }
 
-Engine::MetaType Engine::FlyCamControllerComponent::Reflect()
+CE::MetaType CE::FlyCamControllerComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<FlyCamControllerComponent>{}, "FlyCamControllerComponent" };
 	MetaProps& props = type.GetProperties();

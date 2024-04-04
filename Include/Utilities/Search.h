@@ -9,7 +9,7 @@
 #include "Core/AssetManager.h"
 #include "Utilities/EnumString.h"
 
-namespace Engine::Search
+namespace CE::Search
 {
 	template<typename T, typename T2 = void>
 	struct MovableTypeHelper

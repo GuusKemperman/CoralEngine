@@ -7,7 +7,7 @@ struct Reflector
 	static constexpr bool sIsSpecialized = false;
 };
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 
@@ -96,7 +96,7 @@ If you are trying to reflect an std::vector<std::shared_ptr<const Material>>, yo
 #define CONCAT(a, b) CONCAT_INNER(a, b)
 #define CONCAT_INNER(a, b) a ## b
 #define GET_MACRO(_1, _2, NAME,...) NAME
-#define REFLECT_AT_START_UP_2(dummyVariableName, type) [[maybe_unused]] static inline const bool CONCAT(__sDummyVariableToReflect, dummyVariableName) = Engine::Internal::ReflectAtStartup<type>::sDummy;
+#define REFLECT_AT_START_UP_2(dummyVariableName, type) [[maybe_unused]] static inline const bool CONCAT(__sDummyVariableToReflect, dummyVariableName) = CE::Internal::ReflectAtStartup<type>::sDummy;
 #define REFLECT_AT_START_UP_1(type) REFLECT_AT_START_UP_2(type, type)
 
 #define EXPAND( x ) x
