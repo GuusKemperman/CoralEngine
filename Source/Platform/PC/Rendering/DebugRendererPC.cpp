@@ -21,7 +21,7 @@ public:
     bool AddLine(const World& world, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color);
     void Render(GPUWorld& gpuWorld);
 
-	std::unique_ptr<DXPipeline> mDebugPipeline;
+	ComPtr<ID3D12PipelineState> mDebugPipeline;
 };
 
 CE::DebugRenderer::DebugRenderer()
@@ -38,15 +38,15 @@ CE::DebugRenderer::Impl::Impl()
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
 	std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/DebugVertex.hlsl");
-	ComPtr<ID3DBlob> v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+	ComPtr<ID3DBlob> v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
 	shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/DebugPixel.hlsl");
-	ComPtr<ID3DBlob> p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
-	mDebugPipeline = std::make_unique<DXPipeline>();
-	mDebugPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
-	mDebugPipeline->AddInput("COLOR", DXGI_FORMAT_R32G32B32A32_FLOAT, 1);
-	mDebugPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
-	mDebugPipeline->SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE);
-	mDebugPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"Debug line pipeline");
+	ComPtr<ID3DBlob> p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
+	mDebugPipeline = DXPipelineBuilder()
+		.AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+		.AddInput("COLOR", DXGI_FORMAT_R32G32B32A32_FLOAT, 1)
+		.SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
+		.SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE)
+		.Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"Debug line pipeline");
 }
 
 void CE::DebugRenderer::AddLine(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color) const
@@ -122,7 +122,7 @@ void CE::DebugRenderer::Impl::Render(GPUWorld& gpuWorld)
 
 	// Draw the lines
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST); 
-	commandList->SetPipelineState(mDebugPipeline->GetPipeline().Get());
+	commandList->SetPipelineState(mDebugPipeline.Get());
 
 	gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
 
