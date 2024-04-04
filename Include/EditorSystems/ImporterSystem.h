@@ -71,14 +71,19 @@ namespace CE
 
 		static std::filesystem::path GetPathToSaveAssetTo(const ImportPreview& preview, const std::vector<ImportPreview>& toImport);
 
+		static std::optional<std::filesystem::path> GetDuplicateOfExistingAssets(const ImportPreview& preview);
+
+		static bool AreDuplicates(const ImportPreview& preview1, const ImportPreview& preview2);
+
+		static std::vector<std::filesystem::path> GetDuplicatesInOtherPreviews(const ImportPreview& preview, std::vector<ImportPreview>::const_iterator begin, std::vector<ImportPreview>::const_iterator end);
+
+		static std::vector<std::filesystem::path> GetDuplicates(const ImportPreview& preview, std::vector<ImportPreview>::const_iterator begin, std::vector<ImportPreview>::const_iterator end);
+
 		static bool WouldAssetBeDeletedOrReplacedOnImporting(const WeakAsset<>& asset, const std::vector<ImportPreview>& toImport);
 
 		void RetrieveImportResultsFromFutures();
 
 		void Preview();
-
-		// Check to see if our user submitted multiple assets with the same name
-		uint32 ShowDuplicateImportedAssetsErrors();
 
 		uint32 ShowDuplicateAssetsErrors();
 
@@ -99,7 +104,9 @@ namespace CE
 
 		std::array<DirToWatch, 2> mDirectoriesToWatch{};
 
-		static inline bool sIsOpen;
+		static inline bool sExcludeDuplicates{};
+
+		static inline bool sIsOpen{};
 		bool mHasWindowPoppedUp{};
 
 		friend ReflectAccess;

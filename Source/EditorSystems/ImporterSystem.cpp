@@ -125,10 +125,11 @@ void CE::ImporterSystem::Tick(const float)
 	mHasWindowPoppedUp = true;
 
 	Preview();
-	uint32 numOfConflicts = ShowDuplicateImportedAssetsErrors();
-	numOfConflicts += ShowDuplicateAssetsErrors();
+	uint32 numOfConflicts = ShowDuplicateAssetsErrors();
 	numOfConflicts += ShowErrorsToWarnAboutDiscardChanges();
 	numOfConflicts += ShowReadOnlyErrors();
+
+	ImGui::Checkbox("Exclude duplicates", &sExcludeDuplicates);
 
 	if (numOfConflicts != 0)
 	{
@@ -406,6 +407,62 @@ std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPrevi
 	return dir / filename.append(AssetManager::sAssetExtension);
 }
 
+std::optional<std::filesystem::path> CE::ImporterSystem::GetDuplicateOfExistingAssets(const ImportPreview& preview)
+{
+	const std::string& name = preview.mImportedAsset.GetMetaData().GetName();
+	const std::optional<WeakAsset<>> existingAsset = AssetManager::Get().TryGetWeakAsset(name);
+
+	if (existingAsset.has_value()
+		&& !WasImportedFrom(*existingAsset, preview.mImportRequest.mFile))
+	{
+		return existingAsset->GetFileOfOrigin().value_or("Asset generated at runtime");
+	}
+	return std::nullopt;
+}
+
+bool CE::ImporterSystem::AreDuplicates(const ImportPreview& preview1, const ImportPreview& preview2)
+{
+	return &preview1 != &preview2
+		&& preview1.mImportedAsset.GetMetaData().GetName() == preview2.mImportedAsset.GetMetaData().GetName();
+}
+
+std::vector<std::filesystem::path> CE::ImporterSystem::GetDuplicatesInOtherPreviews(const ImportPreview& preview,
+                                                                                    std::vector<ImportPreview>::const_iterator begin, std::vector<ImportPreview>::const_iterator end)
+{
+	std::vector<std::filesystem::path> returnValue{};
+
+	for (auto preview2 = begin; preview2 != end; ++preview2)
+	{
+		if (AreDuplicates(preview, *preview2))
+		{
+			returnValue.emplace_back(preview2->mImportRequest.mFile);
+		}
+	}
+
+	return returnValue;
+}
+
+std::vector<std::filesystem::path> CE::ImporterSystem::GetDuplicates(const ImportPreview& preview, std::vector<ImportPreview>::const_iterator begin, std::vector<ImportPreview>::const_iterator end)
+{
+	std::vector<std::filesystem::path> returnValue = GetDuplicatesInOtherPreviews(preview, begin, end);
+
+	const std::string& name = preview.mImportedAsset.GetMetaData().GetName();
+	const std::optional<WeakAsset<>> existingAsset = AssetManager::Get().TryGetWeakAsset(name);
+
+	if (std::optional<std::filesystem::path> existingDuplicate = GetDuplicateOfExistingAssets(preview);
+		existingDuplicate.has_value())
+	{
+		returnValue.emplace_back(std::move(*existingDuplicate));
+	}
+
+	if (!returnValue.empty())
+	{
+		returnValue.emplace(returnValue.begin(), preview.mImportRequest.mFile);
+	}
+
+	return returnValue;
+}
+
 bool CE::ImporterSystem::WouldAssetBeDeletedOrReplacedOnImporting(const WeakAsset<>& asset, const std::vector<ImportPreview>& toImport)
 {
 	if (!asset.GetMetaData().GetImporterInfo().has_value())
@@ -519,69 +576,49 @@ void CE::ImporterSystem::Preview()
 	ImGui::EndChild();
 }
 
-uint32 CE::ImporterSystem::ShowDuplicateImportedAssetsErrors()
+uint32 CE::ImporterSystem::ShowDuplicateAssetsErrors()
 {
 	uint32 numOfErrors{};
-	std::vector<std::string> duplicateNames{};
-	bool isOpen{}, shouldDisplay{};
+
+	if (sExcludeDuplicates)
+	{
+		return numOfErrors;
+	}
+
+	std::vector<std::string_view> namesAlreadyChecked{};
+	bool isOpenAlready{}, shouldDisplay{};
 
 	for (auto preview1 = mImportPreview.begin(); preview1 != mImportPreview.end(); ++preview1)
 	{
-		const auto& name = preview1->mImportedAsset.GetMetaData().GetName();
+		const std::string_view name = preview1->mImportedAsset.GetMetaData().GetName();
 
-		if (std::find(duplicateNames.begin(), duplicateNames.end(), name) != duplicateNames.end())
+		if (std::find(namesAlreadyChecked.begin(), namesAlreadyChecked.end(), name) != namesAlreadyChecked.end())
 		{
 			continue;
 		}
 
-		for (auto preview2 = preview1 + 1; preview2 != mImportPreview.end(); ++preview2)
-		{
-			if (preview2->mImportedAsset.GetMetaData().GetName() != name)
-			{
-				continue;
-			}
+		std::vector<std::filesystem::path> duplicates = GetDuplicates(*preview1, preview1 + 1, mImportPreview.end());
 
-			// Oh noo, we are trying to import multiple assets with the same name
-			if (OpenErrorTab(isOpen, shouldDisplay, "Duplicate names from currently imported"))
-			{
-				ImGui::TextWrapped(Format("The asset {} was imported from both {} amd {}. Choose one of them to exclude from the importing process.",
-					name,
-					preview1->mImportRequest.mFile.string(),
-					preview2->mImportRequest.mFile.string()).c_str());
-			}
-
-			numOfErrors++;
-		}
-	}
-
-	CloseErrorTab(shouldDisplay);
-	return numOfErrors;
-}
-
-uint32 CE::ImporterSystem::ShowDuplicateAssetsErrors()
-{
-	bool isOpenAlready{}, shouldDisplay{};
-	uint32 numOfErrors{};
-
-	for (const ImportPreview& preview : mImportPreview)
-	{
-		const std::string& name = preview.mImportedAsset.GetMetaData().GetName();
-		const std::optional<WeakAsset<Asset>> existingAsset = AssetManager::Get().TryGetWeakAsset(name);
-
-		if (!existingAsset.has_value()
-			|| WasImportedFrom(*existingAsset, preview.mImportRequest.mFile))
+		if (duplicates.empty())
 		{
 			continue;
 		}
 
-		if (OpenErrorTab(isOpenAlready, shouldDisplay, "Name was taken"))
+		namesAlreadyChecked.push_back(name);
+		numOfErrors++;
+
+		if (OpenErrorTab(isOpenAlready, shouldDisplay, "Duplicate names"))
 		{
-			ImGui::TextWrapped(Format("Could not import {} from {}, there is already an asset with this name (see {})",
-				name,
-				preview.mImportRequest.mFile.string(),
-				existingAsset->GetFileOfOrigin().value_or("assets generated at runtime").string()).c_str());
+			if (ImGui::TreeNode(name.data()))
+			{
+				for (const std::filesystem::path& duplicate : duplicates)
+				{
+					ImGui::TextUnformatted(duplicate.string().c_str());
+				}
+
+				ImGui::TreePop();
+			}
 		}
-		++numOfErrors;
 	}
 
 	CloseErrorTab(shouldDisplay);
@@ -646,6 +683,36 @@ uint32 CE::ImporterSystem::ShowReadOnlyErrors()
 
 void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 {
+	if (sExcludeDuplicates)
+	{
+		std::unordered_map<std::string, std::vector<std::filesystem::path>> duplicatesToErase{};
+
+		for (auto it1 = toImport.begin(); it1 != toImport.end(); ++it1)
+		{
+			const std::string& name = it1->mImportedAsset.GetMetaData().GetName();
+			if (duplicatesToErase.find(name) != duplicatesToErase.end())
+			{
+				continue;
+			}
+
+			duplicatesToErase[name] = GetDuplicatesInOtherPreviews(*it1, it1 + 1, toImport.end());
+		}
+
+		toImport.erase(std::remove_if(toImport.begin(), toImport.end(),
+			[&duplicatesToErase](const ImportPreview& preview)
+			{
+				auto inErase = duplicatesToErase.find(preview.mImportedAsset.GetMetaData().GetName());
+
+				if (inErase != duplicatesToErase.end()
+					&& std::find(inErase->second.begin(), inErase->second.end(), preview.mImportRequest.mFile) != inErase->second.end())
+				{
+					return true;
+				}
+
+				return GetDuplicateOfExistingAssets(preview).has_value();
+			}), toImport.end());
+	}
+
 	std::vector<WeakAsset<>> assetsToEraseEntirely{};
 
 	AssetManager& assetManager = AssetManager::Get();

@@ -372,6 +372,7 @@ std::optional<CE::WeakAsset<CE::Asset>> CE::AssetManager::Duplicate(WeakAsset<CE
 	AssetFileMetaData newMetaData{ copyName, asset.GetMetaData().GetClass(), asset.GetMetaData().GetAssetVersion() };
 
 	{
+		std::filesystem::create_directories(copyPath.parent_path());
 		std::ofstream file{ copyPath, std::ofstream::binary };
 
 		if (!file.is_open())
