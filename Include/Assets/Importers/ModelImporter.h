@@ -11,7 +11,7 @@ namespace CE
 	{
 	public:
 
-		std::optional<std::vector<ImportedAsset>> Import(const std::filesystem::path& path) const override;
+		Importer::ImportResult Import(const std::filesystem::path& path) const override;
 
 		static std::optional<ImportedAsset> ImportFromMemory(const std::filesystem::path& importedFromFile,
 			const std::string& name,

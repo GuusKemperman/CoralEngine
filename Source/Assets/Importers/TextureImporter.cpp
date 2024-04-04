@@ -18,7 +18,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::TextureImporter::Import(const 
 	if (pixels == nullptr)
 	{
 		LOG(LogAssets, Error, "Importing texture failed: stbi returned nullptr", path.string());
-		return std::optional<std::vector<ImportedAsset>>{};
+		return Importer::ImportResult{};
 	}
 
 	const MetaType* const myType = MetaManager::Get().TryGetType<TextureImporter>();
@@ -39,7 +39,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::TextureImporter::Import(const 
 		returnValue.emplace_back(std::move(*importedTexture));
 		return returnValue;
 	}
-	return std::optional<std::vector<ImportedAsset>>{};
+	return Importer::ImportResult{};
 }
 
 

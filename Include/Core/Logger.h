@@ -1,9 +1,11 @@
 #pragma once
+#include <mutex>
+
 #include "Core/EngineSubsystem.h"
 
 #if LOGGING_ENABLED
 
-#define LOG(channel, severity, formatString, ...) CE::Logger::Get().Log(CE::Format(#formatString, ##__VA_ARGS__), #channel, severity, CE::SourceLocation::current( __LINE__, __FILE__ ));
+#define LOG(channel, severity, formatString, ...) CE::Logger::Get().Log(CE::Format(#formatString, ##__VA_ARGS__), #channel, severity, __FILE__, __LINE__);
 
 // If logging is enabled, we replace assert with a fatal log entry.
 // This will instruct the logger to dump the current log contents to
@@ -81,8 +83,9 @@ namespace CE
 	public:
 		void Log(std::string_view message,
 			std::string_view channel, 
-			LogSeverity severity, 
-			SourceLocation&& origin,
+			LogSeverity severity,
+			std::string_view file,
+			uint32 line,
 			std::function<void()>&& onMessageClick = {});
 
 		void Clear();
@@ -128,16 +131,23 @@ namespace CE
 		std::unordered_map<uint32, Channel> mChannels{};
 		std::unique_ptr<ManyStrings> mEntryContents{};
 
+		// We support logging from multiple threads.
+		std::mutex mMutex{};
+
 		struct Entry
 		{
-			Entry(const Channel& channel, LogSeverity severity, SourceLocation&& origin, std::function<void()>&& onClick) :
+			Entry(const Channel& channel, LogSeverity severity, std::string_view file, uint32 line, std::function<void()>&& onClick) :
 				mChannel(channel),
 				mSeverity(severity),
-				mOrigin(std::move(origin)),
+				mFromFile(file),
+				mFromLine(line),
 				mOnClick(std::move(onClick)){}
 			std::reference_wrapper<const Channel> mChannel;
 			LogSeverity mSeverity;
-			SourceLocation mOrigin;
+
+			std::string_view mFromFile{};
+			uint32 mFromLine{};
+
 			std::function<void()> mOnClick;
 		};
 		std::vector<Entry> mEntries{};

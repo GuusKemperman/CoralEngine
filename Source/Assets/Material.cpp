@@ -16,12 +16,12 @@ CE::Material::Material(std::string_view name) :
 CE::Material::Material(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {
-	switch (loadInfo.GetVersion())
+	switch (loadInfo.GetMetaData().GetAssetVersion())
 	{
 	case 0: LoadV0(loadInfo); break;
 	case 1:
 	case 2: LoadV1V2(loadInfo); break;
-	default: LOG(LogAssets, Error, "Invalid version {} for material {}", loadInfo.GetVersion(), GetName());
+	default: LOG(LogAssets, Error, "Invalid version {} for material {}", loadInfo.GetMetaData().GetAssetVersion(), GetName());
 	}
 }
 
@@ -196,7 +196,7 @@ void CE::Material::LoadV1V2(AssetLoadInfo& loadInfo)
 	*serializedEmissiveTexture >> mEmissiveTexture;
 
 	// Occlusion strength is 0 at default in V1, that makes the materials being rendered black at default
-	if (loadInfo.GetVersion() == 1)
+	if (loadInfo.GetMetaData().GetAssetVersion() == 1)
 	{
 		mOcclusionStrength = 1.0f;
 	}

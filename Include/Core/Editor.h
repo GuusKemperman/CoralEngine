@@ -33,6 +33,15 @@ namespace CE
 		CastTo* TryGetSystem(std::string_view systemName);
 
 		/*
+		Get a system by type.
+
+		Note:
+			If there is no system of this type, this function will return nullptr.
+		*/
+		template<typename SystemType>
+		SystemType* TryGetSystem();
+
+		/*
 		Add a system. The arguments provided will be passed to the constructor of T.
 
 		If there is already a system with the same name, this function will emit a warning
@@ -178,6 +187,12 @@ namespace CE
 	CastTo* Editor::TryGetSystem(const std::string_view systemName)
 	{
 		return dynamic_cast<CastTo*>(TryGetSystemInternal(systemName));
+	}
+
+	template <typename SystemType>
+	SystemType* Editor::TryGetSystem()
+	{
+		return dynamic_cast<SystemType*>(TryGetSystemInternal(MakeTypeId<SystemType>()));
 	}
 
 	template<typename T, typename ...Args>

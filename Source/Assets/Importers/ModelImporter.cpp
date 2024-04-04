@@ -94,7 +94,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 	if (***REMOVED***ne == nullptr)
 	{
 		LOG(LogAssets, Error, "Loading of file {} failed: assimp returned null ***REMOVED***ne", file.string());
-		return std::optional<std::vector<ImportedAsset>>{};
+		return Importer::ImportResult{};
 	}
 
 	const MetaType* const myType = MetaManager::Get().TryGetType<ModelImporter>();
@@ -437,7 +437,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 
 	if (anyErrors)
 	{
-		return std::optional<std::vector<ImportedAsset>>{};
+		return Importer::ImportResult{};
 	}
 
 	World world{ false };
@@ -515,7 +515,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 	}
 	
 	LOG(LogError, Error, "Importing {} failed; failed to make a valid prefab out of the ai ***REMOVED***ne", file.string());
-	return std::optional<std::vector<ImportedAsset>>{};
+	return Importer::ImportResult{};
 }
 
 std::optional<CE::ImportedAsset> CE::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,

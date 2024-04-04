@@ -74,7 +74,6 @@ void CE::UISystem::Update(World& world, float dt)
 
 	Input& input = Input::Get();
 
-
 	if (selectedEntity == entt::null
 		|| (!input.WasKeyboardKeyPressed(Input::KeyboardKey::Enter)
 			&& !input.WasKeyboardKeyPressed(Input::KeyboardKey::NumpadEnter)
@@ -82,7 +81,6 @@ void CE::UISystem::Update(World& world, float dt)
 	{
 		return;
 	}
-
 
 	for (auto&& [typeId, storage] : reg.Storage())
 	{
