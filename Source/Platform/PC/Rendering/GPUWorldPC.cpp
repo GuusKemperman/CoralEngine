@@ -467,11 +467,7 @@ uint32 CE::GPUWorld::ReadCompactClusterCounter() const
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->ChangeState(commandList, D3D12_RESOURCE_STATE_COPY_SOURCE);
     commandList->CopyResource(mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_READBACK_RESOURCE]->Get(), mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->Get());
 
-    engineDevice.WaitForFence();
-
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->ChangeState(commandList, prevState);
-
-    engineDevice.WaitForFence();
 
     void* mappedData;
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_READBACK_RESOURCE]->Get()->Map(0, nullptr, &mappedData);
@@ -596,8 +592,6 @@ void CE::GPUWorld::ClearClusterData()
     data.RowPitch = sizeof(InfoStruct::Clustering::DXLightGridElement);
     data.SlicePitch = sizeof(InfoStruct::Clustering::DXLightGridElement) * 4000;
     mStructuredBuffers[InfoStruct::LIGHT_GRID_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
-
-
 }
 
 void CE::GPUWorld::UpdateLights(int numDirLights, int numPointLights)

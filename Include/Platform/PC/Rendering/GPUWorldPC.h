@@ -59,6 +59,7 @@ namespace CE
         void UpdateLights(int numDirLights, int numPointLights);
         void ClearClusterData();
 
+        DXResource& GetStructuredBuffer(InfoStruct::DXStructuredBuffers structuredBuffer) const { return *mStructuredBuffers[structuredBuffer]; }
         const DXConstBuffer& GetConstantBuffer(InfoStruct::DXConstantBuffers constantBuffer) const { return *mConstBuffers[constantBuffer]; }
         const DXConstBuffer& GetCameraBuffer() const { return *mConstBuffers[InfoStruct::CAM_MATRIX_CB]; };
         DXConstBuffer& GetMaterialInfoBuffer() const { return *mConstBuffers[InfoStruct::MATERIAL_INFO_CB]; };
@@ -66,7 +67,6 @@ namespace CE
         DXConstBuffer& GetModelMatrixBuffer() const { return *mConstBuffers[InfoStruct::MODEL_MATRIX_CB]; };
         DXConstBuffer& GetBoneMatrixBuffer() const { return *mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]; };
         DXConstBuffer& GetMeshColorBuffer() const { return *mConstBuffers[InfoStruct::COLOR_CB]; };
-        DXResource& GetStructuredBuffer(InfoStruct::DXStructuredBuffers structuredBuffer) const { return *mStructuredBuffers[structuredBuffer]; }
 
         const DXHeapHandle& GetDirLightHeapSlot() const { return mDirectionalLightsSRVSlot; };
         const DXHeapHandle& GetPointLigthHeapSlot() const { return mPointLightsSRVSlot; };

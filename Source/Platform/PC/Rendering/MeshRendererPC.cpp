@@ -143,8 +143,7 @@ void CE::MeshRenderer::Render(const World& world)
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     DepthPrePass(world, gpuWorld);
-
-    CullClusters(world, gpuWorld);
+    ClusteredShading(world);
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
     commandList->SetPipelineState(mPBRPipeline.Get());
@@ -255,9 +254,6 @@ void CE::MeshRenderer::Render(const World& world)
             meshCounter++;
         }
     }
-
-    ClusteredShading(world);
-
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 }
 
@@ -365,6 +361,12 @@ void CE::MeshRenderer::CalculateClusterGrid(const GPUWorld& gpuWorld)
 
     glm::ivec3 clusterGrid = gpuWorld.GetClusterGrid();
     commandList->Dispatch(clusterGrid.x, clusterGrid.y, clusterGrid.z);
+
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    barrier.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::CLUSTER_GRID_SB).Get(); // The resource that you're synchronizing.
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    commandList->ResourceBarrier(1, &barrier);
 }
 
 void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld)
@@ -432,6 +434,13 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
         meshCounter++;
     }
 
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    barrier.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::ACTIVE_CLUSTER_SB).Get();
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    commandList->ResourceBarrier(1, &barrier);
+
+
 }
 
 void CE::MeshRenderer::CompactClusters(const GPUWorld& gpuWorld)
@@ -448,6 +457,12 @@ void CE::MeshRenderer::CompactClusters(const GPUWorld& gpuWorld)
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 10, gpuWorld.GetActiveClusterSRVSlot());
 
     commandList->Dispatch(gpuWorld.GetNumberOfClusters(), 1, 1);
+
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    barrier.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::COMPACT_CLUSTER_SB).Get(); // The resource that you're synchronizing.
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    commandList->ResourceBarrier(1, &barrier);
 }
 
 void CE::MeshRenderer::AssignLights(const GPUWorld& gpuWorld, int compactClusterCount)
@@ -472,23 +487,31 @@ void CE::MeshRenderer::AssignLights(const GPUWorld& gpuWorld, int compactCluster
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 7, gpuWorld.GetLigthGridUAVSlot());
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 8, gpuWorld.GetLightIndicesUAVSlot());
     commandList->Dispatch(compactClusterCount, 1, 1);
+
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    barrier.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::POINT_LIGHT_COUNTER).Get(); // The resource that you're synchronizing.
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    commandList->ResourceBarrier(1, &barrier);
+
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    barrier.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::LIGHT_GRID_SB).Get(); // The resource that you're synchronizing.
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    commandList->ResourceBarrier(1, &barrier);
+
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    barrier.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::LIGHT_INDICES).Get(); // The resource that you're synchronizing.
+    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    commandList->ResourceBarrier(1, &barrier);
 }
 
 void CE::MeshRenderer::ClusteredShading(const World& world)
 {
-    Device& engineDevice = Device::Get();
     GPUWorld& gpuWorld = world.GetGPUWorld();
 
-    engineDevice.WaitForFence();
     gpuWorld.ClearClusterData();
     CalculateClusterGrid(gpuWorld);
-    engineDevice.WaitForFence();
+    CullClusters(world, gpuWorld);
     CompactClusters(gpuWorld);
-    engineDevice.WaitForFence();
-    uint32 numOfCompactClusters = gpuWorld.ReadCompactClusterCounter();
-    if (numOfCompactClusters > 0)
-    {
-        AssignLights(gpuWorld, numOfCompactClusters);
-        engineDevice.WaitForFence();
-    }
+    AssignLights(gpuWorld, gpuWorld.GetNumberOfClusters());
 }

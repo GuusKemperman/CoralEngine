@@ -13,7 +13,7 @@ public:
 	
 	ComPtr<ID3D12Resource> GetResource() { return mResource; }
 	ComPtr<ID3D12Resource> GetUploadResource(int subresource) { return mUploadBuffers[subresource]->GetResource(); }
-	ID3D12Resource* Get() { return mResource.Get(); }
+	ID3D12Resource* Get() const { return mResource.Get(); }
 	void SetResource(ComPtr<ID3D12Resource> res) { mResource = res; }
 
 	CD3DX12_RESOURCE_DESC GetDesc() const { return mDesc; }
