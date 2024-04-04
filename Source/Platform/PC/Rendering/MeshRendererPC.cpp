@@ -141,7 +141,6 @@ void CE::MeshRenderer::Render(const World& world)
 
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-    gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
 
     DepthPrePass(world, gpuWorld);
 
@@ -149,17 +148,16 @@ void CE::MeshRenderer::Render(const World& world)
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
     commandList->SetPipelineState(mPBRPipeline.Get());
-    gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
-    commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
-    gpuWorld.GetLightBuffer().Bind(commandList, 1, 0, frameIndex);
-    gpuWorld.GetCameraBuffer().Bind(commandList, 4, 0, frameIndex);
-    gpuWorld.GetConstantBuffer(InfoStruct::CLUSTERING_CAM_CB).Bind(commandList, 22, 0, frameIndex);
-    gpuWorld.GetConstantBuffer(InfoStruct::CLUSTER_INFO_CB).Bind(commandList, 23, 0, frameIndex);
 
-    resourceHeap->BindToGraphics(commandList, 18, gpuWorld.GetDirLightHeapSlot());
-    resourceHeap->BindToGraphics(commandList, 19, gpuWorld.GetPointLigthHeapSlot());
-    resourceHeap->BindToGraphics(commandList, 20, gpuWorld.GetLigthGridSRVSlot());
-    resourceHeap->BindToGraphics(commandList, 21, gpuWorld.GetLightIndicesSRVSlot());
+    gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
+    gpuWorld.GetLightBuffer().Bind(commandList, 3, 0, frameIndex);
+    gpuWorld.GetConstantBuffer(InfoStruct::CLUSTERING_CAM_CB).Bind(commandList, 6, 0, frameIndex);
+    gpuWorld.GetConstantBuffer(InfoStruct::CLUSTER_INFO_CB).Bind(commandList, 7, 0, frameIndex);
+
+    resourceHeap->BindToGraphics(commandList, 13, gpuWorld.GetDirLightHeapSlot());
+    resourceHeap->BindToGraphics(commandList, 14, gpuWorld.GetPointLigthHeapSlot());
+    resourceHeap->BindToGraphics(commandList, 15, gpuWorld.GetLigthGridSRVSlot());
+    resourceHeap->BindToGraphics(commandList, 16, gpuWorld.GetLightIndicesSRVSlot());
 
     int meshCounter = 0;
 
@@ -178,28 +176,28 @@ void CE::MeshRenderer::Render(const World& world)
             {
                 if (staticMeshComponent.mMaterial->mBaseColorTexture && staticMeshComponent.mMaterial->mBaseColorTexture->WasSentToGpu())
                 {
-                    staticMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 6);
+                    staticMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 8);
                 }
                 if (staticMeshComponent.mMaterial->mEmissiveTexture && staticMeshComponent.mMaterial->mEmissiveTexture->WasSentToGpu())
                 {
-                    staticMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 7);
+                    staticMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 9);
                 }
                 if (staticMeshComponent.mMaterial->mMetallicRoughnessTexture && staticMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSentToGpu())
                 {
-                    staticMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 8);
+                    staticMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
                 }
                 if (staticMeshComponent.mMaterial->mNormalTexture && staticMeshComponent.mMaterial->mNormalTexture->WasSentToGpu())
                 {
-                    staticMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 9);
+                    staticMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 11);
                 }
                 if (staticMeshComponent.mMaterial->mOcclusionTexture && staticMeshComponent.mMaterial->mOcclusionTexture->WasSentToGpu())
                 {
-                    staticMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 10);
+                    staticMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 12);
                 }
             }
 
-            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
-            gpuWorld.GetMaterialInfoBuffer().Bind(commandList, 3, meshCounter, frameIndex);
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
+            gpuWorld.GetMaterialInfoBuffer().Bind(commandList, 4, meshCounter, frameIndex);
 
             HandleColorComponent(world, entity, meshCounter, frameIndex);
 
@@ -226,29 +224,29 @@ void CE::MeshRenderer::Render(const World& world)
             {
                 if (skinnedMeshComponent.mMaterial->mBaseColorTexture && skinnedMeshComponent.mMaterial->mBaseColorTexture->WasSentToGpu())
                 {
-                    skinnedMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 6);
+                    skinnedMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 8);
                 }
                 if (skinnedMeshComponent.mMaterial->mEmissiveTexture && skinnedMeshComponent.mMaterial->mEmissiveTexture->WasSentToGpu())
                 {
-                    skinnedMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 7);
+                    skinnedMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 9);
                 }
                 if (skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture && skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSentToGpu())
                 {
-                    skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 8);
+                    skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
                 }
                 if (skinnedMeshComponent.mMaterial->mNormalTexture && skinnedMeshComponent.mMaterial->mNormalTexture->WasSentToGpu())
                 {
-                    skinnedMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 9);
+                    skinnedMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 11);
                 }
                 if (skinnedMeshComponent.mMaterial->mOcclusionTexture && skinnedMeshComponent.mMaterial->mOcclusionTexture->WasSentToGpu())
                 {
-                    skinnedMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 10);
+                    skinnedMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 12);
                 }
             }
 
-            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
-            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
-            gpuWorld.GetMaterialInfoBuffer().Bind(commandList, 3, meshCounter, frameIndex);
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
+            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
+            gpuWorld.GetMaterialInfoBuffer().Bind(commandList, 4, meshCounter, frameIndex);
 
             HandleColorComponent(world, entity, meshCounter, frameIndex);
 
@@ -271,6 +269,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
     int frameIndex = engineDevice.GetFrameIndex();
 
     commandList->SetPipelineState(mZPipeline.Get());
+    gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
 
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
@@ -286,7 +285,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
             modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
             modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
             gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
-            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
 
             staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
             meshCounter++;
@@ -309,11 +308,11 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
             modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
             modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
             gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
-            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
 
             const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
             gpuWorld.GetBoneMatrixBuffer().Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
-            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
+            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
 
             skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
             meshCounter++;
@@ -344,7 +343,7 @@ void CE::MeshRenderer::HandleColorComponent(const World& world, const entt::enti
         meshColorBuffer.Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
     }
 
-    meshColorBuffer.Bind(commandList, 17, meshCounter, frameIndex);
+    meshColorBuffer.Bind(commandList, 5, meshCounter, frameIndex);
 }
 
 void CE::MeshRenderer::CalculateClusterGrid(const GPUWorld& gpuWorld)
