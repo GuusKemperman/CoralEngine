@@ -162,8 +162,8 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::
 		[&fileToImport](const ImportFuture& future)
 		{
 			return future.mImportRequest.mFile == fileToImport;
-		}) != mImportFutures.end() ||
-		std::find_if(mImportPreview.begin(), mImportPreview.end(),
+		}) != mImportFutures.end() 
+		|| std::find_if(mImportPreview.begin(), mImportPreview.end(),
 			[&fileToImport](const ImportPreview& future)
 			{
 				return future.mImportRequest.mFile == fileToImport;

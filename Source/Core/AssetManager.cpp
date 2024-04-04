@@ -229,7 +229,7 @@ void CE::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
 #ifdef EDITOR
 	Editor::Get().Refresh({ Editor::RefreshRequest::Volatile, renameLambda });
 #else
-	LOG(LogAssets, Warning, "Renaming asset {} without the editor. Existing weak assets to this asset will become dangling.", asset.GetName());
+	LOG(LogAssets, Warning, "Renaming asset {} without the editor. Existing weak assets to this asset will become dangling.", asset.GetMetaData().GetName());
 	renameLambda();
 #endif
 }
@@ -268,7 +268,7 @@ void CE::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
 #ifdef EDITOR
 	Editor::Get().Refresh({ Editor::RefreshRequest::Volatile, deleteLambda });
 #else
-	LOG(LogAssets, Warning, "Deleting asset {} without the editor. Existing weak assets to this asset will become dangling.", asset.GetName());
+	LOG(LogAssets, Warning, "Deleting asset {} without the editor. Existing weak assets to this asset will become dangling.", asset.GetMetaData().GetName());
 	deleteLambda();
 #endif
 }
