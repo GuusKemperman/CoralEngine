@@ -17,34 +17,11 @@
 #include "World/Physics.h"
 #include "World/WorldViewport.h"
 
-CE::PhysicsSystem::PhysicsSystem()
+CE::PhysicsSystem::PhysicsSystem() :
+	mOnCollisionEntryEvents(GetAllBoundEvents(sCollisionEntryEvent)),
+	mOnCollisionStayEvents(GetAllBoundEvents(sCollisionStayEvent)),
+	mOnCollisionExitEvents(GetAllBoundEvents(sCollisionExitEvent))
 {
-	for (const MetaType& type : MetaManager::Get().EachType())
-	{
-		if (!ComponentFilter::IsTypeValid(type))
-		{
-			continue;
-		}
-
-		const MetaFunc* const entry = TryGetEvent(type, sCollisionEntryEvent);
-		const MetaFunc* const stay = TryGetEvent(type, sCollisionStayEvent);
-		const MetaFunc* const exit = TryGetEvent(type, sCollisionExitEvent);
-
-		if (entry != nullptr)
-		{
-			mOnCollisionEntryEvents.emplace_back(CollisionEvent{ type, *entry, entry->GetProperties().Has(Props::sIsEventStaticTag) });
-		}
-
-		if (stay != nullptr)
-		{
-			mOnCollisionStayEvents.emplace_back(CollisionEvent{ type, *stay, stay->GetProperties().Has(Props::sIsEventStaticTag) });
-		}
-
-		if (exit != nullptr)
-		{
-			mOnCollisionExitEvents.emplace_back(CollisionEvent{ type, *exit, exit->GetProperties().Has(Props::sIsEventStaticTag) });
-		}
-	}
 }
 
 void CE::PhysicsSystem::Update(World& world, float dt)
@@ -294,7 +271,7 @@ void CE::PhysicsSystem::UpdateTransformedColliders(World& world)
 
 template <typename CollisionDataContainer>
 void CE::PhysicsSystem::CallEvents(World& world, const CollisionDataContainer& collisions,
-                                         const std::vector<CollisionEvent>& events)
+                                         const std::vector<BoundEvent>& events)
 {
 	if (collisions.empty())
 	{
@@ -303,9 +280,9 @@ void CE::PhysicsSystem::CallEvents(World& world, const CollisionDataContainer& c
 
 	Registry& reg = world.GetRegistry();
 
-	for (const CollisionEvent& event : events)
+	for (const BoundEvent& event : events)
 	{
-		entt::sparse_set* const storage = reg.Storage(event.mComponentType.get().GetTypeId());
+		entt::sparse_set* const storage = reg.Storage(event.mType.get().GetTypeId());
 
 		if (storage == nullptr)
 		{
@@ -407,7 +384,7 @@ void CE::PhysicsSystem::DebugDrawing(const World& world)
 	}
 }
 
-void CE::PhysicsSystem::CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage,
+void CE::PhysicsSystem::CallEvent(const BoundEvent& event, World& world, entt::sparse_set& storage,
         entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint)
 {
 	static_assert(std::is_same_v<decltype(sCollisionEntryEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
@@ -422,12 +399,12 @@ void CE::PhysicsSystem::CallEvent(const CollisionEvent& event, World& world, ent
 
 	if (event.mIsStatic)
 	{
-		event.mEvent.get().InvokeUncheckedUnpacked(world, owner, otherEntity, depth, normal, contactPoint);
+		event.mFunc.get().InvokeUncheckedUnpacked(world, owner, otherEntity, depth, normal, contactPoint);
 	}
 	else
 	{
-		MetaAny component{ event.mComponentType, storage.value(owner), false };
-		event.mEvent.get().InvokeUncheckedUnpacked(component, world, owner, otherEntity, depth, normal, contactPoint);
+		MetaAny component{ event.mType, storage.value(owner), false };
+		event.mFunc.get().InvokeUncheckedUnpacked(component, world, owner, otherEntity, depth, normal, contactPoint);
 	}
 }
 

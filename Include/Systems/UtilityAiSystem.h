@@ -1,5 +1,6 @@
 #pragma once
 #include "Systems/System.h"
+#include "Utilities/Events.h"
 
 namespace CE
 {
@@ -32,6 +33,8 @@ namespace CE
 	private:
 		template<typename EventT>
 		static void CallTransitionEvent(const EventT& event, const MetaType* type, World& world, entt::entity owner);
+
+		std::vector<BoundEvent> mBoundEvaluateEvents = GetAllBoundEvents(sAIEvaluateEvent);
 
 		friend ReflectAccess;
 		static MetaType Reflect();
