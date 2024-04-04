@@ -90,7 +90,6 @@ DXPipelineBuilder& DXPipelineBuilder::SetDepthFormat(const DXGI_FORMAT& format)
 	return *this;
 }
 
-void DXPipeline::SetVertexAndPixelShaders(LPVOID vsBuffer, SIZE_T vsSize, LPVOID psBuffer, SIZE_T psSize)
 DXPipelineBuilder& DXPipelineBuilder::SetVertexAndPixelShaders(LPVOID vsBuffer, SIZE_T vsSize, LPVOID psBuffer, SIZE_T psSize)
 {
 	mVertexShaderBuffer = vsBuffer;

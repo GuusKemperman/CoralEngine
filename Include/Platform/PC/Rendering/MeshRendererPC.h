@@ -24,18 +24,16 @@ namespace CE
         void CullClusters(const World& world, const GPUWorld& gpuWorld);
         void CompactClusters(const GPUWorld& gpuWorld);
         void AssignLights(const GPUWorld& gpuWorld, int numberOfCompactClusters);
-        //void CullClustersCS(const GPUWorld& gpuWorld, const FrameBuffer& buffer);
-
         void ClusteredShading(const World& world);
 
-        std::unique_ptr<DXPipeline> mPBRPipeline;
-        std::unique_ptr<DXPipeline> mPBRSkinnedPipeline;
-        std::unique_ptr<DXPipeline> mClusterGridPipeline;
-        std::unique_ptr<DXPipeline> mCullClusterPipeline;
-        std::unique_ptr<DXPipeline> mCullClusterSkinnedMeshPipeline;
-        std::unique_ptr<DXPipeline> mCompactClusterPipeline;
-        std::unique_ptr<DXPipeline> mAssignLigthsPipeline;
-        std::unique_ptr<DXPipeline> mZPipeline;
-        std::unique_ptr<DXPipeline> mZSkinnedPipeline;
+        ComPtr<ID3D12PipelineState>  mPBRPipeline;
+        ComPtr<ID3D12PipelineState>  mPBRSkinnedPipeline;
+        ComPtr<ID3D12PipelineState>  mClusterGridPipeline;
+        ComPtr<ID3D12PipelineState>  mCullClusterPipeline;
+        ComPtr<ID3D12PipelineState>  mCullClusterSkinnedMeshPipeline;
+        ComPtr<ID3D12PipelineState>  mCompactClusterPipeline;
+        ComPtr<ID3D12PipelineState>  mAssignLigthsPipeline;
+        ComPtr<ID3D12PipelineState>  mZPipeline;
+        ComPtr<ID3D12PipelineState>  mZSkinnedPipeline;
     };
 }

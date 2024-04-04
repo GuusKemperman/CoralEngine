@@ -36,7 +36,7 @@ DXResource::~DXResource()
 	}
 
 	CE::Device& engineDevice = CE::Device::Get();
-	engineDevice.AddToDeallocation(std::move(resource));
+	engineDevice.AddToDeallocation(std::move(mResource));
 }
 
 void DXResource::ChangeState(const ComPtr<ID3D12GraphicsCommandList>& list, D3D12_RESOURCE_STATES dstState)

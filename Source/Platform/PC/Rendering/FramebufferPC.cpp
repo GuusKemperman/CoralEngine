@@ -194,10 +194,4 @@ size_t CE::FrameBuffer::GetColorTextureId()
 	Device& engineDevice = Device::Get();
 	return mFrameBufferRscHandle[engineDevice.GetFrameIndex()].GetAddressGPU().ptr;
 }
-void Engine::FrameBuffer::BindDepthStencilResoure() const
-{
-	Device& engineDevice = Device::Get();
-	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
-	commandList->SetComputeRootDescriptorTable(12, mDepthStencilHandle.GetAddressGPU());
-}
 #endif

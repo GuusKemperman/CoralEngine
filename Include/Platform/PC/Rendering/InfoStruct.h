@@ -3,7 +3,7 @@
 #include "DX12Classes/DXDefines.h"
 #include "glm/glm.hpp"
 
-namespace Engine::InfoStruct
+namespace CE::InfoStruct
 {
     struct DXMatrixInfo
     {
@@ -46,6 +46,7 @@ namespace Engine::InfoStruct
         uint32 useMetallicRoughnessTex;
         uint32 useNormalTex;
         uint32 useOcclusionTex;
+        glm::vec4 uvScale = glm::vec4(1);            
     };
 
     struct DXColorMultiplierInfo

@@ -458,7 +458,7 @@ void CE::GPUWorld::Update()
     UpdateClusterData(camera);
 }
 
-uint32 Engine::GPUWorld::ReadCompactClusterCounter() const
+uint32 CE::GPUWorld::ReadCompactClusterCounter() const
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -483,7 +483,7 @@ uint32 Engine::GPUWorld::ReadCompactClusterCounter() const
     return value;
 }
 
-void Engine::GPUWorld::ReadGridData(std::vector<InfoStruct::Clustering::DXAABB>& data)
+void CE::GPUWorld::ReadGridData(std::vector<InfoStruct::Clustering::DXAABB>& data)
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -539,7 +539,7 @@ void CE::GPUWorld::SendMaterialTexturesToGPU(const CE::Material& mat)
     }
 }
 
-void Engine::GPUWorld::UpdateClusterData(const CameraComponent& camera)
+void CE::GPUWorld::UpdateClusterData(const CameraComponent& camera)
 {
     Device& engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
@@ -566,7 +566,7 @@ void Engine::GPUWorld::UpdateClusterData(const CameraComponent& camera)
 
 
 
-void Engine::GPUWorld::ClearClusterData()
+void CE::GPUWorld::ClearClusterData()
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -600,7 +600,7 @@ void Engine::GPUWorld::ClearClusterData()
 
 }
 
-void Engine::GPUWorld::UpdateLights(int numDirLights, int numPointLights)
+void CE::GPUWorld::UpdateLights(int numDirLights, int numPointLights)
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
@@ -621,21 +621,21 @@ void Engine::GPUWorld::UpdateLights(int numDirLights, int numPointLights)
 
     if (mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB]->mResizeBuffer)
     {
-        auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXDirLightInfo) * static_cast<uint>(mDirectionalLights.size()), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+        auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXDirLightInfo) * static_cast<UINT>(mDirectionalLights.size()), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
         mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "DIRECTIONAL LIGHT STRUCTURED BUFFER");
-        mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXDirLightInfo) * static_cast<uint>(mDirectionalLights.size()), 0);
+        mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXDirLightInfo) * static_cast<UINT>(mDirectionalLights.size()), 0);
         srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXDirLightInfo);
-        srvDesc.Buffer.NumElements =static_cast<uint>(mDirectionalLights.size());
+        srvDesc.Buffer.NumElements =static_cast<UINT>(mDirectionalLights.size());
         mDirectionalLightsSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB].get(), &srvDesc);
         mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB]->mResizeBuffer = false;
     }
 
     if (mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->mResizeBuffer) {
-        auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXPointLightInfo) * static_cast<uint>(mPointLights.size()), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+        auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXPointLightInfo) * static_cast<UINT>(mPointLights.size()), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
         mStructuredBuffers[InfoStruct::POINT_LIGHT_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "POINT LIGHT STRUCTURED BUFFER");
-        mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXPointLightInfo) *static_cast<uint>(mPointLights.size()), 0);
+        mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXPointLightInfo) *static_cast<UINT>(mPointLights.size()), 0);
         srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXPointLightInfo);
-        srvDesc.Buffer.NumElements = static_cast<uint>(mPointLights.size());
+        srvDesc.Buffer.NumElements = static_cast<UINT>(mPointLights.size());
         mPointLightsSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::POINT_LIGHT_SB].get(), &srvDesc);
         mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->mResizeBuffer = false;
     }

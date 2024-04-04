@@ -28,9 +28,6 @@ namespace CE
 
 		size_t GetColorTextureId();
 
-	public:
-		void BindDepthStencilResoure() const;
-
 	private:
 		std::unique_ptr<DXResource> mResource[FRAME_BUFFER_COUNT];
 		std::unique_ptr<DXResource> mDepthResource;

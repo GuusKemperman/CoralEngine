@@ -27,6 +27,7 @@
 #include "Assets/Texture.h"
 #include "Assets/StaticMesh.h"
 #include "Assets/SkinnedMesh.h"
+#include "Platform/PC/Rendering/InfoStruct.h"
 
 CE::MeshRenderer::MeshRenderer()
 {
@@ -78,52 +79,52 @@ CE::MeshRenderer::MeshRenderer()
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZSkinnedVertex.hlsl");
-    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
-    mZSkinnedPipeline = std::make_unique<DXPipeline>();
-    mZSkinnedPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
-    mZSkinnedPipeline->AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1);
-    mZSkinnedPipeline->AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2);
-    mZSkinnedPipeline->AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM);
-    mZSkinnedPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0);
-    mZSkinnedPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
+    v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    mZSkinnedPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1)
+        .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2)
+        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/ClusterGridCS.hlsl");
-    ComPtr<ID3DBlob> cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
-    mClusterGridPipeline = std::make_unique<DXPipeline>();
-    mClusterGridPipeline->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
-    mClusterGridPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"CLUSTER GRID COMPUTE SHADER");
+    ComPtr<ID3DBlob> cs = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
+    mClusterGridPipeline = DXPipelineBuilder()
+        .SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize())
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CLUSTER GRID COMPUTE SHADER");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CompactClustersCS.hlsl");
-    cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
-    mCompactClusterPipeline = std::make_unique<DXPipeline>();
-    mCompactClusterPipeline->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
-    mCompactClusterPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"COMPACT CLUSTER COMPUTE SHADER");
+    cs = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
+    mCompactClusterPipeline = DXPipelineBuilder()
+        .SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize())
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"COMPACT CLUSTER COMPUTE SHADER");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/AssignLightsCS.hlsl");
-    cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
-    mAssignLigthsPipeline = std::make_unique<DXPipeline>();
-    mAssignLigthsPipeline->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
-    mAssignLigthsPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"ASSIGN LIGHTS COMPUTE SHADER");
+    cs = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
+    mAssignLigthsPipeline = DXPipelineBuilder()
+        .SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize())
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"ASSIGN LIGHTS COMPUTE SHADER");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CullClustersVS.hlsl");
-    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CullClustersPS.hlsl");
-    p = DXPipeline::ShaderToBlob(shaderPath.c_str(), "ps_5_0");
-    mCullClusterPipeline = std::make_unique<DXPipeline>();
-    mCullClusterPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
-    mCullClusterPipeline->SetDepthState(depth);
-    mCullClusterPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
-    mCullClusterPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
+    p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0");
+    mCullClusterPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .SetDepthState(depth)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
     
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CullClustersSkinnedMeshVS.hlsl");
-    v = DXPipeline::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
-    mCullClusterSkinnedMeshPipeline = std::make_unique<DXPipeline>();
-    mCullClusterSkinnedMeshPipeline->AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0);
-    mCullClusterSkinnedMeshPipeline->AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1);
-    mCullClusterSkinnedMeshPipeline->AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2);
-    mCullClusterSkinnedMeshPipeline->SetDepthState(depth);
-    mCullClusterSkinnedMeshPipeline->SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize());
-    mCullClusterSkinnedMeshPipeline->CreatePipeline(device, reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
+    v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    mCullClusterSkinnedMeshPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1)
+        .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2)
+        .SetDepthState(depth)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
 }
 
 CE::MeshRenderer::~MeshRenderer() = default;
@@ -146,10 +147,10 @@ void CE::MeshRenderer::Render(const World& world)
 
     CullClusters(world, gpuWorld);
 
-    commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
-    commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
+    commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
+    commandList->SetPipelineState(mPBRPipeline.Get());
     gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
-    commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
+    commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
     gpuWorld.GetLightBuffer().Bind(commandList, 1, 0, frameIndex);
     gpuWorld.GetCameraBuffer().Bind(commandList, 4, 0, frameIndex);
     gpuWorld.GetConstantBuffer(InfoStruct::CLUSTERING_CAM_CB).Bind(commandList, 22, 0, frameIndex);
@@ -259,17 +260,17 @@ void CE::MeshRenderer::Render(const World& world)
 
     ClusteredShading(world);
 
-    commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetSignature())->GetSignature().Get());
+    commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 }
 
-void Engine::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld)
+void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld)
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
     int meshCounter = 0;
     int frameIndex = engineDevice.GetFrameIndex();
 
-    commandList->SetPipelineState(mZPipeline->GetPipeline().Get());
+    commandList->SetPipelineState(mZPipeline.Get());
 
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
@@ -292,7 +293,7 @@ void Engine::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuW
         }
     }
 
-    commandList->SetPipelineState(mZSkinnedPipeline->GetPipeline().Get());
+    commandList->SetPipelineState(mZSkinnedPipeline.Get());
 
     {
         const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
@@ -346,14 +347,14 @@ void CE::MeshRenderer::HandleColorComponent(const World& world, const entt::enti
     meshColorBuffer.Bind(commandList, 17, meshCounter, frameIndex);
 }
 
-void Engine::MeshRenderer::CalculateClusterGrid(const GPUWorld& gpuWorld)
+void CE::MeshRenderer::CalculateClusterGrid(const GPUWorld& gpuWorld)
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
     int frameIndex = engineDevice.GetFrameIndex();
 
-    commandList->SetComputeRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
-    commandList->SetPipelineState(mClusterGridPipeline->GetPipeline().Get());
+    commandList->SetComputeRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()));
+    commandList->SetPipelineState(mClusterGridPipeline.Get());
     ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
     
@@ -367,7 +368,7 @@ void Engine::MeshRenderer::CalculateClusterGrid(const GPUWorld& gpuWorld)
     commandList->Dispatch(clusterGrid.x, clusterGrid.y, clusterGrid.z);
 }
 
-void Engine::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld)
+void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld)
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -380,8 +381,8 @@ void Engine::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuW
     data.SlicePitch = sizeof(uint32) * 4000;
     gpuWorld.GetStructuredBuffer(InfoStruct::ACTIVE_CLUSTER_SB).Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
-    commandList->SetGraphicsRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
-    commandList->SetPipelineState(mCullClusterPipeline->GetPipeline().Get());
+    commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()));
+    commandList->SetPipelineState(mCullClusterPipeline.Get());
     ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
     commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
@@ -410,7 +411,7 @@ void Engine::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuW
         meshCounter++;
     }
 
-    commandList->SetPipelineState(mCullClusterSkinnedMeshPipeline->GetPipeline().Get());
+    commandList->SetPipelineState(mCullClusterSkinnedMeshPipeline.Get());
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     const auto skinnedView = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
@@ -434,13 +435,13 @@ void Engine::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuW
 
 }
 
-void Engine::MeshRenderer::CompactClusters(const GPUWorld& gpuWorld)
+void CE::MeshRenderer::CompactClusters(const GPUWorld& gpuWorld)
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 
-    commandList->SetComputeRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
-    commandList->SetPipelineState(mCompactClusterPipeline->GetPipeline().Get());
+    commandList->SetComputeRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()));
+    commandList->SetPipelineState(mCompactClusterPipeline.Get());
     ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
@@ -450,14 +451,14 @@ void Engine::MeshRenderer::CompactClusters(const GPUWorld& gpuWorld)
     commandList->Dispatch(gpuWorld.GetNumberOfClusters(), 1, 1);
 }
 
-void Engine::MeshRenderer::AssignLights(const GPUWorld& gpuWorld, int compactClusterCount)
+void CE::MeshRenderer::AssignLights(const GPUWorld& gpuWorld, int compactClusterCount)
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
     int frameIndex = engineDevice.GetFrameIndex();
 
-    commandList->SetComputeRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
-    commandList->SetPipelineState(mAssignLigthsPipeline->GetPipeline().Get());
+    commandList->SetComputeRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()));
+    commandList->SetPipelineState(mAssignLigthsPipeline.Get());
     ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
@@ -474,7 +475,7 @@ void Engine::MeshRenderer::AssignLights(const GPUWorld& gpuWorld, int compactClu
     commandList->Dispatch(compactClusterCount, 1, 1);
 }
 
-void Engine::MeshRenderer::ClusteredShading(const World& world)
+void CE::MeshRenderer::ClusteredShading(const World& world)
 {
     Device& engineDevice = Device::Get();
     GPUWorld& gpuWorld = world.GetGPUWorld();
