@@ -375,11 +375,11 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
     int frameIndex = engineDevice.GetFrameIndex();
 
-    std::vector<uint32> activeClusters = std::vector<uint32>(4000, 0);
+    std::vector<uint32> activeClusters = std::vector<uint32>(gpuWorld.GetNumberOfClusters(), 0);
     D3D12_SUBRESOURCE_DATA data;
     data.pData = activeClusters.data();
     data.RowPitch = sizeof(uint32);
-    data.SlicePitch = sizeof(uint32) * 4000;
+    data.SlicePitch = sizeof(uint32) * gpuWorld.GetNumberOfClusters();
     gpuWorld.GetStructuredBuffer(InfoStruct::ACTIVE_CLUSTER_SB).Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()));
@@ -439,8 +439,6 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
     barrier.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::ACTIVE_CLUSTER_SB).Get();
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     commandList->ResourceBarrier(1, &barrier);
-
-
 }
 
 void CE::MeshRenderer::CompactClusters(const GPUWorld& gpuWorld)

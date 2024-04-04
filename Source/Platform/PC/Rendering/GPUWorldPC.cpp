@@ -230,7 +230,7 @@ CE::GPUWorld::GPUWorld(const World& world)
     uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
     uavDesc.Buffer.FirstElement = 0;
     uavDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXAABB);
-    uavDesc.Buffer.NumElements = 4000;
+    uavDesc.Buffer.NumElements = mNumberOfClusters;
     mClusterUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::CLUSTER_GRID_SB].get(), &uavDesc);
 
     //Light grid
