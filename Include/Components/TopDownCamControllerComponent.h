@@ -9,7 +9,7 @@ namespace CE
 	{
 	public:
 		void ApplyTranslation(TransformComponent& transform, const glm::vec3& targe, glm::vec2 cursorDistanceFromScreenCentert, float dt) const;
-		void UpdateRotation(TransformComponent& transform, const glm::vec3& target, glm::vec2 cursorDistanceFromScreenCenter);
+		void UpdateRotation(TransformComponent& transform, const glm::vec3& target, glm::vec2 cursorDistanceFromScreenCenter, float dt);
 
 		void AdjustZoom(const float scrollDelta);
 		void RotateCameraAroundTarget(const float angle);

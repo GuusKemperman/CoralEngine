@@ -21,8 +21,10 @@ void CE::TopDownCamControllerComponent::ApplyTranslation(TransformComponent& tra
 	transform.SetWorldPosition(totalTranslation);
 }
 
-void CE::TopDownCamControllerComponent::UpdateRotation(TransformComponent& transform, const glm::vec3& target, glm::vec2 CD)
+void CE::TopDownCamControllerComponent::UpdateRotation(TransformComponent& transform, const glm::vec3& target, glm::vec2 CD, float dt)
 {
+	float previousHeight = mTargetLocation[Axis::Up];
+
 	mTargetLocation = target;
 
 	const float sn = sin(glm::radians(mRotationAngle - 90.0f));
@@ -32,7 +34,7 @@ void CE::TopDownCamControllerComponent::UpdateRotation(TransformComponent& trans
 
 	mTargetLocation[Axis::Right] += CDRotated.x * mCursorOffsetFactor;
 	mTargetLocation[Axis::Forward] += CDRotated.y * mCursorOffsetFactor;
-	mTargetLocation[Axis::Up] += mOffsetHeight;
+	mTargetLocation[Axis::Up] = previousHeight + mHeightInterpolationfactor * dt * (target[Axis::Up] + mOffsetHeight - previousHeight);
 
 	const glm::vec3 direction = glm::normalize(mTargetLocation - transform.GetWorldPosition());
 
@@ -63,7 +65,6 @@ CE::MetaType CE::TopDownCamControllerComponent::Reflect()
 	MetaType type = MetaType{ MetaType::T<TopDownCamControllerComponent>{}, "TopDownCamControllerComponent"};
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
-	type.AddField(&TopDownCamControllerComponent::mOffset, "mOffset").GetProperties();
 	type.AddField(&TopDownCamControllerComponent::mOffsetHeight, "mOffsetHeight").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&TopDownCamControllerComponent::mZoom, "mZoom").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&TopDownCamControllerComponent::mMinZoom, "mMinZoom").GetProperties().Add(Props::sIsScriptableTag);
