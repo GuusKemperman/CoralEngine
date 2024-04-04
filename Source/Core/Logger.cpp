@@ -87,9 +87,22 @@ CE::Logger::~Logger()
 	ofstream.close();
 };
 
-void CE::Logger::Log(std::string_view message, const std::string_view channel, const LogSeverity severity, SourceLocation&& origin, std::function<void()>&& onClick)
+void CE::Logger::Log(std::string_view message, 
+	const std::string_view channel, 
+	const LogSeverity severity, 
+	std::string_view file,
+	uint32 line, 
+	std::function<void()>&& onClick)
 {
 	Name::HashType channelHash = Name::HashString(channel);
+
+	const std::string formattedMessage = Format("{}({})\n\t{}\n\n",
+		std::filesystem::path{ file }.filename().string(), // Only the filename, not all that C:/projects nonsense
+		line,
+		message);
+
+	mMutex.lock();
+	++mNumOfEntriesPerSeverity[static_cast<int>(severity)];
 
 	auto existingChannel = mChannels.find(channelHash);
 
@@ -98,16 +111,10 @@ void CE::Logger::Log(std::string_view message, const std::string_view channel, c
 		existingChannel = mChannels.emplace(channelHash, Channel{ std::string{ channel } }).first;
 	}
 
-	const std::string formattedMessage = Format("{}({}:{})\n\t{}\n\n",
-		std::filesystem::path{ origin.file_name() }.filename().string(), // Only the filename, not all that C:/projects nonsense
-		origin.line(),
-		origin.column(),
-		message);
-
-	++mNumOfEntriesPerSeverity[static_cast<int>(severity)];
-	mEntries.emplace_back(existingChannel->second, severity, std::move(origin), std::move(onClick));
+	mEntries.emplace_back(existingChannel->second, severity, file, line, std::move(onClick));
 	mEntryContents->Emplace(formattedMessage);
-	
+	mMutex.unlock();
+
 	fputs(formattedMessage.c_str(), stdout);
 	
 	if (severity == Fatal)
@@ -119,9 +126,11 @@ void CE::Logger::Log(std::string_view message, const std::string_view channel, c
 
 void CE::Logger::Clear()
 {
+	mMutex.lock();
 	mEntries.clear();
 	mEntryContents->Clear();
 	mNumOfEntriesPerSeverity = {};
+	mMutex.unlock();
 }
 
 void CE::Logger::DumpToCrashLog() const
