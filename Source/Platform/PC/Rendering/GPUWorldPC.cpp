@@ -26,7 +26,7 @@ CE::DebugRenderingData::DebugRenderingData()
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
-    uint bufferSize = sizeof(glm::vec3) * MAX_LINE_VERTICES;
+    uint32 bufferSize = sizeof(glm::vec3) * MAX_LINE_VERTICES;
     mVertexPositionBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
         CD3DX12_RESOURCE_DESC::Buffer(bufferSize), nullptr, "Line vertex position buffer");
     mVertexPositionBuffer->CreateUploadBuffer(device, bufferSize, 0);
@@ -265,6 +265,17 @@ void CE::GPUWorld::Update()
                 materialInfo.useOcclusionTex = false;
 
             }
+
+            float uvScale = staticMeshComponent.mTiling;
+
+            if(staticMeshComponent.mTilesWithMeshScale)
+            {
+                float meshScale = transformComponent.GetWorldScaleUniform();
+                float scaleFactor = meshScale < 1 && meshScale >0 ? 1 / meshScale : meshScale;
+                uvScale *= scaleFactor;
+            }
+
+            materialInfo.uvScale = glm::vec4(uvScale, uvScale, 1.f, 1.f);
 
             mConstBuffers[MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
             meshCounter++;

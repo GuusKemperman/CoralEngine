@@ -44,19 +44,15 @@ void CE::UpdateTopDownCamSystem::Update(World& world, float dt)
 	cursorDistanceScreenCenter.y *= -1.0f;
 
 	const bool emptyRotation = timeScaledRotation == 0;
-	const bool emptyZoom = timeScaledZoomDelta == 0;
-
-	if (!emptyZoom)
-	{
-		topDownController->AdjustZoom(timeScaledZoomDelta);
-	}
+	
+	topDownController->AdjustZoom(timeScaledZoomDelta);
 
 	if (!emptyRotation)
 	{
 		topDownController->RotateCameraAroundTarget(timeScaledRotation);
 	}
 
-	topDownController->ApplyTranslation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
+	topDownController->ApplyTranslation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter, dt);
 	topDownController->UpdateRotation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
 }
 

@@ -1,13 +1,13 @@
 #include "Precomp.h"
 #include "../Include/Platform/PC/Rendering/DX12Classes/DXSignature.h"
 
-void DXSignature::CreateSignature(ComPtr<ID3D12Device5> device, LPCWSTR name)
+ComPtr<ID3D12RootSignature> DXSignatureBuilder::Build(ComPtr<ID3D12Device5> device, LPCWSTR name) const
 {
 	CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-	rootSignatureDesc.Init(static_cast<UINT>(parameters.size()),
-		parameters.data(),
-		static_cast<UINT>(samplers.size()),
-		samplers.data(),
+	rootSignatureDesc.Init(static_cast<UINT>(mParameters.size()),
+		mParameters.data(),
+		static_cast<UINT>(mSamplers.size()),
+		mSamplers.data(),
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
@@ -22,19 +22,17 @@ void DXSignature::CreateSignature(ComPtr<ID3D12Device5> device, LPCWSTR name)
 		assert(false && "Failed to serialize root signature");
 	}
 
+	ComPtr<ID3D12RootSignature> signature;
 	hr = device->CreateRootSignature(0, serializedSignature->GetBufferPointer(), serializedSignature->GetBufferSize(), IID_PPV_ARGS(&signature));
 	if (FAILED(hr)) {
 		MessageBox(NULL, L"Failed to initialize root signature", L"FATAL ERROR!", MB_ICONERROR | MB_OK);
 		assert(false && "Failed to initialize root signature");
 	}
 	signature->SetName(name);
-
-	parameters.clear();
-	samplers.clear();
-	ranges.clear();
+	return signature;
 }
 
-void DXSignature::Add32BitConstant(const uint shaderRegister, D3D12_SHADER_VISIBILITY shader, int num32BitValues)
+DXSignatureBuilder& DXSignatureBuilder::Add32BitConstant(const uint32 shaderRegister, D3D12_SHADER_VISIBILITY shader, int num32BitValues)
 {
 	D3D12_ROOT_DESCRIPTOR desc;
 	desc.RegisterSpace = 0;
@@ -47,10 +45,11 @@ void DXSignature::Add32BitConstant(const uint shaderRegister, D3D12_SHADER_VISIB
 	par.Constants.ShaderRegister = shaderRegister;
 	par.ShaderVisibility = shader;
 
-	parameters.push_back(par);
+	mParameters.push_back(par);
+	return *this;
 }
 
-void DXSignature::AddCBuffer(const uint shaderRegister, D3D12_SHADER_VISIBILITY shader)
+DXSignatureBuilder& DXSignatureBuilder::AddCBuffer(const uint32 shaderRegister, D3D12_SHADER_VISIBILITY shader)
 {
 	D3D12_ROOT_DESCRIPTOR desc;
 	desc.RegisterSpace = 0;
@@ -61,10 +60,11 @@ void DXSignature::AddCBuffer(const uint shaderRegister, D3D12_SHADER_VISIBILITY 
 	par.Descriptor = desc;
 	par.ShaderVisibility = shader;
 
-	parameters.push_back(par);
+	mParameters.push_back(par);
+	return *this;
 }
 
-void DXSignature::AddTable(D3D12_SHADER_VISIBILITY shader, D3D12_DESCRIPTOR_RANGE_TYPE rangeType, int numDescriptors, int shaderRegister)
+DXSignatureBuilder& DXSignatureBuilder::AddTable(D3D12_SHADER_VISIBILITY shader, D3D12_DESCRIPTOR_RANGE_TYPE rangeType, int numDescriptors, int shaderRegister)
 {
 	D3D12_DESCRIPTOR_RANGE range;
 	range.RangeType = rangeType;
@@ -73,21 +73,22 @@ void DXSignature::AddTable(D3D12_SHADER_VISIBILITY shader, D3D12_DESCRIPTOR_RANG
 	range.RegisterSpace = 0;
 	range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	ranges[rangeCounter] = range;
+	mRanges[mRangeCounter] = range;
 
 	D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable;
 	descriptorTable.NumDescriptorRanges = 1;
-	descriptorTable.pDescriptorRanges = &ranges[rangeCounter];
-	rangeCounter++;
+	descriptorTable.pDescriptorRanges = &mRanges[mRangeCounter];
+	mRangeCounter++;
 
 	D3D12_ROOT_PARAMETER par;
 	par.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	par.DescriptorTable = descriptorTable;
 	par.ShaderVisibility = shader;
-	parameters.push_back(par);
+	mParameters.push_back(par);
+	return *this;
 }
 
-void DXSignature::AddSampler(const uint shaderRegister, D3D12_SHADER_VISIBILITY shader, D3D12_TEXTURE_ADDRESS_MODE mode, D3D12_FILTER filter)
+DXSignatureBuilder& DXSignatureBuilder::AddSampler(const uint32 shaderRegister, D3D12_SHADER_VISIBILITY shader, D3D12_TEXTURE_ADDRESS_MODE mode, D3D12_FILTER filter)
 {
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
 	sampler.Filter = filter;
@@ -104,6 +105,6 @@ void DXSignature::AddSampler(const uint shaderRegister, D3D12_SHADER_VISIBILITY 
 	sampler.RegisterSpace = 0;
 	sampler.ShaderVisibility = shader;
 
-	samplers.push_back(sampler);
-
+	mSamplers.push_back(sampler);
+	return *this;
 }
