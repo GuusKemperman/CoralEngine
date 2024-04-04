@@ -179,28 +179,84 @@ CE::GPUWorld& CE::World::GetGPUWorld() const
 	return *mGPUWorld;
 }
 
-static inline std::stack<std::reference_wrapper<CE::World>> sWorldStack{};
+static std::mutex sStackMutex{};
+static std::vector<std::pair<std::thread::id, std::stack<std::reference_wrapper<CE::World>>>> sWorldStacks{};
 
 void CE::World::PushWorld(World& world)
 {
-	sWorldStack.push(world);
+	const std::thread::id curr = std::this_thread::get_id();
+
+	sStackMutex.lock();
+
+	if (sWorldStacks.size() >= 31)
+	{
+		// We always keep the main thread's stack in there
+		sWorldStacks.erase(std::remove_if(sWorldStacks.begin() + 1, sWorldStacks.end(),
+			[](const std::pair<std::thread::id, std::stack<std::reference_wrapper<World>>>& stack)
+			{
+				return stack.second.empty();
+			}), sWorldStacks.end());
+	}
+
+	const auto it = std::find_if(sWorldStacks.begin(), sWorldStacks.end(),
+		[curr](const std::pair<std::thread::id, std::stack<std::reference_wrapper<World>>>& stack)
+		{
+			return stack.first == curr;
+		});
+
+	if (it == sWorldStacks.end())
+	{
+		sWorldStacks.emplace_back(curr, std::stack<std::reference_wrapper<World>>{}).second.push(world);
+	}
+	else
+	{
+		it->second.push(world);
+	}
+
+	sStackMutex.unlock();
 }
 
 void CE::World::PopWorld(uint32 amountToPop)
 {
+	const std::thread::id curr = std::this_thread::get_id();
+
+	sStackMutex.lock();
+
+	const auto it = std::find_if(sWorldStacks.begin(), sWorldStacks.end(),
+		[curr](const std::pair<std::thread::id, std::stack<std::reference_wrapper<World>>>& stack)
+		{
+			return stack.first == curr;
+		});
+
 	for (uint32 i = 0; i < amountToPop; i++)
 	{
-		sWorldStack.pop();
+		it->second.pop();
 	}
+	sStackMutex.unlock();
 }
 
 CE::World* CE::World::TryGetWorldAtTopOfStack()
 {
-	if (sWorldStack.empty())
+	const std::thread::id curr = std::this_thread::get_id();
+
+	sStackMutex.lock();
+
+	const auto it = std::find_if(sWorldStacks.begin(), sWorldStacks.end(),
+		[curr](const std::pair<std::thread::id, std::stack<std::reference_wrapper<World>>>& stack)
+		{
+			return stack.first == curr;
+		});
+
+	if (it == sWorldStacks.end()
+		|| it->second.empty())
 	{
+		sStackMutex.unlock();
 		return nullptr;
 	}
-	return &sWorldStack.top().get();
+
+	World* world = &it->second.top().get();
+	sStackMutex.unlock();
+	return world;
 }
 
 void CE::World::TransitionToLevel(const std::shared_ptr<const Level>& level)

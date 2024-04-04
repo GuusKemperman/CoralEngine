@@ -39,7 +39,7 @@ CE::Script::Script(AssetLoadInfo& loadInfo) :
 	{
 		for (const BinaryGSONObject& serializedFunc : functions->GetChildren())
 		{
-			std::optional<ScriptFunc> func = ScriptFunc::DeserializeFrom(serializedFunc, *this, loadInfo.GetVersion());
+			std::optional<ScriptFunc> func = ScriptFunc::DeserializeFrom(serializedFunc, *this, loadInfo.GetMetaData().GetAssetVersion());
 
 			if (func.has_value())
 			{
@@ -59,7 +59,7 @@ CE::Script::Script(AssetLoadInfo& loadInfo) :
 	{
 		for (const BinaryGSONObject& serializedMember : members->GetChildren())
 		{
-			std::optional<ScriptField> field = ScriptField::DeserializeFrom(serializedMember, *this, loadInfo.GetVersion());
+			std::optional<ScriptField> field = ScriptField::DeserializeFrom(serializedMember, *this, loadInfo.GetMetaData().GetAssetVersion());
 
 			if (field.has_value())
 			{
