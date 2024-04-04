@@ -126,6 +126,8 @@ CE::GPUWorld::GPUWorld(const World& world)
 {
     Device& engineDevice = Device::Get();
     ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
+    mClusterGrid = glm::ivec3(16, 8, 24);
+    mNumberOfClusters = mClusterGrid.x * mClusterGrid.y * mClusterGrid.z;
 
     // Create constant buffers
     mConstBuffers[InfoStruct::CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 1, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
@@ -150,29 +152,29 @@ CE::GPUWorld::GPUWorld(const World& world)
     mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXPointLightInfo) * 100, 0);
     mPointLights.resize(100);
 
-    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * mNumberOfClusters, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::CLUSTER_GRID_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "CLUSTER GRID BUFFER");
 
-    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXLightGridElement) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXLightGridElement) * mNumberOfClusters, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::LIGHT_GRID_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "LIGHT GRID BUFFER");
-    mStructuredBuffers[InfoStruct::LIGHT_GRID_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::Clustering::DXLightGridElement) * 4000, 0);
+    mStructuredBuffers[InfoStruct::LIGHT_GRID_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::Clustering::DXLightGridElement) * mNumberOfClusters, 0);
 
 
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "POINT LIGHT COUNTER BUFFER");
     mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER]->CreateUploadBuffer(device, sizeof(uint32), 0);
 
-    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(int32) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(int32) * mNumberOfClusters, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::LIGHT_INDICES] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "LIGHTI INDICES BUFFER");
-    mStructuredBuffers[InfoStruct::LIGHT_INDICES]->CreateUploadBuffer(device, sizeof(int32) * 4000, 0);
+    mStructuredBuffers[InfoStruct::LIGHT_INDICES]->CreateUploadBuffer(device, sizeof(int32) * mNumberOfClusters, 0);
 
-    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32) * mNumberOfClusters, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::ACTIVE_CLUSTER_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "ACTIVE CLUSTER BUFFER");
-    mStructuredBuffers[InfoStruct::ACTIVE_CLUSTER_SB]->CreateUploadBuffer(device, sizeof(uint32) * 4000, 0);
+    mStructuredBuffers[InfoStruct::ACTIVE_CLUSTER_SB]->CreateUploadBuffer(device, sizeof(uint32) * mNumberOfClusters, 0);
 
-    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(unsigned int) * 4000, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(unsigned int) * mNumberOfClusters, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER BUFFER");
-    mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB]->CreateUploadBuffer(device, sizeof(unsigned int) * 4000, 0);
+    mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB]->CreateUploadBuffer(device, sizeof(unsigned int) * mNumberOfClusters, 0);
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(unsigned int), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER COUNTER BUFFER");
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->CreateUploadBuffer(device, sizeof(unsigned int), 0);
@@ -181,7 +183,7 @@ CE::GPUWorld::GPUWorld(const World& world)
     heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_READBACK_RESOURCE] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER COUNTER READBACK BUFFER", D3D12_RESOURCE_STATE_COPY_DEST);
 
-    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * 4000);
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * mNumberOfClusters);
     mStructuredBuffers[InfoStruct::GRID_READBACK_RESOURCE] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "READBACK GRID BUFFER", D3D12_RESOURCE_STATE_COPY_DEST);
 
     D3D12_SHADER_RESOURCE_VIEW_DESC  srvDesc = {};
@@ -205,7 +207,7 @@ CE::GPUWorld::GPUWorld(const World& world)
     srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
     srvDesc.Buffer.FirstElement = 0;
     srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXAABB);
-    srvDesc.Buffer.NumElements = 4000;
+    srvDesc.Buffer.NumElements = mNumberOfClusters;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     mClusterSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::CLUSTER_GRID_SB].get(), &srvDesc);
 
@@ -250,8 +252,6 @@ CE::GPUWorld::GPUWorld(const World& world)
 
     uavDesc.Buffer.NumElements = 1;
     mPointLightCounterUAVSlot =  engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER].get(), &uavDesc); 
-
-    mClusterGrid = glm::ivec3(16, 8, 24);
 }
 
 CE::GPUWorld::~GPUWorld() = default;
@@ -521,7 +521,6 @@ void CE::GPUWorld::UpdateClusterData(const CameraComponent& camera)
     clusterInfo.mNumClustersX = mClusterGrid.x;
     clusterInfo.mNumClustersY = mClusterGrid.y;
     clusterInfo.mNumClustersZ = mClusterGrid.z;
-    mNumberOfClusters = mClusterGrid.x * mClusterGrid.y * mClusterGrid.z;
     clusterInfo.mMaxLightsInCluster = 50;
     mConstBuffers[InfoStruct::CLUSTER_INFO_CB]->Update(&clusterInfo, sizeof(InfoStruct::Clustering::DXCluster), 0, frameIndex);
 
@@ -542,17 +541,17 @@ void CE::GPUWorld::ClearClusterData()
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 
-    std::vector<uint32> clusterCompactData(4000, 0);
+    std::vector<uint32> clusterCompactData(mNumberOfClusters, 0);
     D3D12_SUBRESOURCE_DATA data;
     data.pData = clusterCompactData.data();
     data.RowPitch = sizeof(uint32);
-    data.SlicePitch = sizeof(uint32) * 4000;
+    data.SlicePitch = sizeof(uint32) * mNumberOfClusters;
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
-    std::vector<int32> lightIndicesClear(4000, -1);
+    std::vector<int32> lightIndicesClear(mNumberOfClusters, -1);
     data.pData = lightIndicesClear.data();
     data.RowPitch = sizeof(int32);
-    data.SlicePitch = sizeof(int32) * 4000;
+    data.SlicePitch = sizeof(int32) * mNumberOfClusters;
     mStructuredBuffers[InfoStruct::LIGHT_INDICES]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
     uint32 counterValue = 0;
@@ -562,10 +561,10 @@ void CE::GPUWorld::ClearClusterData()
     mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
-    std::vector<InfoStruct::Clustering::DXLightGridElement> lightGridClear(4000, InfoStruct::Clustering::DXLightGridElement{});
+    std::vector<InfoStruct::Clustering::DXLightGridElement> lightGridClear(mNumberOfClusters, InfoStruct::Clustering::DXLightGridElement{});
     data.pData = lightGridClear.data();
     data.RowPitch = sizeof(InfoStruct::Clustering::DXLightGridElement);
-    data.SlicePitch = sizeof(InfoStruct::Clustering::DXLightGridElement) * 4000;
+    data.SlicePitch = sizeof(InfoStruct::Clustering::DXLightGridElement) * mNumberOfClusters;
     mStructuredBuffers[InfoStruct::LIGHT_GRID_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 }
 
