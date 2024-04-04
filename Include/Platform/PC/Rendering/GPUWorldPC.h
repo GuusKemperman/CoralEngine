@@ -89,7 +89,6 @@ namespace CE
         glm::ivec3 GetClusterGrid() const { return mClusterGrid; }
         int GetNumberOfClusters() const { return mNumberOfClusters; }
         uint32 ReadCompactClusterCounter() const;
-        void ReadGridData(std::vector<InfoStruct::Clustering::DXAABB>& data);
 
 	private:
         void SendMaterialTexturesToGPU(const Material& mat);

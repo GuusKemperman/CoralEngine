@@ -561,19 +561,6 @@ void CE::Device::SubmitCommands()
 
 }
 
-void CE::Device::WaitForFence()
-{
-    mFenceValue[mFrameIndex]++;
-    HRESULT hr = mCommandQueue->Signal(mFence[mFrameIndex].Get(), mFenceValue[mFrameIndex]);
-
-    if (FAILED(hr)) 
-    {
-        LOG(LogCore, Fatal, "Failed to signal fence");
-    }
-    WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
-    //StartRecordingCommands();
-}
-
 void CE::Device::StartRecordingCommands()
 {
     mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();

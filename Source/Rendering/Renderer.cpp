@@ -22,9 +22,9 @@ CE::Renderer::Renderer()
 
 CE::Renderer::~Renderer() = default;
 
-void CE::Renderer::Render(const World& world, FrameBuffer& buffer)
+void CE::Renderer::Render(const World& world)
 {
-	Render(world, Device::Get().GetDisplaySize(), buffer);
+	Render(world, Device::Get().GetDisplaySize());
 }
 
 #ifdef EDITOR
@@ -46,13 +46,13 @@ void CE::Renderer::RenderToFrameBuffer(
 		buffer.Clear();
 	}
 
-	Render(world, buffer.GetSize(), buffer);
+	Render(world, buffer.GetSize());
 
 	buffer.Unbind();
 }
 #endif // EDITOR
 
-void CE::Renderer::Render(const World& world, glm::vec2 viewportSize, FrameBuffer& buffer)
+void CE::Renderer::Render(const World& world, glm::vec2 viewportSize)
 {
 	// Casting const away :(
 	WorldViewport& worldViewport = const_cast<WorldViewport&>(world.GetViewport());
@@ -69,11 +69,7 @@ void CE::Renderer::Render(const World& world, glm::vec2 viewportSize, FrameBuffe
 	world.GetRegistry().RenderSystems();
 	world.GetGPUWorld().Update();
 
-	//The framebuffer needs to be bound again after the mesh renderer because of fences inside the function
-	//TODO: Separate cluster rendering from the render function
 	mMeshRenderer->Render(world);
-	buffer.Bind();
 	mDebugRenderer->Render(world);
 	mUIRenderer->Render(world);
-
 }

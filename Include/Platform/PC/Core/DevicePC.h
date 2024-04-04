@@ -61,8 +61,6 @@ namespace CE
     public:
         std::shared_ptr<DXDescHeap> GetDescriptorHeap(int heap) { return mDescriptorHeaps[heap]; }
         int GetFrameIndex() { return mFrameIndex; }
-        void WaitForFence();
-
 
     private:
         friend Engine;

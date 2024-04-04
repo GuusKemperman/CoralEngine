@@ -479,29 +479,6 @@ uint32 CE::GPUWorld::ReadCompactClusterCounter() const
     return value;
 }
 
-void CE::GPUWorld::ReadGridData(std::vector<InfoStruct::Clustering::DXAABB>& data)
-{
-    Device& engineDevice = Device::Get();
-    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
-    D3D12_RESOURCE_STATES prevState = mStructuredBuffers[InfoStruct::CLUSTER_GRID_SB]->GetState();
-
-    mStructuredBuffers[InfoStruct::CLUSTER_GRID_SB]->ChangeState(commandList, D3D12_RESOURCE_STATE_COPY_SOURCE);
-    commandList->CopyResource(mStructuredBuffers[InfoStruct::GRID_READBACK_RESOURCE]->Get(), mStructuredBuffers[InfoStruct::CLUSTER_GRID_SB]->Get());
-
-    engineDevice.WaitForFence();
-
-    mStructuredBuffers[InfoStruct::CLUSTER_GRID_SB]->ChangeState(commandList, prevState);
-
-    engineDevice.WaitForFence();
-
-    void* mappedData;
-
-    mStructuredBuffers[InfoStruct::GRID_READBACK_RESOURCE]->Get()->Map(0, nullptr, &mappedData);
-    std::memcpy(data.data(), mappedData, sizeof(InfoStruct::Clustering::DXAABB) * 4000);
-
-    mStructuredBuffers[InfoStruct::GRID_READBACK_RESOURCE]->Get()->Unmap(0, nullptr);
-}
-
 void CE::GPUWorld::SendMaterialTexturesToGPU(const CE::Material& mat)
 {
     if (mat.mBaseColorTexture != nullptr
