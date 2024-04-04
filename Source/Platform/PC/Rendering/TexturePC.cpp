@@ -1,34 +1,28 @@
 #include "Precomp.h"
 #include "Platform/PC/Rendering/TexturePC.h"
-
+#include "Platform/pc/Rendering/TexturePC.h"
 #include "Platform/pc/Rendering/DX12Classes/DXDefines.h"
 #include "Platform/pc/Rendering/DX12Classes/DXResource.h"
 #include "Platform/pc/Rendering/DX12Classes/DXDescHeap.h"
-#include "Core/Device.h"
+
 #include "Utilities/StringFunctions.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "stb_image/stb_image.h"
+#include "Meta/MetaManager.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
+
+#include "Core/Device.h"
+#include "Core/JobManager.h"
 
 CE::Texture::Texture(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo),
-	mLoadedPixels(std::async(std::launch::async, 
-		[data = StringFunctions::StreamToString(loadInfo.GetStream())]
+	mLoadedPixels(std::make_shared<STBIPixels>())
+{
+	JobManager::Get().AddWork([data = StringFunctions::StreamToString(loadInfo.GetStream()), buffer = mLoadedPixels]()
 		{
 			int channels{};
-			STBIPixels buffer{};
-
-			buffer.mPixels = stbi_load_from_memory(
-				reinterpret_cast<const unsigned char*>(data.data()), 
-				static_cast<int>(data.size()), 
-				&buffer.mWidth, 
-				&buffer.mHeight, 
-				&channels, 
-				4);
-
-			return buffer;
-		}))
-{
+			buffer->mPixels = stbi_load_from_memory(reinterpret_cast<const unsigned char*>(data.data()), static_cast<int>(data.size()), &buffer->mWidth, &buffer->mHeight, &channels, 4);
+		});
 }
 
 CE::Texture::Texture(Texture&& other) noexcept = default;
@@ -38,8 +32,8 @@ CE::Texture::~Texture() = default;
 bool CE::Texture::IsReadyToBeSentToGpu() const
 {
 	return !mHeapSlot.has_value()
-		&& mLoadedPixels.valid()
-		&& mLoadedPixels.wait_for(std::chrono::seconds{ 0 }) == std::future_status::ready;
+		&& mLoadedPixels != nullptr
+		&& mLoadedPixels->mPixels != nullptr;
 }
 
 void CE::Texture::SendToGPU() const
@@ -52,13 +46,14 @@ void CE::Texture::SendToGPU() const
 
 	Texture& self = const_cast<Texture&>(*this);
 
-	STBIPixels buffer = self.mLoadedPixels.get();
-	if (buffer.mPixels == nullptr
-		|| buffer.mWidth <= 0
-		|| buffer.mHeight <= 0
+	if (mLoadedPixels == nullptr
+		|| mLoadedPixels->mPixels == nullptr
+		|| mLoadedPixels->mWidth <= 0
+		|| mLoadedPixels->mHeight <= 0
 		|| Device::IsHeadless())
 	{
 		LOG(LogAssets, Error, "Invalid texture {}, or device was running headless mode", GetName());
+		self.mLoadedPixels.reset();
 		return;
 	}
 
@@ -72,8 +67,8 @@ void CE::Texture::SendToGPU() const
 	CD3DX12_RESOURCE_DESC resourceDescription = {};
 	resourceDescription.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	resourceDescription.Alignment = 0;
-	resourceDescription.Width = buffer.mWidth;
-	resourceDescription.Height = buffer.mHeight;
+	resourceDescription.Width = mLoadedPixels->mWidth;
+	resourceDescription.Height = mLoadedPixels->mHeight;
 	resourceDescription.DepthOrArraySize = 1;
 	resourceDescription.MipLevels = 4;
 	resourceDescription.Format = dxgiformat;
@@ -88,10 +83,10 @@ void CE::Texture::SendToGPU() const
 	UINT64 textureUploadBufferSize;
 	device->GetCopyableFootprints(&resourceDescription, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
 
-	int bytesPerRow = (buffer.mWidth * self.GetDXGIFormatBitsPerPixel(resourceDescription.Format)) / 8; // number of bytes in each row of the image data
+	int bytesPerRow = (mLoadedPixels->mWidth * self.GetDXGIFormatBitsPerPixel(resourceDescription.Format)) / 8; // number of bytes in each row of the image data
 
 	D3D12_SUBRESOURCE_DATA textureData = {};
-	textureData.pData = buffer.mPixels; // pointer to our image data
+	textureData.pData = mLoadedPixels->mPixels; // pointer to our image data
 	textureData.RowPitch = bytesPerRow; // size of all our triangle vertex data
 	textureData.SlicePitch = bytesPerRow * resourceDescription.Height; // also the size of our triangle vertex data
 
@@ -127,6 +122,8 @@ void CE::Texture::SendToGPU() const
 	self.mMipmapCB = nullptr;
 
 	engineDevice.SubmitUploadCommands();
+
+	self.mLoadedPixels.reset();
 }
 
 void CE::Texture::BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
@@ -252,24 +249,6 @@ void CE::Texture::GenerateMipmaps() const
 	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 8, *mUAVslots[2]);
 
 	uploadCmdList->Dispatch(dstWidth /8, dstHeight / 8,  1);
-}
-
-CE::Texture::STBIPixels::STBIPixels(STBIPixels&& pixels) :
-	mWidth(pixels.mWidth),
-	mHeight(pixels.mHeight),
-	mPixels(pixels.mPixels)
-{
-	pixels.mPixels = nullptr;
-}
-
-CE::Texture::STBIPixels& CE::Texture::STBIPixels::operator=(STBIPixels&& pixels)
-{
-	mWidth = pixels.mWidth;
-	mHeight = pixels.mHeight;
-	mPixels = pixels.mPixels;
-	
-	pixels.mPixels = nullptr;
-	return *this;
 }
 
 CE::Texture::STBIPixels::~STBIPixels()
