@@ -159,6 +159,10 @@ void CE::AbilitySystem::Update(World& world, float dt)
         {
             characterData.mGlobalCooldownTimer -= dt;
         }
+        else
+        {
+            characterData.mGlobalCooldownTimer = 0.f;
+        }
 
         // Create abilities
         for (auto& ability : abilities.mAbilitiesToInput)
