@@ -31,8 +31,8 @@ void CE::ProjectileComponent::OnInspect(World&, const std::vector<entt::entity>&
 	{
 		ImGui::BeginTooltip();
 		ImGui::Text("This is set to true by default - the entity gets destroyed when it reaches the set range.\n"
-			"However you may choose to disable this and make the ability destroy based on its lifetime\n"
-			"through the AbilityLifeTimeComponent.");
+			"However you may choose to disable this and make the ability get destroyed based on its lifetime\n"
+			"by adding the AbilityLifeTimeComponent if it has not already been added.");
 		ImGui::EndTooltip();
 	}
 }
