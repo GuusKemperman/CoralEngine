@@ -76,7 +76,8 @@ void CE::UISystem::Update(World& world, float dt)
 
 	if (selectedEntity == entt::null
 		|| (!input.WasKeyboardKeyPressed(Input::KeyboardKey::Enter)
-			&& !input.WasKeyboardKeyPressed(Input::KeyboardKey::NumpadEnter)))
+			&& !input.WasKeyboardKeyPressed(Input::KeyboardKey::NumpadEnter)
+			&& !input.WasGamepadButtonPressed(0, Input::GamepadButton::South)))
 	{
 		return;
 	}
