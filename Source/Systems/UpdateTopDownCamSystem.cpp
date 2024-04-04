@@ -53,7 +53,7 @@ void CE::UpdateTopDownCamSystem::Update(World& world, float dt)
 	}
 
 	topDownController->ApplyTranslation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter, dt);
-	topDownController->UpdateRotation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
+	topDownController->UpdateRotation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter, dt);
 }
 
 void CE::UpdateTopDownCamSystem::Render(const World& world)
