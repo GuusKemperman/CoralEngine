@@ -301,50 +301,49 @@ void CE::Device::InitializeDevice()
     }
 
     //CREATE ROOT SIGNATURE
-    mSignature = std::make_unique<DXSignature>(12);
-    mSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX);//0
-    mSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL);//1
-    mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX);//2
-    mSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL);//3
-    mSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL);//4
-    mSignature->AddCBuffer(5, D3D12_SHADER_VISIBILITY_VERTEX);//5
+    mSignature = DXSignatureBuilder(12)
+        .AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX)//0
+        .AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL)//1
+        .AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX)//2
+        .AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL)//3
+        .AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL)//4
+        .AddCBuffer(5, D3D12_SHADER_VISIBILITY_VERTEX)//5
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);//6
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);//7
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);//8
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//9
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//10
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0)//6
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1)//7
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2)//8
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3)//9
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4)//10
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);//11
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);//12
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);//13
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4);//14
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1)//11
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2)//12
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3)//13
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4)//14
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);//15
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//16
-    mSignature->AddCBuffer(6, D3D12_SHADER_VISIBILITY_PIXEL);//17
-    mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);
-    mSignature->CreateSignature(mDevice, L"MAIN ROOT SIGNATURE");
+        .AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5)//15
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6)//16
+        .AddCBuffer(6, D3D12_SHADER_VISIBILITY_PIXEL)//17
+        .AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP)
+        .Build(mDevice, L"MAIN ROOT SIGNATURE");
 
     //COMPUTE ROOT SIGNATURE
-    //CREATE COMPUTE ROOT SIGNATURE
-    mComputeSignature = std::make_unique<DXSignature>(8);
-    mComputeSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL); // Cluster info 0
-    mComputeSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_ALL); // Camera info 1
-    mComputeSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_ALL); // Cluster camera info 2
-    mComputeSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_ALL); // Light info 3
-    mComputeSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_ALL); // Model matrices 4
-    mComputeSignature->AddCBuffer(5, D3D12_SHADER_VISIBILITY_ALL); // Pixel color for cluster culling 5
-    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0); //6
-    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1); //7
-    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2); //8
-    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3); //9
-    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); //10
-    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1); //11
-    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2); //12
-    mComputeSignature->AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3); //13
-    mComputeSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_ALL, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_FILTER_MIN_MAG_MIP_LINEAR);//14
-    mComputeSignature->CreateSignature(mDevice, L"COMPUTE ROOT SIGNATURE");
+    mComputeSignature = DXSignatureBuilder(8)
+        .AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL) // Cluster info 0
+        .AddCBuffer(1, D3D12_SHADER_VISIBILITY_ALL) // Camera info 1
+        .AddCBuffer(2, D3D12_SHADER_VISIBILITY_ALL) // Cluster camera info 2
+        .AddCBuffer(3, D3D12_SHADER_VISIBILITY_ALL) // Light info 3
+        .AddCBuffer(4, D3D12_SHADER_VISIBILITY_ALL) // Model matrices 4
+        .AddCBuffer(5, D3D12_SHADER_VISIBILITY_ALL) // Pixel color for cluster culling 5
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0) //6
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1) //7
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2) //8
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3) //9
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0) //10
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1) //11
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2) //12
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3) //13
+        .AddSampler(0, D3D12_SHADER_VISIBILITY_ALL, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_FILTER_MIN_MAG_MIP_LINEAR)//14
+        .Build(mDevice, L"COMPUTE ROOT SIGNATURE");
 
     //CREATE DEPTH STENCIL
     D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -366,11 +365,10 @@ void CE::Device::InitializeDevice()
 
     FileIO& fileIO = FileIO::Get();
     std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/MipmapGen.hlsl");
-    mGenMipmapsPipeline = std::make_unique<DXPipeline>();
-    ComPtr<ID3DBlob> cs = DXPipeline::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
-    mGenMipmapsPipeline = std::make_unique<DXPipeline>();
-    mGenMipmapsPipeline->SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize());
-    mGenMipmapsPipeline->CreatePipeline(mDevice, mComputeSignature.get(), L"GENERATE MIPMAPS COMPUTE SHADER");
+    ComPtr<ID3DBlob> cs = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
+    mGenMipmapsPipeline = DXPipelineBuilder()
+        .SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize())
+        .Build(mDevice, mComputeSignature, L"GENERATE MIPMAPS COMPUTE SHADER");
 
     SubmitCommands();
 }
@@ -474,7 +472,7 @@ void CE::Device::NewFrame() {
     mCommandList->RSSetViewports(1, &mViewport); 
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
     mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
-    mCommandList->SetGraphicsRootSignature(mSignature->GetSignature().Get());
+    mCommandList->SetGraphicsRootSignature(mSignature.Get());
 
     glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);

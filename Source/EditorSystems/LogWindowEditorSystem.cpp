@@ -17,8 +17,10 @@ void CE::LogWindow::Tick(const float)
 {
 	if (Begin(mFlags))
 	{
+		Logger::Get().mMutex.lock();
 		DisplayMenuBar();
 		DisplayWindowContents();
+		Logger::Get().mMutex.unlock();
 	}
 
 	End();
@@ -76,7 +78,9 @@ void CE::LogWindow::DisplayMenuBar()
 
 	if (ImGui::SmallButton("Clear"))
 	{
+		logger.mMutex.unlock();
 		logger.Clear();
+		logger.mMutex.lock();
 	}
 
 	if (ImGui::RadioButton("Autoscroll", mAutoScroll))
@@ -95,7 +99,7 @@ void CE::LogWindow::DisplayMenuBar()
 
 void CE::LogWindow::DisplayWindowContents()
 {
-	const Logger& logger = Logger::Get();
+	Logger& logger = Logger::Get();
 
 	const ManyStrings& entryContents = *logger.mEntryContents;
 	ImGui::PushTextWrapPos(0.0f);
@@ -126,7 +130,9 @@ void CE::LogWindow::DisplayWindowContents()
 
 			if (ImGui::Selectable(text.data(), false))
 			{
+				logger.mMutex.unlock();
 				entry.mOnClick();
+				logger.mMutex.lock();
 			}
 
 			ImVec2 p_min = ImGui::GetItemRectMin();

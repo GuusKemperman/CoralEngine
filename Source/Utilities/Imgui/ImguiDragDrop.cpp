@@ -34,7 +34,7 @@ std::optional<CE::WeakAsset<CE::Asset>> CE::DragDrop::PeekAsset(const TypeId typ
 			const std::optional<WeakAsset<Asset>> receivedAsset = AssetManager::Get().TryGetWeakAsset(nameHash);
 
 			if (receivedAsset.has_value()
-				&& !receivedAsset->GetAssetClass().IsBaseClassOf(typenameId))
+				&& !receivedAsset->GetMetaData().GetClass().IsBaseClassOf(typenameId))
 			{
 				return std::nullopt;
 			}

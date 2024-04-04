@@ -76,7 +76,7 @@ CE::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
     std::vector<glm::vec3> tangentsStorage(0);
     const glm::vec3* tangents = nullptr;
 
-    int loadInfoVersion = loadInfo.GetVersion();
+    int loadInfoVersion = loadInfo.GetMetaData().GetAssetVersion();
     if (loadInfoVersion == 1
         && flags & hasTangents)
     {
