@@ -532,12 +532,10 @@ void CE::GPUWorld::UpdateClusterData(const CameraComponent& camera)
     clusteringCam.mDepthSliceBias = -((float)clusterInfo.mNumClustersZ * std::log2f(clusteringCam.mNearPlane) / std::log2f(clusteringCam.mFarPlane / clusteringCam.mNearPlane));
     clusteringCam.mLinearDepthCoefficient.x = clusteringCam.mFarPlane / (clusteringCam.mNearPlane - clusteringCam.mFarPlane);
     clusteringCam.mLinearDepthCoefficient.y = (clusteringCam.mNearPlane * clusteringCam.mFarPlane) / (clusteringCam.mNearPlane - clusteringCam.mFarPlane);
-    clusteringCam.mScreenDimensions = ImGui::GetContentRegionAvail();
+    clusteringCam.mScreenDimensions = camera.mViewportSize;
     clusteringCam.mTileSize = glm::vec2(clusteringCam.mScreenDimensions.x / clusterInfo.mNumClustersX, clusteringCam.mScreenDimensions.y / clusterInfo.mNumClustersY);
     mConstBuffers[InfoStruct::CLUSTERING_CAM_CB]->Update(&clusteringCam, sizeof(InfoStruct::Clustering::DXCameraClustering), 0, frameIndex);
 }
-
-
 
 void CE::GPUWorld::ClearClusterData()
 {

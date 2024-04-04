@@ -105,7 +105,7 @@ void CE::UIRenderer::Render(const World& world)
             && sprite.mTexture->WasSentToGpu())
         {
             colorInfo.mUseTexture = true;
-            sprite.mTexture->BindToGraphics(commandList, 6);
+            sprite.mTexture->BindToGraphics(commandList, 8);
         }
         else
         {
