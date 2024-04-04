@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Systems/SpawnerSystem.h"
 
-#include "Components/PlayerTag.h"
+#include "Components/PlayerComponent.h"
 #include "Components/SpawnerComponent.h"
 #include "Components/TransformComponent.h"
 #include "World/Registry.h"
@@ -11,13 +11,13 @@ void Game::SpawnerSystem::Update(CE::World& world, float)
 	auto& reg = world.GetRegistry();
 	auto spawnerView = reg.View<SpawnerComponent, CE::TransformComponent>();
 
-	const auto playerCheck = reg.View<PlayerTag>();
+	const auto playerCheck = reg.View<PlayerComponent>();
 
 	if (playerCheck.empty()) { return; }
 
-	const auto playerView = reg.View<PlayerTag, CE::TransformComponent>();
+	const auto playerView = reg.View<PlayerComponent, CE::TransformComponent>();
 
-	auto [playerTransform] = playerView.get(playerView.front());
+	auto [playerComponent, playerTransform] = playerView.get(playerView.front());
 
 	for (auto [spawnerID, spawnerComponent, spawnerTransform] : spawnerView.each())
 	{

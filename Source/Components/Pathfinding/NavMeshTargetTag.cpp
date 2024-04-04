@@ -6,7 +6,6 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-
 CE::MetaType CE::NavMeshTargetTag::Reflect()
 {
 	auto metaType = MetaType{MetaType::T<NavMeshTargetTag>{}, "NavMeshTargetTag"};
