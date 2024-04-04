@@ -454,7 +454,7 @@ void Engine::MeshRenderer::CompactClusters(const GPUWorld& gpuWorld)
     commandList->Dispatch(gpuWorld.GetNumberOfClusters(), 1, 1);
 }
 
-void Engine::MeshRenderer::AssignLights(const GPUWorld& gpuWorld, int)
+void Engine::MeshRenderer::AssignLights(const GPUWorld& gpuWorld, int compactClusterCount)
 {
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -475,7 +475,7 @@ void Engine::MeshRenderer::AssignLights(const GPUWorld& gpuWorld, int)
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 6, gpuWorld.GetPointLightCounterUAVSlot());
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 7, gpuWorld.GetLigthGridUAVSlot());
     engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(commandList, 8, gpuWorld.GetLightIndicesUAVSlot());
-    commandList->Dispatch(gpuWorld.GetNumberOfClusters(), 1, 1);
+    commandList->Dispatch(compactClusterCount, 1, 1);
 }
 
 void Engine::MeshRenderer::ClusteredShading(const World& world)
