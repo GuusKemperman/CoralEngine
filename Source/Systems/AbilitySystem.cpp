@@ -168,9 +168,14 @@ void CE::AbilitySystem::Update(World& world, float dt)
             {
             case Ability::Cooldown:
             {
-                if (ability.mRequirementCounter < ability.mAbilityAsset->mRequirementToUse)
+                if (ability.mRequirementCounter <= ability.mAbilityAsset->mRequirementToUse)
                 {
                     ability.mRequirementCounter += dt;
+                }
+                else
+                {
+                    // Clamp to the set cooldown for exact numbers
+                    ability.mRequirementCounter = std::min(ability.mRequirementCounter, ability.mAbilityAsset->mRequirementToUse);
                 }
                 break;
             }
@@ -180,10 +185,10 @@ void CE::AbilitySystem::Update(World& world, float dt)
                 break;
             }
             }
-            // Check if ability can be used
-            if (CanAbilityBeActivated(characterData, ability))
+        	// Activate abilities for the player based on input
+            if (abilities.mIsPlayer)
             {
-                if (abilities.mIsPlayer)
+                if (CanAbilityBeActivated(characterData, ability))
                 {
                     for (auto& key : ability.mKeyboardKeys)
                     {

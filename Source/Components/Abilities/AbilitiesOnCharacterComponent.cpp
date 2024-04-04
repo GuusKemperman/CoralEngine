@@ -57,7 +57,8 @@ void CE::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vecto
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::BeginTooltip();
-		ImGui::Text("Check this box if the entity this component is attached to is a player.\nThis defines whether an ability needs input.");
+		ImGui::Text("Check this box if the entity this component is attached to is a player.\n"
+			  "This defines whether an ability needs input.");
 		ImGui::EndTooltip();
 	}
 	isPlayer = abilities.mIsPlayer;

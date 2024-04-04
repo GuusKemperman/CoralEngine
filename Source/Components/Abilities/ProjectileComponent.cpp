@@ -26,13 +26,15 @@ CE::MetaType CE::ProjectileComponent::Reflect()
 #ifdef EDITOR
 void CE::ProjectileComponent::OnInspect(World&, const std::vector<entt::entity>&)
 {
-	ImGui::TextDisabled("Destroy On Range Reached (?)");
+	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.1f, 1.0f));
+	ImGui::Text("Destroy On Range Reached (?)");
+	ImGui::PopStyleColor();
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::BeginTooltip();
 		ImGui::Text("This is set to true by default - the entity gets destroyed when it reaches the set range.\n"
-			"However you may choose to disable this and make the ability get destroyed based on its lifetime\n"
-			"by adding the AbilityLifeTimeComponent if it has not already been added.");
+			"However, you may choose to disable this and make the ability get destroyed based on its lifetime\n"
+			"by adding the AbilityLifeTimeComponent, if it has not already been added.");
 		ImGui::EndTooltip();
 	}
 }
