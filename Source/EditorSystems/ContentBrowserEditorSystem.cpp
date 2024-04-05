@@ -15,6 +15,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
+#include "Utilities/StringFunctions.h"
 
 namespace
 {
@@ -160,7 +161,13 @@ std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEdi
             }
         }
 
-        currentFolder->mContent.push_back(std::move(asset));
+        // Sort alphabetically
+        const auto whereToInsert = std::lower_bound(currentFolder->mContent.begin(), currentFolder->mContent.end(), asset,
+            [](const WeakAsset<>& sl, const WeakAsset<>& sr)
+            {
+                return sl.GetMetaData().GetName() < sr.GetMetaData().GetName();
+            });
+        currentFolder->mContent.insert(whereToInsert, std::move(asset));
     }
 
     // Return the root folder, which contains the entire folder structure
@@ -420,6 +427,12 @@ void CE::ContentBrowserEditorSystem::DisplayAssetCreatorPopUp()
         if (newAsset.has_value())
         {
             Editor::Get().TryOpenAssetForEdit(*newAsset);
+
+            // Adding assets is not considered to be a volatile
+			// action, our system will not restart, and we
+			// have to explicitly state we want to recreate our
+			// folder graph.
+            mFolderGraph = MakeFolderGraph();
         }
 	}
 
@@ -457,7 +470,6 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
 
         const bool anyErrors = DisplayNameUI(sPopUpNewAssetName);
 
-
         ImGui::BeginDisabled(anyErrors);
 
         if (ImGui::Button("Rename"))
@@ -470,29 +482,29 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
         ImGui::EndMenu();
     }
 
-
-    if (ImGui::BeginMenu("Duplicate##Menu"))
+    if (ImGui::MenuItem("Duplicate"))
     {
-        bool anyErrors = false;
-        anyErrors |= DisplayNameUI(sPopUpNewAssetName);
-        FilePathUIResult fileUIResult = DisplayFilepathUI(sPopUpFolderRelativeToRoot, sPopUpIsEngineAsset, sPopUpNewAssetName);
-        anyErrors |= fileUIResult.mAnyErrors;
-
-        ImGui::BeginDisabled(anyErrors);
-
-        if (ImGui::Button("Duplicate"))
-        {
-            std::optional<WeakAsset<Asset>> newAsset = AssetManager::Get().Duplicate(*asset, fileUIResult.mActualFullPath);
-
-            if (newAsset.has_value())
+        const std::string copyName = StringFunctions::CreateUniqueName(asset->GetMetaData().GetName(),
+            [](std::string_view name)
             {
-                Editor::Get().TryOpenAssetForEdit(*newAsset);
-            }
+                return !AssetManager::Get().TryGetWeakAsset(name).has_value();
+            });
+
+        std::filesystem::path copyPath = asset->GetFileOfOrigin().value_or(FileIO::Get().GetPath(FileIO::Directory::GameAssets, copyName)).parent_path() / copyName;
+        copyPath.replace_extension(AssetManager::sAssetExtension);
+
+        std::optional<WeakAsset<Asset>> newAsset = AssetManager::Get().Duplicate(*asset, copyPath);
+
+        if (newAsset.has_value())
+        {
+            Editor::Get().TryOpenAssetForEdit(*newAsset);
+
+            // Adding assets is not considered to be a volatile
+            // action, our system will not restart, and we
+            // have to explicitly state we want to recreate our
+            // folder graph.
+            mFolderGraph = MakeFolderGraph();
         }
-
-        ImGui::EndDisabled();
-
-        ImGui::EndMenu();
     }
 
     if (const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = asset->GetMetaData().GetImporterInfo();
