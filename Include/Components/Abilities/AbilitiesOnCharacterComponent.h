@@ -36,7 +36,6 @@ namespace CE
 	class AbilitiesOnCharacterComponent
 	{
 	public:
-		bool mIsPlayer = true;
 		std::vector<AbilityInstance> mAbilitiesToInput{};
 
 	private:

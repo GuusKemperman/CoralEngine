@@ -11,11 +11,11 @@ void Game::SpawnerSystem::Update(CE::World& world, float)
 	auto& reg = world.GetRegistry();
 	auto spawnerView = reg.View<SpawnerComponent, CE::TransformComponent>();
 
-	const auto playerCheck = reg.View<PlayerComponent>();
+	const auto playerCheck = reg.View<CE::PlayerComponent>();
 
 	if (playerCheck.empty()) { return; }
 
-	const auto playerView = reg.View<PlayerComponent, CE::TransformComponent>();
+	const auto playerView = reg.View<CE::PlayerComponent, CE::TransformComponent>();
 
 	auto [playerComponent, playerTransform] = playerView.get(playerView.front());
 

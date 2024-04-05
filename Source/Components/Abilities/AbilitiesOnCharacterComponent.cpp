@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 
+#include "Components/PlayerComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
@@ -16,7 +17,6 @@ CE::MetaType CE::AbilitiesOnCharacterComponent::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<AbilitiesOnCharacterComponent>{}, "AbilitiesOnCharacterComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 	
-	metaType.AddField(&AbilitiesOnCharacterComponent::mIsPlayer, "mIsPlayer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&AbilitiesOnCharacterComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties().Add(Props::sNoInspectTag).Add(Props::sIsScriptableTag);
 
 	BindEvent(metaType, sBeginPlayEvent, &AbilitiesOnCharacterComponent::OnBeginPlay);
@@ -43,7 +43,7 @@ void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World&, entt::entity)
 }
 
 #ifdef EDITOR
-static bool isPlayer = true; // little hack to inspect the component conditionally
+static bool isPlayer = true; // Little hack to inspect the component conditionally
 void CE::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
 {
 	auto& reg = world.GetRegistry();
@@ -53,10 +53,8 @@ void CE::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vecto
 		return;
 	}
 	auto& abilities = reg.Get<AbilitiesOnCharacterComponent>(entities[0]);
-	ShowInspectUI("mIsPlayer", abilities.mIsPlayer);
-	ImGui::SetItemTooltip("Check this box if the entity this component is attached to is a player.\n"
-		"This defines whether an ability needs input.");
-	isPlayer = abilities.mIsPlayer;
+	auto player = reg.TryGet<PlayerComponent>(entities[0]);
+	isPlayer = player != nullptr;
 	ShowInspectUI("Abilities", abilities.mAbilitiesToInput);
 }
 #endif // EDITOR

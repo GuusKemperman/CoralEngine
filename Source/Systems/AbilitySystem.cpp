@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Systems/AbilitySystem.h"
 
+#include "Components/PlayerComponent.h"
 #include "Assets/Ability.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
@@ -175,7 +176,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
             }
             }
         	// Activate abilities for the player based on input
-            if (abilities.mIsPlayer)
+            if (auto playerComponent = reg.TryGet<PlayerComponent>(entity))
             {
                 if (CanAbilityBeActivated(characterData, ability))
                 {
@@ -188,8 +189,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
                     }
                     for (auto& button : ability.mGamepadButtons)
                     {
-                        // TODO: replace zero with player id
-                        if (input.WasGamepadButtonPressed(0, button))
+                        if (input.WasGamepadButtonPressed(playerComponent->mID, button))
                         {
                             ActivateAbility(world, entity, characterData, ability);
                         }
