@@ -1552,6 +1552,7 @@
     <ClInclude Include="Include\Components\UI\UISpriteComponent.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Platform\PC\Rendering\InfoStruct.h" />
     <ClInclude Include="Include\Components\UI\UIButtonComponent.h" />
     <ClInclude Include="Include\Assets\SkinnedMesh.h" />
     <ClInclude Include="Include\Components\SkinnedMeshComponent.h" />

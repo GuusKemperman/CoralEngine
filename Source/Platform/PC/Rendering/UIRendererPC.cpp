@@ -105,7 +105,7 @@ void CE::UIRenderer::Render(const World& world)
             && sprite.mTexture->WasSentToGpu())
         {
             colorInfo.mUseTexture = true;
-            sprite.mTexture->BindToGraphics(commandList, 6);
+            sprite.mTexture->BindToGraphics(commandList, 8);
         }
         else
         {
@@ -113,7 +113,7 @@ void CE::UIRenderer::Render(const World& world)
         }
 
         renderingData.mColorBuffer->Update(&colorInfo, sizeof(InfoStruct::ColorInfo), i, frameIndex);
-        renderingData.mColorBuffer->Bind(commandList, 1, i, frameIndex);
+        renderingData.mColorBuffer->Bind(commandList, 3, i, frameIndex);
 
         commandList->IASetVertexBuffers(0, 1, &renderingData.mVertexBufferView);
         commandList->IASetVertexBuffers(1, 1, &renderingData.mTexCoordBufferView);

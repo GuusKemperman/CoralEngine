@@ -2,6 +2,7 @@
 #include <vector>
 #include <memory>
 #include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
+#include <dxcapi.h>
 
 struct ID3D12Device5;
 
@@ -19,6 +20,7 @@ public:
 	DXPipelineBuilder& SetMsaaCountAndQuality(uint32 count, uint32 quality);
 	DXPipelineBuilder& AddRenderTarget(DXGI_FORMAT format);
 	DXPipelineBuilder& SetPrimitiveTopology(const D3D12_PRIMITIVE_TOPOLOGY_TYPE& topology);
+	DXPipelineBuilder& SetDepthFormat(const DXGI_FORMAT& format);
 
 	ComPtr<ID3D12PipelineState> Build(ComPtr<ID3D12Device5> device, const ComPtr<ID3D12RootSignature>& root, LPCWSTR name) const;
 
