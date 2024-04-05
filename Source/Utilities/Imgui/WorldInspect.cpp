@@ -817,6 +817,7 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 		// Add a transform component, since
 		// 99% of entities require it
 		reg.AddComponent<TransformComponent>(newEntity);
+		reg.AddComponent<NameComponent>(newEntity, "New entity");
 	}
 	ImGui::SetItemTooltip("Create a new entity");
 
