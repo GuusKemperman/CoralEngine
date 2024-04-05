@@ -63,9 +63,8 @@ bool CE::OverTimeEffect::operator==(const OverTimeEffect& other) const
 		Math::AreFloatsEqual(mDurationTimer, other.mDurationTimer) &&
 		mNumberOfTicks == other.mNumberOfTicks &&
 		mTicksCounter == other.mTicksCounter &&
-		mEffectSettings == other.mEffectSettings &&
-		Math::AreFloatsEqual(mDealtDamageModifierOfCastByCharacter, 
-			other.mDealtDamageModifierOfCastByCharacter);
+		mEffectSettings == other.mEffectSettings/* && 
+		mCastByCharacterData == other.mCastByCharacterData*/;
 }
 
 bool CE::OverTimeEffect::operator!=(const OverTimeEffect& other) const
@@ -84,6 +83,7 @@ void CE::OverTimeEffect::DisplayWidget()
 	ShowInspectUIReadOnly("mAmount", mEffectSettings.mAmount);
 	ShowInspectUIReadOnly("mFlatOrPercentage", mEffectSettings.mFlatOrPercentage);
 	ShowInspectUIReadOnly("mIncreaseOrDecrease", mEffectSettings.mIncreaseOrDecrease);
+	ShowInspectUIReadOnly("CastByCharacterTeamID", mCastByCharacterData.mTeamId);
 }
 #endif // EDITOR
 
@@ -97,7 +97,7 @@ CE::MetaType CE::OverTimeEffect::Reflect()
 	metaType.AddField(&OverTimeEffect::mNumberOfTicks, "mNumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&OverTimeEffect::mTicksCounter, "mTicksCounter").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 	metaType.AddField(&OverTimeEffect::mEffectSettings, "mEffectSettings").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
-	metaType.AddField(&OverTimeEffect::mDealtDamageModifierOfCastByCharacter, "mDealtDamageModifierOfCastByCharacter").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
+	metaType.AddField(&OverTimeEffect::mCastByCharacterData, "mCastByCharacterData").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
 
 	return metaType;
 }
@@ -113,11 +113,7 @@ bool CE::VisualEffect::operator==(const VisualEffect& other) const
 
 bool CE::VisualEffect::operator!=(const VisualEffect& other) const
 {
-	return !Math::AreFloatsEqual(mColor.x, other.mColor.x) ||
-		!Math::AreFloatsEqual(mColor.y, other.mColor.y) ||
-		!Math::AreFloatsEqual(mColor.z, other.mColor.z) ||
-		!Math::AreFloatsEqual(mDuration, other.mDuration) ||
-		!Math::AreFloatsEqual(mDurationTimer, other.mDurationTimer);
+	return !(*this == other);
 }
 
 #ifdef EDITOR

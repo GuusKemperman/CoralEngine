@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Systems/AbilitySystem.h"
 
+#include "Components/PlayerComponent.h"
 #include "Assets/Ability.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
@@ -12,7 +13,7 @@
 #include "Assets/Script.h"
 #include "Components/MeshColorComponent.h"
 #include "Components/TransformComponent.h"
-#include "Components/Abilities/AOEComponent.h"
+#include "Components/Abilities/AbilityLifetimeComponent.h"
 #include "Components/Abilities/EffectsOnCharacterComponent.h"
 #include "Components/Abilities/ProjectileComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
@@ -27,17 +28,17 @@ void CE::AbilitySystem::Update(World& world, float dt)
     {
         auto& physicsBody = reg.Get<PhysicsBody2DComponent>(entity);
         projectile.mCurrentRange += glm::length(physicsBody.mLinearVelocity) * dt;
-	    if (projectile.mCurrentRange >= projectile.mRange)
+	    if (projectile.mCurrentRange >= projectile.mRange && projectile.mDestroyOnRangeReached)
 	    {
             reg.Destroy(entity, true);
 	    }
     }
 
-    auto viewAOE = reg.View<AOEComponent>();
-    for (auto [entity, aoe] : viewAOE.each())
+    auto viewLifetime = reg.View<AbilityLifetimeComponent>();
+    for (auto [entity, lifetime] : viewLifetime.each())
     {
-        aoe.mDurationTimer += dt;
-        if (aoe.mDurationTimer >= aoe.mDuration)
+        lifetime.mDurationTimer += dt;
+        if (lifetime.mDurationTimer >= lifetime.mDuration)
         {
             reg.Destroy(entity, true);
         }
@@ -48,7 +49,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
     for (auto [entity, characterData, abilities, effects] : viewCharacters.each())
     {
         // Durational effects
-        auto& durationalEffects = effects.mDurationalEffects;
+        std::vector<DurationalEffect>& durationalEffects = effects.mDurationalEffects;
         for (auto it = durationalEffects.begin(); it != durationalEffects.end();)
         {
             it->mDurationTimer += dt;
@@ -64,7 +65,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
         }
 
         // Over time effects
-        auto& overTimeEffects = effects.mOverTimeEffects;
+        std::vector<OverTimeEffect>& overTimeEffects = effects.mOverTimeEffects;
         for (auto it = overTimeEffects.begin(); it != overTimeEffects.end();)
         {
             it->mDurationTimer += dt;
@@ -72,7 +73,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
             {
                 it->mTicksCounter++;
             	it->mDurationTimer = 0.f;
-                AbilityFunctionality::ApplyInstantEffect(world, entt::null, entity, it->mEffectSettings, AbilityFunctionality::ApplyType::EffectOverTime, it->mDealtDamageModifierOfCastByCharacter);
+                AbilityFunctionality::ApplyInstantEffect(world, it->mCastByCharacterData, entity, it->mEffectSettings);
             }
             if (it->mTicksCounter >= it->mNumberOfTicks)
             {
@@ -85,7 +86,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
         }
 
         // Visual effects
-        auto& visualEffects = effects.mVisualEffects;
+        std::vector<VisualEffect>& visualEffects = effects.mVisualEffects;
         if (visualEffects.empty() == false)
         {
             // Get the effect color
@@ -155,10 +156,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
         }
 
         // Update GDC
-        if (characterData.mGlobalCooldownTimer > 0.f)
-        {
-            characterData.mGlobalCooldownTimer -= dt;
-        }
+        characterData.mGlobalCooldownTimer = std::max(characterData.mGlobalCooldownTimer - dt, 0.0f);
 
         // Create abilities
         for (auto& ability : abilities.mAbilitiesToInput)
@@ -168,10 +166,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
             {
             case Ability::Cooldown:
             {
-                if (ability.mRequirementCounter < ability.mAbilityAsset->mRequirementToUse)
-                {
-                    ability.mRequirementCounter += dt;
-                }
+                ability.mRequirementCounter = std::min(ability.mRequirementCounter + dt, ability.mAbilityAsset->mRequirementToUse);
                 break;
             }
             case Ability::Mana:
@@ -180,10 +175,10 @@ void CE::AbilitySystem::Update(World& world, float dt)
                 break;
             }
             }
-            // Check if ability can be used
-            if (CanAbilityBeActivated(characterData, ability))
+        	// Activate abilities for the player based on input
+            if (auto playerComponent = reg.TryGet<PlayerComponent>(entity))
             {
-                if (abilities.mIsPlayer)
+                if (CanAbilityBeActivated(characterData, ability))
                 {
                     for (auto& key : ability.mKeyboardKeys)
                     {
@@ -194,8 +189,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
                     }
                     for (auto& button : ability.mGamepadButtons)
                     {
-                        // TODO: replace zero with player id
-                        if (input.WasGamepadButtonPressed(0, button))
+                        if (input.WasGamepadButtonPressed(playerComponent->mID, button))
                         {
                             ActivateAbility(world, entity, characterData, ability);
                         }
@@ -213,26 +207,33 @@ bool CE::AbilitySystem::CanAbilityBeActivated(const CharacterComponent& characte
         (ability.mAbilityAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
 }
 
-void CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability)
+bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability)
 {
     if (!CanAbilityBeActivated(characterData, ability))
     {
         // For the player, this will get checked twice,
         // but it is a small tradeoff for safety in the AI usage.
-        return;
+        return false;
     }
 
     // Ability activate event
-    if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mScript->GetName()))
+    if (ability.mAbilityAsset->mScript != nullptr)
     {
-	    if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
+        if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mScript->GetName()))
         {
-            metaFunc->InvokeUncheckedUnpacked(world, castBy);
+            if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
+            {
+                metaFunc->InvokeUncheckedUnpacked(world, castBy);
+            }
+        }
+        else
+        {
+            LOG(LogAbilitySystem, Error, "Did not find script {} when trying to activate ability {}", ability.mAbilityAsset->mScript->GetName(), ability.mAbilityAsset->GetName())
         }
     }
     else
     {
-        LOG(LogAbilitySystem, Error, "Unable to call OnAbilityActivate event for ability "{}"", ability.mAbilityAsset->GetName())
+        LOG(LogAbilitySystem, Error, "Ability {} does not have a script selected.", ability.mAbilityAsset->GetName())
     }
     characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
     ability.mChargesCounter++;
@@ -241,6 +242,8 @@ void CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
         ability.mChargesCounter = 0;
         ability.mRequirementCounter = 0;
     }
+
+    return true;
 }
 
 CE::MetaType CE::AbilitySystem::Reflect()

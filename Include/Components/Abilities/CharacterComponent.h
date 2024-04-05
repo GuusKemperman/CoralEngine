@@ -6,7 +6,7 @@ namespace CE
 	class CharacterComponent
 	{
 	public:
-		int mTeamId = -1; // for targeting
+		int mTeamId = -1; // For targeting
 
 		float mGlobalCooldown = 0.25f;
 		float mGlobalCooldownTimer = mGlobalCooldown;

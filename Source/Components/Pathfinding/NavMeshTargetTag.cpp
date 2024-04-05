@@ -1,11 +1,10 @@
 #include "Precomp.h"
-#include "Components/Pathfinding/NavMeshTargetComponent.h"
+#include "Components/Pathfinding/NavMeshTargetTag.h"
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
-
 
 CE::MetaType CE::NavMeshTargetTag::Reflect()
 {

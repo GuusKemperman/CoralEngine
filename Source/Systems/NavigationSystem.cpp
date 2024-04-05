@@ -6,7 +6,7 @@
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Components/Pathfinding/NavMeshComponent.h"
-#include "Components/Pathfinding/NavMeshTargetComponent.h"
+#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
@@ -70,14 +70,16 @@ void NavigationSystem::Update(World& world, float dt)
 		auto characterComponent = registry.TryGet<CharacterComponent>(agentId);
 		if (characterComponent == nullptr)
 		{
-			LOG(LogNavigationSystem, Warning, "NavMesh Agent with entity ID {} does not have a character component attached to get the movement speed.", entt::to_integral(agentId))
+			LOG(LogNavigationSystem, Warning,
+			    "NavMesh Agent with entity ID {} does not have a character component attached to get the movement speed.",
+			    entt::to_integral(agentId))
 			continue;
 		}
 		float speed = characterComponent->mCurrentMovementSpeed;
 
 		// Find a path from the agent's position to the target's position
 		navMeshAgent.mPathFound = naveMesh.FindQuickestPath(agentWorldPosition,
-			targetPosition.value());
+		                                                    targetPosition.value());
 
 		if (navMeshAgent.mPathFound.empty())
 		{
@@ -88,7 +90,7 @@ void NavigationSystem::Update(World& world, float dt)
 		const glm::vec2 dVec2 = navMeshAgent.mPathFound[1] - agentWorldPosition;
 
 		// Calculate the distance between the agent and the next waypoint
-		const float distance = glm::length(dVec2);
+		const float distance = length(dVec2);
 
 		if (distance == 0.0f)
 		{
@@ -116,11 +118,11 @@ void NavigationSystem::Render(const World& world)
 			for (size_t i = 0; i < n.mPathFound.size() - 1; i++)
 			{
 				DrawDebugLine(
-					world, 
-					DebugCategory::AINavigation, 
-					To3DRightForward(n.mPathFound[i]), 
+					world,
+					DebugCategory::AINavigation,
+					To3DRightForward(n.mPathFound[i]),
 					To3DRightForward(n.mPathFound[i + 1]),
-				    {1.f, 0.f, 0.f, 1.f});
+					{1.f, 0.f, 0.f, 1.f});
 			}
 		}
 	}
