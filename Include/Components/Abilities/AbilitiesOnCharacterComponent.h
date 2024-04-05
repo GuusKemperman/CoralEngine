@@ -20,6 +20,8 @@ namespace CE
 		std::vector<Input::KeyboardKey> mKeyboardKeys{};
 		std::vector<Input::GamepadButton> mGamepadButtons{};
 
+		void MakeAbilityReadyToBeActivated();
+
 		bool operator==(const AbilityInstance& other) const;
 		bool operator!=(const AbilityInstance& other) const;
 

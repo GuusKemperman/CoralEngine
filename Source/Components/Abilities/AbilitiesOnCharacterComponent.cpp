@@ -59,6 +59,11 @@ void CE::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vecto
 }
 #endif // EDITOR
 
+void CE::AbilityInstance::MakeAbilityReadyToBeActivated()
+{
+	mRequirementCounter = mAbilityAsset->mRequirementToUse;
+}
+
 bool CE::AbilityInstance::operator==(const AbilityInstance& other) const
 {
 	return mAbilityAsset == other.mAbilityAsset &&
@@ -113,6 +118,14 @@ CE::MetaType CE::AbilityInstance::Reflect()
 			return AbilitySystem::CanAbilityBeActivated(characterData, ability);
 
 		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<const AbilityInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
+	metaType.AddFunc([](AbilityInstance& ability)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			ability.MakeAbilityReadyToBeActivated();
+		}, "MakeAbilityReadyToBeActivated", MetaFunc::ExplicitParams<AbilityInstance&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	ReflectFieldType<AbilityInstance>(metaType);
 	return metaType;
