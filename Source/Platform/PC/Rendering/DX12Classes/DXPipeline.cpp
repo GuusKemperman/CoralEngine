@@ -48,10 +48,10 @@ ComPtr<ID3D12PipelineState> DXPipelineBuilder::Build(ComPtr<ID3D12Device5> devic
 		hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&pipeline));
 	}
 
-
-	if (FAILED(hr)) {
-		MessageBox(NULL, L"Failed to create default pipeline", L"FATAL ERROR!", MB_ICONERROR | MB_OK);
-		assert(false && "Failed to create default pipeline");
+	if (FAILED(hr))
+	{
+		MessageBox(NULL, L"Failed to create pipeline", L"FATAL ERROR!", MB_ICONERROR | MB_OK);
+		assert(false && "Failed to create pipeline");
 	}
 	pipeline->SetName(name);
 
@@ -81,6 +81,12 @@ DXPipelineBuilder& DXPipelineBuilder::SetBlendState(const CD3DX12_BLEND_DESC& bl
 DXPipelineBuilder& DXPipelineBuilder::SetDepthState(const CD3DX12_DEPTH_STENCIL_DESC& depthStencil)
 {
 	mDepth = depthStencil;
+	return *this;
+}
+
+DXPipelineBuilder& DXPipelineBuilder::SetDepthFormat(const DXGI_FORMAT& format)
+{
+	mDepthFormat = format;
 	return *this;
 }
 
@@ -128,10 +134,10 @@ ComPtr<ID3DBlob> DXPipelineBuilder::ShaderToBlob(const char* path, const char* s
     MultiByteToWideChar(CP_ACP, 0, path, -1, wString, 4096);
     HRESULT hr;
 
-    if(functionName != nullptr)
-        hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, functionName, shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
-    else
-        hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
+	if(functionName != nullptr)
+		hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, functionName, shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
+	else
+		hr = D3DCompileFromFile(wString, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", shaderVersion, D3DCOMPILE_DEBUG, 0, &shader, &errorBuff);
 
     if (FAILED(hr))
     {

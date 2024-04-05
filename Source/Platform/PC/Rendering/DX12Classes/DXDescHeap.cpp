@@ -15,7 +15,7 @@ DXDescHeap::DXDescHeap(const ComPtr<ID3D12Device5>& device, int numDescriptors, 
 
 	//Leaving space for ImGUI resources
 	if (mType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
-		mResourceCount = RESOURCE_START;
+		mResourceCount = 4;
 
 	HRESULT hr = device->CreateDescriptorHeap(&renderTargetDesc, IID_PPV_ARGS(&mDescriptorHeap));
 	if (FAILED(hr))
@@ -107,7 +107,7 @@ DXHeapHandle DXDescHeap::AllocateResource(DXResource* resource, D3D12_SHADER_RES
 	return DXHeapHandle(slot, shared_from_this());
 }
 
-DXHeapHandle DXDescHeap::AllocateUAV(DXResource* resource, D3D12_UNORDERED_ACCESS_VIEW_DESC* desc)
+DXHeapHandle DXDescHeap::AllocateUAV(DXResource* resource, D3D12_UNORDERED_ACCESS_VIEW_DESC* desc, DXResource* counterResource)
 {
 	int slot = -1;
 
@@ -137,7 +137,11 @@ DXHeapHandle DXDescHeap::AllocateUAV(DXResource* resource, D3D12_UNORDERED_ACCES
 	CE::Device& engineDevice = CE::Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 	CD3DX12_CPU_DESCRIPTOR_HANDLE handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), slot, mDescriptorSize);
-	device->CreateUnorderedAccessView(resource->Get(), nullptr, desc, handle);
+	
+	if(!counterResource)
+		device->CreateUnorderedAccessView(resource->Get(), nullptr, desc, handle);
+	else
+		device->CreateUnorderedAccessView(resource->Get(), counterResource->Get(), desc, handle);
 
 
 	return DXHeapHandle(slot, shared_from_this());
