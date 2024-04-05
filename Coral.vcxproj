@@ -1512,6 +1512,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Utilities\StaticReflection\ReflectComponentType.cpp" />
+    <ClCompile Include="Source\Utilities\StringFunctions.cpp" />
     <ClCompile Include="Source\World\Archiver.cpp" />
     <ClCompile Include="Source\World\Physics.cpp" />
     <ClCompile Include="source\World\World.cpp" />

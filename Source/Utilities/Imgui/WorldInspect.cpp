@@ -1167,11 +1167,36 @@ namespace
 
 		// The tag got copied as well, lets remove that as well
 		reg.RemoveComponents<WasRootCopyTag>(selectedEntities.begin(), selectedEntities.end());
+
+		// Append the number to the end
+		for (entt::entity copy : selectedEntities)
+		{
+			NameComponent* name = reg.TryGet<NameComponent>(copy);
+
+			if (name == nullptr)
+			{
+				continue;
+			}
+
+			name->mName = StringFunctions::CreateUniqueName(name->mName,
+				[&reg](std::string_view copyName)
+				{
+					for (auto [entity, existingNameComponent] : reg.View<const NameComponent>().each())
+					{
+						if (copyName == existingNameComponent.mName)
+						{
+							return false;
+						}
+					}
+
+					return true;
+				});
+		}
 	}
 
 	void Duplicate(CE::World& world, std::vector<entt::entity>& selectedEntities)
 	{
-		std::string clipboardData = CopyToClipBoard(world, selectedEntities);
+		const std::string clipboardData = CopyToClipBoard(world, selectedEntities);
 		PasteClipBoard(world, selectedEntities, clipboardData);
 	}
 
