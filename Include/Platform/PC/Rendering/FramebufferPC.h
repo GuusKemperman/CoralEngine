@@ -34,6 +34,7 @@ namespace CE
 		DXHeapHandle mFrameBufferHandle[FRAME_BUFFER_COUNT];
 		DXHeapHandle mFrameBufferRscHandle[FRAME_BUFFER_COUNT];
 		DXHeapHandle mDepthStencilHandle;
+		DXHeapHandle mDepthStencilSRVHandle;
 
 		glm::vec4 mClearColor{};
 		glm::ivec2 mSize{};

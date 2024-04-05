@@ -73,6 +73,15 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, static_cast<UINT>(mSize.x), static_cast<UINT>(mSize.y), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 	mDepthResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
 	mDepthStencilHandle = engineDevice.GetDescriptorHeap(DEPTH_HEAP)->AllocateDepthStencil(mDepthResource.get(), &depthStencilDesc);
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+
+	mDepthStencilSRVHandle = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mDepthResource.get(), &srvDesc);
 }
 
 CE::FrameBuffer::~FrameBuffer() = default;
@@ -119,7 +128,6 @@ void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 	mScissorRect.top = 0;
 	mScissorRect.right = static_cast<LONG>(mViewport.Width);
 	mScissorRect.bottom = static_cast<LONG>(mViewport.Height);
-
 
 	Device& engineDevice = Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
