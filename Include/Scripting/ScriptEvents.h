@@ -21,11 +21,13 @@ namespace CE
 		void Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc,
 		            const std::shared_ptr<const Script>& script) const;
 
+#ifdef EDITOR
 		/**
 		 * \brief Can be used to make calls to ImGui so the user can add/remove event specific properties.
 		 */
 		virtual void OnDetailsInspect([[maybe_unused]] ScriptFunc& scriptFunc) const {}
-		
+#endif // EDITOR
+
 		std::reference_wrapper<const EventBase> mBasedOnEvent;
 
 		std::vector<MetaFuncNamedParam> mParamsToShowToUser{};
@@ -55,20 +57,41 @@ namespace CE
 	};
 
 	// For both Tick and FixedTick
-	class ScriptTickEvent :
+	class ScriptTickEventBase :
 		public ScriptEvent
 	{
 	public:
 		template<typename EventT>
-		ScriptTickEvent(const EventT& event) :
+		ScriptTickEventBase(const EventT& event) :
 			ScriptEvent(event, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt) {}
 
+#ifdef EDITOR
 		void OnDetailsInspect(ScriptFunc& scriptFunc) const override;
+#endif // EDITOR
+	};
+
+	class ScriptTickEvent final :
+		public ScriptTickEventBase
+	{
+	public:
+		ScriptTickEvent() : ScriptTickEventBase(sTickEvent) {};
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
 			const std::shared_ptr<const Script>& script) const override;
 	};
+
+	class ScriptFixedTickEvent final :
+		public ScriptTickEventBase
+	{
+	public:
+		ScriptFixedTickEvent() : ScriptTickEventBase(sFixedTickEvent) {};
+
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+			const std::shared_ptr<const Script>& script) const override;
+	};
+	
 
 	class ScriptAITickEvent final :
 		public ScriptEvent
@@ -141,8 +164,8 @@ namespace CE
 
 	static const ScriptOnlyPassComponentEvent sOnConstructScriptEvent{ sConstructEvent };
 	static const ScriptOnlyPassComponentEvent sOnBeginPlayScriptEvent{ sBeginPlayEvent };
-	static const ScriptTickEvent sOnTickScriptEvent{ sTickEvent };
-	static const ScriptTickEvent sOnFixedTickScriptEvent{ sFixedTickEvent };
+	static const ScriptTickEvent sOnTickScriptEvent{};
+	static const ScriptFixedTickEvent sOnFixedTickScriptEvent{};
 	static const ScriptOnlyPassComponentEvent sOnDestructScriptEvent{ sDestructEvent };
 	static const ScriptOnlyPassComponentEvent sOnAIStateEnterScriptEvent{ sAIStateEnterEvent };
 	static const ScriptAITickEvent sOnAITickScriptEvent{};

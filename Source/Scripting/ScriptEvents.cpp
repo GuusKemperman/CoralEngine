@@ -55,7 +55,8 @@ CE::MetaFunc::InvokeT CE::ScriptOnlyPassComponentEvent::GetScriptInvoker(const S
 		};
 }
 
-void CE::ScriptTickEvent::OnDetailsInspect(ScriptFunc& scriptFunc) const
+#ifdef EDITOR
+void CE::ScriptTickEventBase::OnDetailsInspect(ScriptFunc& scriptFunc) const
 {
 	MetaProps& props = scriptFunc.GetProps();
 
@@ -87,6 +88,7 @@ void CE::ScriptTickEvent::OnDetailsInspect(ScriptFunc& scriptFunc) const
 		}
 	}
 }
+#endif // EDITOR
 
 CE::MetaFunc::InvokeT CE::ScriptTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
 	const std::shared_ptr<const Script>& script) const
@@ -96,6 +98,18 @@ CE::MetaFunc::InvokeT CE::ScriptTickEvent::GetScriptInvoker(const ScriptFunc& sc
 		{
 			// The reference to the component and the deltatime
 			std::array<MetaAny, 2> scriptArgs{ std::move(args[0]), std::move(args[3]) };
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
+CE::MetaFunc::InvokeT CE::ScriptFixedTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const std::shared_ptr<const Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			// The reference to the component and the deltatime
+			std::array<MetaAny, 2> scriptArgs{ std::move(args[0]), MetaAny{ sFixedTickEventStepSize } };
 			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
 		};
 }

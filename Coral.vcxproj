@@ -1801,7 +1801,7 @@
     <ClInclude Include="Include\Scripting\ScriptEvents.h" />
     <ClInclude Include="Include\Assets\Animation\Bone.h" />
     <ClInclude Include="Include\Systems\AnimationSystem.h" />
-    <ClInclude Include="Include\Systems\TickSystems.h" />
+    <ClInclude Include="Include\Systems\TickEventSystems.h" />
     <ClInclude Include="Include\Systems\NavigationSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem.h" />
     <ClInclude Include="Include\Systems\UISystem.h" />

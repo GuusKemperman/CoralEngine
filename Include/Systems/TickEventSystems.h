@@ -13,11 +13,11 @@ namespace CE
 	};
 
 	template<bool IsFixed, TickResponsibility Responsibility>
-	class TickSystem final :
+	class TickEventSystem final :
 		public System
 	{
 	public:
-		TickSystem();
+		TickEventSystem();
 
 		void Update(World& world, float dt) override;
 
@@ -31,7 +31,7 @@ namespace CE
 	};
 
 	template <bool IsFixed, TickResponsibility Responsibility>
-	TickSystem<IsFixed, Responsibility>::TickSystem() :
+	TickEventSystem<IsFixed, Responsibility>::TickEventSystem() :
 		mBoundEvents(IsFixed ? GetAllBoundEvents(sFixedTickEvent) : GetAllBoundEvents(sTickEvent))
 	{
 		if constexpr (Responsibility == TickResponsibility::BeforeBeginPlay)
@@ -55,7 +55,7 @@ namespace CE
 	}
 
 	template <bool IsFixed, TickResponsibility Responsibility>
-	void TickSystem<IsFixed, Responsibility>::Update(World& world, float dt)
+	void TickEventSystem<IsFixed, Responsibility>::Update(World& world, float dt)
 	{
 		Registry& reg = world.GetRegistry();
 
@@ -78,19 +78,34 @@ namespace CE
 
 				if (boundEvent.mIsStatic)
 				{
-					boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity, dt);
+					if constexpr (IsFixed)
+					{
+						boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity);
+					}
+					else
+					{
+						boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity, dt);
+					}
 				}
 				else
 				{
 					MetaAny component{ boundEvent.mType.get(), storage->value(entity), false };
-					boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, entity, dt);
+
+					if constexpr (IsFixed)
+					{
+						boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, entity);
+					}
+					else
+					{
+						boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, entity, dt);
+					}
 				}
 			}
 		}
 	}
 
 	template <bool IsFixed, TickResponsibility Responsibility>
-	SystemStaticTraits TickSystem<IsFixed, Responsibility>::GetStaticTraits() const
+	SystemStaticTraits TickEventSystem<IsFixed, Responsibility>::GetStaticTraits() const
 	{
 		SystemStaticTraits traits{};
 
@@ -106,18 +121,18 @@ namespace CE
 	}
 
 	template <bool IsFixed, TickResponsibility Responsibility>
-	MetaType TickSystem<IsFixed, Responsibility>::Reflect()
+	MetaType TickEventSystem<IsFixed, Responsibility>::Reflect()
 	{
-		return MetaType{ MetaType::T<TickSystem>{}, MakeTypeName<TickSystem>(), MetaType::Base<System>{} };
+		return MetaType{ MetaType::T<TickEventSystem>{}, MakeTypeName<TickEventSystem>(), MetaType::Base<System>{} };
 	}
 
-	using TickSystemBeforeBeginPlay = TickSystem<false, TickResponsibility::BeforeBeginPlay>;
-	using TickSystemWhenRunning = TickSystem<false, TickResponsibility::WhenRunning>;
-	using TickSystemWhenPaused = TickSystem<false, TickResponsibility::WhenPaused>;
+	using TickSystemBeforeBeginPlay = TickEventSystem<false, TickResponsibility::BeforeBeginPlay>;
+	using TickSystemWhenRunning = TickEventSystem<false, TickResponsibility::WhenRunning>;
+	using TickSystemWhenPaused = TickEventSystem<false, TickResponsibility::WhenPaused>;
 
-	using FixedTickSystemBeforeBeginPlay = TickSystem<true, TickResponsibility::BeforeBeginPlay>;
-	using FixedTickSystemWhenRunning = TickSystem<true, TickResponsibility::WhenRunning>;
-	using FixedTickSystemWhenPaused = TickSystem<true, TickResponsibility::WhenPaused>;
+	using FixedTickSystemBeforeBeginPlay = TickEventSystem<true, TickResponsibility::BeforeBeginPlay>;
+	using FixedTickSystemWhenRunning = TickEventSystem<true, TickResponsibility::WhenRunning>;
+	using FixedTickSystemWhenPaused = TickEventSystem<true, TickResponsibility::WhenPaused>;
 
 	REFLECT_AT_START_UP(TickSystemBeforeBeginPlay);
 	REFLECT_AT_START_UP(TickSystemWhenRunning);
