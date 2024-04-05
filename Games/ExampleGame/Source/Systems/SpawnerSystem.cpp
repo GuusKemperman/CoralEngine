@@ -1,35 +1,36 @@
 #include "Precomp.h"
 #include "Systems/SpawnerSystem.h"
 
+#include "Components/PlayerComponent.h"
 #include "Components/SpawnerComponent.h"
 #include "Components/TransformComponent.h"
 #include "World/Registry.h"
 
-void Game::SpawnerSystem::Update(CE::World& world, float dt)
+void Game::SpawnerSystem::Update(CE::World& world, float)
 {
-	CE::Registry& reg = world.GetRegistry();
+	auto& reg = world.GetRegistry();
 	auto spawnerView = reg.View<SpawnerComponent, CE::TransformComponent>();
+
+	const auto playerCheck = reg.View<PlayerComponent>();
+
+	if (playerCheck.empty()) { return; }
+
+	const auto playerView = reg.View<PlayerComponent, CE::TransformComponent>();
+
+	auto [playerComponent, playerTransform] = playerView.get(playerView.front());
+
 	for (auto [spawnerID, spawnerComponent, spawnerTransform] : spawnerView.each())
 	{
-		if (spawnerComponent.mPrefab == nullptr)
+		const float distance = glm::distance(playerTransform.GetWorldPosition(),
+		                                     spawnerTransform.GetWorldPosition());
+
+		if (spawnerComponent.mMax > distance && spawnerComponent.mMin < distance)
 		{
-			continue;
+			spawnerComponent.mActive = true;
 		}
-
-		spawnerComponent.mCurrentTimer += dt;
-		if (spawnerComponent.mCurrentTimer < spawnerComponent.mSpawningTimer)
+		else
 		{
-			continue;
-		}
-		
-		const entt::entity spawnedPrefab = reg.CreateFromPrefab(*spawnerComponent.mPrefab);
-		spawnerComponent.mCurrentTimer = 0;
-
-		CE::TransformComponent* const spawnedTransform = reg.TryGet<CE::TransformComponent>(spawnedPrefab);
-
-		if (spawnedTransform != nullptr)
-		{
-			spawnedTransform->SetWorldPosition(spawnerTransform.GetWorldPosition());
+			spawnerComponent.mActive = false;
 		}
 	}
 }

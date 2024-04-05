@@ -44,7 +44,7 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc(static_cast<T(*)(const T&, const float&, const float&)>(&Math::ClampLength), "ClampLength").GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddFunc([](T& n) -> T& { ++n; return n; }, OperatorType::increment, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](T& n) -> T& { ++n; return n; }, OperatorType::decrement, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n) -> T& { --n; return n; }, OperatorType::decrement, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](T& n, const T& l) -> T& { n += l; return n; }, OperatorType::add_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](T& n, const T& l) -> T& { n -= l; return n; }, OperatorType::subtract_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](T& n, const T& l) -> T& { n *= l; return n; }, OperatorType::multiplies_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);

@@ -3,7 +3,7 @@
 
 #include "Components/TransformComponent.h"
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
-#include "Components/Pathfinding/NavMeshTargetComponent.h"
+#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Events.h"
@@ -34,7 +34,8 @@ float Game::ChasingState::OnAiEvaluate(const CE::World& world, entt::entity owne
 	return score;
 }
 
-std::pair<float, entt::entity> Game::ChasingState::GetBestScoreAndTarget(const CE::World& world, entt::entity owner) const
+std::pair<float, entt::entity> Game::ChasingState::GetBestScoreAndTarget(
+	const CE::World& world, entt::entity owner) const
 {
 	const auto targetsView = world.GetRegistry().View<CE::NavMeshTargetTag, CE::TransformComponent>();
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
@@ -80,10 +81,10 @@ void Game::ChasingState::DebugRender(CE::World& world, entt::entity owner) const
 		return;
 	}
 
-	CE::DrawDebugCircle(
-		world, CE::DebugCategory::Gameplay, 
+	DrawDebugCircle(
+		world, CE::DebugCategory::Gameplay,
 		transformComponent->GetWorldPosition(),
-	    mRadius, {0.f, 0.f, 1.f, 1.f});
+		mRadius, {0.f, 0.f, 1.f, 1.f});
 }
 
 CE::MetaType Game::ChasingState::Reflect()

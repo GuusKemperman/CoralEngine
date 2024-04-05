@@ -1036,7 +1036,7 @@
     <ClCompile Include="Source\Utilities\Geometry2d.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshAgentComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshComponent.cpp" />
-    <ClCompile Include="Source\Components\Pathfinding\NavMeshTargetComponent.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\NavMeshTargetTag.cpp" />
     <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PhysicsBody2DComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PolygonColliderComponent.cpp" />
@@ -1675,7 +1675,7 @@
     <ClInclude Include="Include\Components\NameComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshAgentComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshComponent.h" />
-    <ClInclude Include="Include\Components\Pathfinding\NavMeshTargetComponent.h" />
+    <ClInclude Include="Include\Components\Pathfinding\NavMeshTargetTag.h" />
     <ClInclude Include="Include\Components\Physics2D\DiskColliderComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PhysicsBody2DComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
