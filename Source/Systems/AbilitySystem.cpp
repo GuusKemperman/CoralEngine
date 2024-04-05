@@ -155,14 +155,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
         }
 
         // Update GDC
-        if (characterData.mGlobalCooldownTimer > 0.f)
-        {
-            characterData.mGlobalCooldownTimer -= dt;
-        }
-        else
-        {
-            characterData.mGlobalCooldownTimer = 0.f;
-        }
+        characterData.mGlobalCooldownTimer = std::max(characterData.mGlobalCooldownTimer - dt, 0.0f);
 
         // Create abilities
         for (auto& ability : abilities.mAbilitiesToInput)
@@ -172,15 +165,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
             {
             case Ability::Cooldown:
             {
-                if (ability.mRequirementCounter <= ability.mAbilityAsset->mRequirementToUse)
-                {
-                    ability.mRequirementCounter += dt;
-                }
-                else
-                {
-                    // Clamp to the set cooldown for exact numbers
-                    ability.mRequirementCounter = std::min(ability.mRequirementCounter, ability.mAbilityAsset->mRequirementToUse);
-                }
+                ability.mRequirementCounter = std::min(ability.mRequirementCounter + dt, ability.mAbilityAsset->mRequirementToUse);
                 break;
             }
             case Ability::Mana:
