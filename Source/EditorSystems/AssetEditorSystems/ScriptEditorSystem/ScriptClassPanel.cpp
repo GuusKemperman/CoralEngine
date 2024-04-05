@@ -119,12 +119,12 @@ void CE::ScriptEditorSystem::DisplayMembersOverview()
 		memberNames.emplace_back(field.GetName());
 	}
 
-	const OverviewResult result = DisplayOverview("Members", std::move(memberNames),
+	const OverviewResult result = DisplayOverview("Variables", std::move(memberNames),
 		TryGetSelectedField() == nullptr ? std::optional<Name>{} : TryGetSelectedField()->GetName());
 
 	if (result.mAddButtonPressed)
 	{
-		std::string name = "New field";
+		std::string name = "New variable";
 
 		while (mAsset.TryGetField(name) != nullptr)
 		{
