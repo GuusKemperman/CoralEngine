@@ -114,7 +114,7 @@ void CE::ScriptFunc::DeclareMetaFunc(MetaType& addToType)
 		metaParams
 	);
 
-	declaredFunc.GetProperties().Set(Props::sIsScriptPure, IsPure());
+	declaredFunc.GetProperties().Set(Props::sIsScriptPure, IsPure()).Add(Props::sIsScriptableTag);
 }
 
 
