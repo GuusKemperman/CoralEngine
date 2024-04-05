@@ -26,7 +26,7 @@ namespace CE
 		float mZoomSensitivity = 3.0f;
 		float mRotateSensitivity = 100.0f;
 
-		float mHeightInterpolationfactor = 0.7f;
+		float mHeightInterpolationFactor = 0.7f;
 
 		entt::entity mTarget{entt::null};
 		glm::vec3 mTargetLocation{};
