@@ -110,44 +110,36 @@ void CE::World::BeginPlay()
 	mTime = {};
 	LOG(LogCore, Verbose, "World will begin play");
 
-	for (auto&& [typeHash, storage] : mRegistry->Storage())
+	std::vector<BoundEvent> beginPlayEvents = GetAllBoundEvents(sBeginPlayEvent);
+
+	for (const BoundEvent& boundEvent : beginPlayEvents)
 	{
-		const MetaType* const metaType = MetaManager::Get().TryGetType(typeHash);
+		entt::sparse_set* storage = mRegistry->Storage(boundEvent.mType.get().GetTypeId());
 
-		if (metaType == nullptr)
+		if (storage == nullptr)
 		{
 			continue;
 		}
 
-		const MetaFunc* const beginPlayEvent = TryGetEvent(*metaType, sBeginPlayEvent);
-
-		if (beginPlayEvent == nullptr)
-		{
-			continue;
-		}
-
-		const bool isStatic = beginPlayEvent->GetProperties().Has(Props::sIsEventStaticTag);
-
-		for (const entt::entity entity : storage)
+		for (const entt::entity entity : *storage)
 		{
 			// Tombstone check
-			if (!storage.contains(entity))
+			if (!storage->contains(entity))
 			{
 				continue;
 			}
 
-			if (isStatic)
+			if (boundEvent.mIsStatic)
 			{
-				beginPlayEvent->InvokeCheckedUnpacked(*this, entity);
+				boundEvent.mFunc.get().InvokeCheckedUnpacked(*this, entity);
 			}
 			else
 			{
-				MetaAny component{ *metaType, storage.value(entity), false };
-				beginPlayEvent->InvokeCheckedUnpacked(component, *this, entity);
+				MetaAny component{ boundEvent.mType, storage->value(entity), false };
+				boundEvent.mFunc.get().InvokeCheckedUnpacked(component, *this, entity);
 			}
 		}
 	}
-
 }
 
 void CE::World::EndPlay()

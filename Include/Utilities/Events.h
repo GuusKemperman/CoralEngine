@@ -219,6 +219,16 @@ namespace CE
 	template<typename EventT>
 	const MetaFunc* TryGetEvent(const MetaType& fromType, const EventT& event);
 
+	struct BoundEvent
+	{
+		std::reference_wrapper<const MetaType> mType;
+		std::reference_wrapper<const MetaFunc> mFunc;
+		bool mIsStatic{};
+	};
+
+	template <typename EventT>
+	std::vector<BoundEvent> GetAllBoundEvents(const EventT& event);
+
 	//********************************//
 	//			Implementation		  //
 	//********************************//
@@ -271,16 +281,25 @@ namespace CE
 		BindEvent<std::monostate>(type, event, func);
 	}
 
+	namespace Internal
+	{
+		const MetaFunc* TryGetEvent(const MetaType& fromType, std::string_view eventName);
+	}
+
 	template <typename EventT>
 	const MetaFunc* TryGetEvent(const MetaType& fromType, const EventT& event)
 	{
-		const MetaFunc* func = fromType.TryGetFunc(event.mName);
+		return Internal::TryGetEvent(fromType, event.mName);
+	}
 
-		if (func != nullptr
-			&& func->GetProperties().Has(Internal::sIsEventProp))
-		{
-			return func;
-		}
-		return nullptr;
+	namespace Internal
+	{
+		std::vector<BoundEvent> GetAllBoundEvents(std::string_view eventName);
+	}
+
+	template <typename EventT>
+	std::vector<BoundEvent> GetAllBoundEvents(const EventT& event)
+	{
+		return Internal::GetAllBoundEvents(event.mName);
 	}
 }
