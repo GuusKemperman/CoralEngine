@@ -30,15 +30,4 @@ namespace CE
 		helper >> tmp;
 		return tmp;
 	}
-
-	inline MetaProps& MetaProps::Add(const Name name)
-	{
-		mProperties[name.GetHash()] = std::make_pair(name.String(), "");
-		return *this;
-	}
-
-	inline bool MetaProps::Has(const Name name) const
-	{
-		return mProperties.find(name.GetHash()) != mProperties.end();
-	}
 }

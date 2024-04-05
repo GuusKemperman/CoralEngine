@@ -1,41 +1,129 @@
 #pragma once
 #include "Systems/System.h"
 #include "Utilities/Events.h"
+#include "World/Registry.h"
 
 namespace CE
 {
+	enum class TickResponsibility
+	{
+		BeforeBeginPlay,
+		WhenPaused,
+		WhenRunning
+	};
+
+	template<bool IsFixed, TickResponsibility Responsibility>
 	class TickSystem final :
 		public System
 	{
 	public:
+		TickSystem();
+
 		void Update(World& world, float dt) override;
+
+		SystemStaticTraits GetStaticTraits() const override;
 
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(TickSystem);
 
 		std::vector<BoundEvent> mBoundEvents = GetAllBoundEvents(sTickEvent);
 	};
 
-	class FixedTickSystem final :
-		public System
+	template <bool IsFixed, TickResponsibility Responsibility>
+	TickSystem<IsFixed, Responsibility>::TickSystem() :
+		mBoundEvents(IsFixed ? GetAllBoundEvents(sFixedTickEvent) : GetAllBoundEvents(sTickEvent))
 	{
-	public:
-		void Update(World& world, float dt) override;
-
-		SystemStaticTraits GetStaticTraits() const override
+		if constexpr (Responsibility == TickResponsibility::BeforeBeginPlay)
 		{
-			SystemStaticTraits traits{};
+			// Remove all the events that are not called before begin play
+			mBoundEvents.erase(std::remove_if(mBoundEvents.begin(), mBoundEvents.end(),
+				[](const BoundEvent& bound)
+				{
+					return !bound.mFunc.get().GetProperties().Has(Props::sShouldTickBeforeBeginPlayTag);
+				}), mBoundEvents.end());
+		}
+		else if constexpr (Responsibility == TickResponsibility::WhenPaused)
+		{
+			// Remove all the events that are not called when paused
+			mBoundEvents.erase(std::remove_if(mBoundEvents.begin(), mBoundEvents.end(),
+				[](const BoundEvent& bound)
+				{
+					return !bound.mFunc.get().GetProperties().Has(Props::sShouldTickWhilstPausedTag);
+				}), mBoundEvents.end());
+		}
+	}
+
+	template <bool IsFixed, TickResponsibility Responsibility>
+	void TickSystem<IsFixed, Responsibility>::Update(World& world, float dt)
+	{
+		Registry& reg = world.GetRegistry();
+
+		for (const BoundEvent& boundEvent : mBoundEvents)
+		{
+			entt::sparse_set* const storage = reg.Storage(boundEvent.mType.get().GetTypeId());
+
+			if (storage == nullptr)
+			{
+				continue;
+			}
+
+			for (const entt::entity entity : *storage)
+			{
+				// Tombstone check
+				if (!storage->contains(entity))
+				{
+					continue;
+				}
+
+				if (boundEvent.mIsStatic)
+				{
+					boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity, dt);
+				}
+				else
+				{
+					MetaAny component{ boundEvent.mType.get(), storage->value(entity), false };
+					boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, entity, dt);
+				}
+			}
+		}
+	}
+
+	template <bool IsFixed, TickResponsibility Responsibility>
+	SystemStaticTraits TickSystem<IsFixed, Responsibility>::GetStaticTraits() const
+	{
+		SystemStaticTraits traits{};
+
+		if constexpr (IsFixed)
+		{
 			traits.mFixedTickInterval = sFixedTickEventStepSize;
-			return traits;
 		}
 
-	private:
-		std::vector<BoundEvent> mBoundEvents = GetAllBoundEvents(sFixedTickEvent);
+		traits.mShouldTickBeforeBeginPlay = Responsibility == TickResponsibility::BeforeBeginPlay;
+		traits.mShouldTickWhilstPaused = Responsibility == TickResponsibility::WhenPaused;
 
-		friend ReflectAccess;
-		static MetaType Reflect();
-		REFLECT_AT_START_UP(FixedTickSystem);
-	};
+		return traits;
+	}
+
+	template <bool IsFixed, TickResponsibility Responsibility>
+	MetaType TickSystem<IsFixed, Responsibility>::Reflect()
+	{
+		return MetaType{ MetaType::T<TickSystem>{}, MakeTypeName<TickSystem>(), MetaType::Base<System>{} };
+	}
+
+	using TickSystemBeforeBeginPlay = TickSystem<false, TickResponsibility::BeforeBeginPlay>;
+	using TickSystemWhenRunning = TickSystem<false, TickResponsibility::WhenRunning>;
+	using TickSystemWhenPaused = TickSystem<false, TickResponsibility::WhenPaused>;
+
+	using FixedTickSystemBeforeBeginPlay = TickSystem<true, TickResponsibility::BeforeBeginPlay>;
+	using FixedTickSystemWhenRunning = TickSystem<true, TickResponsibility::WhenRunning>;
+	using FixedTickSystemWhenPaused = TickSystem<true, TickResponsibility::WhenPaused>;
+
+	REFLECT_AT_START_UP(TickSystemBeforeBeginPlay);
+	REFLECT_AT_START_UP(TickSystemWhenRunning);
+	REFLECT_AT_START_UP(TickSystemWhenPaused);
+
+	REFLECT_AT_START_UP(FixedTickSystemBeforeBeginPlay);
+	REFLECT_AT_START_UP(FixedTickSystemWhenRunning);
+	REFLECT_AT_START_UP(FixedTickSystemWhenPaused);
 }

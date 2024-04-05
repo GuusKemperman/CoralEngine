@@ -55,35 +55,47 @@ CE::MetaFunc::InvokeT CE::ScriptOnlyPassComponentEvent::GetScriptInvoker(const S
 		};
 }
 
-CE::ScriptTickEvent::ScriptTickEvent() :
-	ScriptEvent(sTickEvent, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt)
+void CE::ScriptTickEvent::OnDetailsInspect(ScriptFunc& scriptFunc) const
 {
-}
+	MetaProps& props = scriptFunc.GetProps();
 
-CE::MetaFunc::InvokeT  CE::ScriptTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const
-{
-	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
-	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+	bool tickWhilstPaused = props.Has(Props::sShouldTickWhilstPausedTag);
+
+	if (ImGui::Checkbox("Tick while paused", &tickWhilstPaused))
+	{
+		if (tickWhilstPaused)
 		{
-			// The reference to the component and the deltatime
-			std::array<MetaAny, 2> scriptArgs{ std::move(args[0]), std::move(args[3]) };
-			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
-		};
+			props.Add(Props::sShouldTickWhilstPausedTag);
+		}
+		else
+		{
+			props.Remove(Props::sShouldTickWhilstPausedTag);
+		}
+	}
+
+	bool tickBeforeBeginPlay = props.Has(Props::sShouldTickBeforeBeginPlayTag);
+
+	if (ImGui::Checkbox("Tick before begin play", &tickBeforeBeginPlay))
+	{
+		if (tickBeforeBeginPlay)
+		{
+			props.Add(Props::sShouldTickBeforeBeginPlayTag);
+		}
+		else
+		{
+			props.Remove(Props::sShouldTickBeforeBeginPlayTag);
+		}
+	}
 }
 
-CE::ScriptFixedTickEvent::ScriptFixedTickEvent() :
-	ScriptEvent(sFixedTickEvent, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt)
-{
-}
-
-CE::MetaFunc::InvokeT  CE::ScriptFixedTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+CE::MetaFunc::InvokeT CE::ScriptTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
 	const std::shared_ptr<const Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
 		{
 			// The reference to the component and the deltatime
-			std::array<MetaAny, 2> scriptArgs{ std::move(args[0]), MetaAny{ sFixedTickEventStepSize } };
+			std::array<MetaAny, 2> scriptArgs{ std::move(args[0]), std::move(args[3]) };
 			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
 		};
 }

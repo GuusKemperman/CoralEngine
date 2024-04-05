@@ -524,6 +524,7 @@
   <ItemGroup>
     <ClCompile Include="Source\Assets\Core\AssetInternal.cpp" />
     <ClCompile Include="Source\Components\AnimationRootComponent.cpp" />
+    <ClCompile Include="Source\Meta\MetaProps.cpp" />
     <ClCompile Include="Source\Utilities\Events.cpp" />
     <ClCompile Include="Source\Utilities\PathfindingInfo.cpp" />
     <ClCompile Include="Source\EditorSystems\ImporterSystem.cpp">
@@ -1075,7 +1076,6 @@
     <ClCompile Include="Source\Components\NameComponent.cpp" />
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
     <ClCompile Include="Source\Components\TopDownCamControllerComponent.cpp" />
-    <ClCompile Include="Source\Systems\EventsSystem.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\ReflectNull.cpp" />
     <ClCompile Include="Source\Systems\UpdateTopDownCamSystem.cpp" />
     <ClCompile Include="Source\Platform\PC\Core\FileIOPC.cpp">
