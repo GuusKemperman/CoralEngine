@@ -59,36 +59,6 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 {
 	Registry& reg = world.GetRegistry();
 
-	struct StateToEvaluate
-	{
-		std::reference_wrapper<entt::sparse_set> mStorage;
-		std::reference_wrapper<const MetaType> mType;
-		std::reference_wrapper<const MetaFunc> mEvaluate;
-		bool mAreEventsStatic{};
-	};
-	std::vector<StateToEvaluate> statesToEvaluate{};
-
-	for (auto&& [typeId, storage] : reg.Storage())
-	{
-		const MetaType* const state = MetaManager::Get().TryGetType(typeId);
-
-		if (state == nullptr)
-		{
-			continue;
-		}
-
-		const MetaFunc* const evaluateEvent = TryGetEvent(*state, sAIEvaluateEvent);
-
-		if (evaluateEvent == nullptr)
-		{
-			continue;
-		}
-
-		statesToEvaluate.emplace_back(StateToEvaluate{
-			storage, *state, *evaluateEvent, evaluateEvent->GetProperties().Has(Props::sIsEventStaticTag)
-			});
-	}
-
 	const auto& enemyAIControllerView = world.GetRegistry().View<EnemyAiControllerComponent>();
 
 	for (auto [entity, currentAIController] : enemyAIControllerView.each())
@@ -100,9 +70,12 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 		currentAIController.mDebugPreviouslyEvaluatedScores.clear();
 #endif 
 
-		for (const StateToEvaluate& state : statesToEvaluate)
+		for (const BoundEvent& boundEvent : mBoundEvaluateEvents)
 		{
-			if (!state.mStorage.get().contains(entity))
+			entt::sparse_set* const storage = reg.Storage(boundEvent.mType.get().GetTypeId());
+
+			if (storage == nullptr
+				|| !storage->contains(entity))
 			{
 				continue;
 			}
@@ -110,31 +83,29 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 			float score{};
 			FuncResult evalResult;
 
-			if (state.mAreEventsStatic)
+			if (boundEvent.mIsStatic)
 			{
-				evalResult = state.mEvaluate.get().InvokeUncheckedUnpackedWithRVO(&score, world, entity);
+				evalResult = boundEvent.mFunc.get().InvokeUncheckedUnpackedWithRVO(&score, world, entity);
 			}
 			else
 			{
-				MetaAny component{ state.mType, state.mStorage.get().value(entity), false };
-				evalResult = state.mEvaluate.get().InvokeUncheckedUnpackedWithRVO(&score, component, world, entity);
+				MetaAny component{ boundEvent.mType, storage->value(entity), false };
+				evalResult = boundEvent.mFunc.get().InvokeUncheckedUnpackedWithRVO(&score, component, world, entity);
 			}
 
 			if (evalResult.HasError())
 			{
-				LOG(LogAI, Error, "Error occured while evaluating state {} - {}", state.mType.get().GetName(),
-					evalResult.Error());
 				continue;
 			}
 
 #ifdef EDITOR
-			currentAIController.mDebugPreviouslyEvaluatedScores.emplace_back(state.mType.get().GetName(), score);
+			currentAIController.mDebugPreviouslyEvaluatedScores.emplace_back(boundEvent.mType.get().GetName(), score);
 #endif 
 
 			if (score > bestScore)
 			{
 				bestScore = score;
-				bestType = &state.mType.get();
+				bestType = &boundEvent.mType.get();
 			}
 		}
 
