@@ -121,9 +121,6 @@ CE::MetaType CE::AbilityInstance::Reflect()
 
 	metaType.AddFunc([](AbilityInstance& ability)
 		{
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
 			ability.MakeAbilityReadyToBeActivated();
 		}, "MakeAbilityReadyToBeActivated", MetaFunc::ExplicitParams<AbilityInstance&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
