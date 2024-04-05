@@ -31,10 +31,6 @@ void CE::AITickSystem::Update(World& world, float dt)
 
 		if (aiTickEvent == nullptr)
 		{
-			LOG(LogAI, Warning, "Component {} has an {} event, but not a {} event",
-				currentAIController.mCurrentState->GetName(),
-				sAIEvaluateEvent.mName,
-				sAITickEvent.mName);
 			continue;
 		}
 
