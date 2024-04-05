@@ -524,10 +524,15 @@
   <ItemGroup>
     <ClCompile Include="Source\Assets\Core\AssetInternal.cpp" />
     <ClCompile Include="Source\Components\AnimationRootComponent.cpp" />
+    <ClCompile Include="Source\Utilities\Events.cpp" />
     <ClCompile Include="Source\Utilities\PathfindingInfo.cpp" />
     <ClCompile Include="Source\EditorSystems\ImporterSystem.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Utilities\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Rendering\Renderer.cpp" />
@@ -1552,6 +1557,7 @@
     <ClInclude Include="Include\Components\UI\UISpriteComponent.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Platform\PC\Rendering\InfoStruct.h" />
     <ClInclude Include="Include\Components\UI\UIButtonComponent.h" />
     <ClInclude Include="Include\Assets\SkinnedMesh.h" />
     <ClInclude Include="Include\Components\SkinnedMeshComponent.h" />

@@ -301,32 +301,30 @@ void CE::Device::InitializeDevice()
     }
 
     //CREATE ROOT SIGNATURE
-    mSignature = DXSignatureBuilder(12)
-        .AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX)//0
-        .AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL)//1
-        .AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX)//2
-        .AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL)//3
-        .AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL)//4
-        .AddCBuffer(5, D3D12_SHADER_VISIBILITY_VERTEX)//5
+    mSignature = DXSignatureBuilder(9)
+        .AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL)   //0  //Camera matrices
+        .AddCBuffer(1, D3D12_SHADER_VISIBILITY_VERTEX)//1  //Model matrices
+        .AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX)//2  //Bone matrices
+        .AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL) //3  //Light info 
+        .AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL) //4  //Material info
+        .AddCBuffer(5, D3D12_SHADER_VISIBILITY_PIXEL) //5  //Color multiplier
+        .AddCBuffer(6, D3D12_SHADER_VISIBILITY_PIXEL) //6  //Camera clustering buffer
+        .AddCBuffer(7, D3D12_SHADER_VISIBILITY_PIXEL) //7  // Cluster info buffer
 
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0)//6
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1)//7
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2)//8
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3)//9
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4)//10
-
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1)//11
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2)//12
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3)//13
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4)//14
-
-        .AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5)//15
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6)//16
-        .AddCBuffer(6, D3D12_SHADER_VISIBILITY_PIXEL)//17
-        .AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP)
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0)//8   //Base color tex
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1)//9   //Emissive tex
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2)//10  //Metallic roughness tex
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3)//11  //NormalTex
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4)//12  //Occlusion texture
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5)//13  //Directonal lights buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6)//14  //Point lights buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7)//15  //Light grid buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8)//16  //Light indices buffer
+        .AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP) //18  //Sampler
         .Build(mDevice, L"MAIN ROOT SIGNATURE");
 
     //COMPUTE ROOT SIGNATURE
+    //CREATE COMPUTE ROOT SIGNATURE
     mComputeSignature = DXSignatureBuilder(8)
         .AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL) // Cluster info 0
         .AddCBuffer(1, D3D12_SHADER_VISIBILITY_ALL) // Camera info 1
@@ -334,10 +332,12 @@ void CE::Device::InitializeDevice()
         .AddCBuffer(3, D3D12_SHADER_VISIBILITY_ALL) // Light info 3
         .AddCBuffer(4, D3D12_SHADER_VISIBILITY_ALL) // Model matrices 4
         .AddCBuffer(5, D3D12_SHADER_VISIBILITY_ALL) // Pixel color for cluster culling 5
+
         .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0) //6
         .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1) //7
         .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2) //8
         .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3) //9
+
         .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0) //10
         .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1) //11
         .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2) //12
@@ -601,12 +601,12 @@ void CE::Device::SubmitUploadCommands()
     mUploadFenceValue++;
     HRESULT hr = mUploadCommandQueue->Signal(mUploadFence.Get(), mUploadFenceValue);
 
+    WaitForFence(mUploadFence, mUploadFenceValue, mUploadFenceEvent);
+    
     if (FAILED(hr)) 
     {
         LOG(LogCore, Fatal, "Failed to signal upload fence");
     }
-
-    WaitForFence(mUploadFence, mUploadFenceValue, mUploadFenceEvent);
 }
 
 void CE::Device::AddToDeallocation(ComPtr<ID3D12Resource>&& res)

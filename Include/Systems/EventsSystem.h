@@ -14,6 +14,8 @@ namespace CE
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(TickSystem);
+
+		std::vector<BoundEvent> mBoundEvents = GetAllBoundEvents(sTickEvent);
 	};
 
 	class FixedTickSystem final :
@@ -30,6 +32,8 @@ namespace CE
 		}
 
 	private:
+		std::vector<BoundEvent> mBoundEvents = GetAllBoundEvents(sFixedTickEvent);
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(FixedTickSystem);
