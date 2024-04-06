@@ -52,6 +52,10 @@ namespace CE
 
 		void SetTimeScale(float timeScale) { mTime.mTimescale = timeScale; }
 
+		float GetRealDeltaTime() const { return mTime.mRealDeltaTime; }
+
+		float GetScaledDeltaTime() const { return mTime.mScaledDeltaTime; }
+
 		bool IsPaused() const { return mTime.mIsPaused; }
 
 		void Pause() { mTime.mIsPaused = true; }

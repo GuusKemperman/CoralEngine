@@ -17,8 +17,10 @@ namespace CE
 		float mRequirementCounter{};
 		int mChargesCounter{};
 
-		std::vector<Input::KeyboardKey> mKeyboardKeys;
-		std::vector<Input::GamepadButton> mGamepadButtons;
+		std::vector<Input::KeyboardKey> mKeyboardKeys{};
+		std::vector<Input::GamepadButton> mGamepadButtons{};
+
+		void MakeAbilityReadyToBeActivated();
 
 		bool operator==(const AbilityInstance& other) const;
 		bool operator!=(const AbilityInstance& other) const;
@@ -36,8 +38,7 @@ namespace CE
 	class AbilitiesOnCharacterComponent
 	{
 	public:
-		bool mIsPlayer = true;
-		std::vector<AbilityInstance> mAbilitiesToInput;
+		std::vector<AbilityInstance> mAbilitiesToInput{};
 
 	private:
 		friend ReflectAccess;

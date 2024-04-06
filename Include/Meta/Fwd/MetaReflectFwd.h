@@ -107,7 +107,7 @@ If you are trying to reflect an std::vector<std::shared_ptr<const Material>>, yo
 
 Example:
 	// Good
-	REFLECT_AT_START_UP(glm::, vec2)
+	REFLECT_AT_START_UP(glmVec2, vec2)
 
 	// The namespace does not have to be specified now:
 	using namespace glm;

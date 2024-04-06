@@ -20,12 +20,12 @@ namespace CE
 	class MetaType;
 	class MetaFunc;
 	class MetaField;
+	class MetaProps;
 	struct MetaFuncNamedParam;
 	class BinaryGSONObject;
 	class Script;
 	class FunctionEntryScriptNode;
 	class ScriptNode;
-
 
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
 	namespace Internal
@@ -96,7 +96,6 @@ namespace CE
 	}
 #endif
 
-
 	class ScriptFunc
 	{
 	public:
@@ -116,6 +115,9 @@ namespace CE
 
 		const std::string& GetNameOfScriptAsset() const { return mNameOfScriptAsset; }
 		TypeId GetTypeIdOfScriptAsset() const { return mTypeIdOfScript; }
+
+		MetaProps& GetProps() { return *mProps; }
+		const MetaProps& GetProps() const { return *mProps; }
 
 		/*
 		The function does nothing when called; first all the script classes are declared, after which Script::DefineMetaType
@@ -263,6 +265,8 @@ namespace CE
 		std::optional<ScriptVariableTypeData> mReturns{};
 
 		const ScriptEvent* mBasedOnEvent{};
+
+		std::unique_ptr<MetaProps> mProps{};
 
 		bool mIsPure{};
 		bool mIsStatic{};

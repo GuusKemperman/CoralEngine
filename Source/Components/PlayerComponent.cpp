@@ -6,7 +6,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-CE::MetaType Game::PlayerComponent::Reflect()
+CE::MetaType CE::PlayerComponent::Reflect()
 {
 	auto metaType = CE::MetaType{CE::MetaType::T<PlayerComponent>{}, "PlayerComponent"};
 	metaType.GetProperties().Add(CE::Props::sIsScriptableTag);

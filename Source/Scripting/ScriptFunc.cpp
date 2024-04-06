@@ -41,7 +41,8 @@ namespace CE::Internal
 CE::ScriptFunc::ScriptFunc(const Script& script, const std::string_view name) :
 	mName(name),
 	mNameOfScriptAsset(script.GetName()),
-	mTypeIdOfScript(Name::HashString(script.GetName()))
+	mTypeIdOfScript(Name::HashString(script.GetName())),
+	mProps(std::make_unique<MetaProps>())
 {}
 
 CE::ScriptFunc::ScriptFunc(const Script& script, const ScriptEvent& event) :
@@ -52,6 +53,7 @@ CE::ScriptFunc::ScriptFunc(const Script& script, const ScriptEvent& event) :
 		std::optional<ScriptVariableTypeData> { ScriptVariableTypeData{ event.mReturnValueToShowToUser->mTypeTraits, event.mReturnValueToShowToUser->mName } } :
 		std::nullopt),
 	mBasedOnEvent(&event),
+	mProps(std::make_unique<MetaProps>()),
 	mIsStatic(event.mBasedOnEvent.get().mIsAlwaysStatic)
 {
 	for (const MetaFuncNamedParam& param : event.mParamsToShowToUser)
@@ -70,53 +72,57 @@ CE::ScriptFunc::~ScriptFunc()
 
 void CE::ScriptFunc::DeclareMetaFunc(MetaType& addToType)
 {
+	MetaFunc* declared{};
 	if (IsEvent())
 	{
-		mBasedOnEvent->Declare(mTypeIdOfScript, addToType);
-		return;
+	 	declared = &mBasedOnEvent->Declare(mTypeIdOfScript, addToType);
 	}
-
-	std::vector<MetaFuncNamedParam> metaParams{};
-
-	for (ScriptVariableTypeData& scriptParam : GetParameters(false))
+	else
 	{
-		scriptParam.RefreshTypePointer();
 
-		if (scriptParam.TryGetType() == nullptr)
+		std::vector<MetaFuncNamedParam> metaParams{};
+
+		for (ScriptVariableTypeData& scriptParam : GetParameters(false))
 		{
-			VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, scriptParam.GetTypeName() });
-			continue;
+			scriptParam.RefreshTypePointer();
+
+			if (scriptParam.TryGetType() == nullptr)
+			{
+				VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, scriptParam.GetTypeName() });
+				continue;
+			}
+
+			metaParams.emplace_back(TypeTraits{ scriptParam.TryGetType()->GetTypeId(), scriptParam.GetTypeForm() }, scriptParam.GetName());
 		}
 
-		metaParams.emplace_back(TypeTraits{ scriptParam.TryGetType()->GetTypeId(), scriptParam.GetTypeForm() }, scriptParam.GetName());
+		MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
+
+		if (mReturns.has_value())
+		{
+			if (mReturns->TryGetType() == nullptr)
+			{
+				VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, mReturns->GetTypeName() });
+			}
+			else
+			{
+				metaReturn = { { mReturns->TryGetType()->GetTypeId(), mReturns->GetTypeForm() }, mReturns->GetTypeName() };
+			}
+		}
+
+		declared = &addToType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
+			{
+				return { "There were unresolved compilation errors" };
+			},
+			mName,
+			metaReturn,
+			metaParams
+		);
+
+		declared->GetProperties().Set(Props::sIsScriptPure, IsPure()).Add(Props::sIsScriptableTag);
 	}
 
-	MetaFuncNamedParam metaReturn{ MakeTypeTraits<void>() };
-
-	if (mReturns.has_value())
-	{
-		if (mReturns->TryGetType() == nullptr)
-		{
-			VirtualMachine::PrintError(ScriptError{ ScriptError::UnreflectedType, *this, mReturns->GetTypeName() });
-		}
-		else
-		{
-			metaReturn = { { mReturns->TryGetType()->GetTypeId(), mReturns->GetTypeForm() }, mReturns->GetTypeName() };
-		}
-	}
-
-	MetaFunc& declaredFunc = addToType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
-		{
-			return { "There were unresolved compilation errors" };
-		},
-		mName,
-		metaReturn,
-		metaParams
-	);
-
-	declaredFunc.GetProperties().Set(Props::sIsScriptPure, IsPure());
+	declared->GetProperties().Add(*mProps);
 }
-
 
 void CE::ScriptFunc::DefineMetaFunc(MetaFunc& func)
 {
@@ -677,6 +683,7 @@ void CE::ScriptFunc::SerializeTo(BinaryGSONObject& object) const
 	}
 
 	object.AddGSONMember("name") << mName;
+	object.AddGSONMember("props") << *mProps;
 
 	BinaryGSONObject& nodes = object.AddGSONObject("nodes");
 
@@ -738,6 +745,7 @@ std::optional<CE::ScriptFunc> CE::ScriptFunc::DeserializeFrom(const BinaryGSONOb
 	}
 
 	std::optional<ScriptFunc> returnValue{};
+
 	const BinaryGSONMember* serializedEventName = object.TryGetGSONMember("event");
 
 	if (serializedEventName != nullptr)
@@ -794,6 +802,13 @@ std::optional<CE::ScriptFunc> CE::ScriptFunc::DeserializeFrom(const BinaryGSONOb
 	}
 
 	returnValue->AddCondensed(std::move(nodes), std::move(links), std::move(pins));
+
+	const BinaryGSONMember* serializedProps = object.TryGetGSONMember("props");
+
+	if (serializedProps != nullptr)
+	{
+		*serializedProps >> *returnValue->mProps;
+	}
 
 	return returnValue;
 }
