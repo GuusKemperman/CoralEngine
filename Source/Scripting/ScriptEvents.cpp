@@ -55,12 +55,43 @@ CE::MetaFunc::InvokeT CE::ScriptOnlyPassComponentEvent::GetScriptInvoker(const S
 		};
 }
 
-CE::ScriptTickEvent::ScriptTickEvent() :
-	ScriptEvent(sTickEvent, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt)
+#ifdef EDITOR
+void CE::ScriptTickEventBase::OnDetailsInspect(ScriptFunc& scriptFunc) const
 {
-}
+	MetaProps& props = scriptFunc.GetProps();
 
-CE::MetaFunc::InvokeT  CE::ScriptTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const
+	bool tickWhilstPaused = props.Has(Props::sShouldTickWhilstPausedTag);
+
+	if (ImGui::Checkbox("Tick while paused", &tickWhilstPaused))
+	{
+		if (tickWhilstPaused)
+		{
+			props.Add(Props::sShouldTickWhilstPausedTag);
+		}
+		else
+		{
+			props.Remove(Props::sShouldTickWhilstPausedTag);
+		}
+	}
+
+	bool tickBeforeBeginPlay = props.Has(Props::sShouldTickBeforeBeginPlayTag);
+
+	if (ImGui::Checkbox("Tick before begin play", &tickBeforeBeginPlay))
+	{
+		if (tickBeforeBeginPlay)
+		{
+			props.Add(Props::sShouldTickBeforeBeginPlayTag);
+		}
+		else
+		{
+			props.Remove(Props::sShouldTickBeforeBeginPlayTag);
+		}
+	}
+}
+#endif // EDITOR
+
+CE::MetaFunc::InvokeT CE::ScriptTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const std::shared_ptr<const Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -71,12 +102,7 @@ CE::MetaFunc::InvokeT  CE::ScriptTickEvent::GetScriptInvoker(const ScriptFunc& s
 		};
 }
 
-CE::ScriptFixedTickEvent::ScriptFixedTickEvent() :
-	ScriptEvent(sFixedTickEvent, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt)
-{
-}
-
-CE::MetaFunc::InvokeT  CE::ScriptFixedTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+CE::MetaFunc::InvokeT CE::ScriptFixedTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
 	const std::shared_ptr<const Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]

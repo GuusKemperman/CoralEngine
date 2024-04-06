@@ -12,6 +12,13 @@ namespace CE
 	public:
 		void Update(World& world, float dt) override;
 
+		SystemStaticTraits GetStaticTraits() const override
+		{
+			SystemStaticTraits traits{};
+			traits.mShouldTickWhilstPaused = true;
+			return traits;
+		}
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();

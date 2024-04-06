@@ -7,6 +7,7 @@
 #include "EditorSystems/AssetEditorSystems/ScriptEditorSystem.h"
 
 #include "Core/VirtualMachine.h"
+#include "Scripting/ScriptEvents.h"
 #include "Scripting/ScriptTools.h"
 #include "Utilities/Search.h"
 #include "Utilities/Imgui/ImguiInspect.h"
@@ -57,7 +58,11 @@ void CE::ScriptEditorSystem::DisplayDetailsPanel()
 				LOG(LogEditor, Warning, "Selecting a node that no longer exists, should not be possible");
 			}
 		}
-		else if (!func->IsEvent())
+		else if (func->IsEvent())
+		{
+			DisplayEventDetails(*func);
+		}
+		else
 		{
 			DisplayFunctionDetails(*func);
 		}
@@ -138,6 +143,12 @@ void CE::ScriptEditorSystem::DisplayFunctionDetails(ScriptFunc& func)
 	{
 		func.SetReturnType(std::move(returnValueWrapped.mParam));
 	}
+}
+
+void CE::ScriptEditorSystem::DisplayEventDetails(ScriptFunc& func)
+{
+	ImGui::TextUnformatted(func.GetName().c_str());
+	func.TryGetEvent()->OnDetailsInspect(func);
 }
 
 void CE::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
