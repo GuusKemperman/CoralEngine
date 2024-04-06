@@ -44,8 +44,8 @@ void CE::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	const glm::vec2 rotationInput
 	{
-		mouseInput.y + input.GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp) + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightY),
-		mouseInput.x + input.GetKeyboardAxis(Input::KeyboardKey::ArrowRight, Input::KeyboardKey::ArrowLeft) + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightX)
+		mouseInput.y + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightY),
+		mouseInput.x + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightX)
 	};
 
 	const glm::vec2 timeScaledRotationInput = rotationInput * dt;
