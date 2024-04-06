@@ -301,11 +301,11 @@ void CE::Device::InitializeDevice()
     }
 
     //CREATE ROOT SIGNATURE
-    mSignature = DXSignatureBuilder(9)
+    mSignature = DXSignatureBuilder(10)
         .AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL)   //0  //Camera matrices
         .AddCBuffer(1, D3D12_SHADER_VISIBILITY_VERTEX)//1  //Model matrices
         .AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX)//2  //Bone matrices
-        .AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL) //3  //Light info 
+        .AddCBuffer(3, D3D12_SHADER_VISIBILITY_ALL)   //3  //Light info 
         .AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL) //4  //Material info
         .AddCBuffer(5, D3D12_SHADER_VISIBILITY_PIXEL) //5  //Color multiplier
         .AddCBuffer(6, D3D12_SHADER_VISIBILITY_PIXEL) //6  //Camera clustering buffer
@@ -316,10 +316,12 @@ void CE::Device::InitializeDevice()
         .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2)//10  //Metallic roughness tex
         .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3)//11  //NormalTex
         .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4)//12  //Occlusion texture
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5)//13  //Directonal lights buffer
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6)//14  //Point lights buffer
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7)//15  //Light grid buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5)//13  //Directonal lights buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL,   D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6)//14  //Point lights buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL,   D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7)//15  //Light grid buffer
         .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8)//16  //Light indices buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 9)//17  //Shadow maps
+
         .AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP) //18  //Sampler
         .Build(mDevice, L"MAIN ROOT SIGNATURE");
 

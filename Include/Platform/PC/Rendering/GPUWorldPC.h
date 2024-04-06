@@ -53,17 +53,6 @@ namespace CE
 		~GPUWorld();
 		void Update() override;
 
-        struct DXShadowMapInfo {
-            std::unique_ptr<DXResource> mDepthResource;
-            std::unique_ptr<DXResource> mRenderTarget;
-            DXHeapHandle mDepthHandle;
-            DXHeapHandle mDepthSRVHandle;
-            DXHeapHandle mRTHandle;
-
-            D3D12_VIEWPORT mViewport;
-            D3D12_RECT mScissorRect;
-        };
-
         /// <summary>
         /// Updating the material buffer has to happen after the mesh rendering commands have completed.
         /// </summary>
@@ -93,7 +82,7 @@ namespace CE
         const DXHeapHandle& GetLightIndicesUAVSlot() const { return mLightIndicesUAVSlot; };
         const DXHeapHandle& GetLigthGridUAVSlot() const { return mLightGridUAVSlot; };
         const DXHeapHandle& GetPointLightCounterUAVSlot() const { return mPointLightCounterUAVSlot; };
-        const InfoStruct::DXShadowMapInfo*  const GetShadowMap(uint32 index) const{ return mShadowMaps[index].get(); }
+        const InfoStruct::DXShadowMapInfo* GetShadowMap(uint32 index) const{ return mShadowMaps[index].get(); }
 
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
         UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
@@ -107,14 +96,12 @@ namespace CE
         void UpdateClusterData(const CameraComponent& camera);
         void InitializeShadowMaps();
 
-		std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
-        std::vector<std::unique_ptr<InfoStruct::DXShadowMapInfo>> mShadowMaps;
-
 		std::unique_ptr<DXConstBuffer> mConstBuffers[InfoStruct::NUM_CBS];
 		std::unique_ptr<DXResource> mStructuredBuffers[InfoStruct::NUM_SB];
 		InfoStruct::DXLightInfo mLights;
         std::vector<InfoStruct::DXDirLightInfo> mDirectionalLights;
         std::vector<InfoStruct::DXPointLightInfo> mPointLights;
+        std::vector<std::unique_ptr<InfoStruct::DXShadowMapInfo>> mShadowMaps;
         InfoStruct::DXLightInfo mLightInfo;
         int mNumberOfClusters = 0;
         glm::ivec3 mClusterGrid;

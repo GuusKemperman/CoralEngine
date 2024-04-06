@@ -17,6 +17,7 @@ namespace CE::InfoStruct
     {
         glm::vec4 mDir = { 0.f, 0.0f, 0.0f, 0.f };
         glm::vec4 mColorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
+        glm::mat4x4 lightMat = {};
     };
 
     struct DXPointLightInfo
@@ -89,6 +90,17 @@ namespace CE::InfoStruct
         COLOR_CB,
         UI_MODEL_MAT_CB,
         NUM_CBS
+    };
+
+    struct DXShadowMapInfo {
+        std::unique_ptr<DXResource> mDepthResource;
+        std::unique_ptr<DXResource> mRenderTarget;
+        DXHeapHandle mDepthHandle;
+        DXHeapHandle mDepthSRVHandle;
+        DXHeapHandle mRTHandle;
+
+        D3D12_VIEWPORT mViewport;
+        D3D12_RECT mScissorRect;
     };
 
     namespace Clustering

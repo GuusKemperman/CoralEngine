@@ -24,7 +24,7 @@ CE::Renderer::~Renderer() = default;
 
 void CE::Renderer::Render(const World& world)
 {
-	Render(world, Device::Get().GetDisplaySize(), buffer);
+	Render(world, Device::Get().GetDisplaySize());
 }
 
 #ifdef EDITOR
@@ -46,7 +46,7 @@ void CE::Renderer::RenderToFrameBuffer(
 		buffer.Clear();
 	}
 
-	Render(world, buffer.GetSize(), buffer);
+	Render(world, buffer.GetSize());
 
 	buffer.Unbind();
 }
@@ -70,7 +70,6 @@ void CE::Renderer::Render(const World& world, glm::vec2 viewportSize)
 	world.GetGPUWorld().Update();
 
 	mMeshRenderer->Render(world);
-	buffer.Bind();
 	mDebugRenderer->Render(world);
 	mUIRenderer->Render(world);
 }

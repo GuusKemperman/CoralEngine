@@ -535,7 +535,7 @@ void CE::GPUWorld::SendMaterialTexturesToGPU(const CE::Material& mat)
     }
 }
 
-void Engine::GPUWorld::InitializeShadowMaps()
+void CE::GPUWorld::InitializeShadowMaps()
 {
     for (int i = 0; i < mShadowMaps.size(); i++) {
         std::unique_ptr<InfoStruct::DXShadowMapInfo>& shadowMap = mShadowMaps[i];

@@ -157,13 +157,11 @@ void CE::MeshRenderer::Render(const World& world)
     resourceHeap->BindToGraphics(commandList, 14, gpuWorld.GetPointLigthHeapSlot());
     resourceHeap->BindToGraphics(commandList, 15, gpuWorld.GetLigthGridSRVSlot());
     resourceHeap->BindToGraphics(commandList, 16, gpuWorld.GetLightIndicesSRVSlot());
-
-    int meshCounter = 0;
-
     auto shadowMap = gpuWorld.GetShadowMap(0);
     shadowMap->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
-    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, shadowMap->mDepthSRVHandle);
+    resourceHeap->BindToGraphics(commandList, 17, shadowMap->mDepthSRVHandle);
 
+    int meshCounter = 0;
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
         //RENDERING
@@ -345,14 +343,17 @@ void CE::MeshRenderer::HandleColorComponent(const World& world, const entt::enti
         meshColorBuffer.Update(&info, sizeof(InfoStruct::DXColorMultiplierInfo), meshCounter, frameIndex);
     }
 
-    meshColorBuffer.Bind(commandList, 17, meshCounter, frameIndex);
+    meshColorBuffer.Bind(commandList, 5, meshCounter, frameIndex);
 }
 
 void CE::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const GPUWorld& gpuWorld)
 {
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
     const auto dirLightView = world.GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
+    int frameIndex = engineDevice.GetFrameIndex();
 
-    commandList->SetPipelineState(mZPipeline->GetPipeline().Get());
+    commandList->SetPipelineState(mZPipeline.Get());
 
     int lightCounter = 1;
 
