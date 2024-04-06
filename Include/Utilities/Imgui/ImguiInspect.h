@@ -13,7 +13,7 @@
 #include "Utilities/Math.h"
 #include "Utilities/Search.h"
 
-namespace Engine
+namespace CE
 {
 	/*
 	Used ImGui::Auto to inspect the element, possibly changing its value.
@@ -80,11 +80,11 @@ IMGUI_AUTO_DEFINE_INLINE(template<>, entt::entity, ImGui::Auto(reinterpret_cast<
 namespace ImGui
 {
 	template<typename EnumType>
-	struct Auto_t<EnumType, std::enable_if_t<Engine::sIsEnumReflected<EnumType>>>
+	struct Auto_t<EnumType, std::enable_if_t<CE::sIsEnumReflected<EnumType>>>
 	{
 		static void Auto(EnumType& var, const std::string& name)
 		{
-			var = Engine::Search::DisplayDropDownWithSearchBar<EnumType>(name.c_str(), Engine::EnumToString(var).data()).value_or(var);
+			var = CE::Search::DisplayDropDownWithSearchBar<EnumType>(name.c_str(), CE::EnumToString(var).data()).value_or(var);
 		}
 		static constexpr bool sIsSpecialized = true;
 	};

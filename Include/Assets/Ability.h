@@ -1,7 +1,7 @@
 #pragma once
 #include "Assets/Asset.h"
 
-namespace Engine
+namespace CE
 {
 	class AbilitiesOnCharacterComponent;
 	struct AbilityInstance;
@@ -53,14 +53,14 @@ namespace Engine
 }
 
 template<>
-struct Reflector<Engine::Ability::RequirementType>
+struct Reflector<CE::Ability::RequirementType>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(RequirementType, Engine::Ability::RequirementType);
+}; REFLECT_AT_START_UP(RequirementType, CE::Ability::RequirementType);
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::Ability::RequirementType>
+struct CE::EnumStringPairsImpl<CE::Ability::RequirementType>
 {
 	static constexpr EnumStringPairs<Ability::RequirementType, 2> value = {
 		EnumStringPair<Ability::RequirementType>{ Ability::RequirementType::Cooldown, "Cooldown" },

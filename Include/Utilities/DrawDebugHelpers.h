@@ -2,7 +2,7 @@
 
 #include "Rendering/DebugRenderer.h"
 
-namespace Engine
+namespace CE
 {
 // Optimizing away debug lines on non editor builds
 #ifdef EDITOR

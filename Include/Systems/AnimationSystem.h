@@ -1,8 +1,9 @@
 #pragma once
 #include "Systems/System.h"
 
-namespace Engine
+namespace CE
 {
+	class Registry;
 	class Animation;
 	class SkinnedMeshComponent;
 	struct AnimNode;

@@ -18,7 +18,7 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/AbilityFunctionality.h"
 
-void Engine::AbilitySystem::Update(World& world, float dt)
+void CE::AbilitySystem::Update(World& world, float dt)
 {
     Registry& reg = world.GetRegistry();
 
@@ -206,14 +206,14 @@ void Engine::AbilitySystem::Update(World& world, float dt)
     }
 }
 
-bool Engine::AbilitySystem::CanAbilityBeActivated(const CharacterComponent& characterData, const AbilityInstance& ability)
+bool CE::AbilitySystem::CanAbilityBeActivated(const CharacterComponent& characterData, const AbilityInstance& ability)
 {
     return ability.mRequirementCounter >= ability.mAbilityAsset->mRequirementToUse &&
         ability.mChargesCounter < ability.mAbilityAsset->mCharges &&
         (ability.mAbilityAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
 }
 
-void Engine::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability)
+void CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability)
 {
     if (!CanAbilityBeActivated(characterData, ability))
     {
@@ -243,7 +243,7 @@ void Engine::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, C
     }
 }
 
-Engine::MetaType Engine::AbilitySystem::Reflect()
+CE::MetaType CE::AbilitySystem::Reflect()
 {
 	return MetaType{ MetaType::T<AbilitySystem>{}, "AbilitySystem", MetaType::Base<System>{} };
 }

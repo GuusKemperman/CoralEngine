@@ -5,7 +5,7 @@
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void Engine::PointLightComponent::OnDrawGizmos(World& world, entt::entity owner) const
+void CE::PointLightComponent::OnDrawGizmos(World& world, entt::entity owner) const
 {
 	static constexpr DebugCategory::Enum category = DebugCategory::Editor;
 
@@ -29,7 +29,7 @@ void Engine::PointLightComponent::OnDrawGizmos(World& world, entt::entity owner)
 		Colors::Yellow);
 }
 
-Engine::MetaType Engine::PointLightComponent::Reflect()
+CE::MetaType CE::PointLightComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<PointLightComponent>{}, "PointLightComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);

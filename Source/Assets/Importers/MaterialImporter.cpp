@@ -4,7 +4,7 @@
 #include "Assets/Material.h"
 #include "Meta/MetaManager.h"
 
-Engine::ImportedAsset Engine::MaterialImporter::Import(const std::filesystem::path& importedFromFile, 
+CE::ImportedAsset CE::MaterialImporter::Import(const std::filesystem::path& importedFromFile, 
     const uint32 importerVersion,
     const Material& material)
 {

@@ -1,7 +1,7 @@
 #ifdef EDITOR
 #pragma once
 
-namespace Engine
+namespace CE
 {
 	class World;
 	class TransformComponent;

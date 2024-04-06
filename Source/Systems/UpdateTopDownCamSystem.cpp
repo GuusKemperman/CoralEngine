@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Systems/UpdateTopDownCamSystem.h"
 
+#include "Components/CameraComponent.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "World/WorldViewport.h"
@@ -11,12 +12,11 @@
 #include "Meta/MetaManager.h"
 #include "Utilities/DrawDebugHelpers.h"
 
-void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
+void CE::UpdateTopDownCamSystem::Update(World& world, float dt)
 {
 	auto& registry = world.GetRegistry();
 
-	auto activeCamera = world.GetViewport().GetMainCamera();
-	const entt::entity activeCameraOwner = activeCamera.has_value() ? activeCamera->first : entt::null;
+	const entt::entity activeCameraOwner = CameraComponent::GetSelected(world);
 	TopDownCamControllerComponent* const topDownController = registry.TryGet<TopDownCamControllerComponent>(activeCameraOwner);
 	TransformComponent* const transform = registry.TryGet<TransformComponent>(activeCameraOwner);
 
@@ -44,23 +44,19 @@ void Engine::UpdateTopDownCamSystem::Update(World& world, float dt)
 	cursorDistanceScreenCenter.y *= -1.0f;
 
 	const bool emptyRotation = timeScaledRotation == 0;
-	const bool emptyZoom = timeScaledZoomDelta == 0;
-
-	if (!emptyZoom)
-	{
-		topDownController->AdjustZoom(timeScaledZoomDelta);
-	}
+	
+	topDownController->AdjustZoom(timeScaledZoomDelta);
 
 	if (!emptyRotation)
 	{
 		topDownController->RotateCameraAroundTarget(timeScaledRotation);
 	}
 
-	topDownController->ApplyTranslation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
-	topDownController->UpdateRotation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
+	topDownController->ApplyTranslation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter, dt);
+	topDownController->UpdateRotation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter, dt);
 }
 
-void Engine::UpdateTopDownCamSystem::Render(const World& world)
+void CE::UpdateTopDownCamSystem::Render(const World& world)
 {
 	auto& registry = world.GetRegistry();
 
@@ -91,7 +87,7 @@ void Engine::UpdateTopDownCamSystem::Render(const World& world)
 	}
 }
 
-Engine::MetaType Engine::UpdateTopDownCamSystem::Reflect()
+CE::MetaType CE::UpdateTopDownCamSystem::Reflect()
 {
 	return MetaType{ MetaType::T<UpdateTopDownCamSystem>{}, "UpdateTopDownCamSystem", MetaType::Base<System>{} };
 }

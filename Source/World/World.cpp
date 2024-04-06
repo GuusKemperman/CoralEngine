@@ -13,17 +13,12 @@
 #include "Assets/Level.h"
 #include "Rendering/GPUWorld.h"
 
-Engine::World::World(const bool beginPlayImmediately) :
+CE::World::World(const bool beginPlayImmediately) :
 	mRegistry(std::make_unique<Registry>(*this)),
 	mViewport(std::make_unique<WorldViewport>(*this)),
 	mPhysics(std::make_unique<Physics>(*this))
 {
 	LOG(LogCore, Verbose, "World is awaiting begin play..");
-
-	if (!Device::IsHeadless())
-	{
-		mGPUWorld = std::make_unique<GPUWorld>(*this);
-	}
 
 	if (beginPlayImmediately)
 	{
@@ -31,7 +26,7 @@ Engine::World::World(const bool beginPlayImmediately) :
 	}
 }
 
-Engine::World::World(World&& other) noexcept :
+CE::World::World(World&& other) noexcept :
 	mRegistry(std::move(other.mRegistry)),
 	mViewport(std::move(other.mViewport)),
 	mGPUWorld(std::move(other.mGPUWorld)),
@@ -43,10 +38,14 @@ Engine::World::World(World&& other) noexcept :
 	mRegistry->mWorld = *this;
 	mViewport->mWorld = *this;
 	mPhysics->mWorld = *this;
-	mGPUWorld->mWorld = *this;
+
+	if (mGPUWorld != nullptr)
+	{
+		mGPUWorld->mWorld = *this;
+	}
 }
 
-Engine::World::~World()
+CE::World::~World()
 {
 	// Mightve been moved out
 	if (mRegistry != nullptr)
@@ -57,7 +56,7 @@ Engine::World::~World()
 	}
 }
 
-Engine::World& Engine::World::operator=(World&& other) noexcept
+CE::World& CE::World::operator=(World&& other) noexcept
 {
 	mRegistry = std::move(other.mRegistry);
 	mViewport = std::move(other.mViewport);
@@ -68,15 +67,19 @@ Engine::World& Engine::World::operator=(World&& other) noexcept
 	mRegistry->mWorld = *this;
 	mViewport->mWorld = *this;
 	mPhysics->mWorld = *this;
-	mGPUWorld->mWorld = *this;
-	
+
+	if (mGPUWorld != nullptr)
+	{
+		mGPUWorld->mWorld = *this;
+	}
+
 	mTime = other.mTime;
 	mHasBegunPlay = other.mHasBegunPlay;
 
 	return *this;
 }
 
-void Engine::World::Tick(const float unscaledDeltaTime)
+void CE::World::Tick(const float unscaledDeltaTime)
 {
 	PushWorld(*this);
 
@@ -93,7 +96,7 @@ void Engine::World::Tick(const float unscaledDeltaTime)
 	PopWorld();
 }
 
-void Engine::World::BeginPlay()
+void CE::World::BeginPlay()
 {
 	if (HasBegunPlay())
 	{
@@ -107,47 +110,39 @@ void Engine::World::BeginPlay()
 	mTime = {};
 	LOG(LogCore, Verbose, "World will begin play");
 
-	for (auto&& [typeHash, storage] : mRegistry->Storage())
+	std::vector<BoundEvent> beginPlayEvents = GetAllBoundEvents(sBeginPlayEvent);
+
+	for (const BoundEvent& boundEvent : beginPlayEvents)
 	{
-		const MetaType* const metaType = MetaManager::Get().TryGetType(typeHash);
+		entt::sparse_set* storage = mRegistry->Storage(boundEvent.mType.get().GetTypeId());
 
-		if (metaType == nullptr)
+		if (storage == nullptr)
 		{
 			continue;
 		}
 
-		const MetaFunc* const beginPlayEvent = TryGetEvent(*metaType, sBeginPlayEvent);
-
-		if (beginPlayEvent == nullptr)
-		{
-			continue;
-		}
-
-		const bool isStatic = beginPlayEvent->GetProperties().Has(Props::sIsEventStaticTag);
-
-		for (const entt::entity entity : storage)
+		for (const entt::entity entity : *storage)
 		{
 			// Tombstone check
-			if (!storage.contains(entity))
+			if (!storage->contains(entity))
 			{
 				continue;
 			}
 
-			if (isStatic)
+			if (boundEvent.mIsStatic)
 			{
-				beginPlayEvent->InvokeCheckedUnpacked(*this, entity);
+				boundEvent.mFunc.get().InvokeCheckedUnpacked(*this, entity);
 			}
 			else
 			{
-				MetaAny component{ *metaType, storage.value(entity), false };
-				beginPlayEvent->InvokeCheckedUnpacked(component, *this, entity);
+				MetaAny component{ boundEvent.mType, storage->value(entity), false };
+				boundEvent.mFunc.get().InvokeCheckedUnpacked(component, *this, entity);
 			}
 		}
 	}
-
 }
 
-void Engine::World::EndPlay()
+void CE::World::EndPlay()
 {
 	if (!HasBegunPlay())
 	{
@@ -159,31 +154,104 @@ void Engine::World::EndPlay()
 	mHasBegunPlay = false;
 }
 
-static inline std::stack<std::reference_wrapper<Engine::World>> sWorldStack{};
-
-void Engine::World::PushWorld(World& world)
+CE::GPUWorld& CE::World::GetGPUWorld() const
 {
-	sWorldStack.push(world);
+	ASSERT_LOG(!Device::IsHeadless(), "Cannot access GPUWorld when device is running in headless mode. Check using Device::IsHeadless.");
+
+	if (mGPUWorld == nullptr)
+	{
+		// The GPU buffers are only allocated when GetGPUWorld is called.
+		// Otherwise, we allocate a looot of resources that are only
+		// freed at the end of the frame, and if we create a lot of worlds
+		// in one frame (such as with unit tests), then we run out of memory.
+		// hence, the const_cast
+		const_cast<World&>(*this).mGPUWorld = std::make_unique<GPUWorld>(*this);
+	}
+
+	return *mGPUWorld;
 }
 
-void Engine::World::PopWorld(uint32 amountToPop)
+static std::mutex sStackMutex{};
+static std::vector<std::pair<std::thread::id, std::stack<std::reference_wrapper<CE::World>>>> sWorldStacks{};
+
+void CE::World::PushWorld(World& world)
 {
+	const std::thread::id curr = std::this_thread::get_id();
+
+	sStackMutex.lock();
+
+	if (sWorldStacks.size() >= 31)
+	{
+		// We always keep the main thread's stack in there
+		sWorldStacks.erase(std::remove_if(sWorldStacks.begin() + 1, sWorldStacks.end(),
+			[](const std::pair<std::thread::id, std::stack<std::reference_wrapper<World>>>& stack)
+			{
+				return stack.second.empty();
+			}), sWorldStacks.end());
+	}
+
+	const auto it = std::find_if(sWorldStacks.begin(), sWorldStacks.end(),
+		[curr](const std::pair<std::thread::id, std::stack<std::reference_wrapper<World>>>& stack)
+		{
+			return stack.first == curr;
+		});
+
+	if (it == sWorldStacks.end())
+	{
+		sWorldStacks.emplace_back(curr, std::stack<std::reference_wrapper<World>>{}).second.push(world);
+	}
+	else
+	{
+		it->second.push(world);
+	}
+
+	sStackMutex.unlock();
+}
+
+void CE::World::PopWorld(uint32 amountToPop)
+{
+	const std::thread::id curr = std::this_thread::get_id();
+
+	sStackMutex.lock();
+
+	const auto it = std::find_if(sWorldStacks.begin(), sWorldStacks.end(),
+		[curr](const std::pair<std::thread::id, std::stack<std::reference_wrapper<World>>>& stack)
+		{
+			return stack.first == curr;
+		});
+
 	for (uint32 i = 0; i < amountToPop; i++)
 	{
-		sWorldStack.pop();
+		it->second.pop();
 	}
+	sStackMutex.unlock();
 }
 
-Engine::World* Engine::World::TryGetWorldAtTopOfStack()
+CE::World* CE::World::TryGetWorldAtTopOfStack()
 {
-	if (sWorldStack.empty())
+	const std::thread::id curr = std::this_thread::get_id();
+
+	sStackMutex.lock();
+
+	const auto it = std::find_if(sWorldStacks.begin(), sWorldStacks.end(),
+		[curr](const std::pair<std::thread::id, std::stack<std::reference_wrapper<World>>>& stack)
+		{
+			return stack.first == curr;
+		});
+
+	if (it == sWorldStacks.end()
+		|| it->second.empty())
 	{
+		sStackMutex.unlock();
 		return nullptr;
 	}
-	return &sWorldStack.top().get();
+
+	World* world = &it->second.top().get();
+	sStackMutex.unlock();
+	return world;
 }
 
-void Engine::World::TransitionToLevel(const std::shared_ptr<const Level>& level)
+void CE::World::TransitionToLevel(const std::shared_ptr<const Level>& level)
 {
 	if (GetNextLevel() == nullptr)
 	{
@@ -193,9 +261,9 @@ void Engine::World::TransitionToLevel(const std::shared_ptr<const Level>& level)
 
 namespace
 {
-	std::vector<entt::entity> FindAllEntitiesWithComponents(const Engine::World& world, const std::vector<Engine::ComponentFilter>& components, bool returnAfterFirstFound)
+	std::vector<entt::entity> FindAllEntitiesWithComponents(const CE::World& world, const std::vector<CE::ComponentFilter>& components, bool returnAfterFirstFound)
 	{
-		using namespace Engine;
+		using namespace CE;
 
 		std::vector<std::reference_wrapper<const entt::sparse_set>> storages{};
 
@@ -248,10 +316,9 @@ namespace
 
 		return returnValue;
 	}
-
 }
 
-Engine::MetaType Engine::World::Reflect()
+CE::MetaType CE::World::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<World>{}, "World" };
 	type.GetProperties().Add(Props::sIsScriptableTag);

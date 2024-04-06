@@ -10,7 +10,7 @@
 class DXDescHeap;
 class DXResource;
 
-namespace Engine
+namespace CE
 {
 	class Texture :
 		public Asset

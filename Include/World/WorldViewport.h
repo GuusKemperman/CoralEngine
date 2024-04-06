@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace CE
 {
 	class World;
 	class FrameBuffer;
@@ -18,11 +18,6 @@ namespace Engine
 
 		glm::vec2 GetViewportSize() const { return mLastRenderedAtSize; }
 
-		std::optional<std::pair<entt::entity, CameraComponent&>> GetMainCamera();
-		std::optional<std::pair<entt::entity, const CameraComponent&>> GetMainCamera() const;
-
-		void SetMainCamera(entt::entity entity) { mMainCamera = entity; }
-
 		glm::vec3 GetScreenToWorldDirection(glm::vec2 screenPosition) const;
 		glm::vec3 ScreenToWorld(glm::vec2 screenPosition, float distanceFromCamera) const;
 
@@ -34,7 +29,5 @@ namespace Engine
 		// In pixels
 		glm::vec2 mLastRenderedAtSize{};
 		glm::vec2 mLastRenderedAtPos{};
-
-		mutable entt::entity mMainCamera{};
 	};
 }

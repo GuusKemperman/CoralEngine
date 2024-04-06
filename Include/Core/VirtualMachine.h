@@ -6,7 +6,7 @@
 #include "Meta/MetaAny.h"
 #include "Meta/MetaFunc.h"
 
-namespace Engine
+namespace CE
 {
 	class Script;
 	class ScriptField;
@@ -76,7 +76,7 @@ namespace Engine
 		// When we recompile, we first have to clean up the result of the previous compilation
 		static void DestroyAllTypesCreatedThroughScripts();
 
-		static constexpr uint32 sMaxNumOfNodesToExecutePerFunctionBeforeGivingUp = 10'000'000;
+		static constexpr uint32 sMaxNumOfNodesToExecutePerFunctionBeforeGivingUp = 10'000;
 		static constexpr uint32 sMaxStackSize = 1 << 16;
 		std::array<char, sMaxStackSize> mStack{};
 		char* mStackPtr = &mStack[0];

@@ -8,7 +8,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
-void Engine::ParticleScaleOverTimeSystem::Update(World& world, [[maybe_unused]] float dt)
+void CE::ParticleScaleOverTimeSystem::Update(World& world, [[maybe_unused]] float dt)
 {
 	const auto emitterView = world.GetRegistry().View<ParticleEmitterComponent, ParticleScaleOverTimeComponent>();
 
@@ -44,7 +44,7 @@ void Engine::ParticleScaleOverTimeSystem::Update(World& world, [[maybe_unused]] 
 	}
 }
 
-Engine::MetaType Engine::ParticleScaleOverTimeSystem::Reflect()
+CE::MetaType CE::ParticleScaleOverTimeSystem::Reflect()
 {
 	return MetaType{ MetaType::T<ParticleScaleOverTimeSystem>{}, "ParticleScaleOverTimeSystem", MetaType::Base<System>{} };
 }

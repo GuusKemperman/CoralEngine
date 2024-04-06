@@ -8,21 +8,21 @@ namespace
 {
 	std::string GetGetComponentFuncName(std::string_view componentTypeName)
 	{
-		return Engine::Format("Get {}", componentTypeName);
+		return CE::Format("Get {}", componentTypeName);
 	}
 
 	std::string GetRemoveComponentFuncName(std::string_view componentTypeName)
 	{
-		return Engine::Format("Remove {}", componentTypeName);
+		return CE::Format("Remove {}", componentTypeName);
 	}
 
 	std::string GetHasComponentFuncName(std::string_view componentTypeName)
 	{
-		return Engine::Format("Has {}", componentTypeName);
+		return CE::Format("Has {}", componentTypeName);
 	}
 }
 
-void Engine::Internal::ReflectComponentType(MetaType& type, bool isEmpty)
+void CE::Internal::ReflectComponentType(MetaType& type, bool isEmpty)
 {
 	type.GetProperties().Add(Props::sComponentTag);
 
@@ -52,7 +52,7 @@ void Engine::Internal::ReflectComponentType(MetaType& type, bool isEmpty)
 				if (existingComponent != nullptr)
 				{
 					return Format("Could not add {} to entity {} - this entity already has a component of this type",
-						type.GetName(), static_cast<EntityType>(entity));
+						type.GetName(), entt::to_integral(entity));
 				}
 
 				return world->GetRegistry().AddComponent(type, entity);
@@ -113,7 +113,7 @@ void Engine::Internal::ReflectComponentType(MetaType& type, bool isEmpty)
 	).GetProperties().Add(Props::sIsScriptableTag);
 }
 
-void Engine::Internal::UnreflectComponentType(MetaType& type)
+void CE::Internal::UnreflectComponentType(MetaType& type)
 {
 	MetaType& entityType = MetaManager::Get().GetType<entt::entity>();
 

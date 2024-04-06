@@ -19,7 +19,7 @@ namespace
 	void SetCustomTheme();
 }
 
-void Engine::Editor::PostConstruct()
+void CE::Editor::PostConstruct()
 {
 	if (Device::IsHeadless())
 	{
@@ -40,9 +40,10 @@ void Engine::Editor::PostConstruct()
 
 	std::ifstream editorSavedState{ pathToSavedState };
 
-	std::function<void(const MetaType&)> recursivelyStart = [this, &recursivelyStart](const MetaType& type)
+	std::function<void(const MetaType&)> recursivelyStart = [this, &recursivelyStart, &editorSavedState](const MetaType& type)
 		{
-			if (type.GetProperties().Has(Props::sEditorSystemDefaultOpenTag))
+			if (type.GetProperties().Has(Props::sEditorSystemAlwaysOpenTag)
+				|| (!editorSavedState.is_open() && type.GetProperties().Has(Props::sEditorSystemDefaultOpenTag)))
 			{
 				if (type.IsDefaultConstructible())
 				{
@@ -50,8 +51,7 @@ void Engine::Editor::PostConstruct()
 				}
 				else
 				{
-					LOG(LogEditor, Error, "Could not {}, since type {} is not default constructible",
-						Props::sEditorSystemDefaultOpenTag,
+					LOG(LogEditor, Error, "Could not add system, since type {} is not default constructible",
 						type.GetName());
 				}
 			}
@@ -62,9 +62,10 @@ void Engine::Editor::PostConstruct()
 			}
 		};
 
+	recursivelyStart(*editorSystemType);
+
 	if (!editorSavedState.is_open())
 	{
-		recursivelyStart(*editorSystemType);
 		return;
 	}
 
@@ -102,7 +103,8 @@ void Engine::Editor::PostConstruct()
 			continue;
 		}
 
-		if (typeOfSystem->IsDefaultConstructible())
+		if (typeOfSystem->IsDefaultConstructible()
+			&& !typeOfSystem->GetProperties().Has(Props::sEditorSystemAlwaysOpenTag))
 		{
 			TryAddSystemInternal(*typeOfSystem);
 			continue;
@@ -118,7 +120,7 @@ void Engine::Editor::PostConstruct()
 	}
 }
 
-Engine::Editor::~Editor()
+CE::Editor::~Editor()
 {
 	DestroyRequestedSystems();
 
@@ -157,7 +159,7 @@ Engine::Editor::~Editor()
 	DestroyRequestedSystems();
 }
 
-void Engine::Editor::Tick(const float deltaTime)
+void CE::Editor::Tick(const float deltaTime)
 {
 	DestroyRequestedSystems();
 	DisplayMainMenuBar();
@@ -181,7 +183,7 @@ void Engine::Editor::Tick(const float deltaTime)
 	}
 }
 
-void Engine::Editor::FullFillRefreshRequests()
+void CE::Editor::FullFillRefreshRequests()
 {
 	if (mRefreshRequests.empty())
 	{
@@ -347,7 +349,7 @@ system->GetName());
 }
 
 
-void Engine::Editor::DestroySystem(const std::string_view systemName)
+void CE::Editor::DestroySystem(const std::string_view systemName)
 {
 	if (std::find(mSystemsToDestroy.begin(), mSystemsToDestroy.end(), systemName) != mSystemsToDestroy.end())
 	{
@@ -364,17 +366,17 @@ void Engine::Editor::DestroySystem(const std::string_view systemName)
 	mSystemsToDestroy.emplace_front(systemName);
 }
 
-void Engine::Editor::Refresh(RefreshRequest&& request)
+void CE::Editor::Refresh(RefreshRequest&& request)
 {
 	mRefreshRequests.push_front(std::move(request));
 }
 
-void Engine::Editor::SaveAll()
+void CE::Editor::SaveAll()
 {
 	Refresh(RefreshRequest{ RefreshRequest::SaveAssetsToFile | RefreshRequest::Volatile });
 }
 
-Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>& originalAsset)
+CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>& originalAsset)
 {
 	if (originalAsset.GetFileOfOrigin().has_value())
 	{
@@ -383,7 +385,7 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>
 		if (!loadInfo.has_value())
 		{
 			LOG(LogEditor, Warning, "Cannot open asset editor for {}, {} did not produce a valid AssetLoadInfo",
-				originalAsset.GetName(),
+				originalAsset.GetMetaData().GetName(),
 				originalAsset.GetFileOfOrigin()->string());
 			return nullptr;
 		}
@@ -395,20 +397,20 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>
 	return TryOpenAssetForEdit(originalAsset.MakeShared()->Save());
 }
 
-bool Engine::Editor::IsThereAnEditorTypeForAssetType(TypeId assetTypeId) const
+bool CE::Editor::IsThereAnEditorTypeForAssetType(TypeId assetTypeId) const
 {
 	return GetAssetKeyAssetEditorPairs().find(assetTypeId) != GetAssetKeyAssetEditorPairs().end();
 }
 
 template<typename T>
-static CONSTEVAL Engine::TypeForm Test(T&&)
+static CONSTEVAL CE::TypeForm Test(T&&)
 {
-	return Engine::MakeTypeForm<T>();
+	return CE::MakeTypeForm<T>();
 }
 
-Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadInfo)
+CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadInfo)
 {
-	const MetaType& assetType = loadInfo.GetAssetClass();
+	const MetaType& assetType = loadInfo.GetMetaData().GetClass();
 	FuncResult asset = assetType.Construct(loadInfo);
 
 	if (asset.HasError())
@@ -471,7 +473,7 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadIn
 	return TryAddSystemInternal(assetEditorType.GetTypeId(), std::move(uniquePtr));
 }
 
-void Engine::Editor::DestroyRequestedSystems()
+void CE::Editor::DestroyRequestedSystems()
 {
 	for (const std::string& name : mSystemsToDestroy)
 	{
@@ -497,12 +499,12 @@ void Engine::Editor::DestroyRequestedSystems()
 	mSystemsToDestroy.clear();
 }
 
-std::filesystem::path Engine::Editor::GetFileLocationOfSystemState(const std::string_view systemName)
+std::filesystem::path CE::Editor::GetFileLocationOfSystemState(const std::string_view systemName)
 {
 	return FileIO::Get().GetPath(FileIO::Directory::Intermediate, std::string{ "EditorSystemStates/" }.append(systemName).append(".txt"));
 }
 
-void Engine::Editor::LoadSystemState(EditorSystem& system)
+void CE::Editor::LoadSystemState(EditorSystem& system)
 {
 	const std::filesystem::path file = GetFileLocationOfSystemState(system.GetName());
 
@@ -516,7 +518,7 @@ void Engine::Editor::LoadSystemState(EditorSystem& system)
 	system.LoadState(stream);
 }
 
-void Engine::Editor::SaveSystemState(const EditorSystem& system)
+void CE::Editor::SaveSystemState(const EditorSystem& system)
 {
 	const std::filesystem::path file = GetFileLocationOfSystemState(system.GetName());
 	create_directories(file.parent_path());
@@ -532,7 +534,7 @@ void Engine::Editor::SaveSystemState(const EditorSystem& system)
 	system.SaveState(stream);
 }
 
-Engine::EditorSystem* Engine::Editor::TryAddSystemInternal(const TypeId typeId, SystemPtr<EditorSystem> system)
+CE::EditorSystem* CE::Editor::TryAddSystemInternal(const TypeId typeId, SystemPtr<EditorSystem> system)
 {
 	const std::string_view systemName = system->GetName();
 
@@ -556,7 +558,7 @@ Engine::EditorSystem* Engine::Editor::TryAddSystemInternal(const TypeId typeId, 
 	return returnValue;
 }
 
-Engine::EditorSystem* Engine::Editor::TryAddSystemInternal(const MetaType& type)
+CE::EditorSystem* CE::Editor::TryAddSystemInternal(const MetaType& type)
 {
 	FuncResult constructResult = type.Construct();
 
@@ -573,7 +575,7 @@ Engine::EditorSystem* Engine::Editor::TryAddSystemInternal(const MetaType& type)
 	return TryAddSystemInternal(type.GetTypeId(), std::move(system));
 }
 
-Engine::EditorSystem* Engine::Editor::TryGetSystemInternal(const std::string_view systemName)
+CE::EditorSystem* CE::Editor::TryGetSystemInternal(const std::string_view systemName)
 {
 	const auto it = std::find_if(mSystems.begin(), mSystems.end(),
 	                             [systemName](const std::pair<TypeId, SystemPtr<EditorSystem>>& other)
@@ -584,7 +586,7 @@ Engine::EditorSystem* Engine::Editor::TryGetSystemInternal(const std::string_vie
 	return it == mSystems.end() ? nullptr : it->second.get();
 }
 
-Engine::EditorSystem* Engine::Editor::TryGetSystemInternal(const TypeId typeId)
+CE::EditorSystem* CE::Editor::TryGetSystemInternal(const TypeId typeId)
 {
 	const auto it = std::find_if(mSystems.begin(), mSystems.end(),
 	                             [typeId](const std::pair<TypeId, SystemPtr<EditorSystem>>& other)
@@ -595,7 +597,7 @@ Engine::EditorSystem* Engine::Editor::TryGetSystemInternal(const TypeId typeId)
 	return it == mSystems.end() ? nullptr : it->second.get();
 }
 
-void Engine::Editor::DisplayMainMenuBar()
+void CE::Editor::DisplayMainMenuBar()
 {
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -729,8 +731,8 @@ namespace
 	void SetCustomTheme()
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		const std::string fontPath = Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::EngineAssets, "Fonts/Roboto-Regular.ttf");
-		const std::string iconsPath = Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::EngineAssets, "Fonts/fontawesome-webfont.ttf");
+		const std::string fontPath = CE::FileIO::Get().GetPath(CE::FileIO::Directory::EngineAssets, "Fonts/Roboto-Regular.ttf");
+		const std::string iconsPath = CE::FileIO::Get().GetPath(CE::FileIO::Directory::EngineAssets, "Fonts/fontawesome-webfont.ttf");
 
 		ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 16.0f);
 

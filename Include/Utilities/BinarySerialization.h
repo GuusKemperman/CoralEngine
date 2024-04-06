@@ -33,7 +33,7 @@
 #pragma warning(pop)
 #endif
 
-namespace Engine
+namespace CE
 {
 	template<typename T>
 	std::string ToBinary(const T& value)

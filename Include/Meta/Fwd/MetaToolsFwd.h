@@ -1,7 +1,7 @@
 #pragma once
 #include "Utilities/MemFunctions.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaAny;
 

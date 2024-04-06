@@ -3,10 +3,11 @@
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "Systems/System.h"
+#include "Utilities/Events.h"
 
 struct Physics2DUnitTestAccess;
 
-namespace Engine
+namespace CE
 {
 	class Physics;
 	class Registry;
@@ -64,17 +65,10 @@ namespace Engine
 		void UpdateCollisions(World& world);
 		void DebugDrawing(const World& world);
 
-		struct CollisionEvent
-		{
-			std::reference_wrapper<const MetaType> mComponentType;
-			std::reference_wrapper<const MetaFunc> mEvent;
-			bool mIsStatic{};
-		};
-
 		template<typename CollisionDataContainer>
-		static void CallEvents(World& world, const CollisionDataContainer& collisions, const std::vector<CollisionEvent>& events);
+		static void CallEvents(World& world, const CollisionDataContainer& collisions, const std::vector<BoundEvent>& events);
 
-		static void CallEvent(const CollisionEvent& event, World& world, entt::sparse_set& storage, entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint);
+		static void CallEvent(const BoundEvent& event, World& world, entt::sparse_set& storage, entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint);
 
 		struct ResolvedCollision
 		{
@@ -104,9 +98,9 @@ namespace Engine
 
 		std::vector<CollisionData> mPreviousCollisions{};
 
-		std::vector<CollisionEvent> mOnCollisionEntryEvents{};
-		std::vector<CollisionEvent> mOnCollisionStayEvents{};
-		std::vector<CollisionEvent> mOnCollisionExitEvents{};
+		std::vector<BoundEvent> mOnCollisionEntryEvents{};
+		std::vector<BoundEvent> mOnCollisionStayEvents{};
+		std::vector<BoundEvent> mOnCollisionExitEvents{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();

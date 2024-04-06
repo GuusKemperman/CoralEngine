@@ -2,7 +2,7 @@
 #include "Systems/System.h"
 #include "Core/Input.h"
 
-namespace Engine
+namespace CE
 {
 	class UIButtonComponent;
 

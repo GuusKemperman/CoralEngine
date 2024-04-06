@@ -16,36 +16,29 @@
 #include "Scripting/ScriptConfig.h"
 #include "Scripting/ScriptEvents.h"
 
-void Engine::VirtualMachine::PostConstruct()
+void CE::VirtualMachine::PostConstruct()
 {
 	Recompile();
 }
 
-Engine::VirtualMachine::~VirtualMachine()
+CE::VirtualMachine::~VirtualMachine()
 {
 	// I mean the meta manager will be destroyed right after us, so *technically* we can skip this step
 	// But it's still polite to clean up our own mess
 	DestroyAllTypesCreatedThroughScripts();
 }
 
-void Engine::VirtualMachine::Recompile()
+void CE::VirtualMachine::Recompile()
 {
 	LOG(LogScripting, Message, "Recompiling...");
 
 	ClearCompilationResult();
 
-	std::vector<WeakAsset<Asset>> allAssets = AssetManager::Get().GetAllAssets();
-
 	std::vector<std::pair<std::reference_wrapper<MetaType>, std::reference_wrapper<Script>>> createdTypes{};
 
-	for (WeakAsset<Asset>& asset : allAssets)
+	for (WeakAsset<Script> asset : AssetManager::Get().GetAllAssets<Script>())
 	{
-		if (!asset.GetAssetClass().IsDerivedFrom<Script>())
-		{
-			continue;
-		}
-
-		Script& script = const_cast<Script&>(*std::static_pointer_cast<const Script>(asset.MakeShared()));
+		Script& script = const_cast<Script&>(*asset.MakeShared());
 		
 		MetaType* type = script.DeclareMetaType();
 
@@ -74,13 +67,13 @@ void Engine::VirtualMachine::Recompile()
 	LOG(LogScripting, Message, "Compilation completed");
 }
 
-void Engine::VirtualMachine::ClearCompilationResult()
+void CE::VirtualMachine::ClearCompilationResult()
 {
 	DestroyAllTypesCreatedThroughScripts();
 	mErrorsFromLastCompilation.clear();
 }
 
-std::vector<std::reference_wrapper<const Engine::ScriptError>> Engine::VirtualMachine::GetErrors(
+std::vector<std::reference_wrapper<const CE::ScriptError>> CE::VirtualMachine::GetErrors(
 	const ScriptLocation& location) const
 {
 	std::vector<std::reference_wrapper<const ScriptError>> returnValue{};
@@ -96,7 +89,7 @@ std::vector<std::reference_wrapper<const Engine::ScriptError>> Engine::VirtualMa
 	return returnValue;
 }
 
-Engine::FuncResult Engine::VirtualMachine::ExecuteScriptFunction(MetaFunc::DynamicArgs args,
+CE::FuncResult CE::VirtualMachine::ExecuteScriptFunction(MetaFunc::DynamicArgs args,
 	MetaFunc::RVOBuffer rvoBuffer,
 	const ScriptFunc& func,
 	const ScriptNode& firstNode,
@@ -288,7 +281,7 @@ Engine::FuncResult Engine::VirtualMachine::ExecuteScriptFunction(MetaFunc::Dynam
 	return { std::move(defaultConstructResult.GetReturnValue()) };
 }
 
-void Engine::VirtualMachine::PrintCompileErrors() const
+void CE::VirtualMachine::PrintCompileErrors() const
 {
 	for (const ScriptError& error : mErrorsFromLastCompilation)
 	{
@@ -296,9 +289,9 @@ void Engine::VirtualMachine::PrintCompileErrors() const
 	}
 }
 
-void Engine::VirtualMachine::PrintError(const ScriptError& error, bool compileError)
+void CE::VirtualMachine::PrintError(const ScriptError& error, bool compileError)
 {
-	Logger::Get().Log(error.ToString(true), compileError ? "ScriptCompileError" : "ScriptRuntimeError", Error, SourceLocation::current(__LINE__, __FILE__),
+	Logger::Get().Log(error.ToString(true), compileError ? "ScriptCompileError" : "ScriptRuntimeError", Error, __FILE__, __LINE__,
 #ifdef EDITOR
 		[loc = error.GetOrigin()]
 		{
@@ -309,7 +302,7 @@ void Engine::VirtualMachine::PrintError(const ScriptError& error, bool compileEr
 #endif // EDITOR
 }
 
-void Engine::VirtualMachine::DestroyAllTypesCreatedThroughScripts()
+void CE::VirtualMachine::DestroyAllTypesCreatedThroughScripts()
 {
 	LOG(LogScripting, Verbose, "Destroying all types created through scripts");
 
@@ -334,7 +327,7 @@ void Engine::VirtualMachine::DestroyAllTypesCreatedThroughScripts()
 	}
 }
 
-Engine::VirtualMachine::VMContext::VMContext(const ScriptFunc& func) :
+CE::VirtualMachine::VMContext::VMContext(const ScriptFunc& func) :
 	mFunc(func)
 {
 	VirtualMachine& vm = VirtualMachine::Get();
@@ -349,7 +342,7 @@ Engine::VirtualMachine::VMContext::VMContext(const ScriptFunc& func) :
 	}
 }
 
-Engine::VirtualMachine::VMContext::~VMContext()
+CE::VirtualMachine::VMContext::~VMContext()
 {
 	VirtualMachine& vm = VirtualMachine::Get();
 
@@ -372,7 +365,7 @@ Engine::VirtualMachine::VMContext::~VMContext()
 	vm.mStackPtr = mStackPtrToFallBackTo;
 }
 
-void* Engine::VirtualMachine::StackAllocate(uint32 numOfBytes, uint32 alignment)
+void* CE::VirtualMachine::StackAllocate(uint32 numOfBytes, uint32 alignment)
 {
 	size_t sizeLeft = reinterpret_cast<uintptr>(&mStack.back()) - reinterpret_cast<uintptr>(mStackPtr) + 1;
 
@@ -386,7 +379,7 @@ void* Engine::VirtualMachine::StackAllocate(uint32 numOfBytes, uint32 alignment)
 	return allocatedAt;
 }
 
-Expected<const Engine::ScriptNode*, Engine::ScriptError> Engine::VirtualMachine::GetNextNodeToExecute(VMContext& context,
+Expected<const CE::ScriptNode*, CE::ScriptError> CE::VirtualMachine::GetNextNodeToExecute(VMContext& context,
 	const ScriptNode& start)
 {
 	ASSERT(!start.IsPure(context.mFunc)
@@ -605,7 +598,7 @@ Expected<const Engine::ScriptNode*, Engine::ScriptError> Engine::VirtualMachine:
 	return ScriptError{ ScriptError::ExecutionTimeOut, { context.mFunc, start } };
 }
 
-Expected<Engine::VirtualMachine::VMContext::CachedValue*, Engine::ScriptError> Engine::VirtualMachine::ExecuteNode(VMContext& context, const ScriptNode& node)
+Expected<CE::VirtualMachine::VMContext::CachedValue*, CE::ScriptError> CE::VirtualMachine::ExecuteNode(VMContext& context, const ScriptNode& node)
 {
 	Span<const ScriptPin> inputs = node.GetInputs(context.mFunc);
 	const size_t numOfInputPins = inputs.size();
@@ -800,17 +793,17 @@ Expected<Engine::VirtualMachine::VMContext::CachedValue*, Engine::ScriptError> E
 	return { nullptr };
 }
 
-Engine::VirtualMachine::VMContext::WhileLoopInfo& Engine::VirtualMachine::BeginLoop(VMContext& context, VMContext::WhileLoopInfo&& loopInfo)
+CE::VirtualMachine::VMContext::WhileLoopInfo& CE::VirtualMachine::BeginLoop(VMContext& context, VMContext::WhileLoopInfo&& loopInfo)
 {
 	return std::get<VMContext::WhileLoopInfo>(context.mControlNodesToFallBackTo.emplace_back(std::move(loopInfo)));
 }
 
-Engine::VirtualMachine::VMContext::ForLoopInfo& Engine::VirtualMachine::BeginLoop(VMContext& context, VMContext::ForLoopInfo&& loopInfo)
+CE::VirtualMachine::VMContext::ForLoopInfo& CE::VirtualMachine::BeginLoop(VMContext& context, VMContext::ForLoopInfo&& loopInfo)
 {
 	return std::get<VMContext::ForLoopInfo>(context.mControlNodesToFallBackTo.emplace_back(std::move(loopInfo)));
 }
 
-void Engine::VirtualMachine::EndLoop(VMContext& context, const ScriptNode& node)
+void CE::VirtualMachine::EndLoop(VMContext& context, const ScriptNode& node)
 {
 	auto nodeToFallBackTo = std::find_if(context.mControlNodesToFallBackTo.crbegin(), context.mControlNodesToFallBackTo.crend(),
 		[&node](const std::variant<VMContext::WhileLoopInfo, VMContext::ForLoopInfo>& loopInfo)
@@ -834,13 +827,13 @@ void Engine::VirtualMachine::EndLoop(VMContext& context, const ScriptNode& node)
 	}
 }
 
-Engine::VirtualMachine::VMContext::CachedValue& Engine::VirtualMachine::FindCachedValue(VMContext& context, PinId pinId)
+CE::VirtualMachine::VMContext::CachedValue& CE::VirtualMachine::FindCachedValue(VMContext& context, PinId pinId)
 {
 	return context.mCachedValues[pinId.Get() - 1];
 }
 
 template<>
-Expected<Engine::MetaAny, Engine::ScriptError> Engine::VirtualMachine::GetValueToPassAsInput(VMContext& context, const ScriptPin& pinToPassInputInto)
+Expected<CE::MetaAny, CE::ScriptError> CE::VirtualMachine::GetValueToPassAsInput(VMContext& context, const ScriptPin& pinToPassInputInto)
 {
 	ASSERT(pinToPassInputInto.IsInput());
 
@@ -1013,7 +1006,7 @@ Expected<Engine::MetaAny, Engine::ScriptError> Engine::VirtualMachine::GetValueT
 	return std::move(*returnValue);
 }
 
-bool Engine::VirtualMachine::AllocateForCache(VMContext& context, VMContext::CachedValue& cachedValue, const ScriptPin& pin, TypeInfo typeInfo)
+bool CE::VirtualMachine::AllocateForCache(VMContext& context, VMContext::CachedValue& cachedValue, const ScriptPin& pin, TypeInfo typeInfo)
 {
 	cachedValue.mNumOfImpureNodesExecutedAtTimeOfCaching = context.mNumOfImpureNodesExecutedAtTimeOfCaching;
 
@@ -1049,19 +1042,19 @@ bool Engine::VirtualMachine::AllocateForCache(VMContext& context, VMContext::Cac
 	return true;
 }
 
-bool Engine::VirtualMachine::DoesCacheValueNeedToBeFreed(VMContext::CachedValue& cachedValue)
+bool CE::VirtualMachine::DoesCacheValueNeedToBeFreed(VMContext::CachedValue& cachedValue)
 {
 	return (cachedValue.mTypeInfoFlags & TypeInfo::UserBit) && (cachedValue.mTypeInfoFlags & TypeInfo::IsTriviallyDestructible) == 0 && cachedValue.mData != nullptr;
 }
 
-void Engine::VirtualMachine::FreeCachedValue(VMContext::CachedValue& cachedValue, const MetaType& pinType)
+void CE::VirtualMachine::FreeCachedValue(VMContext::CachedValue& cachedValue, const MetaType& pinType)
 {
 	ASSERT(DoesCacheValueNeedToBeFreed(cachedValue));
 	pinType.Destruct(cachedValue.mData, false);
 }
 
 template<typename T>
-Expected<T, Engine::ScriptError> Engine::VirtualMachine::GetValueToPassAsInput(VMContext& context, const ScriptPin& pinToPassInputInto)
+Expected<T, CE::ScriptError> CE::VirtualMachine::GetValueToPassAsInput(VMContext& context, const ScriptPin& pinToPassInputInto)
 {
 	ASSERT(pinToPassInputInto.IsInput() && pinToPassInputInto.TryGetType()->GetTypeId() == MakeTypeId<T>());
 

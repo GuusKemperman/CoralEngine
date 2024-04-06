@@ -11,7 +11,7 @@
 #include "Systems/AbilitySystem.h"
 #include "World/World.h"
 
-Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
+CE::MetaType CE::AbilitiesOnCharacterComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<AbilitiesOnCharacterComponent>{}, "AbilitiesOnCharacterComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
@@ -30,7 +30,7 @@ Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
 	return metaType;
 }
 
-void Engine::AbilitiesOnCharacterComponent::OnBeginPlay(World&, entt::entity)
+void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World&, entt::entity)
 {
 	for (auto& ability : mAbilitiesToInput)
 	{
@@ -44,7 +44,7 @@ void Engine::AbilitiesOnCharacterComponent::OnBeginPlay(World&, entt::entity)
 
 #ifdef EDITOR
 static bool isPlayer = true; // little hack to inspect the component conditionally
-void Engine::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
+void CE::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
 {
 	auto& reg = world.GetRegistry();
 	if (entities.size() > 1)
@@ -65,14 +65,14 @@ void Engine::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::v
 }
 #endif // EDITOR
 
-bool Engine::AbilityInstance::operator==(const AbilityInstance& other) const
+bool CE::AbilityInstance::operator==(const AbilityInstance& other) const
 {
 	return mAbilityAsset == other.mAbilityAsset &&
 		mKeyboardKeys == other.mKeyboardKeys && 
 		mGamepadButtons == other.mGamepadButtons;
 }
 
-bool Engine::AbilityInstance::operator!=(const AbilityInstance& other) const
+bool CE::AbilityInstance::operator!=(const AbilityInstance& other) const
 {
 	return mAbilityAsset != other.mAbilityAsset ||
 		mKeyboardKeys != other.mKeyboardKeys ||
@@ -80,7 +80,7 @@ bool Engine::AbilityInstance::operator!=(const AbilityInstance& other) const
 }
 
 #ifdef EDITOR
-void Engine::AbilityInstance::DisplayWidget()
+void CE::AbilityInstance::DisplayWidget()
 {
 	ShowInspectUI("mAbilityAsset", mAbilityAsset);
 	ShowInspectUIReadOnly("mRequirementCounter", mRequirementCounter);
@@ -93,7 +93,7 @@ void Engine::AbilityInstance::DisplayWidget()
 }
 #endif // EDITOR
 
-Engine::MetaType Engine::AbilityInstance::Reflect()
+CE::MetaType CE::AbilityInstance::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<AbilityInstance>{}, "AbilityInstance" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);

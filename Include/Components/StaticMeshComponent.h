@@ -1,7 +1,7 @@
 #pragma once
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
     class StaticMesh;
     class Material;
@@ -12,6 +12,10 @@ namespace Engine
         std::shared_ptr<const StaticMesh> mStaticMesh{};
 
         std::shared_ptr<const Material> mMaterial{};
+
+        bool mTilesWithMeshScale = false;
+
+        float mTiling = 1;
 
     private:
         friend ReflectAccess;

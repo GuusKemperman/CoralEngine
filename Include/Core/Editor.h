@@ -8,7 +8,7 @@
 #include "EditorSystems/EditorSystem.h"
 #include "Meta/MetaTypeId.h"
 
-namespace Engine
+namespace CE
 {
 	class AssetLoadInfo;
 
@@ -31,6 +31,15 @@ namespace Engine
 		*/
 		template<typename CastTo = EditorSystem>
 		CastTo* TryGetSystem(std::string_view systemName);
+
+		/*
+		Get a system by type.
+
+		Note:
+			If there is no system of this type, this function will return nullptr.
+		*/
+		template<typename SystemType>
+		SystemType* TryGetSystem();
 
 		/*
 		Add a system. The arguments provided will be passed to the constructor of T.
@@ -178,6 +187,12 @@ namespace Engine
 	CastTo* Editor::TryGetSystem(const std::string_view systemName)
 	{
 		return dynamic_cast<CastTo*>(TryGetSystemInternal(systemName));
+	}
+
+	template <typename SystemType>
+	SystemType* Editor::TryGetSystem()
+	{
+		return dynamic_cast<SystemType*>(TryGetSystemInternal(MakeTypeId<SystemType>()));
 	}
 
 	template<typename T, typename ...Args>

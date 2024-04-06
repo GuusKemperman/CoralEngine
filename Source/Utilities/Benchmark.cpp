@@ -6,7 +6,7 @@
 
 using namespace std::chrono;
 
-Engine::BenchmarkResult Engine::BenchMark(World& world, const BenchmarkParams params)
+CE::BenchmarkResult CE::BenchMark(World& world, const BenchmarkParams params)
 {
 
     BenchmarkResult result{};
@@ -67,13 +67,13 @@ Engine::BenchmarkResult Engine::BenchMark(World& world, const BenchmarkParams pa
     return result;
 }
 
-Engine::BenchmarkResult Engine::BenchMark(const Level& level, const BenchmarkParams params)
+CE::BenchmarkResult CE::BenchMark(const Level& level, const BenchmarkParams params)
 {
     World world = level.CreateWorld(true);
     return BenchMark(world, params);
 }
 
-void Engine::BenchmarkResult::Print() const
+void CE::BenchmarkResult::Print() const
 {
     std::cout << Format("AvgDt (ms): {:.4}, Standard deviation (%) : {:.4},  HighestDt (ms): {:.4}, NumOfTicksCompleted: {}",
         static_cast<long double>(mAverageDeltaTime.count()) / 1e6,
@@ -82,7 +82,7 @@ void Engine::BenchmarkResult::Print() const
 		mDeltaTimes.size()) << std::endl;
 }
 
-void Engine::BenchmarkResult::ExportToCSV(std::ostream& ostream) const
+void CE::BenchmarkResult::ExportToCSV(std::ostream& ostream) const
 {
     if (mDeltaTimes.empty())
     {

@@ -1,39 +1,39 @@
 #include "Precomp.h"
-#include "Components/Pathfinding/Geometry2d.h"
+#include "Utilities/Geometry2d.h"
 
 #include <predicates/predicates.h>
 
 #include <glm/gtx/norm.hpp>
 
-float Engine::TransformedAABB::SignedDistance(glm::vec2 toPoint) const
+float CE::TransformedAABB::SignedDistance(glm::vec2 toPoint) const
 {
 	const glm::vec2 halfExtends = (mMax - mMin) * 0.5f;
 	const glm::vec2 boxCentre = mMin + halfExtends;
 
 	glm::vec2 d = abs(boxCentre - toPoint) - halfExtends;
-	return glm::length(glm::max(d, 0.0f)) + glm::min(glm::max(d.x, d.y), 0.0f);
+	return length(max(d, 0.0f)) + glm::min(glm::max(d.x, d.y), 0.0f);
 }
 
-Engine::TransformedPolygon Engine::TransformedAABB::GetAsPolygon() const
+CE::TransformedPolygon CE::TransformedAABB::GetAsPolygon() const
 {
 	return {
-	{
-		mMin,
-		glm::vec2{ mMax.x, mMin.y },
-		mMax,
-		glm::vec2{ mMin.x, mMax.y }
-	},
-	*this
+		{
+			mMin,
+			glm::vec2{mMax.x, mMin.y},
+			mMax,
+			glm::vec2{mMin.x, mMax.y}
+		},
+		*this
 	};
 }
 
-float Engine::TransformedDisk::SignedDistance(const glm::vec2 toPoint) const
+float CE::TransformedDisk::SignedDistance(const glm::vec2 toPoint) const
 {
-	const float dist = glm::distance(mCentre, toPoint);
+	const float dist = distance(mCentre, toPoint);
 	return dist - mRadius;
 }
 
-Engine::TransformedPolygon Engine::TransformedDisk::GetAsPolygon() const
+CE::TransformedPolygon CE::TransformedDisk::GetAsPolygon() const
 {
 	constexpr float dt = glm::two_pi<float>() / 16.0f;
 
@@ -44,24 +44,24 @@ Engine::TransformedPolygon Engine::TransformedDisk::GetAsPolygon() const
 		points.emplace_back(mCentre.x + mRadius * cos(t + dt), mCentre.y + mRadius * sin(t + dt));
 	}
 
-	return TransformedPolygon{ std::move(points), { mCentre - glm::vec2{mRadius}, mCentre + glm::vec2{mRadius} } };
+	return TransformedPolygon{std::move(points), {mCentre - glm::vec2{mRadius}, mCentre + glm::vec2{mRadius}}};
 }
 
 
 // https://iquilezles.org/articles/distfunctions2d/
-float Engine::TransformedPolygon::SignedDistance(const glm::vec2 point) const
+float CE::TransformedPolygon::SignedDistance(const glm::vec2 point) const
 {
-	float d = glm::distance2(point, mPoints[0]);
+	float d = distance2(point, mPoints[0]);
 	float s = 1.0f;
 
 	for (uint32 i = 0, j = static_cast<uint32>(mPoints.size()) - 1u; i < mPoints.size(); j = i++)
 	{
 		glm::vec2 e = mPoints[j] - mPoints[i];
 		glm::vec2 w = point - mPoints[i];
-		glm::vec2 b = w - e * glm::clamp(glm::dot(w, e) / glm::length2(e), 0.0f, 1.0f);
-		d = glm::min(d, glm::length2(b));
-		glm::bvec3 c = { point.y >= mPoints[i].y, point.y < mPoints[j].y, e.x * w.y > e.y * w.x };
-		if (glm::all(c) || glm::all(glm::not_(c)))
+		glm::vec2 b = w - e * glm::clamp(dot(w, e) / length2(e), 0.0f, 1.0f);
+		d = glm::min(d, length2(b));
+		glm::bvec3 c = {point.y >= mPoints[i].y, point.y < mPoints[j].y, e.x * w.y > e.y * w.x};
+		if (all(c) || all(not_(c)))
 		{
 			s *= -1.0f;
 		}
@@ -70,7 +70,7 @@ float Engine::TransformedPolygon::SignedDistance(const glm::vec2 point) const
 	return s * sqrtf(d);
 }
 
-glm::vec2 Engine::TransformedPolygon::GetCentre() const
+glm::vec2 CE::TransformedPolygon::GetCentre() const
 {
 	if (mPoints.empty())
 	{
@@ -82,7 +82,7 @@ glm::vec2 Engine::TransformedPolygon::GetCentre() const
 	return total / static_cast<float>(mPoints.size());
 }
 
-Engine::TransformedPolygon::TransformedPolygon(PolygonPoints&& transformedPoints):
+CE::TransformedPolygon::TransformedPolygon(PolygonPoints&& transformedPoints):
 	mPoints(std::move(transformedPoints))
 {
 	for (const glm::vec2 point : mPoints)
@@ -94,7 +94,7 @@ Engine::TransformedPolygon::TransformedPolygon(PolygonPoints&& transformedPoints
 	}
 }
 
-Engine::TransformedPolygon::TransformedPolygon(PolygonPoints&& transformedPoints, TransformedAABB boundingBox) :
+CE::TransformedPolygon::TransformedPolygon(PolygonPoints&& transformedPoints, TransformedAABB boundingBox) :
 	mPoints(std::move(transformedPoints)),
 	mBoundingBox(boundingBox)
 {
@@ -103,16 +103,16 @@ Engine::TransformedPolygon::TransformedPolygon(PolygonPoints&& transformedPoints
 	{
 		if (!AreOverlapping(boundingBox, point))
 		{
-			LOG(LogCore, Error, "Invalid bounding box provided: {}, {} was not in boxMin {}, {} boxMax {}, {}", 
-				point.x, point.y,
-				boundingBox.mMin.x, boundingBox.mMin.y,
-				boundingBox.mMax.x, boundingBox.mMax.y);
+			LOG(LogCore, Error, "Invalid bounding box provided: {}, {} was not in boxMin {}, {} boxMax {}, {}",
+			    point.x, point.y,
+			    boundingBox.mMin.x, boundingBox.mMin.y,
+			    boundingBox.mMax.x, boundingBox.mMax.y);
 		}
 	}
 #endif
 }
 
-bool Engine::IsPointLeftOfLine(glm::vec2 point, glm::vec2 line1, glm::vec2 line2)
+bool CE::IsPointLeftOfLine(glm::vec2 point, glm::vec2 line1, glm::vec2 line2)
 {
 	double p[2] = {point.x, point.y};
 	double la[2] = {line1.x, line1.y};
@@ -120,7 +120,7 @@ bool Engine::IsPointLeftOfLine(glm::vec2 point, glm::vec2 line1, glm::vec2 line2
 	return RobustPredicates::orient2d(p, la, lb) > 0;
 }
 
-bool Engine::IsPointRightOfLine(glm::vec2 point, glm::vec2 line1, glm::vec2 line2)
+bool CE::IsPointRightOfLine(glm::vec2 point, glm::vec2 line1, glm::vec2 line2)
 {
 	double p[2] = {point.x, point.y};
 	double la[2] = {line1.x, line1.y};
@@ -128,7 +128,7 @@ bool Engine::IsPointRightOfLine(glm::vec2 point, glm::vec2 line1, glm::vec2 line
 	return RobustPredicates::orient2d(p, la, lb) < 0;
 }
 
-bool Engine::IsClockwise(const PolygonPoints& polygon)
+bool CE::IsClockwise(const PolygonPoints& polygon)
 {
 	size_t n = polygon.size();
 	assert(n > 2);
@@ -148,7 +148,7 @@ bool Engine::IsClockwise(const PolygonPoints& polygon)
 	return signedArea < 0.f;
 }
 
-glm::vec2 Engine::GetNearestPointOnLineSegment(glm::vec2 p, glm::vec2 segmentA, glm::vec2 segmentB)
+glm::vec2 CE::GetNearestPointOnLineSegment(glm::vec2 p, glm::vec2 segmentA, glm::vec2 segmentB)
 {
 	const float t = dot(p - segmentA, segmentB - segmentA) / distance2(segmentA, segmentB);
 	if (t <= 0) return segmentA;
@@ -156,7 +156,7 @@ glm::vec2 Engine::GetNearestPointOnLineSegment(glm::vec2 p, glm::vec2 segmentA, 
 	return (1 - t) * segmentA + t * segmentB;
 }
 
-glm::vec2 Engine::GetNearestPointOnPolygonBoundary(glm::vec2 point, const std::vector<glm::vec2>& polygon)
+glm::vec2 CE::GetNearestPointOnPolygonBoundary(glm::vec2 point, const std::vector<glm::vec2>& polygon)
 {
 	float bestDist = std::numeric_limits<float>::max();
 	glm::vec2 bestNearest(0.f, 0.f);
@@ -176,14 +176,14 @@ glm::vec2 Engine::GetNearestPointOnPolygonBoundary(glm::vec2 point, const std::v
 	return bestNearest;
 }
 
-bool Engine::AreOverlapping(const TransformedDisk diskA, const TransformedDisk diskB)
+bool CE::AreOverlapping(const TransformedDisk diskA, const TransformedDisk diskB)
 {
 	const float combinedRadius = diskA.mRadius + diskB.mRadius;
-	const float combinedRadius2 = combinedRadius * combinedRadius;;
-	return glm::distance2(diskA.mCentre, diskB.mCentre) <= combinedRadius2;
+	const float combinedRadius2 = combinedRadius * combinedRadius;
+	return distance2(diskA.mCentre, diskB.mCentre) <= combinedRadius2;
 }
 
-bool Engine::AreOverlapping(const TransformedAABB boxA, const TransformedAABB boxB)
+bool CE::AreOverlapping(const TransformedAABB boxA, const TransformedAABB boxB)
 {
 	return boxA.mMin.x < boxB.mMax.x
 		&& boxA.mMax.x > boxB.mMin.x
@@ -191,7 +191,7 @@ bool Engine::AreOverlapping(const TransformedAABB boxA, const TransformedAABB bo
 		&& boxA.mMin.y < boxB.mMax.y;
 }
 
-bool Engine::AreOverlapping(const TransformedPolygon& polygonA, const TransformedPolygon& polygonB)
+bool CE::AreOverlapping(const TransformedPolygon& polygonA, const TransformedPolygon& polygonB)
 {
 	if (!AreOverlapping(polygonA.mBoundingBox, polygonB.mBoundingBox))
 	{
@@ -200,7 +200,7 @@ bool Engine::AreOverlapping(const TransformedPolygon& polygonA, const Transforme
 
 	for (size_t i = 0, j = polygonA.mPoints.size() - 1; i < polygonA.mPoints.size(); j = i++)
 	{
-		if (AreOverlapping(polygonB, Line{ polygonA.mPoints[i], polygonA.mPoints[j] }))
+		if (AreOverlapping(polygonB, Line{polygonA.mPoints[i], polygonA.mPoints[j]}))
 		{
 			return true;
 		}
@@ -212,7 +212,7 @@ bool Engine::AreOverlapping(const TransformedPolygon& polygonA, const Transforme
 			|| AreOverlapping(polygonB, polygonA.mPoints.front()));
 }
 
-bool Engine::AreOverlapping(const TransformedPolygon& polygon, const TransformedDisk disk)
+bool CE::AreOverlapping(const TransformedPolygon& polygon, const TransformedDisk disk)
 {
 	if (!AreOverlapping(polygon.mBoundingBox, disk))
 	{
@@ -221,7 +221,7 @@ bool Engine::AreOverlapping(const TransformedPolygon& polygon, const Transformed
 
 	for (size_t i = 0, j = polygon.mPoints.size() - 1; i < polygon.mPoints.size(); j = i++)
 	{
-		if (AreOverlapping(disk, Line{ polygon.mPoints[i], polygon.mPoints[j] }))
+		if (AreOverlapping(disk, Line{polygon.mPoints[i], polygon.mPoints[j]}))
 		{
 			return true;
 		}
@@ -231,7 +231,7 @@ bool Engine::AreOverlapping(const TransformedPolygon& polygon, const Transformed
 	return AreOverlapping(polygon, disk.mCentre);
 }
 
-bool Engine::AreOverlapping(const TransformedPolygon& polygon, const TransformedAABB aabb)
+bool CE::AreOverlapping(const TransformedPolygon& polygon, const TransformedAABB aabb)
 {
 	if (!AreOverlapping(polygon.mBoundingBox, aabb))
 	{
@@ -240,7 +240,7 @@ bool Engine::AreOverlapping(const TransformedPolygon& polygon, const Transformed
 
 	for (size_t i = 0, j = polygon.mPoints.size() - 1; i < polygon.mPoints.size(); j = i++)
 	{
-		if (AreOverlapping(aabb, Line{ polygon.mPoints[i], polygon.mPoints[j] }))
+		if (AreOverlapping(aabb, Line{polygon.mPoints[i], polygon.mPoints[j]}))
 		{
 			return true;
 		}
@@ -250,7 +250,7 @@ bool Engine::AreOverlapping(const TransformedPolygon& polygon, const Transformed
 	return AreOverlapping(polygon, aabb.GetCentre());
 }
 
-bool Engine::AreOverlapping(const TransformedAABB aabb, const TransformedDisk disk)
+bool CE::AreOverlapping(const TransformedAABB aabb, const TransformedDisk disk)
 {
 	// https://learnopengl.com/In-Practice/2D-Game/Collisions/Collision-Detection
 	// calculate AABB info (center, half-extents)
@@ -260,12 +260,12 @@ bool Engine::AreOverlapping(const TransformedAABB aabb, const TransformedDisk di
 
 	// get difference vector between both centers
 	glm::vec2 difference = disk.mCentre - aabbCentre;
-	glm::vec2 clamped = glm::clamp(difference, -halfSize, halfSize);
+	glm::vec2 clamped = clamp(difference, -halfSize, halfSize);
 	// add clamped value to AABB_center and we get the value of box closest to disk
 	glm::vec2 closest = aabbCentre + clamped;
 	// retrieve vector between center disk and closest point AABB and check if length <= radius
 	difference = closest - disk.mCentre;
-	return glm::length(difference) <= disk.mRadius;
+	return length(difference) <= disk.mRadius;
 }
 
 // Function needed for line-line intersection
@@ -274,6 +274,7 @@ static bool onSegment(glm::vec2 p, glm::vec2 q, glm::vec2 r)
 	return q.x <= (glm::max)(p.x, r.x) && q.x >= (glm::min)(p.x, r.x) &&
 		q.y <= (glm::max)(p.y, r.y) && q.y >= (glm::min)(p.y, r.y);
 }
+
 // Function needed for line-line intersection
 static int orientation(glm::vec2 p, glm::vec2 q, glm::vec2 r)
 {
@@ -281,7 +282,7 @@ static int orientation(glm::vec2 p, glm::vec2 q, glm::vec2 r)
 	return val == 0 ? 0 : ((val > 0) ? 1 : 2);
 }
 
-bool Engine::AreOverlapping(const Line line1, const Line line2)
+bool CE::AreOverlapping(const Line line1, const Line line2)
 {
 	// https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
 
@@ -300,7 +301,7 @@ bool Engine::AreOverlapping(const Line line1, const Line line2)
 		|| (o4 == 0 && onSegment(line2.mStart, line1.mEnd, line2.mEnd));
 }
 
-bool Engine::AreOverlapping(const Line line, const TransformedAABB aabb)
+bool CE::AreOverlapping(const Line line, const TransformedAABB aabb)
 {
 	// https://tavianator.com/2022/ray_box_boundary.html
 	// While this is fast, rays completely inside the box will be considered an intersection, which may not be what we want.
@@ -320,7 +321,7 @@ bool Engine::AreOverlapping(const Line line, const TransformedAABB aabb)
 	return tmin < tmax && tmin <= 1.0f;
 }
 
-bool Engine::AreOverlapping(const Line line, const TransformedDisk disk)
+bool CE::AreOverlapping(const Line line, const TransformedDisk disk)
 {
 	// Uses the signed distance to a line segment function from:
 	// https://iquilezles.org/articles/distfunctions2d/
@@ -332,17 +333,18 @@ bool Engine::AreOverlapping(const Line line, const TransformedDisk disk)
 	return distance2ToLine <= disk.mRadius * disk.mRadius;
 }
 
-bool Engine::AreOverlapping(const Line line, const TransformedPolygon& polygon)
+bool CE::AreOverlapping(const Line line, const TransformedPolygon& polygon)
 {
 	if (!AreOverlapping(polygon.mBoundingBox, line)
-		&& !AreOverlapping(polygon.mBoundingBox, line.mStart)) // The ray might have started and ended inside the box, hence the additonal check
+		&& !AreOverlapping(polygon.mBoundingBox, line.mStart))
+	// The ray might have started and ended inside the box, hence the additonal check
 	{
 		return false;
 	}
 
 	for (size_t i = 0, j = polygon.mPoints.size() - 1; i < polygon.mPoints.size(); j = i++)
 	{
-		if (AreOverlapping(line, Line{ polygon.mPoints[i], polygon.mPoints[j] }))
+		if (AreOverlapping(line, Line{polygon.mPoints[i], polygon.mPoints[j]}))
 		{
 			return true;
 		}
@@ -351,42 +353,42 @@ bool Engine::AreOverlapping(const Line line, const TransformedPolygon& polygon)
 	return false;
 }
 
-bool Engine::AreOverlapping(const TransformedDisk disk, const TransformedPolygon& polygon)
+bool CE::AreOverlapping(const TransformedDisk disk, const TransformedPolygon& polygon)
 {
 	return AreOverlapping(polygon, disk);
 }
 
-bool Engine::AreOverlapping(const TransformedAABB box, const TransformedPolygon& polygon)
+bool CE::AreOverlapping(const TransformedAABB box, const TransformedPolygon& polygon)
 {
 	return AreOverlapping(polygon, box);
 }
 
-bool Engine::AreOverlapping(const TransformedDisk disk, const TransformedAABB box)
+bool CE::AreOverlapping(const TransformedDisk disk, const TransformedAABB box)
 {
 	return AreOverlapping(box, disk);
 }
 
-bool Engine::AreOverlapping(const TransformedAABB aabb, const Line line)
+bool CE::AreOverlapping(const TransformedAABB aabb, const Line line)
 {
 	return AreOverlapping(line, aabb);
 }
 
-bool Engine::AreOverlapping(const TransformedDisk disk, const Line line)
+bool CE::AreOverlapping(const TransformedDisk disk, const Line line)
 {
 	return AreOverlapping(line, disk);
 }
 
-bool Engine::AreOverlapping(const TransformedPolygon& polygon, const Line line)
+bool CE::AreOverlapping(const TransformedPolygon& polygon, const Line line)
 {
 	return AreOverlapping(line, polygon);
 }
 
-bool Engine::AreOverlapping(TransformedDisk disk, glm::vec2 point)
+bool CE::AreOverlapping(TransformedDisk disk, glm::vec2 point)
 {
-	return glm::distance2(point, disk.mCentre) < disk.mRadius * disk.mRadius;
+	return distance2(point, disk.mCentre) < disk.mRadius * disk.mRadius;
 }
 
-bool Engine::AreOverlapping(TransformedAABB aabb, glm::vec2 point)
+bool CE::AreOverlapping(TransformedAABB aabb, glm::vec2 point)
 {
 	return point.x >= aabb.mMin.x
 		&& point.x <= aabb.mMax.x
@@ -394,7 +396,7 @@ bool Engine::AreOverlapping(TransformedAABB aabb, glm::vec2 point)
 		&& point.y <= aabb.mMax.y;
 }
 
-bool Engine::AreOverlapping(const TransformedPolygon& polygon, glm::vec2 point)
+bool CE::AreOverlapping(const TransformedPolygon& polygon, glm::vec2 point)
 {
 	if (!AreOverlapping(polygon.mBoundingBox, point))
 	{
@@ -417,30 +419,34 @@ bool Engine::AreOverlapping(const TransformedPolygon& polygon, glm::vec2 point)
 	return contains;
 }
 
-bool Engine::AreOverlapping(glm::vec2 point, TransformedDisk disk)
+bool CE::AreOverlapping(glm::vec2 point, TransformedDisk disk)
 {
 	return AreOverlapping(disk, point);
 }
 
-bool Engine::AreOverlapping(glm::vec2 point, TransformedAABB aabb)
+bool CE::AreOverlapping(glm::vec2 point, TransformedAABB aabb)
 {
 	return AreOverlapping(aabb, point);
 }
 
-bool Engine::AreOverlapping(glm::vec2 point, const TransformedPolygon& polygon)
+bool CE::AreOverlapping(glm::vec2 point, const TransformedPolygon& polygon)
 {
 	return AreOverlapping(polygon, point);
 }
 
-float Engine::TimeOfLineIntersection(Line line1, Line line2)
+float CE::TimeOfLineIntersection(Line line1, Line line2)
 {
 	float s1_x, s1_y, s2_x, s2_y;
-	s1_x = line1.mEnd.x - line1.mStart.x;     s1_y = line1.mEnd.y - line1.mStart.y;
-	s2_x = line2.mEnd.x - line2.mStart.x;     s2_y = line2.mEnd.y - line2.mStart.y;
+	s1_x = line1.mEnd.x - line1.mStart.x;
+	s1_y = line1.mEnd.y - line1.mStart.y;
+	s2_x = line2.mEnd.x - line2.mStart.x;
+	s2_y = line2.mEnd.y - line2.mStart.y;
 
 	float s, t;
-	s = (-s1_y * (line1.mStart.x - line2.mStart.x) + s1_x * (line1.mStart.y - line2.mStart.y)) / (-s2_x * s1_y + s1_x * s2_y);
-	t = (s2_x * (line1.mStart.y - line2.mStart.y) - s2_y * (line1.mStart.x - line2.mStart.x)) / (-s2_x * s1_y + s1_x * s2_y);
+	s = (-s1_y * (line1.mStart.x - line2.mStart.x) + s1_x * (line1.mStart.y - line2.mStart.y)) / (-s2_x * s1_y + s1_x *
+		s2_y);
+	t = (s2_x * (line1.mStart.y - line2.mStart.y) - s2_y * (line1.mStart.x - line2.mStart.x)) / (-s2_x * s1_y + s1_x *
+		s2_y);
 
 	if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
 	{
@@ -449,7 +455,7 @@ float Engine::TimeOfLineIntersection(Line line1, Line line2)
 	return INFINITY;
 }
 
-float Engine::TimeOfLineIntersection(Line line, TransformedAABB aabb)
+float CE::TimeOfLineIntersection(Line line, TransformedAABB aabb)
 {
 	float tmin = 0.0, tmax = INFINITY;
 
@@ -467,14 +473,14 @@ float Engine::TimeOfLineIntersection(Line line, TransformedAABB aabb)
 	return tmin < tmax ? tmin : INFINITY;
 }
 
-float Engine::TimeOfLineIntersection(Line line, TransformedDisk disk)
+float CE::TimeOfLineIntersection(Line line, TransformedDisk disk)
 {
 	glm::vec2 f = line.mStart - disk.mCentre;
 	glm::vec2 d = line.mEnd - line.mStart;
 
-	float a = glm::dot(d, d);
-	float b = 2 * glm::dot(f, d);
-	float c = glm::dot(f, f) - (disk.mRadius * disk.mRadius);
+	float a = dot(d, d);
+	float b = 2 * dot(f, d);
+	float c = dot(f, f) - (disk.mRadius * disk.mRadius);
 
 	float discriminant = b * b - 4 * a * c;
 	if (discriminant < 0)
@@ -515,7 +521,7 @@ float Engine::TimeOfLineIntersection(Line line, TransformedDisk disk)
 	// here t1 didn't intersect so we are either started
 	// inside the sphere or completely past it
 	if ((t2 >= 0 && t2 <= 1)
-		|| (t1 < 0 && t2 > 1))// Completely inside)
+		|| (t1 < 0 && t2 > 1)) // Completely inside)
 	{
 		// ExitWound
 		return t2;
@@ -525,10 +531,11 @@ float Engine::TimeOfLineIntersection(Line line, TransformedDisk disk)
 	return INFINITY;
 }
 
-float Engine::TimeOfLineIntersection(Line line, const TransformedPolygon& polygon)
+float CE::TimeOfLineIntersection(Line line, const TransformedPolygon& polygon)
 {
 	if (!AreOverlapping(polygon.mBoundingBox, line)
-		&& !AreOverlapping(polygon.mBoundingBox, line.mStart)) // The ray might have started and ended inside the box, hence the additonal check
+		&& !AreOverlapping(polygon.mBoundingBox, line.mStart))
+	// The ray might have started and ended inside the box, hence the additonal check
 	{
 		return INFINITY;
 	}
@@ -536,7 +543,7 @@ float Engine::TimeOfLineIntersection(Line line, const TransformedPolygon& polygo
 	float earliestHitTime = INFINITY;
 	for (size_t i = 0, j = polygon.mPoints.size() - 1; i < polygon.mPoints.size(); j = i++)
 	{
-		const float hitTime = TimeOfLineIntersection(line, Line{ polygon.mPoints[i], polygon.mPoints[j] });
+		const float hitTime = TimeOfLineIntersection(line, Line{polygon.mPoints[i], polygon.mPoints[j]});
 
 		if (hitTime >= 0.0f
 			&& hitTime <= 1.0f
@@ -547,5 +554,4 @@ float Engine::TimeOfLineIntersection(Line line, const TransformedPolygon& polygo
 	}
 
 	return earliestHitTime;
-
 }

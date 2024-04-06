@@ -10,7 +10,7 @@
 #include "Components/NameComponent.h"
 #include "Utilities/Imgui/WorldInspect.h"
 
-Engine::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
+CE::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
 	AssetEditorSystem(std::move(asset)),
 	mWorldHelper(std::make_unique<WorldInspectHelper>(World{false}))
 {
@@ -42,9 +42,9 @@ Engine::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
 	}
 }
 
-Engine::PrefabEditorSystem::~PrefabEditorSystem() = default;
+CE::PrefabEditorSystem::~PrefabEditorSystem() = default;
 
-void Engine::PrefabEditorSystem::Tick(const float deltaTime)
+void CE::PrefabEditorSystem::Tick(const float deltaTime)
 {
 	if (!Begin(ImGuiWindowFlags_MenuBar))
 	{
@@ -65,7 +65,7 @@ void Engine::PrefabEditorSystem::Tick(const float deltaTime)
 	End();
 }
 
-void Engine::PrefabEditorSystem::SaveState(std::ostream& toStream) const
+void CE::PrefabEditorSystem::SaveState(std::ostream& toStream) const
 {
 	AssetEditorSystem<Prefab>::SaveState(toStream);
 
@@ -83,7 +83,7 @@ void Engine::PrefabEditorSystem::SaveState(std::ostream& toStream) const
 	savedState.SaveToBinary(toStream);
 }
 
-void Engine::PrefabEditorSystem::LoadState(std::istream& fromStream)
+void CE::PrefabEditorSystem::LoadState(std::istream& fromStream)
 {
 	AssetEditorSystem<Prefab>::LoadState(fromStream);
 
@@ -124,7 +124,7 @@ void Engine::PrefabEditorSystem::LoadState(std::istream& fromStream)
 	cameraTranform->SetLocalOrientation(localOri);
 }
 
-void Engine::PrefabEditorSystem::ApplyChangesToAsset()
+void CE::PrefabEditorSystem::ApplyChangesToAsset()
 {
 	const Registry& reg = mWorldHelper->GetWorldBeforeBeginPlay().GetRegistry();
 
@@ -155,7 +155,7 @@ void Engine::PrefabEditorSystem::ApplyChangesToAsset()
 	mAsset.CreateFromEntity(mWorldHelper->GetWorldBeforeBeginPlay(), mPrefabInstance);
 }
 
-Engine::MetaType Engine::PrefabEditorSystem::Reflect()
+CE::MetaType CE::PrefabEditorSystem::Reflect()
 {
 	return { MetaType::T<PrefabEditorSystem>{}, "PrefabEditorSystem",
 		MetaType::Base<AssetEditorSystem<Prefab>>{},

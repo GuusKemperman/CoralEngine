@@ -4,7 +4,7 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-//namespace Engine::Internal
+//namespace CE::Internal
 //{
 //	template<typename T, typename Arg> std::false_type operator<(const T&, const Arg&);
 //	template<typename T, typename Arg> std::false_type operator==(const T&, const Arg&);
@@ -32,11 +32,11 @@
 template<typename T>
 struct Reflector<std::vector<T>>
 {
-	static_assert(Engine::sIsReflectable<T>, "Cannot reflect a vector of a type that is not reflected");
+	static_assert(CE::sIsReflectable<T>, "Cannot reflect a vector of a type that is not reflected");
 
-	static Engine::MetaType Reflect()
+	static CE::MetaType Reflect()
 	{
-		using namespace Engine;
+		using namespace CE;
 
 		const MetaType& basedOnType = MetaManager::Get().GetType<T>();
 

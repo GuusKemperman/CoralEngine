@@ -3,7 +3,7 @@
 #include "BasicDataTypes/ScalableTimer.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class Level;
 	class Registry;
@@ -38,7 +38,7 @@ namespace Engine
 		WorldViewport& GetViewport() { ASSERT(mViewport != nullptr); return *mViewport; };
 		const WorldViewport& GetViewport() const { ASSERT(mViewport != nullptr); return *mViewport; };
 
-		GPUWorld& GetGPUWorld() const { return *mGPUWorld; };
+		GPUWorld& GetGPUWorld() const;
 
 		bool HasBegunPlay() const { return mHasBegunPlay; }
 

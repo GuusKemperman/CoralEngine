@@ -6,7 +6,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::TransformedAABB Engine::AABBColliderComponent::CreateTransformedCollider(const TransformComponent& transform) const
+CE::TransformedAABB CE::AABBColliderComponent::CreateTransformedCollider(const TransformComponent& transform) const
 {
 	const glm::vec2 worldPosition = transform.GetWorldPosition2D();
 	const glm::vec2 scale = transform.GetWorldScale2D();
@@ -14,7 +14,7 @@ Engine::TransformedAABB Engine::AABBColliderComponent::CreateTransformedCollider
 	return { worldPosition - scaledHalfExtends, worldPosition + scaledHalfExtends };
 }
 
-Engine::MetaType Engine::AABBColliderComponent::Reflect()
+CE::MetaType CE::AABBColliderComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<AABBColliderComponent>{}, "AABBColliderComponnet" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
@@ -26,9 +26,9 @@ Engine::MetaType Engine::AABBColliderComponent::Reflect()
 	return metaType;
 }
 
-Engine::MetaType Reflector<Engine::TransformedAABB>::Reflect()
+CE::MetaType Reflector<CE::TransformedAABB>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 
 	MetaType metaType = MetaType{ MetaType::T<TransformedAABBColliderComponent>{}, "TransformedAABBColliderComponent" };
 	metaType.GetProperties().Add(Props::sNoInspectTag).Add(Props::sNoSerializeTag);

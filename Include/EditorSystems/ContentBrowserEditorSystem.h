@@ -4,7 +4,7 @@
 
 #include "Core/AssetManager.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 
@@ -16,7 +16,6 @@ namespace Engine
 
 		void Tick(float deltaTime) override;
 
-
 	private:
 		struct ContentFolder
 		{
@@ -26,7 +25,7 @@ namespace Engine
 			std::vector<ContentFolder> mChildren{};
 			std::vector<WeakAsset<Asset>> mContent{};
 		};
-		static std::vector<ContentFolder> MakeFolderGraph(std::vector<WeakAsset<Asset>>&& assets);
+		static std::vector<ContentFolder> MakeFolderGraph();
 
 		// Moved in because the assets may be deleted, don't hold onto them.
 		void DisplayDirectory(const ContentFolder& folder);
@@ -52,6 +51,8 @@ namespace Engine
 
 		void DisplayAssetCreatorPopUp();
 		void DisplayAssetRightClickPopUp();
+
+		static void Reimport(const WeakAsset<Asset>& asset);
 
 		friend ReflectAccess;
 		static MetaType Reflect();

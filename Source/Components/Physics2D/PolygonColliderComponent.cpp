@@ -5,7 +5,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
-Engine::TransformedPolygon Engine::PolygonColliderComponent::CreateTransformedCollider(const TransformComponent& transform) const
+CE::TransformedPolygon CE::PolygonColliderComponent::CreateTransformedCollider(const TransformComponent& transform) const
 {
 	const glm::mat4 worldMatrix = transform.GetWorldMatrix();
 
@@ -20,7 +20,7 @@ Engine::TransformedPolygon Engine::PolygonColliderComponent::CreateTransformedCo
 	return points;
 }
 
-Engine::MetaType Engine::PolygonColliderComponent::Reflect()
+CE::MetaType CE::PolygonColliderComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<PolygonColliderComponent>{}, "PolygonColliderComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
@@ -32,9 +32,9 @@ Engine::MetaType Engine::PolygonColliderComponent::Reflect()
 	return metaType;
 }
 
-Engine::MetaType Reflector<Engine::TransformedPolygon>::Reflect()
+CE::MetaType Reflector<CE::TransformedPolygon>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 
 	MetaType metaType = MetaType{ MetaType::T<TransformedPolygonColliderComponent>{}, "TransformedPolygonColliderComponent" };
 	metaType.GetProperties().Add(Props::sNoInspectTag).Add(Props::sNoSerializeTag);

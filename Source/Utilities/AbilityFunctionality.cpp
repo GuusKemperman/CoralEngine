@@ -16,7 +16,7 @@
 #include "World/World.h"
 #include "Utilities/Math.h"
 
-Engine::MetaType Engine::AbilityFunctionality::Reflect()
+CE::MetaType CE::AbilityFunctionality::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<AbilityFunctionality>{}, "AbilityFunctionality" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
@@ -86,7 +86,7 @@ Engine::MetaType Engine::AbilityFunctionality::Reflect()
 	return metaType;
 }
 
-std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, ApplyType applyType, float dealtDamageModifierOfCastByCharacter)
+std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, ApplyType applyType, float dealtDamageModifierOfCastByCharacter)
 {
 	auto& reg = world.GetRegistry();
 	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
@@ -146,7 +146,7 @@ std::optional<float> Engine::AbilityFunctionality::ApplyInstantEffect(World& wor
 	return effect.mAmount;
 }
 
-void Engine::AbilityFunctionality::ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration)
+void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration)
 {
 	const auto calculatedAmount = ApplyInstantEffect(world, castByEntity, affectedEntity, effect, ApplyType::Durational);
 	if (!calculatedAmount.has_value())
@@ -162,13 +162,13 @@ void Engine::AbilityFunctionality::ApplyDurationalEffect(World& world, entt::ent
 	effects.mVisualEffects.back().mDuration = duration;
 }
 
-void Engine::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect)
+void CE::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect)
 {
 	float& currentStat = GetStat(durationalEffect.mStatAffected, characterComponent).second;
 	currentStat -= durationalEffect.mAmount;
 }
 
-void Engine::AbilityFunctionality::ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration, int ticks)
+void CE::AbilityFunctionality::ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration, int ticks)
 {
 	auto& reg = world.GetRegistry();
 	auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
@@ -187,7 +187,7 @@ void Engine::AbilityFunctionality::ApplyOverTimeEffect(World& world, entt::entit
 	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease}, castByEntityCharacterComponent->mCurrentDealtDamageModifier });
 }
 
-entt::entity Engine::AbilityFunctionality::SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy)
+entt::entity CE::AbilityFunctionality::SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy)
 {
 	auto& reg = world.GetRegistry();
 	auto prefabEntity = reg.CreateFromPrefab(prefab);
@@ -244,7 +244,7 @@ entt::entity Engine::AbilityFunctionality::SpawnProjectile(World& world, const P
 	return prefabEntity;
 }
 
-entt::entity Engine::AbilityFunctionality::SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy)
+entt::entity CE::AbilityFunctionality::SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy)
 {
 	auto& reg = world.GetRegistry();
 	auto prefabEntity = reg.CreateFromPrefab(prefab);
@@ -279,7 +279,7 @@ entt::entity Engine::AbilityFunctionality::SpawnAOE(World& world, const Prefab& 
 	return prefabEntity;
 }
 
-std::pair<float&, float&> Engine::AbilityFunctionality::GetStat(Stat stat, CharacterComponent& characterComponent)
+std::pair<float&, float&> CE::AbilityFunctionality::GetStat(Stat stat, CharacterComponent& characterComponent)
 {
 	switch (stat)
 	{
@@ -297,7 +297,7 @@ std::pair<float&, float&> Engine::AbilityFunctionality::GetStat(Stat stat, Chara
 	return { characterComponent.mBaseHealth, characterComponent.mCurrentHealth };
 }
 
-glm::vec3 Engine::AbilityFunctionality::GetEffectColor(Stat stat, IncreaseOrDecrease increaseOrDecrease)
+glm::vec3 CE::AbilityFunctionality::GetEffectColor(Stat stat, IncreaseOrDecrease increaseOrDecrease)
 {
 	glm::vec3 color;
 	if (const auto it = sDefaultEffectColors.find(std::make_pair(stat, increaseOrDecrease));
@@ -312,9 +312,9 @@ glm::vec3 Engine::AbilityFunctionality::GetEffectColor(Stat stat, IncreaseOrDecr
 	return color;
 }
 
-Engine::MetaType Reflector<Engine::AbilityFunctionality::Stat>::Reflect()
+CE::MetaType Reflector<CE::AbilityFunctionality::Stat>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	using T = AbilityFunctionality::Stat;
 	MetaType type{ MetaType::T<T>{}, "Stat" };
 
@@ -326,9 +326,9 @@ Engine::MetaType Reflector<Engine::AbilityFunctionality::Stat>::Reflect()
 	return type;
 }
 
-Engine::MetaType Reflector<Engine::AbilityFunctionality::FlatOrPercentage>::Reflect()
+CE::MetaType Reflector<CE::AbilityFunctionality::FlatOrPercentage>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	using T = AbilityFunctionality::FlatOrPercentage;
 	MetaType type{ MetaType::T<T>{}, "FlatOrPercentage" };
 
@@ -340,9 +340,9 @@ Engine::MetaType Reflector<Engine::AbilityFunctionality::FlatOrPercentage>::Refl
 	return type;
 }
 
-Engine::MetaType Reflector<Engine::AbilityFunctionality::IncreaseOrDecrease>::Reflect()
+CE::MetaType Reflector<CE::AbilityFunctionality::IncreaseOrDecrease>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	using T = AbilityFunctionality::IncreaseOrDecrease;
 	MetaType type{ MetaType::T<T>{}, "IncreaseOrDecrease" };
 
@@ -354,7 +354,7 @@ Engine::MetaType Reflector<Engine::AbilityFunctionality::IncreaseOrDecrease>::Re
 	return type;
 }
 
-bool Engine::AbilityFunctionality::EffectSettings::operator==(const EffectSettings& other) const
+bool CE::AbilityFunctionality::EffectSettings::operator==(const EffectSettings& other) const
 {
 	return mStat == other.mStat &&
 		Math::AreFloatsEqual(mAmount, other.mAmount) &&
@@ -363,7 +363,7 @@ bool Engine::AbilityFunctionality::EffectSettings::operator==(const EffectSettin
 		mClampToMax == other.mClampToMax;
 }
 
-bool Engine::AbilityFunctionality::EffectSettings::operator!=(const EffectSettings& other) const
+bool CE::AbilityFunctionality::EffectSettings::operator!=(const EffectSettings& other) const
 {
 	return mStat != other.mStat ||
 		!Math::AreFloatsEqual(mAmount, other.mAmount) ||
@@ -372,7 +372,7 @@ bool Engine::AbilityFunctionality::EffectSettings::operator!=(const EffectSettin
 		mClampToMax != other.mClampToMax;
 }
 
-Engine::MetaType Engine::AbilityFunctionality::EffectSettings::Reflect()
+CE::MetaType CE::AbilityFunctionality::EffectSettings::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<EffectSettings>{}, "EffectSettings" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);

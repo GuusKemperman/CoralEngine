@@ -14,7 +14,7 @@ namespace
 	void DecomposeMatrixToComponents(const float* matrix, float* translation, float* rotation, float* scale);
 }
 
-Engine::TransformComponent::~TransformComponent()
+CE::TransformComponent::~TransformComponent()
 {
 	SetParent(nullptr);
 
@@ -27,12 +27,12 @@ Engine::TransformComponent::~TransformComponent()
 	}
 }
 
-void Engine::TransformComponent::OnConstruct(World&, entt::entity owner)
+void CE::TransformComponent::OnConstruct(World&, entt::entity owner)
 {
 	mOwner = owner;
 }
 
-glm::mat4 Engine::TransformComponent::ToMatrix(const glm::vec3 position, const glm::vec3 scale, const glm::quat orientation)
+glm::mat4 CE::TransformComponent::ToMatrix(const glm::vec3 position, const glm::vec3 scale, const glm::quat orientation)
 {
 	// Scales first, rotates second, translates last.
 	const glm::mat4 translationMatrix = translate(glm::mat4{ 1.0f }, position);
@@ -42,12 +42,12 @@ glm::mat4 Engine::TransformComponent::ToMatrix(const glm::vec3 position, const g
 	return translationMatrix * rotationMatrix * scaleMatrix;
 }
 
-glm::mat4 Engine::TransformComponent::GetLocalMatrix() const
+glm::mat4 CE::TransformComponent::GetLocalMatrix() const
 {
 	return ToMatrix(mLocalPosition, mLocalScale, mLocalOrientation);
 }
 
-void Engine::TransformComponent::SetLocalMatrix(const glm::mat4& matrix)
+void CE::TransformComponent::SetLocalMatrix(const glm::mat4& matrix)
 {
 	glm::vec3 eulerOrientationDegrees{};
 
@@ -59,7 +59,7 @@ void Engine::TransformComponent::SetLocalMatrix(const glm::mat4& matrix)
 	SetLocalOrientation(eulerOrientationDegrees * (TWOPI / 360.0f));
 }
 
-glm::mat4 Engine::TransformComponent::GetWorldMatrix() const
+glm::mat4 CE::TransformComponent::GetWorldMatrix() const
 {
 	if (mParent == nullptr)
 	{
@@ -69,7 +69,7 @@ glm::mat4 Engine::TransformComponent::GetWorldMatrix() const
 	return mParent->GetWorldMatrix() * GetLocalMatrix();
 }
 
-void Engine::TransformComponent::SetWorldMatrix(const glm::mat4& matrix)
+void CE::TransformComponent::SetWorldMatrix(const glm::mat4& matrix)
 {
 	glm::vec3 translation{};
 	glm::vec3 eulerOrientation{};
@@ -90,7 +90,7 @@ void Engine::TransformComponent::SetWorldMatrix(const glm::mat4& matrix)
 #endif
 
 
-void Engine::TransformComponent::SetParent(TransformComponent* const parent, const bool preserveWorld)
+void CE::TransformComponent::SetParent(TransformComponent* const parent, const bool preserveWorld)
 {
 	if (mParent == parent
 		|| parent == this)
@@ -140,7 +140,7 @@ void Engine::TransformComponent::SetParent(TransformComponent* const parent, con
 #pragma warning(pop)
 #endif
 
-bool Engine::TransformComponent::IsAForeFather(const TransformComponent& potentialForeFather) const
+bool CE::TransformComponent::IsAForeFather(const TransformComponent& potentialForeFather) const
 {
 	if (mParent == nullptr)
 	{
@@ -153,12 +153,12 @@ bool Engine::TransformComponent::IsAForeFather(const TransformComponent& potenti
 	return mParent->IsAForeFather(potentialForeFather);
 }
 
-glm::vec3 Engine::TransformComponent::GetWorldPosition() const
+glm::vec3 CE::TransformComponent::GetWorldPosition() const
 {
 	return mParent == nullptr ? mLocalPosition : GetWorldMatrix() * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f };
 }
 
-void Engine::TransformComponent::SetWorldPosition(const glm::vec3 position)
+void CE::TransformComponent::SetWorldPosition(const glm::vec3 position)
 {
 	if (mParent == nullptr)
 	{
@@ -171,7 +171,7 @@ void Engine::TransformComponent::SetWorldPosition(const glm::vec3 position)
 	}
 }
 
-glm::quat Engine::TransformComponent::GetWorldOrientation() const
+glm::quat CE::TransformComponent::GetWorldOrientation() const
 {
 	if (mParent == nullptr)
 	{
@@ -181,7 +181,7 @@ glm::quat Engine::TransformComponent::GetWorldOrientation() const
 	return mParent->GetWorldOrientation() * GetLocalOrientation();
 }
 
-void Engine::TransformComponent::SetWorldOrientation(const glm::quat orientation)
+void CE::TransformComponent::SetWorldOrientation(const glm::quat orientation)
 {
 	if (mParent == nullptr)
 	{
@@ -194,7 +194,7 @@ void Engine::TransformComponent::SetWorldOrientation(const glm::quat orientation
 	}
 }
 
-glm::vec3 Engine::TransformComponent::GetWorldScale() const
+glm::vec3 CE::TransformComponent::GetWorldScale() const
 {
 	if (mParent == nullptr)
 	{
@@ -203,7 +203,7 @@ glm::vec3 Engine::TransformComponent::GetWorldScale() const
 	return mParent->GetWorldScale() * GetLocalScale();
 }
 
-void Engine::TransformComponent::SetWorldScale(const glm::vec3 scale)
+void CE::TransformComponent::SetWorldScale(const glm::vec3 scale)
 {
 	if (mParent == nullptr)
 	{
@@ -216,13 +216,13 @@ void Engine::TransformComponent::SetWorldScale(const glm::vec3 scale)
 	}
 }
 
-void Engine::TransformComponent::AttachChild(TransformComponent& child)
+void CE::TransformComponent::AttachChild(TransformComponent& child)
 {
 	//ASSERT(!IsAForeFather(child) && "Cannot attach a parent to its child");
 	mChildren.push_back(child);
 }
 
-void Engine::TransformComponent::DetachChild(TransformComponent& child)
+void CE::TransformComponent::DetachChild(TransformComponent& child)
 {
 	const auto it = std::find_if(mChildren.begin(), mChildren.end(), 
 		[&child](const TransformComponent& transform)
@@ -234,7 +234,7 @@ void Engine::TransformComponent::DetachChild(TransformComponent& child)
 	mChildren.erase(it);
 }
 
-Engine::MetaType Engine::TransformComponent::Reflect()
+CE::MetaType CE::TransformComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<TransformComponent>{}, "TransformComponent" };
 	MetaProps& props = type.GetProperties();

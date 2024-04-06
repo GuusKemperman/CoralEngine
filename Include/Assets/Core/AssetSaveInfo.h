@@ -1,21 +1,21 @@
 #pragma once
 #include <sstream>
 
-namespace Engine
+#include "AssetFileMetaData.h"
+
+namespace CE
 {
 	class MetaType;
 
 	class AssetSaveInfo
 	{
 	public:
-		AssetSaveInfo(const std::string& name, const MetaType& assetClass);
-		AssetSaveInfo(const std::string& name, const MetaType& assetClass, 
-			const std::filesystem::path& importedFromFile, uint32 importerVersion);
+		AssetSaveInfo(const std::string& name, const MetaType& assetClass, const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = std::nullopt);
 		
-		AssetSaveInfo(AssetSaveInfo&& other) noexcept;
+		AssetSaveInfo(AssetSaveInfo&& other) noexcept = default;
 		AssetSaveInfo(const AssetSaveInfo&) = delete;
 
-		AssetSaveInfo& operator=(AssetSaveInfo&& other) noexcept;
+		AssetSaveInfo& operator=(AssetSaveInfo&& other) noexcept = default;
 		AssetSaveInfo& operator=(const AssetSaveInfo&) = delete;
 
 		// Returns true on success
@@ -27,9 +27,13 @@ namespace Engine
 		const std::ostream& GetStream() const { return mStream; }
 
 		std::string ToString() const;
-		
+
+		const AssetFileMetaData& GetMetaData() const { return mMetaData; }
+
 	private:
 		// First save to a string stream; if anything goes wrong, our original file is left unmodified
 		std::ostringstream mStream{};
+
+		AssetFileMetaData mMetaData;
 	};
 }

@@ -5,7 +5,7 @@
 #include "Components/UI/UIButtonComponent.h"
 #include "Core/Input.h"
 
-void Engine::UISystem::Update(World& world, float dt)
+void CE::UISystem::Update(World& world, float dt)
 {
 	mSecondsSinceLastNavigationChange += dt;
 
@@ -74,14 +74,13 @@ void Engine::UISystem::Update(World& world, float dt)
 
 	Input& input = Input::Get();
 
-
 	if (selectedEntity == entt::null
 		|| (!input.WasKeyboardKeyPressed(Input::KeyboardKey::Enter)
-			&& !input.WasKeyboardKeyPressed(Input::KeyboardKey::NumpadEnter)))
+			&& !input.WasKeyboardKeyPressed(Input::KeyboardKey::NumpadEnter)
+			&& !input.WasGamepadButtonPressed(0, Input::GamepadButton::South)))
 	{
 		return;
 	}
-
 
 	for (auto&& [typeId, storage] : reg.Storage())
 	{
@@ -117,7 +116,7 @@ void Engine::UISystem::Update(World& world, float dt)
 
 }
 
-entt::entity Engine::UISystem::CheckNavigation(World& world, 
+entt::entity CE::UISystem::CheckNavigation(World& world, 
 	entt::entity currentEntity,
 	entt::entity UIButtonComponent::* ptrToField,
 	Input::KeyboardKey key1, 
@@ -166,7 +165,7 @@ entt::entity Engine::UISystem::CheckNavigation(World& world,
 	return currentEntity;
 }
 
-Engine::MetaType Engine::UISystem::Reflect()
+CE::MetaType CE::UISystem::Reflect()
 {
 	return MetaType{ MetaType::T<UISystem>{}, "UISystem", MetaType::Base<System>{} };
 }

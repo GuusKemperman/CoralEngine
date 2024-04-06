@@ -4,7 +4,7 @@
 
 #include "Assets/Material.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 

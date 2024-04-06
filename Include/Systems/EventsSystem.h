@@ -2,7 +2,7 @@
 #include "Systems/System.h"
 #include "Utilities/Events.h"
 
-namespace Engine
+namespace CE
 {
 	class TickSystem final :
 		public System
@@ -14,6 +14,8 @@ namespace Engine
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(TickSystem);
+
+		std::vector<BoundEvent> mBoundEvents = GetAllBoundEvents(sTickEvent);
 	};
 
 	class FixedTickSystem final :
@@ -30,6 +32,8 @@ namespace Engine
 		}
 
 	private:
+		std::vector<BoundEvent> mBoundEvents = GetAllBoundEvents(sFixedTickEvent);
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(FixedTickSystem);

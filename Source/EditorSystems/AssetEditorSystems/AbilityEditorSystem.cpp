@@ -4,12 +4,12 @@
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Meta/MetaManager.h"
 
-Engine::AbilityEditorSystem::AbilityEditorSystem(Ability&& asset)
+CE::AbilityEditorSystem::AbilityEditorSystem(Ability&& asset)
 	: AssetEditorSystem(std::move(asset))
 {
 }
 
-void Engine::AbilityEditorSystem::Tick(float deltaTime)
+void CE::AbilityEditorSystem::Tick(float deltaTime)
 {
 	if (!Begin(ImGuiWindowFlags_MenuBar))
 	{
@@ -37,7 +37,7 @@ void Engine::AbilityEditorSystem::Tick(float deltaTime)
 	End();
 }
 
-Engine::MetaType Engine::AbilityEditorSystem::Reflect()
+CE::MetaType CE::AbilityEditorSystem::Reflect()
 {
 	return { MetaType::T<AbilityEditorSystem>{}, "AbilityEditorSystem",
 		MetaType::Base<AssetEditorSystem<Ability>>{},

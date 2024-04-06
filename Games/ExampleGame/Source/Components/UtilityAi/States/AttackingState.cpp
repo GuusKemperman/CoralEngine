@@ -5,24 +5,24 @@
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
-#include "Components/Pathfinding/NavMeshTargetComponent.h"
+#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Systems/AbilitySystem.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void Game::AttackingState::OnAiTick(Engine::World& world, entt::entity owner, float)
+void Game::AttackingState::OnAiTick(CE::World& world, entt::entity owner, float)
 {
 	auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
 	mTargetEntity = targetEntity;
 
-	const auto characterData = world.GetRegistry().TryGet<Engine::CharacterComponent>(owner);
+	const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
 	if (characterData == nullptr)
 	{
 		return;
 	}
 
-	const auto abilities = world.GetRegistry().TryGet<Engine::AbilitiesOnCharacterComponent>(owner);
+	const auto abilities = world.GetRegistry().TryGet<CE::AbilitiesOnCharacterComponent>(owner);
 	if (abilities == nullptr)
 	{
 		return;
@@ -33,15 +33,15 @@ void Game::AttackingState::OnAiTick(Engine::World& world, entt::entity owner, fl
 		return;
 	}
 
-	Engine::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
+	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
 
-	auto* navMeshAgent = world.GetRegistry().TryGet<Engine::NavMeshAgentComponent>(owner);
+	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
 	if (navMeshAgent == nullptr) { return; }
 
 	if (mTargetEntity != entt::null)
 	{
-		const auto* transformComponent = world.GetRegistry().TryGet<Engine::TransformComponent>(mTargetEntity);
+		const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(mTargetEntity);
 
 		if (transformComponent == nullptr) { return; }
 
@@ -49,26 +49,26 @@ void Game::AttackingState::OnAiTick(Engine::World& world, entt::entity owner, fl
 	}
 }
 
-float Game::AttackingState::OnAiEvaluate(const Engine::World& world, entt::entity owner) const
+float Game::AttackingState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
 {
 	auto [score, entity] = GetBestScoreAndTarget(world, owner);
 	return score;
 }
 
-void Game::AttackingState::OnAIStateEnterEvent(Engine::World& world, entt::entity owner)
+void Game::AttackingState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 {
-	auto* navMeshAgent = world.GetRegistry().TryGet<Engine::NavMeshAgentComponent>(owner);
+	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
 	if (navMeshAgent == nullptr) { return; }
 
 	navMeshAgent->StopNavMesh();
 }
 
-std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const Engine::World& world,
+std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const CE::World& world,
                                                                            entt::entity owner) const
 {
-	const auto targetsView = world.GetRegistry().View<Engine::NavMeshTargetTag, Engine::TransformComponent>();
-	const auto* transformComponent = world.GetRegistry().TryGet<Engine::TransformComponent>(owner);
+	const auto targetsView = world.GetRegistry().View<CE::NavMeshTargetTag, CE::TransformComponent>();
+	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
 	if (transformComponent == nullptr)
 	{
@@ -100,17 +100,17 @@ std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const
 	return {highestScore, entityId};
 }
 
-Engine::MetaType Game::AttackingState::Reflect()
+CE::MetaType Game::AttackingState::Reflect()
 {
-	auto type = Engine::MetaType{Engine::MetaType::T<AttackingState>{}, "AttackingState"};
-	type.GetProperties().Add(Engine::Props::sIsScriptableTag);
+	auto type = CE::MetaType{CE::MetaType::T<AttackingState>{}, "AttackingState"};
+	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&AttackingState::mRadius, "mRadius").GetProperties().Add(Engine::Props::sIsScriptableTag);
+	type.AddField(&AttackingState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, Engine::sAITickEvent, &AttackingState::OnAiTick);
-	BindEvent(type, Engine::sAIEvaluateEvent, &AttackingState::OnAiEvaluate);
-	BindEvent(type, Engine::sAIStateEnterEvent, &AttackingState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAITickEvent, &AttackingState::OnAiTick);
+	BindEvent(type, CE::sAIEvaluateEvent, &AttackingState::OnAiEvaluate);
+	BindEvent(type, CE::sAIStateEnterEvent, &AttackingState::OnAIStateEnterEvent);
 
-	Engine::ReflectComponentType<AttackingState>(type);
+	CE::ReflectComponentType<AttackingState>(type);
 	return type;
 }

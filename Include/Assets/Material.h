@@ -3,7 +3,7 @@
 
 #include "BasicDataTypes/Colors/LinearColor.h"
 
-namespace Engine
+namespace CE
 {
 	class Texture;
 

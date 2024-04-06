@@ -7,7 +7,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Utilities/Math.h"
 
-Engine::MetaType Engine::EffectsOnCharacterComponent::Reflect()
+CE::MetaType CE::EffectsOnCharacterComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<EffectsOnCharacterComponent>{}, "EffectsOnCharacterComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
@@ -21,7 +21,7 @@ Engine::MetaType Engine::EffectsOnCharacterComponent::Reflect()
 	return metaType;
 }
 
-bool Engine::DurationalEffect::operator==(const DurationalEffect& other) const
+bool CE::DurationalEffect::operator==(const DurationalEffect& other) const
 {
 	return Math::AreFloatsEqual(mDuration, other.mDuration) &&
 		Math::AreFloatsEqual(mDurationTimer, other.mDurationTimer) &&
@@ -29,13 +29,13 @@ bool Engine::DurationalEffect::operator==(const DurationalEffect& other) const
 		Math::AreFloatsEqual(mAmount, other.mAmount);
 }
 
-bool Engine::DurationalEffect::operator!=(const DurationalEffect& other) const
+bool CE::DurationalEffect::operator!=(const DurationalEffect& other) const
 {
 	return !(*this == other);
 }
 
 #ifdef EDITOR
-void Engine::DurationalEffect::DisplayWidget()
+void CE::DurationalEffect::DisplayWidget()
 {
 	ShowInspectUIReadOnly("mDuration", mDuration);
 	ShowInspectUIReadOnly("mDurationTimer", mDurationTimer);
@@ -44,7 +44,7 @@ void Engine::DurationalEffect::DisplayWidget()
 }
 #endif // EDITOR
 
-Engine::MetaType Engine::DurationalEffect::Reflect()
+CE::MetaType CE::DurationalEffect::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<DurationalEffect>{}, "DurationalEffect" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
@@ -57,7 +57,7 @@ Engine::MetaType Engine::DurationalEffect::Reflect()
 	return metaType;
 }
 
-bool Engine::OverTimeEffect::operator==(const OverTimeEffect& other) const
+bool CE::OverTimeEffect::operator==(const OverTimeEffect& other) const
 {
 	return Math::AreFloatsEqual(mTickDuration, other.mTickDuration) &&
 		Math::AreFloatsEqual(mDurationTimer, other.mDurationTimer) &&
@@ -68,13 +68,13 @@ bool Engine::OverTimeEffect::operator==(const OverTimeEffect& other) const
 			other.mDealtDamageModifierOfCastByCharacter);
 }
 
-bool Engine::OverTimeEffect::operator!=(const OverTimeEffect& other) const
+bool CE::OverTimeEffect::operator!=(const OverTimeEffect& other) const
 {
 	return !(*this == other);
 }
 
 #ifdef EDITOR
-void Engine::OverTimeEffect::DisplayWidget()
+void CE::OverTimeEffect::DisplayWidget()
 {
 	ShowInspectUIReadOnly("mTickDuration", mTickDuration);
 	ShowInspectUIReadOnly("mDurationTimer", mDurationTimer);
@@ -87,7 +87,7 @@ void Engine::OverTimeEffect::DisplayWidget()
 }
 #endif // EDITOR
 
-Engine::MetaType Engine::OverTimeEffect::Reflect()
+CE::MetaType CE::OverTimeEffect::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<OverTimeEffect>{}, "OverTimeEffect" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
@@ -102,7 +102,7 @@ Engine::MetaType Engine::OverTimeEffect::Reflect()
 	return metaType;
 }
 
-bool Engine::VisualEffect::operator==(const VisualEffect& other) const
+bool CE::VisualEffect::operator==(const VisualEffect& other) const
 {
 	return Math::AreFloatsEqual(mColor.x, other.mColor.x) && 
 		Math::AreFloatsEqual(mColor.y, other.mColor.y) &&
@@ -111,7 +111,7 @@ bool Engine::VisualEffect::operator==(const VisualEffect& other) const
 		Math::AreFloatsEqual(mDurationTimer, other.mDurationTimer);
 }
 
-bool Engine::VisualEffect::operator!=(const VisualEffect& other) const
+bool CE::VisualEffect::operator!=(const VisualEffect& other) const
 {
 	return !Math::AreFloatsEqual(mColor.x, other.mColor.x) ||
 		!Math::AreFloatsEqual(mColor.y, other.mColor.y) ||
@@ -121,7 +121,7 @@ bool Engine::VisualEffect::operator!=(const VisualEffect& other) const
 }
 
 #ifdef EDITOR
-void Engine::VisualEffect::DisplayWidget()
+void CE::VisualEffect::DisplayWidget()
 {
 	ShowInspectUIReadOnly("mColor", mColor);
 	ShowInspectUIReadOnly("mDuration", mDuration);
@@ -129,7 +129,7 @@ void Engine::VisualEffect::DisplayWidget()
 }
 #endif // EDITOR
 
-Engine::MetaType Engine::VisualEffect::Reflect()
+CE::MetaType CE::VisualEffect::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<VisualEffect>{}, "VisualEffect" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);

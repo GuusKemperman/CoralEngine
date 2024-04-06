@@ -6,12 +6,13 @@
 #include "Components/TransformComponent.h"
 #include "Assets/SkinnedMesh.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Components/AnimationRootComponent.h"
 #include "Assets/Animation/Animation.h"
 #include "Assets/Animation/Bone.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
-void Engine::AnimationSystem::CalculateBoneTransformRecursive(const AnimNode& node, 
+void CE::AnimationSystem::CalculateBoneTransformRecursive(const AnimNode& node, 
 	const glm::mat4x4& parenTransform, 
 	const std::unordered_map<std::string, BoneInfo>& boneMap,
 	const SkinnedMeshComponent& mesh,
@@ -42,27 +43,29 @@ void Engine::AnimationSystem::CalculateBoneTransformRecursive(const AnimNode& no
 	}
 }
 
-void Engine::AnimationSystem::Update(World& world, float dt)
+void CE::AnimationSystem::Update(World& world, float dt)
 {
 	auto& reg = world.GetRegistry();
 
-	const auto& view = reg.View<SkinnedMeshComponent>();
-
-	for (auto [entity, skinnedMesh] : view.each())
 	{
-		if (skinnedMesh.mAnimation == nullptr)
+		const auto& view = reg.View<SkinnedMeshComponent>();
+
+		for (auto [entity, skinnedMesh] : view.each())
 		{
-			continue;
+			if (skinnedMesh.mAnimation == nullptr)
+			{
+				continue;
+			}
+
+			skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * dt;
+			skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
+
+			CalculateBoneTransformRecursive(skinnedMesh.mAnimation->mRootNode, glm::mat4x4(1.0f), skinnedMesh.mSkinnedMesh->GetBoneMap(), skinnedMesh, skinnedMesh.mAnimation, skinnedMesh.mFinalBoneMatrices);
 		}
-
-		skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * dt;
-		skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
-
-		CalculateBoneTransformRecursive(skinnedMesh.mAnimation->mRootNode, glm::mat4x4(1.0f), skinnedMesh.mSkinnedMesh->GetBoneMap(), skinnedMesh, skinnedMesh.mAnimation, skinnedMesh.mFinalBoneMatrices);
 	}
 }
 
-Engine::MetaType Engine::AnimationSystem::Reflect()
+CE::MetaType CE::AnimationSystem::Reflect()
 {
 	return MetaType{ MetaType::T<AnimationSystem>{}, "AnimationSystem", MetaType::Base<System>{} };
 }

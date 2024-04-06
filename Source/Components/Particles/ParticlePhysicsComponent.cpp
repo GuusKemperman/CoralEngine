@@ -5,7 +5,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::MetaType Engine::ParticlePhysicsComponent::Reflect()
+CE::MetaType CE::ParticlePhysicsComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<ParticlePhysicsComponent>{}, "ParticlePhysicsComponent" };
 	MetaProps& props = type.GetProperties();

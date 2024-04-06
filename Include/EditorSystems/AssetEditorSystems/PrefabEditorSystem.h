@@ -4,7 +4,7 @@
 
 #include "Assets/Prefabs/Prefab.h"
 
-namespace Engine
+namespace CE
 {
 	class WorldInspectHelper;
 	

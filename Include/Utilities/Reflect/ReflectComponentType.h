@@ -6,7 +6,7 @@
 #include "Meta/MetaProps.h"
 #include "Meta/MetaAny.h"
 
-namespace Engine
+namespace CE
 {
 	namespace Internal
 	{
@@ -44,7 +44,7 @@ namespace Engine
 				if (reg.HasComponent<T>(entity))
 				{
 					return Format("Could not add {} to entity {} - this entity already has a component of this type",
-						MakeTypeName<T>(), static_cast<EntityType>(entity));
+						MakeTypeName<T>(), entt::to_integral(entity));
 				}
 
 				if constexpr (!isEmpty)

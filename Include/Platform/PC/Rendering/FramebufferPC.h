@@ -5,7 +5,7 @@
 #include "DX12Classes/DXResource.h"
 #include "DX12Classes/DXHeapHandle.h"
 
-namespace Engine
+namespace CE
 {
 	class MyShader;
 
@@ -34,6 +34,7 @@ namespace Engine
 		DXHeapHandle mFrameBufferHandle[FRAME_BUFFER_COUNT];
 		DXHeapHandle mFrameBufferRscHandle[FRAME_BUFFER_COUNT];
 		DXHeapHandle mDepthStencilHandle;
+		DXHeapHandle mDepthStencilSRVHandle;
 
 		glm::vec4 mClearColor{};
 		glm::ivec2 mSize{};

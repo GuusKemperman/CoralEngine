@@ -5,12 +5,12 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
 
-Engine::UnitTestEditorSystem::UnitTestEditorSystem() :
+CE::UnitTestEditorSystem::UnitTestEditorSystem() :
 	EditorSystem("UnitTests")
 {
 }
 
-void Engine::UnitTestEditorSystem::Tick(const float)
+void CE::UnitTestEditorSystem::Tick(const float)
 {
 	if (!Begin(ImGuiWindowFlags_MenuBar))
 	{
@@ -193,7 +193,7 @@ void Engine::UnitTestEditorSystem::Tick(const float)
 	End();
 }
 
-Engine::MetaType Engine::UnitTestEditorSystem::Reflect()
+CE::MetaType CE::UnitTestEditorSystem::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<UnitTestEditorSystem>{}, "UnitTestEditorSystem", MetaType::Base<EditorSystem>{} };
 	return type;

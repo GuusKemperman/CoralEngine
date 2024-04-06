@@ -2,7 +2,7 @@
 #include "Meta/MetaTypeFilter.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	namespace Internal
 	{
@@ -15,8 +15,8 @@ namespace Engine
 }
 
 template<>
-struct Reflector<Engine::ComponentFilter>
+struct Reflector<CE::ComponentFilter>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(EngineComponentFilter, Engine::ComponentFilter);
+}; REFLECT_AT_START_UP(EngineComponentFilter, CE::ComponentFilter);

@@ -1,7 +1,7 @@
 #pragma once
 #include "Meta/Fwd/MetaReflectFwd.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 

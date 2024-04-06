@@ -2,7 +2,7 @@
 #include "Meta/MetaTypeTraits.h"
 #include "Scripting/ScriptConfig.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaFunc;
 	class MetaType;

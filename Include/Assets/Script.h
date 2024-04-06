@@ -5,7 +5,7 @@
 #include "Scripting/ScriptField.h"
 #include "Scripting/ScriptErrors.h"
 
-namespace Engine
+namespace CE
 {
 	class BinaryGSONObject;
 	class MetaType;

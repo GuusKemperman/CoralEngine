@@ -3,7 +3,7 @@
 #include "Assets/Script.h"
 #include "Utilities/Events.h"
 
-namespace Engine
+namespace CE
 {
 	class Script;
 	class ScriptFunc;
@@ -13,8 +13,8 @@ namespace Engine
 	class ScriptEvent
 	{
 	public:
-		template <typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
-		ScriptEvent(const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event, std::vector<MetaFuncNamedParam>&& params,
+		template <typename Ret, typename... Args, bool IsAlwaysStatic>
+		ScriptEvent(const Event<Ret(Args...), IsAlwaysStatic>& event, std::vector<MetaFuncNamedParam>&& params,
 		            std::optional<MetaFuncNamedParam>&& ret);
 
 		MetaFunc& Declare(TypeId selfTypeId, MetaType& toType) const;
@@ -34,7 +34,6 @@ namespace Engine
 		TypeTraits mEventReturnType{};
 
 		bool mIsStatic{};
-		bool mIsPure{};
 	};
 
 	class ScriptOnlyPassComponentEvent :
@@ -118,16 +117,15 @@ namespace Engine
 	};
 
 
-	template <typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
-	ScriptEvent::ScriptEvent(const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event,
+	template <typename Ret, typename... Args, bool IsAlwaysStatic>
+	ScriptEvent::ScriptEvent(const Event<Ret(Args...), IsAlwaysStatic>& event,
 	                         std::vector<MetaFuncNamedParam>&& params, std::optional<MetaFuncNamedParam>&& ret) :
 		mBasedOnEvent(event),
 		mParamsToShowToUser(std::move(params)),
 		mReturnValueToShowToUser(std::move(ret)),
 		mEventParams({MakeTypeTraits<Args>()...}),
 		mEventReturnType(MakeTypeTraits<Ret>()),
-		mIsStatic(IsAlwaysStatic),
-		mIsPure(IsPure)
+		mIsStatic(IsAlwaysStatic)
 	{
 	}
 

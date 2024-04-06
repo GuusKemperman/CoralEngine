@@ -6,7 +6,7 @@
 #include "Assets/Asset.h"
 #include "Systems/System.h"
 
-using namespace Engine;
+using namespace CE;
 
 namespace
 {

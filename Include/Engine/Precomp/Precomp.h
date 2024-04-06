@@ -54,26 +54,8 @@ static_assert(false, "EngineDebug or EngineRelease configuration is not supporte
 #define DX12
 #endif // PLATFORM_WINDOWS
 
-// Will be removed once we switch
-// to directX.
-#ifdef OPEN_GL
-
-#include "glad/glad.h"
-
-void _CheckGL(const char* f, int l);
-void _CheckFrameBuffer(const char* f, int l);
-
-#define CheckGL() { _CheckGL( __FILE__, __LINE__ ); }
-#define CheckFrameBuffer() { _CheckFrameBuffer(__FILE__, __LINE__); }
-#else
-#define CheckGL()
-#define CheckFrameBuffer()
-#endif // OPEN_GL
-
-namespace Engine
-{
-	using EntityType = std::underlying_type_t<entt::entity>;
-}
+// Coral Engine
+namespace CE {}
 
 #include "BasicDataTypes/ArithmeticAliases.h"
 #include "Utilities/CPP20/STDAliases.h"
@@ -95,7 +77,5 @@ template<bool flag = false> void static_no_match() { static_assert(flag, "No mat
 
 template <class> constexpr bool AlwaysFalse = false;
 
-#include "Core/CommonMetaProperties.h"
-
+#include "Utilities/CommonMetaProperties.h"
 #include "Utilities/EnumString.h"
-

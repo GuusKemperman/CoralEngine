@@ -6,7 +6,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 
 
-Engine::MetaType Engine::MeshColorComponent::Reflect()
+CE::MetaType CE::MeshColorComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<MeshColorComponent>{}, "MeshColorComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);

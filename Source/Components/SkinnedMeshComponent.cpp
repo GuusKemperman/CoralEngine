@@ -9,7 +9,7 @@
 #include "Assets/Animation/Animation.h"
 #include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
-Engine::MetaType Engine::SkinnedMeshComponent::Reflect()
+CE::MetaType CE::SkinnedMeshComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<SkinnedMeshComponent>{}, "SkinnedMeshComponent" };
 	MetaProps& props = type.GetProperties();

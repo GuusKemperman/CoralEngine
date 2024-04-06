@@ -2,7 +2,7 @@
 #include "Meta/MetaReflect.h"
 #include "Rendering/SkinnedMeshDefines.h"
 
-namespace Engine
+namespace CE
 {
     class SkinnedMesh;
     class Animation;

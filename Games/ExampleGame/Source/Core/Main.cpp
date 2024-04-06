@@ -9,7 +9,7 @@
 
 int main(int argc, char* argv[])
 {
-	Engine::EngineClass engine{ argc, argv, GAME_DIR };
+	CE::Engine engine{ argc, argv, GAME_DIR };
 	engine.Run("MainMenu");
 	return 0;
 }

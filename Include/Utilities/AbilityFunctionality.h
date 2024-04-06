@@ -1,7 +1,7 @@
 #pragma once
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	struct DurationalEffect;
 	class Prefab;
@@ -103,14 +103,14 @@ namespace Engine
 }
 
 template<>
-struct Reflector<Engine::AbilityFunctionality::Stat>
+struct Reflector<CE::AbilityFunctionality::Stat>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(Stat, Engine::AbilityFunctionality::Stat);
+}; REFLECT_AT_START_UP(Stat, CE::AbilityFunctionality::Stat);
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::AbilityFunctionality::Stat>
+struct CE::EnumStringPairsImpl<CE::AbilityFunctionality::Stat>
 {
 	static constexpr EnumStringPairs<AbilityFunctionality::Stat, 4> value = {
 		EnumStringPair<AbilityFunctionality::Stat>{ AbilityFunctionality::Stat::Health, "Health" },
@@ -121,14 +121,14 @@ struct Engine::EnumStringPairsImpl<Engine::AbilityFunctionality::Stat>
 };
 
 template<>
-struct Reflector<Engine::AbilityFunctionality::FlatOrPercentage>
+struct Reflector<CE::AbilityFunctionality::FlatOrPercentage>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(FlatOrPercentage, Engine::AbilityFunctionality::FlatOrPercentage);
+}; REFLECT_AT_START_UP(FlatOrPercentage, CE::AbilityFunctionality::FlatOrPercentage);
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::AbilityFunctionality::FlatOrPercentage>
+struct CE::EnumStringPairsImpl<CE::AbilityFunctionality::FlatOrPercentage>
 {
 	static constexpr EnumStringPairs<AbilityFunctionality::FlatOrPercentage, 2> value = {
 		EnumStringPair<AbilityFunctionality::FlatOrPercentage>{ AbilityFunctionality::FlatOrPercentage::Flat, "Flat" },
@@ -138,14 +138,14 @@ struct Engine::EnumStringPairsImpl<Engine::AbilityFunctionality::FlatOrPercentag
 
 
 template<>
-struct Reflector<Engine::AbilityFunctionality::IncreaseOrDecrease>
+struct Reflector<CE::AbilityFunctionality::IncreaseOrDecrease>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(IncreaseOrDecrease, Engine::AbilityFunctionality::IncreaseOrDecrease);
+}; REFLECT_AT_START_UP(IncreaseOrDecrease, CE::AbilityFunctionality::IncreaseOrDecrease);
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::AbilityFunctionality::IncreaseOrDecrease>
+struct CE::EnumStringPairsImpl<CE::AbilityFunctionality::IncreaseOrDecrease>
 {
 	static constexpr EnumStringPairs<AbilityFunctionality::IncreaseOrDecrease, 2> value = {
 		EnumStringPair<AbilityFunctionality::IncreaseOrDecrease>{ AbilityFunctionality::IncreaseOrDecrease::Increase, "Increase" },

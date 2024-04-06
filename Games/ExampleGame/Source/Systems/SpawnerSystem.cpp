@@ -1,40 +1,41 @@
 #include "Precomp.h"
 #include "Systems/SpawnerSystem.h"
 
+#include "Components/PlayerComponent.h"
 #include "Components/SpawnerComponent.h"
 #include "Components/TransformComponent.h"
 #include "World/Registry.h"
 
-void Game::SpawnerSystem::Update(Engine::World& world, float dt)
+void Game::SpawnerSystem::Update(CE::World& world, float)
 {
-	Engine::Registry& reg = world.GetRegistry();
-	auto spawnerView = reg.View<SpawnerComponent, Engine::TransformComponent>();
+	auto& reg = world.GetRegistry();
+	auto spawnerView = reg.View<SpawnerComponent, CE::TransformComponent>();
+
+	const auto playerCheck = reg.View<PlayerComponent>();
+
+	if (playerCheck.empty()) { return; }
+
+	const auto playerView = reg.View<PlayerComponent, CE::TransformComponent>();
+
+	auto [playerComponent, playerTransform] = playerView.get(playerView.front());
+
 	for (auto [spawnerID, spawnerComponent, spawnerTransform] : spawnerView.each())
 	{
-		if (spawnerComponent.mPrefab == nullptr)
+		const float distance = glm::distance(playerTransform.GetWorldPosition(),
+		                                     spawnerTransform.GetWorldPosition());
+
+		if (spawnerComponent.mMax > distance && spawnerComponent.mMin < distance)
 		{
-			continue;
+			spawnerComponent.mActive = true;
 		}
-
-		spawnerComponent.mCurrentTimer += dt;
-		if (spawnerComponent.mCurrentTimer < spawnerComponent.mSpawningTimer)
+		else
 		{
-			continue;
-		}
-		
-		const entt::entity spawnedPrefab = reg.CreateFromPrefab(*spawnerComponent.mPrefab);
-		spawnerComponent.mCurrentTimer = 0;
-
-		Engine::TransformComponent* const spawnedTransform = reg.TryGet<Engine::TransformComponent>(spawnedPrefab);
-
-		if (spawnedTransform != nullptr)
-		{
-			spawnedTransform->SetWorldPosition(spawnerTransform.GetWorldPosition());
+			spawnerComponent.mActive = false;
 		}
 	}
 }
 
-Engine::MetaType Game::SpawnerSystem::Reflect()
+CE::MetaType Game::SpawnerSystem::Reflect()
 {
-	return Engine::MetaType{Engine::MetaType::T<SpawnerSystem>{}, "SpawnerSystem", Engine::MetaType::Base<System>{}};
+	return CE::MetaType{CE::MetaType::T<SpawnerSystem>{}, "SpawnerSystem", CE::MetaType::Base<System>{}};
 }

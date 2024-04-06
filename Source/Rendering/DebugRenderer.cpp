@@ -2,7 +2,7 @@
 #include "Rendering/DebugRenderer.h"
 #include "glm/gtx/rotate_vector.hpp"
 
-void Engine::DebugRenderer::AddLine(const World& world, DebugCategory::Enum category, glm::vec2 from, glm::vec2 to, const glm::vec4& color, Plane::Enum plane) const
+void CE::DebugRenderer::AddLine(const World& world, DebugCategory::Enum category, glm::vec2 from, glm::vec2 to, const glm::vec4& color, Plane::Enum plane) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -20,7 +20,7 @@ void Engine::DebugRenderer::AddLine(const World& world, DebugCategory::Enum cate
     }
 }
 
-void Engine::DebugRenderer::AddCircle(const World& world, DebugCategory::Enum category, const glm::vec3& center, float radius, const glm::vec4& color, Plane::Enum plane) const
+void CE::DebugRenderer::AddCircle(const World& world, DebugCategory::Enum category, const glm::vec3& center, float radius, const glm::vec4& color, Plane::Enum plane) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -69,7 +69,7 @@ void Engine::DebugRenderer::AddCircle(const World& world, DebugCategory::Enum ca
     }
 }
 
-void Engine::DebugRenderer::AddSphere(const World& world, DebugCategory::Enum category, const glm::vec3& center, float radius, const glm::vec4& color) const
+void CE::DebugRenderer::AddSphere(const World& world, DebugCategory::Enum category, const glm::vec3& center, float radius, const glm::vec4& color) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -105,7 +105,7 @@ void Engine::DebugRenderer::AddSphere(const World& world, DebugCategory::Enum ca
     }
 }
 
-void Engine::DebugRenderer::AddRectangle(const World& world, DebugCategory::Enum category, const glm::vec3& center, glm::vec2 halfExtends, const glm::vec4& color, Plane::Enum plane) const
+void CE::DebugRenderer::AddRectangle(const World& world, DebugCategory::Enum category, const glm::vec3& center, glm::vec2 halfExtends, const glm::vec4& color, Plane::Enum plane) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -139,7 +139,7 @@ void Engine::DebugRenderer::AddRectangle(const World& world, DebugCategory::Enum
     AddLine(world, category, D, A, color);
 }
 
-void Engine::DebugRenderer::AddBox(const World& world, DebugCategory::Enum category, const glm::vec3& center, const glm::vec3& halfExtents, const glm::vec4& color) const
+void CE::DebugRenderer::AddBox(const World& world, DebugCategory::Enum category, const glm::vec3& center, const glm::vec3& halfExtents, const glm::vec4& color) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -169,7 +169,7 @@ void Engine::DebugRenderer::AddBox(const World& world, DebugCategory::Enum categ
     AddLine(world, category, glm::vec3(minCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), color);
 }
 
-void Engine::DebugRenderer::AddCylinder(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, float radius, uint32 segments, const glm::vec4& color) const
+void CE::DebugRenderer::AddCylinder(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, float radius, uint32 segments, const glm::vec4& color) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -216,7 +216,7 @@ void Engine::DebugRenderer::AddCylinder(const World& world, DebugCategory::Enum 
     }
 }
 
-void Engine::DebugRenderer::AddPolygon(const World& world, DebugCategory::Enum category, const std::vector<glm::vec3>& points, const glm::vec4& color) const
+void CE::DebugRenderer::AddPolygon(const World& world, DebugCategory::Enum category, const std::vector<glm::vec3>& points, const glm::vec4& color) const
 {
     if (!IsCategoryVisible(category)) return;
 
@@ -227,7 +227,7 @@ void Engine::DebugRenderer::AddPolygon(const World& world, DebugCategory::Enum c
     }
 }
 
-void Engine::DebugRenderer::AddPolygon(const World& world, DebugCategory::Enum category, const std::vector<glm::vec2>& points, const glm::vec4& color, Plane::Enum plane) const
+void CE::DebugRenderer::AddPolygon(const World& world, DebugCategory::Enum category, const std::vector<glm::vec2>& points, const glm::vec4& color, Plane::Enum plane) const
 {
     if (!IsCategoryVisible(category)) return;
 

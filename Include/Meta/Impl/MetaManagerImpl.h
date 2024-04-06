@@ -7,7 +7,7 @@
 #include "Meta/MetaReflect.h"
 
 template<typename T>
-Engine::MetaType& Engine::MetaManager::GetType()
+CE::MetaType& CE::MetaManager::GetType()
 {
 	static_assert(sIsReflectable<T>,
 		R"(Type does not have a reflect function, so the type can never be gotten from the MetaManager. 
@@ -25,7 +25,7 @@ If you are trying to reflect an std::vector<std::shared_ptr<const Material>>, yo
 
 	MetaType* type{};
 
-	if constexpr (Engine::Internal::sHasInternalReflect<T>)
+	if constexpr (CE::Internal::sHasInternalReflect<T>)
 	{
 		type = &AddType(ReflectAccess::GetReflectFunc<T>()());
 	}

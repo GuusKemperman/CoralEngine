@@ -6,13 +6,13 @@
 #include "World/Registry.h"
 #include "World/World.h"
 
-namespace Engine
+namespace CE
 {
-	template <typename EventT, typename Functor>
-	static void CallEvent(World& world, const EventT& event, Functor&& functor);
+	template <typename Functor>
+	static void CallEvent(World& world, const std::vector<BoundEvent>& bound, Functor&& functor);
 }
 
-void Engine::TickSystem::Update(World& world, float dt)
+void CE::TickSystem::Update(World& world, float dt)
 {
 	struct TickFunctor
 	{
@@ -36,10 +36,10 @@ void Engine::TickSystem::Update(World& world, float dt)
 		MetaAny mDtArg;
 	};
 
-	CallEvent(world, sTickEvent, TickFunctor{MetaAny{world}, MetaAny{dt}});
+	CallEvent(world, mBoundEvents, TickFunctor{MetaAny{world}, MetaAny{dt}});
 }
 
-void Engine::FixedTickSystem::Update(World& world, float)
+void CE::FixedTickSystem::Update(World& world, float)
 {
 	struct FixedTickFunctor
 	{
@@ -60,74 +60,48 @@ void Engine::FixedTickSystem::Update(World& world, float)
 
 		MetaAny mWorldArg;
 	};
-	CallEvent(world, sFixedTickEvent, FixedTickFunctor{MetaAny{world}});
+	CallEvent(world, mBoundEvents, FixedTickFunctor{MetaAny{world}});
 }
 
-template <typename EventT, typename Functor>
-void Engine::CallEvent(World& world, const EventT& event, Functor&& functor)
+template <typename Functor>
+void CE::CallEvent(World& world, const std::vector<BoundEvent>& boundEvents, Functor&& functor)
 {
 	Registry& reg = world.GetRegistry();
 
-	// We can't directly iterate over the storages,
-	// an OnTick function may spawn a component and
-	// construct a new storage, which could invalidate
-	// the iterators to the storage itself.
-
-	struct TypeToCallEventFor
+	for (const BoundEvent& boundEvent : boundEvents)
 	{
-		std::reference_wrapper<const MetaType> mType;
-		std::reference_wrapper<const MetaFunc> mEvent;
-		std::reference_wrapper<entt::sparse_set> mStorage;
-	};
+		entt::sparse_set* const storage = reg.Storage(boundEvent.mType.get().GetTypeId());
 
-	std::vector<TypeToCallEventFor> typesWithEvent{};
-
-	for (auto&& [typeHash, storage] : reg.Storage())
-	{
-		const MetaType* const type = MetaManager::Get().TryGetType(typeHash);
-
-		if (type == nullptr)
+		if (storage == nullptr)
 		{
 			continue;
 		}
 
-		const MetaFunc* const func = TryGetEvent(*type, event);
-
-		if (func != nullptr)
-		{
-			typesWithEvent.emplace_back(TypeToCallEventFor{*type, *func, storage});
-		}
-	}
-
-	for (const auto& [type, func, storage] : typesWithEvent)
-	{
-		const bool isStatic = func.get().GetProperties().Has(Props::sIsEventStaticTag);
-
-		for (const entt::entity entity : storage.get())
+		for (const entt::entity entity : *storage)
 		{
 			// Tombstone check
-			if (!storage.get().contains(entity))
+			if (!storage->contains(entity))
 			{
 				continue;
 			}
-			if (isStatic)
+			if (boundEvent.mIsStatic)
 			{
-				functor(func, std::nullopt, entity);
+				functor(boundEvent.mFunc, std::nullopt, entity);
 			}
 			else
 			{
-				functor(func, MetaAny{type.get(), storage.get().value(entity), false}, entity);
+				functor(boundEvent.mFunc, MetaAny{ boundEvent.mType.get(), storage->value(entity), false }, entity);
 			}
 		}
 	}
 }
 
-Engine::MetaType Engine::TickSystem::Reflect()
+CE::MetaType CE::TickSystem::Reflect()
 {
 	return MetaType{MetaType::T<TickSystem>{}, "TickSystem", MetaType::Base<System>{}};
 }
 
-Engine::MetaType Engine::FixedTickSystem::Reflect()
+CE::MetaType CE::FixedTickSystem::Reflect()
 {
 	return MetaType{MetaType::T<FixedTickSystem>{}, "FixedTickSystem", MetaType::Base<System>{}};
 }

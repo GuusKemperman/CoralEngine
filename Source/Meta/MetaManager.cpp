@@ -3,7 +3,7 @@
 
 #include "Meta/MetaType.h"
 
-namespace Engine::Internal
+namespace CE::Internal
 {
 	// Has to be a function to ensure it is constructed before the other static variables
 	// start calling RegisterReflectFunc
@@ -19,13 +19,13 @@ namespace Engine::Internal
 	}
 }
 
-namespace Engine
+namespace CE
 {
 	static std::unordered_map<TypeId, MetaType> mTypeByTypeId{};
 	static std::unordered_map<Name::HashType, std::reference_wrapper<MetaType>> mTypeByName{};
 }
 
-void Engine::MetaManager::PostConstruct()
+void CE::MetaManager::PostConstruct()
 {
 	for (const auto& [typeId, func] : Internal::GetTypesReflectedAtStartUp())
 	{
@@ -39,7 +39,7 @@ void Engine::MetaManager::PostConstruct()
 	}
 }
 
-Engine::MetaType& Engine::MetaManager::AddType(MetaType&& type)
+CE::MetaType& CE::MetaManager::AddType(MetaType&& type)
 {
 	if (MetaType* existingType = TryGetType(type.GetTypeId()); existingType != nullptr)
 	{
@@ -71,24 +71,24 @@ Engine::MetaType& Engine::MetaManager::AddType(MetaType&& type)
 	return returnValue;
 }
 
-Engine::MetaType* Engine::MetaManager::TryGetType(const Name typeName)
+CE::MetaType* CE::MetaManager::TryGetType(const Name typeName)
 {
 	const auto it = mTypeByName.find(typeName.GetHash());
 	return it == mTypeByName.end() ? nullptr : &it->second.get();
 }
 
-Engine::MetaType* Engine::MetaManager::TryGetType(const TypeId typeId)
+CE::MetaType* CE::MetaManager::TryGetType(const TypeId typeId)
 {
 	const auto it = mTypeByTypeId.find(typeId);
 	return it == mTypeByTypeId.end() ? nullptr : &it->second;
 }
 
-Engine::MetaManager::EachTypeT Engine::MetaManager::EachType()
+CE::MetaManager::EachTypeT CE::MetaManager::EachType()
 {
 	return { mTypeByName.begin(), mTypeByName.end() };
 }
 
-bool Engine::MetaManager::RemoveType(const TypeId typeId)
+bool CE::MetaManager::RemoveType(const TypeId typeId)
 {
 	const auto it = mTypeByTypeId.find(typeId);
 
@@ -107,7 +107,7 @@ bool Engine::MetaManager::RemoveType(const TypeId typeId)
 	return erasedFromBoth;
 }
 
-bool Engine::MetaManager::RemoveType(const Name typeName)
+bool CE::MetaManager::RemoveType(const Name typeName)
 {
 	const auto it = mTypeByTypeId.find(typeName.GetHash());
 
@@ -126,7 +126,7 @@ bool Engine::MetaManager::RemoveType(const Name typeName)
 	return erasedFromBoth;
 }
 
-bool Engine::Internal::DoesTypeExist(const TypeId typeId)
+bool CE::Internal::DoesTypeExist(const TypeId typeId)
 {
 	return MetaManager::Get().TryGetType(typeId) != nullptr;
 }

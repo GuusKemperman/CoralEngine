@@ -3,14 +3,16 @@
 #include "Assets/Core/ImportedAsset.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class Importer
 	{
 	public:
 		virtual ~Importer() = default;
 
-		virtual std::optional<std::vector<ImportedAsset>> Import(const std::filesystem::path& path) const = 0;
+		using ImportResult = std::optional<std::vector<ImportedAsset>>;
+
+		virtual ImportResult Import(const std::filesystem::path& path) const = 0;
 
 		virtual std::vector<std::filesystem::path> CanImportExtensions() const = 0;
 

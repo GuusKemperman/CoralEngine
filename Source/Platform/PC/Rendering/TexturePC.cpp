@@ -14,7 +14,7 @@
 #include "Core/Device.h"
 #include "Core/JobManager.h"
 
-Engine::Texture::Texture(AssetLoadInfo& loadInfo) :
+CE::Texture::Texture(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo),
 	mLoadedPixels(std::make_shared<STBIPixels>())
 {
@@ -25,18 +25,18 @@ Engine::Texture::Texture(AssetLoadInfo& loadInfo) :
 		});
 }
 
-Engine::Texture::Texture(Texture&& other) noexcept = default;
+CE::Texture::Texture(Texture&& other) noexcept = default;
 
-Engine::Texture::~Texture() = default;
+CE::Texture::~Texture() = default;
 
-bool Engine::Texture::IsReadyToBeSentToGpu() const
+bool CE::Texture::IsReadyToBeSentToGpu() const
 {
 	return !mHeapSlot.has_value()
 		&& mLoadedPixels != nullptr
 		&& mLoadedPixels->mPixels != nullptr;
 }
 
-void Engine::Texture::SendToGPU() const
+void CE::Texture::SendToGPU() const
 {
 	if (!IsReadyToBeSentToGpu())
 	{
@@ -126,7 +126,7 @@ void Engine::Texture::SendToGPU() const
 	self.mLoadedPixels.reset();
 }
 
-void Engine::Texture::BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
+void CE::Texture::BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
 {
 	if (!mHeapSlot.has_value())
 	{
@@ -137,7 +137,7 @@ void Engine::Texture::BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandL
 	commandList->SetGraphicsRootDescriptorTable(rootSlot, mHeapSlot->GetAddressGPU());
 }
 
-void Engine::Texture::BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
+void CE::Texture::BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
 {
 	if (!mHeapSlot.has_value())
 	{
@@ -148,7 +148,7 @@ void Engine::Texture::BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandLi
 	commandList->SetComputeRootDescriptorTable(rootSlot, mHeapSlot->GetAddressGPU());
 }
 
-int Engine::Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
+int CE::Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 {
 	switch (dxgiFormat)
 	{
@@ -177,7 +177,7 @@ int Engine::Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 	}
 }
 
-void Engine::Texture::GenerateMipmaps() const
+void CE::Texture::GenerateMipmaps() const
 {
 	//FROM: https://www.3dgep.com/learning-directx-12-4/#Generate_Mipmaps_Compute_Shader
 	//TODO: Do the required steps if resource does not support UAVs
@@ -237,8 +237,8 @@ void Engine::Texture::GenerateMipmaps() const
 	generateMipsCB.TexelSize.y = 1.0f / (float)dstHeight;
 	self.mMipmapCB->Update(&generateMipsCB, sizeof(DXGenerateMips), 0, engineDevice.GetFrameIndex());
 
-	uploadCmdList->SetPipelineState(reinterpret_cast<DXPipeline*>(engineDevice.GetMipmapPipeline())->GetPipeline().Get());
-	uploadCmdList->SetComputeRootSignature(reinterpret_cast<DXSignature*>(engineDevice.GetComputeSignature())->GetSignature().Get());
+	uploadCmdList->SetPipelineState(reinterpret_cast<ID3D12PipelineState*>(engineDevice.GetMipmapPipeline()));
+	uploadCmdList->SetComputeRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()));
 	ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
 	uploadCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
@@ -251,7 +251,7 @@ void Engine::Texture::GenerateMipmaps() const
 	uploadCmdList->Dispatch(dstWidth /8, dstHeight / 8,  1);
 }
 
-Engine::Texture::STBIPixels::~STBIPixels()
+CE::Texture::STBIPixels::~STBIPixels()
 {
 	stbi_image_free(mPixels);
 }

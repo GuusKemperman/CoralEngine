@@ -5,7 +5,7 @@
 
 #include "Core/FileIO.h"
 
-using namespace Engine;
+using namespace CE;
 using namespace std;
 
 std::string FileIO::ReadTextFile(Directory type, const std::string& path)
