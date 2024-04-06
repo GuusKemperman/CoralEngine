@@ -88,7 +88,7 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 
 	if (componentClass == nullptr)
 	{
-		LOG(LogAssets, Warning, "The class {} no longer exists and won't be deserialized.", serializedStorage.GetName());
+		LOG(LogAssets, Verbose, "The class {} no longer exists and won't be deserialized.", serializedStorage.GetName());
 		return;
 	}
 
@@ -155,7 +155,7 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 
 			if (field == nullptr)
 			{
-				LOG(LogAssets, Warning, "Could not find property whose name generated the hash {} while deserializing a component of class {}",
+				LOG(LogAssets, Verbose, "Could not find property whose name generated the hash {} while deserializing a component of class {}",
 					serializedProperty.GetName(), componentClass->GetName());
 				continue;
 			}

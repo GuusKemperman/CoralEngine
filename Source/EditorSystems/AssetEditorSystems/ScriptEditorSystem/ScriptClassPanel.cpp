@@ -85,13 +85,7 @@ void CE::ScriptEditorSystem::DisplayFunctionsOverview()
 
 	if (result.mAddButtonPressed)
 	{
-		std::string name = "New function";
-
-		while (mAsset.TryGetFunc(name) != nullptr)
-		{
-			name.append(" (1)");
-		}
-
+		const std::string name = StringFunctions::CreateUniqueName("New function", [this](std::string_view name) { return mAsset.TryGetFunc(name) == nullptr; });
 		SelectFunction(&mAsset.AddFunc(name));
 	}
 
@@ -119,18 +113,12 @@ void CE::ScriptEditorSystem::DisplayMembersOverview()
 		memberNames.emplace_back(field.GetName());
 	}
 
-	const OverviewResult result = DisplayOverview("Members", std::move(memberNames),
+	const OverviewResult result = DisplayOverview("Variables", std::move(memberNames),
 		TryGetSelectedField() == nullptr ? std::optional<Name>{} : TryGetSelectedField()->GetName());
 
 	if (result.mAddButtonPressed)
 	{
-		std::string name = "New field";
-
-		while (mAsset.TryGetField(name) != nullptr)
-		{
-			name.append(" (1)");
-		}
-
+		const std::string name = StringFunctions::CreateUniqueName("New variable", [this](std::string_view name) { return mAsset.TryGetField(name) == nullptr; });
 		SelectField(&mAsset.AddField(name));
 	}
 

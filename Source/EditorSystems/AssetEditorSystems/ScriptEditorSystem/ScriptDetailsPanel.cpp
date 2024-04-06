@@ -209,7 +209,7 @@ void CE::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
 	{
 		field.SetName(memberName);
 	}
-	std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>("Type: ", field.GetTypeName().c_str(),
+	std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>("Type", field.GetTypeName().c_str(),
 		[](const MetaType& type)
 		{
 			return CanTypeBeOwnedByScripts(type);
@@ -231,7 +231,7 @@ void CE::ParamWrapper::DisplayInspectUI(const std::string&)
 		mParam.SetName(paramName);
 	}
 
-	std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>("Type: ", 
+	std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>("Type", 
 		mParam.GetTypeName(),
 		[](const MetaType& type)
 		{

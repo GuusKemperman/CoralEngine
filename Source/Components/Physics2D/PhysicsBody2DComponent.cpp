@@ -9,6 +9,7 @@
 #ifdef EDITOR
 void CE::CollisionRules::DisplayWidget(const std::string& name)
 {
+	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 	if (ImGui::TreeNode(name.c_str()))
 	{
 		const auto currentPreset = std::find_if(sCollisionPresets.begin(), sCollisionPresets.end(), 
