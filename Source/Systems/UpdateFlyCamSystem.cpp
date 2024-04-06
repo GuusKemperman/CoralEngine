@@ -40,7 +40,7 @@ void CE::UpdateFlyCamSystem::Update(World& world, float dt)
 		Axis::Up
 	};
 
-	const glm::vec2 mouseInput = input.GetDeltaMousePosition() / world.GetViewport().GetViewportSize() * 100.0f * input.IsMouseButtonHeld(Input::MouseButton::Right, true);
+	const glm::vec2 mouseInput = input.GetDeltaMousePosition() / world.GetViewport().GetViewportSize() * 100.0f * static_cast<float>(input.IsMouseButtonHeld(Input::MouseButton::Right, true));
 
 	const glm::vec2 rotationInput
 	{
