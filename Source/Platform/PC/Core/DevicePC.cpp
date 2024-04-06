@@ -263,7 +263,7 @@ void Engine::Device::InitializeDevice()
     //CREATE ROOT SIGNATURE
     mSignature = std::make_unique<DXSignature>(12);
     mSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX);//0
-    mSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL);//1
+    mSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_ALL);//1
     mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX);//2
     mSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL);//3
     mSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL);//4

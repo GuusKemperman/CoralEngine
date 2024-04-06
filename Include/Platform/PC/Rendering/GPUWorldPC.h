@@ -25,6 +25,7 @@ namespace Engine
         {
             glm::vec4 mDir = { 0.f, 0.0f, 0.0f, 0.f };
             glm::vec4 mColorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
+            glm::mat4x4 lightMat = {};
         };
 
         struct DXPointLightInfo 
@@ -71,6 +72,17 @@ namespace Engine
             glm::vec4 mColor;
             uint32 mUseTexture;
             uint32 mPadding[3];
+        };
+
+        struct DXShadowMapInfo {
+            std::unique_ptr<DXResource> mDepthResource;
+            std::unique_ptr<DXResource> mRenderTarget;
+            DXHeapHandle mDepthHandle;
+            DXHeapHandle mDepthSRVHandle;
+            DXHeapHandle mRTHandle;
+
+            D3D12_VIEWPORT mViewport;
+            D3D12_RECT mScissorRect;
         };
     }
 
@@ -120,14 +132,17 @@ namespace Engine
         DXConstBuffer& GetModelMatrixBuffer() const { return *mConstBuffers[MODEL_MATRIX_CB]; };
         DXConstBuffer& GetBoneMatrixBuffer() const { return *mConstBuffers[FINAL_BONE_MATRIX_CB]; };
         DXConstBuffer& GetMeshColorBuffer() const { return *mConstBuffers[COLOR_CB]; };
-
+        const InfoStruct::DXShadowMapInfo*  const GetShadowMap(uint32 index) const{ return mShadowMaps[index].get(); }
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
         UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
 
+
 	private:
         void SendMaterialTexturesToGPU(const Material& mat);
+        void InitializeShadowMaps();
 
 		std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
+        std::vector<std::unique_ptr<InfoStruct::DXShadowMapInfo>> mShadowMaps;
 		InfoStruct::DXLightInfo mLights;
 
         DebugRenderingData mDebugRenderingData;

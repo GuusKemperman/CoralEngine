@@ -21,9 +21,9 @@ Engine::Renderer::Renderer()
 
 Engine::Renderer::~Renderer() = default;
 
-void Engine::Renderer::Render(const World& world)
+void Engine::Renderer::Render(const World& world, FrameBuffer& buffer)
 {
-	Render(world, Device::Get().GetDisplaySize());
+	Render(world, Device::Get().GetDisplaySize(), buffer);
 }
 
 #ifdef EDITOR
@@ -45,13 +45,13 @@ void Engine::Renderer::RenderToFrameBuffer(
 		buffer.Clear();
 	}
 
-	Render(world, buffer.GetSize());
+	Render(world, buffer.GetSize(), buffer);
 
 	buffer.Unbind();
 }
 #endif // EDITOR
 
-void Engine::Renderer::Render(const World& world, glm::vec2 viewportSize)
+void Engine::Renderer::Render(const World& world, glm::vec2 viewportSize, FrameBuffer& buffer)
 {
 	// Casting const away :(
 	WorldViewport& worldViewport = const_cast<WorldViewport&>(world.GetViewport());
@@ -69,6 +69,7 @@ void Engine::Renderer::Render(const World& world, glm::vec2 viewportSize)
 	world.GetGPUWorld().Update();
 
 	mMeshRenderer->Render(world);
+	buffer.Bind();
 	mDebugRenderer->Render(world);
 	mUIRenderer->Render(world);
 }

@@ -164,6 +164,10 @@ void Engine::MeshRenderer::Render(const World& world)
     commandList->SetPipelineState(mPBRPipeline->GetPipeline().Get());
     meshCounter = 0;
 
+    auto shadowMap = gpuWorld.GetShadowMap(0);
+    shadowMap->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
+    engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToGraphics(commandList, 16, shadowMap->mDepthSRVHandle);
+
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
         //RENDERING
@@ -301,7 +305,18 @@ void Engine::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const 
 
     for (auto [entity, lightComponent, transform] : dirLightView.each()) {        
 
-        lightComponent.BindDepthResource();
+        glm::vec4 clearColor = glm::vec4(0.f);
+        auto shadowMap = gpuWorld.GetShadowMap(lightCounter - 1);
+
+        shadowMap->mRenderTarget->ChangeState(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        shadowMap->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        engineDevice.GetDescriptorHeap(DEPTH_HEAP)->ClearDepthStencil(commandList, shadowMap->mDepthHandle);
+        engineDevice.GetDescriptorHeap(RT_HEAP)->ClearRenderTarget(commandList, shadowMap->mRTHandle, &clearColor[0]);
+
+        commandList->RSSetViewports(1, &shadowMap->mViewport);
+        commandList->RSSetScissorRects(1, &shadowMap->mScissorRect);
+        engineDevice.GetDescriptorHeap(RT_HEAP)->BindRenderTargets(commandList, &shadowMap->mRTHandle, shadowMap->mDepthHandle);
+
         gpuWorld.GetCameraBuffer().Bind(commandList, 0, lightCounter, frameIndex);
 
         {
@@ -314,10 +329,6 @@ void Engine::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const 
                     continue;
                 }
 
-                glm::mat4x4 modelMatrices[2]{};
-                modelMatrices[0] = glm::transpose(transform2.GetWorldMatrix());
-                modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-                gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
                 gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
 
                 staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();

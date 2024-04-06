@@ -16,18 +16,10 @@ namespace Engine
 
 		void OnDrawGizmos(World& world, entt::entity owner) const;
 
-	public:
-		DirectionalLightComponent();
-		~DirectionalLightComponent();
-		void BindDepthResource() const;
-
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(DirectionalLightComponent);
-
-		class Impl;
-		std::unique_ptr<Impl> mImpl;
 	};
 }
 
