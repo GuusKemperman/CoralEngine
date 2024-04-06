@@ -260,6 +260,34 @@ CE::GPUWorld::GPUWorld(const World& world)
 
 CE::GPUWorld::~GPUWorld() = default;
 
+glm::mat4 ConvertXMMATRIXToGlmMat4(const DirectX::XMMATRIX& dxMatrix)
+{
+    glm::mat4 glmMatrix;
+
+    // DirectX::XMMATRIX is row-major, but accessing it like this already accounts for the layout difference
+    glmMatrix[0][0] = dxMatrix.r[0].m128_f32[0];
+    glmMatrix[1][0] = dxMatrix.r[0].m128_f32[1];
+    glmMatrix[2][0] = dxMatrix.r[0].m128_f32[2];
+    glmMatrix[3][0] = dxMatrix.r[0].m128_f32[3];
+
+    glmMatrix[0][1] = dxMatrix.r[1].m128_f32[0];
+    glmMatrix[1][1] = dxMatrix.r[1].m128_f32[1];
+    glmMatrix[2][1] = dxMatrix.r[1].m128_f32[2];
+    glmMatrix[3][1] = dxMatrix.r[1].m128_f32[3];
+
+    glmMatrix[0][2] = dxMatrix.r[2].m128_f32[0];
+    glmMatrix[1][2] = dxMatrix.r[2].m128_f32[1];
+    glmMatrix[2][2] = dxMatrix.r[2].m128_f32[2];
+    glmMatrix[3][2] = dxMatrix.r[2].m128_f32[3];
+
+    glmMatrix[0][3] = dxMatrix.r[3].m128_f32[0];
+    glmMatrix[1][3] = dxMatrix.r[3].m128_f32[1];
+    glmMatrix[2][3] = dxMatrix.r[3].m128_f32[2];
+    glmMatrix[3][3] = dxMatrix.r[3].m128_f32[3];
+
+    return glmMatrix;
+}
+
 void CE::GPUWorld::Update()
 {
     Device& engineDevice = Device::Get();
@@ -285,7 +313,6 @@ void CE::GPUWorld::Update()
     mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
     glm::vec3 cameraPos = glm::transpose(matrixInfo.ivm)[3];
 
-
     float nearPlane = camera.mNear;
     float farPlane = camera.mFar;
 
@@ -308,8 +335,6 @@ void CE::GPUWorld::Update()
         pointLight.mRadius = lightComponent.mRange;
         mPointLights[pointLightCounter] = pointLight;
         pointLightCounter++;
-
-
     }
 
     for (auto [entity, lightComponent, transform] : dirLightView.each()) {
@@ -323,22 +348,27 @@ void CE::GPUWorld::Update()
         glm::quat quatRotation = transform.GetLocalOrientation();
         glm::vec3 baseDir = glm::vec3(0, 0, 1);
         glm::vec3 lightDirection = quatRotation * baseDir;
-
         float extent = lightComponent.mExtent;
 
-        InfoStruct::DXMatrixInfo lightCameraMap;
         glm::vec3 lightForward = transform.GetWorldForward();
-        glm::mat4x4 projection = glm::orthoLH_ZO(extent * -0.5f, extent * 0.5f, extent * 0.5f, extent * -0.5f, nearPlane, farPlane);
-        // glm::mat4x4 projection = glm::orthoLH_ZO(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+        glm::mat4x4 projection = glm::orthoLH_ZO(extent * -0.5f, extent * 0.5f, extent * -0.5f, extent * 0.5f, nearPlane, farPlane);
         glm::mat4x4 view = glm::inverse(transform.GetWorldMatrix());
-
+        
+        InfoStruct::DXMatrixInfo lightCameraMap;
         lightCameraMap.pm = glm::transpose(projection);
         lightCameraMap.vm = glm::transpose(view);
+
+        // Transform NDC space [-1,+1]^2 to texture space [0,1]^2
+        glm::mat4x4 t(
+            0.5f, 0.0f, 0.0f, 0.0f,
+            0.0f, -0.5f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.5f, 0.5f, 0.0f, 1.0f);
 
         InfoStruct::DXDirLightInfo dirLight;
         dirLight.mDir = glm::vec4(lightDirection, 1.f);
         dirLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
-        dirLight.lightMat = glm::inverse(glm::transpose(view * projection));
+        dirLight.lightMat = glm::transpose(t*projection*view);
         mDirectionalLights[dirLightCounter] = dirLight;
 
         mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&lightCameraMap, sizeof(InfoStruct::DXMatrixInfo), dirLightCounter+1, frameIndex);
@@ -547,6 +577,7 @@ void CE::GPUWorld::InitializeShadowMaps()
         depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
         depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
         depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
         auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, 2048, 2048, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
         shadowMap->mDepthResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), resourceDesc, &depthOptimizedClearValue, "DIRECTIONAL LIGHT DEPTH STENCIL");
 
@@ -555,6 +586,14 @@ void CE::GPUWorld::InitializeShadowMaps()
         depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
         depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
         shadowMap->mDepthHandle = engineDevice.GetDescriptorHeap(DEPTH_HEAP)->AllocateDepthStencil(shadowMap->mDepthResource.get(), &depthStencilDesc);
+
+        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+        srvDesc.Texture2D.MipLevels = 1;
+        srvDesc.Texture2D.MostDetailedMip = 0;
+        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        shadowMap->mDepthSRVHandle = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(shadowMap->mDepthResource.get(), &srvDesc);
 
         D3D12_CLEAR_VALUE clearValue = {};
         clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Use the format that matches your RTV format.
@@ -570,14 +609,6 @@ void CE::GPUWorld::InitializeShadowMaps()
         rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
         rtvDesc.Texture2D.MipSlice = 0;
         shadowMap-> mRTHandle = engineDevice.GetDescriptorHeap(RT_HEAP)->AllocateRenderTarget(shadowMap->mRenderTarget.get(), &rtvDesc);
-
-        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-        srvDesc.Texture2D.MipLevels = 1;
-        srvDesc.Texture2D.MostDetailedMip = 0;
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-        shadowMap->mDepthSRVHandle = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(shadowMap->mDepthResource.get(), &srvDesc);
 
         shadowMap->mViewport.Width = static_cast<FLOAT>(2048);
         shadowMap->mViewport.Height = static_cast<FLOAT>(2048);

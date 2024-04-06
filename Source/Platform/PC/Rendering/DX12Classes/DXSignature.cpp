@@ -88,7 +88,7 @@ DXSignatureBuilder& DXSignatureBuilder::AddTable(D3D12_SHADER_VISIBILITY shader,
 	return *this;
 }
 
-DXSignatureBuilder& DXSignatureBuilder::AddSampler(const uint32 shaderRegister, D3D12_SHADER_VISIBILITY shader, D3D12_TEXTURE_ADDRESS_MODE mode, D3D12_FILTER filter)
+DXSignatureBuilder& DXSignatureBuilder::AddSampler(const uint32 shaderRegister, D3D12_SHADER_VISIBILITY shader, D3D12_TEXTURE_ADDRESS_MODE mode, D3D12_FILTER filter, D3D12_STATIC_BORDER_COLOR color, D3D12_COMPARISON_FUNC comparison)
 {
 	D3D12_STATIC_SAMPLER_DESC sampler = {};
 	sampler.Filter = filter;
@@ -97,8 +97,8 @@ DXSignatureBuilder& DXSignatureBuilder::AddSampler(const uint32 shaderRegister, 
 	sampler.AddressW = mode;
 	sampler.MipLODBias = 0;
 	sampler.MaxAnisotropy = 0;
-	sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-	sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	sampler.ComparisonFunc = comparison;
+	sampler.BorderColor = color;
 	sampler.MinLOD = 0.0f;
 	sampler.MaxLOD = D3D12_FLOAT32_MAX;
 	sampler.ShaderRegister = shaderRegister;

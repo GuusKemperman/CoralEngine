@@ -78,6 +78,18 @@ CE::MeshRenderer::MeshRenderer()
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
 
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
+    v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    //CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    //rast.CullMode = D3D12_CULL_MODE_FRONT;
+    mShadowMapPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
+        //.SetRasterizer(rast)
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
+
+
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZSkinnedVertex.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     mZSkinnedPipeline = DXPipelineBuilder()
@@ -353,7 +365,7 @@ void CE::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const GPUW
     const auto dirLightView = world.GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
     int frameIndex = engineDevice.GetFrameIndex();
 
-    commandList->SetPipelineState(mZPipeline.Get());
+    commandList->SetPipelineState(mShadowMapPipeline.Get());
 
     int lightCounter = 1;
 
@@ -383,7 +395,7 @@ void CE::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const GPUW
                     continue;
                 }
 
-                gpuWorld.GetModelMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
+                gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
 
                 staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
                 meshCounter++;

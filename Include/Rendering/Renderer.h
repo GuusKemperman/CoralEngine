@@ -19,7 +19,7 @@ namespace CE
 		~Renderer() final override;
 
 	public:
-		void Render(const World& world);
+		void Render(const World& world, FrameBuffer& buffer);
 
 #ifdef EDITOR
 		void RenderToFrameBuffer(
@@ -32,7 +32,7 @@ namespace CE
 		const DebugRenderer& GetDebugRenderer() const { return *mDebugRenderer; };
 
 	private:
-		void Render(const World& world, glm::vec2 viewportSize);
+		void Render(const World& world, glm::vec2 viewportSize, FrameBuffer& buffer);
 
 		std::unique_ptr<ISubRenderer> mMeshRenderer;
 		std::unique_ptr<ISubRenderer> mUIRenderer;

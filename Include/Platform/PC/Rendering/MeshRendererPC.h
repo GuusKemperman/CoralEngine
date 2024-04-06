@@ -36,6 +36,7 @@ namespace CE
         ComPtr<ID3D12PipelineState>  mCompactClusterPipeline;
         ComPtr<ID3D12PipelineState>  mAssignLigthsPipeline;
         ComPtr<ID3D12PipelineState>  mZPipeline;
+        ComPtr<ID3D12PipelineState>  mShadowMapPipeline;
         ComPtr<ID3D12PipelineState>  mZSkinnedPipeline;
     };
 }
