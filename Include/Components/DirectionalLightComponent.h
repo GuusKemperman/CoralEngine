@@ -4,6 +4,7 @@
 namespace CE
 {
 	class World;
+	class TransformComponent;
 
 	class DirectionalLightComponent
 	{
@@ -17,6 +18,7 @@ namespace CE
 
 		void OnDrawGizmos(World& world, entt::entity owner) const;
 		glm::mat4 GetShadowProjection() const;
+		glm::mat4 GetShadowView(const World& world, const TransformComponent& transform) const;
 
 	private:
 		friend ReflectAccess;
