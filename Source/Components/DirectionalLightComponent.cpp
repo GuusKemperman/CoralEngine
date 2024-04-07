@@ -38,6 +38,11 @@ void CE::DirectionalLightComponent::OnDrawGizmos(World& world, entt::entity owne
 		Colors::Yellow);
 }
 
+glm::mat4 CE::DirectionalLightComponent::GetShadowProjection() const
+{
+	return glm::ortho(-mShadowExtent, mShadowExtent, -mShadowExtent, mShadowExtent, -mShadowNearFar, mShadowNearFar);
+}
+
 CE::MetaType CE::DirectionalLightComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<DirectionalLightComponent>{}, "DirectionalLightComponent" };
@@ -45,6 +50,10 @@ CE::MetaType CE::DirectionalLightComponent::Reflect()
 
 	metaType.AddField(&DirectionalLightComponent::mColor, "mColor").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&DirectionalLightComponent::mIntensity, "mIntensity").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&DirectionalLightComponent::mCastShadows, "mCastShadows").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&DirectionalLightComponent::mShadowExtent, "mShadowExtent").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&DirectionalLightComponent::mShadowNearFar, "mShadowNearFar").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&DirectionalLightComponent::mShadowBias, "mShadowBias").GetProperties().Add(Props::sIsScriptableTag);
 
 #ifdef EDITOR
 	BindEvent(metaType, sDrawGizmoEvent, &DirectionalLightComponent::OnDrawGizmos);
