@@ -42,11 +42,13 @@ void CE::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	const glm::vec2 mouseInput = input.GetDeltaMousePosition() / world.GetViewport().GetViewportSize() * static_cast<float>(input.IsMouseButtonHeld(Input::MouseButton::Right, true));
 
-	const glm::vec2 timeScaledRotationInput
+	glm::vec2 timeScaledRotationInput
 	{
 		mouseInput.y + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightY) * dt,
 		mouseInput.x + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightX) * dt
 	};
+
+	timeScaledRotationInput *= flyCam->mRotationSpeed;
 
 	const std::array<glm::quat, 2> timeScaledRotations
 	{

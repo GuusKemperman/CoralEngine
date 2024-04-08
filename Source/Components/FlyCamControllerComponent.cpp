@@ -22,7 +22,7 @@ void CE::FlyCamControllerComponent::ApplyTranslation(TransformComponent& transfo
 void CE::FlyCamControllerComponent::ApplyRotation(TransformComponent& transform, const std::array<glm::quat, 2>& timeScaledRotations) const
 {
 	glm::quat orientation = transform.GetWorldOrientation();
-	orientation = (timeScaledRotations[1] * mRotationSpeed) * orientation * (timeScaledRotations[0] * mRotationSpeed);
+	orientation = timeScaledRotations[1] * orientation * timeScaledRotations[0];
 	transform.SetWorldOrientation(orientation);
 }
 
