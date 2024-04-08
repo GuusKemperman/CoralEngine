@@ -348,7 +348,7 @@ void CE::GPUWorld::Update()
         float extent = lightComponent.mShadowExtent;
 
         glm::vec3 lightForward = transform.GetWorldForward();
-        glm::mat4x4 projection = glm::orthoLH_ZO(extent * -0.5f, extent * 0.5f, extent * -0.5f, extent * 0.5f, 0.01f, lightComponent.mShadowNearFar);
+        glm::mat4x4 projection = glm::orthoLH_ZO(-extent, extent, -extent, extent, -extent, extent);
         glm::mat4x4 view = lightComponent.GetShadowView(mWorld, transform);
         
         InfoStruct::DXMatrixInfo lightCameraMap;
@@ -368,6 +368,7 @@ void CE::GPUWorld::Update()
         dirLight.mLightMat = glm::transpose(t*projection*view);
         dirLight.mBias = lightComponent.mShadowBias;
         dirLight.mCastsShadows = lightComponent.mCastShadows;
+        dirLight.mNumSamples = lightComponent.mShadowSamples;
         mDirectionalLights[dirLightCounter] = dirLight;
 
         mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&lightCameraMap, sizeof(InfoStruct::DXMatrixInfo), 1, frameIndex);

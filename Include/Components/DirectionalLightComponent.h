@@ -16,6 +16,7 @@ namespace CE
 		float mShadowExtent = 100.0f;
 		float mShadowNearFar = 5000.0f;
 		float mShadowBias = 0.00015f;
+		uint32 mShadowSamples = 2;
 
 		void OnDrawGizmos(World& world, entt::entity owner) const;
 		glm::mat4 GetShadowProjection() const;
