@@ -82,7 +82,7 @@ namespace CE
         const DXHeapHandle& GetLightIndicesUAVSlot() const { return mLightIndicesUAVSlot; };
         const DXHeapHandle& GetLigthGridUAVSlot() const { return mLightGridUAVSlot; };
         const DXHeapHandle& GetPointLightCounterUAVSlot() const { return mPointLightCounterUAVSlot; };
-        const InfoStruct::DXShadowMapInfo* GetShadowMap(uint32 index) const{ return mShadowMaps[index].get(); }
+        const InfoStruct::DXShadowMapInfo* GetShadowMap() const { return mShadowMap.get(); }
 
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
         UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
@@ -101,7 +101,7 @@ namespace CE
 		InfoStruct::DXLightInfo mLights;
         std::vector<InfoStruct::DXDirLightInfo> mDirectionalLights;
         std::vector<InfoStruct::DXPointLightInfo> mPointLights;
-        std::vector<std::unique_ptr<InfoStruct::DXShadowMapInfo>> mShadowMaps;
+        std::unique_ptr<InfoStruct::DXShadowMapInfo> mShadowMap;
         InfoStruct::DXLightInfo mLightInfo;
         int mNumberOfClusters = 0;
         glm::ivec3 mClusterGrid;

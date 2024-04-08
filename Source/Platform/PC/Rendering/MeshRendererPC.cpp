@@ -171,7 +171,7 @@ void CE::MeshRenderer::Render(const World& world)
     resourceHeap->BindToGraphics(commandList, 14, gpuWorld.GetPointLigthHeapSlot());
     resourceHeap->BindToGraphics(commandList, 15, gpuWorld.GetLigthGridSRVSlot());
     resourceHeap->BindToGraphics(commandList, 16, gpuWorld.GetLightIndicesSRVSlot());
-    auto shadowMap = gpuWorld.GetShadowMap(0);
+    auto shadowMap = gpuWorld.GetShadowMap();
     shadowMap->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
     resourceHeap->BindToGraphics(commandList, 17, shadowMap->mDepthSRVHandle);
 
@@ -372,9 +372,13 @@ void CE::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const GPUW
     int lightCounter = 1;
 
     for (auto [entity, lightComponent, transform] : dirLightView.each()) {        
-
+        if (!lightComponent.mCastShadows)
+        {
+            lightCounter++;
+            continue;
+        }
         glm::vec4 clearColor = glm::vec4(0.f);
-        auto shadowMap = gpuWorld.GetShadowMap(lightCounter - 1);
+        auto shadowMap = gpuWorld.GetShadowMap();
 
         shadowMap->mRenderTarget->ChangeState(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
         shadowMap->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
@@ -385,7 +389,7 @@ void CE::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const GPUW
         commandList->RSSetScissorRects(1, &shadowMap->mScissorRect);
         engineDevice.GetDescriptorHeap(RT_HEAP)->BindRenderTargets(commandList, &shadowMap->mRTHandle, shadowMap->mDepthHandle);
 
-        gpuWorld.GetCameraBuffer().Bind(commandList, 0, lightCounter, frameIndex);
+        gpuWorld.GetCameraBuffer().Bind(commandList, 0, 1, frameIndex);
 
         {
             const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
@@ -404,6 +408,8 @@ void CE::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const GPUW
             }
         }
         lightCounter++;
+
+        return;
     }
 }
 

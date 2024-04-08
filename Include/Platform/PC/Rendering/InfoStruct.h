@@ -19,8 +19,8 @@ namespace CE::InfoStruct
         glm::vec4 mColorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
         glm::mat4x4 mLightMat = {};
         uint32 mCastsShadows = false;
-        float mBias = 0.001f;
         uint32 padding[2];
+        float mBias = 0.001f;
     };
 
     struct DXPointLightInfo
@@ -35,7 +35,8 @@ namespace CE::InfoStruct
     {
         uint32 numDirLights = 0;
         uint32 numPointLights = 0;
-        uint32 padding[2];
+        int mActiveShadowingLight = 0;
+        uint32 padding;
     };
 
     struct DXMaterialInfo

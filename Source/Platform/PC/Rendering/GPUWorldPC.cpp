@@ -130,7 +130,7 @@ CE::GPUWorld::GPUWorld(const World& world)
     mNumberOfClusters = mClusterGrid.x * mClusterGrid.y * mClusterGrid.z;
 
     // Create constant buffers
-    mConstBuffers[InfoStruct::CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 101, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
+    mConstBuffers[InfoStruct::CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 2, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::MATERIAL_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Model material info", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
@@ -139,7 +139,6 @@ CE::GPUWorld::GPUWorld(const World& world)
     mConstBuffers[InfoStruct::UI_MODEL_MAT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "UI MODEL MATRICES", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::CLUSTER_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::Clustering::DXCluster), 1, "Cluster creation data", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::CLUSTERING_CAM_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::Clustering::DXCameraClustering), 1, "Clustering camera data", FRAME_BUFFER_COUNT);
-    mShadowMaps.resize(10);
 
     // Create structured buffers
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -334,6 +333,7 @@ void CE::GPUWorld::Update()
         pointLightCounter++;
     }
 
+    mLightInfo.mActiveShadowingLight = -1;
     for (auto [entity, lightComponent, transform] : dirLightView.each()) {
 
         if(dirLightCounter >= mDirectionalLights.size())
@@ -370,7 +370,10 @@ void CE::GPUWorld::Update()
         dirLight.mCastsShadows = lightComponent.mCastShadows;
         mDirectionalLights[dirLightCounter] = dirLight;
 
-        mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&lightCameraMap, sizeof(InfoStruct::DXMatrixInfo), dirLightCounter+1, frameIndex);
+        mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&lightCameraMap, sizeof(InfoStruct::DXMatrixInfo), 1, frameIndex);
+
+        if (lightComponent.mCastShadows)
+            mLightInfo.mActiveShadowingLight = dirLightCounter;
 
         dirLightCounter++;
     }
@@ -566,63 +569,58 @@ void CE::GPUWorld::SendMaterialTexturesToGPU(const CE::Material& mat)
 
 void CE::GPUWorld::InitializeShadowMaps()
 {
-    for (int i = 0; i < mShadowMaps.size(); i++) {
-        std::unique_ptr<InfoStruct::DXShadowMapInfo>& shadowMap = mShadowMaps[i];
-        shadowMap = std::make_unique<InfoStruct::DXShadowMapInfo>();
-        Device& engineDevice = Device::Get();
-        ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
+    mShadowMap = std::make_unique<InfoStruct::DXShadowMapInfo>();
+    Device& engineDevice = Device::Get();
+    ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
-        D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-        depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
-        depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
-        depthOptimizedClearValue.DepthStencil.Stencil = 0;
+    D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+    depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+    depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+    depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
-        auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, 2048, 2048, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
-        shadowMap->mDepthResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), resourceDesc, &depthOptimizedClearValue, "DIRECTIONAL LIGHT DEPTH STENCIL");
+    auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, 2048, 2048, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+    mShadowMap->mDepthResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), resourceDesc, &depthOptimizedClearValue, "DIRECTIONAL LIGHT DEPTH STENCIL");
 
-        D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
-        depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-        depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-        depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
-        shadowMap->mDepthHandle = engineDevice.GetDescriptorHeap(DEPTH_HEAP)->AllocateDepthStencil(shadowMap->mDepthResource.get(), &depthStencilDesc);
+    D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+    depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+    mShadowMap->mDepthHandle = engineDevice.GetDescriptorHeap(DEPTH_HEAP)->AllocateDepthStencil(mShadowMap->mDepthResource.get(), &depthStencilDesc);
 
-        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-        srvDesc.Texture2D.MipLevels = 1;
-        srvDesc.Texture2D.MostDetailedMip = 0;
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-        shadowMap->mDepthSRVHandle = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(shadowMap->mDepthResource.get(), &srvDesc);
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+    srvDesc.Texture2D.MipLevels = 1;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    mShadowMap->mDepthSRVHandle = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mShadowMap->mDepthResource.get(), &srvDesc);
 
-        D3D12_CLEAR_VALUE clearValue = {};
-        clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Use the format that matches your RTV format.
-        clearValue.Color[0] = 0.f; // Red component
-        clearValue.Color[1] = 0.f; // Green component
-        clearValue.Color[2] = 0.f; // Blue component
-        clearValue.Color[3] = 0.f; // Alpha component
-        resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, 2048, 2048, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
-        shadowMap->mRenderTarget = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), resourceDesc, &clearValue, "DIRECTIONAL LIGHT RENDER TARGET");
+    D3D12_CLEAR_VALUE clearValue = {};
+    clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Use the format that matches your RTV format.
+    clearValue.Color[0] = 0.f; // Red component
+    clearValue.Color[1] = 0.f; // Green component
+    clearValue.Color[2] = 0.f; // Blue component
+    clearValue.Color[3] = 0.f; // Alpha component
+    resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, 2048, 2048, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+    mShadowMap->mRenderTarget = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), resourceDesc, &clearValue, "DIRECTIONAL LIGHT RENDER TARGET");
 
-        D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-        rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-        rtvDesc.Texture2D.MipSlice = 0;
-        shadowMap-> mRTHandle = engineDevice.GetDescriptorHeap(RT_HEAP)->AllocateRenderTarget(shadowMap->mRenderTarget.get(), &rtvDesc);
+    D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+    rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+    rtvDesc.Texture2D.MipSlice = 0;
+    mShadowMap-> mRTHandle = engineDevice.GetDescriptorHeap(RT_HEAP)->AllocateRenderTarget(mShadowMap->mRenderTarget.get(), &rtvDesc);
 
-        shadowMap->mViewport.Width = static_cast<FLOAT>(2048);
-        shadowMap->mViewport.Height = static_cast<FLOAT>(2048);
-        shadowMap->mViewport.TopLeftX = 0;
-        shadowMap->mViewport.TopLeftY = 0;
-        shadowMap->mViewport.MinDepth = 0.0f;
-        shadowMap->mViewport.MaxDepth = 1.0f;
+    mShadowMap->mViewport.Width = static_cast<FLOAT>(2048);
+    mShadowMap->mViewport.Height = static_cast<FLOAT>(2048);
+    mShadowMap->mViewport.TopLeftX = 0;
+    mShadowMap->mViewport.TopLeftY = 0;
+    mShadowMap->mViewport.MinDepth = 0.0f;
+    mShadowMap->mViewport.MaxDepth = 1.0f;
 
-        shadowMap->mScissorRect.left = 0;
-        shadowMap->mScissorRect.top = 0;
-        shadowMap->mScissorRect.right = static_cast<LONG>(shadowMap->mViewport.Width);
-        shadowMap->mScissorRect.bottom = static_cast<LONG>(shadowMap->mViewport.Height);
-
-    }
-
+    mShadowMap->mScissorRect.left = 0;
+    mShadowMap->mScissorRect.top = 0;
+    mShadowMap->mScissorRect.right = static_cast<LONG>(mShadowMap->mViewport.Width);
+    mShadowMap->mScissorRect.bottom = static_cast<LONG>(mShadowMap->mViewport.Height);
 }
 void CE::GPUWorld::UpdateClusterData(const CameraComponent& camera)
 {
