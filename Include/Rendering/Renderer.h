@@ -35,6 +35,7 @@ namespace CE
 		void Render(const World& world, glm::vec2 viewportSize, FrameBuffer& buffer);
 
 		std::unique_ptr<ISubRenderer> mMeshRenderer;
+		std::unique_ptr<ISubRenderer> mShadowMapRenderer;
 		std::unique_ptr<ISubRenderer> mUIRenderer;
 		std::unique_ptr<DebugRenderer> mDebugRenderer;
 	};

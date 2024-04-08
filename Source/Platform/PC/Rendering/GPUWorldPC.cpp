@@ -349,7 +349,7 @@ void CE::GPUWorld::Update()
 
         glm::vec3 lightForward = transform.GetWorldForward();
         glm::mat4x4 projection = glm::orthoLH_ZO(extent * -0.5f, extent * 0.5f, extent * -0.5f, extent * 0.5f, 0.01f, lightComponent.mShadowNearFar);
-        glm::mat4x4 view = glm::inverse(transform.GetWorldMatrix());
+        glm::mat4x4 view = lightComponent.GetShadowView(mWorld, transform);
         
         InfoStruct::DXMatrixInfo lightCameraMap;
         lightCameraMap.pm = glm::transpose(projection);

@@ -12,12 +12,16 @@
 #include "Rendering/MeshRenderer.h"
 #include "Rendering/UIRenderer.h"
 #include "Rendering/DebugRenderer.h"
+#include "Rendering/ShadowMapRenderer.h"
 
 CE::Renderer::Renderer()
 {
 	mMeshRenderer = std::make_unique<MeshRenderer>();
 	mUIRenderer = std::make_unique<UIRenderer>();
 	mDebugRenderer = std::make_unique<DebugRenderer>();
+	//NOTE: I needed to separate the shadow map to be able to bind the correct depth buffer again after rendering
+	//the shadow maps, idealy the class would be implemented on ***REMOVED*** too, but if u have a better idea lmk
+	mShadowMapRenderer = std::make_unique<ShadowMapRenderer>();
 }
 
 CE::Renderer::~Renderer() = default;
@@ -69,8 +73,9 @@ void CE::Renderer::Render(const World& world, glm::vec2 viewportSize, FrameBuffe
 	world.GetRegistry().RenderSystems();
 	world.GetGPUWorld().Update();
 
-	mMeshRenderer->Render(world);
+	mShadowMapRenderer->Render(world);
 	buffer.Bind();
+	mMeshRenderer->Render(world);
 	mDebugRenderer->Render(world);
 	mUIRenderer->Render(world);
 }

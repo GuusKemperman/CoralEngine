@@ -13,6 +13,9 @@
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/MeshColorComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Components/DirectionalLightComponent.h"
+
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
@@ -21,8 +24,6 @@
 
 #include "Rendering/GPUWorld.h"
 #include "Components/CameraComponent.h"
-#include "Components/PointLightComponent.h"
-#include "Components/DirectionalLightComponent.h"
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
 #include "Assets/StaticMesh.h"
@@ -78,19 +79,6 @@ CE::MeshRenderer::MeshRenderer()
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
 
-    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
-    v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
-    CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-    rast.DepthBias = 10000;
-    rast.DepthBiasClamp = 0.0f;
-    rast.SlopeScaledDepthBias = 1.0f;
-    mShadowMapPipeline = DXPipelineBuilder()
-        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
-        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
-        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
-        .SetRasterizer(rast)
-        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SHADOWMAPPING PIPELINE");
-
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZSkinnedVertex.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     mZSkinnedPipeline = DXPipelineBuilder()
@@ -100,15 +88,6 @@ CE::MeshRenderer::MeshRenderer()
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
-
-    mShadowMapSkinnedPipeline = DXPipelineBuilder()
-        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
-        .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1)
-        .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2)
-        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
-        .SetRasterizer(rast)
-        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
-        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED SHADOW MAPPING PIPELINE");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/ClusterGridCS.hlsl");
     ComPtr<ID3DBlob> cs = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
@@ -279,7 +258,6 @@ void CE::MeshRenderer::Render(const World& world)
         }
     }
 
-    RenderShadowMapsStaticMesh(world, gpuWorld);
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 }
 
@@ -366,77 +344,6 @@ void CE::MeshRenderer::HandleColorComponent(const World& world, const entt::enti
     }
 
     meshColorBuffer.Bind(commandList, 5, meshCounter, frameIndex);
-}
-
-void CE::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const GPUWorld& gpuWorld)
-{
-    Device& engineDevice = Device::Get();
-    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
-    const auto dirLightView = world.GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
-    int frameIndex = engineDevice.GetFrameIndex();
-
-    commandList->SetPipelineState(mShadowMapPipeline.Get());
-
-    int lightCounter = 1;
-    gpuWorld.GetCameraBuffer().Bind(commandList, 0, 1, frameIndex);
-
-    for (auto [entity, lightComponent, transform] : dirLightView.each()) {   
-        commandList->SetPipelineState(mShadowMapPipeline.Get());
-        if (!lightComponent.mCastShadows)
-        {
-            lightCounter++;
-            continue;
-        }
-        glm::vec4 clearColor = glm::vec4(0.f);
-        auto shadowMap = gpuWorld.GetShadowMap();
-
-        shadowMap->mRenderTarget->ChangeState(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-        shadowMap->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-        engineDevice.GetDescriptorHeap(DEPTH_HEAP)->ClearDepthStencil(commandList, shadowMap->mDepthHandle);
-        engineDevice.GetDescriptorHeap(RT_HEAP)->ClearRenderTarget(commandList, shadowMap->mRTHandle, &clearColor[0]);
-
-        commandList->RSSetViewports(1, &shadowMap->mViewport);
-        commandList->RSSetScissorRects(1, &shadowMap->mScissorRect);
-        engineDevice.GetDescriptorHeap(RT_HEAP)->BindRenderTargets(commandList, &shadowMap->mRTHandle, shadowMap->mDepthHandle);
-
-        int meshCounter = 0;
-
-        {
-            const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
-            for (auto [entity2, staticMeshComponent, transform2] : view.each()) 
-            {
-                if (!staticMeshComponent.mStaticMesh)
-                {
-                    continue;
-                }
-
-                gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
-
-                staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
-                meshCounter++;
-            }
-        }
-
-        commandList->SetPipelineState(mShadowMapSkinnedPipeline.Get());
-        {
-            const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
-            for (auto [entity2, staticMeshComponent, transform2] : view.each())
-            {
-                if (!staticMeshComponent.mSkinnedMesh)
-                {
-                    continue;
-                }
-
-                gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
-
-                staticMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
-                meshCounter++;
-            }
-        }
-        lightCounter++;
-
-        return;
-    }
 }
 
 void CE::MeshRenderer::CalculateClusterGrid(const GPUWorld& gpuWorld)
