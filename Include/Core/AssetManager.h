@@ -5,7 +5,6 @@
 #include "Assets/Core/AssetFileMetaData.h"
 #include "Assets/Core/AssetInternal.h"
 #include "Assets/Core/WeakAsset.h"
-#include "Meta/MetaTypeId.h"
 #include "Meta/MetaManager.h"
 
 namespace CE
@@ -188,8 +187,6 @@ namespace CE
 		std::unordered_map<Name::HashType, Internal::AssetInternal> mAssets{};
 
 		void OpenDirectory(const std::filesystem::path& directory);
-
-
 
 		Internal::AssetInternal* TryGetAssetInternal(Name key, TypeId typeId);
 		Internal::AssetInternal* TryGetLoadedAssetInternal(Name key, TypeId typeId);

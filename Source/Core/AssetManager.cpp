@@ -2,9 +2,7 @@
 #include "Core/AssetManager.h"
 
 #include "Core/FileIO.h"
-#include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
-#include "Assets/Importers/Importer.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaTools.h"
 #include "Meta/MetaType.h"
@@ -79,19 +77,6 @@ CE::Internal::AssetInternal* CE::AssetManager::TryGetLoadedAssetInternal(const N
 	return internalAsset;
 }
 
-void CE::AssetManager::Unload(Internal::AssetInternal& asset)
-{
-	if (asset.mAsset != nullptr)
-	{
-		LOG(LogAssets, Verbose, "Unloading {}", asset.mMetaData.mAssetName);
-		asset.mAsset.reset();
-	}
-	else
-	{
-		LOG(LogAssets, Verbose, "Asset {} is already unloaded", asset.mMetaData.mAssetName);
-	}
-}
-
 void CE::AssetManager::UnloadAllUnusedAssets()
 {
 	bool wereAnyUnloaded;
@@ -116,31 +101,12 @@ void CE::AssetManager::UnloadAllUnusedAssets()
 
 void CE::AssetManager::Load(Internal::AssetInternal& internalAsset)
 {
-	LOG(LogAssets, Verbose, "Asset manager is loading {}", internalAsset.mMetaData.mAssetName);
+	internalAsset.Load();
+}
 
-	auto& asset = internalAsset.mAsset;
-
-	if (asset != nullptr)
-	{
-		LOG(LogAssets, Warning, "Attempting to load {} twice", internalAsset.mMetaData.mAssetName);
-		return;
-	}
-
-	ASSERT_LOG(internalAsset.mFileOfOrigin.has_value(), "Attempted to load {}, but this asset was generated at runtime and should not have been unloaded to begin with", internalAsset.mAsset->GetName());
-
-	AssetLoadInfo loadInfo{ *internalAsset.mFileOfOrigin };
-
-	FuncResult constructResult = internalAsset.mMetaData.mClass.get().Construct(loadInfo);
-
-	if (constructResult.HasError())
-	{
-		LOG(LogAssets, Error, "Asset {} could not be constructed. Does it have a constructor that takes a LoadInfo&, and was this constructor reflected in your reflect function? {}",
-			internalAsset.mMetaData.mClass.get().GetName(),
-			constructResult.Error());
-		return;
-	}
-
-	asset = MakeShared<Asset>(std::move(constructResult.GetReturnValue()));
+void CE::AssetManager::Unload(Internal::AssetInternal& asset)
+{
+	asset.UnLoad();
 }
 
 void CE::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
