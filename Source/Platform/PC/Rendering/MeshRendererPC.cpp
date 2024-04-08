@@ -89,8 +89,7 @@ CE::MeshRenderer::MeshRenderer()
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
         .SetRasterizer(rast)
-        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
-
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SHADOWMAPPING PIPELINE");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZSkinnedVertex.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
@@ -101,6 +100,15 @@ CE::MeshRenderer::MeshRenderer()
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
+
+    mShadowMapSkinnedPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1)
+        .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2)
+        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .SetRasterizer(rast)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED SHADOW MAPPING PIPELINE");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/ClusterGridCS.hlsl");
     ComPtr<ID3DBlob> cs = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
@@ -370,8 +378,10 @@ void CE::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const GPUW
     commandList->SetPipelineState(mShadowMapPipeline.Get());
 
     int lightCounter = 1;
+    gpuWorld.GetCameraBuffer().Bind(commandList, 0, 1, frameIndex);
 
-    for (auto [entity, lightComponent, transform] : dirLightView.each()) {        
+    for (auto [entity, lightComponent, transform] : dirLightView.each()) {   
+        commandList->SetPipelineState(mShadowMapPipeline.Get());
         if (!lightComponent.mCastShadows)
         {
             lightCounter++;
@@ -389,11 +399,10 @@ void CE::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const GPUW
         commandList->RSSetScissorRects(1, &shadowMap->mScissorRect);
         engineDevice.GetDescriptorHeap(RT_HEAP)->BindRenderTargets(commandList, &shadowMap->mRTHandle, shadowMap->mDepthHandle);
 
-        gpuWorld.GetCameraBuffer().Bind(commandList, 0, 1, frameIndex);
+        int meshCounter = 0;
 
         {
             const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
-            int meshCounter = 0;
             for (auto [entity2, staticMeshComponent, transform2] : view.each()) 
             {
                 if (!staticMeshComponent.mStaticMesh)
@@ -404,6 +413,23 @@ void CE::MeshRenderer::RenderShadowMapsStaticMesh(const World& world, const GPUW
                 gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
 
                 staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
+                meshCounter++;
+            }
+        }
+
+        commandList->SetPipelineState(mShadowMapSkinnedPipeline.Get());
+        {
+            const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
+            for (auto [entity2, staticMeshComponent, transform2] : view.each())
+            {
+                if (!staticMeshComponent.mSkinnedMesh)
+                {
+                    continue;
+                }
+
+                gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
+
+                staticMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
                 meshCounter++;
             }
         }

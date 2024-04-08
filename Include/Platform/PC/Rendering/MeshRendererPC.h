@@ -21,7 +21,6 @@ namespace CE
         void DepthPrePass(const World& world, const GPUWorld& gpuWorld);
         void HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex);
         void RenderShadowMapsStaticMesh(const World& world, const GPUWorld& gpuWorld);
-        //TODO: RenderShadowMapsSkinnedMesh
         void CalculateClusterGrid(const GPUWorld& gpuWorld);
         void CullClusters(const World& world, const GPUWorld& gpuWorld);
         void CompactClusters(const GPUWorld& gpuWorld);
@@ -37,6 +36,7 @@ namespace CE
         ComPtr<ID3D12PipelineState>  mAssignLigthsPipeline;
         ComPtr<ID3D12PipelineState>  mZPipeline;
         ComPtr<ID3D12PipelineState>  mShadowMapPipeline;
+        ComPtr<ID3D12PipelineState>  mShadowMapSkinnedPipeline;
         ComPtr<ID3D12PipelineState>  mZSkinnedPipeline;
     };
 }
