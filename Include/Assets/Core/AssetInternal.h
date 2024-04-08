@@ -13,6 +13,9 @@ namespace CE::Internal
 	{
 		AssetInternal(AssetFileMetaData&& metaData, const std::optional<std::filesystem::path>& path);
 
+		void Load();
+		void UnLoad();
+
 		AssetFileMetaData mMetaData;
 
 		// The .asset file. Is only nullopt if this
