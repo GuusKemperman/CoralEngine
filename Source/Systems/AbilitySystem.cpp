@@ -202,6 +202,10 @@ void CE::AbilitySystem::Update(World& world, float dt)
 
 bool CE::AbilitySystem::CanAbilityBeActivated(const CharacterComponent& characterData, const AbilityInstance& ability)
 {
+    if (ability.mAbilityAsset == nullptr)
+    {
+        return false;
+    }
     return ability.mRequirementCounter >= ability.mAbilityAsset->mRequirementToUse &&
         ability.mChargesCounter < ability.mAbilityAsset->mCharges &&
         (ability.mAbilityAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
