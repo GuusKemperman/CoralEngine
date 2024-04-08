@@ -85,7 +85,7 @@ namespace CE
 	{
 		if (!IsLoaded())
 		{
-			AssetManager::Get().Load(mAssetInternal);
+			mAssetInternal.get().Load();
 			ASSERT(IsLoaded());
 		}
 
