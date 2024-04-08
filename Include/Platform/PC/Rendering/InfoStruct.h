@@ -96,7 +96,7 @@ namespace CE::InfoStruct
         glm::vec4 mColor{ 1.0f };
         float mNearPlane = 0.0f;
         float mFarPlane = 500.0f;
-        uint32 applyFog = false;
+        uint32 mApplyFog = false;
         uint32 padding = {};
     };
 

@@ -462,7 +462,7 @@ void CE::GPUWorld::Update()
         const auto view = mWorld.get().GetRegistry().View<const FogComponent>();
         for (auto [entity, fogComponent] : view.each())
         {
-            fog.applyFog = true;
+            fog.mApplyFog = true;
             fog.mColor = fogComponent.mColor;
             fog.mFarPlane = fogComponent.mFarPlane;
             fog.mNearPlane = fogComponent.mNearPlane;
