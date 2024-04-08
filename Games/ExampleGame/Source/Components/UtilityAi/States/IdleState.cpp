@@ -12,7 +12,7 @@ void Game::IdleState::OnAiTick(CE::World&, entt::entity, float)
 
 float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
 {
-	return 1.0f;
+	return 0.01f;
 }
 
 void Game::IdleState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
