@@ -76,6 +76,7 @@ CE::MetaType CE::DirectionalLightComponent::Reflect()
 	metaType.AddField(&DirectionalLightComponent::mShadowExtent, "mShadowExtent").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&DirectionalLightComponent::mShadowNearFar, "mShadowNearFar").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&DirectionalLightComponent::mShadowBias, "mShadowBias").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&DirectionalLightComponent::mShadowSamples, "mShadowSamples").GetProperties().Add(Props::sIsScriptableTag);
 
 #ifdef EDITOR
 	BindEvent(metaType, sDrawGizmoEvent, &DirectionalLightComponent::OnDrawGizmos);
