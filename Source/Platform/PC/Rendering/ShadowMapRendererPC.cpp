@@ -135,7 +135,9 @@ void CE::ShadowMapRenderer::Render(const World& world)
         }
         lightCounter++;
 
+        Device::Get().BindSwapchainRT();
         return;
     }
 
+    Device::Get().BindSwapchainRT();
 }
