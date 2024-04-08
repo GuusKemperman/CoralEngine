@@ -48,7 +48,20 @@ namespace CE
 
 	namespace Props
 	{
+		/**
+		 * \brief Can be used to check if the MetaFunc returned from TryGetEvent should be called with an instance of the component.
+		 */
 		static constexpr std::string_view sIsEventStaticTag = "sIsEventStaticTag";
+
+		/**
+		 * \brief Can be added to the OnTick or OnFixedTick event to indicate that the event should be called even when the game is paused
+		 */
+		static constexpr std::string_view sShouldTickWhilstPausedTag = "sShouldTickWhilstPausedTag";
+
+		/**
+		 * \brief Can be added to the OnTick or OnFixedTick event to indicate that the event should be called in the editor before begin play has been called.
+		 */
+		static constexpr std::string_view sShouldTickBeforeBeginPlayTag = "sShouldTickBeforeBeginPlayTag";
 	}
 
 	static constexpr Event<float(const World&, entt::entity)> sAIEvaluateEvent{ "OnAIEvaluate" };

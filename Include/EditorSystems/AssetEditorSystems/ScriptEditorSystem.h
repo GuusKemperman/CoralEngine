@@ -99,6 +99,7 @@ namespace CE
 		void DisplayDetailsPanel();
 
 		void DisplayFunctionDetails(ScriptFunc& func);
+		void DisplayEventDetails(ScriptFunc& func);
 		void DisplayNodeDetails(ScriptNode& node);
 		void DisplayMemberDetails(ScriptField& field);
 

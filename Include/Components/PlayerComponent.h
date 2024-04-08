@@ -1,7 +1,7 @@
 #pragma once
 #include "Meta/MetaReflect.h"
 
-namespace Game
+namespace CE
 {
 	class PlayerComponent
 	{

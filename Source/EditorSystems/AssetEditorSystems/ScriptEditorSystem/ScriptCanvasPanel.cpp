@@ -987,7 +987,7 @@ std::vector<CE::ScriptEditorSystem::NodeTheUserCanAdd> CE::ScriptEditorSystem::G
 		{
 			return true;
 		},
-		Input::KeyboardKey::C);
+		Input::KeyboardKey::K);
 
 	for (const MetaType& type : MetaManager::Get().EachType())
 	{

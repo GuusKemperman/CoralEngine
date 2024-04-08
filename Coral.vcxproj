@@ -524,6 +524,8 @@
   <ItemGroup>
     <ClCompile Include="Source\Assets\Core\AssetInternal.cpp" />
     <ClCompile Include="Source\Components\AnimationRootComponent.cpp" />
+    <ClCompile Include="Source\Meta\MetaProps.cpp" />
+    <ClCompile Include="Source\Components\PlayerComponent.cpp" />
     <ClCompile Include="Source\Utilities\Events.cpp" />
     <ClCompile Include="Source\Utilities\PathfindingInfo.cpp" />
     <ClCompile Include="Source\EditorSystems\ImporterSystem.cpp">
@@ -560,7 +562,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Assets\Animation\Bone.cpp" />
-    <ClCompile Include="Source\Components\Abilities\AOEComponent.cpp" />
+    <ClCompile Include="Source\Components\Abilities\AbilityLifetimeComponent.cpp" />
     <ClCompile Include="Source\Components\Abilities\ProjectileComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\AABBColliderComponent.cpp" />
     <ClCompile Include="Source\Components\UI\UIButtonComponent.cpp" />
@@ -1075,7 +1077,6 @@
     <ClCompile Include="Source\Components\NameComponent.cpp" />
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
     <ClCompile Include="Source\Components\TopDownCamControllerComponent.cpp" />
-    <ClCompile Include="Source\Systems\EventsSystem.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\ReflectNull.cpp" />
     <ClCompile Include="Source\Systems\UpdateTopDownCamSystem.cpp" />
     <ClCompile Include="Source\Platform\PC\Core\FileIOPC.cpp">
@@ -1531,6 +1532,7 @@
     <ClInclude Include="Include\Assets\Core\AssetInternal.h" />
     <ClInclude Include="Include\Assets\Core\WeakAsset.h" />
     <ClInclude Include="Include\Components\AnimationRootComponent.h" />
+    <ClInclude Include="Include\Components\PlayerComponent.h" />
     <ClInclude Include="Include\Utilities\Geometry2d.h" />
     <ClInclude Include="Include\EditorSystems\ImporterSystem.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.h" />
@@ -1539,7 +1541,7 @@
     <ClInclude Include="Include\Assets\Animation\Animation.h" />
     <ClInclude Include="Include\Assets\Importers\AnimationImporter.h" />
     <ClInclude Include="Include\Assets\Animation\BoneInfo.h" />
-    <ClInclude Include="Include\Components\Abilities\AOEComponent.h" />
+    <ClInclude Include="Include\Components\Abilities\AbilityLifetimeComponent.h" />
     <ClInclude Include="Include\Components\Abilities\EffectsOnCharacterComponent.h" />
     <ClInclude Include="Include\Components\Abilities\ProjectileComponent.h" />
     <ClCompile Include="Source\Platform\PC\Rendering\TexturePC.cpp">
@@ -1800,7 +1802,7 @@
     <ClInclude Include="Include\Scripting\ScriptEvents.h" />
     <ClInclude Include="Include\Assets\Animation\Bone.h" />
     <ClInclude Include="Include\Systems\AnimationSystem.h" />
-    <ClInclude Include="Include\Systems\EventsSystem.h" />
+    <ClInclude Include="Include\Systems\TickEventSystems.h" />
     <ClInclude Include="Include\Systems\NavigationSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem.h" />
     <ClInclude Include="Include\Systems\UISystem.h" />
@@ -1979,13 +1981,6 @@
       <Profile Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">VSVS</Profile>
       <Profile Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">VSVS</Profile>
       <Profile Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">VSVS</Profile>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
-    </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Depth_p.pssl">
-      <FileType>Document</FileType>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>

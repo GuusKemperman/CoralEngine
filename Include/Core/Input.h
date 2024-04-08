@@ -262,6 +262,9 @@ namespace CE
         /// Gets the screen position of the mouse, relative to the top-left corner of the screen.
         glm::vec2 GetMousePosition() const;
 
+        /// Gets the delta between the current and previous mouse position, relative to the top-left corner of the screen.
+        glm::vec2 GetDeltaMousePosition() const;
+
         /// Gets the mouse wheel, relative to the value it was the previous frame
         float GetMouseWheel(bool checkFocus = true) const;
 

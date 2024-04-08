@@ -30,6 +30,7 @@ namespace
     GLFWgamepadstate prev_gamepad_state[max_nr_gamepads];
 
     glm::vec2 mousepos;
+    glm::vec2 previousmousepos;
     float mousewheelDelta = 0;
 
     void cursor_position_callback(GLFWwindow*, double xpos, double ypos)
@@ -82,6 +83,7 @@ Input::~Input()
 
 void Input::NewFrame()
 {
+    previousmousepos = mousepos;
     glfwPollEvents();
 
     // update keyboard key states
@@ -216,6 +218,8 @@ bool Input::WasMouseButtonReleased(MouseButton button, bool checkFocus) const
 }
 
 glm::vec2 Input::GetMousePosition() const { return mousepos; }
+
+glm::vec2 Input::GetDeltaMousePosition() const { return mousepos - previousmousepos; }
 
 float Input::GetMouseWheel(bool checkFocus) const
 {

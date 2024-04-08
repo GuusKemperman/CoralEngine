@@ -21,6 +21,13 @@ namespace CE
 		void Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc,
 		            const std::shared_ptr<const Script>& script) const;
 
+#ifdef EDITOR
+		/**
+		 * \brief Can be used to make calls to ImGui so the user can add/remove event specific properties.
+		 */
+		virtual void OnDetailsInspect([[maybe_unused]] ScriptFunc& scriptFunc) const {}
+#endif // EDITOR
+
 		std::reference_wrapper<const EventBase> mBasedOnEvent;
 
 		std::vector<MetaFuncNamedParam> mParamsToShowToUser{};
@@ -49,27 +56,42 @@ namespace CE
 			const std::shared_ptr<const Script>& script) const override;
 	};
 
-	class ScriptTickEvent final :
+	// For both Tick and FixedTick
+	class ScriptTickEventBase :
 		public ScriptEvent
 	{
 	public:
-		ScriptTickEvent();
+		template<typename EventT>
+		ScriptTickEventBase(const EventT& event) :
+			ScriptEvent(event, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt) {}
+
+#ifdef EDITOR
+		void OnDetailsInspect(ScriptFunc& scriptFunc) const override;
+#endif // EDITOR
+	};
+
+	class ScriptTickEvent final :
+		public ScriptTickEventBase
+	{
+	public:
+		ScriptTickEvent() : ScriptTickEventBase(sTickEvent) {};
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+			const std::shared_ptr<const Script>& script) const override;
 	};
 
 	class ScriptFixedTickEvent final :
-		public ScriptEvent
+		public ScriptTickEventBase
 	{
 	public:
-		ScriptFixedTickEvent();
+		ScriptFixedTickEvent() : ScriptTickEventBase(sFixedTickEvent) {};
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+			const std::shared_ptr<const Script>& script) const override;
 	};
+	
 
 	class ScriptAITickEvent final :
 		public ScriptEvent

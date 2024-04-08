@@ -21,12 +21,12 @@ namespace CE
 		float mMaxZoom = 10.0f;
 		float mRotationAngle = 270.0f;
 		float mViewAngle = 45.0f;
-		float mCursorOffsetFactor = 5.0f;
+		float mCursorOffsetFactor = 0.0f;
 
 		float mZoomSensitivity = 3.0f;
 		float mRotateSensitivity = 100.0f;
 
-		float mHeightInterpolationfactor = 0.7f;
+		float mHeightInterpolationFactor = 0.7f;
 
 		entt::entity mTarget{entt::null};
 		glm::vec3 mTargetLocation{};
