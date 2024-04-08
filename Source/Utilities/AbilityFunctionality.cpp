@@ -3,7 +3,7 @@
 
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/ActiveAbilityComponent.h"
-#include "Components/Abilities/AOEComponent.h"
+#include "Components/Abilities/AbilityLifetimeComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/EffectsOnCharacterComponent.h"
 #include "Components/Abilities/ProjectileComponent.h"
@@ -21,35 +21,35 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<AbilityFunctionality>{}, "AbilityFunctionality" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddFunc([](entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax)
+	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyInstantEffect(*world, castByEntity, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax });
+			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax });
 
 		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
-		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	metaType.AddFunc([](entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration)
+	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyDurationalEffect(*world, castByEntity, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration);
+			ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration);
 
 		}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
-		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	metaType.AddFunc([](entt::entity castByEntity, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration, int ticks)
+	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration, int ticks)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyOverTimeEffect(*world, castByEntity, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration, ticks);
+			ApplyOverTimeEffect(*world, castByCharacterData, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration, ticks);
 
 		}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
-		entt::entity, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float, int>{}, "CastByEntity", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float, int>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	metaType.AddFunc([](const std::shared_ptr<const Prefab>& prefab, entt::entity castBy) -> entt::entity
 		{
@@ -62,31 +62,15 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			return SpawnProjectile(*world, *prefab, castBy);
+			return SpawnAbilityPrefab(*world, *prefab, castBy);
 
-		}, "SpawnProjectile", MetaFunc::ExplicitParams<
-		const std::shared_ptr<const Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
-
-	metaType.AddFunc([](const std::shared_ptr<const Prefab>& prefab, entt::entity castBy) -> entt::entity
-		{
-			if (prefab == nullptr)
-			{
-				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
-				return entt::null;
-			}
-
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
-			return SpawnAOE(*world, *prefab, castBy);
-
-		}, "SpawnAOE", MetaFunc::ExplicitParams<
+		}, "SpawnAbilityPrefab", MetaFunc::ExplicitParams<
 		const std::shared_ptr<const Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	return metaType;
 }
 
-std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, ApplyType applyType, float dealtDamageModifierOfCastByCharacter)
+std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, EffectSettings effect)
 {
 	auto& reg = world.GetRegistry();
 	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
@@ -106,56 +90,42 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 	{
 		if (effect.mStat == Stat::Health)
 		{
-			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
-			if (applyType != ApplyType::EffectOverTime)
-			{
-				auto castByCharacterComponent = reg.TryGet<CharacterComponent>(castByEntity);
-				if (castByCharacterComponent == nullptr)
-				{
-					LOG(LogAbilitySystem, Error, "Apply Effect - CastByEntity {} is not a character.", entt::to_integral(castByEntity));
-					return std::nullopt;
-				}
-				damageModifier += castByCharacterComponent->mCurrentDealtDamageModifier;
-			}
-			else
-			{
-				damageModifier += dealtDamageModifierOfCastByCharacter;
-			}
+			const float damageModifier = characterComponent->mCurrentReceivedDamageModifier + castByCharacterData.mCurrentDealtDamageModifier;
 			effect.mAmount += effect.mAmount * damageModifier * 0.01f;
 		}
 
 		effect.mAmount = -effect.mAmount;
 	}
 
-	// apply
+	// Apply
 	current += effect.mAmount;
 	if (effect.mClampToMax)
 	{
 		current = std::min(current, base);
 	}
 
-	// visual effect
+	// Visual effect
 	auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
 	if (effects == nullptr)
 	{
 		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
 		return std::nullopt;
 	}
-	effects->mVisualEffects.push_back(VisualEffect{ GetEffectColor(effect.mStat, effect.mIncreaseOrDecrease)});
+	effects->mVisualEffects.push_back(VisualEffect{ GetEffectColor(effect.mStat, effect.mIncreaseOrDecrease) });
 
 	return effect.mAmount;
 }
 
-void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration)
+void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, EffectSettings effect, float duration)
 {
-	const auto calculatedAmount = ApplyInstantEffect(world, castByEntity, affectedEntity, effect, ApplyType::Durational);
+	const auto calculatedAmount = ApplyInstantEffect(world, castByCharacterData, affectedEntity, effect);
 	if (!calculatedAmount.has_value())
 	{
 		return;
 	}
 
 	auto& reg = world.GetRegistry();
-	// we do a Get() here because we have already checked for this component in ApplyInstantEffect()
+	// We do a Get() here because we have already checked for this component in ApplyInstantEffect()
 	auto& effects = reg.Get<EffectsOnCharacterComponent>(affectedEntity);
 
 	effects.mDurationalEffects.push_back(DurationalEffect{ duration, 0.f, effect.mStat, calculatedAmount.value() });
@@ -168,7 +138,7 @@ void CE::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& charac
 	currentStat -= durationalEffect.mAmount;
 }
 
-void CE::AbilityFunctionality::ApplyOverTimeEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, EffectSettings effect, float duration, int ticks)
+void CE::AbilityFunctionality::ApplyOverTimeEffect(World& world, const CharacterComponent&, entt::entity affectedEntity, EffectSettings effect, float duration, int ticks)
 {
 	auto& reg = world.GetRegistry();
 	auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
@@ -177,74 +147,11 @@ void CE::AbilityFunctionality::ApplyOverTimeEffect(World& world, entt::entity ca
 		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
 		return;
 	}
-	auto castByEntityCharacterComponent = reg.TryGet<CharacterComponent>(castByEntity);
-	if (castByEntityCharacterComponent == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} is not a character.", entt::to_integral(castByEntity));
-		return;
-	}
 
-	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease}, castByEntityCharacterComponent->mCurrentDealtDamageModifier });
+	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease}});
 }
 
-entt::entity CE::AbilityFunctionality::SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy)
-{
-	auto& reg = world.GetRegistry();
-	auto prefabEntity = reg.CreateFromPrefab(prefab);
-
-	auto prejectileComponent = reg.TryGet<ProjectileComponent>(prefabEntity);
-	if (prejectileComponent == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "The prefab does not have a ProjectileComponent attached.")
-			return{};
-	}
-	auto activeAbility = reg.TryGet<ActiveAbilityComponent>(prefabEntity);
-	if (activeAbility == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "The prefab does not have an ActiveAbilityComponent attached.")
-			return{};
-	}
-	auto prefabTransform = reg.TryGet<TransformComponent>(prefabEntity);
-	if (prefabTransform == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "The prefab does not have a TransformComponent attached.")
-			return{};
-	}
-	auto prefabPhysicsBody = reg.TryGet<PhysicsBody2DComponent>(prefabEntity);
-	if (prefabPhysicsBody == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "The prefab does not have a PhysicsBody2DComponent attached.")
-			return{};
-	}
-	auto characterTransform = reg.TryGet<TransformComponent>(castBy);
-	if (characterTransform == nullptr)
-	{
-		LOG(LogAbilitySystem, Error, "The cast-by character does not have a TransformComponent attached.")
-			return{};
-	}
-
-	// set the cast-by character for effect calculations and team checks
-	activeAbility->mCastByCharacter = castBy;
-
-	// calculate the 2D orientation of the character
-	const glm::vec3 characterWorldPos = characterTransform->GetWorldPosition();
-	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
-
-	// translate the spawn position by a certain amount so that the projectile does not spawn inside the character mesh
-	const glm::vec2 projectileTranslation = characterDir * (characterTransform->GetWorldScale2D() + 1.f); // + 1.f arbitrary value
-	const glm::vec3 projectileTranslation3D = { projectileTranslation.x, 0.f, projectileTranslation.y };
-	const glm::vec3 projectileSpawnPos = characterWorldPos + projectileTranslation3D;
-
-	// set the position
-	prefabTransform->SetLocalPosition(projectileSpawnPos);
-
-	// set the velocity
-	prefabPhysicsBody->mLinearVelocity = characterDir * prejectileComponent->mSpeed;
-
-	return prefabEntity;
-}
-
-entt::entity CE::AbilityFunctionality::SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy)
+entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Prefab& prefab, entt::entity castBy)
 {
 	auto& reg = world.GetRegistry();
 	auto prefabEntity = reg.CreateFromPrefab(prefab);
@@ -264,17 +171,48 @@ entt::entity CE::AbilityFunctionality::SpawnAOE(World& world, const Prefab& pref
 	auto characterTransform = reg.TryGet<TransformComponent>(castBy);
 	if (characterTransform == nullptr)
 	{
-		LOG(LogAbilitySystem, Error, "The cast-by character does not have a TransformComponent attached.")
+		LOG(LogAbilitySystem, Error, "The cast-by entity does not have a TransformComponent attached.")
+			return{};
+	}
+	auto characterComponent = reg.TryGet<CharacterComponent>(castBy);
+	if (characterComponent == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "The cast-by entity does not have a CharacterComponent attached.")
 			return{};
 	}
 
-	// set the cast-by character for effect calculations and team checks
-	activeAbility->mCastByCharacter = castBy;
+	// Store a copy of the cast-by character's CharacterComponent
+	// so that effect calculations and team checks can be performed even if the character dies in the meantime.
+	activeAbility->mCastByCharacterData = *characterComponent;
 
-	// set the position
+	// Set the position.
 	const Physics& physics = world.GetPhysics();
 	const glm::vec2 pos2D = characterTransform->GetWorldPosition2D();
 	prefabTransform->SetLocalPosition(To3DRightForward(pos2D, physics.GetHeightAtPosition(pos2D)));
+
+	// Check for projectile component.
+	auto projectileComponent = reg.TryGet<ProjectileComponent>(prefabEntity);
+	if (projectileComponent != nullptr)
+	{
+		auto prefabPhysicsBody = reg.TryGet<PhysicsBody2DComponent>(prefabEntity);
+		if (prefabPhysicsBody == nullptr)
+		{
+			LOG(LogAbilitySystem, Error, "The prefab does not have a PhysicsBody2DComponent attached.")
+				return{};
+		}
+		// Calculate the 2D orientation of the character.
+		const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+		// Set the velocity.
+		prefabPhysicsBody->mLinearVelocity = characterDir * projectileComponent->mSpeed;
+
+		// Translate the spawn position by a certain amount
+		// so that the projectile does not spawn inside the character mesh.
+		//const glm::vec2 projectileTranslation = characterDir * (characterTransform->GetWorldScale2D() + 1.f); // + 1.f arbitrary value
+		//const glm::vec3 projectileTranslation3D = { projectileTranslation.x, 0.f, projectileTranslation.y };
+		//const glm::vec3 projectileSpawnPos = characterTransform->GetWorldPosition() + projectileTranslation3D;
+		//prefabTransform->SetLocalPosition(projectileSpawnPos);
+		// I will leave commented code here for future use
+	}
 
 	return prefabEntity;
 }
@@ -293,7 +231,7 @@ std::pair<float&, float&> CE::AbilityFunctionality::GetStat(Stat stat, Character
 		return { characterComponent.mBaseReceivedDamageModifier, characterComponent.mCurrentReceivedDamageModifier };
 	}
 
-	// because of the stupid warning "not all control paths return a value"
+	// Needed because of the stupid warning "not all control paths return a value".
 	return { characterComponent.mBaseHealth, characterComponent.mCurrentHealth };
 }
 

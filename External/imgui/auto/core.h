@@ -120,6 +120,7 @@ template<typename Container> bool ImGui::detail::AutoContainerTreeNode(const std
 {
 	//std::size_t size = ImGui::detail::AutoContainerSize(cont);
 	std::size_t size = cont.size();
+	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 	if (ImGui::TreeNode(name.c_str()))
 	{
 		return true;

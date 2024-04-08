@@ -34,30 +34,26 @@ void CE::UpdateTopDownCamSystem::Update(World& world, float dt)
 		return;
 	}
 
-	const float zoomDelta = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp) + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickLeftY);
+	const float zoomDelta = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp)/* + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickLeftY)*/;
 	const float timeScaledZoomDelta = zoomDelta * dt;
 
-	const float rotationInput = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowRight, Input::KeyboardKey::ArrowLeft) + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickRightX);
+	const float rotationInput = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowRight, Input::KeyboardKey::ArrowLeft)/* + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickRightX)*/;
 	const float timeScaledRotation = rotationInput * dt;
 
 	glm::vec2 cursorDistanceScreenCenter = (world.GetViewport().GetViewportSize() * 0.5f - Input::Get().GetMousePosition()) / world.GetViewport().GetViewportSize();
 	cursorDistanceScreenCenter.y *= -1.0f;
 
 	const bool emptyRotation = timeScaledRotation == 0;
-	const bool emptyZoom = timeScaledZoomDelta == 0;
-
-	if (!emptyZoom)
-	{
-		topDownController->AdjustZoom(timeScaledZoomDelta);
-	}
+	
+	topDownController->AdjustZoom(timeScaledZoomDelta);
 
 	if (!emptyRotation)
 	{
 		topDownController->RotateCameraAroundTarget(timeScaledRotation);
 	}
 
-	topDownController->ApplyTranslation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
-	topDownController->UpdateRotation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter);
+	topDownController->ApplyTranslation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter, dt);
+	topDownController->UpdateRotation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter, dt);
 }
 
 void CE::UpdateTopDownCamSystem::Render(const World& world)

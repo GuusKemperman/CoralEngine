@@ -5,7 +5,7 @@
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
-#include "Components/Pathfinding/NavMeshTargetComponent.h"
+#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Systems/AbilitySystem.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"

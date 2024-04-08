@@ -39,7 +39,7 @@ CE::Script::Script(AssetLoadInfo& loadInfo) :
 	{
 		for (const BinaryGSONObject& serializedFunc : functions->GetChildren())
 		{
-			std::optional<ScriptFunc> func = ScriptFunc::DeserializeFrom(serializedFunc, *this, loadInfo.GetVersion());
+			std::optional<ScriptFunc> func = ScriptFunc::DeserializeFrom(serializedFunc, *this, loadInfo.GetMetaData().GetAssetVersion());
 
 			if (func.has_value())
 			{
@@ -59,7 +59,7 @@ CE::Script::Script(AssetLoadInfo& loadInfo) :
 	{
 		for (const BinaryGSONObject& serializedMember : members->GetChildren())
 		{
-			std::optional<ScriptField> field = ScriptField::DeserializeFrom(serializedMember, *this, loadInfo.GetVersion());
+			std::optional<ScriptField> field = ScriptField::DeserializeFrom(serializedMember, *this, loadInfo.GetMetaData().GetAssetVersion());
 
 			if (field.has_value())
 			{
@@ -298,7 +298,7 @@ CE::MetaType* CE::Script::DeclareMetaType()
 	const uint32 alignment = std::max(std::max_element(membersToAdd.begin(), membersToAdd.end(),
 		[](const MemberToAdd& lhs, const MemberToAdd& rhs)
 		{
-			return lhs.mType.get().GetAlignment() > rhs.mType.get().GetAlignment();
+			return lhs.mType.get().GetAlignment() < rhs.mType.get().GetAlignment();
 		})->mType.get().GetAlignment(), 1u);
 
 	ASSERT(alignment < TypeInfo::sMaxAlign);
@@ -328,8 +328,16 @@ CE::MetaType* CE::Script::DeclareMetaType()
 	}
 
 	// Insert padding bytes to make sure the alignment is correct in arrays
-	size += !membersToAdd.empty() ? size % membersToAdd[0].mType.get().GetAlignment() : 0;
+	const uint32 paddingToAddToSize = size % alignment == 0 ? 0 : alignment;
+	size = (size / alignment) * alignment + paddingToAddToSize;
 	size = std::max(size, 1u);
+
+#ifdef ASSERTS_ENABLED
+	for (int i = 0; i < 64; i++)
+	{
+		ASSERT((size * i) % alignment == 0);
+	}
+#endif // ASSERTS_ENABLED
 
 	ourTypeInfo.mFlags |= size;
 	ASSERT(size < TypeInfo::sMaxSize);

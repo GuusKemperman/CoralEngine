@@ -40,9 +40,10 @@ void CE::Editor::PostConstruct()
 
 	std::ifstream editorSavedState{ pathToSavedState };
 
-	std::function<void(const MetaType&)> recursivelyStart = [this, &recursivelyStart](const MetaType& type)
+	std::function<void(const MetaType&)> recursivelyStart = [this, &recursivelyStart, &editorSavedState](const MetaType& type)
 		{
-			if (type.GetProperties().Has(Props::sEditorSystemDefaultOpenTag))
+			if (type.GetProperties().Has(Props::sEditorSystemAlwaysOpenTag)
+				|| (!editorSavedState.is_open() && type.GetProperties().Has(Props::sEditorSystemDefaultOpenTag)))
 			{
 				if (type.IsDefaultConstructible())
 				{
@@ -50,8 +51,7 @@ void CE::Editor::PostConstruct()
 				}
 				else
 				{
-					LOG(LogEditor, Error, "Could not {}, since type {} is not default constructible",
-						Props::sEditorSystemDefaultOpenTag,
+					LOG(LogEditor, Error, "Could not add system, since type {} is not default constructible",
 						type.GetName());
 				}
 			}
@@ -62,9 +62,10 @@ void CE::Editor::PostConstruct()
 			}
 		};
 
+	recursivelyStart(*editorSystemType);
+
 	if (!editorSavedState.is_open())
 	{
-		recursivelyStart(*editorSystemType);
 		return;
 	}
 
@@ -102,7 +103,8 @@ void CE::Editor::PostConstruct()
 			continue;
 		}
 
-		if (typeOfSystem->IsDefaultConstructible())
+		if (typeOfSystem->IsDefaultConstructible()
+			&& !typeOfSystem->GetProperties().Has(Props::sEditorSystemAlwaysOpenTag))
 		{
 			TryAddSystemInternal(*typeOfSystem);
 			continue;
@@ -383,7 +385,7 @@ CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>& origin
 		if (!loadInfo.has_value())
 		{
 			LOG(LogEditor, Warning, "Cannot open asset editor for {}, {} did not produce a valid AssetLoadInfo",
-				originalAsset.GetName(),
+				originalAsset.GetMetaData().GetName(),
 				originalAsset.GetFileOfOrigin()->string());
 			return nullptr;
 		}
@@ -408,7 +410,7 @@ static CONSTEVAL CE::TypeForm Test(T&&)
 
 CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadInfo)
 {
-	const MetaType& assetType = loadInfo.GetAssetClass();
+	const MetaType& assetType = loadInfo.GetMetaData().GetClass();
 	FuncResult asset = assetType.Construct(loadInfo);
 
 	if (asset.HasError())

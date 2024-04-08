@@ -17,8 +17,6 @@ namespace CE
 	template<typename T, size_t Size = std::dynamic_extent>
 	using Span = std::span<T, Size>;
 
-	using SourceLocation = std::source_location;
-
 	template <class... T>
 	std::string Format(const std::format_string<T...> fmt, T&&... args)
 	{
@@ -29,7 +27,6 @@ namespace CE
 #else // If we don't have C++20
 
 #include "Span.h"
-#include "SourceLocation.h"
 
 #ifdef _MSC_VER 
 
@@ -61,8 +58,6 @@ namespace CE
 {
 	template<typename T, size_t Size = tcb::dynamic_extent>
 	using Span = tcb::span<T, Size>;
-
-	using SourceLocation = EarlySTD::source_location;
 
 	template <class... T>
 	std::string Format(const fmt::format_string<T...> fmt, T&&... args)

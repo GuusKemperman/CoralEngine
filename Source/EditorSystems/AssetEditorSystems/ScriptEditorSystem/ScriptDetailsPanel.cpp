@@ -7,6 +7,7 @@
 #include "EditorSystems/AssetEditorSystems/ScriptEditorSystem.h"
 
 #include "Core/VirtualMachine.h"
+#include "Scripting/ScriptEvents.h"
 #include "Scripting/ScriptTools.h"
 #include "Utilities/Search.h"
 #include "Utilities/Imgui/ImguiInspect.h"
@@ -57,7 +58,11 @@ void CE::ScriptEditorSystem::DisplayDetailsPanel()
 				LOG(LogEditor, Warning, "Selecting a node that no longer exists, should not be possible");
 			}
 		}
-		else if (!func->IsEvent())
+		else if (func->IsEvent())
+		{
+			DisplayEventDetails(*func);
+		}
+		else
 		{
 			DisplayFunctionDetails(*func);
 		}
@@ -140,6 +145,12 @@ void CE::ScriptEditorSystem::DisplayFunctionDetails(ScriptFunc& func)
 	}
 }
 
+void CE::ScriptEditorSystem::DisplayEventDetails(ScriptFunc& func)
+{
+	ImGui::TextUnformatted(func.GetName().c_str());
+	func.TryGetEvent()->OnDetailsInspect(func);
+}
+
 void CE::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
 {
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
@@ -198,7 +209,7 @@ void CE::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
 	{
 		field.SetName(memberName);
 	}
-	std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>("Type: ", field.GetTypeName().c_str(),
+	std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>("Type", field.GetTypeName().c_str(),
 		[](const MetaType& type)
 		{
 			return CanTypeBeOwnedByScripts(type);
@@ -220,7 +231,7 @@ void CE::ParamWrapper::DisplayInspectUI(const std::string&)
 		mParam.SetName(paramName);
 	}
 
-	std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>("Type: ", 
+	std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>("Type", 
 		mParam.GetTypeName(),
 		[](const MetaType& type)
 		{

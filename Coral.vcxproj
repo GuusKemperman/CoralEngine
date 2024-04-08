@@ -522,7 +522,20 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Assets\Core\AssetInternal.cpp" />
+    <ClCompile Include="Source\Components\AnimationRootComponent.cpp" />
+    <ClCompile Include="Source\Meta\MetaProps.cpp" />
+    <ClCompile Include="Source\Components\PlayerComponent.cpp" />
+    <ClCompile Include="Source\Utilities\Events.cpp" />
     <ClCompile Include="Source\Utilities\PathfindingInfo.cpp" />
+    <ClCompile Include="Source\EditorSystems\ImporterSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Utilities\DrawDebugHelpers.cpp" />
     <ClCompile Include="Source\Rendering\Renderer.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.cpp">
@@ -549,7 +562,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Assets\Animation\Bone.cpp" />
-    <ClCompile Include="Source\Components\Abilities\AOEComponent.cpp" />
+    <ClCompile Include="Source\Components\Abilities\AbilityLifetimeComponent.cpp" />
     <ClCompile Include="Source\Components\Abilities\ProjectileComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\AABBColliderComponent.cpp" />
     <ClCompile Include="Source\Components\UI\UIButtonComponent.cpp" />
@@ -1025,7 +1038,7 @@
     <ClCompile Include="Source\Utilities\Geometry2d.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshAgentComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshComponent.cpp" />
-    <ClCompile Include="Source\Components\Pathfinding\NavMeshTargetComponent.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\NavMeshTargetTag.cpp" />
     <ClCompile Include="Source\Components\Physics2D\DiskColliderComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PhysicsBody2DComponent.cpp" />
     <ClCompile Include="Source\Components\Physics2D\PolygonColliderComponent.cpp" />
@@ -1064,7 +1077,6 @@
     <ClCompile Include="Source\Components\NameComponent.cpp" />
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
     <ClCompile Include="Source\Components\TopDownCamControllerComponent.cpp" />
-    <ClCompile Include="Source\Systems\EventsSystem.cpp" />
     <ClCompile Include="Source\Meta\ReflectedTypes\ReflectNull.cpp" />
     <ClCompile Include="Source\Systems\UpdateTopDownCamSystem.cpp" />
     <ClCompile Include="Source\Platform\PC\Core\FileIOPC.cpp">
@@ -1501,6 +1513,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Utilities\StaticReflection\ReflectComponentType.cpp" />
+    <ClCompile Include="Source\Utilities\StringFunctions.cpp" />
     <ClCompile Include="Source\World\Archiver.cpp" />
     <ClCompile Include="Source\World\Physics.cpp" />
     <ClCompile Include="source\World\World.cpp" />
@@ -1516,14 +1529,19 @@
     <ClCompile Include="Source\Components\UI\UISpriteComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Assets\Core\AssetInternal.h" />
+    <ClInclude Include="Include\Assets\Core\WeakAsset.h" />
+    <ClInclude Include="Include\Components\AnimationRootComponent.h" />
+    <ClInclude Include="Include\Components\PlayerComponent.h" />
     <ClInclude Include="Include\Utilities\Geometry2d.h" />
+    <ClInclude Include="Include\EditorSystems\ImporterSystem.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\GPUWorldPC.h" />
     <ClInclude Include="Include\Components\MeshColorComponent.h" />
     <ClInclude Include="Include\Assets\Animation\Animation.h" />
     <ClInclude Include="Include\Assets\Importers\AnimationImporter.h" />
     <ClInclude Include="Include\Assets\Animation\BoneInfo.h" />
-    <ClInclude Include="Include\Components\Abilities\AOEComponent.h" />
+    <ClInclude Include="Include\Components\Abilities\AbilityLifetimeComponent.h" />
     <ClInclude Include="Include\Components\Abilities\EffectsOnCharacterComponent.h" />
     <ClInclude Include="Include\Components\Abilities\ProjectileComponent.h" />
     <ClCompile Include="Source\Platform\PC\Rendering\TexturePC.cpp">
@@ -1542,6 +1560,7 @@
     <ClInclude Include="Include\Components\UI\UISpriteComponent.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Platform\PC\Rendering\InfoStruct.h" />
     <ClInclude Include="Include\Components\UI\UIButtonComponent.h" />
     <ClInclude Include="Include\Assets\SkinnedMesh.h" />
     <ClInclude Include="Include\Components\SkinnedMeshComponent.h" />
@@ -1659,7 +1678,7 @@
     <ClInclude Include="Include\Components\NameComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshAgentComponent.h" />
     <ClInclude Include="Include\Components\Pathfinding\NavMeshComponent.h" />
-    <ClInclude Include="Include\Components\Pathfinding\NavMeshTargetComponent.h" />
+    <ClInclude Include="Include\Components\Pathfinding\NavMeshTargetTag.h" />
     <ClInclude Include="Include\Components\Physics2D\DiskColliderComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PhysicsBody2DComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
@@ -1783,13 +1802,12 @@
     <ClInclude Include="Include\Scripting\ScriptEvents.h" />
     <ClInclude Include="Include\Assets\Animation\Bone.h" />
     <ClInclude Include="Include\Systems\AnimationSystem.h" />
-    <ClInclude Include="Include\Systems\EventsSystem.h" />
+    <ClInclude Include="Include\Systems\TickEventSystems.h" />
     <ClInclude Include="Include\Systems\NavigationSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem.h" />
     <ClInclude Include="Include\Systems\UISystem.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
     <ClInclude Include="Include\Utilities\AbilityFunctionality.h" />
-    <ClInclude Include="Include\Utilities\CPP20\SourceLocation.h" />
     <ClInclude Include="Include\Utilities\CPP20\Span.h" />
     <ClInclude Include="Include\Utilities\CPP20\STDAliases.h" />
     <ClInclude Include="Include\Rendering\DebugRenderer.h" />

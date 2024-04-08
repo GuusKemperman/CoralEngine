@@ -35,6 +35,6 @@ namespace CE
         };
 
     private:
-        std::unique_ptr<DXPipeline> mPipeline;
+        ComPtr<ID3D12PipelineState> mPipeline;
     };
 }

@@ -48,7 +48,20 @@ namespace CE
 
 	namespace Props
 	{
+		/**
+		 * \brief Can be used to check if the MetaFunc returned from TryGetEvent should be called with an instance of the component.
+		 */
 		static constexpr std::string_view sIsEventStaticTag = "sIsEventStaticTag";
+
+		/**
+		 * \brief Can be added to the OnTick or OnFixedTick event to indicate that the event should be called even when the game is paused
+		 */
+		static constexpr std::string_view sShouldTickWhilstPausedTag = "sShouldTickWhilstPausedTag";
+
+		/**
+		 * \brief Can be added to the OnTick or OnFixedTick event to indicate that the event should be called in the editor before begin play has been called.
+		 */
+		static constexpr std::string_view sShouldTickBeforeBeginPlayTag = "sShouldTickBeforeBeginPlayTag";
 	}
 
 	static constexpr Event<float(const World&, entt::entity)> sAIEvaluateEvent{ "OnAIEvaluate" };
@@ -219,6 +232,16 @@ namespace CE
 	template<typename EventT>
 	const MetaFunc* TryGetEvent(const MetaType& fromType, const EventT& event);
 
+	struct BoundEvent
+	{
+		std::reference_wrapper<const MetaType> mType;
+		std::reference_wrapper<const MetaFunc> mFunc;
+		bool mIsStatic{};
+	};
+
+	template <typename EventT>
+	std::vector<BoundEvent> GetAllBoundEvents(const EventT& event);
+
 	//********************************//
 	//			Implementation		  //
 	//********************************//
@@ -271,16 +294,25 @@ namespace CE
 		BindEvent<std::monostate>(type, event, func);
 	}
 
+	namespace Internal
+	{
+		const MetaFunc* TryGetEvent(const MetaType& fromType, std::string_view eventName);
+	}
+
 	template <typename EventT>
 	const MetaFunc* TryGetEvent(const MetaType& fromType, const EventT& event)
 	{
-		const MetaFunc* func = fromType.TryGetFunc(event.mName);
+		return Internal::TryGetEvent(fromType, event.mName);
+	}
 
-		if (func != nullptr
-			&& func->GetProperties().Has(Internal::sIsEventProp))
-		{
-			return func;
-		}
-		return nullptr;
+	namespace Internal
+	{
+		std::vector<BoundEvent> GetAllBoundEvents(std::string_view eventName);
+	}
+
+	template <typename EventT>
+	std::vector<BoundEvent> GetAllBoundEvents(const EventT& event)
+	{
+		return Internal::GetAllBoundEvents(event.mName);
 	}
 }

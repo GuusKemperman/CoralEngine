@@ -20,8 +20,8 @@ CE::Asset::Asset(std::string_view name, TypeId myTypeId) :
 }
 
 CE::Asset::Asset(AssetLoadInfo& loadInfo) :
-	mName(loadInfo.GetName()),
-	mTypeId(loadInfo.GetAssetClass().GetTypeId())
+	mName(loadInfo.GetMetaData().GetName()),
+	mTypeId(loadInfo.GetMetaData().GetClass().GetTypeId())
 {
 }
 
@@ -74,7 +74,7 @@ void CE::InspectAsset(const std::string& name, std::shared_ptr<const Asset>& ass
 	auto selectedAsset = Search::DisplayDropDownWithSearchBar<Asset, NullAsset>(name.c_str(), asset == nullptr ? "None" : asset->GetName().data(),
 		[assetClass](const std::variant<WeakAsset<Asset>, NullAsset>& asset)
 		{
-			return std::get<WeakAsset<Asset>>(asset).GetAssetClass().IsDerivedFrom(assetClass);
+			return std::get<WeakAsset<Asset>>(asset).GetMetaData().GetClass().IsDerivedFrom(assetClass);
 		});
 
 	if (selectedAsset.has_value())

@@ -16,7 +16,7 @@ namespace CE
 		std::optional<WeakAsset<Prefab>> receivedPrefab = DragDrop::PeekAsset<Prefab>();
 
 		if (receivedPrefab.has_value() // Check if there is currently an asset being send
-			&& receivedPrefab->GetName() != currentPrefab.GetName() // You can do some additional checks here, to filter out any assets you don't actually want to receive.
+			&& receivedPrefab->GetMetaData().GetName() != currentPrefab.GetMetaData().GetName() // You can do some additional checks here, to filter out any assets you don't actually want to receive.
 			&& DragDrop::AcceptAsset()) // Will only return true if the user released the mousebutton while hovering over the previous element.
 		{
 			// Congratulations! You just succesfully received an asset!

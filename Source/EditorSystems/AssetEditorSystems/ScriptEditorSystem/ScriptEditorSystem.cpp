@@ -165,6 +165,11 @@ void CE::ScriptEditorSystem::Tick(const float deltaTime)
 
 void CE::ScriptEditorSystem::SelectFunction(ScriptFunc* func)
 {
+	if (func != nullptr)
+	{
+		SelectField(nullptr);
+	}
+
 	if (TryGetSelectedFunc() == func)
 	{
 		return;

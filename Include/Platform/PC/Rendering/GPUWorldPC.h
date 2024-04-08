@@ -2,6 +2,7 @@
 #include "Rendering/IGPUWorld.h"
 #include "DX12Classes/DXDefines.h"
 #include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
+#include "Platform/PC/Rendering/InfoStruct.h"
 
 class DXResource;
 class DXConstBuffer;
@@ -10,69 +11,7 @@ class DXDescHeap;
 namespace CE
 {
     class Material;
-
-    namespace InfoStruct 
-    {
-        struct DXMatrixInfo 
-        {
-            glm::mat4x4 vm;
-            glm::mat4x4 pm;
-            glm::mat4x4 ivm;
-            glm::mat4x4 ipm;
-        };
-
-        struct DXDirLightInfo 
-        {
-            glm::vec4 mDir = { 0.f, 0.0f, 0.0f, 0.f };
-            glm::vec4 mColorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
-        };
-
-        struct DXPointLightInfo 
-        {
-            glm::vec4 mPosition = { 0.f, 0.0f, 0.0f, 0.f };
-            glm::vec4 mColorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
-            float mRadius = 0.f;
-            float padding[3];
-        };
-
-        struct DXLightInfo 
-        {
-            DXPointLightInfo mPointLights[MAX_LIGHTS];
-            DXDirLightInfo mDirLights[MAX_LIGHTS];
-        };
-
-        struct DXMaterialInfo
-        {
-            glm::vec4 colorFactor =  glm::vec4(1.f);
-            glm::vec4 emissiveFactor = glm::vec4(1.f);
-            float metallicFactor = 1;
-            float roughnessFactor = 1;
-            float normalScale = 1;
-            unsigned int useColorTex = 0;
-            unsigned int useEmissiveTex = 0;
-            unsigned int useMetallicRoughnessTex= 0;
-            unsigned int useNormalTex= 0;
-            unsigned int useOcclusionTex= 0;
-        };
-
-        struct DXColorMultiplierInfo
-        {
-            glm::vec4 colorMult;
-            glm::vec4 colorAdd;
-        };
-
-        enum DXStructuredBuffers 
-        {
-            MODEL_MAT_SB,
-        };
-
-        struct ColorInfo
-        {
-            glm::vec4 mColor;
-            uint32 mUseTexture;
-            uint32 mPadding[3];
-        };
-    }
+    class CameraComponent;
 
     class DebugRenderingData
     {
@@ -114,21 +53,70 @@ namespace CE
 		~GPUWorld();
 		void Update() override;
 
-        const DXConstBuffer& GetCameraBuffer() const { return *mConstBuffers[CAM_MATRIX_CB]; };
-        DXConstBuffer& GetMaterialInfoBuffer() const { return *mConstBuffers[MATERIAL_INFO_CB]; };
-        const DXConstBuffer& GetLightBuffer() const { return *mConstBuffers[LIGHT_CB]; };
-        DXConstBuffer& GetModelMatrixBuffer() const { return *mConstBuffers[MODEL_MATRIX_CB]; };
-        DXConstBuffer& GetBoneMatrixBuffer() const { return *mConstBuffers[FINAL_BONE_MATRIX_CB]; };
-        DXConstBuffer& GetMeshColorBuffer() const { return *mConstBuffers[COLOR_CB]; };
+        /// <summary>
+        /// Updating the material buffer has to happen after the mesh rendering commands have completed.
+        /// </summary>
+        void UpdateLights(int numDirLights, int numPointLights);
+        void ClearClusterData();
+
+        DXResource& GetStructuredBuffer(InfoStruct::DXStructuredBuffers structuredBuffer) const { return *mStructuredBuffers[structuredBuffer]; }
+        const DXConstBuffer& GetConstantBuffer(InfoStruct::DXConstantBuffers constantBuffer) const { return *mConstBuffers[constantBuffer]; }
+        const DXConstBuffer& GetCameraBuffer() const { return *mConstBuffers[InfoStruct::CAM_MATRIX_CB]; };
+        DXConstBuffer& GetMaterialInfoBuffer() const { return *mConstBuffers[InfoStruct::MATERIAL_INFO_CB]; };
+        const DXConstBuffer& GetLightBuffer() const { return *mConstBuffers[InfoStruct::LIGHT_CB]; };
+        DXConstBuffer& GetModelMatrixBuffer() const { return *mConstBuffers[InfoStruct::MODEL_MATRIX_CB]; };
+        DXConstBuffer& GetBoneMatrixBuffer() const { return *mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]; };
+        DXConstBuffer& GetMeshColorBuffer() const { return *mConstBuffers[InfoStruct::COLOR_CB]; };
+
+        const DXHeapHandle& GetDirLightHeapSlot() const { return mDirectionalLightsSRVSlot; };
+        const DXHeapHandle& GetPointLigthHeapSlot() const { return mPointLightsSRVSlot; };
+        const DXHeapHandle& GetCompactClusterSRVSlot() const { return mCompactClusterSRVSlot; };
+        const DXHeapHandle& GetClusterSRVSlot() const { return mClusterSRVSlot; };
+        const DXHeapHandle& GetActiveClusterSRVSlot() const { return mActiveClusterSRVSlot; };
+        const DXHeapHandle& GetLightIndicesSRVSlot() const { return mLightIndicesSRVSlot; };
+        const DXHeapHandle& GetLigthGridSRVSlot() const { return mLightGridSRVSlot; };
+
+        const DXHeapHandle& GetCompactClusterUAVSlot() const { return mCompactClusterUAVSlot; };
+        const DXHeapHandle& GetClusterUAVSlot() const { return mClusterUAVSlot; };
+        const DXHeapHandle& GetActiveClusterUAVSlot() const { return mActiveClusterUAVSlot; };
+        const DXHeapHandle& GetLightIndicesUAVSlot() const { return mLightIndicesUAVSlot; };
+        const DXHeapHandle& GetLigthGridUAVSlot() const { return mLightGridUAVSlot; };
+        const DXHeapHandle& GetPointLightCounterUAVSlot() const { return mPointLightCounterUAVSlot; };
 
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
         UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
 
+        glm::ivec3 GetClusterGrid() const { return mClusterGrid; }
+        int GetNumberOfClusters() const { return mNumberOfClusters; }
+        uint32 ReadCompactClusterCounter() const;
+
 	private:
         void SendMaterialTexturesToGPU(const Material& mat);
+        void UpdateClusterData(const CameraComponent& camera);
 
-		std::unique_ptr<DXConstBuffer> mConstBuffers[NUM_CBS];
+		std::unique_ptr<DXConstBuffer> mConstBuffers[InfoStruct::NUM_CBS];
+		std::unique_ptr<DXResource> mStructuredBuffers[InfoStruct::NUM_SB];
 		InfoStruct::DXLightInfo mLights;
+        std::vector<InfoStruct::DXDirLightInfo> mDirectionalLights;
+        std::vector<InfoStruct::DXPointLightInfo> mPointLights;
+        InfoStruct::DXLightInfo mLightInfo;
+        int mNumberOfClusters = 0;
+        glm::ivec3 mClusterGrid;
+
+        DXHeapHandle mDirectionalLightsSRVSlot;
+        DXHeapHandle mPointLightsSRVSlot;
+        DXHeapHandle mCompactClusterSRVSlot;
+        DXHeapHandle mClusterSRVSlot;
+        DXHeapHandle mActiveClusterSRVSlot;
+        DXHeapHandle mLightIndicesSRVSlot;
+        DXHeapHandle mLightGridSRVSlot;
+
+        DXHeapHandle mClusterUAVSlot;
+        DXHeapHandle mActiveClusterUAVSlot;
+        DXHeapHandle mCompactClusterUAVSlot;
+        DXHeapHandle mLightGridUAVSlot;
+        DXHeapHandle mPointLightCounterUAVSlot;
+        DXHeapHandle mLightIndicesUAVSlot;
 
         DebugRenderingData mDebugRenderingData;
         UIRenderingData mUIRenderingData;
