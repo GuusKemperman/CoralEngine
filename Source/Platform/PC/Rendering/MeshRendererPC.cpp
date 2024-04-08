@@ -157,6 +157,7 @@ void CE::MeshRenderer::Render(const World& world)
     resourceHeap->BindToGraphics(commandList, 14, gpuWorld.GetPointLigthHeapSlot());
     resourceHeap->BindToGraphics(commandList, 15, gpuWorld.GetLigthGridSRVSlot());
     resourceHeap->BindToGraphics(commandList, 16, gpuWorld.GetLightIndicesSRVSlot());
+    gpuWorld.GetConstantBuffer(InfoStruct::FOG_CB).Bind(commandList, 17, 0, frameIndex);
 
     int meshCounter = 0;
 
