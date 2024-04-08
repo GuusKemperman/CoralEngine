@@ -578,7 +578,7 @@ void CE::GPUWorld::InitializeShadowMaps()
     depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
     depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
-    auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, 2048, 2048, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+    auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, 4096, 4096, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
     mShadowMap->mDepthResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), resourceDesc, &depthOptimizedClearValue, "DIRECTIONAL LIGHT DEPTH STENCIL");
 
     D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -601,7 +601,7 @@ void CE::GPUWorld::InitializeShadowMaps()
     clearValue.Color[1] = 0.f; // Green component
     clearValue.Color[2] = 0.f; // Blue component
     clearValue.Color[3] = 0.f; // Alpha component
-    resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, 2048, 2048, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+    resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, 4096, 4096, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
     mShadowMap->mRenderTarget = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), resourceDesc, &clearValue, "DIRECTIONAL LIGHT RENDER TARGET");
 
     D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
@@ -610,8 +610,8 @@ void CE::GPUWorld::InitializeShadowMaps()
     rtvDesc.Texture2D.MipSlice = 0;
     mShadowMap-> mRTHandle = engineDevice.GetDescriptorHeap(RT_HEAP)->AllocateRenderTarget(mShadowMap->mRenderTarget.get(), &rtvDesc);
 
-    mShadowMap->mViewport.Width = static_cast<FLOAT>(2048);
-    mShadowMap->mViewport.Height = static_cast<FLOAT>(2048);
+    mShadowMap->mViewport.Width = static_cast<FLOAT>(4096);
+    mShadowMap->mViewport.Height = static_cast<FLOAT>(4096);
     mShadowMap->mViewport.TopLeftX = 0;
     mShadowMap->mViewport.TopLeftY = 0;
     mShadowMap->mViewport.MinDepth = 0.0f;
