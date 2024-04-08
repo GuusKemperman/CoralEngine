@@ -161,6 +161,11 @@ void CE::AbilitySystem::Update(World& world, float dt)
         // Create abilities
         for (auto& ability : abilities.mAbilitiesToInput)
         {
+            if (ability.mAbilityAsset == nullptr)
+            {
+                continue;
+            }
+
             // Update counter
             switch (ability.mAbilityAsset->mRequirementType)
             {
