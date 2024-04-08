@@ -80,13 +80,15 @@ CE::MeshRenderer::MeshRenderer()
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
-    //CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-    //rast.CullMode = D3D12_CULL_MODE_FRONT;
+    CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    rast.DepthBias = 10000;
+    rast.DepthBiasClamp = 0.0f;
+    rast.SlopeScaledDepthBias = 1.0f;
     mShadowMapPipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
-        //.SetRasterizer(rast)
+        .SetRasterizer(rast)
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
 
 

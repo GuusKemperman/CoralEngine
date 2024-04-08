@@ -313,9 +313,6 @@ void CE::GPUWorld::Update()
     mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
     glm::vec3 cameraPos = glm::transpose(matrixInfo.ivm)[3];
 
-    float nearPlane = camera.mNear;
-    float farPlane = camera.mFar;
-
     // Update lights
     const auto pointLightView = mWorld.get().GetRegistry().View<const PointLightComponent, const TransformComponent>();
     const auto dirLightView = mWorld.get().GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
@@ -348,10 +345,10 @@ void CE::GPUWorld::Update()
         glm::quat quatRotation = transform.GetLocalOrientation();
         glm::vec3 baseDir = glm::vec3(0, 0, 1);
         glm::vec3 lightDirection = quatRotation * baseDir;
-        float extent = lightComponent.mExtent;
+        float extent = lightComponent.mShadowExtent;
 
         glm::vec3 lightForward = transform.GetWorldForward();
-        glm::mat4x4 projection = glm::orthoLH_ZO(extent * -0.5f, extent * 0.5f, extent * -0.5f, extent * 0.5f, nearPlane, farPlane);
+        glm::mat4x4 projection = glm::orthoLH_ZO(extent * -0.5f, extent * 0.5f, extent * -0.5f, extent * 0.5f, 0.01f, lightComponent.mShadowNearFar);
         glm::mat4x4 view = glm::inverse(transform.GetWorldMatrix());
         
         InfoStruct::DXMatrixInfo lightCameraMap;
@@ -368,7 +365,9 @@ void CE::GPUWorld::Update()
         InfoStruct::DXDirLightInfo dirLight;
         dirLight.mDir = glm::vec4(lightDirection, 1.f);
         dirLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
-        dirLight.lightMat = glm::transpose(t*projection*view);
+        dirLight.mLightMat = glm::transpose(t*projection*view);
+        dirLight.mBias = lightComponent.mShadowBias;
+        dirLight.mCastsShadows = lightComponent.mCastShadows;
         mDirectionalLights[dirLightCounter] = dirLight;
 
         mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&lightCameraMap, sizeof(InfoStruct::DXMatrixInfo), dirLightCounter+1, frameIndex);
