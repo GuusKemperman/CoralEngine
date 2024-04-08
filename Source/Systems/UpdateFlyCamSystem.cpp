@@ -28,9 +28,9 @@ void CE::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	Input& input = Input::Get();
 
-	movementInput[Axis::Forward] = input.GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S) + -input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftY);
-	movementInput[Axis::Up] = input.GetKeyboardAxis(Input::KeyboardKey::E, Input::KeyboardKey::Q);;
-	movementInput[Axis::Right] =  input.GetKeyboardAxis(Input::KeyboardKey::D, Input::KeyboardKey::A) + input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftX);
+	movementInput[Axis::Forward] = input.GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S) * input.IsKeyboardKeyHeld(Input::KeyboardKey::LeftAlt) + -input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftY);
+	movementInput[Axis::Up] = input.GetKeyboardAxis(Input::KeyboardKey::E, Input::KeyboardKey::Q) * input.IsKeyboardKeyHeld(Input::KeyboardKey::LeftAlt);
+	movementInput[Axis::Right] =  input.GetKeyboardAxis(Input::KeyboardKey::D, Input::KeyboardKey::A) * input.IsKeyboardKeyHeld(Input::KeyboardKey::LeftAlt) + input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftX);
 
 	const glm::vec3 timeScaledMovementInput = movementInput * dt;
 
@@ -40,13 +40,15 @@ void CE::UpdateFlyCamSystem::Update(World& world, float dt)
 		Axis::Up
 	};
 
-	const glm::vec2 rotationInput
+	const glm::vec2 mouseInput = input.GetDeltaMousePosition() / world.GetViewport().GetViewportSize() * static_cast<float>(input.IsMouseButtonHeld(Input::MouseButton::Right, true));
+
+	glm::vec2 timeScaledRotationInput
 	{
-		input.GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp) + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightY),
-		input.GetKeyboardAxis(Input::KeyboardKey::ArrowRight, Input::KeyboardKey::ArrowLeft) + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightX),
+		mouseInput.y + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightY) * dt,
+		mouseInput.x + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightX) * dt
 	};
 
-	const glm::vec2 timeScaledRotationInput = rotationInput * dt;
+	timeScaledRotationInput *= flyCam->mRotationSpeed;
 
 	const std::array<glm::quat, 2> timeScaledRotations
 	{
