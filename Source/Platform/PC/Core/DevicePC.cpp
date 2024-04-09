@@ -322,12 +322,13 @@ void CE::Device::InitializeDevice()
         .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8)//16  //Light indices buffer
         .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 9)//17  //Shadow maps
 
-        .AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP) //18  //Sampler
+        .AddCBuffer(8, D3D12_SHADER_VISIBILITY_PIXEL) //18  //Fog info buffer
+        .AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP) //19  //Sampler
         .AddSampler(1, D3D12_SHADER_VISIBILITY_PIXEL,
                        D3D12_TEXTURE_ADDRESS_MODE_WRAP,
                        D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
                        D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE,
-                       D3D12_COMPARISON_FUNC_LESS_EQUAL) //18  //Sampler
+                       D3D12_COMPARISON_FUNC_LESS_EQUAL) //20  //Sampler
         .Build(mDevice, L"MAIN ROOT SIGNATURE");
 
     //COMPUTE ROOT SIGNATURE

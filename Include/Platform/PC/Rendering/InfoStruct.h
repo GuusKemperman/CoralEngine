@@ -94,6 +94,7 @@ namespace CE::InfoStruct
         FINAL_BONE_MATRIX_CB,
         COLOR_CB,
         UI_MODEL_MAT_CB,
+        FOG_CB,
         NUM_CBS
     };
 
@@ -106,6 +107,14 @@ namespace CE::InfoStruct
 
         D3D12_VIEWPORT mViewport;
         D3D12_RECT mScissorRect;
+    };
+    
+    struct DXFogInfo {
+        glm::vec4 mColor{ 1.0f };
+        float mNearPlane = 0.0f;
+        float mFarPlane = 500.0f;
+        uint32 mApplyFog = false;
+        uint32 padding = {};
     };
 
     namespace Clustering

@@ -16,6 +16,7 @@
 #include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Components/FogComponent.h"
 #include "Rendering/GPUWorld.h"
 
 #include "Platform/PC/Core/DevicePC.h"
@@ -139,7 +140,8 @@ CE::GPUWorld::GPUWorld(const World& world)
     mConstBuffers[InfoStruct::UI_MODEL_MAT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "UI MODEL MATRICES", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::CLUSTER_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::Clustering::DXCluster), 1, "Cluster creation data", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::CLUSTERING_CAM_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::Clustering::DXCameraClustering), 1, "Clustering camera data", FRAME_BUFFER_COUNT);
-
+    mConstBuffers[InfoStruct::FOG_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXFogInfo), 1, "Fog info", FRAME_BUFFER_COUNT);
+    
     // Create structured buffers
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
     auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXDirLightInfo) * 10, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
@@ -496,6 +498,19 @@ void CE::GPUWorld::Update()
 
             meshCounter++;
         }
+    }
+
+    {
+        InfoStruct::DXFogInfo fog{};
+        const auto view = mWorld.get().GetRegistry().View<const FogComponent>();
+        for (auto [entity, fogComponent] : view.each())
+        {
+            fog.mApplyFog = true;
+            fog.mColor = fogComponent.mColor;
+            fog.mFarPlane = fogComponent.mFarPlane;
+            fog.mNearPlane = fogComponent.mNearPlane;
+        }
+        mConstBuffers[InfoStruct::FOG_CB]->Update(&fog, sizeof(InfoStruct::DXFogInfo), 0, frameIndex);
     }
 
     UpdateClusterData(camera);
