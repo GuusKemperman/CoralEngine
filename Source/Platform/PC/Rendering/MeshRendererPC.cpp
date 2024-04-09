@@ -281,10 +281,6 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
                 continue;
             }
 
-            glm::mat4x4 modelMatrices[2]{};
-            modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-            gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
             gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
 
             staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
@@ -304,14 +300,8 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
                 continue;
             }
 
-            glm::mat4x4 modelMatrices[2]{};
-            modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-            gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
             gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
 
-            const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
-            gpuWorld.GetBoneMatrixBuffer().Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
             gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
 
             skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
@@ -402,11 +392,8 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
 
     int meshCounter = 0;
     const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
-    for (auto [entity, staticMeshComponent, transform] : view.each()) {
-        glm::mat4x4 modelMatrices[2]{};
-        modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-        modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-        gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+    for (auto [entity, staticMeshComponent, transform] : view.each())
+    {
         gpuWorld.GetModelMatrixBuffer().Bind(commandList, 4, meshCounter, frameIndex);
 
         if (!staticMeshComponent.mStaticMesh)
@@ -420,15 +407,10 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     const auto skinnedView = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
-    for (auto [entity, skinnedMeshComponent, transform] : skinnedView.each()) {
-        glm::mat4x4 modelMatrices[2]{};
-        modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-        modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-        gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+    for (auto [entity, skinnedMeshComponent, transform] : skinnedView.each())
+    {
         gpuWorld.GetModelMatrixBuffer().Bind(commandList, 4, meshCounter, frameIndex);
 
-        const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
-        gpuWorld.GetBoneMatrixBuffer().Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
         gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
 
         if (!skinnedMeshComponent.mSkinnedMesh)

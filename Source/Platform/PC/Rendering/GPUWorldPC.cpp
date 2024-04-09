@@ -259,34 +259,6 @@ CE::GPUWorld::GPUWorld(const World& world)
 
 CE::GPUWorld::~GPUWorld() = default;
 
-glm::mat4 ConvertXMMATRIXToGlmMat4(const DirectX::XMMATRIX& dxMatrix)
-{
-    glm::mat4 glmMatrix;
-
-    // DirectX::XMMATRIX is row-major, but accessing it like this already accounts for the layout difference
-    glmMatrix[0][0] = dxMatrix.r[0].m128_f32[0];
-    glmMatrix[1][0] = dxMatrix.r[0].m128_f32[1];
-    glmMatrix[2][0] = dxMatrix.r[0].m128_f32[2];
-    glmMatrix[3][0] = dxMatrix.r[0].m128_f32[3];
-
-    glmMatrix[0][1] = dxMatrix.r[1].m128_f32[0];
-    glmMatrix[1][1] = dxMatrix.r[1].m128_f32[1];
-    glmMatrix[2][1] = dxMatrix.r[1].m128_f32[2];
-    glmMatrix[3][1] = dxMatrix.r[1].m128_f32[3];
-
-    glmMatrix[0][2] = dxMatrix.r[2].m128_f32[0];
-    glmMatrix[1][2] = dxMatrix.r[2].m128_f32[1];
-    glmMatrix[2][2] = dxMatrix.r[2].m128_f32[2];
-    glmMatrix[3][2] = dxMatrix.r[2].m128_f32[3];
-
-    glmMatrix[0][3] = dxMatrix.r[3].m128_f32[0];
-    glmMatrix[1][3] = dxMatrix.r[3].m128_f32[1];
-    glmMatrix[2][3] = dxMatrix.r[3].m128_f32[2];
-    glmMatrix[3][3] = dxMatrix.r[3].m128_f32[3];
-
-    return glmMatrix;
-}
-
 void CE::GPUWorld::Update()
 {
     Device& engineDevice = Device::Get();
@@ -451,6 +423,12 @@ void CE::GPUWorld::Update()
             materialInfo.uvScale = glm::vec4(uvScale, uvScale, 1.f, 1.f);
 
             mConstBuffers[InfoStruct::MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
+
+            glm::mat4x4 modelMatrices[2]{};
+            modelMatrices[0] = glm::transpose(transformComponent.GetWorldMatrix());
+            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
+            mConstBuffers[InfoStruct::MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+
             meshCounter++;
         }
     }
@@ -507,6 +485,15 @@ void CE::GPUWorld::Update()
             }
 
             mConstBuffers[InfoStruct::MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
+
+            glm::mat4x4 modelMatrices[2]{};
+            modelMatrices[0] = glm::transpose(transformComponent.GetWorldMatrix());
+            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
+            mConstBuffers[InfoStruct::MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+
+            const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
+            mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]->Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
+
             meshCounter++;
         }
     }
