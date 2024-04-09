@@ -63,7 +63,7 @@ namespace CE
 
 		if (type.GetProperties().Has(Props::sIsScriptableTag))
 		{
-			addComponentFunc.GetProperties().Add(Props::sIsScriptableTag);
+			addComponentFunc.GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 		}
 
 		Internal::ReflectComponentType(type, isEmpty);
