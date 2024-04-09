@@ -57,10 +57,10 @@ std::pair<float, entt::entity> Game::ChasingState::GetBestScoreAndTarget(
 
 		if (distance < mRadius)
 		{
-			score = 5.f;
+			score = 1 / distance;
 		}
 
-		score = std::max(0.0f, std::min(mRadius, score));
+		//score = std::max(0.0f, std::min(mRadius, score));
 
 		if (highestScore < score)
 		{

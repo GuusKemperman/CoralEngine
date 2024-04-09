@@ -206,24 +206,28 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			ImGui::SetItemTooltip("Stop");
 		}
 
+		// World will not change anymore
+		World& world = GetWorld();
+		World::PushWorld(world);
+
 		const glm::vec2 fpsCursorPos = { viewportPos.x + mViewportWidth - 60.0f, 0.0f };
 		ImGui::SetCursorPos(fpsCursorPos);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.3f);
 		ImGui::TextUnformatted(Format("FPS {:.1f}", 1.0f / mDeltaTimeRunningAverage).data());
 
-		const std::string viewportSizeText = Format("{}x{}", static_cast<int>(GetWorld().GetViewport().GetViewportSize().x), static_cast<int>(GetWorld().GetViewport().GetViewportSize().y));
+		const std::string viewportSizeText = Format("{}x{}", static_cast<int>(world.GetViewport().GetViewportSize().x), static_cast<int>(world.GetViewport().GetViewportSize().y));
 		ImGui::SetCursorPosX(viewportPos.x + mViewportWidth - ImGui::CalcTextSize(viewportSizeText.c_str()).x - 10.0f);
 
 		ImGui::TextUnformatted(viewportSizeText.c_str());
 		ImGui::PopStyleVar();
 
 		{
-			const auto possibleCamerasView = GetWorld().GetRegistry().View<CameraComponent>();
+			const auto possibleCamerasView = world.GetRegistry().View<CameraComponent>();
 
 			if (possibleCamerasView.size() > 1)
 			{
-				const entt::entity cameraEntity = CameraComponent::GetSelected(GetWorld());
+				const entt::entity cameraEntity = CameraComponent::GetSelected(world);
 
 				ImGui::SetCursorPos({ fpsCursorPos.x - ImGui::CalcTextSize(ICON_FA_CAMERA).x - 10.0f, fpsCursorPos.y });
 
@@ -236,9 +240,9 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 				{
 					for (entt::entity possibleCamera : possibleCamerasView)
 					{
-						if (ImGui::MenuItem(NameComponent::GetDisplayName(GetWorld().GetRegistry(), possibleCamera).c_str(), nullptr, possibleCamera == cameraEntity))
+						if (ImGui::MenuItem(NameComponent::GetDisplayName(world.GetRegistry(), possibleCamera).c_str(), nullptr, possibleCamera == cameraEntity))
 						{
-							CameraComponent::Select(GetWorld(), possibleCamera);
+							CameraComponent::Select(world, possibleCamera);
 						}
 					}
 					ImGui::EndPopup();
@@ -249,10 +253,12 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		drawList->ChannelsSetCurrent(0);
 		ImGui::SetCursorPos(viewportPos);
 
-		GetWorld().Tick(deltaTime);
-		WorldViewportPanel::Display(GetWorld(), *mViewportFrameBuffer, &mSelectedEntities);
+		world.Tick(deltaTime);
 
+		WorldViewportPanel::Display(world, *mViewportFrameBuffer, &mSelectedEntities);
 		drawList->ChannelsMerge();
+
+		World::PopWorld();
 	}
 	ImGui::EndChild();
 
@@ -260,17 +266,22 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 	if (ImGui::BeginChild("HierarchyAndDetailsWindow", { mHierarchyAndDetailsWidth, 0.0f }))
 	{
+		World& world = GetWorld();
+		World::PushWorld(world);
+
 		ImGui::PushID(2); // Second splitter requires new ID
 		ImGui::Splitter(false, &mHierarchyHeight, &mDetailsHeight);
 		ImGui::PopID();
 
 		ImGui::BeginChild("WorldHierarchy", { 0.0f, mHierarchyHeight });
-		WorldHierarchy::Display(GetWorld(), &mSelectedEntities);
+		WorldHierarchy::Display(world, &mSelectedEntities);
 		ImGui::EndChild();
 
 		ImGui::BeginChild("WorldDetails", { 0.0f, mDetailsHeight });
-		WorldDetails::Display(GetWorld(), mSelectedEntities);
+		WorldDetails::Display(world, mSelectedEntities);
 		ImGui::EndChild();
+
+		World::PopWorld();
 	}
 
 	ImGui::EndChild();
