@@ -87,7 +87,8 @@ std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const
 
 		if (distance < mRadius)
 		{
-			score = 10.0f;
+			score = 1 / distance;
+			score += 1 / mRadius;
 		}
 
 		if (highestScore < score)
