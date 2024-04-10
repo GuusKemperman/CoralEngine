@@ -284,7 +284,6 @@ void CE::GPUWorld::Update()
     matrixInfo.ipm = glm::inverse(matrixInfo.pm);
     matrixInfo.ivm = glm::inverse(matrixInfo.vm);
     mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
-    glm::vec3 cameraPos = glm::transpose(matrixInfo.ivm)[3];
 
     // Update lights
     const auto pointLightView = mWorld.get().GetRegistry().View<const PointLightComponent, const TransformComponent>();

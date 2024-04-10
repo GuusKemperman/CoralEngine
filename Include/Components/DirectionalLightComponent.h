@@ -1,6 +1,5 @@
 #pragma once
 #include "Meta/MetaReflect.h"
-#include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 
 namespace CE
 {

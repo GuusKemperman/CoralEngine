@@ -68,7 +68,8 @@ namespace CE::InfoStruct
         uint32 mPadding[3];
     };
 
-    enum DXStructuredBuffers {
+    enum DXStructuredBuffers
+    {
         MODEL_MAT_SB,
         DIRECTIONAL_LIGHT_SB,
         POINT_LIGHT_SB,
@@ -84,7 +85,8 @@ namespace CE::InfoStruct
         NUM_SB
     };
 
-    enum DXConstantBuffers {
+    enum DXConstantBuffers
+    {
         CAM_MATRIX_CB,
         LIGHT_CB,
         MATERIAL_INFO_CB,
@@ -98,7 +100,8 @@ namespace CE::InfoStruct
         NUM_CBS
     };
 
-    struct DXShadowMapInfo {
+    struct DXShadowMapInfo
+    {
         std::unique_ptr<DXResource> mDepthResource;
         std::unique_ptr<DXResource> mRenderTarget;
         DXHeapHandle mDepthHandle;
