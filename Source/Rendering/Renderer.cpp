@@ -48,7 +48,6 @@ void CE::Renderer::RenderToFrameBuffer(
 		buffer.Clear();
 	}
 
-	buffer.Bind();
 	Render(world, buffer.GetSize());
 
 	buffer.Unbind();
