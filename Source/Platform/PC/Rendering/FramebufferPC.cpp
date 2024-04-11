@@ -86,7 +86,7 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 
 CE::FrameBuffer::~FrameBuffer() = default;
 
-void CE::FrameBuffer::Bind()
+void CE::FrameBuffer::Bind() const
 {
 	Device& engineDevice = Device::Get();
 	std::shared_ptr<DXDescHeap> rtHeap = engineDevice.GetDescriptorHeap(RT_HEAP);
@@ -98,7 +98,7 @@ void CE::FrameBuffer::Bind()
 	rtHeap->BindRenderTargets(commandList, &mFrameBufferHandle[engineDevice.GetFrameIndex()], mDepthStencilHandle);
 }
 
-void CE::FrameBuffer::Unbind()
+void CE::FrameBuffer::Unbind() const
 {
 
 }

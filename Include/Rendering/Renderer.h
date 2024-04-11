@@ -27,6 +27,8 @@ namespace CE
 			FrameBuffer& buffer, 
 			std::optional<glm::vec2> firstResizeBufferTo = {},
 			bool clearBufferFirst = true);
+
+		const FrameBuffer& GetFrameBuffer() const { return *mFrameBuffer; }
 #endif // EDITOR
 
 		const DebugRenderer& GetDebugRenderer() const { return *mDebugRenderer; };
@@ -35,9 +37,13 @@ namespace CE
 		void Render(const World& world, glm::vec2 viewportSize);
 
 		std::unique_ptr<ISubRenderer> mMeshRenderer;
-		std::unique_ptr<ISubRenderer> mShadowMapRenderer;
 		std::unique_ptr<ISubRenderer> mUIRenderer;
 		std::unique_ptr<DebugRenderer> mDebugRenderer;
+
+#ifdef EDITOR
+		FrameBuffer* mFrameBuffer;
+#endif // EDITOR
+
 	};
 }
 

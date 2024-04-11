@@ -25,6 +25,7 @@ namespace CE
         void CompactClusters(const GPUWorld& gpuWorld);
         void AssignLights(const GPUWorld& gpuWorld, int numberOfCompactClusters);
         void ClusteredShading(const World& world);
+        void RenderShadowMaps(const World& world);
 
         ComPtr<ID3D12PipelineState>  mPBRPipeline;
         ComPtr<ID3D12PipelineState>  mPBRSkinnedPipeline;
@@ -35,5 +36,8 @@ namespace CE
         ComPtr<ID3D12PipelineState>  mAssignLigthsPipeline;
         ComPtr<ID3D12PipelineState>  mZPipeline;
         ComPtr<ID3D12PipelineState>  mZSkinnedPipeline;
+        ComPtr<ID3D12PipelineState>  mShadowMapPipeline;
+        ComPtr<ID3D12PipelineState>  mShadowMapSkinnedPipeline;
+
     };
 }

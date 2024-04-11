@@ -522,7 +522,6 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Platform\PC\Rendering\ShadowMapRendererPC.cpp" />
     <ClCompile Include="Source\Components\FogComponent.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetInternal.cpp" />
     <ClCompile Include="Source\Components\AnimationRootComponent.cpp" />
@@ -1536,7 +1535,6 @@
     <ClInclude Include="Include\Assets\Core\WeakAsset.h" />
     <ClInclude Include="Include\Components\AnimationRootComponent.h" />
     <ClInclude Include="Include\Components\PlayerComponent.h" />
-    <ClInclude Include="Include\Rendering\ShadowMapRenderer.h" />
     <ClInclude Include="Include\Utilities\Geometry2d.h" />
     <ClInclude Include="Include\EditorSystems\ImporterSystem.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.h" />
@@ -1926,8 +1924,6 @@
     <ClInclude Include="Include\Components\PointLightComponent.h" />
     <ClInclude Include="Include\Rendering\Renderer.h" />
     <ClInclude Include="Include\Utilities\PathfindingInfo.h" />
-    <ClInclude Include="Include\Platform\PC\Rendering\ShadowMapRendererPC.h" />
-    <ClInclude Include="Include\Platform\***REMOVED***\Rendering\ShadowMapRenderer***REMOVED***.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />
