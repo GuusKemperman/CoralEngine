@@ -15,8 +15,8 @@ namespace CE
 		FrameBuffer(glm::ivec2 initialSize = {1, 1});
 		~FrameBuffer();
 
-		void Bind();
-		void Unbind();
+		void Bind() const;
+		void Unbind() const;
 
 		void Resize(glm::ivec2 newSize);
 		glm::ivec2 GetSize() const { return mSize; }

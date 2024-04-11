@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Platform/PC/Rendering/MeshRendererPC.h"
 #include "Core/Device.h"
+#include "Rendering/Renderer.h"
 #include "Core/FileIO.h"
 
 #include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
@@ -13,6 +14,9 @@
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/MeshColorComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Components/DirectionalLightComponent.h"
+
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
@@ -21,13 +25,15 @@
 
 #include "Rendering/GPUWorld.h"
 #include "Components/CameraComponent.h"
-#include "Components/PointLightComponent.h"
-#include "Components/DirectionalLightComponent.h"
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
 #include "Assets/StaticMesh.h"
 #include "Assets/SkinnedMesh.h"
 #include "Platform/PC/Rendering/InfoStruct.h"
+
+#ifdef EDITOR
+#include "Rendering/FrameBuffer.h"
+#endif
 
 CE::MeshRenderer::MeshRenderer()
 {
@@ -125,6 +131,32 @@ CE::MeshRenderer::MeshRenderer()
         .SetDepthState(depth)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
+
+
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
+    v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    rast.DepthBias = 10000;
+    rast.DepthBiasClamp = 0.0f;
+    rast.SlopeScaledDepthBias = 1.0f;
+    mShadowMapPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
+        .SetRasterizer(rast)
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SHADOWMAPPING PIPELINE");
+
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZSkinnedVertex.hlsl");
+    v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    mShadowMapSkinnedPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1)
+        .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2)
+        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .SetRasterizer(rast)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED SHADOW MAPPING PIPELINE");
+
 }
 
 CE::MeshRenderer::~MeshRenderer() = default;
@@ -141,6 +173,13 @@ void CE::MeshRenderer::Render(const World& world)
 
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+    commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
+
+    RenderShadowMaps(world);
+
+#ifdef EDITOR
+    Renderer::Get().GetFrameBuffer().Bind();
+#endif // EDITOR
 
     DepthPrePass(world, gpuWorld);
     ClusteredShading(world);
@@ -152,15 +191,17 @@ void CE::MeshRenderer::Render(const World& world)
     gpuWorld.GetLightBuffer().Bind(commandList, 3, 0, frameIndex);
     gpuWorld.GetConstantBuffer(InfoStruct::CLUSTERING_CAM_CB).Bind(commandList, 6, 0, frameIndex);
     gpuWorld.GetConstantBuffer(InfoStruct::CLUSTER_INFO_CB).Bind(commandList, 7, 0, frameIndex);
+    gpuWorld.GetConstantBuffer(InfoStruct::FOG_CB).Bind(commandList, 18, 0, frameIndex);
 
     resourceHeap->BindToGraphics(commandList, 13, gpuWorld.GetDirLightHeapSlot());
     resourceHeap->BindToGraphics(commandList, 14, gpuWorld.GetPointLigthHeapSlot());
     resourceHeap->BindToGraphics(commandList, 15, gpuWorld.GetLigthGridSRVSlot());
     resourceHeap->BindToGraphics(commandList, 16, gpuWorld.GetLightIndicesSRVSlot());
-    gpuWorld.GetConstantBuffer(InfoStruct::FOG_CB).Bind(commandList, 17, 0, frameIndex);
+    auto shadowMap = gpuWorld.GetShadowMap();
+    shadowMap->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
+    resourceHeap->BindToGraphics(commandList, 17, shadowMap->mDepthSRVHandle);
 
     int meshCounter = 0;
-
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
         //RENDERING
@@ -255,6 +296,7 @@ void CE::MeshRenderer::Render(const World& world)
             meshCounter++;
         }
     }
+
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 }
 
@@ -278,10 +320,6 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
                 continue;
             }
 
-            glm::mat4x4 modelMatrices[2]{};
-            modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-            gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
             gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
 
             staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
@@ -301,14 +339,8 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
                 continue;
             }
 
-            glm::mat4x4 modelMatrices[2]{};
-            modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-            gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
             gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
 
-            const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
-            gpuWorld.GetBoneMatrixBuffer().Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
             gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
 
             skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
@@ -399,11 +431,8 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
 
     int meshCounter = 0;
     const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
-    for (auto [entity, staticMeshComponent, transform] : view.each()) {
-        glm::mat4x4 modelMatrices[2]{};
-        modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-        modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-        gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+    for (auto [entity, staticMeshComponent, transform] : view.each())
+    {
         gpuWorld.GetModelMatrixBuffer().Bind(commandList, 4, meshCounter, frameIndex);
 
         if (!staticMeshComponent.mStaticMesh)
@@ -417,15 +446,10 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     const auto skinnedView = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
-    for (auto [entity, skinnedMeshComponent, transform] : skinnedView.each()) {
-        glm::mat4x4 modelMatrices[2]{};
-        modelMatrices[0] = glm::transpose(transform.GetWorldMatrix());
-        modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-        gpuWorld.GetModelMatrixBuffer().Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+    for (auto [entity, skinnedMeshComponent, transform] : skinnedView.each())
+    {
         gpuWorld.GetModelMatrixBuffer().Bind(commandList, 4, meshCounter, frameIndex);
 
-        const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
-        gpuWorld.GetBoneMatrixBuffer().Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
         gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
 
         if (!skinnedMeshComponent.mSkinnedMesh)
@@ -513,4 +537,80 @@ void CE::MeshRenderer::ClusteredShading(const World& world)
     CullClusters(world, gpuWorld);
     CompactClusters(gpuWorld);
     AssignLights(gpuWorld, gpuWorld.GetNumberOfClusters());
+}
+
+void CE::MeshRenderer::RenderShadowMaps(const World& world)
+{
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    const auto dirLightView = world.GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
+    int frameIndex = engineDevice.GetFrameIndex();
+    GPUWorld& gpuWorld = world.GetGPUWorld();
+
+    commandList->SetPipelineState(mShadowMapPipeline.Get());
+
+    int lightCounter = 1;
+    gpuWorld.GetCameraBuffer().Bind(commandList, 0, 1, frameIndex);
+
+    for (auto [entity, lightComponent, transform] : dirLightView.each()) {   
+        commandList->SetPipelineState(mShadowMapPipeline.Get());
+        if (!lightComponent.mCastShadows)
+        {
+            lightCounter++;
+            continue;
+        }
+        glm::vec4 clearColor = glm::vec4(0.f);
+        auto shadowMap = gpuWorld.GetShadowMap();
+
+        shadowMap->mRenderTarget->ChangeState(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+        shadowMap->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+        engineDevice.GetDescriptorHeap(DEPTH_HEAP)->ClearDepthStencil(commandList, shadowMap->mDepthHandle);
+        engineDevice.GetDescriptorHeap(RT_HEAP)->ClearRenderTarget(commandList, shadowMap->mRTHandle, &clearColor[0]);
+
+        commandList->RSSetViewports(1, &shadowMap->mViewport);
+        commandList->RSSetScissorRects(1, &shadowMap->mScissorRect);
+        engineDevice.GetDescriptorHeap(RT_HEAP)->BindRenderTargets(commandList, &shadowMap->mRTHandle, shadowMap->mDepthHandle);
+
+        int meshCounter = 0;
+
+        {
+            const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
+            for (auto [entity2, staticMeshComponent, transform2] : view.each()) 
+            {
+                if (!staticMeshComponent.mStaticMesh)
+                {
+                    continue;
+                }
+
+                gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
+
+                staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
+                meshCounter++;
+            }
+        }
+
+        commandList->SetPipelineState(mShadowMapSkinnedPipeline.Get());
+        {
+            const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
+            for (auto [entity2, skinnedMeshComponent, transform2] : view.each())
+            {
+                if (!skinnedMeshComponent.mSkinnedMesh)
+                {
+                    continue;
+                }
+
+                gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
+                gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
+
+                skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
+                meshCounter++;
+            }
+        }
+        lightCounter++;
+
+        Device::Get().BindSwapchainRT();
+        return;
+    }
+
+    Device::Get().BindSwapchainRT();
 }

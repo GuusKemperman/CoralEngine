@@ -17,6 +17,11 @@ namespace CE::InfoStruct
     {
         glm::vec4 mDir = { 0.f, 0.0f, 0.0f, 0.f };
         glm::vec4 mColorAndIntensity = { 0.f, 0.0f, 0.0f, 0.f };
+        glm::mat4x4 mLightMat = {};
+        uint32 mCastsShadows = false;
+        uint32 mNumSamples = 2;
+        float mBias = 0.001f;
+        uint32 padding = 0;
     };
 
     struct DXPointLightInfo
@@ -31,7 +36,8 @@ namespace CE::InfoStruct
     {
         uint32 numDirLights = 0;
         uint32 numPointLights = 0;
-        uint32 padding[2];
+        int mActiveShadowingLight = 0;
+        uint32 padding;
     };
 
     struct DXMaterialInfo
@@ -62,7 +68,8 @@ namespace CE::InfoStruct
         uint32 mPadding[3];
     };
 
-    enum DXStructuredBuffers {
+    enum DXStructuredBuffers
+    {
         MODEL_MAT_SB,
         DIRECTIONAL_LIGHT_SB,
         POINT_LIGHT_SB,
@@ -78,7 +85,8 @@ namespace CE::InfoStruct
         NUM_SB
     };
 
-    enum DXConstantBuffers {
+    enum DXConstantBuffers
+    {
         CAM_MATRIX_CB,
         LIGHT_CB,
         MATERIAL_INFO_CB,
@@ -92,6 +100,18 @@ namespace CE::InfoStruct
         NUM_CBS
     };
 
+    struct DXShadowMapInfo
+    {
+        std::unique_ptr<DXResource> mDepthResource;
+        std::unique_ptr<DXResource> mRenderTarget;
+        DXHeapHandle mDepthHandle;
+        DXHeapHandle mDepthSRVHandle;
+        DXHeapHandle mRTHandle;
+
+        D3D12_VIEWPORT mViewport;
+        D3D12_RECT mScissorRect;
+    };
+    
     struct DXFogInfo {
         glm::vec4 mColor{ 1.0f };
         float mNearPlane = 0.0f;

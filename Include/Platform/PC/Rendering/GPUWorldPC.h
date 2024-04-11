@@ -82,6 +82,7 @@ namespace CE
         const DXHeapHandle& GetLightIndicesUAVSlot() const { return mLightIndicesUAVSlot; };
         const DXHeapHandle& GetLigthGridUAVSlot() const { return mLightGridUAVSlot; };
         const DXHeapHandle& GetPointLightCounterUAVSlot() const { return mPointLightCounterUAVSlot; };
+        const InfoStruct::DXShadowMapInfo* GetShadowMap() const { return mShadowMap.get(); }
 
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
         UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
@@ -93,12 +94,14 @@ namespace CE
 	private:
         void SendMaterialTexturesToGPU(const Material& mat);
         void UpdateClusterData(const CameraComponent& camera);
+        void InitializeShadowMaps();
 
 		std::unique_ptr<DXConstBuffer> mConstBuffers[InfoStruct::NUM_CBS];
 		std::unique_ptr<DXResource> mStructuredBuffers[InfoStruct::NUM_SB];
 		InfoStruct::DXLightInfo mLights;
         std::vector<InfoStruct::DXDirLightInfo> mDirectionalLights;
         std::vector<InfoStruct::DXPointLightInfo> mPointLights;
+        std::unique_ptr<InfoStruct::DXShadowMapInfo> mShadowMap;
         InfoStruct::DXLightInfo mLightInfo;
         int mNumberOfClusters = 0;
         glm::ivec3 mClusterGrid;

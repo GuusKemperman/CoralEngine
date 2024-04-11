@@ -46,6 +46,7 @@ namespace CE
 		void StartUploadCommands();
         void SubmitUploadCommands();
         void AddToDeallocation(ComPtr<ID3D12Resource>&& res);
+        void BindSwapchainRT();
 
         glm::vec2 GetDisplaySize() { return glm::vec2(mViewport.Width, mViewport.Height); }
 

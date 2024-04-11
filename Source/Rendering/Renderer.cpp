@@ -34,6 +34,8 @@ void CE::Renderer::RenderToFrameBuffer(
 	std::optional<glm::vec2> firstResizeBufferTo, 
 	bool clearBufferFirst)
 {
+	mFrameBuffer = &buffer;
+
 	if (firstResizeBufferTo.has_value())
 	{
 		buffer.Resize(static_cast<glm::ivec2>(*firstResizeBufferTo));

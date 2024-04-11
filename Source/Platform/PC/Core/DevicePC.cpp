@@ -301,11 +301,11 @@ void CE::Device::InitializeDevice()
     }
 
     //CREATE ROOT SIGNATURE
-    mSignature = DXSignatureBuilder(9)
+    mSignature = DXSignatureBuilder(10)
         .AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL)   //0  //Camera matrices
         .AddCBuffer(1, D3D12_SHADER_VISIBILITY_VERTEX)//1  //Model matrices
         .AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX)//2  //Bone matrices
-        .AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL) //3  //Light info 
+        .AddCBuffer(3, D3D12_SHADER_VISIBILITY_ALL)   //3  //Light info 
         .AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL) //4  //Material info
         .AddCBuffer(5, D3D12_SHADER_VISIBILITY_PIXEL) //5  //Color multiplier
         .AddCBuffer(6, D3D12_SHADER_VISIBILITY_PIXEL) //6  //Camera clustering buffer
@@ -316,12 +316,19 @@ void CE::Device::InitializeDevice()
         .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2)//10  //Metallic roughness tex
         .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3)//11  //NormalTex
         .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4)//12  //Occlusion texture
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5)//13  //Directonal lights buffer
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6)//14  //Point lights buffer
-        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7)//15  //Light grid buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5)//13  //Directonal lights buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL,   D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6)//14  //Point lights buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL,   D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7)//15  //Light grid buffer
         .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8)//16  //Light indices buffer
-        .AddCBuffer(8, D3D12_SHADER_VISIBILITY_PIXEL) //17  //Fog info buffer
-        .AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP) //18  //Sampler
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 9)//17  //Shadow maps
+
+        .AddCBuffer(8, D3D12_SHADER_VISIBILITY_PIXEL) //18  //Fog info buffer
+        .AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP) //19  //Sampler
+        .AddSampler(1, D3D12_SHADER_VISIBILITY_PIXEL,
+                       D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+                       D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
+                       D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE,
+                       D3D12_COMPARISON_FUNC_LESS_EQUAL) //20  //Sampler
         .Build(mDevice, L"MAIN ROOT SIGNATURE");
 
     //COMPUTE ROOT SIGNATURE
@@ -613,6 +620,19 @@ void CE::Device::SubmitUploadCommands()
 void CE::Device::AddToDeallocation(ComPtr<ID3D12Resource>&& res)
 {
     mResourcesToDeallocate.emplace_back(std::move(res));
+}
+
+void CE::Device::BindSwapchainRT()
+{
+    mCommandList->RSSetViewports(1, &mViewport); 
+    mCommandList->RSSetScissorRects(1, &mScissorRect); 
+    mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
+
+    glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
+    mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mRenderTargetHandles[mFrameIndex], mDepthHandle);
+    mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mRenderTargetHandles[mFrameIndex], &clearColor[0]);
+    mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, mDepthHandle);
 }
 
 #ifdef EDITOR
