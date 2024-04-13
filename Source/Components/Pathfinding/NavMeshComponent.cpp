@@ -116,7 +116,15 @@ CE::NavMeshComponent::NavMeshData CE::NavMeshComponent::GenerateNavMeshData(cons
 		std::queue<glm::vec2> open{};
 		open.emplace(terrainStart);
 
-		std::vector<glm::vec2> closed{};
+		struct Vec2Hasher
+		{
+			size_t operator() (const glm::vec2 point) const
+			{
+				return static_cast<size_t>(glm::fract(sin(glm::dot(point, glm::vec2(12.9898, 78.233))) * 43758.5453) * static_cast<float>(std::numeric_limits<size_t>::max()));
+			}
+		};
+
+		std::unordered_set<glm::vec2, Vec2Hasher> closed{};
 		closed.reserve(mMaxNumOfTerrainSamples);
 
 		const Physics& physics = world.GetPhysics();
@@ -126,11 +134,11 @@ CE::NavMeshComponent::NavMeshData CE::NavMeshComponent::GenerateNavMeshData(cons
 			glm::vec2 current = open.front();
 			open.pop();
 
-			if (std::find(closed.begin(), closed.end(), current) != closed.end())
+			if (closed.find(current) != closed.end())
 			{
 				continue;
 			}
-			closed.emplace_back(current);
+			closed.emplace(current);
 
 			if (closed.size() >= mMaxNumOfTerrainSamples)
 			{
