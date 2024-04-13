@@ -21,7 +21,7 @@ namespace CE::Search
 
 	void End();
 
-	void BeginCategory(std::string_view name, std::function<void(std::string_view)> displayStart);
+	void BeginCategory(std::string_view name, std::function<bool(std::string_view)> displayStart);
 
 	void EndCategory(std::function<void()> displayEnd);
 
@@ -33,7 +33,7 @@ namespace CE::Search
 
 	void EndCombo();
 
-	bool TreeNode(std::string_view label);
+	void TreeNode(std::string_view label);
 
 	void TreePop();
 

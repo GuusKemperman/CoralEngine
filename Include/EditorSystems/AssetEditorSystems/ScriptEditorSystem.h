@@ -111,27 +111,17 @@ namespace CE
 
 		struct NodeTheUserCanAdd
 		{
-			NodeTheUserCanAdd(std::string&& category, 
-				std::string&& name, 
+			NodeTheUserCanAdd(std::string&& name, 
 				std::function<ScriptNode&(ScriptFunc&)>&& addNode,
 				std::function<bool(const ScriptPin&)>&& matchesContext,
 				std::optional<Input::KeyboardKey> shortcut = std::nullopt) :
-			mCategory(std::move(category)),
 			mName(std::move(name)),
-			mQueryComparisonString(PrepareStringForFuzzySearch(std::string{ mName }.append(" ").append(mCategory))),
 			mAddNode(std::move(addNode)),
 			mMatchesContext(std::move(matchesContext)),
 			mShortCut(shortcut)
 			{}
 
-			std::string mCategory{};
 			std::string mName{};
-
-			// Our searching algorithm likes space separated words,
-			// so our pretty camelcase naming will have to go.
-			// As an optimisation, we only do this once, and
-			// store the result.
-			std::string mQueryComparisonString{};
 
 			std::function<ScriptNode& (ScriptFunc&)> mAddNode{};
 			std::function<bool(const ScriptPin&)> mMatchesContext{};
@@ -139,10 +129,12 @@ namespace CE
 			// If CTRL is held, and this key is pressed,
 			// a node of this type is created.
 			std::optional<Input::KeyboardKey> mShortCut;
+		};
 
-			// How similar the name of this item is to the string the user is searching for,
-			// in a range from 0.0 to 100.0
-			double mSimilarityToQuery = 100.0;
+		struct NodeCategory
+		{
+			std::string mName{};
+			std::vector<NodeTheUserCanAdd> mNodes{};
 		};
 
 		void DisplayCanvas();
@@ -175,51 +167,22 @@ namespace CE
 			std::vector<PinToInspect>& pinsToInspect);
 
 		bool ShouldWeOnlyShowContextMatchingNodes() const;
+
 		static bool DoesNodeMatchContext(const ScriptPin& toPin,
 			TypeTraits returnTypeTraits, 
 			const std::vector<TypeTraits>& parameters, 
 			bool isPure);
+
 		bool DoesNodeMatchContext(const NodeTheUserCanAdd& node) const;
 		static inline bool sContextSensitive = true;
 
 		bool ShouldShowUserNode(const NodeTheUserCanAdd& node) const;
 
-		// Our searching algorithm likes space separated words,
-		// so our pretty camelcase naming will have to go.
-		static std::string PrepareStringForFuzzySearch(const std::string& string);
-
 		ImColor GetIconColor(const ScriptVariableTypeData& typeData) const;
 		void DrawPinIcon(const ScriptPin& pin, bool connected, int alpha, bool mirrored = false) const;
 
-		std::vector<NodeTheUserCanAdd> GetAllNodesTheUserCanAdd() const;
-
-		struct QueryData
-		{
-			std::vector<NodeTheUserCanAdd> mNodesThatCanBeCreated;
-			std::vector<std::reference_wrapper<NodeTheUserCanAdd>> mRecommendedNodesBasedOnQuery{};
-			std::string mCurrentQuery{};
-			bool mIsContextSensitive{};
-
-			double mSimilarityCutOff = 0.0;
-			bool mIsRunning{};
-			bool mIsReady{};
-		};
-		QueryData mLastUpToDateQueryData{};
-		QueryData mThreadOutputData{};
-		std::thread mQueryThread{};
-		std::string mCurrentQuery{};
-
-		void UpdateSimilarityToQuery(QueryData& queryData) const;
-		static void ClearQuery(QueryData& queryData);
-
-		// Increase this number to reduce the amount of nodes
-		// shown to the user when searching
-		static constexpr double sCutOffStrength = 1.5;
-		static constexpr double sMinSimilarityCutoff = 40.0;
-		// This makes it more likely to show functions and fields from
-		// this script when searching.
-		static constexpr double sBiasTowardsNodesFromThisScript = 1.5f;
-		static constexpr uint32 sMaxNumOfRecommendedNodesDuringQuery = 7;
+		std::vector<NodeCategory> GetAllNodesTheUserCanAdd() const;
+		std::vector<NodeCategory> mAllNodesTheUserCanAdd{};
 
 		ax::NodeEditor::PinId mPinTheUserRightClicked{};
 		ax::NodeEditor::PinId mPinTheUserIsTryingToLink{};

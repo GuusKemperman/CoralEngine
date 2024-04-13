@@ -12,18 +12,15 @@
 #include "Utilities/StringFunctions.h"
 
 CE::ScriptEditorSystem::ScriptEditorSystem(Script&& asset) :
-	AssetEditorSystem(std::move(asset))
+	AssetEditorSystem(std::move(asset)),
+	mAllNodesTheUserCanAdd(GetAllNodesTheUserCanAdd())
 {
-	mLastUpToDateQueryData.mNodesThatCanBeCreated = GetAllNodesTheUserCanAdd();
 	mAsset.PostDeclarationRefresh();
 }
 
 CE::ScriptEditorSystem::~ScriptEditorSystem()
 {
-	if (mQueryThread.joinable())
-	{
-		mQueryThread.join();
-	}
+	// Frees the context
 	SelectFunction(nullptr);
 }
 
@@ -399,15 +396,17 @@ void CE::ScriptEditorSystem::ReadInput()
 			CutSelection();
 		}
 
-		for (const NodeTheUserCanAdd& node : mLastUpToDateQueryData.mNodesThatCanBeCreated)
+		for (const NodeCategory& nodeCategory : mAllNodesTheUserCanAdd)
 		{
-			if (node.mShortCut.has_value()
-				&& input.WasKeyboardKeyPressed(*node.mShortCut))
+			for (const NodeTheUserCanAdd& node : nodeCategory.mNodes)
 			{
-				AddNewNode(node);
+				if (node.mShortCut.has_value()
+					&& input.WasKeyboardKeyPressed(*node.mShortCut))
+				{
+					AddNewNode(node);
+				}
 			}
 		}
-
 	}
 
 	if (input.WasKeyboardKeyPressed(Input::KeyboardKey::Delete))

@@ -6,13 +6,14 @@
 
 #include "Utilities/ManyStrings.h"
 #include "rapidfuzz/rapidfuzz_all.hpp"
+
 using CachedScorer = rapidfuzz::fuzz::CachedPartialTokenSortRatio<char>;
 
 namespace
 {
 	struct CategoryFunctions
 	{
-		std::function<void(std::string_view)> mOnDisplayStart{};
+		std::function<bool(std::string_view)> mOnDisplayStart{};
 		std::function<void()> mOnDisplayEnd{};
 	};
 
@@ -26,7 +27,7 @@ namespace
 	struct Entry
 	{
 		uint32 mIsCategory : 1;
-		uint32 mNumOfChildren : 31;
+		uint32 mNumOfTotalChildren : 31;
 	};
 
 	struct SearchContext
@@ -59,7 +60,7 @@ namespace
 	std::stack<std::reference_wrapper<SearchContext>> sContextStack{};
 
 	void ProcessItemClickConsumption(SearchContext& context);
-	void RecursivelyDisplayEntry(SearchContext& context, uint32& index);
+	void RecursivelyDisplayEntry(SearchContext& context, uint32& index, uint32 stopAt);
 	void ApplyKeyboardNavigation(SearchContext& context);
 }
 
@@ -92,7 +93,7 @@ void CE::Search::End()
 		});
 
 	uint32 index{};
-	RecursivelyDisplayEntry(context, index);
+	RecursivelyDisplayEntry(context, index, static_cast<uint32>(context.mAllEntries.size()));
 
 	context.mAllEntries.clear();
 	context.mDisplayFunctions.clear();
@@ -103,7 +104,7 @@ void CE::Search::End()
 	ImGui::PopID();
 }
 
-void CE::Search::BeginCategory(std::string_view name, std::function<void(std::string_view)> displayStart)
+void CE::Search::BeginCategory(std::string_view name, std::function<bool(std::string_view)> displayStart)
 {
 	SearchContext& context = sContextStack.top();
 	context.mAllEntries.emplace_back(
@@ -114,11 +115,6 @@ void CE::Search::BeginCategory(std::string_view name, std::function<void(std::st
 		});
 	context.mDisplayFunctions.emplace_back(CategoryFunctions{ std::move(displayStart) });
 	context.mNames.Emplace(name);
-
-	if (!context.mCategoryStack.empty())
-	{
-		context.mAllEntries[context.mCategoryStack.top()].mNumOfChildren++;
-	}
 	context.mCategoryStack.emplace(static_cast<uint32>(context.mAllEntries.size()) - 1);
 }
 
@@ -128,9 +124,13 @@ void CE::Search::EndCategory(std::function<void()> displayEnd)
 
 	// We need to update display end
 	const uint32 indexOfCurrentCategory = context.mCategoryStack.top();
+
 	std::variant<CategoryFunctions, ItemFunctions>& funcs = context.mDisplayFunctions[indexOfCurrentCategory];
 	CategoryFunctions& catFunctions = std::get<CategoryFunctions>(funcs);
 	catFunctions.mOnDisplayEnd = std::move(displayEnd);
+
+	context.mAllEntries[indexOfCurrentCategory].mNumOfTotalChildren = static_cast<uint32>(context.mAllEntries.size() - 1) - indexOfCurrentCategory;
+
 
 	context.mCategoryStack.pop();
 }
@@ -154,11 +154,6 @@ bool CE::Search::AddEntry(std::string_view name, std::function<bool(std::string_
 		});
 	context.mDisplayFunctions.emplace_back(ItemFunctions{ std::move(display) });
 	context.mNames.Emplace(name);
-
-	if (!context.mCategoryStack.empty())
-	{
-		context.mAllEntries[context.mCategoryStack.top()].mNumOfChildren++;
-	}
 
 	return wasPressed;
 }
@@ -195,10 +190,9 @@ void CE::Search::EndCombo()
 	ImGui::EndCombo();
 }
 
-bool CE::Search::TreeNode(std::string_view label)
+void CE::Search::TreeNode(std::string_view label)
 {
-	BeginCategory(label, [](std::string_view l) { ImGui::TreeNode(l.data()); });
-	return true;
+	BeginCategory(label, [](std::string_view l) { return ImGui::TreeNode(l.data()); });
 }
 
 void CE::Search::TreePop()
@@ -213,11 +207,11 @@ namespace
 		context.mIndexOfPressedItem = std::numeric_limits<uint32>::max();
 	}
 
-	void RecursivelyDisplayEntry(SearchContext& context, uint32& index)
+	void RecursivelyDisplayEntry(SearchContext& context, uint32& index, uint32 stopAt)
 	{
 		const SearchContext::CalculationResult& result = *context.mCalculationResult;
 
-		for (; index < context.mAllEntries.size(); index++)
+		for (; index < stopAt; index++)
 		{
 			if (!result.mIsItemVisible[index])
 			{
@@ -236,11 +230,25 @@ namespace
 			if (entry.mIsCategory)
 			{
 				const CategoryFunctions& catFunctions = std::get<CategoryFunctions>(functions);
-				catFunctions.mOnDisplayStart(name);
 
-				RecursivelyDisplayEntry(context, index);
+				if (catFunctions.mOnDisplayStart(name))
+				{
+					++index;
 
-				catFunctions.mOnDisplayEnd();
+					RecursivelyDisplayEntry(context, index, index + entry.mNumOfTotalChildren);
+
+
+					// We incremented the index already, we undo
+					// that here to prevent the increment in our for-loop
+					// from doing this operation twice.
+					index--;
+
+					catFunctions.mOnDisplayEnd();
+				}
+				else
+				{
+					index += entry.mNumOfTotalChildren;
+				}
 			}
 			else
 			{
