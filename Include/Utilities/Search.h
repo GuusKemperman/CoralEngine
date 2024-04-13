@@ -11,6 +11,32 @@
 
 namespace CE::Search
 {
+	enum SearchFlags
+	{
+		ShowSummary = 1,
+		NoKeyboardSelect = 1 << 1
+	};
+
+	void Begin(std::string_view id, SearchFlags flags = {});
+
+	void End();
+
+	void BeginCategory(std::string_view name, std::function<void(std::string_view)> displayStart);
+
+	void EndCategory(std::function<void()> displayEnd);
+
+	bool AddEntry(std::string_view name, std::function<bool(std::string_view)> display);
+
+	bool BeginCombo(std::string_view label, std::string_view previewValue, ImGuiComboFlags flags = 0);
+
+	bool Button(std::string_view label);
+
+	void EndCombo();
+
+	bool TreeNode(std::string_view label);
+
+	void TreePop();
+
 	template<typename T, typename T2 = void>
 	struct MovableTypeHelper
 	{
@@ -77,7 +103,7 @@ namespace CE::Search
 			mValue(std::forward<Args>(args)...),
 			mName(std::move(name))
 		{
-			
+
 		}
 
 		ChoiceValueType<Types...> mValue;
@@ -134,7 +160,7 @@ namespace CE::Search
 	 * Example:
 	 *	std::string searchFor = "CubeAsset"
 	 * 	Search::Choices<Asset> assetsThatMatchSearch = Search::CollectChoices<Asset>();
-     *  Search::EraseChoicesThatDoNotMatch(searchFor, assetsThatMatchSearch);
+	 *  Search::EraseChoicesThatDoNotMatch(searchFor, assetsThatMatchSearch);
 	 */
 	template<typename... Types>
 	void EraseChoicesThatDoNotMatch(std::string_view query,
@@ -240,7 +266,7 @@ namespace CE::Search
 
 	template<typename... Types>
 	bool DefaultFilter(FilterParam<Types...>) { return true; }
-	
+
 
 	template<typename... Types>
 	constexpr bool operator<(const Choice<Types...>& lhs, const Choice<Types...>& rhs)
@@ -345,9 +371,7 @@ namespace CE::Search
 		for (Choice& choice : choices)
 		{
 			if (ImGui::Button(choice.mName.c_str())
-				|| ImGui::IsItemClicked()) // If we click on the button, the search term is reset, the button may move, 
-										// and we won't be hovering over the button when the mouse button is released.
-										// So we activate OnClick and not OnRelease
+				|| ImGui::IsItemClicked())
 			{
 				return choice.mValue;
 			}

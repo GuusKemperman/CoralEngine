@@ -84,7 +84,22 @@ namespace ImGui
 	{
 		static void Auto(EnumType& var, const std::string& name)
 		{
-			CE::Search::Search<EnumType>(name, var, std::function<bool(EnumType)>{ [](EnumType) { return true; } });
+			using namespace CE;
+
+			if (!Search::BeginCombo(name, EnumToString(var)))
+			{
+				return;
+			}
+
+			for (const auto& [value, valName] : sEnumStringPairs<EnumType>)
+			{
+				if (Search::Button(valName))
+				{
+					var = value;
+				}
+			}
+
+			Search::EndCombo();
 		}
 		static constexpr bool sIsSpecialized = true;
 	};

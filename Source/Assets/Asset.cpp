@@ -51,43 +51,33 @@ CE::MetaType CE::Asset::Reflect()
 
 #ifdef EDITOR
 
-struct NullAsset { };
-
-namespace CE::Search
-{
-	template<>
-	struct SearchBarOptionsCollector<NullAsset>
-	{
-		template<typename... Types, typename FilterType>
-		static void AddOptions(Search::Choices<Types...>& insertInto, const FilterType&)
-		{
-			// The space is intentional, it's a 'hack' to make
-			// sure None is always the first option, since
-			// the options are sorted in a lexicographical order.
-			insertInto.emplace_back(" None", NullAsset{});
-		}
-	};
-}
-
 void CE::InspectAsset(const std::string& name, std::shared_ptr<const Asset>& asset, const TypeId assetClass)
 {
-	auto selectedAsset = Search::DisplayDropDownWithSearchBar<Asset, NullAsset>(name.c_str(), asset == nullptr ? "None" : asset->GetName().data(),
-		[assetClass](const std::variant<WeakAsset<Asset>, NullAsset>& asset)
-		{
-			return std::get<WeakAsset<Asset>>(asset).GetMetaData().GetClass().IsDerivedFrom(assetClass);
-		});
-
-	if (selectedAsset.has_value())
+	if (!Search::BeginCombo(name, asset == nullptr ? "None" : asset->GetName().data()))
 	{
-		if (std::holds_alternative<NullAsset>(*selectedAsset))
+		return;
+	}
+
+	if (Search::Button("None"))
+	{
+		asset.reset();
+	}
+
+	for (const WeakAsset<>& weakAsset : AssetManager::Get().GetAllAssets<>())
+	{
+		if (!weakAsset.GetMetaData().GetClass().IsDerivedFrom(assetClass))
 		{
-			asset = nullptr;
+			continue;
 		}
-		else
+
+		if (Search::Button(weakAsset.GetMetaData().GetName()))
 		{
-			asset = std::get<WeakAsset<Asset>>(*selectedAsset).MakeShared();
+			asset = weakAsset.MakeShared();
 		}
 	}
+
+
+	Search::EndCombo();
 
 	std::optional<WeakAsset<Asset>> receivedAsset = DragDrop::PeekAsset(assetClass);
 

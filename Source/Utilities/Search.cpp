@@ -1,58 +1,450 @@
 #include "Precomp.h"
 #include "Utilities/Search.h"
 
-#include "imgui/imgui_internal.h"
+#include <future>
+#include <stack>
+
+#include "Utilities/ManyStrings.h"
+#include "rapidfuzz/rapidfuzz_all.hpp"
+using CachedScorer = rapidfuzz::fuzz::CachedPartialTokenSortRatio<char>;
 
 namespace
 {
-    bool IsComboAlreadyOpen(std::string_view comboLabel)
-    {
-        ImGuiWindow* window = ImGui::GetCurrentWindow();
-        const ImGuiID id = window->GetID(comboLabel.data());
-        const ImGuiID popup_id = ImHashStr("##ComboPopup", 0, id);
-        return ImGui::IsPopupOpen(popup_id, ImGuiPopupFlags_None);
-    }
+	struct CategoryFunctions
+	{
+		std::function<void(std::string_view)> mOnDisplayStart{};
+		std::function<void()> mOnDisplayEnd{};
+	};
+
+	struct ItemFunctions
+	{
+		std::function<bool(std::string_view)> mOnDisplay{};
+	};
+
+	// Can represent either
+	// a category or an item
+	struct Entry
+	{
+		uint32 mIsCategory : 1;
+		uint32 mNumOfChildren : 31;
+	};
+
+	struct SearchContext
+	{
+		CE::ManyStrings mNames{};
+		std::vector<Entry> mAllEntries{};
+		std::vector<std::variant<CategoryFunctions, ItemFunctions>> mDisplayFunctions{};
+
+		std::stack<uint32> mCategoryStack{};
+
+		std::string mUserQuery{};
+
+		struct CalculationResult
+		{
+			// Inputs
+			CE::ManyStrings mNames{};
+			std::vector<Entry> mEntries{};
+			std::string mUserQuery{};
+
+			// Outputs
+			std::vector<bool> mIsItemVisible{};
+			std::vector<uint32> mIndicesOfTopEntries{};
+		};
+		std::optional<CalculationResult> mCalculationResult{};
+
+		uint32 mIndexOfPressedItem = std::numeric_limits<uint32>::max();
+		CE::Search::SearchFlags mFlags{};
+	};
+	std::unordered_map<ImGuiID, SearchContext> sContexts{};
+	std::stack<std::reference_wrapper<SearchContext>> sContextStack{};
+
+	void ProcessItemClickConsumption(SearchContext& context);
+	void RecursivelyDisplayEntry(SearchContext& context, uint32& index);
+	void ApplyKeyboardNavigation(SearchContext& context);
 }
 
+void CE::Search::Begin(std::string_view id, SearchFlags flags)
+{
+	const ImGuiID imId = ImGui::GetID(id.data());
+	ImGui::PushID(imId);
 
+	SearchContext& context = sContextStack.emplace(sContexts[imId]);
+	context.mFlags = flags;
+	DisplaySearchBar(context.mUserQuery);
+}
+
+void CE::Search::End()
+{
+	// Display all the items here
+	SearchContext& context = sContextStack.top();
+
+	if ((context.mFlags & SearchFlags::NoKeyboardSelect) == 0)
+	{
+		ApplyKeyboardNavigation(context);
+	}
+
+	context.mCalculationResult.emplace(SearchContext::CalculationResult
+		{
+			context.mNames,
+			context.mAllEntries,
+			context.mUserQuery,
+			std::vector<bool>(context.mAllEntries.size(), true)
+		});
+
+	uint32 index{};
+	RecursivelyDisplayEntry(context, index);
+
+	context.mAllEntries.clear();
+	context.mDisplayFunctions.clear();
+	context.mNames.Clear();
+	ASSERT_LOG(context.mCategoryStack.empty(), "There were more calls to BeginCategory than to EndCategory");
+
+	sContextStack.pop();
+	ImGui::PopID();
+}
+
+void CE::Search::BeginCategory(std::string_view name, std::function<void(std::string_view)> displayStart)
+{
+	SearchContext& context = sContextStack.top();
+	context.mAllEntries.emplace_back(
+		Entry
+		{
+			true,
+			0
+		});
+	context.mDisplayFunctions.emplace_back(CategoryFunctions{ std::move(displayStart) });
+	context.mNames.Emplace(name);
+
+	if (!context.mCategoryStack.empty())
+	{
+		context.mAllEntries[context.mCategoryStack.top()].mNumOfChildren++;
+	}
+	context.mCategoryStack.emplace(static_cast<uint32>(context.mAllEntries.size()) - 1);
+}
+
+void CE::Search::EndCategory(std::function<void()> displayEnd)
+{
+	SearchContext& context = sContextStack.top();
+
+	// We need to update display end
+	const uint32 indexOfCurrentCategory = context.mCategoryStack.top();
+	std::variant<CategoryFunctions, ItemFunctions>& funcs = context.mDisplayFunctions[indexOfCurrentCategory];
+	CategoryFunctions& catFunctions = std::get<CategoryFunctions>(funcs);
+	catFunctions.mOnDisplayEnd = std::move(displayEnd);
+
+	context.mCategoryStack.pop();
+}
+
+bool CE::Search::AddEntry(std::string_view name, std::function<bool(std::string_view)> display)
+{
+	SearchContext& context = sContextStack.top();
+
+	const bool wasPressed = context.mIndexOfPressedItem == context.mAllEntries.size();
+
+	if (wasPressed)
+	{
+		ProcessItemClickConsumption(context);
+	}
+
+	context.mAllEntries.emplace_back(
+		Entry
+		{
+			false,
+			0
+		});
+	context.mDisplayFunctions.emplace_back(ItemFunctions{ std::move(display) });
+	context.mNames.Emplace(name);
+
+	if (!context.mCategoryStack.empty())
+	{
+		context.mAllEntries[context.mCategoryStack.top()].mNumOfChildren++;
+	}
+
+	return wasPressed;
+}
+
+bool CE::Search::BeginCombo(std::string_view label, std::string_view previewValue, ImGuiComboFlags flags)
+{
+	if (!ImGui::BeginCombo(label.data(), previewValue.data(), flags))
+	{
+		return false;
+	}
+
+	Begin(label);
+
+	return true;
+}
+
+bool CE::Search::Button(std::string_view label)
+{
+	return AddEntry(label,
+		[](std::string_view name)
+		{
+			// If we click on the button, the search term is reset, the button may move,
+			// and the entire popup is closed.
+			// We won't be hovering over the button when the mouse button is released.
+			// So we activate OnClick and not OnRelease
+			return ImGui::MenuItem(name.data()) || ImGui::IsItemClicked(0);
+		}
+	);
+}
+
+void CE::Search::EndCombo()
+{
+	End();
+	ImGui::EndCombo();
+}
+
+bool CE::Search::TreeNode(std::string_view label)
+{
+	BeginCategory(label, [](std::string_view l) { ImGui::TreeNode(l.data()); });
+	return true;
+}
+
+void CE::Search::TreePop()
+{
+	EndCategory([] { ImGui::TreePop(); });
+}
+
+namespace
+{
+	void ProcessItemClickConsumption(SearchContext& context)
+	{
+		context.mIndexOfPressedItem = std::numeric_limits<uint32>::max();
+	}
+
+	void RecursivelyDisplayEntry(SearchContext& context, uint32& index)
+	{
+		const SearchContext::CalculationResult& result = *context.mCalculationResult;
+
+		for (; index < context.mAllEntries.size(); index++)
+		{
+			if (!result.mIsItemVisible[index])
+			{
+				continue;
+			}
+
+			const std::string_view name = context.mNames[index];
+			const Entry& entry = context.mAllEntries[index];
+			const std::variant<CategoryFunctions, ItemFunctions>& functions = context.mDisplayFunctions[index];
+
+			//if (isSelected)
+			//{
+			//	ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_ButtonHovered]);
+			//}
+
+			if (entry.mIsCategory)
+			{
+				const CategoryFunctions& catFunctions = std::get<CategoryFunctions>(functions);
+				catFunctions.mOnDisplayStart(name);
+
+				RecursivelyDisplayEntry(context, index);
+
+				catFunctions.mOnDisplayEnd();
+			}
+			else
+			{
+				const ItemFunctions& itemFunctions = std::get<ItemFunctions>(functions);
+
+				if (itemFunctions.mOnDisplay(name)
+					/*|| (isSelected && ImGui::IsKeyPressed(ImGuiKey_Enter))*/)
+				{
+					context.mIndexOfPressedItem = index;
+				}
+			}
+
+			//if (isSelected)
+			//{
+			//	ImGui::PopStyleColor();
+			//}
+		}
+	}
+
+	void ApplyKeyboardNavigation(SearchContext& /*context*/)
+	{
+		//// Update focus based on the arrow keys
+		//if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+		//{
+		//	context.mIndexOfSelectedItem++;
+		//	if (isTyping)
+		//	{
+		//		context.mIndexOfSelectedItem = 0;
+		//	}
+		//	else if (context.mIndexOfSelectedItem + 1 < context.mAllEntries.size())
+		//	{
+		//		context.mIndexOfSelectedItem++;
+
+		//	}
+		//}
+		//else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+		//{
+		//	if (context.mIndexOfSelectedItem == 0)
+		//	{
+		//		// Return focus to the search bar
+		//		ImGui::SetKeyboardFocusHere(-1);
+		//	}
+		//	else
+		//	{
+		//		context.mIndexOfSelectedItem--;
+		//	}
+		//}
+	}
+}
 
 std::string CE::Search::DisplaySearchBar(std::string_view label, std::string_view hint)
 {
-    std::string str{};
-    DisplaySearchBar(str, label, hint);
-    return str;
+	std::string str{};
+	DisplaySearchBar(str, label, hint);
+	return str;
 }
 
 void CE::Search::DisplaySearchBar(std::string& searchTerm, std::string_view label, std::string_view hint)
 {
-    ImGui::InputTextWithHint(label.data(), hint.data(), &searchTerm);
+	ImGui::InputTextWithHint(label.data(), hint.data(), &searchTerm);
 }
 
 bool CE::Search::BeginSearchCombo(std::string_view label, std::string_view hint)
 {
-    const bool isComboOpen = IsComboAlreadyOpen(label);
+	if (!ImGui::BeginCombo(label.data(), hint.data()))
+	{
+		return false;
+	}
 
-    if (!ImGui::BeginCombo(label.data(), hint.data()))
-    {
-        return false;
-    }
-
-    // We just opened
-    if (!isComboOpen)
-    {
-        ImGui::SetKeyboardFocusHere();
-    }
-
-    return true;
+	return true;
 }
 
 void CE::Search::EndSearchCombo(bool wasItemSelected)
 {
-    if (wasItemSelected)
-    {
-        ImGui::CloseCurrentPopup();
-    }
+	if (wasItemSelected)
+	{
+		ImGui::CloseCurrentPopup();
+	}
 
-    ImGui::EndCombo();
+	ImGui::EndCombo();
 }
 
+//std::optional<std::string> CE::Search::DisplaySearchBar(const ManyStrings& strings, std::string_view label, std::string_view hint)
+//{
+//    if (!BeginSearchCombo(label, hint))
+//    {
+//        return std::nullopt;
+//    }
+//
+//    struct SearchResult
+//    {
+//        ~SearchResult()
+//        {
+//            if (mPendingScores.joinable())
+//            {
+//                mPendingScores.join();
+//            }
+//        }
+//
+//        std::thread mPendingScores{};
+//        bool mIsReady{};
+//        std::string mQuery{};
+//        ManyStrings mStrings{};
+//        std::vector<float> mScores{};
+//        std::vector<uint32> mIndicesOfSortedStrings{};
+//    };
+//
+//    static std::array<SearchResult, 2> sResults{};
+//    static bool sLastValidResult{};
+//
+//    // Check if the result from our previous thread is ready
+//    if (sResults[!sLastValidResult].mIsReady)
+//    {
+//        // Note that we do not check if the pending result is still valid.
+//        // We do this later, where we check if the last valid result is
+//        // still valid. Since our pending result now becomes our last valid result,
+//        // we can defer that check.
+//        SearchResult& pendingResult = sResults[!sLastValidResult];
+//
+//        if (pendingResult.mPendingScores.joinable())
+//        {
+//            pendingResult.mPendingScores.join();
+//        }
+//        pendingResult.mIsReady = false;
+//
+//        // Swap the buffers
+//        sLastValidResult = !sLastValidResult;
+//    }
+//
+//    SearchResult& lastValidResult = sResults[sLastValidResult];
+//    bool isCurrentResultInvalid{};
+//
+//    // In case the list of strings to search through has changed,
+//    // we need to update our last valid result.
+//    if (lastValidResult.mStrings != strings)
+//    {
+//        // Our last valid result has been invalidated, just assume all the terms match
+//        lastValidResult.mScores.resize(strings.NumOfStrings());
+//        std::fill(lastValidResult.mScores.begin(), lastValidResult.mScores.end(), 100.0f);
+//
+//        // Make a copy here, but we set
+//        // shouldRelaunch to true, so the
+//        // strings will be moved into our
+//        // pending query.
+//        lastValidResult.mStrings = strings;
+//        isCurrentResultInvalid = true;
+//    }
+//
+//    // Show the current options
+//    static std::string sCurrentQuery{};
+//    DisplaySearchBar(sCurrentQuery, label, hint);
+//
+//    std::optional<std::string> returnValue{};
+//
+//    for (const uint32 index : lastValidResult.mIndicesOfSortedStrings)
+//    {
+//        const std::string_view item = lastValidResult.mStrings[index];
+//        if (ImGui::Selectable(item.data())
+//            || ImGui::IsItemClicked()) // If we click on the button, the search term is reset, the button may move, 
+//            // and we won't be hovering over the button when the mouse button is released.
+//            // So we activate OnClick and not OnRelease)
+//        {
+//            returnValue.emplace(item);
+//        }
+//    }
+//
+//    // If the search term has changed AND we don't already have
+//    // a query pending, we make a new query.
+//    if (isCurrentResultInvalid
+//        || (sCurrentQuery != lastValidResult.mQuery
+//            && !sResults[!sLastValidResult].mPendingScores.joinable()))
+//    {
+//        SearchResult& pending = sResults[!sLastValidResult];
+//        pending.mStrings = strings;
+//        pending.mQuery = sCurrentQuery;
+//        pending.mScores.clear();
+//        pending.mIsReady = false;
+//        pending.mPendingScores = std::thread{
+//            [&pending]
+//            {
+//                pending.mScores.resize(pending.mStrings.NumOfStrings());
+//
+//                CachedScorer scorer{ pending.mQuery };
+//
+//                for (size_t i = 0; i < pending.mStrings.NumOfStrings(); i++)
+//                {
+//                    pending.mScores[i] = static_cast<float>(scorer.similarity(pending.mStrings[i], sDefaultCutOff));
+//                }
+//
+//                pending.mIndicesOfSortedStrings.resize(pending.mScores.size());
+//                std::iota(pending.mIndicesOfSortedStrings.begin(), pending.mIndicesOfSortedStrings.end(), 0);
+//
+//                std::sort(pending.mIndicesOfSortedStrings.begin(), pending.mIndicesOfSortedStrings.end(),
+//                    [&pending](uint32 lhs, uint32 rhs)
+//                    {
+//                        return pending.mScores[lhs] > pending.mScores[rhs];
+//                    });
+//
+//                pending.mIsReady = true;
+//            }
+//        };
+//    }
+//
+//    EndSearchCombo(returnValue.has_value());
+//
+//    return returnValue;
+//}
