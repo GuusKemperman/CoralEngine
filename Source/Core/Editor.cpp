@@ -11,7 +11,7 @@
 #include "Meta/MetaProps.h"
 #include "Rendering/DebugRenderer.h"
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
-#include "Containers/view_istream.h"
+#include "Utilities/view_istream.h"
 #include "GSON/GSONBinary.h"
 
 namespace

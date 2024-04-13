@@ -5,7 +5,7 @@
 
 #include "Core/FileIO.h"
 #include "GSON/GSONReadable.h"
-#include "Containers/ManyStrings.h"
+#include "Utilities/ManyStrings.h"
 
 static std::filesystem::path GetLogIniPath()
 {

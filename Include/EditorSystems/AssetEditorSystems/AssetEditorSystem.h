@@ -9,7 +9,7 @@
 #include "Core/Editor.h"
 #include "Core/Input.h"
 #include "Meta/MetaType.h"
-#include "Containers/view_istream.h"
+#include "Utilities/view_istream.h"
 #include "Utilities/DoUndo.h"
 #include "Utilities/StringFunctions.h"
 

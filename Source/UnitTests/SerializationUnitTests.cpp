@@ -6,7 +6,7 @@
 #include "Core/Editor.h"
 #include "Core/AssetManager.h"
 #include "Meta/MetaType.h"
-#include "Containers/view_istream.h"
+#include "Utilities/view_istream.h"
 #include "World/Registry.h"
 #include "World/World.h"
 

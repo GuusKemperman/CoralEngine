@@ -84,7 +84,7 @@ namespace ImGui
 	{
 		static void Auto(EnumType& var, const std::string& name)
 		{
-			var = CE::Search::DisplayDropDownWithSearchBar<EnumType>(name.c_str(), CE::EnumToString(var).data()).value_or(var);
+			CE::Search::Search<EnumType>(name, var, std::function<bool(EnumType)>{ [](EnumType) { return true; } });
 		}
 		static constexpr bool sIsSpecialized = true;
 	};
