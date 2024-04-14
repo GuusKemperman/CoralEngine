@@ -630,7 +630,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 				continue;
 			}
 
-			if (Search::AddEntry(func.GetDesignerFriendlyName(),
+			if (Search::AddItem(func.GetDesignerFriendlyName(),
 				[&reg, &selectedEntities, &componentClass, &func](std::string_view name)
 				{
 					// We only do this additional PushId for functions,
@@ -691,7 +691,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 				continue;
 			}
 
-			Search::AddEntry(field.GetName(),
+			Search::AddItem(field.GetName(),
 				[&componentClass, &field, &reg, &selectedEntities](std::string_view fieldName) -> bool
 				{
 					entt::sparse_set* storage = reg.Storage(componentClass.GetTypeId());

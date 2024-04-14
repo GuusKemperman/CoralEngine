@@ -17,7 +17,7 @@ namespace CE::Search
 
 	void EndCategory(std::function<void()> displayEnd);
 
-	bool AddEntry(std::string_view name, std::function<bool(std::string_view)> display);
+	bool AddItem(std::string_view name, std::function<bool(std::string_view)> display);
 
 	bool BeginCombo(std::string_view label, std::string_view previewValue, ImGuiComboFlags flags = 0);
 

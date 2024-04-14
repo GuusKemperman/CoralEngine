@@ -140,7 +140,7 @@ void CE::Search::EndCategory(std::function<void()> displayEnd)
 	context.mCategoryStack.pop();
 }
 
-bool CE::Search::AddEntry(std::string_view name, std::function<bool(std::string_view)> display)
+bool CE::Search::AddItem(std::string_view name, std::function<bool(std::string_view)> display)
 {
 	SearchContext& context = sContextStack.top();
 
@@ -177,7 +177,7 @@ bool CE::Search::BeginCombo(std::string_view label, std::string_view previewValu
 
 bool CE::Search::Button(std::string_view label)
 {
-	return AddEntry(label,
+	return AddItem(label,
 		[](std::string_view name)
 		{
 			// If we click on the button, the search term is reset, the button may move,

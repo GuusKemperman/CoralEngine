@@ -221,7 +221,7 @@ void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folde
 
 void CE::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& asset) const
 {
-    if (Search::AddEntry(asset.GetMetaData().GetName(),
+    if (Search::AddItem(asset.GetMetaData().GetName(),
         [asset](std::string_view) -> bool
         {
             bool returnValue{};
