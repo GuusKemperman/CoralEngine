@@ -37,6 +37,10 @@ namespace CE::Search
 
 	void TreePop();
 
+	bool BeginPopup(std::string_view name);
+
+	void EndPopup();
+
 	template<typename T, typename T2 = void>
 	struct MovableTypeHelper
 	{

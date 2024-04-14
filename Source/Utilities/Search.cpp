@@ -200,6 +200,25 @@ void CE::Search::TreePop()
 	EndCategory([] { ImGui::TreePop(); });
 }
 
+bool CE::Search::BeginPopup(std::string_view name)
+{
+	ImGui::SetNextWindowSize(ImVec2{ -1.0f, 300.0f });
+
+	if (!ImGui::BeginPopup(name.data()))
+	{
+		return false;
+	}
+
+	Begin("SearchInPopUp");
+	return true;
+}
+
+void CE::Search::EndPopup()
+{
+	End();
+	ImGui::EndPopup();
+}
+
 namespace
 {
 	void ProcessItemClickConsumption(SearchContext& context)
@@ -231,7 +250,8 @@ namespace
 			{
 				const CategoryFunctions& catFunctions = std::get<CategoryFunctions>(functions);
 
-				if (catFunctions.mOnDisplayStart(name))
+				if (!catFunctions.mOnDisplayStart 
+					|| catFunctions.mOnDisplayStart(name))
 				{
 					++index;
 
@@ -243,7 +263,10 @@ namespace
 					// from doing this operation twice.
 					index--;
 
-					catFunctions.mOnDisplayEnd();
+					if (catFunctions.mOnDisplayEnd)
+					{
+						catFunctions.mOnDisplayEnd();
+					}
 				}
 				else
 				{
@@ -254,7 +277,8 @@ namespace
 			{
 				const ItemFunctions& itemFunctions = std::get<ItemFunctions>(functions);
 
-				if (itemFunctions.mOnDisplay(name)
+				if (itemFunctions.mOnDisplay 
+					&& itemFunctions.mOnDisplay(name)
 					/*|| (isSelected && ImGui::IsKeyPressed(ImGuiKey_Enter))*/)
 				{
 					context.mIndexOfPressedItem = index;

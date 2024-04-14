@@ -359,11 +359,10 @@ void CE::ScriptEditorSystem::DisplayCanvasPopUps()
 		ImGui::EndPopup();
 	}
 
-	ImGui::SetNextWindowSize(ImVec2{ -1.0f, 300.0f });
-	if (ImGui::BeginPopup("Create New Node"))
+	if (Search::BeginPopup("Create New Node"))
 	{
 		DisplayCreateNewNowPopUp(mMousePosInCanvasSpace);
-		ImGui::EndPopup();
+		Search::EndPopup();
 	}
 	else
 	{
@@ -380,8 +379,6 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 	{
 		mCreateNodePopUpPosition = placeNodeAtPos;
 	}
-
-	Search::Begin("CreateNodeSearch");
 
 	ImGui::SameLine();
 	ImGui::Checkbox("Context sensitive", &sContextSensitive);
@@ -408,8 +405,6 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 
 		Search::TreePop();
 	}
-
-	Search::End();
 }
 
 void CE::ScriptEditorSystem::DisplayPinContextPopUp()
