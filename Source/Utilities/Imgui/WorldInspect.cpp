@@ -811,7 +811,7 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 	if (selectedEntities == nullptr)
 	{
 		selectedEntities = &dummySelectedEntities;
-	}// From here on out, we can assume selectedEntities != nullptr
+	} // From here on out, we can assume selectedEntities != nullptr
 
 	if (ImGui::IsMouseClicked(1)
 		&& ImGui::IsWindowHovered())
@@ -834,66 +834,40 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 	ImGui::SameLine();
 
-	const std::string searchFor = Search::DisplaySearchBar();
+	Search::Begin("Hierarchy");
 
-	if (!searchFor.empty())
+	// First we display all entities without transforms
 	{
-		Search::Choices<entt::entity> entitiesToDisplay{};
+		// We can't use a view that ONLY excludes,
+		// so we have to iterate over all the entities
 		const auto& allEntities = reg.Storage<entt::entity>();
 
 		for (const auto& [entity] : allEntities.each())
 		{
-			entitiesToDisplay.emplace_back(NameComponent::GetDisplayName(reg, entity), entity);
-		}
+			if (reg.HasComponent<TransformComponent>(entity))
+			{
+				continue;
+			}
 
-		Search::EraseChoicesThatDoNotMatch(searchFor, entitiesToDisplay);
-
-		for (const Search::Choice<entt::entity>& entityToDisplay : entitiesToDisplay)
-		{
-			DisplaySingle(reg, entityToDisplay.mValue, *selectedEntities, nullptr);
+			DisplayEntity(reg, entity, *selectedEntities);
 		}
 	}
-	else
+
+	// Now we display only entities with transforms
 	{
-		bool anyDisplayed{};
-
-		// First we display all entities without transforms
+		for (auto [entity, transform] : reg.View<TransformComponent>().each())
 		{
-			const auto& allEntities = reg.Storage<entt::entity>();
-
-			for (const auto& [entity] : allEntities.each())
+			// We recursively display children.
+			// So we only call display if
+			// this transform does not have a parent.
+			if (transform.IsOrphan())
 			{
-				if (reg.TryGet<TransformComponent>(entity) != nullptr)
-				{
-					continue;
-				}
-
-				DisplaySingle(reg, entity, *selectedEntities, nullptr);
-				anyDisplayed = true;
-			}
-		}
-
-		if (anyDisplayed)
-		{
-			ImGui::SeparatorText("Entities with transforms");
-		}
-
-		// Now we display only entities with transforms
-		{
-			auto withTransforms = reg.View<TransformComponent>();
-
-			for (auto [entity, transform] : withTransforms.each())
-			{
-				// We recursively display children.
-				// So we only call display family if
-				// this transform does not have a parent.
-				if (transform.IsOrphan())
-				{
-					DisplayFamily(reg, transform, *selectedEntities);
-				}
+				DisplayEntity(reg, entity, *selectedEntities);
 			}
 		}
 	}
+	
+	Search::End();
 
 	DisplayRightClickPopUp(world, *selectedEntities);
 
@@ -902,102 +876,96 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 	ReceiveDragDrops(world);
 }
 
-void CE::WorldHierarchy::DisplayFamily(Registry& reg,
-	TransformComponent& parentTransform,
-	std::vector<entt::entity>& selectedEntities)
+void CE::WorldHierarchy::DisplayEntity(Registry& registry, entt::entity entity, std::vector<entt::entity>& selectedEntities)
 {
-	const entt::entity entity = parentTransform.GetOwner();
-	ImGui::PushID(static_cast<int>(entity));
+	const std::string displayName = NameComponent::GetDisplayName(registry, entity).append("##DisplayName");
 
-	const std::vector<std::reference_wrapper<TransformComponent>>& children = parentTransform.GetChildren();
-
-	bool isTreeNodeOpen{};
-
-	if (!children.empty())
-	{
-		isTreeNodeOpen = ImGui::TreeNode("");
-		ImGui::SameLine();
-	}
-
-	DisplaySingle(reg, entity, selectedEntities, &parentTransform);
-
-	if (isTreeNodeOpen)
-	{
-		for (TransformComponent& childTransform : children)
+	CE::Search::BeginCategory(displayName,
+		[&registry, entity, &selectedEntities](std::string_view name) -> bool
 		{
-			DisplayFamily(reg, childTransform, selectedEntities);
-		}
+			ImGui::PushID(static_cast<int>(entity));
 
-		ImGui::TreePop();
-	}
+			const TransformComponent* const transform = registry.TryGet<TransformComponent>(entity);
 
-	ImGui::PopID();
-}
+			bool isTreeNodeOpen{};
 
-void CE::WorldHierarchy::DisplaySingle(Registry& registry,
-	const entt::entity owner,
-	std::vector<entt::entity>& selectedEntities,
-	TransformComponent* const transformComponent)
-{
-	const std::string displayName = NameComponent::GetDisplayName(registry, owner).append("##DisplayName");
-
-	bool isSelected = std::find(selectedEntities.begin(), selectedEntities.end(), owner) != selectedEntities.end();
-	const ImVec2 selectableAreaSize = ImGui::CalcTextSize(displayName.c_str());
-
-	if (ImGui::Selectable(displayName.c_str(), &isSelected, 0, selectableAreaSize))
-	{
-		if (!Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
-		{
-			selectedEntities.clear();
-		}
-
-		if (isSelected)
-		{
-			if (std::find(selectedEntities.begin(), selectedEntities.end(), owner) == selectedEntities.end())
+			if (transform != nullptr
+				&& !transform->GetChildren().empty())
 			{
-				selectedEntities.push_back(owner);
+				isTreeNodeOpen = ImGui::TreeNode("");
+				ImGui::SameLine();
 			}
-		}
-		else
+
+			bool isSelected = std::find(selectedEntities.begin(), selectedEntities.end(), entity) != selectedEntities.end();
+			const ImVec2 selectableAreaSize = ImGui::CalcTextSize(name.data(), name.data() + name.size());
+
+			if (ImGui::Selectable(name.data(), &isSelected, 0, selectableAreaSize))
+			{
+				if (!Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
+				{
+					selectedEntities.clear();
+				}
+
+				if (isSelected)
+				{
+					if (std::find(selectedEntities.begin(), selectedEntities.end(), entity) == selectedEntities.end())
+					{
+						selectedEntities.push_back(entity);
+					}
+				}
+				else
+				{
+					selectedEntities.erase(std::remove(selectedEntities.begin(), selectedEntities.end(), entity),
+						selectedEntities.end());
+				}
+			}
+
+			ImGui::SetItemTooltip(Format("Entity {}", entt::to_integral(entity)).c_str());
+
+			// Only objects with transforms can accept children
+			if (transform != nullptr)
+			{
+				if (!selectedEntities.empty())
+				{
+					DragDrop::SendEntities(selectedEntities);
+				}
+
+				ReceiveDragDropOntoParent(registry, entity);
+
+				const std::optional<WeakAsset<Prefab>> receivedPrefab = DragDrop::PeekAsset<Prefab>();
+
+				if (receivedPrefab.has_value()
+					&& DragDrop::AcceptAsset())
+				{
+					const entt::entity prefabEntity = registry.CreateFromPrefab(*receivedPrefab->MakeShared());
+
+					TransformComponent* const prefabTransform = registry.TryGet<TransformComponent>(prefabEntity);
+					TransformComponent* const parentTransform = registry.TryGet<TransformComponent>(entity);
+
+					if (prefabTransform != nullptr
+						&& parentTransform != nullptr)
+					{
+						prefabTransform->SetParent(parentTransform);
+					}
+				}
+			}
+
+			ImGui::PopID();
+
+			return isTreeNodeOpen;
+		});
+
+	const TransformComponent* const transform = registry.TryGet<TransformComponent>(entity);
+
+	if (transform != nullptr)
+	{
+		for (const TransformComponent& child : transform->GetChildren())
 		{
-			selectedEntities.erase(std::remove(selectedEntities.begin(), selectedEntities.end(), owner),
-				selectedEntities.end());
+			DisplayEntity(registry, child.GetOwner(), selectedEntities);
 		}
 	}
 
-	ImGui::SetItemTooltip(Format("Entity {}", entt::to_integral(owner)).c_str());
-
-	// Only objects with transforms can accept children
-	if (!transformComponent)
-	{
-		return;
-	}
-
-	if (!selectedEntities.empty())
-	{
-		DragDrop::SendEntities(selectedEntities);
-	}
-
-	ReceiveDragDropOntoParent(registry, owner);
-
-	std::optional<WeakAsset<Prefab>> receivedPrefab = DragDrop::PeekAsset<Prefab>();
-
-	if (!receivedPrefab.has_value()
-		|| !DragDrop::AcceptAsset())
-	{
-		return;
-	}
-
-	entt::entity prefabEntity = registry.CreateFromPrefab(*receivedPrefab->MakeShared());
-
-	TransformComponent* const prefabTransform = registry.TryGet<TransformComponent>(prefabEntity);
-	TransformComponent* const parentTransform = registry.TryGet<TransformComponent>(owner);
-
-	if (prefabTransform != nullptr
-		&& parentTransform != nullptr)
-	{
-		prefabTransform->SetParent(parentTransform);
-	}
+	CE::Search::TreePop();
 }
 
 void CE::WorldHierarchy::ReceiveDragDropOntoParent(Registry& registry,
