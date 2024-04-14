@@ -59,6 +59,10 @@ namespace
 	std::unordered_map<ImGuiID, SearchContext> sContexts{};
 	std::stack<std::reference_wrapper<SearchContext>> sContextStack{};
 
+	constexpr std::string_view sDefaultLabel = ICON_FA_SEARCH "##SearchBar";
+	constexpr std::string_view sDefaultHint = "Search";
+
+
 	void ProcessItemClickConsumption(SearchContext& context);
 	void RecursivelyDisplayEntry(SearchContext& context, uint32& index, uint32 stopAt);
 	void ApplyKeyboardNavigation(SearchContext& context);
@@ -71,7 +75,8 @@ void CE::Search::Begin(std::string_view id, SearchFlags flags)
 
 	SearchContext& context = sContextStack.emplace(sContexts[imId]);
 	context.mFlags = flags;
-	DisplaySearchBar(context.mUserQuery);
+
+	ImGui::InputTextWithHint(sDefaultLabel.data(), sDefaultHint.data(), &context.mUserQuery);
 }
 
 void CE::Search::End()
@@ -321,38 +326,6 @@ namespace
 		//	}
 		//}
 	}
-}
-
-std::string CE::Search::DisplaySearchBar(std::string_view label, std::string_view hint)
-{
-	std::string str{};
-	DisplaySearchBar(str, label, hint);
-	return str;
-}
-
-void CE::Search::DisplaySearchBar(std::string& searchTerm, std::string_view label, std::string_view hint)
-{
-	ImGui::InputTextWithHint(label.data(), hint.data(), &searchTerm);
-}
-
-bool CE::Search::BeginSearchCombo(std::string_view label, std::string_view hint)
-{
-	if (!ImGui::BeginCombo(label.data(), hint.data()))
-	{
-		return false;
-	}
-
-	return true;
-}
-
-void CE::Search::EndSearchCombo(bool wasItemSelected)
-{
-	if (wasItemSelected)
-	{
-		ImGui::CloseCurrentPopup();
-	}
-
-	ImGui::EndCombo();
 }
 
 //std::optional<std::string> CE::Search::DisplaySearchBar(const ManyStrings& strings, std::string_view label, std::string_view hint)

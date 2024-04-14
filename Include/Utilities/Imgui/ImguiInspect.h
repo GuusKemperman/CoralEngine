@@ -15,6 +15,8 @@
 
 namespace CE
 {
+	class MetaType;
+
 	/*
 	Used ImGui::Auto to inspect the element, possibly changing its value.
 		
