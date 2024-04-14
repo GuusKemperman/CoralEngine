@@ -209,7 +209,7 @@ bool CE::Search::BeginPopup(std::string_view name)
 		return false;
 	}
 
-	Begin("SearchInPopUp");
+	Begin(std::string{ name } + "SearchInPopUp");
 	return true;
 }
 

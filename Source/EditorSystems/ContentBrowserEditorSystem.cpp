@@ -58,33 +58,17 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
     }
 
     ImGui::SetItemTooltip("Create a new asset");
-
-    ImGui::SameLine();
-
-    static std::string searchFor{};
-
-	Search::DisplaySearchBar(searchFor);
-
-    if (!searchFor.empty())
-    {
-		Search::Choices<Asset> assetsThatMatchSearch = Search::CollectChoices<Asset>();
-        Search::EraseChoicesThatDoNotMatch(searchFor, assetsThatMatchSearch);
-
-        for (Search::Choice<Asset>& choice : assetsThatMatchSearch)
-        {
-            DisplayAsset(std::move(choice.mValue));
-        }
-
-        End();
-        return;
-    }
+    
+    Search::Begin("ContentBrowserSearch");
 
     sWasAssetJustRightClicked = false;
 
     for (const ContentFolder& folder : mFolderGraph)
     {
-        DisplayDirectory(std::move(folder));
+        DisplayDirectory(folder);
     }
+
+    Search::End();
 
     if (sWasAssetJustRightClicked)
     {
@@ -176,113 +160,120 @@ std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEdi
 
 void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folder)
 {
-    const bool isOpen = ImGui::TreeNode(folder.mPath.filename().string().c_str());
+    Search::BeginCategory(folder.mPath.filename().string(),
+        [&folder](std::string_view folderName) -> bool
+        {
+            const bool isOpen = ImGui::TreeNode(folderName.data());
 
-    std::optional<WeakAsset<Asset>> receivedAsset = DragDrop::PeekAsset<Asset>();
-    if (receivedAsset.has_value()
-        && receivedAsset->GetFileOfOrigin().has_value()
-        && receivedAsset->GetFileOfOrigin()->parent_path() != folder.mPath
-        && DragDrop::AcceptAsset())
-    {
-        AssetManager::Get().MoveAsset(*receivedAsset, folder.mPath / receivedAsset->GetFileOfOrigin()->filename());
-    }
+            std::optional<WeakAsset<Asset>> receivedAsset = DragDrop::PeekAsset<Asset>();
+            if (receivedAsset.has_value()
+                && receivedAsset->GetFileOfOrigin().has_value()
+                && receivedAsset->GetFileOfOrigin()->parent_path() != folder.mPath
+                && DragDrop::AcceptAsset())
+            {
+                AssetManager::Get().MoveAsset(*receivedAsset, folder.mPath / receivedAsset->GetFileOfOrigin()->filename());
+            }
 
-    std::string popUpName = Format("{}RightClickedDir", folder.mPath.string());
+            const std::string popUpName = Format("{}RightClickedDir", folder.mPath.string());
 
-    if (ImGui::IsItemClicked(1))
-    {
-        ImGui::OpenPopup(popUpName.c_str());
-    }
+            if (ImGui::IsItemClicked(1))
+            {
+                ImGui::OpenPopup(popUpName.c_str());
+            }
 
-    if (ImGui::BeginPopup(popUpName.c_str()))
-    {
-	    if (ImGui::MenuItem("Reimport"))
-	    {
-            std::function<void(const ContentFolder&)> importRecursive = [&importRecursive](const ContentFolder& folder)
+            if (ImGui::BeginPopup(popUpName.c_str()))
+            {
+                if (ImGui::MenuItem("Reimport"))
                 {
-                    for (const WeakAsset<Asset>& asset : folder.mContent)
-                    {
-                        Reimport(asset);
-                    }
+                    std::function<void(const ContentFolder&)> importRecursive = [&importRecursive](const ContentFolder& folder)
+                        {
+                            for (const WeakAsset<Asset>& asset : folder.mContent)
+                            {
+                                Reimport(asset);
+                            }
 
-                    for (const ContentFolder& child : folder.mChildren)
-                    {
-                        importRecursive(child);
-                    }
-                };
-            importRecursive(folder);
-	    }
+                            for (const ContentFolder& child : folder.mChildren)
+                            {
+                                importRecursive(child);
+                            }
+                        };
+                    importRecursive(folder);
+                }
 
-        ImGui::EndPopup();
-    }
+                ImGui::EndPopup();
+            }
 
-    if (isOpen)
+            return isOpen;
+        });
+
+    for (const ContentFolder& child : folder.mChildren)
     {
-        for (const ContentFolder& child : folder.mChildren)
-        {
-            DisplayDirectory(std::move(child));
-        }
-
-        ImGui::Indent();
-
-        for (const WeakAsset<Asset>& asset : folder.mContent)
-        {
-            DisplayAsset(std::move(asset));
-        }
-
-        ImGui::Unindent();
-        ImGui::TreePop();
+        DisplayDirectory(std::move(child));
     }
+
+    for (const WeakAsset<Asset>& asset : folder.mContent)
+    {
+        DisplayAsset(std::move(asset));
+    }
+
+    Search::TreePop();
 }
 
 void CE::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& asset) const
 {
-    if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetMetaData().GetClass().GetTypeId()))
-    {
-        if (ImGui::Button(asset.GetMetaData().GetName().c_str()))
+    if (Search::AddEntry(asset.GetMetaData().GetName(),
+        [asset](std::string_view) -> bool
         {
-            OpenAsset(asset);
-        }
-    }
-    else
+            bool returnValue{};
+
+            if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetMetaData().GetClass().GetTypeId()))
+            {
+                if (ImGui::Button(asset.GetMetaData().GetName().c_str()))
+                {
+                    returnValue = true;
+                }
+            }
+            else
+            {
+                ImGui::TextUnformatted(asset.GetMetaData().GetName().c_str());
+            }
+
+            if (ImGui::IsItemClicked(1))
+            {
+                sRightClickedAsset = asset.GetMetaData().GetName();
+                sWasAssetJustRightClicked = true;
+            }
+
+            DragDrop::SendAsset(asset.GetMetaData().GetName());
+
+            if (ImGui::BeginItemTooltip())
+            {
+                ImGui::Text("Name: %s", asset.GetMetaData().GetName().c_str());
+                ImGui::Text("Type: %s", asset.GetMetaData().GetClass().GetName().c_str());
+
+                if (asset.GetFileOfOrigin().has_value())
+                {
+                    ImGui::Text("File: %s", asset.GetFileOfOrigin()->string().c_str());
+                }
+                else
+                {
+                    ImGui::Text("Generated at runtime");
+                }
+
+                if (const std::optional<AssetFileMetaData::ImporterInfo> importerInfo = asset.GetMetaData().GetImporterInfo();
+                    importerInfo.has_value())
+                {
+                    ImGui::Text("Imported from: %s", importerInfo->mImportedFile.string().c_str());
+                }
+
+                ImGui::Text("NumOfReferences: %d", static_cast<int>(asset.NumOfReferences()));
+                ImGui::EndTooltip();
+            }
+
+            return returnValue;
+        }))
     {
-        ImGui::TextUnformatted(asset.GetMetaData().GetName().c_str());
-    }
-
-
-    if (ImGui::IsItemClicked(1))
-    {
-        sRightClickedAsset = asset.GetMetaData().GetName();
-        sWasAssetJustRightClicked = true;
-    }
-
-    // Looks scary because we may end up deleting the asset,
-    // but a user can't drag an asset at the same time as they
-    // click the delete button
-    DragDrop::SendAsset(asset.GetMetaData().GetName());
-
-    if (ImGui::BeginItemTooltip())
-    {
-        ImGui::Text("Name: %s", asset.GetMetaData().GetName().c_str());
-        ImGui::Text("Type: %s", asset.GetMetaData().GetClass().GetName().c_str());
-
-        if (asset.GetFileOfOrigin().has_value())
-        {
-            ImGui::Text("File: %s", asset.GetFileOfOrigin()->string().c_str());
-        }
-        else
-        {
-            ImGui::Text("Generated at runtime");
-        }
-
-        if (const std::optional<AssetFileMetaData::ImporterInfo> importerInfo = asset.GetMetaData().GetImporterInfo();
-            importerInfo.has_value())
-        {
-            ImGui::Text("Imported from: %s", importerInfo->mImportedFile.string().c_str());
-        }
-
-        ImGui::Text("NumOfReferences: %d", static_cast<int>(asset.NumOfReferences()));
-        ImGui::EndTooltip();
+        OpenAsset(asset);
     }
 }
 
