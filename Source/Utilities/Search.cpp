@@ -1,11 +1,10 @@
 #include "Precomp.h"
 #include "Utilities/Search.h"
 
-#include <future>
+#include "rapidfuzz/rapidfuzz_all.hpp"
 #include <stack>
 
 #include "Utilities/ManyStrings.h"
-#include "rapidfuzz/rapidfuzz_all.hpp"
 
 namespace
 {
@@ -59,22 +58,25 @@ namespace
 
 	struct Result
 	{
-		const Input mInput{};
+		~Result();
+
+		std::thread mThread{};
+        bool mIsReady{};
+
+		Input mInput{};
 		ReusableBuffers mBuffers{};
 		Output mOutput{};
 	};
 
 	struct SearchContext
 	{
-		CE::ManyStrings mNames{};
-		std::vector<Entry> mAllEntries{};
-		std::vector<std::variant<CategoryFunctions, ItemFunctions>> mDisplayFunctions{};
+		Input mInput{};
 
+		std::vector<std::variant<CategoryFunctions, ItemFunctions>> mDisplayFunctions{};
 		std::stack<uint32> mCategoryStack{};
 
-		std::string mUserQuery{};
-
-		std::optional<Result> mResult{};
+		std::array<Result, 2> mResults{};
+		bool mIndexOfLastValidResult{};
 
 		uint32 mIndexOfPressedItem = std::numeric_limits<uint32>::max();
 		CE::Search::SearchFlags mFlags{};
@@ -84,9 +86,13 @@ namespace
 
 	constexpr std::string_view sDefaultLabel = ICON_FA_SEARCH "##SearchBar";
 	constexpr std::string_view sDefaultHint = "Search";
-	constexpr bool sShowScores = true;
 
-	void UpdateCalculation(Result& result);
+	bool operator==(const Entry& lhs, const Entry& rhs);
+	bool operator!=(const Entry& lhs, const Entry& rhs);
+
+	bool IsResultSafeToUse(const Result& oldResult, const Input& currentInput);
+	bool IsResultUpToDate(const Result& oldResult, const Input& currentInput);
+	void BringResultUpToDate(Result& result);
 	void ProcessItemClickConsumption(SearchContext& context);
 	void DisplayToUser(SearchContext& context);
 }
@@ -99,7 +105,7 @@ void CE::Search::Begin(std::string_view id, SearchFlags flags)
 	SearchContext& context = sContextStack.emplace(sContexts[imId]);
 	context.mFlags = flags;
 
-	ImGui::InputTextWithHint(sDefaultLabel.data(), sDefaultHint.data(), &context.mUserQuery);
+	ImGui::InputTextWithHint(sDefaultLabel.data(), sDefaultHint.data(), &context.mInput.mUserQuery);
 }
 
 void CE::Search::End()
@@ -107,19 +113,72 @@ void CE::Search::End()
 	// Display all the items here
 	SearchContext& context = sContextStack.top();
 
-	context.mResult.emplace(Result
-		{
-			context.mNames,
-			context.mAllEntries,
-			context.mUserQuery,
-		});
+	// Check if the result from our previous thread is ready
+    if (context.mResults[!context.mIndexOfLastValidResult].mIsReady)
+    {
+        // Note that we do not check if the pending result is still valid.
+        // We do this later, where we check if the last valid result is
+        // still valid. Since our pending result now becomes our last valid result,
+        // we can defer that check.
+        Result& pendingResult = context.mResults[!context.mIndexOfLastValidResult];
 
-	UpdateCalculation(*context.mResult);
+        if (pendingResult.mThread.joinable())
+        {
+            pendingResult.mThread.join();
+        }
+        pendingResult.mIsReady = false;
+
+        // Swap the buffers
+		context.mIndexOfLastValidResult = !context.mIndexOfLastValidResult;
+    }
+
+    Result& lastValidResult = context.mResults[context.mIndexOfLastValidResult];
+
+    // In case the list of strings to search through has changed,
+    // we need to update our last valid result.
+    if (!IsResultSafeToUse(lastValidResult, context.mInput))
+    {
+        // Our last valid result has been invalidated, we'll just
+		// have to update it on this thread, unfortunately.
+		// In order to spare our poor main thread, we will
+		// clear the user query temporarily, which results in an
+		// early out. We get a valid result we can use now, and
+		// one of our other cores will get to work with bringing
+		// the result up to date.
+		std::string tmpUserQuery{};
+    	std::swap(tmpUserQuery, context.mInput.mUserQuery);
+		lastValidResult.mInput = context.mInput;
+    	std::swap(tmpUserQuery, context.mInput.mUserQuery);
+
+		context.mInput.mUserQuery = std::move(tmpUserQuery);
+
+		BringResultUpToDate(lastValidResult);
+    }
+	ASSERT(IsResultSafeToUse(lastValidResult, context.mInput));
+
 	DisplayToUser(context);
 
-	context.mAllEntries.clear();
+	Result& pendingResult = context.mResults[!context.mIndexOfLastValidResult];
+
+	if (!IsResultUpToDate(lastValidResult, context.mInput)
+		&& !pendingResult.mThread.joinable())
+	{
+		pendingResult.mInput = context.mInput;
+		pendingResult.mIsReady = false;
+
+		pendingResult.mThread = std::thread
+		{
+			[&pendingResult]
+			{
+				BringResultUpToDate(pendingResult);
+				pendingResult.mIsReady = true;
+			}
+		};
+	}
+
+	context.mInput.mEntries.clear();
 	context.mDisplayFunctions.clear();
-	context.mNames.Clear();
+	context.mInput.mNames.Clear();
 	ASSERT_LOG(context.mCategoryStack.empty(), "There were more calls to BeginCategory than to EndCategory");
 
 	sContextStack.pop();
@@ -129,15 +188,15 @@ void CE::Search::End()
 void CE::Search::BeginCategory(std::string_view name, std::function<bool(std::string_view)> displayStart)
 {
 	SearchContext& context = sContextStack.top();
-	context.mAllEntries.emplace_back(
+	context.mInput.mEntries.emplace_back(
 		Entry
 		{
 			true,
 			0
 		});
 	context.mDisplayFunctions.emplace_back(CategoryFunctions{ std::move(displayStart) });
-	context.mNames.Emplace(name);
-	context.mCategoryStack.emplace(static_cast<uint32>(context.mAllEntries.size()) - 1);
+	context.mInput.mNames.Emplace(name);
+	context.mCategoryStack.emplace(static_cast<uint32>(context.mInput.mEntries.size()) - 1);
 }
 
 void CE::Search::EndCategory(std::function<void()> displayEnd)
@@ -151,7 +210,7 @@ void CE::Search::EndCategory(std::function<void()> displayEnd)
 	CategoryFunctions& catFunctions = std::get<CategoryFunctions>(funcs);
 	catFunctions.mOnDisplayEnd = std::move(displayEnd);
 
-	context.mAllEntries[indexOfCurrentCategory].mNumOfTotalChildren = static_cast<uint32>(context.mAllEntries.size() - 1) - indexOfCurrentCategory;
+	context.mInput.mEntries[indexOfCurrentCategory].mNumOfTotalChildren = static_cast<uint32>(context.mInput.mEntries.size() - 1) - indexOfCurrentCategory;
 	context.mCategoryStack.pop();
 }
 
@@ -159,21 +218,21 @@ bool CE::Search::AddItem(std::string_view name, std::function<bool(std::string_v
 {
 	SearchContext& context = sContextStack.top();
 
-	const bool wasPressed = context.mIndexOfPressedItem == context.mAllEntries.size();
+	const bool wasPressed = context.mIndexOfPressedItem == context.mInput.mEntries.size();
 
 	if (wasPressed)
 	{
 		ProcessItemClickConsumption(context);
 	}
 
-	context.mAllEntries.emplace_back(
+	context.mInput.mEntries.emplace_back(
 		Entry
 		{
 			false,
 			0
 		});
 	context.mDisplayFunctions.emplace_back(ItemFunctions{ std::move(display) });
-	context.mNames.Emplace(name);
+	context.mInput.mNames.Emplace(name);
 
 	return wasPressed;
 }
@@ -257,6 +316,38 @@ namespace
 		}
 	}
 
+	Result::~Result()
+	{
+		if (mThread.joinable())
+		{
+			mThread.join();
+		}
+	}
+
+	bool operator==(const Entry& lhs, const Entry& rhs)
+	{
+		return lhs.mNumOfTotalChildren == rhs.mNumOfTotalChildren && lhs.mIsCategory == rhs.mIsCategory;
+	}
+
+	bool operator!=(const Entry& lhs, const Entry& rhs)
+	{
+		return lhs.mNumOfTotalChildren != rhs.mNumOfTotalChildren || lhs.mIsCategory != rhs.mIsCategory;
+	}
+
+	bool IsResultSafeToUse(const Result& oldResult, const Input& currentInput)
+	{
+		const Input& oldInput = oldResult.mInput;
+
+		return oldInput.mNames == currentInput.mNames
+			&& oldInput.mEntries == currentInput.mEntries;
+	}
+
+	bool IsResultUpToDate(const Result& oldResult, const Input& currentInput)
+	{
+		const Input& oldInput = oldResult.mInput;
+		return oldInput.mUserQuery == currentInput.mUserQuery;
+	}
+
 	void AppendToDisplayOrder(const EntryAsNode& node, Result& result)
 	{
 		result.mOutput.mDisplayOrder.emplace_back(node.mIndex);
@@ -296,10 +387,13 @@ namespace
 		}
 	}
 
-	void UpdateCalculation(Result& result)
+	void BringResultUpToDate(Result& result)
 	{
 		std::vector<EntryAsNode>& nodes = result.mBuffers.mNodes;
 		const std::vector<Entry>& entries = result.mInput.mEntries;
+
+		nodes.clear();
+		result.mOutput.mDisplayOrder.clear();
 
 		for (uint32 i = 0; i < entries.size();)
 		{
@@ -309,6 +403,8 @@ namespace
 		if (!result.mInput.mUserQuery.empty())
 		{
 			std::vector<float>& scores = result.mBuffers.mScores;
+			scores.clear();
+
 			const CE::ManyStrings& names = result.mInput.mNames;
 
 			scores.resize(entries.size());
@@ -335,15 +431,15 @@ namespace
 
 	void DisplayToUser(SearchContext& context)
 	{
-		const std::vector<uint32>& displayOrder = context.mResult->mOutput.mDisplayOrder;
+		const std::vector<uint32>& displayOrder = context.mResults[context.mIndexOfLastValidResult].mOutput.mDisplayOrder;
 		static constexpr uint32 endOfCatFlag = Output::sDisplayEndOfCategoryFlag;
 
 		for (auto displayCommand = displayOrder.begin(); displayCommand != displayOrder.end(); ++displayCommand)
 		{
 			const uint32 index = *displayCommand & (~endOfCatFlag);
 
-			const std::string_view name = context.mNames[index];
-			const Entry& entry = context.mAllEntries[index];
+			const std::string_view name = context.mInput.mNames[index];
+			const Entry& entry = context.mInput.mEntries[index];
 			const std::variant<CategoryFunctions, ItemFunctions>& functions = context.mDisplayFunctions[index];
 
 			if (!entry.mIsCategory)
@@ -387,7 +483,7 @@ namespace
 			for (; displayCommand != displayOrder.end(); ++displayCommand)
 			{
 				const uint32 indexOfEntryToSkip = *displayCommand & (~endOfCatFlag);
-				const Entry& entryToSkip = context.mAllEntries[indexOfEntryToSkip];
+				const Entry& entryToSkip = context.mInput.mEntries[indexOfEntryToSkip];
 
 				if (!entryToSkip.mIsCategory)
 				{
