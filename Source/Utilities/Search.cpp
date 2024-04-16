@@ -7,8 +7,6 @@
 #include "Utilities/ManyStrings.h"
 #include "rapidfuzz/rapidfuzz_all.hpp"
 
-using CachedScorer = rapidfuzz::fuzz::CachedPartialTokenSortRatio<char>;
-
 namespace
 {
 	struct CategoryFunctions
@@ -42,14 +40,28 @@ namespace
 
 		struct CalculationResult
 		{
-			// Inputs
-			CE::ManyStrings mNames{};
-			std::vector<Entry> mEntries{};
-			std::string mUserQuery{};
+			struct Inputs
+			{
+				CE::ManyStrings mNames{};
+				std::vector<Entry> mEntries{};
+				std::string mUserQuery{};
+			};
+			Inputs mInput{};
 
-			// Outputs
-			std::vector<bool> mIsItemVisible{};
-			std::vector<uint32> mIndicesOfTopEntries{};
+			struct InternalReusableBuffers
+			{
+				std::vector<float> mScores{};
+				std::vector<bool> mIsVisible{};
+			};
+			InternalReusableBuffers mReusableBuffers{};
+
+			struct Outputs
+			{
+				static constexpr uint32 sDisplayEndOfCategoryFlag = 1u << 31u;
+				std::vector<uint32> mDisplayOrder{};
+			};
+			Outputs mOutput{};
+
 		};
 		std::optional<CalculationResult> mCalculationResult{};
 
@@ -62,10 +74,10 @@ namespace
 	constexpr std::string_view sDefaultLabel = ICON_FA_SEARCH "##SearchBar";
 	constexpr std::string_view sDefaultHint = "Search";
 
-
+	void QuicklyCreateValidResult(SearchContext::CalculationResult& result);
+	void UpdateCalculation(SearchContext::CalculationResult& output);
 	void ProcessItemClickConsumption(SearchContext& context);
-	void RecursivelyDisplayEntry(SearchContext& context, uint32& index, uint32 stopAt);
-	void ApplyKeyboardNavigation(SearchContext& context);
+	void DisplayToUser(SearchContext& context);
 }
 
 void CE::Search::Begin(std::string_view id, SearchFlags flags)
@@ -84,21 +96,16 @@ void CE::Search::End()
 	// Display all the items here
 	SearchContext& context = sContextStack.top();
 
-	if ((context.mFlags & SearchFlags::NoKeyboardSelect) == 0)
-	{
-		ApplyKeyboardNavigation(context);
-	}
-
 	context.mCalculationResult.emplace(SearchContext::CalculationResult
 		{
 			context.mNames,
 			context.mAllEntries,
 			context.mUserQuery,
-			std::vector<bool>(context.mAllEntries.size(), true)
 		});
 
-	uint32 index{};
-	RecursivelyDisplayEntry(context, index, static_cast<uint32>(context.mAllEntries.size()));
+	QuicklyCreateValidResult(*context.mCalculationResult);
+	// UpdateCalculation(*context.mCalculationResult);
+	DisplayToUser(context);
 
 	context.mAllEntries.clear();
 	context.mDisplayFunctions.clear();
@@ -135,8 +142,6 @@ void CE::Search::EndCategory(std::function<void()> displayEnd)
 	catFunctions.mOnDisplayEnd = std::move(displayEnd);
 
 	context.mAllEntries[indexOfCurrentCategory].mNumOfTotalChildren = static_cast<uint32>(context.mAllEntries.size() - 1) - indexOfCurrentCategory;
-
-
 	context.mCategoryStack.pop();
 }
 
@@ -226,230 +231,166 @@ void CE::Search::EndPopup()
 
 namespace
 {
+	struct EntryAsNode
+	{
+		EntryAsNode(uint32& index, const SearchContext::CalculationResult& result) :
+			mIndex(index++)
+		{
+			const Entry& entry = result.mInput.mEntries[mIndex];
+
+			if (!entry.mIsCategory)
+			{
+				return;
+			}
+
+			while (index <= mIndex + entry.mNumOfTotalChildren)
+			{
+				mChildren.emplace_back(index, result);
+			}
+		}
+
+		void AppendToDisplayOrder(SearchContext::CalculationResult& result) const
+		{
+			result.mOutput.mDisplayOrder.emplace_back(mIndex);
+
+			for (const EntryAsNode& child : mChildren)
+			{
+				child.AppendToDisplayOrder(result);
+			}
+
+			if (result.mInput.mEntries[mIndex].mIsCategory)
+			{
+				result.mOutput.mDisplayOrder.emplace_back(mIndex | SearchContext::CalculationResult::Outputs::sDisplayEndOfCategoryFlag);
+			}
+		}
+
+		uint32 mIndex{};
+		std::vector<EntryAsNode> mChildren{};
+	};
+
+	void QuicklyCreateValidResult(SearchContext::CalculationResult& result)
+	{
+		std::vector<EntryAsNode> mNodes{};
+		
+		for (uint32 i = 0; i < result.mInput.mEntries.size();)
+		{
+			mNodes.emplace_back(i, result);
+		}
+
+		for (const EntryAsNode& node : mNodes)
+		{
+			node.AppendToDisplayOrder(result);
+		}
+	}
+
+	void UpdateCalculation(SearchContext::CalculationResult& /*output*/)
+	{
+	/*	if (output.mUserQuery.empty())
+		{
+			for (size_t i = 0; i < output.mIsVisible.size(); i++)
+			{
+				output.mIsVisible[i] = true;
+			}
+			output.mIsVisible.resize(output.mEntries.size(), true);
+			return;
+		}
+
+		output.mScores.resize(output.mEntries.size());
+
+		const rapidfuzz::fuzz::CachedPartialTokenSortRatio scorer{ output.mUserQuery };
+
+		for (size_t i = 0; i < output.mNames.NumOfStrings(); i++)
+		{
+			output.mScores[i] = static_cast<float>(scorer.similarity(output.mNames[i]));
+		}
+
+		static constexpr float cutOff = 40.0f;
+		output.mIsVisible.resize(output.mScores.size());
+
+		for (size_t i = 0; i < output.mEntries.size(); i++)
+		{
+			output.mIsVisible[i] = output.mScores[i] >= cutOff;
+		}*/
+	}
+
 	void ProcessItemClickConsumption(SearchContext& context)
 	{
 		context.mIndexOfPressedItem = std::numeric_limits<uint32>::max();
 	}
 
-	void RecursivelyDisplayEntry(SearchContext& context, uint32& index, uint32 stopAt)
+	void DisplayToUser(SearchContext& context)
 	{
-		const SearchContext::CalculationResult& result = *context.mCalculationResult;
+		const std::vector<uint32>& displayOrder = context.mCalculationResult->mOutput.mDisplayOrder;
+		static constexpr uint32 endOfCatFlag = SearchContext::CalculationResult::Outputs::sDisplayEndOfCategoryFlag;
 
-		for (; index < stopAt; index++)
+		for (auto displayCommand = displayOrder.begin(); displayCommand != displayOrder.end(); ++displayCommand)
 		{
-			if (!result.mIsItemVisible[index])
-			{
-				continue;
-			}
+			const uint32 index = *displayCommand & (~endOfCatFlag);
 
 			const std::string_view name = context.mNames[index];
 			const Entry& entry = context.mAllEntries[index];
 			const std::variant<CategoryFunctions, ItemFunctions>& functions = context.mDisplayFunctions[index];
 
-			//if (isSelected)
-			//{
-			//	ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_ButtonHovered]);
-			//}
-
-			if (entry.mIsCategory)
+			if (!entry.mIsCategory)
 			{
-				const CategoryFunctions& catFunctions = std::get<CategoryFunctions>(functions);
+				const ItemFunctions& itemFunctions = std::get<ItemFunctions>(functions);
 
-				if (!catFunctions.mOnDisplayStart 
-					|| catFunctions.mOnDisplayStart(name))
+				if (itemFunctions.mOnDisplay
+					&& itemFunctions.mOnDisplay(name))
 				{
-					++index;
+					context.mIndexOfPressedItem = index;
+				}
 
-					RecursivelyDisplayEntry(context, index, index + entry.mNumOfTotalChildren);
+				continue;
+			}
 
+			const CategoryFunctions& catFunctions = std::get<CategoryFunctions>(functions);
 
-					// We incremented the index already, we undo
-					// that here to prevent the increment in our for-loop
-					// from doing this operation twice.
-					index--;
+			if (*displayCommand & endOfCatFlag)
+			{
+				// Close the tab
+				if (catFunctions.mOnDisplayEnd)
+				{
+					catFunctions.mOnDisplayEnd();
+				}
 
-					if (catFunctions.mOnDisplayEnd)
+				continue;
+			}
+
+			// Open the tab
+			if (!catFunctions.mOnDisplayStart
+				|| catFunctions.mOnDisplayStart(name)) 
+			{
+				// If it's open, do nothing
+				continue;
+			}
+
+			// Otherwise, skip all the items until we encounter an exit
+			uint32 numOfCategoriesEncountered = 1;
+			++displayCommand;
+
+			for (; displayCommand != displayOrder.end(); ++displayCommand)
+			{
+				const uint32 indexOfEntryToSkip = *displayCommand & (~endOfCatFlag);
+				const Entry& entryToSkip = context.mAllEntries[indexOfEntryToSkip];
+
+				if (!entryToSkip.mIsCategory)
+				{
+					continue;
+				}
+
+				if (*displayCommand & endOfCatFlag)
+				{
+					if (--numOfCategoriesEncountered == 0)
 					{
-						catFunctions.mOnDisplayEnd();
+						break;
 					}
 				}
 				else
 				{
-					index += entry.mNumOfTotalChildren;
+					numOfCategoriesEncountered++;
 				}
 			}
-			else
-			{
-				const ItemFunctions& itemFunctions = std::get<ItemFunctions>(functions);
-
-				if (itemFunctions.mOnDisplay 
-					&& itemFunctions.mOnDisplay(name)
-					/*|| (isSelected && ImGui::IsKeyPressed(ImGuiKey_Enter))*/)
-				{
-					context.mIndexOfPressedItem = index;
-				}
-			}
-
-			//if (isSelected)
-			//{
-			//	ImGui::PopStyleColor();
-			//}
 		}
 	}
-
-	void ApplyKeyboardNavigation(SearchContext& /*context*/)
-	{
-		//// Update focus based on the arrow keys
-		//if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
-		//{
-		//	context.mIndexOfSelectedItem++;
-		//	if (isTyping)
-		//	{
-		//		context.mIndexOfSelectedItem = 0;
-		//	}
-		//	else if (context.mIndexOfSelectedItem + 1 < context.mAllEntries.size())
-		//	{
-		//		context.mIndexOfSelectedItem++;
-
-		//	}
-		//}
-		//else if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
-		//{
-		//	if (context.mIndexOfSelectedItem == 0)
-		//	{
-		//		// Return focus to the search bar
-		//		ImGui::SetKeyboardFocusHere(-1);
-		//	}
-		//	else
-		//	{
-		//		context.mIndexOfSelectedItem--;
-		//	}
-		//}
-	}
 }
-
-//std::optional<std::string> CE::Search::DisplaySearchBar(const ManyStrings& strings, std::string_view label, std::string_view hint)
-//{
-//    if (!BeginSearchCombo(label, hint))
-//    {
-//        return std::nullopt;
-//    }
-//
-//    struct SearchResult
-//    {
-//        ~SearchResult()
-//        {
-//            if (mPendingScores.joinable())
-//            {
-//                mPendingScores.join();
-//            }
-//        }
-//
-//        std::thread mPendingScores{};
-//        bool mIsReady{};
-//        std::string mQuery{};
-//        ManyStrings mStrings{};
-//        std::vector<float> mScores{};
-//        std::vector<uint32> mIndicesOfSortedStrings{};
-//    };
-//
-//    static std::array<SearchResult, 2> sResults{};
-//    static bool sLastValidResult{};
-//
-//    // Check if the result from our previous thread is ready
-//    if (sResults[!sLastValidResult].mIsReady)
-//    {
-//        // Note that we do not check if the pending result is still valid.
-//        // We do this later, where we check if the last valid result is
-//        // still valid. Since our pending result now becomes our last valid result,
-//        // we can defer that check.
-//        SearchResult& pendingResult = sResults[!sLastValidResult];
-//
-//        if (pendingResult.mPendingScores.joinable())
-//        {
-//            pendingResult.mPendingScores.join();
-//        }
-//        pendingResult.mIsReady = false;
-//
-//        // Swap the buffers
-//        sLastValidResult = !sLastValidResult;
-//    }
-//
-//    SearchResult& lastValidResult = sResults[sLastValidResult];
-//    bool isCurrentResultInvalid{};
-//
-//    // In case the list of strings to search through has changed,
-//    // we need to update our last valid result.
-//    if (lastValidResult.mStrings != strings)
-//    {
-//        // Our last valid result has been invalidated, just assume all the terms match
-//        lastValidResult.mScores.resize(strings.NumOfStrings());
-//        std::fill(lastValidResult.mScores.begin(), lastValidResult.mScores.end(), 100.0f);
-//
-//        // Make a copy here, but we set
-//        // shouldRelaunch to true, so the
-//        // strings will be moved into our
-//        // pending query.
-//        lastValidResult.mStrings = strings;
-//        isCurrentResultInvalid = true;
-//    }
-//
-//    // Show the current options
-//    static std::string sCurrentQuery{};
-//    DisplaySearchBar(sCurrentQuery, label, hint);
-//
-//    std::optional<std::string> returnValue{};
-//
-//    for (const uint32 index : lastValidResult.mIndicesOfSortedStrings)
-//    {
-//        const std::string_view item = lastValidResult.mStrings[index];
-//        if (ImGui::Selectable(item.data())
-//            || ImGui::IsItemClicked()) // If we click on the button, the search term is reset, the button may move, 
-//            // and we won't be hovering over the button when the mouse button is released.
-//            // So we activate OnClick and not OnRelease)
-//        {
-//            returnValue.emplace(item);
-//        }
-//    }
-//
-//    // If the search term has changed AND we don't already have
-//    // a query pending, we make a new query.
-//    if (isCurrentResultInvalid
-//        || (sCurrentQuery != lastValidResult.mQuery
-//            && !sResults[!sLastValidResult].mPendingScores.joinable()))
-//    {
-//        SearchResult& pending = sResults[!sLastValidResult];
-//        pending.mStrings = strings;
-//        pending.mQuery = sCurrentQuery;
-//        pending.mScores.clear();
-//        pending.mIsReady = false;
-//        pending.mPendingScores = std::thread{
-//            [&pending]
-//            {
-//                pending.mScores.resize(pending.mStrings.NumOfStrings());
-//
-//                CachedScorer scorer{ pending.mQuery };
-//
-//                for (size_t i = 0; i < pending.mStrings.NumOfStrings(); i++)
-//                {
-//                    pending.mScores[i] = static_cast<float>(scorer.similarity(pending.mStrings[i], sDefaultCutOff));
-//                }
-//
-//                pending.mIndicesOfSortedStrings.resize(pending.mScores.size());
-//                std::iota(pending.mIndicesOfSortedStrings.begin(), pending.mIndicesOfSortedStrings.end(), 0);
-//
-//                std::sort(pending.mIndicesOfSortedStrings.begin(), pending.mIndicesOfSortedStrings.end(),
-//                    [&pending](uint32 lhs, uint32 rhs)
-//                    {
-//                        return pending.mScores[lhs] > pending.mScores[rhs];
-//                    });
-//
-//                pending.mIsReady = true;
-//            }
-//        };
-//    }
-//
-//    EndSearchCombo(returnValue.has_value());
-//
-//    return returnValue;
-//}
