@@ -431,6 +431,8 @@ namespace
 
 	void DisplayToUser(SearchContext& context)
 	{
+		ImGui::PushID(context.mInput.mUserQuery.empty());
+
 		const std::vector<uint32>& displayOrder = context.mResults[context.mIndexOfLastValidResult].mOutput.mDisplayOrder;
 		static constexpr uint32 endOfCatFlag = Output::sDisplayEndOfCategoryFlag;
 
@@ -468,9 +470,18 @@ namespace
 				continue;
 			}
 
+			if (!catFunctions.mOnDisplayStart)
+			{
+				continue;
+			}
+
+			if (!context.mInput.mUserQuery.empty())
+			{
+				ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+			}
+
 			// Open the tab
-			if (!catFunctions.mOnDisplayStart
-				|| catFunctions.mOnDisplayStart(name))
+			if (catFunctions.mOnDisplayStart(name))
 			{
 				// If it's open, do nothing
 				continue;
@@ -503,5 +514,7 @@ namespace
 				}
 			}
 		}
+
+		ImGui::PopID();
 	}
 }
