@@ -28,6 +28,42 @@ namespace
 		uint32 mNumOfTotalChildren : 31;
 	};
 
+	struct Result;
+
+	struct EntryAsNode
+	{
+		EntryAsNode(uint32& index, const Result& result);
+
+		uint32 mIndex{};
+		std::vector<EntryAsNode> mChildren{};
+	};
+
+	struct Input
+	{
+		CE::ManyStrings mNames{};
+		std::vector<Entry> mEntries{};
+		std::string mUserQuery{};
+	};
+
+	struct ReusableBuffers
+	{
+		std::vector<float> mScores{};
+		std::vector<EntryAsNode> mNodes{};
+	};
+
+	struct Output
+	{
+		static constexpr uint32 sDisplayEndOfCategoryFlag = 1u << 31u;
+		std::vector<uint32> mDisplayOrder{};
+	};
+
+	struct Result
+	{
+		const Input mInput{};
+		ReusableBuffers mBuffers{};
+		Output mOutput{};
+	};
+
 	struct SearchContext
 	{
 		CE::ManyStrings mNames{};
@@ -38,32 +74,7 @@ namespace
 
 		std::string mUserQuery{};
 
-		struct CalculationResult
-		{
-			struct Inputs
-			{
-				CE::ManyStrings mNames{};
-				std::vector<Entry> mEntries{};
-				std::string mUserQuery{};
-			};
-			Inputs mInput{};
-
-			struct InternalReusableBuffers
-			{
-				std::vector<float> mScores{};
-				std::vector<bool> mIsVisible{};
-			};
-			InternalReusableBuffers mReusableBuffers{};
-
-			struct Outputs
-			{
-				static constexpr uint32 sDisplayEndOfCategoryFlag = 1u << 31u;
-				std::vector<uint32> mDisplayOrder{};
-			};
-			Outputs mOutput{};
-
-		};
-		std::optional<CalculationResult> mCalculationResult{};
+		std::optional<Result> mResult{};
 
 		uint32 mIndexOfPressedItem = std::numeric_limits<uint32>::max();
 		CE::Search::SearchFlags mFlags{};
@@ -73,9 +84,9 @@ namespace
 
 	constexpr std::string_view sDefaultLabel = ICON_FA_SEARCH "##SearchBar";
 	constexpr std::string_view sDefaultHint = "Search";
+	constexpr bool sShowScores = true;
 
-	void QuicklyCreateValidResult(SearchContext::CalculationResult& result);
-	void UpdateCalculation(SearchContext::CalculationResult& output);
+	void UpdateCalculation(Result& result);
 	void ProcessItemClickConsumption(SearchContext& context);
 	void DisplayToUser(SearchContext& context);
 }
@@ -96,15 +107,14 @@ void CE::Search::End()
 	// Display all the items here
 	SearchContext& context = sContextStack.top();
 
-	context.mCalculationResult.emplace(SearchContext::CalculationResult
+	context.mResult.emplace(Result
 		{
 			context.mNames,
 			context.mAllEntries,
 			context.mUserQuery,
 		});
 
-	QuicklyCreateValidResult(*context.mCalculationResult);
-	// UpdateCalculation(*context.mCalculationResult);
+	UpdateCalculation(*context.mResult);
 	DisplayToUser(context);
 
 	context.mAllEntries.clear();
@@ -231,86 +241,91 @@ void CE::Search::EndPopup()
 
 namespace
 {
-	struct EntryAsNode
+	EntryAsNode::EntryAsNode(uint32& index, const Result& result):
+		mIndex(index++)
 	{
-		EntryAsNode(uint32& index, const SearchContext::CalculationResult& result) :
-			mIndex(index++)
+		const Entry& entry = result.mInput.mEntries[mIndex];
+
+		if (!entry.mIsCategory)
 		{
-			const Entry& entry = result.mInput.mEntries[mIndex];
-
-			if (!entry.mIsCategory)
-			{
-				return;
-			}
-
-			while (index <= mIndex + entry.mNumOfTotalChildren)
-			{
-				mChildren.emplace_back(index, result);
-			}
-		}
-
-		void AppendToDisplayOrder(SearchContext::CalculationResult& result) const
-		{
-			result.mOutput.mDisplayOrder.emplace_back(mIndex);
-
-			for (const EntryAsNode& child : mChildren)
-			{
-				child.AppendToDisplayOrder(result);
-			}
-
-			if (result.mInput.mEntries[mIndex].mIsCategory)
-			{
-				result.mOutput.mDisplayOrder.emplace_back(mIndex | SearchContext::CalculationResult::Outputs::sDisplayEndOfCategoryFlag);
-			}
-		}
-
-		uint32 mIndex{};
-		std::vector<EntryAsNode> mChildren{};
-	};
-
-	void QuicklyCreateValidResult(SearchContext::CalculationResult& result)
-	{
-		std::vector<EntryAsNode> mNodes{};
-		
-		for (uint32 i = 0; i < result.mInput.mEntries.size();)
-		{
-			mNodes.emplace_back(i, result);
-		}
-
-		for (const EntryAsNode& node : mNodes)
-		{
-			node.AppendToDisplayOrder(result);
-		}
-	}
-
-	void UpdateCalculation(SearchContext::CalculationResult& /*output*/)
-	{
-	/*	if (output.mUserQuery.empty())
-		{
-			for (size_t i = 0; i < output.mIsVisible.size(); i++)
-			{
-				output.mIsVisible[i] = true;
-			}
-			output.mIsVisible.resize(output.mEntries.size(), true);
 			return;
 		}
 
-		output.mScores.resize(output.mEntries.size());
-
-		const rapidfuzz::fuzz::CachedPartialTokenSortRatio scorer{ output.mUserQuery };
-
-		for (size_t i = 0; i < output.mNames.NumOfStrings(); i++)
+		while (index <= mIndex + entry.mNumOfTotalChildren)
 		{
-			output.mScores[i] = static_cast<float>(scorer.similarity(output.mNames[i]));
+			mChildren.emplace_back(index, result);
+		}
+	}
+
+	void AppendToDisplayOrder(const EntryAsNode& node, Result& result)
+	{
+		result.mOutput.mDisplayOrder.emplace_back(node.mIndex);
+
+		for (const EntryAsNode& child : node.mChildren)
+		{
+			AppendToDisplayOrder(child, result);
 		}
 
-		static constexpr float cutOff = 40.0f;
-		output.mIsVisible.resize(output.mScores.size());
-
-		for (size_t i = 0; i < output.mEntries.size(); i++)
+		if (result.mInput.mEntries[node.mIndex].mIsCategory)
 		{
-			output.mIsVisible[i] = output.mScores[i] >= cutOff;
-		}*/
+			result.mOutput.mDisplayOrder.emplace_back(node.mIndex | Output::sDisplayEndOfCategoryFlag);
+		}
+	}
+
+	void SortNodes(const std::vector<EntryAsNode>::iterator begin, const std::vector<EntryAsNode>::iterator end, const Result& result)
+	{
+		std::sort(begin, end,
+			[&result](const EntryAsNode& lhs, const EntryAsNode& rhs)
+				{
+					const float lhsScore = result.mBuffers.mScores[lhs.mIndex];
+					const float rhsScore = result.mBuffers.mScores[rhs.mIndex];
+
+					if (lhsScore != rhsScore)
+					{
+						return lhsScore > rhsScore;
+					}
+
+					// Fall back the order in which the nodes
+					// were submitted if both scores are the same
+					return lhs.mIndex < rhs.mIndex;
+			});
+
+		for (auto it = begin; it != end; ++it)
+		{
+			SortNodes(it->mChildren.begin(), it->mChildren.end(), result);
+		}
+	}
+
+	void UpdateCalculation(Result& result)
+	{
+		std::vector<EntryAsNode>& nodes = result.mBuffers.mNodes;
+		const std::vector<Entry>& entries = result.mInput.mEntries;
+
+		for (uint32 i = 0; i < entries.size();)
+		{
+			nodes.emplace_back(i, result);
+		}
+
+		if (!result.mInput.mUserQuery.empty())
+		{
+			std::vector<float>& scores = result.mBuffers.mScores;
+			const CE::ManyStrings& names = result.mInput.mNames;
+
+			scores.resize(entries.size());
+			const rapidfuzz::fuzz::CachedPartialTokenSortRatio scorer{ result.mInput.mUserQuery };
+
+			for (size_t i = 0; i < entries.size(); i++)
+			{
+				scores[i] = static_cast<float>(scorer.similarity(names[i]));
+			}
+
+			SortNodes(nodes.begin(), nodes.end(), result);
+		}
+
+		for (const EntryAsNode& node : nodes)
+		{
+			AppendToDisplayOrder(node, result);
+		}
 	}
 
 	void ProcessItemClickConsumption(SearchContext& context)
@@ -320,8 +335,8 @@ namespace
 
 	void DisplayToUser(SearchContext& context)
 	{
-		const std::vector<uint32>& displayOrder = context.mCalculationResult->mOutput.mDisplayOrder;
-		static constexpr uint32 endOfCatFlag = SearchContext::CalculationResult::Outputs::sDisplayEndOfCategoryFlag;
+		const std::vector<uint32>& displayOrder = context.mResult->mOutput.mDisplayOrder;
+		static constexpr uint32 endOfCatFlag = Output::sDisplayEndOfCategoryFlag;
 
 		for (auto displayCommand = displayOrder.begin(); displayCommand != displayOrder.end(); ++displayCommand)
 		{
@@ -359,7 +374,7 @@ namespace
 
 			// Open the tab
 			if (!catFunctions.mOnDisplayStart
-				|| catFunctions.mOnDisplayStart(name)) 
+				|| catFunctions.mOnDisplayStart(name))
 			{
 				// If it's open, do nothing
 				continue;
