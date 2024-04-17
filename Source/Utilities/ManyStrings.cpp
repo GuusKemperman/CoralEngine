@@ -57,8 +57,17 @@ const char* CE::ManyStrings::Data() const
 	return mBuffer.data();
 }
 
+char* CE::ManyStrings::Data()
+{
+	return mBuffer.data();
+}
+
 size_t CE::ManyStrings::NumOfStrings() const
-{ return mEndIndices.size(); }
+{
+	return mEndIndices.size();
+}
 
 size_t CE::ManyStrings::SizeInBytes() const
-{ return mBuffer.size(); }
+{
+	return mBuffer.size();
+}

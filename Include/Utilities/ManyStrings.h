@@ -11,11 +11,12 @@ namespace CE
 
 		void Emplace(std::string_view data);
 
-		std::string_view operator[](const size_t index) const;
+		std::string_view operator[](size_t index) const;
 
 		void Clear();
 
 		const char* Data() const;
+		char* Data();
 
 		size_t NumOfStrings() const;
 		size_t SizeInBytes() const;

@@ -48,6 +48,7 @@ namespace
 	{
 		std::vector<float> mScores{};
 		std::vector<EntryAsNode> mNodes{};
+		CE::ManyStrings mPreprocessedNames{};
 	};
 
 	struct Output
@@ -367,6 +368,37 @@ namespace
 		}
 	}
 
+	void PreprocessString(char* data, size_t count)
+	{
+		for (size_t i = 0; i < count; i++)
+		{
+			char& byte = data[i];
+			byte = static_cast<char>(std::tolower(static_cast<unsigned char>(byte)));
+		}
+	}
+
+	void GiveInitialScores(Result& result)
+	{
+		std::vector<float>& scores = result.mBuffers.mScores;
+		scores.clear();
+
+		CE::ManyStrings& names = result.mBuffers.mPreprocessedNames;
+		names = result.mInput.mNames;
+
+		PreprocessString(names.Data(), names.SizeInBytes());
+		scores.resize(names.NumOfStrings());
+
+		std::string preprocessedQuery = result.mInput.mUserQuery;
+		PreprocessString(preprocessedQuery.data(), preprocessedQuery.size());
+
+		const rapidfuzz::fuzz::CachedPartialTokenSortRatio scorer{ preprocessedQuery };
+
+		for (size_t i = 0; i < names.NumOfStrings(); i++)
+		{
+			scores[i] = static_cast<float>(scorer.similarity(names[i]) / 100.0);
+		}
+	}
+
 	void PropagateScoreToChildren(const std::vector<EntryAsNode>& nodes, Result& result)
 	{
 		for (const EntryAsNode& node : nodes)
@@ -485,11 +517,21 @@ namespace
 
 	void BringResultUpToDate(Result& result)
 	{
-		std::vector<EntryAsNode>& nodes = result.mBuffers.mNodes;
+		result.mOutput.mDisplayOrder.clear();
+
 		const std::vector<Entry>& entries = result.mInput.mEntries;
 
+		// I've never had this happen, and I've never tested with zero entries.
+		// but because of how rare it is to want to search through zero entries,
+		// we should try and avoid any unexpected edge cases when we have zero entries.
+		if (entries.empty())
+		{
+			return;
+		}
+
+		std::vector<EntryAsNode>& nodes = result.mBuffers.mNodes;
+
 		nodes.clear();
-		result.mOutput.mDisplayOrder.clear();
 
 		for (uint32 i = 0; i < entries.size();)
 		{
@@ -498,18 +540,7 @@ namespace
 
 		if (!result.mInput.mUserQuery.empty())
 		{
-			std::vector<float>& scores = result.mBuffers.mScores;
-			scores.clear();
-
-			const CE::ManyStrings& names = result.mInput.mNames;
-
-			scores.resize(entries.size());
-			const rapidfuzz::fuzz::CachedPartialTokenSortRatio scorer{ result.mInput.mUserQuery };
-
-			for (size_t i = 0; i < entries.size(); i++)
-			{
-				scores[i] = static_cast<float>(scorer.similarity(names[i]) / 100.0);
-			}
+			GiveInitialScores(result);
 
 			LOG(LogSearch, Verbose, "Initial scores:");
 			PrintNodeTree(nodes, result);
