@@ -5,6 +5,7 @@
 #include <stack>
 
 #include "Utilities/ManyStrings.h"
+#include "Utilities/Math.h"
 
 namespace
 {
@@ -47,7 +48,6 @@ namespace
 	struct ReusableBuffers
 	{
 		std::vector<float> mScores{};
-		std::vector<float> mSortedScores{};
 		std::vector<EntryAsNode> mNodes{};
 		CE::ManyStrings mPreprocessedNames{};
 	};
@@ -91,7 +91,9 @@ namespace
 
 	constexpr bool sDebugPrintingEnabled = false;
 
-	constexpr float sPercentageOfEntriesToShow = .1f;
+	// Increasing this value will reduce the amount of
+	// items shown to the user.
+	constexpr float sFilterStrength = .5f;
 
 	bool operator==(const Entry& lhs, const Entry& rhs);
 	bool operator!=(const Entry& lhs, const Entry& rhs);
@@ -443,30 +445,12 @@ namespace
 		}
 	}
 
-	std::pair<float, uint32> SumScores(const std::vector<EntryAsNode>& nodes, const Result& result)
+	float CalculateCutOff(const Result& result)
 	{
-		return std::accumulate(nodes.begin(), nodes.end(), std::pair<float, uint32>{},
-			[&result](std::pair<float, uint32> curr, const EntryAsNode& node)
-			{
-				curr.first += result.mBuffers.mScores[node.mIndex];
-				++curr.second;
-
-				auto [sumScores, numEvaluated] = SumScores(node.mChildren, result);
-
-				curr.first += sumScores;
-				curr.second += numEvaluated;
-
-				return curr;
-			});
-	}
-
-	float CalculateCutOff(Result& result)
-	{
-		result.mBuffers.mSortedScores = result.mBuffers.mScores;
-		std::sort(result.mBuffers.mSortedScores.begin(), result.mBuffers.mSortedScores.end());
-
-		const size_t indexAtDesiredPercentile = static_cast<size_t>((1.0f - sPercentageOfEntriesToShow) * static_cast<float>((result.mBuffers.mSortedScores.size() - 1)));
-		return result.mBuffers.mSortedScores[indexAtDesiredPercentile];
+		const std::vector<float>& scores = result.mBuffers.mScores;
+		const float highestScore = *std::max_element(scores.begin(), scores.end());
+		const float average = std::accumulate(scores.begin(), scores.end(), 0.0f) / static_cast<float>(scores.size());
+		return CE::Math::lerp(average, highestScore, sFilterStrength);
 	}
 
 	void RemoveAllBelowCutOff(std::vector<EntryAsNode>& nodes, const Result& result, float cutOff)

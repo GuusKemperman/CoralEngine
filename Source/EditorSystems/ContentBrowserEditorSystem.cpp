@@ -58,7 +58,7 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
     }
 
     ImGui::SetItemTooltip("Create a new asset");
-    
+    ImGui::SameLine();
     Search::Begin("ContentBrowserSearch");
 
     sWasAssetJustRightClicked = false;
