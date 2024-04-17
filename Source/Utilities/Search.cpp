@@ -43,6 +43,7 @@ namespace
 		CE::ManyStrings mNames{};
 		std::vector<Entry> mEntries{};
 		std::string mUserQuery{};
+		CE::Search::SearchFlags mFlags{};
 	};
 
 	struct ReusableBuffers
@@ -81,7 +82,6 @@ namespace
 		bool mIndexOfLastValidResult{};
 
 		uint32 mIndexOfPressedItem = std::numeric_limits<uint32>::max();
-		CE::Search::SearchFlags mFlags{};
 	};
 	std::unordered_map<ImGuiID, SearchContext> sContexts{};
 	std::stack<std::reference_wrapper<SearchContext>> sContextStack{};
@@ -89,7 +89,7 @@ namespace
 	constexpr std::string_view sDefaultLabel = ICON_FA_SEARCH "##SearchBar";
 	constexpr std::string_view sDefaultHint = "Search";
 
-	constexpr bool sDebugPrintingEnabled = false;
+	constexpr bool sDebugPrintingEnabled = true;
 
 	// Increasing this value will reduce the amount of
 	// items shown to the user.
@@ -111,7 +111,7 @@ void CE::Search::Begin(std::string_view id, SearchFlags flags)
 	ImGui::PushID(imId);
 
 	SearchContext& context = sContextStack.emplace(sContexts[imId]);
-	context.mFlags = flags;
+	context.mInput.mFlags = flags;
 
 	ImGui::InputTextWithHint(sDefaultLabel.data(), sDefaultHint.data(), &context.mInput.mUserQuery);
 }
@@ -353,7 +353,7 @@ namespace
 	bool IsResultUpToDate(const Result& oldResult, const Input& currentInput)
 	{
 		const Input& oldInput = oldResult.mInput;
-		return oldInput.mUserQuery == currentInput.mUserQuery;
+		return oldInput.mUserQuery == currentInput.mUserQuery && oldInput.mFlags == currentInput.mFlags;
 	}
 
 	void AppendToDisplayOrder(const EntryAsNode& node, Result& result)
@@ -537,8 +537,11 @@ namespace
 			SortNodes(nodes, result);
 			PrintNodeTree(nodes, result, "First sorting pass");
 
-			PropagateScoreToChildren(nodes, result);
-			PrintNodeTree(nodes, result, "Propagated to children");
+			if ((result.mInput.mFlags & CE::Search::IgnoreParentScore) == 0)
+			{
+				PropagateScoreToChildren(nodes, result);
+				PrintNodeTree(nodes, result, "Propagated to children");
+			}
 
 			PropagateScoreToParents(nodes, result);
 			PrintNodeTree(nodes, result, "Propagated to parents");

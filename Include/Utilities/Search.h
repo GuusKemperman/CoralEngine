@@ -5,8 +5,9 @@ namespace CE::Search
 {
 	enum SearchFlags
 	{
-		ShowSummary = 1,
-		NoKeyboardSelect = 1 << 1
+		// Each category and item will be evaluated independently, regardless of the score of
+		// it's parent
+		IgnoreParentScore = 1,
 	};
 
 	void Begin(std::string_view id, SearchFlags flags = {});

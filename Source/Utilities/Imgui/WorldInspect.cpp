@@ -876,7 +876,7 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 	ImGui::SameLine();
 
-	Search::Begin("Hierarchy");
+	Begin("Hierarchy", Search::IgnoreParentScore);
 
 	// First we display all entities without transforms
 	{
