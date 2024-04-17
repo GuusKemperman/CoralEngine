@@ -429,6 +429,28 @@ namespace
 		}
 	}
 
+	[[maybe_unused]] std::string ConvertNodeTreeToString(const std::vector<EntryAsNode>& nodes, const Result& result, std::string& indentation)
+	{
+		std::string str{};
+
+		for (const EntryAsNode& node : nodes)
+		{
+			str += CE::Format("{} - {}\n", result.mInput.mNames[node.mIndex], result.mBuffers.mScores[node.mIndex]);
+
+			indentation.push_back('\t');
+			str.append(ConvertNodeTreeToString(node.mChildren, result, indentation));
+			indentation.pop_back();
+		}
+
+		return str;
+	}
+
+	[[maybe_unused]] void PrintNodeTree(const std::vector<EntryAsNode>& nodes, const Result& result)
+	{
+		[[maybe_unused]] std::string indentation{};
+		LOG(LogEditor, Verbose, "SearchTerm: {}\n{}\n", result.mInput.mUserQuery, ConvertNodeTreeToString(nodes, result, indentation));
+	}
+
 	void BringResultUpToDate(Result& result)
 	{
 		std::vector<EntryAsNode>& nodes = result.mBuffers.mNodes;
@@ -457,10 +479,13 @@ namespace
 				scores[i] = static_cast<float>(scorer.similarity(names[i]) / 100.0);
 			}
 
+			//PrintNodeTree(nodes, result);
+
 			const float cutOff = CalculateCutOff(nodes, result);
 			RemoveAllBelowCutOff(nodes, result, cutOff);
 
 			SortNodes(nodes, result);
+			PrintNodeTree(nodes, result);
 		}
 
 		for (const EntryAsNode& node : nodes)

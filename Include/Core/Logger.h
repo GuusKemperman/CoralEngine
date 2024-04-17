@@ -5,7 +5,7 @@
 
 #if LOGGING_ENABLED
 
-#define LOG(channel, severity, formatString, ...) CE::Logger::Get().Log(CE::Format(#formatString, ##__VA_ARGS__), #channel, severity, __FILE__, __LINE__);
+#define LOG(channel, severity, formatString, ...) CE::Logger::Get().Log(CE::Format(formatString, ##__VA_ARGS__), #channel, severity, __FILE__, __LINE__);
 
 // If logging is enabled, we replace assert with a fatal log entry.
 // This will instruct the logger to dump the current log contents to
