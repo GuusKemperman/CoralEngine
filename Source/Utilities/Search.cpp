@@ -367,27 +367,35 @@ namespace
 		}
 	}
 
-	void SortNodes(std::vector<EntryAsNode>& nodes, const Result& result)
+	void PropagateScoreToChildren(const std::vector<EntryAsNode>& nodes, Result& result)
 	{
-		std::sort(nodes.begin(), nodes.end(),
-			[&result](const EntryAsNode& lhs, const EntryAsNode& rhs)
-				{
-					const float lhsScore = result.mBuffers.mScores[lhs.mIndex];
-					const float rhsScore = result.mBuffers.mScores[rhs.mIndex];
-
-					if (lhsScore != rhsScore)
-					{
-						return lhsScore > rhsScore;
-					}
-
-					// Fall back the order in which the nodes
-					// were submitted if both scores are the same
-					return lhs.mIndex < rhs.mIndex;
-			});
-
-		for (EntryAsNode& node : nodes)
+		for (const EntryAsNode& node : nodes)
 		{
-			SortNodes(node.mChildren, result);
+			const float nodeScore = result.mBuffers.mScores[node.mIndex];
+
+			for (const EntryAsNode& child : node.mChildren)
+			{
+				float& childScore = result.mBuffers.mScores[child.mIndex];
+				childScore = std::max(childScore, nodeScore);
+			}
+
+			PropagateScoreToChildren(node.mChildren, result);
+		}
+	}
+
+	void PropagateScoreToParents(const std::vector<EntryAsNode>& nodes, Result& result)
+	{
+		for (const EntryAsNode& node : nodes)
+		{
+			PropagateScoreToParents(node.mChildren, result);
+
+			float& nodeScore = result.mBuffers.mScores[node.mIndex];
+
+			for (const EntryAsNode& child : node.mChildren)
+			{
+				const float childScore = result.mBuffers.mScores[child.mIndex];
+				nodeScore = std::max(nodeScore, childScore);
+			}
 		}
 	}
 
@@ -429,13 +437,37 @@ namespace
 		}
 	}
 
+	void SortNodes(std::vector<EntryAsNode>& nodes, const Result& result)
+	{
+		std::sort(nodes.begin(), nodes.end(),
+			[&result](const EntryAsNode& lhs, const EntryAsNode& rhs)
+				{
+					const float lhsScore = result.mBuffers.mScores[lhs.mIndex];
+					const float rhsScore = result.mBuffers.mScores[rhs.mIndex];
+
+					if (lhsScore != rhsScore)
+					{
+						return lhsScore > rhsScore;
+					}
+
+					// Fall back the order in which the nodes
+					// were submitted if both scores are the same
+					return lhs.mIndex < rhs.mIndex;
+			});
+
+		for (EntryAsNode& node : nodes)
+		{
+			SortNodes(node.mChildren, result);
+		}
+	}
+
 	[[maybe_unused]] std::string ConvertNodeTreeToString(const std::vector<EntryAsNode>& nodes, const Result& result, std::string& indentation)
 	{
 		std::string str{};
 
 		for (const EntryAsNode& node : nodes)
 		{
-			str += CE::Format("{} - {}\n", result.mInput.mNames[node.mIndex], result.mBuffers.mScores[node.mIndex]);
+			str += CE::Format("{}{} = {}\n", indentation, result.mInput.mNames[node.mIndex], result.mBuffers.mScores[node.mIndex]);
 
 			indentation.push_back('\t');
 			str.append(ConvertNodeTreeToString(node.mChildren, result, indentation));
@@ -448,7 +480,7 @@ namespace
 	[[maybe_unused]] void PrintNodeTree(const std::vector<EntryAsNode>& nodes, const Result& result)
 	{
 		[[maybe_unused]] std::string indentation{};
-		LOG(LogEditor, Verbose, "SearchTerm: {}\n{}\n", result.mInput.mUserQuery, ConvertNodeTreeToString(nodes, result, indentation));
+		LOG(LogSearch, Verbose, "SearchTerm: {}\n{}\n", result.mInput.mUserQuery, ConvertNodeTreeToString(nodes, result, indentation));
 	}
 
 	void BringResultUpToDate(Result& result)
@@ -479,12 +511,28 @@ namespace
 				scores[i] = static_cast<float>(scorer.similarity(names[i]) / 100.0);
 			}
 
-			//PrintNodeTree(nodes, result);
+			LOG(LogSearch, Verbose, "Initial scores:");
+			PrintNodeTree(nodes, result);
+
+			PropagateScoreToChildren(nodes, result);
+
+			LOG(LogSearch, Verbose, "Propegated to children:");
+			PrintNodeTree(nodes, result);
+
+			PropagateScoreToParents(nodes, result);
+
+			LOG(LogSearch, Verbose, "Propegated to parents:");
+			PrintNodeTree(nodes, result);
 
 			const float cutOff = CalculateCutOff(nodes, result);
 			RemoveAllBelowCutOff(nodes, result, cutOff);
 
+			LOG(LogSearch, Verbose, "Removed all lower than {}:", cutOff);
+			PrintNodeTree(nodes, result);
+
 			SortNodes(nodes, result);
+
+			LOG(LogSearch, Verbose, "Sorted:", cutOff);
 			PrintNodeTree(nodes, result);
 		}
 
