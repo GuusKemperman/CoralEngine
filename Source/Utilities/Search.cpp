@@ -87,6 +87,10 @@ namespace
 	constexpr std::string_view sDefaultLabel = ICON_FA_SEARCH "##SearchBar";
 	constexpr std::string_view sDefaultHint = "Search";
 
+	// Increase this value to reduce the number
+	// of entries shown to the user
+	constexpr float sCutOffStrength = 1.5f;
+
 	bool operator==(const Entry& lhs, const Entry& rhs);
 	bool operator!=(const Entry& lhs, const Entry& rhs);
 
@@ -363,9 +367,9 @@ namespace
 		}
 	}
 
-	void SortNodes(const std::vector<EntryAsNode>::iterator begin, const std::vector<EntryAsNode>::iterator end, const Result& result)
+	void SortNodes(std::vector<EntryAsNode>& nodes, const Result& result)
 	{
-		std::sort(begin, end,
+		std::sort(nodes.begin(), nodes.end(),
 			[&result](const EntryAsNode& lhs, const EntryAsNode& rhs)
 				{
 					const float lhsScore = result.mBuffers.mScores[lhs.mIndex];
@@ -381,9 +385,47 @@ namespace
 					return lhs.mIndex < rhs.mIndex;
 			});
 
-		for (auto it = begin; it != end; ++it)
+		for (EntryAsNode& node : nodes)
 		{
-			SortNodes(it->mChildren.begin(), it->mChildren.end(), result);
+			SortNodes(node.mChildren, result);
+		}
+	}
+
+	std::pair<float, uint32> SumScores(const std::vector<EntryAsNode>& nodes, const Result& result)
+	{
+		return std::accumulate(nodes.begin(), nodes.end(), std::pair<float, uint32>{},
+			[&result](std::pair<float, uint32> curr, const EntryAsNode& node)
+			{
+				curr.first += result.mBuffers.mScores[node.mIndex];
+				++curr.second;
+
+				auto [sumScores, numEvaluated] = SumScores(node.mChildren, result);
+
+				curr.first += sumScores;
+				curr.second += numEvaluated;
+
+				return curr;
+			});
+	}
+
+	float CalculateCutOff(const std::vector<EntryAsNode>& nodes, const Result& result)
+	{
+		const auto [sum, numOfEntries] = SumScores(nodes, result);
+		const float avgSimilarity = sum / static_cast<float>(numOfEntries);
+		return avgSimilarity * sCutOffStrength;
+	}
+
+	void RemoveAllBelowCutOff(std::vector<EntryAsNode>& nodes, const Result& result, float cutOff)
+	{
+		nodes.erase(std::remove_if(nodes.begin(), nodes.end(),
+			[cutOff, &result](const EntryAsNode& node)
+			{
+				return result.mBuffers.mScores[node.mIndex] < cutOff;
+			}), nodes.end());
+
+		for (EntryAsNode& node : nodes)
+		{
+			RemoveAllBelowCutOff(node.mChildren, result, cutOff);
 		}
 	}
 
@@ -412,10 +454,13 @@ namespace
 
 			for (size_t i = 0; i < entries.size(); i++)
 			{
-				scores[i] = static_cast<float>(scorer.similarity(names[i]));
+				scores[i] = static_cast<float>(scorer.similarity(names[i]) / 100.0);
 			}
 
-			SortNodes(nodes.begin(), nodes.end(), result);
+			const float cutOff = CalculateCutOff(nodes, result);
+			RemoveAllBelowCutOff(nodes, result, cutOff);
+
+			SortNodes(nodes, result);
 		}
 
 		for (const EntryAsNode& node : nodes)
