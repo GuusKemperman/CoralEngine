@@ -42,6 +42,8 @@ namespace
 	{
 		CE::ManyStrings mNames{};
 		std::vector<Entry> mEntries{};
+		std::vector<float> mBonuses{};
+
 		std::string mUserQuery{};
 		CE::Search::SearchFlags mFlags{};
 	};
@@ -185,8 +187,9 @@ void CE::Search::End()
 	}
 
 	context.mInput.mEntries.clear();
-	context.mDisplayFunctions.clear();
 	context.mInput.mNames.Clear();
+	context.mInput.mBonuses.clear();
+	context.mDisplayFunctions.clear();
 	ASSERT_LOG(context.mCategoryStack.empty(), "There were more calls to BeginCategory than to EndCategory");
 
 	sContextStack.pop();
@@ -202,8 +205,9 @@ void CE::Search::BeginCategory(std::string_view name, std::function<bool(std::st
 			true,
 			0
 		});
-	context.mDisplayFunctions.emplace_back(CategoryFunctions{ std::move(displayStart) });
 	context.mInput.mNames.Emplace(name);
+	context.mInput.mBonuses.emplace_back();
+	context.mDisplayFunctions.emplace_back(CategoryFunctions{ std::move(displayStart) });
 	context.mCategoryStack.emplace(static_cast<uint32>(context.mInput.mEntries.size()) - 1);
 }
 
@@ -239,8 +243,9 @@ bool CE::Search::AddItem(std::string_view name, std::function<bool(std::string_v
 			false,
 			0
 		});
-	context.mDisplayFunctions.emplace_back(ItemFunctions{ std::move(display) });
 	context.mInput.mNames.Emplace(name);
+	context.mInput.mBonuses.emplace_back();
+	context.mDisplayFunctions.emplace_back(ItemFunctions{ std::move(display) });
 
 	return wasPressed;
 }
@@ -306,6 +311,11 @@ void CE::Search::EndPopup()
 	ImGui::EndPopup();
 }
 
+void CE::Search::SetBonus(float bonus)
+{
+	sContextStack.top().get().mInput.mBonuses.back() = bonus;
+}
+
 namespace
 {
 	EntryAsNode::EntryAsNode(uint32& index, const Result& result):
@@ -353,7 +363,9 @@ namespace
 	bool IsResultUpToDate(const Result& oldResult, const Input& currentInput)
 	{
 		const Input& oldInput = oldResult.mInput;
-		return oldInput.mUserQuery == currentInput.mUserQuery && oldInput.mFlags == currentInput.mFlags;
+		return oldInput.mUserQuery == currentInput.mUserQuery
+			&& oldInput.mFlags == currentInput.mFlags
+			&& oldInput.mBonuses == currentInput.mBonuses;
 	}
 
 	void AppendToDisplayOrder(const EntryAsNode& node, Result& result)
@@ -397,17 +409,16 @@ namespace
 
 	void GiveInitialScores(Result& result)
 	{
-		std::vector<float>& scores = result.mBuffers.mScores;
-		scores.clear();
-
 		CE::ManyStrings& names = result.mBuffers.mPreprocessedNames;
 		names = result.mInput.mNames;
 
 		PreprocessString(names.Data(), names.SizeInBytes());
-		scores.resize(names.NumOfStrings());
 
 		std::string preprocessedQuery = result.mInput.mUserQuery;
 		PreprocessString(preprocessedQuery.data(), preprocessedQuery.size());
+
+		std::vector<float>& scores = result.mBuffers.mScores;
+		scores = result.mInput.mBonuses;
 
 		ApplyScoresUsingScorer<rapidfuzz::fuzz::CachedPartialTokenSortRatio<char>>(result, preprocessedQuery, .5);
 		ApplyScoresUsingScorer<rapidfuzz::fuzz::CachedRatio<char>>(result, preprocessedQuery, .5);

@@ -134,8 +134,13 @@ namespace CE
 		struct NodeCategory
 		{
 			std::string mName{};
+			float mLikelinessOfBeingSelectedByUser{};
 			std::vector<NodeTheUserCanAdd> mNodes{};
 		};
+
+		// When writing for example GetOwner, we want the first result to be
+		// the GetOwner of the script you are editing.
+		static constexpr float sLikelinessIncreaseForThisScript = 0.2f;
 
 		void DisplayCanvas();
 		void DrawCanvasObjects();

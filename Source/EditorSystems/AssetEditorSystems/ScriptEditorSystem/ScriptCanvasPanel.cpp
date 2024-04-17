@@ -392,15 +392,22 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 		}
 
 		Search::TreeNode(category.mName);
+		Search::SetBonus(category.mLikelinessOfBeingSelectedByUser);
 
 		for (const NodeTheUserCanAdd& node : category.mNodes)
 		{
-			if (ShouldShowUserNode(node)
-				&& Search::Button(node.mName))
+			if (!ShouldShowUserNode(node))
+			{
+				continue;
+			}
+
+			if (Search::Button(node.mName))
 			{
 				ImGui::CloseCurrentPopup();
 				AddNewNode(node);
 			}
+
+			Search::SetBonus(category.mLikelinessOfBeingSelectedByUser);
 		}
 
 		Search::TreePop();
@@ -861,95 +868,110 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 		},
 		Input::KeyboardKey::K);
 
-	for (const MetaType& type : MetaManager::Get().EachType())
-	{
-		NodeCategory typeCategory{ type.GetName() };
-
-		for (const MetaFunc& metaFunc : type.GetDirectFuncs())
+	auto addType = [&](const MetaType& type, float categoryBonus)
 		{
-			if (!CanFunctionBeTurnedIntoNode(metaFunc))
-			{
-				continue;
-			}
+			NodeCategory typeCategory{ type.GetName(), categoryBonus };
 
-			typeCategory.mNodes.emplace_back(std::string{ metaFunc.GetDesignerFriendlyName() },
-				[&type, &metaFunc](ScriptFunc& func) -> decltype(auto)
+			for (const MetaFunc& metaFunc : type.GetDirectFuncs())
+			{
+				if (!CanFunctionBeTurnedIntoNode(metaFunc))
 				{
-					return func.AddNode<MetaFuncScriptNode>(func, type, metaFunc);
-				},
-				[&metaFunc](const ScriptPin& contextPin) -> bool
-				{
-					return DoesNodeMatchContext(contextPin,
-					metaFunc.GetReturnType().mTypeTraits,
-					[&]
+					continue;
+				}
+
+				typeCategory.mNodes.emplace_back(std::string{ metaFunc.GetDesignerFriendlyName() },
+					[&type, &metaFunc](ScriptFunc& func) -> decltype(auto)
 					{
-						std::vector<TypeTraits> params{};
-						params.reserve(metaFunc.GetParameters().size());
-
-						for (const MetaFuncNamedParam& namedParam : metaFunc.GetParameters())
-						{
-							params.emplace_back(namedParam.mTypeTraits);
-						}
-
-						return params;
-					}(),
-					IsFunctionPure(metaFunc));
-				});
-		}
-
-		for (const MetaField& field : type.GetDirectFields())
-		{
-			if (CanBeGetThroughScripts(field, false))
-			{
-				typeCategory.mNodes.emplace_back(GetterScriptNode::GetTitle(field.GetName(), true),
-					[&field](ScriptFunc& func) -> decltype(auto)
-					{
-						return func.AddNode<GetterScriptNode>(func, field, true);
+						return func.AddNode<MetaFuncScriptNode>(func, type, metaFunc);
 					},
-					[&field](const ScriptPin& contextPin) -> bool
-					{
-						return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId(), TypeForm::Value }, { { field.GetOuterType().GetTypeId(), TypeForm::ConstRef } }, true);
-					});
-			}
-
-			if (CanBeGetThroughScripts(field, true))
-			{
-				typeCategory.mNodes.emplace_back(GetterScriptNode::GetTitle(field.GetName(), false),
-					[&field](ScriptFunc& func) -> decltype(auto)
-					{
-						return func.AddNode<GetterScriptNode>(func, field, false);
-					},
-					[&field](const ScriptPin& contextPin) -> bool
-					{
-						return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId(), TypeForm::Ref }, { { field.GetOuterType().GetTypeId(), TypeForm::Ref } }, true);
-					});
-			}
-
-			if (CanBeSetThroughScripts(field))
-			{
-				typeCategory.mNodes.emplace_back(Format("Set {}", field.GetName()),
-					[&field](ScriptFunc& func) -> decltype(auto)
-					{
-						return func.AddNode<SetterScriptNode>(func, field);
-					},
-					[&field](const ScriptPin& contextPin) -> bool
+					[&metaFunc](const ScriptPin& contextPin) -> bool
 					{
 						return DoesNodeMatchContext(contextPin,
-							{ field.GetType().GetTypeId() },
-							{ { field.GetOuterType().GetTypeId()},{ field.GetType().GetTypeId() } }, false);
+						metaFunc.GetReturnType().mTypeTraits,
+						[&]
+							{
+								std::vector<TypeTraits> params{};
+								params.reserve(metaFunc.GetParameters().size());
+
+								for (const MetaFuncNamedParam& namedParam : metaFunc.GetParameters())
+								{
+									params.emplace_back(namedParam.mTypeTraits);
+								}
+
+								return params;
+							}(),
+								IsFunctionPure(metaFunc));
 					});
 			}
-		}
 
-		if (!typeCategory.mNodes.empty())
-		{
-			std::sort(typeCategory.mNodes.begin(), typeCategory.mNodes.end(),
-				[](const NodeTheUserCanAdd& lhs, const NodeTheUserCanAdd& rhs)
+			for (const MetaField& field : type.GetDirectFields())
+			{
+				if (CanBeGetThroughScripts(field, false))
 				{
-					return lhs.mName < rhs.mName;
-				});
+					typeCategory.mNodes.emplace_back(GetterScriptNode::GetTitle(field.GetName(), true),
+						[&field](ScriptFunc& func) -> decltype(auto)
+						{
+							return func.AddNode<GetterScriptNode>(func, field, true);
+						},
+						[&field](const ScriptPin& contextPin) -> bool
+						{
+							return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId(), TypeForm::Value }, { { field.GetOuterType().GetTypeId(), TypeForm::ConstRef } }, true);
+						});
+				}
 
-			returnValue.emplace_back(std::move(typeCategory));
+				if (CanBeGetThroughScripts(field, true))
+				{
+					typeCategory.mNodes.emplace_back(GetterScriptNode::GetTitle(field.GetName(), false),
+						[&field](ScriptFunc& func) -> decltype(auto)
+						{
+							return func.AddNode<GetterScriptNode>(func, field, false);
+						},
+						[&field](const ScriptPin& contextPin) -> bool
+						{
+							return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId(), TypeForm::Ref }, { { field.GetOuterType().GetTypeId(), TypeForm::Ref } }, true);
+						});
+				}
+
+				if (CanBeSetThroughScripts(field))
+				{
+					typeCategory.mNodes.emplace_back(Format("Set {}", field.GetName()),
+						[&field](ScriptFunc& func) -> decltype(auto)
+						{
+							return func.AddNode<SetterScriptNode>(func, field);
+						},
+						[&field](const ScriptPin& contextPin) -> bool
+						{
+							return DoesNodeMatchContext(contextPin,
+								{ field.GetType().GetTypeId() },
+								{ { field.GetOuterType().GetTypeId()},{ field.GetType().GetTypeId() } }, false);
+						});
+				}
+			}
+
+			if (!typeCategory.mNodes.empty())
+			{
+				std::sort(typeCategory.mNodes.begin(), typeCategory.mNodes.end(),
+					[](const NodeTheUserCanAdd& lhs, const NodeTheUserCanAdd& rhs)
+					{
+						return lhs.mName < rhs.mName;
+					});
+
+				returnValue.emplace_back(std::move(typeCategory));
+			}
+		};
+
+	const MetaType* myType = MetaManager::Get().TryGetType(mAsset.GetName());
+
+	if (myType != nullptr)
+	{
+		addType(*myType, sLikelinessIncreaseForThisScript);
+	}
+
+	for (const MetaType& type : MetaManager::Get().EachType())
+	{
+		if (&type != myType)
+		{
+			addType(type, 0.0f);
 		}
 	}
 
@@ -960,7 +982,8 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 	}
 
 	// + 1, Because we want to leave the Common category at the top, always
-	std::sort(returnValue.begin() + 1, returnValue.end(),
+	// And if our type was not nullptr, we want to leave that in place as well
+	std::sort(returnValue.begin() + 1 + (myType != nullptr), returnValue.end(),
 		[](const NodeCategory& lhs, const NodeCategory& rhs)
 		{
 			return lhs.mName < rhs.mName;

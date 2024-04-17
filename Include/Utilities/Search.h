@@ -33,5 +33,14 @@ namespace CE::Search
 	bool BeginPopup(std::string_view name);
 
 	void EndPopup();
+
+	/**
+	 * \brief A value that is added to the score of the most recently added entry when comparing it againt the string the user is looking for.
+	 *
+	 * Can be used to move commonly used entries higher up.
+	 *
+	 * \param bonus A value that gets added to the base score. The base score for all entries is always between 0.0f and 1.0f, take this into account when applying your bonus.
+	 */
+	void SetBonus(float bonus);
 }
 #endif // EDITOR
