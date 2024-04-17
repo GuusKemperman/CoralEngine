@@ -47,6 +47,7 @@ namespace
 	struct ReusableBuffers
 	{
 		std::vector<float> mScores{};
+		std::vector<float> mSortedScores{};
 		std::vector<EntryAsNode> mNodes{};
 		CE::ManyStrings mPreprocessedNames{};
 	};
@@ -90,9 +91,7 @@ namespace
 
 	constexpr bool sDebugPrintingEnabled = false;
 
-	// Increase this value to reduce the number
-	// of entries shown to the user
-	constexpr float sCutOffStrength = 1.5f;
+	constexpr float sPercentageOfEntriesToShow = .1f;
 
 	bool operator==(const Entry& lhs, const Entry& rhs);
 	bool operator!=(const Entry& lhs, const Entry& rhs);
@@ -461,11 +460,13 @@ namespace
 			});
 	}
 
-	float CalculateCutOff(const std::vector<EntryAsNode>& nodes, const Result& result)
+	float CalculateCutOff(Result& result)
 	{
-		const auto [sum, numOfEntries] = SumScores(nodes, result);
-		const float avgSimilarity = sum / static_cast<float>(numOfEntries);
-		return avgSimilarity * sCutOffStrength;
+		result.mBuffers.mSortedScores = result.mBuffers.mScores;
+		std::sort(result.mBuffers.mSortedScores.begin(), result.mBuffers.mSortedScores.end());
+
+		const size_t indexAtDesiredPercentile = static_cast<size_t>((1.0f - sPercentageOfEntriesToShow) * static_cast<float>((result.mBuffers.mSortedScores.size() - 1)));
+		return result.mBuffers.mSortedScores[indexAtDesiredPercentile];
 	}
 
 	void RemoveAllBelowCutOff(std::vector<EntryAsNode>& nodes, const Result& result, float cutOff)
@@ -558,9 +559,9 @@ namespace
 			PropagateScoreToParents(nodes, result);
 			PrintNodeTree(nodes, result, "Propagated to parents");
 
-			const float cutOff = CalculateCutOff(nodes, result);
+			const float cutOff = CalculateCutOff(result);
 			RemoveAllBelowCutOff(nodes, result, cutOff);
-			PrintNodeTree(nodes, result, "Cutoff low scores");
+			PrintNodeTree(nodes, result, CE::Format("Removing scores below {}", cutOff));
 
 			SortNodes(nodes, result);
 			PrintNodeTree(nodes, result, "Second sorting pass");

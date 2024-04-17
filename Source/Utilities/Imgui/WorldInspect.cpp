@@ -920,9 +920,9 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 void CE::WorldHierarchy::DisplayEntity(Registry& registry, entt::entity entity, std::vector<entt::entity>& selectedEntities)
 {
-	const std::string displayName = NameComponent::GetDisplayName(registry, entity).append("##DisplayName");
+	const std::string displayName = NameComponent::GetDisplayName(registry, entity);
 
-	CE::Search::BeginCategory(displayName,
+	Search::BeginCategory(displayName,
 		[&registry, entity, &selectedEntities](std::string_view name) -> bool
 		{
 			ImGui::PushID(static_cast<int>(entity));
@@ -1007,7 +1007,7 @@ void CE::WorldHierarchy::DisplayEntity(Registry& registry, entt::entity entity, 
 		}
 	}
 
-	CE::Search::TreePop();
+	Search::TreePop();
 }
 
 void CE::WorldHierarchy::ReceiveDragDropOntoParent(Registry& registry,
