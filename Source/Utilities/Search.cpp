@@ -88,6 +88,8 @@ namespace
 	constexpr std::string_view sDefaultLabel = ICON_FA_SEARCH "##SearchBar";
 	constexpr std::string_view sDefaultHint = "Search";
 
+	constexpr bool sDebugPrintingEnabled = false;
+
 	// Increase this value to reduce the number
 	// of entries shown to the user
 	constexpr float sCutOffStrength = 1.5f;
@@ -377,6 +379,21 @@ namespace
 		}
 	}
 
+	template<typename Scorer>
+	void ApplyScoresUsingScorer(Result& result, std::string_view preprocessedQuery, double weight)
+	{
+		const CE::ManyStrings& names = result.mBuffers.mPreprocessedNames;
+		std::vector<float>& scores = result.mBuffers.mScores;
+		const Scorer scorer{ preprocessedQuery };
+
+		const double factor = weight / 100.0;
+		
+		for (size_t i = 0; i < names.NumOfStrings(); i++)
+		{
+			scores[i] += static_cast<float>(scorer.similarity(names[i]) * factor);
+		}
+	}
+
 	void GiveInitialScores(Result& result)
 	{
 		std::vector<float>& scores = result.mBuffers.mScores;
@@ -391,12 +408,8 @@ namespace
 		std::string preprocessedQuery = result.mInput.mUserQuery;
 		PreprocessString(preprocessedQuery.data(), preprocessedQuery.size());
 
-		const rapidfuzz::fuzz::CachedPartialTokenSortRatio scorer{ preprocessedQuery };
-
-		for (size_t i = 0; i < names.NumOfStrings(); i++)
-		{
-			scores[i] = static_cast<float>(scorer.similarity(names[i]) / 100.0);
-		}
+		ApplyScoresUsingScorer<rapidfuzz::fuzz::CachedPartialTokenSortRatio<char>>(result, preprocessedQuery, .5);
+		ApplyScoresUsingScorer<rapidfuzz::fuzz::CachedRatio<char>>(result, preprocessedQuery, .5);
 	}
 
 	void PropagateScoreToChildren(const std::vector<EntryAsNode>& nodes, Result& result)
@@ -471,20 +484,10 @@ namespace
 
 	void SortNodes(std::vector<EntryAsNode>& nodes, const Result& result)
 	{
-		std::sort(nodes.begin(), nodes.end(),
+		std::stable_sort(nodes.begin(), nodes.end(),
 			[&result](const EntryAsNode& lhs, const EntryAsNode& rhs)
-				{
-					const float lhsScore = result.mBuffers.mScores[lhs.mIndex];
-					const float rhsScore = result.mBuffers.mScores[rhs.mIndex];
-
-					if (lhsScore != rhsScore)
-					{
-						return lhsScore > rhsScore;
-					}
-
-					// Fall back the order in which the nodes
-					// were submitted if both scores are the same
-					return lhs.mIndex < rhs.mIndex;
+			{
+				return  result.mBuffers.mScores[lhs.mIndex] > result.mBuffers.mScores[rhs.mIndex];
 			});
 
 		for (EntryAsNode& node : nodes)
@@ -509,10 +512,13 @@ namespace
 		return str;
 	}
 
-	[[maybe_unused]] void PrintNodeTree(const std::vector<EntryAsNode>& nodes, const Result& result)
+	[[maybe_unused]] void PrintNodeTree([[maybe_unused]] const std::vector<EntryAsNode>& nodes, [[maybe_unused]] const Result& result, [[maybe_unused]] std::string_view stage)
 	{
-		[[maybe_unused]] std::string indentation{};
-		LOG(LogSearch, Verbose, "SearchTerm: {}\n{}\n", result.mInput.mUserQuery, ConvertNodeTreeToString(nodes, result, indentation));
+		if constexpr (sDebugPrintingEnabled)
+		{
+			[[maybe_unused]] std::string indentation{};
+			LOG(LogSearch, Verbose, "Stage: {}\nSearchTerm: {}\n{}\n", stage, result.mInput.mUserQuery, ConvertNodeTreeToString(nodes, result, indentation));
+		}
 	}
 
 	void BringResultUpToDate(Result& result)
@@ -541,30 +547,23 @@ namespace
 		if (!result.mInput.mUserQuery.empty())
 		{
 			GiveInitialScores(result);
+			PrintNodeTree(nodes, result, "Initial scores");
 
-			LOG(LogSearch, Verbose, "Initial scores:");
-			PrintNodeTree(nodes, result);
+			SortNodes(nodes, result);
+			PrintNodeTree(nodes, result, "First sorting pass");
 
 			PropagateScoreToChildren(nodes, result);
-
-			LOG(LogSearch, Verbose, "Propegated to children:");
-			PrintNodeTree(nodes, result);
+			PrintNodeTree(nodes, result, "Propagated to children");
 
 			PropagateScoreToParents(nodes, result);
-
-			LOG(LogSearch, Verbose, "Propegated to parents:");
-			PrintNodeTree(nodes, result);
+			PrintNodeTree(nodes, result, "Propagated to parents");
 
 			const float cutOff = CalculateCutOff(nodes, result);
 			RemoveAllBelowCutOff(nodes, result, cutOff);
-
-			LOG(LogSearch, Verbose, "Removed all lower than {}:", cutOff);
-			PrintNodeTree(nodes, result);
+			PrintNodeTree(nodes, result, "Cutoff low scores");
 
 			SortNodes(nodes, result);
-
-			LOG(LogSearch, Verbose, "Sorted:", cutOff);
-			PrintNodeTree(nodes, result);
+			PrintNodeTree(nodes, result, "Second sorting pass");
 		}
 
 		for (const EntryAsNode& node : nodes)
