@@ -26,26 +26,11 @@ namespace CE::Search
 
 	bool Button(std::string_view label);
 
-	enum WindowFlags : int32
-	{
-		/**
-		 * \brief Normally if BeginCombo or BeginPopup returns true,
-		 * CE::Search::Begin will have already been called for you.
-		 * With this flag, you can prevent that from happening, which allows
-		 * you to do something like this:
-		 *
-		 * ImGui::Button("Ha!"); ImGui::SameLine(); CE::Search::Begin("Searching");
-		 *
-		 * This places a button on the same line as the actual search bar.
-		 */
-		CallSearchBeginManually = 1 << 1
-	};
-
-	bool BeginCombo(std::string_view label, std::string_view previewValue, int32 searchFlagsAndWindowFlags = {});
+	bool BeginCombo(std::string_view label, std::string_view previewValue, SearchFlags searchFlags = {});
 
 	void EndCombo();
 
-	bool BeginPopup(std::string_view name, int32 searchFlagsAndWindowFlags = {});
+	bool BeginPopup(std::string_view name, SearchFlags searchFlags = {});
 
 	void EndPopup();
 

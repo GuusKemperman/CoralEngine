@@ -102,6 +102,7 @@ namespace
 	bool operator==(const Entry& lhs, const Entry& rhs);
 	bool operator!=(const Entry& lhs, const Entry& rhs);
 
+	void BeginChild();
 	bool IsResultSafeToUse(const Result& oldResult, const Input& currentInput);
 	bool IsResultUpToDate(const Result& oldResult, const Input& currentInput);
 	void BringResultUpToDate(Result& result);
@@ -123,7 +124,6 @@ void CE::Search::Begin(std::string_view id, SearchFlags flags)
 	}
 
 	ImGui::InputTextWithHint(sDefaultLabel.data(), sDefaultHint.data(), &context.mInput.mUserQuery);
-	ImGui::BeginChild("SearchItems", ImGui::GetContentRegionAvail(), false, ImGuiWindowFlags_NavFlattened);
 }
 
 void CE::Search::End()
@@ -209,6 +209,12 @@ void CE::Search::End()
 void CE::Search::BeginCategory(std::string_view name, std::function<bool(std::string_view)> displayStart)
 {
 	SearchContext& context = sContextStack.top();
+
+	if (context.mInput.mEntries.empty())
+	{
+		BeginChild();
+	}
+
 	context.mInput.mEntries.emplace_back(
 		Entry
 		{
@@ -239,6 +245,11 @@ void CE::Search::EndCategory(std::function<void()> displayEnd)
 bool CE::Search::AddItem(std::string_view name, std::function<bool(std::string_view)> display)
 {
 	SearchContext& context = sContextStack.top();
+
+	if (context.mInput.mEntries.empty())
+	{
+		BeginChild();
+	}
 
 	const bool wasPressed = context.mIndexOfPressedItem == context.mInput.mEntries.size();
 
@@ -280,7 +291,7 @@ bool CE::Search::Button(std::string_view label)
 	);
 }
 
-bool CE::Search::BeginCombo(std::string_view label, std::string_view previewValue, int32 searchFlagsAndWindowFlags)
+bool CE::Search::BeginCombo(std::string_view label, std::string_view previewValue, SearchFlags searchFlags)
 {
 	// Copied directly from ImGui::BeginCombo, but we use our own
 	// popup instead. The default combo popup does not like our
@@ -354,9 +365,8 @@ bool CE::Search::BeginCombo(std::string_view label, std::string_view previewValu
 
 	ImGui::SetNextWindowPos(ImGui::GetCursorScreenPos());
 
-	return BeginPopup(popup_name, searchFlagsAndWindowFlags);
+	return BeginPopup(popup_name, searchFlags);
 }
-
 
 void CE::Search::EndCombo()
 {
@@ -364,7 +374,7 @@ void CE::Search::EndCombo()
 	ImGui::EndCombo();
 }
 
-bool CE::Search::BeginPopup(std::string_view name, int32 searchFlagsAndWindowFlags)
+bool CE::Search::BeginPopup(std::string_view name, SearchFlags searchFlags)
 {
 	ImGui::SetNextWindowSize(ImVec2{ -1.0f, 300.0f });
 
@@ -373,11 +383,7 @@ bool CE::Search::BeginPopup(std::string_view name, int32 searchFlagsAndWindowFla
 		return false;
 	}
 
-	if ((searchFlagsAndWindowFlags & WindowFlags::CallSearchBeginManually) == 0)
-	{
-		Begin(std::string{ name } + "SearchInPopUp", static_cast<SearchFlags>(searchFlagsAndWindowFlags));
-	}
-
+	Begin(std::string{ name } + "SearchInPopUp", static_cast<SearchFlags>(searchFlags));
 	return true;
 }
 
@@ -434,6 +440,11 @@ namespace
 	bool operator!=(const Entry& lhs, const Entry& rhs)
 	{
 		return lhs.mNumOfTotalChildren != rhs.mNumOfTotalChildren || lhs.mIsCategory != rhs.mIsCategory;
+	}
+
+	void BeginChild()
+	{
+		ImGui::BeginChild("SearchItems", ImGui::GetContentRegionAvail(), false, ImGuiWindowFlags_NavFlattened);
 	}
 
 	bool IsResultSafeToUse(const Result& oldResult, const Input& currentInput)

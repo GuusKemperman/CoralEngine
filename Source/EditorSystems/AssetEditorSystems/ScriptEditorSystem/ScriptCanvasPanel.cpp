@@ -357,17 +357,14 @@ void CE::ScriptEditorSystem::DisplayCanvasPopUps()
 
 void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 {
-	if (!Search::BeginPopup("Create New Node", Search::WindowFlags::CallSearchBeginManually))
+	if (!Search::BeginPopup("Create New Node"))
 	{
 		mCreateNodePopUpPosition.reset();
 		return;
 	}
 
-	ImGui::Checkbox("##ContextSensitive", &sContextSensitive);
-	ImGui::SetItemTooltip("Context sensitive");
-
 	ImGui::SameLine();
-	Search::Begin("SearchBar");
+	ImGui::Checkbox("Context sensitive", &sContextSensitive);
 
 	if (!mCreateNodePopUpPosition.has_value())
 	{
