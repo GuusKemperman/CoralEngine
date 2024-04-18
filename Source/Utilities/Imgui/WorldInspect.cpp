@@ -856,7 +856,7 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 	} // From here on out, we can assume selectedEntities != nullptr
 
 	if (ImGui::IsMouseClicked(1)
-		&& ImGui::IsWindowHovered())
+		&& ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
 	{
 		ImGui::OpenPopup("HierarchyPopUp");
 	}
@@ -876,7 +876,7 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 	ImGui::SameLine();
 
-	Begin("Hierarchy", Search::IgnoreParentScore);
+	Search::Begin("Hierarchy", Search::IgnoreParentScore);
 
 	// First we display all entities without transforms
 	{

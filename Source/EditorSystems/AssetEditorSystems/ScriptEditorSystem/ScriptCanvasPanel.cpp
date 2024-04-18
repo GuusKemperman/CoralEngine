@@ -348,39 +348,26 @@ void CE::ScriptEditorSystem::DisplayCanvasPopUps()
 	{
 		ImGui::OpenPopup("Create New Node");
 	}
-	ax::NodeEditor::Resume();
 
-	ax::NodeEditor::Suspend();
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
+	DisplayPinContextPopUp();
+	DisplayCreateNewNowPopUp(mMousePosInCanvasSpace);
 
-	if (ImGui::BeginPopup("Pin Context Menu"))
-	{
-		DisplayPinContextPopUp();
-		ImGui::EndPopup();
-	}
-
-	if (Search::BeginPopup("Create New Node"))
-	{
-		DisplayCreateNewNowPopUp(mMousePosInCanvasSpace);
-		Search::EndPopup();
-	}
-	else
-	{
-		mCreateNodePopUpPosition.reset();
-	}
-
-	ImGui::PopStyleVar();
 	ax::NodeEditor::Resume();
 }
 
 void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 {
+	if (!Search::BeginPopup("Create New Node"))
+	{
+		mCreateNodePopUpPosition.reset();
+		return;
+	}
+
 	if (!mCreateNodePopUpPosition.has_value())
 	{
 		mCreateNodePopUpPosition = placeNodeAtPos;
 	}
 
-	ImGui::SameLine();
 	ImGui::Checkbox("Context sensitive", &sContextSensitive);
 
 	for (const NodeCategory& category : mAllNodesTheUserCanAdd)
@@ -412,10 +399,17 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 
 		Search::TreePop();
 	}
+
+	Search::EndPopup();
 }
 
 void CE::ScriptEditorSystem::DisplayPinContextPopUp()
 {
+	if (!ImGui::BeginPopup("Pin Context Menu"))
+	{
+		return;
+	}
+
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
 	const ScriptPin* pin = currentFunc.TryGetPin(mPinTheUserRightClicked);
 
@@ -423,6 +417,7 @@ void CE::ScriptEditorSystem::DisplayPinContextPopUp()
 	{
 		mPinTheUserRightClicked = ax::NodeEditor::PinId::Invalid;
 		ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
 		return;
 	}
 
@@ -469,6 +464,8 @@ void CE::ScriptEditorSystem::DisplayPinContextPopUp()
 			}
 		}
 	}
+
+	ImGui::EndPopup();
 }
 
 void CE::ScriptEditorSystem::DisplayFunctionNode(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,

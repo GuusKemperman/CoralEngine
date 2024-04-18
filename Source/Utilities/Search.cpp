@@ -115,8 +115,12 @@ void CE::Search::Begin(std::string_view id, SearchFlags flags)
 	SearchContext& context = sContextStack.emplace(sContexts[imId]);
 	context.mInput.mFlags = flags;
 
-	ImGui::InputTextWithHint(sDefaultLabel.data(), sDefaultHint.data(), &context.mInput.mUserQuery);
+	if (ImGui::IsWindowAppearing())
+	{
+		ImGui::SetKeyboardFocusHere();
+	}
 
+	ImGui::InputTextWithHint(sDefaultLabel.data(), sDefaultHint.data(), &context.mInput.mUserQuery);
 	ImGui::BeginChild("SearchItems");
 }
 
