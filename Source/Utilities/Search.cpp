@@ -85,6 +85,7 @@ namespace
 		bool mIndexOfLastValidResult{};
 
 		uint32 mIndexOfPressedItem = std::numeric_limits<uint32>::max();
+		bool mHasPressedItemBeenConsumed{};
 	};
 	std::unordered_map<ImGuiID, SearchContext> sContexts{};
 	std::stack<std::reference_wrapper<SearchContext>> sContextStack{};
@@ -261,6 +262,12 @@ bool CE::Search::AddItem(std::string_view name, std::function<bool(std::string_v
 
 bool CE::Search::BeginCombo(std::string_view label, std::string_view previewValue, ImGuiComboFlags flags)
 {
+	// Copied directly from ImGui::BeginCombo, but we use our own
+	// popup instead. The default combo popup does not like our
+	// usage of a child window, and it closes immediately when an
+	// item is clicked, which does not give us the change to have
+	// AddItem return true during the next frame.
+
 	using namespace ImGui;
 
 	ImGuiContext& g = *GImGui;
@@ -374,6 +381,14 @@ bool CE::Search::BeginPopup(std::string_view name)
 
 void CE::Search::EndPopup()
 {
+	SearchContext& context = sContextStack.top();
+
+	if (context.mHasPressedItemBeenConsumed)
+	{
+		context.mHasPressedItemBeenConsumed = false;
+		ImGui::CloseCurrentPopup();
+	}
+
 	End();
 	ImGui::EndPopup();
 }
@@ -641,6 +656,7 @@ namespace
 	void ProcessItemClickConsumption(SearchContext& context)
 	{
 		context.mIndexOfPressedItem = std::numeric_limits<uint32>::max();
+		context.mHasPressedItemBeenConsumed = true;
 	}
 
 	void DisplayToUser(SearchContext& context)
@@ -666,6 +682,7 @@ namespace
 					&& itemFunctions.mOnDisplay(name))
 				{
 					context.mIndexOfPressedItem = index;
+					context.mHasPressedItemBeenConsumed = false;
 				}
 
 				continue;
