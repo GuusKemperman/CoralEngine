@@ -642,7 +642,11 @@ void CE::Device::CreateImguiContext()
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
+    ImGui::GetIO().ConfigFlags |= 
+        ImGuiConfigFlags_DockingEnable
+	    | ImGuiConfigFlags_ViewportsEnable
+	    | ImGuiConfigFlags_NavEnableGamepad
+	    | ImGuiConfigFlags_NavEnableKeyboard;
     ImGui::GetIO().ConfigViewportsNoDecoration = false;
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
