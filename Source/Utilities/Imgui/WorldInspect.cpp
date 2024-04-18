@@ -110,7 +110,7 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 	ImGui::Splitter(true, &mViewportWidth, &mHierarchyAndDetailsWidth);
 
-	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, 0.0f }))
+	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, -2.0f }))
 	{
 		const ImVec2 beginPlayPos = ImGui::GetWindowContentRegionMin() + ImVec2{ ImGui::GetContentRegionAvail().x / 2.0f, 10.0f };
 		const ImVec2 viewportPos = ImGui::GetCursorPos();
@@ -278,7 +278,7 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		WorldHierarchy::Display(world, &mSelectedEntities);
 		ImGui::EndChild();
 
-		ImGui::BeginChild("WorldDetails", { 0.0f, mDetailsHeight });
+		ImGui::BeginChild("WorldDetails", { 0.0f, mDetailsHeight - 5.0f });
 		WorldDetails::Display(world, mSelectedEntities);
 		ImGui::EndChild();
 
@@ -847,6 +847,8 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 	}
 }
 
+static ImVec2 sInvisibleDragDropAreaStart{};
+
 void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* selectedEntities)
 {
 	std::vector<entt::entity> dummySelectedEntities{};
@@ -908,12 +910,14 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 			}
 		}
 	}
-	
+
+
 	Search::End();
 
 	DisplayRightClickPopUp(world, *selectedEntities);
 
-	ImGui::InvisibleButton("DragToUnparent", glm::max(static_cast<glm::vec2>(ImGui::GetContentRegionAvail()), glm::vec2{ 1.0f, 1.0f }));
+	ImGui::SetCursorScreenPos(sInvisibleDragDropAreaStart);
+	ImGui::InvisibleButton("DragToUnparent", glm::max(static_cast<glm::vec2>(ImGui::GetContentRegionAvail()), glm::vec2{ 1.0f }));
 	ReceiveDragDropOntoParent(reg, std::nullopt);
 	ReceiveDragDrops(world);
 }
@@ -993,6 +997,8 @@ void CE::WorldHierarchy::DisplayEntity(Registry& registry, entt::entity entity, 
 			}
 
 			ImGui::PopID();
+
+			sInvisibleDragDropAreaStart = ImGui::GetCursorScreenPos();
 
 			return isTreeNodeOpen;
 		});
