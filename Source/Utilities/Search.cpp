@@ -91,7 +91,7 @@ namespace
 	constexpr std::string_view sDefaultLabel = ICON_FA_SEARCH "##SearchBar";
 	constexpr std::string_view sDefaultHint = "Search";
 
-	constexpr bool sDebugPrintingEnabled = true;
+	constexpr bool sDebugPrintingEnabled = false;
 
 	// Increasing this value will reduce the amount of
 	// items shown to the user.

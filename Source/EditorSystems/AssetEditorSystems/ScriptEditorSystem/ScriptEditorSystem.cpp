@@ -12,9 +12,9 @@
 #include "Utilities/StringFunctions.h"
 
 CE::ScriptEditorSystem::ScriptEditorSystem(Script&& asset) :
-	AssetEditorSystem(std::move(asset)),
-	mAllNodesTheUserCanAdd(GetAllNodesTheUserCanAdd())
+	AssetEditorSystem(std::move(asset))
 {
+	InitialiseAllNodesTheUserCanAdd();
 	mAsset.PostDeclarationRefresh();
 }
 
@@ -22,6 +22,13 @@ CE::ScriptEditorSystem::~ScriptEditorSystem()
 {
 	// Frees the context
 	SelectFunction(nullptr);
+
+	mShouldWeStopCountingNodePopularity = true;
+
+	if (mNodePopularityCalculateThread.joinable())
+	{
+		mNodePopularityCalculateThread.join();
+	}
 }
 
 void CE::ScriptEditorSystem::Tick(const float deltaTime)

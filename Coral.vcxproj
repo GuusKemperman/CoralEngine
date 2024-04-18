@@ -1379,7 +1379,7 @@
     <ClCompile Include="Source\Scripting\Nodes\FunctionLikeScriptNode.cpp" />
     <ClCompile Include="Source\Core\VirtualMachine.cpp" />
     <ClCompile Include="Source\Scripting\Nodes\MetaFuncScriptNode.cpp" />
-    <ClCompile Include="Source\Scripting\Nodes\MetaMemberScriptNode.cpp" />
+    <ClCompile Include="Source\Scripting\Nodes\MetaFieldScriptNode.cpp" />
     <ClCompile Include="Source\Scripting\ScriptPin.cpp" />
     <ClCompile Include="Source\Scripting\ScriptFunc.cpp" />
     <ClCompile Include="Source\Scripting\ScriptLink.cpp" />
@@ -1830,7 +1830,7 @@
     <ClInclude Include="Include\Scripting\Nodes\CommentScriptNode.h" />
     <ClInclude Include="Include\Scripting\Nodes\EntryAndReturnScriptNode.h" />
     <ClInclude Include="Include\Scripting\Nodes\FunctionLikeScriptNode.h" />
-    <ClInclude Include="Include\Scripting\Nodes\MetaMemberScriptNode.h" />
+    <ClInclude Include="Include\Scripting\Nodes\MetaFieldScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptField.h" />
     <ClInclude Include="Include\Scripting\ScriptErrors.h" />
     <ClInclude Include="Include\Scripting\ScriptFunc.h" />

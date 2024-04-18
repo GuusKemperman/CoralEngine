@@ -8,7 +8,7 @@
 #include "Scripting/Nodes/ControlScriptNodes.h"
 #include "Scripting/Nodes/CommentScriptNode.h"
 #include "Scripting/Nodes/MetaFuncScriptNode.h"
-#include "Scripting/Nodes/MetaMemberScriptNode.h"
+#include "Scripting/Nodes/MetaFieldScriptNode.h"
 #include "Scripting/Nodes/EntryAndReturnScriptNode.h"
 #include "Scripting/Nodes/ReroutScriptNode.h"
 

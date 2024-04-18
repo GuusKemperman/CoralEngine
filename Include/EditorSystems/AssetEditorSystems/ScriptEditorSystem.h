@@ -18,6 +18,7 @@ namespace CE
 	class CommentScriptNode;
 	class ScriptFunc;
 	class ScriptField;
+	class ScriptNode;
 
 	class ScriptEditorSystem final :
 		public AssetEditorSystem<Script>
@@ -114,10 +115,12 @@ namespace CE
 			NodeTheUserCanAdd(std::string&& name, 
 				std::function<ScriptNode&(ScriptFunc&)>&& addNode,
 				std::function<bool(const ScriptPin&)>&& matchesContext,
+				std::function<bool(const ScriptNode&)>&& wasCreatedFromThis,
 				std::optional<Input::KeyboardKey> shortcut = std::nullopt) :
 			mName(std::move(name)),
 			mAddNode(std::move(addNode)),
 			mMatchesContext(std::move(matchesContext)),
+			mWasCreatedFromThis(wasCreatedFromThis),
 			mShortCut(shortcut)
 			{}
 
@@ -125,22 +128,31 @@ namespace CE
 
 			std::function<ScriptNode& (ScriptFunc&)> mAddNode{};
 			std::function<bool(const ScriptPin&)> mMatchesContext{};
+			std::function<bool(const ScriptNode&)> mWasCreatedFromThis{};
 
 			// If CTRL is held, and this key is pressed,
 			// a node of this type is created.
 			std::optional<Input::KeyboardKey> mShortCut;
+			float mSearchBonus{};
+
+			// May not have been finished calculating
+			// Once all popularities have been calculated,
+			// the popularity will be applied to
+			// mSearchBonus
+			uint32 mNumOfTimesUsed{};
 		};
 
 		struct NodeCategory
 		{
 			std::string mName{};
-			float mLikelinessOfBeingSelectedByUser{};
+			float mSearchBonus{};
 			std::vector<NodeTheUserCanAdd> mNodes{};
 		};
 
 		// When writing for example GetOwner, we want the first result to be
 		// the GetOwner of the script you are editing.
-		static constexpr float sLikelinessIncreaseForThisScript = 0.2f;
+		static constexpr float sSearchBonusIncreaseForThisScript = 0.2f;
+		static constexpr float sPopularityInfluenceOnSearchBonus = 5.0f;
 
 		void DisplayCanvas();
 		void DrawCanvasObjects();
@@ -186,8 +198,11 @@ namespace CE
 		ImColor GetIconColor(const ScriptVariableTypeData& typeData) const;
 		void DrawPinIcon(const ScriptPin& pin, bool connected, int alpha, bool mirrored = false) const;
 
-		std::vector<NodeCategory> GetAllNodesTheUserCanAdd() const;
+		void InitialiseAllNodesTheUserCanAdd();
+
 		std::vector<NodeCategory> mAllNodesTheUserCanAdd{};
+		std::thread mNodePopularityCalculateThread{};
+		bool mShouldWeStopCountingNodePopularity{};
 
 		ax::NodeEditor::PinId mPinTheUserRightClicked{};
 		ax::NodeEditor::PinId mPinTheUserIsTryingToLink{};

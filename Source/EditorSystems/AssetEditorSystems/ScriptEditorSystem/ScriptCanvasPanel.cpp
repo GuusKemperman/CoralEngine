@@ -16,7 +16,7 @@
 #include "Scripting/Nodes/CommentScriptNode.h"
 #include "Scripting/Nodes/ControlScriptNodes.h"
 #include "Scripting/Nodes/EntryAndReturnScriptNode.h"
-#include "Scripting/Nodes/MetaMemberScriptNode.h"
+#include "Scripting/Nodes/MetaFieldScriptNode.h"
 #include "Scripting/Nodes/MetaFuncScriptNode.h"
 #include "Scripting/Nodes/ReroutScriptNode.h"
 #include "Utilities/Imgui/ImguiInspect.h"
@@ -392,7 +392,7 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 		}
 
 		Search::TreeNode(category.mName);
-		Search::SetBonus(category.mLikelinessOfBeingSelectedByUser);
+		Search::SetBonus(category.mSearchBonus);
 
 		for (const NodeTheUserCanAdd& node : category.mNodes)
 		{
@@ -407,7 +407,7 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 				AddNewNode(node);
 			}
 
-			Search::SetBonus(category.mLikelinessOfBeingSelectedByUser);
+			Search::SetBonus(category.mSearchBonus);
 		}
 
 		Search::TreePop();
@@ -686,7 +686,7 @@ void CE::ScriptEditorSystem::DisplayPin(ax::NodeEditor::Utilities::BlueprintNode
 
 		const glm::vec2 tempCursorPos = ImGui::GetCursorPos();
 
-		const glm::vec2 iconPosition = { topLeft.x, topLeft.y + (inspectWindowSize.y * .5f) - (static_cast<float>(sPinIconSize) * .5f)};
+		const glm::vec2 iconPosition = { topLeft.x, topLeft.y + (inspectWindowSize.y * .5f) - (static_cast<float>(sPinIconSize) * .5f) };
 
 		ImGui::SetCursorPos(iconPosition);
 		DrawPinIcon(pin, pin.IsLinked(), (int)(alpha * 255));
@@ -759,11 +759,9 @@ bool CE::ScriptEditorSystem::ShouldShowUserNode(const NodeTheUserCanAdd& node) c
 	return DoesNodeMatchContext(node);
 }
 
-std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAllNodesTheUserCanAdd() const
+void CE::ScriptEditorSystem::InitialiseAllNodesTheUserCanAdd()
 {
-	std::vector<NodeCategory> returnValue{};
-
-	NodeCategory& common = returnValue.emplace_back(NodeCategory{ "Common" });
+	NodeCategory& common = mAllNodesTheUserCanAdd.emplace_back(NodeCategory{ "Common" });
 
 	common.mNodes.emplace_back(std::string{ BranchScriptNode::sBranchNodeName },
 		[](ScriptFunc& func) -> decltype(auto)
@@ -774,6 +772,10 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 		{
 			return contextPin.IsFlow()
 				|| (contextPin.TryGetType() != nullptr && contextPin.TryGetType()->GetTypeId() == MakeTypeId<bool>() && contextPin.IsOutput());
+		},
+		[](const ScriptNode& node) -> bool
+		{
+			return node.GetType() == ScriptNodeType::Branch;
 		},
 		Input::KeyboardKey::B);
 
@@ -787,7 +789,12 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 		{
 			return contextPin.IsFlow()
 				|| (contextPin.TryGetType() != nullptr && contextPin.TryGetType()->GetTypeId() == MakeTypeId<int32>());
-		});
+		},
+		[](const ScriptNode& node) -> bool
+		{
+			return node.GetType() == ScriptNodeType::ForLoop;
+		}
+		);
 
 	common.mNodes.emplace_back(std::string{ WhileLoopScriptNode::sWhileLoopNodeName },
 		[](ScriptFunc& func) -> decltype(auto)
@@ -798,6 +805,10 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 		{
 			return contextPin.IsFlow()
 				|| (contextPin.TryGetType() != nullptr && contextPin.TryGetType()->GetTypeId() == MakeTypeId<bool>() && contextPin.IsOutput());
+		},
+		[](const ScriptNode& node) -> bool
+		{
+			return node.GetType() == ScriptNodeType::WhileLoop;
 		});
 
 	common.mNodes.emplace_back(std::string{ FunctionEntryScriptNode::sEntryNodeName },
@@ -829,6 +840,10 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 				}
 			}
 			return false;
+		},
+		[](const ScriptNode& node) -> bool
+		{
+			return node.GetType() == ScriptNodeType::FunctionEntry;
 		});
 
 
@@ -855,6 +870,10 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 			}
 
 			return DoesNodeMatchContext(contextPin, {}, { { returnType->TryGetType()->GetTypeId(), returnType->GetTypeForm() } }, currentFunc->IsPure());
+		},
+		[](const ScriptNode& node) -> bool
+		{
+			return node.GetType() == ScriptNodeType::FunctionReturn;
 		});
 
 	common.mNodes.emplace_back("Comment",
@@ -865,6 +884,10 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 		[](const ScriptPin&) -> bool
 		{
 			return true;
+		},
+		[](const ScriptNode& node) -> bool
+		{
+			return node.GetType() == ScriptNodeType::Comment;
 		},
 		Input::KeyboardKey::K);
 
@@ -901,6 +924,11 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 								return params;
 							}(),
 								IsFunctionPure(metaFunc));
+					},
+					[&metaFunc](const ScriptNode& node) -> bool
+					{
+						return node.GetType() == ScriptNodeType::FunctionCall
+							&& static_cast<const MetaFuncScriptNode&>(node).TryGetOriginalFunc() == &metaFunc;
 					});
 			}
 
@@ -916,6 +944,12 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 						[&field](const ScriptPin& contextPin) -> bool
 						{
 							return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId(), TypeForm::Value }, { { field.GetOuterType().GetTypeId(), TypeForm::ConstRef } }, true);
+						},
+						[&field](const ScriptNode& node) -> bool
+						{
+							return node.GetType() == ScriptNodeType::Getter
+								&& static_cast<const GetterScriptNode&>(node).TryGetOriginalField() == &field
+								&& static_cast<const GetterScriptNode&>(node).DoesNodeReturnCopy();
 						});
 				}
 
@@ -929,6 +963,12 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 						[&field](const ScriptPin& contextPin) -> bool
 						{
 							return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId(), TypeForm::Ref }, { { field.GetOuterType().GetTypeId(), TypeForm::Ref } }, true);
+						},
+						[&field](const ScriptNode& node) -> bool
+						{
+							return node.GetType() == ScriptNodeType::Getter
+								&& static_cast<const GetterScriptNode&>(node).TryGetOriginalField() == &field
+								&& !static_cast<const GetterScriptNode&>(node).DoesNodeReturnCopy();
 						});
 				}
 
@@ -944,6 +984,11 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 							return DoesNodeMatchContext(contextPin,
 								{ field.GetType().GetTypeId() },
 								{ { field.GetOuterType().GetTypeId()},{ field.GetType().GetTypeId() } }, false);
+						},
+						[&field](const ScriptNode& node) -> bool
+						{
+							return node.GetType() == ScriptNodeType::Setter
+								&& static_cast<const SetterScriptNode&>(node).TryGetOriginalField() == &field;
 						});
 				}
 			}
@@ -956,7 +1001,7 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 						return lhs.mName < rhs.mName;
 					});
 
-				returnValue.emplace_back(std::move(typeCategory));
+				mAllNodesTheUserCanAdd.emplace_back(std::move(typeCategory));
 			}
 		};
 
@@ -964,7 +1009,7 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 
 	if (myType != nullptr)
 	{
-		addType(*myType, sLikelinessIncreaseForThisScript);
+		addType(*myType, sSearchBonusIncreaseForThisScript);
 	}
 
 	for (const MetaType& type : MetaManager::Get().EachType())
@@ -976,20 +1021,92 @@ std::vector<CE::ScriptEditorSystem::NodeCategory> CE::ScriptEditorSystem::GetAll
 	}
 
 	// In the VERY rare case in which there were no types reflected
-	if (returnValue.size() == 1)
+	if (mAllNodesTheUserCanAdd.size() == 1)
 	{
-		return returnValue;
+		return;
 	}
 
 	// + 1, Because we want to leave the Common category at the top, always
 	// And if our type was not nullptr, we want to leave that in place as well
-	std::sort(returnValue.begin() + 1 + (myType != nullptr), returnValue.end(),
+	std::sort(mAllNodesTheUserCanAdd.begin() + 1 + (myType != nullptr), mAllNodesTheUserCanAdd.end(),
 		[](const NodeCategory& lhs, const NodeCategory& rhs)
 		{
 			return lhs.mName < rhs.mName;
 		});
 
-	return returnValue;
+	mNodePopularityCalculateThread = std::thread
+	{
+		[this]()
+		{
+			uint32 totalNumOfNodesUsed{};
+
+			for (const WeakAsset<Script> weakScript : AssetManager::Get().GetAllAssets<Script>())
+			{
+				if (mShouldWeStopCountingNodePopularity)
+				{
+					break;
+				}
+
+				const std::shared_ptr<const Script> script = weakScript.MakeShared();
+
+				for (const ScriptFunc& func : script->GetFunctions())
+				{
+					if (mShouldWeStopCountingNodePopularity)
+					{
+						break;
+					}
+
+					for (const ScriptNode& node : func.GetNodes())
+					{
+						if (mShouldWeStopCountingNodePopularity)
+						{
+							break;
+						}
+
+						for (NodeCategory& nodeCategory : mAllNodesTheUserCanAdd)
+						{
+							if (mShouldWeStopCountingNodePopularity)
+							{
+								break;
+							}
+
+							for (NodeTheUserCanAdd& nodeThatCanBeAdded : nodeCategory.mNodes)
+							{
+								if (mShouldWeStopCountingNodePopularity)
+								{
+									break;
+								}
+
+								if (nodeThatCanBeAdded.mWasCreatedFromThis(node))
+								{
+									nodeThatCanBeAdded.mNumOfTimesUsed++;
+									totalNumOfNodesUsed++;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			for (NodeCategory& nodeCategory : mAllNodesTheUserCanAdd)
+			{
+				if (mShouldWeStopCountingNodePopularity)
+				{
+					break;
+				}
+
+				for (NodeTheUserCanAdd& nodeThatCanBeAdded : nodeCategory.mNodes)
+				{
+					if (mShouldWeStopCountingNodePopularity)
+					{
+						break;
+					}
+
+					nodeThatCanBeAdded.mSearchBonus += sPopularityInfluenceOnSearchBonus * static_cast<float>(nodeThatCanBeAdded.mNumOfTimesUsed) / static_cast<float>(totalNumOfNodesUsed);
+				}
+			}
+		}
+	};
 }
 
 ImColor CE::ScriptEditorSystem::GetIconColor(const ScriptVariableTypeData& typeData) const
