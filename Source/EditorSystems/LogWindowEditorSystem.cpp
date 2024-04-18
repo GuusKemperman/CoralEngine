@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "EditorSystems/LogWindowEditorSystem.h"
 
-#include "Containers/ManyStrings.h"
+#include "Utilities/ManyStrings.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"

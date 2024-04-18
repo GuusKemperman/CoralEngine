@@ -6,7 +6,7 @@ namespace CE
 	class MetaField;
 
 	// The common parts between the Setter and Getter node
-	class NodeInvolvingMetaMember :
+	class NodeInvolvingField :
 		public FunctionLikeNode
 	{
 	protected:
@@ -15,17 +15,17 @@ namespace CE
 		friend class ScriptNode;
 
 		// This constructor is used only when deserializing
-		NodeInvolvingMetaMember(const ScriptNodeType type) :
+		NodeInvolvingField(const ScriptNodeType type) :
 			FunctionLikeNode(type) {};
 
-		NodeInvolvingMetaMember(ScriptNodeType type,
+		NodeInvolvingField(ScriptNodeType type,
 		                        ScriptFunc& scriptFunc,
 		                        const MetaField& field);
 
 	public:
 		void SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const override;
 
-		const MetaField* TryGetOriginalMemberData() const { return mCachedField; }
+		const MetaField* TryGetOriginalField() const { return mCachedField; }
 
 		std::string GetSubTitle() const override { return mTypeName; }
 		glm::vec4 GetHeaderColor(const ScriptFunc&) const override { return glm::vec4{ .5f, .25f, .25f, 1.0f }; }
@@ -39,11 +39,11 @@ namespace CE
 
 		// The type that holds the field
 		std::string mTypeName{};
-		std::string mMemberName{};
+		std::string mFieldName{};
 	};
 
 	class SetterScriptNode final :
-		public NodeInvolvingMetaMember
+		public NodeInvolvingField
 	{
 		// ScriptNode constructs an instance of this 
 		// object during serialization
@@ -51,7 +51,7 @@ namespace CE
 
 		// This constructor is used only when deserializing
 		SetterScriptNode() :
-			NodeInvolvingMetaMember(ScriptNodeType::Setter) {};
+			NodeInvolvingField(ScriptNodeType::Setter) {};
 	public:
 		SetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field);
 
@@ -60,14 +60,14 @@ namespace CE
 			return Format("Set {}", memberName);
 		}
 
-		std::string GetTitle() const override { return GetTitle(mMemberName); }
+		std::string GetTitle() const override { return GetTitle(mFieldName); }
 
 	private:
 		std::optional<InputsOutputs> GetExpectedInputsOutputs(const ScriptFunc&) const override;
 	};
 
 	class GetterScriptNode final :
-		public NodeInvolvingMetaMember
+		public NodeInvolvingField
 	{
 		// ScriptNode constructs an instance of this 
 		// object during serialization
@@ -75,13 +75,13 @@ namespace CE
 
 		// This constructor is used only when deserializing
 		GetterScriptNode() :
-			NodeInvolvingMetaMember(ScriptNodeType::Getter) {};
+			NodeInvolvingField(ScriptNodeType::Getter) {};
 	public:
 		GetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field, bool returnsCopy);
 
 		static std::string GetTitle(std::string_view memberName, bool returnsCopy);
 
-		std::string GetTitle() const override { return GetTitle(mMemberName, mReturnsCopy); }
+		std::string GetTitle() const override { return GetTitle(mFieldName, mReturnsCopy); }
 
 		bool DoesNodeReturnCopy() const { return mReturnsCopy; }
 

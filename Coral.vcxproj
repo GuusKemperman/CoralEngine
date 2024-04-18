@@ -528,6 +528,7 @@
     <ClCompile Include="Source\Meta\MetaProps.cpp" />
     <ClCompile Include="Source\Components\PlayerComponent.cpp" />
     <ClCompile Include="Source\Utilities\Events.cpp" />
+    <ClCompile Include="Source\Utilities\ManyStrings.cpp" />
     <ClCompile Include="Source\Utilities\PathfindingInfo.cpp" />
     <ClCompile Include="Source\EditorSystems\ImporterSystem.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1378,7 +1379,7 @@
     <ClCompile Include="Source\Scripting\Nodes\FunctionLikeScriptNode.cpp" />
     <ClCompile Include="Source\Core\VirtualMachine.cpp" />
     <ClCompile Include="Source\Scripting\Nodes\MetaFuncScriptNode.cpp" />
-    <ClCompile Include="Source\Scripting\Nodes\MetaMemberScriptNode.cpp" />
+    <ClCompile Include="Source\Scripting\Nodes\MetaFieldScriptNode.cpp" />
     <ClCompile Include="Source\Scripting\ScriptPin.cpp" />
     <ClCompile Include="Source\Scripting\ScriptFunc.cpp" />
     <ClCompile Include="Source\Scripting\ScriptLink.cpp" />
@@ -1685,7 +1686,7 @@
     <ClInclude Include="Include\Components\Physics2D\PhysicsBody2DComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
     <ClInclude Include="Include\Components\PrefabOriginComponent.h" />
-    <ClInclude Include="include\Containers\ManyStrings.h" />
+    <ClInclude Include="Include\Utilities\ManyStrings.h" />
     <ClInclude Include="Include\Utilities\CommonMetaProperties.h" />
     <ClInclude Include="Include\Core\VirtualMachine.h" />
     <ClInclude Include="Include\EditorSystems\AssetEditorSystems\AbilityEditorSystem.h" />
@@ -1829,7 +1830,7 @@
     <ClInclude Include="Include\Scripting\Nodes\CommentScriptNode.h" />
     <ClInclude Include="Include\Scripting\Nodes\EntryAndReturnScriptNode.h" />
     <ClInclude Include="Include\Scripting\Nodes\FunctionLikeScriptNode.h" />
-    <ClInclude Include="Include\Scripting\Nodes\MetaMemberScriptNode.h" />
+    <ClInclude Include="Include\Scripting\Nodes\MetaFieldScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptField.h" />
     <ClInclude Include="Include\Scripting\ScriptErrors.h" />
     <ClInclude Include="Include\Scripting\ScriptFunc.h" />
@@ -1843,7 +1844,7 @@
     <ClInclude Include="Include\Utilities\Expected.h" />
     <ClInclude Include="Include\Rendering\FrameBuffer.h" />
     <ClInclude Include="Include\Utilities\Benchmark.h" />
-    <ClInclude Include="include\Containers\view_istream.h" />
+    <ClInclude Include="Include\Utilities\view_istream.h" />
     <ClInclude Include="include\core\ecs.h" />
     <ClInclude Include="include\core\Engine.h" />
     <ClInclude Include="include\Core\FileIO.h" />

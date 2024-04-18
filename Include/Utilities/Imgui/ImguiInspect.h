@@ -15,6 +15,8 @@
 
 namespace CE
 {
+	class MetaType;
+
 	/*
 	Used ImGui::Auto to inspect the element, possibly changing its value.
 		
@@ -84,7 +86,22 @@ namespace ImGui
 	{
 		static void Auto(EnumType& var, const std::string& name)
 		{
-			var = CE::Search::DisplayDropDownWithSearchBar<EnumType>(name.c_str(), CE::EnumToString(var).data()).value_or(var);
+			using namespace CE;
+
+			if (!Search::BeginCombo(name, EnumToString(var)))
+			{
+				return;
+			}
+
+			for (const auto& [value, valName] : sEnumStringPairs<EnumType>)
+			{
+				if (Search::Button(valName))
+				{
+					var = value;
+				}
+			}
+
+			Search::EndCombo();
 		}
 		static constexpr bool sIsSpecialized = true;
 	};

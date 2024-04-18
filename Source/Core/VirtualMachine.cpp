@@ -7,7 +7,7 @@
 #include "Meta/MetaFunc.h"
 #include "Scripting/ScriptTools.h"
 #include "Scripting/Nodes/MetaFuncScriptNode.h"
-#include "Scripting/Nodes/MetaMemberScriptNode.h"
+#include "Scripting/Nodes/MetaFieldScriptNode.h"
 #include "Scripting/Nodes/EntryAndReturnScriptNode.h"
 #include "Scripting/Nodes/ControlScriptNodes.h"
 #include "Assets/Script.h"
@@ -708,7 +708,7 @@ Expected<CE::VirtualMachine::VMContext::CachedValue*, CE::ScriptError> CE::Virtu
 		ASSERT(inputDeleter.mSize != 0 && "Getting or setting a field always require a target");
 		ASSERT(returnAddress != nullptr && "Does not return void; memory should have been allocated");
 
-		const MetaField* const metaMember = static_cast<const NodeInvolvingMetaMember&>(node).TryGetOriginalMemberData();
+		const MetaField* const metaMember = static_cast<const NodeInvolvingField&>(node).TryGetOriginalField();
 		ASSERT(metaMember != nullptr && "Should've been caught during script-compilation");
 
 		ASSERT(&metaMember->GetType() == returnType);
