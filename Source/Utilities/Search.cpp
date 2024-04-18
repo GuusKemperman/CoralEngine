@@ -123,7 +123,7 @@ void CE::Search::Begin(std::string_view id, SearchFlags flags)
 	}
 
 	ImGui::InputTextWithHint(sDefaultLabel.data(), sDefaultHint.data(), &context.mInput.mUserQuery);
-	ImGui::BeginChild("SearchItems", ImGui::GetContentRegionAvail());
+	ImGui::BeginChild("SearchItems", ImGui::GetContentRegionAvail(), false, ImGuiWindowFlags_NavFlattened);
 }
 
 void CE::Search::End()
