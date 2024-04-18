@@ -260,7 +260,27 @@ bool CE::Search::AddItem(std::string_view name, std::function<bool(std::string_v
 	return wasPressed;
 }
 
-bool CE::Search::BeginCombo(std::string_view label, std::string_view previewValue, ImGuiComboFlags flags)
+void CE::Search::TreeNode(std::string_view label)
+{
+	BeginCategory(label, [](std::string_view l) { return ImGui::TreeNode(l.data()); });
+}
+
+void CE::Search::TreePop()
+{
+	EndCategory([] { ImGui::TreePop(); });
+}
+
+bool CE::Search::Button(std::string_view label)
+{
+	return AddItem(label,
+		[](std::string_view name)
+		{
+			return ImGui::MenuItem(name.data());
+		}
+	);
+}
+
+bool CE::Search::BeginCombo(std::string_view label, std::string_view previewValue, int32 searchFlagsAndWindowFlags)
 {
 	// Copied directly from ImGui::BeginCombo, but we use our own
 	// popup instead. The default combo popup does not like our
@@ -280,11 +300,10 @@ bool CE::Search::BeginCombo(std::string_view label, std::string_view previewValu
 
 	const ImGuiStyle& style = g.Style;
 	const ImGuiID id = window->GetID(label.data());
-	IM_ASSERT((flags & (ImGuiComboFlags_NoArrowButton | ImGuiComboFlags_NoPreview)) != (ImGuiComboFlags_NoArrowButton | ImGuiComboFlags_NoPreview)); // Can't use both flags together
 
-	const float arrow_size = (flags & ImGuiComboFlags_NoArrowButton) ? 0.0f : GetFrameHeight();
+	const float arrow_size = GetFrameHeight();
 	const ImVec2 label_size = CalcTextSize(label.data(), NULL, true);
-	const float w = (flags & ImGuiComboFlags_NoPreview) ? arrow_size : CalcItemWidth();
+	const float w = CalcItemWidth();
 	const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2(w, label_size.y + style.FramePadding.y * 2.0f));
 	const ImRect total_bb(bb.Min, bb.Max + ImVec2(label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f, 0.0f));
 	ItemSize(total_bb, style.FramePadding.y);
@@ -308,20 +327,18 @@ bool CE::Search::BeginCombo(std::string_view label, std::string_view previewValu
 	const ImU32 frame_col = GetColorU32(hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
 	const float value_x2 = ImMax(bb.Min.x, bb.Max.x - arrow_size);
 	RenderNavHighlight(bb, id);
-	if (!(flags & ImGuiComboFlags_NoPreview))
-		window->DrawList->AddRectFilled(bb.Min, ImVec2(value_x2, bb.Max.y), frame_col, style.FrameRounding, (flags & ImGuiComboFlags_NoArrowButton) ? ImDrawFlags_RoundCornersAll : ImDrawFlags_RoundCornersLeft);
-	if (!(flags & ImGuiComboFlags_NoArrowButton))
-	{
-		ImU32 bg_col = GetColorU32((popup_open || hovered) ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
-		ImU32 text_col = GetColorU32(ImGuiCol_Text);
-		window->DrawList->AddRectFilled(ImVec2(value_x2, bb.Min.y), bb.Max, bg_col, style.FrameRounding, (w <= arrow_size) ? ImDrawFlags_RoundCornersAll : ImDrawFlags_RoundCornersRight);
-		if (value_x2 + arrow_size - style.FramePadding.x <= bb.Max.x)
-			RenderArrow(window->DrawList, ImVec2(value_x2 + style.FramePadding.y, bb.Min.y + style.FramePadding.y), text_col, ImGuiDir_Down, 1.0f);
-	}
+	window->DrawList->AddRectFilled(bb.Min, ImVec2(value_x2, bb.Max.y), frame_col, style.FrameRounding, ImDrawFlags_RoundCornersLeft);
+
+	ImU32 bg_col = GetColorU32((popup_open || hovered) ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+	ImU32 text_col = GetColorU32(ImGuiCol_Text);
+	window->DrawList->AddRectFilled(ImVec2(value_x2, bb.Min.y), bb.Max, bg_col, style.FrameRounding, (w <= arrow_size) ? ImDrawFlags_RoundCornersAll : ImDrawFlags_RoundCornersRight);
+	if (value_x2 + arrow_size - style.FramePadding.x <= bb.Max.x)
+		RenderArrow(window->DrawList, ImVec2(value_x2 + style.FramePadding.y, bb.Min.y + style.FramePadding.y), text_col, ImGuiDir_Down, 1.0f);
+
 	RenderFrameBorder(bb.Min, bb.Max, style.FrameRounding);
 
 	// Render preview and label
-	if (previewValue.data() != NULL && !(flags & ImGuiComboFlags_NoPreview))
+	if (previewValue.data() != NULL)
 	{
 		if (g.LogEnabled)
 			LogSetNextTextDecoration("{", "}");
@@ -337,18 +354,9 @@ bool CE::Search::BeginCombo(std::string_view label, std::string_view previewValu
 
 	ImGui::SetNextWindowPos(ImGui::GetCursorScreenPos());
 
-	return BeginPopup(popup_name);
+	return BeginPopup(popup_name, searchFlagsAndWindowFlags);
 }
 
-bool CE::Search::Button(std::string_view label)
-{
-	return AddItem(label,
-		[](std::string_view name)
-		{
-			return ImGui::MenuItem(name.data());
-		}
-	);
-}
 
 void CE::Search::EndCombo()
 {
@@ -356,17 +364,7 @@ void CE::Search::EndCombo()
 	ImGui::EndCombo();
 }
 
-void CE::Search::TreeNode(std::string_view label)
-{
-	BeginCategory(label, [](std::string_view l) { return ImGui::TreeNode(l.data()); });
-}
-
-void CE::Search::TreePop()
-{
-	EndCategory([] { ImGui::TreePop(); });
-}
-
-bool CE::Search::BeginPopup(std::string_view name)
+bool CE::Search::BeginPopup(std::string_view name, int32 searchFlagsAndWindowFlags)
 {
 	ImGui::SetNextWindowSize(ImVec2{ -1.0f, 300.0f });
 
@@ -375,7 +373,11 @@ bool CE::Search::BeginPopup(std::string_view name)
 		return false;
 	}
 
-	Begin(std::string{ name } + "SearchInPopUp");
+	if ((searchFlagsAndWindowFlags & WindowFlags::CallSearchBeginManually) == 0)
+	{
+		Begin(std::string{ name } + "SearchInPopUp", static_cast<SearchFlags>(searchFlagsAndWindowFlags));
+	}
+
 	return true;
 }
 
