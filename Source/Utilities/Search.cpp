@@ -116,6 +116,8 @@ void CE::Search::Begin(std::string_view id, SearchFlags flags)
 	context.mInput.mFlags = flags;
 
 	ImGui::InputTextWithHint(sDefaultLabel.data(), sDefaultHint.data(), &context.mInput.mUserQuery);
+
+	ImGui::BeginChild("SearchItems");
 }
 
 void CE::Search::End()
@@ -193,6 +195,7 @@ void CE::Search::End()
 	ASSERT_LOG(context.mCategoryStack.empty(), "There were more calls to BeginCategory than to EndCategory");
 
 	sContextStack.pop();
+	ImGui::EndChild();
 	ImGui::PopID();
 }
 
