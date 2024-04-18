@@ -110,7 +110,7 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 	ImGui::Splitter(true, &mViewportWidth, &mHierarchyAndDetailsWidth);
 
-	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, -2.0f }))
+	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, -2.0f }, false, ImGuiWindowFlags_NoScrollbar))
 	{
 		const ImVec2 beginPlayPos = ImGui::GetWindowContentRegionMin() + ImVec2{ ImGui::GetContentRegionAvail().x / 2.0f, 10.0f };
 		const ImVec2 viewportPos = ImGui::GetCursorPos();
@@ -265,7 +265,7 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 	ImGui::SameLine();
 
-	if (ImGui::BeginChild("HierarchyAndDetailsWindow", { mHierarchyAndDetailsWidth, 0.0f }))
+	if (ImGui::BeginChild("HierarchyAndDetailsWindow", { mHierarchyAndDetailsWidth, 0.0f }, false, ImGuiWindowFlags_NoScrollbar))
 	{
 		World& world = GetWorld();
 		World::PushWorld(world);
@@ -274,11 +274,11 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		ImGui::Splitter(false, &mHierarchyHeight, &mDetailsHeight);
 		ImGui::PopID();
 
-		ImGui::BeginChild("WorldHierarchy", { 0.0f, mHierarchyHeight });
+		ImGui::BeginChild("WorldHierarchy", { 0.0f, mHierarchyHeight }, false, ImGuiWindowFlags_NoScrollbar);
 		WorldHierarchy::Display(world, &mSelectedEntities);
 		ImGui::EndChild();
 
-		ImGui::BeginChild("WorldDetails", { 0.0f, mDetailsHeight - 5.0f });
+		ImGui::BeginChild("WorldDetails", { 0.0f, mDetailsHeight - 5.0f }, false, ImGuiWindowFlags_NoScrollbar);
 		WorldDetails::Display(world, mSelectedEntities);
 		ImGui::EndChild();
 
@@ -577,7 +577,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 
 	ImGui::SameLine();
 
-	Search::Begin("WorldDetailsSearch");
+	Search::Begin();
 
 	for (const MetaType& componentClass : componentsThatAllSelectedHave)
 	{
@@ -878,7 +878,7 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 	ImGui::SameLine();
 
-	Search::Begin("Hierarchy", Search::IgnoreParentScore);
+	Search::Begin(Search::IgnoreParentScore);
 
 	// First we display all entities without transforms
 	{

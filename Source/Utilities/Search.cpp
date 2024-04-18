@@ -110,9 +110,9 @@ namespace
 	void DisplayToUser(SearchContext& context);
 }
 
-void CE::Search::Begin(std::string_view id, SearchFlags flags)
+void CE::Search::Begin(SearchFlags flags)
 {
-	const ImGuiID imId = ImGui::GetID(id.data());
+	const ImGuiID imId = ImGui::GetID("Search");
 	ImGui::PushID(imId);
 
 	SearchContext& context = sContextStack.emplace(sContexts[imId]);
@@ -383,7 +383,7 @@ bool CE::Search::BeginPopup(std::string_view name, SearchFlags searchFlags)
 		return false;
 	}
 
-	Begin(std::string{ name } + "SearchInPopUp", static_cast<SearchFlags>(searchFlags));
+	Begin(searchFlags);
 	return true;
 }
 
