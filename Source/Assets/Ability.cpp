@@ -48,7 +48,7 @@ CE::Ability::Ability(AssetLoadInfo& loadInfo) :
 		return;
 	}
 
-	*serializedScript >> mScript;
+	*serializedScript >> mOnAbilityActivateScript;
 	*serializedIconTexture >> mIconTexture;
 	*serializedDescription >> mDescription;
 	*serializedGlobalCooldown >> mGlobalCooldown;
@@ -61,7 +61,7 @@ void CE::Ability::OnSave(AssetSaveInfo& saveInfo) const
 {
 	BinaryGSONObject obj{};
 
-	obj.AddGSONMember("Script") << mScript;
+	obj.AddGSONMember("Script") << mOnAbilityActivateScript;
 	obj.AddGSONMember("IconTexture") << mIconTexture;
 	obj.AddGSONMember("Description") << mDescription;
 	obj.AddGSONMember("GlobalCooldown") << mGlobalCooldown;
@@ -76,7 +76,7 @@ CE::MetaType CE::Ability::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Ability>{}, "Ability", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 
-	type.AddField(&Ability::mScript, "mScript");
+	type.AddField(&Ability::mOnAbilityActivateScript, "mOnAbilityActivateScript");
 	type.AddField(&Ability::mIconTexture, "mIconTexture");
 	type.AddField(&Ability::mDescription, "mDescription");
 	type.AddField(&Ability::mGlobalCooldown, "mGlobalCooldown");

@@ -226,9 +226,9 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
     }
 
     // Ability activate event
-    if (ability.mAbilityAsset->mScript != nullptr)
+    if (ability.mAbilityAsset->mOnAbilityActivateScript != nullptr)
     {
-        if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mScript->GetName()))
+        if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript->GetName()))
         {
             if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
             {
@@ -237,7 +237,7 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
         }
         else
         {
-            LOG(LogAbilitySystem, Error, "Did not find script {} when trying to activate ability {}", ability.mAbilityAsset->mScript->GetName(), ability.mAbilityAsset->GetName())
+            LOG(LogAbilitySystem, Error, "Did not find script {} when trying to activate ability {}", ability.mAbilityAsset->mOnAbilityActivateScript->GetName(), ability.mAbilityAsset->GetName())
         }
     }
     else
