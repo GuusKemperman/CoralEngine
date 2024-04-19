@@ -3,6 +3,10 @@
 
 CE::AssetHandleBase::AssetHandleBase() = default;
 
+CE::AssetHandleBase::AssetHandleBase(nullptr_t)
+{
+}
+
 CE::AssetHandleBase::AssetHandleBase(AssetHandleBase&& other) noexcept :
 	mAssetInternal(other.mAssetInternal)
 {

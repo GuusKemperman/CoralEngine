@@ -17,22 +17,23 @@ UNIT_TEST(AssetHandleTests, SingleThread)
 	Internal::AssetInternal assetInternal{ AssetFileMetaData{"TestAsset", MetaManager::Get().GetType<StaticMesh>() }, std::nullopt };
 
 	{
-		const AssetHandle<StaticMesh> nonEmpty{ &assetInternal };
+		AssetHandle<StaticMesh> nonEmpty{ &assetInternal };
+
 		TEST_ASSERT(nonEmpty.GetNumberOfStrongReferences() == 1);
 
 		{
-			AssetHandle<StaticMesh> nonEmpty2{ &assetInternal };
+			AssetHandle<> nonEmpty2{ &assetInternal };
 			TEST_ASSERT(nonEmpty.GetNumberOfStrongReferences() == 2);
 
-			AssetHandle<StaticMesh> nonEmpty3{};
+			AssetHandle<> nonEmpty3{};
 			TEST_ASSERT(nonEmpty.GetNumberOfStrongReferences() == 2);
 			nonEmpty3 = nonEmpty2;
 			TEST_ASSERT(nonEmpty.GetNumberOfStrongReferences() == 3);
 
-			AssetHandle<StaticMesh> nonEmpty4{ std::move(nonEmpty3) };
+			AssetHandle<> nonEmpty4{ std::move(nonEmpty3) };
 			TEST_ASSERT(nonEmpty.GetNumberOfStrongReferences() == 3);
 
-			AssetHandle<StaticMesh> nonEmpty5{};
+			AssetHandle<> nonEmpty5{};
 			nonEmpty5 = std::move(nonEmpty4);
 			TEST_ASSERT(nonEmpty.GetNumberOfStrongReferences() == 3);
 		}

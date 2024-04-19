@@ -1,15 +1,16 @@
 #pragma once
 #include "AssetInternal.h"
+#include "AssetInternal.h"
 #include "Assets/Asset.h"
 
 namespace CE
 {
 	class AssetHandleBase
 	{
-	protected:
-		AssetHandleBase();
-
 	public:
+		AssetHandleBase();
+		AssetHandleBase(nullptr_t);
+
 		AssetHandleBase(AssetHandleBase&& other) noexcept;
 
 		AssetHandleBase& operator=(AssetHandleBase&& other) noexcept;
@@ -68,6 +69,20 @@ namespace CE
 		public AssetHandleRefCounter<Internal::AssetInternal::RefCountType::Strong>
 	{
 	public:
+		using AssetHandleRefCounter::AssetHandleRefCounter;
+
+		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+		AssetHandle(AssetHandle<O>&& other) noexcept;
+
+		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+		AssetHandle(const AssetHandle<O>& other);
+
+		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+		AssetHandle& operator=(AssetHandle<O>&& other) noexcept;
+
+		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+		AssetHandle& operator=(const AssetHandle<O>& other);
+
 		const T& operator*() const;
 		const T* operator->() const;
 	};
@@ -77,6 +92,20 @@ namespace CE
 		public AssetHandleRefCounter<Internal::AssetInternal::RefCountType::Strong>
 	{
 	public:
+		using AssetHandleRefCounter::AssetHandleRefCounter;
+
+		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+		WeakAssetHandle(WeakAssetHandle<O>&& other) noexcept;
+
+		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+		WeakAssetHandle(const WeakAssetHandle<O>& other);
+
+		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+		WeakAssetHandle& operator=(WeakAssetHandle<O>&& other) noexcept;
+
+		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+		WeakAssetHandle& operator=(const WeakAssetHandle<O>& other);
+
 		explicit operator AssetHandle<T>() const;
 	};
 
@@ -155,6 +184,34 @@ namespace CE
 	}
 
 	template <typename T>
+	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
+	AssetHandle<T>::AssetHandle(AssetHandle<O>&& other) noexcept :
+		AssetHandleRefCounter(std::move(other))
+	{
+	}
+
+	template <typename T>
+	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
+	AssetHandle<T>::AssetHandle(const AssetHandle<O>& other) :
+		AssetHandleRefCounter(other)
+	{
+	}
+
+	template <typename T>
+	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
+	AssetHandle<T>& AssetHandle<T>::operator=(AssetHandle<O>&& other) noexcept
+	{
+		return static_cast<AssetHandle&>(AssetHandleRefCounter::operator=(std::move(other)));
+	}
+
+	template <typename T>
+	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
+	AssetHandle<T>& AssetHandle<T>::operator=(const AssetHandle<O>& other)
+	{
+		return static_cast<AssetHandle&>(AssetHandleRefCounter::operator=(other));
+	}
+
+	template <typename T>
 	const T& AssetHandle<T>::operator*() const
 	{
 		ASSERT(IsLoaded());
@@ -166,6 +223,34 @@ namespace CE
 	{
 		ASSERT(IsLoaded());
 		return *mAssetInternal->mAsset;
+	}
+
+	template <typename T>
+	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
+	WeakAssetHandle<T>::WeakAssetHandle(WeakAssetHandle<O>&& other) noexcept :
+		AssetHandleRefCounter(std::move(other))
+	{
+	}
+
+	template <typename T>
+	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
+	WeakAssetHandle<T>::WeakAssetHandle(const WeakAssetHandle<O>& other) :
+		AssetHandleRefCounter(other)
+	{
+	}
+
+	template <typename T>
+	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
+	WeakAssetHandle<T>& WeakAssetHandle<T>::operator=(WeakAssetHandle<O>&& other) noexcept
+	{
+		return static_cast<WeakAssetHandle&>(AssetHandleRefCounter::operator=(std::move(other)));
+	}
+
+	template <typename T>
+	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
+	WeakAssetHandle<T>& WeakAssetHandle<T>::operator=(const WeakAssetHandle<O>& other)
+	{
+		return static_cast<WeakAssetHandle&>(AssetHandleRefCounter::operator=(std::move(other)));
 	}
 
 	template <typename T>
