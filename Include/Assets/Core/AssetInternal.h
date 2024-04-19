@@ -16,6 +16,10 @@ namespace CE::Internal
 		void Load();
 		void UnLoad();
 
+		enum class RefCountType : bool { Strong, Weak };
+
+		std::array<std::atomic<uint32>, 2> mRefCounters{};
+
 		AssetFileMetaData mMetaData;
 
 		// The .asset file. Is only nullopt if this
@@ -33,5 +37,6 @@ namespace CE::Internal
 		called.
 		*/
 		std::shared_ptr<Asset> mAsset{};
+
 	};
 }
