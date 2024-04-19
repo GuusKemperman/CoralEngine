@@ -106,7 +106,8 @@ namespace CE
 		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
 		WeakAssetHandle& operator=(const WeakAssetHandle<O>& other);
 
-		explicit operator AssetHandle<T>() const;
+		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+		explicit operator AssetHandle<O>() const;
 	};
 
 	template <Internal::AssetInternal::RefCountType IndexOfCounter>
@@ -254,7 +255,8 @@ namespace CE
 	}
 
 	template <typename T>
-	WeakAssetHandle<T>::operator AssetHandle<T>() const
+	template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+	WeakAssetHandle<T>::operator AssetHandle<O>() const
 	{
 		return AssetHandle<T>{ mAssetInternal };
 	}
