@@ -1,7 +1,7 @@
 #pragma once
 #include "AssetInternal.h"
-#include "AssetInternal.h"
 #include "Assets/Asset.h"
+#include "Meta/MetaTypeId.h"
 
 namespace CE
 {
@@ -17,7 +17,10 @@ namespace CE
 
 		bool operator==(nullptr_t) const;
 		bool operator!=(nullptr_t) const;
-		
+
+		bool operator==(const AssetHandleBase& other) const;
+		bool operator!=(const AssetHandleBase& other) const;
+
 		operator bool() const;
 
 		const AssetFileMetaData& GetMetaData() const;
@@ -31,6 +34,8 @@ namespace CE
 
 	protected:
 		void AssureNotNull() const;
+
+		bool IsA(TypeId type) const;
 
 		Internal::AssetInternal* mAssetInternal{};
 	};
@@ -65,6 +70,15 @@ namespace CE
 	};
 
 	template<typename T = Asset>
+	class AssetHandle;
+
+	template<typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool> = true>
+	AssetHandle<T> StaticAssetHandleCast(const AssetHandle<O>& other);
+
+	template<typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool> = true>
+	AssetHandle<T> DynamicAssetHandleCast(const AssetHandle<O>& other);
+
+	template<typename T>
 	class AssetHandle final :
 		public AssetHandleRefCounter<Internal::AssetInternal::RefCountType::Strong>
 	{
@@ -85,14 +99,33 @@ namespace CE
 
 		const T& operator*() const;
 		const T* operator->() const;
+
+	private:
+		template<typename U, typename O, std::enable_if_t<std::is_convertible_v<U*, O*>, bool>>
+		friend AssetHandle<U> StaticAssetHandleCast(const AssetHandle<O>& other);
+
+		template<typename U, typename O, std::enable_if_t<std::is_convertible_v<U*, O*>, bool>>
+		friend AssetHandle<U> DynamicAssetHandleCast(const AssetHandle<O>& other);
 	};
 
 	template<typename T = Asset>
+	class WeakAssetHandle;
+
+	template<typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool> = true>
+	WeakAssetHandle<T> StaticAssetHandleCast(const WeakAssetHandle<O>& other);
+
+	template<typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool> = true>
+	WeakAssetHandle<T> DynamicAssetHandleCast(const WeakAssetHandle<O>& other);
+
+	template<typename T>
 	class WeakAssetHandle final :
 		public AssetHandleRefCounter<Internal::AssetInternal::RefCountType::Strong>
 	{
 	public:
 		using AssetHandleRefCounter::AssetHandleRefCounter;
+
+		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+		WeakAssetHandle(const AssetHandle<O>& other);
 
 		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
 		WeakAssetHandle(WeakAssetHandle<O>&& other) noexcept;
@@ -108,6 +141,13 @@ namespace CE
 
 		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
 		explicit operator AssetHandle<O>() const;
+
+	private:
+		template<typename U, typename O, std::enable_if_t<std::is_convertible_v<U*, O*>, bool>>
+		friend WeakAssetHandle<U> StaticAssetHandleCast(const WeakAssetHandle<O>& other);
+
+		template<typename U, typename O, std::enable_if_t<std::is_convertible_v<U*, O*>, bool>>
+		friend WeakAssetHandle<U> DynamicAssetHandleCast(const WeakAssetHandle<O>& other);
 	};
 
 	template <Internal::AssetInternal::RefCountType IndexOfCounter>
@@ -230,6 +270,45 @@ namespace CE
 		return &*this;
 	}
 
+	template <typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool>>
+	AssetHandle<T> StaticAssetHandleCast(const AssetHandle<O>& other)
+	{
+		return { other.mAssetInternal };
+	}
+
+	template <typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool>>
+	AssetHandle<T> DynamicAssetHandleCast(const AssetHandle<O>& other)
+	{
+		if (other.IsA(MakeTypeId<T>()))
+		{
+			return StaticAssetHandleCast<T>(other);
+		}
+		return nullptr;
+	}
+
+	template <typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool>>
+	WeakAssetHandle<T> StaticAssetHandleCast(const WeakAssetHandle<O>& other)
+	{
+		return { other.mAssetInternal };
+	}
+
+	template <typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool>>
+	WeakAssetHandle<T> DynamicAssetHandleCast(const WeakAssetHandle<O>& other)
+	{
+		if (other.IsA(MakeTypeId<T>()))
+		{
+			return StaticAssetHandleCast<T>(other);
+		}
+		return nullptr;
+	}
+
+	template <typename T>
+	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
+	WeakAssetHandle<T>::WeakAssetHandle(const AssetHandle<O>& other) :
+		AssetHandleRefCounter(other.mAssetInternal)
+	{
+	}
+
 	template <typename T>
 	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
 	WeakAssetHandle<T>::WeakAssetHandle(WeakAssetHandle<O>&& other) noexcept :
@@ -259,7 +338,7 @@ namespace CE
 	}
 
 	template <typename T>
-	template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+	template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
 	WeakAssetHandle<T>::operator AssetHandle<O>() const
 	{
 		return AssetHandle<T>{ mAssetInternal };

@@ -1,6 +1,8 @@
 #include "Precomp.h"
 #include "Assets/Core/AssetHandle.h"
 
+#include "Meta/Fwd/MetaTypeFwd.h"
+
 CE::AssetHandleBase::AssetHandleBase() = default;
 
 CE::AssetHandleBase::AssetHandleBase(nullptr_t)
@@ -28,6 +30,16 @@ bool CE::AssetHandleBase::operator==(nullptr_t) const
 bool CE::AssetHandleBase::operator!=(nullptr_t) const
 {
 	return mAssetInternal != nullptr;
+}
+
+bool CE::AssetHandleBase::operator==(const AssetHandleBase& other) const
+{
+	return mAssetInternal == other.mAssetInternal;
+}
+
+bool CE::AssetHandleBase::operator!=(const AssetHandleBase& other) const
+{
+	return mAssetInternal != other.mAssetInternal;
 }
 
 CE::AssetHandleBase::operator bool() const
@@ -75,4 +87,10 @@ uint32 CE::AssetHandleBase::GetNumberOfSoftReferences() const
 void CE::AssetHandleBase::AssureNotNull() const
 {
 	ASSERT_LOG(*this != nullptr, "Attempted to dereference null handle");
+}
+
+bool CE::AssetHandleBase::IsA(TypeId type) const
+{
+	return mAssetInternal != nullptr
+		&& GetMetaData().GetClass().IsDerivedFrom(type);
 }
