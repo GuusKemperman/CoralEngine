@@ -2,7 +2,10 @@
 #include "AssetInternal.h"
 #include "Assets/Asset.h"
 #include "Meta/MetaTypeId.h"
-#include "Utilities/BinarySerialization.h"
+#include "Meta/MetaReflect.h"
+#include "Meta/MetaType.h"
+#include "Meta/MetaProps.h"
+#include "Utilities/Reflect/ReflectFieldType.h"
 
 namespace CE
 {
@@ -116,6 +119,9 @@ namespace CE
 
 		template<typename U, typename O, std::enable_if_t<std::is_convertible_v<U*, O*>, bool>>
 		friend AssetHandle<U> DynamicAssetHandleCast(const AssetHandle<O>& other);
+
+		friend ReflectAccess;
+		static MetaType Reflect();
 	};
 
 	template<typename T>
@@ -149,6 +155,9 @@ namespace CE
 
 		template<typename U, typename O, std::enable_if_t<std::is_convertible_v<U*, O*>, bool>>
 		friend WeakAssetHandle<U> DynamicAssetHandleCast(const WeakAssetHandle<O>& other);
+
+		friend ReflectAccess;
+		static MetaType Reflect();
 	};
 
 	template <Internal::AssetInternal::RefCountType IndexOfCounter>
@@ -303,6 +312,24 @@ namespace CE
 		return nullptr;
 	}
 
+	template <typename U>
+	MetaType AssetHandle<U>::Reflect()
+	{
+		const MetaType& basedOnType = MetaManager::Get().GetType<U>();
+		MetaType refType{ MetaType::T<AssetHandle<U>>{}, Format("{} Strong Ref", basedOnType.GetName()) };
+		refType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+
+		ReflectFieldType<AssetHandle<U>>(refType);
+
+		refType.AddFunc(
+			[](const AssetHandle<U>& value, nullptr_t)
+			{
+				return value == nullptr;
+			}, OperatorType::equal, MetaFunc::ExplicitParams<const AssetHandle<U>&, nullptr_t>{});
+
+		return refType;
+	}
+
 	template <typename T>
 	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
 	WeakAssetHandle<T>::WeakAssetHandle(const AssetHandle<O>& other) :
@@ -343,6 +370,23 @@ namespace CE
 	WeakAssetHandle<T>::operator AssetHandle<O>() const
 	{
 		return AssetHandle<T>{ mAssetInternal };
+	}
+
+	template <typename U>
+	MetaType WeakAssetHandle<U>::Reflect()
+	{
+		const MetaType& basedOnType = MetaManager::Get().GetType<U>();
+		MetaType refType{ MetaType::T<WeakAssetHandle<>>{}, Format("{} Weak Ref", basedOnType.GetName()) };
+
+		ReflectFieldType<WeakAssetHandle<>>(refType);
+
+		refType.AddFunc(
+			[](const WeakAssetHandle<>& value, nullptr_t)
+			{
+				return value == nullptr;
+			}, OperatorType::equal, MetaFunc::ExplicitParams<const WeakAssetHandle<>&, nullptr_t>{});
+
+		return refType;
 	}
 }
 
