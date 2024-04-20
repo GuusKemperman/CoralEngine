@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Assets/Core/AssetHandle.h"
 
+#include "Core/AssetManager.h"
 #include "Meta/Fwd/MetaTypeFwd.h"
 
 CE::AssetHandleBase::AssetHandleBase() = default;
@@ -93,4 +94,43 @@ bool CE::AssetHandleBase::IsA(TypeId type) const
 {
 	return mAssetInternal != nullptr
 		&& GetMetaData().GetClass().IsDerivedFrom(type);
+}
+
+void cereal::save(BinaryOutputArchive& archive, const CE::AssetHandleBase& asset)
+{
+	if (asset != nullptr)
+	{
+		const CE::Name::HashType hash = CE::Name::HashString(asset.GetMetaData().GetName());
+		archive(hash);
+	}
+	else
+	{
+		archive(CE::Name::HashType{});
+	}
+}
+
+void cereal::load(BinaryInputArchive& archive, CE::AssetHandle<>& asset)
+{
+	CE::WeakAssetHandle<> weakHandle{ asset };
+	load(archive, weakHandle);
+	asset = CE::AssetHandle<>{ weakHandle };
+}
+
+void cereal::load(BinaryInputArchive& archive, CE::WeakAssetHandle<>& asset)
+{
+	CE::Name::HashType assetNameHash{};
+	archive(assetNameHash);
+
+	if (assetNameHash == 0)
+	{
+		asset = nullptr;
+		return;
+	}
+
+	asset = CE::AssetManager::Get().TryGetWeakAssetHandle(CE::Name{ assetNameHash });
+
+	if (asset == nullptr)
+	{
+		LOG(LogAssets, Warning, "Asset whose name generated the hash {} no longer exists", assetNameHash);
+	}
 }

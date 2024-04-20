@@ -2,6 +2,7 @@
 #include "AssetInternal.h"
 #include "Assets/Asset.h"
 #include "Meta/MetaTypeId.h"
+#include "Utilities/BinarySerialization.h"
 
 namespace CE
 {
@@ -72,11 +73,20 @@ namespace CE
 	template<typename T = Asset>
 	class AssetHandle;
 
+	template<typename T = Asset>
+	class WeakAssetHandle;
+
 	template<typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool> = true>
 	AssetHandle<T> StaticAssetHandleCast(const AssetHandle<O>& other);
 
 	template<typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool> = true>
 	AssetHandle<T> DynamicAssetHandleCast(const AssetHandle<O>& other);
+
+	template<typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool> = true>
+	WeakAssetHandle<T> StaticAssetHandleCast(const WeakAssetHandle<O>& other);
+
+	template<typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool> = true>
+	WeakAssetHandle<T> DynamicAssetHandleCast(const WeakAssetHandle<O>& other);
 
 	template<typename T>
 	class AssetHandle final :
@@ -107,15 +117,6 @@ namespace CE
 		template<typename U, typename O, std::enable_if_t<std::is_convertible_v<U*, O*>, bool>>
 		friend AssetHandle<U> DynamicAssetHandleCast(const AssetHandle<O>& other);
 	};
-
-	template<typename T = Asset>
-	class WeakAssetHandle;
-
-	template<typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool> = true>
-	WeakAssetHandle<T> StaticAssetHandleCast(const WeakAssetHandle<O>& other);
-
-	template<typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool> = true>
-	WeakAssetHandle<T> DynamicAssetHandleCast(const WeakAssetHandle<O>& other);
 
 	template<typename T>
 	class WeakAssetHandle final :
@@ -305,7 +306,7 @@ namespace CE
 	template <typename T>
 	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
 	WeakAssetHandle<T>::WeakAssetHandle(const AssetHandle<O>& other) :
-		AssetHandleRefCounter(other.mAssetInternal)
+		AssetHandleRefCounter(other)
 	{
 	}
 
@@ -342,5 +343,33 @@ namespace CE
 	WeakAssetHandle<T>::operator AssetHandle<O>() const
 	{
 		return AssetHandle<T>{ mAssetInternal };
+	}
+}
+
+namespace cereal
+{
+	class BinaryInputArchive;
+	class BinaryOutputArchive;
+
+	void save(BinaryOutputArchive& archive, const CE::AssetHandleBase& asset);
+
+	void load(BinaryInputArchive& archive, CE::AssetHandle<>& asset);
+
+	void load(BinaryInputArchive& archive, CE::WeakAssetHandle<>& asset);
+
+	template<typename T>
+	void load(BinaryInputArchive& archive, CE::AssetHandle<T>& asset)
+	{
+		CE::AssetHandle<> asBase = asset;
+		load(archive, asBase);
+		asset = CE::DynamicAssetHandleCast<T>(asBase);
+	}
+
+	template<typename T>
+	void load(BinaryInputArchive& archive, CE::WeakAssetHandle<T>& asset)
+	{
+		CE::AssetHandle<> asBase = asset;
+		load(archive, asBase);
+		asset = CE::DynamicAssetHandleCast<T>(asBase);
 	}
 }

@@ -3,6 +3,7 @@
 
 #include "Assets/Asset.h"
 #include "Assets/Core/AssetFileMetaData.h"
+#include "Assets/Core/AssetHandle.h"
 #include "Assets/Core/AssetInternal.h"
 #include "Assets/Core/WeakAsset.h"
 #include "Meta/MetaManager.h"
@@ -70,6 +71,9 @@ namespace CE
 		*/
 		template<typename T = Asset>
 		std::optional<WeakAsset<T>> TryGetWeakAsset(Name key);
+
+		template<typename T = Asset>
+		WeakAssetHandle<T> TryGetWeakAssetHandle(Name key);
 
 		/*
 		If you want to save on memory, it is recommended to call this every frame
@@ -228,6 +232,12 @@ namespace CE
 		}
 
 		return WeakAsset<T>{ *assetInternal };
+	}
+
+	template <typename T>
+	WeakAssetHandle<T> AssetManager::TryGetWeakAssetHandle(Name key)
+	{
+		return { TryGetAssetInternal(key, MakeTypeId<T>()) };
 	}
 
 	template <typename AssetType>
