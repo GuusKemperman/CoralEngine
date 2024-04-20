@@ -215,6 +215,11 @@ namespace CE
 	template <typename T>
 	const T& AssetHandle<T>::operator*() const
 	{
+		AssureNotNull();
+		if (!IsLoaded())
+		{
+			mAssetInternal->Load();
+		}
 		ASSERT(IsLoaded());
 		return *mAssetInternal->mAsset;
 	}
@@ -222,8 +227,7 @@ namespace CE
 	template <typename T>
 	const T* AssetHandle<T>::operator->() const
 	{
-		ASSERT(IsLoaded());
-		return *mAssetInternal->mAsset;
+		return &*this;
 	}
 
 	template <typename T>
