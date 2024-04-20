@@ -118,6 +118,37 @@ namespace CE
 		template<typename AssetType = Asset>
  		IterableRange<EachAssetIt<AssetType>> GetAllAssets();
 
+
+		template<typename AssetType>
+		class EachAssetHandleIt
+		{
+		public:
+			using value_type = WeakAssetHandle<AssetType>;
+			using ContainerType = std::unordered_map<Name::HashType, Internal::AssetInternal>;
+			using UnderlyingIt = ContainerType::iterator;
+
+			EachAssetHandleIt(UnderlyingIt&& it, ContainerType& container);
+
+			decltype(auto) operator*() const;
+
+			decltype(auto) operator->() const;
+
+			EachAssetHandleIt& operator++();
+			EachAssetHandleIt operator++(int);
+
+			constexpr bool operator==(const EachAssetHandleIt& b) const;
+			constexpr bool operator!=(const EachAssetHandleIt& b) const;
+
+		private:
+			void IncrementUntilTypeMatches();
+
+			UnderlyingIt mIt;
+			std::reference_wrapper<ContainerType> mContainer;
+		};
+
+		template<typename AssetType = Asset>
+		IterableRange<EachAssetHandleIt<AssetType>> GetAllAssetHandles();
+
 		/*
 		Rename the asset
 
@@ -214,6 +245,18 @@ namespace CE
 		return mIt != b.mIt;
 	}
 
+	template <typename AssetType>
+	constexpr bool AssetManager::EachAssetHandleIt<AssetType>::operator==(const EachAssetHandleIt& b) const
+	{
+		return mIt == b.mIt;
+	}
+
+	template <typename AssetType>
+	constexpr bool AssetManager::EachAssetHandleIt<AssetType>::operator!=(const EachAssetHandleIt& b) const
+	{
+		return mIt != b.mIt;
+	}
+
 	template<typename T>
 	std::shared_ptr<const T> AssetManager::TryGetAsset(const Name key)
 	{
@@ -298,6 +341,68 @@ namespace CE
 
 	template <typename AssetType>
 	IterableRange<AssetManager::EachAssetIt<AssetType>> AssetManager::GetAllAssets()
+	{
+		return { { mAssets.begin(), mAssets }, { mAssets.end(), mAssets } };
+	}
+
+	template <typename AssetType>
+	AssetManager::EachAssetHandleIt<AssetType>::EachAssetHandleIt(UnderlyingIt&& it, ContainerType& container) :
+		mIt(std::move(it)),
+		mContainer(container)
+	{
+		// Not really a traditional iterator i suppose,
+		// but good enough for our purposes.
+		if (mIt == mContainer.get().begin()
+			&& !mIt->second.mMetaData.GetClass().IsDerivedFrom<AssetType>())
+		{
+			IncrementUntilTypeMatches();
+		}
+	}
+
+	template <typename AssetType>
+	decltype(auto) AssetManager::EachAssetHandleIt<AssetType>::operator*() const
+	{
+		return WeakAssetHandle<AssetType>{ &mIt->second };
+	}
+
+	template <typename AssetType>
+	decltype(auto) AssetManager::EachAssetHandleIt<AssetType>::operator->() const
+	{
+		return **this;
+	}
+
+	template <typename AssetType>
+	AssetManager::EachAssetHandleIt<AssetType>& AssetManager::EachAssetHandleIt<AssetType>::operator++()
+	{
+		IncrementUntilTypeMatches();
+		return *this;
+	}
+
+	template <typename AssetType>
+	AssetManager::EachAssetHandleIt<AssetType> AssetManager::EachAssetHandleIt<AssetType>::operator++(int)
+	{
+		EachAssetIt tmp = *this; ++(*this); return tmp;
+	}
+
+	template <typename AssetType>
+	void AssetManager::EachAssetHandleIt<AssetType>::IncrementUntilTypeMatches()
+	{
+		if constexpr (std::is_same_v<Asset, AssetType>)
+		{
+			++mIt;
+		}
+		else
+		{
+			do
+			{
+				++mIt;
+			} while (mIt != mContainer.get().end()
+				&& !mIt->second.mMetaData.GetClass().IsDerivedFrom<AssetType>());
+		}
+	}
+
+	template <typename AssetType>
+	IterableRange<AssetManager::EachAssetHandleIt<AssetType>> AssetManager::GetAllAssetHandles()
 	{
 		return { { mAssets.begin(), mAssets }, { mAssets.end(), mAssets } };
 	}

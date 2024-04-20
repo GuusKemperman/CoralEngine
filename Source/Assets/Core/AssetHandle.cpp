@@ -3,6 +3,8 @@
 
 #include "Core/AssetManager.h"
 #include "Meta/Fwd/MetaTypeFwd.h"
+#include "Utilities/Search.h"
+#include "Utilities/Imgui/ImguiDragDrop.h"
 
 CE::AssetHandleBase::AssetHandleBase() = default;
 
@@ -111,7 +113,7 @@ void cereal::save(BinaryOutputArchive& archive, const CE::AssetHandleBase& asset
 
 void cereal::load(BinaryInputArchive& archive, CE::AssetHandle<>& asset)
 {
-	CE::WeakAssetHandle<> weakHandle{ asset };
+	CE::WeakAssetHandle weakHandle{ asset };
 	load(archive, weakHandle);
 	asset = CE::AssetHandle<>{ weakHandle };
 }
@@ -134,3 +136,48 @@ void cereal::load(BinaryInputArchive& archive, CE::WeakAssetHandle<>& asset)
 		LOG(LogAssets, Warning, "Asset whose name generated the hash {} no longer exists", assetNameHash);
 	}
 }
+
+#ifdef EDITOR
+void CE::Internal::DisplayHandleWidget(AssetHandle<>& asset, const std::string& name, TypeId type)
+{
+	WeakAssetHandle weakHandle{ asset };
+	DisplayHandleWidget(weakHandle, name, type);
+	asset = CE::AssetHandle<>{ weakHandle };
+}
+
+void CE::Internal::DisplayHandleWidget(WeakAssetHandle<>& asset, const std::string& name, TypeId type)
+{
+	if (!Search::BeginCombo(name, asset == nullptr ? "None" : asset.GetMetaData().GetName()))
+	{
+		return;
+	}
+
+	if (Search::Button("None"))
+	{
+		asset = nullptr;
+	}
+
+	for (const WeakAssetHandle<>& weakAsset : AssetManager::Get().GetAllAssetHandles<>())
+	{
+		if (!weakAsset.GetMetaData().GetClass().IsDerivedFrom(type))
+		{
+			continue;
+		}
+
+		if (Search::Button(weakAsset.GetMetaData().GetName()))
+		{
+			asset = weakAsset;
+		}
+	}
+
+	Search::EndCombo();
+
+	WeakAssetHandle<> receivedAsset = DragDrop::PeekAssetHandle(type);
+
+	if (receivedAsset != nullptr
+		&& DragDrop::AcceptAsset())
+	{
+		asset = std::move(receivedAsset);
+	}
+}
+#endif // EDITOR

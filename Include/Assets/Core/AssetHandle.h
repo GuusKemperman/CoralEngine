@@ -373,3 +373,39 @@ namespace cereal
 		asset = CE::DynamicAssetHandleCast<T>(asBase);
 	}
 }
+
+#ifdef EDITOR
+
+namespace CE::Internal
+{
+	void DisplayHandleWidget(AssetHandle<>& asset, const std::string& name, TypeId type);
+	void DisplayHandleWidget(WeakAssetHandle<>& asset, const std::string& name, TypeId type);
+}
+
+namespace ImGui
+{
+	template<typename T>
+	struct Auto_t<CE::AssetHandle<T>>
+	{
+		static void Auto(CE::AssetHandle<T>& asset, const std::string& name)
+		{
+			CE::AssetHandle<> base = asset;
+			CE::Internal::DisplayHandleWidget(base, name, CE::MakeTypeId<T>());
+			asset = CE::StaticAssetHandleCast<T>(base);
+		}
+		static constexpr bool sIsSpecialized = true;
+	};
+
+	template<typename T>
+	struct Auto_t<CE::WeakAssetHandle<T>>
+	{
+		static void Auto(CE::WeakAssetHandle<T>& asset, const std::string& name)
+		{
+			CE::WeakAssetHandle<> base = asset;
+			CE::Internal::DisplayHandleWidget(base, name, CE::MakeTypeId<T>());
+			asset = CE::StaticAssetHandleCast<T>(base);
+		}
+		static constexpr bool sIsSpecialized = true;
+	};
+}
+#endif // EDITOR

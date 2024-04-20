@@ -34,6 +34,8 @@ namespace CE
 			return reinterpret_cast<std::optional<WeakAsset<T>>&>(asAsset);
 		}
 
+		WeakAssetHandle<> PeekAssetHandle(TypeId assetTypeId);
+
 		// Will only return true if the user released the mousebutton while hovering over the previous element.
 		bool AcceptAsset();
 
