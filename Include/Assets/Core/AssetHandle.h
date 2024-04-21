@@ -409,6 +409,15 @@ namespace CE
 	}
 }
 
+template<typename T>
+struct std::hash<CE::AssetHandle<T>>
+{
+	std::size_t operator()(const CE::AssetHandle<T>& asset) const
+	{
+		return std::hash<const T*>{}(asset.Get());
+	}
+};
+
 namespace cereal
 {
 	class BinaryInputArchive;
