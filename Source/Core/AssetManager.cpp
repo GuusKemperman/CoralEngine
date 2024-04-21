@@ -69,7 +69,7 @@ CE::Internal::AssetInternal* CE::AssetManager::TryGetLoadedAssetInternal(const N
 
 	if (internalAsset->mAsset == nullptr)
 	{
-		Load(*internalAsset);
+		internalAsset->Load();
 		ASSERT(internalAsset->mAsset != nullptr);
 	}
 	return internalAsset;
@@ -91,20 +91,10 @@ void CE::AssetManager::UnloadAllUnusedAssets()
 				continue;
 			}
 
-			Unload(asset);
+			asset.UnLoad();
 			wereAnyUnloaded = true;
 		}
 	} while (wereAnyUnloaded); // We might've unloaded an asset that held onto the last reference of another asset
-}
-
-void CE::AssetManager::Load(Internal::AssetInternal& internalAsset)
-{
-	internalAsset.Load();
-}
-
-void CE::AssetManager::Unload(Internal::AssetInternal& asset)
-{
-	asset.UnLoad();
 }
 
 void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view newName)

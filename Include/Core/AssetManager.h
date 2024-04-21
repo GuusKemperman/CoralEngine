@@ -171,9 +171,6 @@ namespace CE
 		static inline constexpr std::string_view sAssetExtension = ".asset";
 
 	private:
-		template<typename T>
-		friend class WeakAssetHandle;
-
 		// Made a friend, as the AssetManager is the only one
 		// allowed to create weak assets. We have a ToWeakAsset function
 		// that EachAssetT is allowed to use, without exposing the constructor
@@ -181,18 +178,12 @@ namespace CE
 		template<typename T>
 		friend class EachAssetT;
 
-		template<typename T>
-		static WeakAssetHandle<T> ToWeakAsset(Internal::AssetInternal& internalAsset);
-
 		std::unordered_map<Name::HashType, Internal::AssetInternal> mAssets{};
 
 		void OpenDirectory(const std::filesystem::path& directory);
 
 		Internal::AssetInternal* TryGetAssetInternal(Name key, TypeId typeId);
 		Internal::AssetInternal* TryGetLoadedAssetInternal(Name key, TypeId typeId);
-
-		void Load(Internal::AssetInternal& asset);
-		void Unload(Internal::AssetInternal& asset);
 
 		Internal::AssetInternal* TryConstruct(const std::filesystem::path& path);
 		Internal::AssetInternal* TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData);
@@ -287,12 +278,13 @@ namespace CE
 	template <typename T>
 	AssetHandle<T> AssetManager::AddAsset(T&& generatedAsset)
 	{
-		return { TryConstruct(std::nullopt, AssetFileMetaData{ generatedAsset.GetName(), MetaManager::Get().GetType<T>() }) };
-	}
+		Internal::AssetInternal* internalAsset = TryConstruct(std::nullopt, AssetFileMetaData{ generatedAsset.GetName(), MetaManager::Get().GetType<T>() });
 
-	template <typename T>
-	WeakAssetHandle<T> AssetManager::ToWeakAsset(Internal::AssetInternal& internalAsset)
-	{
+		if (internalAsset != nullptr)
+		{
+			internalAsset->mAsset = MakeUniqueInPlace<T, Asset>(std::move(generatedAsset));
+		}
+
 		return { internalAsset };
 	}
 }
