@@ -241,8 +241,6 @@ CE::MetaType* CE::Script::DeclareMetaType()
 		return nullptr;
 	}
 
-	LOG(LogScripting, Verbose, "Making type from script {}", GetName());
-
 	struct MemberToAdd
 	{
 		MemberToAdd(const MetaType& type, const std::string& name) : mType(type), mName(name) {};
@@ -368,8 +366,6 @@ CE::MetaType* CE::Script::DeclareMetaType()
 	AddDestructor(metaType, false);
 
 	Internal::ReflectComponentType(metaType, false);
-
-	LOG(LogScripting, Verbose, "Finished making type from script {}", GetName());
 
 	return &metaType;
 }
