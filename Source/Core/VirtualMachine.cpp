@@ -30,6 +30,7 @@ CE::VirtualMachine::~VirtualMachine()
 
 void CE::VirtualMachine::Recompile()
 {
+	[[maybe_unused]] const std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	LOG(LogScripting, Message, "Recompiling...");
 
 	ClearCompilationResult();
@@ -64,7 +65,9 @@ void CE::VirtualMachine::Recompile()
 
 	PrintCompileErrors();
 
-	LOG(LogScripting, Message, "Compilation completed");
+	[[maybe_unused]] const std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+	[[maybe_unused]] float deltaTime = std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1).count();
+	LOG(LogScripting, Message, "Compilation completed in {} seconds", deltaTime);
 }
 
 void CE::VirtualMachine::ClearCompilationResult()
@@ -314,7 +317,6 @@ void CE::VirtualMachine::DestroyAllTypesCreatedThroughScripts()
 	{
 		if (WasTypeCreatedByScript(type))
 		{
-			LOG(LogScripting, Verbose, "Type {} will be destroyed", type.GetName());
 			Internal::UnreflectComponentType(type);
 			typesToRemove.push_back(type.GetTypeId());
 		}

@@ -67,7 +67,8 @@ namespace CE
 		// Let's see if we need to spin up some more threads
 		for (Thread& thread : mThreads)
 		{
-			if (thread.mIsFinished)
+			if (thread.mIsFinished
+				&& thread.mThread.joinable())
 			{
 				thread.mThread.join();
 				thread.mIsFinished = false;

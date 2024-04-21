@@ -12,6 +12,8 @@
 
 void CE::AssetManager::PostConstruct()
 {
+	mAssets.reserve(1024);
+
 	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""));
 	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""));
 }
@@ -24,29 +26,25 @@ void CE::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 		return;
 	}
 
+	[[maybe_unused]] uint32 numOfAssetsFound{};
 
 	for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(directory))
 	{
-		if (!is_regular_file(dirEntry))
+		if (!std::filesystem::is_regular_file(dirEntry))
 		{
 			continue;
 		}
 
 		const std::filesystem::path& path = dirEntry.path();
-		const std::string extension = path.extension().string();
 
-		if (extension == sAssetExtension)
+		if (path.extension() == sAssetExtension)
 		{
-			OpenAsset(path);
-			continue;
+			numOfAssetsFound += OpenAsset(path);
 		}
-
-
 	}
 
-	LOG(LogAssets, Verbose, "Finished constructing assets");
+	LOG(LogAssets, Verbose, "Finished indexing {}, found {} assets", directory.string(), numOfAssetsFound);
 }
-
 
 CE::Internal::AssetInternal* CE::AssetManager::TryGetAssetInternal(const Name key, const TypeId typeId)
 {
@@ -71,7 +69,7 @@ CE::Internal::AssetInternal* CE::AssetManager::TryGetLoadedAssetInternal(const N
 
 	if (internalAsset->mAsset == nullptr)
 	{
-		Load(*internalAsset);
+		internalAsset->Load();
 		ASSERT(internalAsset->mAsset != nullptr);
 	}
 	return internalAsset;
@@ -93,20 +91,10 @@ void CE::AssetManager::UnloadAllUnusedAssets()
 				continue;
 			}
 
-			Unload(asset);
+			asset.UnLoad();
 			wereAnyUnloaded = true;
 		}
 	} while (wereAnyUnloaded); // We might've unloaded an asset that held onto the last reference of another asset
-}
-
-void CE::AssetManager::Load(Internal::AssetInternal& internalAsset)
-{
-	internalAsset.Load();
-}
-
-void CE::AssetManager::Unload(Internal::AssetInternal& asset)
-{
-	asset.UnLoad();
 }
 
 void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view newName)
@@ -444,8 +432,6 @@ CE::WeakAssetHandle<> CE::AssetManager::OpenAsset(const std::filesystem::path& p
 
 CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::filesystem::path& path)
 {
-	LOG(LogAssets, Verbose, "Constructing asset from {}", path.string());
-
 	if (path.extension() != sAssetExtension)
 	{
 		LOG(LogAssets, Error, "Failed to construct asset {}: Expected extension {}, but extension was {}.",

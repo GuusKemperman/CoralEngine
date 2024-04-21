@@ -23,9 +23,19 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
 
-	JobManager::StartUp();
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
+
+	std::thread deviceAgnosticSystems
+	{
+		[&]
+		{
+			JobManager::StartUp();
+			MetaManager::StartUp();
+			AssetManager::StartUp();
+			VirtualMachine::StartUp();
+		}
+	};
 
 	if (!Device::IsHeadless())
 	{
@@ -40,9 +50,8 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 		Device::Get().CreateImguiContext();
 	}
 #endif // EDITOR
-	MetaManager::StartUp();
-	AssetManager::StartUp();
-	VirtualMachine::StartUp();
+
+	deviceAgnosticSystems.join();
 
 #ifdef EDITOR
 	Editor::StartUp();
@@ -134,7 +143,6 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 
 	while (!device.ShouldClose())
 	{
-
 		t2 = std::chrono::high_resolution_clock::now();
 		float deltaTime = std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1).count();
 
@@ -184,4 +192,3 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 		}
 	}
 }
-
