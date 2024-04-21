@@ -5,7 +5,6 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
 bool Game::EnemyTypeAndCount::operator==(const EnemyTypeAndCount& other) const

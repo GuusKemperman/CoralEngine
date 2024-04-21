@@ -1,4 +1,5 @@
 #pragma once
+#include "Assets/Core/AssetHandle.h"
 #include "Physics.h"
 #include "BasicDataTypes/ScalableTimer.h"
 #include "Meta/MetaReflect.h"
@@ -77,9 +78,9 @@ namespace CE
 		 *
 		 * \param level The level to transition to.
 		 */
-		void TransitionToLevel(const std::shared_ptr<const Level>& level);
+		void TransitionToLevel(const AssetHandle<Level>& level);
 
-		const std::shared_ptr<const Level>& GetNextLevel() const { return mLevelToTransitionTo; }
+		const AssetHandle<Level>& GetNextLevel() const { return mLevelToTransitionTo; }
 
 	private:
 		friend ReflectAccess;
@@ -91,7 +92,7 @@ namespace CE
 		std::unique_ptr<GPUWorld> mGPUWorld{};
 		std::unique_ptr<Physics> mPhysics{};
 
-		std::shared_ptr<const Level> mLevelToTransitionTo{};
+		AssetHandle<Level> mLevelToTransitionTo{};
 
 		ScalableTimer mTime{};
 

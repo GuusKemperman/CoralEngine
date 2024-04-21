@@ -241,7 +241,7 @@ std::vector<CE::ImporterSystem::ImportRequest> CE::ImporterSystem::GetAllFilesTo
 
 		bool wasPreviouslyImported = false;
 
-		for (const WeakAsset<> asset : AssetManager::Get().GetAllAssets())
+		for (const WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
 		{
 			if (!WasImportedFrom(asset, fileToImport))
 			{
@@ -316,7 +316,7 @@ std::vector<CE::ImporterSystem::ImportRequest> CE::ImporterSystem::GetAllFilesTo
 	return importableAssets;
 }
 
-bool CE::ImporterSystem::WasImportedFrom(const WeakAsset<>& asset, const std::filesystem::path& file)
+bool CE::ImporterSystem::WasImportedFrom(const WeakAssetHandle<>& asset, const std::filesystem::path& file)
 {
 	return asset.GetMetaData().GetImporterInfo().has_value()
 		// We only look at the filename, as the full path may be different.
@@ -347,7 +347,7 @@ std::pair<CE::TypeId, std::shared_ptr<const CE::Importer>> CE::ImporterSystem::T
 	return { 0, nullptr };
 }
 
-bool CE::ImporterSystem::WouldAssetBeDeletedOrReplacedOnImporting(const WeakAsset<>& asset) const
+bool CE::ImporterSystem::WouldAssetBeDeletedOrReplacedOnImporting(const WeakAssetHandle<>& asset) const
 {
 	return WouldAssetBeDeletedOrReplacedOnImporting(asset, mImportPreview);
 }
@@ -400,12 +400,12 @@ std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPrevi
 std::optional<std::filesystem::path> CE::ImporterSystem::GetDuplicateOfExistingAssets(const ImportPreview& preview)
 {
 	const std::string& name = preview.mImportedAsset.GetMetaData().GetName();
-	const std::optional<WeakAsset<>> existingAsset = AssetManager::Get().TryGetWeakAsset(name);
+	const WeakAssetHandle existingAsset = AssetManager::Get().TryGetWeakAsset(name);
 
-	if (existingAsset.has_value()
-		&& !WasImportedFrom(*existingAsset, preview.mImportRequest.mFile))
+	if (existingAsset != nullptr
+		&& !WasImportedFrom(existingAsset, preview.mImportRequest.mFile))
 	{
-		return existingAsset->GetFileOfOrigin().value_or("Asset generated at runtime");
+		return existingAsset.GetFileOfOrigin().value_or("Asset generated at runtime");
 	}
 	return std::nullopt;
 }
@@ -436,9 +436,6 @@ std::vector<std::filesystem::path> CE::ImporterSystem::GetDuplicates(const Impor
 {
 	std::vector<std::filesystem::path> returnValue = GetDuplicatesInOtherPreviews(preview, begin, end);
 
-	const std::string& name = preview.mImportedAsset.GetMetaData().GetName();
-	const std::optional<WeakAsset<>> existingAsset = AssetManager::Get().TryGetWeakAsset(name);
-
 	if (std::optional<std::filesystem::path> existingDuplicate = GetDuplicateOfExistingAssets(preview);
 		existingDuplicate.has_value())
 	{
@@ -453,7 +450,7 @@ std::vector<std::filesystem::path> CE::ImporterSystem::GetDuplicates(const Impor
 	return returnValue;
 }
 
-bool CE::ImporterSystem::WouldAssetBeDeletedOrReplacedOnImporting(const WeakAsset<>& asset, const std::vector<ImportPreview>& toImport)
+bool CE::ImporterSystem::WouldAssetBeDeletedOrReplacedOnImporting(const WeakAssetHandle<>& asset, const std::vector<ImportPreview>& toImport)
 {
 	if (!asset.GetMetaData().GetImporterInfo().has_value())
 	{
@@ -623,12 +620,12 @@ uint32 CE::ImporterSystem::ShowErrorsToWarnAboutDiscardChanges()
 	for (const ImportPreview& preview : mImportPreview)
 	{
 		const std::string& name = preview.mImportedAsset.GetMetaData().GetName();
-		const std::optional<WeakAsset<Asset>> existingAsset = AssetManager::Get().TryGetWeakAsset(name);
+		WeakAssetHandle existingAsset = AssetManager::Get().TryGetWeakAsset(name);
 
-		if (!existingAsset.has_value()
-			|| !WasImportedFrom(*existingAsset, preview.mImportRequest.mFile)
-			|| !existingAsset->GetMetaData().GetImporterInfo()->mWereEditsMadeAfterImporting
-			|| !WouldAssetBeDeletedOrReplacedOnImporting(*existingAsset))
+		if (existingAsset != nullptr
+			|| !WasImportedFrom(existingAsset, preview.mImportRequest.mFile)
+			|| !existingAsset.GetMetaData().GetImporterInfo()->mWereEditsMadeAfterImporting
+			|| !WouldAssetBeDeletedOrReplacedOnImporting(existingAsset))
 		{
 			continue;
 		}
@@ -651,7 +648,7 @@ uint32 CE::ImporterSystem::ShowReadOnlyErrors()
 	bool isOpenAlready{}, shouldDisplay{};
 	uint32 numOfErrors{};
 
-	for (WeakAsset<> asset : AssetManager::Get().GetAllAssets())
+	for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
 	{
 		if (WouldAssetBeDeletedOrReplacedOnImporting(asset)
 			&& std::filesystem::exists(*asset.GetFileOfOrigin())
@@ -703,11 +700,11 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 			}), toImport.end());
 	}
 
-	std::vector<WeakAsset<>> assetsToEraseEntirely{};
+	std::vector<WeakAssetHandle<>> assetsToEraseEntirely{};
 
 	AssetManager& assetManager = AssetManager::Get();
 
-	for (WeakAsset<> asset : assetManager.GetAllAssets())
+	for (WeakAssetHandle<> asset : assetManager.GetAllAssets())
 	{
 		if (!WouldAssetBeDeletedOrReplacedOnImporting(asset, toImport))
 		{
@@ -753,7 +750,7 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 		}
 	}
 
-	for (WeakAsset<Asset>& assetToErase : assetsToEraseEntirely)
+	for (WeakAssetHandle<>& assetToErase : assetsToEraseEntirely)
 	{
 		assetManager.DeleteAsset(std::move(assetToErase));
 	}
@@ -772,12 +769,12 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 			continue;
 		}
 
-		if (assetManager.TryGetWeakAsset(imported.mImportedAsset.GetMetaData().GetName()).has_value())
+		if (assetManager.TryGetWeakAsset(imported.mImportedAsset.GetMetaData().GetName()) != nullptr)
 		{
 			continue;
 		}
 
-		if (assetManager.OpenAsset(file).has_value())
+		if (assetManager.OpenAsset(file) != nullptr)
 		{
 			LOG(LogAssets, Verbose, "Imported {} from {} to {}",
 				imported.mImportedAsset.GetMetaData().GetName(),

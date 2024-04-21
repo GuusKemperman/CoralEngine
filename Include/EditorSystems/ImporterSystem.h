@@ -61,11 +61,11 @@ namespace CE
 
 		std::vector<ImportRequest> GetAllFilesToImport(DirToWatch& directory);
 
-		static bool WasImportedFrom(const WeakAsset<>& asset, const std::filesystem::path& file);
+		static bool WasImportedFrom(const WeakAssetHandle<>& asset, const std::filesystem::path& file);
 
 		std::pair<TypeId, std::shared_ptr<const Importer>> TryGetImporterForExtension(const std::filesystem::path& extension);
 
-		bool WouldAssetBeDeletedOrReplacedOnImporting(const WeakAsset<>& asset) const;
+		bool WouldAssetBeDeletedOrReplacedOnImporting(const WeakAssetHandle<>& asset) const;
 
 		std::filesystem::path GetPathToSaveAssetTo(const ImportPreview& preview) const;
 
@@ -79,7 +79,7 @@ namespace CE
 
 		static std::vector<std::filesystem::path> GetDuplicates(const ImportPreview& preview, std::vector<ImportPreview>::const_iterator begin, std::vector<ImportPreview>::const_iterator end);
 
-		static bool WouldAssetBeDeletedOrReplacedOnImporting(const WeakAsset<>& asset, const std::vector<ImportPreview>& toImport);
+		static bool WouldAssetBeDeletedOrReplacedOnImporting(const WeakAssetHandle<>& asset, const std::vector<ImportPreview>& toImport);
 
 		void RetrieveImportResultsFromFutures();
 

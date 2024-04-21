@@ -1,4 +1,5 @@
 #pragma once
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaTypeTraits.h"
 #include "Scripting/ScriptConfig.h"
 
@@ -19,7 +20,7 @@ namespace CE
 
 	bool WasTypeCreatedByScript(const MetaType& type);
 
-	std::shared_ptr<const Script> TryGetScriptResponsibleForCreatingType(const MetaType& type);
+	AssetHandle<Script> TryGetScriptResponsibleForCreatingType(const MetaType& type);
 
 	// Ignores any properties associated with the function, a function may not have the scriptable keyword,
 	// but this function can obviously not check that and will return true/false only based on the constness of its parameters

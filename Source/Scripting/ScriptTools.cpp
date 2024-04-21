@@ -83,7 +83,7 @@ bool CE::WasTypeCreatedByScript(const MetaType& type)
 	return type.GetProperties().Has(Props::sIsFromScriptsTag);
 }
 
-std::shared_ptr<const CE::Script> CE::TryGetScriptResponsibleForCreatingType(const MetaType& type)
+CE::AssetHandle<CE::Script> CE::TryGetScriptResponsibleForCreatingType(const MetaType& type)
 {
 	if (!WasTypeCreatedByScript(type))
 	{

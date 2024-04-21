@@ -94,7 +94,7 @@ std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEdi
     const std::string gameAssets = FileIO::Get().GetPath(FileIO::Directory::GameAssets, "");
 
     // Iterate through the provided paths
-    for (WeakAsset<> asset : AssetManager::Get().GetAllAssets())
+    for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
     {
         const std::string fullPath = asset.GetFileOfOrigin().value_or("Generated assets").string();
 
@@ -147,7 +147,7 @@ std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEdi
 
         // Sort alphabetically
         const auto whereToInsert = std::lower_bound(currentFolder->mContent.begin(), currentFolder->mContent.end(), asset,
-            [](const WeakAsset<>& sl, const WeakAsset<>& sr)
+            [](const WeakAssetHandle<>& sl, const WeakAssetHandle<>& sr)
             {
                 return sl.GetMetaData().GetName() < sr.GetMetaData().GetName();
             });
@@ -165,13 +165,14 @@ void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folde
         {
             const bool isOpen = ImGui::TreeNode(folderName.data());
 
-            std::optional<WeakAsset<Asset>> receivedAsset = DragDrop::PeekAsset<Asset>();
-            if (receivedAsset.has_value()
-                && receivedAsset->GetFileOfOrigin().has_value()
-                && receivedAsset->GetFileOfOrigin()->parent_path() != folder.mPath
+            WeakAssetHandle receivedAsset = DragDrop::PeekAsset<Asset>();
+
+        	if (receivedAsset != nullptr
+                && receivedAsset.GetFileOfOrigin().has_value()
+                && receivedAsset.GetFileOfOrigin()->parent_path() != folder.mPath
                 && DragDrop::AcceptAsset())
             {
-                AssetManager::Get().MoveAsset(*receivedAsset, folder.mPath / receivedAsset->GetFileOfOrigin()->filename());
+                AssetManager::Get().MoveAsset(receivedAsset, folder.mPath / receivedAsset.GetFileOfOrigin()->filename());
             }
 
             const std::string popUpName = Format("{}RightClickedDir", folder.mPath.string());
@@ -187,7 +188,7 @@ void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folde
                 {
                     std::function<void(const ContentFolder&)> importRecursive = [&importRecursive](const ContentFolder& folder)
                         {
-                            for (const WeakAsset<Asset>& asset : folder.mContent)
+                            for (const WeakAssetHandle<>& asset : folder.mContent)
                             {
                                 Reimport(asset);
                             }
@@ -211,7 +212,7 @@ void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folde
         DisplayDirectory(std::move(child));
     }
 
-    for (const WeakAsset<Asset>& asset : folder.mContent)
+    for (const WeakAssetHandle<>& asset : folder.mContent)
     {
         DisplayAsset(std::move(asset));
     }
@@ -219,7 +220,7 @@ void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folde
     Search::TreePop();
 }
 
-void CE::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& asset) const
+void CE::ContentBrowserEditorSystem::DisplayAsset(const WeakAssetHandle<>& asset) const
 {
     if (Search::AddItem(asset.GetMetaData().GetName(),
         [asset](std::string_view) -> bool
@@ -266,7 +267,6 @@ void CE::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& asset)
                     ImGui::Text("Imported from: %s", importerInfo->mImportedFile.string().c_str());
                 }
 
-                ImGui::Text("NumOfReferences: %d", static_cast<int>(asset.NumOfReferences()));
                 ImGui::EndTooltip();
             }
 
@@ -277,7 +277,7 @@ void CE::ContentBrowserEditorSystem::DisplayAsset(const WeakAsset<Asset>& asset)
     }
 }
 
-void CE::ContentBrowserEditorSystem::OpenAsset(WeakAsset<Asset> asset) const
+void CE::ContentBrowserEditorSystem::OpenAsset(WeakAssetHandle<> asset) const
 {
     Editor::Get().TryOpenAssetForEdit(asset);
 }
@@ -295,7 +295,7 @@ bool CE::ContentBrowserEditorSystem::DisplayNameUI(std::string& assetName)
         anyErrors = true;
     }
 
-    if (AssetManager::Get().TryGetWeakAsset(Name{ assetName }).has_value())
+    if (AssetManager::Get().TryGetWeakAsset(Name{ assetName }) != nullptr)
     {
     	ImGui::Text("There is already an asset with the name %s", assetName.c_str());
         anyErrors = true;
@@ -413,11 +413,11 @@ void CE::ContentBrowserEditorSystem::DisplayAssetCreatorPopUp()
 
 	if (ImGui::Button(Format("Save to {}", fileUIResult.mPathToShowUser.string()).c_str()))
 	{
-        std::optional<WeakAsset<Asset>> newAsset = AssetManager::Get().NewAsset(*sPopUpAssetClass, fileUIResult.mActualFullPath);
+        WeakAssetHandle newAsset = AssetManager::Get().NewAsset(*sPopUpAssetClass, fileUIResult.mActualFullPath);
 
-        if (newAsset.has_value())
+        if (newAsset != nullptr)
         {
-            Editor::Get().TryOpenAssetForEdit(*newAsset);
+            Editor::Get().TryOpenAssetForEdit(newAsset);
 
             // Adding assets is not considered to be a volatile
 			// action, our system will not restart, and we
@@ -440,9 +440,9 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
         return;
     }
 
-    std::optional<WeakAsset<Asset>> asset = AssetManager::Get().TryGetWeakAsset(sRightClickedAsset);
+    WeakAssetHandle asset = AssetManager::Get().TryGetWeakAsset(sRightClickedAsset);
 
-    if (!asset.has_value())
+    if (asset == nullptr)
     {
         ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
@@ -465,7 +465,7 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
 
         if (ImGui::Button("Rename"))
         {
-            AssetManager::Get().RenameAsset(*asset, sPopUpNewAssetName);
+            AssetManager::Get().RenameAsset(asset, sPopUpNewAssetName);
         }
 
         ImGui::EndDisabled();
@@ -475,20 +475,20 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
 
     if (ImGui::MenuItem("Duplicate"))
     {
-        const std::string copyName = StringFunctions::CreateUniqueName(asset->GetMetaData().GetName(),
+        const std::string copyName = StringFunctions::CreateUniqueName(asset.GetMetaData().GetName(),
             [](std::string_view name)
             {
-                return !AssetManager::Get().TryGetWeakAsset(name).has_value();
+                return AssetManager::Get().TryGetWeakAsset(name) != nullptr;
             });
 
-        std::filesystem::path copyPath = asset->GetFileOfOrigin().value_or(FileIO::Get().GetPath(FileIO::Directory::GameAssets, copyName)).parent_path() / copyName;
+        std::filesystem::path copyPath = asset.GetFileOfOrigin().value_or(FileIO::Get().GetPath(FileIO::Directory::GameAssets, copyName)).parent_path() / copyName;
         copyPath.replace_extension(AssetManager::sAssetExtension);
 
-        std::optional<WeakAsset<Asset>> newAsset = AssetManager::Get().Duplicate(*asset, copyPath);
+        WeakAssetHandle newAsset = AssetManager::Get().Duplicate(asset, copyPath);
 
-        if (newAsset.has_value())
+        if (newAsset != nullptr)
         {
-            Editor::Get().TryOpenAssetForEdit(*newAsset);
+            Editor::Get().TryOpenAssetForEdit(newAsset);
 
             // Adding assets is not considered to be a volatile
             // action, our system will not restart, and we
@@ -498,24 +498,24 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
         }
     }
 
-    if (const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = asset->GetMetaData().GetImporterInfo();
+    if (const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = asset.GetMetaData().GetImporterInfo();
         importerInfo.has_value()
         && ImGui::MenuItem("Reimport"))
     {
-        Reimport(*asset);
+        Reimport(asset);
     }
 
     if (ImGui::MenuItem("Delete", "Del")
         || input.WasKeyboardKeyPressed(Input::KeyboardKey::Delete))
     {
-        AssetManager::Get().DeleteAsset(std::move(*asset));
+        AssetManager::Get().DeleteAsset(std::move(asset));
         ImGui::CloseCurrentPopup();
     }
 
     ImGui::EndPopup();
 }
 
-void CE::ContentBrowserEditorSystem::Reimport(const WeakAsset<Asset>& asset)
+void CE::ContentBrowserEditorSystem::Reimport(const WeakAssetHandle<>& asset)
 {
     if (!asset.GetMetaData().GetImporterInfo().has_value())
     {

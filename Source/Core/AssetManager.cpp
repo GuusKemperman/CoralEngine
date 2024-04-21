@@ -87,7 +87,7 @@ void CE::AssetManager::UnloadAllUnusedAssets()
 		for (auto& [name, asset] : mAssets)
 		{
 			if (asset.mAsset == nullptr // Asset is already unloaded
-				|| asset.mAsset.use_count() > 1 // We hold a reference, and atleast in one other place someone is holding a reference as well.
+				|| asset.mRefCounters[static_cast<int>(Internal::AssetInternal::RefCountType::Strong)] > 0 // Someone is holding a reference
 				|| !asset.mFileOfOrigin.has_value()) // This asset was generated at runtime; if we unload it, we won't be able to load if back in again. 
 			{
 				continue;
@@ -109,30 +109,37 @@ void CE::AssetManager::Unload(Internal::AssetInternal& asset)
 	asset.UnLoad();
 }
 
-void CE::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
+void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view newName)
 {
 	auto renameLambda = [this, oldName = asset.GetMetaData().GetName(), newName = std::string{ newName }]()
 		{
-			std::optional<WeakAsset<Asset>> asset = TryGetWeakAsset(oldName);
+			WeakAssetHandle asset = TryGetWeakAsset(oldName);
 
-			if (!asset.has_value())
+			if (asset == nullptr)
 			{
 				return;
 			}
 
-			if (TryGetWeakAsset(newName).has_value())
+			if (TryGetWeakAsset(newName) != nullptr)
 			{
 				LOG(LogAssets, Error, "Cannot rename asset {} to {}, there is already an asset with this name", oldName, newName);
 				return;
 			}
 
-
-			AssetFileMetaData newMetaData = asset->mAssetInternal.get().mMetaData;
+			AssetFileMetaData newMetaData = asset.GetMetaData();
 			newMetaData.mAssetName = newName;
 
-			if (asset->GetFileOfOrigin().has_value())
+			Internal::AssetInternal* assetInternal = TryGetAssetInternal(asset.GetMetaData().GetName(), asset.GetMetaData().GetClass().GetTypeId());
+
+			if (assetInternal == nullptr)
 			{
-				const std::filesystem::path oldPath = *asset->mAssetInternal.get().mFileOfOrigin;
+				LOG(LogAssets, Error, "Cannot rename asset {} to {}, could not find internal asset", oldName, newName);
+				return;
+			}
+
+			if (asset.GetFileOfOrigin().has_value())
+			{
+				const std::filesystem::path oldPath = *asset.GetFileOfOrigin();
 				const std::filesystem::path newPath = std::filesystem::path{ oldPath }.replace_filename(newName).replace_extension(sAssetExtension);
 
 				std::error_code err{};
@@ -141,7 +148,7 @@ void CE::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
 				if (err)
 				{
 					LOG(LogAssets, Error, "Cannot rename asset {}, could not rename file {} to {} - {}",
-						asset->GetMetaData().GetName(),
+						asset.GetMetaData().GetName(),
 						oldPath.string(),
 						newPath.string(),
 						err.message());
@@ -155,7 +162,7 @@ void CE::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
 
 					if (!file.is_open())
 					{
-						LOG(LogAssets, Error, "Cannot rename asset {}, could not open file {} for read", asset->GetMetaData().GetName(), newPath.string());
+						LOG(LogAssets, Error, "Cannot rename asset {}, could not open file {} for read", asset.GetMetaData().GetName(), newPath.string());
 						return;
 					}
 
@@ -163,7 +170,6 @@ void CE::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
 
 					fileContents = StringFunctions::StreamToString(file);
 				}
-
 
 				{
 					std::ofstream file{ newPath, std::ofstream::binary };
@@ -178,10 +184,11 @@ void CE::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
 					file.write(fileContents.c_str(), fileContents.size());
 				}
 
-				asset->mAssetInternal.get().mFileOfOrigin = newPath;
+				assetInternal->mFileOfOrigin = newPath;
 			}
 
-			asset->mAssetInternal.get().mMetaData = newMetaData;
+			assetInternal->mMetaData = newMetaData;
+
 			auto extractedAsset = mAssets.extract(Name::HashString(oldName));
 			extractedAsset.key() = Name::HashString(newName);
 			auto insertResult = mAssets.insert(std::move(extractedAsset));
@@ -200,35 +207,34 @@ void CE::AssetManager::RenameAsset(WeakAsset<> asset, std::string_view newName)
 #endif
 }
 
-void CE::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
+void CE::AssetManager::DeleteAsset(WeakAssetHandle<>&& asset)
 {
 	auto deleteLambda = [this, assetName = asset.GetMetaData().GetName()]()
 		{
 			LOG(LogAssets, Verbose, "Asset {} will be erased. Any WeakAssets referencing it will now be dangling", assetName);
 
-			std::optional<WeakAsset<Asset>> asset = TryGetWeakAsset(assetName);
+			WeakAssetHandle asset = TryGetWeakAsset(assetName);
 
-			if (!asset.has_value())
+			if (asset == nullptr)
 			{
 				return;
 			}
 
-
-			if (asset->GetFileOfOrigin().has_value())
+			if (asset.GetFileOfOrigin().has_value())
 			{
 				std::error_code err{};
-				std::filesystem::remove(*asset->GetFileOfOrigin(), err);
+				std::filesystem::remove(*asset.GetFileOfOrigin(), err);
 
 				if (err)
 				{
 					LOG(LogAssets, Error, "Asset {} was removed from the asset manager, but deleting {} failed ({}). Asset will be present again on next startup",
 						assetName,
-						asset->GetFileOfOrigin()->string(),
+						asset.GetFileOfOrigin()->string(),
 						err.message());
 				}
 			}
 
-			mAssets.erase(Name::HashString(asset->GetMetaData().GetName()));
+			mAssets.erase(Name::HashString(asset.GetMetaData().GetName()));
 		};
 
 #ifdef EDITOR
@@ -239,9 +245,9 @@ void CE::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
 #endif
 }
 
-bool CE::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesystem::path& toLocation)
+bool CE::AssetManager::MoveAsset(WeakAssetHandle<> asset, const std::filesystem::path& toLocation)
 {
-	if (!asset.mAssetInternal.get().mFileOfOrigin.has_value())
+	if (!asset.GetFileOfOrigin().has_value())
 	{
 		LOG(LogAssets, Error, "Failed to move asset {} to {}: This asset was generated at runtime, there is no original file to copy from.",
 			asset.GetMetaData().GetAssetVersion(),
@@ -258,7 +264,17 @@ bool CE::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesystem::
 		return false;
 	}
 
-	std::filesystem::path& assetFile = *asset.mAssetInternal.get().mFileOfOrigin;
+	Internal::AssetInternal* assetInternal = TryGetAssetInternal(asset.GetMetaData().GetName(), asset.GetMetaData().GetClass().GetTypeId());
+
+	if (assetInternal == nullptr)
+	{
+		LOG(LogAssets, Error, "Failed to move asset {} to {}: Could not find internal asset",
+			asset.GetMetaData().GetAssetVersion(),
+			toLocation.string());
+		return false;
+	}
+
+	std::filesystem::path& assetFile = *assetInternal->mFileOfOrigin;
 
 	LOG(LogAssets, Message, "Moving file from {} to {}", assetFile.string(), toLocation.string());
 
@@ -290,43 +306,43 @@ bool CE::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesystem::
 	return true;
 }
 
-std::optional<CE::WeakAsset<CE::Asset>> CE::AssetManager::Duplicate(WeakAsset<CE::Asset> asset, const std::filesystem::path& copyPath)
+CE::WeakAssetHandle<> CE::AssetManager::Duplicate(WeakAssetHandle<> asset, const std::filesystem::path& copyPath)
 {
 	if (!asset.GetFileOfOrigin().has_value())
 	{
 		LOG(LogAssets, Error, "Cannot duplicate asset {}, as it did not come from a file", asset.GetMetaData().GetName());
-		return std::nullopt;
+		return nullptr;
 	}
 
 	if (std::filesystem::exists(copyPath))
 	{
 		LOG(LogAssets, Error, "Cannot duplicate asset {}, as there is already a file {}", asset.GetMetaData().GetName(), copyPath.string());
-		return std::nullopt;
+		return nullptr;
 	}
 
 	if (copyPath.extension() != sAssetExtension)
 	{
 		LOG(LogAssets, Error, "Cannot duplicate asset {} to {}, the extension was not {}", asset.GetMetaData().GetName(), copyPath.string(), sAssetExtension);
-		return std::nullopt;
+		return nullptr;
 	}
 
 	const std::string copyName = copyPath.filename().replace_extension().string();
 
-	if (TryGetWeakAsset(copyName).has_value())
+	if (TryGetWeakAsset(copyName) != nullptr)
 	{
 		LOG(LogAssets, Error, "Cannot duplicate asset {}, as there is already an asset with this name", asset.GetMetaData().GetName());
-		return std::nullopt;
+		return nullptr;
 	}
 
 	std::string fileContents{};
 
 	{
-		std::ifstream file{ *asset.mAssetInternal.get().mFileOfOrigin, std::ifstream::binary };
+		std::ifstream file{ *asset.GetFileOfOrigin(), std::ifstream::binary };
 
 		if (!file.is_open())
 		{
-			LOG(LogAssets, Error, "Cannot duplicate asset {}, could not open file {}", asset.GetMetaData().GetName(), asset.mAssetInternal.get().mFileOfOrigin->string());
-			return std::nullopt;
+			LOG(LogAssets, Error, "Cannot duplicate asset {}, could not open file {}", asset.GetMetaData().GetName(), asset.GetFileOfOrigin()->string());
+			return nullptr;
 		}
 
 		(void)AssetFileMetaData::ReadMetaData(file);
@@ -344,7 +360,7 @@ std::optional<CE::WeakAsset<CE::Asset>> CE::AssetManager::Duplicate(WeakAsset<CE
 		if (!file.is_open())
 		{
 			LOG(LogAssets, Error, "Cannot duplicate asset {}, could not open file {}", asset.GetMetaData().GetName(), copyPath.string());
-			return std::nullopt;
+			return nullptr;
 		}
 
 		newMetaData.WriteMetaData(file);
@@ -356,33 +372,32 @@ std::optional<CE::WeakAsset<CE::Asset>> CE::AssetManager::Duplicate(WeakAsset<CE
 	if (constructedAsset == nullptr)
 	{
 		LOG(LogAssets, Error, "Cannot duplicate asset {}, could not construct asset. File was duplicated however, see {}", asset.GetMetaData().GetName(), copyPath.string());
-		return std::nullopt;
+		return nullptr;
 	}
 
 	return TryGetWeakAsset(copyName);
 }
 
-std::optional<CE::WeakAsset<>> CE::AssetManager::NewAsset(const MetaType& assetClass,
-	const std::filesystem::path& path)
+CE::WeakAssetHandle<> CE::AssetManager::NewAsset(const MetaType& assetClass, const std::filesystem::path& path)
 {
 	const std::string assetName = path.filename().replace_extension().string();
 
-	if (AssetManager::Get().TryGetWeakAsset(Name{ assetName }).has_value())
+	if (AssetManager::Get().TryGetWeakAsset(Name{ assetName }) != nullptr)
 	{
 		LOG(LogAssets, Error, "Cannot create new asset {}, there is already an asset with this name", assetName);
-		return std::nullopt;
+		return nullptr;
 	}
 
 	if (std::filesystem::exists(path))
 	{
 		LOG(LogAssets, Error, "Cannot create new asset {} at {}, there is already a file at this location", assetName, path.string());
-		return std::nullopt;
+		return nullptr;
 	}
 
 	if (path.extension() != sAssetExtension)
 	{
 		LOG(LogAssets, Error, "Cannot duplicate asset {} to {}, the extension was not {}", assetName, path.string(), sAssetExtension);
-		return std::nullopt;
+		return nullptr;
 	}
 
 	const std::string_view strView{ assetName };
@@ -391,7 +406,7 @@ std::optional<CE::WeakAsset<>> CE::AssetManager::NewAsset(const MetaType& assetC
 	if (constructResult.HasError())
 	{
 		LOG(LogAssets, Error, "Failed to create new asset of type {} - {}", assetClass.GetName(), constructResult.Error());
-		return std::nullopt;
+		return nullptr;
 	}
 
 	const Asset* const asset = constructResult.GetReturnValue().As<Asset>();
@@ -399,7 +414,7 @@ std::optional<CE::WeakAsset<>> CE::AssetManager::NewAsset(const MetaType& assetC
 	if (asset == nullptr)
 	{
 		LOG(LogAssets, Error, "Failed to create new asset of type {} - Construct result was not an asset", assetClass.GetName());
-		return std::nullopt;
+		return nullptr;
 	}
 
 	const AssetSaveInfo saveInfo = asset->Save();
@@ -408,7 +423,7 @@ std::optional<CE::WeakAsset<>> CE::AssetManager::NewAsset(const MetaType& assetC
 	if (!success)
 	{
 		LOG(LogAssets, Error, "Failed to create new asset, the file {} could not be saved to", path.string());
-		return std::nullopt;
+		return nullptr;
 	}
 
 	const Internal::AssetInternal* const constructedAsset = TryConstruct(path);
@@ -416,21 +431,15 @@ std::optional<CE::WeakAsset<>> CE::AssetManager::NewAsset(const MetaType& assetC
 	if (constructedAsset == nullptr)
 	{
 		LOG(LogAssets, Error, "Cannot duplicate asset {}, could not construct asset. File was duplicated however, see {}", assetName, path.string());
-		return std::nullopt;
+		return nullptr;
 	}
 
 	return TryGetWeakAsset(assetName);
 }
 
-std::optional<CE::WeakAsset<CE::Asset>> CE::AssetManager::OpenAsset(const std::filesystem::path& path)
+CE::WeakAssetHandle<> CE::AssetManager::OpenAsset(const std::filesystem::path& path)
 {
-	Internal::AssetInternal* const internalAsset = TryConstruct(path);
-
-	if (internalAsset == nullptr)
-	{
-		return std::nullopt;
-	}
-	return WeakAsset<Asset>{ *internalAsset };
+	return { TryConstruct(path) };
 }
 
 CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::filesystem::path& path)

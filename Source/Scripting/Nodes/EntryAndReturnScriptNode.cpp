@@ -34,7 +34,7 @@ void CE::Internal::NodeInvolvingScriptFunc::PostDeclarationRefresh(ScriptFunc& s
 
 const CE::ScriptFunc* CE::Internal::NodeInvolvingScriptFunc::TryGetOriginalFunc() const
 {
-	const std::shared_ptr<const Script> script = AssetManager::Get().TryGetAsset<Script>(mNameOfScriptAsset);
+	const AssetHandle<Script> script = AssetManager::Get().TryGetAsset<Script>(mNameOfScriptAsset);
 	
 	return script == nullptr ? nullptr : script->TryGetFunc(mNameOfFunction);
 }

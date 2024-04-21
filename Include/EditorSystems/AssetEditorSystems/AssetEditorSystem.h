@@ -84,7 +84,7 @@ namespace CE
 		in order to prevent your changes leading to unexpected behaviour
 		elsewhere. This function return the orginal asset, if it exists.
 		*/
-		std::optional<WeakAsset<T>> TryGetOriginalAsset() const;
+		WeakAssetHandle<T> TryGetOriginalAsset() const;
 
 		/*
 		Saves the asset to file at the end of the frame. Will do a 
@@ -214,11 +214,11 @@ namespace CE
 		mAsset(std::move(asset)),
 		mPathToSaveAssetTo([this]() -> std::filesystem::path
 			{
-				std::optional<WeakAsset<T>> originalAsset = TryGetOriginalAsset();
+				WeakAssetHandle<T> originalAsset = TryGetOriginalAsset();
 
-				if (originalAsset.has_value())
+				if (originalAsset != nullptr)
 				{
-					return originalAsset->GetFileOfOrigin().value_or(std::filesystem::path{});
+					return originalAsset.GetFileOfOrigin().value_or(std::filesystem::path{});
 				}
 				return {};
 			}
@@ -227,7 +227,7 @@ namespace CE
 	}
 
 	template<typename T>
-	std::optional<WeakAsset<T>> AssetEditorSystem<T>::TryGetOriginalAsset() const
+	WeakAssetHandle<T> AssetEditorSystem<T>::TryGetOriginalAsset() const
 	{
 		return AssetManager::Get().TryGetWeakAsset<T>(mAsset.GetName());
 	}
@@ -261,9 +261,9 @@ namespace CE
 
 		std::optional<AssetFileMetaData::ImporterInfo> importerInfo{};
 
-		if (const std::optional<WeakAsset<T>> originalAsset = TryGetOriginalAsset(); originalAsset.has_value())
+		if (const WeakAssetHandle<T> originalAsset = TryGetOriginalAsset(); originalAsset != nullptr)
 		{
-			importerInfo = originalAsset->GetMetaData().GetImporterInfo();
+			importerInfo = originalAsset.GetMetaData().GetImporterInfo();
 
 			if (importerInfo.has_value())
 			{

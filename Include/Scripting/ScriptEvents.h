@@ -1,6 +1,6 @@
 #pragma once
-
 #include "Assets/Script.h"
+#include "Assets/Core/AssetHandle.h"
 #include "Utilities/Events.h"
 
 namespace CE
@@ -19,7 +19,7 @@ namespace CE
 
 		MetaFunc& Declare(TypeId selfTypeId, MetaType& toType) const;
 		void Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc,
-		            const std::shared_ptr<const Script>& script) const;
+		            const AssetHandle<Script>& script) const;
 
 #ifdef EDITOR
 		/**
@@ -35,7 +35,7 @@ namespace CE
 
 	private:
 		virtual MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                           const std::shared_ptr<const Script>& script) const = 0;
+		                                           const AssetHandle<Script>& script) const = 0;
 
 		std::vector<TypeTraits> mEventParams{};
 		TypeTraits mEventReturnType{};
@@ -53,7 +53,7 @@ namespace CE
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-			const std::shared_ptr<const Script>& script) const override;
+			const AssetHandle<Script>& script) const override;
 	};
 
 	// For both Tick and FixedTick
@@ -78,7 +78,7 @@ namespace CE
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-			const std::shared_ptr<const Script>& script) const override;
+			const AssetHandle<Script>& script) const override;
 	};
 
 	class ScriptFixedTickEvent final :
@@ -89,7 +89,7 @@ namespace CE
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-			const std::shared_ptr<const Script>& script) const override;
+			const AssetHandle<Script>& script) const override;
 	};
 	
 
@@ -101,7 +101,7 @@ namespace CE
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+		                                   const AssetHandle<Script>& script) const override;
 	};
 
 	class ScriptAIEvaluateEvent final :
@@ -112,7 +112,7 @@ namespace CE
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+		                                   const AssetHandle<Script>& script) const override;
 	};
 
 	class ScriptAbilityActivateEvent final :
@@ -123,7 +123,7 @@ namespace CE
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+		                                   const AssetHandle<Script>& script) const override;
 	};
 
 	class CollisionEvent :
@@ -135,7 +135,7 @@ namespace CE
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+		                                   const AssetHandle<Script>& script) const override;
 	};
 
 

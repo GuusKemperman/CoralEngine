@@ -1038,14 +1038,14 @@ void CE::ScriptEditorSystem::InitialiseAllNodesTheUserCanAdd()
 		{
 			uint32 totalNumOfNodesUsed{};
 
-			for (const WeakAsset<Script> weakScript : AssetManager::Get().GetAllAssets<Script>())
+			for (const WeakAssetHandle<Script> asset : AssetManager::Get().GetAllAssets<Script>())
 			{
 				if (mShouldWeStopCountingNodePopularity)
 				{
 					break;
 				}
 
-				const std::shared_ptr<const Script> script = weakScript.MakeShared();
+				AssetHandle<Script> script{ asset };
 
 				for (const ScriptFunc& func : script->GetFunctions())
 				{

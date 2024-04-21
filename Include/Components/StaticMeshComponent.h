@@ -1,4 +1,5 @@
 #pragma once
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE
@@ -9,9 +10,9 @@ namespace CE
     class StaticMeshComponent
     {
     public:   
-        std::shared_ptr<const StaticMesh> mStaticMesh{};
+        AssetHandle<StaticMesh> mStaticMesh{};
 
-        std::shared_ptr<const Material> mMaterial{};
+        AssetHandle<Material> mMaterial{};
 
         bool mTilesWithMeshScale = false;
 

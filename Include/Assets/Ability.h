@@ -1,5 +1,6 @@
 #pragma once
 #include "Assets/Asset.h"
+#include "Core/AssetHandle.h"
 
 namespace CE
 {
@@ -29,9 +30,9 @@ namespace CE
 
         void OnSave(AssetSaveInfo& saveInfo) const override;
 
-		std::shared_ptr<const Script> mScript{};
+		AssetHandle<Script> mScript{};
 
-		std::shared_ptr<const Texture> mIconTexture{};
+		AssetHandle<Texture> mIconTexture{};
 		std::string mDescription{};
 
 		/**

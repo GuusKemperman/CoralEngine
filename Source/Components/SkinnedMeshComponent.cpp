@@ -7,7 +7,6 @@
 #include "Assets/SkinnedMesh.h"
 #include "Assets/Material.h"
 #include "Assets/Animation/Animation.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
 CE::MetaType CE::SkinnedMeshComponent::Reflect()
 {

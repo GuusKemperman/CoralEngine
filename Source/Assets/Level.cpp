@@ -446,7 +446,7 @@ CE::Level::DiffedPrefab CE::Level::DiffPrefab(const BinaryGSONObject& serialized
 	const std::string& prefabName = serializedPrefab.GetName();
 	DiffedPrefab returnValue{ serializedPrefab.GetName() };
 
-	const std::shared_ptr<const Prefab> prefab = AssetManager::Get().TryGetAsset<Prefab>(prefabName);
+	const AssetHandle<Prefab> prefab = AssetManager::Get().TryGetAsset<Prefab>(prefabName);
 	const std::vector<BinaryGSONObject>& serializedFactories = serializedPrefab.GetChildren();
 
 	if (prefab == nullptr)
@@ -584,7 +584,7 @@ CE::BinaryGSONObject CE::Level::GenerateCurrentStateOfPrefabs(const BinaryGSONOb
 
 		*serializedHashedPrefabName >> hashedPrefabName;
 
-		const Prefab* prefab = AssetManager::Get().TryGetAsset<Prefab>(hashedPrefabName).get();
+		const Prefab* prefab = AssetManager::Get().TryGetAsset<Prefab>(hashedPrefabName).Get();
 
 		if (prefab == nullptr)
 		{

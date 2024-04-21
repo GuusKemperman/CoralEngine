@@ -4,16 +4,13 @@
 #include "Assets/Animation/Animation.h"
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/TransformComponent.h"
-
 #include "World/World.h"
 #include "World/Registry.h"
-
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
-void CE::AnimationRootComponent::SwitchAnimationRecursive(Registry& reg, const entt::entity entity, const std::shared_ptr<const Animation> animation, float timeStamp)
+void CE::AnimationRootComponent::SwitchAnimationRecursive(Registry& reg, const entt::entity entity, const AssetHandle<Animation> animation, float timeStamp)
 {
 	auto skinnedMesh = reg.TryGet<SkinnedMeshComponent>(entity);
 
@@ -49,7 +46,7 @@ void CE::AnimationRootComponent::SwitchAnimation()
 	SwitchAnimationRecursive(world->GetRegistry(), mOwner, mWantedAnimation, mWantedTimeStamp);
 }
 
-void CE::AnimationRootComponent::SwitchAnimation(Registry& reg, const std::shared_ptr<const Animation>& animation, float timeStamp)
+void CE::AnimationRootComponent::SwitchAnimation(Registry& reg, const AssetHandle<Animation>& animation, float timeStamp)
 {
 	if (animation == mWantedAnimation)
 	{
@@ -73,7 +70,7 @@ CE::MetaType CE::AnimationRootComponent::Reflect()
 
 	type.AddFunc(static_cast<void (AnimationRootComponent::*)()>(&AnimationRootComponent::SwitchAnimation), "SwitchAnimationEditor").GetProperties().Add(Props::sCallFromEditorTag);
 
-	type.AddFunc([](AnimationRootComponent& animationRoot, const std::shared_ptr<const Animation>& animation, float timeStamp)
+	type.AddFunc([](AnimationRootComponent& animationRoot, const AssetHandle<Animation>& animation, float timeStamp)
 		{
 			if (animation == nullptr)
 			{
@@ -87,7 +84,7 @@ CE::MetaType CE::AnimationRootComponent::Reflect()
 			animationRoot.SwitchAnimation(world->GetRegistry(), animation, timeStamp);
 
 		}, "SwitchAnimation", MetaFunc::ExplicitParams<AnimationRootComponent&,
-		const std::shared_ptr<const Animation>&, float>{}, "AnimationRootComponent", "Animation", "Time Stamp").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const AssetHandle<Animation>&, float>{}, "AnimationRootComponent", "Animation", "Time Stamp").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	BindEvent(type, sConstructEvent, &AnimationRootComponent::OnConstruct);
 

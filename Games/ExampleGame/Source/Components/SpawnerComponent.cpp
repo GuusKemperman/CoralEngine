@@ -3,7 +3,6 @@
 
 #include "Meta/Fwd/MetaTypeFwd.h"
 #include "Assets/Prefabs/Prefab.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
 

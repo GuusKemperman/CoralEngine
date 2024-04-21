@@ -16,7 +16,7 @@ void CE::AnimationSystem::CalculateBoneTransformRecursive(const AnimNode& node,
 	const glm::mat4x4& parenTransform, 
 	const std::unordered_map<std::string, BoneInfo>& boneMap,
 	const SkinnedMeshComponent& mesh,
-	const std::shared_ptr<const Animation> animation, 
+	const AssetHandle<Animation>& animation, 
 	std::vector<glm::mat4x4>& finalBoneMatrices)
 {
 	const Bone* bone = animation->FindBone(node.mName);

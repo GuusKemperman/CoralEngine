@@ -61,15 +61,15 @@ void CE::ScriptLocation::NavigateToLocation() const
 
 	if (scriptEditor == nullptr)
 	{
-		std::optional<WeakAsset<Script>> script = AssetManager::Get().TryGetWeakAsset<Script>(mNameOfScript);
+		WeakAssetHandle<Script> script = AssetManager::Get().TryGetWeakAsset<Script>(mNameOfScript);
 
-		if (!script.has_value())
+		if (script == nullptr)
 		{
 			LOG(LogEditor, Message, "Could not navigate to script {}, it no longer exists", mNameOfScript);
 			return;
 		}
 
-		scriptEditor = dynamic_cast<ScriptEditorSystem*>(Editor::Get().TryOpenAssetForEdit(WeakAssetStaticCast<Asset>(*script)));
+		scriptEditor = dynamic_cast<ScriptEditorSystem*>(Editor::Get().TryOpenAssetForEdit(script));
 
 		if (scriptEditor == nullptr)
 		{

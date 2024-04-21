@@ -1,8 +1,8 @@
 #pragma once
 #include "Meta/MetaType.h"
 #include "Assets/Asset.h"
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
 namespace CE
 {
@@ -10,11 +10,11 @@ namespace CE
 	template<typename AssetT>
 	void ReflectAssetType(MetaType&)
 	{
-		using RefType = std::shared_ptr<const AssetT>;
+		using RefType = AssetHandle<AssetT>;
 		using ArrType = std::vector<RefType>;
 
 		// Will ensure the array and ptr types are reflected at startup
-		// as well
+		// as well, as they are exposed to scripting.
 		if (!Internal::ReflectAtStartup<ArrType>::sDummy
 			&& !Internal::ReflectAtStartup<RefType>::sDummy)
 		{

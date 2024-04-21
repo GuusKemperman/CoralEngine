@@ -1,4 +1,5 @@
 #pragma once
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE
@@ -9,8 +10,8 @@ namespace CE
 	class ParticleMeshRendererComponent
 	{
 	public:
-		std::shared_ptr<const StaticMesh> mParticleMesh{};
-		std::shared_ptr<const Material> mParticleMaterial{};
+		AssetHandle<StaticMesh> mParticleMesh{};
+		AssetHandle<Material> mParticleMaterial{};
 
 	private:
 		friend ReflectAccess;

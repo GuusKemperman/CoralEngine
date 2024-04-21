@@ -978,12 +978,12 @@ void CE::WorldHierarchy::DisplayEntity(Registry& registry, entt::entity entity, 
 
 				ReceiveDragDropOntoParent(registry, entity);
 
-				const std::optional<WeakAsset<Prefab>> receivedPrefab = DragDrop::PeekAsset<Prefab>();
+				const WeakAssetHandle<Prefab> receivedPrefab = DragDrop::PeekAsset<Prefab>();
 
-				if (receivedPrefab.has_value()
+				if (receivedPrefab != nullptr
 					&& DragDrop::AcceptAsset())
 				{
-					const entt::entity prefabEntity = registry.CreateFromPrefab(*receivedPrefab->MakeShared());
+					const entt::entity prefabEntity = registry.CreateFromPrefab( *AssetHandle<Prefab>{ receivedPrefab } );
 
 					TransformComponent* const prefabTransform = registry.TryGet<TransformComponent>(prefabEntity);
 					TransformComponent* const parentTransform = registry.TryGet<TransformComponent>(entity);
@@ -1319,17 +1319,17 @@ namespace
 	{
 		using namespace CE;
 
-		std::optional<WeakAsset<Prefab>> receivedPrefab = DragDrop::PeekAsset<Prefab>();
+		WeakAssetHandle<Prefab> receivedPrefab = DragDrop::PeekAsset<Prefab>();
 
-		if (receivedPrefab.has_value()
+		if (receivedPrefab != nullptr
 			&& DragDrop::AcceptAsset())
 		{
-			world.GetRegistry().CreateFromPrefab(*receivedPrefab->MakeShared());
+			world.GetRegistry().CreateFromPrefab(*AssetHandle<Prefab>{ receivedPrefab });
 		}
 
-		std::optional<WeakAsset<StaticMesh>> receivedMesh = DragDrop::PeekAsset<StaticMesh>();
+		WeakAssetHandle<StaticMesh> receivedMesh = DragDrop::PeekAsset<StaticMesh>();
 
-		if (receivedMesh.has_value()
+		if (receivedMesh != nullptr
 			&& DragDrop::AcceptAsset())
 		{
 			Registry& reg = world.GetRegistry();
@@ -1337,7 +1337,7 @@ namespace
 
 			reg.AddComponent<TransformComponent>(entity);
 			StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(entity);
-			meshComponent.mStaticMesh = receivedMesh->MakeShared();
+			meshComponent.mStaticMesh = AssetHandle<StaticMesh>{ receivedMesh };
 			meshComponent.mMaterial = Material::TryGetDefaultMaterial();
 		}
 	}

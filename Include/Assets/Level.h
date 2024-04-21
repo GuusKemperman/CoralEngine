@@ -4,6 +4,7 @@
 #include "GSON/GSONBinary.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/Prefabs/PrefabEntityFactory.h"
+#include "Core/AssetHandle.h"
 
 namespace CE
 {
@@ -53,7 +54,7 @@ namespace CE
 		{
 			std::string mPrefabName{};
 
-			std::optional<std::shared_ptr<const Prefab>> mPrefab{};
+			std::optional<AssetHandle<Prefab>> mPrefab{};
 
 			// The factories that have been added to the prefab while our level was stored in a file offline.
 			// This vector is sorted so that when iterating over them, you are guaranteed to encounter each

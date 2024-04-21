@@ -84,7 +84,7 @@ CE::MetaType CE::Ability::Reflect()
 	type.AddField(&Ability::mRequirementToUse, "mRequirementToUse");
 	type.AddField(&Ability::mCharges, "mCharges");
 
-	type.AddFunc([](const std::shared_ptr<const Ability>& script) -> std::shared_ptr<const Texture>
+	type.AddFunc([](const AssetHandle<Ability>& script) -> AssetHandle<Texture>
 		{
 			if (script == nullptr)
 			{
@@ -93,7 +93,7 @@ CE::MetaType CE::Ability::Reflect()
 
 			return script->mIconTexture;
 		},
-		"GetIconTexture", MetaFunc::ExplicitParams<const std::shared_ptr<const Ability>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+		"GetIconTexture", MetaFunc::ExplicitParams<const AssetHandle<Ability>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectAssetType<Ability>(type);
 	return type;

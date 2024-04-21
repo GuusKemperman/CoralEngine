@@ -144,7 +144,7 @@ void CE::Animation::OnSave(AssetSaveInfo& saveInfo) const
 {
 	if (mBones.empty())
 	{
-		LOG(LogAssets, Error, "Unable to save animation {}, No bones found", this->GetName());
+		LOG(LogAssets, Error, "Unable to save animation {}, No bones found", GetName());
 	}
 
 	BinaryGSONObject obj{ GetName() };
