@@ -18,6 +18,8 @@ namespace CE
 		friend class EngineSubsystem<AssetManager>;
 		void PostConstruct() override;
 
+		~AssetManager();
+
 	public:
 
 		/*
