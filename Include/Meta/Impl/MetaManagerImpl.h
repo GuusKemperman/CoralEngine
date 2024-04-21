@@ -12,7 +12,7 @@ CE::MetaType& CE::MetaManager::GetType()
 	static_assert(sIsReflectable<T>,
 		R"(Type does not have a reflect function, so the type can never be gotten from the MetaManager. 
 If it does have a Reflect function, make sure it is included from wherever this error originated.
-If you are trying to reflect an std::vector<std::shared_ptr<const Material>>, you need to include Material.h, ReflectVector.h and ReflectSmartPtr.h.)");
+If you are trying to reflect an std::vector<AssetHandle<Material>>, you need to include Material.h, ReflectVector.h and ReflectSmartPtr.h.)");
 
 	static constexpr TypeId typeId = MakeTypeId<T>();
 

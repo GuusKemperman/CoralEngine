@@ -111,11 +111,11 @@ void CE::Editor::PostConstruct()
 		}
 
 		std::string assetName = Internal::GetAssetNameBasedOnSystemName(systemName);
-		std::optional<WeakAsset<>> asset = AssetManager::Get().TryGetWeakAsset<Asset>(assetName);
+		WeakAssetHandle asset = AssetManager::Get().TryGetWeakAsset<Asset>(assetName);
 
-		if (asset.has_value())
+		if (asset != nullptr)
 		{
-			TryOpenAssetForEdit(*asset);
+			TryOpenAssetForEdit(asset);
 		}
 	}
 }
@@ -376,8 +376,13 @@ void CE::Editor::SaveAll()
 	Refresh(RefreshRequest{ RefreshRequest::SaveAssetsToFile | RefreshRequest::Volatile });
 }
 
-CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>& originalAsset)
+CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(const WeakAssetHandle<>& originalAsset)
 {
+	if (originalAsset == nullptr)
+	{
+		return nullptr;
+	}
+
 	if (originalAsset.GetFileOfOrigin().has_value())
 	{
 		std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromFile(*originalAsset.GetFileOfOrigin());
@@ -394,7 +399,7 @@ CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>& origin
 	}
 
 	// We can still open assets that did not come from a file
-	return TryOpenAssetForEdit(originalAsset.MakeShared()->Save());
+	return TryOpenAssetForEdit(AssetHandle<>{ originalAsset }->Save());
 }
 
 bool CE::Editor::IsThereAnEditorTypeForAssetType(TypeId assetTypeId) const

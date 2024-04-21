@@ -251,7 +251,7 @@ CE::World* CE::World::TryGetWorldAtTopOfStack()
 	return world;
 }
 
-void CE::World::TransitionToLevel(const std::shared_ptr<const Level>& level)
+void CE::World::TransitionToLevel(const AssetHandle<Level>& level)
 {
 	if (GetNextLevel() == nullptr)
 	{
@@ -392,14 +392,14 @@ CE::MetaType CE::World::Reflect()
 			return world->HasBegunPlay();
 		}, "HasBegunPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	type.AddFunc([](const std::shared_ptr<const Level>& level)
+	type.AddFunc([](const AssetHandle<Level>& level)
 		{
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 			world->TransitionToLevel(level);
 		},
 		"TransitionToLevel", 
-		MetaFunc::ExplicitParams<const std::shared_ptr<const Level>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		MetaFunc::ExplicitParams<const AssetHandle<Level>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([]
 		{
@@ -439,7 +439,7 @@ CE::MetaType CE::World::Reflect()
 			return world->GetRegistry().Create();
 		}, "Spawn entity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const std::shared_ptr<const Prefab>& prefab)
+	type.AddFunc([](const AssetHandle<Prefab>& prefab)
 		{
 			if (prefab == nullptr)
 			{
@@ -449,7 +449,7 @@ CE::MetaType CE::World::Reflect()
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 			return world->GetRegistry().CreateFromPrefab(*prefab);
-		}, "Spawn prefab", MetaFunc::ExplicitParams<const std::shared_ptr<const Prefab>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Spawn prefab", MetaFunc::ExplicitParams<const AssetHandle<Prefab>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const entt::entity& entity, bool destroyChildren)
 		{

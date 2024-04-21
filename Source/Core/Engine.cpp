@@ -108,7 +108,7 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 	}
 
 #ifndef EDITOR
-	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>(starterLevel);
+	AssetHandle<Level> level = AssetManager::Get().TryGetAsset<Level>(starterLevel);
 
 	if (level == nullptr)
 	{

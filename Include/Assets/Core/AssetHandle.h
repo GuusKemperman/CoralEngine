@@ -113,6 +113,8 @@ namespace CE
 		const T& operator*() const;
 		const T* operator->() const;
 
+		const T* Get() const;
+
 	private:
 		template<typename U, typename O, std::enable_if_t<std::is_convertible_v<U*, O*>, bool>>
 		friend AssetHandle<U> StaticAssetHandleCast(const AssetHandle<O>& other);
@@ -266,18 +268,35 @@ namespace CE
 	const T& AssetHandle<T>::operator*() const
 	{
 		AssureNotNull();
-		if (!IsLoaded())
-		{
-			mAssetInternal->Load();
-		}
-		ASSERT(IsLoaded());
-		return *mAssetInternal->mAsset;
+		return *Get();
 	}
 
 	template <typename T>
 	const T* AssetHandle<T>::operator->() const
 	{
-		return &*this;
+		return Get();
+	}
+
+	template <typename T>
+	const T* AssetHandle<T>::Get() const
+	{
+		if (mAssetInternal == nullptr)
+		{
+			return nullptr;
+		}
+
+		if (!IsLoaded())
+		{
+			mAssetInternal->Load();
+		}
+		ASSERT(IsLoaded());
+
+		// We do a reinterpret_cast,
+		// otherwise if we use a static_cast
+		// the user is forced to include the
+		// entire header of where the asset is
+		// located.
+		return reinterpret_cast<const T*>(mAssetInternal->mAsset.get());
 	}
 
 	template <typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool>>
@@ -316,7 +335,7 @@ namespace CE
 	MetaType AssetHandle<U>::Reflect()
 	{
 		const MetaType& basedOnType = MetaManager::Get().GetType<U>();
-		MetaType refType{ MetaType::T<AssetHandle<U>>{}, Format("{} Strong Ref", basedOnType.GetName()) };
+		MetaType refType{ MetaType::T<AssetHandle<U>>{}, Format("{} Ref", basedOnType.GetName()) };
 		refType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
 		ReflectFieldType<AssetHandle<U>>(refType);

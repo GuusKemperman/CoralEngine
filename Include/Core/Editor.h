@@ -109,7 +109,7 @@ namespace CE
 			Will return nullptr if there is already a window with the asset name.
 			Will return nullptr if there is no editor for this type of asset.
 		*/
-		EditorSystem* TryOpenAssetForEdit(const WeakAsset<Asset>& originalAsset);
+		EditorSystem* TryOpenAssetForEdit(const WeakAssetHandle<>& originalAsset);
 
 		// Checks if there is any editor system that could open an asset of this type
 		// for edit.

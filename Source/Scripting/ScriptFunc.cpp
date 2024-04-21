@@ -129,7 +129,7 @@ void CE::ScriptFunc::DefineMetaFunc(MetaFunc& func)
 	ASSERT(VirtualMachine::Get().GetErrors(*this).empty());
 
 	// Get a reference to our script to prevent unloading
-	std::shared_ptr<const Script> ourScript = AssetManager::Get().TryGetAsset<Script>(mNameOfScriptAsset);
+	AssetHandle<Script> ourScript = AssetManager::Get().TryGetAsset<Script>(mNameOfScriptAsset);
 
 	if (ourScript == nullptr)
 	{

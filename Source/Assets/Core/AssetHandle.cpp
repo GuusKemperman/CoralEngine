@@ -129,7 +129,7 @@ void cereal::load(BinaryInputArchive& archive, CE::WeakAssetHandle<>& asset)
 		return;
 	}
 
-	asset = CE::AssetManager::Get().TryGetWeakAssetHandle(CE::Name{ assetNameHash });
+	asset = CE::AssetManager::Get().TryGetWeakAsset(CE::Name{ assetNameHash });
 
 	if (asset == nullptr)
 	{
@@ -157,7 +157,7 @@ void CE::Internal::DisplayHandleWidget(WeakAssetHandle<>& asset, const std::stri
 		asset = nullptr;
 	}
 
-	for (const WeakAssetHandle<>& weakAsset : AssetManager::Get().GetAllAssetHandles<>())
+	for (const WeakAssetHandle<>& weakAsset : AssetManager::Get().GetAllAssets<>())
 	{
 		if (!weakAsset.GetMetaData().GetClass().IsDerivedFrom(type))
 		{
@@ -172,7 +172,7 @@ void CE::Internal::DisplayHandleWidget(WeakAssetHandle<>& asset, const std::stri
 
 	Search::EndCombo();
 
-	WeakAssetHandle<> receivedAsset = DragDrop::PeekAssetHandle(type);
+	WeakAssetHandle<> receivedAsset = DragDrop::PeekAsset(type);
 
 	if (receivedAsset != nullptr
 		&& DragDrop::AcceptAsset())

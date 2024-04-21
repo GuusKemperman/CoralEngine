@@ -49,8 +49,7 @@ void CE::Internal::AssetInternal::Load()
 			constructResult.Error());
 		return;
 	}
-
-	mAsset = MakeShared<Asset>(std::move(constructResult.GetReturnValue()));
+	mAsset = MakeUnique<Asset>(std::move(constructResult.GetReturnValue()));
 }
 
 void CE::Internal::AssetInternal::UnLoad()

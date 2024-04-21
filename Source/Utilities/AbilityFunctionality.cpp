@@ -15,6 +15,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Utilities/Math.h"
+#include "Assets/Prefabs/Prefab.h"
 
 CE::MetaType CE::AbilityFunctionality::Reflect()
 {
@@ -51,7 +52,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
 		const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float, int>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	metaType.AddFunc([](const std::shared_ptr<const Prefab>& prefab, entt::entity castBy) -> entt::entity
+	metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy) -> entt::entity
 		{
 			if (prefab == nullptr)
 			{
@@ -65,7 +66,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 			return SpawnAbilityPrefab(*world, *prefab, castBy);
 
 		}, "SpawnAbilityPrefab", MetaFunc::ExplicitParams<
-		const std::shared_ptr<const Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const AssetHandle<Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	return metaType;
 }

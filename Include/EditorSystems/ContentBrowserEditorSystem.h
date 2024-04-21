@@ -23,7 +23,7 @@ namespace CE
 			ContentFolder(const std::filesystem::path& path) : mPath(path) {}
 			std::filesystem::path mPath{};
 			std::vector<ContentFolder> mChildren{};
-			std::vector<WeakAsset<Asset>> mContent{};
+			std::vector<WeakAssetHandle<>> mContent{};
 		};
 		static std::vector<ContentFolder> MakeFolderGraph();
 
@@ -31,9 +31,9 @@ namespace CE
 		void DisplayDirectory(const ContentFolder& folder);
 
 		// Moved in because the asset may be deleted, don't hold onto it.
-		void DisplayAsset(const WeakAsset<Asset>& asset) const;
+		void DisplayAsset(const WeakAssetHandle<>& asset) const;
 
-		void OpenAsset(WeakAsset<Asset> asset) const;
+		void OpenAsset(WeakAssetHandle<> asset) const;
 
 		static bool DisplayNameUI(std::string& name);
 
@@ -52,7 +52,7 @@ namespace CE
 		void DisplayAssetCreatorPopUp();
 		void DisplayAssetRightClickPopUp();
 
-		static void Reimport(const WeakAsset<Asset>& asset);
+		static void Reimport(const WeakAssetHandle<>& asset);
 
 		friend ReflectAccess;
 		static MetaType Reflect();

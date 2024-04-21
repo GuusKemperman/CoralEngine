@@ -26,7 +26,7 @@ void CE::PrefabOriginComponent::SetFactoryOfOrigin(const PrefabEntityFactory& fa
 
 const CE::Prefab* CE::PrefabOriginComponent::TryGetPrefab() const
 {
-	return AssetManager::Get().TryGetAsset<Prefab>(mHashedPrefabName).get();
+	return AssetManager::Get().TryGetAsset<Prefab>(mHashedPrefabName).Get();
 }
 
 const CE::PrefabEntityFactory* CE::PrefabOriginComponent::TryGetFactory() const

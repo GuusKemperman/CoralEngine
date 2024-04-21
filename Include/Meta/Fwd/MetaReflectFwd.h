@@ -73,7 +73,7 @@ namespace CE
 					static_assert(!sHasExternalReflect<T> || !sHasInternalReflect<T>, "Both an internal and external reflect function.");
 					static_assert(sHasExternalReflect<T> || sHasInternalReflect<T>,
 						R"(No external or internal reflect function. You need to make sure the Reflect function is included from wherever you are trying to reflect it.
-If you are trying to reflect an std::vector<std::shared_ptr<const Material>>, you need to include Material.h, ReflectVector.h and ReflectSmartPtr.h.)");
+If you are trying to reflect an std::vector<AssetHandle<Material>>, you need to include AssetHandle.h, Material.h and ReflectVector.h.)");
 
 					if constexpr (sHasInternalReflect<T>)
 					{

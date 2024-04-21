@@ -36,9 +36,9 @@ void CE::VirtualMachine::Recompile()
 
 	std::vector<std::pair<std::reference_wrapper<MetaType>, std::reference_wrapper<Script>>> createdTypes{};
 
-	for (WeakAsset<Script> asset : AssetManager::Get().GetAllAssets<Script>())
+	for (WeakAssetHandle<Script> asset : AssetManager::Get().GetAllAssets<Script>())
 	{
-		Script& script = const_cast<Script&>(*asset.MakeShared());
+		Script& script = const_cast<Script&>(*AssetHandle<Script>{ asset });
 		
 		MetaType* type = script.DeclareMetaType();
 

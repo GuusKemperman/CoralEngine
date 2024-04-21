@@ -1,5 +1,6 @@
 #pragma once
 #include "Meta/MetaReflect.h"
+#include "Assets/Core/AssetHandle.h"
 
 namespace CE
 {
@@ -9,7 +10,8 @@ namespace CE
 	{
 	public:
 		glm::vec4 mColor{ 1.0f };
-		std::shared_ptr<const Texture> mTexture{};
+
+		AssetHandle<Texture> mTexture{};
 
 	private:
 		friend ReflectAccess;
