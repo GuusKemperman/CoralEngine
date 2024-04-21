@@ -1,4 +1,6 @@
 #pragma once
+#include <atomic>
+
 #include "AssetFileMetaData.h"
 #include "Utilities/MemFunctions.h"
 
