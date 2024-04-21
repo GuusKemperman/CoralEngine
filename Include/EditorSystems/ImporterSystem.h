@@ -54,12 +54,11 @@ namespace CE
 		struct DirToWatch
 		{
 			std::filesystem::path mDirectory{};
-			std::filesystem::file_time_type mDirWriteTimeWhenLastChecked{};
 		};
 
-		void ImportAllOutOfDateFiles();
+		std::vector<ImportRequest> GetAllFilesToImport();
 
-		std::vector<ImportRequest> GetAllFilesToImport(DirToWatch& directory);
+		std::vector<ImportRequest> GetFilesToImportInDirectory(DirToWatch& directory);
 
 		static bool WasImportedFrom(const WeakAssetHandle<>& asset, const std::filesystem::path& file);
 
@@ -98,11 +97,20 @@ namespace CE
 
 		std::shared_ptr<bool> mWasImportingCancelled{};
 		std::vector<std::pair<TypeId, std::shared_ptr<Importer>>> mImporters{};
+
+		// Look up an importer using a file's extension. The value is the index in mImporters
+		std::unordered_map<std::filesystem::path, uint32> mImporterLookup{};
+
+		// Look up all the asset that were imported from a certain filename
+		std::unordered_multimap<std::filesystem::path, WeakAssetHandle<>> mImportedFromLookUp{};
+
 		std::vector<ImportFuture> mImportFutures{};
 		std::vector<ImportPreview> mImportPreview{};
 		std::vector<ImportRequest> mFailedFiles{};
 
 		std::array<DirToWatch, 2> mDirectoriesToWatch{};
+		static constexpr float sCheckWatchedDirectoriesCooldown = 10.0f;
+		float mTimeSinceLastCheckedOnDirectories = sCheckWatchedDirectoriesCooldown;
 
 		static inline bool sExcludeDuplicates{};
 

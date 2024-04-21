@@ -89,13 +89,48 @@ CE::ImporterSystem::ImporterSystem() :
 			}
 		};
 	addImporter(importerType);
+
+	for (uint32 i = 0; i < static_cast<uint32>(mImporters.size()); i++)
+	{
+		std::vector<std::filesystem::path> canImportExtensions = mImporters[i].second->CanImportExtensions();
+
+		for (std::filesystem::path& extension : canImportExtensions)
+		{
+			mImporterLookup.emplace(std::move(extension), i);
+		}
+	}
+
+	for (const WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
+	{
+		const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = asset.GetMetaData().GetImporterInfo();
+		if (!importerInfo.has_value())
+		{
+			continue;
+		}
+
+		mImportedFromLookUp.emplace(importerInfo->mImportedFile.filename(), asset);
+	}
 }
 
 CE::ImporterSystem::~ImporterSystem() = default;
 
-void CE::ImporterSystem::Tick(const float)
+void CE::ImporterSystem::Tick(const float dt)
 {
-	ImportAllOutOfDateFiles();
+	mTimeSinceLastCheckedOnDirectories += dt;
+
+	if (mTimeSinceLastCheckedOnDirectories >= sCheckWatchedDirectoriesCooldown)
+	{
+		const std::vector<ImportRequest> assetsToImport = GetAllFilesToImport();
+
+		for (const ImportRequest& assetToImport : assetsToImport)
+		{
+			Import(assetToImport.mFile, assetToImport.mReasonForImporting);
+		}
+
+		mTimeSinceLastCheckedOnDirectories = 0.0f;
+	}
+
+	GetAllFilesToImport();
 	RetrieveImportResultsFromFutures();
 
 	ImGui::SetNextWindowSize({ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
@@ -198,30 +233,29 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::
 		});
 }
 
-void CE::ImporterSystem::ImportAllOutOfDateFiles()
+std::vector<CE::ImporterSystem::ImportRequest> CE::ImporterSystem::GetAllFilesToImport()
 {
-	std::vector<ImportRequest> all = GetAllFilesToImport(mDirectoriesToWatch[0]);
-	std::vector<ImportRequest> game = GetAllFilesToImport(mDirectoriesToWatch[1]);
+	if (*mWasImportingCancelled)
+	{
+		return {};
+	}
 
+	std::vector<ImportRequest> all = GetFilesToImportInDirectory(mDirectoriesToWatch[0]);
+
+	if (*mWasImportingCancelled)
+	{
+		return {};
+	}
+
+	std::vector<ImportRequest> game = GetFilesToImportInDirectory(mDirectoriesToWatch[1]);
 	all.insert(all.end(), std::make_move_iterator(game.begin()), std::make_move_iterator(game.end()));
 
-	for (const ImportRequest& assetToImport : all)
-	{
-		Import(assetToImport.mFile, assetToImport.mReasonForImporting);
-	}
+	return all;
 }
 
-std::vector<CE::ImporterSystem::ImportRequest> CE::ImporterSystem::GetAllFilesToImport(DirToWatch& directory)
+std::vector<CE::ImporterSystem::ImportRequest> CE::ImporterSystem::GetFilesToImportInDirectory(DirToWatch& directory)
 {
 	std::vector<ImportRequest> importableAssets{};
-
-	const std::filesystem::file_time_type dirWriteTime = std::filesystem::last_write_time(directory.mDirectory);
-	if (directory.mDirWriteTimeWhenLastChecked >= dirWriteTime)
-	{
-		return importableAssets;
-	}
-
-	directory.mDirWriteTimeWhenLastChecked = dirWriteTime;
 
 	for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(directory.mDirectory))
 	{
@@ -241,13 +275,11 @@ std::vector<CE::ImporterSystem::ImportRequest> CE::ImporterSystem::GetAllFilesTo
 
 		bool wasPreviouslyImported = false;
 
-		for (const WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
-		{
-			if (!WasImportedFrom(asset, fileToImport))
-			{
-				continue;
-			}
+		auto existingAssetsIt = mImportedFromLookUp.equal_range(fileToImport.filename());
 
+		for (auto existingAssetIt = existingAssetsIt.first; existingAssetIt != existingAssetsIt.second; ++existingAssetIt)
+		{
+			WeakAssetHandle<> asset = existingAssetIt->second;
 			wasPreviouslyImported = true;
 
 			const uint32 assetImporterVersion = asset.GetMetaData().GetImporterInfo()->mImporterVersion;
@@ -333,18 +365,14 @@ bool CE::ImporterSystem::WasImportedFrom(const WeakAssetHandle<>& asset, const s
 
 std::pair<CE::TypeId, std::shared_ptr<const CE::Importer>> CE::ImporterSystem::TryGetImporterForExtension(const std::filesystem::path& extension)
 {
-	for (const auto& [typeId, importer] : mImporters)
-	{
-		std::vector<std::filesystem::path> canImport = importer->CanImportExtensions();
-		auto it = std::find(canImport.begin(), canImport.end(), extension);
+	auto it = mImporterLookup.find(extension);
 
-		if (it != canImport.end())
-		{
-			return { typeId, importer };
-		}
+	if (it == mImporterLookup.end())
+	{
+		return { 0, nullptr };
 	}
 
-	return { 0, nullptr };
+	return mImporters[it->second];
 }
 
 bool CE::ImporterSystem::WouldAssetBeDeletedOrReplacedOnImporting(const WeakAssetHandle<>& asset) const
@@ -622,7 +650,7 @@ uint32 CE::ImporterSystem::ShowErrorsToWarnAboutDiscardChanges()
 		const std::string& name = preview.mImportedAsset.GetMetaData().GetName();
 		WeakAssetHandle existingAsset = AssetManager::Get().TryGetWeakAsset(name);
 
-		if (existingAsset != nullptr
+		if (existingAsset == nullptr
 			|| !WasImportedFrom(existingAsset, preview.mImportRequest.mFile)
 			|| !existingAsset.GetMetaData().GetImporterInfo()->mWereEditsMadeAfterImporting
 			|| !WouldAssetBeDeletedOrReplacedOnImporting(existingAsset))
