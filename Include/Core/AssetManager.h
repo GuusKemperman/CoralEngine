@@ -171,6 +171,7 @@ namespace CE
 		WeakAssetHandle<> OpenAsset(const std::filesystem::path& path);
 
 		static inline constexpr std::string_view sAssetExtension = ".asset";
+		static inline constexpr std::string_view sRenameExtension = ".rename";
 
 	private:
 		// Made a friend, as the AssetManager is the only one
@@ -182,8 +183,6 @@ namespace CE
 
 		std::forward_list<Internal::AssetInternal> mAssets{};
 		std::unordered_map<Name::HashType, std::reference_wrapper<Internal::AssetInternal>> mLookUp{};
-
-		void OpenDirectory(const std::filesystem::path& directory);
 
 		Internal::AssetInternal* TryGetAssetInternal(Name key, TypeId typeId);
 		Internal::AssetInternal* TryGetLoadedAssetInternal(Name key, TypeId typeId);

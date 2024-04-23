@@ -14,8 +14,90 @@ void CE::AssetManager::PostConstruct()
 {
 	mLookUp.reserve(1024);
 
-	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""));
-	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""));
+	std::vector<std::filesystem::path> assetFiles{};
+	std::vector<std::filesystem::path> renameFiles{};
+
+	assetFiles.reserve(2048);
+	renameFiles.reserve(256);
+
+	auto openDirectory = [&](const std::filesystem::path& directory)
+		{
+			if (!std::filesystem::is_directory(directory))
+			{
+				LOG(LogAssets, Warning, "{} is not a directory", directory.string());
+				return;
+			}
+
+			[[maybe_unused]] uint32 numOfAssetsFound{};
+
+			for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(directory))
+			{
+				if (!std::filesystem::is_regular_file(dirEntry))
+				{
+					continue;
+				}
+
+				const std::filesystem::path& path = dirEntry.path();
+				std::filesystem::path extension = path.extension();
+
+				if (extension == sAssetExtension)
+				{
+					assetFiles.emplace_back(path);
+					++numOfAssetsFound;
+				}
+				else if (extension == sRenameExtension)
+				{
+					renameFiles.emplace_back(path);
+				}
+			}
+
+			LOG(LogAssets, Verbose, "Finished indexing {}, found {} assets", directory.string(), numOfAssetsFound);
+		};
+
+	openDirectory(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""));
+	openDirectory(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""));
+
+	for (const std::filesystem::path& assetPath : assetFiles)
+	{
+		OpenAsset(assetPath);
+	}
+
+	for (const std::filesystem::path& renamePath : renameFiles)
+	{
+		std::ifstream file{ renamePath };
+
+		if (!file.is_open())
+		{
+			LOG(LogAssets, Warning, "Could not process rename file {}, as the file could not be opened", renamePath.string());
+			continue;
+		}
+
+		const std::string oldName = renamePath.filename().replace_extension().string();
+		std::string newName{};
+		file >> newName;
+		file.close();
+
+		Internal::AssetInternal* const assetWithNewName = TryGetAssetInternal(newName, MakeTypeId<Asset>());
+
+		if (assetWithNewName == nullptr)
+		{
+			LOG(LogAssets, Message, "An asset was once renamed from {} to {}, but {} has now been deleted. The rename file {} will now also be removed.",
+				oldName, newName, newName, renamePath.string());
+
+			std::error_code err{};
+			std::filesystem::remove(renamePath, err);
+
+			if (err)
+			{
+				LOG(LogAssets, Warning, "The no-longer necesary file {} could not be deleted - {}",
+					renamePath.string(),
+					err.message());
+			}
+			continue;
+		}
+
+		mLookUp.emplace(Name::HashString(oldName), *assetWithNewName);
+	}
 }
 
 CE::AssetManager::~AssetManager()
@@ -27,34 +109,6 @@ CE::AssetManager::~AssetManager()
 			assetInternal.UnLoad();
 		}
 	}
-}
-
-void CE::AssetManager::OpenDirectory(const std::filesystem::path& directory)
-{
-	if (!std::filesystem::is_directory(directory))
-	{
-		LOG(LogAssets, Warning, "{} is not a directory", directory.string());
-		return;
-	}
-
-	[[maybe_unused]] uint32 numOfAssetsFound{};
-
-	for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(directory))
-	{
-		if (!std::filesystem::is_regular_file(dirEntry))
-		{
-			continue;
-		}
-
-		const std::filesystem::path& path = dirEntry.path();
-
-		if (path.extension() == sAssetExtension)
-		{
-			numOfAssetsFound += OpenAsset(path);
-		}
-	}
-
-	LOG(LogAssets, Verbose, "Finished indexing {}, found {} assets", directory.string(), numOfAssetsFound);
 }
 
 CE::Internal::AssetInternal* CE::AssetManager::TryGetAssetInternal(const Name key, const TypeId typeId)
@@ -183,12 +237,24 @@ void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view new
 					file.write(fileContents.c_str(), fileContents.size());
 				}
 
+				{
+					std::filesystem::path renamePath = oldPath;
+					renamePath.replace_extension(sRenameExtension);
+					std::ofstream file{ renamePath };
+
+					if (!file.is_open())
+					{
+						LOG(LogAssets, Error, "Failed to preserve referenced to asset {}, as we could not open newly created file {} for writing", oldName, renamePath.string());
+						return;
+					}
+
+					file << newName;
+				}
+
 				assetInternal->mFileOfOrigin = newPath;
 			}
 
 			assetInternal->mMetaData = newMetaData;
-
-			mLookUp.erase(Name::HashString(oldName));
 			auto emplaceResult = mLookUp.emplace(Name::HashString(newName), *assetInternal);
 
 			if (!emplaceResult.second)

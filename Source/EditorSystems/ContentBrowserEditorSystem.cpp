@@ -456,12 +456,6 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
 
     if (ImGui::BeginMenu("Rename##Menu"))
     {
-        PushError();
-
-        ImGui::TextUnformatted("This will break all existing references to the asset!");
-
-        PopError();
-
         const bool anyErrors = DisplayNameUI(sPopUpNewAssetName);
 
         ImGui::BeginDisabled(anyErrors);
