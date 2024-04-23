@@ -8,45 +8,24 @@ namespace CE
 	{
 	public:
 		// BinaryDest should be atleast hex.size/2.
-		static void HexToBinary(const std::string_view hex, Span<char> binaryDest);
+		static void HexToBinary(std::string_view hex, Span<char> binaryDest);
 
-		static std::string HexToBinary(const std::string_view hex);
+		static std::string HexToBinary(std::string_view hex);
 
 		// Make sure hexDest.size is atleast binary.size * 2
-		static void BinaryToHex(const std::string_view binary, Span<char> hexDest);
+		static void BinaryToHex(std::string_view binary, Span<char> hexDest);
 
-		static std::string BinaryToHex(const std::string_view binary);
+		static std::string BinaryToHex(std::string_view binary);
 
-		static std::vector<std::string> SplitString(const std::string& stringToSplit, const std::string& splitOn);
+		static std::vector<std::string_view> SplitString(std::string_view stringToSplit, std::string_view splitOn);
 
 		static std::string StreamToString(std::istream& stream);
 
-		/// Replace all occurrences of the search string with the replacement string.
-		///
-		/// @param subject The string being searched and replaced on, otherwise known as the haystack.
-		/// @param search The value being searched for, otherwise known as the needle.
-		/// @param replace The replacement value that replaces found search values.
-		/// @return a new string with all occurrences replaced.
-		///
-		static std::string StringReplace(const std::string& subject, const std::string& search, const std::string& replace);
+		static [[nodiscard]] std::string StringReplace(std::string_view subject, std::string_view search, std::string_view replace);
 
-		/// Determine whether or not a string ends with the given suffix. Does
-		/// not create an internal copy.
-		///
-		/// @param subject The string being searched in.
-		/// @param prefix The string to search for.
-		/// @return a boolean indicating if the suffix was found.
-		///
-		static bool StringEndsWith(const std::string& subject, const std::string& suffix);
+		static bool StringEndsWith(std::string_view subject, std::string_view suffix);
 
-		/// Determine whether or not a string starts with the given prefix. Does
-		/// not create an internal copy.
-		///
-		/// @param subject The string being searched in.
-		/// @param prefix The string to search for.
-		/// @return a boolean indicating if the prefix was found.
-		///
-		static bool StringStartsWith(const std::string& subject, const std::string& prefix);
+		static bool StringStartsWith(std::string_view subject, std::string_view prefix);
 
 		static bool AreStreamsEqual(std::istream& streamA, std::istream& streamB);
 

@@ -62,19 +62,26 @@ std::string CE::StringFunctions::BinaryToHex(const std::string_view binary)
 	return hex;
 }
 
-std::vector<std::string> CE::StringFunctions::SplitString(const std::string& stringToSplit, const std::string& splitOn)
+std::vector<std::string_view> CE::StringFunctions::SplitString(std::string_view stringToSplit, std::string_view splitOn)
 {
-	std::string copy = stringToSplit;
-	size_t pos = 0;
-	std::vector<std::string> returnValue{};
+	size_t lastPos{};
+	const size_t length = stringToSplit.length();
 
-	while ((pos = copy.find(splitOn)) != std::string::npos)
+	std::vector<std::string_view> tokens{};
+
+	while (lastPos < length + 1)
 	{
-		returnValue.emplace_back(copy.substr(0, pos));
-		copy.erase(0, pos + splitOn.length());
+		size_t pos = stringToSplit.find_first_of(splitOn, lastPos);
+		if (pos == std::string::npos)
+		{
+			pos = length;
+		}
+
+		tokens.emplace_back(stringToSplit.data() + lastPos, pos - lastPos);
+		lastPos = pos + 1;
 	}
-	returnValue.push_back(std::move(copy));
-	return returnValue;
+
+	return tokens;
 }
 
 std::string CE::StringFunctions::StreamToString(std::istream& stream)
@@ -90,8 +97,8 @@ std::string CE::StringFunctions::StreamToString(std::istream& stream)
 	return ret;
 }
 
-std::string CE::StringFunctions::StringReplace(const std::string& subject, const std::string& search,
-	const std::string& replace)
+std::string CE::StringFunctions::StringReplace(std::string_view subject, std::string_view search,
+	std::string_view replace)
 {
 	std::string result(subject);
 	size_t pos = 0;
@@ -105,7 +112,7 @@ std::string CE::StringFunctions::StringReplace(const std::string& subject, const
 	return result;
 }
 
-bool CE::StringFunctions::StringEndsWith(const std::string& subject, const std::string& suffix)
+bool CE::StringFunctions::StringEndsWith(std::string_view subject, std::string_view suffix)
 {
 	// Early out test:
 	if (suffix.length() > subject.length()) return false;
@@ -114,7 +121,7 @@ bool CE::StringFunctions::StringEndsWith(const std::string& subject, const std::
 	return subject.compare(subject.length() - suffix.length(), suffix.length(), suffix) == 0;
 }
 
-bool CE::StringFunctions::StringStartsWith(const std::string& subject, const std::string& prefix)
+bool CE::StringFunctions::StringStartsWith(std::string_view subject, std::string_view prefix)
 {
 	// Early out, prefix is longer than the subject:
 	if (prefix.length() > subject.length()) return false;
