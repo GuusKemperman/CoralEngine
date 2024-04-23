@@ -51,8 +51,16 @@ bool CE::NodeInvolvingField::DeserializeVirtual(const BinaryGSONObject& from)
 void CE::NodeInvolvingField::PostDeclarationRefresh(ScriptFunc& scriptFunc)
 {
 	const MetaType* const metaType = MetaManager::Get().TryGetType(Name{ mTypeName });
-	mCachedField = metaType == nullptr ? nullptr : metaType->TryGetField(Name{ mFieldName });
-	FunctionLikeNode::PostDeclarationRefresh(scriptFunc);
+
+	if (metaType == nullptr)
+	{
+		FunctionLikeNode::PostDeclarationRefresh(scriptFunc);
+		return;
+	}
+
+	// In case our type got renamed
+	mTypeName = metaType->GetName();
+	mCachedField = metaType->TryGetField(Name{ mFieldName });
 }
 
 CE::SetterScriptNode::SetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field):

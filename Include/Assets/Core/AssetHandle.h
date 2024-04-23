@@ -33,6 +33,11 @@ namespace CE
 
 		const std::optional<std::filesystem::path>& GetFileOfOrigin() const;
 
+		/**
+		 * \brief If this asset was renamed, this will return the names that this asset previously went by.
+		 */
+		std::vector<std::string> GetOldNames() const;
+
 		uint32 GetNumberOfStrongReferences() const;
 		uint32 GetNumberOfSoftReferences() const;
 

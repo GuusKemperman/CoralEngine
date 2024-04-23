@@ -5,6 +5,7 @@
 #include "Scripting/ScriptIds.h"
 #include "Scripting/ScriptFunc.h"
 #include "GSON/GSONBinary.h"
+#include "Meta/MetaManager.h"
 #include "Scripting/Nodes/ControlScriptNodes.h"
 #include "Scripting/Nodes/CommentScriptNode.h"
 #include "Scripting/Nodes/MetaFuncScriptNode.h"
@@ -82,24 +83,22 @@ void CE::ScriptNode::RefreshByComparingPins(ScriptFunc& scriptFunc,
 		outOfDataResult.mAreOutputsOutOfDate = false;
 	}
 
-	// Update the names of the pins
+	auto updateNames = [](Span<ScriptPin> pins, const std::vector<ScriptVariableTypeData>& expectedPins)
+		{
+			for (uint32 i = 0; i < pins.size() && i < expectedPins.size(); i++)
+			{
+				pins[i].SetName(expectedPins[i].GetName());
+			}
+		};
+
 	if (!outOfDataResult.mAreInputsOutOfDate)
 	{
-		auto inputs = GetInputs(scriptFunc);
-		for (uint32 i = 0; i < inputs.size() && i < expectedInputs.size(); i++)
-		{
-			inputs[i].SetName(expectedInputs[i].GetName());
-		}
+		updateNames(GetInputs(scriptFunc), expectedInputs);
 	}
 
-	// Update the names of the pins
-	if (!outOfDataResult.mAreInputsOutOfDate)
+	if (!outOfDataResult.mAreOutputsOutOfDate)
 	{
-		auto outputs = GetOutputs(scriptFunc);
-		for (uint32 i = 0; i < outputs.size() && i < expectedOutputs.size(); i++)
-		{
-			outputs[i].SetName(expectedOutputs[i].GetName());
-		}
+		updateNames(GetOutputs(scriptFunc), expectedOutputs);
 	}
 }
 #endif // REMOVE_FROM_SCRIPTS_ENABLED
@@ -273,7 +272,8 @@ CE::ScriptNode::CompareOutOfDataResult CE::ScriptNode::CheckIfOutOfDateByCompari
 {
 	static constexpr auto compareToPins = [](const ScriptVariableTypeData& currentParams, const ScriptPin& oldPins) -> bool
 		{
-			return oldPins.GetTypeName() == currentParams.GetTypeName() && oldPins.GetTypeForm() == currentParams.GetTypeForm();
+			return oldPins.GetTypeName() == currentParams.GetTypeName()
+					&& oldPins.GetTypeForm() == currentParams.GetTypeForm();
 		};
 
 	CompareOutOfDataResult result{};

@@ -32,10 +32,10 @@ namespace CE::Props
 
 	/*
 	Use on:
-		Types, Functions, Fields
+		Types
 
 	Description:
-		Can be to safely rename types, functions and fields.
+		Can be to safely rename types
 
 	Example:
 		// Here this tag is used to fix a typo.

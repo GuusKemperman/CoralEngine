@@ -99,7 +99,7 @@ CE::MetaType* CE::MetaManager::TryGetType(const TypeId typeId)
 
 CE::MetaManager::EachTypeT CE::MetaManager::EachType()
 {
-	return { mTypeByName.begin(), mTypeByName.end() };
+	return { mTypeByTypeId.begin(), mTypeByTypeId.end() };
 }
 
 static bool EraseFromBoth(std::unordered_map<CE::TypeId, CE::MetaType>::iterator it)

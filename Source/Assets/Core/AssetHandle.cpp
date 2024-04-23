@@ -68,6 +68,21 @@ const std::optional<std::filesystem::path>& CE::AssetHandleBase::GetFileOfOrigin
 	return mAssetInternal->mFileOfOrigin;
 }
 
+std::vector<std::string> CE::AssetHandleBase::GetOldNames() const
+{
+	AssureNotNull();
+
+	std::vector<std::string> ret{};
+	ret.reserve(mAssetInternal->mOldNames.size());
+
+	for (const std::filesystem::path& pathToRenameFile : mAssetInternal->mOldNames)
+	{
+		ret.emplace_back(pathToRenameFile.filename().replace_extension().string());
+	}
+
+	return ret;
+}
+
 uint32 CE::AssetHandleBase::GetNumberOfStrongReferences() const
 {
 	if (*this == nullptr)

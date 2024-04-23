@@ -15,7 +15,7 @@ namespace CE
 		friend EngineSubsystem;
 
 		// We only expose the value to the user; not the TypeId key.
-		using EachTypeT = IterableRange<EncapsulingForwardIterator<AlwaysSecondEncapsulator, std::unordered_map<Name::HashType, std::reference_wrapper<MetaType>>::iterator>>;
+		using EachTypeT = IterableRange<EncapsulingForwardIterator<AlwaysSecondEncapsulator, std::unordered_map<TypeId, MetaType>::iterator>>;
 
 		void PostConstruct() override;
 
