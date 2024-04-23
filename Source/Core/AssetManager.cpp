@@ -3,7 +3,6 @@
 
 #include "Core/FileIO.h"
 #include "Assets/Core/AssetSaveInfo.h"
-#include "Meta/MetaManager.h"
 #include "Meta/MetaTools.h"
 #include "Meta/MetaType.h"
 #include "Core/Editor.h"
@@ -97,6 +96,7 @@ void CE::AssetManager::PostConstruct()
 		}
 
 		mLookUp.emplace(Name::HashString(oldName), *assetWithNewName);
+		assetWithNewName->mOldNames.emplace_back(renamePath);
 	}
 }
 
@@ -249,6 +249,8 @@ void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view new
 					}
 
 					file << newName;
+
+					assetInternal->mOldNames.emplace_back(renamePath);
 				}
 
 				assetInternal->mFileOfOrigin = newPath;
@@ -307,8 +309,32 @@ void CE::AssetManager::DeleteAsset(WeakAssetHandle<>&& asset)
 				}
 			}
 
-			mLookUp.erase(Name::HashString(assetName));
-			mAssets.remove_if([&assetName](const Internal::AssetInternal& asset)
+			for (const std::filesystem::path& renameFile : asset->mOldNames)
+			{
+				std::error_code err{};
+				std::filesystem::remove(renameFile, err);
+
+				if (err)
+				{
+					LOG(LogAssets, Warning, "Asset {} is being deleted, but this asset was once renamed and the {} file could not be removed.",
+						assetName,
+						renameFile.string());
+				}
+			}
+
+			for (auto it = mLookUp.begin(); it != mLookUp.end();)
+			{
+				if (it->second.get().mMetaData.GetName() == assetName)
+				{
+					it = mLookUp.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
+
+			mAssets.remove_if([assetName](const Internal::AssetInternal& asset)
 				{
 					return asset.mMetaData.GetName() == assetName;
 				});
