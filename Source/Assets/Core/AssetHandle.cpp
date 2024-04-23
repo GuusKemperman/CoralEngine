@@ -114,7 +114,7 @@ void cereal::save(BinaryOutputArchive& archive, const CE::AssetHandleBase& asset
 
 void cereal::load(BinaryInputArchive& archive, CE::AssetHandle<>& asset)
 {
-	CE::WeakAssetHandle weakHandle{ asset };
+	CE::WeakAssetHandle<> weakHandle{ asset };
 	load(archive, weakHandle);
 	asset = CE::AssetHandle<>{ weakHandle };
 }
@@ -141,7 +141,7 @@ void cereal::load(BinaryInputArchive& archive, CE::WeakAssetHandle<>& asset)
 #ifdef EDITOR
 void CE::Internal::DisplayHandleWidget(AssetHandle<>& asset, const std::string& name, TypeId type)
 {
-	WeakAssetHandle weakHandle{ asset };
+	WeakAssetHandle<> weakHandle{ asset };
 	DisplayHandleWidget(weakHandle, name, type);
 	asset = CE::AssetHandle<>{ weakHandle };
 }
