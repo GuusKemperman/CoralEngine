@@ -12,7 +12,7 @@
 
 void CE::AssetManager::PostConstruct()
 {
-	mAssets.reserve(1024);
+	mLookUp.reserve(1024);
 
 	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""));
 	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""));
@@ -20,7 +20,7 @@ void CE::AssetManager::PostConstruct()
 
 CE::AssetManager::~AssetManager()
 {
-	for (auto& [nameHash, assetInternal] : mAssets)
+	for (Internal::AssetInternal& assetInternal : mAssets)
 	{
 		if (assetInternal.mAsset != nullptr)
 		{
@@ -59,14 +59,14 @@ void CE::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 
 CE::Internal::AssetInternal* CE::AssetManager::TryGetAssetInternal(const Name key, const TypeId typeId)
 {
-	const auto it = mAssets.find(key.GetHash());
+	const auto it = mLookUp.find(key.GetHash());
 
-	if (it == mAssets.end()
-		|| !it->second.mMetaData.GetClass().IsDerivedFrom(typeId))
+	if (it == mLookUp.end()
+		|| !it->second.get().mMetaData.GetClass().IsDerivedFrom(typeId))
 	{
 		return nullptr;
 	}
-	return &it->second;
+	return &it->second.get();
 }
 
 CE::Internal::AssetInternal* CE::AssetManager::TryGetLoadedAssetInternal(const Name key, const TypeId typeId)
@@ -93,7 +93,7 @@ void CE::AssetManager::UnloadAllUnusedAssets()
 	do
 	{
 		wereAnyUnloaded = false;
-		for (auto& [name, asset] : mAssets)
+		for (Internal::AssetInternal& asset : mAssets)
 		{
 			if (asset.mAsset == nullptr // Asset is already unloaded
 				|| asset.mRefCounters[static_cast<int>(Internal::AssetInternal::RefCountType::Strong)] > 0 // Someone is holding a reference
@@ -188,11 +188,10 @@ void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view new
 
 			assetInternal->mMetaData = newMetaData;
 
-			auto extractedAsset = mAssets.extract(Name::HashString(oldName));
-			extractedAsset.key() = Name::HashString(newName);
-			auto insertResult = mAssets.insert(std::move(extractedAsset));
+			mLookUp.erase(Name::HashString(oldName));
+			auto emplaceResult = mLookUp.emplace(Name::HashString(newName), *assetInternal);
 
-			if (!insertResult.inserted)
+			if (!emplaceResult.second)
 			{
 				LOG(LogAssets, Error, "Cannot rename asset {}, inesrtion somehow failed. Assets is deleted from memory, but still exists on file", oldName);
 			}
@@ -210,38 +209,62 @@ void CE::AssetManager::DeleteAsset(WeakAssetHandle<>&& asset)
 {
 	auto deleteLambda = [this, assetName = asset.GetMetaData().GetName()]()
 		{
-			LOG(LogAssets, Verbose, "Asset {} will be erased. Any WeakAssets referencing it will now be dangling", assetName);
-
-			WeakAssetHandle asset = TryGetWeakAsset(assetName);
+			const Internal::AssetInternal* const asset = TryGetAssetInternal(assetName, MakeTypeId<Asset>());
 
 			if (asset == nullptr)
 			{
+				LOG(LogAssets, Warning, "Could not delete asset {}, it seems to not be present anymore. Maybe asset was already deleted?",
+					assetName);
 				return;
 			}
 
-			if (asset.GetFileOfOrigin().has_value())
+			const uint32 numOfReferences = asset->mRefCounters[0] + asset->mRefCounters[1];
+			if (numOfReferences != 0)
+			{
+				LOG(LogAssets, Error, "Could not safely delete asset {}, as it was still referenced {} time(s).", 
+					assetName,
+					numOfReferences);
+				return;
+			}
+
+			if (asset->mFileOfOrigin.has_value())
 			{
 				std::error_code err{};
-				std::filesystem::remove(*asset.GetFileOfOrigin(), err);
+				std::filesystem::remove(*asset->mFileOfOrigin, err);
 
 				if (err)
 				{
 					LOG(LogAssets, Error, "Asset {} was removed from the asset manager, but deleting {} failed ({}). Asset will be present again on next startup",
 						assetName,
-						asset.GetFileOfOrigin()->string(),
+						asset->mFileOfOrigin->string(),
 						err.message());
 				}
 			}
 
-			mAssets.erase(Name::HashString(asset.GetMetaData().GetName()));
+			mLookUp.erase(Name::HashString(assetName));
+			mAssets.remove_if([&assetName](const Internal::AssetInternal& asset)
+				{
+					return asset.mMetaData.GetName() == assetName;
+				});
 		};
 
 #ifdef EDITOR
-	Editor::Get().Refresh({ Editor::RefreshRequest::Volatile, deleteLambda });
+	if (asset.GetNumberOfStrongReferences() != 0
+		|| asset.GetNumberOfSoftReferences() != 1)
+	{
+		Editor::Get().Refresh({ Editor::RefreshRequest::Volatile, deleteLambda });
+		return;
+	}
 #else
 	LOG(LogAssets, Warning, "Deleting asset {} without the editor. Existing weak assets to this asset will become dangling.", asset.GetMetaData().GetName());
-	deleteLambda();
 #endif
+
+	{
+		// Remove the last reference
+		[[maybe_unused]] WeakAssetHandle<> tmp = std::move(asset);
+	}
+
+	deleteLambda();
 }
 
 bool CE::AssetManager::MoveAsset(WeakAssetHandle<> asset, const std::filesystem::path& toLocation)
@@ -460,7 +483,7 @@ CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::filesyste
 		return nullptr;
 	}
 
-	const std::optional<AssetFileMetaData> metaData = AssetFileMetaData::ReadMetaData(istream);
+	std::optional<AssetFileMetaData> metaData = AssetFileMetaData::ReadMetaData(istream);
 
 	if (!metaData.has_value())
 	{
@@ -479,28 +502,28 @@ CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::optional<
 		LOG(LogAssets, Warning, "Expected {}, but extension was {}.", sAssetExtension, path->extension().string());
 	}
 
-	const auto emplaceResult = mAssets.try_emplace(Name::HashString(metaData.mAssetName),
-		std::move(metaData),
-		path);
+	Internal::AssetInternal& assetInternal = mAssets.emplace_front(std::move(metaData), path);
+	
+	const auto emplaceResult = mLookUp.emplace(Name::HashString(assetInternal.mMetaData.GetName()), assetInternal);
 
 	if (!emplaceResult.second)
 	{
-		LOG(LogAssets, Warning, "Failed to construct asset {}: there is already an asset with the name {}, from {}. Returning existing asset.",
-			path.value_or("Generated at runtime").string(), emplaceResult.first->second.mMetaData.GetName(), emplaceResult.first->second.mFileOfOrigin.value_or("Generated at runtime").string());
+		LOG(LogAssets, Error, "Failed to construct asset {}: there is already an asset with the name {}, from {}",
+			path.value_or("Generated at runtime").string(), assetInternal.mMetaData.GetName(), assetInternal.mFileOfOrigin.value_or("Generated at runtime").string());
+		mAssets.pop_front();
+		return nullptr;
 	}
 
-	Internal::AssetInternal& constructedAssetInternal = emplaceResult.first->second;
-
 #ifdef LOGGING_ENABLED
-	const uint32 currentVersion = GetClassVersion(constructedAssetInternal.mMetaData.GetClass());
-	if (constructedAssetInternal.mMetaData.mAssetVersion != currentVersion)
+	const uint32 currentVersion = GetClassVersion(assetInternal.mMetaData.GetClass());
+	if (assetInternal.mMetaData.mAssetVersion != currentVersion)
 	{
 		LOG(LogAssets, Verbose, "Asset {} is out of date: version is {} (current is {}). If the loader still supports this version, you have nothing to worry about.",
-			constructedAssetInternal.mMetaData.mAssetName,
-			constructedAssetInternal.mMetaData.mAssetVersion,
+			assetInternal.mMetaData.mAssetName,
+			assetInternal.mMetaData.mAssetVersion,
 			currentVersion);
 	}
 #endif // LOGGING_ENABLED
 
-	return &constructedAssetInternal;
+	return &assetInternal;
 }

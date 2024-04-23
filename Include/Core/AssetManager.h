@@ -88,7 +88,7 @@ namespace CE
 		{
 		public:
 			using value_type = WeakAssetHandle<AssetType>;
-			using ContainerType = std::unordered_map<Name::HashType, Internal::AssetInternal>;
+			using ContainerType = std::forward_list<Internal::AssetInternal>;
 			using UnderlyingIt = ContainerType::iterator;
 
 			EachAssetIt(UnderlyingIt&& it, ContainerType& container);
@@ -180,7 +180,8 @@ namespace CE
 		template<typename T>
 		friend class EachAssetT;
 
-		std::unordered_map<Name::HashType, Internal::AssetInternal> mAssets{};
+		std::forward_list<Internal::AssetInternal> mAssets{};
+		std::unordered_map<Name::HashType, std::reference_wrapper<Internal::AssetInternal>> mLookUp{};
 
 		void OpenDirectory(const std::filesystem::path& directory);
 
@@ -223,7 +224,7 @@ namespace CE
 		// Not really a traditional iterator i suppose,
 		// but good enough for our purposes.
 		if (mIt == mContainer.get().begin()
-			&& !mIt->second.mMetaData.GetClass().IsDerivedFrom<AssetType>())
+			&& !mIt->mMetaData.GetClass().IsDerivedFrom<AssetType>())
 		{
 			IncrementUntilTypeMatches();
 		}
@@ -232,7 +233,7 @@ namespace CE
 	template <typename AssetType>
 	decltype(auto) AssetManager::EachAssetIt<AssetType>::operator*() const
 	{
-		return WeakAssetHandle<AssetType>{ &mIt->second };
+		return WeakAssetHandle<AssetType>{ &*mIt };
 	}
 
 	template <typename AssetType>
@@ -267,7 +268,7 @@ namespace CE
 			{
 				++mIt;
 			} while (mIt != mContainer.get().end()
-				&& !mIt->second.mMetaData.GetClass().IsDerivedFrom<AssetType>());
+				&& !mIt->mMetaData.GetClass().IsDerivedFrom<AssetType>());
 		}
 	}
 
