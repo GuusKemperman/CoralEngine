@@ -18,6 +18,17 @@ void CE::AssetManager::PostConstruct()
 	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""));
 }
 
+CE::AssetManager::~AssetManager()
+{
+	for (auto& [nameHash, assetInternal] : mAssets)
+	{
+		if (assetInternal.mAsset != nullptr)
+		{
+			assetInternal.UnLoad();
+		}
+	}
+}
+
 void CE::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 {
 	if (!std::filesystem::is_directory(directory))

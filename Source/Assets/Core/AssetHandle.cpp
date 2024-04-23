@@ -2,6 +2,7 @@
 #include "Assets/Core/AssetHandle.h"
 
 #include "Core/AssetManager.h"
+#include "Core/Editor.h"
 #include "Meta/Fwd/MetaTypeFwd.h"
 #include "Utilities/Search.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
@@ -147,8 +148,21 @@ void CE::Internal::DisplayHandleWidget(AssetHandle<>& asset, const std::string& 
 
 void CE::Internal::DisplayHandleWidget(WeakAssetHandle<>& asset, const std::string& name, TypeId type)
 {
-	if (!Search::BeginCombo(name, asset == nullptr ? "None" : asset.GetMetaData().GetName()))
+	const bool isOpen = Search::BeginCombo(name, asset == nullptr ? "None" : asset.GetMetaData().GetName());
+
+	if (!isOpen)
 	{
+		if (asset != nullptr
+			&& Editor::Get().IsThereAnEditorTypeForAssetType(type))
+		{
+			ImGui::SameLine();
+			if (ImGui::Button(ICON_FA_PENCIL))
+			{
+				Editor::Get().TryOpenAssetForEdit(asset);
+			}
+			ImGui::SetItemTooltip("Open this asset for edit");
+		}
+
 		return;
 	}
 

@@ -407,12 +407,6 @@ bool CE::Editor::IsThereAnEditorTypeForAssetType(TypeId assetTypeId) const
 	return GetAssetKeyAssetEditorPairs().find(assetTypeId) != GetAssetKeyAssetEditorPairs().end();
 }
 
-template<typename T>
-static CONSTEVAL CE::TypeForm Test(T&&)
-{
-	return CE::MakeTypeForm<T>();
-}
-
 CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadInfo)
 {
 	const MetaType& assetType = loadInfo.GetMetaData().GetClass();
@@ -545,15 +539,8 @@ CE::EditorSystem* CE::Editor::TryAddSystemInternal(const TypeId typeId, SystemPt
 
 	if (TryGetSystemInternal(systemName) != nullptr)
 	{
-		if (std::find(mSystemsToDestroy.begin(), mSystemsToDestroy.end(), systemName) != mSystemsToDestroy.end())
-		{
-			LOG(LogEditor, Warning, "Failed to add system {}: There is already a system with this name. A request has been made to destroy this system already, but the existing system will be only destroyed only at the end of this frame.", systemName);
-		}
-		else
-		{
-			LOG(LogEditor, Warning, "Failed to add system {}: as there is already a system with this name. Destroy the existing system before adding this one.", systemName);
-		}
-
+		ImGui::SetWindowFocus(Internal::GetSystemNameBasedOnAssetName(system->GetName()).c_str());
+		LOG(LogEditor, Verbose, "Failed to add system {}, there is already a system with this name. Brought focus to the existing system instead.", systemName);
 		return nullptr;
 	}
 

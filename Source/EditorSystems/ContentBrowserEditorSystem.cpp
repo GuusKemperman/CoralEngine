@@ -15,6 +15,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
+#include "Meta/MetaTypeFilter.h"
 #include "Utilities/StringFunctions.h"
 
 namespace
@@ -365,26 +366,16 @@ void CE::ContentBrowserEditorSystem::DisplayAssetCreatorPopUp()
         return;
     }
 
-	if (ImGui::BeginCombo("Type", sPopUpAssetClass == nullptr ? "None" : sPopUpAssetClass->GetName().c_str()))
-	{
-	    std::function<void(const MetaType&)> displayChildren =
-	        [&](const MetaType& type)
-	        {
-	            for (const MetaType& child : type.GetDirectDerivedClasses())
-	            {
-	                if (ImGui::Button(child.GetName().c_str()))
-	                {
-	                    sPopUpAssetClass = &child;
-	                }
-	                displayChildren(child);
-	            }
-	        };
-	    const MetaType* const assetType = MetaManager::Get().TryGetType<Asset>();
-	    ASSERT(assetType != nullptr);
-	    displayChildren(*assetType);
-
-	    ImGui::EndCombo();
-	}
+    struct OnlyAssetsThatCanBeEdited
+    {
+        bool operator()(const MetaType& type) const
+    	{
+            return Editor::Get().IsThereAnEditorTypeForAssetType(type.GetTypeId());
+        }
+    };
+    MetaTypeFilter<OnlyAssetsThatCanBeEdited> filter{ sPopUpAssetClass };
+    ShowInspectUI("Type", filter);
+    sPopUpAssetClass = filter.Get();
 
 	bool anyErrors = false;
     anyErrors |= DisplayNameUI(sPopUpNewAssetName);
