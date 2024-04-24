@@ -21,7 +21,7 @@ namespace CE
 
 		static std::string StreamToString(std::istream& stream);
 
-		static [[nodiscard]] std::string StringReplace(std::string_view subject, std::string_view search, std::string_view replace);
+		[[nodiscard]] static std::string StringReplace(std::string_view subject, std::string_view search, std::string_view replace);
 
 		static bool StringEndsWith(std::string_view subject, std::string_view suffix);
 

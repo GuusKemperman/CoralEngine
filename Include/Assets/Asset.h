@@ -32,6 +32,10 @@ namespace CE
 		Asset& operator=(const Asset&) = delete;
 
 		const std::string& GetName() const { return mName; }
+
+		// Note that this does not rename the asset in the asset manager, nor the asset on file.
+		void SetName(std::string_view name) { mName = std::string{ name }; }
+
 		TypeId GetTypeId() const { return mTypeId; }
 
 		/*

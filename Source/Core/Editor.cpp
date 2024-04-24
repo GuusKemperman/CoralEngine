@@ -224,8 +224,12 @@ void CE::Editor::FullFillRefreshRequests()
 
 	struct SystemToRefresh
 	{
-		SystemToRefresh(const MetaType& type) : mType(type) {}
+		SystemToRefresh(const MetaType& type, std::string nameOfSystem) :
+			mType(type),
+			mNameOfSystem(std::move(nameOfSystem))
+		{}
 		std::reference_wrapper<const MetaType> mType;
+		std::string mNameOfSystem{};
 
 		// Empty if this was not an asset editor,
 		std::optional<AssetEditorSystemInterface::MementoStack> mAssetEditorRestoreData{};
@@ -261,7 +265,7 @@ system->GetName());
 			continue;
 		}
 
-		SystemToRefresh& restoreInfo = restorationData.emplace_back(*systemType);
+		SystemToRefresh& restoreInfo = restorationData.emplace_back(*systemType, nameOfSystem);
 
 		std::ostringstream savedStateStream{};
 		system->SaveState(savedStateStream);
@@ -321,15 +325,22 @@ system->GetName());
 			}
 			system = TryOpenAssetForEdit(std::move(*loadInfo));
 
-			AssetEditorSystemInterface* systemAsAssetEditor = dynamic_cast<AssetEditorSystemInterface*>(system);
+			// Check if our asset was renamed.
+			// The assets in our do-undo stack will all have the wrong name.
+			// So if the names don't match discard the do-undo stack
+			if (system != nullptr
+				&& system->GetName() == restoreData.mNameOfSystem)
+			{
+				AssetEditorSystemInterface* systemAsAssetEditor = dynamic_cast<AssetEditorSystemInterface*>(system);
 
-			if (systemAsAssetEditor != nullptr)
-			{
-				systemAsAssetEditor->SetMementoStack(std::move(stack));
-			}
-			else
-			{
-				LOG(LogEditor, Error, "Failed to restore do-undo stack, system was not an asset editor");
+				if (systemAsAssetEditor != nullptr)
+				{
+					systemAsAssetEditor->SetMementoStack(std::move(stack));
+				}
+				else
+				{
+					LOG(LogEditor, Error, "Failed to restore do-undo stack, system was not an asset editor");
+				}
 			}
 		}
 		else
@@ -418,6 +429,21 @@ CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadInfo)
 			assetType.GetName(),
 			asset.Error());
 		return nullptr;
+	}
+
+	AssetHandle originalAsset = AssetManager::Get().TryGetAsset(loadInfo.GetMetaData().GetName());
+
+	if (originalAsset == nullptr)
+	{
+		LOG(LogEditor, Message, "Cannot open asset editor, {} was deleted",
+			loadInfo.GetMetaData().GetName());
+		return nullptr;
+	}
+
+	// The name of our asset editor should match that of the renamed asset
+	if (originalAsset.GetMetaData().GetName() != loadInfo.GetMetaData().GetName())
+	{
+		asset.GetReturnValue().As<Asset>()->SetName(originalAsset.GetMetaData().GetName());
 	}
 
 	const std::unordered_map<TypeId, TypeId>& assetToEditorMap = GetAssetKeyAssetEditorPairs();
