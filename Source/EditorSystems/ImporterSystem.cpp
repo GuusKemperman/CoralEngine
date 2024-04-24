@@ -216,19 +216,38 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::
 		LOG(LogAssets, Error, "No importer that can import {}.", fileToImport.string());
 	}
 
+	ImportRequest request{ fileToImport, std::string{ reasonForImporting } };
+
 	mImportFutures.emplace_back(
 		ImportFuture
 		{
-			fileToImport,
-			std::string{ reasonForImporting },
-			std::async(std::launch::async, [fileToImport, importer, isCancelled = mWasImportingCancelled]() -> Importer::ImportResult
+			request,
+			std::async(std::launch::async, [request, importer, isCancelled = mWasImportingCancelled]() -> std::optional<std::vector<ImportPreview>>
 			{
 				if (*isCancelled)
 				{
 					return std::nullopt;
 				}
 
-				return importer->Import(fileToImport);
+				Importer::ImportResult result = importer->Import(request.mFile);
+
+				if (!result.has_value())
+				{
+					return std::nullopt;
+				}
+
+				std::vector<ImportPreview> previews{};
+
+				for (ImportedAsset& asset : *result)
+				{
+					// Takes into account renamed assets
+					WeakAssetHandle original = AssetManager::Get().TryGetWeakAsset(asset.GetMetaData().GetName());
+					std::string suggestedName = original == nullptr ? asset.GetMetaData().GetName() : original.GetMetaData().GetName();
+
+					previews.emplace_back(ImportPreview{ request, std::move(asset), std::move(suggestedName) });
+				}
+
+				return previews;
 			})
 		});
 }
@@ -512,7 +531,7 @@ void CE::ImporterSystem::RetrieveImportResultsFromFutures()
 			continue;
 		}
 
-		Importer::ImportResult result = it->mImportResult.get();
+		std::optional<std::vector<ImportPreview>> result = it->mImportResult.get();
 
 		if (!result.has_value())
 		{
@@ -520,10 +539,7 @@ void CE::ImporterSystem::RetrieveImportResultsFromFutures()
 		}
 		else
 		{
-			for (ImportedAsset& imported : *result)
-			{
-				mImportPreview.emplace_back(ImportPreview{ it->mImportRequest, std::move(imported) });
-			}
+			mImportPreview.insert(mImportPreview.end(), std::make_move_iterator(result->begin()), std::make_move_iterator(result->end()));
 		}
 
 		it = mImportFutures.erase(it);
@@ -584,7 +600,7 @@ void CE::ImporterSystem::Preview()
 
 		for (auto it = first; it != last; ++it)
 		{
-			ImGui::TextWrapped(it->mImportedAsset.GetMetaData().GetName().c_str());
+			ImGui::InputText(it->mImportedAsset.GetMetaData().GetName().c_str(), &it->mDesiredName);
 		}
 	}
 
@@ -797,24 +813,27 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 			continue;
 		}
 
-		if (assetManager.TryGetWeakAsset(imported.mImportedAsset.GetMetaData().GetName()) != nullptr)
+		WeakAssetHandle<> inAssetManager = assetManager.TryGetWeakAsset(imported.mImportedAsset.GetMetaData().GetName());
+
+		if (inAssetManager == nullptr)
 		{
-			continue;
+			inAssetManager = assetManager.OpenAsset(file);
+
+			if (inAssetManager == nullptr)
+			{
+				LOG(LogAssets, Warning, "Failed to open {} from {}, engine might require restart in order for this asset to show up.",
+					imported.mImportedAsset.GetMetaData().GetName(),
+					file.string());
+				continue;
+			}
 		}
 
-		if (assetManager.OpenAsset(file) != nullptr)
-		{
-			LOG(LogAssets, Verbose, "Imported {} from {} to {}",
-				imported.mImportedAsset.GetMetaData().GetName(),
-				imported.mImportRequest.mFile.string(),
-				file.string());
-		}
-		else
-		{
-			LOG(LogAssets, Warning, "Failed to open {} from {}, engine might require restart in order for this asset to show up.",
-				imported.mImportedAsset.GetMetaData().GetName(),
-				file.string());
-		}
+		assetManager.RenameAsset(inAssetManager, imported.mDesiredName);
+
+		LOG(LogAssets, Verbose, "Imported {} from {} to {}",
+			imported.mImportedAsset.GetMetaData().GetName(),
+			imported.mImportRequest.mFile.string(),
+			file.string());
 	}
 };
 

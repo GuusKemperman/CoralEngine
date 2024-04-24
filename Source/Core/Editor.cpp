@@ -292,11 +292,12 @@ system->GetName());
 		AssetManager::Get().UnloadAllUnusedAssets();
 	}
 
-	for (const RefreshRequest& refreshRequest : mRefreshRequests)
+	for (size_t i = 0; i < mRefreshRequests.size(); i++)
 	{
-		if (refreshRequest.mActionWhileUnloaded)
+		RefreshRequest& request = mRefreshRequests[i];
+		if (request.mActionWhileUnloaded)
 		{
-			refreshRequest.mActionWhileUnloaded();
+			request.mActionWhileUnloaded();
 		}
 	}
 
@@ -379,7 +380,7 @@ void CE::Editor::DestroySystem(const std::string_view systemName)
 
 void CE::Editor::Refresh(RefreshRequest&& request)
 {
-	mRefreshRequests.push_front(std::move(request));
+	mRefreshRequests.emplace_back(std::move(request));
 }
 
 void CE::Editor::SaveAll()

@@ -164,6 +164,11 @@ void CE::AssetManager::UnloadAllUnusedAssets()
 
 void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view newName)
 {
+	if (asset.GetMetaData().GetName() == newName)
+	{
+		return;
+	}
+
 	auto renameLambda = [this, oldName = asset.GetMetaData().GetName(), newName = std::string{ newName }]()
 		{
 			WeakAssetHandle asset = TryGetWeakAsset(oldName);
@@ -268,7 +273,7 @@ void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view new
 #ifdef EDITOR
 	Editor::Get().Refresh({ Editor::RefreshRequest::Volatile, renameLambda });
 #else
-	LOG(LogAssets, Warning, "Renaming asset {} without the editor. Existing weak assets to this asset will become dangling.", asset.GetMetaData().GetName());
+	LOG(LogAssets, Warning, "Renaming asset {} without the editor.", asset.GetMetaData().GetName());
 	renameLambda();
 #endif
 }

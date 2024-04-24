@@ -156,23 +156,9 @@ void CE::Search::End()
     // we need to update our last valid result.
     if (!IsResultSafeToUse(lastValidResult, context.mInput))
     {
-        // Our last valid result has been invalidated, we'll just
-		// have to update it on this thread, unfortunately.
-		// In order to spare our poor main thread, we will
-		// clear the user query temporarily, which results in an
-		// early out. We get a valid result we can use now, and
-		// one of our other cores will get to work with bringing
-		// the result up to date.
-		std::string tmpUserQuery{};
-    	std::swap(tmpUserQuery, context.mInput.mUserQuery);
 		lastValidResult.mInput = context.mInput;
-    	std::swap(tmpUserQuery, context.mInput.mUserQuery);
-
-		context.mInput.mUserQuery = std::move(tmpUserQuery);
-
 		BringResultUpToDate(lastValidResult);
     }
-	ASSERT(IsResultSafeToUse(lastValidResult, context.mInput));
 
 	DisplayToUser(context);
 

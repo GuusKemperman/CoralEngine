@@ -180,7 +180,7 @@ namespace CE
 		std::vector<std::pair<TypeId, SystemPtr<EditorSystem>>> mSystems{};
 		std::forward_list<std::string> mSystemsToDestroy{};
 
-		std::forward_list<RefreshRequest> mRefreshRequests{};
+		std::vector<RefreshRequest> mRefreshRequests{};
 	};
 
 	template<typename CastTo>
