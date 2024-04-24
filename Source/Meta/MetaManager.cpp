@@ -77,7 +77,7 @@ CE::MetaType& CE::MetaManager::AddType(MetaType&& type)
 	{
 		for (const std::string_view oldName : StringFunctions::SplitString(*oldNames, ","))
 		{
-			const auto oldNameInsertResult = mTypeByName.emplace(Name::HashString(oldName), returnValue);
+			[[maybe_unused]] const auto oldNameInsertResult = mTypeByName.emplace(Name::HashString(oldName), returnValue);
 			ASSERT(oldNameInsertResult.second);
 		}
 	}
