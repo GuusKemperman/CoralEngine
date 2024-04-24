@@ -1,15 +1,9 @@
 #include "Precomp.h"
 #include "Assets/Asset.h"
 
-#include <cereal/archives/binary.hpp>
-#include <cereal/types/string.hpp>
-
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
-#include "Utilities/Imgui/ImguiDragDrop.h"
-#include "Utilities/Search.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
-#include "Core/AssetManager.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaType.h"
 

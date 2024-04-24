@@ -33,6 +33,11 @@ namespace CE
 
 		const std::optional<std::filesystem::path>& GetFileOfOrigin() const;
 
+		/**
+		 * \brief If this asset was renamed, this will return the names that this asset previously went by.
+		 */
+		std::vector<std::string> GetOldNames() const;
+
 		uint32 GetNumberOfStrongReferences() const;
 		uint32 GetNumberOfSoftReferences() const;
 
@@ -110,6 +115,9 @@ namespace CE
 		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
 		AssetHandle& operator=(const AssetHandle<O>& other);
 
+		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
+		explicit operator WeakAssetHandle<O>() const;
+
 		const T& operator*() const;
 		const T* operator->() const;
 
@@ -128,13 +136,10 @@ namespace CE
 
 	template<typename T>
 	class WeakAssetHandle final :
-		public AssetHandleRefCounter<Internal::AssetInternal::RefCountType::Strong>
+		public AssetHandleRefCounter<Internal::AssetInternal::RefCountType::Weak>
 	{
 	public:
 		using AssetHandleRefCounter::AssetHandleRefCounter;
-
-		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
-		WeakAssetHandle(const AssetHandle<O>& other);
 
 		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
 		WeakAssetHandle(WeakAssetHandle<O>&& other) noexcept;
@@ -192,6 +197,7 @@ namespace CE
 	AssetHandleRefCounter<IndexOfCounter>& AssetHandleRefCounter<IndexOfCounter>::operator=(
 		AssetHandleRefCounter&& other) noexcept
 	{
+		DecreaseRef();
 		return static_cast<AssetHandleRefCounter&>(AssetHandleBase::operator=(std::move(other)));
 	}
 
@@ -262,6 +268,13 @@ namespace CE
 	AssetHandle<T>& AssetHandle<T>::operator=(const AssetHandle<O>& other)
 	{
 		return static_cast<AssetHandle&>(AssetHandleRefCounter::operator=(other));
+	}
+
+	template <typename T>
+	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
+	AssetHandle<T>::operator WeakAssetHandle<O>() const
+	{
+		return { mAssetInternal };
 	}
 
 	template <typename T>
@@ -347,13 +360,6 @@ namespace CE
 			}, OperatorType::equal, MetaFunc::ExplicitParams<const AssetHandle<U>&, nullptr_t>{});
 
 		return refType;
-	}
-
-	template <typename T>
-	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
-	WeakAssetHandle<T>::WeakAssetHandle(const AssetHandle<O>& other) :
-		AssetHandleRefCounter(other)
-	{
 	}
 
 	template <typename T>

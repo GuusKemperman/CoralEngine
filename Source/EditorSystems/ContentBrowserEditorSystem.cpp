@@ -91,8 +91,20 @@ std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEdi
     rootFolder.mChildren.emplace_back(sEngineAssetsDisplayName);
     rootFolder.mChildren.emplace_back(sGameAssetsDisplayName);
 
-    const std::string engineAssets = FileIO::Get().GetPath(FileIO::Directory::EngineAssets, "");
-    const std::string gameAssets = FileIO::Get().GetPath(FileIO::Directory::GameAssets, "");
+    std::string engineAssets = FileIO::Get().GetPath(FileIO::Directory::EngineAssets, "");
+    std::string gameAssets = FileIO::Get().GetPath(FileIO::Directory::GameAssets, "");
+
+    // Don't include the /, as some file paths will have a backward slash.
+    // Testing for equality later would then cause some issues
+    if (!engineAssets.empty())
+    {
+        engineAssets.pop_back();
+    }
+
+    if (!gameAssets.empty())
+    {
+        gameAssets.pop_back();
+    }
 
     // Iterate through the provided paths
     for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
@@ -106,12 +118,12 @@ std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEdi
         if (fullPath.substr(0, engineAssets.size()) == engineAssets)
         {
             currentFolder = &rootFolder.mChildren[sIndexOfEngineAssets];
-            relativePath = fullPath.substr(engineAssets.size());
+            relativePath = fullPath.substr(engineAssets.size() + 1);
         }
         else if (fullPath.substr(0, gameAssets.size()) == gameAssets)
         {
             currentFolder = &rootFolder.mChildren[sIndexOfGameAssets];
-            relativePath = fullPath.substr(gameAssets.size());
+            relativePath = fullPath.substr(gameAssets.size() + 1);
         }
         else
         {
@@ -444,12 +456,6 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
 
     if (ImGui::BeginMenu("Rename##Menu"))
     {
-        PushError();
-
-        ImGui::TextUnformatted("This will break all existing references to the asset!");
-
-        PopError();
-
         const bool anyErrors = DisplayNameUI(sPopUpNewAssetName);
 
         ImGui::BeginDisabled(anyErrors);
@@ -469,7 +475,7 @@ void CE::ContentBrowserEditorSystem::DisplayAssetRightClickPopUp()
         const std::string copyName = StringFunctions::CreateUniqueName(asset.GetMetaData().GetName(),
             [](std::string_view name)
             {
-                return AssetManager::Get().TryGetWeakAsset(name) != nullptr;
+                return AssetManager::Get().TryGetWeakAsset(name) == nullptr;
             });
 
         std::filesystem::path copyPath = asset.GetFileOfOrigin().value_or(FileIO::Get().GetPath(FileIO::Directory::GameAssets, copyName)).parent_path() / copyName;

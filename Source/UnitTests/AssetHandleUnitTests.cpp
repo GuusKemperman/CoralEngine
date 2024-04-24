@@ -37,6 +37,10 @@ UNIT_TEST(AssetHandleTests, SingleThread)
 			AssetHandle<> nonEmpty5{};
 			nonEmpty5 = std::move(nonEmpty4);
 			TEST_ASSERT(nonEmpty.GetNumberOfStrongReferences() == 3);
+
+			nonEmpty5 = nullptr;
+			TEST_ASSERT(nonEmpty.GetNumberOfStrongReferences() == 2);
+
 		}
 		TEST_ASSERT(nonEmpty.GetNumberOfStrongReferences() == 1);
 	}

@@ -39,16 +39,17 @@ namespace CE
 			std::string mReasonForImporting{};
 		};
 
-		struct ImportFuture
-		{
-			ImportRequest mImportRequest{};
-			std::future<Importer::ImportResult> mImportResult{};
-		};
-
 		struct ImportPreview
 		{
 			ImportRequest mImportRequest{};
 			ImportedAsset mImportedAsset;
+			std::string mDesiredName{};
+		};
+
+		struct ImportFuture
+		{
+			ImportRequest mImportRequest{};
+			std::future<std::optional<std::vector<ImportPreview>>> mImportResult{};
 		};
 
 		struct DirToWatch

@@ -30,7 +30,9 @@ namespace CE::Internal
 		// was provided by the user.
 		std::optional<std::filesystem::path> mFileOfOrigin{};
 
-		std::unique_ptr<Asset, InPlaceDeleter<Asset, true>> mAsset{};
+		// The .rename files that redirect to this asset.
+		std::vector<std::filesystem::path> mOldNames{};
 
+		std::unique_ptr<Asset, InPlaceDeleter<Asset, true>> mAsset{};
 	};
 }

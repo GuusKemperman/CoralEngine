@@ -9,6 +9,7 @@
 #include "GSON/GSONBinary.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
+#include "Core/AssetManager.h"
 #include "Meta/MetaTools.h"
 #include "Scripting/ScriptEvents.h"
 #include "Utilities/ClassVersion.h"
@@ -340,9 +341,27 @@ CE::MetaType* CE::Script::DeclareMetaType()
 	ourTypeInfo.mFlags |= size;
 	ASSERT(size < TypeInfo::sMaxSize);
 
-	MetaType& metaType = MetaManager::Get().AddType({ ourTypeInfo, GetName() });
+	MetaType metaType{ ourTypeInfo, GetName() };
+	MetaProps& props = metaType.GetProperties();
+	props.Add(Props::sIsFromScriptsTag).Add(Props::sIsScriptableTag).Add(Props::sComponentTag);
 
-	metaType.GetProperties().Add(Props::sIsFromScriptsTag).Add(Props::sIsScriptableTag).Add(Props::sComponentTag);
+	if (AssetHandle<Script> handleToSelf = AssetManager::Get().TryGetAsset<Script>(GetName());
+		handleToSelf != nullptr)
+	{
+		std::string oldNamesCommaSeperated{};
+
+		for (const std::string& oldName : handleToSelf.GetOldNames())
+		{
+			oldNamesCommaSeperated.append(oldName).push_back(',');
+		}
+
+		if (!oldNamesCommaSeperated.empty())
+		{
+			// Remove last ','
+			oldNamesCommaSeperated.pop_back();
+			props.Set(Props::sOldNames, oldNamesCommaSeperated);
+		}
+	}
 
 	for (MemberToAdd& memberToAdd : membersToAdd)
 	{
@@ -367,7 +386,7 @@ CE::MetaType* CE::Script::DeclareMetaType()
 
 	Internal::ReflectComponentType(metaType, false);
 
-	return &metaType;
+	return &MetaManager::Get().AddType(std::move(metaType));
 }
 
 void CE::Script::PostDeclarationRefresh()

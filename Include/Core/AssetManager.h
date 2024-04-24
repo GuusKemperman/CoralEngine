@@ -88,7 +88,7 @@ namespace CE
 		{
 		public:
 			using value_type = WeakAssetHandle<AssetType>;
-			using ContainerType = std::unordered_map<Name::HashType, Internal::AssetInternal>;
+			using ContainerType = std::forward_list<Internal::AssetInternal>;
 			using UnderlyingIt = ContainerType::iterator;
 
 			EachAssetIt(UnderlyingIt&& it, ContainerType& container);
@@ -171,6 +171,7 @@ namespace CE
 		WeakAssetHandle<> OpenAsset(const std::filesystem::path& path);
 
 		static inline constexpr std::string_view sAssetExtension = ".asset";
+		static inline constexpr std::string_view sRenameExtension = ".rename";
 
 	private:
 		// Made a friend, as the AssetManager is the only one
@@ -180,9 +181,8 @@ namespace CE
 		template<typename T>
 		friend class EachAssetT;
 
-		std::unordered_map<Name::HashType, Internal::AssetInternal> mAssets{};
-
-		void OpenDirectory(const std::filesystem::path& directory);
+		std::forward_list<Internal::AssetInternal> mAssets{};
+		std::unordered_map<Name::HashType, std::reference_wrapper<Internal::AssetInternal>> mLookUp{};
 
 		Internal::AssetInternal* TryGetAssetInternal(Name key, TypeId typeId);
 		Internal::AssetInternal* TryGetLoadedAssetInternal(Name key, TypeId typeId);
@@ -223,7 +223,7 @@ namespace CE
 		// Not really a traditional iterator i suppose,
 		// but good enough for our purposes.
 		if (mIt == mContainer.get().begin()
-			&& !mIt->second.mMetaData.GetClass().IsDerivedFrom<AssetType>())
+			&& !mIt->mMetaData.GetClass().IsDerivedFrom<AssetType>())
 		{
 			IncrementUntilTypeMatches();
 		}
@@ -232,7 +232,7 @@ namespace CE
 	template <typename AssetType>
 	decltype(auto) AssetManager::EachAssetIt<AssetType>::operator*() const
 	{
-		return WeakAssetHandle<AssetType>{ &mIt->second };
+		return WeakAssetHandle<AssetType>{ &*mIt };
 	}
 
 	template <typename AssetType>
@@ -267,7 +267,7 @@ namespace CE
 			{
 				++mIt;
 			} while (mIt != mContainer.get().end()
-				&& !mIt->second.mMetaData.GetClass().IsDerivedFrom<AssetType>());
+				&& !mIt->mMetaData.GetClass().IsDerivedFrom<AssetType>());
 		}
 	}
 

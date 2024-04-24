@@ -68,6 +68,21 @@ const std::optional<std::filesystem::path>& CE::AssetHandleBase::GetFileOfOrigin
 	return mAssetInternal->mFileOfOrigin;
 }
 
+std::vector<std::string> CE::AssetHandleBase::GetOldNames() const
+{
+	AssureNotNull();
+
+	std::vector<std::string> ret{};
+	ret.reserve(mAssetInternal->mOldNames.size());
+
+	for (const std::filesystem::path& pathToRenameFile : mAssetInternal->mOldNames)
+	{
+		ret.emplace_back(pathToRenameFile.filename().replace_extension().string());
+	}
+
+	return ret;
+}
+
 uint32 CE::AssetHandleBase::GetNumberOfStrongReferences() const
 {
 	if (*this == nullptr)
@@ -114,7 +129,7 @@ void cereal::save(BinaryOutputArchive& archive, const CE::AssetHandleBase& asset
 
 void cereal::load(BinaryInputArchive& archive, CE::AssetHandle<>& asset)
 {
-	CE::WeakAssetHandle weakHandle{ asset };
+	CE::WeakAssetHandle<> weakHandle{ asset };
 	load(archive, weakHandle);
 	asset = CE::AssetHandle<>{ weakHandle };
 }
@@ -141,7 +156,7 @@ void cereal::load(BinaryInputArchive& archive, CE::WeakAssetHandle<>& asset)
 #ifdef EDITOR
 void CE::Internal::DisplayHandleWidget(AssetHandle<>& asset, const std::string& name, TypeId type)
 {
-	WeakAssetHandle weakHandle{ asset };
+	WeakAssetHandle<> weakHandle{ asset };
 	DisplayHandleWidget(weakHandle, name, type);
 	asset = CE::AssetHandle<>{ weakHandle };
 }
