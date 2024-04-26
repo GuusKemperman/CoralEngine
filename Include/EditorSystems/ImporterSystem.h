@@ -71,7 +71,7 @@ namespace CE
 
 		static std::filesystem::path GetPathToSaveAssetTo(const ImportPreview& preview, const std::vector<ImportPreview>& toImport);
 
-		static std::optional<std::filesystem::path> GetDuplicateOfExistingAssets(const ImportPreview& preview);
+		static std::vector<std::filesystem::path> GetDuplicatesOfExistingAssets(const ImportPreview& preview);
 
 		static bool AreDuplicates(const ImportPreview& preview1, const ImportPreview& preview2);
 

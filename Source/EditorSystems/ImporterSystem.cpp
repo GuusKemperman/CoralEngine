@@ -444,23 +444,36 @@ std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPrevi
 	return dir / filename.append(AssetManager::sAssetExtension);
 }
 
-std::optional<std::filesystem::path> CE::ImporterSystem::GetDuplicateOfExistingAssets(const ImportPreview& preview)
+std::vector<std::filesystem::path> CE::ImporterSystem::GetDuplicatesOfExistingAssets(const ImportPreview& preview)
 {
-	const std::string& name = preview.mImportedAsset.GetMetaData().GetName();
-	const WeakAssetHandle existingAsset = AssetManager::Get().TryGetWeakAsset(name);
+	std::vector<std::filesystem::path> returnValue{};
 
-	if (existingAsset != nullptr
-		&& !WasImportedFrom(existingAsset, preview.mImportRequest.mFile))
-	{
-		return existingAsset.GetFileOfOrigin().value_or("Asset generated at runtime");
-	}
-	return std::nullopt;
+	auto checkName = [&](std::string_view name)
+		{
+			const WeakAssetHandle existingAsset = AssetManager::Get().TryGetWeakAsset(name);
+
+			if (existingAsset != nullptr
+				&& !WasImportedFrom(existingAsset, preview.mImportRequest.mFile))
+			{
+				returnValue.emplace_back(existingAsset.GetFileOfOrigin().value_or("Asset generated at runtime.").replace_extension(AssetManager::sRenameExtension));
+			}
+		};
+
+	// Our initial name must also not be taken, as we
+	// have to create a .rename file to redirect to our nem
+	// desired name.
+	checkName(preview.mImportedAsset.GetMetaData().GetName());
+	checkName(preview.mDesiredName);
+	return returnValue;
 }
 
 bool CE::ImporterSystem::AreDuplicates(const ImportPreview& preview1, const ImportPreview& preview2)
 {
 	return &preview1 != &preview2
-		&& preview1.mImportedAsset.GetMetaData().GetName() == preview2.mImportedAsset.GetMetaData().GetName();
+		&& (preview1.mImportedAsset.GetMetaData().GetName() == preview2.mImportedAsset.GetMetaData().GetName()
+			|| preview1.mDesiredName == preview2.mImportedAsset.GetMetaData().GetName()
+			|| preview1.mDesiredName == preview2.mDesiredName
+			|| preview2.mDesiredName == preview1.mImportedAsset.GetMetaData().GetName());
 }
 
 std::vector<std::filesystem::path> CE::ImporterSystem::GetDuplicatesInOtherPreviews(const ImportPreview& preview,
@@ -482,12 +495,8 @@ std::vector<std::filesystem::path> CE::ImporterSystem::GetDuplicatesInOtherPrevi
 std::vector<std::filesystem::path> CE::ImporterSystem::GetDuplicates(const ImportPreview& preview, std::vector<ImportPreview>::const_iterator begin, std::vector<ImportPreview>::const_iterator end)
 {
 	std::vector<std::filesystem::path> returnValue = GetDuplicatesInOtherPreviews(preview, begin, end);
-
-	if (std::optional<std::filesystem::path> existingDuplicate = GetDuplicateOfExistingAssets(preview);
-		existingDuplicate.has_value())
-	{
-		returnValue.emplace_back(std::move(*existingDuplicate));
-	}
+	std::vector<std::filesystem::path> existingDuplicate = GetDuplicatesOfExistingAssets(preview);
+	returnValue.insert(returnValue.end(), std::make_move_iterator(existingDuplicate.begin()), std::make_move_iterator(existingDuplicate.end()));
 
 	if (!returnValue.empty())
 	{
@@ -740,7 +749,7 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 					return true;
 				}
 
-				return GetDuplicateOfExistingAssets(preview).has_value();
+				return !GetDuplicatesOfExistingAssets(preview).empty();
 			}), toImport.end());
 	}
 
