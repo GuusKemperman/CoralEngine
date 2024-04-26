@@ -322,14 +322,7 @@ CE::ContentBrowserEditorSystem::FilePathUIResult CE::ContentBrowserEditorSystem:
 {
     ShowInspectUI("IsEngineAsset", sPopUpIsEngineAsset);
     ShowInspectUI("File location", folderRelativeToRoot);
-
-    std::filesystem::path outputRootFolder = folderRelativeToRoot;
-
-    while (outputRootFolder.has_parent_path())
-    {
-        outputRootFolder = outputRootFolder.parent_path();
-    }
-
+    
     const std::filesystem::path actualOutputFile =
         Format("{}{}{}{}{}",
             isEngineAsset ? FileIO::Get().GetPath(FileIO::Directory::EngineAssets, "") : FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""),
