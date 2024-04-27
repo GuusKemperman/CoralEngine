@@ -92,7 +92,6 @@ namespace CE
         uint32 ReadCompactClusterCounter() const;
 
 	private:
-        void SendMaterialTexturesToGPU(const Material& mat);
         void UpdateClusterData(const CameraComponent& camera);
         void InitializeShadowMaps();
 

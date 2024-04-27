@@ -1,14 +1,13 @@
 #include "Precomp.h"
 #include "Platform/PC/Rendering/TexturePC.h"
-#include "Platform/pc/Rendering/TexturePC.h"
-#include "Platform/pc/Rendering/DX12Classes/DXDefines.h"
-#include "Platform/pc/Rendering/DX12Classes/DXResource.h"
-#include "Platform/pc/Rendering/DX12Classes/DXDescHeap.h"
+
+#include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
+#include "Platform/PC/Rendering/DX12Classes/DXResource.h"
+#include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 
 #include "Utilities/StringFunctions.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "stb_image/stb_image.h"
-#include "Meta/MetaManager.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 
 #include "Core/Device.h"
@@ -16,18 +15,24 @@
 
 CE::Texture::Texture(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo),
-	mLoadedPixels(std::make_shared<STBIPixels>())
-{
-	JobManager::Get().AddWork([data = StringFunctions::StreamToString(loadInfo.GetStream()), buffer = mLoadedPixels]()
+	mLoadedPixels(std::make_shared<STBIPixels>()),
+	mLoadingThread([data = StringFunctions::StreamToString(loadInfo.GetStream()), buffer = mLoadedPixels]()
 		{
 			int channels{};
 			buffer->mPixels = stbi_load_from_memory(reinterpret_cast<const unsigned char*>(data.data()), static_cast<int>(data.size()), &buffer->mWidth, &buffer->mHeight, &channels, 4);
-		});
+		})
+{
 }
 
 CE::Texture::Texture(Texture&& other) noexcept = default;
 
-CE::Texture::~Texture() = default;
+CE::Texture::~Texture()
+{
+	if (mLoadingThread.WasLaunched())
+	{
+		mLoadingThread.CancelOrDetach();
+	}
+}
 
 bool CE::Texture::IsReadyToBeSentToGpu() const
 {
@@ -38,13 +43,14 @@ bool CE::Texture::IsReadyToBeSentToGpu() const
 
 void CE::Texture::SendToGPU() const
 {
+	Texture& self = const_cast<Texture&>(*this);
+	self.mLoadingThread.Join();
+
 	if (!IsReadyToBeSentToGpu())
 	{
 		LOG(LogAssets, Error, "{} is not ready to be send to GPU", GetName());
 		return;
 	}
-
-	Texture& self = const_cast<Texture&>(*this);
 
 	if (mLoadedPixels == nullptr
 		|| mLoadedPixels->mPixels == nullptr
@@ -130,7 +136,13 @@ void CE::Texture::BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList,
 {
 	if (!mHeapSlot.has_value())
 	{
-		LOG(LogAssets, Error, "{} has not been send to GPU", GetName());
+		const AssetHandle defaultTexture = TryGetDefaultTexture();
+
+		if (defaultTexture != nullptr)
+		{
+			defaultTexture->BindToGraphics(commandList, rootSlot);
+		}
+
 		return;
 	}
 
@@ -141,7 +153,13 @@ void CE::Texture::BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, 
 {
 	if (!mHeapSlot.has_value())
 	{
-		LOG(LogAssets, Error, "{} has not been send to GPU", GetName());
+		const AssetHandle defaultTexture = TryGetDefaultTexture();
+
+		if (defaultTexture != nullptr)
+		{
+			defaultTexture->BindToGraphics(commandList, rootSlot);
+		}
+
 		return;
 	}
 

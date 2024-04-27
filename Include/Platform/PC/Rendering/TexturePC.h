@@ -1,11 +1,11 @@
 #pragma once
-#include <thread>
-
 #include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
 #include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
 #include "Assets/Asset.h"
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
+#include "Utilities/ASync.h"
 
 class DXDescHeap;
 class DXResource;
@@ -27,18 +27,19 @@ namespace CE
 			Texture& operator=(Texture&&) = delete;
 			Texture& operator=(const Texture&) = delete;
 
+			static AssetHandle<Texture> TryGetDefaultTexture();
+
 			bool IsReadyToBeSentToGpu() const;
-			bool WasSentToGpu() const { return mHeapSlot.has_value(); }
+			bool WasSendToGPU() const { return mHeapSlot.has_value(); }
 			void SendToGPU() const;
 
 			void BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
 			void BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
 
-			
-
 		private:
 			int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 			void GenerateMipmaps() const;
+
 			std::unique_ptr<DXResource> mTextureBuffer{};
 			std::optional<DXHeapHandle> mHeapSlot;
 
@@ -66,6 +67,7 @@ namespace CE
 			// After the texture has been sent to the GPU,
 			// this value will be reset to nullptr.
 			std::shared_ptr<STBIPixels> mLoadedPixels{};
+			ASyncThread mLoadingThread{};
 
 			friend ReflectAccess;
 			static MetaType Reflect();

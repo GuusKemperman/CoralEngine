@@ -19,6 +19,7 @@ namespace CE::Internal
 		std::function<void()> mWorkload{};
 		std::weak_ptr<Worker> mWorker{};
 		bool mIsCancelled{};
+		bool mIsCurrentlyBeingDone{};
 		std::mutex mMutex{};
 	};
 }
@@ -27,6 +28,8 @@ namespace
 {
 	struct Worker
 	{
+		~Worker();
+
 		void RunWorkerThread();
 
 		std::thread mThread{
@@ -37,10 +40,10 @@ namespace
 		};
 		std::list<std::shared_ptr<CE::Internal::Job>> mJobs{};
 		std::mutex mJobsMutex{};
+		bool mShouldStopWorking{};
 	};
 
-	void DoJob(const std::shared_ptr<CE::Internal::Job> job);
-	void AddJob(std::shared_ptr<Worker>&& worker, std::function<void()>&& workload);
+	void DoJob(std::shared_ptr<CE::Internal::Job> job);
 
 	std::vector<std::shared_ptr<Worker>> sWorkers{};
 	std::mutex sWorkersMutex{};
@@ -52,9 +55,15 @@ CE::Internal::Job::Job(std::function<void()>&& workload, std::weak_ptr<Worker>&&
 {
 }
 
+Worker::~Worker()
+{
+	mShouldStopWorking = true;
+	mThread.join();
+}
+
 void Worker::RunWorkerThread()
 {
-	while (true)
+	while (!mShouldStopWorking)
 	{
 		if (mJobs.empty())
 		{
@@ -102,14 +111,16 @@ CE::ASyncThread::ASyncThread(std::function<void()>&& work)
 	}
 
 	if (bestWorker == nullptr
-		|| bestWorker->mJobs.size() > 4)
+		|| (bestWorker->mJobs.size() > 8 && sWorkers.size() < 7))
 	{
-		bestWorker = sWorkers.emplace_back();
+		bestWorker = sWorkers.emplace_back(std::make_shared<Worker>());
 	}
 
 	sWorkersMutex.unlock();
 
-	AddJob(std::move(bestWorker), std::move(work));
+	bestWorker->mJobsMutex.lock();
+	mJob = bestWorker->mJobs.emplace_back(std::make_shared<Internal::Job>(std::move(work), bestWorker));
+	bestWorker->mJobsMutex.unlock();
 }
 
 CE::ASyncThread::~ASyncThread()
@@ -122,17 +133,29 @@ bool CE::ASyncThread::WasLaunched() const
 	return mJob != nullptr;
 }
 
-void CE::ASyncThread::Cancel()
+void CE::ASyncThread::CancelOrJoin()
 {
 	ASSERT(WasLaunched());
 	mJob->mIsCancelled = true;
 	Join();
 }
 
+void CE::ASyncThread::CancelOrDetach()
+{
+	ASSERT(WasLaunched());
+	mJob->mIsCancelled = true;
+	Detach();
+}
+
 void CE::ASyncThread::Join()
 {
 	ASSERT(WasLaunched());
 	DoJob(mJob);
+	mJob = nullptr;
+}
+
+void CE::ASyncThread::Detach()
+{
 	mJob = nullptr;
 }
 
@@ -156,18 +179,13 @@ namespace
 
 		// Could've been cancelled from another thread
 		// during the last few lines
-		if (!job->mIsCancelled)
+		if (!job->mIsCancelled
+			&& !job->mIsCurrentlyBeingDone)
 		{
+			job->mIsCurrentlyBeingDone = true;
 			job->mWorkload();
 		}
 
 		job->mMutex.unlock();
-	}
-
-	void AddJob(std::shared_ptr<Worker>&& worker, std::function<void()>&& workload)
-	{
-		worker->mJobsMutex.lock();
-		worker->mJobs.emplace_back(std::make_shared<CE::Internal::Job>(std::move(workload), worker));
-		worker->mJobsMutex.unlock();
 	}
 }

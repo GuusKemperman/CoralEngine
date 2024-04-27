@@ -19,7 +19,8 @@ namespace CE
 
 		bool WasLaunched() const;
 
-		void Cancel();
+		void CancelOrJoin();
+		void CancelOrDetach();
 		void Join();
 		void Detach();
 
