@@ -17,9 +17,9 @@ CE::MetaType CE::Texture::Reflect()
 
 CE::AssetHandle<CE::Texture> CE::Texture::TryGetDefaultTexture()
 {
-	static constexpr std::string_view defaultTextureName = "T_Pink";
+	static constexpr std::string_view defaultTextureName = "T_White";
 
-	AssetHandle defaultTexture = AssetManager::Get().TryGetAsset<Texture>("T_Pink");
+	AssetHandle defaultTexture = AssetManager::Get().TryGetAsset<Texture>(defaultTextureName);
 
 	if (defaultTexture == nullptr)
 	{

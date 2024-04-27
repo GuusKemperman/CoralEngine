@@ -134,37 +134,36 @@ void CE::Texture::SendToGPU() const
 
 void CE::Texture::BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
 {
-	if (!mHeapSlot.has_value())
+	const DXHeapHandle* heapSlot = TryGetHeapSlot();
+
+	if (heapSlot != nullptr)
 	{
-		const AssetHandle defaultTexture = TryGetDefaultTexture();
-
-		if (defaultTexture != nullptr)
-		{
-			defaultTexture->BindToGraphics(commandList, rootSlot);
-		}
-
-		return;
+		commandList->SetGraphicsRootDescriptorTable(rootSlot, heapSlot->GetAddressGPU());
 	}
-
-	commandList->SetGraphicsRootDescriptorTable(rootSlot, mHeapSlot->GetAddressGPU());
 }
 
 void CE::Texture::BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
 {
-	if (!mHeapSlot.has_value())
+	const DXHeapHandle* heapSlot = TryGetHeapSlot();
+
+	if (heapSlot != nullptr)
 	{
-		const AssetHandle defaultTexture = TryGetDefaultTexture();
-
-		if (defaultTexture != nullptr)
-		{
-			defaultTexture->BindToGraphics(commandList, rootSlot);
-		}
-
-		return;
+		commandList->SetComputeRootDescriptorTable(rootSlot, heapSlot->GetAddressGPU());
 	}
-
-	commandList->SetComputeRootDescriptorTable(rootSlot, mHeapSlot->GetAddressGPU());
 }
+
+#ifdef EDITOR
+ImTextureID CE::Texture::GetImGuiId() const
+{
+	const DXHeapHandle* heapSlot = TryGetHeapSlot();
+
+	if (heapSlot != nullptr)
+	{
+		return reinterpret_cast<ImTextureID>(heapSlot->GetAddressGPU().ptr);
+	}
+	return nullptr;
+}
+#endif // EDITOR
 
 int CE::Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 {
@@ -267,6 +266,24 @@ void CE::Texture::GenerateMipmaps() const
 	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 8, *mUAVslots[2]);
 
 	uploadCmdList->Dispatch(dstWidth /8, dstHeight / 8,  1);
+}
+
+const DXHeapHandle* CE::Texture::TryGetHeapSlot() const
+{
+	if (mHeapSlot.has_value())
+	{
+		return &*mHeapSlot;
+	}
+
+	const AssetHandle defaultTexture = TryGetDefaultTexture();
+
+	if (defaultTexture != nullptr
+		&& defaultTexture->mHeapSlot.has_value())
+	{
+		return  &*defaultTexture->mHeapSlot;
+	}
+
+	return nullptr;
 }
 
 CE::Texture::STBIPixels::~STBIPixels()

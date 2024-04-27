@@ -401,15 +401,15 @@ namespace CE
 	MetaType WeakAssetHandle<U>::Reflect()
 	{
 		const MetaType& basedOnType = MetaManager::Get().GetType<U>();
-		MetaType refType{ MetaType::T<WeakAssetHandle<>>{}, Format("{} Weak Ref", basedOnType.GetName()) };
+		MetaType refType{ MetaType::T<WeakAssetHandle<U>>{}, Format("{} Weak Ref", basedOnType.GetName()) };
 
-		ReflectFieldType<WeakAssetHandle<>>(refType);
+		ReflectFieldType<WeakAssetHandle<U>>(refType);
 
 		refType.AddFunc(
-			[](const WeakAssetHandle<>& value, nullptr_t)
+			[](const WeakAssetHandle<U>& value, nullptr_t)
 			{
 				return value == nullptr;
-			}, OperatorType::equal, MetaFunc::ExplicitParams<const WeakAssetHandle<>&, nullptr_t>{});
+			}, OperatorType::equal, MetaFunc::ExplicitParams<const WeakAssetHandle<U>&, nullptr_t>{});
 
 		return refType;
 	}
@@ -446,7 +446,7 @@ namespace cereal
 	template<typename T>
 	void load(BinaryInputArchive& archive, CE::WeakAssetHandle<T>& asset)
 	{
-		CE::AssetHandle<> asBase = asset;
+		CE::WeakAssetHandle<> asBase = asset;
 		load(archive, asBase);
 		asset = CE::DynamicAssetHandleCast<T>(asBase);
 	}

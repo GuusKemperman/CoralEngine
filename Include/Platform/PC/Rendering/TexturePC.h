@@ -36,9 +36,15 @@ namespace CE
 			void BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
 			void BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
 
+#ifdef EDITOR
+			ImTextureID GetImGuiId() const;
+#endif // EDITOR
+
 		private:
 			int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 			void GenerateMipmaps() const;
+
+			const DXHeapHandle* TryGetHeapSlot() const;
 
 			std::unique_ptr<DXResource> mTextureBuffer{};
 			std::optional<DXHeapHandle> mHeapSlot;

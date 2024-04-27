@@ -4,6 +4,7 @@
 #include <imgui/imgui_internal.h>
 
 #include "Assets/Asset.h"
+#include "Assets/Texture.h"
 #include "Core/AssetManager.h"
 #include "Core/Editor.h"
 #include "Core/FileIO.h"
@@ -16,6 +17,7 @@
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
 #include "Meta/MetaTypeFilter.h"
+#include "Assets/Core/AssetThumbnails.h"
 #include "Utilities/StringFunctions.h"
 
 namespace
@@ -64,7 +66,7 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 
     sWasAssetJustRightClicked = false;
 
-    for (const ContentFolder& folder : mFolderGraph)
+    for (ContentFolder& folder : mFolderGraph)
     {
         DisplayDirectory(folder);
     }
@@ -158,20 +160,22 @@ std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEdi
             }
         }
 
+        ContentEntry newEntry{ std::move(asset) };
+
         // Sort alphabetically
-        const auto whereToInsert = std::lower_bound(currentFolder->mContent.begin(), currentFolder->mContent.end(), asset,
-            [](const WeakAssetHandle<>& sl, const WeakAssetHandle<>& sr)
+        const auto whereToInsert = std::lower_bound(currentFolder->mContent.begin(), currentFolder->mContent.end(), newEntry,
+            [](const ContentEntry& lhs, const ContentEntry& rhs)
             {
-                return sl.GetMetaData().GetName() < sr.GetMetaData().GetName();
+                return lhs.mAsset.GetMetaData().GetName() < rhs.mAsset.GetMetaData().GetName();
             });
-        currentFolder->mContent.insert(whereToInsert, std::move(asset));
+        currentFolder->mContent.insert(whereToInsert, std::move(newEntry));
     }
 
     // Return the root folder, which contains the entire folder structure
     return rootFolder.mChildren;
 }
 
-void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folder)
+void CE::ContentBrowserEditorSystem::DisplayDirectory(ContentFolder& folder)
 {
     Search::BeginCategory(folder.mPath.filename().string(),
         [&folder](std::string_view folderName) -> bool
@@ -201,9 +205,9 @@ void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folde
                 {
                     std::function<void(const ContentFolder&)> importRecursive = [&importRecursive](const ContentFolder& folder)
                         {
-                            for (const WeakAssetHandle<>& asset : folder.mContent)
+                            for (const ContentEntry& entry : folder.mContent)
                             {
-                                Reimport(asset);
+                                Reimport(entry.mAsset);
                             }
 
                             for (const ContentFolder& child : folder.mChildren)
@@ -220,36 +224,66 @@ void CE::ContentBrowserEditorSystem::DisplayDirectory(const ContentFolder& folde
             return isOpen;
         });
 
-    for (const ContentFolder& child : folder.mChildren)
+    for (ContentFolder& child : folder.mChildren)
     {
-        DisplayDirectory(std::move(child));
+        DisplayDirectory(child);
     }
 
-    for (const WeakAssetHandle<>& asset : folder.mContent)
+    for (ContentEntry& entry : folder.mContent)
     {
-        DisplayAsset(std::move(asset));
+        DisplayEntry(entry);
     }
 
     Search::TreePop();
 }
 
-void CE::ContentBrowserEditorSystem::DisplayAsset(const WeakAssetHandle<>& asset) const
+void CE::ContentBrowserEditorSystem::DisplayEntry(ContentEntry& entry) const
 {
+    const WeakAssetHandle<>& asset = entry.mAsset;
+
     if (Search::AddItem(asset.GetMetaData().GetName(),
-        [asset](std::string_view) -> bool
+        [asset, &entry](std::string_view) -> bool
         {
             bool returnValue{};
 
+            std::optional<AssetHandle<Texture>>& thumbNail = entry.mThumbnail;
+
+            if (!thumbNail.has_value())
+            {
+                thumbNail = GetThumbNail(asset);
+            }
+
+            static constexpr ImVec2 itemSize = { 64.0f, 64.0f };
+        	const std::string& assetName = asset.GetMetaData().GetName();
+
             if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetMetaData().GetClass().GetTypeId()))
             {
-                if (ImGui::Button(asset.GetMetaData().GetName().c_str()))
+                if (thumbNail != nullptr)
+                {
+					if (ImGui::ImageButton(assetName.c_str(), (*thumbNail)->GetImGuiId(), itemSize, 
+                        ImVec2(0, 0),
+                        ImVec2(1, 1)))
+					{
+                        returnValue = true;
+					}
+                }
+                else if (ImGui::Button(assetName.c_str()))
                 {
                     returnValue = true;
                 }
             }
             else
             {
-                ImGui::TextUnformatted(asset.GetMetaData().GetName().c_str());
+                if (thumbNail != nullptr)
+                {
+                    ImGui::Image((*thumbNail)->GetImGuiId(), itemSize,
+                        ImVec2(0, 0),
+                        ImVec2(1, 1));
+                }
+                else
+                {
+                    ImGui::TextUnformatted(asset.GetMetaData().GetName().c_str());
+                }
             }
 
             if (ImGui::IsItemClicked(1))

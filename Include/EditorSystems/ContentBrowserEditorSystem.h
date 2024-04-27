@@ -6,6 +6,7 @@
 
 namespace CE
 {
+	class Texture;
 	class MetaType;
 
 	class ContentBrowserEditorSystem final :
@@ -17,21 +18,30 @@ namespace CE
 		void Tick(float deltaTime) override;
 
 	private:
+		struct ContentEntry
+		{
+			WeakAssetHandle<> mAsset{};
+
+			// Will be nullopt if there has not yet been
+			// an attempt to generate a thumbnail.
+			// May still be nullptr if the attempt was made,
+			// but failed.
+			std::optional<AssetHandle<Texture>> mThumbnail{};
+		};
+
 		struct ContentFolder
 		{
 			ContentFolder() = default;
 			ContentFolder(const std::filesystem::path& path) : mPath(path) {}
 			std::filesystem::path mPath{};
 			std::vector<ContentFolder> mChildren{};
-			std::vector<WeakAssetHandle<>> mContent{};
+			std::vector<ContentEntry> mContent{};
 		};
 		static std::vector<ContentFolder> MakeFolderGraph();
 
-		// Moved in because the assets may be deleted, don't hold onto them.
-		void DisplayDirectory(const ContentFolder& folder);
+		void DisplayDirectory(ContentFolder& folder);
 
-		// Moved in because the asset may be deleted, don't hold onto it.
-		void DisplayAsset(const WeakAssetHandle<>& asset) const;
+		void DisplayEntry(ContentEntry& entry) const;
 
 		void OpenAsset(WeakAssetHandle<> asset) const;
 
