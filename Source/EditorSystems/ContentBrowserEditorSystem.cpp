@@ -14,7 +14,6 @@
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Search.h"
 #include "Meta/MetaType.h"
-#include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
 #include "Meta/MetaTypeFilter.h"
 #include "Assets/Core/AssetThumbnails.h"
@@ -244,7 +243,20 @@ void CE::ContentBrowserEditorSystem::DisplayEntry(ContentEntry& entry) const
     if (Search::AddItem(asset.GetMetaData().GetName(),
         [asset, &entry](std::string_view) -> bool
         {
-            bool returnValue{};
+            static constexpr ImVec2 itemSize = { 64.0f, 64.0f };
+
+            static ImGuiID prevTreeId{};
+            const ImGuiID currTreeId = ImGui::GetID("");
+
+        	ImGui::SameLine();
+
+        	if (currTreeId != prevTreeId
+                || ImGui::GetContentRegionAvail().x < itemSize.x + 4.0f)
+            {
+				ImGui::NewLine();
+            }
+
+            prevTreeId = currTreeId;
 
             std::optional<AssetHandle<Texture>>& thumbNail = entry.mThumbnail;
 
@@ -253,8 +265,8 @@ void CE::ContentBrowserEditorSystem::DisplayEntry(ContentEntry& entry) const
                 thumbNail = GetThumbNail(asset);
             }
 
-            static constexpr ImVec2 itemSize = { 64.0f, 64.0f };
         	const std::string& assetName = asset.GetMetaData().GetName();
+            bool returnValue{};
 
             if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetMetaData().GetClass().GetTypeId()))
             {
