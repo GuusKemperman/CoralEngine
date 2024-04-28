@@ -133,3 +133,31 @@ std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::StaticMesh>(
 		std::make_unique<CE::World>(std::move(world)),
 		GetThumbnailName(forAsset.GetMetaData().GetName()));
 }
+
+template <>
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::Material>(const CE::WeakAssetHandle<CE::Material>& forAsset)
+{
+	CE::World world = CE::Level::CreateDefaultWorld();
+
+	{
+		CE::Registry& reg = world.GetRegistry();
+		const entt::entity entity = reg.Create();
+
+		reg.AddComponent<CE::TransformComponent>(entity).SetLocalScale(2.5f);
+		CE::StaticMeshComponent& staticMeshComponent = reg.AddComponent<CE::StaticMeshComponent>(entity);
+
+		staticMeshComponent.mStaticMesh = CE::AssetManager::Get().TryGetAsset<CE::StaticMesh>("Sphere_Sphere");
+
+		if (staticMeshComponent.mStaticMesh == nullptr)
+		{
+			LOG(LogEditor, Warning, "The default asset used for creating thumbnails for materials has been renamed or removed. Materials will no longer have a thumbnail");
+			return nullptr;
+		}
+		
+		staticMeshComponent.mMaterial = CE::AssetHandle<CE::Material>{ forAsset };
+	}
+
+	return std::make_unique<CE::ThumbnailFromWorldFactory>(
+		std::make_unique<CE::World>(std::move(world)),
+		GetThumbnailName(forAsset.GetMetaData().GetName()));
+}
