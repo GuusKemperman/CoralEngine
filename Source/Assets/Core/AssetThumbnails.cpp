@@ -5,6 +5,7 @@
 #include "Assets/Material.h"
 #include "Assets/StaticMesh.h"
 #include "Assets/Texture.h"
+#include "Components/SkinnedMeshComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/AssetManager.h"
@@ -127,6 +128,28 @@ std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::StaticMesh>(
 
 		staticMeshComponent.mStaticMesh = CE::AssetHandle<CE::StaticMesh>{ forAsset };
 		staticMeshComponent.mMaterial = CE::Material::TryGetDefaultMaterial();
+	}
+
+	return std::make_unique<CE::ThumbnailFromWorldFactory>(
+		std::make_unique<CE::World>(std::move(world)),
+		GetThumbnailName(forAsset.GetMetaData().GetName()));
+}
+
+template <>
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::SkinnedMesh>(
+	const CE::WeakAssetHandle<CE::SkinnedMesh>& forAsset)
+{
+	CE::World world = CE::Level::CreateDefaultWorld();
+
+	{
+		CE::Registry& reg = world.GetRegistry();
+		const entt::entity entity = reg.Create();
+
+		reg.AddComponent<CE::TransformComponent>(entity);
+		CE::SkinnedMeshComponent& skinnedMeshComponent = reg.AddComponent<CE::SkinnedMeshComponent>(entity);
+
+		skinnedMeshComponent.mSkinnedMesh = CE::AssetHandle<CE::SkinnedMesh>{ forAsset };
+		skinnedMeshComponent.mMaterial = CE::Material::TryGetDefaultMaterial();
 	}
 
 	return std::make_unique<CE::ThumbnailFromWorldFactory>(

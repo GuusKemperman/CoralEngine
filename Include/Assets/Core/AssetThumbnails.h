@@ -5,12 +5,9 @@
 
 namespace CE
 {
+	class SkinnedMesh;
 	class Material;
 	class StaticMesh;
-}
-
-namespace CE
-{
 	class Level;
 	class Prefab;
 	class Texture;
@@ -94,6 +91,9 @@ std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle
 
 template<>
 std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle<CE::StaticMesh>& forAsset);
+
+template<>
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle<CE::SkinnedMesh>& forAsset);
 
 template<>
 std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle<CE::Material>& forAsset);
