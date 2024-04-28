@@ -5,29 +5,81 @@
 
 namespace CE
 {
+	class Level;
 	class Texture;
 	class Script;
+	class World;
+	class FrameBuffer;
+	class ThumbnailFactory;
 
-	AssetHandle<Texture> GetThumbNail(WeakAssetHandle<> forAsset);
+	static constexpr glm::vec2 sDesiredThumbNailSize{ 64.0f };
+
+	std::unique_ptr<ThumbnailFactory> GetThumbNail(WeakAssetHandle<> forAsset);
+
+	AssetHandle<Texture> GetDefaultThumbnail();
 
 	namespace Internal
 	{
-		AssetHandle<Texture> GetDefaultThumbnail();
-
 		static constexpr std::string_view sGetThumbnailFuncName = "GetThumbNail";
 	}
+
+	class ThumbnailFactory
+	{
+	public:
+		ThumbnailFactory() = default;
+		ThumbnailFactory(const AssetHandle<Texture>& texture) :
+			mTexture(texture)
+		{}
+
+		virtual ~ThumbnailFactory() = default;
+
+		virtual void Tick() {};
+
+		AssetHandle<Texture> mTexture{};
+
+		enum class State
+		{
+			NeedMoreTicks,
+			Failed,
+		};
+		State mState{};
+
+	private:
+		friend ReflectAccess;
+		static MetaType Reflect();
+	};
+
+	class ThumbnailFromWorldFactory :
+		public ThumbnailFactory
+	{
+	public:
+		ThumbnailFromWorldFactory(std::unique_ptr<World>&& world, std::string_view thumbnailName);
+		~ThumbnailFromWorldFactory();
+
+		void Tick() override;
+
+	private:
+		uint32 mNumOfTicksReceived{};
+
+		std::string mTextureName{};
+		std::unique_ptr<World> mWorld{};
+		std::unique_ptr<FrameBuffer> mFrameBuffer{};
+	};
 }
 
 template<typename T>
-CE::AssetHandle<CE::Texture> GetThumbNailImpl([[maybe_unused]] const CE::WeakAssetHandle<T>& forAsset)
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl([[maybe_unused]] const CE::WeakAssetHandle<T>& forAsset)
 {
-	return CE::Internal::GetDefaultThumbnail();
+	return std::make_unique<CE::ThumbnailFactory>(CE::GetDefaultThumbnail());
 }
 
 template<>
-CE::AssetHandle<CE::Texture> GetThumbNailImpl(const CE::WeakAssetHandle<CE::Texture>& forAsset);
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle<CE::Texture>& forAsset);
 
 template<>
-CE::AssetHandle<CE::Texture> GetThumbNailImpl(const CE::WeakAssetHandle<CE::Script>& forAsset);
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle<CE::Script>& forAsset);
+
+template<>
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle<CE::Level>& forAsset);
 
 #endif // EDITOR

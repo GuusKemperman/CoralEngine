@@ -13,6 +13,15 @@
 #include "Core/Device.h"
 #include "Core/JobManager.h"
 
+#ifdef EDITOR
+CE::Texture::Texture(std::string_view name, FrameBuffer&& frameBuffer) :
+	Asset(name, MakeTypeId<Texture>()),
+	mHeapSlot(std::move(frameBuffer.mFrameBufferRscHandle[Device::Get().GetFrameIndex()])),
+	mTextureBuffer(std::move(frameBuffer.mResource[Device::Get().GetFrameIndex()]))
+{
+}
+#endif // EDITOR
+
 CE::Texture::Texture(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo),
 	mLoadedPixels(std::make_shared<STBIPixels>()),

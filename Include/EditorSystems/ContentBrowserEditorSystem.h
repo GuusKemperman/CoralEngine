@@ -3,10 +3,10 @@
 #include "EditorSystems/EditorSystem.h"
 
 #include "Core/AssetManager.h"
+#include "Assets/Core/AssetThumbnails.h"
 
 namespace CE
 {
-	class Texture;
 	class MetaType;
 
 	class ContentBrowserEditorSystem final :
@@ -20,19 +20,29 @@ namespace CE
 	private:
 		struct ContentEntry
 		{
-			WeakAssetHandle<> mAsset{};
+			ContentEntry() = default;
 
-			// Will be nullopt if there has not yet been
-			// an attempt to generate a thumbnail.
-			// May still be nullptr if the attempt was made,
-			// but failed.
-			std::optional<AssetHandle<Texture>> mThumbnail{};
+			ContentEntry(const ContentEntry&) = delete;
+			ContentEntry(ContentEntry&&) noexcept = default;
+
+			ContentEntry& operator=(const ContentEntry&) = delete;
+			ContentEntry& operator=(ContentEntry&&) noexcept = default;
+
+			WeakAssetHandle<> mAsset{};
+			std::unique_ptr<ThumbnailFactory> mThumbnailFactory{};
 		};
 
 		struct ContentFolder
 		{
 			ContentFolder() = default;
 			ContentFolder(const std::filesystem::path& path) : mPath(path) {}
+
+			ContentFolder(const ContentFolder&) = delete;
+			ContentFolder(ContentFolder&&) noexcept = default;
+
+			ContentFolder& operator=(const ContentFolder&) = delete;
+			ContentFolder& operator=(ContentFolder&&) noexcept = default;
+
 			std::filesystem::path mPath{};
 			std::vector<ContentFolder> mChildren{};
 			std::vector<ContentEntry> mContent{};

@@ -5,6 +5,7 @@
 #include "Assets/Asset.h"
 #include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
+#include "Rendering/FrameBuffer.h"
 #include "Utilities/ASync.h"
 
 class DXDescHeap;
@@ -15,67 +16,72 @@ namespace CE
 	class Texture :
 		public Asset
 	{
-		public:
-			Texture(std::string_view name);
-			Texture(AssetLoadInfo& loadInfo);
-
-			~Texture() override;
-
-			Texture(Texture&& other) noexcept;
-			Texture(const Texture&) = delete;
-
-			Texture& operator=(Texture&&) = delete;
-			Texture& operator=(const Texture&) = delete;
-
-			static AssetHandle<Texture> TryGetDefaultTexture();
-
-			bool IsReadyToBeSentToGpu() const;
-			bool WasSendToGPU() const { return mHeapSlot.has_value(); }
-			void SendToGPU() const;
-
-			void BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
-			void BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
+	public:
+		Texture(std::string_view name);
 
 #ifdef EDITOR
-			ImTextureID GetImGuiId() const;
+		Texture(std::string_view name, FrameBuffer&& frameBuffer);
 #endif // EDITOR
 
-		private:
-			int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
-			void GenerateMipmaps() const;
+		Texture(AssetLoadInfo& loadInfo);
 
-			const DXHeapHandle* TryGetHeapSlot() const;
+		~Texture() override;
 
-			std::unique_ptr<DXResource> mTextureBuffer{};
-			std::optional<DXHeapHandle> mHeapSlot;
+		Texture(Texture&& other) noexcept;
+		Texture(const Texture&) = delete;
 
-			std::optional<DXHeapHandle> mUAVslots[3];
-			std::unique_ptr<DXConstBuffer> mMipmapCB;
+		Texture& operator=(Texture&&) = delete;
+		Texture& operator=(const Texture&) = delete;
 
-			struct STBIPixels
-			{
-				~STBIPixels();
-				unsigned char* mPixels{};
-				int mWidth{};
-				int mHeight{};
-			};
+		static AssetHandle<Texture> TryGetDefaultTexture();
 
-			struct DXGenerateMips
-			{
-				uint32_t SrcMipLevel;           // Texture level of source mip
-				uint32_t NumMipLevels;          // Number of OutMips to write: [1-4]
-				uint32_t SrcDimension;          // Width and height of the source texture are even or odd.
-				uint32_t IsSRGB;                // Must apply gamma correction to sRGB textures.
-				glm::vec2 TexelSize;			// 1.0 / OutMip1.Dimensions
-			};
+		bool IsReadyToBeSentToGpu() const;
+		bool WasSendToGPU() const { return mHeapSlot.has_value(); }
+		void SendToGPU() const;
 
-			// Stores the return value of the load thread
-			// After the texture has been sent to the GPU,
-			// this value will be reset to nullptr.
-			std::shared_ptr<STBIPixels> mLoadedPixels{};
-			ASyncThread mLoadingThread{};
+		void BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
+		void BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
 
-			friend ReflectAccess;
-			static MetaType Reflect();
+#ifdef EDITOR
+		ImTextureID GetImGuiId() const;
+#endif // EDITOR
+
+	private:
+		int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
+		void GenerateMipmaps() const;
+
+		const DXHeapHandle* TryGetHeapSlot() const;
+
+		std::unique_ptr<DXResource> mTextureBuffer{};
+		std::optional<DXHeapHandle> mHeapSlot;
+
+		std::optional<DXHeapHandle> mUAVslots[3];
+		std::unique_ptr<DXConstBuffer> mMipmapCB;
+
+		struct STBIPixels
+		{
+			~STBIPixels();
+			unsigned char* mPixels{};
+			int mWidth{};
+			int mHeight{};
+		};
+
+		struct DXGenerateMips
+		{
+			uint32_t SrcMipLevel;           // Texture level of source mip
+			uint32_t NumMipLevels;          // Number of OutMips to write: [1-4]
+			uint32_t SrcDimension;          // Width and height of the source texture are even or odd.
+			uint32_t IsSRGB;                // Must apply gamma correction to sRGB textures.
+			glm::vec2 TexelSize;			// 1.0 / OutMip1.Dimensions
+		};
+
+		// Stores the return value of the load thread
+		// After the texture has been sent to the GPU,
+		// this value will be reset to nullptr.
+		std::shared_ptr<STBIPixels> mLoadedPixels{};
+		ASyncThread mLoadingThread{};
+
+		friend ReflectAccess;
+		static MetaType Reflect();
 	};
 }

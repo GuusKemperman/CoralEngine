@@ -15,7 +15,13 @@ namespace CE
 	void ReflectAssetType([[maybe_unused]] MetaType& type)
 	{
 #ifdef EDITOR
-		type.AddFunc(&GetThumbNailImpl<T>, Internal::sGetThumbnailFuncName);
+		type.AddFunc(
+			[](std::unique_ptr<ThumbnailFactory>& factory, const WeakAssetHandle<>& asset)
+			{
+				factory = GetThumbNailImpl<T>(StaticAssetHandleCast<T>(asset));
+			},
+			Internal::sGetThumbnailFuncName,
+			MetaFunc::ExplicitParams<std::unique_ptr<ThumbnailFactory>&, const WeakAssetHandle<>&>{});
 #endif // EDITOR
 
 		// Will ensure the array and ptr types are reflected at startup

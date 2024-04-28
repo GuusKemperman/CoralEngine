@@ -15,6 +15,12 @@ namespace CE
 		ASyncThread() = default;
 		ASyncThread(std::function<void()>&& work);
 
+		ASyncThread(const ASyncThread&) = delete;
+		ASyncThread(ASyncThread&&) noexcept = default;
+
+		ASyncThread& operator=(const ASyncThread&) = delete;
+		ASyncThread& operator=(ASyncThread&&) noexcept = default;
+
 		~ASyncThread();
 
 		bool WasLaunched() const;

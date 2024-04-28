@@ -110,7 +110,8 @@ std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEdi
     // Iterate through the provided paths
     for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
     {
-        const std::string fullPath = asset.GetFileOfOrigin().value_or("Generated assets").string();
+        const std::string fullPath = asset.GetFileOfOrigin().value_or(
+            std::filesystem::path{ "Generated assets" }.operator/=(asset.GetMetaData().GetName())).string();
 
         std::filesystem::path currentPath{};
         std::filesystem::path relativePath{};
@@ -159,7 +160,8 @@ std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEdi
             }
         }
 
-        ContentEntry newEntry{ std::move(asset) };
+        ContentEntry newEntry{};
+        newEntry.mAsset = std::move(asset);
 
         // Sort alphabetically
         const auto whereToInsert = std::lower_bound(currentFolder->mContent.begin(), currentFolder->mContent.end(), newEntry,
@@ -167,11 +169,11 @@ std::vector<CE::ContentBrowserEditorSystem::ContentFolder> CE::ContentBrowserEdi
             {
                 return lhs.mAsset.GetMetaData().GetName() < rhs.mAsset.GetMetaData().GetName();
             });
-        currentFolder->mContent.insert(whereToInsert, std::move(newEntry));
+        currentFolder->mContent.emplace(whereToInsert, std::move(newEntry));
     }
 
     // Return the root folder, which contains the entire folder structure
-    return rootFolder.mChildren;
+    return std::move(rootFolder.mChildren);
 }
 
 void CE::ContentBrowserEditorSystem::DisplayDirectory(ContentFolder& folder)
@@ -238,12 +240,19 @@ void CE::ContentBrowserEditorSystem::DisplayDirectory(ContentFolder& folder)
 
 void CE::ContentBrowserEditorSystem::DisplayEntry(ContentEntry& entry) const
 {
+    if (entry.mThumbnailFactory != nullptr
+        && entry.mThumbnailFactory->mTexture == nullptr
+        && entry.mThumbnailFactory->mState == ThumbnailFactory::State::NeedMoreTicks)
+    {
+        entry.mThumbnailFactory->Tick();
+    }
+
     const WeakAssetHandle<>& asset = entry.mAsset;
 
     if (Search::AddItem(asset.GetMetaData().GetName(),
         [asset, &entry](std::string_view) -> bool
         {
-            static constexpr ImVec2 itemSize = { 64.0f, 64.0f };
+            static constexpr ImVec2 itemSize = sDesiredThumbNailSize;
 
             static ImGuiID prevTreeId{};
             const ImGuiID currTreeId = ImGui::GetID("");
@@ -258,11 +267,21 @@ void CE::ContentBrowserEditorSystem::DisplayEntry(ContentEntry& entry) const
 
             prevTreeId = currTreeId;
 
-            std::optional<AssetHandle<Texture>>& thumbNail = entry.mThumbnail;
+            std::unique_ptr<ThumbnailFactory>& thumbnailFactory = entry.mThumbnailFactory;
 
-            if (!thumbNail.has_value())
+            if (thumbnailFactory == nullptr)
             {
-                thumbNail = GetThumbNail(asset);
+                thumbnailFactory = GetThumbNail(asset);
+            }
+
+            const AssetHandle<Texture> thumbNailToUse = thumbnailFactory != nullptr && thumbnailFactory->mTexture != nullptr ?
+                thumbnailFactory->mTexture :
+                GetDefaultThumbnail();
+
+            if (thumbNailToUse == nullptr)
+            {
+                LOG(LogEditor, Error, "No default thumbnail texture!");
+                return false;
             }
 
         	const std::string& assetName = asset.GetMetaData().GetName();
@@ -270,25 +289,18 @@ void CE::ContentBrowserEditorSystem::DisplayEntry(ContentEntry& entry) const
 
             if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetMetaData().GetClass().GetTypeId()))
             {
-                if (thumbNail != nullptr)
-                {
-					if (ImGui::ImageButton(assetName.c_str(), (*thumbNail)->GetImGuiId(), itemSize, 
-                        ImVec2(0, 0),
-                        ImVec2(1, 1)))
-					{
-                        returnValue = true;
-					}
-                }
-                else if (ImGui::Button(assetName.c_str()))
-                {
+				if (ImGui::ImageButton(assetName.c_str(), thumbNailToUse->GetImGuiId(), itemSize,
+                    ImVec2(0, 0),
+                    ImVec2(1, 1)))
+				{
                     returnValue = true;
-                }
+				}
             }
             else
             {
-                if (thumbNail != nullptr)
+                if (thumbnailFactory != nullptr)
                 {
-                    ImGui::Image((*thumbNail)->GetImGuiId(), itemSize,
+                    ImGui::Image(thumbNailToUse->GetImGuiId(), itemSize,
                         ImVec2(0, 0),
                         ImVec2(1, 1));
                 }

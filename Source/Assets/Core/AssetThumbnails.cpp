@@ -1,9 +1,24 @@
 #include "Precomp.h"
 #include "Assets/Core/AssetThumbnails.h"
 
+#include "Assets/Level.h"
+#include "Assets/Material.h"
+#include "Assets/StaticMesh.h"
+#include "Assets/Texture.h"
+#include "Components/TransformComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Core/AssetManager.h"
+#include "Rendering/FrameBuffer.h"
+#include "Rendering/Renderer.h"
+#include "World/Registry.h"
+#include "World/World.h"
 
-CE::AssetHandle<CE::Texture> CE::GetThumbNail(WeakAssetHandle<> forAsset)
+static std::string GetThumbnailName(std::string assetName)
+{
+	return CE::Format("{}'s Thumbnail", assetName);
+}
+
+std::unique_ptr<CE::ThumbnailFactory> CE::GetThumbNail(WeakAssetHandle<> forAsset)
 {
 	if (forAsset == nullptr)
 	{
@@ -14,7 +29,7 @@ CE::AssetHandle<CE::Texture> CE::GetThumbNail(WeakAssetHandle<> forAsset)
 	const MetaFunc* const func = assetType.TryGetFunc(Internal::sGetThumbnailFuncName);
 
 	if (func == nullptr
-		|| func->GetParameters().size() != 1)
+		|| func->GetParameters().size() != 2)
 	{
 		LOG(LogEditor, Error, "Could not get thumbnail for asset {} of type {}, function did not exist or had unexpected parameters",
 			forAsset.GetMetaData().GetName(),
@@ -22,18 +37,8 @@ CE::AssetHandle<CE::Texture> CE::GetThumbNail(WeakAssetHandle<> forAsset)
 		return nullptr;
 	}
 
-	const MetaType* handleType = MetaManager::Get().TryGetType(func->GetParameters()[0].mTypeTraits.mStrippedTypeId);
-
-	if (handleType == nullptr)
-	{
-		LOG(LogEditor, Error, "Could not get thumbnail for asset {} of type {}, could not retrieve handle type",
-			forAsset.GetMetaData().GetName(),
-			assetType.GetName());
-		return nullptr;
-	}
-
-	AssetHandle<Texture> returnValue{};
-	const FuncResult result = func->InvokeUncheckedUnpackedWithRVO(&returnValue, MetaAny{ *handleType, &forAsset, false });
+	std::unique_ptr<ThumbnailFactory> returnValue{};
+	const FuncResult result = func->InvokeCheckedUnpacked(returnValue, forAsset);
 
 	if (result.HasError())
 	{
@@ -45,19 +50,54 @@ CE::AssetHandle<CE::Texture> CE::GetThumbNail(WeakAssetHandle<> forAsset)
 	return returnValue;
 }
 
-CE::AssetHandle<CE::Texture> CE::Internal::GetDefaultThumbnail()
+CE::AssetHandle<CE::Texture> CE::GetDefaultThumbnail()
 {
 	return AssetManager::Get().TryGetAsset<Texture>("T_DefaultIcon");
 }
 
-template <>
-CE::AssetHandle<CE::Texture> GetThumbNailImpl<CE::Texture>(const CE::WeakAssetHandle<CE::Texture>& forAsset)
+CE::ThumbnailFromWorldFactory::ThumbnailFromWorldFactory(std::unique_ptr<World>&& world, 
+	std::string_view thumbnailName) :
+	mWorld(std::move(world)),
+	mFrameBuffer(std::make_unique<FrameBuffer>(sDesiredThumbNailSize)),
+	mTextureName(thumbnailName)
 {
-	return CE::AssetHandle<CE::Texture>{ forAsset };
+}
+
+CE::ThumbnailFromWorldFactory::~ThumbnailFromWorldFactory() = default;
+
+void CE::ThumbnailFromWorldFactory::Tick()
+{
+	ThumbnailFactory::Tick();
+
+	mWorld->Tick(1.0f / 60.0f);
+	CE::Renderer::Get().RenderToFrameBuffer(*mWorld, *mFrameBuffer, sDesiredThumbNailSize);
+
+	if (++mNumOfTicksReceived == 2)
+	{
+		Texture texture{ mTextureName, std::move(*mFrameBuffer) };
+		mTexture = AssetManager::Get().AddAsset(std::move(texture));
+		mFrameBuffer.reset();
+		mWorld.reset();
+	}
 }
 
 template <>
-CE::AssetHandle<CE::Texture> GetThumbNailImpl<CE::Script>(const CE::WeakAssetHandle<CE::Script>&)
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::Texture>(const CE::WeakAssetHandle<CE::Texture>& forAsset)
 {
-	return CE::AssetManager::Get().TryGetAsset<CE::Texture>("T_ScriptIcon");
+	return std::make_unique<CE::ThumbnailFactory>(CE::AssetHandle<CE::Texture>{ forAsset });
+}
+
+template <>
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::Script>(const CE::WeakAssetHandle<CE::Script>&)
+{
+	return std::make_unique<CE::ThumbnailFactory>(CE::AssetManager::Get().TryGetAsset<CE::Texture>("T_ScriptIcon"));
+}
+
+template <>
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::Level>(const CE::WeakAssetHandle<CE::Level>& forAsset)
+{
+	CE::World world = CE::AssetHandle<CE::Level>{ forAsset }->CreateWorld(false);
+	return std::make_unique<CE::ThumbnailFromWorldFactory>(
+		std::make_unique<CE::World>(std::move(world)), 
+		GetThumbnailName(forAsset.GetMetaData().GetName()));
 }

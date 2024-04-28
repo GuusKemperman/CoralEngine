@@ -44,23 +44,7 @@ CE::Level::Level(std::string_view name) :
 	Asset(name, MakeTypeId<Level>()),
 	mSerializedComponents(std::make_unique<BinaryGSONObject>())
 {
-	World world{ false };
-	Registry& reg = world.GetRegistry();
-
-	{
-		const entt::entity camera = reg.Create();
-		reg.AddComponent<CameraComponent>(camera);
-		reg.AddComponent<FlyCamControllerComponent>(camera);
-		reg.AddComponent<NameComponent>(camera, "Camera");
-		reg.AddComponent<TransformComponent>(camera).SetLocalPosition({ 0.0f, 0.0f, -30.0f });;
-	}
-
-	{
-		const entt::entity light = reg.Create();
-		reg.AddComponent<NameComponent>(light, "Light");
-		reg.AddComponent<DirectionalLightComponent>(light);
-		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ DEG2RAD(17.0f), DEG2RAD(-63.0f), 0.0f });
-	}
+	World world = CreateDefaultWorld();
 
 	CreateFromWorld(world);
 }
@@ -301,6 +285,29 @@ CE::World CE::Level::CreateWorld(const bool callBeginPlayImmediately) const
 	if (callBeginPlayImmediately)
 	{
 		world.BeginPlay();
+	}
+
+	return world;
+}
+
+CE::World CE::Level::CreateDefaultWorld()
+{
+	World world{ false };
+	Registry& reg = world.GetRegistry();
+
+	{
+		const entt::entity camera = reg.Create();
+		reg.AddComponent<CameraComponent>(camera);
+		reg.AddComponent<FlyCamControllerComponent>(camera);
+		reg.AddComponent<NameComponent>(camera, "Camera");
+		reg.AddComponent<TransformComponent>(camera).SetLocalPosition({ 0.0f, 0.0f, -10.0f });
+	}
+
+	{
+		const entt::entity light = reg.Create();
+		reg.AddComponent<NameComponent>(light, "Light");
+		reg.AddComponent<DirectionalLightComponent>(light);
+		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ DEG2RAD(17.0f), DEG2RAD(-63.0f), 0.0f });
 	}
 
 	return world;

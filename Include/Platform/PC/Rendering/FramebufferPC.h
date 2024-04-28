@@ -29,6 +29,14 @@ namespace CE
 		size_t GetColorTextureId();
 
 	private:
+		// Texture's can be created from
+		// FrameBuffers. This involves
+		// 'stealing' the DXHeapHandle.
+		// We prefer using a friend
+		// declaration over exposing the
+		// stealing API to the user.
+		friend class Texture;
+
 		std::unique_ptr<DXResource> mResource[FRAME_BUFFER_COUNT];
 		std::unique_ptr<DXResource> mDepthResource;
 		DXHeapHandle mFrameBufferHandle[FRAME_BUFFER_COUNT];
