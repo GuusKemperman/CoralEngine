@@ -111,3 +111,25 @@ std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::Prefab>(const CE::Wea
 		std::make_unique<CE::World>(std::move(world)),
 		GetThumbnailName(forAsset.GetMetaData().GetName()));
 }
+
+template <>
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::StaticMesh>(
+	const CE::WeakAssetHandle<CE::StaticMesh>& forAsset)
+{
+	CE::World world = CE::Level::CreateDefaultWorld();
+
+	{
+		CE::Registry& reg = world.GetRegistry();
+		const entt::entity entity = reg.Create();
+
+		reg.AddComponent<CE::TransformComponent>(entity);
+		CE::StaticMeshComponent& staticMeshComponent = reg.AddComponent<CE::StaticMeshComponent>(entity);
+
+		staticMeshComponent.mStaticMesh = CE::AssetHandle<CE::StaticMesh>{ forAsset };
+		staticMeshComponent.mMaterial = CE::Material::TryGetDefaultMaterial();
+	}
+
+	return std::make_unique<CE::ThumbnailFromWorldFactory>(
+		std::make_unique<CE::World>(std::move(world)),
+		GetThumbnailName(forAsset.GetMetaData().GetName()));
+}
