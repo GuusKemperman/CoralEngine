@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "EditorSystems/AssetEditorSystems/PrefabEditorSystem.h"
 
+#include "Assets/Level.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/TransformComponent.h"
@@ -12,7 +13,7 @@
 
 CE::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
 	AssetEditorSystem(std::move(asset)),
-	mWorldHelper(std::make_unique<WorldInspectHelper>(World{false}))
+	mWorldHelper(std::make_unique<WorldInspectHelper>(Level::CreateDefaultWorld()))
 {
 	Registry& reg = mWorldHelper->GetWorld().GetRegistry();
 	mPrefabInstance = reg.CreateFromPrefab(mAsset);
@@ -22,23 +23,6 @@ CE::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
 	{
 		mPrefabInstance = reg.Create();
 		reg.AddComponent<NameComponent>(mPrefabInstance, mAsset.GetName());
-	}
-
-	// Make a camera to see the prefab nicely
-	{
-		mCameraInstance = reg.Create();
-		reg.AddComponent<CameraComponent>(mCameraInstance);
-		reg.AddComponent<FlyCamControllerComponent>(mCameraInstance);
-		reg.AddComponent<NameComponent>(mCameraInstance, "Camera");
-		reg.AddComponent<TransformComponent>(mCameraInstance).SetLocalPosition({ 0.0f, 0.0f, -30.0f });;
-	}
-
-	// And ofcourse some light
-	{
-		mLightInstance = reg.Create();
-		reg.AddComponent<NameComponent>(mLightInstance, "Light");
-		reg.AddComponent<DirectionalLightComponent>(mLightInstance);
-		reg.AddComponent<TransformComponent>(mLightInstance).SetLocalOrientation({DEG2RAD(17.0f), DEG2RAD(-63.0f), 0.0f });
 	}
 }
 

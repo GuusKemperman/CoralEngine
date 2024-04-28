@@ -101,3 +101,13 @@ std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::Level>(const CE::Weak
 		std::make_unique<CE::World>(std::move(world)), 
 		GetThumbnailName(forAsset.GetMetaData().GetName()));
 }
+
+template <>
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::Prefab>(const CE::WeakAssetHandle<CE::Prefab>& forAsset)
+{
+	CE::World world = CE::Level::CreateDefaultWorld();
+	world.GetRegistry().CreateFromPrefab(*CE::AssetHandle<CE::Prefab>{ forAsset });
+	return std::make_unique<CE::ThumbnailFromWorldFactory>(
+		std::make_unique<CE::World>(std::move(world)),
+		GetThumbnailName(forAsset.GetMetaData().GetName()));
+}

@@ -6,6 +6,7 @@
 namespace CE
 {
 	class Level;
+	class Prefab;
 	class Texture;
 	class Script;
 	class World;
@@ -81,5 +82,8 @@ std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle
 
 template<>
 std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle<CE::Level>& forAsset);
+
+template<>
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle<CE::Prefab>& forAsset);
 
 #endif // EDITOR
