@@ -95,6 +95,12 @@ std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::Script>(const CE::Wea
 }
 
 template <>
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::Animation>(const CE::WeakAssetHandle<CE::Animation>&)
+{
+	return std::make_unique<CE::ThumbnailFactory>(CE::AssetManager::Get().TryGetAsset<CE::Texture>("T_AnimationsIcon"));
+}
+
+template <>
 std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::Level>(const CE::WeakAssetHandle<CE::Level>& forAsset)
 {
 	CE::World world = CE::AssetHandle<CE::Level>{ forAsset }->CreateWorld(false);
