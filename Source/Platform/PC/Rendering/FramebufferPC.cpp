@@ -29,7 +29,6 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 	mScissorRect.right = static_cast<LONG>(mViewport.Width);
 	mScissorRect.bottom = static_cast<LONG>(mViewport.Height);
 
-	mClearColor = { 0.2f, 0.2f, 0.2f, 1.f };
 	D3D12_CLEAR_VALUE clearValue = {};
 	clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Use the format that matches your RTV format.
 	clearValue.Color[0] = mClearColor.x; // Red component
@@ -132,7 +131,6 @@ void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 	Device& engineDevice = Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 
-	mClearColor = { 0.2f, 0.2f, 0.2f, 1.f };
 	D3D12_CLEAR_VALUE clearValue = {};
 	clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Use the format that matches your RTV format.
 	clearValue.Color[0] = mClearColor.x; // Red component

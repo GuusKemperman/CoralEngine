@@ -44,7 +44,7 @@ namespace CE
 		DXHeapHandle mDepthStencilHandle;
 		DXHeapHandle mDepthStencilSRVHandle;
 
-		glm::vec4 mClearColor{};
+		glm::vec4 mClearColor{ .39f, .45f, .5f, 1.0f };
 		glm::ivec2 mSize{};
 		D3D12_VIEWPORT mViewport;
 		D3D12_RECT mScissorRect;
