@@ -5,6 +5,7 @@
 
 namespace CE
 {
+	class Ability;
 	class SkinnedMesh;
 	class Animation;
 	class Material;
@@ -101,5 +102,8 @@ std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle
 
 template<>
 std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle<CE::Material>& forAsset);
+
+template<>
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl(const CE::WeakAssetHandle<CE::Ability>& forAsset);
 
 #endif // EDITOR

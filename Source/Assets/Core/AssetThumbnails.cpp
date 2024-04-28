@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Assets/Core/AssetThumbnails.h"
 
+#include "Assets/Ability.h"
 #include "Assets/Level.h"
 #include "Assets/Material.h"
 #include "Assets/StaticMesh.h"
@@ -189,4 +190,17 @@ std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::Material>(const CE::W
 	return std::make_unique<CE::ThumbnailFromWorldFactory>(
 		std::make_unique<CE::World>(std::move(world)),
 		GetThumbnailName(forAsset.GetMetaData().GetName()));
+}
+
+template <>
+std::unique_ptr<CE::ThumbnailFactory> GetThumbNailImpl<CE::Ability>(const CE::WeakAssetHandle<CE::Ability>& forAsset)
+{
+	CE::AssetHandle icon = CE::AssetHandle<CE::Ability>{forAsset}->GetIconTexture();
+
+	if (icon == nullptr)
+	{
+		icon = CE::AssetManager::Get().TryGetAsset<CE::Texture>("T_AbilityIcon");
+	}
+
+	return std::make_unique<CE::ThumbnailFactory>(icon);
 }
