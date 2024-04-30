@@ -32,6 +32,8 @@ namespace CE
 	private:
 		static ImTextureID GetDefaultThumbnail();
 
+		static bool AreAllTexturesLoaded();
+
 		// All thumbnails that are not used get offloaded after this number
 		// multiplied by the amount of time it took to generate the thumbnail.
 		// This keeps expensive thumbnails around for longer.
@@ -39,9 +41,10 @@ namespace CE
 
 		static constexpr float sMinAmountOfTimeConsideredUnused = 1.0f;
 
+		Cooldown mRenderCooldown{ .5f };
 		Cooldown mWorkCooldown{ 1.0f };
 		static constexpr float sMaxTimeToSpendPerFrame = .5f;
-		static constexpr uint32 sMaxNumOfFramesToRenderPerFrame = 5;
+		static constexpr uint32 sMaxNumOfFramesToRenderPerFrame = 1;
 
 		struct GeneratedThumbnail
 		{

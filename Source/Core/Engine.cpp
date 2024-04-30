@@ -136,7 +136,7 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 #endif // EDITOR
 
 	float timeElapsedSinceLastGarbageCollect{};
-	static constexpr float garbageCollectInterval = 30.0f;
+	static constexpr float garbageCollectInterval = 15.0f;
 
 	std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	std::chrono::high_resolution_clock::time_point t2{};

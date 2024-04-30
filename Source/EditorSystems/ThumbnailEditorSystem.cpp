@@ -24,12 +24,35 @@ CE::ThumbnailEditorSystem::ThumbnailEditorSystem() :
 
 void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 {
+	const Timer timeSpendThisFrame{};
+
+	if (mRenderCooldown.IsReady(deltaTime)
+		&& !mCurrentlyGenerating.empty() 
+		&& AreAllTexturesLoaded())
+	{
+		for (uint32 i = 0; i < sMaxNumOfFramesToRenderPerFrame
+			&& timeSpendThisFrame.GetSecondsElapsed() <= sMaxTimeToSpendPerFrame
+			&& !mCurrentlyGenerating.empty(); i++)
+		{
+			CurrentlyGenerating& current = mCurrentlyGenerating.front();
+
+			Timer timeToRenderFrame{};
+
+			Renderer::Get().RenderToFrameBuffer(current.mWorld, current.mFrameBuffer, current.mFrameBuffer.GetSize());
+
+			const auto result = mGeneratedThumbnails.emplace(std::piecewise_construct,
+				std::forward_as_tuple(Name::HashString(current.mForAsset.GetMetaData().GetName())),
+				std::forward_as_tuple(std::move(current.mFrameBuffer)));
+
+			result.first->second.mTimeToGenerate = timeToRenderFrame.GetSecondsElapsed() + current.mTimeNeededToCreateWorld;
+			mCurrentlyGenerating.pop_front();
+		}
+	}
+
 	if (!mWorkCooldown.IsReady(deltaTime))
 	{
 		return;
 	}
-
-	const Timer timeSpendThisFrame{};
 
 	for (auto it = mGeneratedThumbnails.begin(); it != mGeneratedThumbnails.end() && timeSpendThisFrame.GetSecondsElapsed() <= sMaxTimeToSpendPerFrame;)
 	{
@@ -90,65 +113,11 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 		it = mGenerateQueue.erase(it);
 	}
 
-	if (mCurrentlyGenerating.empty())
+	if (!mCurrentlyGenerating.empty())
 	{
-		return;
-	}
-
-	bool anyNotSendYet{};
-
-	for (WeakAssetHandle<Material> weakAsset : AssetManager::Get().GetAllAssets<Material>())
-	{
-		if (weakAsset.GetNumberOfStrongReferences() == 0)
-		{
-			continue;
-		}
-
-		AssetHandle<Material> material{ std::move(weakAsset) };
-
-		// Load it in
-		(void)*material;
-	}
-
-	for (WeakAssetHandle<Texture> weakAsset : AssetManager::Get().GetAllAssets<Texture>())
-	{
-		if (weakAsset.GetNumberOfStrongReferences() == 0)
-		{
-			continue;
-		}
-
-		AssetHandle<Texture> texture{ std::move(weakAsset) };
-
-		// Kickstarts the loading process
-		(void)*texture;
-
-		if (!texture->WasSendToGPU())
-		{
-			anyNotSendYet = true;
-		}
-	}
-
-	if (anyNotSendYet)
-	{
-		return;
-	}
-
-	for (uint32 i = 0; i < sMaxNumOfFramesToRenderPerFrame 
-		&& timeSpendThisFrame.GetSecondsElapsed() <= sMaxTimeToSpendPerFrame
-		&& !mCurrentlyGenerating.empty(); i++)
-	{
-		CurrentlyGenerating& current = mCurrentlyGenerating.front();
-
-		Timer timeToRenderFrame{};
-
-		Renderer::Get().RenderToFrameBuffer(current.mWorld, current.mFrameBuffer, current.mFrameBuffer.GetSize());
-
-		const auto result = mGeneratedThumbnails.emplace(std::piecewise_construct,
-			std::forward_as_tuple(Name::HashString(current.mForAsset.GetMetaData().GetName())),
-			std::forward_as_tuple(std::move(current.mFrameBuffer)));
-
-		result.first->second.mTimeToGenerate = timeToRenderFrame.GetSecondsElapsed() + current.mTimeNeededToCreateWorld;
-		mCurrentlyGenerating.pop_front();
+		// Starts the loading process
+		// for all textures
+		(void)AreAllTexturesLoaded();
 	}
 }
 
@@ -223,6 +192,44 @@ ImTextureID CE::ThumbnailEditorSystem::GetDefaultThumbnail()
 {
 	AssetHandle<Texture> icon = AssetManager::Get().TryGetAsset<Texture>("T_DefaultIcon");
 	return icon == nullptr ? nullptr : icon->GetImGuiId();
+}
+
+bool CE::ThumbnailEditorSystem::AreAllTexturesLoaded()
+{
+	bool anyNotSendYet{};
+
+	for (WeakAssetHandle<Material> weakAsset : AssetManager::Get().GetAllAssets<Material>())
+	{
+		if (weakAsset.GetNumberOfStrongReferences() == 0)
+		{
+			continue;
+		}
+
+		AssetHandle<Material> material{ std::move(weakAsset) };
+
+		// Load it in
+		(void)*material;
+	}
+
+	for (WeakAssetHandle<Texture> weakAsset : AssetManager::Get().GetAllAssets<Texture>())
+	{
+		if (weakAsset.GetNumberOfStrongReferences() == 0)
+		{
+			continue;
+		}
+
+		AssetHandle<Texture> texture{ std::move(weakAsset) };
+
+		// Kickstarts the loading process
+		(void)*texture;
+
+		if (!texture->WasSendToGPU())
+		{
+			anyNotSendYet = true;
+		}
+	}
+
+	return !anyNotSendYet;
 }
 
 CE::ThumbnailEditorSystem::GeneratedThumbnail::GeneratedThumbnail(FrameBuffer&& frameBuffer)
