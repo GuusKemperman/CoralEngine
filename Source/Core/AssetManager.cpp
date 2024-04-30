@@ -104,10 +104,7 @@ CE::AssetManager::~AssetManager()
 {
 	for (Internal::AssetInternal& assetInternal : mAssets)
 	{
-		if (assetInternal.mAsset != nullptr)
-		{
-			assetInternal.UnLoad();
-		}
+		assetInternal.UnloadIfLoaded();
 	}
 }
 
@@ -123,23 +120,6 @@ CE::Internal::AssetInternal* CE::AssetManager::TryGetAssetInternal(const Name ke
 	return &it->second.get();
 }
 
-CE::Internal::AssetInternal* CE::AssetManager::TryGetLoadedAssetInternal(const Name key, const TypeId typeId)
-{
-	auto* internalAsset = TryGetAssetInternal(key, typeId);
-
-	if (internalAsset == nullptr)
-	{
-		return nullptr;
-	}
-
-	if (internalAsset->mAsset == nullptr)
-	{
-		internalAsset->Load();
-		ASSERT(internalAsset->mAsset != nullptr);
-	}
-	return internalAsset;
-}
-
 void CE::AssetManager::UnloadAllUnusedAssets()
 {
 	bool wereAnyUnloaded;
@@ -149,14 +129,14 @@ void CE::AssetManager::UnloadAllUnusedAssets()
 		wereAnyUnloaded = false;
 		for (Internal::AssetInternal& asset : mAssets)
 		{
-			if (asset.mAsset == nullptr // Asset is already unloaded
+			if (!asset.IsLoaded() // Asset is already unloaded
 				|| asset.mRefCounters[static_cast<int>(Internal::AssetInternal::RefCountType::Strong)] > 0 // Someone is holding a reference
 				|| !asset.mFileOfOrigin.has_value()) // This asset was generated at runtime; if we unload it, we won't be able to load if back in again. 
 			{
 				continue;
 			}
 
-			asset.UnLoad();
+			asset.UnloadIfLoaded();
 			wereAnyUnloaded = true;
 		}
 	} while (wereAnyUnloaded); // We might've unloaded an asset that held onto the last reference of another asset

@@ -185,7 +185,6 @@ namespace CE
 		std::unordered_map<Name::HashType, std::reference_wrapper<Internal::AssetInternal>> mLookUp{};
 
 		Internal::AssetInternal* TryGetAssetInternal(Name key, TypeId typeId);
-		Internal::AssetInternal* TryGetLoadedAssetInternal(Name key, TypeId typeId);
 
 		Internal::AssetInternal* TryConstruct(const std::filesystem::path& path);
 		Internal::AssetInternal* TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData);
@@ -284,7 +283,13 @@ namespace CE
 
 		if (internalAsset != nullptr)
 		{
-			internalAsset->mAsset = MakeUniqueInPlace<T, Asset>(std::move(generatedAsset));
+			internalAsset->mAsset = {
+				[&generatedAsset]
+				{
+					return MakeUniqueInPlace<T, Asset>(std::move(generatedAsset));
+				}
+			};
+			internalAsset->mAsset.GetThread().Join();
 		}
 
 		return { internalAsset };

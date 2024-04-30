@@ -3,6 +3,7 @@
 
 #include "AssetFileMetaData.h"
 #include "Utilities/MemFunctions.h"
+#include "Utilities/ASync.h"
 
 namespace CE
 {
@@ -16,12 +17,23 @@ namespace CE::Internal
 	{
 		AssetInternal(AssetFileMetaData&& metaData, const std::optional<std::filesystem::path>& path);
 
-		void Load();
-		void UnLoad();
+		// Will return the Asset, if it has finished loading.
+		Asset* TryGet();
+
+		// Will finish loading if we havent already and return the asset
+		Asset& Get();
+
+		void StartLoadingIfNotStarted();
+
+		void UnloadIfLoaded();
+
+		bool IsLoaded() const;
 
 		enum class RefCountType : bool { Strong, Weak };
 
 		std::array<std::atomic<uint32>, 2> mRefCounters{};
+
+		ASyncFuture<std::unique_ptr<Asset, InPlaceDeleter<Asset, true>>> mAsset{};
 
 		AssetFileMetaData mMetaData;
 
@@ -33,6 +45,6 @@ namespace CE::Internal
 		// The .rename files that redirect to this asset.
 		std::vector<std::filesystem::path> mOldNames{};
 
-		std::unique_ptr<Asset, InPlaceDeleter<Asset, true>> mAsset{};
+		std::mutex mLoadUnloadMutex{};
 	};
 }

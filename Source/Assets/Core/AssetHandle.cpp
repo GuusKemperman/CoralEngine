@@ -60,7 +60,7 @@ const CE::AssetFileMetaData& CE::AssetHandleBase::GetMetaData() const
 
 bool CE::AssetHandleBase::IsLoaded() const
 {
-	return mAssetInternal != nullptr && mAssetInternal->mAsset != nullptr;
+	return mAssetInternal->IsLoaded();
 }
 
 const std::optional<std::filesystem::path>& CE::AssetHandleBase::GetFileOfOrigin() const
