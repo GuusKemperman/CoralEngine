@@ -103,8 +103,6 @@ namespace CE
 	public:
 		using AssetHandleRefCounter::AssetHandleRefCounter;
 
-		AssetHandle(Internal::AssetInternal* assetInternal);
-
 		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
 		AssetHandle(AssetHandle<O>&& other) noexcept;
 
@@ -124,8 +122,6 @@ namespace CE
 		const T* operator->() const;
 
 		const T* Get() const;
-
-		const T* GetIfReady() const;
 
 	private:
 		template<typename U, typename O, std::enable_if_t<std::is_convertible_v<U*, O*>, bool>>
@@ -247,16 +243,6 @@ namespace CE
 	}
 
 	template <typename T>
-	AssetHandle<T>::AssetHandle(Internal::AssetInternal* assetInternal) :
-		AssetHandleRefCounter(assetInternal)
-	{
-		if (mAssetInternal != nullptr)
-		{
-			mAssetInternal->StartLoadingIfNotStarted();
-		}
-	}
-
-	template <typename T>
 	template <typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool>>
 	AssetHandle<T>::AssetHandle(AssetHandle<O>&& other) noexcept :
 		AssetHandleRefCounter(std::move(other))
@@ -312,28 +298,18 @@ namespace CE
 			return nullptr;
 		}
 
-		// We do a reinterpret_cast,
-		// otherwise if we use a static_cast
-		// the user is forced to include the
-		// entire header of where the asset is
-		// located.
-		return reinterpret_cast<const T*>(&mAssetInternal->Get());
-	}
-
-	template <typename T>
-	const T* AssetHandle<T>::GetIfReady() const
-	{
-		if (mAssetInternal == nullptr)
+		if (!IsLoaded())
 		{
-			return nullptr;
+			mAssetInternal->Load();
 		}
+		ASSERT(IsLoaded());
 
 		// We do a reinterpret_cast,
 		// otherwise if we use a static_cast
 		// the user is forced to include the
 		// entire header of where the asset is
 		// located.
-		return reinterpret_cast<const T*>(mAssetInternal->TryGet());
+		return reinterpret_cast<const T*>(mAssetInternal->mAsset.get());
 	}
 
 	template <typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool>>

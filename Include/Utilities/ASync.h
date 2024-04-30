@@ -33,38 +33,4 @@ namespace CE
 	private:
 		std::shared_ptr<Internal::Job> mJob{};
 	};
-
-	template<typename T>
-	class ASyncFuture
-	{
-	public:
-		ASyncFuture() = default;
-		ASyncFuture(std::function<T()>&& work) :
-			mValue(std::make_shared<std::optional<T>>()),
-			mThread(
-				[value = mValue, work]
-				{
-					const_cast<std::shared_ptr<std::optional<T>>&>(value)->emplace(work());
-				}
-			)
-		{
-		}
-
-		ASyncFuture(const ASyncFuture&) = delete;
-		ASyncFuture(ASyncFuture&&) noexcept = default;
-
-		ASyncFuture& operator=(const ASyncFuture&) = delete;
-		ASyncFuture& operator=(ASyncFuture&&) noexcept = default;
-
-		ASyncThread& GetThread() { return mThread; }
-		const ASyncThread& GetThread() const { return mThread; }
-
-		bool IsReady() const { return mValue != nullptr && mValue->has_value(); }
-
-		T& Get() { return **mValue; }
-
-	private:
-		std::shared_ptr<std::optional<T>> mValue{};
-		ASyncThread mThread{};
-	};
 }
