@@ -300,14 +300,26 @@ CE::World CE::Level::CreateDefaultWorld()
 		reg.AddComponent<CameraComponent>(camera);
 		reg.AddComponent<FlyCamControllerComponent>(camera);
 		reg.AddComponent<NameComponent>(camera, "Camera");
-		reg.AddComponent<TransformComponent>(camera).SetLocalPosition({ 0.0f, 0.0f, -10.0f });
+
+		TransformComponent& transform = reg.AddComponent<TransformComponent>(camera);
+		transform.SetLocalPosition({ 5.5f, 2.5f, -7.5f });
+		transform.SetLocalOrientation({ DEG2RAD(14.5f), DEG2RAD(-33.0f), 0.0f });
 	}
 
 	{
 		const entt::entity light = reg.Create();
-		reg.AddComponent<NameComponent>(light, "Light");
-		reg.AddComponent<DirectionalLightComponent>(light);
-		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ DEG2RAD(17.0f), DEG2RAD(-63.0f), 0.0f });
+		reg.AddComponent<NameComponent>(light, "Main Light");
+		DirectionalLightComponent& lightComponent = reg.AddComponent<DirectionalLightComponent>(light);
+		lightComponent.mCastShadows = true;
+		lightComponent.mIntensity = .6f;
+		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ DEG2RAD(-15.6), DEG2RAD(-47.6), DEG2RAD(51.6) });
+	}
+
+	{
+		const entt::entity light = reg.Create();
+		reg.AddComponent<NameComponent>(light, "Secondary Light");
+		reg.AddComponent<DirectionalLightComponent>(light).mIntensity = .6f;
+		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ DEG2RAD(113.8), DEG2RAD(53.54), DEG2RAD(90.7) });
 	}
 
 	return world;

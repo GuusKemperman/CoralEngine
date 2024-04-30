@@ -16,6 +16,7 @@
 #include "World/World.h"
 #include "Utilities/Math.h"
 #include "Assets/Prefabs/Prefab.h"
+#include "World/Physics.h"
 
 CE::MetaType CE::AbilityFunctionality::Reflect()
 {

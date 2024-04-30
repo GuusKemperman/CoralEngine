@@ -9,6 +9,7 @@
 #include "Meta/MetaProps.h"
 #include "World/Registry.h"
 #include "World/WorldViewport.h"
+#include "World/Physics.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Assets/Level.h"
 #include "Rendering/GPUWorld.h"

@@ -3,6 +3,7 @@
 
 #include "Core/AssetManager.h"
 #include "Core/Editor.h"
+#include "EditorSystems/ThumbnailEditorSystem.h"
 #include "Meta/Fwd/MetaTypeFwd.h"
 #include "Utilities/Search.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"

@@ -1,6 +1,5 @@
 #pragma once
 #include "Assets/Core/AssetHandle.h"
-#include "Physics.h"
 #include "BasicDataTypes/ScalableTimer.h"
 #include "Meta/MetaReflect.h"
 
@@ -12,6 +11,7 @@ namespace CE
 	class GPUWorld;
 	class DebugRenderer;
 	class BinaryGSONObject;
+	class Physics;
 
 	class World
 	{

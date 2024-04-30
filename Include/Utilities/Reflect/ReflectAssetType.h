@@ -5,7 +5,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 #ifdef EDITOR
-#include "Assets/Core/AssetThumbnails.h"
+#include "EditorSystems/ThumbnailEditorSystem.h"
 #endif // EDITOR
 
 namespace CE
@@ -16,12 +16,12 @@ namespace CE
 	{
 #ifdef EDITOR
 		type.AddFunc(
-			[](std::unique_ptr<ThumbnailFactory>& factory, const WeakAssetHandle<>& asset)
+			[](GetThumbnailRet& ret, const WeakAssetHandle<>& asset)
 			{
-				factory = GetThumbNailImpl<T>(StaticAssetHandleCast<T>(asset));
+				ret = GetThumbNailImpl<T>(StaticAssetHandleCast<T>(asset));
 			},
 			Internal::sGetThumbnailFuncName,
-			MetaFunc::ExplicitParams<std::unique_ptr<ThumbnailFactory>&, const WeakAssetHandle<>&>{});
+			MetaFunc::ExplicitParams<GetThumbnailRet&, const WeakAssetHandle<>&>{});
 #endif // EDITOR
 
 		// Will ensure the array and ptr types are reflected at startup

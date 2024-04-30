@@ -1,13 +1,12 @@
 #ifdef EDITOR
 #pragma once
 #include "EditorSystems/EditorSystem.h"
-
 #include "Core/AssetManager.h"
-#include "Assets/Core/AssetThumbnails.h"
 
 namespace CE
 {
 	class MetaType;
+	class ThumbnailEditorSystem;
 
 	class ContentBrowserEditorSystem final :
 		public EditorSystem
@@ -18,20 +17,6 @@ namespace CE
 		void Tick(float deltaTime) override;
 
 	private:
-		struct ContentEntry
-		{
-			ContentEntry() = default;
-
-			ContentEntry(const ContentEntry&) = delete;
-			ContentEntry(ContentEntry&&) noexcept = default;
-
-			ContentEntry& operator=(const ContentEntry&) = delete;
-			ContentEntry& operator=(ContentEntry&&) noexcept = default;
-
-			WeakAssetHandle<> mAsset{};
-			std::unique_ptr<ThumbnailFactory> mThumbnailFactory{};
-		};
-
 		struct ContentFolder
 		{
 			ContentFolder() = default;
@@ -45,13 +30,13 @@ namespace CE
 
 			std::filesystem::path mPath{};
 			std::vector<ContentFolder> mChildren{};
-			std::vector<ContentEntry> mContent{};
+			std::vector<WeakAssetHandle<>> mContent{};
 		};
 		static std::vector<ContentFolder> MakeFolderGraph();
 
-		void DisplayDirectory(ContentFolder& folder);
+		void DisplayFolder(ContentFolder& folder, ThumbnailEditorSystem& thumbnailSystem);
 
-		void DisplayEntry(ContentEntry& entry) const;
+		void DisplayAsset(WeakAssetHandle<>& asset, ThumbnailEditorSystem& thumbnailSystem) const;
 
 		void OpenAsset(WeakAssetHandle<> asset) const;
 
