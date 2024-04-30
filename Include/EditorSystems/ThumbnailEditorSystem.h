@@ -32,19 +32,22 @@ namespace CE
 	private:
 		static ImTextureID GetDefaultThumbnail();
 
-		static bool AreAllTexturesLoaded();
+		static bool AreAllAssetsLoaded(const Timer& timeOut);
+
+		template<typename T>
+		static bool LoadAssets(const Timer& timeOut);
 
 		// All thumbnails that are not used get offloaded after this number
 		// multiplied by the amount of time it took to generate the thumbnail.
 		// This keeps expensive thumbnails around for longer.
 		static constexpr float sUnusedThumbnailRemoveStrictness = 200.0f;
 
-		static constexpr float sMinAmountOfTimeConsideredUnused = 10.0f;
+		static constexpr float sMinAmountOfTimeConsideredUnused = 2.0f;
 
-		Cooldown mRenderCooldown{ .5f };
+		Cooldown mRenderCooldown{ .1f };
 		Cooldown mWorkCooldown{ 1.0f };
-		static constexpr float sMaxTimeToSpendPerFrame = .1f;
-		static constexpr uint32 sMaxNumOfFramesToRenderPerFrame = 2;
+		static constexpr float sMaxTimeToSpendPerFrame = .075f;
+		static constexpr uint32 sMaxNumOfFramesToRenderPerFrame = 10;
 
 		struct GeneratedThumbnail
 		{

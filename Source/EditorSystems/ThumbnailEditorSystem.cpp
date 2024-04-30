@@ -28,7 +28,7 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 
 	if (mRenderCooldown.IsReady(deltaTime)
 		&& !mCurrentlyGenerating.empty() 
-		&& AreAllTexturesLoaded())
+		&& AreAllAssetsLoaded(timeSpendThisFrame))
 	{
 		auto it = mCurrentlyGenerating.begin();
 		for (uint32 numRendered = 0; it != mCurrentlyGenerating.end() 
@@ -38,7 +38,7 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 			CurrentlyGenerating& current = *it;
 			Timer timeToRenderFrame{};
 
-			LOG(LogEditor, Message, "Rendering {} to thumbnail", current.mForAsset.GetMetaData().GetName());
+			LOG(LogEditor, Verbose, "Rendering {} to thumbnail", current.mForAsset.GetMetaData().GetName());
 			Renderer::Get().RenderToFrameBuffer(current.mWorld, current.mFrameBuffer, current.mFrameBuffer.GetSize());
 
 			const auto result = mGeneratedThumbnails.emplace(std::piecewise_construct,
@@ -118,7 +118,7 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 	{
 		// Starts the loading process
 		// for all textures
-		(void)AreAllTexturesLoaded();
+		(void)AreAllAssetsLoaded(timeSpendThisFrame);
 	}
 }
 
@@ -195,25 +195,20 @@ ImTextureID CE::ThumbnailEditorSystem::GetDefaultThumbnail()
 	return icon == nullptr ? nullptr : icon->GetImGuiId();
 }
 
-bool CE::ThumbnailEditorSystem::AreAllTexturesLoaded()
+bool CE::ThumbnailEditorSystem::AreAllAssetsLoaded(const Timer& timeOut)
 {
-	bool anyNotSendYet{};
-
-	for (WeakAssetHandle<Material> weakAsset : AssetManager::Get().GetAllAssets<Material>())
-	{
-		if (weakAsset.GetNumberOfStrongReferences() == 0)
-		{
-			continue;
-		}
-
-		AssetHandle<Material> material{ std::move(weakAsset) };
-
-		// Load it in
-		(void)*material;
-	}
+	bool allLoaded = LoadAssets<Material>(timeOut)
+		&& LoadAssets<StaticMesh>(timeOut)
+		&& LoadAssets<SkinnedMesh>(timeOut)
+		&& LoadAssets<Animation>(timeOut);
 
 	for (WeakAssetHandle<Texture> weakAsset : AssetManager::Get().GetAllAssets<Texture>())
 	{
+		if (timeOut.GetSecondsElapsed() > sMaxTimeToSpendPerFrame)
+		{
+			return false;
+		}
+
 		if (weakAsset.GetNumberOfStrongReferences() == 0)
 		{
 			continue;
@@ -226,11 +221,35 @@ bool CE::ThumbnailEditorSystem::AreAllTexturesLoaded()
 
 		if (!texture->WasSendToGPU())
 		{
-			anyNotSendYet = true;
+			allLoaded = false;
 		}
 	}
 
-	return !anyNotSendYet;
+	return allLoaded;
+}
+
+template <typename T>
+bool CE::ThumbnailEditorSystem::LoadAssets(const Timer& timeOut)
+{
+	for (WeakAssetHandle<T> weakAsset : AssetManager::Get().GetAllAssets<T>())
+	{
+		if (timeOut.GetSecondsElapsed() > sMaxTimeToSpendPerFrame)
+		{
+			return false;
+		}
+
+		if (weakAsset.GetNumberOfStrongReferences() == 0)
+		{
+			continue;
+		}
+
+		AssetHandle<T> asset{ std::move(weakAsset) };
+
+		// Load it in
+		(void)*asset;
+	}
+
+	return true;
 }
 
 CE::ThumbnailEditorSystem::GeneratedThumbnail::GeneratedThumbnail(FrameBuffer&& frameBuffer)
