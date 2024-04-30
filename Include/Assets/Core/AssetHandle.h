@@ -298,6 +298,8 @@ namespace CE
 			return nullptr;
 		}
 
+		mAssetInternal->mHasBeenDereferencedSinceGarbageCollect = true;
+
 		if (!IsLoaded())
 		{
 			mAssetInternal->Load();

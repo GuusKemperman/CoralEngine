@@ -14,8 +14,6 @@ CE::Internal::AssetInternal::AssetInternal(AssetFileMetaData&& metaData, const s
 
 void CE::Internal::AssetInternal::Load()
 {
-	mHasBeenLoadedSinceGarbageCollect = true;
-
 	LOG(LogAssets, Verbose, "Loading {}", mMetaData.GetName());
 
 	if (mAsset != nullptr)

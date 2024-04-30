@@ -27,7 +27,7 @@ namespace CE::Internal
 
 		AssetFileMetaData mMetaData;
 
-		bool mHasBeenLoadedSinceGarbageCollect{};
+		bool mHasBeenDereferencedSinceGarbageCollect{};
 
 		// The .asset file. Is only nullopt if this
 		// asset was generated at runtime, and no path

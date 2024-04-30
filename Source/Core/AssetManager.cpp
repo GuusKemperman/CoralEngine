@@ -152,7 +152,7 @@ void CE::AssetManager::UnloadAllUnusedAssets()
 			if (asset.mAsset == nullptr // Asset is already unloaded
 				|| asset.mRefCounters[static_cast<int>(Internal::AssetInternal::RefCountType::Strong)] > 0 // Someone is holding a reference
 				|| !asset.mFileOfOrigin.has_value() // This asset was generated at runtime; if we unload it, we won't be able to load if back in again. 
-				|| asset.mHasBeenLoadedSinceGarbageCollect) // While this asset is unloaded, it was recently loaded. Maybe something 
+				|| asset.mHasBeenDereferencedSinceGarbageCollect) // While this asset is unloaded, it was recently loaded. Maybe something 
 															// is only briefly loading it every ~30 seconds, so lets not unload this.
 			{
 				continue;
@@ -165,7 +165,7 @@ void CE::AssetManager::UnloadAllUnusedAssets()
 
 	for (Internal::AssetInternal& asset : mAssets)
 	{
-		asset.mHasBeenLoadedSinceGarbageCollect = false;
+		asset.mHasBeenDereferencedSinceGarbageCollect = false;
 	}
 }
 
