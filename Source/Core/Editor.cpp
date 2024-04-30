@@ -636,7 +636,8 @@ void CE::Editor::DisplayMainMenuBar()
 		{
 			std::function<void(const MetaType&)> recursivelyDisplayAsOption = [this, &recursivelyDisplayAsOption](const MetaType& type)
 				{
-					if (type.IsDefaultConstructible())
+					if (type.IsDefaultConstructible()
+						&& !type.GetProperties().Has(Props::sEditorSystemAlwaysOpenTag))
 					{
 						const EditorSystem* existingSystem = TryGetSystemInternal(type.GetTypeId());
 						bool selected = existingSystem != nullptr;

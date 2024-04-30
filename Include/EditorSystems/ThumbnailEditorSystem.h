@@ -32,24 +32,32 @@ namespace CE
 	private:
 		static ImTextureID GetDefaultThumbnail();
 
+		// All thumbnails that are not used get offloaded after this number
+		// multiplied by the amount of time it took to generate the thumbnail.
+		// This keeps expensive thumbnails around for longer.
+		static constexpr float sUnusedThumbnailRemoveStrictness = 200.0f;
+
+		static constexpr float sMinAmountOfTimeConsideredUnused = 1.0f;
+
+		Cooldown mWorkCooldown{ 1.0f };
+		static constexpr float sMaxTimeToSpendPerFrame = .5f;
+		static constexpr uint32 sMaxNumOfFramesToRenderPerFrame = 5;
+
 		struct GeneratedThumbnail
 		{
 			GeneratedThumbnail(FrameBuffer&& frameBuffer);
 			GeneratedThumbnail(AssetHandle<Texture> texture);
 
 			std::variant<AssetHandle<Texture>, Texture> mTexture{};
-			uint32 mNumOfTimesRequested = 1;
+			Timer mNumSecondsSinceLastRequested{};
+			float mTimeToGenerate{};
 		};
 		std::unordered_map<Name::HashType, GeneratedThumbnail> mGeneratedThumbnails{};
 
 		struct GenerateRequest
 		{
-			GenerateRequest(WeakAssetHandle<> handle);
-			~GenerateRequest();
-
 			WeakAssetHandle<> mForAsset{};
-			ASyncFuture<GetThumbnailRet> mResult{};
-			uint32 mNumOfTimesRequested = 1;
+			Timer mNumSecondsSinceLastRequested{};
 		};
 
 		std::list<GenerateRequest> mGenerateQueue{};
@@ -61,12 +69,10 @@ namespace CE
 			World mWorld;
 			WeakAssetHandle<> mForAsset{};
 			FrameBuffer mFrameBuffer{ sGeneratedThumbnailResolution };
-			uint32 mNumOfTimesRequested = 1;
-			Timer mTimer{};
+			Timer mNumSecondsSinceLastRequested{};
+			float mTimeNeededToCreateWorld{};
 		};
 		std::list<CurrentlyGenerating> mCurrentlyGenerating{};
-
-		Cooldown mRenderFrameCooldown{ 1.0f };
 
 		friend ReflectAccess;
 		static MetaType Reflect();

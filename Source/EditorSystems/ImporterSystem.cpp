@@ -112,25 +112,40 @@ CE::ImporterSystem::ImporterSystem() :
 	}
 }
 
-CE::ImporterSystem::~ImporterSystem() = default;
+CE::ImporterSystem::~ImporterSystem()
+{
+	if (mChangedFilesInDirectoriesToWatch.GetThread().WasLaunched())
+	{
+		mChangedFilesInDirectoriesToWatch.GetThread().CancelOrJoin();
+	}
+}
 
 void CE::ImporterSystem::Tick(const float dt)
 {
-	mTimeSinceLastCheckedOnDirectories += dt;
-
-	if (mTimeSinceLastCheckedOnDirectories >= sCheckWatchedDirectoriesCooldown)
+	if (mCheckDirectoryCooldown.IsReady(dt)
+		&& !mChangedFilesInDirectoriesToWatch.GetThread().WasLaunched())
 	{
-		const std::vector<ImportRequest> assetsToImport = GetAllFilesToImport();
+		mChangedFilesInDirectoriesToWatch =
+		{
+			[this]
+			{
+				return GetAllFilesToImport();
+			}
+		};
+	}
+
+	if (mChangedFilesInDirectoriesToWatch.IsReady())
+	{
+		const std::vector<ImportRequest>& assetsToImport = mChangedFilesInDirectoriesToWatch.Get();
 
 		for (const ImportRequest& assetToImport : assetsToImport)
 		{
 			Import(assetToImport.mFile, assetToImport.mReasonForImporting);
 		}
 
-		mTimeSinceLastCheckedOnDirectories = 0.0f;
+		mChangedFilesInDirectoriesToWatch = {};
 	}
 
-	GetAllFilesToImport();
 	RetrieveImportResultsFromFutures();
 
 	ImGui::SetNextWindowSize({ 800.0f, 600.0f }, ImGuiCond_FirstUseEver);
