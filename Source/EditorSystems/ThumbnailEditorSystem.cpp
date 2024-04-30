@@ -57,23 +57,17 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 		if (it->mNumOfTimesRequested == 0)
 		{
 			it = mGenerateQueue.erase(it);
+			continue;
 		}
-		else
+
+		if (!it->mResult.IsReady())
 		{
 			it->mNumOfTimesRequested = 0;
 			++it;
+			continue;
 		}
-	}
 
-	const Timer timer{};
-
-	while (timer.GetSecondsElapsed() <= .05f
-		&& !mGenerateQueue.empty())
-	{
-		const GenerateRequest request = std::move(mGenerateQueue.front());
-		mGenerateQueue.pop_front();
-
-		GetThumbnailRet generatedThumbnail = Internal::GenerateThumbnail(request.mForAsset);
+		GetThumbnailRet& generatedThumbnail = it->mResult.Get();
 
 		if (std::holds_alternative<AssetHandle<Texture>>(generatedThumbnail))
 		{
@@ -82,7 +76,7 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 			if (texture != nullptr)
 			{
 				[[maybe_unused]] const auto result = mGeneratedThumbnails.emplace(std::piecewise_construct,
-					std::forward_as_tuple(Name::HashString(request.mForAsset.GetMetaData().GetName())),
+					std::forward_as_tuple(Name::HashString(it->mForAsset.GetMetaData().GetName())),
 					std::forward_as_tuple(texture));
 
 				if (!result.second)
@@ -93,31 +87,70 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 		}
 		else
 		{
-			mCurrentlyGenerating.emplace_back(std::move(std::get<World>(generatedThumbnail)), request.mForAsset);
+			mCurrentlyGenerating.emplace_back(std::move(std::get<World>(generatedThumbnail)), it->mForAsset);
 		}
+
+		it = mGenerateQueue.erase(it);
 	}
 
-	for (auto it = mCurrentlyGenerating.begin(); it != mCurrentlyGenerating.end();) 
+	if (mRenderFrameCooldown.IsReady(deltaTime)
+		&& !mCurrentlyGenerating.empty())
 	{
-		Renderer::Get().RenderToFrameBuffer(it->mWorld, it->mFrameBuffer, it->mFrameBuffer.GetSize());
+		const Timer timer{};
 
-		if (++it->mNumOfTimesRendered == 2)
+		bool anyNotSendYet{};
+
+		for (WeakAssetHandle<Material> weakAsset : AssetManager::Get().GetAllAssets<Material>())
 		{
-			[[maybe_unused]] const auto result = mGeneratedThumbnails.emplace(std::piecewise_construct,
-				std::forward_as_tuple(Name::HashString(it->mForAsset.GetMetaData().GetName())),
-				std::forward_as_tuple(std::move(it->mFrameBuffer)));
-
-			if (!result.second)
+			if (weakAsset.GetNumberOfStrongReferences() == 0)
 			{
-				LOG(LogEditor, Warning, "Could not add generated thumbnail to map.");
+				continue;
 			}
 
-			it = mCurrentlyGenerating.erase(it);
+			AssetHandle<Material> material{ std::move(weakAsset) };
+
+			// Load it in
+			(void)*material;
 		}
-		else
+
+		while (!anyNotSendYet
+			&& timer.GetSecondsElapsed() < .05f)
 		{
-			++it;
+			for (WeakAssetHandle<Texture> weakAsset : AssetManager::Get().GetAllAssets<Texture>())
+			{
+				if (weakAsset.GetNumberOfStrongReferences() == 0)
+				{
+					continue;
+				}
+
+				AssetHandle<Texture> texture{ std::move(weakAsset) };
+
+				// Kickstarts the loading process
+				(void)*texture;
+
+				if (!texture->WasSendToGPU())
+				{
+					anyNotSendYet = true;
+				}
+			}
+
+			if (!anyNotSendYet)
+			{
+				CurrentlyGenerating& current = mCurrentlyGenerating.front();
+				Renderer::Get().RenderToFrameBuffer(current.mWorld, current.mFrameBuffer, current.mFrameBuffer.GetSize());
+
+				[[maybe_unused]] const auto result = mGeneratedThumbnails.emplace(std::piecewise_construct,
+					std::forward_as_tuple(Name::HashString(current.mForAsset.GetMetaData().GetName())),
+					std::forward_as_tuple(std::move(current.mFrameBuffer)));
+
+				if (!result.second)
+				{
+					LOG(LogEditor, Warning, "Could not add generated thumbnail to map.");
+				}
+				mCurrentlyGenerating.pop_front();
+			}
 		}
+		mRenderFrameCooldown.mAmountOfTimePassed -= timer.GetSecondsElapsed();
 	}
 }
 
@@ -170,7 +203,7 @@ ImTextureID CE::ThumbnailEditorSystem::GetThumbnail(const WeakAssetHandle<>& for
 	if (inQueue == mGenerateQueue.end()
 		&& inCurrentlyGenerating == mCurrentlyGenerating.end())
 	{
-		mGenerateQueue.emplace_back(GenerateRequest{ forAsset });
+		mGenerateQueue.emplace_back(forAsset);
 	}
 
 	return GetDefaultThumbnail();
@@ -204,12 +237,21 @@ CE::ThumbnailEditorSystem::GeneratedThumbnail::GeneratedThumbnail(AssetHandle<Te
 {
 }
 
+CE::ThumbnailEditorSystem::GenerateRequest::GenerateRequest(WeakAssetHandle<> handle) :
+	mForAsset(handle),
+	mResult([handle]{ return Internal::GenerateThumbnail(handle); })
+{
+}
+
+CE::ThumbnailEditorSystem::GenerateRequest::~GenerateRequest()
+{
+	mResult.GetThread().CancelOrJoin();
+}
+
 CE::ThumbnailEditorSystem::CurrentlyGenerating::CurrentlyGenerating(World&& world, WeakAssetHandle<> forAsset) :
 	mWorld(std::move(world)),
 	mForAsset(std::move(forAsset))
 {
-	// For updating camera matrices
-	mWorld.Tick(1.0f / 60.0f);
 }
 
 CE::GetThumbnailRet CE::Internal::GenerateThumbnail(WeakAssetHandle<> forAsset)

@@ -11,6 +11,8 @@ namespace CE
 	class Texture;
 	class World;
 
+	using GetThumbnailRet = std::variant<AssetHandle<Texture>, World>;
+
 	class ThumbnailEditorSystem final :
 		public EditorSystem
 	{
@@ -42,7 +44,11 @@ namespace CE
 
 		struct GenerateRequest
 		{
+			GenerateRequest(WeakAssetHandle<> handle);
+			~GenerateRequest();
+
 			WeakAssetHandle<> mForAsset{};
+			ASyncFuture<GetThumbnailRet> mResult{};
 			uint32 mNumOfTimesRequested = 1;
 		};
 
@@ -55,10 +61,12 @@ namespace CE
 			World mWorld;
 			WeakAssetHandle<> mForAsset{};
 			FrameBuffer mFrameBuffer{ sGeneratedThumbnailResolution };
-			uint32 mNumOfTimesRendered{};
 			uint32 mNumOfTimesRequested = 1;
+			Timer mTimer{};
 		};
 		std::list<CurrentlyGenerating> mCurrentlyGenerating{};
+
+		Cooldown mRenderFrameCooldown{ 1.0f };
 
 		friend ReflectAccess;
 		static MetaType Reflect();
@@ -78,8 +86,6 @@ namespace CE
 	class Texture;
 	class Script;
 	class FrameBuffer;
-
-	using GetThumbnailRet = std::variant<AssetHandle<Texture>, World>;
 
 	namespace Internal
 	{

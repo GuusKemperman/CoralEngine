@@ -25,8 +25,9 @@ CE::Texture::Texture(std::string_view name, FrameBuffer&& frameBuffer) :
 CE::Texture::Texture(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo),
 	mLoadedPixels(std::make_shared<STBIPixels>()),
-	mLoadingThread([data = StringFunctions::StreamToString(loadInfo.GetStream()), buffer = mLoadedPixels]()
+	mLoadingThread([loadInfoMoved = std::make_shared<AssetLoadInfo>(std::move(loadInfo)), buffer = mLoadedPixels]
 		{
+			const std::string data = StringFunctions::StreamToString(loadInfoMoved->GetStream());
 			int channels{};
 			buffer->mPixels = stbi_load_from_memory(reinterpret_cast<const unsigned char*>(data.data()), static_cast<int>(data.size()), &buffer->mWidth, &buffer->mHeight, &channels, 4);
 		})
