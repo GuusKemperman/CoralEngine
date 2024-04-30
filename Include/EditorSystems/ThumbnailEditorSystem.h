@@ -19,7 +19,11 @@ namespace CE
 
 		void Tick(float deltaTime) override;
 
-		ImTextureID GetThumbnail(WeakAssetHandle<> forAsset);
+		ImTextureID GetThumbnail(const WeakAssetHandle<>& forAsset);
+
+		bool DisplayImGuiImageButton(const WeakAssetHandle<>& forAsset, ImVec2 size);
+
+		void DisplayImGuiImage(const WeakAssetHandle<>& forAsset, ImVec2 size);
 
 		static constexpr glm::vec2 sGeneratedThumbnailResolution{ 64.0f };
 

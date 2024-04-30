@@ -121,11 +121,11 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 	}
 }
 
-ImTextureID CE::ThumbnailEditorSystem::GetThumbnail(WeakAssetHandle<> forAsset)
+ImTextureID CE::ThumbnailEditorSystem::GetThumbnail(const WeakAssetHandle<>& forAsset)
 {
 	if (forAsset == nullptr)
 	{
-		return nullptr;
+		return GetDefaultThumbnail();
 	}
 
 	const auto inGeneratedThumbnails = mGeneratedThumbnails.find(Name::HashString(forAsset.GetMetaData().GetName()));
@@ -174,6 +174,18 @@ ImTextureID CE::ThumbnailEditorSystem::GetThumbnail(WeakAssetHandle<> forAsset)
 	}
 
 	return GetDefaultThumbnail();
+}
+
+bool CE::ThumbnailEditorSystem::DisplayImGuiImageButton(const WeakAssetHandle<>& forAsset, ImVec2 size)
+{
+	const ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
+	return ImGui::ImageButton(ImGui::IsRectVisible(cursorScreenPos, cursorScreenPos + size) ? GetThumbnail(forAsset) : GetDefaultThumbnail(), size);
+}
+
+void CE::ThumbnailEditorSystem::DisplayImGuiImage(const WeakAssetHandle<>& forAsset, ImVec2 size)
+{
+	const ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
+	ImGui::Image(ImGui::IsRectVisible(cursorScreenPos, cursorScreenPos + size) ? GetThumbnail(forAsset) : GetDefaultThumbnail(), size);
 }
 
 ImTextureID CE::ThumbnailEditorSystem::GetDefaultThumbnail()

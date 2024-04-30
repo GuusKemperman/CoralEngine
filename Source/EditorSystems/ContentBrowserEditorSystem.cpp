@@ -264,44 +264,34 @@ void CE::ContentBrowserEditorSystem::DisplayAsset(WeakAssetHandle<>& asset, Thum
 
             prevTreeId = currTreeId;
 
-            ImTextureID thumbnailToUse = thumbnailSystem.GetThumbnail(asset);
 
-            if (thumbnailToUse == nullptr)
-            {
-                LOG(LogEditor, Error, "No default thumbnail texture!");
-                return false;
-            }
-
-        	const std::string& assetName = asset.GetMetaData().GetName();
             bool returnValue{};
 
             if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetMetaData().GetClass().GetTypeId()))
             {
-				if (ImGui::ImageButton(assetName.c_str(), thumbnailToUse, itemSize,
-                    ImVec2(0, 0),
-                    ImVec2(1, 1)))
+                if (thumbnailSystem.DisplayImGuiImageButton(asset, itemSize))
 				{
                     returnValue = true;
 				}
             }
             else
             {
-                ImGui::Image(thumbnailToUse, itemSize,
-                    ImVec2(0, 0),
-                    ImVec2(1, 1));
+                thumbnailSystem.DisplayImGuiImage(asset, itemSize);
             }
+
+            const std::string& assetName = asset.GetMetaData().GetName();
 
             if (ImGui::IsItemClicked(1))
             {
-                sRightClickedAsset = asset.GetMetaData().GetName();
+                sRightClickedAsset = assetName;
                 sWasAssetJustRightClicked = true;
             }
 
-            DragDrop::SendAsset(asset.GetMetaData().GetName());
+            DragDrop::SendAsset(assetName);
 
             if (ImGui::BeginItemTooltip())
             {
-                ImGui::Text("Name: %s", asset.GetMetaData().GetName().c_str());
+                ImGui::Text("Name: %s", assetName.c_str());
                 ImGui::Text("Type: %s", asset.GetMetaData().GetClass().GetName().c_str());
 
                 if (asset.GetFileOfOrigin().has_value())
