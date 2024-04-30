@@ -17,10 +17,9 @@ DXResource::DXResource(const ComPtr<ID3D12Device5>& device, const CD3DX12_HEAP_P
 
 	if (FAILED(hr)) assert(false && "Resource creation failed");
 
-	wchar_t* wString = new wchar_t[4096];
+	wchar_t wString[4096];
 	MultiByteToWideChar(CP_ACP, 0, name, -1, wString, 4096);
 	mResource->SetName(wString);
-	delete[] wString;
 }
 
 DXResource::DXResource(ComPtr<ID3D12Resource> res, D3D12_RESOURCE_STATES resState)

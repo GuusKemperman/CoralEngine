@@ -526,7 +526,14 @@
     <ClCompile Include="Source\Components\FogComponent.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetInternal.cpp" />
     <ClCompile Include="Source\Components\AnimationRootComponent.cpp" />
-    <ClCompile Include="Source\EditorSystems\ThumbnailEditorSystem.cpp" />
+    <ClCompile Include="Source\EditorSystems\ThumbnailEditorSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Meta\MetaProps.cpp" />
     <ClCompile Include="Source\Components\PlayerComponent.cpp" />
     <ClCompile Include="Source\UnitTests\AssetHandleUnitTests.cpp" />

@@ -39,12 +39,12 @@ namespace CE
 		// This keeps expensive thumbnails around for longer.
 		static constexpr float sUnusedThumbnailRemoveStrictness = 200.0f;
 
-		static constexpr float sMinAmountOfTimeConsideredUnused = 1.0f;
+		static constexpr float sMinAmountOfTimeConsideredUnused = 10.0f;
 
 		Cooldown mRenderCooldown{ .5f };
 		Cooldown mWorkCooldown{ 1.0f };
-		static constexpr float sMaxTimeToSpendPerFrame = .5f;
-		static constexpr uint32 sMaxNumOfFramesToRenderPerFrame = 1;
+		static constexpr float sMaxTimeToSpendPerFrame = .1f;
+		static constexpr uint32 sMaxNumOfFramesToRenderPerFrame = 2;
 
 		struct GeneratedThumbnail
 		{
@@ -74,6 +74,7 @@ namespace CE
 			FrameBuffer mFrameBuffer{ sGeneratedThumbnailResolution };
 			Timer mNumSecondsSinceLastRequested{};
 			float mTimeNeededToCreateWorld{};
+			bool mHasBeenRendered{};
 		};
 		std::list<CurrentlyGenerating> mCurrentlyGenerating{};
 

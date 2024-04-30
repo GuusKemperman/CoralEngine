@@ -30,14 +30,15 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 		&& !mCurrentlyGenerating.empty() 
 		&& AreAllTexturesLoaded())
 	{
-		for (uint32 i = 0; i < sMaxNumOfFramesToRenderPerFrame
-			&& timeSpendThisFrame.GetSecondsElapsed() <= sMaxTimeToSpendPerFrame
-			&& !mCurrentlyGenerating.empty(); i++)
+		auto it = mCurrentlyGenerating.begin();
+		for (uint32 numRendered = 0; it != mCurrentlyGenerating.end() 
+			&& numRendered < sMaxNumOfFramesToRenderPerFrame 
+			&& timeSpendThisFrame.GetSecondsElapsed() <= sMaxTimeToSpendPerFrame; ++it, ++numRendered)
 		{
-			CurrentlyGenerating& current = mCurrentlyGenerating.front();
-
+			CurrentlyGenerating& current = *it;
 			Timer timeToRenderFrame{};
 
+			LOG(LogEditor, Message, "Rendering {} to thumbnail", current.mForAsset.GetMetaData().GetName());
 			Renderer::Get().RenderToFrameBuffer(current.mWorld, current.mFrameBuffer, current.mFrameBuffer.GetSize());
 
 			const auto result = mGeneratedThumbnails.emplace(std::piecewise_construct,
@@ -45,8 +46,8 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 				std::forward_as_tuple(std::move(current.mFrameBuffer)));
 
 			result.first->second.mTimeToGenerate = timeToRenderFrame.GetSecondsElapsed() + current.mTimeNeededToCreateWorld;
-			mCurrentlyGenerating.pop_front();
 		}
+		mCurrentlyGenerating.erase(mCurrentlyGenerating.begin(), it);
 	}
 
 	if (!mWorkCooldown.IsReady(deltaTime))

@@ -523,7 +523,7 @@ void CE::Device::EndFrame()
 
     if (FAILED(mSwapChain->Present(0, 0))) 
     {
-        LOG(LogCore, Fatal, "Failded to present");
+        LOG(LogCore, Fatal, "Failed to present");
     }
 
 #ifdef EDITOR
