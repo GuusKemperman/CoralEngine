@@ -134,6 +134,10 @@ namespace CE
 		// We support logging from multiple threads.
 		std::mutex mMutex{};
 
+		// We only log the thread Id if the message
+		// came from a thread that was not the main thread
+		std::thread::id mMainThreadId = std::this_thread::get_id();
+
 		struct Entry
 		{
 			Entry(const Channel& channel, LogSeverity severity, std::string_view file, uint32 line, std::function<void()>&& onClick) :

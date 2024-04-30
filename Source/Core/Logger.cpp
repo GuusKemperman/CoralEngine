@@ -96,7 +96,9 @@ void CE::Logger::Log(std::string_view message,
 {
 	Name::HashType channelHash = Name::HashString(channel);
 
-	const std::string formattedMessage = Format("{} ({}) - {}\n",
+	std::string formattedMessage = std::this_thread::get_id() == mMainThreadId ? std::string{} : Format("Thread {} - ", std::hash<std::thread::id>()(std::this_thread::get_id()));
+
+	formattedMessage += Format("{} ({}) - {}\n",
 		std::filesystem::path{ file }.filename().string(), // Only the filename, not all that C:/projects nonsense
 		line,
 		message);
