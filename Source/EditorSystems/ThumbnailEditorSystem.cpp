@@ -180,7 +180,8 @@ ImTextureID CE::ThumbnailEditorSystem::GetThumbnail(const WeakAssetHandle<>& for
 bool CE::ThumbnailEditorSystem::DisplayImGuiImageButton(const WeakAssetHandle<>& forAsset, ImVec2 size)
 {
 	const ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
-	return ImGui::ImageButton(ImGui::IsRectVisible(cursorScreenPos, cursorScreenPos + size) ? GetThumbnail(forAsset) : GetDefaultThumbnail(), size);
+	const std::string_view id = forAsset != nullptr ? std::string_view{ forAsset.GetMetaData().GetName() } : "None";
+	return ImGui::ImageButton(id.data(), ImGui::IsRectVisible(cursorScreenPos, cursorScreenPos + size) ? GetThumbnail(forAsset) : GetDefaultThumbnail(), size);
 }
 
 void CE::ThumbnailEditorSystem::DisplayImGuiImage(const WeakAssetHandle<>& forAsset, ImVec2 size)
