@@ -91,7 +91,7 @@ namespace CE
 		REFLECT_AT_START_UP(ContentBrowserEditorSystem);
 
 		ContentFolder mRootFolder{ {}, "All", nullptr };
-		ContentFolder* mSelectedFolder{};
+		std::reference_wrapper<ContentFolder> mSelectedFolder = mRootFolder;
 
 		ASyncFuture<ContentFolder> mPendingRootFolder{};
 

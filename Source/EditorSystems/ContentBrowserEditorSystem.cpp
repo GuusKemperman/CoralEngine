@@ -47,8 +47,6 @@ CE::ContentBrowserEditorSystem::~ContentBrowserEditorSystem()
 
 void CE::ContentBrowserEditorSystem::Tick(const float)
 {
-	ImGui::ShowDemoWindow();
-
 	if (!Begin())
 	{
 		End();
@@ -68,7 +66,7 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 		}
 
 		mPendingRootFolder = {};
-		mSelectedFolder = nullptr;
+		mSelectedFolder = mRootFolder;
 	}
 
 	ImGui::Splitter(true, &mFolderHierarchyPanelWidthPercentage, &mContentPanelWidthPercentage);
@@ -77,8 +75,6 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 	ImGui::SameLine();
 
 	DisplayContentPanel();
-
-
 
 	End();
 }
@@ -178,21 +174,13 @@ void CE::ContentBrowserEditorSystem::DisplayContentPanel()
 		return;
 	}
 
-	if (mSelectedFolder == nullptr)
-	{
-		ImGui::EndChild();
-		return;
-	}
-
-	DisplayPathToCurrentlySelectedFolder(*mSelectedFolder);
+	DisplayPathToCurrentlySelectedFolder(mSelectedFolder);
 	ImGui::NewLine();
 
 	static std::vector<std::reference_wrapper<ContentFolder>> foldersToDisplay{};
 	static std::vector<WeakAssetHandle<>> assetsToDisplay{};
 
-	foldersToDisplay.clear();
-	assetsToDisplay.clear();
-
+	ImGui::SameLine();
 	Search::Begin(Search::DontCreateChildForContent);
 
 	if (!Search::GetUserQuery().empty())
@@ -224,12 +212,12 @@ void CE::ContentBrowserEditorSystem::DisplayContentPanel()
 					self(self, child);
 				}
 			};
-		addFolderRecursive(addFolderRecursive, *mSelectedFolder);
+		addFolderRecursive(addFolderRecursive, mSelectedFolder);
 	}
 	else
 	{
-		foldersToDisplay.insert(foldersToDisplay.begin(), mSelectedFolder->mChildren.begin(), mSelectedFolder->mChildren.end());
-		assetsToDisplay.insert(assetsToDisplay.begin(), mSelectedFolder->mContent.begin(), mSelectedFolder->mContent.end());
+		foldersToDisplay.insert(foldersToDisplay.begin(), mSelectedFolder.get().mChildren.begin(), mSelectedFolder.get().mChildren.end());
+		assetsToDisplay.insert(assetsToDisplay.begin(), mSelectedFolder.get().mContent.begin(), mSelectedFolder.get().mContent.end());
 	}
 
 	Search::End();
@@ -248,6 +236,9 @@ void CE::ContentBrowserEditorSystem::DisplayContentPanel()
 		DisplayItemInFolder(content, *thumbnailEditorSystem);
 	}
 
+	foldersToDisplay.clear();
+	assetsToDisplay.clear();
+
 	ImGui::EndTable();
 	ImGui::EndChild();
 }
@@ -259,25 +250,63 @@ void CE::ContentBrowserEditorSystem::DisplayFolder(ContentFolder& folder)
 	Search::BeginCategory(folder.mFolderName,
 		[&folder, this, displayAsTreeNode](std::string_view folderName) -> bool
 		{
+			bool isSelected = &mSelectedFolder.get() == &folder;
+
+			auto recursiveCheckIfChildIsSelected = [this, &folder](const auto& self, const ContentFolder& folderToCheck) -> bool
+				{
+					if (&folder == &folderToCheck)
+					{
+						return true;
+					}
+
+					if (folderToCheck.mParent == nullptr)
+					{
+						return false;
+					}
+					return self(self, *folderToCheck.mParent);
+				};
+
+			const bool isOneOfChildrenSelected = recursiveCheckIfChildIsSelected(recursiveCheckIfChildIsSelected, mSelectedFolder);
+
 			bool isOpen{};
 			if (displayAsTreeNode)
 			{
+				if (isOneOfChildrenSelected)
+				{
+					ImGui::SetNextItemOpen(true);
+				}
+
 				isOpen = ImGui::TreeNode(Format("##{}", folderName).data());
 				ImGui::SameLine();
 			}
+			else
+			{
+				// The three node arrow take up space
+				// this makes sure that all folders are
+				// aligned, regardless of whether they
+				// have content
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 24.0f);
+			}
 
-			bool isSelected = mSelectedFolder == &folder;
 			const ImVec2 selectableAreaSize = { ImGui::GetContentRegionAvail().x, ImGui::GetTextLineHeight() };
+
+			if (isOneOfChildrenSelected
+				&& !isSelected)
+			{
+				glm::vec4 col = ImGui::GetStyle().Colors[ImGuiCol_HeaderActive];
+				col *= .7f;
+				ImGui::RenderFrame(ImGui::GetCursorScreenPos(), ImGui::GetCursorScreenPos() + selectableAreaSize, ImColor{ col }, false, 0.0f);
+			}
 
 			if (ImGui::Selectable(Format("{} {}", isOpen ? ICON_FA_FOLDER_OPEN : ICON_FA_FOLDER, folderName).data(), &isSelected, 0, selectableAreaSize))
 			{
 				if (isSelected)
 				{
-					mSelectedFolder = &folder;
+					mSelectedFolder = folder;
 				}
 				else
 				{
-					mSelectedFolder = nullptr;
+					mSelectedFolder = mRootFolder;
 				}
 			}
 
@@ -474,7 +503,7 @@ void CE::ContentBrowserEditorSystem::DisplayPathToCurrentlySelectedFolder(Conten
 
 	if (ImGui::Button(folder.mFolderName.data()))
 	{
-		mSelectedFolder = &folder;
+		mSelectedFolder = folder;
 	}
 	ImGui::SameLine();
 	ImGui::TextUnformatted("/");
@@ -529,7 +558,7 @@ void CE::ContentBrowserEditorSystem::DisplayImage(ContentFolder& folder, Thumbna
 
 	if (thumbnailSystem.DisplayImGuiImageButton(thumbnail, thumbnailSystem.sGeneratedThumbnailResolution))
 	{
-		mSelectedFolder = &folder;
+		mSelectedFolder = folder;
 	}
 }
 

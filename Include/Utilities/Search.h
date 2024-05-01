@@ -9,6 +9,8 @@ namespace CE::Search
 		// it's parent
 		IgnoreParentScore = 1,
 
+		// Will not call ImGui::BeginChild before displaying the content.
+		// Not to be confused with the general advice given to influencers.
 		DontCreateChildForContent = 1 << 1,
 	};
 
