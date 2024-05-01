@@ -71,62 +71,14 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 		mSelectedFolder = nullptr;
 	}
 
-	ThumbnailEditorSystem* thumbnailEditorSystem = Editor::Get().TryGetSystem<ThumbnailEditorSystem>();
-
-	if (thumbnailEditorSystem == nullptr)
-	{
-		LOG(LogEditor, Error, "Could not display content, no thumbnail editor system!");
-		return;
-	}
-
 	ImGui::Splitter(true, &mFolderHierarchyPanelWidthPercentage, &mContentPanelWidthPercentage);
 
-	if (ImGui::BeginChild("FolderHierarchy", { mFolderHierarchyPanelWidthPercentage, -2.0f }, false, ImGuiWindowFlags_NoScrollbar))
-	{
-		if (ImGui::Button(ICON_FA_PLUS))
-		{
-			//ImGui::OpenPopup(sAssetCreatorImGuiId.data());
-		}
-
-		ImGui::SetItemTooltip("Create a new asset");
-		ImGui::SameLine();
-		Search::Begin();
-
-		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-		DisplayFolder(mRootFolder);
-
-		Search::End();
-	}
-	ImGui::EndChild();
+	DisplayFolderHierarchyPanel();
 	ImGui::SameLine();
 
-	if (ImGui::BeginChild("ContentPanel", { mContentPanelWidthPercentage, -2.0f }, false, ImGuiWindowFlags_NoScrollbar))
-	{
-		if (mSelectedFolder != nullptr)
-		{
-			DisplayPathToCurrentlySelectedFolder(*mSelectedFolder);
-			ImGui::NewLine();
-
-			ImGui::BeginTable("TableTest",
-				std::max(static_cast<int>(ImGui::GetContentRegionAvail().x / (ThumbnailEditorSystem::sGeneratedThumbnailResolution.x + 10.0f)), 1),
-				ImGuiTableColumnFlags_WidthFixed);
-
-			for (ContentFolder& folder : mSelectedFolder->mChildren)
-			{
-				DisplayItemInFolder(folder, *thumbnailEditorSystem);
-			}
-
-			for (const WeakAssetHandle<>& content : mSelectedFolder->mContent)
-			{
-				DisplayItemInFolder(content, *thumbnailEditorSystem);
-			}
-
-			ImGui::EndTable();
-		}
+	DisplayContentPanel();
 
 
-	}
-	ImGui::EndChild();
 
 	End();
 }
@@ -191,6 +143,113 @@ void CE::ContentBrowserEditorSystem::RequestUpdateToFolderGraph()
 			return rootFolder;
 		}
 	};
+}
+
+void CE::ContentBrowserEditorSystem::DisplayFolderHierarchyPanel()
+{
+	if (ImGui::BeginChild("FolderHierarchy", { mFolderHierarchyPanelWidthPercentage, -2.0f }))
+	{
+		ImGui::SetItemTooltip("Create a new asset");
+		ImGui::SameLine();
+		Search::Begin();
+
+		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+		DisplayFolder(mRootFolder);
+
+		Search::End();
+	}
+	ImGui::EndChild();
+}
+
+void CE::ContentBrowserEditorSystem::DisplayContentPanel()
+{
+	if (!ImGui::BeginChild("ContentPanel", { mContentPanelWidthPercentage, -2.0f }))
+	{
+		ImGui::EndChild();
+		return;
+	}
+
+	ThumbnailEditorSystem* thumbnailEditorSystem = Editor::Get().TryGetSystem<ThumbnailEditorSystem>();
+
+	if (thumbnailEditorSystem == nullptr)
+	{
+		LOG(LogEditor, Error, "Could not display content, no thumbnail editor system!");
+		ImGui::EndChild();
+		return;
+	}
+
+	if (mSelectedFolder == nullptr)
+	{
+		ImGui::EndChild();
+		return;
+	}
+
+	DisplayPathToCurrentlySelectedFolder(*mSelectedFolder);
+	ImGui::NewLine();
+
+	static std::vector<std::reference_wrapper<ContentFolder>> foldersToDisplay{};
+	static std::vector<WeakAssetHandle<>> assetsToDisplay{};
+
+	foldersToDisplay.clear();
+	assetsToDisplay.clear();
+
+	Search::Begin(Search::DontCreateChildForContent);
+
+	if (!Search::GetUserQuery().empty())
+	{
+		const auto addFolderRecursive = [](const auto& self, ContentFolder& node) -> void
+			{
+				for (ContentFolder& child : node.mChildren)
+				{
+					Search::AddItem(child.mFolderName,
+						[&child](std::string_view)
+						{
+							foldersToDisplay.emplace_back(child);
+							return false;
+						});
+				}
+
+				for (const WeakAssetHandle<>& asset : node.mContent)
+				{
+					Search::AddItem(asset.GetMetaData().GetName(),
+						[&asset](std::string_view)
+						{
+							assetsToDisplay.emplace_back(asset);
+							return false;
+						});
+				}
+				
+				for (ContentFolder& child : node.mChildren)
+				{
+					self(self, child);
+				}
+			};
+		addFolderRecursive(addFolderRecursive, *mSelectedFolder);
+	}
+	else
+	{
+		foldersToDisplay.insert(foldersToDisplay.begin(), mSelectedFolder->mChildren.begin(), mSelectedFolder->mChildren.end());
+		assetsToDisplay.insert(assetsToDisplay.begin(), mSelectedFolder->mContent.begin(), mSelectedFolder->mContent.end());
+	}
+
+	Search::End();
+
+	ImGui::BeginTable("TableTest",
+		std::max(static_cast<int>(ImGui::GetContentRegionAvail().x / (ThumbnailEditorSystem::sGeneratedThumbnailResolution.x + 10.0f)), 1),
+		ImGuiTableColumnFlags_WidthFixed);
+
+	for (ContentFolder& folder : foldersToDisplay)
+	{
+		DisplayItemInFolder(folder, *thumbnailEditorSystem);
+	}
+
+	for (const WeakAssetHandle<>& content : assetsToDisplay)
+	{
+		DisplayItemInFolder(content, *thumbnailEditorSystem);
+	}
+
+	ImGui::EndTable();
+	ImGui::EndChild();
 }
 
 void CE::ContentBrowserEditorSystem::DisplayFolder(ContentFolder& folder)

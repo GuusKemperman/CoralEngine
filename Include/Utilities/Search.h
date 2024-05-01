@@ -8,6 +8,8 @@ namespace CE::Search
 		// Each category and item will be evaluated independently, regardless of the score of
 		// it's parent
 		IgnoreParentScore = 1,
+
+		DontCreateChildForContent = 1 << 1,
 	};
 
 	/**
@@ -86,5 +88,10 @@ namespace CE::Search
 	 * between 0.0f and 1.0f, take this into account when applying your bonus.
 	 */
 	void SetBonus(float bonus);
+
+	/**
+	 * \brief Can be used to find out what the user is currently searching for
+	 */
+	const std::string& GetUserQuery();
 }
 #endif // EDITOR

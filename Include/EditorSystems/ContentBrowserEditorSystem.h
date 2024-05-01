@@ -1,8 +1,8 @@
-#include "Utilities/ASync.h"
 #ifdef EDITOR
 #pragma once
 #include "EditorSystems/EditorSystem.h"
 #include "Core/AssetManager.h"
+#include "Utilities/ASync.h"
 
 namespace CE
 {
@@ -43,6 +43,9 @@ namespace CE
 			std::vector<WeakAssetHandle<>> mContent{};
 		};
 		void RequestUpdateToFolderGraph();
+
+		void DisplayFolderHierarchyPanel();
+		void DisplayContentPanel();
 
 		void DisplayFolder(ContentFolder& folder);
 

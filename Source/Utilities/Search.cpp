@@ -181,7 +181,8 @@ void CE::Search::End()
 		};
 	}
 
-	if (!context.mInput.mEntries.empty())
+	if (!context.mInput.mEntries.empty()
+		&& (context.mInput.mFlags & SearchFlags::DontCreateChildForContent) == 0)
 	{
 		ImGui::EndChild();
 	}
@@ -201,7 +202,8 @@ void CE::Search::BeginCategory(std::string_view name, std::function<bool(std::st
 {
 	SearchContext& context = sContextStack.top();
 
-	if (context.mInput.mEntries.empty())
+	if (context.mInput.mEntries.empty()
+		&& (context.mInput.mFlags & SearchFlags::DontCreateChildForContent) == 0)
 	{
 		BeginChild();
 	}
@@ -237,7 +239,8 @@ bool CE::Search::AddItem(std::string_view name, std::function<bool(std::string_v
 {
 	SearchContext& context = sContextStack.top();
 
-	if (context.mInput.mEntries.empty())
+	if (context.mInput.mEntries.empty()
+		&& (context.mInput.mFlags & SearchFlags::DontCreateChildForContent) == 0)
 	{
 		BeginChild();
 	}
@@ -395,6 +398,11 @@ void CE::Search::EndPopup()
 void CE::Search::SetBonus(float bonus)
 {
 	sContextStack.top().get().mInput.mBonuses.back() = bonus;
+}
+
+const std::string& CE::Search::GetUserQuery()
+{
+	return sContextStack.top().get().mInput.mUserQuery;
 }
 
 namespace
