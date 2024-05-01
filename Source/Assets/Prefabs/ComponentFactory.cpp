@@ -4,7 +4,6 @@
 #include "World/Registry.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
-#include "Utilities/Reflect/ReflectFieldType.h"
 
 CE::ComponentFactory::ComponentFactory(const MetaType& objectClass, const BinaryGSONObject& serializedComponent) :
 	mProductClass(objectClass)
@@ -64,13 +63,6 @@ CE::ComponentFactory::ComponentFactory(const MetaType& objectClass, const Binary
 			mOverridenDefaultValues.pop_back();
 		}
 	}
-
-	// As an optimization, we only allow the serialized component to have the custom step as a child
-	// This means no lookup time
-	//if (!serializedComponent.GetChildren().empty())
-	//{
-	//	mCustomSerializedData = serializedComponent.GetChildren()[0];
-	//}
 }
 
 CE::MetaAny CE::ComponentFactory::Construct(Registry& reg, const entt::entity entity) const
@@ -91,34 +83,6 @@ CE::MetaAny CE::ComponentFactory::Construct(Registry& reg, const entt::entity en
 				result.Error());
 		}
 	}
-
-	//if (!mCustomSerializedData.IsEmpty())
-	//{
-	//	// Perfom the custom step
-	//	const MetaFunc* const onDeserialize = TryGetComponentOnDeserialize(mProductClass.get());
-
-	//	if (onDeserialize == nullptr)
-	//	{
-	//		// This component no longer has a custom step,
-	//		// so let's ignore it the next time we call this function
-	//		LOG(LogAssets, Verbose, "{} no longer has custom OnDeserialize function.",
-	//			mProductClass.get().GetName());
-	//		mCustomSerializedData.Clear();
-	//	}
-
-	//	MetaAny customDataRef = MakeRef(mCustomSerializedData);
-	//	MetaAny entityRef = MakeRef(const_cast<entt::entity&>(entity));
-	//	MetaAny worldRef = MakeRef(reg.GetWorld());
-
-	//	const FuncResult result = onDeserialize->Invoke({ component, customDataRef, entityRef, worldRef });
-
-	//	if (!result.WasInvoked())
-	//	{
-	//		LOG(LogAssets, Error, "Failed to invoke custom OnDeserialize step for {}",
-	//			mProductClass.get().GetName());
-	//		mCustomSerializedData.Clear();
-	//	}
-	//}
 
 	return component;
 }

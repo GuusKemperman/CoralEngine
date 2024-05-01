@@ -526,14 +526,14 @@ void CE::ContentBrowserEditorSystem::DisplayImage(const WeakAssetHandle<>& asset
 {
 	if (Editor::Get().IsThereAnEditorTypeForAssetType(asset.GetMetaData().GetClass().GetTypeId()))
 	{
-		if (thumbnailSystem.DisplayImGuiImageButton(asset, thumbnailSystem.sGeneratedThumbnailResolution))
+		if (thumbnailSystem.DisplayImGuiImageButton(asset, ThumbnailEditorSystem::sGeneratedThumbnailResolution))
 		{
 			OpenAsset(asset);
 		}
 	}
 	else
 	{
-		thumbnailSystem.DisplayImGuiImage(asset, thumbnailSystem.sGeneratedThumbnailResolution);
+		thumbnailSystem.DisplayImGuiImage(asset, ThumbnailEditorSystem::sGeneratedThumbnailResolution);
 	}
 
 	const std::string& assetName = asset.GetMetaData().GetName();
