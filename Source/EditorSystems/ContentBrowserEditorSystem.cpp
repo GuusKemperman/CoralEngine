@@ -34,7 +34,15 @@ namespace
 CE::ContentBrowserEditorSystem::ContentBrowserEditorSystem() :
 	EditorSystem("ContentBrowser")
 {
-	MakeFolderGraph();
+	RequestUpdateToFolderGraph();
+}
+
+CE::ContentBrowserEditorSystem::~ContentBrowserEditorSystem()
+{
+	if (mPendingRootFolder.GetThread().WasLaunched())
+	{
+		mPendingRootFolder.GetThread().CancelOrDetach();
+	}
 }
 
 void CE::ContentBrowserEditorSystem::Tick(const float)
@@ -45,6 +53,22 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 	{
 		End();
 		return;
+	}
+
+	if (mPendingRootFolder.IsReady())
+	{
+		mRootFolder = std::move(mPendingRootFolder.Get());
+
+		// I didn't feel like making a move constructor,
+		// plus this reassignment only needs to happen for
+		// the rootfolder
+		for (ContentFolder& child : mRootFolder.mChildren)
+		{
+			child.mParent = &mRootFolder;
+		}
+
+		mPendingRootFolder = {};
+		mSelectedFolder = nullptr;
 	}
 
 	ThumbnailEditorSystem* thumbnailEditorSystem = Editor::Get().TryGetSystem<ThumbnailEditorSystem>();
@@ -107,53 +131,66 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 	End();
 }
 
-void CE::ContentBrowserEditorSystem::MakeFolderGraph()
+void CE::ContentBrowserEditorSystem::RequestUpdateToFolderGraph()
 {
-	std::unordered_map<std::filesystem::path, WeakAssetHandle<>> assetLookUp{};
-
-	for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
+	if (mPendingRootFolder.GetThread().WasLaunched())
 	{
-		if (asset.GetFileOfOrigin().has_value())
-		{
-			assetLookUp.emplace(*asset.GetFileOfOrigin(), asset);
-		}
+		mPendingRootFolder.GetThread().CancelOrDetach();
 	}
 
-	// Create the root folder to hold the top-level directories and files
-	mRootFolder = { "", "All", nullptr };
-
-	ContentFolder& engineFolder = mRootFolder.mChildren.emplace_back(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""), std::string{ sEngineAssetsDisplayName }, &mRootFolder);
-	ContentFolder& gameFolder = mRootFolder.mChildren.emplace_back(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""), std::string{ sGameAssetsDisplayName }, &mRootFolder);
-
-	std::function<void(ContentFolder&)> parse = [&parse, &assetLookUp](ContentFolder& folder)
+	mPendingRootFolder = 
+	{
+		[]
 		{
-			for (std::filesystem::directory_entry entry : std::filesystem::directory_iterator{ folder.mActualPath })
+			std::unordered_map<std::filesystem::path, WeakAssetHandle<>> assetLookUp{};
+
+			for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
 			{
-				std::filesystem::path path = entry.path();;
-
-				if (entry.is_directory())
+				if (asset.GetFileOfOrigin().has_value())
 				{
-					parse(folder.mChildren.emplace_back(path, path.filename().string(), &folder));
-					continue;
+					assetLookUp.emplace(*asset.GetFileOfOrigin(), asset);
 				}
-
-				if (path.extension() != AssetManager::sAssetExtension)
-				{
-					continue;
-				}
-
-				auto it = assetLookUp.find(path);
-
-				if (it == assetLookUp.end())
-				{
-					continue;
-				}
-
-				folder.mContent.emplace_back(it->second);
 			}
-		};
-	parse(engineFolder);
-	parse(gameFolder);
+
+			// Create the root folder to hold the top-level directories and files
+			ContentFolder rootFolder = { "", "All", nullptr };
+
+			ContentFolder& engineFolder = rootFolder.mChildren.emplace_back(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""), std::string{ sEngineAssetsDisplayName }, &rootFolder);
+			ContentFolder& gameFolder = rootFolder.mChildren.emplace_back(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""), std::string{ sGameAssetsDisplayName }, &rootFolder);
+
+			std::function<void(ContentFolder&)> parse = [&parse, &assetLookUp](ContentFolder& folder)
+				{
+					for (std::filesystem::directory_entry entry : std::filesystem::directory_iterator{ folder.mActualPath })
+					{
+						std::filesystem::path path = entry.path();;
+
+						if (entry.is_directory())
+						{
+							parse(folder.mChildren.emplace_back(path, path.filename().string(), &folder));
+							continue;
+						}
+
+						if (path.extension() != AssetManager::sAssetExtension)
+						{
+							continue;
+						}
+
+						auto it = assetLookUp.find(path);
+
+						if (it == assetLookUp.end())
+						{
+							continue;
+						}
+
+						folder.mContent.emplace_back(it->second);
+					}
+				};
+			parse(engineFolder);
+			parse(gameFolder);
+
+			return rootFolder;
+		}
+	};
 }
 
 void CE::ContentBrowserEditorSystem::DisplayFolder(ContentFolder& folder)
@@ -486,7 +523,7 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const WeakAssetHandle
 			// action, our system will not restart, and we
 			// have to explicitly state we want to recreate our
 			// folder graph.
-			MakeFolderGraph();
+			RequestUpdateToFolderGraph();
 		}
 	}
 
@@ -628,7 +665,7 @@ void CE::ContentBrowserEditorSystem::ShowCreateNewMenu()
 //		// action, our system will not restart, and we
 //		// have to explicitly state we want to recreate our
 //		// folder graph.
-//		mRootFolder = MakeFolderGraph();
+//		mRootFolder = RequestUpdateToFolderGraph();
 //	}
 //}
 

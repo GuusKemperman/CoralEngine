@@ -5,6 +5,7 @@
 #include <stack>
 #include <imgui/imgui_internal.h>
 
+#include "Utilities/ASync.h"
 #include "Utilities/ManyStrings.h"
 #include "Utilities/Math.h"
 
@@ -66,7 +67,7 @@ namespace
 	{
 		~Result();
 
-		std::thread mThread{};
+		CE::ASyncThread mThread{};
         bool mIsReady{};
 
 		Input mInput{};
@@ -140,9 +141,9 @@ void CE::Search::End()
         // we can defer that check.
         Result& pendingResult = context.mResults[!context.mIndexOfLastValidResult];
 
-        if (pendingResult.mThread.joinable())
+        if (pendingResult.mThread.WasLaunched())
         {
-            pendingResult.mThread.join();
+            pendingResult.mThread.Join();
         }
         pendingResult.mIsReady = false;
 
@@ -165,12 +166,12 @@ void CE::Search::End()
 	Result& pendingResult = context.mResults[!context.mIndexOfLastValidResult];
 
 	if (!IsResultUpToDate(lastValidResult, context.mInput)
-		&& !pendingResult.mThread.joinable())
+		&& !pendingResult.mThread.WasLaunched())
 	{
 		pendingResult.mInput = context.mInput;
 		pendingResult.mIsReady = false;
 
-		pendingResult.mThread = std::thread
+		pendingResult.mThread =
 		{
 			[&pendingResult]
 			{
@@ -416,9 +417,9 @@ namespace
 
 	Result::~Result()
 	{
-		if (mThread.joinable())
+		if (mThread.WasLaunched())
 		{
-			mThread.join();
+			mThread.CancelOrJoin();
 		}
 	}
 

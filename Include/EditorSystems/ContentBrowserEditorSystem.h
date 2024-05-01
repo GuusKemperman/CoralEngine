@@ -1,3 +1,4 @@
+#include "Utilities/ASync.h"
 #ifdef EDITOR
 #pragma once
 #include "EditorSystems/EditorSystem.h"
@@ -13,6 +14,7 @@ namespace CE
 	{
 	public:
 		ContentBrowserEditorSystem();
+		~ContentBrowserEditorSystem();
 
 		void Tick(float deltaTime) override;
 
@@ -40,7 +42,7 @@ namespace CE
 			ContentFolder* mParent{};
 			std::vector<WeakAssetHandle<>> mContent{};
 		};
-		void MakeFolderGraph();
+		void RequestUpdateToFolderGraph();
 
 		void DisplayFolder(ContentFolder& folder);
 
@@ -85,8 +87,10 @@ namespace CE
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(ContentBrowserEditorSystem);
 
-		ContentFolder mRootFolder{};
+		ContentFolder mRootFolder{ {}, "All", nullptr };
 		ContentFolder* mSelectedFolder{};
+
+		ASyncFuture<ContentFolder> mPendingRootFolder{};
 
 		float mFolderHierarchyPanelWidthPercentage = .25f;
 		float mContentPanelWidthPercentage = .75f;
