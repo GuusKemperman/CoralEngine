@@ -66,7 +66,7 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 		}
 
 		mPendingRootFolder = {};
-		mSelectedFolder = mRootFolder;
+		SelectFolder(mSelectedFolderPath);
 	}
 
 	ImGui::Splitter(true, &mFolderHierarchyPanelWidthPercentage, &mContentPanelWidthPercentage);
@@ -77,6 +77,18 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 	DisplayContentPanel();
 
 	End();
+}
+
+void CE::ContentBrowserEditorSystem::SaveState(std::ostream& toStream) const
+{
+	toStream << mSelectedFolderPath.string();
+}
+
+void CE::ContentBrowserEditorSystem::LoadState(std::istream& fromStream)
+{
+	std::string tmp{};
+	fromStream >> tmp;
+	SelectFolder(tmp);
 }
 
 void CE::ContentBrowserEditorSystem::RequestUpdateToFolderGraph()
@@ -302,11 +314,11 @@ void CE::ContentBrowserEditorSystem::DisplayFolder(ContentFolder& folder)
 			{
 				if (isSelected)
 				{
-					mSelectedFolder = folder;
+					SelectFolder(folder);
 				}
 				else
 				{
-					mSelectedFolder = mRootFolder;
+					SelectFolder(mRootFolder);
 				}
 			}
 
@@ -503,7 +515,7 @@ void CE::ContentBrowserEditorSystem::DisplayPathToCurrentlySelectedFolder(Conten
 
 	if (ImGui::Button(folder.mFolderName.data()))
 	{
-		mSelectedFolder = folder;
+		SelectFolder(folder);
 	}
 	ImGui::SameLine();
 	ImGui::TextUnformatted("/");
@@ -558,7 +570,7 @@ void CE::ContentBrowserEditorSystem::DisplayImage(ContentFolder& folder, Thumbna
 
 	if (thumbnailSystem.DisplayImGuiImageButton(thumbnail, thumbnailSystem.sGeneratedThumbnailResolution))
 	{
-		mSelectedFolder = folder;
+		SelectFolder(folder);
 	}
 }
 
@@ -759,6 +771,32 @@ void CE::ContentBrowserEditorSystem::ShowCreateNewMenu()
 
 //ImGui::EndDisabled();
 //ImGui::EndPopup();
+}
+
+void CE::ContentBrowserEditorSystem::SelectFolder(ContentFolder& folder)
+{
+	mSelectedFolder = folder;
+	mSelectedFolderPath = mSelectedFolder.get().mActualPath;
+}
+
+void CE::ContentBrowserEditorSystem::SelectFolder(const std::filesystem::path& path)
+{
+	mSelectedFolderPath = path;
+	mSelectedFolder = mRootFolder;
+
+	auto selectRecursive = [&](const auto& self, ContentFolder& current) -> void
+		{
+			if (current.mActualPath == path)
+			{
+				mSelectedFolder = current;
+			}
+
+			for (ContentFolder& child : current.mChildren)
+			{
+				self(self, child);
+			}
+		};
+	selectRecursive(selectRecursive, mRootFolder);
 }
 
 CE::MetaType CE::ContentBrowserEditorSystem::Reflect()

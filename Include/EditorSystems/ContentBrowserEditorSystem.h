@@ -18,6 +18,10 @@ namespace CE
 
 		void Tick(float deltaTime) override;
 
+		void SaveState(std::ostream& toStream) const override;
+
+		void LoadState(std::istream& fromStream) override;
+
 	private:
 		struct ContentFolder
 		{
@@ -86,12 +90,16 @@ namespace CE
 
 		void ShowCreateNewMenu();
 
+		void SelectFolder(ContentFolder& folder);
+		void SelectFolder(const std::filesystem::path& path);
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(ContentBrowserEditorSystem);
 
 		ContentFolder mRootFolder{ {}, "All", nullptr };
 		std::reference_wrapper<ContentFolder> mSelectedFolder = mRootFolder;
+		std::filesystem::path mSelectedFolderPath{};
 
 		ASyncFuture<ContentFolder> mPendingRootFolder{};
 
