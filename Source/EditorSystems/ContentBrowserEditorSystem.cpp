@@ -22,10 +22,6 @@
 
 namespace
 {
-	// The index inside the rootfolder when calling MakeFolderGraph
-	constexpr uint32 sIndexOfEngineAssets = 0;
-	constexpr uint32 sIndexOfGameAssets = 1;
-
 	constexpr std::string_view sEngineAssetsDisplayName = "EngineAssets";
 	constexpr std::string_view sGameAssetsDisplayName = "GameAssets";
 
@@ -36,9 +32,9 @@ namespace
 }
 
 CE::ContentBrowserEditorSystem::ContentBrowserEditorSystem() :
-	EditorSystem("ContentBrowser"),
-	mFolderGraph(MakeFolderGraph())
+	EditorSystem("ContentBrowser")
 {
+	MakeFolderGraph();
 }
 
 void CE::ContentBrowserEditorSystem::Tick(const float)
@@ -73,7 +69,7 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 		Search::Begin();
 
 		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-		DisplayFolder(mFolderGraph);
+		DisplayFolder(mRootFolder);
 
 		Search::End();
 	}
@@ -82,13 +78,15 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 
 	if (ImGui::BeginChild("ContentPanel", { mContentPanelWidthPercentage, -2.0f }, false, ImGuiWindowFlags_NoScrollbar))
 	{
-
-		ImGui::BeginTable("TableTest",
-			std::max(static_cast<int>(ImGui::GetContentRegionAvail().x / (ThumbnailEditorSystem::sGeneratedThumbnailResolution.x + 10.0f)), 1),
-			ImGuiTableColumnFlags_WidthFixed);
-
 		if (mSelectedFolder != nullptr)
 		{
+			DisplayPathToCurrentlySelectedFolder(*mSelectedFolder);
+			ImGui::NewLine();
+
+			ImGui::BeginTable("TableTest",
+				std::max(static_cast<int>(ImGui::GetContentRegionAvail().x / (ThumbnailEditorSystem::sGeneratedThumbnailResolution.x + 10.0f)), 1),
+				ImGuiTableColumnFlags_WidthFixed);
+
 			for (ContentFolder& folder : mSelectedFolder->mChildren)
 			{
 				DisplayItemInFolder(folder, *thumbnailEditorSystem);
@@ -98,111 +96,71 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 			{
 				DisplayItemInFolder(content, *thumbnailEditorSystem);
 			}
+
+			ImGui::EndTable();
 		}
 
-		ImGui::EndTable();
+
 	}
 	ImGui::EndChild();
 
 	End();
 }
 
-CE::ContentBrowserEditorSystem::ContentFolder CE::ContentBrowserEditorSystem::MakeFolderGraph()
+void CE::ContentBrowserEditorSystem::MakeFolderGraph()
 {
-	// Create the root folder to hold the top-level directories and files
-	ContentFolder rootFolder{};
+	std::unordered_map<std::filesystem::path, WeakAssetHandle<>> assetLookUp{};
 
-	rootFolder.mPath = "All";
-
-	rootFolder.mChildren.emplace_back(sEngineAssetsDisplayName);
-	rootFolder.mChildren.emplace_back(sGameAssetsDisplayName);
-
-	std::string engineAssets = FileIO::Get().GetPath(FileIO::Directory::EngineAssets, "");
-	std::string gameAssets = FileIO::Get().GetPath(FileIO::Directory::GameAssets, "");
-
-	// Don't include the /, as some file paths will have a backward slash.
-	// Testing for equality later would then cause some issues
-	if (!engineAssets.empty())
-	{
-		engineAssets.pop_back();
-	}
-
-	if (!gameAssets.empty())
-	{
-		gameAssets.pop_back();
-	}
-
-	// Iterate through the provided paths
 	for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
 	{
-		const std::string fullPath = asset.GetFileOfOrigin().value_or(
-			std::filesystem::path{ "Generated assets" }.operator/=(asset.GetMetaData().GetName())).string();
-
-		std::filesystem::path currentPath{};
-		std::filesystem::path relativePath{};
-		ContentFolder* currentFolder = &rootFolder;
-
-		if (fullPath.substr(0, engineAssets.size()) == engineAssets)
+		if (asset.GetFileOfOrigin().has_value())
 		{
-			currentFolder = &rootFolder.mChildren[sIndexOfEngineAssets];
-			relativePath = fullPath.substr(engineAssets.size() + 1);
+			assetLookUp.emplace(*asset.GetFileOfOrigin(), asset);
 		}
-		else if (fullPath.substr(0, gameAssets.size()) == gameAssets)
-		{
-			currentFolder = &rootFolder.mChildren[sIndexOfGameAssets];
-			relativePath = fullPath.substr(gameAssets.size() + 1);
-		}
-		else
-		{
-			currentFolder = &rootFolder;
-			relativePath = fullPath;
-		}
-
-		// Traverse the folder structure and create necessary folders
-		for (const std::filesystem::path& subPath : relativePath)
-		{
-			currentPath /= subPath;
-
-			// Check if the subPath is a directory
-			if (subPath != relativePath.filename())
-			{
-				// Search for the subPath in the current folder's children
-				auto it = std::find_if(currentFolder->mChildren.begin(), currentFolder->mChildren.end(),
-					[&subPath](const ContentFolder& folder)
-					{
-						return folder.mPath.filename() == subPath;
-					});
-
-				// If not found, create a new folder
-				if (it == currentFolder->mChildren.end())
-				{
-					currentFolder->mChildren.emplace_back(currentPath);
-					it = currentFolder->mChildren.end() - 1;
-				}
-
-				// Update the current folder pointer
-				currentFolder = &(*it);
-			}
-		}
-
-		// Sort alphabetically
-		const auto whereToInsert = std::lower_bound(currentFolder->mContent.begin(), currentFolder->mContent.end(), asset,
-			[](const WeakAssetHandle<>& lhs, const WeakAssetHandle<>& rhs)
-			{
-				return lhs.GetMetaData().GetName() < rhs.GetMetaData().GetName();
-			});
-		currentFolder->mContent.emplace(whereToInsert, std::move(asset));
 	}
 
-	// Return the root folder, which contains the entire folder structure
-	return rootFolder;
+	// Create the root folder to hold the top-level directories and files
+	mRootFolder = { "", "All", nullptr };
+
+	ContentFolder& engineFolder = mRootFolder.mChildren.emplace_back(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""), std::string{ sEngineAssetsDisplayName }, &mRootFolder);
+	ContentFolder& gameFolder = mRootFolder.mChildren.emplace_back(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""), std::string{ sGameAssetsDisplayName }, &mRootFolder);
+
+	std::function<void(ContentFolder&)> parse = [&parse, &assetLookUp](ContentFolder& folder)
+		{
+			for (std::filesystem::directory_entry entry : std::filesystem::directory_iterator{ folder.mActualPath })
+			{
+				std::filesystem::path path = entry.path();;
+
+				if (entry.is_directory())
+				{
+					parse(folder.mChildren.emplace_back(path, path.filename().string(), &folder));
+					continue;
+				}
+
+				if (path.extension() != AssetManager::sAssetExtension)
+				{
+					continue;
+				}
+
+				auto it = assetLookUp.find(path);
+
+				if (it == assetLookUp.end())
+				{
+					continue;
+				}
+
+				folder.mContent.emplace_back(it->second);
+			}
+		};
+	parse(engineFolder);
+	parse(gameFolder);
 }
 
 void CE::ContentBrowserEditorSystem::DisplayFolder(ContentFolder& folder)
 {
 	const bool displayAsTreeNode = !folder.mChildren.empty();
 
-	Search::BeginCategory(folder.mPath.filename().string(),
+	Search::BeginCategory(folder.mFolderName,
 		[&folder, this, displayAsTreeNode](std::string_view folderName) -> bool
 		{
 			bool isOpen{};
@@ -227,19 +185,17 @@ void CE::ContentBrowserEditorSystem::DisplayFolder(ContentFolder& folder)
 				}
 			}
 
-			WeakAssetHandle receivedAsset = DragDrop::PeekAsset<Asset>();
-
-			if (receivedAsset != nullptr
-				&& receivedAsset.GetFileOfOrigin().has_value()
-				&& receivedAsset.GetFileOfOrigin()->parent_path() != folder.mPath
-				&& DragDrop::AcceptAsset())
+			if (&folder != &mRootFolder)
 			{
-				AssetManager::Get().MoveAsset(receivedAsset, folder.mPath / receivedAsset.GetFileOfOrigin()->filename());
+				WeakAssetHandle receivedAsset = DragDrop::PeekAsset<Asset>();
+
+				if (receivedAsset != nullptr
+					&& receivedAsset.GetFileOfOrigin().has_value()
+					&& DragDrop::AcceptAsset())
+				{
+					AssetManager::Get().MoveAsset(receivedAsset, folder.mActualPath / receivedAsset.GetFileOfOrigin()->filename());
+				}
 			}
-
-
-
-			const std::string popUpName = Format("{}RightClickedDir", folder.mPath.string());
 
 			if (ImGui::IsItemClicked(1))
 			{
@@ -408,9 +364,25 @@ std::string_view CE::ContentBrowserEditorSystem::GetName(const WeakAssetHandle<>
 	return asset.GetMetaData().GetName();
 }
 
-std::string CE::ContentBrowserEditorSystem::GetName(const ContentFolder& folder)
+std::string_view CE::ContentBrowserEditorSystem::GetName(const ContentFolder& folder)
 {
-	return folder.mPath.filename().string();
+	return folder.mFolderName;
+}
+
+void CE::ContentBrowserEditorSystem::DisplayPathToCurrentlySelectedFolder(ContentFolder& folder)
+{
+	if (folder.mParent != nullptr)
+	{
+		DisplayPathToCurrentlySelectedFolder(*folder.mParent);
+	}
+
+	if (ImGui::Button(folder.mFolderName.data()))
+	{
+		mSelectedFolder = &folder;
+	}
+	ImGui::SameLine();
+	ImGui::TextUnformatted("/");
+	ImGui::SameLine();
 }
 
 void CE::ContentBrowserEditorSystem::DisplayImage(const WeakAssetHandle<>& asset, ThumbnailEditorSystem& thumbnailSystem)
@@ -514,7 +486,7 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const WeakAssetHandle
 			// action, our system will not restart, and we
 			// have to explicitly state we want to recreate our
 			// folder graph.
-			mFolderGraph = MakeFolderGraph();
+			MakeFolderGraph();
 		}
 	}
 
@@ -539,6 +511,23 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const ContentFolder& 
 	if (!ImGui::BeginPopup(GetRightClickPopUpMenuName(GetName(folder)).data()))
 	{
 		return;
+	}
+
+	if (&folder != &mRootFolder
+		&& ImGui::MenuItem("New folder"))
+	{
+		const auto getPath = [&folder](std::string_view name)
+			{
+				return folder.mActualPath / name;
+			};
+
+		const std::string folderName = StringFunctions::CreateUniqueName("New folder",
+			[&getPath](std::string_view name) -> bool
+			{
+				return !std::filesystem::exists(getPath(name));
+			});
+
+		std::filesystem::create_directory(getPath(folderName));
 	}
 
 	if (ImGui::MenuItem("Reimport"))
@@ -574,6 +563,11 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const ContentFolder& 
 				}
 			};
 		deleteRecursive(folder);
+
+		if (&folder != &mRootFolder)
+		{
+			std::filesystem::remove(folder.mActualPath);
+		}
 	}
 
 	ImGui::EndPopup();
@@ -634,7 +628,7 @@ void CE::ContentBrowserEditorSystem::ShowCreateNewMenu()
 //		// action, our system will not restart, and we
 //		// have to explicitly state we want to recreate our
 //		// folder graph.
-//		mFolderGraph = MakeFolderGraph();
+//		mRootFolder = MakeFolderGraph();
 //	}
 //}
 

@@ -20,7 +20,11 @@ namespace CE
 		struct ContentFolder
 		{
 			ContentFolder() = default;
-			ContentFolder(const std::filesystem::path& path) : mPath(path) {}
+			ContentFolder(const std::filesystem::path& path, std::string&& name, ContentFolder* parent) :
+				mActualPath(path),
+				mFolderName(std::move(name)),
+				mParent(parent)
+			{}
 
 			ContentFolder(const ContentFolder&) = delete;
 			ContentFolder(ContentFolder&&) noexcept = default;
@@ -28,11 +32,15 @@ namespace CE
 			ContentFolder& operator=(const ContentFolder&) = delete;
 			ContentFolder& operator=(ContentFolder&&) noexcept = default;
 
-			std::filesystem::path mPath{};
-			std::vector<ContentFolder> mChildren{};
+			// Will be empty for the root folder
+			std::filesystem::path mActualPath{};
+			std::string mFolderName{};
+
+			std::list<ContentFolder> mChildren{};
+			ContentFolder* mParent{};
 			std::vector<WeakAssetHandle<>> mContent{};
 		};
-		static ContentFolder MakeFolderGraph();
+		void MakeFolderGraph();
 
 		void DisplayFolder(ContentFolder& folder);
 
@@ -59,7 +67,9 @@ namespace CE
 
 		static std::string_view GetName(const WeakAssetHandle<>& asset);
 
-		static std::string GetName(const ContentFolder& folder);
+		static std::string_view GetName(const ContentFolder& folder);
+
+		void DisplayPathToCurrentlySelectedFolder(ContentFolder& folder);
 
 		void DisplayImage(const WeakAssetHandle<>& asset, ThumbnailEditorSystem& thumbnailSystem);
 		void DisplayImage(ContentFolder& assetfolder, ThumbnailEditorSystem& thumbnailSystem);
@@ -75,7 +85,7 @@ namespace CE
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(ContentBrowserEditorSystem);
 
-		ContentFolder mFolderGraph{};
+		ContentFolder mRootFolder{};
 		ContentFolder* mSelectedFolder{};
 
 		float mFolderHierarchyPanelWidthPercentage = .25f;
