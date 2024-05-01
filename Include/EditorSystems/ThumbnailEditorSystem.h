@@ -27,7 +27,7 @@ namespace CE
 
 		void DisplayImGuiImage(const WeakAssetHandle<>& forAsset, ImVec2 size);
 
-		static constexpr glm::vec2 sGeneratedThumbnailResolution{ 64.0f };
+		static constexpr glm::vec2 sGeneratedThumbnailResolution{ 80.0f };
 
 	private:
 		static ImTextureID GetDefaultThumbnail();

@@ -180,6 +180,13 @@ void CE::Search::End()
 		};
 	}
 
+	if (!context.mInput.mEntries.empty())
+	{
+		ImGui::EndChild();
+	}
+
+	ImGui::PopID();
+
 	context.mInput.mEntries.clear();
 	context.mInput.mNames.Clear();
 	context.mInput.mBonuses.clear();
@@ -187,9 +194,6 @@ void CE::Search::End()
 	ASSERT_LOG(context.mCategoryStack.empty(), "There were more calls to BeginCategory than to EndCategory");
 
 	sContextStack.pop();
-
-	ImGui::EndChild();
-	ImGui::PopID();
 }
 
 void CE::Search::BeginCategory(std::string_view name, std::function<bool(std::string_view)> displayStart)

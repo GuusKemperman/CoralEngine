@@ -32,13 +32,14 @@ namespace CE
 			std::vector<ContentFolder> mChildren{};
 			std::vector<WeakAssetHandle<>> mContent{};
 		};
-		static std::vector<ContentFolder> MakeFolderGraph();
+		static ContentFolder MakeFolderGraph();
 
-		void DisplayFolder(ContentFolder& folder, ThumbnailEditorSystem& thumbnailSystem);
+		void DisplayFolder(ContentFolder& folder);
 
-		void DisplayAsset(WeakAssetHandle<>& asset, ThumbnailEditorSystem& thumbnailSystem) const;
+		template<typename T>
+		void DisplayItemInFolder(T& item, ThumbnailEditorSystem& thumbnailSystem);
 
-		void OpenAsset(WeakAssetHandle<> asset) const;
+		static void OpenAsset(WeakAssetHandle<> asset);
 
 		static bool DisplayNameUI(std::string& name);
 
@@ -54,16 +55,31 @@ namespace CE
 		static void PushError();
 		static void PopError();
 
-		void DisplayAssetCreatorPopUp();
-		void DisplayAssetRightClickPopUp();
-
 		static void Reimport(const WeakAssetHandle<>& asset);
+
+		static std::string_view GetName(const WeakAssetHandle<>& asset);
+
+		static std::string GetName(const ContentFolder& folder);
+
+		void DisplayImage(const WeakAssetHandle<>& asset, ThumbnailEditorSystem& thumbnailSystem);
+		void DisplayImage(ContentFolder& assetfolder, ThumbnailEditorSystem& thumbnailSystem);
+
+		static std::string GetRightClickPopUpMenuName(std::string_view itemName);
+
+		void DisplayRightClickMenu(const WeakAssetHandle<>& asset);
+		void DisplayRightClickMenu(const ContentFolder& folder);
+
+		void ShowCreateNewMenu();
 
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(ContentBrowserEditorSystem);
 
-		std::vector<ContentFolder> mFolderGraph{};
+		ContentFolder mFolderGraph{};
+		ContentFolder* mSelectedFolder{};
+
+		float mFolderHierarchyPanelWidthPercentage = .25f;
+		float mContentPanelWidthPercentage = .75f;
 	};
 }
 #endif // EDITOR
