@@ -87,6 +87,10 @@ namespace
 
 		uint32 mIndexOfPressedItem = std::numeric_limits<uint32>::max();
 		bool mHasPressedItemBeenConsumed{};
+
+		// When the user presses enter while typing,
+		// we say that the first item was pressed.
+		bool mHasEnterBeenConsumed{};
 	};
 	std::unordered_map<ImGuiID, SearchContext> sContexts{};
 	std::stack<std::reference_wrapper<SearchContext>> sContextStack{};
@@ -122,9 +126,13 @@ void CE::Search::Begin(SearchFlags flags)
 	if (ImGui::IsWindowAppearing())
 	{
 		ImGui::SetKeyboardFocusHere();
+		context.mInput.mUserQuery.clear();
 	}
 
 	ImGui::InputTextWithHint(sDefaultLabel.data(), sDefaultHint.data(), &context.mInput.mUserQuery);
+
+	context.mHasEnterBeenConsumed = !ImGui::IsItemFocused()
+		|| !ImGui::IsKeyPressed(ImGuiKey_Enter);
 }
 
 void CE::Search::End()
@@ -691,10 +699,11 @@ namespace
 				const ItemFunctions& itemFunctions = std::get<ItemFunctions>(functions);
 
 				if (itemFunctions.mOnDisplay
-					&& itemFunctions.mOnDisplay(name))
+					&& (itemFunctions.mOnDisplay(name) || !context.mHasEnterBeenConsumed))
 				{
 					context.mIndexOfPressedItem = index;
 					context.mHasPressedItemBeenConsumed = false;
+					context.mHasEnterBeenConsumed = true;
 				}
 
 				continue;
