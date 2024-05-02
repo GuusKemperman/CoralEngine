@@ -29,6 +29,12 @@ void CE::UpdateCameraMatricesSystem::Update(World& world, float)
 	}
 }
 
+void CE::UpdateCameraMatricesSystem::Render(const World& world)
+{
+	// We only update the matrices here
+	Update(const_cast<World&>(world), {});
+}
+
 CE::MetaType CE::UpdateCameraMatricesSystem::Reflect()
 {
 	return MetaType{ MetaType::T<UpdateCameraMatricesSystem>{}, "UpdateCameraMatricesSystem", MetaType::Base<System>{} };

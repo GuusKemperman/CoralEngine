@@ -37,6 +37,8 @@ namespace CE
 		void CreateFromWorld(const World& world);
 		World CreateWorld(bool callBeginPlayImmediately) const;
 
+		static World CreateDefaultWorld();
+
 	protected:
 		void OnSave(AssetSaveInfo& saveInfo) const override;
 

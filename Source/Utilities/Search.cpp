@@ -5,6 +5,7 @@
 #include <stack>
 #include <imgui/imgui_internal.h>
 
+#include "Utilities/ASync.h"
 #include "Utilities/ManyStrings.h"
 #include "Utilities/Math.h"
 
@@ -66,7 +67,7 @@ namespace
 	{
 		~Result();
 
-		std::thread mThread{};
+		CE::ASyncThread mThread{};
         bool mIsReady{};
 
 		Input mInput{};
@@ -140,9 +141,9 @@ void CE::Search::End()
         // we can defer that check.
         Result& pendingResult = context.mResults[!context.mIndexOfLastValidResult];
 
-        if (pendingResult.mThread.joinable())
+        if (pendingResult.mThread.WasLaunched())
         {
-            pendingResult.mThread.join();
+            pendingResult.mThread.Join();
         }
         pendingResult.mIsReady = false;
 
@@ -165,12 +166,12 @@ void CE::Search::End()
 	Result& pendingResult = context.mResults[!context.mIndexOfLastValidResult];
 
 	if (!IsResultUpToDate(lastValidResult, context.mInput)
-		&& !pendingResult.mThread.joinable())
+		&& !pendingResult.mThread.WasLaunched())
 	{
 		pendingResult.mInput = context.mInput;
 		pendingResult.mIsReady = false;
 
-		pendingResult.mThread = std::thread
+		pendingResult.mThread =
 		{
 			[&pendingResult]
 			{
@@ -180,6 +181,14 @@ void CE::Search::End()
 		};
 	}
 
+	if (!context.mInput.mEntries.empty()
+		&& (context.mInput.mFlags & SearchFlags::DontCreateChildForContent) == 0)
+	{
+		ImGui::EndChild();
+	}
+
+	ImGui::PopID();
+
 	context.mInput.mEntries.clear();
 	context.mInput.mNames.Clear();
 	context.mInput.mBonuses.clear();
@@ -187,16 +196,14 @@ void CE::Search::End()
 	ASSERT_LOG(context.mCategoryStack.empty(), "There were more calls to BeginCategory than to EndCategory");
 
 	sContextStack.pop();
-
-	ImGui::EndChild();
-	ImGui::PopID();
 }
 
 void CE::Search::BeginCategory(std::string_view name, std::function<bool(std::string_view)> displayStart)
 {
 	SearchContext& context = sContextStack.top();
 
-	if (context.mInput.mEntries.empty())
+	if (context.mInput.mEntries.empty()
+		&& (context.mInput.mFlags & SearchFlags::DontCreateChildForContent) == 0)
 	{
 		BeginChild();
 	}
@@ -232,7 +239,8 @@ bool CE::Search::AddItem(std::string_view name, std::function<bool(std::string_v
 {
 	SearchContext& context = sContextStack.top();
 
-	if (context.mInput.mEntries.empty())
+	if (context.mInput.mEntries.empty()
+		&& (context.mInput.mFlags & SearchFlags::DontCreateChildForContent) == 0)
 	{
 		BeginChild();
 	}
@@ -392,6 +400,11 @@ void CE::Search::SetBonus(float bonus)
 	sContextStack.top().get().mInput.mBonuses.back() = bonus;
 }
 
+const std::string& CE::Search::GetUserQuery()
+{
+	return sContextStack.top().get().mInput.mUserQuery;
+}
+
 namespace
 {
 	EntryAsNode::EntryAsNode(uint32& index, const Result& result):
@@ -412,9 +425,9 @@ namespace
 
 	Result::~Result()
 	{
-		if (mThread.joinable())
+		if (mThread.WasLaunched())
 		{
-			mThread.join();
+			mThread.CancelOrJoin();
 		}
 	}
 

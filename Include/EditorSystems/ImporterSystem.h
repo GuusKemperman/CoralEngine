@@ -1,3 +1,5 @@
+#include "Utilities/ASync.h"
+#include "Utilities/Time.h"
 #ifdef EDITOR
 #include "EditorSystems/EditorSystem.h"
 
@@ -110,8 +112,8 @@ namespace CE
 		std::vector<ImportRequest> mFailedFiles{};
 
 		std::array<DirToWatch, 2> mDirectoriesToWatch{};
-		static constexpr float sCheckWatchedDirectoriesCooldown = 10.0f;
-		float mTimeSinceLastCheckedOnDirectories = sCheckWatchedDirectoriesCooldown;
+		Cooldown mCheckDirectoryCooldown{ 10.0f };
+		ASyncFuture<std::vector<ImportRequest>> mChangedFilesInDirectoriesToWatch{};
 
 		static inline bool sExcludeDuplicates{};
 

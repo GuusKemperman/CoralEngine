@@ -289,9 +289,23 @@ system->GetName());
 	if (combinedFlags & RefreshRequest::ReloadAssets)
 	{
 		VirtualMachine::Get().ClearCompilationResult();
+
+		// The asset manager keeps assets around for
+		// ony cycle if they were dereferenced recently
+		// Sooo, we run the cycle twice
 		AssetManager::Get().UnloadAllUnusedAssets();
+		AssetManager::Get().UnloadAllUnusedAssets();
+
+		for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
+		{
+			if (asset.IsLoaded())
+			{
+				LOG(LogEditor, Warning, "We are refresing, but {} was still loaded into memory. Might lead to a crash", asset.GetMetaData().GetName());
+			}
+		}
 	}
 
+	// Iterate by index because more requests might be added
 	for (size_t i = 0; i < mRefreshRequests.size(); i++)
 	{
 		RefreshRequest& request = mRefreshRequests[i];
@@ -636,7 +650,8 @@ void CE::Editor::DisplayMainMenuBar()
 		{
 			std::function<void(const MetaType&)> recursivelyDisplayAsOption = [this, &recursivelyDisplayAsOption](const MetaType& type)
 				{
-					if (type.IsDefaultConstructible())
+					if (type.IsDefaultConstructible()
+						&& !type.GetProperties().Has(Props::sEditorSystemAlwaysOpenTag))
 					{
 						const EditorSystem* existingSystem = TryGetSystemInternal(type.GetTypeId());
 						bool selected = existingSystem != nullptr;

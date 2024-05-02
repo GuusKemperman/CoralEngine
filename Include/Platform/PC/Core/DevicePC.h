@@ -58,8 +58,7 @@ namespace CE
          */
         static bool IsHeadless() { return sIsHeadless; }
 
-    //Platform specific heap
-    public:
+		//Platform specific heap
         std::shared_ptr<DXDescHeap> GetDescriptorHeap(int heap) { return mDescriptorHeaps[heap]; }
         int GetFrameIndex() { return mFrameIndex; }
 
@@ -76,13 +75,14 @@ namespace CE
         void SubmitCommands();
         void StartRecordingCommands();
 
+        void SendAssetsToGPU();
+
         enum DXResources {
             RT,
             DEPTH_STENCIL_RSC = FRAME_BUFFER_COUNT,
             NUM_RESOURCES = FRAME_BUFFER_COUNT + 1
         };
 
-    private:
         bool mIsWindowOpen{};
 
         GLFWwindow* mWindow;

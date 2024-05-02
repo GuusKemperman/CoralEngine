@@ -19,9 +19,6 @@
 
 #include "World/Registry.h"
 #include "World/World.h"
-#include "Meta/MetaType.h"
-#include "Meta/MetaManager.h"
-#include "Meta/MetaReflect.h"
 
 #include "Rendering/GPUWorld.h"
 #include "Components/CameraComponent.h"
@@ -215,23 +212,23 @@ void CE::MeshRenderer::Render(const World& world)
             // Bind textures
             if (staticMeshComponent.mMaterial)
             {
-                if (staticMeshComponent.mMaterial->mBaseColorTexture && staticMeshComponent.mMaterial->mBaseColorTexture->WasSentToGpu())
+                if (staticMeshComponent.mMaterial->mBaseColorTexture != nullptr)
                 {
                     staticMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 8);
                 }
-                if (staticMeshComponent.mMaterial->mEmissiveTexture && staticMeshComponent.mMaterial->mEmissiveTexture->WasSentToGpu())
+                if (staticMeshComponent.mMaterial->mEmissiveTexture != nullptr)
                 {
                     staticMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 9);
                 }
-                if (staticMeshComponent.mMaterial->mMetallicRoughnessTexture && staticMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSentToGpu())
+                if (staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr)
                 {
                     staticMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
                 }
-                if (staticMeshComponent.mMaterial->mNormalTexture && staticMeshComponent.mMaterial->mNormalTexture->WasSentToGpu())
+                if (staticMeshComponent.mMaterial->mNormalTexture != nullptr)
                 {
                     staticMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 11);
                 }
-                if (staticMeshComponent.mMaterial->mOcclusionTexture && staticMeshComponent.mMaterial->mOcclusionTexture->WasSentToGpu())
+                if (staticMeshComponent.mMaterial->mOcclusionTexture != nullptr)
                 {
                     staticMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 12);
                 }
@@ -263,23 +260,23 @@ void CE::MeshRenderer::Render(const World& world)
             // Bind textures
             if (skinnedMeshComponent.mMaterial)
             {
-                if (skinnedMeshComponent.mMaterial->mBaseColorTexture && skinnedMeshComponent.mMaterial->mBaseColorTexture->WasSentToGpu())
+                if (skinnedMeshComponent.mMaterial->mBaseColorTexture != nullptr)
                 {
                     skinnedMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 8);
                 }
-                if (skinnedMeshComponent.mMaterial->mEmissiveTexture && skinnedMeshComponent.mMaterial->mEmissiveTexture->WasSentToGpu())
+                if (skinnedMeshComponent.mMaterial->mEmissiveTexture != nullptr)
                 {
                     skinnedMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 9);
                 }
-                if (skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture && skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSentToGpu())
+                if (skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr)
                 {
                     skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
                 }
-                if (skinnedMeshComponent.mMaterial->mNormalTexture && skinnedMeshComponent.mMaterial->mNormalTexture->WasSentToGpu())
+                if (skinnedMeshComponent.mMaterial->mNormalTexture != nullptr)
                 {
                     skinnedMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 11);
                 }
-                if (skinnedMeshComponent.mMaterial->mOcclusionTexture && skinnedMeshComponent.mMaterial->mOcclusionTexture->WasSentToGpu())
+                if (skinnedMeshComponent.mMaterial->mOcclusionTexture != nullptr)
                 {
                     skinnedMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 12);
                 }

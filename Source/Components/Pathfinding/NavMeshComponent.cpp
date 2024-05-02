@@ -24,6 +24,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Utilities/DrawDebugHelpers.h"
+#include "World/Physics.h"
 
 void CE::NavMeshComponent::GenerateNavMesh(const World& world)
 {

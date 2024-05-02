@@ -341,27 +341,38 @@ CE::MetaType* CE::Script::DeclareMetaType()
 	ourTypeInfo.mFlags |= size;
 	ASSERT(size < TypeInfo::sMaxSize);
 
-	MetaType metaType{ ourTypeInfo, GetName() };
-	MetaProps& props = metaType.GetProperties();
-	props.Add(Props::sIsFromScriptsTag).Add(Props::sIsScriptableTag).Add(Props::sComponentTag);
-
-	if (AssetHandle<Script> handleToSelf = AssetManager::Get().TryGetAsset<Script>(GetName());
-		handleToSelf != nullptr)
-	{
-		std::string oldNamesCommaSeperated{};
-
-		for (const std::string& oldName : handleToSelf.GetOldNames())
+	// Because of some dumb planning,
+	// the renaming of metatypes only works
+	// if the metatype has the rename property
+	// before being added to the metamanager.
+	// Which is why we create a temporary object.
+	MetaType& metaType = [&]() -> MetaType&
 		{
-			oldNamesCommaSeperated.append(oldName).push_back(',');
-		}
+			MetaType tmp{ ourTypeInfo, GetName() };
 
-		if (!oldNamesCommaSeperated.empty())
-		{
-			// Remove last ','
-			oldNamesCommaSeperated.pop_back();
-			props.Set(Props::sOldNames, oldNamesCommaSeperated);
-		}
-	}
+			MetaProps& props = tmp.GetProperties();
+			props.Add(Props::sIsFromScriptsTag).Add(Props::sIsScriptableTag).Add(Props::sComponentTag);
+
+			if (AssetHandle<Script> handleToSelf = AssetManager::Get().TryGetAsset<Script>(GetName());
+				handleToSelf != nullptr)
+			{
+				std::string oldNamesCommaSeperated{};
+
+				for (const std::string& oldName : handleToSelf.GetOldNames())
+				{
+					oldNamesCommaSeperated.append(oldName).push_back(',');
+				}
+
+				if (!oldNamesCommaSeperated.empty())
+				{
+					// Remove last ','
+					oldNamesCommaSeperated.pop_back();
+					props.Set(Props::sOldNames, oldNamesCommaSeperated);
+				}
+			}
+
+			return MetaManager::Get().AddType(std::move(tmp));
+		}(); 
 
 	for (MemberToAdd& memberToAdd : membersToAdd)
 	{
@@ -386,7 +397,7 @@ CE::MetaType* CE::Script::DeclareMetaType()
 
 	Internal::ReflectComponentType(metaType, false);
 
-	return &MetaManager::Get().AddType(std::move(metaType));
+	return &metaType;
 }
 
 void CE::Script::PostDeclarationRefresh()

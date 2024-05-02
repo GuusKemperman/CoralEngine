@@ -23,6 +23,8 @@ namespace CE
 			Mana // can be based on kills or some other criteria
 		};
 
+		const AssetHandle<Texture>& GetIconTexture() const { return mIconTexture; }
+
 	private:
 		friend AbilitySystem;
 		friend AbilityInstance;

@@ -65,12 +65,5 @@ namespace CE
 		Will return true on success. This function will return false if there is no type with this typeid.
 		*/
 		bool RemoveType(TypeId typeId);
-
-		/*
-		Removes a type based on its name. The type will be immediately destroyed, any references will become dangling.
-
-		Will return true on success. This function will return false if there is no type with this name.
-		*/
-		bool RemoveType(Name typeName);
 	};
 }

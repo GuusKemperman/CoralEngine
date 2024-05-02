@@ -9,6 +9,8 @@ namespace CE
 	public:
 		void Update(World& world, float dt) override;
 
+		void Render(const World& world) override;
+
 		SystemStaticTraits GetStaticTraits() const override
 		{
 			SystemStaticTraits traits{};

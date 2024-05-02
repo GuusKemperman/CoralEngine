@@ -3,6 +3,7 @@
 
 #include "Core/AssetManager.h"
 #include "Core/Editor.h"
+#include "EditorSystems/ThumbnailEditorSystem.h"
 #include "Meta/Fwd/MetaTypeFwd.h"
 #include "Utilities/Search.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
@@ -163,19 +164,33 @@ void CE::Internal::DisplayHandleWidget(AssetHandle<>& asset, const std::string& 
 
 void CE::Internal::DisplayHandleWidget(WeakAssetHandle<>& asset, const std::string& name, TypeId type)
 {
+	ThumbnailEditorSystem* thumbnailEditorSystem = Editor::Get().TryGetSystem<ThumbnailEditorSystem>();
+
+	if (thumbnailEditorSystem == nullptr)
+	{
+		LOG(LogEditor, Error, "Could not display content, no thumbnail editor system!");
+	}
+
 	const bool isOpen = Search::BeginCombo(name, asset == nullptr ? "None" : asset.GetMetaData().GetName());
 
 	if (!isOpen)
 	{
-		if (asset != nullptr
-			&& Editor::Get().IsThereAnEditorTypeForAssetType(type))
+		if (asset != nullptr)
 		{
 			ImGui::SameLine();
-			if (ImGui::Button(ICON_FA_PENCIL))
+			const glm::vec2 thumbnailSize{ 32.0f };
+
+			ImGui::Image(thumbnailEditorSystem->GetThumbnail(asset), thumbnailSize);
+
+			if (Editor::Get().IsThereAnEditorTypeForAssetType(type))
 			{
-				Editor::Get().TryOpenAssetForEdit(asset);
+				ImGui::SameLine();
+				if (ImGui::Button(ICON_FA_PENCIL))
+				{
+					Editor::Get().TryOpenAssetForEdit(asset);
+				}
+				ImGui::SetItemTooltip("Open this asset for edit");
 			}
-			ImGui::SetItemTooltip("Open this asset for edit");
 		}
 
 		return;
@@ -193,7 +208,15 @@ void CE::Internal::DisplayHandleWidget(WeakAssetHandle<>& asset, const std::stri
 			continue;
 		}
 
-		if (Search::Button(weakAsset.GetMetaData().GetName()))
+		if (Search::AddItem(weakAsset.GetMetaData().GetName(),
+			[weakAsset, thumbnailEditorSystem](std::string_view name)
+			{
+				const glm::vec2 thumbnailSize{ ImGui::GetTextLineHeightWithSpacing() };
+				const bool imagePressed = thumbnailEditorSystem->DisplayImGuiImageButton(weakAsset, thumbnailSize);
+				ImGui::SameLine();
+				const bool menuItemPressed = ImGui::MenuItem(name.data());
+				return menuItemPressed || imagePressed;
+			}))
 		{
 			asset = weakAsset;
 		}

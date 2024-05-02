@@ -102,39 +102,30 @@ CE::MetaManager::EachTypeT CE::MetaManager::EachType()
 	return { mTypeByTypeId.begin(), mTypeByTypeId.end() };
 }
 
-static bool EraseFromBoth(std::unordered_map<CE::TypeId, CE::MetaType>::iterator it)
+bool CE::MetaManager::RemoveType(const TypeId typeId)
 {
-	if (it == CE::mTypeByTypeId.end())
+	const auto it = mTypeByTypeId.find(typeId);
+
+	if (it == mTypeByTypeId.end())
 	{
 		return false;
 	}
 
-	for (auto nameIt = CE::mTypeByName.begin(); nameIt != CE::mTypeByName.end();)
+	// Multiple names can point to the same type
+	for (auto nameIt = mTypeByName.begin(); nameIt != mTypeByName.end();)
 	{
 		if (nameIt->second.get() == it->second)
 		{
-			nameIt = CE::mTypeByName.erase(nameIt);
+			nameIt = mTypeByName.erase(nameIt);
 		}
 		else
 		{
 			++nameIt;
 		}
 	}
-	CE::mTypeByTypeId.erase(it);
+	mTypeByTypeId.erase(it);
 
 	return true;
-};
-
-bool CE::MetaManager::RemoveType(const TypeId typeId)
-{
-	const auto it = mTypeByTypeId.find(typeId);
-	return EraseFromBoth(it);
-}
-
-bool CE::MetaManager::RemoveType(const Name typeName)
-{
-	const auto it = mTypeByTypeId.find(typeName.GetHash());
-	return EraseFromBoth(it);
 }
 
 bool CE::Internal::DoesTypeExist(const TypeId typeId)

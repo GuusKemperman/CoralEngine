@@ -376,8 +376,6 @@ void CE::GPUWorld::Update()
             InfoStruct::DXMaterialInfo materialInfo{};
             if (staticMeshComponent.mMaterial != nullptr)
             {
-                SendMaterialTexturesToGPU(*staticMeshComponent.mMaterial);
-
                 materialInfo.colorFactor = { staticMeshComponent.mMaterial->mBaseColorFactor.r,
                     staticMeshComponent.mMaterial->mBaseColorFactor.g,
                     staticMeshComponent.mMaterial->mBaseColorFactor.b,
@@ -391,11 +389,11 @@ void CE::GPUWorld::Update()
                 materialInfo.metallicFactor = staticMeshComponent.mMaterial->mMetallicFactor;
                 materialInfo.roughnessFactor = staticMeshComponent.mMaterial->mRoughnessFactor;
                 materialInfo.normalScale = staticMeshComponent.mMaterial->mNormalScale;
-                materialInfo.useColorTex = staticMeshComponent.mMaterial->mBaseColorTexture != nullptr && staticMeshComponent.mMaterial->mBaseColorTexture->WasSentToGpu();
-                materialInfo.useEmissiveTex = staticMeshComponent.mMaterial->mEmissiveTexture != nullptr && staticMeshComponent.mMaterial->mEmissiveTexture->WasSentToGpu();
-                materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr && staticMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSentToGpu();
-                materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr && staticMeshComponent.mMaterial->mNormalTexture->WasSentToGpu();
-                materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr && staticMeshComponent.mMaterial->mOcclusionTexture->WasSentToGpu();
+                materialInfo.useColorTex = staticMeshComponent.mMaterial->mBaseColorTexture != nullptr;
+                materialInfo.useEmissiveTex = staticMeshComponent.mMaterial->mEmissiveTexture != nullptr;
+                materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr;
+                materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr;
+                materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr;
             }
             else 
             {
@@ -449,8 +447,6 @@ void CE::GPUWorld::Update()
             InfoStruct::DXMaterialInfo materialInfo{};
             if (skinnedMeshComponent.mMaterial != nullptr) 
             {
-                SendMaterialTexturesToGPU(*skinnedMeshComponent.mMaterial);
-
                 materialInfo.colorFactor = { skinnedMeshComponent.mMaterial->mBaseColorFactor.r,
                     skinnedMeshComponent.mMaterial->mBaseColorFactor.g,
                     skinnedMeshComponent.mMaterial->mBaseColorFactor.b,
@@ -465,11 +461,11 @@ void CE::GPUWorld::Update()
                 materialInfo.roughnessFactor = skinnedMeshComponent.mMaterial->mRoughnessFactor;
                 materialInfo.normalScale = skinnedMeshComponent.mMaterial->mNormalScale;
 
-                materialInfo.useColorTex = skinnedMeshComponent.mMaterial->mBaseColorTexture != nullptr && skinnedMeshComponent.mMaterial->mBaseColorTexture->WasSentToGpu();
-                materialInfo.useEmissiveTex = skinnedMeshComponent.mMaterial->mEmissiveTexture != nullptr && skinnedMeshComponent.mMaterial->mEmissiveTexture->WasSentToGpu();
-                materialInfo.useMetallicRoughnessTex = skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr && skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->WasSentToGpu();
-                materialInfo.useNormalTex = skinnedMeshComponent.mMaterial->mNormalTexture != nullptr && skinnedMeshComponent.mMaterial->mNormalTexture->WasSentToGpu();
-                materialInfo.useOcclusionTex = skinnedMeshComponent.mMaterial->mOcclusionTexture != nullptr && skinnedMeshComponent.mMaterial->mOcclusionTexture->WasSentToGpu();
+                materialInfo.useColorTex = skinnedMeshComponent.mMaterial->mBaseColorTexture != nullptr;
+                materialInfo.useEmissiveTex = skinnedMeshComponent.mMaterial->mEmissiveTexture != nullptr;
+                materialInfo.useMetallicRoughnessTex = skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr;
+                materialInfo.useNormalTex = skinnedMeshComponent.mMaterial->mNormalTexture != nullptr;
+                materialInfo.useOcclusionTex = skinnedMeshComponent.mMaterial->mOcclusionTexture != nullptr;
             }
             else 
             {
@@ -534,39 +530,6 @@ uint32 CE::GPUWorld::ReadCompactClusterCounter() const
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_READBACK_RESOURCE]->Get()->Unmap(0, nullptr);
 
     return value;
-}
-
-void CE::GPUWorld::SendMaterialTexturesToGPU(const CE::Material& mat)
-{
-    if (mat.mBaseColorTexture != nullptr
-        && mat.mBaseColorTexture->IsReadyToBeSentToGpu())
-    {
-        mat.mBaseColorTexture->SendToGPU();
-    }
-
-    if (mat.mEmissiveTexture != nullptr
-        && mat.mEmissiveTexture->IsReadyToBeSentToGpu())
-    {
-        mat.mEmissiveTexture->SendToGPU();
-    }
-
-    if (mat.mMetallicRoughnessTexture != nullptr
-        && mat.mMetallicRoughnessTexture->IsReadyToBeSentToGpu())
-    {
-        mat.mMetallicRoughnessTexture->SendToGPU();
-    }
-
-    if (mat.mNormalTexture != nullptr
-        && mat.mNormalTexture->IsReadyToBeSentToGpu())
-    {
-        mat.mNormalTexture->SendToGPU();
-    }
-
-    if (mat.mOcclusionTexture != nullptr
-        && mat.mOcclusionTexture->IsReadyToBeSentToGpu())
-    {
-        mat.mOcclusionTexture->SendToGPU();
-    }
 }
 
 void CE::GPUWorld::InitializeShadowMaps()

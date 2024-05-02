@@ -21,9 +21,13 @@ namespace CE::Internal
 
 		enum class RefCountType : bool { Strong, Weak };
 
-		std::array<std::atomic<uint32>, 2> mRefCounters{};
+		std::array<uint32, 2> mRefCounters{};
+
+		std::unique_ptr<Asset, InPlaceDeleter<Asset, true>> mAsset{};
 
 		AssetFileMetaData mMetaData;
+
+		bool mHasBeenDereferencedSinceGarbageCollect{};
 
 		// The .asset file. Is only nullopt if this
 		// asset was generated at runtime, and no path
@@ -33,6 +37,5 @@ namespace CE::Internal
 		// The .rename files that redirect to this asset.
 		std::vector<std::filesystem::path> mOldNames{};
 
-		std::unique_ptr<Asset, InPlaceDeleter<Asset, true>> mAsset{};
 	};
 }
