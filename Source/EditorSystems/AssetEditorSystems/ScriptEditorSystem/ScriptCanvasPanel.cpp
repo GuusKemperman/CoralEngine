@@ -103,7 +103,7 @@ void CE::ScriptEditorSystem::DisplayCanvas()
 
 		if (node.GetType() == ScriptNodeType::Comment)
 		{
-			static_cast<CommentScriptNode&>(node).SetSize(ax::NodeEditor::GetNodeSize(node.GetId()));
+			static_cast<CommentScriptNode&>(node).SetSize(ax::NodeEditor::GetGroupSize(node.GetId()));
 		}
 	}
 }
@@ -601,6 +601,7 @@ void CE::ScriptEditorSystem::DisplayCommentNode(CommentScriptNode& node)
 
 	const ImVec2 nodeDesiredSize = ImMax({ 50.0f, 50.0f }, ImVec2{ node.GetSize() });
 	ax::NodeEditor::Group(nodeDesiredSize);
+
 	ImGui::PopID();
 	ax::NodeEditor::EndNode();
 	ax::NodeEditor::PopStyleColor(2);
