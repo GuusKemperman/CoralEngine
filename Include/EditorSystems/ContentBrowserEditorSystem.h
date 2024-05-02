@@ -58,16 +58,8 @@ namespace CE
 
 		static void OpenAsset(WeakAssetHandle<> asset);
 
-		static bool DisplayNameUI(std::string& name);
-
-		struct FilePathUIResult
-		{
-			std::filesystem::path mActualFullPath{};
-			std::filesystem::path mPathToShowUser{};
-			bool mAnyErrors{};
-		};
-
-		static FilePathUIResult DisplayFilepathUI(std::string& folderRelativeToRoot, bool& isEngineAsset, const std::string& assetName);
+		static bool DisplayAssetNameUI(std::string& name);
+		void DisplayCreateNewAssetMenu(const ContentFolder& inFolder);
 
 		static void PushError();
 		static void PopError();
@@ -87,8 +79,6 @@ namespace CE
 
 		void DisplayRightClickMenu(const WeakAssetHandle<>& asset);
 		void DisplayRightClickMenu(const ContentFolder& folder);
-
-		void ShowCreateNewMenu();
 
 		void SelectFolder(ContentFolder& folder);
 		void SelectFolder(const std::filesystem::path& path);

@@ -15,7 +15,6 @@
 #include "Utilities/Search.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
-#include "Meta/MetaTypeFilter.h"
 #include "EditorSystems/ThumbnailEditorSystem.h"
 #include "Utilities/StringFunctions.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
@@ -24,11 +23,6 @@ namespace
 {
 	constexpr std::string_view sEngineAssetsDisplayName = "EngineAssets";
 	constexpr std::string_view sGameAssetsDisplayName = "GameAssets";
-
-	std::string sPopUpFolderRelativeToRoot{};
-	std::string sPopUpNewAssetName{};
-	bool sPopUpIsEngineAsset{};
-	const CE::MetaType* sPopUpAssetClass{};
 }
 
 CE::ContentBrowserEditorSystem::ContentBrowserEditorSystem() :
@@ -157,6 +151,10 @@ void CE::ContentBrowserEditorSystem::DisplayFolderHierarchyPanel()
 {
 	if (ImGui::BeginChild("FolderHierarchy", { mFolderHierarchyPanelWidthPercentage, -2.0f }))
 	{
+		if (ImGui::Button(ICON_FA_PLUS))
+		{
+			ImGui::OpenPopup("CreateNewAssetMenu");
+		}
 		ImGui::SetItemTooltip("Create a new asset");
 		ImGui::SameLine();
 		Search::Begin();
@@ -165,6 +163,14 @@ void CE::ContentBrowserEditorSystem::DisplayFolderHierarchyPanel()
 		DisplayFolder(mRootFolder);
 
 		Search::End();
+
+		if (ImGui::BeginPopup("CreateNewAssetMenu"))
+		{
+			ImGui::TextUnformatted(Format("Create asset in {}", mSelectedFolder.get().mFolderName).c_str());
+			ImGui::Separator();
+			DisplayCreateNewAssetMenu(mSelectedFolder);
+			ImGui::EndPopup();
+		}
 	}
 	ImGui::EndChild();
 }
@@ -237,6 +243,13 @@ void CE::ContentBrowserEditorSystem::DisplayContentPanel()
 	ImGui::BeginTable("TableTest",
 		std::max(static_cast<int>(ImGui::GetContentRegionAvail().x / (ThumbnailEditorSystem::sGeneratedThumbnailResolution.x + 10.0f)), 1),
 		ImGuiTableColumnFlags_WidthFixed);
+
+	if (ImGui::IsMouseClicked(1)
+		&& ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
+	{
+		ImGui::OpenPopup(GetRightClickPopUpMenuName(GetName(mSelectedFolder)).data());
+	}
+	DisplayRightClickMenu(mSelectedFolder);
 
 	for (ContentFolder& folder : foldersToDisplay)
 	{
@@ -401,70 +414,76 @@ void CE::ContentBrowserEditorSystem::OpenAsset(WeakAssetHandle<> asset)
 	Editor::Get().TryOpenAssetForEdit(asset);
 }
 
-bool CE::ContentBrowserEditorSystem::DisplayNameUI(std::string& assetName)
+bool CE::ContentBrowserEditorSystem::DisplayAssetNameUI(std::string& assetName)
 {
 	ShowInspectUI("Name", assetName);
 
 	bool anyErrors = false;
 	PushError();
 
-	if (assetName.empty())
-	{
-		ImGui::TextUnformatted("Name is empty");
-		anyErrors = true;
-	}
-
-	if (AssetManager::Get().TryGetWeakAsset(Name{ assetName }) != nullptr)
+	if (AssetManager::Get().TryGetWeakAsset(assetName) != nullptr)
 	{
 		ImGui::Text("There is already an asset with the name %s", assetName.c_str());
 		anyErrors = true;
 	}
+
 	PopError();
 	return anyErrors;
 }
 
-CE::ContentBrowserEditorSystem::FilePathUIResult CE::ContentBrowserEditorSystem::DisplayFilepathUI(std::string& folderRelativeToRoot, bool& isEngineAsset,
-	const std::string& assetName)
+void CE::ContentBrowserEditorSystem::DisplayCreateNewAssetMenu(const ContentFolder& inFolder)
 {
-	ShowInspectUI("IsEngineAsset", sPopUpIsEngineAsset);
-	ShowInspectUI("File location", folderRelativeToRoot);
-
-	std::filesystem::path outputRootFolder = folderRelativeToRoot;
-
-	while (outputRootFolder.has_parent_path())
+	if (ImGui::BeginMenu("New asset"))
 	{
-		outputRootFolder = outputRootFolder.parent_path();
+		auto displayAssetOption =
+			[&inFolder, this](const auto& self, const MetaType& assetType) -> void
+			{
+				for (const MetaType& child : assetType.GetDirectDerivedClasses())
+				{
+					if (Editor::Get().IsThereAnEditorTypeForAssetType(child.GetTypeId())
+						&& ImGui::BeginMenu(child.GetName().c_str()))
+					{
+						static std::string name{};
+
+						const bool anyErrors = DisplayAssetNameUI(name);
+						ImGui::SameLine();
+
+						std::filesystem::path actualOutputFile = inFolder.mActualPath.empty() ? FileIO::Get().GetPath(FileIO::Directory::GameAssets, "") : inFolder.mActualPath;
+						actualOutputFile /= name;
+						actualOutputFile.replace_extension(AssetManager::sAssetExtension);
+
+						ImGui::BeginDisabled(anyErrors);
+
+						if (ImGui::Button("Create")
+							|| ImGui::IsKeyReleased(ImGuiKey_Enter))
+						{
+							WeakAssetHandle newAsset = AssetManager::Get().NewAsset(child, actualOutputFile);
+
+							if (newAsset != nullptr)
+							{
+								Editor::Get().TryOpenAssetForEdit(newAsset);
+
+								// Adding assets is not considered to be a volatile
+								// action, our system will not restart, and we
+								// have to explicitly state we want to recreate our
+								// folder graph.
+								RequestUpdateToFolderGraph();
+							}
+
+							name.clear();
+						}
+						ImGui::EndDisabled();
+
+						ImGui::EndMenu();
+					}
+
+					self(self, child);
+				}
+			};
+
+		displayAssetOption(displayAssetOption, MetaManager::Get().GetType<Asset>());
+		ImGui::EndMenu();
 	}
-
-	const std::filesystem::path actualOutputFile =
-		Format("{}{}{}{}{}",
-			isEngineAsset ? FileIO::Get().GetPath(FileIO::Directory::EngineAssets, "") : FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""),
-			folderRelativeToRoot,
-			folderRelativeToRoot.empty() ? "" : "/",
-			assetName,
-			AssetManager::sAssetExtension);
-
-	// Gaslight our users
-	const std::string outputFileToDisplay =
-		Format("{}/{}{}{}{}",
-			isEngineAsset ? sEngineAssetsDisplayName : sGameAssetsDisplayName,
-			folderRelativeToRoot,
-			folderRelativeToRoot.empty() ? "" : "/",
-			assetName,
-			AssetManager::sAssetExtension);
-
-	bool anyErrors = false;
-	PushError();
-
-	if (std::filesystem::exists(actualOutputFile))
-	{
-		ImGui::Text("There is already a file at %s", outputFileToDisplay.c_str());
-		anyErrors = true;
-	}
-
-	PopError();
-
-	return { actualOutputFile, outputFileToDisplay, anyErrors };
 }
 
 void CE::ContentBrowserEditorSystem::PushError()
@@ -586,15 +605,21 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const WeakAssetHandle
 		return;
 	}
 
+	ImGui::TextUnformatted(asset.GetMetaData().GetName().c_str());
+	ImGui::Separator();
+
 	if (ImGui::BeginMenu("Rename##Menu"))
 	{
-		const bool anyErrors = DisplayNameUI(sPopUpNewAssetName);
+		static std::string renameTo{};
+
+		const bool anyErrors = DisplayAssetNameUI(renameTo);
 
 		ImGui::BeginDisabled(anyErrors);
 
 		if (ImGui::Button("Rename"))
 		{
-			AssetManager::Get().RenameAsset(asset, sPopUpNewAssetName);
+			AssetManager::Get().RenameAsset(asset, renameTo);
+			renameTo.clear();
 		}
 
 		ImGui::EndDisabled();
@@ -650,26 +675,35 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const ContentFolder& 
 		return;
 	}
 
+	ImGui::TextUnformatted(folder.mFolderName.c_str());
+	ImGui::Separator();
+
 	if (&folder != &mRootFolder
-		&& ImGui::MenuItem("New folder"))
+		&& ImGui::BeginMenu("New folder"))
 	{
-		const auto getPath = [&folder](std::string_view name)
-			{
-				return folder.mActualPath / name;
-			};
+		static std::string name{};
+		ImGui::InputText("FolderName", &name);
 
-		const std::string folderName = StringFunctions::CreateUniqueName("New folder",
-			[&getPath](std::string_view name) -> bool
-			{
-				return !std::filesystem::exists(getPath(name));
-			});
+		ImGui::BeginDisabled(name.empty());
 
-		std::filesystem::create_directory(getPath(folderName));
+		if (ImGui::Button("Create")
+			|| ImGui::IsKeyPressed(ImGuiKey_Enter))
+		{
+			std::filesystem::create_directory(folder.mActualPath / name);
+			RequestUpdateToFolderGraph();
+			name.clear();
+		}
+
+		ImGui::EndDisabled();
+		ImGui::EndMenu();
 	}
+
+	DisplayCreateNewAssetMenu(folder);
 
 	if (ImGui::MenuItem("Reimport"))
 	{
-		std::function<void(const ContentFolder&)> importRecursive = [&importRecursive](const ContentFolder& folder)
+		static constexpr auto importRecursive = 
+			[](const auto& self, const ContentFolder& folder) -> void
 			{
 				for (const WeakAssetHandle<>& asset : folder.mContent)
 				{
@@ -678,16 +712,17 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const ContentFolder& 
 
 				for (const ContentFolder& child : folder.mChildren)
 				{
-					importRecursive(child);
+					self(self, child);
 				}
 			};
-		importRecursive(folder);
+		importRecursive(importRecursive, folder);
 	}
 
 	if (ImGui::MenuItem("Delete", "Del")
 		|| Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Delete))
 	{
-		std::function<void(const ContentFolder&)> deleteRecursive = [&deleteRecursive](const ContentFolder& folder)
+		static constexpr auto deleteRecursive = 
+			[](const auto& self, const ContentFolder& folder) -> void
 			{
 				for (const WeakAssetHandle<>& asset : folder.mContent)
 				{
@@ -696,81 +731,19 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const ContentFolder& 
 
 				for (const ContentFolder& child : folder.mChildren)
 				{
-					deleteRecursive(child);
+					self(self, child);
 				}
 			};
-		deleteRecursive(folder);
+		deleteRecursive(deleteRecursive, folder);
 
 		if (&folder != &mRootFolder)
 		{
 			std::filesystem::remove(folder.mActualPath);
 		}
+		RequestUpdateToFolderGraph();
 	}
 
 	ImGui::EndPopup();
-}
-
-void CE::ContentBrowserEditorSystem::ShowCreateNewMenu()
-{
-	//if (!ImGui::BeginPopup(sAssetCreatorImGuiId.data()))
-//{
-//	return;
-//}
-
-//struct OnlyAssetsThatCanBeEdited
-//{
-//	bool operator()(const MetaType& type) const
-//	{
-//		return Editor::Get().IsThereAnEditorTypeForAssetType(type.GetTypeId());
-//	}
-//};
-//MetaTypeFilter<OnlyAssetsThatCanBeEdited> filter{ sPopUpAssetClass };
-//ShowInspectUI("Type", filter);
-//sPopUpAssetClass = filter.Get();
-
-//bool anyErrors = false;
-//anyErrors |= DisplayNameUI(sPopUpNewAssetName);
-
-//const FilePathUIResult fileUIResult = DisplayFilepathUI(sPopUpFolderRelativeToRoot, sPopUpIsEngineAsset, sPopUpNewAssetName);
-
-//anyErrors |= fileUIResult.mAnyErrors;
-
-//PushError();
-
-//if (sPopUpAssetClass == nullptr)
-//{
-//	ImGui::TextUnformatted("No type selected.");
-//	anyErrors = true;
-//}
-//else if (sPopUpAssetClass->IsExactly(MakeTypeId<Asset>())
-//	|| !sPopUpAssetClass->IsDerivedFrom<Asset>())
-//{
-//	ImGui::Text("%s is not a valid type.", sPopUpAssetClass->GetName().c_str());
-//	anyErrors = true;
-//}
-
-//PopError();
-
-//ImGui::BeginDisabled(anyErrors);
-
-//if (ImGui::Button(Format("Save to {}", fileUIResult.mPathToShowUser.string()).c_str()))
-//{
-//	WeakAssetHandle newAsset = AssetManager::Get().NewAsset(*sPopUpAssetClass, fileUIResult.mActualFullPath);
-
-//	if (newAsset != nullptr)
-//	{
-//		Editor::Get().TryOpenAssetForEdit(newAsset);
-
-//		// Adding assets is not considered to be a volatile
-//		// action, our system will not restart, and we
-//		// have to explicitly state we want to recreate our
-//		// folder graph.
-//		mRootFolder = RequestUpdateToFolderGraph();
-//	}
-//}
-
-//ImGui::EndDisabled();
-//ImGui::EndPopup();
 }
 
 void CE::ContentBrowserEditorSystem::SelectFolder(ContentFolder& folder)
