@@ -10,7 +10,6 @@ namespace
 {
 	bool IsNull(const MetaAny* any);
 	bool IsNotNull(const MetaAny* any);
-	bool CallNullptrOverload(const MetaAny& any);
 }
 
 MetaType Reflector<Internal::Null>::Reflect()
@@ -35,23 +34,13 @@ namespace
 			return true;
 		}
 
-		return CallNullptrOverload(*any);
-	}
-
-	bool IsNotNull(const MetaAny* any)
-	{
-		return !IsNull(any);
-	}
-
-	bool CallNullptrOverload(const MetaAny& any)
-	{
 		static constexpr TypeTraits nullptrTraits = MakeTypeTraits<nullptr_t>();
 
-		const MetaType* type = any.TryGetType();
+		const MetaType* type = any->TryGetType();
 
 		if (type == nullptr)
 		{
-			return true;
+			return false;
 		}
 
 		const MetaFunc* const nullptrComparison = type->TryGetFunc(OperatorType::equal, MakeFuncId(MakeTypeTraits<bool>(),
@@ -59,21 +48,21 @@ namespace
 
 		if (nullptrComparison == nullptr)
 		{
-			return true;
+			return false;
 		}
 
 		nullptr_t null{};
 		const MetaAny nullRef{ null };
 
 		bool retAddress{};
-		FuncResult nullptrComparisonResult = (*nullptrComparison).InvokeUncheckedUnpackedWithRVO(&retAddress, any, nullRef);
+		FuncResult nullptrComparisonResult = nullptrComparison->InvokeUncheckedUnpackedWithRVO(&retAddress, *any, nullRef);
 
 		if (nullptrComparisonResult.HasError())
 		{
 			LOG(LogScripting, Error, "An error occured when invoking the IsNull overload for type {} - {}",
 				type->GetName(),
 				nullptrComparisonResult.Error())
-				return true;
+				return false;
 		}
 
 		ASSERT(nullptrComparisonResult.HasReturnValue()
@@ -82,5 +71,10 @@ namespace
 
 			ASSERT(nullptrComparisonResult.GetReturnValue().GetData() == &retAddress);
 		return retAddress;
+	}
+
+	bool IsNotNull(const MetaAny* any)
+	{
+		return !IsNull(any);
 	}
 }
