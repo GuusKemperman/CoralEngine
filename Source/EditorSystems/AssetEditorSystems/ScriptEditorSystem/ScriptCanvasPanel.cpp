@@ -725,7 +725,7 @@ bool CE::ScriptEditorSystem::DoesNodeMatchContext(const ScriptPin& contextPin,
 {
 	if (contextPin.IsFlow())
 	{
-		return isPure;
+		return !isPure;
 	}
 
 	const MetaType* const contextType = contextPin.TryGetType();
