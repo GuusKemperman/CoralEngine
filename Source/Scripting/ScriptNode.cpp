@@ -37,7 +37,7 @@ void CE::ScriptNode::SetPins(ScriptFunc& scriptFunc, InputsOutputs&& inputsOutpu
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
 	ClearPins(scriptFunc);
 #else 
-	ASSERT(!mFirstPinId.IsValid() && mNumOfOutputs == 0 && mNumOfInputs)
+	ASSERT(!mFirstPinId.IsValid() && mNumOfOutputs == 0 && mNumOfInputs);
 #endif // REMOVE_FROM_SCRIPTS_ENABLED
 
 	mNumOfInputs = static_cast<uint32>(inputsOutputs.mInputs.size());

@@ -77,9 +77,8 @@ CE::World& CE::WorldInspectHelper::BeginPlay()
 		LOG(LogEditor, Error, "Called begin play when the world has already begun play");
 		return GetWorld();
 	}
-	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay() && "Do not call BeginPlay on the world yourself, use WorldInspectHelper::BeginPlay")
-
-		mWorldAfterBeginPlay = std::make_unique<World>(false);
+	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay() && "Do not call BeginPlay on the world yourself, use WorldInspectHelper::BeginPlay");
+	mWorldAfterBeginPlay = std::make_unique<World>(false);
 
 	// Duplicate our level world
 	const BinaryGSONObject serializedWorld = Archiver::Serialize(*mWorldBeforeBeginPlay);

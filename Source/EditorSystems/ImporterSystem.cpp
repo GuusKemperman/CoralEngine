@@ -809,12 +809,7 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 		if (std::filesystem::exists(existingImportedAssetFile))
 		{
 			LOG(LogAssets, Message, "Deleting file {} created during previous importation", existingImportedAssetFile.string());
-
-			std::error_code err{};
-			if (!std::filesystem::remove(existingImportedAssetFile, err))
-			{
-				LOG(LogAssets, Error, "Could not delete file {} - {}", existingImportedAssetFile.string(), err.message());
-			}
+			TRY_CATCH_LOG(std::filesystem::remove(existingImportedAssetFile));
 		}
 	}
 

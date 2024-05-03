@@ -61,15 +61,15 @@ namespace
 		{
 			LOG(LogScripting, Error, "An error occured when invoking the IsNull overload for type {} - {}",
 				type->GetName(),
-				nullptrComparisonResult.Error())
-				return false;
+				nullptrComparisonResult.Error());
+			return false;
 		}
 
 		ASSERT(nullptrComparisonResult.HasReturnValue()
 			&& nullptrComparisonResult.GetReturnValue().GetTypeId() == MakeTypeId<bool>()
-			&& "IsNull overload unexpectedly returned nullptr or a non - boolean, should not be possible")
+			&& "IsNull overload unexpectedly returned nullptr or a non - boolean, should not be possible");
 
-			ASSERT(nullptrComparisonResult.GetReturnValue().GetData() == &retAddress);
+		ASSERT(nullptrComparisonResult.GetReturnValue().GetData() == &retAddress);
 		return retAddress;
 	}
 

@@ -346,8 +346,8 @@ std::optional<CE::ComponentClassSerializeArg> CE::GetComponentClassSerializeArg(
 
 	if (componentClass == nullptr)
 	{
-		LOG(LogAssets, Warning, "Cannot serialize component of type {}, as it was not reflected", storage.type().name())
-			return std::nullopt;
+		LOG(LogAssets, Warning, "Cannot serialize component of type {}, as it was not reflected", storage.type().name());
+		return std::nullopt;
 	}
 
 	std::vector<const MetaFunc*> equalityFunctions{};

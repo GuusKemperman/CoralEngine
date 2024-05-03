@@ -145,6 +145,7 @@ void CE::Logger::DumpToCrashLog() const
 	if (!file.is_open())
 	{
 		puts("Failed to dump to crashlog, as the file could not be opened");
+		return;
 	}
 
 	file.write(mEntryContents->Data(), mEntryContents->SizeInBytes());

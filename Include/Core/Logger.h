@@ -5,44 +5,57 @@
 
 #if LOGGING_ENABLED
 
-#define LOG(channel, severity, formatString, ...) CE::Logger::Get().Log(CE::Format(formatString, ##__VA_ARGS__), #channel, severity, __FILE__, __LINE__);
+#define LOG(channel, severity, formatString, ...) CE::Logger::Get().Log(CE::Format(formatString, ##__VA_ARGS__), #channel, severity, __FILE__, __LINE__)
 
 // If logging is enabled, we replace assert with a fatal log entry.
 // This will instruct the logger to dump the current log contents to
 // a file.
 #ifdef ASSERTS_ENABLED
 
-#define ASSERT_LOG(condition, format, ...)\
-if (condition) {}\
-else { UNLIKELY; LOG(LogTemp, Fatal, "Assert failed: " #condition " - " format, ##__VA_ARGS__); }
+#define ASSERT_LOG(condition, format, ...) if (!(condition)) { LOG(LogTemp, Fatal, "Assert failed: {} - " format, #condition, ##__VA_ARGS__); } static_assert(true, "")
 
-#define ABORT LOG(LogTemp, Fatal, "Aborted");
+#define ABORT LOG(LogTemp, Fatal, "Aborted")
 
 #endif // ASSERTS_ENABLED
 
 #else
 
-#define LOG(channel, severity, ...) if constexpr (severity == Fatal) { ABORT; } 
+#define LOG(channel, severity, ...) if constexpr (severity == Fatal) { ABORT; } static_assert(true, "")
 
 // If logging is not enabled, use the classic assert().
 #ifdef ASSERTS_ENABLED
 
-#define ASSERT_LOG(condition, ...)\
-if (condition) {}\
-else { UNLIKELY; assert(condition) }
-
+#define ASSERT_LOG(condition, ...) assert(condition)
 #define ABORT assert(false)
 
 #endif // ASSERTS_ENABLED
 
-#endif
+#endif // LOGGING_ENABLED
 
 #ifndef ASSERTS_ENABLED
-#define ASSERT_LOG(...)
-#define ABORT
+#define ASSERT_LOG(...) static_assert(true, "")
+#define ABORT static_assert(true, "")
 #endif
 
 #define ASSERT(condition) ASSERT_LOG(condition, "")
+
+#define TRY_CATCH_LOG(statement)								\
+	[&]															\
+	{															\
+		try														\
+		{														\
+			statement;											\
+		}														\
+		catch ([[maybe_unused]] const std::exception& e)		\
+		{														\
+			LOG(LogException, Warning,							\
+				"Exception occured while evaluating {} - {}",	\
+				#statement,										\
+				e.what());										\
+			return false;										\
+		}														\
+		return true;											\
+		}()
 
 enum LogSeverity
 {

@@ -36,8 +36,6 @@ constexpr CE::TypeInfo::TypeInfo(TypeId typeId, uint32 size, uint32 allignment, 
 		| (isTriviallyDestructible ? IsTriviallyDestructible : 0)
 		| (userBit ? UserBit : 0))
 {
-	ASSERT(size < sMaxSize);
-	ASSERT(allignment < sMaxAlign);
 }
 
 constexpr bool CE::CanFormBeNullable(TypeForm form)

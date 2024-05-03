@@ -686,10 +686,10 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const ContentFolder& 
 
 		ImGui::BeginDisabled(name.empty());
 
-		if (ImGui::Button("Create")
+		if ((ImGui::Button("Create")
 			|| ImGui::IsKeyPressed(ImGuiKey_Enter))
+			&& TRY_CATCH_LOG(std::filesystem::create_directories(folder.mActualPath / name)))
 		{
-			std::filesystem::create_directory(folder.mActualPath / name);
 			RequestUpdateToFolderGraph();
 			name.clear();
 		}
@@ -738,7 +738,7 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const ContentFolder& 
 
 		if (&folder != &mRootFolder)
 		{
-			std::filesystem::remove(folder.mActualPath);
+			TRY_CATCH_LOG(std::filesystem::remove(folder.mActualPath));
 		}
 		RequestUpdateToFolderGraph();
 	}

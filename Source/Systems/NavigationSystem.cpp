@@ -71,8 +71,8 @@ void NavigationSystem::Update(World& world, float dt)
 		if (characterComponent == nullptr)
 		{
 			LOG(LogNavigationSystem, Warning,
-			    "NavMesh Agent with entity ID {} does not have a character component attached to get the movement speed.",
-			    entt::to_integral(agentId))
+				"NavMesh Agent with entity ID {} does not have a character component attached to get the movement speed.",
+				entt::to_integral(agentId));
 			continue;
 		}
 		float speed = characterComponent->mCurrentMovementSpeed;

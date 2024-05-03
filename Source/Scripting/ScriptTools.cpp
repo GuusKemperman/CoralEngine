@@ -140,8 +140,8 @@ bool CE::CanTypeBeOwnedByScripts(const MetaType& type)
 
 	if (!hasFunctionsNeeded)
 	{
-		LOG(LogScripting, Warning, "Type {} was marked as script_ownable, but was missing some of the required functions. See surrounding code.", 
-			type.GetName())
+		LOG(LogScripting, Warning, "Type {} was marked as script_ownable, but was missing some of the required functions. See surrounding code.",
+			type.GetName());
 	}
 
 	return hasTags && hasFunctionsNeeded;

@@ -237,14 +237,14 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
         }
         else
         {
-            LOG(LogAbilitySystem, Error, "Did not find script {} when trying to activate ability {}", 
-                ability.mAbilityAsset->mScript.GetMetaData().GetName(), 
-                ability.mAbilityAsset.GetMetaData().GetName())
+            LOG(LogAbilitySystem, Error, "Did not find script {} when trying to activate ability {}",
+                ability.mAbilityAsset->mScript.GetMetaData().GetName(),
+                ability.mAbilityAsset.GetMetaData().GetName());
         }
     }
     else
     {
-        LOG(LogAbilitySystem, Error, "Ability {} does not have a script selected.", ability.mAbilityAsset.GetMetaData().GetName())
+        LOG(LogAbilitySystem, Error, "Ability {} does not have a script selected.", ability.mAbilityAsset.GetMetaData().GetName());
     }
     characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
     ability.mChargesCounter++;

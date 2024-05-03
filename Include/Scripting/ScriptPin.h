@@ -121,8 +121,8 @@ namespace CE
 
 		void PostDeclarationRefresh();
 
-		glm::vec2 GetInspectWindowSize() const { ASSERT(IsInput()) return std::get<1>(mData).mInspectWindowSize; }
-		void SetInspectWindowSize(glm::vec2 size) { ASSERT(IsInput()) std::get<1>(mData).mInspectWindowSize = size; }
+		glm::vec2 GetInspectWindowSize() const { ASSERT(IsInput()); return std::get<1>(mData).mInspectWindowSize; }
+		void SetInspectWindowSize(glm::vec2 size) { ASSERT(IsInput()); std::get<1>(mData).mInspectWindowSize = size; }
 
 	private:
 		PinId mId{};

@@ -83,15 +83,7 @@ void CE::AssetManager::PostConstruct()
 			LOG(LogAssets, Message, "An asset was once renamed from {} to {}, but {} has now been deleted. The rename file {} will now also be removed.",
 				oldName, newName, newName, renamePath.string());
 
-			std::error_code err{};
-			std::filesystem::remove(renamePath, err);
-
-			if (err)
-			{
-				LOG(LogAssets, Warning, "The no-longer necesary file {} could not be deleted - {}",
-					renamePath.string(),
-					err.message());
-			}
+			TRY_CATCH_LOG(std::filesystem::remove(renamePath));
 			continue;
 		}
 
@@ -309,29 +301,12 @@ void CE::AssetManager::DeleteAsset(WeakAssetHandle<>&& asset)
 
 			if (asset->mFileOfOrigin.has_value())
 			{
-				std::error_code err{};
-				std::filesystem::remove(*asset->mFileOfOrigin, err);
-
-				if (err)
-				{
-					LOG(LogAssets, Error, "Asset {} was removed from the asset manager, but deleting {} failed ({}). Asset will be present again on next startup",
-						assetName,
-						asset->mFileOfOrigin->string(),
-						err.message());
-				}
+				TRY_CATCH_LOG(std::filesystem::remove(*asset->mFileOfOrigin));
 			}
 
 			for (const std::filesystem::path& renameFile : asset->mOldNames)
 			{
-				std::error_code err{};
-				std::filesystem::remove(renameFile, err);
-
-				if (err)
-				{
-					LOG(LogAssets, Warning, "Asset {} is being deleted, but this asset was once renamed and the {} file could not be removed.",
-						assetName,
-						renameFile.string());
-				}
+				TRY_CATCH_LOG(std::filesystem::remove(renameFile));
 			}
 
 			for (auto it = mLookUp.begin(); it != mLookUp.end();)
@@ -406,26 +381,12 @@ bool CE::AssetManager::MoveAsset(WeakAssetHandle<> asset, const std::filesystem:
 
 	std::filesystem::create_directories(toLocation.parent_path());
 
-	std::error_code err{};
-	std::filesystem::copy(assetFile, toLocation, err);
-
-	if (err)
+	if (!TRY_CATCH_LOG(std::filesystem::copy(assetFile, toLocation)))
 	{
-		LOG(LogAssets, Error, "Failed to move asset from {} to {}: Copying failed - {}",
-			assetFile.string(),
-			toLocation.string(),
-			err.message());
 		return false;
 	}
 
-	std::filesystem::remove(assetFile, err);
-	if (err)
-	{
-		LOG(LogAssets, Warning, "After moving asset from {} to {}: Could not delete original file - {}",
-			assetFile.string(),
-			toLocation.string(),
-			err.message());
-	}
+	TRY_CATCH_LOG(std::filesystem::remove(assetFile));
 
 	assetFile = toLocation;
 
