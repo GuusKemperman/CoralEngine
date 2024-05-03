@@ -881,17 +881,10 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 	// First we display all entities without transforms
 	{
-		// We can't use a view that ONLY excludes,
-		// so we have to iterate over all the entities
-		const auto& allEntities = reg.Storage<entt::entity>();
+		const auto& allEntities = reg.View<entt::entity>(entt::exclude_t<TransformComponent>{});
 
-		for (const auto& [entity] : allEntities.each())
+		for (const entt::entity entity : allEntities)
 		{
-			if (reg.HasComponent<TransformComponent>(entity))
-			{
-				continue;
-			}
-
 			DisplayEntity(reg, entity, *selectedEntities);
 		}
 	}

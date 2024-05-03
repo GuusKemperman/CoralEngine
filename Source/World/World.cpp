@@ -2,6 +2,7 @@
 #include "World/World.h"
 
 #include <stack>
+#include "entt/entity/runtime_view.hpp"
 
 #include "Core/Device.h"
 #include "Components/ComponentFilter.h"
@@ -122,14 +123,11 @@ void CE::World::BeginPlay()
 			continue;
 		}
 
-		for (const entt::entity entity : *storage)
-		{
-			// Tombstone check
-			if (!storage->contains(entity))
-			{
-				continue;
-			}
+		entt::runtime_view view{};
+		view.iterate(*storage);
 
+		for (const entt::entity entity : view)
+		{
 			if (boundEvent.mIsStatic)
 			{
 				boundEvent.mFunc.get().InvokeCheckedUnpacked(*this, entity);
@@ -262,13 +260,11 @@ void CE::World::TransitionToLevel(const AssetHandle<Level>& level)
 
 namespace
 {
-	std::vector<entt::entity> FindAllEntitiesWithComponents(const CE::World& world, const std::vector<CE::ComponentFilter>& components, bool returnAfterFirstFound)
+	entt::runtime_view FindAllEntitiesWithComponents(const CE::World& world, const CE::Span<const CE::ComponentFilter>& components)
 	{
-		using namespace CE;
+		entt::runtime_view view{};
 
-		std::vector<std::reference_wrapper<const entt::sparse_set>> storages{};
-
-		for (const ComponentFilter& component : components)
+		for (const CE::ComponentFilter& component : components)
 		{
 			if (component == nullptr)
 			{
@@ -277,45 +273,15 @@ namespace
 
 			const entt::sparse_set* storage = world.GetRegistry().Storage(component.Get()->GetTypeId());
 
-			if (storage == nullptr)
+			if (storage != nullptr)
 			{
-				return {};
-			}
-
-			storages.push_back(*storage);
-		}
-
-		if (storages.empty())
-		{
-			return {};
-		}
-
-		std::sort(storages.begin(), storages.end(),
-			[](const entt::sparse_set& lhs, const entt::sparse_set& rhs)
-			{
-				return lhs.size() < rhs.size();
-			});
-
-		std::vector<entt::entity> returnValue{};
-
-		for (entt::entity entity : storages[0].get())
-		{
-			if (std::find_if(storages.begin(), storages.end(),
-				[entity](const entt::sparse_set& storage)
-				{
-					return !storage.contains(entity);
-				}) == storages.end())
-			{
-				returnValue.push_back(entity);
-
-				if (returnAfterFirstFound)
-				{
-					return returnValue;
-				}
+				// Const_cast is fine, we are not actually modifying the
+				// view, we just want to collect a list of entities.
+				view.iterate(const_cast<entt::sparse_set&>(*storage));
 			}
 		}
 
-		return returnValue;
+		return view;
 	}
 }
 
@@ -496,36 +462,60 @@ CE::MetaType CE::World::Reflect()
 			return returnValue;
 		}, "Find all entities with name", MetaFunc::ExplicitParams<const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const ComponentFilter& component)
+	type.AddFunc([](const ComponentFilter& component) -> entt::entity
 		{
 			const World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			const std::vector<entt::entity> entities = FindAllEntitiesWithComponents(*world, { component }, true);
-			return entities.empty() ? entt::null : entities[0];
+			const entt::runtime_view view = FindAllEntitiesWithComponents(*world, { &component, 1 });
+
+			if (view.begin() == view.end())
+			{
+				return entt::null;
+			}
+			return *view.begin();
 		}, "Find entity with component", MetaFunc::ExplicitParams<const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const ComponentFilter& component)
 		{
 			const World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return FindAllEntitiesWithComponents(*world, { component }, false);
+
+			const entt::runtime_view view = FindAllEntitiesWithComponents(*world, { &component, 1 });
+
+			std::vector<entt::entity> returnValue{};
+			returnValue.reserve(view.size_hint());
+			returnValue.insert(returnValue.end(), view.begin(), view.end());
+
+			return returnValue;
 		}, "Find all entities with component", MetaFunc::ExplicitParams<const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const std::vector<ComponentFilter>& components)
+	type.AddFunc([](const std::vector<ComponentFilter>& components) -> entt::entity
 		{
 			const World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			const std::vector<entt::entity> entities = FindAllEntitiesWithComponents(*world, components, true);
-			return entities.empty() ? entt::null : entities[0];
+			const entt::runtime_view view = FindAllEntitiesWithComponents(*world, components);
+
+			if (view.begin() == view.end())
+			{
+				return entt::null;
+			}
+			return *view.begin();
 		}, "Find entity with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const std::vector<ComponentFilter>& components)
 		{
 			const World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return FindAllEntitiesWithComponents(*world, components, false);
+
+			const entt::runtime_view view = FindAllEntitiesWithComponents(*world, components);
+
+			std::vector<entt::entity> returnValue{};
+			returnValue.reserve(view.size_hint());
+			returnValue.insert(returnValue.end(), view.begin(), view.end());
+
+			return returnValue;
 		}, "Find all entities with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](glm::vec2 screenPosition, float distanceFromCamera)
