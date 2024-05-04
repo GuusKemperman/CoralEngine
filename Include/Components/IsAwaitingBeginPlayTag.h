@@ -3,10 +3,10 @@
 
 namespace CE
 {
-	class IsDestroyedTag
+	class IsAwaitingBeginPlayTag
 	{
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(IsDestroyedTag);
+		REFLECT_AT_START_UP(IsAwaitingBeginPlayTag);
 	};
 }

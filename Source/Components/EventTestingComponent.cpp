@@ -138,7 +138,7 @@ void CE::EventTestingComponent::OnAiTick(World&, entt::entity, float)
 	++mNumOfAiTicks;
 }
 
-float CE::EventTestingComponent::OnAiEvaluate(const World&, entt::entity) const
+float CE::EventTestingComponent::OnAiEvaluate(const World&, entt::entity)
 {
 	++mNumOfAiEvaluates;
 	return 0.0f;

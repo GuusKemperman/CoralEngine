@@ -8,6 +8,7 @@
 #include "Assets/Prefabs/PrefabEntityFactory.h"
 #include "Components/CameraComponent.h"
 #include "Components/IsDestroyedTag.h"
+#include "Components/IsAwaitingBeginPlayTag.h"
 #include "Components/PrefabOriginComponent.h"
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
@@ -74,7 +75,8 @@ namespace CE
 }
 
 CE::Registry::Registry(World& world) :
-	mWorld(world)
+	mWorld(world),
+	mBoundBeginPlayEvents(GetAllBoundEvents(sBeginPlayEvent))
 {
 	const MetaType* const systemType = MetaManager::Get().TryGetType<System>();
 	ASSERT(systemType != nullptr);
@@ -99,6 +101,19 @@ CE::Registry::Registry(World& world) :
 			}
 		};
 	registerChildren(*systemType);
+}
+
+void CE::Registry::BeginPlay()
+{
+	for (const auto [entity] : Storage<entt::entity>().each())
+	{
+		if (!HasComponent<IsAwaitingBeginPlayTag>(entity))
+		{
+			AddComponent<IsAwaitingBeginPlayTag>(entity);
+		}
+	}
+
+	CallBeginPlayForEntitiesAwaitingBeginPlay();
 }
 
 void CE::Registry::UpdateSystems(float dt)
@@ -152,12 +167,23 @@ entt::entity CE::Registry::CreateFromPrefab(const Prefab& prefab, entt::entity h
 		return Create();
 	}
 
-	return CreateFromFactory(factories[0], true, hint);
+	const entt::entity entity = CreateFromFactory(factories[0], true, hint);
+
+	// We wait with calling BeginPlay until all the
+	// components and children have been constructed.
+	CallBeginPlayForEntitiesAwaitingBeginPlay();
+
+	return entity;
 }
 
 entt::entity CE::Registry::CreateFromFactory(const PrefabEntityFactory& factory, bool createChildren, entt::entity hint)
 {
 	const entt::entity entity = Create(hint);
+
+	// We wait with calling BeginPlay until all the
+	// components and children have been constructed.
+	AddComponent<IsAwaitingBeginPlayTag>(entity);
+
 	AddComponent<PrefabOriginComponent>(entity).SetFactoryOfOrigin(factory);
 
 	for (const ComponentFactory& componentFactory : factory.GetComponentFactories())
@@ -425,10 +451,7 @@ std::vector<CE::Registry::SingleTick> CE::Registry::GetSortedSystemsToUpdate(con
 			{
 				return !isPaused || traits.mShouldTickWhilstPaused;
 			}
-			else
-			{
-				return traits.mShouldTickBeforeBeginPlay;
-			}
+			return traits.mShouldTickBeforeBeginPlay;
 		};
 	{
 		struct SortableFixedTick
@@ -506,6 +529,67 @@ void CE::Registry::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true
 		                                            });
 		mNonFixedSystems.insert(whereToInsert, std::move(newInternal));
 	}
+}
+
+void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
+{
+	auto view = View<IsAwaitingBeginPlayTag>();
+
+	// We remove all the IsAwaitingBeginPlayTags in a bit.
+	// We do this to ensure that if Foo::BeginPlay adds the Bar component,
+	// that Bar::BeginPlay will be called immediately after Bar is constructed.
+	// So if we don't remove the tags, we might miss some BeginPlay invocations.
+	// Buuut, once we remove all of those tags, the view becomes empty.
+	// So we make a temporary copy, on the stack to improve performance,
+	// before removing all the tags.
+	uint32 numOfEntities = static_cast<uint32>(view.size());
+	entt::entity* entities = static_cast<entt::entity*>(ENGINE_ALLOCA(sizeof(entt::entity) * numOfEntities));
+	{
+		uint32 index{};
+		for (const entt::entity entity : view)
+		{
+			entities[index++] = entity;
+		}
+	}
+
+	RemoveComponents<IsAwaitingBeginPlayTag>(entities, entities + numOfEntities);
+
+	for (const BoundEvent& boundEvent : mBoundBeginPlayEvents)
+	{
+		entt::sparse_set* storage = Storage(boundEvent.mType.get().GetTypeId());
+
+		if (storage == nullptr)
+		{
+			continue;
+		}
+
+		for (uint32 i = 0; i < numOfEntities; i++)
+		{
+			entt::entity entity = entities[i];
+			if (!storage->contains(entity))
+			{
+				continue;
+			}
+
+			if (boundEvent.mIsStatic)
+			{
+				boundEvent.mFunc.get().InvokeUncheckedUnpacked(GetWorld(), entity);
+			}
+			else
+			{
+				MetaAny component{ boundEvent.mType, storage->value(entity), false };
+				boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, GetWorld(), entity);
+			}
+		}
+	}
+}
+
+bool CE::Registry::ShouldWeCallBeginPlayImmediatelyAfterConstruct(entt::entity ownerOfNewlyConstructedComponent) const
+{
+	return mWorld.get().HasBegunPlay()
+		// If our entity is awaiting begin play, we can
+		// assume it'll be called later
+		&& !HasComponent<IsAwaitingBeginPlayTag>(ownerOfNewlyConstructedComponent);
 }
 
 CE::AnyStorage::AnyStorage(const MetaType& type) :
