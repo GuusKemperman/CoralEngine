@@ -1033,7 +1033,7 @@ void CE::ScriptEditorSystem::InitialiseAllNodesTheUserCanAdd()
 			return lhs.mName < rhs.mName;
 		});
 
-	mNodePopularityCalculateThread = std::thread
+	mNodePopularityCalculateThread =
 	{
 		[this]()
 		{

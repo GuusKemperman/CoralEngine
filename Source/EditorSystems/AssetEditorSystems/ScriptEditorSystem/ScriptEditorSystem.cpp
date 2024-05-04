@@ -15,7 +15,6 @@ CE::ScriptEditorSystem::ScriptEditorSystem(Script&& asset) :
 	AssetEditorSystem(std::move(asset))
 {
 	InitialiseAllNodesTheUserCanAdd();
-	mAsset.PostDeclarationRefresh();
 }
 
 CE::ScriptEditorSystem::~ScriptEditorSystem()
@@ -25,9 +24,9 @@ CE::ScriptEditorSystem::~ScriptEditorSystem()
 
 	mShouldWeStopCountingNodePopularity = true;
 
-	if (mNodePopularityCalculateThread.joinable())
+	if (mNodePopularityCalculateThread.WasLaunched())
 	{
-		mNodePopularityCalculateThread.join();
+		mNodePopularityCalculateThread.CancelOrJoin();
 	}
 }
 
