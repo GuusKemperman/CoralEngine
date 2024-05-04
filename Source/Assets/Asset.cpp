@@ -21,14 +21,11 @@ CE::Asset::Asset(AssetLoadInfo& loadInfo) :
 
 CE::AssetSaveInfo CE::Asset::Save(const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo) const
 {
-	LOG(LogAssets, Verbose, "Begin saving of: {}", GetName());
-
 	MetaType& metaType = *MetaManager::Get().TryGetType(mTypeId);
 
 	AssetSaveInfo saveInfo{ mName, metaType, importerInfo };
 
 	OnSave(saveInfo);
-	LOG(LogAssets, Verbose, "Finished saving of: {}", GetName());
 	return saveInfo;
 }
 

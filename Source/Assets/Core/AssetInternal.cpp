@@ -56,7 +56,6 @@ void CE::Internal::AssetInternal::UnLoad()
 {
 	if (mAsset != nullptr)
 	{
-		LOG(LogAssets, Verbose, "Unloading {}", mMetaData.GetName());
 		mAsset.reset();
 	}
 	else

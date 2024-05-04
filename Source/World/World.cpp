@@ -20,8 +20,6 @@ CE::World::World(const bool beginPlayImmediately) :
 	mViewport(std::make_unique<WorldViewport>(*this)),
 	mPhysics(std::make_unique<Physics>(*this))
 {
-	LOG(LogCore, Verbose, "World is awaiting begin play..");
-
 	if (beginPlayImmediately)
 	{
 		BeginPlay();
