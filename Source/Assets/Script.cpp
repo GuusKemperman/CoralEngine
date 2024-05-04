@@ -10,6 +10,7 @@
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
 #include "Core/AssetManager.h"
+#include "Core/VirtualMachine.h"
 #include "Meta/MetaTools.h"
 #include "Scripting/ScriptEvents.h"
 #include "Utilities/ClassVersion.h"
@@ -72,6 +73,11 @@ CE::Script::Script(AssetLoadInfo& loadInfo) :
 	{
 		UNLIKELY;
 		LOG(LogScripting, Warning, "No members object serialized");
+	}
+
+	if (VirtualMachine::Get().IsCompiled())
+	{
+		PostDeclarationRefresh();
 	}
 }
 
@@ -465,12 +471,16 @@ void CE::Script::OnSave(AssetSaveInfo& saveInfo) const
 	BinaryGSONObject obj{};
 
 	BinaryGSONObject& functions = obj.AddGSONObject("functions");
+	functions.ReserveChildren(mFunctions.size());
+
 	for (const ScriptFunc& func : mFunctions)
 	{
 		func.SerializeTo(functions.AddGSONObject(""));
 	}
 
 	BinaryGSONObject& members = obj.AddGSONObject("members");
+	members.ReserveChildren(mFields.size());
+
 	for (const ScriptField& field : mFields)
 	{
 		field.SerializeTo(members.AddGSONObject(""));

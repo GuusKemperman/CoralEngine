@@ -1,3 +1,4 @@
+#include "Utilities/ASync.h"
 #ifdef EDITOR
 #pragma once
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
@@ -201,7 +202,7 @@ namespace CE
 		void InitialiseAllNodesTheUserCanAdd();
 
 		std::vector<NodeCategory> mAllNodesTheUserCanAdd{};
-		std::thread mNodePopularityCalculateThread{};
+		ASyncThread mNodePopularityCalculateThread{};
 		bool mShouldWeStopCountingNodePopularity{};
 
 		ax::NodeEditor::PinId mPinTheUserRightClicked{};

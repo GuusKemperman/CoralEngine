@@ -68,12 +68,19 @@ void CE::VirtualMachine::Recompile()
 	[[maybe_unused]] const std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
 	[[maybe_unused]] float deltaTime = std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1).count();
 	LOG(LogScripting, Message, "Compilation completed in {} seconds", deltaTime);
+	mIsCompiled = true;
 }
 
 void CE::VirtualMachine::ClearCompilationResult()
 {
 	DestroyAllTypesCreatedThroughScripts();
 	mErrorsFromLastCompilation.clear();
+	mIsCompiled = false;
+}
+
+bool CE::VirtualMachine::IsCompiled() const
+{
+	return mIsCompiled;
 }
 
 std::vector<std::reference_wrapper<const CE::ScriptError>> CE::VirtualMachine::GetErrors(
