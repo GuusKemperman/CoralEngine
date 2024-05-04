@@ -108,35 +108,9 @@ void CE::World::BeginPlay()
 
 	// Reset the total time elapsed, deltaTime, etc
 	mTime = {};
+
 	LOG(LogCore, Verbose, "World will begin play");
-
-	std::vector<BoundEvent> beginPlayEvents = GetAllBoundEvents(sBeginPlayEvent);
-
-	for (const BoundEvent& boundEvent : beginPlayEvents)
-	{
-		entt::sparse_set* storage = mRegistry->Storage(boundEvent.mType.get().GetTypeId());
-
-		if (storage == nullptr)
-		{
-			continue;
-		}
-
-		entt::runtime_view view{};
-		view.iterate(*storage);
-
-		for (const entt::entity entity : view)
-		{
-			if (boundEvent.mIsStatic)
-			{
-				boundEvent.mFunc.get().InvokeCheckedUnpacked(*this, entity);
-			}
-			else
-			{
-				MetaAny component{ boundEvent.mType, storage->value(entity), false };
-				boundEvent.mFunc.get().InvokeCheckedUnpacked(component, *this, entity);
-			}
-		}
-	}
+	mRegistry->BeginPlay();
 }
 
 void CE::World::EndPlay()
