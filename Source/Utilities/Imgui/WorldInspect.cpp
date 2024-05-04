@@ -881,11 +881,12 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 	// First we display all entities without transforms
 	{
-		const auto& allEntities = reg.View<entt::entity>(entt::exclude_t<TransformComponent>{});
-
-		for (const entt::entity entity : allEntities)
+		for (const auto [entity] : reg.Storage<entt::entity>().each())
 		{
-			DisplayEntity(reg, entity, *selectedEntities);
+			if (!reg.HasComponent<TransformComponent>(entity))
+			{
+				DisplayEntity(reg, entity, *selectedEntities);
+			}
 		}
 	}
 
@@ -902,7 +903,6 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 			}
 		}
 	}
-
 
 	Search::End();
 
@@ -1095,7 +1095,6 @@ namespace
 		world.GetRegistry().Destroy(selectedEntities.begin(), selectedEntities.end(), true);
 		selectedEntities.clear();
 	}
-
 
 	// We prepend some form of known string so we can verify whether
 	// the clipboard holds copied entities
