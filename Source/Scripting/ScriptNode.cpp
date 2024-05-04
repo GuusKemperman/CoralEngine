@@ -115,12 +115,16 @@ void CE::ScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptF
 	to.AddGSONMember("pos") << mPosition;
 
 	BinaryGSONObject& inputs = to.AddGSONObject("inputs");
+	inputs.ReserveChildren(mNumOfInputs);
+
 	for (const ScriptPin& input : GetInputs(scriptFunc))
 	{
 		input.SerializeTo(inputs.AddGSONObject(""));
 	}
 
 	BinaryGSONObject& outputs = to.AddGSONObject("outputs");
+	outputs.ReserveChildren(mNumOfOutputs);
+
 	for (const ScriptPin& output : GetOutputs(scriptFunc))
 	{
 		output.SerializeTo(outputs.AddGSONObject(""));

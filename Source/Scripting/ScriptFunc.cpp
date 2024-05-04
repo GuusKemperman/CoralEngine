@@ -686,6 +686,7 @@ void CE::ScriptFunc::SerializeTo(BinaryGSONObject& object) const
 	object.AddGSONMember("props") << *mProps;
 
 	BinaryGSONObject& nodes = object.AddGSONObject("nodes");
+	nodes.ReserveChildren(mNodes.size());
 
 	for (const ScriptNode& node : GetNodes())
 	{
@@ -693,6 +694,7 @@ void CE::ScriptFunc::SerializeTo(BinaryGSONObject& object) const
 	}
 
 	BinaryGSONObject& links = object.AddGSONObject("links");
+	links.ReserveChildren(mLinks.size());
 
 	for (const ScriptLink& link : GetLinks())
 	{
