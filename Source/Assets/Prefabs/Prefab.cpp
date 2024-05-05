@@ -228,6 +228,8 @@ CE::BinaryGSONObject CE::Prefab::SaveToGSONObject(const std::string& prefabName,
 
 	uint32 seed = factorySeed.value_or(prefabHashedName);
 
+	std::mt19937 device{ seed };
+
 	for (uint32& uniqueId : uniqueFactoryIds)
 	{
 		if (uniqueId != 0)
@@ -239,7 +241,7 @@ CE::BinaryGSONObject CE::Prefab::SaveToGSONObject(const std::string& prefabName,
 
 		do
 		{
-			idCopy = Random::Uint32(seed);
+			idCopy = device();
 		} while (std::find(uniqueFactoryIds.begin(), uniqueFactoryIds.end(), idCopy) != uniqueFactoryIds.end());
 
 		uniqueId = idCopy;
