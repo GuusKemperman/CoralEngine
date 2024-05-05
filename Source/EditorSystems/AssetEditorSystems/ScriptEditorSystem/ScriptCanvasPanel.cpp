@@ -178,7 +178,8 @@ void CE::ScriptEditorSystem::DrawCanvasObjects()
 			| ImGuiWindowFlags_NoCollapse
 			| ImGuiWindowFlags_NoMove
 			| ImGuiWindowFlags_NoBackground
-			| ImGuiWindowFlags_AlwaysAutoResize))
+			| ImGuiWindowFlags_AlwaysAutoResize
+			| ImGuiWindowFlags_NoFocusOnAppearing))
 		{
 			if (bringPinsToFront)
 			{
