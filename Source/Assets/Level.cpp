@@ -121,6 +121,7 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 		}
 	}
 
+
 	// Let's avoid deserializing the entire level unless needed
 	class PossiblyWorld
 	{
@@ -243,11 +244,19 @@ void CE::Level::OnSave(AssetSaveInfo& saveInfo) const
 		return;
 	}
 
-	BinaryGSONObject tempObject{};
-	std::vector<BinaryGSONObject>& children = tempObject.GetChildren();
+	// Unfortunately when we are working in the editor,
+	// we have to deserialize the world. If the level
+	// was referencing any other assets AND those assets
+	// got renamed, then we need to have the updated names
+	// in our level when saving.
+	World world = CreateWorld(false);
 
-	// Dont worry, we'll move it back later
-	children.push_back(std::move(*mSerializedComponents));
+	BinaryGSONObject serializedLevel{};
+
+	std::vector<BinaryGSONObject>& children = serializedLevel.GetChildren();
+	children.reserve(2);
+
+	children.emplace_back(Archiver::Serialize(world));
 
 	// We don't really care about the name anywhere else in the code,
 	// so instead of making sure we always initialize it with the name
@@ -256,10 +265,7 @@ void CE::Level::OnSave(AssetSaveInfo& saveInfo) const
 
 	children.emplace_back(GenerateCurrentStateOfPrefabs(children[0]));
 
-	tempObject.SaveToBinary(saveInfo.GetStream());
-
-	// See, it's all fine
-	*mSerializedComponents = std::move(children[0]);
+	serializedLevel.SaveToBinary(saveInfo.GetStream());
 }
 
 void CE::Level::CreateFromWorld(const World& world)
