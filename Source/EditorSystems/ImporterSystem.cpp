@@ -114,9 +114,19 @@ CE::ImporterSystem::ImporterSystem() :
 
 CE::ImporterSystem::~ImporterSystem()
 {
+	*mWasImportingCancelled = true;
+
 	if (mChangedFilesInDirectoriesToWatch.GetThread().WasLaunched())
 	{
 		mChangedFilesInDirectoriesToWatch.GetThread().CancelOrJoin();
+	}
+
+	for (ImportFuture& future : mImportFutures)
+	{
+		if (future.mImportResult.GetThread().WasLaunched())
+		{
+			future.mImportResult.GetThread().CancelOrDetach();
+		}
 	}
 }
 
@@ -237,33 +247,36 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::
 		ImportFuture
 		{
 			request,
-			std::async(std::launch::async, [request, importer, isCancelled = mWasImportingCancelled]() -> std::optional<std::vector<ImportPreview>>
+			ASyncFuture<std::optional<std::vector<ImportPreview>>>
 			{
-				if (*isCancelled)
+				[request, importer, isCancelled = mWasImportingCancelled]() -> std::optional<std::vector<ImportPreview>>
 				{
-					return std::nullopt;
+					if (*isCancelled)
+					{
+						return std::nullopt;
+					}
+
+					Importer::ImportResult result = importer->Import(request.mFile);
+
+					if (!result.has_value())
+					{
+						return std::nullopt;
+					}
+
+					std::vector<ImportPreview> previews{};
+
+					for (ImportedAsset& asset : *result)
+					{
+						// Takes into account renamed assets
+						WeakAssetHandle original = AssetManager::Get().TryGetWeakAsset(asset.GetMetaData().GetName());
+						std::string suggestedName = original == nullptr ? asset.GetMetaData().GetName() : original.GetMetaData().GetName();
+
+						previews.emplace_back(ImportPreview{ request, std::move(asset), std::move(suggestedName) });
+					}
+
+					return previews;
 				}
-
-				Importer::ImportResult result = importer->Import(request.mFile);
-
-				if (!result.has_value())
-				{
-					return std::nullopt;
-				}
-
-				std::vector<ImportPreview> previews{};
-
-				for (ImportedAsset& asset : *result)
-				{
-					// Takes into account renamed assets
-					WeakAssetHandle original = AssetManager::Get().TryGetWeakAsset(asset.GetMetaData().GetName());
-					std::string suggestedName = original == nullptr ? asset.GetMetaData().GetName() : original.GetMetaData().GetName();
-
-					previews.emplace_back(ImportPreview{ request, std::move(asset), std::move(suggestedName) });
-				}
-
-				return previews;
-			})
+			}
 		});
 }
 
@@ -549,13 +562,13 @@ void CE::ImporterSystem::RetrieveImportResultsFromFutures()
 {
 	for (auto it = mImportFutures.begin(); it != mImportFutures.end();)
 	{
-		if (it->mImportResult.wait_for(std::chrono::seconds{ 0 }) != std::future_status::ready)
+		if (!it->mImportResult.IsReady())
 		{
 			++it;
 			continue;
 		}
 
-		std::optional<std::vector<ImportPreview>> result = it->mImportResult.get();
+		std::optional<std::vector<ImportPreview>>& result = it->mImportResult.Get();
 
 		if (!result.has_value())
 		{

@@ -1,17 +1,15 @@
 #include "Precomp.h"
 #include "Platform/PC/Rendering/TexturePC.h"
 
+#include "stb_image/stb_image.h"
+
 #include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
-
 #include "Utilities/StringFunctions.h"
 #include "Assets/Core/AssetLoadInfo.h"
-#include "stb_image/stb_image.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
-
 #include "Core/Device.h"
-#include "Core/JobManager.h"
 
 #ifdef EDITOR
 CE::Texture::Texture(std::string_view name, FrameBuffer&& frameBuffer) :

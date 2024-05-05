@@ -75,7 +75,6 @@ void CE::Editor::PostConstruct()
 
 	if (savedDataVersion == 0)
 	{
-		recursivelyStart(*editorSystemType);
 		return;
 	}
 
@@ -940,6 +939,4 @@ namespace
 		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 	}
-
-
 }

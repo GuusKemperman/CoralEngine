@@ -9,7 +9,6 @@
 #include "Core/Input.h"
 #include "Core/Editor.h"
 #include "Core/VirtualMachine.h"
-#include "Core/JobManager.h"
 #include "Meta/MetaManager.h"
 #include "Core/UnitTests.h"
 #include "Assets/Level.h"
@@ -30,7 +29,6 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 	{
 		[&]
 		{
-			JobManager::StartUp();
 			MetaManager::StartUp();
 			AssetManager::StartUp();
 			VirtualMachine::StartUp();
@@ -106,7 +104,6 @@ CE::Engine::~Engine()
 
 	Logger::ShutDown();
 	FileIO::ShutDown();
-	JobManager::ShutDown();
 }
 
 void CE::Engine::Run([[maybe_unused]] Name starterLevel)

@@ -163,8 +163,7 @@ namespace
 {
 	void DoJob(const std::shared_ptr<CE::Internal::Job> job)
 	{
-		if (job == nullptr
-			|| job->mIsCancelled)
+		if (job == nullptr)
 		{
 			return;
 		}
@@ -174,6 +173,11 @@ namespace
 		thread->mJobsMutex.lock();
 		thread->mJobs.remove(job);
 		thread->mJobsMutex.unlock();
+
+		if (job->mIsCancelled)
+		{
+			return;
+		}
 
 		job->mMutex.lock();
 

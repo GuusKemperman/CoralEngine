@@ -51,7 +51,7 @@ namespace CE
 		struct ImportFuture
 		{
 			ImportRequest mImportRequest{};
-			std::future<std::optional<std::vector<ImportPreview>>> mImportResult{};
+			ASyncFuture<std::optional<std::vector<ImportPreview>>> mImportResult{};
 		};
 
 		struct DirToWatch
