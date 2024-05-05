@@ -44,9 +44,9 @@ namespace CE
 
 		static constexpr float sMinAmountOfTimeConsideredUnused = 2.0f;
 
-		Cooldown mRenderCooldown{ .1f };
-		Cooldown mWorkCooldown{ 1.0f };
-		static constexpr float sMaxTimeToSpendPerFrame = .075f;
+		Cooldown mRenderCooldown{ .25f };
+		Cooldown mWorkCooldown{ 1.3f };
+		static constexpr float sMaxTimeToSpendPerFrame = .04f;
 		static constexpr uint32 sMaxNumOfFramesToRenderPerFrame = 10;
 
 		struct GeneratedThumbnail

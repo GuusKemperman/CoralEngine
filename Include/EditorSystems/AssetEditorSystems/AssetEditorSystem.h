@@ -189,7 +189,7 @@ namespace CE
 			std::optional<T> mTemporarilyDeserializedAsset{};
 		};
 		DifferenceCheckState mDifferenceCheckState{};
-		Cooldown mUpdateStateCooldown{ 0.0f }; //.13f };
+		Cooldown mUpdateStateCooldown{ .25f };
 
 		// Used for checking if our asset has unsaved changes. Kept in memory for performance reasons.
 		// May not always be up to date, it's updated when needed.
@@ -311,6 +311,13 @@ namespace CE
 	{
 		EditorSystem::Tick(deltaTime);
 
+		const bool checkForDifferences = mUpdateStateCooldown.IsReady(deltaTime);
+
+		if (!Input::Get().HasFocus())
+		{
+			return;
+		}
+
 		if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl)
 			|| Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
 		{
@@ -339,7 +346,7 @@ namespace CE
 			}
 		}
 
-		if (mUpdateStateCooldown.IsReady(deltaTime))
+		if (checkForDifferences)
 		{
 			CheckForDifferences();
 		}

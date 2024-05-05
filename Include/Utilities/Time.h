@@ -14,7 +14,7 @@ namespace CE
 
 			if (mAmountOfTimePassed >= mCooldown)
 			{
-				mAmountOfTimePassed -= mCooldown;
+				mAmountOfTimePassed = 0.0f;
 				return true;
 			}
 			return false;
