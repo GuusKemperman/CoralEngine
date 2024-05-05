@@ -31,6 +31,8 @@ namespace CE
 
 		bool IsLoaded() const;
 
+		void Unload();
+
 		const std::optional<std::filesystem::path>& GetFileOfOrigin() const;
 
 		/**

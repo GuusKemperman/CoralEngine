@@ -379,6 +379,7 @@ void CE::ContentBrowserEditorSystem::DisplayItemInFolder(T& item, ThumbnailEdito
 
 	auto name = GetName(item);
 	ImGui::PushID(name.data(), name.data() + name.size());
+	ImGui::PushID(MakeTypeId<T>());
 
 	DisplayImage(item, thumbnailSystem);
 
@@ -406,6 +407,7 @@ void CE::ContentBrowserEditorSystem::DisplayItemInFolder(T& item, ThumbnailEdito
 
 	DisplayRightClickMenu(item);
 
+	ImGui::PopID();
 	ImGui::PopID();
 }
 

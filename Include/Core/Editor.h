@@ -181,6 +181,7 @@ namespace CE
 		std::forward_list<std::string> mSystemsToDestroy{};
 
 		std::vector<RefreshRequest> mRefreshRequests{};
+		std::chrono::system_clock::time_point mTimeOfLastRefresh = std::chrono::system_clock::now();
 	};
 
 	template<typename CastTo>

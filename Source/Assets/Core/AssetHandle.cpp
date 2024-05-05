@@ -63,6 +63,14 @@ bool CE::AssetHandleBase::IsLoaded() const
 	return mAssetInternal != nullptr && mAssetInternal->mAsset != nullptr;
 }
 
+void CE::AssetHandleBase::Unload()
+{
+	if (IsLoaded())
+	{
+		mAssetInternal->UnLoad();
+	}
+}
+
 const std::optional<std::filesystem::path>& CE::AssetHandleBase::GetFileOfOrigin() const
 {
 	AssureNotNull();

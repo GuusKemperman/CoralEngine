@@ -10,6 +10,23 @@
 
 namespace CE
 {
+	namespace Props
+	{
+		/*
+		Use on:
+			Assets
+
+		Description:
+			Can be used to indicate that assets of this type will never have dependencies
+			on other assets. This means they do not need to be unloaded when the editor
+			refreshes, and can lead to performance benefits.
+
+		Example:
+			type.GetProperties().Add(Props::sCannotReferenceOtherAssetsTag)
+		*/
+		static constexpr std::string_view sCannotReferenceOtherAssetsTag = "sCannotReferenceOtherAssetsTag";
+	}
+
 	// Makes sure the type receives all the functionality that an Asset requires.
 	template<typename T>
 	void ReflectAssetType([[maybe_unused]] MetaType& type)
