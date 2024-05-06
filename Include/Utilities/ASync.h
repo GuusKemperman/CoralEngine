@@ -61,10 +61,21 @@ namespace CE
 
 		bool IsReady() const { return mValue != nullptr && mValue->has_value(); }
 
-		T& Get() { return **mValue; }
+		T& Get();
 
 	private:
 		std::shared_ptr<std::optional<T>> mValue{};
 		ASyncThread mThread{};
 	};
+
+	template <typename T>
+	T& ASyncFuture<T>::Get()
+	{
+		if (mThread.WasLaunched())
+		{
+			mThread.Join();
+		}
+
+		return **mValue;
+	}
 }
