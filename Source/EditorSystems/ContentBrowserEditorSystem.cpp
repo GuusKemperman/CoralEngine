@@ -740,7 +740,14 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const ContentFolder& 
 
 		if (&folder != &mRootFolder)
 		{
-			TRY_CATCH_LOG(std::filesystem::remove(folder.mActualPath));
+			Editor::Get().Refresh(
+				{
+					Editor::RefreshRequest::ReloadOtherSystems,
+					[path = folder.mActualPath]
+					{
+						TRY_CATCH_LOG(std::filesystem::remove_all(path));
+					}
+				});
 		}
 		RequestUpdateToFolderGraph();
 	}
