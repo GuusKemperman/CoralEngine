@@ -160,7 +160,7 @@ IMGUI_AUTO_DEFINE_BEGIN(template<typename T>, std::vector<T>)
 		ImGui::PopID();					ImGui::Unindent();
 	}
 IMGUI_AUTO_DEFINE_END
-IMGUI_AUTO_DEFINE_BEGIN(template<>, std::vector<bool>
+IMGUI_AUTO_DEFINE_BEGIN(template<>, std::vector<bool>)
 	if(ImGui::detail::AutoContainerTreeNode< std::vector<bool> >("Array " + name, var))
 	{
 		ImGui::Indent();
