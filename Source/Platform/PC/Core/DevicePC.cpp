@@ -479,7 +479,7 @@ void CE::Device::NewFrame() {
     ImGuizmo::BeginFrame();
 #endif // EDITOR
 
-    SendAssetsToGPU();
+    SendTexturesToGPU();
 
     mCommandList->RSSetViewports(1, &mViewport); 
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
@@ -587,7 +587,7 @@ void CE::Device::StartRecordingCommands()
     }
 }
 
-void CE::Device::SendAssetsToGPU()
+void CE::Device::SendTexturesToGPU()
 {
     AssetHandle defaultTexture = Texture::TryGetDefaultTexture();
 

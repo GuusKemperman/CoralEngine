@@ -75,7 +75,7 @@ namespace CE
         void SubmitCommands();
         void StartRecordingCommands();
 
-        void SendAssetsToGPU();
+        void SendTexturesToGPU();
 
         enum DXResources {
             RT,

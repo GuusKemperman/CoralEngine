@@ -195,7 +195,7 @@ void CE::ContentBrowserEditorSystem::DisplayContentPanel()
 	DisplayPathToCurrentlySelectedFolder(mSelectedFolder);
 	ImGui::NewLine();
 
-	static std::vector<std::reference_wrapper<ContentFolder>> foldersToDisplay{};
+	static std::vector<std::reference_wrapper<const ContentFolder>> foldersToDisplay{};
 	static std::vector<WeakAssetHandle<>> assetsToDisplay{};
 
 	ImGui::SameLine();
@@ -203,9 +203,9 @@ void CE::ContentBrowserEditorSystem::DisplayContentPanel()
 
 	if (!Search::GetUserQuery().empty())
 	{
-		const auto addFolderRecursive = [](const auto& self, ContentFolder& node) -> void
+		const auto addFolderRecursive = [](const auto& self, const ContentFolder& node) -> void
 			{
-				for (ContentFolder& child : node.mChildren)
+				for (const ContentFolder& child : node.mChildren)
 				{
 					Search::AddItem(child.mFolderName,
 						[&child](std::string_view)
@@ -225,7 +225,7 @@ void CE::ContentBrowserEditorSystem::DisplayContentPanel()
 						});
 				}
 				
-				for (ContentFolder& child : node.mChildren)
+				for (const ContentFolder& child : node.mChildren)
 				{
 					self(self, child);
 				}
@@ -251,7 +251,7 @@ void CE::ContentBrowserEditorSystem::DisplayContentPanel()
 	}
 	DisplayRightClickMenu(mSelectedFolder);
 
-	for (ContentFolder& folder : foldersToDisplay)
+	for (const ContentFolder& folder : foldersToDisplay)
 	{
 		DisplayItemInFolder(folder, *thumbnailEditorSystem);
 	}
@@ -268,7 +268,7 @@ void CE::ContentBrowserEditorSystem::DisplayContentPanel()
 	ImGui::EndChild();
 }
 
-void CE::ContentBrowserEditorSystem::DisplayFolder(ContentFolder& folder)
+void CE::ContentBrowserEditorSystem::DisplayFolder(const ContentFolder& folder)
 {
 	const bool displayAsTreeNode = !folder.mChildren.empty();
 
@@ -318,8 +318,7 @@ void CE::ContentBrowserEditorSystem::DisplayFolder(ContentFolder& folder)
 			if (isOneOfChildrenSelected
 				&& !isSelected)
 			{
-				glm::vec4 col = ImGui::GetStyle().Colors[ImGuiCol_HeaderActive];
-				col *= .7f;
+				const glm::vec4 col = ImGui::GetStyle().Colors[ImGuiCol_TabUnfocused];
 				ImGui::RenderFrame(ImGui::GetCursorScreenPos(), ImGui::GetCursorScreenPos() + selectableAreaSize, ImColor{ col }, false, 0.0f);
 			}
 
@@ -357,7 +356,7 @@ void CE::ContentBrowserEditorSystem::DisplayFolder(ContentFolder& folder)
 			return isOpen;
 		});
 
-	for (ContentFolder& child : folder.mChildren)
+	for (const ContentFolder& child : folder.mChildren)
 	{
 		DisplayFolder(child);
 	}
@@ -527,7 +526,7 @@ std::string_view CE::ContentBrowserEditorSystem::GetName(const ContentFolder& fo
 	return folder.mFolderName;
 }
 
-void CE::ContentBrowserEditorSystem::DisplayPathToCurrentlySelectedFolder(ContentFolder& folder)
+void CE::ContentBrowserEditorSystem::DisplayPathToCurrentlySelectedFolder(const ContentFolder& folder)
 {
 	if (folder.mParent != nullptr)
 	{
@@ -585,7 +584,7 @@ void CE::ContentBrowserEditorSystem::DisplayImage(const WeakAssetHandle<>& asset
 	}
 }
 
-void CE::ContentBrowserEditorSystem::DisplayImage(ContentFolder& folder, ThumbnailEditorSystem& thumbnailSystem)
+void CE::ContentBrowserEditorSystem::DisplayImage(const ContentFolder& folder, ThumbnailEditorSystem& thumbnailSystem)
 {
 	WeakAssetHandle<Texture> thumbnail = AssetManager::Get().TryGetWeakAsset<Texture>("T_FolderIcon");
 
@@ -755,7 +754,7 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const ContentFolder& 
 	ImGui::EndPopup();
 }
 
-void CE::ContentBrowserEditorSystem::SelectFolder(ContentFolder& folder)
+void CE::ContentBrowserEditorSystem::SelectFolder(const ContentFolder& folder)
 {
 	mSelectedFolder = folder;
 	mSelectedFolderPath = mSelectedFolder.get().mActualPath;

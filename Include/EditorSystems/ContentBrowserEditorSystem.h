@@ -51,7 +51,7 @@ namespace CE
 		void DisplayFolderHierarchyPanel();
 		void DisplayContentPanel();
 
-		void DisplayFolder(ContentFolder& folder);
+		void DisplayFolder(const ContentFolder& folder);
 
 		template<typename T>
 		void DisplayItemInFolder(T& item, ThumbnailEditorSystem& thumbnailSystem);
@@ -70,17 +70,17 @@ namespace CE
 
 		static std::string_view GetName(const ContentFolder& folder);
 
-		void DisplayPathToCurrentlySelectedFolder(ContentFolder& folder);
+		void DisplayPathToCurrentlySelectedFolder(const ContentFolder& folder);
 
 		void DisplayImage(const WeakAssetHandle<>& asset, ThumbnailEditorSystem& thumbnailSystem);
-		void DisplayImage(ContentFolder& assetfolder, ThumbnailEditorSystem& thumbnailSystem);
+		void DisplayImage(const ContentFolder& assetfolder, ThumbnailEditorSystem& thumbnailSystem);
 
 		static std::string GetRightClickPopUpMenuName(std::string_view itemName);
 
 		void DisplayRightClickMenu(const WeakAssetHandle<>& asset);
 		void DisplayRightClickMenu(const ContentFolder& folder);
 
-		void SelectFolder(ContentFolder& folder);
+		void SelectFolder(const ContentFolder& folder);
 		void SelectFolder(const std::filesystem::path& path);
 
 		friend ReflectAccess;
@@ -88,7 +88,7 @@ namespace CE
 		REFLECT_AT_START_UP(ContentBrowserEditorSystem);
 
 		ContentFolder mRootFolder{ {}, "All", nullptr };
-		std::reference_wrapper<ContentFolder> mSelectedFolder = mRootFolder;
+		std::reference_wrapper<const ContentFolder> mSelectedFolder = mRootFolder;
 		std::filesystem::path mSelectedFolderPath{};
 
 		ASyncFuture<ContentFolder> mPendingRootFolder{};
