@@ -32,7 +32,7 @@ namespace CE
 
         void OnSave(AssetSaveInfo& saveInfo) const override;
 
-		AssetHandle<Script> mScript{};
+		AssetHandle<Script> mOnAbilityActivateScript{};
 
 		AssetHandle<Texture> mIconTexture{};
 		std::string mDescription{};
