@@ -38,7 +38,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 				World* world = World::TryGetWorldAtTopOfStack();
 				ASSERT(world != nullptr);
 
-				ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration);
+				ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration);
 
 			}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
 			const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
@@ -48,7 +48,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 					World* world = World::TryGetWorldAtTopOfStack();
 					ASSERT(world != nullptr);
 
-					ApplyOverTimeEffect(*world, castByCharacterData, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration, ticks);
+					ApplyOverTimeEffect(*world, castByCharacterData, affectedEntity, AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration, ticks);
 
 				}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
 				const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float, int>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
@@ -150,7 +150,7 @@ void CE::AbilityFunctionality::ApplyOverTimeEffect(World& world, const Character
 		return;
 	}
 
-	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease} });
+	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, AbilityEffect{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease} });
 }
 
 entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Prefab& prefab, entt::entity castBy)
