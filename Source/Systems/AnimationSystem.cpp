@@ -57,7 +57,7 @@ void CE::AnimationSystem::Update(World& world, float dt)
 				continue;
 			}
 
-			skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * dt;
+			skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * skinnedMesh.mAnimationSpeed * dt;
 			skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
 
 			CalculateBoneTransformRecursive(skinnedMesh.mAnimation->mRootNode, glm::mat4x4(1.0f), skinnedMesh.mSkinnedMesh->GetBoneMap(), skinnedMesh, skinnedMesh.mAnimation, skinnedMesh.mFinalBoneMatrices);

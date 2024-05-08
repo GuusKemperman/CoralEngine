@@ -57,7 +57,7 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 
 	for (auto it = mGeneratedThumbnails.begin(); it != mGeneratedThumbnails.end() && timeSpendThisFrame.GetSecondsElapsed() <= sMaxTimeToSpendPerFrame;)
 	{
-		if (it->second.mNumSecondsSinceLastRequested.GetSecondsElapsed() >= sMinAmountOfTimeConsideredUnused
+		if (it->second.mNumSecondsSinceLastRequested.GetSecondsElapsed() >= sMinAmountOfTimeConsideredUnusedWhenFullyRendered
 			&& it->second.mNumSecondsSinceLastRequested.GetSecondsElapsed() >= it->second.mTimeToGenerate * sUnusedThumbnailRemoveStrictness)
 		{
 			it = mGeneratedThumbnails.erase(it);
@@ -80,6 +80,12 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 			++it;
 		}
 	}
+
+	std::stable_sort(mGenerateQueue.begin(), mGenerateQueue.end(),
+		[](const GenerateRequest& lhs, const GenerateRequest& rhs)
+		{
+			return lhs.mNumSecondsSinceLastRequested.GetSecondsElapsed() > rhs.mNumSecondsSinceLastRequested.GetSecondsElapsed();
+		});
 
 	for (auto it = mGenerateQueue.begin(); it != mGenerateQueue.end() && timeSpendThisFrame.GetSecondsElapsed() <= sMaxTimeToSpendPerFrame;)
 	{
