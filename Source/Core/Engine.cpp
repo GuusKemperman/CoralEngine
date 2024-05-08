@@ -9,7 +9,6 @@
 #include "Core/Input.h"
 #include "Core/Editor.h"
 #include "Core/VirtualMachine.h"
-#include "Core/JobManager.h"
 #include "Meta/MetaManager.h"
 #include "Core/UnitTests.h"
 #include "Assets/Level.h"
@@ -23,9 +22,18 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
 
-	JobManager::StartUp();
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
+
+	std::thread deviceAgnosticSystems
+	{
+		[&]
+		{
+			MetaManager::StartUp();
+			AssetManager::StartUp();
+			VirtualMachine::StartUp();
+		}
+	};
 
 	if (!Device::IsHeadless())
 	{
@@ -40,9 +48,8 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 		Device::Get().CreateImguiContext();
 	}
 #endif // EDITOR
-	MetaManager::StartUp();
-	AssetManager::StartUp();
-	VirtualMachine::StartUp();
+
+	deviceAgnosticSystems.join();
 
 #ifdef EDITOR
 	Editor::StartUp();
@@ -97,7 +104,6 @@ CE::Engine::~Engine()
 
 	Logger::ShutDown();
 	FileIO::ShutDown();
-	JobManager::ShutDown();
 }
 
 void CE::Engine::Run([[maybe_unused]] Name starterLevel)
@@ -108,7 +114,7 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 	}
 
 #ifndef EDITOR
-	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>(starterLevel);
+	AssetHandle<Level> level = AssetManager::Get().TryGetAsset<Level>(starterLevel);
 
 	if (level == nullptr)
 	{
@@ -127,14 +133,13 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 #endif // EDITOR
 
 	float timeElapsedSinceLastGarbageCollect{};
-	static constexpr float garbageCollectInterval = 30.0f;
+	static constexpr float garbageCollectInterval = 15.0f;
 
 	std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	std::chrono::high_resolution_clock::time_point t2{};
 
 	while (!device.ShouldClose())
 	{
-
 		t2 = std::chrono::high_resolution_clock::now();
 		float deltaTime = std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1).count();
 
@@ -184,4 +189,3 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 		}
 	}
 }
-

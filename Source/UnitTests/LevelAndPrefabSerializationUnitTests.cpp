@@ -7,7 +7,7 @@
 #include "Assets/Core/AssetSaveInfo.h"
 #include "Components/CameraComponent.h"
 #include "Components/IsDestroyedTag.h"
-#include "Containers/view_istream.h"
+#include "Utilities/view_istream.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/NameComponent.h"
@@ -551,16 +551,16 @@ namespace
 			{
 				auto prefab = AssetManager::Get().TryGetWeakAsset<Asset>(sTestPrefabName);
 
-				if (prefab.has_value())
+				if (prefab != nullptr)
 				{
-					AssetManager::Get().DeleteAsset(std::move(*prefab));
+					AssetManager::Get().DeleteAsset(std::move(prefab));
 				}
 			}
 		};
 		PrefabDeleter __{};
 
 		// Make a prefab from it
-		std::shared_ptr<const Prefab> prefabInAssetManager{};
+		AssetHandle<Prefab> prefabInAssetManager{};
 
 		auto updatePrefab = [&]
 			{
@@ -574,13 +574,13 @@ namespace
 				{
 					AssetLoadInfo loadInfo = prefabInAssetManager->Save();
 
-					prefabInAssetManager.reset();
+					prefabInAssetManager = nullptr;
 					{
 						auto prefabToDelete = AssetManager::Get().TryGetWeakAsset<Asset>(sTestPrefabName);
 
-						if (prefabToDelete.has_value())
+						if (prefabToDelete != nullptr)
 						{
-							AssetManager::Get().DeleteAsset(std::move(*prefabToDelete));
+							AssetManager::Get().DeleteAsset(std::move(prefabToDelete));
 						}
 					}
 

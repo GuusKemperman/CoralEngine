@@ -96,15 +96,20 @@ void CE::load(Archive& ar, MetaTypeFilter<Filter>& value)
 IMGUI_AUTO_DEFINE_BEGIN(template<typename Filter>, CE::MetaTypeFilter<Filter>)
 using namespace CE;
 
-std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>(name, var.Get() == nullptr ? "None" : var.Get()->GetName(),
-	[](const MetaType& type)
-	{
-		return MetaTypeFilter<Filter>::IsTypeValid(type);
-	});
-
-if (selectedType.has_value())
+if (!Search::BeginCombo(name, var.Get() == nullptr ? "None" : var.Get()->GetName()))
 {
-	var = &(selectedType->get());
+	return;
 }
+
+for (const MetaType& type : MetaManager::Get().EachType())
+{
+	if (MetaTypeFilter<Filter>::IsTypeValid(type)
+		&& Search::Button(type.GetName()))
+	{
+		var = &type;
+	}
+}
+
+Search::EndCombo();
 IMGUI_AUTO_DEFINE_END
 #endif // EDITOR

@@ -18,7 +18,7 @@ void CE::DragDrop::SendAsset(const Name assetName)
 	}
 }
 
-std::optional<CE::WeakAsset<CE::Asset>> CE::DragDrop::PeekAsset(const TypeId typenameId)
+CE::WeakAssetHandle<> CE::DragDrop::PeekAsset(TypeId assetTypeId)
 {
 	if (ImGui::BeginDragDropTarget())
 	{
@@ -31,23 +31,18 @@ std::optional<CE::WeakAsset<CE::Asset>> CE::DragDrop::PeekAsset(const TypeId typ
 			ASSERT(payload->DataSize == sizeof(Name::HashType));
 			Name::HashType nameHash = *static_cast<Name::HashType*>(payload->Data);
 
-			const std::optional<WeakAsset<Asset>> receivedAsset = AssetManager::Get().TryGetWeakAsset(nameHash);
+			WeakAssetHandle asset = AssetManager::Get().TryGetWeakAsset(nameHash);
 
-			if (receivedAsset.has_value()
-				&& !receivedAsset->GetMetaData().GetClass().IsBaseClassOf(typenameId))
+			if (asset != nullptr
+				&& asset.GetMetaData().GetClass().IsDerivedFrom(assetTypeId))
 			{
-				return std::nullopt;
+				return asset;
 			}
-			return receivedAsset;
+			return nullptr;
 		}
 	}
 
-	return std::nullopt;
-}
-
-std::optional<CE::WeakAsset<CE::Asset>> CE::DragDrop::PeekAsset(const MetaType& assetType)
-{
-	return PeekAsset(assetType.GetTypeId());
+	return nullptr;
 }
 
 bool CE::DragDrop::AcceptAsset()

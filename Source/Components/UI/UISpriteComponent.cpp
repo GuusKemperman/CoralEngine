@@ -1,7 +1,6 @@
 #include "Precomp.h"
 #include "Components/UI/UISpriteComponent.h"
 #include "Assets/Texture.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
 CE::MetaType CE::UISpriteComponent::Reflect()

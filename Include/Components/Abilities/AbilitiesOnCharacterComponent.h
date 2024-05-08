@@ -5,6 +5,7 @@
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Core/Input.h"
 #include "Meta/MetaReflect.h"
+#include "Assets/Core/AssetHandle.h"
 
 namespace CE
 {
@@ -13,7 +14,7 @@ namespace CE
 	
 	struct AbilityInstance
 	{
-		std::shared_ptr<const Ability> mAbilityAsset{};
+		AssetHandle<Ability> mAbilityAsset{};
 		float mRequirementCounter{};
 		int mChargesCounter{};
 

@@ -25,9 +25,9 @@ CE::Material::Material(AssetLoadInfo& loadInfo) :
 	}
 }
 
-std::shared_ptr<const CE::Material> CE::Material::TryGetDefaultMaterial()
+CE::AssetHandle<CE::Material> CE::Material::TryGetDefaultMaterial()
 {
-	std::shared_ptr<const Material> defaultMat = AssetManager::Get().TryGetAsset<Material>(sDefaultMaterialName);
+	AssetHandle<Material> defaultMat = AssetManager::Get().TryGetAsset<Material>(sDefaultMaterialName);
 
 	if (defaultMat == nullptr)
 	{
@@ -107,7 +107,7 @@ void CE::Material::LoadV0(AssetLoadInfo& loadInfo)
 	str.read(reinterpret_cast<char*>(&occlusionTextureNameLength), sizeof(uint16));
 	str.read(reinterpret_cast<char*>(&emissiveTextureNameLength), sizeof(uint16));
 
-	const auto getTex = [&str, this](const uint16 length) -> std::shared_ptr<const Texture>
+	const auto getTex = [&str, this](const uint16 length) -> AssetHandle<Texture>
 		{
 			// 'this' is unused if logging is disabled.
 			(void)(this);
@@ -119,7 +119,7 @@ void CE::Material::LoadV0(AssetLoadInfo& loadInfo)
 
 			std::string textureName(length, '\0');
 			str.read(textureName.data(), length);
-			std::shared_ptr<const Texture> texture = AssetManager::Get().TryGetAsset<Texture>(Name{ textureName });
+			AssetHandle<Texture> texture = AssetManager::Get().TryGetAsset<Texture>(Name{ textureName });
 
 			if (texture == nullptr)
 			{

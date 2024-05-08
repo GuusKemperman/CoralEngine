@@ -32,6 +32,27 @@ namespace CE::Props
 
 	/*
 	Use on:
+		Types
+
+	Description:
+		Can be to safely rename types
+
+	Example:
+		// Here this tag is used to fix a typo.
+
+		// The new name is set as expected
+		MetaType type{ MetaType::T<TransformComponent>{}, "TransformComponent" }; 
+
+		// And to inform the engine that this type was previously called "TransfrmComponent", we add this tag.
+		type.GetProperties().Set(Props::sOldNames, "TransfrmComponent");
+
+		// Multiple names can be added, if they are comma separated
+		type.GetProperties().Set(Props::sOldNames, "TransfrmComponent,Transform,PositionComponent");
+	*/
+	static constexpr std::string_view sOldNames = "sOldNames";
+
+	/*
+	Use on:
 		Classes, Functions, Fields
 
 	Description:
@@ -151,8 +172,6 @@ namespace CE::Props
 	*/
 	static constexpr std::string_view sIsScriptReadOnlyTag = "sIsScriptReadOnlyTag";
 
-	// If a type has a property with this name, it was created from a script
-
 	/*
 	Use on:
 		Types, Functions, Fields
@@ -183,14 +202,14 @@ namespace CE::Props
 	static constexpr std::string_view sEditorSystemDefaultOpenTag = "sEditorSystemDefaultOpenTag";
 
 	/*
-Use on:
-	Classes deriving from CE::EditorSystem. The class must be default constructible.
+	Use on:
+		Classes deriving from CE::EditorSystem. The class must be default constructible.
 
-Description:
-	Automatically adds the system EVERY time the engine starts.
+	Description:
+		Automatically adds the system EVERY time the engine starts.
 
-Example:
-	type.GetProperties().Add(Props::sEditorSystemAlwaysOpenTag);
-*/
+	Example:
+		type.GetProperties().Add(Props::sEditorSystemAlwaysOpenTag);
+	*/
 	static constexpr std::string_view sEditorSystemAlwaysOpenTag = "sEditorSystemAlwaysOpenTag";
 }

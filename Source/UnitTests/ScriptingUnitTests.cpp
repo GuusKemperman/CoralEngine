@@ -6,7 +6,6 @@
 #include "Meta/MetaType.h"
 #include "Assets/Material.h"
 #include "Assets/StaticMesh.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
 using namespace CE;
 
@@ -242,8 +241,7 @@ UNIT_TEST(Scripting, IsNullTest)
 			return UnitTest::Success;
 		};
 
-	TEST_ASSERT(nullCheck({ MakeTypeInfo<std::shared_ptr<const Material>>(), nullptr }, true) == UnitTest::Success);
-	TEST_ASSERT(nullCheck(MetaAny{ std::make_shared<const Material>("__TestStaticMesh__") }, false) == UnitTest::Success);
-	TEST_ASSERT(nullCheck(MetaAny{ std::shared_ptr<const Material>{ nullptr } }, true) == UnitTest::Success);
+	TEST_ASSERT(nullCheck({ MakeTypeInfo<AssetHandle<Material>>(), nullptr }, true) == UnitTest::Success);
+	TEST_ASSERT(nullCheck(MetaAny{ AssetHandle<Material>{ nullptr } }, true) == UnitTest::Success);
 	return UnitTest::Success;
 }

@@ -5,7 +5,6 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Prefabs/Prefab.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
 CE::MetaType CE::ParticleSpawnPrefabOnDeathComponent::Reflect()
 {

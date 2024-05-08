@@ -15,7 +15,7 @@ namespace CE
 		friend EngineSubsystem;
 
 		// We only expose the value to the user; not the TypeId key.
-		using EachTypeT = IterableRange<EncapsulingForwardIterator<AlwaysSecondEncapsulator, std::unordered_map<Name::HashType, std::reference_wrapper<MetaType>>::iterator>>;
+		using EachTypeT = IterableRange<EncapsulingForwardIterator<AlwaysSecondEncapsulator, std::unordered_map<TypeId, MetaType>::iterator>>;
 
 		void PostConstruct() override;
 
@@ -65,12 +65,5 @@ namespace CE
 		Will return true on success. This function will return false if there is no type with this typeid.
 		*/
 		bool RemoveType(TypeId typeId);
-
-		/*
-		Removes a type based on its name. The type will be immediately destroyed, any references will become dangling.
-
-		Will return true on success. This function will return false if there is no type with this name.
-		*/
-		bool RemoveType(Name typeName);
 	};
 }

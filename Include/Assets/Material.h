@@ -2,6 +2,7 @@
 #include "Assets/Asset.h"
 
 #include "BasicDataTypes/Colors/LinearColor.h"
+#include "Core/AssetHandle.h"
 
 namespace CE
 {
@@ -14,7 +15,7 @@ namespace CE
 		Material(std::string_view name);
 		Material(AssetLoadInfo& loadInfo);
 
-		static std::shared_ptr<const Material> TryGetDefaultMaterial();
+		static AssetHandle<Material> TryGetDefaultMaterial();
 
 		LinearColor mBaseColorFactor{ 1.0f };		
 		glm::vec3 mEmissiveFactor{ 1.0f };
@@ -25,11 +26,11 @@ namespace CE
 		float mOcclusionStrength = 1.0f;
 		bool mDoubleSided = false;
 
-		std::shared_ptr<const Texture> mBaseColorTexture{};
-		std::shared_ptr<const Texture> mNormalTexture{};
-		std::shared_ptr<const Texture> mOcclusionTexture{};
-		std::shared_ptr<const Texture> mMetallicRoughnessTexture{};
-		std::shared_ptr<const Texture> mEmissiveTexture{};
+		AssetHandle<Texture> mBaseColorTexture{};
+		AssetHandle<Texture> mNormalTexture{};
+		AssetHandle<Texture> mOcclusionTexture{};
+		AssetHandle<Texture> mMetallicRoughnessTexture{};
+		AssetHandle<Texture> mEmissiveTexture{};
 
 		static constexpr Name sDefaultMaterialName = "MT_White"_Name;
 

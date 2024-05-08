@@ -5,7 +5,7 @@
 
 #include "Core/FileIO.h"
 #include "GSON/GSONReadable.h"
-#include "Containers/ManyStrings.h"
+#include "Utilities/ManyStrings.h"
 
 static std::filesystem::path GetLogIniPath()
 {
@@ -96,7 +96,9 @@ void CE::Logger::Log(std::string_view message,
 {
 	Name::HashType channelHash = Name::HashString(channel);
 
-	const std::string formattedMessage = Format("{} ({}) - {}\n",
+	std::string formattedMessage = std::this_thread::get_id() == mMainThreadId ? std::string{} : Format("Thread {} - ", std::hash<std::thread::id>()(std::this_thread::get_id()));
+
+	formattedMessage += Format("{} ({}) - {}\n",
 		std::filesystem::path{ file }.filename().string(), // Only the filename, not all that C:/projects nonsense
 		line,
 		message);
@@ -143,6 +145,7 @@ void CE::Logger::DumpToCrashLog() const
 	if (!file.is_open())
 	{
 		puts("Failed to dump to crashlog, as the file could not be opened");
+		return;
 	}
 
 	file.write(mEntryContents->Data(), mEntryContents->SizeInBytes());

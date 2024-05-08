@@ -1,33 +1,46 @@
 #include "Precomp.h"
 #include "Platform/PC/Rendering/TexturePC.h"
-#include "Platform/pc/Rendering/TexturePC.h"
-#include "Platform/pc/Rendering/DX12Classes/DXDefines.h"
-#include "Platform/pc/Rendering/DX12Classes/DXResource.h"
-#include "Platform/pc/Rendering/DX12Classes/DXDescHeap.h"
 
+#include "stb_image/stb_image.h"
+
+#include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
+#include "Platform/PC/Rendering/DX12Classes/DXResource.h"
+#include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 #include "Utilities/StringFunctions.h"
 #include "Assets/Core/AssetLoadInfo.h"
-#include "stb_image/stb_image.h"
-#include "Meta/MetaManager.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
-
 #include "Core/Device.h"
-#include "Core/JobManager.h"
+
+#ifdef EDITOR
+CE::Texture::Texture(std::string_view name, FrameBuffer&& frameBuffer) :
+	Asset(name, MakeTypeId<Texture>()),
+	mHeapSlot(std::move(frameBuffer.mFrameBufferRscHandle[Device::Get().GetFrameIndex()])),
+	mTextureBuffer(std::move(frameBuffer.mResource[Device::Get().GetFrameIndex()]))
+{
+}
+#endif // EDITOR
 
 CE::Texture::Texture(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo),
-	mLoadedPixels(std::make_shared<STBIPixels>())
-{
-	JobManager::Get().AddWork([data = StringFunctions::StreamToString(loadInfo.GetStream()), buffer = mLoadedPixels]()
+	mLoadedPixels(std::make_shared<STBIPixels>()),
+	mLoadingThread([loadInfoMoved = std::make_shared<AssetLoadInfo>(std::move(loadInfo)), buffer = mLoadedPixels]
 		{
+			const std::string data = StringFunctions::StreamToString(loadInfoMoved->GetStream());
 			int channels{};
 			buffer->mPixels = stbi_load_from_memory(reinterpret_cast<const unsigned char*>(data.data()), static_cast<int>(data.size()), &buffer->mWidth, &buffer->mHeight, &channels, 4);
-		});
+		})
+{
 }
 
 CE::Texture::Texture(Texture&& other) noexcept = default;
 
-CE::Texture::~Texture() = default;
+CE::Texture::~Texture()
+{
+	if (mLoadingThread.WasLaunched())
+	{
+		mLoadingThread.CancelOrDetach();
+	}
+}
 
 bool CE::Texture::IsReadyToBeSentToGpu() const
 {
@@ -38,13 +51,14 @@ bool CE::Texture::IsReadyToBeSentToGpu() const
 
 void CE::Texture::SendToGPU() const
 {
+	Texture& self = const_cast<Texture&>(*this);
+	self.mLoadingThread.Join();
+
 	if (!IsReadyToBeSentToGpu())
 	{
 		LOG(LogAssets, Error, "{} is not ready to be send to GPU", GetName());
 		return;
 	}
-
-	Texture& self = const_cast<Texture&>(*this);
 
 	if (mLoadedPixels == nullptr
 		|| mLoadedPixels->mPixels == nullptr
@@ -128,25 +142,36 @@ void CE::Texture::SendToGPU() const
 
 void CE::Texture::BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
 {
-	if (!mHeapSlot.has_value())
-	{
-		LOG(LogAssets, Error, "{} has not been send to GPU", GetName());
-		return;
-	}
+	const DXHeapHandle* heapSlot = TryGetHeapSlot();
 
-	commandList->SetGraphicsRootDescriptorTable(rootSlot, mHeapSlot->GetAddressGPU());
+	if (heapSlot != nullptr)
+	{
+		commandList->SetGraphicsRootDescriptorTable(rootSlot, heapSlot->GetAddressGPU());
+	}
 }
 
 void CE::Texture::BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
 {
-	if (!mHeapSlot.has_value())
-	{
-		LOG(LogAssets, Error, "{} has not been send to GPU", GetName());
-		return;
-	}
+	const DXHeapHandle* heapSlot = TryGetHeapSlot();
 
-	commandList->SetComputeRootDescriptorTable(rootSlot, mHeapSlot->GetAddressGPU());
+	if (heapSlot != nullptr)
+	{
+		commandList->SetComputeRootDescriptorTable(rootSlot, heapSlot->GetAddressGPU());
+	}
 }
+
+#ifdef EDITOR
+ImTextureID CE::Texture::GetImGuiId() const
+{
+	const DXHeapHandle* heapSlot = TryGetHeapSlot();
+
+	if (heapSlot != nullptr)
+	{
+		return reinterpret_cast<ImTextureID>(heapSlot->GetAddressGPU().ptr);
+	}
+	return nullptr;
+}
+#endif // EDITOR
 
 int CE::Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
 {
@@ -249,6 +274,24 @@ void CE::Texture::GenerateMipmaps() const
 	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 8, *mUAVslots[2]);
 
 	uploadCmdList->Dispatch(dstWidth /8, dstHeight / 8,  1);
+}
+
+const DXHeapHandle* CE::Texture::TryGetHeapSlot() const
+{
+	if (mHeapSlot.has_value())
+	{
+		return &*mHeapSlot;
+	}
+
+	const AssetHandle defaultTexture = TryGetDefaultTexture();
+
+	if (defaultTexture != nullptr
+		&& defaultTexture->mHeapSlot.has_value())
+	{
+		return  &*defaultTexture->mHeapSlot;
+	}
+
+	return nullptr;
 }
 
 CE::Texture::STBIPixels::~STBIPixels()

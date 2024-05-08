@@ -22,7 +22,7 @@ void CE::ParticleColorSystem::Update(World& world, [[maybe_unused]] float dt)
 		{
 			const size_t particle = newParticles[i];
 
-			const  LinearColor randomColor = LinearColor{ Math::lerp<glm::vec4>(colorComponent.mMinParticleColor, colorComponent.mMaxParticleColor, Random::Float()) };
+			const  LinearColor randomColor = LinearColor{ Math::lerp<glm::vec4>(colorComponent.mMinParticleColor, colorComponent.mMaxParticleColor, Random::Value<float>()) };
 
 			colorComponent.mParticleColors[particle] = randomColor;
 		}

@@ -407,6 +407,11 @@ ImVec2 ax::NodeEditor::GetNodeSize(NodeId nodeId)
     return s_Editor->GetNodeSize(nodeId);
 }
 
+ImVec2 ax::NodeEditor::GetGroupSize(NodeId nodeId)
+{
+    return s_Editor->GetGroupSize(nodeId);
+}
+
 void ax::NodeEditor::CenterNodeOnScreen(NodeId nodeId)
 {
     if (auto node = s_Editor->FindNode(nodeId))

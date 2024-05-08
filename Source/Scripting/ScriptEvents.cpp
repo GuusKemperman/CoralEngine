@@ -31,13 +31,13 @@ CE::MetaFunc& CE::ScriptEvent::Declare(TypeId selfTypeId, MetaType& toType) cons
 	return func;
 }
 
-void CE::ScriptEvent::Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const
+void CE::ScriptEvent::Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, const AssetHandle<Script>& script) const
 {
 	return metaFunc.RedirectFunction(GetScriptInvoker(scriptFunc, script));
 }
 
 CE::MetaFunc::InvokeT CE::ScriptOnlyPassComponentEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -91,7 +91,7 @@ void CE::ScriptTickEventBase::OnDetailsInspect(ScriptFunc& scriptFunc) const
 #endif // EDITOR
 
 CE::MetaFunc::InvokeT CE::ScriptTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -103,7 +103,7 @@ CE::MetaFunc::InvokeT CE::ScriptTickEvent::GetScriptInvoker(const ScriptFunc& sc
 }
 
 CE::MetaFunc::InvokeT CE::ScriptFixedTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -120,7 +120,7 @@ CE::ScriptAITickEvent::ScriptAITickEvent() :
 }
 
 CE::MetaFunc::InvokeT  CE::ScriptAITickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -137,7 +137,7 @@ CE::ScriptAIEvaluateEvent::ScriptAIEvaluateEvent() :
 }
 
 CE::MetaFunc::InvokeT  CE::ScriptAIEvaluateEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -155,7 +155,7 @@ CE::ScriptAbilityActivateEvent::ScriptAbilityActivateEvent() :
 }
 
 CE::MetaFunc::InvokeT  CE::ScriptAbilityActivateEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -167,7 +167,7 @@ CE::MetaFunc::InvokeT  CE::ScriptAbilityActivateEvent::GetScriptInvoker(const Sc
 }
 
 CE::MetaFunc::InvokeT CE::CollisionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult

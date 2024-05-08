@@ -44,23 +44,7 @@ CE::Level::Level(std::string_view name) :
 	Asset(name, MakeTypeId<Level>()),
 	mSerializedComponents(std::make_unique<BinaryGSONObject>())
 {
-	World world{ false };
-	Registry& reg = world.GetRegistry();
-
-	{
-		const entt::entity camera = reg.Create();
-		reg.AddComponent<CameraComponent>(camera);
-		reg.AddComponent<FlyCamControllerComponent>(camera);
-		reg.AddComponent<NameComponent>(camera, "Camera");
-		reg.AddComponent<TransformComponent>(camera).SetLocalPosition({ 0.0f, 0.0f, -30.0f });;
-	}
-
-	{
-		const entt::entity light = reg.Create();
-		reg.AddComponent<NameComponent>(light, "Light");
-		reg.AddComponent<DirectionalLightComponent>(light);
-		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ DEG2RAD(17.0f), DEG2RAD(-63.0f), 0.0f });
-	}
+	World world = CreateDefaultWorld();
 
 	CreateFromWorld(world);
 }
@@ -136,6 +120,7 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 			EraseSerializedFactory(*serializedWorld, removedFactory, diffedPrefab.mPrefabName);
 		}
 	}
+
 
 	// Let's avoid deserializing the entire level unless needed
 	class PossiblyWorld
@@ -259,11 +244,19 @@ void CE::Level::OnSave(AssetSaveInfo& saveInfo) const
 		return;
 	}
 
-	BinaryGSONObject tempObject{};
-	std::vector<BinaryGSONObject>& children = tempObject.GetChildren();
+	// Unfortunately when we are working in the editor,
+	// we have to deserialize the world. If the level
+	// was referencing any other assets AND those assets
+	// got renamed, then we need to have the updated names
+	// in our level when saving.
+	World world = CreateWorld(false);
 
-	// Dont worry, we'll move it back later
-	children.push_back(std::move(*mSerializedComponents));
+	BinaryGSONObject serializedLevel{};
+
+	std::vector<BinaryGSONObject>& children = serializedLevel.GetChildren();
+	children.reserve(2);
+
+	children.emplace_back(Archiver::Serialize(world));
 
 	// We don't really care about the name anywhere else in the code,
 	// so instead of making sure we always initialize it with the name
@@ -272,10 +265,7 @@ void CE::Level::OnSave(AssetSaveInfo& saveInfo) const
 
 	children.emplace_back(GenerateCurrentStateOfPrefabs(children[0]));
 
-	tempObject.SaveToBinary(saveInfo.GetStream());
-
-	// See, it's all fine
-	*mSerializedComponents = std::move(children[0]);
+	serializedLevel.SaveToBinary(saveInfo.GetStream());
 }
 
 void CE::Level::CreateFromWorld(const World& world)
@@ -301,6 +291,41 @@ CE::World CE::Level::CreateWorld(const bool callBeginPlayImmediately) const
 	if (callBeginPlayImmediately)
 	{
 		world.BeginPlay();
+	}
+
+	return world;
+}
+
+CE::World CE::Level::CreateDefaultWorld()
+{
+	World world{ false };
+	Registry& reg = world.GetRegistry();
+
+	{
+		const entt::entity camera = reg.Create();
+		reg.AddComponent<CameraComponent>(camera);
+		reg.AddComponent<FlyCamControllerComponent>(camera);
+		reg.AddComponent<NameComponent>(camera, "Camera");
+
+		TransformComponent& transform = reg.AddComponent<TransformComponent>(camera);
+		transform.SetLocalPosition({ 5.5f, 2.5f, -7.5f });
+		transform.SetLocalOrientation({ DEG2RAD(14.5f), DEG2RAD(-33.0f), 0.0f });
+	}
+
+	{
+		const entt::entity light = reg.Create();
+		reg.AddComponent<NameComponent>(light, "Main Light");
+		DirectionalLightComponent& lightComponent = reg.AddComponent<DirectionalLightComponent>(light);
+		lightComponent.mCastShadows = true;
+		lightComponent.mIntensity = .6f;
+		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ DEG2RAD(-15.6), DEG2RAD(-47.6), DEG2RAD(51.6) });
+	}
+
+	{
+		const entt::entity light = reg.Create();
+		reg.AddComponent<NameComponent>(light, "Secondary Light");
+		reg.AddComponent<DirectionalLightComponent>(light).mIntensity = .6f;
+		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ DEG2RAD(113.8), DEG2RAD(53.54), DEG2RAD(90.7) });
 	}
 
 	return world;
@@ -446,7 +471,7 @@ CE::Level::DiffedPrefab CE::Level::DiffPrefab(const BinaryGSONObject& serialized
 	const std::string& prefabName = serializedPrefab.GetName();
 	DiffedPrefab returnValue{ serializedPrefab.GetName() };
 
-	const std::shared_ptr<const Prefab> prefab = AssetManager::Get().TryGetAsset<Prefab>(prefabName);
+	const AssetHandle<Prefab> prefab = AssetManager::Get().TryGetAsset<Prefab>(prefabName);
 	const std::vector<BinaryGSONObject>& serializedFactories = serializedPrefab.GetChildren();
 
 	if (prefab == nullptr)
@@ -584,7 +609,7 @@ CE::BinaryGSONObject CE::Level::GenerateCurrentStateOfPrefabs(const BinaryGSONOb
 
 		*serializedHashedPrefabName >> hashedPrefabName;
 
-		const Prefab* prefab = AssetManager::Get().TryGetAsset<Prefab>(hashedPrefabName).get();
+		const Prefab* prefab = AssetManager::Get().TryGetAsset<Prefab>(hashedPrefabName).Get();
 
 		if (prefab == nullptr)
 		{

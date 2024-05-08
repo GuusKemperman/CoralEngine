@@ -228,7 +228,7 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
     // Ability activate event
     if (ability.mAbilityAsset->mOnAbilityActivateScript != nullptr)
     {
-        if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript->GetName()))
+        if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName()))
         {
             if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
             {
@@ -237,12 +237,14 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
         }
         else
         {
-            LOG(LogAbilitySystem, Error, "Did not find script {} when trying to activate ability {}", ability.mAbilityAsset->mOnAbilityActivateScript->GetName(), ability.mAbilityAsset->GetName())
+            LOG(LogAbilitySystem, Error, "Did not find script {} when trying to activate ability {}",
+                ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName(),
+                ability.mAbilityAsset.GetMetaData().GetName());
         }
     }
     else
     {
-        LOG(LogAbilitySystem, Error, "Ability {} does not have a script selected.", ability.mAbilityAsset->GetName())
+        LOG(LogAbilitySystem, Error, "Ability {} does not have a script selected.", ability.mAbilityAsset.GetMetaData().GetName());
     }
     characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
     ability.mChargesCounter++;

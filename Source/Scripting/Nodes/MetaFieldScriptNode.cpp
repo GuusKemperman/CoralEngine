@@ -1,29 +1,29 @@
 #include "Precomp.h"
-#include "Scripting/Nodes/MetaMemberScriptNode.h"
+#include "Scripting/Nodes/MetaFieldScriptNode.h"
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 #include "GSON/GSONBinary.h"
 #include "Scripting/ScriptTools.h"
 
-CE::NodeInvolvingMetaMember::NodeInvolvingMetaMember(const ScriptNodeType type, 
+CE::NodeInvolvingField::NodeInvolvingField(const ScriptNodeType type, 
 	ScriptFunc& scriptFunc, 
 	const MetaField& field) :
 	FunctionLikeNode(type, scriptFunc),
 	mTypeName(field.GetOuterType().GetName()),
-	mMemberName(field.GetName())
+	mFieldName(field.GetName())
 {
 }
 
-void CE::NodeInvolvingMetaMember::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
+void CE::NodeInvolvingField::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
 {
 	ScriptNode::SerializeTo(to, scriptFunc);
 
 	to.AddGSONMember("typeName") << mTypeName;
-	to.AddGSONMember("memberName") << mMemberName;
+	to.AddGSONMember("memberName") << mFieldName;
 }
 
-bool CE::NodeInvolvingMetaMember::DeserializeVirtual(const BinaryGSONObject& from)
+bool CE::NodeInvolvingField::DeserializeVirtual(const BinaryGSONObject& from)
 {
 	if (!ScriptNode::DeserializeVirtual(from))
 	{
@@ -43,20 +43,28 @@ bool CE::NodeInvolvingMetaMember::DeserializeVirtual(const BinaryGSONObject& fro
 	}
 
 	*typeName >> mTypeName;
-	*memberName >> mMemberName;
+	*memberName >> mFieldName;
 
 	return true;
 }
 
-void CE::NodeInvolvingMetaMember::PostDeclarationRefresh(ScriptFunc& scriptFunc)
+void CE::NodeInvolvingField::PostDeclarationRefresh(ScriptFunc& scriptFunc)
 {
 	const MetaType* const metaType = MetaManager::Get().TryGetType(Name{ mTypeName });
-	mCachedField = metaType == nullptr ? nullptr : metaType->TryGetField(Name{ mMemberName });
-	FunctionLikeNode::PostDeclarationRefresh(scriptFunc);
+
+	if (metaType == nullptr)
+	{
+		FunctionLikeNode::PostDeclarationRefresh(scriptFunc);
+		return;
+	}
+
+	// In case our type got renamed
+	mTypeName = metaType->GetName();
+	mCachedField = metaType->TryGetField(Name{ mFieldName });
 }
 
 CE::SetterScriptNode::SetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field):
-	NodeInvolvingMetaMember(ScriptNodeType::Setter, scriptFunc, field)
+	NodeInvolvingField(ScriptNodeType::Setter, scriptFunc, field)
 {
 	ASSERT_LOG(CanBeSetThroughScripts(field),
 	           "{}::{} cannot be set through scripts; Check using CanBeSetThroughScripts first",
@@ -68,7 +76,7 @@ CE::SetterScriptNode::SetterScriptNode(ScriptFunc& scriptFunc, const MetaField& 
 
 std::optional<CE::FunctionLikeNode::InputsOutputs> CE::SetterScriptNode::GetExpectedInputsOutputs(const ScriptFunc&) const
 {
-	const MetaField* const originalMemberData = TryGetOriginalMemberData();
+	const MetaField* const originalMemberData = TryGetOriginalField();
 
 	if (originalMemberData == nullptr
 		|| !CanBeSetThroughScripts(*originalMemberData))
@@ -102,7 +110,7 @@ std::optional<CE::FunctionLikeNode::InputsOutputs> CE::SetterScriptNode::GetExpe
 }
 
 CE::GetterScriptNode::GetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field, bool returnsCopy):
-	NodeInvolvingMetaMember(ScriptNodeType::Getter, scriptFunc, field),
+	NodeInvolvingField(ScriptNodeType::Getter, scriptFunc, field),
 	mReturnsCopy(returnsCopy)
 {
 	ASSERT_LOG(CanBeGetThroughScripts(field, !returnsCopy),
@@ -124,14 +132,14 @@ std::string CE::GetterScriptNode::GetTitle(std::string_view memberName, bool ret
 
 void CE::GetterScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
 {
-	NodeInvolvingMetaMember::SerializeTo(to, scriptFunc);
+	NodeInvolvingField::SerializeTo(to, scriptFunc);
 
 	to.AddGSONMember("copy") << mReturnsCopy;
 }
 
 bool CE::GetterScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 {
-	if (!NodeInvolvingMetaMember::DeserializeVirtual(from))
+	if (!NodeInvolvingField::DeserializeVirtual(from))
 	{
 		return false;
 	}
@@ -152,7 +160,7 @@ bool CE::GetterScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 
 std::optional<CE::FunctionLikeNode::InputsOutputs> CE::GetterScriptNode::GetExpectedInputsOutputs(const ScriptFunc&) const
 {
-	const MetaField* const originalMemberData = TryGetOriginalMemberData();
+	const MetaField* const originalMemberData = TryGetOriginalField();
 
 	if (originalMemberData == nullptr
 		|| !CanBeGetThroughScripts(*originalMemberData, !mReturnsCopy))

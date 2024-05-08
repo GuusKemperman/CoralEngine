@@ -9,6 +9,8 @@
 #include "GSON/GSONBinary.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
+#include "Core/AssetManager.h"
+#include "Core/VirtualMachine.h"
 #include "Meta/MetaTools.h"
 #include "Scripting/ScriptEvents.h"
 #include "Utilities/ClassVersion.h"
@@ -71,6 +73,11 @@ CE::Script::Script(AssetLoadInfo& loadInfo) :
 	{
 		UNLIKELY;
 		LOG(LogScripting, Warning, "No members object serialized");
+	}
+
+	if (VirtualMachine::Get().IsCompiled())
+	{
+		PostDeclarationRefresh();
 	}
 }
 
@@ -241,8 +248,6 @@ CE::MetaType* CE::Script::DeclareMetaType()
 		return nullptr;
 	}
 
-	LOG(LogScripting, Verbose, "Making type from script {}", GetName());
-
 	struct MemberToAdd
 	{
 		MemberToAdd(const MetaType& type, const std::string& name) : mType(type), mName(name) {};
@@ -342,9 +347,38 @@ CE::MetaType* CE::Script::DeclareMetaType()
 	ourTypeInfo.mFlags |= size;
 	ASSERT(size < TypeInfo::sMaxSize);
 
-	MetaType& metaType = MetaManager::Get().AddType({ ourTypeInfo, GetName() });
+	// Because of some dumb planning,
+	// the renaming of metatypes only works
+	// if the metatype has the rename property
+	// before being added to the metamanager.
+	// Which is why we create a temporary object.
+	MetaType& metaType = [&]() -> MetaType&
+		{
+			MetaType tmp{ ourTypeInfo, GetName() };
 
-	metaType.GetProperties().Add(Props::sIsFromScriptsTag).Add(Props::sIsScriptableTag).Add(Props::sComponentTag);
+			MetaProps& props = tmp.GetProperties();
+			props.Add(Props::sIsFromScriptsTag).Add(Props::sIsScriptableTag).Add(Props::sComponentTag);
+
+			if (AssetHandle<Script> handleToSelf = AssetManager::Get().TryGetAsset<Script>(GetName());
+				handleToSelf != nullptr)
+			{
+				std::string oldNamesCommaSeperated{};
+
+				for (const std::string& oldName : handleToSelf.GetOldNames())
+				{
+					oldNamesCommaSeperated.append(oldName).push_back(',');
+				}
+
+				if (!oldNamesCommaSeperated.empty())
+				{
+					// Remove last ','
+					oldNamesCommaSeperated.pop_back();
+					props.Set(Props::sOldNames, oldNamesCommaSeperated);
+				}
+			}
+
+			return MetaManager::Get().AddType(std::move(tmp));
+		}(); 
 
 	for (MemberToAdd& memberToAdd : membersToAdd)
 	{
@@ -368,8 +402,6 @@ CE::MetaType* CE::Script::DeclareMetaType()
 	AddDestructor(metaType, false);
 
 	Internal::ReflectComponentType(metaType, false);
-
-	LOG(LogScripting, Verbose, "Finished making type from script {}", GetName());
 
 	return &metaType;
 }
@@ -439,12 +471,16 @@ void CE::Script::OnSave(AssetSaveInfo& saveInfo) const
 	BinaryGSONObject obj{};
 
 	BinaryGSONObject& functions = obj.AddGSONObject("functions");
+	functions.ReserveChildren(mFunctions.size());
+
 	for (const ScriptFunc& func : mFunctions)
 	{
 		func.SerializeTo(functions.AddGSONObject(""));
 	}
 
 	BinaryGSONObject& members = obj.AddGSONObject("members");
+	members.ReserveChildren(mFields.size());
+
 	for (const ScriptField& field : mFields)
 	{
 		field.SerializeTo(members.AddGSONObject(""));

@@ -7,7 +7,7 @@
 #include "Meta/MetaFunc.h"
 #include "Scripting/ScriptTools.h"
 #include "Scripting/Nodes/MetaFuncScriptNode.h"
-#include "Scripting/Nodes/MetaMemberScriptNode.h"
+#include "Scripting/Nodes/MetaFieldScriptNode.h"
 #include "Scripting/Nodes/EntryAndReturnScriptNode.h"
 #include "Scripting/Nodes/ControlScriptNodes.h"
 #include "Assets/Script.h"
@@ -30,15 +30,16 @@ CE::VirtualMachine::~VirtualMachine()
 
 void CE::VirtualMachine::Recompile()
 {
+	[[maybe_unused]] const std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	LOG(LogScripting, Message, "Recompiling...");
 
 	ClearCompilationResult();
 
 	std::vector<std::pair<std::reference_wrapper<MetaType>, std::reference_wrapper<Script>>> createdTypes{};
 
-	for (WeakAsset<Script> asset : AssetManager::Get().GetAllAssets<Script>())
+	for (WeakAssetHandle<Script> asset : AssetManager::Get().GetAllAssets<Script>())
 	{
-		Script& script = const_cast<Script&>(*asset.MakeShared());
+		Script& script = const_cast<Script&>(*AssetHandle<Script>{ asset });
 		
 		MetaType* type = script.DeclareMetaType();
 
@@ -64,13 +65,22 @@ void CE::VirtualMachine::Recompile()
 
 	PrintCompileErrors();
 
-	LOG(LogScripting, Message, "Compilation completed");
+	[[maybe_unused]] const std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+	[[maybe_unused]] float deltaTime = std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1).count();
+	LOG(LogScripting, Message, "Compilation completed in {} seconds", deltaTime);
+	mIsCompiled = true;
 }
 
 void CE::VirtualMachine::ClearCompilationResult()
 {
 	DestroyAllTypesCreatedThroughScripts();
 	mErrorsFromLastCompilation.clear();
+	mIsCompiled = false;
+}
+
+bool CE::VirtualMachine::IsCompiled() const
+{
+	return mIsCompiled;
 }
 
 std::vector<std::reference_wrapper<const CE::ScriptError>> CE::VirtualMachine::GetErrors(
@@ -314,7 +324,6 @@ void CE::VirtualMachine::DestroyAllTypesCreatedThroughScripts()
 	{
 		if (WasTypeCreatedByScript(type))
 		{
-			LOG(LogScripting, Verbose, "Type {} will be destroyed", type.GetName());
 			Internal::UnreflectComponentType(type);
 			typesToRemove.push_back(type.GetTypeId());
 		}
@@ -708,7 +717,7 @@ Expected<CE::VirtualMachine::VMContext::CachedValue*, CE::ScriptError> CE::Virtu
 		ASSERT(inputDeleter.mSize != 0 && "Getting or setting a field always require a target");
 		ASSERT(returnAddress != nullptr && "Does not return void; memory should have been allocated");
 
-		const MetaField* const metaMember = static_cast<const NodeInvolvingMetaMember&>(node).TryGetOriginalMemberData();
+		const MetaField* const metaMember = static_cast<const NodeInvolvingField&>(node).TryGetOriginalField();
 		ASSERT(metaMember != nullptr && "Should've been caught during script-compilation");
 
 		ASSERT(&metaMember->GetType() == returnType);

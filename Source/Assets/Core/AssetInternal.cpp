@@ -49,15 +49,13 @@ void CE::Internal::AssetInternal::Load()
 			constructResult.Error());
 		return;
 	}
-
-	mAsset = MakeShared<Asset>(std::move(constructResult.GetReturnValue()));
+	mAsset = MakeUnique<Asset>(std::move(constructResult.GetReturnValue()));
 }
 
 void CE::Internal::AssetInternal::UnLoad()
 {
 	if (mAsset != nullptr)
 	{
-		LOG(LogAssets, Verbose, "Unloading {}", mMetaData.GetName());
 		mAsset.reset();
 	}
 	else

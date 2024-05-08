@@ -109,7 +109,7 @@ namespace CE
 			Will return nullptr if there is already a window with the asset name.
 			Will return nullptr if there is no editor for this type of asset.
 		*/
-		EditorSystem* TryOpenAssetForEdit(const WeakAsset<Asset>& originalAsset);
+		EditorSystem* TryOpenAssetForEdit(const WeakAssetHandle<>& originalAsset);
 
 		// Checks if there is any editor system that could open an asset of this type
 		// for edit.
@@ -180,7 +180,8 @@ namespace CE
 		std::vector<std::pair<TypeId, SystemPtr<EditorSystem>>> mSystems{};
 		std::forward_list<std::string> mSystemsToDestroy{};
 
-		std::forward_list<RefreshRequest> mRefreshRequests{};
+		std::vector<RefreshRequest> mRefreshRequests{};
+		std::chrono::system_clock::time_point mTimeOfLastRefresh = std::chrono::system_clock::now();
 	};
 
 	template<typename CastTo>

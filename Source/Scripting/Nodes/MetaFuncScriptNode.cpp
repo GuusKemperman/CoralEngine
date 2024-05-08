@@ -70,6 +70,9 @@ void CE::MetaFuncScriptNode::PostDeclarationRefresh(ScriptFunc& scriptFunc)
 		return;
 	}
 
+	// In case our type got renamed
+	mTypeName = type->GetName();
+
 	const std::variant<Name, OperatorType> key = std::holds_alternative<std::string>(mNameOrType) ?
 		std::variant<Name, OperatorType>{Name{ std::get<std::string>(mNameOrType) }} :
 		std::get<OperatorType>(mNameOrType);
