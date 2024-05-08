@@ -773,8 +773,6 @@ void CE::GPUWorld::UpdateParticles()
             }
         }
     }
-
-
 }
 void CE::GPUWorld::UpdateClusterData(const CameraComponent& camera)
 {

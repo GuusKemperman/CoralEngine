@@ -203,6 +203,7 @@ void CE::MeshRenderer::Render(const World& world)
     resourceHeap->BindToGraphics(commandList, 14, gpuWorld.GetPointLigthHeapSlot());
     resourceHeap->BindToGraphics(commandList, 15, gpuWorld.GetLigthGridSRVSlot());
     resourceHeap->BindToGraphics(commandList, 16, gpuWorld.GetLightIndicesSRVSlot());
+
     auto shadowMap = gpuWorld.GetShadowMap();
     shadowMap->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
     resourceHeap->BindToGraphics(commandList, 17, shadowMap->mDepthSRVHandle);
@@ -252,7 +253,9 @@ void CE::MeshRenderer::Render(const World& world)
             meshCounter++;
         }
     }
-    
+
+    RenderParticles(world);
+
     // Render skinned meshes
     commandList->SetPipelineState(mPBRSkinnedPipeline.Get());
 
@@ -303,7 +306,6 @@ void CE::MeshRenderer::Render(const World& world)
         }
     }
 
-    RenderParticles(world);
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 }
@@ -335,9 +337,10 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         }
     }
 
+    uint32 particleCounter = 0;
+
     {
-        uint32 particleCounter = 0;
-        const auto view = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>();
+        const auto view = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>(entt::exclude<ParticleColorOverTimeComponent>);
 
         for (auto [entity, emitter, meshRenderer, colorComponent] : view.each())
         {
@@ -351,8 +354,6 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
             {
                 if (emitter.IsParticleAlive(i))
                 {
-                    LOG(LogCore, Verbose, "Particles rendering!");
-
                     if (particleCounter >= MAX_PARTICLES)
                     {
                         LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
@@ -372,6 +373,42 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
             }
         }
     }
+
+    {
+        const auto view = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent, const ParticleColorOverTimeComponent>();
+
+        for (auto [entity, emitter, meshRenderer, colorComponent, colorOverTime] : view.each())
+        {
+            if (!AreAnyVisible(emitter, meshRenderer))
+            {
+                continue;
+            }
+
+            const size_t numOfParticles = emitter.GetNumOfParticles();
+            for (uint32 i = 0; i < numOfParticles; i++)
+            {
+                if (emitter.IsParticleAlive(i))
+                {
+                    if (particleCounter >= MAX_PARTICLES)
+                    {
+                        LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
+                        return;
+                    }
+
+                    if (!meshRenderer.mParticleMesh)
+                    {
+                        continue;
+                    }
+
+                    gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MODEL_MATRIX_CB).Bind(commandList, 1, particleCounter, frameIndex);
+                    meshRenderer.mParticleMesh->DrawMeshVertexOnly();
+
+                    particleCounter++;
+                }
+            }
+        }
+    }
+
 
     commandList->SetPipelineState(mZSkinnedPipeline.Get());
 
@@ -488,12 +525,47 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
         staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
         meshCounter++;
     }
+    uint32 particleCounter = 0;
 
     {
-        uint32 particleCounter = 0;
-        const auto view2 = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>();
+        const auto view2 = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>(entt::exclude<ParticleColorOverTimeComponent>);
 
         for (auto [entity, emitter, meshRenderer, colorComponent] : view2.each())
+        {
+            if (!AreAnyVisible(emitter, meshRenderer))
+            {
+                continue;
+            }
+
+            const size_t numOfParticles = emitter.GetNumOfParticles();
+            for (uint32 i = 0; i < numOfParticles; i++)
+            {
+                if (emitter.IsParticleAlive(i))
+                {
+                    if (particleCounter >= MAX_PARTICLES)
+                    {
+                        LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
+                        return;
+                    }
+
+                    if (!meshRenderer.mParticleMesh)
+                    {
+                        continue;
+                    }
+
+                    gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MODEL_MATRIX_CB).Bind(commandList, 4, particleCounter, frameIndex);
+                    meshRenderer.mParticleMesh->DrawMeshVertexOnly();
+
+                    particleCounter++;
+                }
+            }
+        }
+    }
+
+    {
+        const auto view2 = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent, const ParticleColorOverTimeComponent>();
+
+        for (auto [entity, emitter, meshRenderer, colorComponent, colorOverTime] : view2.each())
         {
             if (!AreAnyVisible(emitter, meshRenderer))
             {
@@ -709,7 +781,7 @@ void CE::MeshRenderer::RenderParticles(const World& world)
     uint32 particleCounter = 0;
 
     {
-        const auto view = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>();
+        const auto view = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>(entt::exclude<ParticleColorOverTimeComponent>);
 
         for (auto [entity, emitter, meshRenderer, colorComponent] : view.each())
         {
@@ -719,21 +791,15 @@ void CE::MeshRenderer::RenderParticles(const World& world)
             }
 
             const size_t numOfParticles = emitter.GetNumOfParticles();
+
             for (uint32 i = 0; i < numOfParticles; i++)
             {
                 if (emitter.IsParticleAlive(i))
                 {
-                    LOG(LogCore, Verbose, "Particles rendering!");
-
                     if (particleCounter >= MAX_PARTICLES)
                     {
                         LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
                         return;
-                    }
-
-                    if (!meshRenderer.mParticleMesh)
-                    {
-                        continue;
                     }
 
                     // Bind textures
@@ -771,4 +837,63 @@ void CE::MeshRenderer::RenderParticles(const World& world)
             }
         }
     }
+
+    {
+        const auto view = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent, const ParticleColorOverTimeComponent>();
+
+        for (auto [entity, emitter, meshRenderer, colorComponent, colorOverTime] : view.each())
+        {
+            if (!AreAnyVisible(emitter, meshRenderer))
+            {
+                continue;
+            }
+
+            const size_t numOfParticles = emitter.GetNumOfParticles();
+
+            for (uint32 i = 0; i < numOfParticles; i++)
+            {
+                if (emitter.IsParticleAlive(i))
+                {
+                    if (particleCounter >= MAX_PARTICLES)
+                    {
+                        LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
+                        return;
+                    }
+
+                    // Bind textures
+                    if (meshRenderer.mParticleMaterial)
+                    {
+                        if (meshRenderer.mParticleMaterial->mBaseColorTexture != nullptr)
+                        {
+                            meshRenderer.mParticleMaterial->mBaseColorTexture->BindToGraphics(commandList, 8);
+                        }
+                        if (meshRenderer.mParticleMaterial->mEmissiveTexture != nullptr)
+                        {
+                            meshRenderer.mParticleMaterial->mEmissiveTexture->BindToGraphics(commandList, 9);
+                        }
+                        if (meshRenderer.mParticleMaterial->mMetallicRoughnessTexture != nullptr)
+                        {
+                            meshRenderer.mParticleMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
+                        }
+                        if (meshRenderer.mParticleMaterial->mNormalTexture != nullptr)
+                        {
+                            meshRenderer.mParticleMaterial->mNormalTexture->BindToGraphics(commandList, 11);
+                        }
+                        if (meshRenderer.mParticleMaterial->mOcclusionTexture != nullptr)
+                        {
+                            meshRenderer.mParticleMaterial->mOcclusionTexture->BindToGraphics(commandList, 12);
+                        }
+                    }
+
+                    gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MODEL_MATRIX_CB).Bind(commandList, 1, particleCounter, frameIndex);
+                    gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_COLOR_CB).Bind(commandList, 5, particleCounter, frameIndex);
+                    gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MATERIAL_INFO_CB).Bind(commandList, 4, particleCounter, frameIndex);
+                    meshRenderer.mParticleMesh->DrawMesh();
+
+                    particleCounter++;
+                }
+            }
+        }
+    }
+
 }
