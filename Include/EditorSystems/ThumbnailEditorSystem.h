@@ -40,9 +40,10 @@ namespace CE
 		// All thumbnails that are not used get offloaded after this number
 		// multiplied by the amount of time it took to generate the thumbnail.
 		// This keeps expensive thumbnails around for longer.
-		static constexpr float sUnusedThumbnailRemoveStrictness = 200.0f;
+		static constexpr float sUnusedThumbnailRemoveStrictness = 2000.0f;
 
 		static constexpr float sMinAmountOfTimeConsideredUnused = 2.0f;
+		static constexpr float sMinAmountOfTimeConsideredUnusedWhenFullyRendered = 300.0f;
 
 		Cooldown mRenderCooldown{ .25f };
 		Cooldown mWorkCooldown{ 1.3f };
