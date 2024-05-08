@@ -19,6 +19,11 @@
 #include "Components/FogComponent.h"
 #include "Rendering/GPUWorld.h"
 
+#include "Components/Particles/ParticleMeshRendererComponent.h"
+#include "Components/Particles/ParticleEmitterComponent.h"
+#include "Components/Particles/ParticleColorComponent.h"
+#include "Components/Particles/ParticleColorOverTimeComponent.h"
+
 #include "Platform/PC/Core/DevicePC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
 
@@ -134,9 +139,12 @@ CE::GPUWorld::GPUWorld(const World& world)
     mConstBuffers[InfoStruct::CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 2, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::MATERIAL_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Model material info", FRAME_BUFFER_COUNT);
+    mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_PARTICLES, "Model material info", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "Mesh matrix data", FRAME_BUFFER_COUNT);
+    mConstBuffers[InfoStruct::PARTICLE_MODEL_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_PARTICLES, "Particle matrix data", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * MAX_BONES, MAX_SKINNED_MESHES, "Skinned mesh bone matrices", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::COLOR_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXColorMultiplierInfo), MAX_MESHES, "Color multiplier", FRAME_BUFFER_COUNT);
+    mConstBuffers[InfoStruct::PARTICLE_COLOR_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXColorMultiplierInfo), MAX_PARTICLES, "Particle color multiplier", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::UI_MODEL_MAT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "UI MODEL MATRICES", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::CLUSTER_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::Clustering::DXCluster), 1, "Cluster creation data", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::CLUSTERING_CAM_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::Clustering::DXCameraClustering), 1, "Clustering camera data", FRAME_BUFFER_COUNT);
@@ -509,6 +517,7 @@ void CE::GPUWorld::Update()
     }
 
     UpdateClusterData(camera);
+    UpdateParticles();
 }
 
 uint32 CE::GPUWorld::ReadCompactClusterCounter() const
@@ -586,6 +595,186 @@ void CE::GPUWorld::InitializeShadowMaps()
     mShadowMap->mScissorRect.top = 0;
     mShadowMap->mScissorRect.right = static_cast<LONG>(mShadowMap->mViewport.Width);
     mShadowMap->mScissorRect.bottom = static_cast<LONG>(mShadowMap->mViewport.Height);
+}
+void CE::GPUWorld::UpdateParticles()
+{
+    Device& engineDevice = Device::Get();
+    int frameIndex = engineDevice.GetFrameIndex();
+    uint32 particleCounter = 0;
+
+    {
+        const auto view = mWorld.get().GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>(entt::exclude<ParticleColorOverTimeComponent>);
+
+        for (auto [entity, emitter, meshRenderer, colorComponent] : view.each())
+        {
+            bool emitterPlaying = emitter.IsPlaying();
+            bool meshPresent = meshRenderer.mParticleMesh;
+            if (!emitterPlaying || !meshPresent)
+            {
+                continue;
+            }
+
+            const size_t numOfParticles = emitter.GetNumOfParticles();
+
+            Span<const glm::vec3> positions = emitter.GetParticlePositions();
+            Span<const glm::vec3> sizes = emitter.GetParticleSizes();
+            Span<const glm::quat> orientations = emitter.GetParticleOrientations();
+            Span<const LinearColor> colors = colorComponent.GetColors();
+
+            for (uint32 i = 0; i < numOfParticles; i++)
+            {
+                if (emitter.IsParticleAlive(i))
+                {
+                    if (particleCounter >= MAX_PARTICLES)
+                    {
+                        LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
+                        return;
+                    }
+
+                    // Update material
+                    InfoStruct::DXMaterialInfo materialInfo{};
+                    if (meshRenderer.mParticleMaterial != nullptr) 
+                    {
+                        materialInfo.colorFactor = { meshRenderer.mParticleMaterial->mBaseColorFactor.r,
+                            meshRenderer.mParticleMaterial->mBaseColorFactor.g,
+                            meshRenderer.mParticleMaterial->mBaseColorFactor.b,
+                            0.f };
+
+                        materialInfo.emissiveFactor = { meshRenderer.mParticleMaterial->mEmissiveFactor.r,
+                            meshRenderer.mParticleMaterial->mEmissiveFactor.g,
+                            meshRenderer.mParticleMaterial->mEmissiveFactor.b,
+                            0.f };
+
+                        materialInfo.metallicFactor = meshRenderer.mParticleMaterial->mMetallicFactor;
+                        materialInfo.roughnessFactor = meshRenderer.mParticleMaterial->mRoughnessFactor;
+                        materialInfo.normalScale = meshRenderer.mParticleMaterial->mNormalScale;
+
+                        materialInfo.useColorTex = meshRenderer.mParticleMaterial->mBaseColorTexture != nullptr;
+                        materialInfo.useEmissiveTex = meshRenderer.mParticleMaterial->mEmissiveTexture != nullptr;
+                        materialInfo.useMetallicRoughnessTex = meshRenderer.mParticleMaterial->mMetallicRoughnessTexture != nullptr;
+                        materialInfo.useNormalTex = meshRenderer.mParticleMaterial->mNormalTexture != nullptr;
+                        materialInfo.useOcclusionTex = meshRenderer.mParticleMaterial->mOcclusionTexture != nullptr;
+                    }
+                    else 
+                    {
+                        materialInfo.colorFactor = { 0.f, 0.f, 0.f, 0.f };
+                        materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
+                        materialInfo.metallicFactor = 0.f;
+                        materialInfo.roughnessFactor = 0.f;
+                        materialInfo.normalScale = 1.f;
+                        materialInfo.useColorTex = false;
+                        materialInfo.useEmissiveTex = false;
+                        materialInfo.useMetallicRoughnessTex = false;
+                        materialInfo.useNormalTex = false;
+                        materialInfo.useOcclusionTex = false;
+                    }
+                    mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), particleCounter, frameIndex);
+
+                    const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], sizes[i], orientations[i]);
+                    glm::mat4x4 modelMatrices[2]{};
+                    modelMatrices[0] = glm::transpose(mat);
+                    modelMatrices[1] = glm::transpose(glm::inverse(mat));
+                    mConstBuffers[InfoStruct::PARTICLE_MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, particleCounter, frameIndex);
+
+                    InfoStruct::DXColorMultiplierInfo colorInfo;
+                    colorInfo.colorMult = colors[i];
+                    colorInfo.colorAdd = glm::vec4(0.f);
+                    mConstBuffers[InfoStruct::PARTICLE_COLOR_CB]->Update(&colorInfo, sizeof(InfoStruct::DXColorMultiplierInfo), particleCounter, frameIndex);
+
+                    particleCounter++;
+                }
+            }
+        }
+    }
+
+    {
+        const auto view = mWorld.get().GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent, const ParticleColorOverTimeComponent>();
+
+        for (auto [entity, emitter, meshRenderer, colorComponent, colorOverTime] : view.each())
+        {
+            bool emitterPlaying = emitter.IsPlaying();
+            bool meshPresent = meshRenderer.mParticleMesh;
+            if (!emitterPlaying || !meshPresent)
+            {
+                continue;
+            }
+
+            const size_t numOfParticles = emitter.GetNumOfParticles();
+
+            Span<const float> lifeTimes = emitter.GetParticleLifeTimesAsPercentage();
+            Span<const glm::vec3> positions = emitter.GetParticlePositions();
+            Span<const glm::vec3> sizes = emitter.GetParticleSizes();
+            Span<const glm::quat> orientations = emitter.GetParticleOrientations();
+            Span<const LinearColor> colors = colorComponent.GetColors();
+            const ColorGradient& gradient = colorOverTime.mGradient;
+
+            for (uint32 i = 0; i < numOfParticles; i++)
+            {
+                if (emitter.IsParticleAlive(i))
+                {
+                    if (particleCounter >= MAX_PARTICLES)
+                    {
+                        LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
+                        return;
+                    }
+
+                    InfoStruct::DXMaterialInfo materialInfo{};
+                    if (meshRenderer.mParticleMaterial != nullptr) 
+                    {
+                        materialInfo.colorFactor = { meshRenderer.mParticleMaterial->mBaseColorFactor.r,
+                            meshRenderer.mParticleMaterial->mBaseColorFactor.g,
+                            meshRenderer.mParticleMaterial->mBaseColorFactor.b,
+                            0.f };
+
+                        materialInfo.emissiveFactor = { meshRenderer.mParticleMaterial->mEmissiveFactor.r,
+                            meshRenderer.mParticleMaterial->mEmissiveFactor.g,
+                            meshRenderer.mParticleMaterial->mEmissiveFactor.b,
+                            0.f };
+
+                        materialInfo.metallicFactor = meshRenderer.mParticleMaterial->mMetallicFactor;
+                        materialInfo.roughnessFactor = meshRenderer.mParticleMaterial->mRoughnessFactor;
+                        materialInfo.normalScale = meshRenderer.mParticleMaterial->mNormalScale;
+
+                        materialInfo.useColorTex = meshRenderer.mParticleMaterial->mBaseColorTexture != nullptr;
+                        materialInfo.useEmissiveTex = meshRenderer.mParticleMaterial->mEmissiveTexture != nullptr;
+                        materialInfo.useMetallicRoughnessTex = meshRenderer.mParticleMaterial->mMetallicRoughnessTexture != nullptr;
+                        materialInfo.useNormalTex = meshRenderer.mParticleMaterial->mNormalTexture != nullptr;
+                        materialInfo.useOcclusionTex = meshRenderer.mParticleMaterial->mOcclusionTexture != nullptr;
+                    }
+                    else 
+                    {
+                        materialInfo.colorFactor = { 0.f, 0.f, 0.f, 0.f };
+                        materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
+                        materialInfo.metallicFactor = 0.f;
+                        materialInfo.roughnessFactor = 0.f;
+                        materialInfo.normalScale = 1.f;
+                        materialInfo.useColorTex = false;
+                        materialInfo.useEmissiveTex = false;
+                        materialInfo.useMetallicRoughnessTex = false;
+                        materialInfo.useNormalTex = false;
+                        materialInfo.useOcclusionTex = false;
+                    }
+                    mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), particleCounter, frameIndex);
+
+
+                    const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], sizes[i], orientations[i]);
+                    glm::mat4x4 modelMatrices[2]{};
+                    modelMatrices[0] = glm::transpose(mat);
+                    modelMatrices[1] = glm::transpose(glm::inverse(mat));
+                    mConstBuffers[InfoStruct::PARTICLE_MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, particleCounter, frameIndex);
+
+                    InfoStruct::DXColorMultiplierInfo colorInfo;
+                    colorInfo.colorMult = colors[i] * gradient.GetColorAt(lifeTimes[i]);
+                    colorInfo.colorAdd = glm::vec4(0.f);
+                    mConstBuffers[InfoStruct::PARTICLE_COLOR_CB]->Update(&colorInfo, sizeof(InfoStruct::DXColorMultiplierInfo), particleCounter, frameIndex);
+
+                    particleCounter++;
+                }
+            }
+        }
+    }
+
+
 }
 void CE::GPUWorld::UpdateClusterData(const CameraComponent& camera)
 {

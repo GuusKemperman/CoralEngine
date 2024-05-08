@@ -16,6 +16,10 @@
 #include "Components/MeshColorComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/DirectionalLightComponent.h"
+#include "Components/Particles/ParticleMeshRendererComponent.h"
+#include "Components/Particles/ParticleEmitterComponent.h"
+#include "Components/Particles/ParticleColorComponent.h"
+#include "Components/Particles/ParticleColorOverTimeComponent.h"
 
 #include "World/Registry.h"
 #include "World/World.h"
@@ -31,6 +35,12 @@
 #ifdef EDITOR
 #include "Rendering/FrameBuffer.h"
 #endif
+
+bool AreAnyVisible(const CE::ParticleEmitterComponent& emitter, const CE::ParticleMeshRendererComponent& meshRenderer)
+{
+    return emitter.IsPlaying()
+        && meshRenderer.mParticleMesh != nullptr;
+}
 
 CE::MeshRenderer::MeshRenderer()
 {
@@ -128,7 +138,6 @@ CE::MeshRenderer::MeshRenderer()
         .SetDepthState(depth)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
-
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
@@ -294,6 +303,8 @@ void CE::MeshRenderer::Render(const World& world)
         }
     }
 
+    RenderParticles(world);
+
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 }
 
@@ -324,6 +335,44 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         }
     }
 
+    {
+        uint32 particleCounter = 0;
+        const auto view = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>();
+
+        for (auto [entity, emitter, meshRenderer, colorComponent] : view.each())
+        {
+            if (!AreAnyVisible(emitter, meshRenderer))
+            {
+                continue;
+            }
+
+            const size_t numOfParticles = emitter.GetNumOfParticles();
+            for (uint32 i = 0; i < numOfParticles; i++)
+            {
+                if (emitter.IsParticleAlive(i))
+                {
+                    LOG(LogCore, Verbose, "Particles rendering!");
+
+                    if (particleCounter >= MAX_PARTICLES)
+                    {
+                        LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
+                        return;
+                    }
+
+                    if (!meshRenderer.mParticleMesh)
+                    {
+                        continue;
+                    }
+
+                    gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MODEL_MATRIX_CB).Bind(commandList, 1, particleCounter, frameIndex);
+                    meshRenderer.mParticleMesh->DrawMeshVertexOnly();
+
+                    particleCounter++;
+                }
+            }
+        }
+    }
+
     commandList->SetPipelineState(mZSkinnedPipeline.Get());
 
     {
@@ -337,13 +386,14 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
             }
 
             gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
-
             gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
 
             skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
             meshCounter++;
         }
     }
+
+
 
 }
 
@@ -438,6 +488,43 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
         staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
         meshCounter++;
     }
+
+    {
+        uint32 particleCounter = 0;
+        const auto view2 = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>();
+
+        for (auto [entity, emitter, meshRenderer, colorComponent] : view2.each())
+        {
+            if (!AreAnyVisible(emitter, meshRenderer))
+            {
+                continue;
+            }
+
+            const size_t numOfParticles = emitter.GetNumOfParticles();
+            for (uint32 i = 0; i < numOfParticles; i++)
+            {
+                if (emitter.IsParticleAlive(i))
+                {
+                    if (particleCounter >= MAX_PARTICLES)
+                    {
+                        LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
+                        return;
+                    }
+
+                    if (!meshRenderer.mParticleMesh)
+                    {
+                        continue;
+                    }
+
+                    gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MODEL_MATRIX_CB).Bind(commandList, 4, particleCounter, frameIndex);
+                    meshRenderer.mParticleMesh->DrawMeshVertexOnly();
+
+                    particleCounter++;
+                }
+            }
+        }
+    }
+
 
     commandList->SetPipelineState(mCullClusterSkinnedMeshPipeline.Get());
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
@@ -610,4 +697,78 @@ void CE::MeshRenderer::RenderShadowMaps(const World& world)
     }
 
     Device::Get().BindSwapchainRT();
+}
+
+void CE::MeshRenderer::RenderParticles(const World& world)
+{
+    Device& engineDevice = Device::Get();
+    GPUWorld& gpuWorld = world.GetGPUWorld();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
+    int frameIndex = engineDevice.GetFrameIndex();
+    uint32 particleCounter = 0;
+
+    {
+        const auto view = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>();
+
+        for (auto [entity, emitter, meshRenderer, colorComponent] : view.each())
+        {
+            if (!AreAnyVisible(emitter, meshRenderer))
+            {
+                continue;
+            }
+
+            const size_t numOfParticles = emitter.GetNumOfParticles();
+            for (uint32 i = 0; i < numOfParticles; i++)
+            {
+                if (emitter.IsParticleAlive(i))
+                {
+                    LOG(LogCore, Verbose, "Particles rendering!");
+
+                    if (particleCounter >= MAX_PARTICLES)
+                    {
+                        LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
+                        return;
+                    }
+
+                    if (!meshRenderer.mParticleMesh)
+                    {
+                        continue;
+                    }
+
+                    // Bind textures
+                    if (meshRenderer.mParticleMaterial)
+                    {
+                        if (meshRenderer.mParticleMaterial->mBaseColorTexture != nullptr)
+                        {
+                            meshRenderer.mParticleMaterial->mBaseColorTexture->BindToGraphics(commandList, 8);
+                        }
+                        if (meshRenderer.mParticleMaterial->mEmissiveTexture != nullptr)
+                        {
+                            meshRenderer.mParticleMaterial->mEmissiveTexture->BindToGraphics(commandList, 9);
+                        }
+                        if (meshRenderer.mParticleMaterial->mMetallicRoughnessTexture != nullptr)
+                        {
+                            meshRenderer.mParticleMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
+                        }
+                        if (meshRenderer.mParticleMaterial->mNormalTexture != nullptr)
+                        {
+                            meshRenderer.mParticleMaterial->mNormalTexture->BindToGraphics(commandList, 11);
+                        }
+                        if (meshRenderer.mParticleMaterial->mOcclusionTexture != nullptr)
+                        {
+                            meshRenderer.mParticleMaterial->mOcclusionTexture->BindToGraphics(commandList, 12);
+                        }
+                    }
+
+                    gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MODEL_MATRIX_CB).Bind(commandList, 1, particleCounter, frameIndex);
+                    gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_COLOR_CB).Bind(commandList, 5, particleCounter, frameIndex);
+                    gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MATERIAL_INFO_CB).Bind(commandList, 4, particleCounter, frameIndex);
+                    meshRenderer.mParticleMesh->DrawMesh();
+
+                    particleCounter++;
+                }
+            }
+        }
+    }
 }
