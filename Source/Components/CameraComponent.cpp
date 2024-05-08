@@ -121,6 +121,8 @@ CE::MetaType CE::CameraComponent::Reflect()
 CE::MetaType CE::CameraSelectedTag::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<CameraSelectedTag>{}, "CameraSelectedTag" };
+	metaType.GetProperties().Add(Props::sNoInspectTag);
+
 	ReflectComponentType<CameraSelectedTag>(metaType);
 
 	return metaType;

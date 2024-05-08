@@ -16,8 +16,8 @@ CE::TransformedAABB CE::AABBColliderComponent::CreateTransformedCollider(const T
 
 CE::MetaType CE::AABBColliderComponent::Reflect()
 {
-	MetaType metaType = MetaType{ MetaType::T<AABBColliderComponent>{}, "AABBColliderComponnet" };
-	metaType.GetProperties().Add(Props::sIsScriptableTag);
+	MetaType metaType = MetaType{ MetaType::T<AABBColliderComponent>{}, "AABBColliderComponent" };
+	metaType.GetProperties().Add(Props::sIsScriptableTag).Set(Props::sOldNames, "AABBColliderComponnet");
 
 	metaType.AddField(&AABBColliderComponent::mHalfExtends, "mHalfExtends").GetProperties().Add(Props::sIsScriptableTag);
 

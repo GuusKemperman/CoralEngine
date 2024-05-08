@@ -3,6 +3,8 @@
 #include "Utilities/Events.h"
 #include "World/Registry.h"
 
+#include "entt/entity/runtime_view.hpp"
+
 namespace CE
 {
 	enum class TickResponsibility
@@ -68,14 +70,11 @@ namespace CE
 				continue;
 			}
 
-			for (const entt::entity entity : *storage)
-			{
-				// Tombstone check
-				if (!storage->contains(entity))
-				{
-					continue;
-				}
+			entt::runtime_view view{};
+			view.iterate(*storage);
 
+			for (const entt::entity entity : view)
+			{
 				if (boundEvent.mIsStatic)
 				{
 					if constexpr (IsFixed)

@@ -54,15 +54,7 @@ void CE::UIRenderer::Render(const World& world)
             continue;
 	    }
 
-		if (sprite.mTexture->IsReadyToBeSentToGpu())
-	    {
-            sprite.mTexture->SendToGPU();
-	    }
-
-        if (sprite.mTexture->WasSentToGpu())
-        {
-            drawRequests.emplace_back(DrawRequest{ entity, transform.GetWorldPosition()[Axis::Forward] });
-        }
+    	drawRequests.emplace_back(DrawRequest{ entity, transform.GetWorldPosition()[Axis::Forward] });
     }
 
     std::sort(drawRequests.begin(), drawRequests.end(),
@@ -101,8 +93,7 @@ void CE::UIRenderer::Render(const World& world)
 
         InfoStruct::ColorInfo colorInfo;
         colorInfo.mColor = sprite.mColor;
-        if (sprite.mTexture != nullptr
-            && sprite.mTexture->WasSentToGpu())
+        if (sprite.mTexture != nullptr)
         {
             colorInfo.mUseTexture = true;
             sprite.mTexture->BindToGraphics(commandList, 8);

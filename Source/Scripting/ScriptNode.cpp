@@ -5,10 +5,11 @@
 #include "Scripting/ScriptIds.h"
 #include "Scripting/ScriptFunc.h"
 #include "GSON/GSONBinary.h"
+#include "Meta/MetaManager.h"
 #include "Scripting/Nodes/ControlScriptNodes.h"
 #include "Scripting/Nodes/CommentScriptNode.h"
 #include "Scripting/Nodes/MetaFuncScriptNode.h"
-#include "Scripting/Nodes/MetaMemberScriptNode.h"
+#include "Scripting/Nodes/MetaFieldScriptNode.h"
 #include "Scripting/Nodes/EntryAndReturnScriptNode.h"
 #include "Scripting/Nodes/ReroutScriptNode.h"
 
@@ -36,7 +37,7 @@ void CE::ScriptNode::SetPins(ScriptFunc& scriptFunc, InputsOutputs&& inputsOutpu
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
 	ClearPins(scriptFunc);
 #else 
-	ASSERT(!mFirstPinId.IsValid() && mNumOfOutputs == 0 && mNumOfInputs)
+	ASSERT(!mFirstPinId.IsValid() && mNumOfOutputs == 0 && mNumOfInputs);
 #endif // REMOVE_FROM_SCRIPTS_ENABLED
 
 	mNumOfInputs = static_cast<uint32>(inputsOutputs.mInputs.size());
@@ -82,24 +83,22 @@ void CE::ScriptNode::RefreshByComparingPins(ScriptFunc& scriptFunc,
 		outOfDataResult.mAreOutputsOutOfDate = false;
 	}
 
-	// Update the names of the pins
+	auto updateNames = [](Span<ScriptPin> pins, const std::vector<ScriptVariableTypeData>& expectedPins)
+		{
+			for (uint32 i = 0; i < pins.size() && i < expectedPins.size(); i++)
+			{
+				pins[i].SetName(expectedPins[i].GetName());
+			}
+		};
+
 	if (!outOfDataResult.mAreInputsOutOfDate)
 	{
-		auto inputs = GetInputs(scriptFunc);
-		for (uint32 i = 0; i < inputs.size() && i < expectedInputs.size(); i++)
-		{
-			inputs[i].SetName(expectedInputs[i].GetName());
-		}
+		updateNames(GetInputs(scriptFunc), expectedInputs);
 	}
 
-	// Update the names of the pins
-	if (!outOfDataResult.mAreInputsOutOfDate)
+	if (!outOfDataResult.mAreOutputsOutOfDate)
 	{
-		auto outputs = GetOutputs(scriptFunc);
-		for (uint32 i = 0; i < outputs.size() && i < expectedOutputs.size(); i++)
-		{
-			outputs[i].SetName(expectedOutputs[i].GetName());
-		}
+		updateNames(GetOutputs(scriptFunc), expectedOutputs);
 	}
 }
 #endif // REMOVE_FROM_SCRIPTS_ENABLED
@@ -116,12 +115,16 @@ void CE::ScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptF
 	to.AddGSONMember("pos") << mPosition;
 
 	BinaryGSONObject& inputs = to.AddGSONObject("inputs");
+	inputs.ReserveChildren(mNumOfInputs);
+
 	for (const ScriptPin& input : GetInputs(scriptFunc))
 	{
 		input.SerializeTo(inputs.AddGSONObject(""));
 	}
 
 	BinaryGSONObject& outputs = to.AddGSONObject("outputs");
+	outputs.ReserveChildren(mNumOfOutputs);
+
 	for (const ScriptPin& output : GetOutputs(scriptFunc))
 	{
 		output.SerializeTo(outputs.AddGSONObject(""));
@@ -273,7 +276,8 @@ CE::ScriptNode::CompareOutOfDataResult CE::ScriptNode::CheckIfOutOfDateByCompari
 {
 	static constexpr auto compareToPins = [](const ScriptVariableTypeData& currentParams, const ScriptPin& oldPins) -> bool
 		{
-			return oldPins.GetTypeName() == currentParams.GetTypeName() && oldPins.GetTypeForm() == currentParams.GetTypeForm();
+			return oldPins.GetTypeName() == currentParams.GetTypeName()
+					&& oldPins.GetTypeForm() == currentParams.GetTypeForm();
 		};
 
 	CompareOutOfDataResult result{};

@@ -138,14 +138,7 @@ namespace CE
 			std::vector<entt::entity>* selectedEntities);
 
 	private:
-		static void DisplayFamily(Registry& registry,
-			TransformComponent& parentTransform,
-			std::vector<entt::entity>& selectedEntities);
-
-		static void DisplaySingle(Registry& registry,
-		                          entt::entity entity,
-			std::vector<entt::entity>& selectedEntities,
-			TransformComponent* transformComponent);
+		static void DisplayEntity(Registry& registry, entt::entity entity, std::vector<entt::entity>& selectedEntities);
 
 		// Nullopt to unparent them
 		static void ReceiveDragDropOntoParent(Registry& registry,

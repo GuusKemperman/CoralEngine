@@ -28,6 +28,8 @@ namespace CE
 		Registry& operator=(Registry&&) = delete;
 		Registry& operator=(const Registry&) = delete;
 
+		void BeginPlay();
+
 		void UpdateSystems(float dt);
 
 		void RenderSystems() const;
@@ -139,6 +141,10 @@ namespace CE
 		
 		void AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system);
 
+		void CallBeginPlayForEntitiesAwaitingBeginPlay();
+
+		bool ShouldWeCallBeginPlayImmediatelyAfterConstruct(entt::entity ownerOfNewlyConstructedComponent) const;
+
 		template <typename Component>
 		static void DestroyCallback(entt::registry&, entt::entity entity);
 
@@ -171,6 +177,8 @@ namespace CE
 		};
 		std::vector<FixedTickSystem> mFixedTickSystems{};
 		std::vector<InternalSystem> mNonFixedSystems{};
+
+		std::vector<BoundEvent> mBoundBeginPlayEvents{};
 	};
 
 	template<typename ComponentType, typename ...AdditonalArgs>
@@ -239,8 +247,8 @@ namespace CE
 					events.mOnConstruct->InvokeUncheckedUnpacked(GetWorld(), toEntity);
 				}
 
-				if (GetWorld().HasBegunPlay()
-					&& events.mOnBeginPlay != nullptr)
+				if (events.mOnBeginPlay != nullptr
+					&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
 				{
 					events.mOnBeginPlay->InvokeUncheckedUnpacked(GetWorld(), toEntity);
 				}
@@ -264,8 +272,8 @@ namespace CE
 					}
 				}
 
-				if (GetWorld().HasBegunPlay()
-					&& events.mOnBeginPlay != nullptr)
+				if (events.mOnBeginPlay != nullptr
+					&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
 				{
 					if (events.mDoesOnBeginPlayHaveStaticTag)
 					{

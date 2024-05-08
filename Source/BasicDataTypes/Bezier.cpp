@@ -72,20 +72,19 @@ void CE::Bezier::DisplayWidget(const char* label)
 
 	ImGui::TreePop();
 }
-
-void CE::Bezier::DisplayWidget(const char* label) const
-{
-	if (ImGui::TreeNode(label))
-	{
-		ShowInspectUI("ControlPoints", mControlPoints);
-		ImGui::TreePop();
-	}
-}
 #endif // EDITOR
 
 CE::MetaType CE::Bezier::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Bezier>{}, "Bezier" };
+	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+
+	type.AddFunc([](const Bezier& bezier, float t1, float t2)
+		{
+			return bezier.GetSurfaceAreaBetween(t1, t2, 0.05f);
+		}, "GetSurfaceAreaBetween", MetaFunc::ExplicitParams<const Bezier&, float, float>{}, "", "T1", "T2").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&Bezier::GetValueAt, "GetValueAt", "", "Time").GetProperties().Add(Props::sIsScriptableTag);
+
 	ReflectFieldType<Bezier>(type);
 	return type;
 }

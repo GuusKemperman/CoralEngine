@@ -16,7 +16,7 @@ void CE::ParticleEmitterComponent::OnParticleSpawn(const size_t i,
 	mParticleLifeSpan[i] = lifeTime;
 	mParticleTimeAsPercentage[i] = 0.0f;
 
-	mParticleScales[i] = Math::lerp(mMinInitialScale, mMaxInitialScale, Random::Float()) * emitterWorldScale;
+	mParticleScales[i] = Math::lerp(mMinInitialScale, mMaxInitialScale, Random::Value<float>()) * emitterWorldScale;
 	mParticlePositions[i] = emitterMatrix * glm::vec4{ Random::Range(mMinInitialLocalPosition, mMaxInitialLocalPosition), 1.0f };
 	mParticleOrientations[i] = emitterWorldOrientaton * glm::quat{ Random::Range(mMinInitialOrientation, mMaxInitialOrientation) };
 

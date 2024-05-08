@@ -12,6 +12,8 @@
 
 #include <stb_image/stb_image.h>
 
+#include "Core/AssetManager.h"
+#include "Platform/PC/Rendering/TexturePC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 #include "Utilities/StringFunctions.h"
 
@@ -477,6 +479,8 @@ void CE::Device::NewFrame() {
     ImGuizmo::BeginFrame();
 #endif // EDITOR
 
+    SendTexturesToGPU();
+
     mCommandList->RSSetViewports(1, &mViewport); 
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
     mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
@@ -487,7 +491,6 @@ void CE::Device::NewFrame() {
     mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mRenderTargetHandles[mFrameIndex], mDepthHandle);
     mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mRenderTargetHandles[mFrameIndex], &clearColor[0]);
     mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, mDepthHandle);
-
 }
 
 void CE::Device::EndFrame()
@@ -520,7 +523,7 @@ void CE::Device::EndFrame()
 
     if (FAILED(mSwapChain->Present(0, 0))) 
     {
-        LOG(LogCore, Fatal, "Failded to present");
+        LOG(LogCore, Fatal, "Failed to present");
     }
 
 #ifdef EDITOR
@@ -584,9 +587,34 @@ void CE::Device::StartRecordingCommands()
     }
 }
 
+void CE::Device::SendTexturesToGPU()
+{
+    AssetHandle defaultTexture = Texture::TryGetDefaultTexture();
+
+    if (defaultTexture != nullptr
+        && !defaultTexture->WasSendToGPU())
+    {
+        defaultTexture->SendToGPU();
+    }
+
+    for (WeakAssetHandle<Texture> weakHandle : AssetManager::Get().GetAllAssets<Texture>())
+    {
+        if (!weakHandle.IsLoaded())
+        {
+            continue;
+        }
+
+        AssetHandle<Texture> texture{ weakHandle };
+
+        if (texture->IsReadyToBeSentToGpu())
+        {
+            texture->SendToGPU();
+        }
+    }
+}
+
 void CE::Device::StartUploadCommands()
 {
-
     if (FAILED(mUploadCommandAllocator->Reset())) 
     {
         LOG(LogCore, Fatal, "Failed to reset upload command allocator");
@@ -596,7 +624,6 @@ void CE::Device::StartUploadCommands()
     {
         LOG(LogCore, Fatal, "Failed to reset upload command list");
     }
-
 }
 
 void CE::Device::SubmitUploadCommands()
@@ -642,7 +669,11 @@ void CE::Device::CreateImguiContext()
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
+    ImGui::GetIO().ConfigFlags |= 
+        ImGuiConfigFlags_DockingEnable
+	    | ImGuiConfigFlags_ViewportsEnable
+	    | ImGuiConfigFlags_NavEnableGamepad
+	    | ImGuiConfigFlags_NavEnableKeyboard;
     ImGui::GetIO().ConfigViewportsNoDecoration = false;
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;

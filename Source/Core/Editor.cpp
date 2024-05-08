@@ -6,12 +6,13 @@
 #include "Core/VirtualMachine.h"
 #include "Core/FileIO.h"
 #include "Assets/Asset.h"
+#include "Utilities/Reflect/ReflectAssetType.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Meta/MetaTools.h"
 #include "Meta/MetaProps.h"
 #include "Rendering/DebugRenderer.h"
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
-#include "Containers/view_istream.h"
+#include "Utilities/view_istream.h"
 #include "GSON/GSONBinary.h"
 
 namespace
@@ -74,7 +75,6 @@ void CE::Editor::PostConstruct()
 
 	if (savedDataVersion == 0)
 	{
-		recursivelyStart(*editorSystemType);
 		return;
 	}
 
@@ -111,11 +111,11 @@ void CE::Editor::PostConstruct()
 		}
 
 		std::string assetName = Internal::GetAssetNameBasedOnSystemName(systemName);
-		std::optional<WeakAsset<>> asset = AssetManager::Get().TryGetWeakAsset<Asset>(assetName);
+		WeakAssetHandle asset = AssetManager::Get().TryGetWeakAsset<Asset>(assetName);
 
-		if (asset.has_value())
+		if (asset != nullptr)
 		{
-			TryOpenAssetForEdit(*asset);
+			TryOpenAssetForEdit(asset);
 		}
 	}
 }
@@ -192,7 +192,6 @@ void CE::Editor::FullFillRefreshRequests()
 
 	LOG(LogEditor, Verbose, "Commiting volatile actions");
 
-
 	uint32 combinedFlags{};
 
 	for (const RefreshRequest& refreshRequest : mRefreshRequests)
@@ -224,8 +223,12 @@ void CE::Editor::FullFillRefreshRequests()
 
 	struct SystemToRefresh
 	{
-		SystemToRefresh(const MetaType& type) : mType(type) {}
+		SystemToRefresh(const MetaType& type, std::string nameOfSystem) :
+			mType(type),
+			mNameOfSystem(std::move(nameOfSystem))
+		{}
 		std::reference_wrapper<const MetaType> mType;
+		std::string mNameOfSystem{};
 
 		// Empty if this was not an asset editor,
 		std::optional<AssetEditorSystemInterface::MementoStack> mAssetEditorRestoreData{};
@@ -261,7 +264,7 @@ system->GetName());
 			continue;
 		}
 
-		SystemToRefresh& restoreInfo = restorationData.emplace_back(*systemType);
+		SystemToRefresh& restoreInfo = restorationData.emplace_back(*systemType, nameOfSystem);
 
 		std::ostringstream savedStateStream{};
 		system->SaveState(savedStateStream);
@@ -282,19 +285,121 @@ system->GetName());
 
 	DestroyRequestedSystems();
 
+	struct AssetThatWasNotOffloaded
+	{
+		std::string mName{};
+		std::filesystem::path mFile{};
+	};
+	std::vector<AssetThatWasNotOffloaded> nonOffloadedAssets{};
+
 	if (combinedFlags & RefreshRequest::ReloadAssets)
 	{
 		VirtualMachine::Get().ClearCompilationResult();
-		AssetManager::Get().UnloadAllUnusedAssets();
-	}
 
-	for (const RefreshRequest& refreshRequest : mRefreshRequests)
-	{
-		if (refreshRequest.mActionWhileUnloaded)
+		// We have a custom garbage collect implementation here,
+		// that only offloads assets if they might have dependencies
+		// on other assets. This prevents having to offload hundreds
+		// of textures and meshes, only to reload them a second later!
+		// We do still check to see if the file was written to, in which
+		// case we still offload it.
+
+		bool wereAnyUnloaded;
+
+		do
 		{
-			refreshRequest.mActionWhileUnloaded();
+			wereAnyUnloaded = false;
+			for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
+			{
+				if (!asset.IsLoaded()
+					|| asset.GetMetaData().GetClass().GetProperties().Has(Props::sCannotReferenceOtherAssetsTag)
+					|| !asset.GetFileOfOrigin().has_value()) // This asset was generated at runtime; if we unload it, we won't be able to load if back in again. 
+				{
+					continue;
+				}
+
+				asset.Unload();
+				wereAnyUnloaded = true;
+			}
+		} while (wereAnyUnloaded);
+
+		for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
+		{
+			if (!asset.IsLoaded())
+			{
+				continue;
+			}
+
+			if (asset.GetMetaData().GetClass().GetProperties().Has(Props::sCannotReferenceOtherAssetsTag))
+			{
+				if (asset.GetFileOfOrigin().has_value())
+				{
+					nonOffloadedAssets.emplace_back(
+						AssetThatWasNotOffloaded{
+							asset.GetMetaData().GetName(),
+							*asset.GetFileOfOrigin()
+						});
+				}
+			}
+			else
+			{
+				LOG(LogEditor, Warning, "We are refresing, but {} was still loaded into memory. Might lead to a crash", asset.GetMetaData().GetName());
+			}
 		}
 	}
+
+	// Iterate by index because more requests might be added
+	for (size_t i = 0; i < mRefreshRequests.size(); i++)
+	{
+		RefreshRequest& request = mRefreshRequests[i];
+		if (request.mActionWhileUnloaded)
+		{
+			request.mActionWhileUnloaded();
+		}
+	}
+
+	// Only works on windows!
+#ifdef PLATFORM_WINDOWS
+	static constexpr auto toSysClock =
+		[](std::filesystem::file_time_type fileTimePoint)
+		{
+			using namespace std::literals;
+			return std::chrono::system_clock::time_point{ fileTimePoint.time_since_epoch() - 3'234'576h };
+		};
+#else
+	static_assert(false, "Implementation needed for this platform");
+#endif //
+
+	// While these assets have no dependencies on other assets,
+	// it's still possible that their file was modified. If this
+	// is the case, we do offload the asset. If someone needs the
+	// asset again, if will be loaded with the updated changes.
+	for (const AssetThatWasNotOffloaded& nonOffloadedAsset : nonOffloadedAssets)
+	{
+		WeakAssetHandle<> asset = AssetManager::Get().TryGetWeakAsset(nonOffloadedAsset.mName);
+
+		if (asset == nullptr)
+		{
+			continue;
+		}
+
+		if (!TRY_CATCH_LOG(
+			if (!asset.GetFileOfOrigin().has_value() 
+				|| *asset.GetFileOfOrigin() != nonOffloadedAsset.mFile
+				|| !std::filesystem::exists(nonOffloadedAsset.mFile)
+				|| toSysClock(std::filesystem::last_write_time(nonOffloadedAsset.mFile)) >= mTimeOfLastRefresh)
+			{
+
+				if (asset != nullptr)
+				{
+					asset.Unload();
+				}
+			}))
+		{
+			asset.Unload();
+		}
+	}
+
+	mTimeOfLastRefresh = std::chrono::system_clock::now();
 
 	if (combinedFlags & RefreshRequest::ReloadAssets)
 	{
@@ -321,15 +426,22 @@ system->GetName());
 			}
 			system = TryOpenAssetForEdit(std::move(*loadInfo));
 
-			AssetEditorSystemInterface* systemAsAssetEditor = dynamic_cast<AssetEditorSystemInterface*>(system);
+			// Check if our asset was renamed.
+			// The assets in our do-undo stack will all have the wrong name.
+			// So if the names don't match discard the do-undo stack
+			if (system != nullptr
+				&& system->GetName() == restoreData.mNameOfSystem)
+			{
+				AssetEditorSystemInterface* systemAsAssetEditor = dynamic_cast<AssetEditorSystemInterface*>(system);
 
-			if (systemAsAssetEditor != nullptr)
-			{
-				systemAsAssetEditor->SetMementoStack(std::move(stack));
-			}
-			else
-			{
-				LOG(LogEditor, Error, "Failed to restore do-undo stack, system was not an asset editor");
+				if (systemAsAssetEditor != nullptr)
+				{
+					systemAsAssetEditor->SetMementoStack(std::move(stack));
+				}
+				else
+				{
+					LOG(LogEditor, Error, "Failed to restore do-undo stack, system was not an asset editor");
+				}
 			}
 		}
 		else
@@ -345,7 +457,6 @@ system->GetName());
 	}
 
 	mRefreshRequests.clear();
-	LOG(LogEditor, Verbose, "Completed volatile actions");
 }
 
 
@@ -368,7 +479,7 @@ void CE::Editor::DestroySystem(const std::string_view systemName)
 
 void CE::Editor::Refresh(RefreshRequest&& request)
 {
-	mRefreshRequests.push_front(std::move(request));
+	mRefreshRequests.emplace_back(std::move(request));
 }
 
 void CE::Editor::SaveAll()
@@ -376,8 +487,14 @@ void CE::Editor::SaveAll()
 	Refresh(RefreshRequest{ RefreshRequest::SaveAssetsToFile | RefreshRequest::Volatile });
 }
 
-CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>& originalAsset)
+CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(const WeakAssetHandle<>& originalAsset)
 {
+	if (originalAsset == nullptr)
+	{
+		LOG(LogEditor, Verbose, "Cannot open asset editor for asset, as the original asset has been deleted.");
+		return nullptr;
+	}
+
 	if (originalAsset.GetFileOfOrigin().has_value())
 	{
 		std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromFile(*originalAsset.GetFileOfOrigin());
@@ -394,18 +511,12 @@ CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>& origin
 	}
 
 	// We can still open assets that did not come from a file
-	return TryOpenAssetForEdit(originalAsset.MakeShared()->Save());
+	return TryOpenAssetForEdit(AssetHandle<>{ originalAsset }->Save());
 }
 
 bool CE::Editor::IsThereAnEditorTypeForAssetType(TypeId assetTypeId) const
 {
 	return GetAssetKeyAssetEditorPairs().find(assetTypeId) != GetAssetKeyAssetEditorPairs().end();
-}
-
-template<typename T>
-static CONSTEVAL CE::TypeForm Test(T&&)
-{
-	return CE::MakeTypeForm<T>();
 }
 
 CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadInfo)
@@ -419,6 +530,21 @@ CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadInfo)
 			assetType.GetName(),
 			asset.Error());
 		return nullptr;
+	}
+
+	AssetHandle originalAsset = AssetManager::Get().TryGetAsset(loadInfo.GetMetaData().GetName());
+
+	if (originalAsset == nullptr)
+	{
+		LOG(LogEditor, Message, "Cannot open asset editor, {} was deleted",
+			loadInfo.GetMetaData().GetName());
+		return nullptr;
+	}
+
+	// The name of our asset editor should match that of the renamed asset
+	if (originalAsset.GetMetaData().GetName() != loadInfo.GetMetaData().GetName())
+	{
+		asset.GetReturnValue().As<Asset>()->SetName(originalAsset.GetMetaData().GetName());
 	}
 
 	const std::unordered_map<TypeId, TypeId>& assetToEditorMap = GetAssetKeyAssetEditorPairs();
@@ -540,15 +666,8 @@ CE::EditorSystem* CE::Editor::TryAddSystemInternal(const TypeId typeId, SystemPt
 
 	if (TryGetSystemInternal(systemName) != nullptr)
 	{
-		if (std::find(mSystemsToDestroy.begin(), mSystemsToDestroy.end(), systemName) != mSystemsToDestroy.end())
-		{
-			LOG(LogEditor, Warning, "Failed to add system {}: There is already a system with this name. A request has been made to destroy this system already, but the existing system will be only destroyed only at the end of this frame.", systemName);
-		}
-		else
-		{
-			LOG(LogEditor, Warning, "Failed to add system {}: as there is already a system with this name. Destroy the existing system before adding this one.", systemName);
-		}
-
+		ImGui::SetWindowFocus(Internal::GetSystemNameBasedOnAssetName(system->GetName()).c_str());
+		LOG(LogEditor, Verbose, "Failed to add system {}, there is already a system with this name. Brought focus to the existing system instead.", systemName);
 		return nullptr;
 	}
 
@@ -617,7 +736,8 @@ void CE::Editor::DisplayMainMenuBar()
 		{
 			std::function<void(const MetaType&)> recursivelyDisplayAsOption = [this, &recursivelyDisplayAsOption](const MetaType& type)
 				{
-					if (type.IsDefaultConstructible())
+					if (type.IsDefaultConstructible()
+						&& !type.GetProperties().Has(Props::sEditorSystemAlwaysOpenTag))
 					{
 						const EditorSystem* existingSystem = TryGetSystemInternal(type.GetTypeId());
 						bool selected = existingSystem != nullptr;
@@ -820,6 +940,4 @@ namespace
 		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 	}
-
-
 }

@@ -15,6 +15,8 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Utilities/Math.h"
+#include "Assets/Prefabs/Prefab.h"
+#include "World/Physics.h"
 
 CE::MetaType CE::AbilityFunctionality::Reflect()
 {
@@ -31,43 +33,43 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
 		const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration)
-		{
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
-			ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration);
-
-		}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
-		const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
-
-	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration, int ticks)
-		{
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
-			ApplyOverTimeEffect(*world, castByCharacterData, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration, ticks);
-
-		}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
-		const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float, int>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
-
-	metaType.AddFunc([](const std::shared_ptr<const Prefab>& prefab, entt::entity castBy) -> entt::entity
-		{
-			if (prefab == nullptr)
+		metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration)
 			{
-				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
-				return entt::null;
-			}
+				World* world = World::TryGetWorldAtTopOfStack();
+				ASSERT(world != nullptr);
 
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
+				ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration);
 
-			return SpawnAbilityPrefab(*world, *prefab, castBy);
+			}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
+			const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-		}, "SpawnAbilityPrefab", MetaFunc::ExplicitParams<
-		const std::shared_ptr<const Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration, int ticks)
+				{
+					World* world = World::TryGetWorldAtTopOfStack();
+					ASSERT(world != nullptr);
 
-	return metaType;
+					ApplyOverTimeEffect(*world, castByCharacterData, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration, ticks);
+
+				}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
+				const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float, int>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+				metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy) -> entt::entity
+					{
+						if (prefab == nullptr)
+						{
+							LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
+							return entt::null;
+						}
+
+						World* world = World::TryGetWorldAtTopOfStack();
+						ASSERT(world != nullptr);
+
+						return SpawnAbilityPrefab(*world, *prefab, castBy);
+
+					}, "SpawnAbilityPrefab", MetaFunc::ExplicitParams<
+					const AssetHandle<Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+					return metaType;
 }
 
 std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, EffectSettings effect)
@@ -148,7 +150,7 @@ void CE::AbilityFunctionality::ApplyOverTimeEffect(World& world, const Character
 		return;
 	}
 
-	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease}});
+	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease} });
 }
 
 entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Prefab& prefab, entt::entity castBy)
@@ -159,26 +161,26 @@ entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Pr
 	auto activeAbility = reg.TryGet<ActiveAbilityComponent>(prefabEntity);
 	if (activeAbility == nullptr)
 	{
-		LOG(LogAbilitySystem, Error, "The prefab does not have an ActiveAbilityComponent attached.")
-			return{};
+		LOG(LogAbilitySystem, Error, "The prefab does not have an ActiveAbilityComponent attached.");
+		return{};
 	}
 	auto prefabTransform = reg.TryGet<TransformComponent>(prefabEntity);
 	if (prefabTransform == nullptr)
 	{
-		LOG(LogAbilitySystem, Error, "The prefab does not have a TransformComponent attached.")
-			return{};
+		LOG(LogAbilitySystem, Error, "The prefab does not have a TransformComponent attached.");
+		return{};
 	}
 	auto characterTransform = reg.TryGet<TransformComponent>(castBy);
 	if (characterTransform == nullptr)
 	{
-		LOG(LogAbilitySystem, Error, "The cast-by entity does not have a TransformComponent attached.")
-			return{};
+		LOG(LogAbilitySystem, Error, "The cast-by entity does not have a TransformComponent attached.");
+		return{};
 	}
 	auto characterComponent = reg.TryGet<CharacterComponent>(castBy);
 	if (characterComponent == nullptr)
 	{
-		LOG(LogAbilitySystem, Error, "The cast-by entity does not have a CharacterComponent attached.")
-			return{};
+		LOG(LogAbilitySystem, Error, "The cast-by entity does not have a CharacterComponent attached.");
+		return{};
 	}
 
 	// Store a copy of the cast-by character's CharacterComponent
@@ -197,8 +199,8 @@ entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Pr
 		auto prefabPhysicsBody = reg.TryGet<PhysicsBody2DComponent>(prefabEntity);
 		if (prefabPhysicsBody == nullptr)
 		{
-			LOG(LogAbilitySystem, Error, "The prefab does not have a PhysicsBody2DComponent attached.")
-				return{};
+			LOG(LogAbilitySystem, Error, "The prefab does not have a PhysicsBody2DComponent attached.");
+			return{};
 		}
 		// Calculate the 2D orientation of the character.
 		const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
@@ -297,7 +299,7 @@ bool CE::AbilityFunctionality::EffectSettings::operator==(const EffectSettings& 
 	return mStat == other.mStat &&
 		Math::AreFloatsEqual(mAmount, other.mAmount) &&
 		mFlatOrPercentage == other.mFlatOrPercentage &&
-		mIncreaseOrDecrease == other.mIncreaseOrDecrease && 
+		mIncreaseOrDecrease == other.mIncreaseOrDecrease &&
 		mClampToMax == other.mClampToMax;
 }
 

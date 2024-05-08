@@ -1,5 +1,6 @@
 #pragma once
 #include "Assets/Asset.h"
+#include "Core/AssetHandle.h"
 
 namespace CE
 {
@@ -22,6 +23,8 @@ namespace CE
 			Mana // can be based on kills or some other criteria
 		};
 
+		const AssetHandle<Texture>& GetIconTexture() const { return mIconTexture; }
+
 	private:
 		friend AbilitySystem;
 		friend AbilityInstance;
@@ -29,9 +32,9 @@ namespace CE
 
         void OnSave(AssetSaveInfo& saveInfo) const override;
 
-		std::shared_ptr<const Script> mScript{};
+		AssetHandle<Script> mScript{};
 
-		std::shared_ptr<const Texture> mIconTexture{};
+		AssetHandle<Texture> mIconTexture{};
 		std::string mDescription{};
 
 		/**

@@ -56,7 +56,11 @@ bool CE::ScriptVariableTypeData::IsFlow() const
 void CE::ScriptVariableTypeData::RefreshTypePointer()
 {
 	mType = MetaManager::Get().TryGetType(mTypeName);
-	ASSERT(mType == nullptr || mType->GetName() == mTypeName);
+
+	if (mType != nullptr) // In case our type got renamed
+	{
+		mTypeName = mType->GetName();
+	}
 }
 
 CE::ScriptPin::ScriptPin(PinId id, NodeId nodeId, ScriptPinKind kind,

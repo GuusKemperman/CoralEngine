@@ -6,7 +6,6 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/StaticMesh.h"
 #include "Assets/Material.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
 CE::MetaType CE::ParticleMeshRendererComponent::Reflect()
 {

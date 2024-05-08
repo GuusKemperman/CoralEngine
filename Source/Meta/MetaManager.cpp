@@ -2,6 +2,8 @@
 #include "Meta/MetaManager.h"
 
 #include "Meta/MetaType.h"
+#include "Meta/MetaProps.h"
+#include "Utilities/StringFunctions.h"
 
 namespace CE::Internal
 {
@@ -65,8 +67,20 @@ CE::MetaType& CE::MetaManager::AddType(MetaType&& type)
 
 	MetaType& returnValue = typeInsertResult.first->second;
 
-	[[maybe_unused]] const auto nameInsertResult = mTypeByName.emplace(std::make_pair(Name::HashString(returnValue.GetName()), std::ref(returnValue)));
+	[[maybe_unused]] const auto nameInsertResult = mTypeByName.emplace(Name::HashString(returnValue.GetName()), returnValue);
 	ASSERT(nameInsertResult.second);
+
+	const MetaProps& props = returnValue.GetProperties();
+	const std::optional<std::string> oldNames = props.TryGetValue<std::string>(Props::sOldNames);
+
+	if (oldNames.has_value())
+	{
+		for (const std::string_view oldName : StringFunctions::SplitString(*oldNames, ","))
+		{
+			[[maybe_unused]] const auto oldNameInsertResult = mTypeByName.emplace(Name::HashString(oldName), returnValue);
+			ASSERT(oldNameInsertResult.second);
+		}
+	}
 
 	return returnValue;
 }
@@ -85,7 +99,7 @@ CE::MetaType* CE::MetaManager::TryGetType(const TypeId typeId)
 
 CE::MetaManager::EachTypeT CE::MetaManager::EachType()
 {
-	return { mTypeByName.begin(), mTypeByName.end() };
+	return { mTypeByTypeId.begin(), mTypeByTypeId.end() };
 }
 
 bool CE::MetaManager::RemoveType(const TypeId typeId)
@@ -97,33 +111,21 @@ bool CE::MetaManager::RemoveType(const TypeId typeId)
 		return false;
 	}
 
-	const bool erasedFromBoth = mTypeByName.erase(Name::HashString(it->second.GetName())) && mTypeByTypeId.erase(typeId);
-
-	if (!erasedFromBoth)
+	// Multiple names can point to the same type
+	for (auto nameIt = mTypeByName.begin(); nameIt != mTypeByName.end();)
 	{
-		LOG(LogMeta, Error, "Somehow type a type was present in mTypeByTypeId but not in mTypeByTypeName");
+		if (nameIt->second.get() == it->second)
+		{
+			nameIt = mTypeByName.erase(nameIt);
+		}
+		else
+		{
+			++nameIt;
+		}
 	}
+	mTypeByTypeId.erase(it);
 
-	return erasedFromBoth;
-}
-
-bool CE::MetaManager::RemoveType(const Name typeName)
-{
-	const auto it = mTypeByTypeId.find(typeName.GetHash());
-
-	if (it == mTypeByTypeId.end())
-	{
-		return false;
-	}
-
-	const bool erasedFromBoth = mTypeByName.erase(typeName.GetHash()) && mTypeByTypeId.erase(it->second.GetTypeId());
-
-	if (!erasedFromBoth)
-	{
-		LOG(LogMeta, Error, "Somehow type a type was present in mTypeByTypeName but not in mTypeByTypeId");
-	}
-
-	return erasedFromBoth;
+	return true;
 }
 
 bool CE::Internal::DoesTypeExist(const TypeId typeId)

@@ -21,7 +21,6 @@ namespace CE
 
 #ifdef EDITOR
 		void DisplayWidget(const char* label);
-		void DisplayWidget(const char* label) const;
 #endif // EDITOR
 
 		ValueStorage mControlPoints{ glm::vec2{0.0f}, glm::vec2{1.0f}, glm::vec2{-1.0f} };

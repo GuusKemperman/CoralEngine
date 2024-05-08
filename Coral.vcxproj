@@ -522,12 +522,25 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Assets\Core\AssetHandle.cpp" />
     <ClCompile Include="Source\Components\FogComponent.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetInternal.cpp" />
     <ClCompile Include="Source\Components\AnimationRootComponent.cpp" />
+    <ClCompile Include="Source\Components\IsAwaitingBeginPlayTag.cpp" />
+    <ClCompile Include="Source\EditorSystems\ThumbnailEditorSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Meta\MetaProps.cpp" />
     <ClCompile Include="Source\Components\PlayerComponent.cpp" />
+    <ClCompile Include="Source\UnitTests\AssetHandleUnitTests.cpp" />
+    <ClCompile Include="Source\Utilities\ASync.cpp" />
     <ClCompile Include="Source\Utilities\Events.cpp" />
+    <ClCompile Include="Source\Utilities\ManyStrings.cpp" />
     <ClCompile Include="Source\Utilities\PathfindingInfo.cpp" />
     <ClCompile Include="Source\EditorSystems\ImporterSystem.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1378,7 +1391,7 @@
     <ClCompile Include="Source\Scripting\Nodes\FunctionLikeScriptNode.cpp" />
     <ClCompile Include="Source\Core\VirtualMachine.cpp" />
     <ClCompile Include="Source\Scripting\Nodes\MetaFuncScriptNode.cpp" />
-    <ClCompile Include="Source\Scripting\Nodes\MetaMemberScriptNode.cpp" />
+    <ClCompile Include="Source\Scripting\Nodes\MetaFieldScriptNode.cpp" />
     <ClCompile Include="Source\Scripting\ScriptPin.cpp" />
     <ClCompile Include="Source\Scripting\ScriptFunc.cpp" />
     <ClCompile Include="Source\Scripting\ScriptLink.cpp" />
@@ -1530,11 +1543,14 @@
     <ClCompile Include="Source\Components\UI\UISpriteComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Assets\Core\AssetHandle.h" />
     <ClInclude Include="Include\Components\FogComponent.h" />
     <ClInclude Include="Include\Assets\Core\AssetInternal.h" />
-    <ClInclude Include="Include\Assets\Core\WeakAsset.h" />
     <ClInclude Include="Include\Components\AnimationRootComponent.h" />
+    <ClInclude Include="Include\Components\IsAwaitingBeginPlayTag.h" />
     <ClInclude Include="Include\Components\PlayerComponent.h" />
+    <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
+    <ClInclude Include="Include\Utilities\ASync.h" />
     <ClInclude Include="Include\Utilities\Geometry2d.h" />
     <ClInclude Include="Include\EditorSystems\ImporterSystem.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.h" />
@@ -1567,7 +1583,6 @@
     <ClInclude Include="Include\Assets\SkinnedMesh.h" />
     <ClInclude Include="Include\Components\SkinnedMeshComponent.h" />
     <ClInclude Include="Include\Components\UtilityAi\EnemyAiControllerComponent.h" />
-    <ClInclude Include="Include\Core\JobManager.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Clustering***REMOVED***.h" />
     <ClInclude Include="Include\Assets\Ability.h" />
     <ClInclude Include="Include\Components\Abilities\AbilitiesOnCharacterComponent.h" />
@@ -1685,7 +1700,7 @@
     <ClInclude Include="Include\Components\Physics2D\PhysicsBody2DComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
     <ClInclude Include="Include\Components\PrefabOriginComponent.h" />
-    <ClInclude Include="include\Containers\ManyStrings.h" />
+    <ClInclude Include="Include\Utilities\ManyStrings.h" />
     <ClInclude Include="Include\Utilities\CommonMetaProperties.h" />
     <ClInclude Include="Include\Core\VirtualMachine.h" />
     <ClInclude Include="Include\EditorSystems\AssetEditorSystems\AbilityEditorSystem.h" />
@@ -1735,7 +1750,6 @@
     <ClInclude Include="Include\Meta\ReflectedTypes\ReflectGLM.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\ReflectNull.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\ReflectPrimitiveTypes.h" />
-    <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectSmartPtr.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectString.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectVector.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\SkinnedMeshPC.h" />
@@ -1829,7 +1843,7 @@
     <ClInclude Include="Include\Scripting\Nodes\CommentScriptNode.h" />
     <ClInclude Include="Include\Scripting\Nodes\EntryAndReturnScriptNode.h" />
     <ClInclude Include="Include\Scripting\Nodes\FunctionLikeScriptNode.h" />
-    <ClInclude Include="Include\Scripting\Nodes\MetaMemberScriptNode.h" />
+    <ClInclude Include="Include\Scripting\Nodes\MetaFieldScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptField.h" />
     <ClInclude Include="Include\Scripting\ScriptErrors.h" />
     <ClInclude Include="Include\Scripting\ScriptFunc.h" />
@@ -1843,7 +1857,8 @@
     <ClInclude Include="Include\Utilities\Expected.h" />
     <ClInclude Include="Include\Rendering\FrameBuffer.h" />
     <ClInclude Include="Include\Utilities\Benchmark.h" />
-    <ClInclude Include="include\Containers\view_istream.h" />
+    <ClInclude Include="Include\Utilities\Time.h" />
+    <ClInclude Include="Include\Utilities\view_istream.h" />
     <ClInclude Include="include\core\ecs.h" />
     <ClInclude Include="include\core\Engine.h" />
     <ClInclude Include="include\Core\FileIO.h" />

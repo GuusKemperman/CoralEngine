@@ -6,7 +6,7 @@
 #include "Core/Editor.h"
 #include "Core/AssetManager.h"
 #include "Meta/MetaType.h"
-#include "Containers/view_istream.h"
+#include "Utilities/view_istream.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
@@ -15,7 +15,7 @@ using namespace CE;
 //UNI_TEST(Serialization, AllAssetSerialization)
 //{
 //#ifdef EDITOR
-//	std::vector<WeakAsset<Asset>> allAssets = AssetManager::Get().GetAllAssets();
+//	std::vector<WeakAssetHandle<>> allAssets = AssetManager::Get().GetAllAssets();
 //
 //	UnitTest::Result result = UnitTest::Success;
 //
@@ -26,7 +26,7 @@ using namespace CE;
 //	uint32 bufferSize{};
 //	uint32 bufferAlign{};
 //
-//	for (WeakAsset<Asset> asset : allAssets)
+//	for (WeakAssetHandle<> asset : allAssets)
 //	{
 //		bufferSize = std::max(asset.GetMetaData().GetClass().GetSize(), bufferSize);
 //		bufferAlign = std::max(asset.GetMetaData().GetClass().GetAlignment(), bufferAlign);
@@ -38,7 +38,7 @@ using namespace CE;
 //
 //	TEST_ASSERT(assetBuffer != nullptr);
 //
-//	for (WeakAsset<Asset> asset : allAssets)
+//	for (WeakAssetHandle<> asset : allAssets)
 //	{
 //		const MetaType& type = asset.GetMetaData().GetClass();
 //
@@ -47,7 +47,7 @@ using namespace CE;
 //			continue;
 //		}
 //
-//		std::shared_ptr<const Asset> loadedAsset = asset.MakeShared();
+//		AssetHandle<> loadedAsset = asset.MakeShared();
 //
 //		TEST_ASSERT(loadedAsset != nullptr);
 //

@@ -1,4 +1,5 @@
 #pragma once
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
 #include "Rendering/SkinnedMeshDefines.h"
 
@@ -11,11 +12,11 @@ namespace CE
     class SkinnedMeshComponent
     {
     public:   
-        std::shared_ptr<const SkinnedMesh> mSkinnedMesh{};
+        AssetHandle<SkinnedMesh> mSkinnedMesh{};
 
-        std::shared_ptr<const Animation> mAnimation{};
+        AssetHandle<Animation> mAnimation{};
 
-        std::shared_ptr<const Material> mMaterial{};
+        AssetHandle<Material> mMaterial{};
 
         std::vector<glm::mat4x4> mFinalBoneMatrices{MAX_BONES, glm::mat4x4(1.0f)};
         float mCurrentTime = 0.0f;

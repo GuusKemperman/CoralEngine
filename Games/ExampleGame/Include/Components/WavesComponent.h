@@ -3,12 +3,14 @@
 #include "Meta/MetaType.h"
 
 #include "Assets/Asset.h"
+#include "Assets/Core/AssetHandle.h"
 
 namespace Game
 {
 	struct EnemyTypeAndCount
 	{
-		std::shared_ptr<const CE::Prefab> mEnemy{};
+		CE::AssetHandle<CE::Prefab> mEnemy{};
+
 		int mAmount{};
 
 		bool operator==(const EnemyTypeAndCount& other) const;

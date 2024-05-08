@@ -123,6 +123,7 @@ bool CE::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
 CE::MetaType CE::StaticMesh::Reflect()
 {
     MetaType type = MetaType{ MetaType::T<StaticMesh>{}, "StaticMesh", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
+    type.GetProperties().Add(Props::sCannotReferenceOtherAssetsTag);
 
     SetClassVersion(type, 1);
 

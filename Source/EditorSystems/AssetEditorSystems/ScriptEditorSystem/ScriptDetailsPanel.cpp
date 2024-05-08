@@ -7,6 +7,7 @@
 #include "EditorSystems/AssetEditorSystems/ScriptEditorSystem.h"
 
 #include "Core/VirtualMachine.h"
+#include "Meta/MetaTypeFilter.h"
 #include "Scripting/ScriptEvents.h"
 #include "Scripting/ScriptTools.h"
 #include "Utilities/Search.h"
@@ -200,6 +201,8 @@ void CE::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
 	ImGui::PopStyleColor();
 }
 
+
+
 void CE::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
 {
 	// Reduce code reptition
@@ -209,15 +212,27 @@ void CE::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
 	{
 		field.SetName(memberName);
 	}
-	std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>("Type", field.GetTypeName().c_str(),
-		[](const MetaType& type)
-		{
-			return CanTypeBeOwnedByScripts(type);
-		});
 
-	if (selectedType.has_value())
+	struct FieldTypeFilter
 	{
-		field.SetType(*selectedType);
+		bool operator()(const MetaType& type) const
+		{
+			return ScriptField::CanTypeBeUsedForFields(type);
+		}
+	};
+
+	const MetaType* currentFieldType = field.TryGetType();
+
+	if (currentFieldType == nullptr)
+	{
+		ImGui::TextUnformatted(Format("{} is no longer a valid type", field.GetTypeName()).c_str());
+	}
+
+	MetaTypeFilter<FieldTypeFilter> filter{ currentFieldType };
+
+	if (ShowInspectUI("Type", filter))
+	{
+		field.SetType(filter == nullptr ? MetaManager::Get().GetType<int32>() : *filter.Get());
 	}
 
 	ShowInspectUI("Default value", field.GetDefaultValue());
@@ -231,16 +246,27 @@ void CE::ParamWrapper::DisplayInspectUI(const std::string&)
 		mParam.SetName(paramName);
 	}
 
-	std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>("Type", 
-		mParam.GetTypeName(),
-		[](const MetaType& type)
-		{
-			return CanTypeBeReferencedInScripts(type);
-		});
-
-	if (selectedType.has_value())
+	struct ReferencedByScriptFilter
 	{
-		mParam = ScriptVariableTypeData{ *selectedType, CanTypeBeOwnedByScripts(*selectedType) ? TypeForm::Value : TypeForm::Ptr, std::string{ mParam.GetName() }, };
+		bool operator()(const MetaType& type) const
+		{
+			return ScriptField::CanTypeBeUsedForFields(type);
+		}
+	};
+
+	const MetaType* currentParamType = mParam.TryGetType();
+
+	if (currentParamType == nullptr)
+	{
+		ImGui::TextUnformatted(Format("{} is no longer a valid type", mParam.GetTypeName()).c_str());
+	}
+
+	MetaTypeFilter<ReferencedByScriptFilter> filter{ currentParamType };
+
+	if (ShowInspectUI("Type", filter))
+	{
+		const MetaType& selectedType = filter == nullptr ? MetaManager::Get().GetType<int32>() : *filter.Get();
+		mParam = ScriptVariableTypeData{ selectedType, CanTypeBeOwnedByScripts(selectedType) ? TypeForm::Value : TypeForm::Ptr, std::string{ mParam.GetName() }, };
 	}
 
 	const MetaType* const type = mParam.TryGetType();

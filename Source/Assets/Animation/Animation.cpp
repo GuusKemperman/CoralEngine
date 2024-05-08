@@ -144,7 +144,7 @@ void CE::Animation::OnSave(AssetSaveInfo& saveInfo) const
 {
 	if (mBones.empty())
 	{
-		LOG(LogAssets, Error, "Unable to save animation {}, No bones found", this->GetName());
+		LOG(LogAssets, Error, "Unable to save animation {}, No bones found", GetName());
 	}
 
 	BinaryGSONObject obj{ GetName() };
@@ -173,6 +173,7 @@ void CE::Animation::OnSave(AssetSaveInfo& saveInfo) const
 CE::MetaType CE::Animation::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Animation>{}, "Animation", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
+	type.GetProperties().Add(Props::sCannotReferenceOtherAssetsTag);
 
 	ReflectAssetType<Animation>(type);
 	return type;

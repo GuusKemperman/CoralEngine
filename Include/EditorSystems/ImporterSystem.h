@@ -1,3 +1,5 @@
+#include "Utilities/ASync.h"
+#include "Utilities/Time.h"
 #ifdef EDITOR
 #include "EditorSystems/EditorSystem.h"
 
@@ -39,39 +41,39 @@ namespace CE
 			std::string mReasonForImporting{};
 		};
 
-		struct ImportFuture
-		{
-			ImportRequest mImportRequest{};
-			std::future<Importer::ImportResult> mImportResult{};
-		};
-
 		struct ImportPreview
 		{
 			ImportRequest mImportRequest{};
 			ImportedAsset mImportedAsset;
+			std::string mDesiredName{};
+		};
+
+		struct ImportFuture
+		{
+			ImportRequest mImportRequest{};
+			ASyncFuture<std::optional<std::vector<ImportPreview>>> mImportResult{};
 		};
 
 		struct DirToWatch
 		{
 			std::filesystem::path mDirectory{};
-			std::filesystem::file_time_type mDirWriteTimeWhenLastChecked{};
 		};
 
-		void ImportAllOutOfDateFiles();
+		std::vector<ImportRequest> GetAllFilesToImport();
 
-		std::vector<ImportRequest> GetAllFilesToImport(DirToWatch& directory);
+		std::vector<ImportRequest> GetFilesToImportInDirectory(DirToWatch& directory);
 
-		static bool WasImportedFrom(const WeakAsset<>& asset, const std::filesystem::path& file);
+		static bool WasImportedFrom(const WeakAssetHandle<>& asset, const std::filesystem::path& file);
 
 		std::pair<TypeId, std::shared_ptr<const Importer>> TryGetImporterForExtension(const std::filesystem::path& extension);
 
-		bool WouldAssetBeDeletedOrReplacedOnImporting(const WeakAsset<>& asset) const;
+		bool WouldAssetBeDeletedOrReplacedOnImporting(const WeakAssetHandle<>& asset) const;
 
 		std::filesystem::path GetPathToSaveAssetTo(const ImportPreview& preview) const;
 
 		static std::filesystem::path GetPathToSaveAssetTo(const ImportPreview& preview, const std::vector<ImportPreview>& toImport);
 
-		static std::optional<std::filesystem::path> GetDuplicateOfExistingAssets(const ImportPreview& preview);
+		static std::vector<std::filesystem::path> GetDuplicatesOfExistingAssets(const ImportPreview& preview);
 
 		static bool AreDuplicates(const ImportPreview& preview1, const ImportPreview& preview2);
 
@@ -79,7 +81,7 @@ namespace CE
 
 		static std::vector<std::filesystem::path> GetDuplicates(const ImportPreview& preview, std::vector<ImportPreview>::const_iterator begin, std::vector<ImportPreview>::const_iterator end);
 
-		static bool WouldAssetBeDeletedOrReplacedOnImporting(const WeakAsset<>& asset, const std::vector<ImportPreview>& toImport);
+		static bool WouldAssetBeDeletedOrReplacedOnImporting(const WeakAssetHandle<>& asset, const std::vector<ImportPreview>& toImport);
 
 		void RetrieveImportResultsFromFutures();
 
@@ -98,11 +100,20 @@ namespace CE
 
 		std::shared_ptr<bool> mWasImportingCancelled{};
 		std::vector<std::pair<TypeId, std::shared_ptr<Importer>>> mImporters{};
+
+		// Look up an importer using a file's extension. The value is the index in mImporters
+		std::unordered_map<std::filesystem::path, uint32> mImporterLookup{};
+
+		// Look up all the asset that were imported from a certain filename
+		std::unordered_multimap<std::filesystem::path, WeakAssetHandle<>> mImportedFromLookUp{};
+
 		std::vector<ImportFuture> mImportFutures{};
 		std::vector<ImportPreview> mImportPreview{};
 		std::vector<ImportRequest> mFailedFiles{};
 
 		std::array<DirToWatch, 2> mDirectoriesToWatch{};
+		Cooldown mCheckDirectoryCooldown{ 10.0f };
+		ASyncFuture<std::vector<ImportRequest>> mChangedFilesInDirectoriesToWatch{};
 
 		static inline bool sExcludeDuplicates{};
 

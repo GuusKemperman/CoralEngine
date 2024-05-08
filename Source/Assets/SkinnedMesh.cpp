@@ -166,6 +166,7 @@ bool CE::SkinnedMesh::OnSave(AssetSaveInfo& saveInfo,
 CE::MetaType CE::SkinnedMesh::Reflect()
 {
     MetaType type = MetaType{ MetaType::T<SkinnedMesh>{}, "SkinnedMesh", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
+    type.GetProperties().Add(Props::sCannotReferenceOtherAssetsTag);
 
     SetClassVersion(type, 1);
 

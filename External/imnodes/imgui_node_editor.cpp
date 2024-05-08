@@ -1705,8 +1705,17 @@ ImVec2 ed::EditorContext::GetNodeSize(NodeId nodeId)
     auto node = FindNode(nodeId);
     if (!node)
         return ImVec2(0, 0);
-
+    
     return node->m_Bounds.GetSize();
+}
+
+ImVec2 ed::EditorContext::GetGroupSize(NodeId nodeId)
+{
+    auto node = FindNode(nodeId);
+    if (!node)
+        return ImVec2(0, 0);
+
+    return node->m_GroupBounds.GetSize();
 }
 
 void ed::EditorContext::SetNodeZPosition(NodeId nodeId, float z)
