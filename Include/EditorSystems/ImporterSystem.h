@@ -116,6 +116,7 @@ namespace CE
 		ASyncFuture<std::vector<ImportRequest>> mChangedFilesInDirectoriesToWatch{};
 
 		static inline bool sExcludeDuplicates{};
+		static inline bool sIgnoreReadOnly = true;
 
 		friend ReflectAccess;
 		static MetaType Reflect();
