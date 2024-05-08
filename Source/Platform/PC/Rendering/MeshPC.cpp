@@ -111,8 +111,15 @@ CE::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
         reinterpret_cast<const float*>(&tangents->x),
         numOfVertices
     );
-    
-    if (!meshLoaded)
+
+    if (meshLoaded)
+    {
+        mCPUVertexBuffer = std::move(positions);
+        mCPUIndexBuffer = flags & areIndices16Bit ?
+            std::vector<uint32>{ reinterpret_cast<const uint16*>(indices.data()), reinterpret_cast<const uint16*>(indices.data()) + numOfIndices } :
+            std::vector<uint32>{ reinterpret_cast<const uint32*>(indices.data()), reinterpret_cast<const uint32*>(indices.data()) + numOfIndices };
+    }
+    else
     {
         LOG(LogAssets, Error, "Loading of {} failed: Invalid mesh", GetName());
     }

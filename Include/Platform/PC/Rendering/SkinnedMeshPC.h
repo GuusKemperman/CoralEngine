@@ -27,6 +27,9 @@ namespace CE
         SkinnedMesh& operator=(SkinnedMesh&&) = delete;
         SkinnedMesh& operator=(const SkinnedMesh&) = delete;
 
+        Span<const glm::vec3> GetVertices() const { return mCPUVertexBuffer; }
+        Span<const uint32> GetIndices() const { return mCPUIndexBuffer; }
+
     private:
         friend class ModelImporter;
 
@@ -45,6 +48,9 @@ namespace CE
         static MetaType Reflect();
     private:
         bool LoadMesh(const char* indices, unsigned int indexCount, unsigned int size_of_index_type, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, const int* boneIds, const float* boneWeights, unsigned int vertexCount);
+
+        std::vector<glm::vec3> mCPUVertexBuffer{};
+        std::vector<uint32> mCPUIndexBuffer{};
 
         std::shared_ptr<DXResource> mVertexBuffer;
         std::shared_ptr<DXResource> mNormalBuffer;

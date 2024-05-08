@@ -28,6 +28,9 @@ namespace CE
         StaticMesh& operator=(StaticMesh&&) = delete;
         StaticMesh& operator=(const StaticMesh&) = delete;
 
+        Span<const glm::vec3> GetVertices() const { return mCPUVertexBuffer; }
+        Span<const uint32> GetIndices() const { return mCPUIndexBuffer; }
+
     private:
         friend class ModelImporter;
 
@@ -42,8 +45,10 @@ namespace CE
         friend ReflectAccess;
         static MetaType Reflect();
 
-    private:
         bool LoadMesh(const char* indices, unsigned int indexCount, unsigned int size_of_index_type, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount);
+
+        std::vector<glm::vec3> mCPUVertexBuffer{};
+        std::vector<uint32> mCPUIndexBuffer{};
 
         std::shared_ptr<DXResource> mVertexBuffer;
         std::shared_ptr<DXResource> mNormalBuffer;

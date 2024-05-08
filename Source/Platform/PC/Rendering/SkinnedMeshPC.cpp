@@ -141,6 +141,17 @@ CE::SkinnedMesh::SkinnedMesh(AssetLoadInfo& loadInfo) :
         numOfVertices
     );
 
+    if (!meshLoaded)
+    {
+        LOG(LogAssets, Error, "Loading of {} failed: Invalid mesh", GetName());
+        return;
+    }
+
+    mCPUVertexBuffer = std::move(positions);
+    mCPUIndexBuffer = flags & areIndices16Bit ?
+        std::vector<uint32>{ reinterpret_cast<const uint16*>(indices.data()), reinterpret_cast<const uint16*>(indices.data()) + numOfIndices } :
+        std::vector<uint32>{ reinterpret_cast<const uint32*>(indices.data()), reinterpret_cast<const uint32*>(indices.data()) + numOfIndices };
+
     BinaryGSONObject obj {};
 
     const bool success = obj.LoadFromBinary(loadInfo.GetStream());
@@ -161,10 +172,7 @@ CE::SkinnedMesh::SkinnedMesh(AssetLoadInfo& loadInfo) :
 
     *serializedBoneMap >> mBoneInfoMap;
 
-    if (!meshLoaded)
-    {
-        LOG(LogAssets, Error, "Loading of {} failed: Invalid mesh", GetName());
-    }
+
 }
 
 CE::SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) noexcept = default;
