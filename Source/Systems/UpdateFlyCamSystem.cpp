@@ -45,8 +45,8 @@ void CE::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	glm::vec2 timeScaledRotationInput
 	{
-		mouseInput.y + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightY) * dt,
-		mouseInput.x + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightX) * dt
+		mouseInput.y/* + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightY) * dt*/,
+		mouseInput.x/* + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightX) * dt*/
 	};
 
 	timeScaledRotationInput *= flyCam->mRotationSpeed;
