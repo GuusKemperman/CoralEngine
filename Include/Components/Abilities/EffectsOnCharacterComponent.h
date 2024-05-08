@@ -51,7 +51,7 @@ namespace CE
 		int mTicksCounter{};
 
 		// The effect to apply.
-		AbilityFunctionality::EffectSettings mEffectSettings{};
+		AbilityFunctionality::AbilityEffect mEffectSettings{};
 
 		// This is needed only if the effect is health decrease (damage).
 		// It needs to be stored because the dealt damage modifer of the character

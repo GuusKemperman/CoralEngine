@@ -35,7 +35,18 @@ namespace
 	ImGuizmo::OPERATION sGuizmoOperation{ ImGuizmo::OPERATION::TRANSLATE };
 	ImGuizmo::MODE sGuizmoMode{ ImGuizmo::MODE::WORLD };
 	bool sShouldGuizmoSnap{};
-	glm::vec3 sSnapTo{ 1.0f };
+
+	// Different variable for each operation.
+	float sTranslateSnapTo{ 1.0f };
+	float sRotationSnapTo{ 30.0f };
+	float sScaleSnapTo{ 1.0f };
+
+	// Storing it so that we only have to do the check once.
+	float* sCurrentSnapTo{};
+
+	// We need this for the Manipulate() function
+	// which expects a vec3 in the form of a pointer to float.
+	glm::vec3 sCurrentSnapToVec3{};
 
 	void RemoveInvalidEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
 
@@ -142,6 +153,14 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			}
 
 			ImGui::Checkbox("Snap", &sShouldGuizmoSnap);
+			if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
+			{
+				sShouldGuizmoSnap = true;
+			}
+			if (Input::Get().WasKeyboardKeyReleased(Input::KeyboardKey::LeftControl))
+			{
+				sShouldGuizmoSnap = false;
+			}
 			ImGui::SameLine();
 
 			if (sShouldGuizmoSnap)
@@ -149,17 +168,27 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 				switch (sGuizmoOperation)
 				{
 				case ImGuizmo::TRANSLATE:
-					ImGui::InputFloat3("Snap", value_ptr(sSnapTo));
+					sCurrentSnapTo = &sTranslateSnapTo;
 					break;
 				case ImGuizmo::ROTATE:
-					ImGui::InputFloat("Angle Snap", value_ptr(sSnapTo));
+					sCurrentSnapTo = &sRotationSnapTo;
 					break;
 				case ImGuizmo::SCALE:
-					ImGui::InputFloat("Scale Snap", value_ptr(sSnapTo));
+					sCurrentSnapTo = &sScaleSnapTo;
 					break;
 				default:
 					break;
 				}
+				// Convert to string and truncate to the desired decimal precision.
+				std::string valueStr = std::to_string(*sCurrentSnapTo);
+				valueStr = valueStr.substr(0, valueStr.find('.') + 1 + 3); // 1 - dot character and 3 - decimal precision 
+				// Calculate the text size with some padding
+				const ImVec2 textSize = ImGui::CalcTextSize(valueStr.c_str());
+				const float padding = ImGui::GetStyle().FramePadding.x * 2.0f;
+
+				const float width =  textSize.x + padding;
+				ImGui::SetNextItemWidth(width);
+				ImGui::InputFloat("##", sCurrentSnapTo);
 			}
 		}
 
@@ -168,11 +197,11 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		if (!GetWorld().HasBegunPlay())
 		{
 			ImGui::SetNextItemAllowOverlap();
-			ImGui::SetItemTooltip("Begin play");
 			if (ImGui::Button(ICON_FA_PLAY))
 			{
 				(void)BeginPlay();
 			}
+			ImGui::SetItemTooltip("Begin play");
 		}
 		else
 		{
@@ -434,7 +463,13 @@ void CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 	const glm::mat4& view = camera.GetView();
 	const glm::mat4& proj = camera.GetProjection();
 
-	const float* const snap = sShouldGuizmoSnap ? value_ptr(sSnapTo) : nullptr;
+	// The snap needs to be converted to a vec3, otherwise the Y translation does not work.
+	const float* snap{};
+	if (sShouldGuizmoSnap)
+	{
+		sCurrentSnapToVec3 = glm::vec3(*sCurrentSnapTo);
+		snap = value_ptr(sCurrentSnapToVec3);
+	}
 
 	std::vector<TransformComponent*> transformComponents{};
 	std::vector<entt::entity> entitiesToTransform{};
