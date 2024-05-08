@@ -20,6 +20,7 @@ namespace CE
 
         std::vector<glm::mat4x4> mFinalBoneMatrices{MAX_BONES, glm::mat4x4(1.0f)};
         float mCurrentTime = 0.0f;
+        float mAnimationSpeed = 1.0f;
 
     private:
         friend ReflectAccess;
