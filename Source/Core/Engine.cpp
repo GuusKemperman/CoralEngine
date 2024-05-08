@@ -69,6 +69,13 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 			}
 		}
 
+		const uint32 numOfErrorsLogged = Logger::Get().GetNumOfEntriesPerSeverity()[LogSeverity::Error];
+		if (numOfErrorsLogged != 0)
+		{
+			LOG(LogUnitTest, Error, "There were {} unresolved errors logged to the consoler", numOfErrorsLogged);
+			numFailed += numOfErrorsLogged;
+		}
+
 		// We only exit if numFailed != 0,
 		// since maybe theres a crash in
 		// the shutdown process and we want
