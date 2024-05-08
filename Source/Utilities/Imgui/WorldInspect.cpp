@@ -1,7 +1,6 @@
 #include "Precomp.h"
 #include "Utilities/Imgui/WorldInspect.h"
 
-#include "Assets/Level.h"
 #include "imgui/ImGuizmo.h"
 #include "imgui/imgui_internal.h"
 
@@ -16,8 +15,10 @@
 #include "Components/StaticMeshComponent.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/StaticMesh.h"
+#include "Assets/SkinnedMesh.h"
 #include "Assets/Material.h"
 #include "Components/ComponentFilter.h"
+#include "Components/SkinnedMeshComponent.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
@@ -29,6 +30,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Archiver.h"
 #include "Rendering/Renderer.h"
+#include "Utilities/Geometry3d.h"
 
 namespace
 {
@@ -404,6 +406,95 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 		ShowComponentGizmos(world, *selectedEntities);
 		GizmoManipulateSelectedTransforms(world, *selectedEntities, world.GetRegistry().Get<CameraComponent>(cameraOwner));
 	}
+
+	entt::entity hoveringOver = HoveringOverEntity(world);
+
+	if (hoveringOver != entt::null)
+	{
+		LOG(LogTemp, Verbose, "Hovering over {}", NameComponent::GetDisplayName(world.GetRegistry(), hoveringOver));
+	}
+}
+
+namespace
+{
+	const CE::AssetHandle<CE::StaticMesh>& GetMesh(const CE::StaticMeshComponent& component)
+	{
+		return component.mStaticMesh;
+	}
+
+	const CE::AssetHandle<CE::SkinnedMesh>& GetMesh(const CE::SkinnedMeshComponent& component)
+	{
+		return component.mSkinnedMesh;
+	}
+
+	template<typename MeshComponentType>
+	void DoRaycastAgainstMeshCompnoent(const CE::World& world, CE::Ray3D ray, float& nearestT, entt::entity& nearestEntity)
+	{
+		static std::vector<glm::vec3> transformedPoints{};
+
+		for (auto [entity, transform, meshComponent] : world.GetRegistry().View<CE::TransformComponent, MeshComponentType>().each())
+		{
+			auto mesh = GetMesh(meshComponent);
+
+			if (mesh == nullptr
+				|| meshComponent.mMaterial == nullptr)
+			{
+				continue;
+			}
+
+			const glm::mat4 worldMat = transform.GetWorldMatrix();
+
+			transformedPoints.clear();
+			transformedPoints.insert(transformedPoints.end(), mesh->GetVertices().begin(), mesh->GetVertices().end());
+
+			for (glm::vec3& point : transformedPoints)
+			{
+				point = worldMat * glm::vec4{ point, 1.0f };
+			}
+
+			const auto& indices = mesh->GetIndices();
+
+			for (uint32 i = 0; i < indices.size(); i += 3)
+			{
+				const float t = RayTriangleIntersection(ray, { transformedPoints[indices[i]], transformedPoints[indices[i + 1]], transformedPoints[indices[i + 2]] });
+
+				if (t < nearestT)
+				{
+					nearestT = t;
+					nearestEntity = entity;
+					// Don't break because some triangles may be even
+					// closer to the camera.
+				}
+			}
+		}
+	}
+}
+
+entt::entity CE::WorldViewportPanel::HoveringOverEntity(const World& world)
+{
+	const entt::entity camera = CameraComponent::GetSelected(world);
+
+	if (camera == entt::null)
+	{
+		return entt::null;
+	}
+
+	const TransformComponent* transform = world.GetRegistry().TryGet<TransformComponent>(camera);
+
+	if (transform == nullptr)
+	{
+		return entt::null;
+	}
+
+	Ray3D ray{ transform->GetWorldPosition(), transform->GetWorldForward() };
+
+	float nearestT = std::numeric_limits<float>::infinity();
+	entt::entity nearestEntity = entt::null;
+
+	DoRaycastAgainstMeshCompnoent<StaticMeshComponent>(world, ray, nearestT, nearestEntity);
+	DoRaycastAgainstMeshCompnoent<SkinnedMeshComponent>(world, ray, nearestT, nearestEntity);
+
+	return nearestEntity;
 }
 
 void CE::WorldViewportPanel::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
