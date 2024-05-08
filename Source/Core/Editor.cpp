@@ -491,6 +491,7 @@ CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(const WeakAssetHandle<>& origi
 {
 	if (originalAsset == nullptr)
 	{
+		LOG(LogEditor, Verbose, "Cannot open asset editor for asset, as the original asset has been deleted.");
 		return nullptr;
 	}
 
