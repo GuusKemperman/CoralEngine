@@ -76,7 +76,7 @@ CE::MetaType CE::TopDownCamControllerComponent::Reflect()
 	type.AddField(&TopDownCamControllerComponent::mRotateSensitivity, "mRotateSensitivity").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&TopDownCamControllerComponent::mHeightInterpolationFactor, "mHeightInterpolationFactor").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&TopDownCamControllerComponent::mTarget, "mTarget").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&TopDownCamControllerComponent::mUseArrowKeysToMove, "mUseArrowKeysToMove").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&TopDownCamControllerComponent::mUseArrowKeysToEdit, "mUseArrowKeysToEdit").GetProperties().Add(Props::sIsScriptableTag);
 	ReflectComponentType<TopDownCamControllerComponent>(type);
 	return type;
 }

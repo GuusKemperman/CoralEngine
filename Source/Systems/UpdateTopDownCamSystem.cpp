@@ -35,7 +35,7 @@ void CE::UpdateTopDownCamSystem::Update(World& world, float dt)
 	}
 
 	float timeScaledZoomDelta{};
-	if (topDownController->mUseArrowKeysToMove)
+	if (topDownController->mUseArrowKeysToEdit)
 	{
 		const float zoomDelta = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp)/* + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickLeftY)*/;
 		timeScaledZoomDelta = zoomDelta * dt;
