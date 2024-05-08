@@ -32,7 +32,7 @@ namespace CE
 			Increase
 		};
 
-		struct EffectSettings
+		struct AbilityEffect
 		{
 			Stat mStat = Stat::Health;
 			float mAmount{};
@@ -40,19 +40,19 @@ namespace CE
 			IncreaseOrDecrease mIncreaseOrDecrease = IncreaseOrDecrease::Decrease;
 			bool mClampToMax = true;
 
-			bool operator==(const EffectSettings& effectSettings) const;
-			bool operator!=(const EffectSettings& effectSettings) const;
+			bool operator==(const AbilityEffect& effectSettings) const;
+			bool operator!=(const AbilityEffect& effectSettings) const;
 
 		private:
 			friend ReflectAccess;
 			static MetaType Reflect();
-			REFLECT_AT_START_UP(EffectSettings);
+			REFLECT_AT_START_UP(AbilityEffect);
 		};
 
-		static std::optional<float> ApplyInstantEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, EffectSettings effect);
-		static void ApplyDurationalEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f);
+		static std::optional<float> ApplyInstantEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect);
+		static void ApplyDurationalEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f);
 		static void RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect);
-		static void ApplyOverTimeEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, EffectSettings effect, float duration = 0.f, int ticks = 1);
+		static void ApplyOverTimeEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f, int ticks = 1);
 		static entt::entity SpawnAbilityPrefab(World& world, const Prefab& prefab, entt::entity castBy);
 
 	private:
@@ -88,7 +88,7 @@ namespace CE
 	};
 
 	template<class Archive>
-	void serialize([[maybe_unused]] Archive& ar, [[maybe_unused]] const AbilityFunctionality::EffectSettings& value)
+	void serialize([[maybe_unused]] Archive& ar, [[maybe_unused]] const AbilityFunctionality::AbilityEffect& value)
 	{
 		// We don't need to actually serialize it, but otherwise we get a compilation error
 	}
