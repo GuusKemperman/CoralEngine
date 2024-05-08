@@ -163,19 +163,6 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			}
 			ImGui::SameLine();
 
-			const std::function<float(const float&)> CalculateInputBoxWidth = [](const float& value)
-				{
-					// Convert to string and truncate to the desired decimal precision.
-					std::string valueStr = std::to_string(value);
-					valueStr = valueStr.substr(0, valueStr.find('.') + 1 + 3); // 1 - dot character and 3 - decimal precision 
-
-					// Calculate the text size with some padding
-					const ImVec2 textSize = ImGui::CalcTextSize(valueStr.c_str());
-					const float padding = ImGui::GetStyle().FramePadding.x * 2.0f;
-
-					return textSize.x + padding;
-				};
-
 			if (sShouldGuizmoSnap)
 			{
 				switch (sGuizmoOperation)
@@ -192,7 +179,15 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 				default:
 					break;
 				}
-				ImGui::SetNextItemWidth(CalculateInputBoxWidth(*sCurrentSnapTo));
+				// Convert to string and truncate to the desired decimal precision.
+				std::string valueStr = std::to_string(*sCurrentSnapTo);
+				valueStr = valueStr.substr(0, valueStr.find('.') + 1 + 3); // 1 - dot character and 3 - decimal precision 
+				// Calculate the text size with some padding
+				const ImVec2 textSize = ImGui::CalcTextSize(valueStr.c_str());
+				const float padding = ImGui::GetStyle().FramePadding.x * 2.0f;
+
+				const float width =  textSize.x + padding;
+				ImGui::SetNextItemWidth(width);
 				ImGui::InputFloat("##", sCurrentSnapTo);
 			}
 		}
