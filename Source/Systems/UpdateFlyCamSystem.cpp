@@ -29,9 +29,9 @@ void CE::UpdateFlyCamSystem::Update(World& world, float dt)
 	Input& input = Input::Get();
 
 	float isMouseButtonHeld = static_cast<float>(input.IsMouseButtonHeld(Input::MouseButton::Right));
-	movementInput[Axis::Forward] = input.GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S) * isMouseButtonHeld + -input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftY);
+	movementInput[Axis::Forward] = input.GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S) * isMouseButtonHeld/* + -input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftY)*/;
 	movementInput[Axis::Up] = input.GetKeyboardAxis(Input::KeyboardKey::E, Input::KeyboardKey::Q) * isMouseButtonHeld;
-	movementInput[Axis::Right] = input.GetKeyboardAxis(Input::KeyboardKey::D, Input::KeyboardKey::A) * isMouseButtonHeld + input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftX);
+	movementInput[Axis::Right] = input.GetKeyboardAxis(Input::KeyboardKey::D, Input::KeyboardKey::A) * isMouseButtonHeld/* + input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftX)*/;
 
 	const glm::vec3 timeScaledMovementInput = movementInput * dt;
 
