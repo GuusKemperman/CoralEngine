@@ -10,9 +10,15 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "Assets/Animation/Animation.h"
+#include "Components/AnimationRootComponent.h"
 
 void Game::AttackingState::OnAiTick(CE::World& world, entt::entity owner, float)
 {
+	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+
+	animationRootComponent->SwitchAnimation(world.GetRegistry(), mAttackingAnimation, 0.0f);
+
 	auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
 	mTargetEntity = targetEntity;
 
@@ -111,6 +117,8 @@ CE::MetaType Game::AttackingState::Reflect()
 	BindEvent(type, CE::sAITickEvent, &AttackingState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &AttackingState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &AttackingState::OnAIStateEnterEvent);
+
+	type.AddField(&AttackingState::mAttackingAnimation, "mAttackingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<AttackingState>(type);
 	return type;

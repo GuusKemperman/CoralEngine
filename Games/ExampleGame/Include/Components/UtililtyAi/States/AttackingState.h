@@ -1,8 +1,10 @@
 #pragma once
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE
 {
+	class Animation;
 	class World;
 }
 
@@ -21,6 +23,8 @@ namespace Game
 	private:
 		entt::entity mTargetEntity{};
 		float mRadius{};
+
+		CE::AssetHandle<CE::Animation> mAttackingAnimation{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

@@ -8,9 +8,15 @@
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "Assets/Animation/Animation.h"
+#include "Components/AnimationRootComponent.h"
 
 void Game::ChasingState::OnAiTick(CE::World& world, entt::entity owner, float)
 {
+	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+
+	animationRootComponent->SwitchAnimation(world.GetRegistry(), mChasingAnimation, 0.0f);
+
 	auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
 	mTargetEntity = targetEntity;
 
@@ -96,6 +102,8 @@ CE::MetaType Game::ChasingState::Reflect()
 
 	BindEvent(type, CE::sAITickEvent, &ChasingState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &ChasingState::OnAiEvaluate);
+
+	type.AddField(&ChasingState::mChasingAnimation, "mChasingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<ChasingState>(type);
 	return type;
