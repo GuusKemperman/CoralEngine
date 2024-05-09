@@ -384,7 +384,7 @@ void CE::WorldInspectHelper::SaveState(BinaryGSONObject& state)
 	state.AddGSONMember("viewportWidth") << mViewportWidth;
 	state.AddGSONMember("hierarchyAndDetailsWidth") << mHierarchyAndDetailsWidth;
 	state.AddGSONMember("selectedCam") << mSelectedCameraBeforeWeSwitchedToFlyCam;
-	state.AddGSONObject("flycam") = mSerialisedFlyCam;
+	state.AddGSONMember("flycamWorldMat") << mFlyCamWorldMatrix;
 }
 
 void CE::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
@@ -418,11 +418,11 @@ void CE::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
 		*selectedCam >> mSelectedCameraBeforeWeSwitchedToFlyCam;
 	}
 
-	const BinaryGSONObject* const flycam = state.TryGetGSONObject("flycam");
+	const BinaryGSONMember* const flycamWorldMat = state.TryGetGSONMember("flycamWorldMat");
 
-	if (flycam != nullptr)
+	if (flycamWorldMat != nullptr)
 	{
-		mSerialisedFlyCam = *flycam;
+		*flycamWorldMat >> mFlyCamWorldMatrix;
 	}
 }
 
@@ -431,11 +431,18 @@ void CE::WorldInspectHelper::SaveFlyCam()
 	Registry& reg = GetWorld().GetRegistry();
 
 	entt::entity flyCam = reg.View<EditorCameraTag>().front();
+	mFlyCamWorldMatrix = {};
 
-	if (flyCam != entt::null)
+	if (flyCam == entt::null)
 	{
-		mSerialisedFlyCam = Archiver::Serialize(GetWorld(), { &flyCam, 1 }, true);
-		mSerialisedFlyCam.SetName("flycam");
+		return;
+	}
+
+	const TransformComponent* const transform = reg.TryGet<TransformComponent>(flyCam);
+
+	if (transform != nullptr)
+	{
+		mFlyCamWorldMatrix = transform->GetWorldMatrix();
 	}
 }
 
@@ -458,7 +465,7 @@ void CE::WorldInspectHelper::SwitchToPlayCam()
 		&& reg.Valid(*mSelectedCameraBeforeWeSwitchedToFlyCam))
 	{
 		CameraComponent::Select(GetWorld(), *mSelectedCameraBeforeWeSwitchedToFlyCam);
-		mSerialisedFlyCam.Clear();
+		mFlyCamWorldMatrix = {};
 	}
 
 	mSelectedCameraBeforeWeSwitchedToFlyCam.reset();
@@ -474,21 +481,14 @@ void CE::WorldInspectHelper::SpawnFlyCam()
 	}
 	reg.RemovedDestroyed();
 
-	const auto createFlycam = [&reg]()
-		{
-			entt::entity cam = reg.Create();
-			reg.AddComponent<CameraComponent>(cam);
-			reg.AddComponent<FlyCamControllerComponent>(cam);
-			reg.AddComponent<EditorCameraTag>(cam);
-			reg.AddComponent<TransformComponent>(cam);
-			return cam;
-		};
+	const entt::entity flyCam = reg.Create();
+	reg.AddComponent<CameraComponent>(flyCam);
+	reg.AddComponent<FlyCamControllerComponent>(flyCam);
+	reg.AddComponent<EditorCameraTag>(flyCam);
+	reg.AddComponent<TransformComponent>(flyCam);
 
-	entt::entity flyCam{};
-	if (mSerialisedFlyCam.IsEmpty())
+	if (mFlyCamWorldMatrix == glm::mat4{})
 	{
-		flyCam = createFlycam();
-
 		const TransformComponent* playCamera = reg.TryGet<TransformComponent>(mSelectedCameraBeforeWeSwitchedToFlyCam.value_or(entt::null));
 
 		if (playCamera != nullptr)
@@ -498,13 +498,7 @@ void CE::WorldInspectHelper::SpawnFlyCam()
 	}
 	else
 	{
-		Archiver::Deserialize(GetWorld(), mSerialisedFlyCam);
-		flyCam = reg.View<EditorCameraTag>().front();
-
-		if (flyCam == entt::null)
-		{
-			flyCam = createFlycam();
-		}
+		reg.Get<TransformComponent>(flyCam).SetWorldMatrix(mFlyCamWorldMatrix);
 	}
 
 	CameraComponent::Select(GetWorld(), flyCam);

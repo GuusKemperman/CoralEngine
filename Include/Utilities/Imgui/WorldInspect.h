@@ -73,7 +73,7 @@ namespace CE
 		std::unique_ptr<World> mWorldBeforeBeginPlay{};
 		std::unique_ptr<World> mWorldAfterBeginPlay{};
 
-		BinaryGSONObject mSerialisedFlyCam{};
+		glm::mat4 mFlyCamWorldMatrix{};
 		std::optional<entt::entity> mSelectedCameraBeforeWeSwitchedToFlyCam{};
 
 		float mHierarchyHeight = .5f;

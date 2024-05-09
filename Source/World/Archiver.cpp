@@ -52,6 +52,7 @@ std::vector<entt::entity> CE::Archiver::Deserialize(World& world, const BinaryGS
 	// In case an entity id is taken
 	std::unordered_map<entt::entity, entt::entity> idRemappings{};
 	idRemappings.reserve(entities.size());
+	reg.Storage<entt::entity>().reserve(entities.size());
 
 	for (entt::entity& entity : entities)
 	{
@@ -109,16 +110,23 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 			return entity;
 		};
 
+	const size_t storageInitialSize = registry.Storage(componentClass->GetTypeId()) == nullptr ? 0u : registry.Storage(componentClass->GetTypeId())->size();
+
 	for (const BinaryGSONObject& serializedComponent : serializedStorage.GetChildren())
 	{
 		const std::vector<BinaryGSONMember>& serializedProperties = serializedComponent.GetGSONMembers();
-
 		const entt::entity owner = remapId(FromBinary<entt::entity>(serializedComponent.GetName()));
 
 		if (!registry.Valid(owner))
 		{
 			LOG(LogAssets, Error, "{} has owner {}, but this entity does not exist", componentClass->GetName(), entt::to_integral(owner));
 			continue;
+		}
+
+		entt::sparse_set* storage = registry.Storage(componentClass->GetTypeId());
+		if (storage != nullptr)
+		{
+			storage->reserve(storageInitialSize + serializedStorage.GetChildren().size());
 		}
 
 		MetaAny component{ *componentClass, nullptr };
@@ -293,6 +301,13 @@ CE::BinaryGSONObject CE::Archiver::SerializeInternal(const World& world, std::ve
 
 	save.AddGSONMember("entities") << entitiesToSerialize;
 
+	size_t numOfStorages{};
+	for ([[maybe_unused]] auto _ : reg.Storage())
+	{
+		++numOfStorages;
+	}
+	save.ReserveChildren(numOfStorages);
+
 	for (auto&& [typeId, storage] : reg.Storage())
 	{
 		if (storage.empty())
@@ -308,6 +323,7 @@ CE::BinaryGSONObject CE::Archiver::SerializeInternal(const World& world, std::ve
 		}
 
 		BinaryGSONObject& serializedComponentClass = save.AddGSONObject(serializeArg->mComponentClass.GetName());
+		serializedComponentClass.ReserveChildren(storage.size());
 
 		for (const entt::entity entity : storage)
 		{
@@ -352,6 +368,9 @@ std::optional<CE::ComponentClassSerializeArg> CE::GetComponentClassSerializeArg(
 
 	std::vector<const MetaFunc*> equalityFunctions{};
 	std::vector<const MetaFunc*> serializeMemberFunctions{};
+
+	equalityFunctions.reserve(componentClass->GetDirectFields().size());
+	serializeMemberFunctions.reserve(componentClass->GetDirectFields().size());
 
 	for (const MetaField& memberData : componentClass->EachField())
 	{
@@ -423,6 +442,7 @@ void CE::SerializeSingleComponent(const Registry& registry,
 	// Note that this might be nullptr if it's an empty component
 	MetaAny component = MetaAny{ arg.mComponentClass, const_cast<void*>(arg.mStorage.value(entity)), false };
 	BinaryGSONObject& serializedComponent = parentObject.AddGSONObject(ToBinary(entity));
+	serializedComponent.ReserveMembers(arg.mComponentClass.GetDirectFields().size());
 
 	const PrefabOriginComponent* prefabOriginComponent = registry.TryGet<PrefabOriginComponent>(entity);
 	const PrefabEntityFactory* const entityFactoryOfOrigin = prefabOriginComponent == nullptr ? nullptr : prefabOriginComponent->TryGetFactory();
