@@ -181,6 +181,14 @@ void CE::Internal::DisplayHandleWidget(WeakAssetHandle<>& asset, const std::stri
 
 	const bool isOpen = Search::BeginCombo(name, asset == nullptr ? "None" : asset.GetMetaData().GetName());
 
+	WeakAssetHandle<> receivedAsset = DragDrop::PeekAsset(type);
+
+	if (receivedAsset != nullptr
+		&& DragDrop::AcceptAsset())
+	{
+		asset = std::move(receivedAsset);
+	}
+
 	if (!isOpen)
 	{
 		if (asset != nullptr)
@@ -231,13 +239,5 @@ void CE::Internal::DisplayHandleWidget(WeakAssetHandle<>& asset, const std::stri
 	}
 
 	Search::EndCombo();
-
-	WeakAssetHandle<> receivedAsset = DragDrop::PeekAsset(type);
-
-	if (receivedAsset != nullptr
-		&& DragDrop::AcceptAsset())
-	{
-		asset = std::move(receivedAsset);
-	}
 }
 #endif // EDITOR
