@@ -107,14 +107,13 @@ CE::World& CE::WorldInspectHelper::BeginPlay()
 	}
 	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay() && "Do not call BeginPlay on the world yourself, use WorldInspectHelper::BeginPlay");
 
-	SaveFlyCam();
-
 	mWorldAfterBeginPlay = std::make_unique<World>(false);
 
 	// Duplicate our level world
 	const BinaryGSONObject serializedWorld = Archiver::Serialize(*mWorldBeforeBeginPlay);
 	Archiver::Deserialize(*mWorldAfterBeginPlay, serializedWorld);
 
+	SwitchToPlayCam();
 	mWorldAfterBeginPlay->BeginPlay();
 	return GetWorld();
 }
@@ -129,10 +128,9 @@ CE::World& CE::WorldInspectHelper::EndPlay()
 	ASSERT(mWorldAfterBeginPlay->HasBegunPlay() && "Do not call EndPlay on the world yourself, use WorldInspectHelper::EndPlay");
 
 	mWorldAfterBeginPlay->EndPlay();
-
-	SaveFlyCam();
 	mWorldAfterBeginPlay.reset();
 
+	SwitchToFlyCam();
 	return GetWorld();
 }
 
@@ -214,7 +212,58 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		}
 
 		ImGui::SetCursorPos(firstButtonPos);
+		ImGui::SetNextItemAllowOverlap();
 
+		if (!GetWorld().HasBegunPlay())
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+			if (ImGui::Button(ICON_FA_PLAY))
+			{
+				(void)BeginPlay();
+			}
+			ImGui::PopStyleColor();
+			ImGui::SetItemTooltip("Begin play");
+		}
+		else if (!GetWorld().IsPaused())
+		{
+			if (ImGui::Button(ICON_FA_PAUSE))
+			{
+				GetWorld().Pause();
+			}
+			ImGui::SetItemTooltip("Pause");
+		}
+		else
+		{
+			if (ImGui::Button(ICON_FA_PLAY))
+			{
+				GetWorld().Unpause();
+			}
+			ImGui::SetItemTooltip("Resume play");
+		}
+
+		ImGui::SameLine();
+		ImGui::SetCursorPosY(firstButtonPos.y);
+		ImGui::SetNextItemAllowOverlap();
+
+		if (GetWorld().HasBegunPlay())
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+			if (ImGui::Button(ICON_FA_STOP))
+			{
+				(void)EndPlay();
+			}
+			ImGui::PopStyleColor();
+			ImGui::SetItemTooltip("Stop");
+		}
+		else
+		{
+			ImGui::BeginDisabled();
+			ImGui::Button(ICON_FA_STOP);
+			ImGui::EndDisabled();
+		}
+
+		ImGui::SameLine();
+		ImGui::SetCursorPosY(firstButtonPos.y);
 		ImGui::SetNextItemAllowOverlap();
 
 		if (mSelectedCameraBeforeWeSwitchedToFlyCam.has_value())
@@ -232,50 +281,6 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 				SwitchToFlyCam();
 			}
 			ImGui::SetItemTooltip("Switch to the fly camera");
-		}
-
-		ImGui::SameLine();
-		ImGui::SetCursorPosY(firstButtonPos.y)
-		;
-		if (!GetWorld().HasBegunPlay())
-		{
-			ImGui::SetNextItemAllowOverlap();
-			if (ImGui::Button(ICON_FA_PLAY))
-			{
-				(void)BeginPlay();
-			}
-			ImGui::SetItemTooltip("Begin play");
-		}
-		else
-		{
-			if (GetWorld().IsPaused())
-			{
-				ImGui::SetNextItemAllowOverlap();
-				if (ImGui::Button(ICON_FA_PLAY))
-				{
-					GetWorld().Unpause();
-				}
-				ImGui::SetItemTooltip("Resume play");
-			}
-			else
-			{
-				ImGui::SetNextItemAllowOverlap();
-				if (ImGui::Button(ICON_FA_PAUSE))
-				{
-					GetWorld().Pause();
-				}
-				ImGui::SetItemTooltip("Pause");
-			}
-
-			ImGui::SameLine();
-			ImGui::SetCursorPosY(firstButtonPos.y);
-
-			ImGui::SetNextItemAllowOverlap();
-			if (ImGui::Button(ICON_FA_STOP))
-			{
-				(void)EndPlay();
-			}
-			ImGui::SetItemTooltip("Stop");
 		}
 
 		// World will not change anymore
@@ -449,7 +454,13 @@ void CE::WorldInspectHelper::SwitchToPlayCam()
 	}
 	reg.RemovedDestroyed();
 
-	CameraComponent::Select(GetWorld(), mSelectedCameraBeforeWeSwitchedToFlyCam.value_or(entt::null));
+	if (mSelectedCameraBeforeWeSwitchedToFlyCam.has_value()
+		&& reg.Valid(*mSelectedCameraBeforeWeSwitchedToFlyCam))
+	{
+		CameraComponent::Select(GetWorld(), *mSelectedCameraBeforeWeSwitchedToFlyCam);
+		mSerialisedFlyCam.Clear();
+	}
+
 	mSelectedCameraBeforeWeSwitchedToFlyCam.reset();
 }
 
@@ -463,22 +474,39 @@ void CE::WorldInspectHelper::SpawnFlyCam()
 	}
 	reg.RemovedDestroyed();
 
-	Archiver::Deserialize(GetWorld(), mSerialisedFlyCam);
+	const auto createFlycam = [&reg]()
+		{
+			entt::entity cam = reg.Create();
+			reg.AddComponent<CameraComponent>(cam);
+			reg.AddComponent<FlyCamControllerComponent>(cam);
+			reg.AddComponent<EditorCameraTag>(cam);
+			reg.AddComponent<TransformComponent>(cam);
+			return cam;
+		};
 
-	entt::entity flyCam = reg.View<EditorCameraTag>().front();
-
-	if (flyCam == entt::null)
+	entt::entity flyCam{};
+	if (mSerialisedFlyCam.IsEmpty())
 	{
-		flyCam = reg.Create();
-		reg.AddComponent<CameraComponent>(flyCam);
-		reg.AddComponent<FlyCamControllerComponent>(flyCam);
-		reg.AddComponent<EditorCameraTag>(flyCam);
-		reg.AddComponent<NameComponent>(flyCam, "FlyCam");
+		flyCam = createFlycam();
 
-		TransformComponent& transform = reg.AddComponent<TransformComponent>(flyCam);
-		transform.SetLocalPosition({ 5.5f, 2.5f, -7.5f });
-		transform.SetLocalOrientation({ DEG2RAD(14.5f), DEG2RAD(-33.0f), 0.0f });
+		const TransformComponent* playCamera = reg.TryGet<TransformComponent>(mSelectedCameraBeforeWeSwitchedToFlyCam.value_or(entt::null));
+
+		if (playCamera != nullptr)
+		{
+			reg.Get<TransformComponent>(flyCam).SetWorldMatrix(playCamera->GetWorldMatrix());
+		}
 	}
+	else
+	{
+		Archiver::Deserialize(GetWorld(), mSerialisedFlyCam);
+		flyCam = reg.View<EditorCameraTag>().front();
+
+		if (flyCam == entt::null)
+		{
+			flyCam = createFlycam();
+		}
+	}
+
 	CameraComponent::Select(GetWorld(), flyCam);
 }
 

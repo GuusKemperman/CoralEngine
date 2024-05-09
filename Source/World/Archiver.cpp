@@ -412,7 +412,8 @@ void CE::SerializeSingleComponent(const Registry& registry,
 	const entt::entity entity,
 	const ComponentClassSerializeArg& arg)
 {
-	if (!arg.mStorage.contains(entity))
+	if (!arg.mStorage.contains(entity)
+		|| !registry.Valid(entity)) // This check is needed, .contains does not check if the entity is alive
 	{
 		return;
 	}
