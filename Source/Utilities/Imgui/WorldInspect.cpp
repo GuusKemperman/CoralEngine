@@ -18,6 +18,7 @@
 #include "Assets/SkinnedMesh.h"
 #include "Assets/Material.h"
 #include "Components/ComponentFilter.h"
+#include "Components/FlyCamControllerComponent.h"
 #include "Components/SkinnedMeshComponent.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiInspect.h"
@@ -63,6 +64,19 @@ namespace
 
 	void CheckShortcuts(CE::World& world, std::vector<entt::entity>& selectedEntities);
 	void ReceiveDragDrops(CE::World& world);
+
+	struct EditorCameraTag
+	{
+		friend CE::ReflectAccess;
+		static CE::MetaType Reflect()
+		{
+			using namespace CE;
+			MetaType metaType = MetaType{ MetaType::T<EditorCameraTag>{}, "EditorCameraTag" };
+			ReflectComponentType<EditorCameraTag>(metaType);
+			return metaType;
+		}
+		REFLECT_AT_START_UP(EditorCameraTag);
+	};
 }
 
 CE::WorldInspectHelper::WorldInspectHelper(World&& worldThatHasNotYetBegunPlay) :
@@ -70,6 +84,8 @@ CE::WorldInspectHelper::WorldInspectHelper(World&& worldThatHasNotYetBegunPlay) 
 	mWorldBeforeBeginPlay(std::make_unique<World>(std::move(worldThatHasNotYetBegunPlay)))
 {
 	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay());
+
+	
 }
 
 CE::WorldInspectHelper::~WorldInspectHelper() = default;
@@ -92,6 +108,9 @@ CE::World& CE::WorldInspectHelper::BeginPlay()
 		return GetWorld();
 	}
 	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay() && "Do not call BeginPlay on the world yourself, use WorldInspectHelper::BeginPlay");
+
+	SaveFlyCam();
+
 	mWorldAfterBeginPlay = std::make_unique<World>(false);
 
 	// Duplicate our level world
@@ -112,6 +131,8 @@ CE::World& CE::WorldInspectHelper::EndPlay()
 	ASSERT(mWorldAfterBeginPlay->HasBegunPlay() && "Do not call EndPlay on the world yourself, use WorldInspectHelper::EndPlay");
 
 	mWorldAfterBeginPlay->EndPlay();
+
+	SaveFlyCam();
 	mWorldAfterBeginPlay.reset();
 
 	return GetWorld();
@@ -125,7 +146,7 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, -2.0f }, false, ImGuiWindowFlags_NoScrollbar))
 	{
-		const ImVec2 beginPlayPos = ImGui::GetWindowContentRegionMin() + ImVec2{ ImGui::GetContentRegionAvail().x / 2.0f, 10.0f };
+		const ImVec2 firstButtonPos = ImGui::GetWindowContentRegionMin() + ImVec2{ ImGui::GetContentRegionAvail().x / 2.0f, 10.0f };
 		const ImVec2 viewportPos = ImGui::GetCursorPos();
 
 		ImDrawList* drawList = ImGui::GetCurrentWindow()->DrawList;
@@ -136,7 +157,6 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 		if (!mSelectedEntities.empty())
 		{
-
 			if (ImGui::RadioButton("Translate", sGuizmoOperation == ImGuizmo::TRANSLATE))
 				sGuizmoOperation = ImGuizmo::TRANSLATE;
 			ImGui::SameLine();
@@ -195,8 +215,30 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			}
 		}
 
-		ImGui::SetCursorPos(beginPlayPos);
+		ImGui::SetCursorPos(firstButtonPos);
 
+		ImGui::SetNextItemAllowOverlap();
+
+		if (mSelectedCameraBeforeWeSwitchedToFlyCam.has_value())
+		{
+			if (ImGui::Button(ICON_FA_GAMEPAD))
+			{
+				SwitchToPlayCam();
+			}
+			ImGui::SetItemTooltip("Switch to the play camera");
+		}
+		else
+		{
+			if (ImGui::Button(ICON_FA_EJECT))
+			{
+				SwitchToFlyCam();
+			}
+			ImGui::SetItemTooltip("Switch to the fly camera");
+		}
+
+		ImGui::SameLine();
+		ImGui::SetCursorPosY(firstButtonPos.y)
+		;
 		if (!GetWorld().HasBegunPlay())
 		{
 			ImGui::SetNextItemAllowOverlap();
@@ -228,7 +270,7 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			}
 
 			ImGui::SameLine();
-			ImGui::SetCursorPosY(beginPlayPos.y);
+			ImGui::SetCursorPosY(firstButtonPos.y);
 
 			ImGui::SetNextItemAllowOverlap();
 			if (ImGui::Button(ICON_FA_STOP))
@@ -285,9 +327,19 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		drawList->ChannelsSetCurrent(0);
 		ImGui::SetCursorPos(viewportPos);
 
-		world.Tick(deltaTime);
+		if (mSelectedCameraBeforeWeSwitchedToFlyCam.has_value())
+		{
+			SpawnFlyCam();
+		}
 
+		world.Tick(deltaTime);
 		WorldViewportPanel::Display(world, *mViewportFrameBuffer, &mSelectedEntities);
+
+		if (mSelectedCameraBeforeWeSwitchedToFlyCam.has_value())
+		{
+			DestroyFlyCam();
+		}
+
 		drawList->ChannelsMerge();
 
 		World::PopWorld();
@@ -328,6 +380,8 @@ void CE::WorldInspectHelper::SaveState(BinaryGSONObject& state)
 	state.AddGSONMember("detailsWidth") << mDetailsHeight;
 	state.AddGSONMember("viewportWidth") << mViewportWidth;
 	state.AddGSONMember("hierarchyAndDetailsWidth") << mHierarchyAndDetailsWidth;
+	state.AddGSONMember("selectedCam") << mSelectedCameraBeforeWeSwitchedToFlyCam;
+	state.AddGSONObject("flycam") = mSerialisedFlyCam;
 }
 
 void CE::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
@@ -353,10 +407,100 @@ void CE::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
 	*detailsWidth >> mDetailsHeight;
 	*viewportWidth >> mViewportWidth;
 	*hierarchyAndDetailsWidth >> mHierarchyAndDetailsWidth;
+
+	const BinaryGSONMember* const selectedCam = state.TryGetGSONMember("selectedCam");
+
+	if (selectedCam != nullptr)
+	{
+		*selectedCam >> mSelectedCameraBeforeWeSwitchedToFlyCam;
+	}
+
+	const BinaryGSONObject* const flycam = state.TryGetGSONObject("flycam");
+
+	if (flycam != nullptr)
+	{
+		mSerialisedFlyCam = *flycam;
+	}
+}
+
+void CE::WorldInspectHelper::SaveFlyCam()
+{
+	Registry& reg = GetWorld().GetRegistry();
+
+	entt::entity flyCam = reg.View<EditorCameraTag>().front();
+
+	if (flyCam != entt::null)
+	{
+		mSerialisedFlyCam = Archiver::Serialize(GetWorld(), { &flyCam, 1 }, true);
+		mSerialisedFlyCam.SetName("flycam");
+	}
+}
+
+void CE::WorldInspectHelper::SwitchToFlyCam()
+{
+	mSelectedCameraBeforeWeSwitchedToFlyCam = CameraComponent::GetSelected(GetWorld());
+}
+
+void CE::WorldInspectHelper::SwitchToPlayCam()
+{
+	Registry& reg = GetWorld().GetRegistry();
+
+	for (const entt::entity entity : reg.View<EditorCameraTag>())
+	{
+		reg.Destroy(entity, true);
+	}
+	reg.RemovedDestroyed();
+
+	CameraComponent::Select(GetWorld(), mSelectedCameraBeforeWeSwitchedToFlyCam.value_or(entt::null));
+	mSelectedCameraBeforeWeSwitchedToFlyCam.reset();
+}
+
+void CE::WorldInspectHelper::SpawnFlyCam()
+{
+	Registry& reg = GetWorld().GetRegistry();
+
+	for (const entt::entity entity : reg.View<EditorCameraTag>())
+	{
+		reg.Destroy(entity, true);
+	}
+	reg.RemovedDestroyed();
+
+	Archiver::Deserialize(GetWorld(), mSerialisedFlyCam);
+
+	entt::entity flyCam = reg.View<EditorCameraTag>().front();
+
+	if (flyCam == entt::null)
+	{
+		flyCam = reg.Create();
+		reg.AddComponent<CameraComponent>(flyCam);
+		reg.AddComponent<FlyCamControllerComponent>(flyCam);
+		reg.AddComponent<EditorCameraTag>(flyCam);
+		reg.AddComponent<NameComponent>(flyCam, "FlyCam");
+
+		TransformComponent& transform = reg.AddComponent<TransformComponent>(flyCam);
+		transform.SetLocalPosition({ 5.5f, 2.5f, -7.5f });
+		transform.SetLocalOrientation({ DEG2RAD(14.5f), DEG2RAD(-33.0f), 0.0f });
+	}
+	CameraComponent::Select(GetWorld(), flyCam);
+}
+
+void CE::WorldInspectHelper::DestroyFlyCam()
+{
+	SaveFlyCam();
+
+	Registry& reg = GetWorld().GetRegistry();
+
+	for (const entt::entity entity : reg.View<EditorCameraTag>())
+	{
+		reg.Destroy(entity, true);
+	}
+	reg.RemovedDestroyed();
+
+	CameraComponent::Select(GetWorld(), mSelectedCameraBeforeWeSwitchedToFlyCam.value_or(entt::null));
 }
 
 void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
-	std::vector<entt::entity>* selectedEntities)
+                                     std::vector<entt::entity>* selectedEntities)
 {
 	const glm::vec2 windowPos = ImGui::GetWindowPos();
 	const glm::vec2 contentMin = ImGui::GetWindowContentRegionMin();
@@ -404,7 +548,9 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 	ImGui::SetCursorPos(contentMin);
 
 	// There is no need to try to draw gizmos/manipulate transforms when nothing is selected
-	if (!selectedEntities->empty())
+	if (!selectedEntities->empty()
+		&& Input::Get().HasFocus()) // ImGuizmo has a global state, so we can only draw one at a time,
+									// otherwise translating one object translates it in all open viewports.
 	{
 		ShowComponentGizmos(world, *selectedEntities);
 
@@ -419,6 +565,10 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 		if (hoveringOver != entt::null)
 		{
 			ToggleIsEntitySelected(*selectedEntities, hoveringOver);
+		}
+		else
+		{
+			selectedEntities->clear();
 		}
 	}
 }

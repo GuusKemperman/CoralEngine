@@ -1,5 +1,6 @@
 #ifdef EDITOR
 #pragma once
+#include "GSON/GSONBinary.h"
 
 namespace CE
 {
@@ -9,7 +10,6 @@ namespace CE
 	class World;
 	class CameraComponent;
 	class FrameBuffer;
-	class BinaryGSONObject;
 
 	/*
 	A little helper class that manages the BeginPlay / EndPlay logic for you, and nicely
@@ -61,9 +61,20 @@ namespace CE
 		std::unique_ptr<FrameBuffer> mViewportFrameBuffer{};
 
 	private:
+		void SaveFlyCam();
+
+		void SwitchToFlyCam();
+		void SwitchToPlayCam();
+
+		void SpawnFlyCam();
+		void DestroyFlyCam();
+
 		// Never nullptr
 		std::unique_ptr<World> mWorldBeforeBeginPlay{};
 		std::unique_ptr<World> mWorldAfterBeginPlay{};
+
+		BinaryGSONObject mSerialisedFlyCam{};
+		std::optional<entt::entity> mSelectedCameraBeforeWeSwitchedToFlyCam{};
 
 		float mHierarchyHeight = .5f;
 		float mDetailsHeight = .5f;
