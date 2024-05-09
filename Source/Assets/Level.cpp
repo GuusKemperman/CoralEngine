@@ -304,7 +304,7 @@ CE::World CE::Level::CreateDefaultWorld()
 	{
 		const entt::entity camera = reg.Create();
 		reg.AddComponent<CameraComponent>(camera);
-		reg.AddComponent<NameComponent>(camera, "FlyCam");
+		reg.AddComponent<NameComponent>(camera, "Main Camera");
 
 		TransformComponent& transform = reg.AddComponent<TransformComponent>(camera);
 		transform.SetLocalPosition({ 5.5f, 2.5f, -7.5f });

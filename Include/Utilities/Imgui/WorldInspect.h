@@ -55,6 +55,9 @@ namespace CE
 		void SaveState(BinaryGSONObject& state);
 		void LoadState(const BinaryGSONObject& state);
 
+		void SwitchToFlyCam();
+		void SwitchToPlayCam();
+
 		// Can be passed to WorldViewport::Display/WorldHierarchy::Display/WorldDetails::Display, etc.
 		std::vector<entt::entity> mSelectedEntities{};
 
@@ -62,9 +65,6 @@ namespace CE
 
 	private:
 		void SaveFlyCam();
-
-		void SwitchToFlyCam();
-		void SwitchToPlayCam();
 
 		void SpawnFlyCam();
 		void DestroyFlyCam();

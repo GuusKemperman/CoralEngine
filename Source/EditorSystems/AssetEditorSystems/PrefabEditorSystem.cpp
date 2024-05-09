@@ -5,17 +5,38 @@
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/TransformComponent.h"
-#include "Components/CameraComponent.h"
-#include "Components/DirectionalLightComponent.h"
-#include "Components/FlyCamControllerComponent.h"
 #include "Components/NameComponent.h"
 #include "Utilities/Imgui/WorldInspect.h"
+#include "Utilities/Reflect/ReflectComponentType.h"
+
+namespace
+{
+	struct PartOfDefaultLevelTag
+	{
+		friend CE::ReflectAccess;
+		static CE::MetaType Reflect()
+		{
+			using namespace CE;
+			MetaType metaType = MetaType{ MetaType::T<PartOfDefaultLevelTag>{}, "PartOfDefaultLevelTag" };
+			ReflectComponentType<PartOfDefaultLevelTag>(metaType);
+			return metaType;
+		}
+		REFLECT_AT_START_UP(PartOfDefaultLevelTag);
+	};
+}
 
 CE::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
 	AssetEditorSystem(std::move(asset)),
 	mWorldHelper(std::make_unique<WorldInspectHelper>(Level::CreateDefaultWorld()))
 {
 	Registry& reg = mWorldHelper->GetWorld().GetRegistry();
+
+	auto entityView = reg.View<entt::entity>();
+	reg.AddComponents<PartOfDefaultLevelTag>(entityView.begin(), entityView.end());
+
+	// By default, we will use the flycam
+	mWorldHelper->SwitchToFlyCam();
+
 	mPrefabInstance = reg.CreateFromPrefab(mAsset);
 
 	// In case our prefab was invalid
@@ -51,25 +72,17 @@ void CE::PrefabEditorSystem::Tick(const float deltaTime)
 
 void CE::PrefabEditorSystem::SaveState(std::ostream& toStream) const
 {
-	AssetEditorSystem<Prefab>::SaveState(toStream);
+	AssetEditorSystem::SaveState(toStream);
 
 	BinaryGSONObject savedState{};
 	mWorldHelper->SaveState(savedState);
-
-	const TransformComponent* const  cameraTranform = mWorldHelper->GetWorld().GetRegistry().TryGet<TransformComponent>(mCameraInstance);
-
-	if (cameraTranform != nullptr)
-	{
-		savedState.AddGSONMember("cameraPos") << cameraTranform->GetLocalPosition();
-		savedState.AddGSONMember("cameraOri") << cameraTranform->GetLocalOrientation();
-	}
 
 	savedState.SaveToBinary(toStream);
 }
 
 void CE::PrefabEditorSystem::LoadState(std::istream& fromStream)
 {
-	AssetEditorSystem<Prefab>::LoadState(fromStream);
+	AssetEditorSystem::LoadState(fromStream);
 
 	BinaryGSONObject savedState{};
 
@@ -80,32 +93,6 @@ void CE::PrefabEditorSystem::LoadState(std::istream& fromStream)
 	}
 
 	mWorldHelper->LoadState(savedState);
-
-	const BinaryGSONMember* const cameraPos = savedState.TryGetGSONMember("cameraPos");
-	const BinaryGSONMember* const cameraOri = savedState.TryGetGSONMember("cameraOri");
-
-	if (cameraPos == nullptr
-		|| cameraOri == nullptr)
-	{
-		LOG(LogEditor, Verbose, "No camera transform saved");
-		return;
-	}
-
-	TransformComponent* const cameraTranform = mWorldHelper->GetWorld().GetRegistry().TryGet<TransformComponent>(mCameraInstance);
-
-	if (cameraTranform == nullptr)
-	{
-		return;
-	}
-
-	glm::vec3 localPos{};
-	glm::quat localOri{};
-
-	*cameraPos >> localPos;
-	*cameraOri >> localOri;
-
-	cameraTranform->SetLocalPosition(localPos);
-	cameraTranform->SetLocalOrientation(localOri);
 }
 
 void CE::PrefabEditorSystem::ApplyChangesToAsset()
@@ -119,8 +106,7 @@ void CE::PrefabEditorSystem::ApplyChangesToAsset()
 		
 		for (const auto [entity] : entityStorage->each())
 		{
-			if (entity == mLightInstance
-				|| entity == mCameraInstance)
+			if (reg.HasComponent<PartOfDefaultLevelTag>(entity))
 			{
 				continue;
 			}
