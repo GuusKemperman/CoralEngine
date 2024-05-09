@@ -213,7 +213,14 @@ namespace CE
             /// Represents the down arrow of the D-pad on a gamepad.
             DPadDown = 13,
             /// Represents the left arrow of the D-pad on a gamepad.
-            DPadLeft = 14
+            DPadLeft = 14,
+
+            /// Represents the left trigger of a gamepad, with an analog input value between 0 (not pressed) and 1 (fully pressed).
+            /// To turn it into a button we just take the middle value as a threshold.
+            TriggerLeft = 15,
+            /// Represents the right trigger of a gamepad, with an analog input value between 0 (not pressed) and 1 (fully pressed).
+            /// To turn it into a button we just take the middle value as a threshold.
+        	TriggerRight = 16
         };
 
         /// <summary>
@@ -290,6 +297,8 @@ namespace CE
 
     private:
         bool HasFocus(bool checkFocus) const;
+
+        inline static constexpr float sTriggerThreshold = 0.15f;
 
         friend ReflectAccess;
         static MetaType Reflect();
@@ -469,7 +478,7 @@ struct CE::EnumStringPairsImpl<CE::Input::GamepadAxis>
 template<>
 struct CE::EnumStringPairsImpl<CE::Input::GamepadButton>
 {
-    static constexpr EnumStringPairs<Input::GamepadButton, 14> value = {
+    static constexpr EnumStringPairs<Input::GamepadButton, 16> value = {
         EnumStringPair<Input::GamepadButton>{ Input::GamepadButton::South, "South" },
         { Input::GamepadButton::East, "East" },
         { Input::GamepadButton::West, "West" },
@@ -483,7 +492,9 @@ struct CE::EnumStringPairsImpl<CE::Input::GamepadButton>
         { Input::GamepadButton::DPadUp, "DPadUp" },
         { Input::GamepadButton::DPadRight, "DPadRight" },
         { Input::GamepadButton::DPadDown, "DPadDown" },
-        { Input::GamepadButton::DPadLeft, "DPadLeft" }
+        { Input::GamepadButton::DPadLeft, "DPadLeft" },
+        { Input::GamepadButton::TriggerLeft, "TriggerLeft" },
+        { Input::GamepadButton::TriggerRight, "TriggerRight" }
     };
 };
 
