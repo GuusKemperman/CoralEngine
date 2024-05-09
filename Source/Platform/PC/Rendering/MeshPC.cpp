@@ -118,6 +118,7 @@ CE::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
         mCPUIndexBuffer = flags & areIndices16Bit ?
             std::vector<uint32>{ reinterpret_cast<const uint16*>(indices.data()), reinterpret_cast<const uint16*>(indices.data()) + numOfIndices } :
             std::vector<uint32>{ reinterpret_cast<const uint32*>(indices.data()), reinterpret_cast<const uint32*>(indices.data()) + numOfIndices };
+        mBoundingBox = { GetVertices() };
     }
     else
     {

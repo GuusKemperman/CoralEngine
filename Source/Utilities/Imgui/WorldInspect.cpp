@@ -30,6 +30,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Archiver.h"
 #include "Rendering/Renderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Geometry3d.h"
 
 namespace
@@ -428,7 +429,7 @@ namespace
 	}
 
 	template<typename MeshComponentType>
-	void DoRaycastAgainstMeshCompnoent(const CE::World& world, CE::Ray3D ray, float& nearestT, entt::entity& nearestEntity)
+	void DoRaycastAgainstMeshComponents(const CE::World& world, CE::Ray3D ray, float& nearestT, entt::entity& nearestEntity)
 	{
 		static std::vector<glm::vec3> transformedPoints{};
 
@@ -443,6 +444,14 @@ namespace
 			}
 
 			const glm::mat4 worldMat = transform.GetWorldMatrix();
+			const glm::mat4 inversedWorldMat = glm::inverse(worldMat);
+			CE::Ray3D rayInMeshLocalSpace = { inversedWorldMat * glm::vec4{ ray.mOrigin, 1.0f }, inversedWorldMat * glm::vec4{ ray.mDirection, 0.0f } };
+			rayInMeshLocalSpace.mDirection = glm::normalize(rayInMeshLocalSpace.mDirection);
+
+			if (!CE::AreOverlapping(rayInMeshLocalSpace, mesh->GetBoundingBox()))
+			{
+				continue;
+			}
 
 			transformedPoints.clear();
 			transformedPoints.insert(transformedPoints.end(), mesh->GetVertices().begin(), mesh->GetVertices().end());
@@ -456,7 +465,7 @@ namespace
 
 			for (uint32 i = 0; i < indices.size(); i += 3)
 			{
-				const float t = RayTriangleIntersection(ray, { transformedPoints[indices[i]], transformedPoints[indices[i + 1]], transformedPoints[indices[i + 2]] });
+				const float t = TimeOfRayIntersection(ray, { transformedPoints[indices[i]], transformedPoints[indices[i + 1]], transformedPoints[indices[i + 2]] });
 
 				if (t < nearestT)
 				{
@@ -486,13 +495,13 @@ entt::entity CE::WorldViewportPanel::HoveringOverEntity(const World& world)
 		return entt::null;
 	}
 
-	Ray3D ray{ transform->GetWorldPosition(), transform->GetWorldForward() };
+	const Ray3D ray{ transform->GetWorldPosition(), world.GetViewport().GetScreenToWorldDirection(Input::Get().GetMousePosition()) };
 
 	float nearestT = std::numeric_limits<float>::infinity();
 	entt::entity nearestEntity = entt::null;
 
-	DoRaycastAgainstMeshCompnoent<StaticMeshComponent>(world, ray, nearestT, nearestEntity);
-	DoRaycastAgainstMeshCompnoent<SkinnedMeshComponent>(world, ray, nearestT, nearestEntity);
+	DoRaycastAgainstMeshComponents<StaticMeshComponent>(world, ray, nearestT, nearestEntity);
+	DoRaycastAgainstMeshComponents<SkinnedMeshComponent>(world, ray, nearestT, nearestEntity);
 
 	return nearestEntity;
 }
@@ -538,7 +547,6 @@ void CE::WorldViewportPanel::ShowComponentGizmos(World& world, const std::vector
 		}
 	}
 }
-
 
 void CE::WorldViewportPanel::SetGizmoRect(const glm::vec2 windowPos, glm::vec2 windowSize)
 {

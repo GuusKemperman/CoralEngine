@@ -3,6 +3,7 @@
 #include "DX12Classes/DXDefines.h"
 #include "Assets/Asset.h"
 #include "Assets/Animation/BoneInfo.h"
+#include "Utilities/Geometry3d.h"
 
 class DXResource;
 
@@ -29,6 +30,7 @@ namespace CE
 
         Span<const glm::vec3> GetVertices() const { return mCPUVertexBuffer; }
         Span<const uint32> GetIndices() const { return mCPUIndexBuffer; }
+        AABB3D GetBoundingBox() const { return mBoundingBox; }
 
     private:
         friend class ModelImporter;
@@ -51,6 +53,7 @@ namespace CE
 
         std::vector<glm::vec3> mCPUVertexBuffer{};
         std::vector<uint32> mCPUIndexBuffer{};
+        AABB3D mBoundingBox{};
 
         std::shared_ptr<DXResource> mVertexBuffer;
         std::shared_ptr<DXResource> mNormalBuffer;
