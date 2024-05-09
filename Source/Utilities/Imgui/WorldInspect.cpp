@@ -144,7 +144,7 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 	ImGui::Splitter(true, &mViewportWidth, &mHierarchyAndDetailsWidth);
 
-	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, -2.0f }, false, ImGuiWindowFlags_NoScrollbar))
+	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, -2.0f }, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoNav))
 	{
 		const ImVec2 firstButtonPos = ImGui::GetWindowContentRegionMin() + ImVec2{ ImGui::GetContentRegionAvail().x / 2.0f, 10.0f };
 		const ImVec2 viewportPos = ImGui::GetCursorPos();
