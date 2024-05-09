@@ -114,11 +114,18 @@ CE::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
 
     if (meshLoaded)
     {
+#ifdef EDITOR
+        // There is no reason why this NEEDS to be editor only,
+        // feel free to remove all the ifdefs if you require this
+        // data in non-editor builds. But since we likely won't need
+        // it for non-editor builds and because it does take up additional
+        // RAM, these buffers are, for now, editor only.
         mCPUVertexBuffer = std::move(positions);
         mCPUIndexBuffer = flags & areIndices16Bit ?
             std::vector<uint32>{ reinterpret_cast<const uint16*>(indices.data()), reinterpret_cast<const uint16*>(indices.data()) + numOfIndices } :
             std::vector<uint32>{ reinterpret_cast<const uint32*>(indices.data()), reinterpret_cast<const uint32*>(indices.data()) + numOfIndices };
         mBoundingBox = { GetVertices() };
+#endif
     }
     else
     {
