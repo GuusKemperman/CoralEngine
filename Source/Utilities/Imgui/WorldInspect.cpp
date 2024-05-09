@@ -30,7 +30,6 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Archiver.h"
 #include "Rendering/Renderer.h"
-#include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Geometry3d.h"
 
 namespace
@@ -52,6 +51,7 @@ namespace
 	glm::vec3 sCurrentSnapToVec3{};
 
 	void RemoveInvalidEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
+	void ToggleIsEntitySelected(std::vector<entt::entity>& selectedEntities, entt::entity toSelect);
 
 	void DeleteEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
 	std::string CopyToClipBoard(const CE::World& world, const std::vector<entt::entity>& selectedEntities);
@@ -396,6 +396,8 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 		ImVec2(0, 0),
 		ImVec2(1, 1));
 
+	bool shouldSelectEntityUnderneathMouse = ImGui::IsItemClicked();
+
 	// Since it is our 'image' that receives the drag drop, we call this right after the image call.
 	ReceiveDragDrops(world);
 
@@ -405,14 +407,19 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 	if (!selectedEntities->empty())
 	{
 		ShowComponentGizmos(world, *selectedEntities);
-		GizmoManipulateSelectedTransforms(world, *selectedEntities, world.GetRegistry().Get<CameraComponent>(cameraOwner));
+
+		// We don't change the selection if we are interacting with the gizmos
+		shouldSelectEntityUnderneathMouse &= !GizmoManipulateSelectedTransforms(world, *selectedEntities, world.GetRegistry().Get<CameraComponent>(cameraOwner));
 	}
 
-	entt::entity hoveringOver = HoveringOverEntity(world);
-
-	if (hoveringOver != entt::null)
+	if (shouldSelectEntityUnderneathMouse)
 	{
-		LOG(LogTemp, Verbose, "Hovering over {}", NameComponent::GetDisplayName(world.GetRegistry(), hoveringOver));
+		const entt::entity hoveringOver = GetEntityThatMouseIsHoveringOver(world);
+
+		if (hoveringOver != entt::null)
+		{
+			ToggleIsEntitySelected(*selectedEntities, hoveringOver);
+		}
 	}
 }
 
@@ -479,7 +486,7 @@ namespace
 	}
 }
 
-entt::entity CE::WorldViewportPanel::HoveringOverEntity(const World& world)
+entt::entity CE::WorldViewportPanel::GetEntityThatMouseIsHoveringOver(const World& world)
 {
 	const entt::entity camera = CameraComponent::GetSelected(world);
 
@@ -553,7 +560,7 @@ void CE::WorldViewportPanel::SetGizmoRect(const glm::vec2 windowPos, glm::vec2 w
 	ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
 }
 
-void CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
+bool CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 	const std::vector<entt::entity>& selectedEntities,
 	const CameraComponent& camera)
 {
@@ -600,8 +607,9 @@ void CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 		&avgMatrix[0][0]);
 
 	glm::mat4 delta;
+	bool isSelected{};
 
-	if (Manipulate(value_ptr(view), value_ptr(proj), sGuizmoOperation, sGuizmoMode, value_ptr(avgMatrix), value_ptr(delta), snap))
+	if (Manipulate(value_ptr(view), value_ptr(proj), sGuizmoOperation, sGuizmoMode, value_ptr(avgMatrix), value_ptr(delta), snap, nullptr, nullptr, &isSelected))
 	{
 		// Apply the delta to all transformComponents
 		for (const auto transformComponent : transformComponents)
@@ -633,6 +641,8 @@ void CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 			transformComponent->SetWorldMatrix(transformMatrix);
 		}
 	}
+
+	return isSelected;
 }
 
 void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selectedEntities)
@@ -1073,23 +1083,7 @@ void CE::WorldHierarchy::DisplayEntity(Registry& registry, entt::entity entity, 
 
 			if (ImGui::Selectable(name.data(), &isSelected, 0, selectableAreaSize))
 			{
-				if (!Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
-				{
-					selectedEntities.clear();
-				}
-
-				if (isSelected)
-				{
-					if (std::find(selectedEntities.begin(), selectedEntities.end(), entity) == selectedEntities.end())
-					{
-						selectedEntities.push_back(entity);
-					}
-				}
-				else
-				{
-					selectedEntities.erase(std::remove(selectedEntities.begin(), selectedEntities.end(), entity),
-						selectedEntities.end());
-				}
+				ToggleIsEntitySelected(selectedEntities, entity);
 			}
 
 			ImGui::SetItemTooltip(Format("Entity {}", entt::to_integral(entity)).c_str());
@@ -1222,6 +1216,25 @@ namespace
 			{
 				return !world.GetRegistry().Valid(entity);
 			}), selectedEntities.end());
+	}
+
+	void ToggleIsEntitySelected(std::vector<entt::entity>& selectedEntities, entt::entity toSelect)
+	{
+		if (!CE::Input::Get().IsKeyboardKeyHeld(CE::Input::KeyboardKey::LeftControl))
+		{
+			selectedEntities.clear();
+		}
+
+		const auto it = std::find(selectedEntities.begin(), selectedEntities.end(), toSelect);
+
+		if (it == selectedEntities.end())
+		{
+			selectedEntities.push_back(toSelect);
+		}
+		else
+		{
+			selectedEntities.erase(it);
+		}
 	}
 
 	void DeleteEntities(CE::World& world, std::vector<entt::entity>& selectedEntities)
