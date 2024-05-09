@@ -168,7 +168,12 @@ namespace
 			return;
 		}
 
-		const std::shared_ptr thread{ job->mWorker };
+		const std::shared_ptr thread = job->mWorker.lock();
+
+		if (thread == nullptr)
+		{
+			return;
+		}
 
 		thread->mJobsMutex.lock();
 		thread->mJobs.remove(job);

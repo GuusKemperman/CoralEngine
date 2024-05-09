@@ -3,50 +3,13 @@
 
 #include "Components/TransformComponent.h"
 #include "Utilities/Geometry2d.h"
-#include "Components/Physics2D/AABBColliderComponent.h"
-#include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Components/Physics2D/PolygonColliderComponent.h"
 #include "World/World.h"
 #include "World/Registry.h"
 
 CE::Physics::Physics(World& world) :
 	mWorld(world)
 {
-}
-
-float CE::Physics::GetHeightAtPosition(glm::vec2 position2D) const
-{
-	float highestHeight = -std::numeric_limits<float>::infinity();
-
-	GetHeightAtPosition<TransformedDiskColliderComponent>(position2D, highestHeight);
-	GetHeightAtPosition<TransformedAABBColliderComponent>(position2D, highestHeight);
-	GetHeightAtPosition<TransformedPolygonColliderComponent>(position2D, highestHeight);
-
-	return highestHeight;
-}
-
-void CE::Physics::Teleport(TransformComponent& transform, glm::vec2 toPosition) const
-{
-	const glm::vec3 currentPos = transform.GetWorldPosition();
-
-	float currHeight = GetHeightAtPosition(To2DRightForward(currentPos));
-	float destHeight = GetHeightAtPosition(toPosition);
-
-	glm::vec3 targetPosition = To3DRightForward(toPosition);
-
-	if (currHeight == -std::numeric_limits<float>::infinity())
-	{
-		currHeight = currentPos[Axis::Up];
-	}
-
-	if (destHeight == -std::numeric_limits<float>::infinity())
-	{
-		destHeight = currentPos[Axis::Up];
-	}
-
-	targetPosition[Axis::Up] = currentPos[Axis::Up] + destHeight - currHeight;
-	transform.SetWorldPosition(targetPosition);
 }
 
 CE::MetaType CE::Physics::Reflect()

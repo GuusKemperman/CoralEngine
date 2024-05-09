@@ -144,7 +144,14 @@ float Input::GetGamepadAxis(int gamepadID, GamepadAxis axis, bool checkFocus) co
 
     int a = static_cast<int>(axis);
     ASSERT(a >= 0 && a <= GLFW_GAMEPAD_AXIS_LAST);
-    return gamepad_state[gamepadID].axes[a];
+
+    float result = gamepad_state[gamepadID].axes[a];
+    if (axis == GamepadAxis::TriggerLeft || axis == GamepadAxis::TriggerRight)
+    {
+        result = result * 0.5f + 0.5f;
+    }
+
+    return result;
 }
 
 bool Input::IsGamepadButtonHeld(int gamepadID, GamepadButton button, bool checkFocus) const
@@ -165,6 +172,15 @@ bool Input::WasGamepadButtonPressed(int gamepadID, GamepadButton button, bool ch
         || !HasFocus(checkFocus))
     {
         return false;
+    }
+
+    if (button == GamepadButton::TriggerRight)
+    {
+        return GetGamepadAxis(gamepadID, GamepadAxis::TriggerRight, checkFocus) > sTriggerThreshold;
+    }
+    if (button == GamepadButton::TriggerLeft)
+    {
+        return GetGamepadAxis(gamepadID, GamepadAxis::TriggerLeft, checkFocus) > sTriggerThreshold;
     }
 
     int b = static_cast<int>(button);
