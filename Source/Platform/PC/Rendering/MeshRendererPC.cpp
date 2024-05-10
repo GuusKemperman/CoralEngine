@@ -36,12 +36,6 @@
 #include "Rendering/FrameBuffer.h"
 #endif
 
-bool AreAnyVisible(const CE::ParticleEmitterComponent& emitter, const CE::ParticleMeshRendererComponent& meshRenderer)
-{
-    return emitter.IsPlaying()
-        && meshRenderer.mParticleMesh != nullptr;
-}
-
 CE::MeshRenderer::MeshRenderer()
 {
     Device& engineDevice = Device::Get();
@@ -219,29 +213,9 @@ void CE::MeshRenderer::Render(const World& world)
                 continue;
             }
 
-            // Bind textures
             if (staticMeshComponent.mMaterial)
             {
-                if (staticMeshComponent.mMaterial->mBaseColorTexture != nullptr)
-                {
-                    staticMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 8);
-                }
-                if (staticMeshComponent.mMaterial->mEmissiveTexture != nullptr)
-                {
-                    staticMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 9);
-                }
-                if (staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr)
-                {
-                    staticMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
-                }
-                if (staticMeshComponent.mMaterial->mNormalTexture != nullptr)
-                {
-                    staticMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 11);
-                }
-                if (staticMeshComponent.mMaterial->mOcclusionTexture != nullptr)
-                {
-                    staticMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 12);
-                }
+                BindMaterial(*staticMeshComponent.mMaterial);
             }
 
             gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
@@ -269,29 +243,9 @@ void CE::MeshRenderer::Render(const World& world)
                 continue;
             }
 
-            // Bind textures
             if (skinnedMeshComponent.mMaterial)
             {
-                if (skinnedMeshComponent.mMaterial->mBaseColorTexture != nullptr)
-                {
-                    skinnedMeshComponent.mMaterial->mBaseColorTexture->BindToGraphics(commandList, 8);
-                }
-                if (skinnedMeshComponent.mMaterial->mEmissiveTexture != nullptr)
-                {
-                    skinnedMeshComponent.mMaterial->mEmissiveTexture->BindToGraphics(commandList, 9);
-                }
-                if (skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr)
-                {
-                    skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
-                }
-                if (skinnedMeshComponent.mMaterial->mNormalTexture != nullptr)
-                {
-                    skinnedMeshComponent.mMaterial->mNormalTexture->BindToGraphics(commandList, 11);
-                }
-                if (skinnedMeshComponent.mMaterial->mOcclusionTexture != nullptr)
-                {
-                    skinnedMeshComponent.mMaterial->mOcclusionTexture->BindToGraphics(commandList, 12);
-                }
+                BindMaterial(*skinnedMeshComponent.mMaterial);
             }
 
             gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
@@ -344,7 +298,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
 
         for (auto [entity, emitter, meshRenderer, colorComponent] : view.each())
         {
-            if (!AreAnyVisible(emitter, meshRenderer))
+            if (!meshRenderer.AreAnyVisible(emitter))
             {
                 continue;
             }
@@ -379,7 +333,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
 
         for (auto [entity, emitter, meshRenderer, colorComponent, colorOverTime] : view.each())
         {
-            if (!AreAnyVisible(emitter, meshRenderer))
+            if (!meshRenderer.AreAnyVisible(emitter))
             {
                 continue;
             }
@@ -532,7 +486,7 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
 
         for (auto [entity, emitter, meshRenderer, colorComponent] : view2.each())
         {
-            if (!AreAnyVisible(emitter, meshRenderer))
+            if (!meshRenderer.AreAnyVisible(emitter))
             {
                 continue;
             }
@@ -567,7 +521,7 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
 
         for (auto [entity, emitter, meshRenderer, colorComponent, colorOverTime] : view2.each())
         {
-            if (!AreAnyVisible(emitter, meshRenderer))
+            if (!meshRenderer.AreAnyVisible(emitter))
             {
                 continue;
             }
@@ -785,7 +739,7 @@ void CE::MeshRenderer::RenderParticles(const World& world)
 
         for (auto [entity, emitter, meshRenderer, colorComponent] : view.each())
         {
-            if (!AreAnyVisible(emitter, meshRenderer))
+            if (!meshRenderer.AreAnyVisible(emitter))
             {
                 continue;
             }
@@ -802,29 +756,9 @@ void CE::MeshRenderer::RenderParticles(const World& world)
                         return;
                     }
 
-                    // Bind textures
                     if (meshRenderer.mParticleMaterial)
                     {
-                        if (meshRenderer.mParticleMaterial->mBaseColorTexture != nullptr)
-                        {
-                            meshRenderer.mParticleMaterial->mBaseColorTexture->BindToGraphics(commandList, 8);
-                        }
-                        if (meshRenderer.mParticleMaterial->mEmissiveTexture != nullptr)
-                        {
-                            meshRenderer.mParticleMaterial->mEmissiveTexture->BindToGraphics(commandList, 9);
-                        }
-                        if (meshRenderer.mParticleMaterial->mMetallicRoughnessTexture != nullptr)
-                        {
-                            meshRenderer.mParticleMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
-                        }
-                        if (meshRenderer.mParticleMaterial->mNormalTexture != nullptr)
-                        {
-                            meshRenderer.mParticleMaterial->mNormalTexture->BindToGraphics(commandList, 11);
-                        }
-                        if (meshRenderer.mParticleMaterial->mOcclusionTexture != nullptr)
-                        {
-                            meshRenderer.mParticleMaterial->mOcclusionTexture->BindToGraphics(commandList, 12);
-                        }
+                        BindMaterial(*meshRenderer.mParticleMaterial);
                     }
 
                     gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MODEL_MATRIX_CB).Bind(commandList, 1, particleCounter, frameIndex);
@@ -843,7 +777,7 @@ void CE::MeshRenderer::RenderParticles(const World& world)
 
         for (auto [entity, emitter, meshRenderer, colorComponent, colorOverTime] : view.each())
         {
-            if (!AreAnyVisible(emitter, meshRenderer))
+            if (!meshRenderer.AreAnyVisible(emitter))
             {
                 continue;
             }
@@ -860,29 +794,9 @@ void CE::MeshRenderer::RenderParticles(const World& world)
                         return;
                     }
 
-                    // Bind textures
                     if (meshRenderer.mParticleMaterial)
                     {
-                        if (meshRenderer.mParticleMaterial->mBaseColorTexture != nullptr)
-                        {
-                            meshRenderer.mParticleMaterial->mBaseColorTexture->BindToGraphics(commandList, 8);
-                        }
-                        if (meshRenderer.mParticleMaterial->mEmissiveTexture != nullptr)
-                        {
-                            meshRenderer.mParticleMaterial->mEmissiveTexture->BindToGraphics(commandList, 9);
-                        }
-                        if (meshRenderer.mParticleMaterial->mMetallicRoughnessTexture != nullptr)
-                        {
-                            meshRenderer.mParticleMaterial->mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
-                        }
-                        if (meshRenderer.mParticleMaterial->mNormalTexture != nullptr)
-                        {
-                            meshRenderer.mParticleMaterial->mNormalTexture->BindToGraphics(commandList, 11);
-                        }
-                        if (meshRenderer.mParticleMaterial->mOcclusionTexture != nullptr)
-                        {
-                            meshRenderer.mParticleMaterial->mOcclusionTexture->BindToGraphics(commandList, 12);
-                        }
+                        BindMaterial(*meshRenderer.mParticleMaterial);
                     }
 
                     gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MODEL_MATRIX_CB).Bind(commandList, 1, particleCounter, frameIndex);
@@ -896,4 +810,31 @@ void CE::MeshRenderer::RenderParticles(const World& world)
         }
     }
 
+}
+
+void CE::MeshRenderer::BindMaterial(const CE::Material& material)
+{
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+
+    if (material.mBaseColorTexture != nullptr)
+    {
+        material.mBaseColorTexture->BindToGraphics(commandList, 8);
+    }
+    if (material.mEmissiveTexture != nullptr)
+    {
+        material.mEmissiveTexture->BindToGraphics(commandList, 9);
+    }
+    if (material.mMetallicRoughnessTexture != nullptr)
+    {
+        material.mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
+    }
+    if (material.mNormalTexture != nullptr)
+    {
+        material.mNormalTexture->BindToGraphics(commandList, 11);
+    }
+    if (material.mOcclusionTexture != nullptr)
+    {
+        material.mOcclusionTexture->BindToGraphics(commandList, 12);
+    }
 }

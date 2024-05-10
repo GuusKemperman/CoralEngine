@@ -8,6 +8,7 @@ namespace CE
 {
     class World;
     class GPUWorld;
+    class Material;
 
     class MeshRenderer final : 
         public ISubRenderer
@@ -27,6 +28,7 @@ namespace CE
         void ClusteredShading(const World& world);
         void RenderShadowMaps(const World& world);
         void RenderParticles(const World& world);
+        void BindMaterial(const CE::Material& material);
 
         ComPtr<ID3D12PipelineState>  mPBRPipeline;
         ComPtr<ID3D12PipelineState>  mPBRSkinnedPipeline;

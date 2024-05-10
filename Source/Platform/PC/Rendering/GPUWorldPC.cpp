@@ -381,43 +381,7 @@ void CE::GPUWorld::Update()
                 continue;
             }
 
-            InfoStruct::DXMaterialInfo materialInfo{};
-            if (staticMeshComponent.mMaterial != nullptr)
-            {
-                materialInfo.colorFactor = { staticMeshComponent.mMaterial->mBaseColorFactor.r,
-                    staticMeshComponent.mMaterial->mBaseColorFactor.g,
-                    staticMeshComponent.mMaterial->mBaseColorFactor.b,
-                    0.f };
-
-                materialInfo.emissiveFactor = { staticMeshComponent.mMaterial->mEmissiveFactor.r,
-                    staticMeshComponent.mMaterial->mEmissiveFactor.g,
-                    staticMeshComponent.mMaterial->mEmissiveFactor.b,
-                    0.f };
-
-                materialInfo.metallicFactor = staticMeshComponent.mMaterial->mMetallicFactor;
-                materialInfo.roughnessFactor = staticMeshComponent.mMaterial->mRoughnessFactor;
-                materialInfo.normalScale = staticMeshComponent.mMaterial->mNormalScale;
-                materialInfo.useColorTex = staticMeshComponent.mMaterial->mBaseColorTexture != nullptr;
-                materialInfo.useEmissiveTex = staticMeshComponent.mMaterial->mEmissiveTexture != nullptr;
-                materialInfo.useMetallicRoughnessTex = staticMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr;
-                materialInfo.useNormalTex = staticMeshComponent.mMaterial->mNormalTexture != nullptr;
-                materialInfo.useOcclusionTex = staticMeshComponent.mMaterial->mOcclusionTexture != nullptr;
-            }
-            else 
-            {
-                materialInfo.colorFactor = { 0.f, 0.f, 0.f, 0.f };
-                materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
-                materialInfo.metallicFactor = 0.f;
-                materialInfo.roughnessFactor = 0.f;
-                materialInfo.normalScale = 1.f;
-                materialInfo.useColorTex = false;
-                materialInfo.useEmissiveTex = false;
-                materialInfo.useMetallicRoughnessTex = false;
-                materialInfo.useNormalTex = false;
-                materialInfo.useOcclusionTex = false;
-
-            }
-
+            InfoStruct::DXMaterialInfo materialInfo = GetMaterial(staticMeshComponent.mMaterial.Get());
             float uvScale = staticMeshComponent.mTiling;
 
             if(staticMeshComponent.mTilesWithMeshScale)
@@ -452,43 +416,7 @@ void CE::GPUWorld::Update()
             }
 
             // Update material
-            InfoStruct::DXMaterialInfo materialInfo{};
-            if (skinnedMeshComponent.mMaterial != nullptr) 
-            {
-                materialInfo.colorFactor = { skinnedMeshComponent.mMaterial->mBaseColorFactor.r,
-                    skinnedMeshComponent.mMaterial->mBaseColorFactor.g,
-                    skinnedMeshComponent.mMaterial->mBaseColorFactor.b,
-                    0.f };
-
-                materialInfo.emissiveFactor = { skinnedMeshComponent.mMaterial->mEmissiveFactor.r,
-                    skinnedMeshComponent.mMaterial->mEmissiveFactor.g,
-                    skinnedMeshComponent.mMaterial->mEmissiveFactor.b,
-                    0.f };
-
-                materialInfo.metallicFactor = skinnedMeshComponent.mMaterial->mMetallicFactor;
-                materialInfo.roughnessFactor = skinnedMeshComponent.mMaterial->mRoughnessFactor;
-                materialInfo.normalScale = skinnedMeshComponent.mMaterial->mNormalScale;
-
-                materialInfo.useColorTex = skinnedMeshComponent.mMaterial->mBaseColorTexture != nullptr;
-                materialInfo.useEmissiveTex = skinnedMeshComponent.mMaterial->mEmissiveTexture != nullptr;
-                materialInfo.useMetallicRoughnessTex = skinnedMeshComponent.mMaterial->mMetallicRoughnessTexture != nullptr;
-                materialInfo.useNormalTex = skinnedMeshComponent.mMaterial->mNormalTexture != nullptr;
-                materialInfo.useOcclusionTex = skinnedMeshComponent.mMaterial->mOcclusionTexture != nullptr;
-            }
-            else 
-            {
-                materialInfo.colorFactor = { 0.f, 0.f, 0.f, 0.f };
-                materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
-                materialInfo.metallicFactor = 0.f;
-                materialInfo.roughnessFactor = 0.f;
-                materialInfo.normalScale = 1.f;
-                materialInfo.useColorTex = false;
-                materialInfo.useEmissiveTex = false;
-                materialInfo.useMetallicRoughnessTex = false;
-                materialInfo.useNormalTex = false;
-                materialInfo.useOcclusionTex = false;
-            }
-
+            InfoStruct::DXMaterialInfo materialInfo = GetMaterial(skinnedMeshComponent.mMaterial.Get());
             mConstBuffers[InfoStruct::MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
 
             glm::mat4x4 modelMatrices[2]{};
@@ -623,67 +551,32 @@ void CE::GPUWorld::UpdateParticles()
 
             for (uint32 i = 0; i < numOfParticles; i++)
             {
-                if (emitter.IsParticleAlive(i))
+                if (!emitter.IsParticleAlive(i))
+                    continue;
+
+                if (particleCounter >= MAX_PARTICLES)
                 {
-                    if (particleCounter >= MAX_PARTICLES)
-                    {
-                        LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
-                        return;
-                    }
-
-                    // Update material
-                    InfoStruct::DXMaterialInfo materialInfo{};
-                    if (meshRenderer.mParticleMaterial != nullptr) 
-                    {
-                        materialInfo.colorFactor = { meshRenderer.mParticleMaterial->mBaseColorFactor.r,
-                            meshRenderer.mParticleMaterial->mBaseColorFactor.g,
-                            meshRenderer.mParticleMaterial->mBaseColorFactor.b,
-                            0.f };
-
-                        materialInfo.emissiveFactor = { meshRenderer.mParticleMaterial->mEmissiveFactor.r,
-                            meshRenderer.mParticleMaterial->mEmissiveFactor.g,
-                            meshRenderer.mParticleMaterial->mEmissiveFactor.b,
-                            0.f };
-
-                        materialInfo.metallicFactor = meshRenderer.mParticleMaterial->mMetallicFactor;
-                        materialInfo.roughnessFactor = meshRenderer.mParticleMaterial->mRoughnessFactor;
-                        materialInfo.normalScale = meshRenderer.mParticleMaterial->mNormalScale;
-
-                        materialInfo.useColorTex = meshRenderer.mParticleMaterial->mBaseColorTexture != nullptr;
-                        materialInfo.useEmissiveTex = meshRenderer.mParticleMaterial->mEmissiveTexture != nullptr;
-                        materialInfo.useMetallicRoughnessTex = meshRenderer.mParticleMaterial->mMetallicRoughnessTexture != nullptr;
-                        materialInfo.useNormalTex = meshRenderer.mParticleMaterial->mNormalTexture != nullptr;
-                        materialInfo.useOcclusionTex = meshRenderer.mParticleMaterial->mOcclusionTexture != nullptr;
-                    }
-                    else 
-                    {
-                        materialInfo.colorFactor = { 0.f, 0.f, 0.f, 0.f };
-                        materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
-                        materialInfo.metallicFactor = 0.f;
-                        materialInfo.roughnessFactor = 0.f;
-                        materialInfo.normalScale = 1.f;
-                        materialInfo.useColorTex = false;
-                        materialInfo.useEmissiveTex = false;
-                        materialInfo.useMetallicRoughnessTex = false;
-                        materialInfo.useNormalTex = false;
-                        materialInfo.useOcclusionTex = false;
-                    }
-                    mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), particleCounter, frameIndex);
-
-                    const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], sizes[i], orientations[i]);
-                    glm::mat4x4 modelMatrices[2]{};
-                    modelMatrices[0] = glm::transpose(mat);
-                    modelMatrices[1] = glm::transpose(glm::inverse(mat));
-                    mConstBuffers[InfoStruct::PARTICLE_MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, particleCounter, frameIndex);
-
-                    InfoStruct::DXColorMultiplierInfo colorInfo;
-                    colorInfo.colorMult = colors[i];
-                    colorInfo.colorAdd = glm::vec4(0.f);
-                    mConstBuffers[InfoStruct::PARTICLE_COLOR_CB]->Update(&colorInfo, sizeof(InfoStruct::DXColorMultiplierInfo), particleCounter, frameIndex);
-
-                    particleCounter++;
+                    LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
+                    return;
                 }
-            }
+
+                // Update material
+                InfoStruct::DXMaterialInfo materialInfo = GetMaterial(meshRenderer.mParticleMaterial.Get());
+                mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), particleCounter, frameIndex);
+
+                const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], sizes[i], orientations[i]);
+                glm::mat4x4 modelMatrices[2]{};
+                modelMatrices[0] = glm::transpose(mat);
+                modelMatrices[1] = glm::transpose(glm::inverse(mat));
+                mConstBuffers[InfoStruct::PARTICLE_MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, particleCounter, frameIndex);
+
+                InfoStruct::DXColorMultiplierInfo colorInfo;
+                colorInfo.colorMult = colors[i];
+                colorInfo.colorAdd = glm::vec4(0.f);
+                mConstBuffers[InfoStruct::PARTICLE_COLOR_CB]->Update(&colorInfo, sizeof(InfoStruct::DXColorMultiplierInfo), particleCounter, frameIndex);
+
+                particleCounter++;
+            }          
         }
     }
 
@@ -710,70 +603,78 @@ void CE::GPUWorld::UpdateParticles()
 
             for (uint32 i = 0; i < numOfParticles; i++)
             {
-                if (emitter.IsParticleAlive(i))
+                if (!emitter.IsParticleAlive(i))
+                    continue;
+
+                if (particleCounter >= MAX_PARTICLES)
                 {
-                    if (particleCounter >= MAX_PARTICLES)
-                    {
-                        LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
-                        return;
-                    }
-
-                    InfoStruct::DXMaterialInfo materialInfo{};
-                    if (meshRenderer.mParticleMaterial != nullptr) 
-                    {
-                        materialInfo.colorFactor = { meshRenderer.mParticleMaterial->mBaseColorFactor.r,
-                            meshRenderer.mParticleMaterial->mBaseColorFactor.g,
-                            meshRenderer.mParticleMaterial->mBaseColorFactor.b,
-                            0.f };
-
-                        materialInfo.emissiveFactor = { meshRenderer.mParticleMaterial->mEmissiveFactor.r,
-                            meshRenderer.mParticleMaterial->mEmissiveFactor.g,
-                            meshRenderer.mParticleMaterial->mEmissiveFactor.b,
-                            0.f };
-
-                        materialInfo.metallicFactor = meshRenderer.mParticleMaterial->mMetallicFactor;
-                        materialInfo.roughnessFactor = meshRenderer.mParticleMaterial->mRoughnessFactor;
-                        materialInfo.normalScale = meshRenderer.mParticleMaterial->mNormalScale;
-
-                        materialInfo.useColorTex = meshRenderer.mParticleMaterial->mBaseColorTexture != nullptr;
-                        materialInfo.useEmissiveTex = meshRenderer.mParticleMaterial->mEmissiveTexture != nullptr;
-                        materialInfo.useMetallicRoughnessTex = meshRenderer.mParticleMaterial->mMetallicRoughnessTexture != nullptr;
-                        materialInfo.useNormalTex = meshRenderer.mParticleMaterial->mNormalTexture != nullptr;
-                        materialInfo.useOcclusionTex = meshRenderer.mParticleMaterial->mOcclusionTexture != nullptr;
-                    }
-                    else 
-                    {
-                        materialInfo.colorFactor = { 0.f, 0.f, 0.f, 0.f };
-                        materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
-                        materialInfo.metallicFactor = 0.f;
-                        materialInfo.roughnessFactor = 0.f;
-                        materialInfo.normalScale = 1.f;
-                        materialInfo.useColorTex = false;
-                        materialInfo.useEmissiveTex = false;
-                        materialInfo.useMetallicRoughnessTex = false;
-                        materialInfo.useNormalTex = false;
-                        materialInfo.useOcclusionTex = false;
-                    }
-                    mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), particleCounter, frameIndex);
-
-
-                    const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], sizes[i], orientations[i]);
-                    glm::mat4x4 modelMatrices[2]{};
-                    modelMatrices[0] = glm::transpose(mat);
-                    modelMatrices[1] = glm::transpose(glm::inverse(mat));
-                    mConstBuffers[InfoStruct::PARTICLE_MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, particleCounter, frameIndex);
-
-                    InfoStruct::DXColorMultiplierInfo colorInfo;
-                    colorInfo.colorMult = colors[i] * gradient.GetColorAt(lifeTimes[i]);
-                    colorInfo.colorAdd = glm::vec4(0.f);
-                    mConstBuffers[InfoStruct::PARTICLE_COLOR_CB]->Update(&colorInfo, sizeof(InfoStruct::DXColorMultiplierInfo), particleCounter, frameIndex);
-
-                    particleCounter++;
+                    LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
+                    return;
                 }
+
+                InfoStruct::DXMaterialInfo materialInfo = GetMaterial(meshRenderer.mParticleMaterial.Get());
+                mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), particleCounter, frameIndex);
+
+                const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], sizes[i], orientations[i]);
+                glm::mat4x4 modelMatrices[2]{};
+                modelMatrices[0] = glm::transpose(mat);
+                modelMatrices[1] = glm::transpose(glm::inverse(mat));
+                mConstBuffers[InfoStruct::PARTICLE_MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, particleCounter, frameIndex);
+
+                InfoStruct::DXColorMultiplierInfo colorInfo;
+                colorInfo.colorMult = colors[i] * gradient.GetColorAt(lifeTimes[i]);
+                colorInfo.colorAdd = glm::vec4(0.f);
+                mConstBuffers[InfoStruct::PARTICLE_COLOR_CB]->Update(&colorInfo, sizeof(InfoStruct::DXColorMultiplierInfo), particleCounter, frameIndex);
+
+                particleCounter++;
             }
         }
     }
 }
+
+CE::InfoStruct::DXMaterialInfo CE::GPUWorld::GetMaterial(const CE::Material* material)
+{
+    InfoStruct::DXMaterialInfo materialInfo{};
+
+    if (material != nullptr) 
+    {
+        materialInfo.colorFactor = { material->mBaseColorFactor.r,
+            material->mBaseColorFactor.g,
+            material->mBaseColorFactor.b,
+            0.f };
+
+        materialInfo.emissiveFactor = { material->mEmissiveFactor.r,
+            material->mEmissiveFactor.g,
+            material->mEmissiveFactor.b,
+            0.f };
+
+        materialInfo.metallicFactor = material->mMetallicFactor;
+        materialInfo.roughnessFactor = material->mRoughnessFactor;
+        materialInfo.normalScale = material->mNormalScale;
+
+        materialInfo.useColorTex = material->mBaseColorTexture != nullptr;
+        materialInfo.useEmissiveTex = material->mEmissiveTexture != nullptr;
+        materialInfo.useMetallicRoughnessTex = material->mMetallicRoughnessTexture != nullptr;
+        materialInfo.useNormalTex = material->mNormalTexture != nullptr;
+        materialInfo.useOcclusionTex = material->mOcclusionTexture != nullptr;
+    }
+    else 
+    {
+        materialInfo.colorFactor = { 0.f, 0.f, 0.f, 0.f };
+        materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
+        materialInfo.metallicFactor = 0.f;
+        materialInfo.roughnessFactor = 0.f;
+        materialInfo.normalScale = 1.f;
+        materialInfo.useColorTex = false;
+        materialInfo.useEmissiveTex = false;
+        materialInfo.useMetallicRoughnessTex = false;
+        materialInfo.useNormalTex = false;
+        materialInfo.useOcclusionTex = false;
+    }
+
+    return materialInfo;
+}
+
 void CE::GPUWorld::UpdateClusterData(const CameraComponent& camera)
 {
     Device& engineDevice = Device::Get();

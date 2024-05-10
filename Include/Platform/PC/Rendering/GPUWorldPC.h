@@ -95,6 +95,7 @@ namespace CE
         void UpdateClusterData(const CameraComponent& camera);
         void InitializeShadowMaps();
         void UpdateParticles();
+        InfoStruct::DXMaterialInfo GetMaterial(const CE::Material* material);
 
 		std::unique_ptr<DXConstBuffer> mConstBuffers[InfoStruct::NUM_CBS];
 		std::unique_ptr<DXResource> mStructuredBuffers[InfoStruct::NUM_SB];
