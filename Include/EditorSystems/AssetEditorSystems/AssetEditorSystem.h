@@ -194,7 +194,7 @@ namespace CE
 			std::optional<T> mTemporarilyDeserializedAsset{};
 		};
 		DifferenceCheckState mDifferenceCheckState{};
-		Cooldown mUpdateStateCooldown{ .4f };
+		Cooldown mUpdateStateCooldown{ .2f };
 
 		// Used for checking if our asset has unsaved changes. Kept in memory for performance reasons.
 		// May not always be up to date, it's updated when needed.
