@@ -179,11 +179,6 @@ namespace
 		thread->mJobs.remove(job);
 		thread->mJobsMutex.unlock();
 
-		if (job->mIsCancelled)
-		{
-			return;
-		}
-
 		job->mMutex.lock();
 
 		// Could've been cancelled from another thread

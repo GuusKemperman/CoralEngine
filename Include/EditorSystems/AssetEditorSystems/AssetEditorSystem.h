@@ -508,14 +508,9 @@ namespace CE
 	template <typename T>
 	void AssetEditorSystem<T>::CompleteDifferenceCheckCycle()
 	{
-		for (int i = static_cast<int>(mDifferenceCheckState.mStage); i < static_cast<int>(DifferenceCheckState::Stage::NUM_OF_STAGES); i++)
+		for (int i = 0; i < static_cast<int>(DifferenceCheckState::Stage::NUM_OF_STAGES) * 2; i++)
 		{
 			CheckForDifferences();
-
-			if (mDifferenceCheckState.mStage == DifferenceCheckState::Stage::FirstStage)
-			{
-				break;
-			}
 		}
 	}
 
