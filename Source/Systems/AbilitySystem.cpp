@@ -2,7 +2,7 @@
 #include "Systems/AbilitySystem.h"
 
 #include "Components/PlayerComponent.h"
-#include "Assets/Ability.h"
+#include "Assets/Ability/Ability.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Meta/MetaType.h"

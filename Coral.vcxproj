@@ -1586,7 +1586,7 @@
     <ClInclude Include="Include\Components\SkinnedMeshComponent.h" />
     <ClInclude Include="Include\Components\UtilityAi\EnemyAiControllerComponent.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Clustering***REMOVED***.h" />
-    <ClInclude Include="Include\Assets\Ability.h" />
+    <ClInclude Include="Include\Assets\Ability\Ability.h" />
     <ClInclude Include="Include\Components\Abilities\AbilitiesOnCharacterComponent.h" />
     <ClInclude Include="Include\Components\Abilities\ActiveAbilityComponent.h" />
     <ClInclude Include="Include\Components\TopDownCamControllerComponent.h" />

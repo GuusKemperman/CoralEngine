@@ -3,7 +3,7 @@
 
 #include "Core/AssetManager.h"
 #include "Core/FileIO.h"
-#include "Assets/Ability.h"
+#include "Assets/Ability/Ability.h"
 #include "Assets/Level.h"
 #include "Assets/Material.h"
 #include "Assets/StaticMesh.h"

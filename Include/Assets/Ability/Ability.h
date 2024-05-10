@@ -1,6 +1,6 @@
 #pragma once
 #include "Assets/Asset.h"
-#include "Core/AssetHandle.h"
+#include "Assets/Core/AssetHandle.h"
 
 namespace CE
 {

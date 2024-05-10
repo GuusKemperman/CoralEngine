@@ -7,7 +7,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Utilities/Imgui/ImguiInspect.h"
-#include "Assets/Ability.h"
+#include "Assets/Ability/Ability.h"
 #include "Systems/AbilitySystem.h"
 #include "World/World.h"
 
@@ -29,7 +29,7 @@ CE::MetaType CE::AbilitiesOnCharacterComponent::Reflect()
 	return metaType;
 }
 
-void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World&, entt::entity)
+void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity entity)
 {
 	for (auto& ability : mAbilitiesToInput)
 	{
@@ -37,6 +37,12 @@ void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World&, entt::entity)
 		if (ability.mAbilityAsset->mRequirementType == Ability::Cooldown)
 		{
 			ability.mRequirementCounter = ability.mAbilityAsset->mRequirementToUse;
+		}
+		const MetaType* scriptType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+
+		if (scriptType != nullptr)
+		{
+			world.GetRegistry().AddComponent(*scriptType, entity);
 		}
 	}
 }

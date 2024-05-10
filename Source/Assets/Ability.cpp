@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Assets/Ability.h"
+#include "Assets/Ability/Ability.h"
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
