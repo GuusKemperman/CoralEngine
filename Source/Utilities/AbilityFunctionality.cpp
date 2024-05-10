@@ -28,7 +28,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax });
+			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax });
 
 		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
 		const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
@@ -38,7 +38,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 				World* world = World::TryGetWorldAtTopOfStack();
 				ASSERT(world != nullptr);
 
-				ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration);
+				ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration);
 
 			}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
 			const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
@@ -48,7 +48,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 					World* world = World::TryGetWorldAtTopOfStack();
 					ASSERT(world != nullptr);
 
-					ApplyOverTimeEffect(*world, castByCharacterData, affectedEntity, EffectSettings{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration, ticks);
+					ApplyOverTimeEffect(*world, castByCharacterData, affectedEntity, AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration, ticks);
 
 				}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
 				const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float, int>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
@@ -72,7 +72,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 					return metaType;
 }
 
-std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, EffectSettings effect)
+std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect)
 {
 	auto& reg = world.GetRegistry();
 	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
@@ -118,7 +118,7 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 	return effect.mAmount;
 }
 
-void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, EffectSettings effect, float duration)
+void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration)
 {
 	const auto calculatedAmount = ApplyInstantEffect(world, castByCharacterData, affectedEntity, effect);
 	if (!calculatedAmount.has_value())
@@ -140,7 +140,7 @@ void CE::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& charac
 	currentStat -= durationalEffect.mAmount;
 }
 
-void CE::AbilityFunctionality::ApplyOverTimeEffect(World& world, const CharacterComponent&, entt::entity affectedEntity, EffectSettings effect, float duration, int ticks)
+void CE::AbilityFunctionality::ApplyOverTimeEffect(World& world, const CharacterComponent&, entt::entity affectedEntity, AbilityEffect effect, float duration, int ticks)
 {
 	auto& reg = world.GetRegistry();
 	auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
@@ -150,7 +150,7 @@ void CE::AbilityFunctionality::ApplyOverTimeEffect(World& world, const Character
 		return;
 	}
 
-	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, EffectSettings{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease} });
+	effects->mOverTimeEffects.push_back(OverTimeEffect{ duration, 0.f, ticks, 0, AbilityEffect{effect.mStat, effect.mAmount, effect.mFlatOrPercentage, effect.mIncreaseOrDecrease} });
 }
 
 entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Prefab& prefab, entt::entity castBy)
@@ -294,7 +294,7 @@ CE::MetaType Reflector<CE::AbilityFunctionality::IncreaseOrDecrease>::Reflect()
 	return type;
 }
 
-bool CE::AbilityFunctionality::EffectSettings::operator==(const EffectSettings& other) const
+bool CE::AbilityFunctionality::AbilityEffect::operator==(const AbilityEffect& other) const
 {
 	return mStat == other.mStat &&
 		Math::AreFloatsEqual(mAmount, other.mAmount) &&
@@ -303,7 +303,7 @@ bool CE::AbilityFunctionality::EffectSettings::operator==(const EffectSettings& 
 		mClampToMax == other.mClampToMax;
 }
 
-bool CE::AbilityFunctionality::EffectSettings::operator!=(const EffectSettings& other) const
+bool CE::AbilityFunctionality::AbilityEffect::operator!=(const AbilityEffect& other) const
 {
 	return mStat != other.mStat ||
 		!Math::AreFloatsEqual(mAmount, other.mAmount) ||
@@ -312,16 +312,16 @@ bool CE::AbilityFunctionality::EffectSettings::operator!=(const EffectSettings& 
 		mClampToMax != other.mClampToMax;
 }
 
-CE::MetaType CE::AbilityFunctionality::EffectSettings::Reflect()
+CE::MetaType CE::AbilityFunctionality::AbilityEffect::Reflect()
 {
-	MetaType metaType = MetaType{ MetaType::T<EffectSettings>{}, "EffectSettings" };
+	MetaType metaType = MetaType{ MetaType::T<AbilityEffect>{}, "AbilityEffect" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddField(&EffectSettings::mStat, "mStat").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-	metaType.AddField(&EffectSettings::mAmount, "mAmount").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-	metaType.AddField(&EffectSettings::mFlatOrPercentage, "mFlatOrPercentage").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-	metaType.AddField(&EffectSettings::mIncreaseOrDecrease, "mIncreaseOrDecrease").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-	metaType.AddField(&EffectSettings::mClampToMax, "mClampToMax").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
+	metaType.AddField(&AbilityEffect::mStat, "mStat").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
+	metaType.AddField(&AbilityEffect::mAmount, "mAmount").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
+	metaType.AddField(&AbilityEffect::mFlatOrPercentage, "mFlatOrPercentage").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
+	metaType.AddField(&AbilityEffect::mIncreaseOrDecrease, "mIncreaseOrDecrease").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
+	metaType.AddField(&AbilityEffect::mClampToMax, "mClampToMax").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
 
 	return metaType;
 }

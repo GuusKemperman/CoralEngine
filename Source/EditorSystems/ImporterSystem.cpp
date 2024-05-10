@@ -181,6 +181,7 @@ void CE::ImporterSystem::Tick(const float dt)
 	numOfConflicts += ShowReadOnlyErrors();
 
 	ImGui::Checkbox("Exclude duplicates", &sExcludeDuplicates);
+	ImGui::Checkbox("Ignore read only", &sIgnoreReadOnly);
 
 	if (numOfConflicts != 0)
 	{
@@ -726,6 +727,11 @@ uint32 CE::ImporterSystem::ShowErrorsToWarnAboutDiscardChanges()
 
 uint32 CE::ImporterSystem::ShowReadOnlyErrors()
 {
+	if (sIgnoreReadOnly)
+	{
+		return 0;
+	}
+
 	bool isOpenAlready{}, shouldDisplay{};
 	uint32 numOfErrors{};
 
@@ -738,7 +744,7 @@ uint32 CE::ImporterSystem::ShowReadOnlyErrors()
 			if (OpenErrorTab(isOpenAlready, shouldDisplay, "Files are read-only"))
 			{
 				ImGui::TextWrapped(Format("{} is read-only",
-					asset.GetFileOfOrigin()->string()).c_str());
+				asset.GetFileOfOrigin()->string()).c_str());
 			}
 
 			++numOfErrors;

@@ -1,4 +1,5 @@
 #pragma once
+#include "Components/TransformComponent.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE
@@ -20,16 +21,16 @@ namespace CE
 		Physics& operator=(Physics&&) = delete;
 		Physics& operator=(const Physics&) = delete;
 
-		/**
+		/** TODO Remove this
 		 * \brief Evaluates the WorldStatic layer to determine what the height is at a given position.
 		 * \return A value ranging between -infinity (if there is no terrain) and infinity (if the terrain is reaaallyy high).
 		 */
-		float GetHeightAtPosition(glm::vec2 position2D) const;
+		float GetHeightAtPosition(glm::vec2) const { return 0.0f; }
 
-		/**
+		/** TODO Remove this
 		 * \brief Moves the transform to the requested position while preserving the height difference relative to the terrain.
 		 */
-		void Teleport(TransformComponent& transform, glm::vec2 toPosition) const;
+		void Teleport(TransformComponent& transform, glm::vec2 toPosition) const { transform.SetWorldPosition(toPosition); }
 
 		/**
 		 * \brief The max height difference that kinematic/dynamic objects are able to traverse
@@ -40,7 +41,7 @@ namespace CE
 		 */
 		static constexpr float sMaxTraversableHeightDifference = 1.0f;
 
-		static bool IsHeightDifferenceTraversable(float heightDiff) { return fabsf(heightDiff) <= sMaxTraversableHeightDifference; }
+		static constexpr bool IsHeightDifferenceTraversable([[maybe_unused]] float heightDiff) { return true; }
 
 	private:
 		friend ReflectAccess;

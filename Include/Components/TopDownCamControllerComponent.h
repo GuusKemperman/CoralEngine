@@ -31,6 +31,8 @@ namespace CE
 		entt::entity mTarget{entt::null};
 		glm::vec3 mTargetLocation{};
 
+		bool mUseArrowKeysToEdit{};
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
