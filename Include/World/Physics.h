@@ -1,12 +1,15 @@
 #pragma once
-#include "Components/TransformComponent.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE
 {
 	class World;
 	class TransformComponent;
-
+	struct TransformedDisk;
+	struct TransformedAABB;
+	struct TransformedPolygon;
+	struct CollisionRules;
+	
 	/**
 	 * \brief Stores the physics-related data to allow for faster queries.
 	 */
@@ -21,7 +24,14 @@ namespace CE
 		Physics& operator=(Physics&&) = delete;
 		Physics& operator=(const Physics&) = delete;
 
+		std::vector<entt::entity> FindAllWithinShape(const TransformedDisk& shape, const CollisionRules& filter) const;
+		std::vector<entt::entity> FindAllWithinShape(const TransformedAABB& shape, const CollisionRules& filter) const;
+		std::vector<entt::entity> FindAllWithinShape(const TransformedPolygon& shape, const CollisionRules& filter) const;
+
 	private:
+		template<typename T>
+		std::vector<entt::entity> FindAllWithinShapeImpl(const T& shape, const CollisionRules& filter) const;
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(Physics);
