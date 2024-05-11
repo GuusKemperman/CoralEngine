@@ -28,7 +28,6 @@ using namespace Microsoft::WRL;
 #include "GLFW/glfw3native.h"
 
 #define FRAME_BUFFER_COUNT 2
-#define MAX_LIGHTS 20
 #define MAX_MESHES 65000
 #define MAX_SKINNED_MESHES 1024
 
@@ -39,27 +38,6 @@ using namespace Microsoft::WRL;
 #define SAMPLER_HEAP				3
 #define NUM_DESC_HEAPS SAMPLER_HEAP+1
 
-//RESOURCES
-#define RENDER_TARGETS_RSC				0
-#define MSAA_RENDER_TARGETS_RSC			2
-#define DEPTH_STENCIL_RSC				4
-#define NUM_RESOURCES DEPTH_STENCIL_RSC+1
-#define RT_COUNT 4
-
-//HEAP SLOTS
-#define IMGUI_SLOT 0
-#define TEX_START 4
-
-//CONSTANT BUFFERS
-#define CAM_MATRIX_CB					0
-#define MODEL_INDEX_CB					1
-#define LIGHT_CB						2
-#define MODEL_MATRIX_CB					3
-#define FINAL_BONE_MATRIX_CB			4
-#define NUM_CBS FINAL_BONE_MATRIX_CB+	1
-
-//RESOURCE HEAP SLOTS
-#define  RESOURCE_START				4
-
 //DEBUG RENDERER
 #define MAX_LINES 32760
+#define MAX_LINE_VERTICES MAX_LINES * 2

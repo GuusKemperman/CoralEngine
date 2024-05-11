@@ -6,7 +6,7 @@
 #include "World/World.h"
 #include "Meta/MetaType.h"
 
-void Engine::AITickSystem::Update(World& world, float dt)
+void CE::AITickSystem::Update(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
 	const auto& enemyAIControllerView = reg.View<EnemyAiControllerComponent>();
@@ -31,10 +31,6 @@ void Engine::AITickSystem::Update(World& world, float dt)
 
 		if (aiTickEvent == nullptr)
 		{
-			LOG(LogAI, Warning, "Component {} has an {} event, but not a {} event",
-			    currentAIController.mCurrentState->GetName(),
-			    sAIEvaluateEvent.mName,
-			    sAITickEvent.mName);
 			continue;
 		}
 
@@ -44,50 +40,20 @@ void Engine::AITickSystem::Update(World& world, float dt)
 		}
 		else
 		{
-			MetaAny component{*currentAIController.mCurrentState, storage->value(entity), false};
+			MetaAny component{ *currentAIController.mCurrentState, storage->value(entity), false };
 			aiTickEvent->InvokeUncheckedUnpacked(component, world, entity, dt);
 		}
 	}
 }
 
-Engine::MetaType Engine::AITickSystem::Reflect()
+CE::MetaType CE::AITickSystem::Reflect()
 {
-	return MetaType{MetaType::T<AITickSystem>{}, "AITickSystem", MetaType::Base<System>{}};
+	return MetaType{ MetaType::T<AITickSystem>{}, "AITickSystem", MetaType::Base<System>{} };
 }
 
-void Engine::AIEvaluateSystem::Update(World& world, float)
+void CE::AIEvaluateSystem::Update(World& world, float)
 {
-	const Registry& reg = world.GetRegistry();
-
-	struct StateToEvaluate
-	{
-		std::reference_wrapper<const entt::sparse_set> mStorage;
-		std::reference_wrapper<const MetaType> mType;
-		std::reference_wrapper<const MetaFunc> mEvaluate;
-		bool mAreEventsStatic{};
-	};
-	std::vector<StateToEvaluate> statesToEvaluate{};
-
-	for (const auto&& [typeId, storage] : reg.Storage())
-	{
-		const MetaType* const state = MetaManager::Get().TryGetType(typeId);
-
-		if (state == nullptr)
-		{
-			continue;
-		}
-
-		const MetaFunc* const evaluateEvent = TryGetEvent(*state, sAIEvaluateEvent);
-
-		if (evaluateEvent == nullptr)
-		{
-			continue;
-		}
-
-		statesToEvaluate.emplace_back(StateToEvaluate{
-			storage, *state, *evaluateEvent, evaluateEvent->GetProperties().Has(Props::sIsEventStaticTag)
-		});
-	}
+	Registry& reg = world.GetRegistry();
 
 	const auto& enemyAIControllerView = world.GetRegistry().View<EnemyAiControllerComponent>();
 
@@ -96,9 +62,16 @@ void Engine::AIEvaluateSystem::Update(World& world, float)
 		float bestScore = std::numeric_limits<float>::lowest();
 		const MetaType* bestType = nullptr;
 
-		for (const StateToEvaluate& state : statesToEvaluate)
+#ifdef EDITOR
+		currentAIController.mDebugPreviouslyEvaluatedScores.clear();
+#endif 
+
+		for (const BoundEvent& boundEvent : mBoundEvaluateEvents)
 		{
-			if (!state.mStorage.get().contains(entity))
+			entt::sparse_set* const storage = reg.Storage(boundEvent.mType.get().GetTypeId());
+
+			if (storage == nullptr
+				|| !storage->contains(entity))
 			{
 				continue;
 			}
@@ -106,40 +79,52 @@ void Engine::AIEvaluateSystem::Update(World& world, float)
 			float score{};
 			FuncResult evalResult;
 
-			if (state.mAreEventsStatic)
+			if (boundEvent.mIsStatic)
 			{
-				evalResult = state.mEvaluate.get().InvokeUncheckedUnpackedWithRVO(&score, world, entity);
+				evalResult = boundEvent.mFunc.get().InvokeUncheckedUnpackedWithRVO(&score, world, entity);
 			}
 			else
 			{
-				// const_cast is fine since we are assigning it to a const MetaAny
-				const MetaAny component{state.mType, const_cast<void*>(state.mStorage.get().value(entity)), false};
-				evalResult = state.mEvaluate.get().InvokeUncheckedUnpackedWithRVO(&score, component, world, entity);
+				MetaAny component{ boundEvent.mType, storage->value(entity), false };
+				evalResult = boundEvent.mFunc.get().InvokeUncheckedUnpackedWithRVO(&score, component, world, entity);
 			}
 
 			if (evalResult.HasError())
 			{
-				LOG(LogAI, Error, "Error occured while evaluating state {} - {}", state.mType.get().GetName(),
-				    evalResult.Error());
 				continue;
 			}
+
+#ifdef EDITOR
+			currentAIController.mDebugPreviouslyEvaluatedScores.emplace_back(boundEvent.mType.get().GetName(), score);
+#endif 
 
 			if (score > bestScore)
 			{
 				bestScore = score;
-				bestType = &state.mType.get();
+				bestType = &boundEvent.mType.get();
 			}
 		}
 
-		CallTransitionEvent(sAIStateExitEvent, currentAIController.mCurrentState, world, entity);
-		currentAIController.mCurrentState = bestType;
-		CallTransitionEvent(sAIStateEnterEvent, currentAIController.mCurrentState, world, entity);
+#ifdef EDITOR
+		std::sort(currentAIController.mDebugPreviouslyEvaluatedScores.begin(), currentAIController.mDebugPreviouslyEvaluatedScores.end(),
+			[](const std::pair<std::string_view, float>& lhs, const std::pair<std::string_view, float>& rhs)
+			{
+				return lhs.second > rhs.second;
+			});
+#endif
+
+		if (currentAIController.mCurrentState != bestType)
+		{
+			CallTransitionEvent(sAIStateExitEvent, currentAIController.mCurrentState, world, entity);
+			currentAIController.mCurrentState = bestType;
+			CallTransitionEvent(sAIStateEnterEvent, currentAIController.mCurrentState, world, entity);
+		}
 	}
 }
 
 template <typename EventT>
-void Engine::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const MetaType* type, World& world,
-                                                   entt::entity owner)
+void CE::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const MetaType* type, World& world,
+	entt::entity owner)
 {
 	if (type == nullptr)
 	{
@@ -167,12 +152,12 @@ void Engine::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const Me
 	}
 	else
 	{
-		MetaAny component{*type, storage->value(owner), false};
+		MetaAny component{ *type, storage->value(owner), false };
 		boundEvent->InvokeUncheckedUnpacked(component, world, owner);
 	}
 }
 
-Engine::MetaType Engine::AIEvaluateSystem::Reflect()
+CE::MetaType CE::AIEvaluateSystem::Reflect()
 {
-	return MetaType{MetaType::T<AIEvaluateSystem>{}, "AIEvaluateSystem", MetaType::Base<System>{}};
+	return MetaType{ MetaType::T<AIEvaluateSystem>{}, "AIEvaluateSystem", MetaType::Base<System>{} };
 }

@@ -7,7 +7,7 @@
 #include "Assets/Core/AssetSaveInfo.h"
 #include "Components/CameraComponent.h"
 #include "Components/IsDestroyedTag.h"
-#include "Containers/view_istream.h"
+#include "Utilities/view_istream.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/NameComponent.h"
@@ -16,7 +16,7 @@
 #include "Components/TransformComponent.h"
 #include "World/Archiver.h"
 
-using namespace Engine;
+using namespace CE;
 
 static constexpr std::string_view sTestLevelName = "__TestLevel__";
 static constexpr std::string_view sTestPrefabName = "__TestPrefab__";
@@ -35,7 +35,8 @@ namespace
 
 	UnitTest::Result TestPrefabChanges(World&& initialWorld,
 		entt::entity initialEntity,
-		std::vector<PrefabChange> changes);
+		std::vector<PrefabChange> changes,
+		std::function<void(World&, entt::entity)>&& changePrefabInstanceInWorld = {});
 }
 
 UNIT_TEST(Serialization, NoPrefabsLevelSerialization)
@@ -362,6 +363,76 @@ UNIT_TEST(Serialization, PrefabRemoveChild)
 		});
 }
 
+UNIT_TEST(Serialization, PrefabChildRemovedWhileInstancesHaveChanges)
+{
+	World world{ false };
+
+	Registry& reg = world.GetRegistry();
+	entt::entity parent = reg.Create();
+	reg.AddComponent<TransformComponent>(parent);
+
+	entt::entity child = reg.Create();
+	TransformComponent& childTransform = reg.AddComponent<TransformComponent>(child);
+
+	TEST_ASSERT(reg.TryGet<TransformComponent>(parent) != nullptr);
+
+	TransformComponent& parentTransform = reg.Get<TransformComponent>(parent);
+	childTransform.SetParent(&parentTransform);
+
+	auto changesToMakeToPrefabInstanceInWorld =
+		[](World& world, entt::entity entity)
+		{
+			Registry& reg = world.GetRegistry();
+
+			TEST_ASSERT(reg.TryGet<TransformComponent>(entity) != nullptr);
+			TransformComponent& parentTransform = reg.Get<TransformComponent>(entity);
+
+			TEST_ASSERT(parentTransform.GetChildren().size() == 1);
+			TransformComponent& childTransform = parentTransform.GetChildren()[0];
+			world.GetRegistry().AddComponent<NameComponent>(childTransform.GetOwner(), "Hello!");
+
+			return UnitTest::Success;
+		};
+
+	return TestPrefabChanges(std::move(world), parent,
+		{
+			{
+				[](World& world, entt::entity parent)
+				{
+					Registry& reg = world.GetRegistry();
+
+					TEST_ASSERT(reg.TryGet<TransformComponent>(parent) != nullptr);
+					TransformComponent& parentTransform = reg.Get<TransformComponent>(parent);
+
+					TEST_ASSERT(parentTransform.GetChildren().size() == 1);
+					TransformComponent& childTransform = parentTransform.GetChildren()[0];
+
+					TEST_ASSERT(reg.Valid(childTransform.GetOwner()));
+					TEST_ASSERT(reg.Storage<entt::entity>().in_use() == 2);
+
+					reg.Destroy(childTransform.GetOwner(), false);
+					reg.RemovedDestroyed();
+
+					TEST_ASSERT(reg.Storage<entt::entity>().in_use() == 1);
+
+					return UnitTest::Result::Success;
+				},
+				[](const World& world, entt::entity parent)
+				{
+					const Registry& reg = world.GetRegistry();
+
+					TEST_ASSERT(reg.TryGet<TransformComponent>(parent) != nullptr);
+
+					const TransformComponent& parentTransform = reg.Get<TransformComponent>(parent);
+					TEST_ASSERT(parentTransform.GetChildren().empty());
+					TEST_ASSERT(reg.Storage<entt::entity>()->in_use() == 1);
+					return UnitTest::Result::Success;
+				},
+			},
+		},
+		std::move(changesToMakeToPrefabInstanceInWorld));
+}
+
 UNIT_TEST(Serialization, CopyPaste)
 {
 	static const std::string parentName = "EntityName\t\n\t!!";
@@ -470,7 +541,8 @@ namespace
 
 	UnitTest::Result TestPrefabChanges(World&& initialWorld,
 		entt::entity initialEntity,
-		std::vector<PrefabChange> changes)
+		std::vector<PrefabChange> changes,
+		std::function<void(World&, entt::entity)>&& changePrefabInstanceInWorld)
 	{
 		// Prevent the prefab from sticking around after the test is done.
 		struct PrefabDeleter
@@ -479,16 +551,16 @@ namespace
 			{
 				auto prefab = AssetManager::Get().TryGetWeakAsset<Asset>(sTestPrefabName);
 
-				if (prefab.has_value())
+				if (prefab != nullptr)
 				{
-					AssetManager::Get().DeleteAsset(std::move(*prefab));
+					AssetManager::Get().DeleteAsset(std::move(prefab));
 				}
 			}
 		};
 		PrefabDeleter __{};
 
 		// Make a prefab from it
-		std::shared_ptr<const Prefab> prefabInAssetManager{};
+		AssetHandle<Prefab> prefabInAssetManager{};
 
 		auto updatePrefab = [&]
 			{
@@ -502,13 +574,13 @@ namespace
 				{
 					AssetLoadInfo loadInfo = prefabInAssetManager->Save();
 
-					prefabInAssetManager.reset();
+					prefabInAssetManager = nullptr;
 					{
 						auto prefabToDelete = AssetManager::Get().TryGetWeakAsset<Asset>(sTestPrefabName);
 
-						if (prefabToDelete.has_value())
+						if (prefabToDelete != nullptr)
 						{
-							AssetManager::Get().DeleteAsset(std::move(*prefabToDelete));
+							AssetManager::Get().DeleteAsset(std::move(prefabToDelete));
 						}
 					}
 
@@ -526,6 +598,11 @@ namespace
 				// Spawn the prefab in the world
 				World levelWorld{ false };
 				levelWorld.GetRegistry().CreateFromPrefab(*prefabInAssetManager, initialEntity);
+
+				if (changePrefabInstanceInWorld)
+				{
+					changePrefabInstanceInWorld(levelWorld, initialEntity);
+				}
 
 				// Make a level from it
 				Level testLevel{ sTestLevelName };

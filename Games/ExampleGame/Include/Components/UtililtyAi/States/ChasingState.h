@@ -1,7 +1,7 @@
 #pragma once
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 	class TransformComponent;
@@ -12,23 +12,20 @@ namespace Game
 	class ChasingState
 	{
 	public:
-		void OnAiTick(Engine::World& world, entt::entity owner, float dt);
-		float OnAiEvaluate(const Engine::World& world, entt::entity owner) const;
-		void OnAIStateEnterEvent(const Engine::World& world, entt::entity owner);
+		void OnAiTick(CE::World& world, entt::entity owner, float dt);
+		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 
-		[[nodiscard]] std::pair<float, entt::entity> GetHighestScore(const Engine::World& world,
+		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
 		                                                             entt::entity owner) const;
 
-		void DebugRender(Engine::World& world, entt::entity owner) const;
+		void DebugRender(CE::World& world, entt::entity owner) const;
 
 	private:
-		entt::entity mTargetEntity = entt::null;
-		entt::entity mChosenTargetEntity = entt::null;
-
+		entt::entity mTargetEntity{};
 		float mRadius{};
 
-		friend Engine::ReflectAccess;
-		static Engine::MetaType Reflect();
+		friend CE::ReflectAccess;
+		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(ChasingState);
 	};
 }

@@ -3,7 +3,7 @@
 #include "cereal/types/array.hpp"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class Bezier
 	{
@@ -21,7 +21,6 @@ namespace Engine
 
 #ifdef EDITOR
 		void DisplayWidget(const char* label);
-		void DisplayWidget(const char* label) const;
 #endif // EDITOR
 
 		ValueStorage mControlPoints{ glm::vec2{0.0f}, glm::vec2{1.0f}, glm::vec2{-1.0f} };
@@ -98,6 +97,6 @@ namespace Engine
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::Bezier, var.DisplayWidget(name.c_str());)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::Bezier, var.DisplayWidget(name.c_str());)
 #endif // EDITOR
 

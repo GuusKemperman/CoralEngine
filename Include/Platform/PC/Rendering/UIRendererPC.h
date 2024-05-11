@@ -1,26 +1,40 @@
 #pragma once
 
 #include "Systems/System.h"
+#include "DX12Classes/DXResource.h"
+#include "DX12Classes/DXPipeline.h"
+#include "DX12Classes/DXConstBuffer.h"
 
-namespace Engine
+#include "Rendering/ISubRenderer.h"
+
+namespace CE
 {
+    class Texture;
+
     class UIRenderer final :
-        public System
+        public ISubRenderer
     {
     public:
         UIRenderer();
-        ~UIRenderer() override;
+        ~UIRenderer();
         void Render(const World& world) override;
 
-        SystemStaticTraits GetStaticTraits() const override
+    private:
+        struct QuadVertex
         {
-            SystemStaticTraits traits{};
-            traits.mPriority = static_cast<int>(TickPriorities::PostRender) + (TickPriorityStepSize >> 1);
-            return traits;
-        }
+            glm::vec3 mPosition;
+            glm::vec4 mColor;
+            glm::vec2 mTexCoord;
+            int32 mTextureIndex;
+        };
+
+        struct ModelMat
+        {
+            glm::mat4 mModel;
+            glm::mat4 mTransposed;
+        };
 
     private:
-        friend ReflectAccess;
-        static MetaType Reflect();
+        ComPtr<ID3D12PipelineState> mPipeline;
     };
 }

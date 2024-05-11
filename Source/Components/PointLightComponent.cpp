@@ -2,10 +2,10 @@
 #include "Components/PointLightComponent.h"
 
 #include "Components/TransformComponent.h"
-#include "Utilities/DebugRenderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void Engine::PointLightComponent::OnDrawGizmos(World& world, entt::entity owner) const
+void CE::PointLightComponent::OnDrawGizmos(World& world, entt::entity owner) const
 {
 	static constexpr DebugCategory::Enum category = DebugCategory::Editor;
 
@@ -21,14 +21,15 @@ void Engine::PointLightComponent::OnDrawGizmos(World& world, entt::entity owner)
 		return;
 	}
 
-	world.GetDebugRenderer().AddSphere(
+	DrawDebugSphere(
+		world,
 		category,
 		transform->GetWorldPosition(),
 		mRange,
 		Colors::Yellow);
 }
 
-Engine::MetaType Engine::PointLightComponent::Reflect()
+CE::MetaType CE::PointLightComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<PointLightComponent>{}, "PointLightComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);

@@ -5,7 +5,7 @@
 #include "Meta/MetaTypeId.h"
 
 template<typename T, typename Outer>
-Engine::MetaField::MetaField(const MetaType& outer, T Outer::* ptr, const std::string_view name) :
+CE::MetaField::MetaField(const MetaType& outer, T Outer::* ptr, const std::string_view name) :
 	MetaField(outer, MetaManager::Get().GetType<T>(),
 		// UB since we are dereferencing a nullptr, but there is currently no legal
 		// way of doing this in c++17 or c++20.

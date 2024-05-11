@@ -3,7 +3,7 @@
 #include "Scripting/ScriptIds.h"
 #include "Scripting/ScriptConfig.h"
 
-namespace Engine
+namespace CE
 {
 	class Script;
 	class ScriptField;

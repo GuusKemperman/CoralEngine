@@ -11,7 +11,7 @@
 #include "Meta/MetaType.h"
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
-namespace Engine
+namespace CE
 {
 	class EnemyAiControllerComponent;
 
@@ -98,7 +98,7 @@ namespace Engine
 
 UNIT_TEST(Events, OnTick)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 
@@ -115,7 +115,7 @@ UNIT_TEST(Events, OnTick)
 
 UNIT_TEST(Events, OnFixedTick)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	entt::entity owner = InitTest(world);
@@ -139,7 +139,7 @@ UNIT_TEST(Events, OnFixedTick)
 
 UNIT_TEST(Events, OnConstruct)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{false};
 	entt::entity owner = InitTest(world);
@@ -151,7 +151,7 @@ UNIT_TEST(Events, OnConstruct)
 
 UNIT_TEST(Events, OnBeginPlay)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{false};
 	entt::entity owner = InitTest(world);
@@ -167,7 +167,7 @@ UNIT_TEST(Events, OnBeginPlay)
 
 UNIT_TEST(Events, OnBeginPlayWhenAddedAfterWorldBeginsPlay)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	entt::entity owner = InitTest(world);
@@ -179,7 +179,7 @@ UNIT_TEST(Events, OnBeginPlayWhenAddedAfterWorldBeginsPlay)
 
 UNIT_TEST(Events, OnDestructEntireWorld)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	{
 		World world{true};
@@ -197,7 +197,7 @@ UNIT_TEST(Events, OnDestructEntireWorld)
 
 UNIT_TEST(Events, OnDestructRemoveComponent)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	entt::entity owner = InitTest(world);
@@ -215,7 +215,7 @@ UNIT_TEST(Events, OnDestructRemoveComponent)
 
 UNIT_TEST(Events, OnDestructDestroyEntity)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	entt::entity owner = InitTest(world);
@@ -234,7 +234,7 @@ UNIT_TEST(Events, OnDestructDestroyEntity)
 
 UNIT_TEST(Events, OnAiTick)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	entt::entity owner = InitTest(world);
@@ -254,7 +254,7 @@ UNIT_TEST(Events, OnAiTick)
 
 UNIT_TEST(Events, OnAiEvaluate)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	entt::entity owner = InitTest(world);
@@ -274,7 +274,7 @@ UNIT_TEST(Events, OnAiEvaluate)
 
 UNIT_TEST(Events, CollisionEvents)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	const entt::entity owner = InitTest(world);

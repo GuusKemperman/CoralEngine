@@ -4,7 +4,7 @@
 
 #include "Assets/Prefabs/Prefab.h"
 
-namespace Engine
+namespace CE
 {
 	class WorldInspectHelper;
 	
@@ -32,6 +32,7 @@ namespace Engine
 
 		entt::entity mPrefabInstance{};
 		entt::entity mCameraInstance{};
+		entt::entity mLightInstance{};
 	};
 }
 #endif // EDITOR

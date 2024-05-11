@@ -2,10 +2,9 @@
 #include "Assets/Importers/AnimationImporter.h"
 
 #include "Assets/Animation/Animation.h"
-#include "Assets/Animation/Bone.h"
 #include "Meta/MetaManager.h"
 
-Engine::ImportedAsset Engine::AnimationImporter::Import(const std::filesystem::path& importedFromFile, 
+CE::ImportedAsset CE::AnimationImporter::Import(const std::filesystem::path& importedFromFile, 
 	const uint32 importerVersion, 
 	const Animation& animation)
 {

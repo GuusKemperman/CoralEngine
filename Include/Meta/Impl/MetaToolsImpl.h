@@ -3,7 +3,7 @@
 #include "Meta/MetaAny.h"
 
 template<typename T>
-std::shared_ptr<T> Engine::MakeShared(MetaAny&& any)
+std::shared_ptr<T> CE::MakeShared(MetaAny&& any)
 {
 	if (!any.IsOwner()
 		|| any.As<T>() == nullptr)
@@ -15,7 +15,7 @@ std::shared_ptr<T> Engine::MakeShared(MetaAny&& any)
 }
 
 template<typename T>
-std::unique_ptr<T, Engine::InPlaceDeleter<T, true>> Engine::MakeUnique(MetaAny&& any)
+std::unique_ptr<T, CE::InPlaceDeleter<T, true>> CE::MakeUnique(MetaAny&& any)
 {
 	if (!any.IsOwner()
 		|| any.As<T>() == nullptr)

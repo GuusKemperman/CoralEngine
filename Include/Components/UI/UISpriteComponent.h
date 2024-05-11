@@ -1,16 +1,17 @@
 #pragma once
 #include "Meta/MetaReflect.h"
-#include "BasicDataTypes/Colors/LinearColor.h"
+#include "Assets/Core/AssetHandle.h"
 
-namespace Engine
+namespace CE
 {
 	class Texture;
 
 	class UISpriteComponent
 	{
 	public:
-		LinearColor mColor{ 1.0f };
-		std::shared_ptr<const Texture> mTexture{};
+		glm::vec4 mColor{ 1.0f };
+
+		AssetHandle<Texture> mTexture{};
 
 	private:
 		friend ReflectAccess;

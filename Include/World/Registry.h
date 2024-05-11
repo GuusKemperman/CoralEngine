@@ -1,13 +1,12 @@
 #pragma once
-#include "World.h"
+#include "World/World.h"
 #include "Systems/System.h"
 #include "Utilities/MemFunctions.h"
 #include "Meta/MetaFunc.h"
 #include "Meta/MetaManager.h"
 #include "Utilities/Events.h"
 
-
-namespace Engine
+namespace CE
 {
 	class MetaType;
 	class MetaAny;
@@ -28,6 +27,8 @@ namespace Engine
 
 		Registry& operator=(Registry&&) = delete;
 		Registry& operator=(const Registry&) = delete;
+
+		void BeginPlay();
 
 		void UpdateSystems(float dt);
 
@@ -140,6 +141,10 @@ namespace Engine
 		
 		void AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system);
 
+		void CallBeginPlayForEntitiesAwaitingBeginPlay();
+
+		bool ShouldWeCallBeginPlayImmediatelyAfterConstruct(entt::entity ownerOfNewlyConstructedComponent) const;
+
 		template <typename Component>
 		static void DestroyCallback(entt::registry&, entt::entity entity);
 
@@ -172,6 +177,8 @@ namespace Engine
 		};
 		std::vector<FixedTickSystem> mFixedTickSystems{};
 		std::vector<InternalSystem> mNonFixedSystems{};
+
+		std::vector<BoundEvent> mBoundBeginPlayEvents{};
 	};
 
 	template<typename ComponentType, typename ...AdditonalArgs>
@@ -181,8 +188,12 @@ namespace Engine
 		{
 			const MetaType* mType{};
 			const MetaFunc* mOnConstruct{};
+			bool mDoesOnConstructHaveStaticTag{};
 			const MetaFunc* mOnBeginPlay{};
+			bool mDoesOnBeginPlayHaveStaticTag{};
 		};
+
+		static constexpr bool isEmpty = entt::component_traits<ComponentType>::page_size == 0;
 
 		static const ComponentEvents events =
 			[]
@@ -193,6 +204,21 @@ namespace Engine
 					tmpEvents.mType = &MetaManager::Get().GetType<ComponentType>();
 					tmpEvents.mOnConstruct = TryGetEvent(*tmpEvents.mType, sConstructEvent);
 					tmpEvents.mOnBeginPlay = TryGetEvent(*tmpEvents.mType, sBeginPlayEvent);
+
+					// If the component is empty, we can assume the event is always static.
+					if constexpr (!isEmpty)
+					{
+						if (tmpEvents.mOnConstruct != nullptr)
+						{
+							tmpEvents.mDoesOnConstructHaveStaticTag = tmpEvents.mOnConstruct->GetProperties().Has(Props::sIsEventStaticTag);
+						}
+
+						if (tmpEvents.mOnBeginPlay != nullptr)
+						{
+							tmpEvents.mDoesOnBeginPlayHaveStaticTag = tmpEvents.mOnBeginPlay->GetProperties().Has(Props::sIsEventStaticTag);
+						}
+					}
+
 					return tmpEvents;
 				}
 				else
@@ -210,8 +236,6 @@ namespace Engine
 			}
 		}
 
-		static constexpr bool isEmpty = entt::component_traits<ComponentType>::page_size == 0;
-
 		if constexpr (isEmpty)
 		{
 			mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
@@ -223,8 +247,8 @@ namespace Engine
 					events.mOnConstruct->InvokeUncheckedUnpacked(GetWorld(), toEntity);
 				}
 
-				if (GetWorld().HasBegunPlay()
-					&& events.mOnBeginPlay != nullptr)
+				if (events.mOnBeginPlay != nullptr
+					&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
 				{
 					events.mOnBeginPlay->InvokeUncheckedUnpacked(GetWorld(), toEntity);
 				}
@@ -238,13 +262,27 @@ namespace Engine
 			{
 				if (events.mOnConstruct != nullptr)
 				{
-					events.mOnConstruct->InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
+					if (events.mDoesOnConstructHaveStaticTag)
+					{
+						events.mOnConstruct->InvokeUncheckedUnpacked(GetWorld(), toEntity);
+					}
+					else
+					{
+						events.mOnConstruct->InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
+					}
 				}
 
-				if (GetWorld().HasBegunPlay()
-					&& events.mOnBeginPlay != nullptr)
+				if (events.mOnBeginPlay != nullptr
+					&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
 				{
-					events.mOnBeginPlay->InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
+					if (events.mDoesOnBeginPlayHaveStaticTag)
+					{
+						events.mOnBeginPlay->InvokeUncheckedUnpacked(GetWorld(), toEntity);
+					}
+					else
+					{
+						events.mOnBeginPlay->InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
+					}
 				}
 			}
 
@@ -284,11 +322,12 @@ namespace Engine
 	{
 		static const MetaType& metaType = MetaManager::Get().GetType<Component>();
 		static const MetaFunc& destroyEvent = *TryGetEvent(metaType, sDestructEvent);
+		static bool doesEventHaveStaticTag = destroyEvent.GetProperties().Has(Props::sIsEventStaticTag);
 
 		if (World::TryGetWorldAtTopOfStack() == nullptr)
 		{
 			UNLIKELY;
-			LOG(LogWorld, Error, "A componentw as destroyed from a function that did not push/pop a world. The destruct event cannot be invoked. Trace callstack and figure out where to place Push/PopWorld");
+			LOG(LogWorld, Error, "A component was destroyed from a function that did not push/pop a world. The destruct event cannot be invoked. Trace callstack and figure out where to place Push/PopWorld");
 			return;
 		}
 
@@ -300,8 +339,16 @@ namespace Engine
 		}
 		else
 		{
-			Component& component = world.GetRegistry().Get<Component>(entity);
-			destroyEvent.InvokeUncheckedUnpacked(component, world, entity);
+			// OnDestruct may still be static
+			if (doesEventHaveStaticTag)
+			{
+				destroyEvent.InvokeUncheckedUnpacked(world, entity);
+			}
+			else
+			{
+				Component& component = world.GetRegistry().Get<Component>(entity);
+				destroyEvent.InvokeUncheckedUnpacked(component, world, entity);
+			}
 		}
 	}
 

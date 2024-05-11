@@ -13,14 +13,14 @@
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
 
-Engine::Prefab::Prefab(std::string_view name) :
+CE::Prefab::Prefab(std::string_view name) :
 	Asset(name, MakeTypeId<Prefab>())
 {
 	World world{ false };
 	CreateFromEntity(world, world.GetRegistry().Create());
 }
 
-Engine::Prefab::Prefab(AssetLoadInfo& loadInfo) :
+CE::Prefab::Prefab(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {
 	BinaryGSONObject object{};
@@ -28,7 +28,7 @@ Engine::Prefab::Prefab(AssetLoadInfo& loadInfo) :
 	LoadFromGSON(object);
 }
 
-Engine::Prefab::Prefab(Prefab&& other) noexcept :
+CE::Prefab::Prefab(Prefab&& other) noexcept :
 	Asset(std::move(other)),
 	mFactories(std::move(other.mFactories))
 {
@@ -38,22 +38,22 @@ Engine::Prefab::Prefab(Prefab&& other) noexcept :
 	}
 }
 
-Engine::Prefab::~Prefab() = default;
+CE::Prefab::~Prefab() = default;
 
-void Engine::Prefab::OnSave(AssetSaveInfo& saveInfo) const
+void CE::Prefab::OnSave(AssetSaveInfo& saveInfo) const
 {
 	World world{ false };
 	const entt::entity createdEntity = world.GetRegistry().CreateFromPrefab(*this);
 	OnSave(saveInfo, GetName(), world, createdEntity, mFactoryIdSeed);
 }
 
-void Engine::Prefab::OnSave(AssetSaveInfo& saveInfo, const std::string& prefabName, World& world, const entt::entity entity, std::optional<uint32> factorySeed)
+void CE::Prefab::OnSave(AssetSaveInfo& saveInfo, const std::string& prefabName, World& world, const entt::entity entity, std::optional<uint32> factorySeed)
 {
 	const BinaryGSONObject& gsonObject = SaveToGSONObject(prefabName, world, entity, factorySeed);
 	gsonObject.SaveToBinary(saveInfo.GetStream());
 }
 
-namespace Engine
+namespace CE
 {
 	struct SerializedFactoryData
 	{
@@ -65,18 +65,18 @@ namespace Engine
 
 namespace cereal
 {
-	static void save(BinaryOutputArchive& ar, const Engine::SerializedFactoryData& data)
+	static void save(BinaryOutputArchive& ar, const CE::SerializedFactoryData& data)
 	{
 		ar(data.mEntity, data.mIndexOfParentFactory, data.mFactoryId);
 	}
 
-	static void load(BinaryInputArchive& ar, Engine::SerializedFactoryData& data)
+	static void load(BinaryInputArchive& ar, CE::SerializedFactoryData& data)
 	{
 		ar(data.mEntity, data.mIndexOfParentFactory, data.mFactoryId);
 	}
 }
 
-void Engine::Prefab::LoadFromGSON(BinaryGSONObject& object)
+void CE::Prefab::LoadFromGSON(BinaryGSONObject& object)
 {
 	mFactories.clear();
 
@@ -148,13 +148,13 @@ void Engine::Prefab::LoadFromGSON(BinaryGSONObject& object)
 
 }
 
-Engine::BinaryGSONObject Engine::Prefab::SaveToGSONObject(const std::string& prefabName, World& world, const entt::entity rootEntity, std::optional<uint32> factorySeed)
+CE::BinaryGSONObject CE::Prefab::SaveToGSONObject(const std::string& prefabName, World& world, const entt::entity rootEntity, std::optional<uint32> factorySeed)
 {
 	Registry& reg = world.GetRegistry();
 
 	if (!reg.Valid(rootEntity))
 	{
-		LOG(LogAssets, Error, "Cannot create prefab from entity {}, this entity does not exists", static_cast<EntityType>(rootEntity));
+		LOG(LogAssets, Error, "Cannot create prefab from entity {}, this entity does not exists", entt::to_integral(rootEntity));
 		return {};
 	}
 
@@ -228,6 +228,8 @@ Engine::BinaryGSONObject Engine::Prefab::SaveToGSONObject(const std::string& pre
 
 	uint32 seed = factorySeed.value_or(prefabHashedName);
 
+	std::mt19937 device{ seed };
+
 	for (uint32& uniqueId : uniqueFactoryIds)
 	{
 		if (uniqueId != 0)
@@ -239,7 +241,7 @@ Engine::BinaryGSONObject Engine::Prefab::SaveToGSONObject(const std::string& pre
 
 		do
 		{
-			idCopy = Random::Uint32(seed);
+			idCopy = device();
 		} while (std::find(uniqueFactoryIds.begin(), uniqueFactoryIds.end(), idCopy) != uniqueFactoryIds.end());
 
 		uniqueId = idCopy;
@@ -286,13 +288,13 @@ Engine::BinaryGSONObject Engine::Prefab::SaveToGSONObject(const std::string& pre
 	return returnValue;
 }
 
-void Engine::Prefab::CreateFromEntity(World& world, const entt::entity entity)
+void CE::Prefab::CreateFromEntity(World& world, const entt::entity entity)
 {
 	BinaryGSONObject serializedPrefab = SaveToGSONObject(GetName(), world, entity);
 	LoadFromGSON(serializedPrefab);
 }
 
-const Engine::PrefabEntityFactory* Engine::Prefab::TryFindFactory(uint32 factoryId) const
+const CE::PrefabEntityFactory* CE::Prefab::TryFindFactory(uint32 factoryId) const
 {
 	const auto it = std::find_if(mFactories.begin(), mFactories.end(),
 		[factoryId](const PrefabEntityFactory& factory)
@@ -302,7 +304,7 @@ const Engine::PrefabEntityFactory* Engine::Prefab::TryFindFactory(uint32 factory
 	return it == mFactories.end() ? nullptr : &*it;
 }
 
-Engine::MetaType Engine::Prefab::Reflect()
+CE::MetaType CE::Prefab::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Prefab>{}, "Prefab", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 	ReflectAssetType<Prefab>(type);

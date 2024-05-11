@@ -1,5 +1,6 @@
 #include "Precomp.h"
 #include "Platform/PC/Core/DevicePC.h"
+#include "Core/FileIO.h"
 
 #pragma warning(push)
 #pragma warning(disable: 4189)
@@ -9,15 +10,23 @@
 #include "imgui/ImGuizmo.h"
 #pragma warning(pop)
 
-#include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
+#include <stb_image/stb_image.h>
 
-Engine::Device::Device()
+#include "Core/AssetManager.h"
+#include "Platform/PC/Rendering/TexturePC.h"
+#include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
+#include "Utilities/StringFunctions.h"
+
+CE::Device::Device()
 {
     InitializeWindow();
 	InitializeDevice();
 }
 
-void Engine::Device::InitializeWindow()
+static constexpr size_t sNumOfIcons = 3;
+static constexpr std::array<std::string_view, sNumOfIcons> GetEmbeddedIcons();
+
+void CE::Device::InitializeWindow()
 {
     LOG(LogCore, Verbose, "Initializing GLFW");
 
@@ -42,17 +51,28 @@ void Engine::Device::InitializeWindow()
     mPreviousHeight = 1080;
 
     mFullscreen = false;
+    std::string applicationName{};
 
+#ifdef EDITOR
+    applicationName = "Coral Engine - ";
+#endif
+
+    const std::filesystem::path thisExe = FileIO::Get().GetPath(FileIO::Directory::ThisExecutable, "");
+    applicationName += thisExe.filename().replace_extension().string();
+    if (applicationName.empty())
+    {
+        applicationName += "Unnamed application";
+    }
     if (mFullscreen)
     {
         mViewport.Width = static_cast<FLOAT>(maxScreenWidth);
         mViewport.Height = static_cast<FLOAT>(maxScreenHeight);
-        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "General engine", mMonitor, nullptr);
+        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), applicationName.c_str(), mMonitor, nullptr);
     }
     else
     {
         glfwWindowHint(GLFW_RESIZABLE, 1);
-        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "General engine", nullptr, nullptr);
+        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), applicationName.c_str(), nullptr, nullptr);
     }
 
     if (mWindow == nullptr)
@@ -60,12 +80,35 @@ void Engine::Device::InitializeWindow()
         LOG(LogCore, Fatal, "GLFW window could not be created");
     }
 
+    const std::array<std::string_view, sNumOfIcons> iconsHex = GetEmbeddedIcons();
+    std::array<GLFWimage, sNumOfIcons> glfwImages{};
+
+    for (size_t i = 0; i < sNumOfIcons; i++)
+    {
+        GLFWimage& image = glfwImages[i];
+        const std::string data = StringFunctions::HexToBinary(iconsHex[i]);
+        int channels;
+        image.pixels = stbi_load_from_memory(reinterpret_cast<const uint8*>(data.data()), static_cast<int>(data.size()), &image.width, &image.height, &channels, 4);
+
+        if (image.pixels == nullptr)
+        {
+            LOG(LogCore, Error, "Failed to load embedded icon {} for the application", i);
+        }
+    }
+
+    glfwSetWindowIcon(mWindow, sNumOfIcons, glfwImages.data());
+
+    for (size_t i = 0; i < sNumOfIcons; i++)
+    {
+        stbi_image_free(glfwImages[i].pixels);
+    }
+
     glfwMakeContextCurrent(mWindow);
     glfwShowWindow(mWindow);
     mIsWindowOpen = true;
 }
 
-void Engine::Device::InitializeDevice()
+void CE::Device::InitializeDevice()
 {
     //DEBUG LAYERS
 #if defined(_DEBUG)
@@ -260,30 +303,57 @@ void Engine::Device::InitializeDevice()
     }
 
     //CREATE ROOT SIGNATURE
-    mSignature = std::make_unique<DXSignature>(12);
-    mSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX);//0
-    mSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL);//1
-    mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX);//2
-    mSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL);//3
-    mSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL);//4
-    mSignature->AddCBuffer(5, D3D12_SHADER_VISIBILITY_VERTEX);//5
+    mSignature = DXSignatureBuilder(10)
+        .AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL)   //0  //Camera matrices
+        .AddCBuffer(1, D3D12_SHADER_VISIBILITY_VERTEX)//1  //Model matrices
+        .AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX)//2  //Bone matrices
+        .AddCBuffer(3, D3D12_SHADER_VISIBILITY_ALL)   //3  //Light info 
+        .AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL) //4  //Material info
+        .AddCBuffer(5, D3D12_SHADER_VISIBILITY_PIXEL) //5  //Color multiplier
+        .AddCBuffer(6, D3D12_SHADER_VISIBILITY_PIXEL) //6  //Camera clustering buffer
+        .AddCBuffer(7, D3D12_SHADER_VISIBILITY_PIXEL) //7  // Cluster info buffer
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);//6
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);//7
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);//8
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//9
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//10
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0)//8   //Base color tex
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1)//9   //Emissive tex
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2)//10  //Metallic roughness tex
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3)//11  //NormalTex
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4)//12  //Occlusion texture
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5)//13  //Directonal lights buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL,   D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6)//14  //Point lights buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL,   D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7)//15  //Light grid buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8)//16  //Light indices buffer
+        .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 9)//17  //Shadow maps
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);//11
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);//12
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);//13
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4);//14
+        .AddCBuffer(8, D3D12_SHADER_VISIBILITY_PIXEL) //18  //Fog info buffer
+        .AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP) //19  //Sampler
+        .AddSampler(1, D3D12_SHADER_VISIBILITY_PIXEL,
+                       D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+                       D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
+                       D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE,
+                       D3D12_COMPARISON_FUNC_LESS_EQUAL) //20  //Sampler
+        .Build(mDevice, L"MAIN ROOT SIGNATURE");
 
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);//15
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//16
-    mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//17
-    mSignature->CreateSignature(mDevice, L"MAIN ROOT SIGNATURE");
+    //COMPUTE ROOT SIGNATURE
+    //CREATE COMPUTE ROOT SIGNATURE
+    mComputeSignature = DXSignatureBuilder(8)
+        .AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL) // Cluster info 0
+        .AddCBuffer(1, D3D12_SHADER_VISIBILITY_ALL) // Camera info 1
+        .AddCBuffer(2, D3D12_SHADER_VISIBILITY_ALL) // Cluster camera info 2
+        .AddCBuffer(3, D3D12_SHADER_VISIBILITY_ALL) // Light info 3
+        .AddCBuffer(4, D3D12_SHADER_VISIBILITY_ALL) // Model matrices 4
+        .AddCBuffer(5, D3D12_SHADER_VISIBILITY_ALL) // Pixel color for cluster culling 5
 
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0) //6
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1) //7
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2) //8
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3) //9
+
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0) //10
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1) //11
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2) //12
+        .AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3) //13
+        .AddSampler(0, D3D12_SHADER_VISIBILITY_ALL, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_FILTER_MIN_MAG_MIP_LINEAR)//14
+        .Build(mDevice, L"COMPUTE ROOT SIGNATURE");
 
     //CREATE DEPTH STENCIL
     D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -302,10 +372,18 @@ void Engine::Device::InitializeDevice()
     mResources[DEPTH_STENCIL_RSC] = std::make_unique<DXResource>(mDevice, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
     mResources[DEPTH_STENCIL_RSC]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
     mDepthHandle = mDescriptorHeaps[DEPTH_HEAP]->AllocateDepthStencil(mResources[DEPTH_STENCIL_RSC].get(), mDevice.Get(), &depthStencilDesc);
+
+    FileIO& fileIO = FileIO::Get();
+    std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/MipmapGen.hlsl");
+    ComPtr<ID3DBlob> cs = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
+    mGenMipmapsPipeline = DXPipelineBuilder()
+        .SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize())
+        .Build(mDevice, mComputeSignature, L"GENERATE MIPMAPS COMPUTE SHADER");
+
     SubmitCommands();
 }
 
-void Engine::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent)
+void CE::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent)
 {
     UINT64 completedValue = fence->GetCompletedValue();
     if (completedValue < fenceValue)
@@ -319,7 +397,7 @@ void Engine::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue,
     fenceValue++;
 }
 
-void Engine::Device::UpdateRenderTarget()
+void CE::Device::UpdateRenderTarget()
 {
     if (mViewport.Width <= 0 || mViewport.Height <= 0)
         return;
@@ -367,7 +445,7 @@ void Engine::Device::UpdateRenderTarget()
     mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
 }
 
-void Engine::Device::NewFrame() {
+void CE::Device::NewFrame() {
 
     int width, height;
     mIsWindowOpen = !glfwWindowShouldClose(mWindow);
@@ -383,6 +461,10 @@ void Engine::Device::NewFrame() {
         mUpdateWindow = true;
     }
 
+    Device& engineDevice = Device::Get();
+    if (engineDevice.GetDisplaySize().x <= 0 || engineDevice.GetDisplaySize().y <= 0)
+        return;
+
 #ifdef EDITOR
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
@@ -397,20 +479,21 @@ void Engine::Device::NewFrame() {
     ImGuizmo::BeginFrame();
 #endif // EDITOR
 
+    SendTexturesToGPU();
+
     mCommandList->RSSetViewports(1, &mViewport); 
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
     mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
-    mCommandList->SetGraphicsRootSignature(mSignature->GetSignature().Get());
+    mCommandList->SetGraphicsRootSignature(mSignature.Get());
 
     glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
     mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mRenderTargetHandles[mFrameIndex], mDepthHandle);
     mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mRenderTargetHandles[mFrameIndex], &clearColor[0]);
     mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, mDepthHandle);
-
 }
 
-void Engine::Device::EndFrame()
+void CE::Device::EndFrame()
 {   
     mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mRenderTargetHandles[mFrameIndex], mDepthHandle);
 
@@ -440,7 +523,7 @@ void Engine::Device::EndFrame()
 
     if (FAILED(mSwapChain->Present(0, 0))) 
     {
-        LOG(LogCore, Fatal, "Failded to present");
+        LOG(LogCore, Fatal, "Failed to present");
     }
 
 #ifdef EDITOR
@@ -472,7 +555,7 @@ void Engine::Device::EndFrame()
     }
 }
 
-void Engine::Device::SubmitCommands()
+void CE::Device::SubmitCommands()
 {
     //CLOSE COMMAND LIST
     mCommandList->Close();
@@ -489,7 +572,7 @@ void Engine::Device::SubmitCommands()
 
 }
 
-void Engine::Device::StartRecordingCommands()
+void CE::Device::StartRecordingCommands()
 {
     mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
 
@@ -504,9 +587,34 @@ void Engine::Device::StartRecordingCommands()
     }
 }
 
-void Engine::Device::StartUploadCommands()
+void CE::Device::SendTexturesToGPU()
 {
+    AssetHandle defaultTexture = Texture::TryGetDefaultTexture();
 
+    if (defaultTexture != nullptr
+        && !defaultTexture->WasSendToGPU())
+    {
+        defaultTexture->SendToGPU();
+    }
+
+    for (WeakAssetHandle<Texture> weakHandle : AssetManager::Get().GetAllAssets<Texture>())
+    {
+        if (!weakHandle.IsLoaded())
+        {
+            continue;
+        }
+
+        AssetHandle<Texture> texture{ weakHandle };
+
+        if (texture->IsReadyToBeSentToGpu())
+        {
+            texture->SendToGPU();
+        }
+    }
+}
+
+void CE::Device::StartUploadCommands()
+{
     if (FAILED(mUploadCommandAllocator->Reset())) 
     {
         LOG(LogCore, Fatal, "Failed to reset upload command allocator");
@@ -516,10 +624,9 @@ void Engine::Device::StartUploadCommands()
     {
         LOG(LogCore, Fatal, "Failed to reset upload command list");
     }
-
 }
 
-void Engine::Device::SubmitUploadCommands()
+void CE::Device::SubmitUploadCommands()
 {
     //CLOSE COMMAND LIST
     mUploadCommandList->Close();
@@ -529,27 +636,44 @@ void Engine::Device::SubmitUploadCommands()
     mUploadFenceValue++;
     HRESULT hr = mUploadCommandQueue->Signal(mUploadFence.Get(), mUploadFenceValue);
 
+    WaitForFence(mUploadFence, mUploadFenceValue, mUploadFenceEvent);
+    
     if (FAILED(hr)) 
     {
         LOG(LogCore, Fatal, "Failed to signal upload fence");
     }
-
-    WaitForFence(mUploadFence, mUploadFenceValue, mUploadFenceEvent);
 }
 
-void Engine::Device::AddToDeallocation(ComPtr<ID3D12Resource>&& res)
+void CE::Device::AddToDeallocation(ComPtr<ID3D12Resource>&& res)
 {
     mResourcesToDeallocate.emplace_back(std::move(res));
 }
 
+void CE::Device::BindSwapchainRT()
+{
+    mCommandList->RSSetViewports(1, &mViewport); 
+    mCommandList->RSSetScissorRects(1, &mScissorRect); 
+    mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
+
+    glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
+    mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mRenderTargetHandles[mFrameIndex], mDepthHandle);
+    mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mRenderTargetHandles[mFrameIndex], &clearColor[0]);
+    mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, mDepthHandle);
+}
+
 #ifdef EDITOR
-void Engine::Device::CreateImguiContext()
+void CE::Device::CreateImguiContext()
 {
     LOG(LogCore, Verbose, "Creating imgui context");
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
+    ImGui::GetIO().ConfigFlags |= 
+        ImGuiConfigFlags_DockingEnable
+	    | ImGuiConfigFlags_ViewportsEnable
+	    | ImGuiConfigFlags_NavEnableGamepad
+	    | ImGuiConfigFlags_NavEnableKeyboard;
     ImGui::GetIO().ConfigViewportsNoDecoration = false;
     ImGui::GetIO().DisplaySize.x = mViewport.Width;
     ImGui::GetIO().DisplaySize.y = mViewport.Height;
@@ -567,3 +691,72 @@ void Engine::Device::CreateImguiContext()
     ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
 }
 #endif
+
+constexpr std::array<std::string_view, sNumOfIcons> GetEmbeddedIcons()
+{
+    return
+    {
+        std::string_view
+        {
+            // 48x48
+            "89504E470D0A1A0A0000000D49484452"
+            "000000300000003001030000006DCC6B"
+            "C4000000017352474200AECE1CE90000"
+            "000467414D410000B18F0BFC61050000"
+            "0006504C54453EDED9FFFFFFF630CE2B"
+            "000000097048597300000EC200000EC2"
+            "0115284A80000000E84944415428CF75"
+            "D0B18AC2401006E07F19D86D02692DA2"
+            "D75D9DED52C8F92A81F49AE38A6B2C56"
+            "52D8C8D56773BE8290C6721FC087D860"
+            "61A7011B0FCED399A0A5D37CB00C3BF3"
+            "0F9ED44BDB71FD1728C48E8DA1029300"
+            "259329973125ADF9019ED61A50BEA80C"
+            "F7BBA2220742515B07AD8B3AF51DF088"
+            "F4A44E7244AF937AC87CEE4ED31CBD8F"
+            "6697A7E8954D1584F7D98179B3DFC2C0"
+            "6E04D8F398C96DE85AAC174676B54D11"
+            "8D96AB057FA62ED51F83ABA061E66719"
+            "4B5F3C96CCEF8FE29566970D6FA67CBF"
+            "255EDEC7AD960C264492C80449949820"
+            "F962D3485ADA1F25FBFD128FBB3C29E0"
+            "0633F14FAA8F44058B0000000049454E"
+            "44AE426082"
+        },
+        {
+            // 32x32
+            "89504E470D0A1A0A0000000D49484452"
+            "0000002000000020010300000049B4E8"
+            "B7000000017352474200AECE1CE90000"
+            "000467414D410000B18F0BFC61050000"
+            "0006504C54453EDED9FFFFFFF630CE2B"
+            "000000097048597300000EC200000EC2"
+            "0115284A80000000874944415418D363"
+            "60606C60606060DE0023929BE1C46603"
+            "063628C1C0C096BF5986412D7FB30D43"
+            "F9E3CF350CC50F1F2730143C6C7EC050"
+            "50D8F88EC1CE70C63B0639C31DEF1818"
+            "0C7FE43124183E004A181E78C0606F38"
+            "FF0C83FDCCF93D0C8C7F9BFF3030FC07"
+            "11ECED3F18D898FB808C9FF3800EF8BB"
+            "03689BEC0720C10F22D81FC089070C00"
+            "150931AC364E68230000000049454E44"
+            "AE426082"
+        },
+        {
+            // 16x16
+            "89504E470D0A1A0A0000000D49484452"
+            "00000010000000100103000000253D6D"
+            "22000000017352474200AECE1CE90000"
+            "000467414D410000B18F0BFC61050000"
+            "0006504C54453EDED9FFFFFFF630CE2B"
+            "000000097048597300000EC200000EC2"
+            "0115284A80000000374944415418D363"
+            "00024E0106CE1006CD0006ED3006C929"
+            "0CBE520CA95E0CAC33184AB318E49731"
+            "38CB30D81630B01F60606E60606E0000"
+            "A71F084E8E1D12830000000049454E44"
+            "AE426082"
+        }
+    };
+}

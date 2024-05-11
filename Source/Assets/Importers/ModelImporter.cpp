@@ -73,20 +73,35 @@ static inline glm::quat GetGLMQuat(const aiQuaternion& pOrientation)
 	return glm::quat(pOrientation.w, pOrientation.x, pOrientation.y, pOrientation.z);
 }
 
-void ReadHierarchyForAnimRecursive(const aiNode& node, Engine::AnimNode& dest)
+void ReadHierarchyForAnimRecursive(const aiNode& node, CE::AnimNode& dest)
 {
 	dest.mName = node.mName.C_Str();
 	dest.mTransform = glm::transpose(reinterpret_cast<const glm::mat4x4&>(node.mTransformation));
 
 	for (size_t j = 0; j < node.mNumChildren; j++)
 	{
-		Engine::AnimNode newNode;
+		CE::AnimNode newNode;
 		ReadHierarchyForAnimRecursive(*node.mChildren[j], newNode);
 		dest.mChildren.push_back(newNode);
 	}
 }
 
-std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(const std::filesystem::path& file) const
+namespace
+{
+	template<typename T>
+	struct DummyAsset
+	{
+		DummyAsset(std::string_view name) :
+			mDummyAsset(std::make_unique<CE::Internal::AssetInternal>(CE::AssetFileMetaData{ name, CE::MetaManager::Get().GetType<T>() }, std::filesystem::path{})),
+			mHandle(mDummyAsset.get())
+		{}
+		std::unique_ptr<CE::Internal::AssetInternal> mDummyAsset{};
+		CE::AssetHandle<T> mHandle{};
+	};
+}
+
+
+std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const std::filesystem::path& file) const
 {
     Assimp::Importer importer{};
     const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_LimitBoneWeights | aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
@@ -94,7 +109,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 	if (***REMOVED***ne == nullptr)
 	{
 		LOG(LogAssets, Error, "Loading of file {} failed: assimp returned null ***REMOVED***ne", file.string());
-		return std::optional<std::vector<ImportedAsset>>{};
+		return Importer::ImportResult{};
 	}
 
 	const MetaType* const myType = MetaManager::Get().TryGetType<ModelImporter>();
@@ -105,7 +120,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 	std::vector<ImportedAsset> returnValue{};
 
 	// Not really loaded in, but materials hold a shared ptr to textures
-	std::vector<std::shared_ptr<const Texture>> textures{};
+	std::vector<DummyAsset<Texture>> textures{};
 
 	// We set it to false initially. If we encounter errors, we continue importing for a bit (but set this to false), 
 	// just so we can log more errors and inform the user of any other issues.
@@ -123,7 +138,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 
 		int width{}, height{}, channels{};
 
-		const Engine::Span<char> pixels = { 
+		const CE::Span<char> pixels = { 
 			reinterpret_cast<char*>(stbi_load_from_memory(reinterpret_cast<const unsigned char*>(aiTex.pcData), size, &width, &height, &channels, 4)),
 			static_cast<unsigned int>(width * height * 4)};
 
@@ -144,7 +159,7 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 			anyErrors = true;
 		}
 
-		textures.emplace_back(std::make_shared<const Texture>(textureName));
+		textures.emplace_back(textureName);
 	}
 
 	for (uint32 i = 0; i < ***REMOVED***ne->mNumMaterials; i++)
@@ -172,65 +187,25 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 		}
 
 		aiString textureName{};
-		if (aiGetMaterialTexture(&aiMat, aiTextureType_BASE_COLOR, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mBaseColorTexture{};
-		{
-			if (textureName.C_Str()[0] == '*')
-			{
-				engineMat.mBaseColorTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
-			}
-			else
-			{
-				engineMat.mBaseColorTexture = std::make_shared<const Texture>(GetTexName(textureName.C_Str()));
-			}
-		}
 
-		if (aiGetMaterialTexture(&aiMat, aiTextureType_NORMALS, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mNormalTexture{};
-		{
-			if (textureName.C_Str()[0] == '*')
+		auto getTexture = [&](aiTextureType aiType, int index) -> CE::AssetHandle<Texture>
 			{
-				engineMat.mNormalTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
-			}
-			else
-			{
-				engineMat.mNormalTexture = std::make_shared<const Texture>(GetTexName(textureName.C_Str()));
-			}
-		}
+				if (aiGetMaterialTexture(&aiMat, aiType, index, &textureName) == aiReturn_SUCCESS)
+				{
+					if (textureName.C_Str()[0] == '*')
+					{
+						return textures[GetIndexFromAssimpTextureName(textureName.C_Str())].mHandle;
+					}
+					return textures.emplace_back(GetTexName(textureName.C_Str())).mHandle;
+				}
+				return nullptr;
+			};
 
-		if (aiGetMaterialTexture(&aiMat, aiTextureType_LIGHTMAP, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mOcclusionTexture{};
-		{
-			if (textureName.C_Str()[0] == '*')
-			{
-				engineMat.mOcclusionTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
-			}
-			else
-			{
-				engineMat.mOcclusionTexture = std::make_shared<const Texture>(GetTexName(textureName.C_Str()));
-			}
-		}
-
-		if (aiGetMaterialTexture(&aiMat, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mMetallicRoughnessTexture{};
-		{
-			if (textureName.C_Str()[0] == '*')
-			{
-				engineMat.mMetallicRoughnessTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
-			}
-			else
-			{
-				engineMat.mMetallicRoughnessTexture = std::make_shared<const Texture>(GetTexName(textureName.C_Str()));
-			}
-		}
-
-		if (aiGetMaterialTexture(&aiMat, aiTextureType_EMISSIVE, 0, &textureName) == aiReturn_SUCCESS) // std::shared_ptr<const Texture> mEmissiveTexture{};
-		{
-			if (textureName.C_Str()[0] == '*')
-			{
-				engineMat.mEmissiveTexture = textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
-			}
-			else
-			{
-				engineMat.mEmissiveTexture = std::make_shared<const Texture>(GetTexName(textureName.C_Str()));
-			}
-		}
+		engineMat.mBaseColorTexture = getTexture(aiTextureType_BASE_COLOR, 0);
+		engineMat.mNormalTexture = getTexture(aiTextureType_NORMALS, 0);
+		engineMat.mOcclusionTexture = getTexture(aiTextureType_LIGHTMAP, 0);
+		engineMat.mMetallicRoughnessTexture = getTexture(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE);
+		engineMat.mEmissiveTexture = getTexture(aiTextureType_EMISSIVE, 0);
 
 		returnValue.emplace_back(MaterialImporter::Import(file, myVersion, engineMat));
 	}
@@ -437,8 +412,12 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 
 	if (anyErrors)
 	{
-		return std::optional<std::vector<ImportedAsset>>{};
+		return Importer::ImportResult{};
 	}
+
+	std::vector<DummyAsset<StaticMesh>> dummyStaticMeshes{};
+	std::vector<DummyAsset<SkinnedMesh>> dummySkinnedMeshes{};
+	std::vector<DummyAsset<Material>> dummyMaterials{};
 
 	World world{ false };
 	Registry& reg = world.GetRegistry();
@@ -470,24 +449,25 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 					reg.AddComponent<TransformComponent>(meshHolder).SetParent(&transform);
 				}
 
+
+				AssetHandle<Material> mat = dummyMaterials.emplace_back(GetMaterialName(file, 
+					***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), 
+					***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex)).mHandle;
+
 				if (***REMOVED***ne->mMeshes[node.mMeshes[i]]->HasBones())
 				{
 					SkinnedMeshComponent& meshComponent = reg.AddComponent<SkinnedMeshComponent>(meshHolder);
 
-					std::shared_ptr<SkinnedMesh> mesh = std::make_shared<SkinnedMesh>(GetMeshName(file, ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str()));
-					meshComponent.mSkinnedMesh = std::move(mesh);
-
-					std::shared_ptr<Material> mat = std::make_shared<Material>(GetMaterialName(file, ***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex));
-					meshComponent.mMaterial = std::move(mat);
+					meshComponent.mSkinnedMesh = dummySkinnedMeshes.emplace_back(GetMeshName(file, 
+						***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str())).mHandle;
+					meshComponent.mMaterial =  std::move(mat);
 				}
 				else
 				{
 					StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(meshHolder);
 
-					std::shared_ptr<StaticMesh> mesh = std::make_shared<StaticMesh>(GetMeshName(file, ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str()));
-					meshComponent.mStaticMesh = std::move(mesh);
-				
-					std::shared_ptr<Material> mat = std::make_shared<Material>(GetMaterialName(file, ***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), ***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex));
+					meshComponent.mStaticMesh = dummyStaticMeshes.emplace_back(GetMeshName(file,
+						***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str())).mHandle;
 					meshComponent.mMaterial = std::move(mat);
 				}
 
@@ -496,7 +476,6 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 			for (size_t i = 0; i < node.mNumChildren; i++)
 			{
 				const aiNode& child = *node.mChildren[i];
-
 				makePrefab(child, entity);
 			}
 
@@ -515,10 +494,10 @@ std::optional<std::vector<Engine::ImportedAsset>> Engine::ModelImporter::Import(
 	}
 	
 	LOG(LogError, Error, "Importing {} failed; failed to make a valid prefab out of the ai ***REMOVED***ne", file.string());
-	return std::optional<std::vector<ImportedAsset>>{};
+	return Importer::ImportResult{};
 }
 
-std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
+std::optional<CE::ImportedAsset> CE::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
     const std::string& name, 
     const uint32 importerVersion, 
     Span<const glm::vec3> positions, 
@@ -538,7 +517,7 @@ std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(con
     return std::optional<ImportedAsset>();
 }
 
-std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
+std::optional<CE::ImportedAsset> CE::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
     const std::string& name, 
     const uint32 importerVersion, 
     Span<const glm::vec3> positions, 
@@ -561,7 +540,7 @@ std::optional<Engine::ImportedAsset> Engine::ModelImporter::ImportFromMemory(con
     return std::optional<ImportedAsset>();
 }
 
-Engine::MetaType Engine::ModelImporter::Reflect()
+CE::MetaType CE::ModelImporter::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<ModelImporter>{}, "ModelImporter", MetaType::Base<Importer>{} };
 

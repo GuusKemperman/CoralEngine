@@ -10,22 +10,22 @@
 #include "Meta/MetaFunc.h"
 #include "Scripting/ScriptConfig.h"
 
-namespace Engine
+namespace CE
 {
 	class ScriptEvent;
 }
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 	class MetaFunc;
 	class MetaField;
+	class MetaProps;
 	struct MetaFuncNamedParam;
 	class BinaryGSONObject;
 	class Script;
 	class FunctionEntryScriptNode;
 	class ScriptNode;
-
 
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
 	namespace Internal
@@ -96,7 +96,6 @@ namespace Engine
 	}
 #endif
 
-
 	class ScriptFunc
 	{
 	public:
@@ -116,6 +115,9 @@ namespace Engine
 
 		const std::string& GetNameOfScriptAsset() const { return mNameOfScriptAsset; }
 		TypeId GetTypeIdOfScriptAsset() const { return mTypeIdOfScript; }
+
+		MetaProps& GetProps() { return *mProps; }
+		const MetaProps& GetProps() const { return *mProps; }
 
 		/*
 		The function does nothing when called; first all the script classes are declared, after which Script::DefineMetaType
@@ -264,6 +266,8 @@ namespace Engine
 
 		const ScriptEvent* mBasedOnEvent{};
 
+		std::unique_ptr<MetaProps> mProps{};
+
 		bool mIsPure{};
 		bool mIsStatic{};
 	};
@@ -285,37 +289,37 @@ namespace Engine
 		return *nodePtr;
 	}
 
-	inline Engine::ScriptNode& Engine::ScriptFunc::GetNode(NodeId id)
+	inline CE::ScriptNode& CE::ScriptFunc::GetNode(NodeId id)
 	{
 		ASSERT(TryGetNode(id) != nullptr);
 		return mNodes[id.Get() - 1];
 	}
 
-	inline const Engine::ScriptNode& Engine::ScriptFunc::GetNode(NodeId id) const
+	inline const CE::ScriptNode& CE::ScriptFunc::GetNode(NodeId id) const
 	{
 		ASSERT(TryGetNode(id) != nullptr);
 		return mNodes[id.Get() - 1];
 	}
 
-	inline Engine::ScriptLink& Engine::ScriptFunc::GetLink(LinkId id)
+	inline CE::ScriptLink& CE::ScriptFunc::GetLink(LinkId id)
 	{
 		ASSERT(TryGetLink(id) != nullptr);
 		return mLinks[id.Get() - 1];
 	}
 
-	inline const Engine::ScriptLink& Engine::ScriptFunc::GetLink(LinkId id) const
+	inline const CE::ScriptLink& CE::ScriptFunc::GetLink(LinkId id) const
 	{
 		ASSERT(TryGetLink(id) != nullptr);
 		return mLinks[id.Get() - 1];
 	}
 
-	inline Engine::ScriptPin& Engine::ScriptFunc::GetPin(PinId id)
+	inline CE::ScriptPin& CE::ScriptFunc::GetPin(PinId id)
 	{
 		ASSERT(TryGetPin(id) != nullptr);
 		return mPins[id.Get() - 1];
 	}
 
-	inline const Engine::ScriptPin& Engine::ScriptFunc::GetPin(PinId id) const
+	inline const CE::ScriptPin& CE::ScriptFunc::GetPin(PinId id) const
 	{
 		ASSERT(TryGetPin(id) != nullptr);
 		return mPins[id.Get() - 1];

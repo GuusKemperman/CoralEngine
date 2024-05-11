@@ -8,7 +8,7 @@
 #include "Scripting/ScriptNode.h"
 #include "Scripting/ScriptTools.h"
 
-Engine::ScriptVariableTypeData::ScriptVariableTypeData(TypeTraits typeTraits, std::string_view name) :
+CE::ScriptVariableTypeData::ScriptVariableTypeData(TypeTraits typeTraits, std::string_view name) :
 	mName(name),
 	mTypeForm(typeTraits.mForm)
 {
@@ -32,7 +32,7 @@ Engine::ScriptVariableTypeData::ScriptVariableTypeData(TypeTraits typeTraits, st
 	}
 }
 
-Engine::ScriptVariableTypeData::ScriptVariableTypeData(std::string_view typeName, TypeForm typeForm, std::string_view name) :
+CE::ScriptVariableTypeData::ScriptVariableTypeData(std::string_view typeName, TypeForm typeForm, std::string_view name) :
 	mTypeName(typeName),
 	mName(name),
 	mType(MetaManager::Get().TryGetType(typeName)),
@@ -40,7 +40,7 @@ Engine::ScriptVariableTypeData::ScriptVariableTypeData(std::string_view typeName
 {
 }
 
-Engine::ScriptVariableTypeData::ScriptVariableTypeData(const MetaType& type, TypeForm typeForm, std::string_view name) :
+CE::ScriptVariableTypeData::ScriptVariableTypeData(const MetaType& type, TypeForm typeForm, std::string_view name) :
 	mTypeName(type.GetName()),
 	mName(name),
 	mType(&type),
@@ -48,18 +48,22 @@ Engine::ScriptVariableTypeData::ScriptVariableTypeData(const MetaType& type, Typ
 {
 }
 
-bool Engine::ScriptVariableTypeData::IsFlow() const
+bool CE::ScriptVariableTypeData::IsFlow() const
 {
 	return mTypeName == ScriptPin::sFlowDisplayName;
 }
 
-void Engine::ScriptVariableTypeData::RefreshTypePointer()
+void CE::ScriptVariableTypeData::RefreshTypePointer()
 {
 	mType = MetaManager::Get().TryGetType(mTypeName);
-	ASSERT(mType == nullptr || mType->GetName() == mTypeName);
+
+	if (mType != nullptr) // In case our type got renamed
+	{
+		mTypeName = mType->GetName();
+	}
 }
 
-Engine::ScriptPin::ScriptPin(PinId id, NodeId nodeId, ScriptPinKind kind,
+CE::ScriptPin::ScriptPin(PinId id, NodeId nodeId, ScriptPinKind kind,
                              const ScriptVariableTypeData& variableTypeInfo) :
 	mId(id),
 	mNodeId(nodeId),
@@ -68,7 +72,7 @@ Engine::ScriptPin::ScriptPin(PinId id, NodeId nodeId, ScriptPinKind kind,
 {
 }
 
-uint32 Engine::ScriptPin::HowManyLinksCanBeConnectedToThisPin() const
+uint32 CE::ScriptPin::HowManyLinksCanBeConnectedToThisPin() const
 {
 	if (IsFlow())
 	{
@@ -94,7 +98,7 @@ uint32 Engine::ScriptPin::HowManyLinksCanBeConnectedToThisPin() const
 	}
 }
 
-Engine::MetaAny* Engine::ScriptPin::TryGetValueIfNoInputLinked()
+CE::MetaAny* CE::ScriptPin::TryGetValueIfNoInputLinked()
 {
 	if (!std::holds_alternative<InputData>(mData))
 	{
@@ -118,18 +122,18 @@ Engine::MetaAny* Engine::ScriptPin::TryGetValueIfNoInputLinked()
 	return &std::get<2>(inputData.mValueToUseIfNotLinked);
 }
 
-const Engine::MetaAny* Engine::ScriptPin::TryGetValueIfNoInputLinked() const
+const CE::MetaAny* CE::ScriptPin::TryGetValueIfNoInputLinked() const
 {
 	return const_cast<ScriptPin&>(*this).TryGetValueIfNoInputLinked();
 }
 
-void Engine::ScriptPin::SetValueIfNoInputLinked(MetaAny&& value)
+void CE::ScriptPin::SetValueIfNoInputLinked(MetaAny&& value)
 {
 	ASSERT(GetKind() == ScriptPinKind::Input);
 	std::get<InputData>(mData).mValueToUseIfNotLinked = std::move(value);
 }
 
-void Engine::ScriptPin::SerializeTo(BinaryGSONObject& to) const
+void CE::ScriptPin::SerializeTo(BinaryGSONObject& to) const
 {
 	to.AddGSONMember("id") << mId.Get();
 	to.AddGSONMember("paramInfo") << mParamInfo;
@@ -206,7 +210,7 @@ void Engine::ScriptPin::SerializeTo(BinaryGSONObject& to) const
 	}
 }
 
-std::optional<Engine::ScriptPin> Engine::ScriptPin::DeserializeFrom(const BinaryGSONObject& src, const ScriptNode& node, [[maybe_unused]] uint32 version)
+std::optional<CE::ScriptPin> CE::ScriptPin::DeserializeFrom(const BinaryGSONObject& src, const ScriptNode& node, [[maybe_unused]] uint32 version)
 {
 	const BinaryGSONMember* serializedId = src.TryGetGSONMember("id");
 	const BinaryGSONMember* serializedIsOutput = src.TryGetGSONMember("isOutput");
@@ -264,7 +268,7 @@ std::optional<Engine::ScriptPin> Engine::ScriptPin::DeserializeFrom(const Binary
 	return pin;
 }
 
-void Engine::ScriptPin::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
+void CE::ScriptPin::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
 {
 	if (IsFlow())
 	{
@@ -286,7 +290,7 @@ void Engine::ScriptPin::CollectErrors(ScriptErrorInserter inserter, const Script
 	}
 }
 
-void Engine::ScriptPin::PostDeclarationRefresh()
+void CE::ScriptPin::PostDeclarationRefresh()
 {
 	mParamInfo.RefreshTypePointer();
 

@@ -3,7 +3,7 @@
 
 #include "Meta/MetaAny.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaField;
 	class Registry;
@@ -21,7 +21,6 @@ namespace Engine
 		ComponentFactory& operator=(ComponentFactory&&) noexcept = default;
 		ComponentFactory& operator=(const ComponentFactory&) = delete;
 
-
 		MetaAny Construct(Registry& registry, entt::entity entity) const;
 
 		const MetaAny* GetOverridenDefaultValue(const MetaField& prop) const;
@@ -36,14 +35,9 @@ namespace Engine
 		};
 
 		 const std::vector<OverridenValue>& GetOverridenDefaultValues() const { return mOverridenDefaultValues; }
-		 //const BinaryGSONObject& GetCustomSerializationData() const { return mCustomSerializedData; }
 
 	private:
 		std::reference_wrapper<const MetaType> mProductClass;
 		std::vector<OverridenValue> mOverridenDefaultValues{};
-
-		// Will be cleared after the first Construct call, but only if the component no longer
-		// has a custom serialization/deserialization step
-		//mutable BinaryGSONObject mCustomSerializedData{};
 	};
 }

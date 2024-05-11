@@ -1,13 +1,15 @@
 #pragma once
-#include "Assets/Prefabs/Prefab.h"
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
+	class Prefab;
+
 	class ParticleSpawnPrefabOnDeathComponent
 	{
 	public:
-		std::shared_ptr<const Prefab> mPrefabToSpawn{};
+		AssetHandle<Prefab> mPrefabToSpawn{};
 
 	private:
 		friend ReflectAccess;

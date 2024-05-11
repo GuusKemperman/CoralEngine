@@ -11,12 +11,12 @@
 #include "Systems/AbilitySystem.h"
 #include "World/World.h"
 
-Engine::Ability::Ability(std::string_view name) :
+CE::Ability::Ability(std::string_view name) :
 	Asset(name, MakeTypeId<Ability>())
 {
 }
 
-Engine::Ability::Ability(AssetLoadInfo& loadInfo) :
+CE::Ability::Ability(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {
 	BinaryGSONObject obj{};
@@ -48,7 +48,7 @@ Engine::Ability::Ability(AssetLoadInfo& loadInfo) :
 		return;
 	}
 
-	*serializedScript >> mScript;
+	*serializedScript >> mOnAbilityActivateScript;
 	*serializedIconTexture >> mIconTexture;
 	*serializedDescription >> mDescription;
 	*serializedGlobalCooldown >> mGlobalCooldown;
@@ -57,11 +57,11 @@ Engine::Ability::Ability(AssetLoadInfo& loadInfo) :
 	*serializedCharges >> mCharges;
 }
 
-void Engine::Ability::OnSave(AssetSaveInfo& saveInfo) const
+void CE::Ability::OnSave(AssetSaveInfo& saveInfo) const
 {
 	BinaryGSONObject obj{};
 
-	obj.AddGSONMember("Script") << mScript;
+	obj.AddGSONMember("Script") << mOnAbilityActivateScript;
 	obj.AddGSONMember("IconTexture") << mIconTexture;
 	obj.AddGSONMember("Description") << mDescription;
 	obj.AddGSONMember("GlobalCooldown") << mGlobalCooldown;
@@ -72,11 +72,11 @@ void Engine::Ability::OnSave(AssetSaveInfo& saveInfo) const
 	obj.SaveToBinary(saveInfo.GetStream());
 }
 
-Engine::MetaType Engine::Ability::Reflect()
+CE::MetaType CE::Ability::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Ability>{}, "Ability", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 
-	type.AddField(&Ability::mScript, "mScript");
+	type.AddField(&Ability::mOnAbilityActivateScript, "mOnAbilityActivateScript");
 	type.AddField(&Ability::mIconTexture, "mIconTexture");
 	type.AddField(&Ability::mDescription, "mDescription");
 	type.AddField(&Ability::mGlobalCooldown, "mGlobalCooldown");
@@ -84,13 +84,24 @@ Engine::MetaType Engine::Ability::Reflect()
 	type.AddField(&Ability::mRequirementToUse, "mRequirementToUse");
 	type.AddField(&Ability::mCharges, "mCharges");
 
+	type.AddFunc([](const AssetHandle<Ability>& script) -> AssetHandle<Texture>
+		{
+			if (script == nullptr)
+			{
+				return nullptr;
+			}
+
+			return script->mIconTexture;
+		},
+		"GetIconTexture", MetaFunc::ExplicitParams<const AssetHandle<Ability>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
 	ReflectAssetType<Ability>(type);
 	return type;
 }
 
-Engine::MetaType Reflector<Engine::Ability::RequirementType>::Reflect()
+CE::MetaType Reflector<CE::Ability::RequirementType>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	using T = Ability::RequirementType;
 	MetaType type{ MetaType::T<T>{}, "Ability RequirementType" };
 

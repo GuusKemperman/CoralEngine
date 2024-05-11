@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Systems/UpdateFlyCamSystem.h"
 
+#include "Components/CameraComponent.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/TransformComponent.h"
@@ -8,12 +9,11 @@
 #include "Core/Input.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
-#include "World/WorldRenderer.h"
+#include "World/WorldViewport.h"
 
-void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
+void CE::UpdateFlyCamSystem::Update(World& world, float dt)
 {
-	auto activeCamera = world.GetRenderer().GetMainCamera();
-	const entt::entity activeCameraOwner = activeCamera.has_value() ? activeCamera->first : entt::null;
+	const entt::entity activeCameraOwner = CameraComponent::GetSelected(world);
 
 	FlyCamControllerComponent* const flyCam = world.GetRegistry().TryGet<FlyCamControllerComponent>(activeCameraOwner);
 	TransformComponent* const transform = world.GetRegistry().TryGet<TransformComponent>(activeCameraOwner);
@@ -28,9 +28,10 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	Input& input = Input::Get();
 
-	movementInput[Axis::Forward] = input.GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S) + -input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftY);
-	movementInput[Axis::Up] = input.GetKeyboardAxis(Input::KeyboardKey::E, Input::KeyboardKey::Q);;
-	movementInput[Axis::Right] =  input.GetKeyboardAxis(Input::KeyboardKey::D, Input::KeyboardKey::A) + input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftX);
+	float isMouseButtonHeld = static_cast<float>(input.IsMouseButtonHeld(Input::MouseButton::Right));
+	movementInput[Axis::Forward] = input.GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S) * isMouseButtonHeld/* + -input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftY)*/;
+	movementInput[Axis::Up] = input.GetKeyboardAxis(Input::KeyboardKey::E, Input::KeyboardKey::Q) * isMouseButtonHeld;
+	movementInput[Axis::Right] = input.GetKeyboardAxis(Input::KeyboardKey::D, Input::KeyboardKey::A) * isMouseButtonHeld/* + input.GetGamepadAxis(0, Input::GamepadAxis::StickLeftX)*/;
 
 	const glm::vec3 timeScaledMovementInput = movementInput * dt;
 
@@ -40,13 +41,15 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 		Axis::Up
 	};
 
-	const glm::vec2 rotationInput
+	const glm::vec2 mouseInput = input.GetDeltaMousePosition() / world.GetViewport().GetViewportSize() * static_cast<float>(input.IsMouseButtonHeld(Input::MouseButton::Right, true));
+
+	glm::vec2 timeScaledRotationInput
 	{
-		input.GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp) + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightY),
-		input.GetKeyboardAxis(Input::KeyboardKey::ArrowRight, Input::KeyboardKey::ArrowLeft) + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightX),
+		mouseInput.y/* + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightY) * dt*/,
+		mouseInput.x/* + input.GetGamepadAxis(0, Input::GamepadAxis::StickRightX) * dt*/
 	};
 
-	const glm::vec2 timeScaledRotationInput = rotationInput * dt;
+	timeScaledRotationInput *= flyCam->mRotationSpeed;
 
 	const std::array<glm::quat, 2> timeScaledRotations
 	{
@@ -68,7 +71,7 @@ void Engine::UpdateFlyCamSystem::Update(World& world, float dt)
 	}
 }
 
-Engine::MetaType Engine::UpdateFlyCamSystem::Reflect()
+CE::MetaType CE::UpdateFlyCamSystem::Reflect()
 {
 	return MetaType{ MetaType::T<UpdateFlyCamSystem>{}, "UpdateFlyCamSystem", MetaType::Base<System>{} };
 }

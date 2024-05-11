@@ -5,20 +5,23 @@
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Core/Input.h"
 #include "Meta/MetaReflect.h"
+#include "Assets/Core/AssetHandle.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 	class Ability;
 	
 	struct AbilityInstance
 	{
-		std::shared_ptr<const Ability> mAbilityAsset{};
+		AssetHandle<Ability> mAbilityAsset{};
 		float mRequirementCounter{};
 		int mChargesCounter{};
 
-		std::vector<Input::KeyboardKey> mKeyboardKeys;
-		std::vector<Input::GamepadButton> mGamepadButtons;
+		std::vector<Input::KeyboardKey> mKeyboardKeys{};
+		std::vector<Input::GamepadButton> mGamepadButtons{};
+
+		void MakeAbilityReadyToBeActivated();
 
 		bool operator==(const AbilityInstance& other) const;
 		bool operator!=(const AbilityInstance& other) const;
@@ -27,6 +30,7 @@ namespace Engine
 		void DisplayWidget();
 #endif // EDITOR
 
+	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AbilityInstance);
@@ -35,12 +39,12 @@ namespace Engine
 	class AbilitiesOnCharacterComponent
 	{
 	public:
-		bool mIsPlayer = true;
-		std::vector<AbilityInstance> mAbilitiesToInput;
+		std::vector<AbilityInstance> mAbilitiesToInput{};
 
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
+		void OnBeginPlay(World&, entt::entity);
 #ifdef EDITOR
 		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
 #endif // EDITOR
@@ -61,5 +65,5 @@ namespace Engine
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::AbilityInstance, var.DisplayWidget(); (void)name;)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::AbilityInstance, var.DisplayWidget(); (void)name;)
 #endif // EDITOR

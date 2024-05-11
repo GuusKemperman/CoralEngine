@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Meta/MetaFuncId.h"
 
-Engine::FuncId Engine::MakeFuncId(const TypeTraits returnType, const std::vector<TypeTraits>& parameters)
+CE::FuncId CE::MakeFuncId(const TypeTraits returnType, const std::vector<TypeTraits>& parameters)
 {
 	uint32 typeId = returnType.Hash();
 

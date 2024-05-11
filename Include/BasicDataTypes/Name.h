@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-namespace Engine
+namespace CE
 {
 	// Essentially a string_view with it's hash precalculated, at compile time if possible
 	class Name
@@ -61,6 +61,7 @@ namespace Engine
 			INTERNAL_NAME_CHECK_EXPIRATION
 			return mData;
 		}
+
 		constexpr std::string_view StringView() const
 		{
 			INTERNAL_NAME_CHECK_EXPIRATION
@@ -135,15 +136,15 @@ namespace Engine
 }
 
 template <>
-struct std::hash<Engine::Name>
+struct std::hash<CE::Name>
 {
-	std::size_t operator()(const Engine::Name& k) const
+	std::size_t operator()(const CE::Name& k) const
 	{
 		return k.GetHash();
 	}
 };
 
-[[nodiscard]] constexpr Engine::Name operator"" _Name(const char* str, std::size_t length) noexcept
+[[nodiscard]] constexpr CE::Name operator"" _Name(const char* str, std::size_t length) noexcept
 {
-	return Engine::Name{ str, static_cast<Engine::Name::SizeType>(length) };
+	return CE::Name{ str, static_cast<CE::Name::SizeType>(length) };
 }

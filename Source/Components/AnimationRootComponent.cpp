@@ -1,0 +1,96 @@
+#include "Precomp.h"
+#include "Components/AnimationRootComponent.h"
+
+#include "Assets/Animation/Animation.h"
+#include "Components/SkinnedMeshComponent.h"
+#include "Components/TransformComponent.h"
+#include "World/World.h"
+#include "World/Registry.h"
+#include "Meta/MetaType.h"
+#include "Meta/MetaProps.h"
+#include "Utilities/Reflect/ReflectComponentType.h"
+
+void CE::AnimationRootComponent::SwitchAnimationRecursive(Registry& reg, const entt::entity entity, const AssetHandle<Animation> animation, float timeStamp, float animationSpeed)
+{
+	auto skinnedMesh = reg.TryGet<SkinnedMeshComponent>(entity);
+
+	if (skinnedMesh != nullptr)
+	{
+		skinnedMesh->mAnimation = animation;
+		skinnedMesh->mCurrentTime = timeStamp;
+		skinnedMesh->mAnimationSpeed = animationSpeed;
+	}
+
+	auto transform = reg.TryGet<TransformComponent>(entity);
+
+	if (transform == nullptr)
+	{
+		return;
+	}
+
+	for (const TransformComponent& child : transform->GetChildren())
+	{
+		SwitchAnimationRecursive(reg, child.GetOwner(), animation, timeStamp, animationSpeed);
+	}
+}
+
+void CE::AnimationRootComponent::OnConstruct(World&, entt::entity owner)
+{
+	mOwner = owner;
+}
+
+void CE::AnimationRootComponent::SwitchAnimation()
+{
+	World* world = World::TryGetWorldAtTopOfStack();
+	ASSERT(world != nullptr);
+
+	SwitchAnimationRecursive(world->GetRegistry(), mOwner, mWantedAnimation, mWantedTimeStamp, mWantedAnimationSpeed);
+}
+
+void CE::AnimationRootComponent::SwitchAnimation(Registry& reg, const AssetHandle<Animation>& animation, float timeStamp, float animationSpeed)
+{
+	if (animation == mWantedAnimation)
+	{
+		return;
+	}
+
+	mWantedAnimation = animation;
+	mWantedTimeStamp = timeStamp;
+	mWantedAnimationSpeed = animationSpeed;
+
+	SwitchAnimationRecursive(reg, mOwner, mWantedAnimation, mWantedTimeStamp, mWantedAnimationSpeed);
+}
+
+CE::MetaType CE::AnimationRootComponent::Reflect()
+{
+	auto type = MetaType{MetaType::T<AnimationRootComponent>{}, "AnimationRootComponent"};
+	MetaProps& props = type.GetProperties();
+	props.Add(Props::sIsScriptableTag);
+
+	type.AddField(&AnimationRootComponent::mWantedAnimation, "mWantedAnimation").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&AnimationRootComponent::mWantedTimeStamp, "mWantedTimeStamp").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&AnimationRootComponent::mWantedAnimationSpeed, "mWantedAnimationSpeed").GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc(static_cast<void (AnimationRootComponent::*)()>(&AnimationRootComponent::SwitchAnimation), "SwitchAnimationEditor").GetProperties().Add(Props::sCallFromEditorTag);
+
+	type.AddFunc([](AnimationRootComponent& animationRoot, const AssetHandle<Animation>& animation, float timeStamp, float animationSpeed)
+		{
+			if (animation == nullptr)
+			{
+				LOG(LogWorld, Warning, "Attempted to set NULL animation.");
+				return;
+			}
+
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			animationRoot.SwitchAnimation(world->GetRegistry(), animation, timeStamp, animationSpeed);
+
+		}, "SwitchAnimation", MetaFunc::ExplicitParams<AnimationRootComponent&,
+		const AssetHandle<Animation>&, float, float>{}, "AnimationRootComponent", "Animation", "Time Stamp", "Animation Speed").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	BindEvent(type, sConstructEvent, &AnimationRootComponent::OnConstruct);
+
+	ReflectComponentType<AnimationRootComponent>(type);
+	return type;
+}

@@ -6,9 +6,9 @@
 #include "imgui/imgui_internal.h"
 
 #include "World/World.h"
-#include "World/WorldRenderer.h"
+#include "World/WorldViewport.h"
 #include "World/Registry.h"
-#include "Utilities/FrameBuffer.h"
+#include "Rendering/FrameBuffer.h"
 #include "Core/Input.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
@@ -17,6 +17,7 @@
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/StaticMesh.h"
 #include "Assets/Material.h"
+#include "Components/ComponentFilter.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
@@ -27,38 +28,50 @@
 #include "Utilities/StringFunctions.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Archiver.h"
+#include "Rendering/Renderer.h"
 
 namespace
 {
 	ImGuizmo::OPERATION sGuizmoOperation{ ImGuizmo::OPERATION::TRANSLATE };
 	ImGuizmo::MODE sGuizmoMode{ ImGuizmo::MODE::WORLD };
 	bool sShouldGuizmoSnap{};
-	glm::vec3 sSnapTo{ 1.0f };
 
-	void RemoveInvalidEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities);
+	// Different variable for each operation.
+	float sTranslateSnapTo{ 1.0f };
+	float sRotationSnapTo{ 30.0f };
+	float sScaleSnapTo{ 1.0f };
 
-	void DeleteEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities);
-	std::string CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities);
-	void CutToClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities);
-	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipboardData);
-	void Duplicate(Engine::World& world, std::vector<entt::entity>& selectedEntities);
+	// Storing it so that we only have to do the check once.
+	float* sCurrentSnapTo{};
+
+	// We need this for the Manipulate() function
+	// which expects a vec3 in the form of a pointer to float.
+	glm::vec3 sCurrentSnapToVec3{};
+
+	void RemoveInvalidEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
+
+	void DeleteEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
+	std::string CopyToClipBoard(const CE::World& world, const std::vector<entt::entity>& selectedEntities);
+	void CutToClipBoard(CE::World& world, std::vector<entt::entity>& selectedEntities);
+	void PasteClipBoard(CE::World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipboardData);
+	void Duplicate(CE::World& world, std::vector<entt::entity>& selectedEntities);
 	std::optional<std::string_view> GetSerializedEntitiesInClipboard();
 	bool IsStringFromCopyToClipBoard(std::string_view string);
 
-	void CheckShortcuts(Engine::World& world, std::vector<entt::entity>& selectedEntities);
-	void ReceiveDragDrops(Engine::World& world);
+	void CheckShortcuts(CE::World& world, std::vector<entt::entity>& selectedEntities);
+	void ReceiveDragDrops(CE::World& world);
 }
 
-Engine::WorldInspectHelper::WorldInspectHelper(World&& worldThatHasNotYetBegunPlay) :
+CE::WorldInspectHelper::WorldInspectHelper(World&& worldThatHasNotYetBegunPlay) :
 	mViewportFrameBuffer(std::make_unique<FrameBuffer>()),
 	mWorldBeforeBeginPlay(std::make_unique<World>(std::move(worldThatHasNotYetBegunPlay)))
 {
 	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay());
 }
 
-Engine::WorldInspectHelper::~WorldInspectHelper() = default;
+CE::WorldInspectHelper::~WorldInspectHelper() = default;
 
-Engine::World& Engine::WorldInspectHelper::GetWorld()
+CE::World& CE::WorldInspectHelper::GetWorld()
 {
 	if (mWorldAfterBeginPlay != nullptr)
 	{
@@ -68,16 +81,15 @@ Engine::World& Engine::WorldInspectHelper::GetWorld()
 	return *mWorldBeforeBeginPlay;
 }
 
-Engine::World& Engine::WorldInspectHelper::BeginPlay()
+CE::World& CE::WorldInspectHelper::BeginPlay()
 {
 	if (mWorldAfterBeginPlay != nullptr)
 	{
 		LOG(LogEditor, Error, "Called begin play when the world has already begun play");
 		return GetWorld();
 	}
-	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay() && "Do not call BeginPlay on the world yourself, use WorldInspectHelper::BeginPlay")
-
-		mWorldAfterBeginPlay = std::make_unique<World>(false);
+	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay() && "Do not call BeginPlay on the world yourself, use WorldInspectHelper::BeginPlay");
+	mWorldAfterBeginPlay = std::make_unique<World>(false);
 
 	// Duplicate our level world
 	const BinaryGSONObject serializedWorld = Archiver::Serialize(*mWorldBeforeBeginPlay);
@@ -87,7 +99,7 @@ Engine::World& Engine::WorldInspectHelper::BeginPlay()
 	return GetWorld();
 }
 
-Engine::World& Engine::WorldInspectHelper::EndPlay()
+CE::World& CE::WorldInspectHelper::EndPlay()
 {
 	if (mWorldAfterBeginPlay == nullptr)
 	{
@@ -102,13 +114,13 @@ Engine::World& Engine::WorldInspectHelper::EndPlay()
 	return GetWorld();
 }
 
-void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
+void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 {
 	mDeltaTimeRunningAverage = mDeltaTimeRunningAverage * sRunningAveragePreservePercentage + deltaTime * (1.0f - sRunningAveragePreservePercentage);
 
 	ImGui::Splitter(true, &mViewportWidth, &mHierarchyAndDetailsWidth);
 
-	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, 0.0f }))
+	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, -2.0f }, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoNav))
 	{
 		const ImVec2 beginPlayPos = ImGui::GetWindowContentRegionMin() + ImVec2{ ImGui::GetContentRegionAvail().x / 2.0f, 10.0f };
 		const ImVec2 viewportPos = ImGui::GetCursorPos();
@@ -141,6 +153,14 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			}
 
 			ImGui::Checkbox("Snap", &sShouldGuizmoSnap);
+			if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
+			{
+				sShouldGuizmoSnap = true;
+			}
+			if (Input::Get().WasKeyboardKeyReleased(Input::KeyboardKey::LeftControl))
+			{
+				sShouldGuizmoSnap = false;
+			}
 			ImGui::SameLine();
 
 			if (sShouldGuizmoSnap)
@@ -148,17 +168,27 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 				switch (sGuizmoOperation)
 				{
 				case ImGuizmo::TRANSLATE:
-					ImGui::InputFloat3("Snap", value_ptr(sSnapTo));
+					sCurrentSnapTo = &sTranslateSnapTo;
 					break;
 				case ImGuizmo::ROTATE:
-					ImGui::InputFloat("Angle Snap", value_ptr(sSnapTo));
+					sCurrentSnapTo = &sRotationSnapTo;
 					break;
 				case ImGuizmo::SCALE:
-					ImGui::InputFloat("Scale Snap", value_ptr(sSnapTo));
+					sCurrentSnapTo = &sScaleSnapTo;
 					break;
 				default:
 					break;
 				}
+				// Convert to string and truncate to the desired decimal precision.
+				std::string valueStr = std::to_string(*sCurrentSnapTo);
+				valueStr = valueStr.substr(0, valueStr.find('.') + 1 + 3); // 1 - dot character and 3 - decimal precision 
+				// Calculate the text size with some padding
+				const ImVec2 textSize = ImGui::CalcTextSize(valueStr.c_str());
+				const float padding = ImGui::GetStyle().FramePadding.x * 2.0f;
+
+				const float width =  textSize.x + padding;
+				ImGui::SetNextItemWidth(width);
+				ImGui::InputFloat("##", sCurrentSnapTo);
 			}
 		}
 
@@ -167,11 +197,11 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		if (!GetWorld().HasBegunPlay())
 		{
 			ImGui::SetNextItemAllowOverlap();
-			ImGui::SetItemTooltip("Begin play");
 			if (ImGui::Button(ICON_FA_PLAY))
 			{
 				(void)BeginPlay();
 			}
+			ImGui::SetItemTooltip("Begin play");
 		}
 		else
 		{
@@ -205,21 +235,28 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			ImGui::SetItemTooltip("Stop");
 		}
 
+		// World will not change anymore
+		World& world = GetWorld();
+		World::PushWorld(world);
+
 		const glm::vec2 fpsCursorPos = { viewportPos.x + mViewportWidth - 60.0f, 0.0f };
 		ImGui::SetCursorPos(fpsCursorPos);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.3f);
 		ImGui::TextUnformatted(Format("FPS {:.1f}", 1.0f / mDeltaTimeRunningAverage).data());
+
+		const std::string viewportSizeText = Format("{}x{}", static_cast<int>(world.GetViewport().GetViewportSize().x), static_cast<int>(world.GetViewport().GetViewportSize().y));
+		ImGui::SetCursorPosX(viewportPos.x + mViewportWidth - ImGui::CalcTextSize(viewportSizeText.c_str()).x - 10.0f);
+
+		ImGui::TextUnformatted(viewportSizeText.c_str());
 		ImGui::PopStyleVar();
 
 		{
-			const auto possibleCamerasView = GetWorld().GetRegistry().View<CameraComponent>();
+			const auto possibleCamerasView = world.GetRegistry().View<CameraComponent>();
 
 			if (possibleCamerasView.size() > 1)
 			{
-				const auto cam = GetWorld().GetRenderer().GetMainCamera();
-
-				const entt::entity cameraEntity = cam.has_value() ? cam->first : entt::null;
+				const entt::entity cameraEntity = CameraComponent::GetSelected(world);
 
 				ImGui::SetCursorPos({ fpsCursorPos.x - ImGui::CalcTextSize(ICON_FA_CAMERA).x - 10.0f, fpsCursorPos.y });
 
@@ -232,9 +269,9 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 				{
 					for (entt::entity possibleCamera : possibleCamerasView)
 					{
-						if (ImGui::MenuItem(NameComponent::GetDisplayName(GetWorld().GetRegistry(), possibleCamera).c_str(), nullptr, possibleCamera == cameraEntity))
+						if (ImGui::MenuItem(NameComponent::GetDisplayName(world.GetRegistry(), possibleCamera).c_str(), nullptr, possibleCamera == cameraEntity))
 						{
-							GetWorld().GetRenderer().SetMainCamera(possibleCamera);
+							CameraComponent::Select(world, possibleCamera);
 						}
 					}
 					ImGui::EndPopup();
@@ -245,28 +282,35 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		drawList->ChannelsSetCurrent(0);
 		ImGui::SetCursorPos(viewportPos);
 
-		GetWorld().Tick(deltaTime);
-		WorldViewport::Display(GetWorld(), *mViewportFrameBuffer, &mSelectedEntities);
+		world.Tick(deltaTime);
 
+		WorldViewportPanel::Display(world, *mViewportFrameBuffer, &mSelectedEntities);
 		drawList->ChannelsMerge();
+
+		World::PopWorld();
 	}
 	ImGui::EndChild();
 
 	ImGui::SameLine();
 
-	if (ImGui::BeginChild("HierarchyAndDetailsWindow", { mHierarchyAndDetailsWidth, 0.0f }))
+	if (ImGui::BeginChild("HierarchyAndDetailsWindow", { mHierarchyAndDetailsWidth, 0.0f }, false, ImGuiWindowFlags_NoScrollbar))
 	{
+		World& world = GetWorld();
+		World::PushWorld(world);
+
 		ImGui::PushID(2); // Second splitter requires new ID
 		ImGui::Splitter(false, &mHierarchyHeight, &mDetailsHeight);
 		ImGui::PopID();
 
-		ImGui::BeginChild("WorldHierarchy", { 0.0f, mHierarchyHeight });
-		WorldHierarchy::Display(GetWorld(), &mSelectedEntities);
+		ImGui::BeginChild("WorldHierarchy", { 0.0f, mHierarchyHeight }, false, ImGuiWindowFlags_NoScrollbar);
+		WorldHierarchy::Display(world, &mSelectedEntities);
 		ImGui::EndChild();
 
-		ImGui::BeginChild("WorldDetails", { 0.0f, mDetailsHeight });
-		WorldDetails::Display(GetWorld(), mSelectedEntities);
+		ImGui::BeginChild("WorldDetails", { 0.0f, mDetailsHeight - 5.0f }, false, ImGuiWindowFlags_NoScrollbar);
+		WorldDetails::Display(world, mSelectedEntities);
 		ImGui::EndChild();
+
+		World::PopWorld();
 	}
 
 	ImGui::EndChild();
@@ -274,23 +318,16 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 	CheckShortcuts(GetWorld(), mSelectedEntities);
 }
 
-void Engine::WorldInspectHelper::SaveState(BinaryGSONObject& state)
+void CE::WorldInspectHelper::SaveState(BinaryGSONObject& state)
 {
 	state.AddGSONMember("selected") << mSelectedEntities;
 	state.AddGSONMember("hierarchyWidth") << mHierarchyHeight;
 	state.AddGSONMember("detailsWidth") << mDetailsHeight;
 	state.AddGSONMember("viewportWidth") << mViewportWidth;
 	state.AddGSONMember("hierarchyAndDetailsWidth") << mHierarchyAndDetailsWidth;
-
-	auto activeCamera = GetWorld().GetRenderer().GetMainCamera();
-
-	if (activeCamera.has_value())
-	{
-		state.AddGSONMember("activeCamera") << activeCamera->first;
-	}
 }
 
-void Engine::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
+void CE::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
 {
 	const BinaryGSONMember* const selected = state.TryGetGSONMember("selected");
 	const BinaryGSONMember* const hierarchyWidth = state.TryGetGSONMember("hierarchyWidth");
@@ -313,18 +350,9 @@ void Engine::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
 	*detailsWidth >> mDetailsHeight;
 	*viewportWidth >> mViewportWidth;
 	*hierarchyAndDetailsWidth >> mHierarchyAndDetailsWidth;
-
-	const BinaryGSONMember* const activeCamera = state.TryGetGSONMember("activeCamera");
-
-	if (activeCamera != nullptr)
-	{
-		entt::entity cameraEntity{};
-		*activeCamera >> cameraEntity;
-		GetWorld().GetRenderer().SetMainCamera(cameraEntity);
-	}
 }
 
-void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
+void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 	std::vector<entt::entity>* selectedEntities)
 {
 	const glm::vec2 windowPos = ImGui::GetWindowPos();
@@ -345,9 +373,9 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 
 	RemoveInvalidEntities(world, *selectedEntities);
 
-	const auto cameraPair = world.GetRenderer().GetMainCamera();
+	const entt::entity cameraOwner = CameraComponent::GetSelected(world);
 
-	if (!cameraPair.has_value())
+	if (cameraOwner == entt::null)
 	{
 		ImGui::TextUnformatted("No camera");
 		return;
@@ -356,7 +384,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 	ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
 	SetGizmoRect(windowPos + contentMin, contentSize);
 
-	world.GetRenderer().Render(frameBuffer, contentSize);
+	Renderer::Get().RenderToFrameBuffer(world, frameBuffer, contentSize);
 
 	ImGui::SetCursorPos(contentMin);
 
@@ -374,11 +402,11 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 	if (!selectedEntities->empty())
 	{
 		ShowComponentGizmos(world, *selectedEntities);
-		GizmoManipulateSelectedTransforms(world, *selectedEntities, cameraPair->second);
+		GizmoManipulateSelectedTransforms(world, *selectedEntities, world.GetRegistry().Get<CameraComponent>(cameraOwner));
 	}
 }
 
-void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
+void CE::WorldViewportPanel::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
 {
 	Registry& reg = world.GetRegistry();
 
@@ -421,12 +449,12 @@ void Engine::WorldViewport::ShowComponentGizmos(World& world, const std::vector<
 }
 
 
-void Engine::WorldViewport::SetGizmoRect(const glm::vec2 windowPos, const glm::vec2& windowSize)
+void CE::WorldViewportPanel::SetGizmoRect(const glm::vec2 windowPos, glm::vec2 windowSize)
 {
 	ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
 }
 
-void Engine::WorldViewport::GizmoManipulateSelectedTransforms(World& world,
+void CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 	const std::vector<entt::entity>& selectedEntities,
 	const CameraComponent& camera)
 {
@@ -435,7 +463,13 @@ void Engine::WorldViewport::GizmoManipulateSelectedTransforms(World& world,
 	const glm::mat4& view = camera.GetView();
 	const glm::mat4& proj = camera.GetProjection();
 
-	const float* const snap = sShouldGuizmoSnap ? value_ptr(sSnapTo) : nullptr;
+	// The snap needs to be converted to a vec3, otherwise the Y translation does not work.
+	const float* snap{};
+	if (sShouldGuizmoSnap)
+	{
+		sCurrentSnapToVec3 = glm::vec3(*sCurrentSnapTo);
+		snap = value_ptr(sCurrentSnapToVec3);
+	}
 
 	std::vector<TransformComponent*> transformComponents{};
 	std::vector<entt::entity> entitiesToTransform{};
@@ -502,11 +536,9 @@ void Engine::WorldViewport::GizmoManipulateSelectedTransforms(World& world,
 	}
 }
 
-void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& selectedEntities)
+void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selectedEntities)
 {
-	const uint32 numOfSelected = static_cast<uint32>(selectedEntities.size());
-
-	if (numOfSelected == 0)
+	if (selectedEntities.empty())
 	{
 		ImGui::TextUnformatted("No entities selected");
 		return;
@@ -514,12 +546,59 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 	Registry& reg = world.GetRegistry();
 
+	std::vector<std::reference_wrapper<const MetaType>> componentsThatAllSelectedHave{};
+
+	for (auto&& [typeHash, storage] : reg.Storage())
+	{
+		const MetaType* componentType = MetaManager::Get().TryGetType(typeHash);
+
+		if (componentType == nullptr
+			|| componentType->GetProperties().Has(Props::sNoInspectTag))
+		{
+			continue;
+		}
+
+		// Only display components if every selected entity has that component.
+		bool allEntitiesHaveOne = true;
+		for (entt::entity entity : selectedEntities)
+		{
+			if (!storage.contains(entity))
+			{
+				allEntitiesHaveOne = false;
+				break;
+			}
+		}
+
+		if (!allEntitiesHaveOne)
+		{
+			continue;
+		}
+
+
+		componentsThatAllSelectedHave.emplace_back(*componentType);
+	}
+
+	// Most commonly used components are placed at the top
+	std::sort(componentsThatAllSelectedHave.begin(), componentsThatAllSelectedHave.end(),
+		[&reg](const MetaType& lhs, const MetaType& rhs)
+		{
+			const size_t lhsCount = reg.Storage(lhs.GetTypeId())->size();
+			const size_t rhsCount = reg.Storage(rhs.GetTypeId())->size();
+
+			if (lhsCount != rhsCount)
+			{
+				return lhsCount > rhsCount;
+			}
+
+			return lhs.GetName() > rhs.GetName();
+		});
+
 	ImGui::TextUnformatted(NameComponent::GetDisplayName(reg, selectedEntities[0]).c_str());
 
-	if (numOfSelected > 1)
+	if (selectedEntities.size() > 1)
 	{
 		ImGui::SameLine();
-		ImGui::Text(" and %u others", numOfSelected - 1);
+		ImGui::Text(" and %u others", static_cast<uint32>(selectedEntities.size()) - 1);
 	}
 
 	const bool addComponentPopUpJustOpened = ImGui::Button(ICON_FA_PLUS);
@@ -532,85 +611,41 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 	ImGui::SameLine();
 
-	const std::string searchFor = Search::DisplaySearchBar();
+	Search::Begin();
 
-	Search::Choices<MetaType> componentsToDisplay{};
-	std::vector<TypeId> classesThatCannotBeAdded{};
-
-	for (auto&& [typeHash, storage] : reg.Storage())
+	for (const MetaType& componentClass : componentsThatAllSelectedHave)
 	{
-		// Only display components if every selected entity has that component.
-
-		bool allEntitiesHaveOne = true;
-		for (uint32 i = 0; i < numOfSelected; i++)
-		{
-			if (!storage.contains(selectedEntities[i]))
+		Search::BeginCategory(componentClass.GetName(),
+			[&world, &reg, &selectedEntities, &componentClass](std::string_view name)
 			{
-				allEntitiesHaveOne = false;
-				break;
-			}
-		}
+				bool removeButtonPressed{};
 
-		if (!allEntitiesHaveOne)
-		{
-			continue;
-		}
+				const bool isHeaderOpen = ImGui::CollapsingHeaderWithButton(name.data(), "X", &removeButtonPressed);
 
-		const MetaType* componentType = MetaManager::Get().TryGetType(typeHash);
+				if (removeButtonPressed)
+				{
+					for (const auto entity : selectedEntities)
+					{
+						reg.RemoveComponentIfEntityHasIt(componentClass.GetTypeId(), entity);
+					}
 
-		if (componentType == nullptr
-			|| componentType->GetProperties().Has(Props::sNoInspectTag))
-		{
-			continue;
-		}
+					return false;
+				}
 
-		componentsToDisplay.emplace_back(componentType->GetName(), *componentType);
+				if (isHeaderOpen)
+				{
+					const MetaFunc* const onInspect = TryGetEvent(componentClass, sInspectEvent);
 
-		// We can't add components more than once.
-		classesThatCannotBeAdded.push_back(typeHash);
-	}
+					if (onInspect != nullptr)
+					{
+						// We run the custom OnInspect here, directly after opening the collapsing header.
+						// We unfortunately cannot search through it's contents, so we always show it.
+						onInspect->InvokeCheckedUnpacked(world, selectedEntities);
+					}
+				}
 
-	Search::EraseChoicesThatDoNotMatch(searchFor, componentsToDisplay);
-
-	for (const Search::Choice<MetaType>& choice : componentsToDisplay)
-	{
-		const MetaType& componentClass = choice.mValue;
-		const TypeId typeHash = componentClass.GetTypeId();
-
-		ImGui::PushID(static_cast<int>(typeHash));
-
-		// Makes sure we popId regardless of where we call continue or break
-		struct IdPopper
-		{
-			~IdPopper()
-			{
-				ImGui::PopID();
-			}
-		};
-		IdPopper __{};
-
-		const char* className = componentClass.GetName().c_str();
-		auto& storage = *reg.Storage(typeHash);
-
-		bool removeButtonPressed{};
-
-		const bool isHeaderOpen = ImGui::CollapsingHeaderWithButton(className, "X", &removeButtonPressed);
-
-		if (removeButtonPressed)
-		{
-			for (const auto entity : selectedEntities)
-			{
-				reg.RemoveComponentIfEntityHasIt(componentClass.GetTypeId(), entity);
-			}
-
-			continue;
-		}
-
-		if (!isHeaderOpen)
-		{
-			continue;
-		}
-
+				return isHeaderOpen;
+			});
 
 		for (const MetaFunc& func : componentClass.EachFunc())
 		{
@@ -619,7 +654,7 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 				continue;
 			}
 
-			const bool isMemberFunc = func.GetParameters().size() == 1 && func.GetParameters()[0].mTypeTraits.mStrippedTypeId == typeHash;
+			const bool isMemberFunc = func.GetParameters().size() == 1 && func.GetParameters()[0].mTypeTraits.mStrippedTypeId == componentClass.GetTypeId();
 
 			if (!func.GetParameters().empty()
 				&& !isMemberFunc)
@@ -629,46 +664,59 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 				continue;
 			}
 
-			if (ImGui::Button(func.GetDesignerFriendlyName().data()))
-			{
-				for (const entt::entity entity : selectedEntities)
+			if (Search::AddItem(func.GetDesignerFriendlyName(),
+				[&reg, &selectedEntities, &componentClass, &func](std::string_view name)
 				{
-					FuncResult result{};
+					// We only do this additional PushId for functions,
+					// prevents some weird behaviour
+					// occuring if for some ungodly reason
+					// a user decided to have a field and function
+					// with the same name
+					ImGui::PushID(123456789);
 
-					if (isMemberFunc)
-					{
-						MetaAny component{ componentClass, storage.value(entity), false };
-						result = func(component);
-					}
-					else
-					{
-						result = func();
-					}
+					ImGui::PushID(static_cast<int>(componentClass.GetTypeId()));
 
-					if (result.HasError())
+					const bool wasPressed = ImGui::Button(name.data());
+
+					ImGui::PopID();
+					ImGui::PopID();
+
+					return wasPressed;
+				}))
+			{
+				entt::sparse_set* storage = reg.Storage(componentClass.GetTypeId());
+
+				if (storage != nullptr)
+				{
+					for (const entt::entity entity : selectedEntities)
 					{
-						LOG(LogEditor, Error, "Error invoking {}::{} on entity {} - {}",
-							componentClass.GetName(), func.GetDesignerFriendlyName(),
-							static_cast<EntityType>(entity),
-							result.Error());
+						if (isMemberFunc)
+						{
+							MetaAny component{ componentClass, storage->value(entity), false };
+
+							if (component == nullptr)
+							{
+								LOG(LogEditor, Error, "Error invoking {}::{}: Component was unexpectedly nullptr",
+									componentClass.GetName(), func.GetDesignerFriendlyName());
+								continue;
+							}
+
+							func.InvokeUncheckedUnpacked(component);
+						}
+						else
+						{
+							func.InvokeUncheckedUnpacked();
+						}
 					}
+				}
+				else
+				{
+					LOG(LogEditor, Error, "Error invoking {}::{}: Storage was unexpectedly nullptr",
+						componentClass.GetName(), func.GetDesignerFriendlyName());
 				}
 			}
 		}
 
-		const MetaFunc* const onInspect = TryGetEvent(componentClass, sInspectEvent);
-
-		if (onInspect != nullptr)
-		{
-			FuncResult result = (*onInspect)(world, selectedEntities);
-
-			if (result.HasError())
-			{
-				LOG(LogEditor, Error, "An error occured while inspecting component that had a custom OnInspect: {}", result.Error());
-			}
-		}
-
-		MetaAny firstComponent{ componentClass, storage.value(selectedEntities[0]), false };
 
 		for (const MetaField& field : componentClass.EachField())
 		{
@@ -677,131 +725,174 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 				continue;
 			}
 
-			const MetaType& memberType = field.GetType();
-
-			const TypeTraits constRefMemberType{ memberType.GetTypeId(), TypeForm::ConstRef };
-			const FuncId idOfEqualityFunc = MakeFuncId(MakeTypeTraits<bool>(), { constRefMemberType, constRefMemberType });
-
-			const MetaFunc* const equalityOperator = memberType.TryGetFunc(OperatorType::equal, idOfEqualityFunc);
-
-			MetaAny refToValueInFirstComponent = field.MakeRef(firstComponent);
-
-			bool allValuesTheSame = true;
-
-			if (equalityOperator != nullptr)
-			{
-				for (uint32 i = 1; i < numOfSelected; i++)
+			Search::AddItem(field.GetName(),
+				[&componentClass, &field, &reg, &selectedEntities](std::string_view fieldName) -> bool
 				{
-					MetaAny anotherComponent{ componentClass, storage.value(selectedEntities[i]), false };
-					MetaAny refToValueInAnotherComponent = field.MakeRef(anotherComponent);
+					entt::sparse_set* storage = reg.Storage(componentClass.GetTypeId());
 
-					FuncResult areEqualResult = (*equalityOperator)(refToValueInFirstComponent, refToValueInAnotherComponent);
-					ASSERT(!areEqualResult.HasError());
-					ASSERT(areEqualResult.HasReturnValue());
-
-					if (!*areEqualResult.GetReturnValue().As<bool>())
+					if (storage == nullptr)
 					{
-						allValuesTheSame = false;
-						break;
+						LOG(LogEditor, Error, "Error inspecting field {}::{}: Storage was unexpectedly nullptr",
+							componentClass.GetName(), fieldName);
+						return false;
+					}
+
+					MetaAny firstComponent{ componentClass, storage->value(selectedEntities[0]), false };
+
+					if (firstComponent == nullptr)
+					{
+						LOG(LogEditor, Error, "Error inspecting field {}::{}: Component on first entity was unexpectedly nullptr",
+							componentClass.GetName(), fieldName);
+						return false;
+					}
+
+					const MetaType& memberType = field.GetType();
+
+					const TypeTraits constRefMemberType{ memberType.GetTypeId(), TypeForm::ConstRef };
+					const FuncId idOfEqualityFunc = MakeFuncId(MakeTypeTraits<bool>(), { constRefMemberType, constRefMemberType });
+
+					const MetaFunc* const equalityOperator = memberType.TryGetFunc(OperatorType::equal, idOfEqualityFunc);
+
+					MetaAny refToValueInFirstComponent = field.MakeRef(firstComponent);
+
+					bool allValuesTheSame = true;
+
+					if (equalityOperator != nullptr)
+					{
+						for (uint32 i = 1; i < static_cast<uint32>(selectedEntities.size()); i++)
+						{
+							MetaAny anotherComponent{ componentClass, storage->value(selectedEntities[i]), false };
+
+							if (anotherComponent == nullptr)
+							{
+								LOG(LogEditor, Error, "Error inspecting field {}::{}: Component was unexpectedly nullptr",
+									componentClass.GetName(), fieldName);
+								return false;
+							}
+
+							MetaAny refToValueInAnotherComponent = field.MakeRef(anotherComponent);
+
+							FuncResult areEqualResult = (*equalityOperator)(refToValueInFirstComponent, refToValueInAnotherComponent);
+							ASSERT(!areEqualResult.HasError());
+							ASSERT(areEqualResult.HasReturnValue());
+
+							if (!*areEqualResult.GetReturnValue().As<bool>())
+							{
+								allValuesTheSame = false;
+								break;
+							}
+						}
+					}
+					else
+					{
+						LOG(LogEditor, Error, "Missing equality operator for {}::{}. Will assume all the values are the same.",
+							field.GetOuterType().GetName(),
+							field.GetName());
+					}
+
+					if (!allValuesTheSame)
+					{
+						ImGui::Text("*");
+						ImGui::SetItemTooltip("Not all selected entities have the same value.");
+						ImGui::SameLine();
+					}
+
+					// If values are not the same, just display a zero initialized value.
+					FuncResult newValue = allValuesTheSame ? memberType.Construct(refToValueInFirstComponent) : memberType.Construct();
+
+					if (newValue.HasError())
+					{
+						LOG(LogEditor, Error, "Could not display value for field {}::{} as it could not be default constructed",
+							field.GetOuterType().GetName(),
+							field.GetName(),
+							newValue.Error());
+						return false;
+					}
+
+					/*
+					Makes the variable read-only, it can not be modified through the editor.
+
+					This is implemented by disabling all interaction with the widget. This
+					means this may not work for more complex widgets, such as vectors, as
+					the user also won't be able to open the collapsing header to view the
+					vector.
+					*/
+					ImGui::BeginDisabled(field.GetProperties().Has(Props::sIsEditorReadOnlyTag));
+
+					const bool wasChanged = ShowInspectUI(std::string{ field.GetName() }, newValue.GetReturnValue());
+
+					ImGui::EndDisabled();
+
+					if (!wasChanged)
+					{
+						return false;
+					}
+
+					for (const entt::entity entity : selectedEntities)
+					{
+						MetaAny component = reg.Get(componentClass.GetTypeId(), entity);
+						MetaAny refToValue = field.MakeRef(component);
+
+						const FuncResult result = memberType.CallFunction(OperatorType::assign, refToValue, newValue.GetReturnValue());
+
+						if (result.HasError())
+						{
+							LOG(LogEditor, Error, "Updating field value failed, could not copy assign value to {}::{} - {}",
+								componentClass.GetName(),
+								field.GetName(),
+								result.Error());
+							return false;
+						}
+					}
+
+					return true;
+				});
+		}
+
+		Search::EndCategory({});
+	}
+
+	Search::End();
+
+	if (Search::BeginPopup("##AddComponentPopUp"))
+	{
+		for (const MetaType& type : MetaManager::Get().EachType())
+		{
+			if (ComponentFilter::IsTypeValid(type)
+				&& !type.GetProperties().Has(Props::sNoInspectTag)
+				&& std::find_if(componentsThatAllSelectedHave.begin(), componentsThatAllSelectedHave.end(),
+					[&type](const MetaType& other)
+					{
+						return type == other;
+					}) == componentsThatAllSelectedHave.end()
+				&& Search::Button(type.GetName()))
+			{
+				for (const entt::entity entity : selectedEntities)
+				{
+					if (!reg.HasComponent(type.GetTypeId(), entity))
+					{
+						reg.AddComponent(type, entity);
 					}
 				}
 			}
-			else
-			{
-				LOG(LogEditor, Error, "Missing equality operator for {}::{}. Will assume all the values are the same.",
-					field.GetOuterType().GetName(),
-					field.GetName());
-			}
-
-			if (!allValuesTheSame)
-			{
-				ImGui::Text("*");
-				ImGui::SetItemTooltip("Not all selected entities have the same value.");
-				ImGui::SameLine();
-			}
-
-			// If values are not the same, just display a zero initialized value.
-			FuncResult newValue = allValuesTheSame ? memberType.Construct(refToValueInFirstComponent) : memberType.Construct();
-
-			if (newValue.HasError())
-			{
-				LOG(LogEditor, Error, "Could not display value for {}::{} as it could not be constructed",
-					field.GetOuterType().GetName(),
-					field.GetName(),
-					newValue.Error());
-				continue;
-			}
-
-			if (!ShowInspectUI(std::string{ field.GetName() }, newValue.GetReturnValue()))
-			{
-				continue;
-			}
-
-			for (const entt::entity entity : selectedEntities)
-			{
-				MetaAny component = reg.Get(componentClass.GetTypeId(), entity);
-				MetaAny refToValue = field.MakeRef(component);
-
-				const FuncResult result = memberType.CallFunction(OperatorType::assign, refToValue, newValue.GetReturnValue());
-
-				if (result.HasError())
-				{
-					LOG(LogEditor, Warning, "Could not copy assign value to {}::{} - {}",
-						componentClass.GetName(),
-						field.GetName(),
-						result.Error());
-					break;
-				}
-			}
-		}
-	}
-
-	if (ImGui::BeginPopup("##AddComponentPopUp"))
-	{
-		if (addComponentPopUpJustOpened)
-		{
-			ImGui::SetKeyboardFocusHere();
 		}
 
-		Search::Choices<MetaType> choices = Search::CollectChoices<MetaType>([&classesThatCannotBeAdded](const MetaType& type)
-			{
-				return type.GetProperties().Has(Props::sComponentTag)
-					&& !type.GetProperties().Has(Props::sNoInspectTag)
-					&& std::find_if(classesThatCannotBeAdded.begin(), classesThatCannotBeAdded.end(),
-						[&type](const TypeId other)
-						{
-							return type.IsExactly(other);
-						}) == classesThatCannotBeAdded.end();
-			});
-
-		std::optional<std::reference_wrapper<const MetaType>> componentToAdd = Search::DisplaySearchBar<MetaType>(choices);
-
-		if (componentToAdd.has_value())
-		{
-			for (entt::entity entity : selectedEntities)
-			{
-				if (reg.TryGet(componentToAdd->get().GetTypeId(), entity) == nullptr)
-				{
-					reg.AddComponent(*componentToAdd, entity);
-				}
-			}
-			ImGui::CloseCurrentPopup();
-		}
-
-		ImGui::EndPopup();
+		Search::EndPopup();
 	}
 }
 
-void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* selectedEntities)
+static ImVec2 sInvisibleDragDropAreaStart{};
+
+void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* selectedEntities)
 {
 	std::vector<entt::entity> dummySelectedEntities{};
 	if (selectedEntities == nullptr)
 	{
 		selectedEntities = &dummySelectedEntities;
-	}// From here on out, we can assume selectedEntities != nullptr
+	} // From here on out, we can assume selectedEntities != nullptr
 
 	if (ImGui::IsMouseClicked(1)
-		&& ImGui::IsWindowHovered())
+		&& ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
 	{
 		ImGui::OpenPopup("HierarchyPopUp");
 	}
@@ -815,178 +906,144 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 		// Add a transform component, since
 		// 99% of entities require it
 		reg.AddComponent<TransformComponent>(newEntity);
+		reg.AddComponent<NameComponent>(newEntity, "New entity");
 	}
 	ImGui::SetItemTooltip("Create a new entity");
 
 	ImGui::SameLine();
 
-	const std::string searchFor = Search::DisplaySearchBar();
+	Search::Begin(Search::IgnoreParentScore);
 
-	if (!searchFor.empty())
+	// First we display all entities without transforms
 	{
-		Search::Choices<entt::entity> entitiesToDisplay{};
-		const auto& allEntities = reg.Storage<entt::entity>();
-
-		for (const auto& [entity] : allEntities.each())
+		for (const auto [entity] : reg.Storage<entt::entity>().each())
 		{
-			entitiesToDisplay.emplace_back(NameComponent::GetDisplayName(reg, entity), entity);
-		}
-
-		Search::EraseChoicesThatDoNotMatch(searchFor, entitiesToDisplay);
-
-		for (const Search::Choice<entt::entity>& entityToDisplay : entitiesToDisplay)
-		{
-			DisplaySingle(reg, entityToDisplay.mValue, *selectedEntities, nullptr);
-		}
-	}
-	else
-	{
-		bool anyDisplayed{};
-
-		// First we display all entities without transforms
-		{
-			const auto& allEntities = reg.Storage<entt::entity>();
-
-			for (const auto& [entity] : allEntities.each())
+			if (!reg.HasComponent<TransformComponent>(entity))
 			{
-				if (reg.TryGet<TransformComponent>(entity) != nullptr)
-				{
-					continue;
-				}
-
-				DisplaySingle(reg, entity, *selectedEntities, nullptr);
-				anyDisplayed = true;
-			}
-		}
-
-		if (anyDisplayed)
-		{
-			ImGui::SeparatorText("Entities with transforms");
-		}
-
-		// Now we display only entities with transforms
-		{
-			auto withTransforms = reg.View<TransformComponent>();
-
-			for (auto [entity, transform] : withTransforms.each())
-			{
-				// We recursively display children.
-				// So we only call display family if
-				// this transform does not have a parent.
-				if (transform.IsOrphan())
-				{
-					DisplayFamily(reg, transform, *selectedEntities);
-				}
+				DisplayEntity(reg, entity, *selectedEntities);
 			}
 		}
 	}
+
+	// Now we display only entities with transforms
+	{
+		for (auto [entity, transform] : reg.View<TransformComponent>().each())
+		{
+			// We recursively display children.
+			// So we only call display if
+			// this transform does not have a parent.
+			if (transform.IsOrphan())
+			{
+				DisplayEntity(reg, entity, *selectedEntities);
+			}
+		}
+	}
+
+	Search::End();
 
 	DisplayRightClickPopUp(world, *selectedEntities);
 
-	ImGui::InvisibleButton("DragToUnparent", glm::max(static_cast<glm::vec2>(ImGui::GetContentRegionAvail()), glm::vec2{ 1.0f, 1.0f }));
+	ImGui::SetCursorScreenPos(sInvisibleDragDropAreaStart);
+	ImGui::InvisibleButton("DragToUnparent", glm::max(static_cast<glm::vec2>(ImGui::GetContentRegionAvail()), glm::vec2{ 1.0f }));
 	ReceiveDragDropOntoParent(reg, std::nullopt);
 	ReceiveDragDrops(world);
 }
 
-void Engine::WorldHierarchy::DisplayFamily(Registry& reg,
-	TransformComponent& parentTransform,
-	std::vector<entt::entity>& selectedEntities)
+void CE::WorldHierarchy::DisplayEntity(Registry& registry, entt::entity entity, std::vector<entt::entity>& selectedEntities)
 {
-	const entt::entity entity = parentTransform.GetOwner();
-	ImGui::PushID(static_cast<int>(entity));
+	const std::string displayName = NameComponent::GetDisplayName(registry, entity);
 
-	const std::vector<std::reference_wrapper<TransformComponent>>& children = parentTransform.GetChildren();
-
-	bool isTreeNodeOpen{};
-
-	if (!children.empty())
-	{
-		isTreeNodeOpen = ImGui::TreeNode("");
-		ImGui::SameLine();
-	}
-
-	DisplaySingle(reg, entity, selectedEntities, &parentTransform);
-
-	if (isTreeNodeOpen)
-	{
-		for (TransformComponent& childTransform : children)
+	Search::BeginCategory(displayName,
+		[&registry, entity, &selectedEntities](std::string_view name) -> bool
 		{
-			DisplayFamily(reg, childTransform, selectedEntities);
-		}
+			ImGui::PushID(static_cast<int>(entity));
 
-		ImGui::TreePop();
-	}
+			const TransformComponent* const transform = registry.TryGet<TransformComponent>(entity);
 
-	ImGui::PopID();
-}
+			bool isTreeNodeOpen{};
 
-void Engine::WorldHierarchy::DisplaySingle(Registry& registry,
-	const entt::entity owner,
-	std::vector<entt::entity>& selectedEntities,
-	TransformComponent* const transformComponent)
-{
-	const std::string displayName = NameComponent::GetDisplayName(registry, owner).append("##DisplayName");
-
-	bool isSelected = std::find(selectedEntities.begin(), selectedEntities.end(), owner) != selectedEntities.end();
-	const ImVec2 selectableAreaSize = ImGui::CalcTextSize(displayName.c_str());
-
-	if (ImGui::Selectable(displayName.c_str(), &isSelected, 0, selectableAreaSize))
-	{
-		if (!Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
-		{
-			selectedEntities.clear();
-		}
-
-		if (isSelected)
-		{
-			if (std::find(selectedEntities.begin(), selectedEntities.end(), owner) == selectedEntities.end())
+			if (transform != nullptr
+				&& !transform->GetChildren().empty())
 			{
-				selectedEntities.push_back(owner);
+				isTreeNodeOpen = ImGui::TreeNode("");
+				ImGui::SameLine();
 			}
-		}
-		else
+
+			bool isSelected = std::find(selectedEntities.begin(), selectedEntities.end(), entity) != selectedEntities.end();
+			const ImVec2 selectableAreaSize = ImGui::CalcTextSize(name.data(), name.data() + name.size());
+
+			if (ImGui::Selectable(name.data(), &isSelected, 0, selectableAreaSize))
+			{
+				if (!Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
+				{
+					selectedEntities.clear();
+				}
+
+				if (isSelected)
+				{
+					if (std::find(selectedEntities.begin(), selectedEntities.end(), entity) == selectedEntities.end())
+					{
+						selectedEntities.push_back(entity);
+					}
+				}
+				else
+				{
+					selectedEntities.erase(std::remove(selectedEntities.begin(), selectedEntities.end(), entity),
+						selectedEntities.end());
+				}
+			}
+
+			ImGui::SetItemTooltip(Format("Entity {}", entt::to_integral(entity)).c_str());
+
+			// Only objects with transforms can accept children
+			if (transform != nullptr)
+			{
+				if (!selectedEntities.empty())
+				{
+					DragDrop::SendEntities(selectedEntities);
+				}
+
+				ReceiveDragDropOntoParent(registry, entity);
+
+				const WeakAssetHandle<Prefab> receivedPrefab = DragDrop::PeekAsset<Prefab>();
+
+				if (receivedPrefab != nullptr
+					&& DragDrop::AcceptAsset())
+				{
+					const entt::entity prefabEntity = registry.CreateFromPrefab( *AssetHandle<Prefab>{ receivedPrefab } );
+
+					TransformComponent* const prefabTransform = registry.TryGet<TransformComponent>(prefabEntity);
+					TransformComponent* const parentTransform = registry.TryGet<TransformComponent>(entity);
+
+					if (prefabTransform != nullptr
+						&& parentTransform != nullptr)
+					{
+						prefabTransform->SetParent(parentTransform);
+					}
+				}
+			}
+
+			ImGui::PopID();
+
+			sInvisibleDragDropAreaStart = ImGui::GetCursorScreenPos();
+
+			return isTreeNodeOpen;
+		});
+
+	const TransformComponent* const transform = registry.TryGet<TransformComponent>(entity);
+
+	if (transform != nullptr)
+	{
+		for (const TransformComponent& child : transform->GetChildren())
 		{
-			selectedEntities.erase(std::remove(selectedEntities.begin(), selectedEntities.end(), owner),
-				selectedEntities.end());
+			DisplayEntity(registry, child.GetOwner(), selectedEntities);
 		}
 	}
 
-	ImGui::SetItemTooltip(Format("Entity {}", static_cast<EntityType>(owner)).c_str());
-
-	// Only objects with transforms can accept children
-	if (!transformComponent)
-	{
-		return;
-	}
-
-	if (!selectedEntities.empty())
-	{
-		DragDrop::SendEntities(selectedEntities);
-	}
-
-	ReceiveDragDropOntoParent(registry, owner);
-
-	std::optional<WeakAsset<Prefab>> receivedPrefab = DragDrop::PeekAsset<Prefab>();
-
-	if (!receivedPrefab.has_value()
-		|| !DragDrop::AcceptAsset())
-	{
-		return;
-	}
-
-	entt::entity prefabEntity = registry.CreateFromPrefab(*receivedPrefab->MakeShared());
-
-	TransformComponent* const prefabTransform = registry.TryGet<TransformComponent>(prefabEntity);
-	TransformComponent* const parentTransform = registry.TryGet<TransformComponent>(owner);
-
-	if (prefabTransform != nullptr
-		&& parentTransform != nullptr)
-	{
-		prefabTransform->SetParent(parentTransform);
-	}
+	Search::TreePop();
 }
 
-void Engine::WorldHierarchy::ReceiveDragDropOntoParent(Registry& registry,
+void CE::WorldHierarchy::ReceiveDragDropOntoParent(Registry& registry,
 	std::optional<entt::entity> parentAllToThisEntity)
 {
 	const std::optional<std::vector<entt::entity>> receivedEntities = DragDrop::PeekEntities();
@@ -1021,7 +1078,7 @@ void Engine::WorldHierarchy::ReceiveDragDropOntoParent(Registry& registry,
 	}
 }
 
-void Engine::WorldHierarchy::DisplayRightClickPopUp(World& world, std::vector<entt::entity>& selectedEntities)
+void CE::WorldHierarchy::DisplayRightClickPopUp(World& world, std::vector<entt::entity>& selectedEntities)
 {
 	if (!ImGui::BeginPopup("HierarchyPopUp"))
 	{
@@ -1059,7 +1116,7 @@ void Engine::WorldHierarchy::DisplayRightClickPopUp(World& world, std::vector<en
 
 namespace
 {
-	void RemoveInvalidEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	void RemoveInvalidEntities(CE::World& world, std::vector<entt::entity>& selectedEntities)
 	{
 		selectedEntities.erase(std::remove_if(selectedEntities.begin(), selectedEntities.end(),
 			[&world](const entt::entity& entity)
@@ -1068,12 +1125,11 @@ namespace
 			}), selectedEntities.end());
 	}
 
-	void DeleteEntities(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	void DeleteEntities(CE::World& world, std::vector<entt::entity>& selectedEntities)
 	{
 		world.GetRegistry().Destroy(selectedEntities.begin(), selectedEntities.end(), true);
 		selectedEntities.clear();
 	}
-
 
 	// We prepend some form of known string so we can verify whether
 	// the clipboard holds copied entities
@@ -1081,17 +1137,17 @@ namespace
 
 	struct WasRootCopyTag
 	{
-		static Engine::MetaType Reflect()
+		static CE::MetaType Reflect()
 		{
-			Engine::MetaType type{ Engine::MetaType::T<WasRootCopyTag>{}, "WasRootCopyTag" };
-			Engine::ReflectComponentType<WasRootCopyTag>(type);
+			CE::MetaType type{ CE::MetaType::T<WasRootCopyTag>{}, "WasRootCopyTag" };
+			CE::ReflectComponentType<WasRootCopyTag>(type);
 			return type;
 		}
 	};
 
-	std::string CopyToClipBoard(const Engine::World& world, const std::vector<entt::entity>& selectedEntities)
+	std::string CopyToClipBoard(const CE::World& world, const std::vector<entt::entity>& selectedEntities)
 	{
-		using namespace Engine;
+		using namespace CE;
 
 		if (selectedEntities.empty())
 		{
@@ -1118,20 +1174,20 @@ namespace
 		return clipBoardData;
 	}
 
-	void CutToClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	void CutToClipBoard(CE::World& world, std::vector<entt::entity>& selectedEntities)
 	{
 		CopyToClipBoard(world, selectedEntities);
 		DeleteEntities(world, selectedEntities);
 	}
 
-	void PasteClipBoard(Engine::World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipBoardData)
+	void PasteClipBoard(CE::World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipBoardData)
 	{
 		if (!IsStringFromCopyToClipBoard(clipBoardData))
 		{
 			return;
 		}
 
-		using namespace Engine;
+		using namespace CE;
 
 		// Force reflection, if it hasn't been already
 		(void)MetaManager::Get().GetType<WasRootCopyTag>();
@@ -1164,11 +1220,36 @@ namespace
 
 		// The tag got copied as well, lets remove that as well
 		reg.RemoveComponents<WasRootCopyTag>(selectedEntities.begin(), selectedEntities.end());
+
+		// Append the number to the end
+		for (entt::entity copy : selectedEntities)
+		{
+			NameComponent* name = reg.TryGet<NameComponent>(copy);
+
+			if (name == nullptr)
+			{
+				continue;
+			}
+
+			name->mName = StringFunctions::CreateUniqueName(name->mName,
+				[&reg](std::string_view copyName)
+				{
+					for (auto [entity, existingNameComponent] : reg.View<const NameComponent>().each())
+					{
+						if (copyName == existingNameComponent.mName)
+						{
+							return false;
+						}
+					}
+
+					return true;
+				});
+		}
 	}
 
-	void Duplicate(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	void Duplicate(CE::World& world, std::vector<entt::entity>& selectedEntities)
 	{
-		std::string clipboardData = CopyToClipBoard(world, selectedEntities);
+		const std::string clipboardData = CopyToClipBoard(world, selectedEntities);
 		PasteClipBoard(world, selectedEntities, clipboardData);
 	}
 
@@ -1196,9 +1277,9 @@ namespace
 		return string.substr(0, sCopiedEntitiesId.size()) == sCopiedEntitiesId;
 	}
 
-	void CheckShortcuts(Engine::World& world, std::vector<entt::entity>& selectedEntities)
+	void CheckShortcuts(CE::World& world, std::vector<entt::entity>& selectedEntities)
 	{
-		using namespace Engine;
+		using namespace CE;
 
 		RemoveInvalidEntities(world, selectedEntities);
 
@@ -1260,21 +1341,21 @@ namespace
 		}
 	}
 
-	void ReceiveDragDrops(Engine::World& world)
+	void ReceiveDragDrops(CE::World& world)
 	{
-		using namespace Engine;
+		using namespace CE;
 
-		std::optional<WeakAsset<Prefab>> receivedPrefab = DragDrop::PeekAsset<Prefab>();
+		WeakAssetHandle<Prefab> receivedPrefab = DragDrop::PeekAsset<Prefab>();
 
-		if (receivedPrefab.has_value()
+		if (receivedPrefab != nullptr
 			&& DragDrop::AcceptAsset())
 		{
-			world.GetRegistry().CreateFromPrefab(*receivedPrefab->MakeShared());
+			world.GetRegistry().CreateFromPrefab(*AssetHandle<Prefab>{ receivedPrefab });
 		}
 
-		std::optional<WeakAsset<StaticMesh>> receivedMesh = DragDrop::PeekAsset<StaticMesh>();
+		WeakAssetHandle<StaticMesh> receivedMesh = DragDrop::PeekAsset<StaticMesh>();
 
-		if (receivedMesh.has_value()
+		if (receivedMesh != nullptr
 			&& DragDrop::AcceptAsset())
 		{
 			Registry& reg = world.GetRegistry();
@@ -1282,7 +1363,7 @@ namespace
 
 			reg.AddComponent<TransformComponent>(entity);
 			StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(entity);
-			meshComponent.mStaticMesh = receivedMesh->MakeShared();
+			meshComponent.mStaticMesh = AssetHandle<StaticMesh>{ receivedMesh };
 			meshComponent.mMaterial = Material::TryGetDefaultMaterial();
 		}
 	}

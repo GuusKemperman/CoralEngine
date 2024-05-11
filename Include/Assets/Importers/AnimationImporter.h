@@ -2,7 +2,7 @@
 #pragma once
 #include "Assets/Core/ImportedAsset.h"
 
-namespace Engine
+namespace CE
 {
 	class Animation;
 

@@ -3,7 +3,7 @@
 #include <fstream>
 #include <sstream>
 
-namespace Engine
+namespace CE
 {
 	class FileFunctions
 	{

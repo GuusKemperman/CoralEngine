@@ -6,12 +6,13 @@
 #include "Core/VirtualMachine.h"
 #include "Core/FileIO.h"
 #include "Assets/Asset.h"
+#include "Utilities/Reflect/ReflectAssetType.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Meta/MetaTools.h"
 #include "Meta/MetaProps.h"
-#include "Utilities/DebugRenderer.h"
+#include "Rendering/DebugRenderer.h"
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
-#include "Containers/view_istream.h"
+#include "Utilities/view_istream.h"
 #include "GSON/GSONBinary.h"
 
 namespace
@@ -19,7 +20,7 @@ namespace
 	void SetCustomTheme();
 }
 
-void Engine::Editor::PostConstruct()
+void CE::Editor::PostConstruct()
 {
 	if (Device::IsHeadless())
 	{
@@ -40,9 +41,10 @@ void Engine::Editor::PostConstruct()
 
 	std::ifstream editorSavedState{ pathToSavedState };
 
-	std::function<void(const MetaType&)> recursivelyStart = [this, &recursivelyStart](const MetaType& type)
+	std::function<void(const MetaType&)> recursivelyStart = [this, &recursivelyStart, &editorSavedState](const MetaType& type)
 		{
-			if (type.GetProperties().Has(Props::sEditorSystemDefaultOpenTag))
+			if (type.GetProperties().Has(Props::sEditorSystemAlwaysOpenTag)
+				|| (!editorSavedState.is_open() && type.GetProperties().Has(Props::sEditorSystemDefaultOpenTag)))
 			{
 				if (type.IsDefaultConstructible())
 				{
@@ -50,8 +52,7 @@ void Engine::Editor::PostConstruct()
 				}
 				else
 				{
-					LOG(LogEditor, Error, "Could not {}, since type {} is not default constructible",
-						Props::sEditorSystemDefaultOpenTag,
+					LOG(LogEditor, Error, "Could not add system, since type {} is not default constructible",
 						type.GetName());
 				}
 			}
@@ -62,9 +63,10 @@ void Engine::Editor::PostConstruct()
 			}
 		};
 
+	recursivelyStart(*editorSystemType);
+
 	if (!editorSavedState.is_open())
 	{
-		recursivelyStart(*editorSystemType);
 		return;
 	}
 
@@ -73,7 +75,6 @@ void Engine::Editor::PostConstruct()
 
 	if (savedDataVersion == 0)
 	{
-		recursivelyStart(*editorSystemType);
 		return;
 	}
 
@@ -102,23 +103,24 @@ void Engine::Editor::PostConstruct()
 			continue;
 		}
 
-		if (typeOfSystem->IsDefaultConstructible())
+		if (typeOfSystem->IsDefaultConstructible()
+			&& !typeOfSystem->GetProperties().Has(Props::sEditorSystemAlwaysOpenTag))
 		{
 			TryAddSystemInternal(*typeOfSystem);
 			continue;
 		}
 
 		std::string assetName = Internal::GetAssetNameBasedOnSystemName(systemName);
-		std::optional<WeakAsset<>> asset = AssetManager::Get().TryGetWeakAsset<Asset>(assetName);
+		WeakAssetHandle asset = AssetManager::Get().TryGetWeakAsset<Asset>(assetName);
 
-		if (asset.has_value())
+		if (asset != nullptr)
 		{
-			TryOpenAssetForEdit(*asset);
+			TryOpenAssetForEdit(asset);
 		}
 	}
 }
 
-Engine::Editor::~Editor()
+CE::Editor::~Editor()
 {
 	DestroyRequestedSystems();
 
@@ -157,7 +159,7 @@ Engine::Editor::~Editor()
 	DestroyRequestedSystems();
 }
 
-void Engine::Editor::Tick(const float deltaTime)
+void CE::Editor::Tick(const float deltaTime)
 {
 	DestroyRequestedSystems();
 	DisplayMainMenuBar();
@@ -181,7 +183,7 @@ void Engine::Editor::Tick(const float deltaTime)
 	}
 }
 
-void Engine::Editor::FullFillRefreshRequests()
+void CE::Editor::FullFillRefreshRequests()
 {
 	if (mRefreshRequests.empty())
 	{
@@ -189,7 +191,6 @@ void Engine::Editor::FullFillRefreshRequests()
 	}
 
 	LOG(LogEditor, Verbose, "Commiting volatile actions");
-
 
 	uint32 combinedFlags{};
 
@@ -222,8 +223,12 @@ void Engine::Editor::FullFillRefreshRequests()
 
 	struct SystemToRefresh
 	{
-		SystemToRefresh(const MetaType& type) : mType(type) {}
+		SystemToRefresh(const MetaType& type, std::string nameOfSystem) :
+			mType(type),
+			mNameOfSystem(std::move(nameOfSystem))
+		{}
 		std::reference_wrapper<const MetaType> mType;
+		std::string mNameOfSystem{};
 
 		// Empty if this was not an asset editor,
 		std::optional<AssetEditorSystemInterface::MementoStack> mAssetEditorRestoreData{};
@@ -259,7 +264,7 @@ system->GetName());
 			continue;
 		}
 
-		SystemToRefresh& restoreInfo = restorationData.emplace_back(*systemType);
+		SystemToRefresh& restoreInfo = restorationData.emplace_back(*systemType, nameOfSystem);
 
 		std::ostringstream savedStateStream{};
 		system->SaveState(savedStateStream);
@@ -280,19 +285,121 @@ system->GetName());
 
 	DestroyRequestedSystems();
 
+	struct AssetThatWasNotOffloaded
+	{
+		std::string mName{};
+		std::filesystem::path mFile{};
+	};
+	std::vector<AssetThatWasNotOffloaded> nonOffloadedAssets{};
+
 	if (combinedFlags & RefreshRequest::ReloadAssets)
 	{
 		VirtualMachine::Get().ClearCompilationResult();
-		AssetManager::Get().UnloadAllUnusedAssets();
-	}
 
-	for (const RefreshRequest& refreshRequest : mRefreshRequests)
-	{
-		if (refreshRequest.mActionWhileUnloaded)
+		// We have a custom garbage collect implementation here,
+		// that only offloads assets if they might have dependencies
+		// on other assets. This prevents having to offload hundreds
+		// of textures and meshes, only to reload them a second later!
+		// We do still check to see if the file was written to, in which
+		// case we still offload it.
+
+		bool wereAnyUnloaded;
+
+		do
 		{
-			refreshRequest.mActionWhileUnloaded();
+			wereAnyUnloaded = false;
+			for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
+			{
+				if (!asset.IsLoaded()
+					|| asset.GetMetaData().GetClass().GetProperties().Has(Props::sCannotReferenceOtherAssetsTag)
+					|| !asset.GetFileOfOrigin().has_value()) // This asset was generated at runtime; if we unload it, we won't be able to load if back in again. 
+				{
+					continue;
+				}
+
+				asset.Unload();
+				wereAnyUnloaded = true;
+			}
+		} while (wereAnyUnloaded);
+
+		for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
+		{
+			if (!asset.IsLoaded())
+			{
+				continue;
+			}
+
+			if (asset.GetMetaData().GetClass().GetProperties().Has(Props::sCannotReferenceOtherAssetsTag))
+			{
+				if (asset.GetFileOfOrigin().has_value())
+				{
+					nonOffloadedAssets.emplace_back(
+						AssetThatWasNotOffloaded{
+							asset.GetMetaData().GetName(),
+							*asset.GetFileOfOrigin()
+						});
+				}
+			}
+			else
+			{
+				LOG(LogEditor, Warning, "We are refresing, but {} was still loaded into memory. Might lead to a crash", asset.GetMetaData().GetName());
+			}
 		}
 	}
+
+	// Iterate by index because more requests might be added
+	for (size_t i = 0; i < mRefreshRequests.size(); i++)
+	{
+		RefreshRequest& request = mRefreshRequests[i];
+		if (request.mActionWhileUnloaded)
+		{
+			request.mActionWhileUnloaded();
+		}
+	}
+
+	// Only works on windows!
+#ifdef PLATFORM_WINDOWS
+	static constexpr auto toSysClock =
+		[](std::filesystem::file_time_type fileTimePoint)
+		{
+			using namespace std::literals;
+			return std::chrono::system_clock::time_point{ fileTimePoint.time_since_epoch() - 3'234'576h };
+		};
+#else
+	static_assert(false, "Implementation needed for this platform");
+#endif //
+
+	// While these assets have no dependencies on other assets,
+	// it's still possible that their file was modified. If this
+	// is the case, we do offload the asset. If someone needs the
+	// asset again, if will be loaded with the updated changes.
+	for (const AssetThatWasNotOffloaded& nonOffloadedAsset : nonOffloadedAssets)
+	{
+		WeakAssetHandle<> asset = AssetManager::Get().TryGetWeakAsset(nonOffloadedAsset.mName);
+
+		if (asset == nullptr)
+		{
+			continue;
+		}
+
+		if (!TRY_CATCH_LOG(
+			if (!asset.GetFileOfOrigin().has_value() 
+				|| *asset.GetFileOfOrigin() != nonOffloadedAsset.mFile
+				|| !std::filesystem::exists(nonOffloadedAsset.mFile)
+				|| toSysClock(std::filesystem::last_write_time(nonOffloadedAsset.mFile)) >= mTimeOfLastRefresh)
+			{
+
+				if (asset != nullptr)
+				{
+					asset.Unload();
+				}
+			}))
+		{
+			asset.Unload();
+		}
+	}
+
+	mTimeOfLastRefresh = std::chrono::system_clock::now();
 
 	if (combinedFlags & RefreshRequest::ReloadAssets)
 	{
@@ -319,15 +426,22 @@ system->GetName());
 			}
 			system = TryOpenAssetForEdit(std::move(*loadInfo));
 
-			AssetEditorSystemInterface* systemAsAssetEditor = dynamic_cast<AssetEditorSystemInterface*>(system);
+			// Check if our asset was renamed.
+			// The assets in our do-undo stack will all have the wrong name.
+			// So if the names don't match discard the do-undo stack
+			if (system != nullptr
+				&& system->GetName() == restoreData.mNameOfSystem)
+			{
+				AssetEditorSystemInterface* systemAsAssetEditor = dynamic_cast<AssetEditorSystemInterface*>(system);
 
-			if (systemAsAssetEditor != nullptr)
-			{
-				systemAsAssetEditor->SetMementoStack(std::move(stack));
-			}
-			else
-			{
-				LOG(LogEditor, Error, "Failed to restore do-undo stack, system was not an asset editor");
+				if (systemAsAssetEditor != nullptr)
+				{
+					systemAsAssetEditor->SetMementoStack(std::move(stack));
+				}
+				else
+				{
+					LOG(LogEditor, Error, "Failed to restore do-undo stack, system was not an asset editor");
+				}
 			}
 		}
 		else
@@ -343,11 +457,10 @@ system->GetName());
 	}
 
 	mRefreshRequests.clear();
-	LOG(LogEditor, Verbose, "Completed volatile actions");
 }
 
 
-void Engine::Editor::DestroySystem(const std::string_view systemName)
+void CE::Editor::DestroySystem(const std::string_view systemName)
 {
 	if (std::find(mSystemsToDestroy.begin(), mSystemsToDestroy.end(), systemName) != mSystemsToDestroy.end())
 	{
@@ -364,18 +477,24 @@ void Engine::Editor::DestroySystem(const std::string_view systemName)
 	mSystemsToDestroy.emplace_front(systemName);
 }
 
-void Engine::Editor::Refresh(RefreshRequest&& request)
+void CE::Editor::Refresh(RefreshRequest&& request)
 {
-	mRefreshRequests.push_front(std::move(request));
+	mRefreshRequests.emplace_back(std::move(request));
 }
 
-void Engine::Editor::SaveAll()
+void CE::Editor::SaveAll()
 {
 	Refresh(RefreshRequest{ RefreshRequest::SaveAssetsToFile | RefreshRequest::Volatile });
 }
 
-Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>& originalAsset)
+CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(const WeakAssetHandle<>& originalAsset)
 {
+	if (originalAsset == nullptr)
+	{
+		LOG(LogEditor, Verbose, "Cannot open asset editor for asset, as the original asset has been deleted.");
+		return nullptr;
+	}
+
 	if (originalAsset.GetFileOfOrigin().has_value())
 	{
 		std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromFile(*originalAsset.GetFileOfOrigin());
@@ -383,7 +502,7 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>
 		if (!loadInfo.has_value())
 		{
 			LOG(LogEditor, Warning, "Cannot open asset editor for {}, {} did not produce a valid AssetLoadInfo",
-				originalAsset.GetName(),
+				originalAsset.GetMetaData().GetName(),
 				originalAsset.GetFileOfOrigin()->string());
 			return nullptr;
 		}
@@ -392,23 +511,17 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(const WeakAsset<Asset>
 	}
 
 	// We can still open assets that did not come from a file
-	return TryOpenAssetForEdit(originalAsset.MakeShared()->Save());
+	return TryOpenAssetForEdit(AssetHandle<>{ originalAsset }->Save());
 }
 
-bool Engine::Editor::IsThereAnEditorTypeForAssetType(TypeId assetTypeId) const
+bool CE::Editor::IsThereAnEditorTypeForAssetType(TypeId assetTypeId) const
 {
 	return GetAssetKeyAssetEditorPairs().find(assetTypeId) != GetAssetKeyAssetEditorPairs().end();
 }
 
-template<typename T>
-static CONSTEVAL Engine::TypeForm Test(T&&)
+CE::EditorSystem* CE::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadInfo)
 {
-	return Engine::MakeTypeForm<T>();
-}
-
-Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadInfo)
-{
-	const MetaType& assetType = loadInfo.GetAssetClass();
+	const MetaType& assetType = loadInfo.GetMetaData().GetClass();
 	FuncResult asset = assetType.Construct(loadInfo);
 
 	if (asset.HasError())
@@ -417,6 +530,21 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadIn
 			assetType.GetName(),
 			asset.Error());
 		return nullptr;
+	}
+
+	AssetHandle originalAsset = AssetManager::Get().TryGetAsset(loadInfo.GetMetaData().GetName());
+
+	if (originalAsset == nullptr)
+	{
+		LOG(LogEditor, Message, "Cannot open asset editor, {} was deleted",
+			loadInfo.GetMetaData().GetName());
+		return nullptr;
+	}
+
+	// The name of our asset editor should match that of the renamed asset
+	if (originalAsset.GetMetaData().GetName() != loadInfo.GetMetaData().GetName())
+	{
+		asset.GetReturnValue().As<Asset>()->SetName(originalAsset.GetMetaData().GetName());
 	}
 
 	const std::unordered_map<TypeId, TypeId>& assetToEditorMap = GetAssetKeyAssetEditorPairs();
@@ -471,7 +599,7 @@ Engine::EditorSystem* Engine::Editor::TryOpenAssetForEdit(AssetLoadInfo&& loadIn
 	return TryAddSystemInternal(assetEditorType.GetTypeId(), std::move(uniquePtr));
 }
 
-void Engine::Editor::DestroyRequestedSystems()
+void CE::Editor::DestroyRequestedSystems()
 {
 	for (const std::string& name : mSystemsToDestroy)
 	{
@@ -497,12 +625,12 @@ void Engine::Editor::DestroyRequestedSystems()
 	mSystemsToDestroy.clear();
 }
 
-std::filesystem::path Engine::Editor::GetFileLocationOfSystemState(const std::string_view systemName)
+std::filesystem::path CE::Editor::GetFileLocationOfSystemState(const std::string_view systemName)
 {
 	return FileIO::Get().GetPath(FileIO::Directory::Intermediate, std::string{ "EditorSystemStates/" }.append(systemName).append(".txt"));
 }
 
-void Engine::Editor::LoadSystemState(EditorSystem& system)
+void CE::Editor::LoadSystemState(EditorSystem& system)
 {
 	const std::filesystem::path file = GetFileLocationOfSystemState(system.GetName());
 
@@ -516,7 +644,7 @@ void Engine::Editor::LoadSystemState(EditorSystem& system)
 	system.LoadState(stream);
 }
 
-void Engine::Editor::SaveSystemState(const EditorSystem& system)
+void CE::Editor::SaveSystemState(const EditorSystem& system)
 {
 	const std::filesystem::path file = GetFileLocationOfSystemState(system.GetName());
 	create_directories(file.parent_path());
@@ -532,21 +660,14 @@ void Engine::Editor::SaveSystemState(const EditorSystem& system)
 	system.SaveState(stream);
 }
 
-Engine::EditorSystem* Engine::Editor::TryAddSystemInternal(const TypeId typeId, SystemPtr<EditorSystem> system)
+CE::EditorSystem* CE::Editor::TryAddSystemInternal(const TypeId typeId, SystemPtr<EditorSystem> system)
 {
 	const std::string_view systemName = system->GetName();
 
 	if (TryGetSystemInternal(systemName) != nullptr)
 	{
-		if (std::find(mSystemsToDestroy.begin(), mSystemsToDestroy.end(), systemName) != mSystemsToDestroy.end())
-		{
-			LOG(LogEditor, Warning, "Failed to add system {}: There is already a system with this name. A request has been made to destroy this system already, but the existing system will be only destroyed only at the end of this frame.", systemName);
-		}
-		else
-		{
-			LOG(LogEditor, Warning, "Failed to add system {}: as there is already a system with this name. Destroy the existing system before adding this one.", systemName);
-		}
-
+		ImGui::SetWindowFocus(Internal::GetSystemNameBasedOnAssetName(system->GetName()).c_str());
+		LOG(LogEditor, Verbose, "Failed to add system {}, there is already a system with this name. Brought focus to the existing system instead.", systemName);
 		return nullptr;
 	}
 
@@ -556,7 +677,7 @@ Engine::EditorSystem* Engine::Editor::TryAddSystemInternal(const TypeId typeId, 
 	return returnValue;
 }
 
-Engine::EditorSystem* Engine::Editor::TryAddSystemInternal(const MetaType& type)
+CE::EditorSystem* CE::Editor::TryAddSystemInternal(const MetaType& type)
 {
 	FuncResult constructResult = type.Construct();
 
@@ -573,7 +694,7 @@ Engine::EditorSystem* Engine::Editor::TryAddSystemInternal(const MetaType& type)
 	return TryAddSystemInternal(type.GetTypeId(), std::move(system));
 }
 
-Engine::EditorSystem* Engine::Editor::TryGetSystemInternal(const std::string_view systemName)
+CE::EditorSystem* CE::Editor::TryGetSystemInternal(const std::string_view systemName)
 {
 	const auto it = std::find_if(mSystems.begin(), mSystems.end(),
 	                             [systemName](const std::pair<TypeId, SystemPtr<EditorSystem>>& other)
@@ -584,7 +705,7 @@ Engine::EditorSystem* Engine::Editor::TryGetSystemInternal(const std::string_vie
 	return it == mSystems.end() ? nullptr : it->second.get();
 }
 
-Engine::EditorSystem* Engine::Editor::TryGetSystemInternal(const TypeId typeId)
+CE::EditorSystem* CE::Editor::TryGetSystemInternal(const TypeId typeId)
 {
 	const auto it = std::find_if(mSystems.begin(), mSystems.end(),
 	                             [typeId](const std::pair<TypeId, SystemPtr<EditorSystem>>& other)
@@ -595,7 +716,7 @@ Engine::EditorSystem* Engine::Editor::TryGetSystemInternal(const TypeId typeId)
 	return it == mSystems.end() ? nullptr : it->second.get();
 }
 
-void Engine::Editor::DisplayMainMenuBar()
+void CE::Editor::DisplayMainMenuBar()
 {
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -615,7 +736,8 @@ void Engine::Editor::DisplayMainMenuBar()
 		{
 			std::function<void(const MetaType&)> recursivelyDisplayAsOption = [this, &recursivelyDisplayAsOption](const MetaType& type)
 				{
-					if (type.IsDefaultConstructible())
+					if (type.IsDefaultConstructible()
+						&& !type.GetProperties().Has(Props::sEditorSystemAlwaysOpenTag))
 					{
 						const EditorSystem* existingSystem = TryGetSystemInternal(type.GetTypeId());
 						bool selected = existingSystem != nullptr;
@@ -703,6 +825,10 @@ void Engine::Editor::DisplayMainMenuBar()
 			{
 				flags ^= DebugCategory::Particles;
 			}
+			if (ImGui::MenuItem("TerrainHeight", nullptr, flags & DebugCategory::TerrainHeight))
+			{
+				flags ^= DebugCategory::TerrainHeight;
+			}
 			if (ImGui::MenuItem("All", nullptr, flags & DebugCategory::All))
 			{
 				flags ^= DebugCategory::All;
@@ -725,8 +851,8 @@ namespace
 	void SetCustomTheme()
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		const std::string fontPath = Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::EngineAssets, "Fonts/Roboto-Regular.ttf");
-		const std::string iconsPath = Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::EngineAssets, "Fonts/fontawesome-webfont.ttf");
+		const std::string fontPath = CE::FileIO::Get().GetPath(CE::FileIO::Directory::EngineAssets, "Fonts/Roboto-Regular.ttf");
+		const std::string iconsPath = CE::FileIO::Get().GetPath(CE::FileIO::Directory::EngineAssets, "Fonts/fontawesome-webfont.ttf");
 
 		ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 16.0f);
 
@@ -814,6 +940,4 @@ namespace
 		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 	}
-
-
 }

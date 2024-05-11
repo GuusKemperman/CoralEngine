@@ -1,9 +1,10 @@
 #pragma once
+#include "Assets/Core/AssetHandle.h"
 #include "Systems/System.h"
-#include <unordered_map>
 
-namespace Engine
+namespace CE
 {
+	class Registry;
 	class Animation;
 	class SkinnedMeshComponent;
 	struct AnimNode;
@@ -15,11 +16,11 @@ namespace Engine
 	public:
 		void Update(World& world, float dt) override;
 
-		void CalculateBoneTransform(const AnimNode& node, 
-	const glm::mat4& parenTransform, 
+		void CalculateBoneTransformRecursive(const AnimNode& node, 
+	const glm::mat4x4& parenTransform, 
 	const std::unordered_map<std::string, BoneInfo>& boneMap,
 	const SkinnedMeshComponent& mesh,
-	const std::shared_ptr<const Animation> animation, 
+	const AssetHandle<Animation>& animation, 
 	std::vector<glm::mat4x4>& finalBoneMatrices);
 
 	private:

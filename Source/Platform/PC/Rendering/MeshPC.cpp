@@ -20,13 +20,13 @@ enum StaticMeshFlags : uint8
     hasTangents = 1 << 5
 };
 
-Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
+CE::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
     Asset(loadInfo)
 {
     std::istream& str = loadInfo.GetStream();
 
     StaticMeshFlags flags{};
-    str.read(reinterpret_cast<char*>(&flags), sizeof(flags));
+    str.read(reinterpret_cast<char*>(&flags), sizeof(StaticMeshFlags));
 
     uint32 numOfVertices{};
     str.read(reinterpret_cast<char*>(&numOfVertices), sizeof(numOfVertices));
@@ -76,7 +76,7 @@ Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
     std::vector<glm::vec3> tangentsStorage(0);
     const glm::vec3* tangents = nullptr;
 
-    int loadInfoVersion = loadInfo.GetVersion();
+    int loadInfoVersion = loadInfo.GetMetaData().GetAssetVersion();
     if (loadInfoVersion == 1
         && flags & hasTangents)
     {
@@ -118,9 +118,9 @@ Engine::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
     }
 }
 
-Engine::StaticMesh::StaticMesh(StaticMesh&& other) noexcept = default;
+CE::StaticMesh::StaticMesh(StaticMesh&& other) noexcept = default;
 
-void Engine::StaticMesh::DrawMesh() const
+void CE::StaticMesh::DrawMesh() const
 {
     if (mVertexBuffer == nullptr)
         return;
@@ -130,13 +130,13 @@ void Engine::StaticMesh::DrawMesh() const
 
 	commandList->IASetVertexBuffers(0, 1, &mVertexBufferView);
 	commandList->IASetVertexBuffers(1, 1, &mNormalBufferView);
-	commandList->IASetVertexBuffers(2, 1, &mTexCoordBufferView);
-	commandList->IASetVertexBuffers(3, 1, &mTangentBufferView);
+    commandList->IASetVertexBuffers(2, 1, &mTangentBufferView);
+	commandList->IASetVertexBuffers(3, 1, &mTexCoordBufferView);
 	commandList->IASetIndexBuffer(&mIndexBufferView);
 	commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
 }
 
-void Engine::StaticMesh::DrawMeshVertexOnly() const
+void CE::StaticMesh::DrawMeshVertexOnly() const
 {
     if (mVertexBuffer == nullptr)
         return;
@@ -149,7 +149,7 @@ void Engine::StaticMesh::DrawMeshVertexOnly() const
     commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
 }
 
-bool Engine::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, unsigned int sizeOfIndexType, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount)
+bool CE::StaticMesh::LoadMesh(const char* indices, unsigned int indexCount, unsigned int sizeOfIndexType, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount)
 {
 	if (Device::IsHeadless() ||
 		indices == nullptr ||

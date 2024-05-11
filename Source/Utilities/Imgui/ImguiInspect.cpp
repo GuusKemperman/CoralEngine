@@ -4,7 +4,7 @@
 #include "Meta/MetaAny.h"
 #include "Meta/MetaType.h"
 
-bool Engine::ShowInspectUI(const std::string& label, MetaAny& value)
+bool CE::ShowInspectUI(const std::string& label, MetaAny& value)
 {
     if (value == nullptr)
     {
@@ -33,7 +33,7 @@ bool Engine::ShowInspectUI(const std::string& label, MetaAny& value)
     return *result.GetReturnValue().As<bool>();
 }
 
-bool Engine::CanBeInspected(const MetaType& type)
+bool CE::CanBeInspected(const MetaType& type)
 {
     return type.TryGetFunc(sShowInspectUIFuncName) != nullptr;
 }

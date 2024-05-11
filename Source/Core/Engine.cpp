@@ -9,33 +9,39 @@
 #include "Core/Input.h"
 #include "Core/Editor.h"
 #include "Core/VirtualMachine.h"
-#include "Core/JobManager.h"
 #include "Meta/MetaManager.h"
 #include "Core/UnitTests.h"
 #include "Core/Audio.h"
 #include "Assets/Level.h"
 #include "World/World.h"
-#include "World/WorldRenderer.h"
 #include "Utilities/Benchmark.h"
 #include "World/Registry.h"
-#include <../External/fmod/fmod.hpp>
+#include "Rendering/Renderer.h"
 
-
-Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
+CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 {
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
 
-	FMOD::System* system{};
-	FMOD::System_Create(&system);
-
 	JobManager::StartUp();
+
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
+
+	std::thread deviceAgnosticSystems
+	{
+		[&]
+		{
+			MetaManager::StartUp();
+			AssetManager::StartUp();
+			VirtualMachine::StartUp();
+		}
+	};
 
 	if (!Device::IsHeadless())
 	{
 		Device::StartUp();
+		Renderer::StartUp();
 	}
 
 	Audio::StartUp().LoadSFX("Assets/Audio/SoundTEst.wav", false);
@@ -46,14 +52,13 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	{
 		Device::Get().CreateImguiContext();
 	}
-#endif
-	MetaManager::StartUp();
-	AssetManager::StartUp();
-	VirtualMachine::StartUp();
+#endif // EDITOR
+
+	deviceAgnosticSystems.join();
 
 #ifdef EDITOR
 	Editor::StartUp();
-#endif // !EDITOR
+#endif // EDITOR
 
 	UnitTestManager::StartUp();
 
@@ -67,6 +72,13 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 			{
 				numFailed++;
 			}
+		}
+
+		const uint32 numOfErrorsLogged = Logger::Get().GetNumOfEntriesPerSeverity()[LogSeverity::Error];
+		if (numOfErrorsLogged != 0)
+		{
+			LOG(LogUnitTest, Error, "There were {} unresolved errors logged to the consoler", numOfErrorsLogged);
+			numFailed += numOfErrorsLogged;
 		}
 
 		// We only exit if numFailed != 0,
@@ -83,7 +95,7 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 	}
 }
 
-Engine::EngineClass::~EngineClass()
+CE::Engine::~Engine()
 {
 	UnitTestManager::ShutDown();
 
@@ -99,15 +111,15 @@ Engine::EngineClass::~EngineClass()
 
 	if (!Device::IsHeadless())
 	{
+		Renderer::ShutDown();
 		Device::ShutDown();
 	}
 
 	Logger::ShutDown();
 	FileIO::ShutDown();
-	JobManager::ShutDown();
 }
 
-void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
+void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 {
 	if (Device::IsHeadless())
 	{
@@ -115,7 +127,7 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 	}
 
 #ifndef EDITOR
-	std::shared_ptr<const Level> level = AssetManager::Get().TryGetAsset<Level>(starterLevel);
+	AssetHandle<Level> level = AssetManager::Get().TryGetAsset<Level>(starterLevel);
 
 	if (level == nullptr)
 	{
@@ -135,7 +147,7 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 #endif // EDITOR
 
 	float timeElapsedSinceLastGarbageCollect{};
-	static constexpr float garbageCollectInterval = 30.0f;
+	static constexpr float garbageCollectInterval = 15.0f;
 
 	std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	std::chrono::high_resolution_clock::time_point t2{};
@@ -143,7 +155,7 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 	while (!device.ShouldClose())
 	{
 		t2 = std::chrono::high_resolution_clock::now();
-		float deltaTime = (std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1)).count();
+		float deltaTime = std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1).count();
 
 		// Check if we hit a breakpoint or something else
 		// that interrupted the program for an extended duration
@@ -157,11 +169,21 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 		input.NewFrame();
 		device.NewFrame();
 
+		if (device.GetDisplaySize().x <= 0
+			|| device.GetDisplaySize().y <= 0)
+		{
+			continue;
+		}
+
 #ifdef EDITOR
 		editor.Tick(deltaTime);
 #else
 		world.Tick(deltaTime);
-		world.GetRenderer().Render();
+
+		if (!Device::IsHeadless())
+		{
+			Renderer::Get().Render(world);
+		}
 #endif  // EDITOR
 
 		audio.PlaySFX("Assets/Audio/SoundTEst.wav");
@@ -169,14 +191,10 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 		device.EndFrame();
 
 #ifdef EDITOR
-		// TODO
 		// Has to be done after EndFrame for some dx12 reasons,
 		// as you are not allowed to free resources in between NewFrame and EndFrame.
-		// In the future this will be fixed by having some queue of destroy requests
-		// that the device will free after EndFrame, and then we can move FullFillRefreshRequests
-		// back to Editor::Tick.
 		editor.FullFillRefreshRequests();
-#endif
+#endif // EDITOR
 
 		timeElapsedSinceLastGarbageCollect += deltaTime;
 
@@ -187,4 +205,3 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 		}
 	}
 }
-

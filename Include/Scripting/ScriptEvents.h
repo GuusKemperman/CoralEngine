@@ -1,9 +1,9 @@
 #pragma once
-
 #include "Assets/Script.h"
+#include "Assets/Core/AssetHandle.h"
 #include "Utilities/Events.h"
 
-namespace Engine
+namespace CE
 {
 	class Script;
 	class ScriptFunc;
@@ -13,13 +13,20 @@ namespace Engine
 	class ScriptEvent
 	{
 	public:
-		template <typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
-		ScriptEvent(const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event, std::vector<MetaFuncNamedParam>&& params,
+		template <typename Ret, typename... Args, bool IsAlwaysStatic>
+		ScriptEvent(const Event<Ret(Args...), IsAlwaysStatic>& event, std::vector<MetaFuncNamedParam>&& params,
 		            std::optional<MetaFuncNamedParam>&& ret);
 
 		MetaFunc& Declare(TypeId selfTypeId, MetaType& toType) const;
 		void Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc,
-		            const std::shared_ptr<const Script>& script) const;
+		            const AssetHandle<Script>& script) const;
+
+#ifdef EDITOR
+		/**
+		 * \brief Can be used to make calls to ImGui so the user can add/remove event specific properties.
+		 */
+		virtual void OnDetailsInspect([[maybe_unused]] ScriptFunc& scriptFunc) const {}
+#endif // EDITOR
 
 		std::reference_wrapper<const EventBase> mBasedOnEvent;
 
@@ -28,13 +35,12 @@ namespace Engine
 
 	private:
 		virtual MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                           const std::shared_ptr<const Script>& script) const = 0;
+		                                           const AssetHandle<Script>& script) const = 0;
 
 		std::vector<TypeTraits> mEventParams{};
 		TypeTraits mEventReturnType{};
 
 		bool mIsStatic{};
-		bool mIsPure{};
 	};
 
 	class ScriptOnlyPassComponentEvent :
@@ -47,30 +53,45 @@ namespace Engine
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-			const std::shared_ptr<const Script>& script) const override;
+			const AssetHandle<Script>& script) const override;
+	};
+
+	// For both Tick and FixedTick
+	class ScriptTickEventBase :
+		public ScriptEvent
+	{
+	public:
+		template<typename EventT>
+		ScriptTickEventBase(const EventT& event) :
+			ScriptEvent(event, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt) {}
+
+#ifdef EDITOR
+		void OnDetailsInspect(ScriptFunc& scriptFunc) const override;
+#endif // EDITOR
 	};
 
 	class ScriptTickEvent final :
-		public ScriptEvent
+		public ScriptTickEventBase
 	{
 	public:
-		ScriptTickEvent();
+		ScriptTickEvent() : ScriptTickEventBase(sTickEvent) {};
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+			const AssetHandle<Script>& script) const override;
 	};
 
 	class ScriptFixedTickEvent final :
-		public ScriptEvent
+		public ScriptTickEventBase
 	{
 	public:
-		ScriptFixedTickEvent();
+		ScriptFixedTickEvent() : ScriptTickEventBase(sFixedTickEvent) {};
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+			const AssetHandle<Script>& script) const override;
 	};
+	
 
 	class ScriptAITickEvent final :
 		public ScriptEvent
@@ -80,7 +101,7 @@ namespace Engine
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+		                                   const AssetHandle<Script>& script) const override;
 	};
 
 	class ScriptAIEvaluateEvent final :
@@ -91,7 +112,7 @@ namespace Engine
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+		                                   const AssetHandle<Script>& script) const override;
 	};
 
 	class ScriptAbilityActivateEvent final :
@@ -102,7 +123,7 @@ namespace Engine
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+		                                   const AssetHandle<Script>& script) const override;
 	};
 
 	class CollisionEvent :
@@ -114,20 +135,19 @@ namespace Engine
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-		                                   const std::shared_ptr<const Script>& script) const override;
+		                                   const AssetHandle<Script>& script) const override;
 	};
 
 
-	template <typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
-	ScriptEvent::ScriptEvent(const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event,
+	template <typename Ret, typename... Args, bool IsAlwaysStatic>
+	ScriptEvent::ScriptEvent(const Event<Ret(Args...), IsAlwaysStatic>& event,
 	                         std::vector<MetaFuncNamedParam>&& params, std::optional<MetaFuncNamedParam>&& ret) :
 		mBasedOnEvent(event),
 		mParamsToShowToUser(std::move(params)),
 		mReturnValueToShowToUser(std::move(ret)),
 		mEventParams({MakeTypeTraits<Args>()...}),
 		mEventReturnType(MakeTypeTraits<Ret>()),
-		mIsStatic(IsAlwaysStatic),
-		mIsPure(IsPure)
+		mIsStatic(IsAlwaysStatic)
 	{
 	}
 

@@ -1,7 +1,7 @@
 #pragma once
-#include "Meta/Fwd/MetaReflectFwd.h"
+#include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	struct DurationalEffect;
 	class Prefab;
@@ -11,7 +11,8 @@ namespace Engine
 	class AbilityFunctionality
 	{
 	public:
-		enum Stat
+
+		enum class Stat
 		{
 			Health,
 			MovementSpeed,
@@ -19,42 +20,89 @@ namespace Engine
 			ReceivedDamageModifier
 		};
 
-		enum FlatOrPercentage
+		enum class FlatOrPercentage
 		{
 			Flat,
 			Percentage
 		};
 
-		enum IncreaseOrDecrease
+		enum class IncreaseOrDecrease
 		{
 			Decrease,
 			Increase
 		};
 
-		static std::optional<float> ApplyInstantEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat = Stat::Health, float amount = 0.f, FlatOrPercentage flatOrPercentage = FlatOrPercentage::Flat, IncreaseOrDecrease increaseOrDecrease = IncreaseOrDecrease::Decrease);
-		static void ApplyDurationalEffect(World& world, entt::entity castByEntity, entt::entity affectedEntity, Stat stat = Stat::Health, float amount = 0.f, FlatOrPercentage flatOrPercentage = FlatOrPercentage::Flat, IncreaseOrDecrease increaseOrDecrease = IncreaseOrDecrease::Decrease, float duration = 0.f);
-		static void RevertDurationalEffect(CharacterComponent& characterComponent, DurationalEffect& durationalEffect);
-		static entt::entity SpawnProjectile(World& world, const Prefab& prefab, entt::entity castBy);
-		static entt::entity SpawnAOE(World& world, const Prefab& prefab, entt::entity castBy); // area of attack
+		struct AbilityEffect
+		{
+			Stat mStat = Stat::Health;
+			float mAmount{};
+			FlatOrPercentage mFlatOrPercentage = FlatOrPercentage::Flat;
+			IncreaseOrDecrease mIncreaseOrDecrease = IncreaseOrDecrease::Decrease;
+			bool mClampToMax = true;
+
+			bool operator==(const AbilityEffect& effectSettings) const;
+			bool operator!=(const AbilityEffect& effectSettings) const;
+
+		private:
+			friend ReflectAccess;
+			static MetaType Reflect();
+			REFLECT_AT_START_UP(AbilityEffect);
+		};
+
+		static std::optional<float> ApplyInstantEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect);
+		static void ApplyDurationalEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f);
+		static void RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect);
+		static void ApplyOverTimeEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f, int ticks = 1);
+		static entt::entity SpawnAbilityPrefab(World& world, const Prefab& prefab, entt::entity castBy);
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);
+		static glm::vec3 GetEffectColor(Stat stat, IncreaseOrDecrease increaseOrDecrease);
+
+		struct PairOfOptionalAndValueHash // to use a key in std::unordered_map
+		{
+			template <class T1, class T2>
+			std::size_t operator() (const std::pair<T1, T2>& pair) const
+			{
+				auto hash1 = pair.first ? std::hash<T1>{}(*pair.first) : 0; // Hash of std::optional of first value
+				auto hash2 = std::hash<T2>{}(pair.second); // Hash of second value
+				return hash1 ^ (hash2 << 1); // Combine hashes
+			}
+		};
+
+		inline static std::unordered_map<std::pair<std::optional<Stat>, IncreaseOrDecrease>, glm::vec3, PairOfOptionalAndValueHash>
+			sDefaultEffectColors = {
+		{{std::nullopt, IncreaseOrDecrease::Increase}, {1.f, 1.f, 1.f}},               // Default increase - white
+		{{std::nullopt, IncreaseOrDecrease::Decrease}, {0.05f, 0.05f, 0.05f}},         // Default decrease - black
+		{{Stat::Health, IncreaseOrDecrease::Increase}, {0.f, 1.f, 0.f}},                    // green
+		{{Stat::Health, IncreaseOrDecrease::Decrease}, {1.f, 0.f, 0.f}},                    // red
+		{{Stat::MovementSpeed, IncreaseOrDecrease::Increase}, {1.f, 0.5f, 0.f}},            // orange
+		{{Stat::MovementSpeed, IncreaseOrDecrease::Decrease}, {0.25f, 0.25f, 1.f}},         // blue
+		{{Stat::DealtDamageModifier, IncreaseOrDecrease::Increase}, {0.75f, 0.25f, 0.75f}}, // purple
+		{{Stat::ReceivedDamageModifier, IncreaseOrDecrease::Increase}, {1.f, 1.f, 0.25f}},  // yellow
+		};
 
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AbilityFunctionality);
 	};
+
+	template<class Archive>
+	void serialize([[maybe_unused]] Archive& ar, [[maybe_unused]] const AbilityFunctionality::AbilityEffect& value)
+	{
+		// We don't need to actually serialize it, but otherwise we get a compilation error
+	}
 }
 
 template<>
-struct Reflector<Engine::AbilityFunctionality::Stat>
+struct Reflector<CE::AbilityFunctionality::Stat>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(Stat, Engine::AbilityFunctionality::Stat);
+}; REFLECT_AT_START_UP(Stat, CE::AbilityFunctionality::Stat);
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::AbilityFunctionality::Stat>
+struct CE::EnumStringPairsImpl<CE::AbilityFunctionality::Stat>
 {
 	static constexpr EnumStringPairs<AbilityFunctionality::Stat, 4> value = {
 		EnumStringPair<AbilityFunctionality::Stat>{ AbilityFunctionality::Stat::Health, "Health" },
@@ -65,14 +113,14 @@ struct Engine::EnumStringPairsImpl<Engine::AbilityFunctionality::Stat>
 };
 
 template<>
-struct Reflector<Engine::AbilityFunctionality::FlatOrPercentage>
+struct Reflector<CE::AbilityFunctionality::FlatOrPercentage>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(FlatOrPercentage, Engine::AbilityFunctionality::FlatOrPercentage);
+}; REFLECT_AT_START_UP(FlatOrPercentage, CE::AbilityFunctionality::FlatOrPercentage);
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::AbilityFunctionality::FlatOrPercentage>
+struct CE::EnumStringPairsImpl<CE::AbilityFunctionality::FlatOrPercentage>
 {
 	static constexpr EnumStringPairs<AbilityFunctionality::FlatOrPercentage, 2> value = {
 		EnumStringPair<AbilityFunctionality::FlatOrPercentage>{ AbilityFunctionality::FlatOrPercentage::Flat, "Flat" },
@@ -82,14 +130,14 @@ struct Engine::EnumStringPairsImpl<Engine::AbilityFunctionality::FlatOrPercentag
 
 
 template<>
-struct Reflector<Engine::AbilityFunctionality::IncreaseOrDecrease>
+struct Reflector<CE::AbilityFunctionality::IncreaseOrDecrease>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(IncreaseOrDecrease, Engine::AbilityFunctionality::IncreaseOrDecrease);
+}; REFLECT_AT_START_UP(IncreaseOrDecrease, CE::AbilityFunctionality::IncreaseOrDecrease);
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::AbilityFunctionality::IncreaseOrDecrease>
+struct CE::EnumStringPairsImpl<CE::AbilityFunctionality::IncreaseOrDecrease>
 {
 	static constexpr EnumStringPairs<AbilityFunctionality::IncreaseOrDecrease, 2> value = {
 		EnumStringPair<AbilityFunctionality::IncreaseOrDecrease>{ AbilityFunctionality::IncreaseOrDecrease::Increase, "Increase" },

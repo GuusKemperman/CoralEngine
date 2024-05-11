@@ -2,7 +2,7 @@
 #include "Core/Input.h"
 #include "Core/Device.h"
 
-using namespace Engine;
+using namespace CE;
 
 enum KeyAction
 {
@@ -30,6 +30,7 @@ namespace
     GLFWgamepadstate prev_gamepad_state[max_nr_gamepads];
 
     glm::vec2 mousepos;
+    glm::vec2 previousmousepos;
     float mousewheelDelta = 0;
 
     void cursor_position_callback(GLFWwindow*, double xpos, double ypos)
@@ -82,6 +83,7 @@ Input::~Input()
 
 void Input::NewFrame()
 {
+    previousmousepos = mousepos;
     glfwPollEvents();
 
     // update keyboard key states
@@ -135,7 +137,14 @@ float Input::GetGamepadAxis(int gamepadID, GamepadAxis axis, bool checkFocus) co
 
     int a = static_cast<int>(axis);
     ASSERT(a >= 0 && a <= GLFW_GAMEPAD_AXIS_LAST);
-    return gamepad_state[gamepadID].axes[a];
+
+    float result = gamepad_state[gamepadID].axes[a];
+    if (axis == GamepadAxis::TriggerLeft || axis == GamepadAxis::TriggerRight)
+    {
+        result = result * 0.5f + 0.5f;
+    }
+
+    return result;
 }
 
 bool Input::IsGamepadButtonHeld(int gamepadID, GamepadButton button, bool checkFocus) const
@@ -156,6 +165,15 @@ bool Input::WasGamepadButtonPressed(int gamepadID, GamepadButton button, bool ch
         || !HasFocus(checkFocus))
     {
         return false;
+    }
+
+    if (button == GamepadButton::TriggerRight)
+    {
+        return GetGamepadAxis(gamepadID, GamepadAxis::TriggerRight, checkFocus) > sTriggerThreshold;
+    }
+    if (button == GamepadButton::TriggerLeft)
+    {
+        return GetGamepadAxis(gamepadID, GamepadAxis::TriggerLeft, checkFocus) > sTriggerThreshold;
     }
 
     int b = static_cast<int>(button);
@@ -216,6 +234,8 @@ bool Input::WasMouseButtonReleased(MouseButton button, bool checkFocus) const
 }
 
 glm::vec2 Input::GetMousePosition() const { return mousepos; }
+
+glm::vec2 Input::GetDeltaMousePosition() const { return mousepos - previousmousepos; }
 
 float Input::GetMouseWheel(bool checkFocus) const
 {

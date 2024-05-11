@@ -1,59 +1,87 @@
 #pragma once
-#include <thread>
-
 #include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
 #include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
+#include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
 #include "Assets/Asset.h"
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
+#include "Rendering/FrameBuffer.h"
+#include "Utilities/ASync.h"
 
 class DXDescHeap;
 class DXResource;
 
-namespace Engine
+namespace CE
 {
 	class Texture :
 		public Asset
 	{
-		public:
-			Texture(std::string_view name);
-			Texture(AssetLoadInfo& loadInfo);
+	public:
+		Texture(std::string_view name);
 
-			~Texture() override;
+#ifdef EDITOR
+		Texture(std::string_view name, FrameBuffer&& frameBuffer);
+#endif // EDITOR
 
-			Texture(Texture&& other) noexcept;
-			Texture(const Texture&) = delete;
+		Texture(AssetLoadInfo& loadInfo);
 
-			Texture& operator=(Texture&&) = delete;
-			Texture& operator=(const Texture&) = delete;
+		~Texture() override;
 
-			bool IsReadyToBeSentToGpu() const;
-			bool WasSentToGpu() const { return mHeapSlot.has_value(); }
-			void SentToGPU() const;
+		Texture(Texture&& other) noexcept;
+		Texture(const Texture&) = delete;
 
-			void BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
-			void BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
+		Texture& operator=(Texture&&) = delete;
+		Texture& operator=(const Texture&) = delete;
 
-		private:
-			int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
+		static AssetHandle<Texture> TryGetDefaultTexture();
 
-			std::shared_ptr<DXResource> mTextureBuffer{};
+		bool IsReadyToBeSentToGpu() const;
+		bool WasSendToGPU() const { return mHeapSlot.has_value(); }
+		void SendToGPU() const;
 
+		void BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
+		void BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
 
-			std::optional<DXHeapHandle> mHeapSlot;
+#ifdef EDITOR
+		ImTextureID GetImGuiId() const;
+#endif // EDITOR
 
-			struct STBIPixels
-			{
-				~STBIPixels();
-				unsigned char* mPixels{};
-				int mWidth{};
-				int mHeight{};
-			};
-			// Stores the return value of the load thread
-			// After the texture has been sent to the GPU,
-			// this value will be reset to nullptr.
-			std::shared_ptr<STBIPixels> mLoadedPixels{};
+	private:
+		int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
+		void GenerateMipmaps() const;
 
-			friend ReflectAccess;
-			static MetaType Reflect();
+		const DXHeapHandle* TryGetHeapSlot() const;
+
+		std::unique_ptr<DXResource> mTextureBuffer{};
+		std::optional<DXHeapHandle> mHeapSlot;
+
+		std::optional<DXHeapHandle> mUAVslots[3];
+		std::unique_ptr<DXConstBuffer> mMipmapCB;
+
+		struct STBIPixels
+		{
+			~STBIPixels();
+			unsigned char* mPixels{};
+			int mWidth{};
+			int mHeight{};
+		};
+
+		struct DXGenerateMips
+		{
+			uint32_t SrcMipLevel;           // Texture level of source mip
+			uint32_t NumMipLevels;          // Number of OutMips to write: [1-4]
+			uint32_t SrcDimension;          // Width and height of the source texture are even or odd.
+			uint32_t IsSRGB;                // Must apply gamma correction to sRGB textures.
+			glm::vec2 TexelSize;			// 1.0 / OutMip1.Dimensions
+		};
+
+		// Stores the return value of the load thread
+		// After the texture has been sent to the GPU,
+		// this value will be reset to nullptr.
+		std::shared_ptr<STBIPixels> mLoadedPixels{};
+		ASyncThread mLoadingThread{};
+
+		friend ReflectAccess;
+		static MetaType Reflect();
 	};
 }

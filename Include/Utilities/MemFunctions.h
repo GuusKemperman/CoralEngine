@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace CE
 {
 	/**
 	 * \brief Uses the fastest available option on the target platform for allocating aligned memory.
@@ -42,9 +42,10 @@ namespace Engine
 		}
 	};
 
-	template<typename T, typename... Args, std::enable_if_t<std::is_constructible_v<T, Args...>, bool> = true>
-	std::unique_ptr<T, InPlaceDeleter<T, true>> MakeUniqueInPlace(Args&& ...args)
+	template<typename T, typename O = T, typename... Args, std::enable_if_t<std::is_constructible_v<T, Args...>
+		&& std::is_base_of_v<O, T>, bool> = true>
+	std::unique_ptr<T, InPlaceDeleter<O, true>> MakeUniqueInPlace(Args&& ...args)
 	{
-		return std::unique_ptr<T, InPlaceDeleter<T, true>>{ new (FastAlloc(sizeof(T), alignof(T))) T(std::forward<Args>(args)...) };
+		return std::unique_ptr<T, InPlaceDeleter<O, true>>{ new (FastAlloc(sizeof(T), alignof(T))) T(std::forward<Args>(args)...) };
 	}
 }

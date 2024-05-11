@@ -1,7 +1,7 @@
 #pragma once
 #include "Scripting/ScriptNode.h"
 
-namespace Engine
+namespace CE
 {
 	class CommentScriptNode final :
 		public ScriptNode
@@ -26,11 +26,15 @@ namespace Engine
 		glm::vec2 GetSize() const { return mSize; }
 		void SetSize(glm::vec2 size) { mSize = size; }
 
+		glm::vec4 GetColour() const { return mColour; }
+		void SetColour(const glm::vec4& colour) { mColour = colour; }
+
 	private:
 		bool DeserializeVirtual(const BinaryGSONObject& from) override;
 
 		std::string mComment{};
 		glm::vec2 mSize{};
+		glm::vec4 mColour{ 1.0f, 1.0f, 1.0f, .25f };
 	};
 }
 

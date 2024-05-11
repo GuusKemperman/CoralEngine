@@ -5,7 +5,7 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-float Engine::Bezier::GetSurfaceAreaBetweenFast(const float t1, const float t2) const
+float CE::Bezier::GetSurfaceAreaBetweenFast(const float t1, const float t2) const
 {
 	const float v1 = GetValueAt(t1);
 	const float v2 = GetValueAt(t2);
@@ -16,7 +16,7 @@ float Engine::Bezier::GetSurfaceAreaBetweenFast(const float t1, const float t2) 
 	return avg * dt;
 }
 
-float Engine::Bezier::GetSurfaceAreaBetween(float t1, const float t2, const float stepSize) const
+float CE::Bezier::GetSurfaceAreaBetween(float t1, const float t2, const float stepSize) const
 {
 	float total{};
 
@@ -34,7 +34,7 @@ float Engine::Bezier::GetSurfaceAreaBetween(float t1, const float t2, const floa
 #ifdef EDITOR
 
 
-void Engine::Bezier::DisplayWidget(const char* label)
+void CE::Bezier::DisplayWidget(const char* label)
 {
 	if (!ImGui::TreeNode(label))
 	{
@@ -56,7 +56,7 @@ void Engine::Bezier::DisplayWidget(const char* label)
 		}
 
 		std::sort(mControlPoints.begin(), mControlPoints.end(),
-			[](const glm::vec2& l, const glm::vec2& r)
+			[](glm::vec2 l, glm::vec2 r)
 			{
 				if (l.x >= 0.0f
 					&& r.x >= 0.0f)
@@ -72,20 +72,19 @@ void Engine::Bezier::DisplayWidget(const char* label)
 
 	ImGui::TreePop();
 }
-
-void Engine::Bezier::DisplayWidget(const char* label) const
-{
-	if (ImGui::TreeNode(label))
-	{
-		ShowInspectUI("ControlPoints", mControlPoints);
-		ImGui::TreePop();
-	}
-}
 #endif // EDITOR
 
-Engine::MetaType Engine::Bezier::Reflect()
+CE::MetaType CE::Bezier::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Bezier>{}, "Bezier" };
+	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+
+	type.AddFunc([](const Bezier& bezier, float t1, float t2)
+		{
+			return bezier.GetSurfaceAreaBetween(t1, t2, 0.05f);
+		}, "GetSurfaceAreaBetween", MetaFunc::ExplicitParams<const Bezier&, float, float>{}, "", "T1", "T2").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&Bezier::GetValueAt, "GetValueAt", "", "Time").GetProperties().Add(Props::sIsScriptableTag);
+
 	ReflectFieldType<Bezier>(type);
 	return type;
 }

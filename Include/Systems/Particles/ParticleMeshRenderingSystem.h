@@ -2,7 +2,7 @@
 //#include "Systems/System.h"
 //
 //
-//namespace Engine
+//namespace CE
 //{
 //	class Registry;
 //

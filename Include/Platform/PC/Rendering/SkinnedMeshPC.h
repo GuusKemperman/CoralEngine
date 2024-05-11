@@ -6,11 +6,8 @@
 
 class DXResource;
 
-namespace Engine
+namespace CE
 {
-    #define MAX_BONES 128
-    #define MAX_BONE_INFLUENCE 4
-
     class SkinnedMesh final :
         public Asset
     {

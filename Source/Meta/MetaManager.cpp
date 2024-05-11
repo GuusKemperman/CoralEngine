@@ -2,8 +2,10 @@
 #include "Meta/MetaManager.h"
 
 #include "Meta/MetaType.h"
+#include "Meta/MetaProps.h"
+#include "Utilities/StringFunctions.h"
 
-namespace Engine::Internal
+namespace CE::Internal
 {
 	// Has to be a function to ensure it is constructed before the other static variables
 	// start calling RegisterReflectFunc
@@ -19,13 +21,13 @@ namespace Engine::Internal
 	}
 }
 
-namespace Engine
+namespace CE
 {
 	static std::unordered_map<TypeId, MetaType> mTypeByTypeId{};
 	static std::unordered_map<Name::HashType, std::reference_wrapper<MetaType>> mTypeByName{};
 }
 
-void Engine::MetaManager::PostConstruct()
+void CE::MetaManager::PostConstruct()
 {
 	for (const auto& [typeId, func] : Internal::GetTypesReflectedAtStartUp())
 	{
@@ -39,7 +41,7 @@ void Engine::MetaManager::PostConstruct()
 	}
 }
 
-Engine::MetaType& Engine::MetaManager::AddType(MetaType&& type)
+CE::MetaType& CE::MetaManager::AddType(MetaType&& type)
 {
 	if (MetaType* existingType = TryGetType(type.GetTypeId()); existingType != nullptr)
 	{
@@ -65,30 +67,42 @@ Engine::MetaType& Engine::MetaManager::AddType(MetaType&& type)
 
 	MetaType& returnValue = typeInsertResult.first->second;
 
-	[[maybe_unused]] const auto nameInsertResult = mTypeByName.emplace(std::make_pair(Name::HashString(returnValue.GetName()), std::ref(returnValue)));
+	[[maybe_unused]] const auto nameInsertResult = mTypeByName.emplace(Name::HashString(returnValue.GetName()), returnValue);
 	ASSERT(nameInsertResult.second);
+
+	const MetaProps& props = returnValue.GetProperties();
+	const std::optional<std::string> oldNames = props.TryGetValue<std::string>(Props::sOldNames);
+
+	if (oldNames.has_value())
+	{
+		for (const std::string_view oldName : StringFunctions::SplitString(*oldNames, ","))
+		{
+			[[maybe_unused]] const auto oldNameInsertResult = mTypeByName.emplace(Name::HashString(oldName), returnValue);
+			ASSERT(oldNameInsertResult.second);
+		}
+	}
 
 	return returnValue;
 }
 
-Engine::MetaType* Engine::MetaManager::TryGetType(const Name typeName)
+CE::MetaType* CE::MetaManager::TryGetType(const Name typeName)
 {
 	const auto it = mTypeByName.find(typeName.GetHash());
 	return it == mTypeByName.end() ? nullptr : &it->second.get();
 }
 
-Engine::MetaType* Engine::MetaManager::TryGetType(const TypeId typeId)
+CE::MetaType* CE::MetaManager::TryGetType(const TypeId typeId)
 {
 	const auto it = mTypeByTypeId.find(typeId);
 	return it == mTypeByTypeId.end() ? nullptr : &it->second;
 }
 
-Engine::MetaManager::EachTypeT Engine::MetaManager::EachType()
+CE::MetaManager::EachTypeT CE::MetaManager::EachType()
 {
-	return { mTypeByName.begin(), mTypeByName.end() };
+	return { mTypeByTypeId.begin(), mTypeByTypeId.end() };
 }
 
-bool Engine::MetaManager::RemoveType(const TypeId typeId)
+bool CE::MetaManager::RemoveType(const TypeId typeId)
 {
 	const auto it = mTypeByTypeId.find(typeId);
 
@@ -97,36 +111,24 @@ bool Engine::MetaManager::RemoveType(const TypeId typeId)
 		return false;
 	}
 
-	const bool erasedFromBoth = mTypeByName.erase(Name::HashString(it->second.GetName())) && mTypeByTypeId.erase(typeId);
-
-	if (!erasedFromBoth)
+	// Multiple names can point to the same type
+	for (auto nameIt = mTypeByName.begin(); nameIt != mTypeByName.end();)
 	{
-		LOG(LogMeta, Error, "Somehow type a type was present in mTypeByTypeId but not in mTypeByTypeName");
+		if (nameIt->second.get() == it->second)
+		{
+			nameIt = mTypeByName.erase(nameIt);
+		}
+		else
+		{
+			++nameIt;
+		}
 	}
+	mTypeByTypeId.erase(it);
 
-	return erasedFromBoth;
+	return true;
 }
 
-bool Engine::MetaManager::RemoveType(const Name typeName)
-{
-	const auto it = mTypeByTypeId.find(typeName.GetHash());
-
-	if (it == mTypeByTypeId.end())
-	{
-		return false;
-	}
-
-	const bool erasedFromBoth = mTypeByName.erase(typeName.GetHash()) && mTypeByTypeId.erase(it->second.GetTypeId());
-
-	if (!erasedFromBoth)
-	{
-		LOG(LogMeta, Error, "Somehow type a type was present in mTypeByTypeName but not in mTypeByTypeId");
-	}
-
-	return erasedFromBoth;
-}
-
-bool Engine::Internal::DoesTypeExist(const TypeId typeId)
+bool CE::Internal::DoesTypeExist(const TypeId typeId)
 {
 	return MetaManager::Get().TryGetType(typeId) != nullptr;
 }

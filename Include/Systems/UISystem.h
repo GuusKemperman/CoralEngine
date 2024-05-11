@@ -2,7 +2,7 @@
 #include "Systems/System.h"
 #include "Core/Input.h"
 
-namespace Engine
+namespace CE
 {
 	class UIButtonComponent;
 
@@ -11,6 +11,13 @@ namespace Engine
 	{
 	public:
 		void Update(World& world, float dt) override;
+
+		SystemStaticTraits GetStaticTraits() const override
+		{
+			SystemStaticTraits traits{};
+			traits.mShouldTickWhilstPaused = true;
+			return traits;
+		}
 
 	private:
 		friend ReflectAccess;

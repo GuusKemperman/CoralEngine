@@ -7,9 +7,8 @@
 #include "Assets/SkinnedMesh.h"
 #include "Assets/Material.h"
 #include "Assets/Animation/Animation.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
-Engine::MetaType Engine::SkinnedMeshComponent::Reflect()
+CE::MetaType CE::SkinnedMeshComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<SkinnedMeshComponent>{}, "SkinnedMeshComponent" };
 	MetaProps& props = type.GetProperties();
@@ -18,6 +17,7 @@ Engine::MetaType Engine::SkinnedMeshComponent::Reflect()
 	type.AddField(&SkinnedMeshComponent::mMaterial, "mMaterial").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&SkinnedMeshComponent::mAnimation, "mAnimation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&SkinnedMeshComponent::mCurrentTime, "mCurrentTime").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&SkinnedMeshComponent::mAnimationSpeed, "mAnimationSpeed").GetProperties().Add(Props::sIsScriptableTag);
 	ReflectComponentType<SkinnedMeshComponent>(type);
 	return type;
 }

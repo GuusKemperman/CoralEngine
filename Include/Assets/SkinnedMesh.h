@@ -6,4 +6,4 @@
 #include "Platform/***REMOVED***/Rendering/SkinnedMesh***REMOVED***.h"
 #endif
 
-REFLECT_AT_START_UP(SkinnedMesh, Engine::SkinnedMesh);
+REFLECT_AT_START_UP(SkinnedMesh, CE::SkinnedMesh);

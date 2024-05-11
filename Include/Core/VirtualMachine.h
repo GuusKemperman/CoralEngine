@@ -6,7 +6,7 @@
 #include "Meta/MetaAny.h"
 #include "Meta/MetaFunc.h"
 
-namespace Engine
+namespace CE
 {
 	class Script;
 	class ScriptField;
@@ -30,17 +30,19 @@ namespace Engine
 	public:
 		/*
 		Will iterate over all script assets and create metatypes out of them.
-		
+
 		If this function was called before, it will first remove all MetaTypes that were created before. Any references to them will become dangling.
 		*/
 		void Recompile();
 
 		/*
-		Will destroy all types created by the compilation process and clear any errors. 
+		Will destroy all types created by the compilation process and clear any errors.
 		This is also automatically called when calling Recompile.
 		*/
 		void ClearCompilationResult();
-		
+
+		bool IsCompiled() const;
+
 		// Returns the errors that were found during the most recent compilation.
 		std::vector<std::reference_wrapper<const ScriptError>> GetErrors(const ScriptLocation& location) const;
 
@@ -72,16 +74,16 @@ namespace Engine
 	private:
 		void PrintCompileErrors() const;
 
-
 		// When we recompile, we first have to clean up the result of the previous compilation
 		static void DestroyAllTypesCreatedThroughScripts();
 
-		static constexpr uint32 sMaxNumOfNodesToExecutePerFunctionBeforeGivingUp = 10'000'000;
+		static constexpr uint32 sMaxNumOfNodesToExecutePerFunctionBeforeGivingUp = 10'000;
 		static constexpr uint32 sMaxStackSize = 1 << 16;
 		std::array<char, sMaxStackSize> mStack{};
 		char* mStackPtr = &mStack[0];
 
 		std::vector<ScriptError> mErrorsFromLastCompilation{};
+		bool mIsCompiled{};
 
 		struct VMContext
 		{

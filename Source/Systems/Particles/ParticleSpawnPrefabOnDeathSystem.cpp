@@ -9,7 +9,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
-void Engine::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unused]] float dt)
+void CE::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unused]] float dt)
 {
 	Registry& reg = world.GetRegistry();
 
@@ -47,7 +47,7 @@ void Engine::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unus
 	}
 }
 
-Engine::MetaType Engine::ParticleSpawnPrefabOnDeathSystem::Reflect()
+CE::MetaType CE::ParticleSpawnPrefabOnDeathSystem::Reflect()
 {
 	return MetaType{ MetaType::T<ParticleSpawnPrefabOnDeathSystem>{}, "ParticleSpawnPrefabOnDeathSystem", MetaType::Base<System>{} };
 }

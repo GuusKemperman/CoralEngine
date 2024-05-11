@@ -5,13 +5,13 @@
 #include "Scripting/ScriptFunc.h"
 #include "World/World.h"
 
-Engine::MetaFunc& Engine::ScriptEvent::Declare(TypeId selfTypeId, MetaType& toType) const
+CE::MetaFunc& CE::ScriptEvent::Declare(TypeId selfTypeId, MetaType& toType) const
 {
 	std::vector<MetaFuncNamedParam> metaParams{};
 
 	if (!mIsStatic)
 	{
-		metaParams.emplace_back(TypeTraits{ selfTypeId, mIsPure ? TypeForm::ConstRef : TypeForm::Ref });
+		metaParams.emplace_back(TypeTraits{ selfTypeId, TypeForm::Ref });
 	}
 	metaParams.insert(metaParams.end(), mEventParams.begin(), mEventParams.end());
 
@@ -26,18 +26,18 @@ Engine::MetaFunc& Engine::ScriptEvent::Declare(TypeId selfTypeId, MetaType& toTy
 		std::move(metaParams)
 	);
 
-	func.GetProperties().Add(Internal::sIsEventProp).Set(Props::sIsScriptPure, mIsPure);
+	func.GetProperties().Add(Internal::sIsEventProp);
 
 	return func;
 }
 
-void Engine::ScriptEvent::Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const
+void CE::ScriptEvent::Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, const AssetHandle<Script>& script) const
 {
 	return metaFunc.RedirectFunction(GetScriptInvoker(scriptFunc, script));
 }
 
-Engine::MetaFunc::InvokeT Engine::ScriptOnlyPassComponentEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+CE::MetaFunc::InvokeT CE::ScriptOnlyPassComponentEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -55,12 +55,43 @@ Engine::MetaFunc::InvokeT Engine::ScriptOnlyPassComponentEvent::GetScriptInvoker
 		};
 }
 
-Engine::ScriptTickEvent::ScriptTickEvent() :
-	ScriptEvent(sTickEvent, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt)
+#ifdef EDITOR
+void CE::ScriptTickEventBase::OnDetailsInspect(ScriptFunc& scriptFunc) const
 {
-}
+	MetaProps& props = scriptFunc.GetProps();
 
-Engine::MetaFunc::InvokeT  Engine::ScriptTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const
+	bool tickWhilstPaused = props.Has(Props::sShouldTickWhilstPausedTag);
+
+	if (ImGui::Checkbox("Tick while paused", &tickWhilstPaused))
+	{
+		if (tickWhilstPaused)
+		{
+			props.Add(Props::sShouldTickWhilstPausedTag);
+		}
+		else
+		{
+			props.Remove(Props::sShouldTickWhilstPausedTag);
+		}
+	}
+
+	bool tickBeforeBeginPlay = props.Has(Props::sShouldTickBeforeBeginPlayTag);
+
+	if (ImGui::Checkbox("Tick before begin play", &tickBeforeBeginPlay))
+	{
+		if (tickBeforeBeginPlay)
+		{
+			props.Add(Props::sShouldTickBeforeBeginPlayTag);
+		}
+		else
+		{
+			props.Remove(Props::sShouldTickBeforeBeginPlayTag);
+		}
+	}
+}
+#endif // EDITOR
+
+CE::MetaFunc::InvokeT CE::ScriptTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -71,13 +102,8 @@ Engine::MetaFunc::InvokeT  Engine::ScriptTickEvent::GetScriptInvoker(const Scrip
 		};
 }
 
-Engine::ScriptFixedTickEvent::ScriptFixedTickEvent() :
-	ScriptEvent(sFixedTickEvent, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt)
-{
-}
-
-Engine::MetaFunc::InvokeT  Engine::ScriptFixedTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+CE::MetaFunc::InvokeT CE::ScriptFixedTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -88,13 +114,13 @@ Engine::MetaFunc::InvokeT  Engine::ScriptFixedTickEvent::GetScriptInvoker(const 
 		};
 }
 
-Engine::ScriptAITickEvent::ScriptAITickEvent() :
+CE::ScriptAITickEvent::ScriptAITickEvent() :
 	ScriptEvent(sAITickEvent, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt)
 {
 }
 
-Engine::MetaFunc::InvokeT  Engine::ScriptAITickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+CE::MetaFunc::InvokeT  CE::ScriptAITickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -105,13 +131,13 @@ Engine::MetaFunc::InvokeT  Engine::ScriptAITickEvent::GetScriptInvoker(const Scr
 		};
 }
 
-Engine::ScriptAIEvaluateEvent::ScriptAIEvaluateEvent() :
+CE::ScriptAIEvaluateEvent::ScriptAIEvaluateEvent() :
 	ScriptEvent(sAIEvaluateEvent, {}, MetaFuncNamedParam{ MakeTypeTraits<float>(), "Score" })
 {
 }
 
-Engine::MetaFunc::InvokeT  Engine::ScriptAIEvaluateEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+CE::MetaFunc::InvokeT  CE::ScriptAIEvaluateEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -123,13 +149,13 @@ Engine::MetaFunc::InvokeT  Engine::ScriptAIEvaluateEvent::GetScriptInvoker(const
 		};
 }
 
-Engine::ScriptAbilityActivateEvent::ScriptAbilityActivateEvent() :
-	ScriptEvent(sAbilityActivateEvent, { { MakeTypeTraits<entt::entity>(), "Ability user" } }, std::nullopt)
+CE::ScriptAbilityActivateEvent::ScriptAbilityActivateEvent() :
+	ScriptEvent(sAbilityActivateEvent, { { MakeTypeTraits<entt::entity>(), "CastByEntity" } }, std::nullopt)
 {
 }
 
-Engine::MetaFunc::InvokeT  Engine::ScriptAbilityActivateEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+CE::MetaFunc::InvokeT  CE::ScriptAbilityActivateEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
@@ -140,8 +166,8 @@ Engine::MetaFunc::InvokeT  Engine::ScriptAbilityActivateEvent::GetScriptInvoker(
 		};
 }
 
-Engine::MetaFunc::InvokeT Engine::CollisionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const std::shared_ptr<const Script>& script) const
+CE::MetaFunc::InvokeT CE::CollisionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult

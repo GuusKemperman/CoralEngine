@@ -8,8 +8,8 @@ public:
 	DXConstBuffer() {};
 	DXConstBuffer(const ComPtr<ID3D12Device5>& device, size_t dataSize, int numOfObjects, const char* bufferDebugName, int frameNumber);
 	void Update(const void* data, size_t dataSize, int offsetIndex, int frameIndex);
-	void Bind(const ComPtr<ID3D12GraphicsCommandList4>& command, int rootParameterIndex, int offsetIndex, int frameIndexs);
-	void BindToCompute(const ComPtr<ID3D12GraphicsCommandList4>& command, int rootParameterIndex, int offsetIndex, int frameIndexs);
+	void Bind(const ComPtr<ID3D12GraphicsCommandList4>& command, int rootParameterIndex, int offsetIndex, int frameIndexs) const;
+	void BindToCompute(const ComPtr<ID3D12GraphicsCommandList4>& command, int rootParameterIndex, int offsetIndex, int frameIndexs) const;
 
 	const size_t GetBufferPerObjectAlignedSize() { return mBufferPerObjectAlignedSize; }
 	const size_t GetGPUPointer(int slot, int bufferIndex);  /*{return buffer[bufferIndex]->GetResource()->GetGPUVirtualAddress() + (bufferPerObjectAlignedSize * slot); }*/

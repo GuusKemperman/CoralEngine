@@ -6,9 +6,8 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/StaticMesh.h"
 #include "Assets/Material.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 
-Engine::MetaType Engine::ParticleMeshRendererComponent::Reflect()
+CE::MetaType CE::ParticleMeshRendererComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<ParticleMeshRendererComponent>{}, "ParticleMeshRendererComponent" };
 	MetaProps& props = type.GetProperties();

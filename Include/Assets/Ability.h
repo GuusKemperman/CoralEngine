@@ -1,8 +1,10 @@
 #pragma once
 #include "Assets/Asset.h"
+#include "Core/AssetHandle.h"
 
-namespace Engine
+namespace CE
 {
+	class AbilitiesOnCharacterComponent;
 	struct AbilityInstance;
 	class AbilitySystem;
 	class Texture;
@@ -21,15 +23,18 @@ namespace Engine
 			Mana // can be based on kills or some other criteria
 		};
 
+		const AssetHandle<Texture>& GetIconTexture() const { return mIconTexture; }
+
 	private:
 		friend AbilitySystem;
 		friend AbilityInstance;
+		friend AbilitiesOnCharacterComponent;
 
         void OnSave(AssetSaveInfo& saveInfo) const override;
 
-		std::shared_ptr<const Script> mScript{};
+		AssetHandle<Script> mOnAbilityActivateScript{};
 
-		std::shared_ptr<const Texture> mIconTexture{};
+		AssetHandle<Texture> mIconTexture{};
 		std::string mDescription{};
 
 		/**
@@ -51,14 +56,14 @@ namespace Engine
 }
 
 template<>
-struct Reflector<Engine::Ability::RequirementType>
+struct Reflector<CE::Ability::RequirementType>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(RequirementType, Engine::Ability::RequirementType);
+}; REFLECT_AT_START_UP(RequirementType, CE::Ability::RequirementType);
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::Ability::RequirementType>
+struct CE::EnumStringPairsImpl<CE::Ability::RequirementType>
 {
 	static constexpr EnumStringPairs<Ability::RequirementType, 2> value = {
 		EnumStringPair<Ability::RequirementType>{ Ability::RequirementType::Cooldown, "Cooldown" },

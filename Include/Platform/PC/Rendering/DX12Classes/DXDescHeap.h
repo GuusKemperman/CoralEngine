@@ -32,6 +32,7 @@ public:
 	void ClearDepthStencil(ComPtr<ID3D12GraphicsCommandList4> commandList, const DXHeapHandle& handle);
 
 	DXHeapHandle AllocateResource(DXResource* resource, D3D12_SHADER_RESOURCE_VIEW_DESC* desc);
+	DXHeapHandle AllocateUAV(DXResource* resource, D3D12_UNORDERED_ACCESS_VIEW_DESC* desc, DXResource* counterResource = nullptr);
 	DXHeapHandle AllocateRenderTarget(DXResource* resource, D3D12_RENDER_TARGET_VIEW_DESC* desc);
 	DXHeapHandle AllocateRenderTarget(DXResource* resource, ID3D12Device5* device, D3D12_RENDER_TARGET_VIEW_DESC* desc);
 	DXHeapHandle AllocateDepthStencil(DXResource* resource, D3D12_DEPTH_STENCIL_VIEW_DESC* desc);

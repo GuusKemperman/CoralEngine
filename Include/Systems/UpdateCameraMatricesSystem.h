@@ -1,13 +1,15 @@
 #pragma once
 #include "Systems/System.h"
 
-namespace Engine
+namespace CE
 {
 	class UpdateCameraMatricesSystem final :
 		public System
 	{
 	public:
 		void Update(World& world, float dt) override;
+
+		void Render(const World& world) override;
 
 		SystemStaticTraits GetStaticTraits() const override
 		{

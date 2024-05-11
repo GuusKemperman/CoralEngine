@@ -1,7 +1,7 @@
 #ifdef EDITOR
 #pragma once
 
-namespace Engine
+namespace CE
 {
 	class World;
 	class TransformComponent;
@@ -71,14 +71,14 @@ namespace Engine
 		float mViewportWidth = .75f;
 		float mHierarchyAndDetailsWidth = .25f;
 
-		static constexpr float sRunningAveragePreservePercentage = .99f;
+		static constexpr float sRunningAveragePreservePercentage = .95f;
 		float mDeltaTimeRunningAverage = 1.0f / 60.0f;
 	};
 
-	class WorldViewport
+	class WorldViewportPanel
 	{
 	public:
-		WorldViewport() = delete;
+		WorldViewportPanel() = delete;
 
 		/*
 		Renders the world to an ImGui::Image and allows the user to interact with it through ImGuizmo and drag drop.
@@ -98,7 +98,7 @@ namespace Engine
 
 	private:
 		static void ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities);
-		static void SetGizmoRect(glm::vec2 windowPos, const glm::vec2& windowSize);
+		static void SetGizmoRect(glm::vec2 windowPos, glm::vec2 windowSize);
 
 		static void GizmoManipulateSelectedTransforms(World& world,
 			const std::vector<entt::entity>& selectedEntities,
@@ -138,14 +138,7 @@ namespace Engine
 			std::vector<entt::entity>* selectedEntities);
 
 	private:
-		static void DisplayFamily(Registry& registry,
-			TransformComponent& parentTransform,
-			std::vector<entt::entity>& selectedEntities);
-
-		static void DisplaySingle(Registry& registry,
-		                          entt::entity entity,
-			std::vector<entt::entity>& selectedEntities,
-			TransformComponent* transformComponent);
+		static void DisplayEntity(Registry& registry, entt::entity entity, std::vector<entt::entity>& selectedEntities);
 
 		// Nullopt to unparent them
 		static void ReceiveDragDropOntoParent(Registry& registry,

@@ -8,7 +8,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Utilities/Math.h"
 
-using namespace Engine;
+using namespace CE;
 using namespace glm;
 using T = quat;
 REFLECT_AT_START_UP(ArrayOfT, std::vector<T>);
@@ -32,10 +32,10 @@ MetaType Reflector<T>::Reflect()
 		{
 			return Math::QuatToDirection(n);
 		}, "QuatToDirection (vec3)", MetaFunc::ExplicitParams<const glm::quat&>{}).GetProperties().Add(Props::sIsScriptableTag);
-		type.AddFunc([](const glm::vec2& n)
+		type.AddFunc([](glm::vec2 n)
 			{
 				return Math::Direction2DToXZQuatOrientation(n);
-			}, "Direction2DToXZQuatOrientation", MetaFunc::ExplicitParams<const glm::vec2&>{}).GetProperties().Add(Props::sIsScriptableTag);
+			}, "Direction2DToXZQuatOrientation", MetaFunc::ExplicitParams<glm::vec2>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddFunc([](T& n, const T& l) -> T& { n *= l; return n; }, OperatorType::multiplies_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 

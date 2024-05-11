@@ -5,14 +5,16 @@
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 #include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
 #include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
+#include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
+#include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
 
 struct GLFWwindow;
 struct GLFWmonitor;
 class DXDescHeap;
 
-namespace Engine
+namespace CE
 {
-    class EngineClass;
+    class Engine;
 
 	class Device final : 
         public EngineSubsystem<Device>
@@ -33,7 +35,9 @@ namespace Engine
         void* GetCommandList() { return mCommandList.Get(); }
         void* GetUploadCommandList() { return mUploadCommandList.Get(); }
         void* GetCommandQueue() { return mCommandQueue.Get(); }
-        void* GetSignature() { return mSignature.get(); }
+        void* GetSignature() { return mSignature.Get(); }
+        void* GetComputeSignature() { return mComputeSignature.Get(); }
+        void* GetMipmapPipeline() { return mGenMipmapsPipeline.Get(); }
 
 #ifdef EDITOR
         void CreateImguiContext();
@@ -42,6 +46,7 @@ namespace Engine
 		void StartUploadCommands();
         void SubmitUploadCommands();
         void AddToDeallocation(ComPtr<ID3D12Resource>&& res);
+        void BindSwapchainRT();
 
         glm::vec2 GetDisplaySize() { return glm::vec2(mViewport.Width, mViewport.Height); }
 
@@ -53,15 +58,14 @@ namespace Engine
          */
         static bool IsHeadless() { return sIsHeadless; }
 
-    //Platform specific heap
-    public:
+		//Platform specific heap
         std::shared_ptr<DXDescHeap> GetDescriptorHeap(int heap) { return mDescriptorHeaps[heap]; }
         int GetFrameIndex() { return mFrameIndex; }
 
     private:
-        friend EngineClass;
+        friend Engine;
 
-        // Set to true by EngineClass if in unit_test mode.
+        // Set to true by Engine if in unit_test mode.
         static inline bool sIsHeadless{};
 
         void InitializeWindow();
@@ -71,7 +75,14 @@ namespace Engine
         void SubmitCommands();
         void StartRecordingCommands();
 
-    private:
+        void SendTexturesToGPU();
+
+        enum DXResources {
+            RT,
+            DEPTH_STENCIL_RSC = FRAME_BUFFER_COUNT,
+            NUM_RESOURCES = FRAME_BUFFER_COUNT + 1
+        };
+
         bool mIsWindowOpen{};
 
         GLFWwindow* mWindow;
@@ -101,14 +112,16 @@ namespace Engine
         HANDLE mUploadFenceEvent;
         UINT64 mFenceValue[FRAME_BUFFER_COUNT];
         UINT64 mUploadFenceValue;
-        int mHeapResourceCount = TEX_START;
-        int mFrameBufferCount = RT_COUNT;
-        int mDepthStencilCount = 1;
+        int mHeapResourceCount = 4;
+        int frameBufferCount = FRAME_BUFFER_COUNT;
+        int depthStencilCount = 1;
         std::vector<ComPtr<ID3D12Resource>> mResourcesToDeallocate;
 
         ComPtr<IDXGISwapChain3> mSwapChain;
         ComPtr<ID3D12Device5> mDevice;
-        std::unique_ptr<DXSignature> mSignature;
+        ComPtr<ID3D12RootSignature> mSignature;
+        ComPtr<ID3D12RootSignature> mComputeSignature;
+        ComPtr<ID3D12PipelineState> mGenMipmapsPipeline;
 
         DXHeapHandle mRenderTargetHandles[FRAME_BUFFER_COUNT];
         DXHeapHandle mDepthHandle;

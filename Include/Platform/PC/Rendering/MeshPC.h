@@ -7,7 +7,7 @@
 
 class DXResource;
 
-namespace Engine
+namespace CE
 {
     class Material;
 
@@ -62,4 +62,4 @@ namespace Engine
         DXGI_FORMAT mIndexFormat;
         bool mBeenUpdated = false;
     };
-}  // namespace Engine
+}  // namespace CE

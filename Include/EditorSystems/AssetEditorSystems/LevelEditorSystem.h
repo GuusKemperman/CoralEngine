@@ -4,7 +4,7 @@
 
 #include "Assets/Level.h"	
 
-namespace Engine
+namespace CE
 {
 	class WorldInspectHelper;
 

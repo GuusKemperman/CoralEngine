@@ -5,23 +5,23 @@
 
 #include "Core/FileIO.h"
 #include "GSON/GSONReadable.h"
-#include "Containers/ManyStrings.h"
+#include "Utilities/ManyStrings.h"
 
 static std::filesystem::path GetLogIniPath()
 {
-	return Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::Intermediate, "Editor/Logger.ini");
+	return CE::FileIO::Get().GetPath(CE::FileIO::Directory::Intermediate, "Editor/Logger.ini");
 }
 
 static std::filesystem::path GetCrashLogDir()
 {
-	std::filesystem::path path = Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::Intermediate, "Logs");
+	std::filesystem::path path = CE::FileIO::Get().GetPath(CE::FileIO::Directory::Intermediate, "Logs");
 	std::filesystem::create_directories(path);
 	return path;
 }
 
-Engine::Logger::Logger() = default;
+CE::Logger::Logger() = default;
 
-void Engine::Logger::PostConstruct()
+void CE::Logger::PostConstruct()
 {
 	mEntryContents = std::make_unique<ManyStrings>();
 
@@ -52,7 +52,7 @@ void Engine::Logger::PostConstruct()
 	}
 }
 
-Engine::Logger::~Logger()
+CE::Logger::~Logger()
 {
 	const std::filesystem::path iniPath = GetLogIniPath();
 
@@ -87,9 +87,24 @@ Engine::Logger::~Logger()
 	ofstream.close();
 };
 
-void Engine::Logger::Log(std::string_view message, const std::string_view channel, const LogSeverity severity, SourceLocation&& origin, std::function<void()>&& onClick)
+void CE::Logger::Log(std::string_view message, 
+	const std::string_view channel, 
+	const LogSeverity severity, 
+	std::string_view file,
+	uint32 line, 
+	std::function<void()>&& onClick)
 {
 	Name::HashType channelHash = Name::HashString(channel);
+
+	std::string formattedMessage = std::this_thread::get_id() == mMainThreadId ? std::string{} : Format("Thread {} - ", std::hash<std::thread::id>()(std::this_thread::get_id()));
+
+	formattedMessage += Format("{} ({}) - {}\n",
+		std::filesystem::path{ file }.filename().string(), // Only the filename, not all that C:/projects nonsense
+		line,
+		message);
+
+	mMutex.lock();
+	++mNumOfEntriesPerSeverity[static_cast<int>(severity)];
 
 	auto existingChannel = mChannels.find(channelHash);
 
@@ -98,16 +113,10 @@ void Engine::Logger::Log(std::string_view message, const std::string_view channe
 		existingChannel = mChannels.emplace(channelHash, Channel{ std::string{ channel } }).first;
 	}
 
-	const std::string formattedMessage = Format("{}({}:{})\n\t{}\n\n",
-		std::filesystem::path{ origin.file_name() }.filename().string(), // Only the filename, not all that C:/projects nonsense
-		origin.line(),
-		origin.column(),
-		message);
-
-	++mNumOfEntriesPerSeverity[static_cast<int>(severity)];
-	mEntries.emplace_back(existingChannel->second, severity, std::move(origin), std::move(onClick));
+	mEntries.emplace_back(existingChannel->second, severity, file, line, std::move(onClick));
 	mEntryContents->Emplace(formattedMessage);
-	
+	mMutex.unlock();
+
 	fputs(formattedMessage.c_str(), stdout);
 	
 	if (severity == Fatal)
@@ -117,14 +126,16 @@ void Engine::Logger::Log(std::string_view message, const std::string_view channe
 	}
 }
 
-void Engine::Logger::Clear()
+void CE::Logger::Clear()
 {
+	mMutex.lock();
 	mEntries.clear();
 	mEntryContents->Clear();
 	mNumOfEntriesPerSeverity = {};
+	mMutex.unlock();
 }
 
-void Engine::Logger::DumpToCrashLog() const
+void CE::Logger::DumpToCrashLog() const
 {
 	const auto now = std::chrono::system_clock::now();
 	const std::filesystem::path logPath = (GetCrashLogDir() / std::to_string(now.time_since_epoch().count())).replace_extension(".txt");
@@ -134,6 +145,7 @@ void Engine::Logger::DumpToCrashLog() const
 	if (!file.is_open())
 	{
 		puts("Failed to dump to crashlog, as the file could not be opened");
+		return;
 	}
 
 	file.write(mEntryContents->Data(), mEntryContents->SizeInBytes());

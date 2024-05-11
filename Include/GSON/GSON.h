@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace CE
 {
 	template<typename Derived>
 	class GSONMemberBase
@@ -114,6 +114,9 @@ namespace Engine
 
 		// May invalidate pointers to GSONMembers owned by this object you've been holding on to.
 		void RemoveGSONMember(MemberType& member);
+
+		void ReserveChildren(size_t numOfChildren);
+		void ReserveMembers(size_t numOfMembers);
 
 	protected:
 		std::string mName{};
@@ -331,5 +334,17 @@ namespace Engine
 
 		const size_t memberIndex = (memberAdress - myMembersAdress) / sizeof(member);
 		mMembers.erase(mMembers.begin() + memberIndex);
+	}
+
+	template <typename ObjectT, typename MemberT>
+	void GSONObjectBase<ObjectT, MemberT>::ReserveChildren(size_t numOfChildren)
+	{
+		mChildren.reserve(numOfChildren);
+	}
+
+	template <typename ObjectT, typename MemberT>
+	void GSONObjectBase<ObjectT, MemberT>::ReserveMembers(size_t numOfMembers)
+	{
+		mMembers.reserve(numOfMembers);
 	}
 }

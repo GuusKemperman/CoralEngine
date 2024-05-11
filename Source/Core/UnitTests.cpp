@@ -1,14 +1,15 @@
 #include "Precomp.h"
 #include "Core/UnitTests.h"
 
+#include "Core/AssetManager.h"
 #include "GSON/GSONReadable.h"
 #include "Core/FileIO.h"
 
 static constexpr std::string_view sPathToTestResults = "UnitTestResults.txt";
 
-static std::vector<Engine::UnitTest>& GetTests()
+static std::vector<CE::UnitTest>& GetTests()
 {
-	static std::vector<Engine::UnitTest> tests{};
+	static std::vector<CE::UnitTest> tests{};
 	return tests;
 }
 
@@ -23,7 +24,7 @@ static std::chrono::system_clock::time_point GetTimeOfCompilation()
 {
 	static auto time = []() -> std::chrono::system_clock::time_point
 		{
-			const std::filesystem::path ourExecutable = Engine::FileIO::Get().GetPath(Engine::FileIO::Directory::ThisExecutable, {});
+			const std::filesystem::path ourExecutable = CE::FileIO::Get().GetPath(CE::FileIO::Directory::ThisExecutable, {});
 
 			if (!std::filesystem::exists(ourExecutable))
 			{
@@ -37,7 +38,7 @@ static std::chrono::system_clock::time_point GetTimeOfCompilation()
 	return time;
 }
 
-void Engine::UnitTestManager::PostConstruct()
+void CE::UnitTestManager::PostConstruct()
 {
 	ReadableGSONObject object{};
 
@@ -110,7 +111,7 @@ void Engine::UnitTestManager::PostConstruct()
 	}
 }
 
-Engine::UnitTestManager::~UnitTestManager()
+CE::UnitTestManager::~UnitTestManager()
 {
 	ReadableGSONObject object{};
 
@@ -133,7 +134,7 @@ Engine::UnitTestManager::~UnitTestManager()
 	object.SaveTo(resultFile);
 }
 
-void Engine::UnitTestManager::RunTests(UnitTest::Result resultFlags)
+void CE::UnitTestManager::RunTests(UnitTest::Result resultFlags)
 {
 	for (UnitTest& test : GetTests())
 	{
@@ -144,30 +145,34 @@ void Engine::UnitTestManager::RunTests(UnitTest::Result resultFlags)
 	}
 }
 
-Engine::Span<Engine::UnitTest> Engine::UnitTestManager::GetAllTests()
+CE::Span<CE::UnitTest> CE::UnitTestManager::GetAllTests()
 {
 	return GetTests();
 }
 
-bool Engine::Internal::RegisterUnitTest(std::string_view category, std::string_view name, std::function<UnitTest::Result()>&& function)
+bool CE::Internal::RegisterUnitTest(std::string_view category, std::string_view name, std::function<UnitTest::Result()>&& function)
 {
 	GetTests().emplace_back(std::string{category}, std::string{name}, std::move(function));
 	return true;
 }
 
-void Engine::UnitTest::operator()()
+void CE::UnitTest::operator()()
 {
 	mTimeLastRan = std::chrono::system_clock::now();
+	LOG(LogUnitTests, Message, "Running {}::{}", mCategory, mName);
 	mResult = mFunc();
-	mLastTestDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - mTimeLastRan);
 
 	if (mResult == Failure)
 	{
 		LOG(LogUnitTest, Error, "Unit test {} failed", mName);
 	}
+
+	LOG(LogUnitTests, Message, "Finished {}::{}", mCategory, mName);
+
+	mLastTestDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - mTimeLastRan);
 }
 
-void Engine::UnitTest::Clear()
+void CE::UnitTest::Clear()
 {
 	mResult = NotRan;
 	mTimeLastRan = {};

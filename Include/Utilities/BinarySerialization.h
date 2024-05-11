@@ -1,5 +1,5 @@
 #pragma once
-#include "Containers/view_istream.h"
+#include "Utilities/view_istream.h"
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -33,7 +33,7 @@
 #pragma warning(pop)
 #endif
 
-namespace Engine
+namespace CE
 {
 	template<typename T>
 	std::string ToBinary(const T& value)

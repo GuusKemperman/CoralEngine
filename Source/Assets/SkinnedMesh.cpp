@@ -11,12 +11,12 @@
 
 namespace cereal
 {
-    inline void save(BinaryOutputArchive& ar, const Engine::BoneInfo& value)
+    inline void save(BinaryOutputArchive& ar, const CE::BoneInfo& value)
     {
         ar(value.mOffset, value.mId);
     }
 
-    inline void load(BinaryInputArchive& ar, Engine::BoneInfo& value)
+    inline void load(BinaryInputArchive& ar, CE::BoneInfo& value)
     {
         ar(value.mOffset, value.mId);
     }
@@ -34,11 +34,11 @@ enum SkinnedMeshFlags : uint8
     hasBoneWeights = 1 << 7
 };
 
-Engine::SkinnedMesh::SkinnedMesh(std::string_view name) :
+CE::SkinnedMesh::SkinnedMesh(std::string_view name) :
     Asset(name, MakeTypeId<SkinnedMesh>())
 {}
 
-bool Engine::SkinnedMesh::OnSave(AssetSaveInfo& saveInfo,
+bool CE::SkinnedMesh::OnSave(AssetSaveInfo& saveInfo,
     Span<const glm::vec3> positions, 
     std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices, 
     std::optional<Span<const glm::vec3>> normals, 
@@ -163,9 +163,10 @@ bool Engine::SkinnedMesh::OnSave(AssetSaveInfo& saveInfo,
     return true;
 }
 
-Engine::MetaType Engine::SkinnedMesh::Reflect()
+CE::MetaType CE::SkinnedMesh::Reflect()
 {
     MetaType type = MetaType{ MetaType::T<SkinnedMesh>{}, "SkinnedMesh", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
+    type.GetProperties().Add(Props::sCannotReferenceOtherAssetsTag);
 
     SetClassVersion(type, 1);
 

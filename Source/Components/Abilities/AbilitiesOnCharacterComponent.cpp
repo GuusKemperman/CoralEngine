@@ -1,23 +1,24 @@
 #include "Precomp.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 
+#include "Components/PlayerComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Assets/Ability.h"
 #include "Systems/AbilitySystem.h"
 #include "World/World.h"
 
-Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
+CE::MetaType CE::AbilitiesOnCharacterComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<AbilitiesOnCharacterComponent>{}, "AbilitiesOnCharacterComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 	
-	metaType.AddField(&AbilitiesOnCharacterComponent::mIsPlayer, "mIsPlayer").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag);
-	metaType.AddField(&AbilitiesOnCharacterComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties().Add(Props::sNoInspectTag);
+	metaType.AddField(&AbilitiesOnCharacterComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties().Add(Props::sNoInspectTag).Add(Props::sIsScriptableTag);
+
+	BindEvent(metaType, sBeginPlayEvent, &AbilitiesOnCharacterComponent::OnBeginPlay);
 
 #ifdef EDITOR
 	BindEvent(metaType, sInspectEvent, &AbilitiesOnCharacterComponent::OnInspect);
@@ -28,37 +29,48 @@ Engine::MetaType Engine::AbilitiesOnCharacterComponent::Reflect()
 	return metaType;
 }
 
+void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World&, entt::entity)
+{
+	for (auto& ability : mAbilitiesToInput)
+	{
+		// Make all the cooldown abilities available on being play.
+		if (ability.mAbilityAsset->mRequirementType == Ability::Cooldown)
+		{
+			ability.mRequirementCounter = ability.mAbilityAsset->mRequirementToUse;
+		}
+	}
+}
+
 #ifdef EDITOR
-static bool isPlayer = true; // little hack to inspect the component conditionally
-void Engine::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
+static bool isPlayer = true; // Little hack to inspect the component conditionally
+void CE::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
 {
 	auto& reg = world.GetRegistry();
 	if (entities.size() > 1)
 	{
-		LOG(LogInspect, Warning, "Abilities On Character Component cannot be edited for multiple entities at the same time. Please only select one entity.");
+		ImGui::TextWrapped("Cannot inspect more than one Abilities On Character Component at a time.");
 		return;
 	}
 	auto& abilities = reg.Get<AbilitiesOnCharacterComponent>(entities[0]);
-	ShowInspectUI("mIsPlayer", abilities.mIsPlayer);
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::BeginTooltip();
-		ImGui::Text("Check this box if the entity this component is attached to is a player.\nThis defines whether an ability needs input.");
-		ImGui::EndTooltip();
-	}
-	isPlayer = abilities.mIsPlayer;
+	auto player = reg.TryGet<PlayerComponent>(entities[0]);
+	isPlayer = player != nullptr;
 	ShowInspectUI("Abilities", abilities.mAbilitiesToInput);
 }
 #endif // EDITOR
 
-bool Engine::AbilityInstance::operator==(const AbilityInstance& other) const
+void CE::AbilityInstance::MakeAbilityReadyToBeActivated()
+{
+	mRequirementCounter = mAbilityAsset->mRequirementToUse;
+}
+
+bool CE::AbilityInstance::operator==(const AbilityInstance& other) const
 {
 	return mAbilityAsset == other.mAbilityAsset &&
 		mKeyboardKeys == other.mKeyboardKeys && 
 		mGamepadButtons == other.mGamepadButtons;
 }
 
-bool Engine::AbilityInstance::operator!=(const AbilityInstance& other) const
+bool CE::AbilityInstance::operator!=(const AbilityInstance& other) const
 {
 	return mAbilityAsset != other.mAbilityAsset ||
 		mKeyboardKeys != other.mKeyboardKeys ||
@@ -66,11 +78,11 @@ bool Engine::AbilityInstance::operator!=(const AbilityInstance& other) const
 }
 
 #ifdef EDITOR
-void Engine::AbilityInstance::DisplayWidget()
+void CE::AbilityInstance::DisplayWidget()
 {
 	ShowInspectUI("mAbilityAsset", mAbilityAsset);
-	ImGui::Text("mRequirementCounter: %f", mRequirementCounter);
-	ImGui::Text("mChargesCounter: %d", mChargesCounter);
+	ShowInspectUIReadOnly("mRequirementCounter", mRequirementCounter);
+	ShowInspectUIReadOnly("mChargesCounter", mChargesCounter);
 	if (isPlayer)
 	{
 		ShowInspectUI("mKeyboardKeys", mKeyboardKeys);
@@ -79,7 +91,7 @@ void Engine::AbilityInstance::DisplayWidget()
 }
 #endif // EDITOR
 
-Engine::MetaType Engine::AbilityInstance::Reflect()
+CE::MetaType CE::AbilityInstance::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<AbilityInstance>{}, "AbilityInstance" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
@@ -96,7 +108,7 @@ Engine::MetaType Engine::AbilityInstance::Reflect()
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			AbilitySystem::ActivateAbility(*world, castBy, characterData, ability);
+			return AbilitySystem::ActivateAbility(*world, castBy, characterData, ability);
 
 		}, "ActivateAbility", MetaFunc::ExplicitParams<AbilityInstance&, entt::entity, CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
@@ -106,5 +118,11 @@ Engine::MetaType Engine::AbilityInstance::Reflect()
 
 		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<const AbilityInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
+	metaType.AddFunc([](AbilityInstance& ability)
+		{
+			ability.MakeAbilityReadyToBeActivated();
+		}, "MakeAbilityReadyToBeActivated", MetaFunc::ExplicitParams<AbilityInstance&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	ReflectFieldType<AbilityInstance>(metaType);
 	return metaType;
 }

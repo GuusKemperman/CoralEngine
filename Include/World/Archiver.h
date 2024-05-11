@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 	class Registry;
@@ -18,7 +18,7 @@ namespace Engine
 		 * Prefabs are assumed to be in the same state as they were
 		 * in during the time of serialization. If the prefabs may
 		 * change in the time between serializing and deserializing,
-		 * use Engine::Level instead.
+		 * use CE::Level instead.
 		 *
 		 * Returns the created entities.
 		*/

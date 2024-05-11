@@ -6,16 +6,16 @@
 #include "Core/Editor.h"
 #include "Core/AssetManager.h"
 #include "Meta/MetaType.h"
-#include "Containers/view_istream.h"
+#include "Utilities/view_istream.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
-using namespace Engine;
+using namespace CE;
 
 //UNI_TEST(Serialization, AllAssetSerialization)
 //{
 //#ifdef EDITOR
-//	std::vector<WeakAsset<Asset>> allAssets = AssetManager::Get().GetAllAssets();
+//	std::vector<WeakAssetHandle<>> allAssets = AssetManager::Get().GetAllAssets();
 //
 //	UnitTest::Result result = UnitTest::Success;
 //
@@ -26,10 +26,10 @@ using namespace Engine;
 //	uint32 bufferSize{};
 //	uint32 bufferAlign{};
 //
-//	for (WeakAsset<Asset> asset : allAssets)
+//	for (WeakAssetHandle<> asset : allAssets)
 //	{
-//		bufferSize = std::max(asset.GetAssetClass().GetSize(), bufferSize);
-//		bufferAlign = std::max(asset.GetAssetClass().GetAlignment(), bufferAlign);
+//		bufferSize = std::max(asset.GetMetaData().GetClass().GetSize(), bufferSize);
+//		bufferAlign = std::max(asset.GetMetaData().GetClass().GetAlignment(), bufferAlign);
 //	}
 //
 //	TEST_ASSERT(bufferSize != 0 && bufferAlign != 0);
@@ -38,16 +38,16 @@ using namespace Engine;
 //
 //	TEST_ASSERT(assetBuffer != nullptr);
 //
-//	for (WeakAsset<Asset> asset : allAssets)
+//	for (WeakAssetHandle<> asset : allAssets)
 //	{
-//		const MetaType& type = asset.GetAssetClass();
+//		const MetaType& type = asset.GetMetaData().GetClass();
 //
 //		if (!Editor::Get().IsThereAnEditorTypeForAssetType(type.GetTypeId()))
 //		{
 //			continue;
 //		}
 //
-//		std::shared_ptr<const Asset> loadedAsset = asset.MakeShared();
+//		AssetHandle<> loadedAsset = asset.MakeShared();
 //
 //		TEST_ASSERT(loadedAsset != nullptr);
 //
@@ -61,7 +61,7 @@ using namespace Engine;
 //
 //		if (reloadedAssetConstructResult.HasError())
 //		{
-//			LOG(LogUnitTests, Error, "Failed to construct asset {} of type {} with a loadInfo object - {}", asset.GetName(), type.GetName(), reloadedAssetConstructResult.Error());
+//			LOG(LogUnitTests, Error, "Failed to construct asset {} of type {} with a loadInfo object - {}", asset.GetMetaData().GetName(), type.GetMetaData().GetName(), reloadedAssetConstructResult.Error());
 //			result = UnitTest::Failure;
 //			continue;
 //		}
@@ -70,7 +70,7 @@ using namespace Engine;
 //
 //		if (reloadedAsset == nullptr)
 //		{
-//			LOG(LogUnitTests, Error, "Construct asset {} of type {} returned an object that, according to MetaAny, is not an asset.", asset.GetName(), type.GetName());
+//			LOG(LogUnitTests, Error, "Construct asset {} of type {} returned an object that, according to MetaAny, is not an asset.", asset.GetMetaData().GetName(), type.GetMetaData().GetName());
 //			result = UnitTest::Failure;
 //			continue;
 //		}
@@ -82,7 +82,7 @@ using namespace Engine;
 //			continue;
 //		}
 //
-//		LOG(LogUnitTests, Error, "Asset {} of type {} produced a different save after reloading. Serialization is likely broken", asset.GetName(), type.GetName());
+//		LOG(LogUnitTests, Error, "Asset {} of type {} produced a different save after reloading. Serialization is likely broken", asset.GetMetaData().GetName(), type.GetMetaData().GetName());
 //		result = UnitTest::Failure;
 //	}
 //

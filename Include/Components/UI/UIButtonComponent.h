@@ -1,7 +1,7 @@
 #pragma once
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class UIButtonSelectedTag
 	{
@@ -22,6 +22,8 @@ namespace Engine
 
 		static void Select(World& world, entt::entity buttonOwner);
 		static void Deselect(World& world);
+
+		static bool IsSelected(const World& world, entt::entity buttonOwner);
 
 	private:
 		friend ReflectAccess;

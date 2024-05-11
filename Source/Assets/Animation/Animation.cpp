@@ -15,58 +15,58 @@ namespace cereal
 	class BinaryOutputArchive;
 	class BinaryInputArchive;
 
-	inline void save(BinaryOutputArchive& ar, const Engine::KeyPosition& position)
+	inline void save(BinaryOutputArchive& ar, const CE::KeyPosition& position)
 	{
 		ar(position.position, position.timeStamp);
 	}
 
-	inline void load(BinaryInputArchive& ar, Engine::KeyPosition& position)
+	inline void load(BinaryInputArchive& ar, CE::KeyPosition& position)
 	{
 		ar(position.position, position.timeStamp);
 	}
 
-	inline void save(BinaryOutputArchive& ar, const Engine::KeyRotation& rotation)
+	inline void save(BinaryOutputArchive& ar, const CE::KeyRotation& rotation)
 	{
 		ar(rotation.orientation, rotation.timeStamp);
 	}
 
-	inline void load(BinaryInputArchive& ar, Engine::KeyRotation& rotation)
+	inline void load(BinaryInputArchive& ar, CE::KeyRotation& rotation)
 	{
 		ar(rotation.orientation, rotation.timeStamp);
 	}
 
-	inline void save(BinaryOutputArchive& ar, const Engine::KeyScale& scale)
+	inline void save(BinaryOutputArchive& ar, const CE::KeyScale& scale)
 	{
 		ar(scale.scale, scale.timeStamp);	
 	}
 
-	inline void load(BinaryInputArchive& ar, Engine::KeyScale& scale)
+	inline void load(BinaryInputArchive& ar, CE::KeyScale& scale)
 	{
 		ar(scale.scale, scale.timeStamp);
 	}
 }
 
-Engine::Animation::Animation(const std::string_view name)
+CE::Animation::Animation(const std::string_view name)
 	: Asset(name, MakeTypeId<Animation>())
 {
 }
 
-void LoadHierarchyFromGSON(const Engine::BinaryGSONObject& obj, Engine::AnimNode& dest)
+void LoadHierarchyFromGSON(const CE::BinaryGSONObject& obj, CE::AnimNode& dest)
 {
 	obj.GetGSONMember("Transform") >> dest.mTransform;
 	obj.GetGSONMember("Name") >> dest.mName;
 	
-	const std::vector<Engine::BinaryGSONObject>& children = obj.GetChildren();
+	const std::vector<CE::BinaryGSONObject>& children = obj.GetChildren();
 
-	for (Engine::BinaryGSONObject child : children)
+	for (CE::BinaryGSONObject child : children)
 	{
-		Engine::AnimNode newNode;
+		CE::AnimNode newNode;
 		LoadHierarchyFromGSON(child, newNode);
 		dest.mChildren.push_back(newNode);
 	}
 }
 
-Engine::Animation::Animation(AssetLoadInfo& loadInfo) :
+CE::Animation::Animation(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {
 	BinaryGSONObject obj{};
@@ -127,24 +127,24 @@ Engine::Animation::Animation(AssetLoadInfo& loadInfo) :
 	LoadHierarchyFromGSON(serializedHierarchy->GetChildren().at(0), mRootNode);
 }
 
-void SaveHierarchyToGSON(const Engine::AnimNode& node, Engine::BinaryGSONObject& obj)
+void SaveHierarchyToGSON(const CE::AnimNode& node, CE::BinaryGSONObject& obj)
 {
 	auto& currentNode = obj.AddGSONObject(node.mName);
 
 	currentNode.AddGSONMember("Transform") << node.mTransform;
 	currentNode.AddGSONMember("Name") << node.mName;
 
-	for (Engine::AnimNode child : node.mChildren)
+	for (CE::AnimNode child : node.mChildren)
 	{
 		SaveHierarchyToGSON(child, currentNode);
 	}
 }
 
-void Engine::Animation::OnSave(AssetSaveInfo& saveInfo) const
+void CE::Animation::OnSave(AssetSaveInfo& saveInfo) const
 {
 	if (mBones.empty())
 	{
-		LOG(LogAssets, Error, "Unable to save animation {}, No bones found", this->GetName());
+		LOG(LogAssets, Error, "Unable to save animation {}, No bones found", GetName());
 	}
 
 	BinaryGSONObject obj{ GetName() };
@@ -170,18 +170,19 @@ void Engine::Animation::OnSave(AssetSaveInfo& saveInfo) const
 	obj.SaveToBinary(saveInfo.GetStream());
 }
 
-Engine::MetaType Engine::Animation::Reflect()
+CE::MetaType CE::Animation::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Animation>{}, "Animation", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
+	type.GetProperties().Add(Props::sCannotReferenceOtherAssetsTag);
 
 	ReflectAssetType<Animation>(type);
 	return type;
 }
 
-const Engine::Bone* Engine::Animation::FindBone(std::string_view name) const
+const CE::Bone* CE::Animation::FindBone(const std::string_view name) const
 {
 	auto iter = std::find_if(mBones.begin(), mBones.end(),
-		[&](const Engine::Bone& bone)
+		[&](const CE::Bone& bone)
 		{
 			return bone.mName == name; 
 		}

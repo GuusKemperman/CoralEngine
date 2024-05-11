@@ -1,7 +1,7 @@
 #pragma once
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 
@@ -62,7 +62,7 @@ namespace Engine
 
 		void OnAiTick(World& world, entt::entity owner, float dt);
 
-		float OnAiEvaluate(const World& world, entt::entity owner) const;
+		float OnAiEvaluate(const World& world, entt::entity owner);
 
 		void OnCollisionEntry(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
 		void OnCollisionStay(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
@@ -74,7 +74,7 @@ namespace Engine
 		uint32 mNumOfTicks{};
 		uint32 mNumOfFixedTicks{};
 		uint32 mNumOfAiTicks{};
-		mutable uint32 mNumOfAiEvaluates{};
+		uint32 mNumOfAiEvaluates{};
 		uint32 mNumOfCollisionEntry{};
 		uint32 mNumOfCollisionStay{};
 		uint32 mNumOfCollisionExit{};

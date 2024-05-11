@@ -2,10 +2,10 @@
 #include "Meta/MetaReflect.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
-	class PhysicsSystem2D;
+	class PhysicsSystem;
 
 	enum class CollisionResponse : uint8
 	{
@@ -27,9 +27,9 @@ namespace Engine
 	enum class CollisionLayer : uint8
 	{
 		/**
-		 * \brief The terrain, all objects that will never move. Used for pathfinding
+		 * \brief All obstacles that will never move. Used for pathfinding
 		 */
-		WorldStatic,
+		StaticObstacles,
 
 		/**
 		 * \brief All obstacles that can be moved, whether that be through physics or by setting the position.
@@ -40,6 +40,11 @@ namespace Engine
 		 * \brief The players and enemies
 		 */
 		Character,
+
+		/**
+		 * \brief The terrain, determines the height at a given point. Used for pathfinding
+		 */
+		Terrain,
 
 		NUM_OF_LAYERS
 	};
@@ -53,6 +58,16 @@ namespace Engine
 		constexpr bool operator==(const CollisionRules& other) const { return mLayer == other.mLayer && mResponses == other.mResponses; }
 
 		constexpr CollisionResponse GetResponse(const CollisionRules& other) const;
+
+		// Since there is always terrain beneath us (hopefully),
+		// it would always be registered as a collision, since
+		// from a 2D top-down perspective, the terrain and the object
+		// occupy the same space. But we are kinda 'hacking' 3D,
+		// where the object is placed above the terrain. Collision with
+		// the terrain is therefore handled more primitively, we simply modify
+		// the height in the same step in which we apply the velocity.
+		// Because of this, for most purposes, we ignore the terrain.
+		constexpr CollisionResponse GetResponseIncludingTerrain(const CollisionRules& other) const;
 
 		CollisionLayer mLayer{};
 		std::array<CollisionResponse, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> mResponses{};
@@ -75,19 +90,35 @@ namespace Engine
 					CollisionResponse::Blocking,	// WorldStatic
 					CollisionResponse::Blocking,	// WorldDynamic
 					CollisionResponse::Blocking,	// Character
+					CollisionResponse::Blocking,	// Terrain
 				}
 			}
 		};
 
-		static constexpr CollisionPreset sWorldStatic
+		static constexpr CollisionPreset sStaticObstacles
 		{
-			"WorldStatic",
+			"Static Obstacles",
 			{
-				CollisionLayer::WorldStatic,
+				CollisionLayer::StaticObstacles,
 				{
 					CollisionResponse::Ignore,		// WorldStatic
 					CollisionResponse::Blocking,	// WorldDynamic
 					CollisionResponse::Blocking,	// Character
+					CollisionResponse::Ignore,		// Terrain
+				}
+			}
+		};
+
+		static constexpr CollisionPreset sTerrain
+		{
+			"Terrain",
+			{
+				CollisionLayer::Terrain,
+				{
+					CollisionResponse::Ignore,		// WorldStatic
+					CollisionResponse::Blocking,	// WorldDynamic
+					CollisionResponse::Blocking,	// Character
+					CollisionResponse::Ignore,		// Terrain
 				}
 			}
 		};
@@ -101,15 +132,17 @@ namespace Engine
 					CollisionResponse::Blocking,	// WorldStatic
 					CollisionResponse::Blocking,	// WorldDynamic
 					CollisionResponse::Blocking,	// Character
+					CollisionResponse::Blocking,	// Terrain
 				}
 			}
 		};
 	}
 
-	static constexpr std::array<CollisionPreset, 3> sCollisionPresets
+	static constexpr std::array<CollisionPreset, 4> sCollisionPresets
 	{
+		CollisionPresets::sTerrain,
 		CollisionPresets::sWorldDynamic,
-		CollisionPresets::sWorldStatic,
+		CollisionPresets::sStaticObstacles,
 		CollisionPresets::sCharacter,
 
 	};
@@ -136,12 +169,12 @@ namespace Engine
 		 */
 		bool mIsAffectedByForces = true;
 
-		void AddForce(const glm::vec2& force)
+		void AddForce(glm::vec2 force)
 		{
 			if (mIsAffectedByForces) mForce += force;
 		}
 
-		void ApplyImpulse(const glm::vec2& imp)
+		void ApplyImpulse(glm::vec2 imp)
 		{
 			if (mIsAffectedByForces) mLinearVelocity += imp * mInvMass;
 		}
@@ -151,12 +184,22 @@ namespace Engine
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(PhysicsBody2DComponent);
 
-		friend PhysicsSystem2D;
+		friend PhysicsSystem;
 
 		void ClearForces() { mForce = {}; }
 	};
 
 	constexpr CollisionResponse CollisionRules::GetResponse(const CollisionRules& other) const
+	{
+		if (mLayer == CollisionLayer::Terrain
+			|| other.mLayer == CollisionLayer::Terrain)
+		{
+			return CollisionResponse::Ignore;
+		}
+		return GetResponseIncludingTerrain(other);
+	}
+
+	constexpr CollisionResponse CollisionRules::GetResponseIncludingTerrain(const CollisionRules& other) const
 	{
 		return static_cast<CollisionResponse>(std::min(static_cast<std::underlying_type_t<CollisionResponse>>(mResponses[static_cast<std::underlying_type_t<CollisionLayer>>(other.mLayer)]),
 			static_cast<std::underlying_type_t<CollisionResponse>>(other.mResponses[static_cast<std::underlying_type_t<CollisionLayer>>(mLayer)])));
@@ -168,41 +211,42 @@ namespace cereal
 	class BinaryOutputArchive;
 	class BinaryInputArchive;
 
-	void save(BinaryOutputArchive& ar, const Engine::CollisionRules& value);
-	void load(BinaryInputArchive& ar, Engine::CollisionRules& value);
+	void save(BinaryOutputArchive& ar, const CE::CollisionRules& value);
+	void load(BinaryInputArchive& ar, CE::CollisionRules& value);
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::CollisionRules, var.DisplayWidget(name);)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::CollisionRules, var.DisplayWidget(name);)
 #endif // EDITOR
 
 template<>
-struct Reflector<Engine::CollisionLayer>
+struct Reflector<CE::CollisionLayer>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(collLayer, Engine::CollisionLayer);
+}; REFLECT_AT_START_UP(collLayer, CE::CollisionLayer);
 
 template<>
-struct Reflector<Engine::CollisionRules>
+struct Reflector<CE::CollisionRules>
 {
-	static Engine::MetaType Reflect();
+	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(collRules, Engine::CollisionRules)
+}; REFLECT_AT_START_UP(collRules, CE::CollisionRules)
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::CollisionLayer>
+struct CE::EnumStringPairsImpl<CE::CollisionLayer>
 {
 	static constexpr EnumStringPairs<CollisionLayer, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> value = 
 	{
-		EnumStringPair<CollisionLayer>{ CollisionLayer::WorldStatic, "WorldStatic" },
+		EnumStringPair<CollisionLayer>{ CollisionLayer::Terrain, "Terrain" },
+		{ CollisionLayer::StaticObstacles, "StaticObstacles" },
 		{ CollisionLayer::WorldDynamic, "WorldDynamic" },
 		{ CollisionLayer::Character, "Character" },
 	};
 };
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::CollisionResponse>
+struct CE::EnumStringPairsImpl<CE::CollisionResponse>
 {
 	static constexpr EnumStringPairs<CollisionResponse, static_cast<size_t>(CollisionResponse::NUM_OF_RESPONSES)> value =
 	{

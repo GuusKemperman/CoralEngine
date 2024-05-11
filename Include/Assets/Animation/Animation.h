@@ -2,14 +2,14 @@
 #include "Assets/Asset.h"
 #include "Assets/Animation/BoneInfo.h"
 
-namespace Engine
+namespace CE
 {
 	class Bone;
 
 	struct AnimNode
 	{
 		std::string mName;
-		glm::mat4 mTransform;
+		glm::mat4x4 mTransform;
 		std::vector<AnimNode> mChildren;
 	};
 
@@ -20,7 +20,7 @@ namespace Engine
 		Animation(const std::string_view name);
 		Animation(AssetLoadInfo& loadInfo);
 
-		const Bone* FindBone(std::string_view name) const;
+		const Bone* FindBone(const std::string_view name) const;
 
 		float mDuration = 0.0;
 		float mTickPerSecond = 0.0;
@@ -47,13 +47,13 @@ namespace cereal
 	class BinaryOutputArchive;
 	class BinaryInputArchive;
 
-	inline void save(BinaryOutputArchive& ar, const Engine::AnimNode& node)
+	inline void save(BinaryOutputArchive& ar, const CE::AnimNode& node)
 	{
-		ar.saveBinary(&node, sizeof(Engine::AnimNode));
+		ar.saveBinary(&node, sizeof(CE::AnimNode));
 	}
 
-	inline void load(BinaryInputArchive& ar, Engine::AnimNode& node)
+	inline void load(BinaryInputArchive& ar, CE::AnimNode& node)
 	{
-		ar.loadBinary(&node, sizeof(Engine::AnimNode));
+		ar.loadBinary(&node, sizeof(CE::AnimNode));
 	}
 }
