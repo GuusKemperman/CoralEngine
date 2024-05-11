@@ -535,6 +535,7 @@
     <ClCompile Include="Source\Components\Abilities\ProjectileComponent.cpp" />
     <ClCompile Include="Source\Components\UI\UIButtonComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
+    <ClCompile Include="Source\Core\Audio.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\UIRendererPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -1512,6 +1513,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClInclude Include="Include\Core\Audio.h" />
     <ClInclude Include="Include\Core\UIRenderer.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\UIRendererPC.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\UIRenderer***REMOVED***.h" />

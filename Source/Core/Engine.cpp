@@ -12,6 +12,7 @@
 #include "Core/JobManager.h"
 #include "Meta/MetaManager.h"
 #include "Core/UnitTests.h"
+#include "Core/Audio.h"
 #include "Assets/Level.h"
 #include "World/World.h"
 #include "World/WorldRenderer.h"
@@ -37,7 +38,9 @@ Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDi
 		Device::StartUp();
 	}
 
+	Audio::StartUp().LoadSFX("Assets/Audio/SoundTEst.wav", false);
 	Input::StartUp();
+
 #ifdef EDITOR
 	if (!Device::IsHeadless())
 	{
@@ -91,6 +94,7 @@ Engine::EngineClass::~EngineClass()
 	VirtualMachine::ShutDown();
 	AssetManager::ShutDown();
 	MetaManager::ShutDown();
+	Audio::ShutDown();
 	Input::ShutDown();
 
 	if (!Device::IsHeadless())
@@ -124,6 +128,7 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 
 	Input& input = Input::Get();
 	Device& device = Device::Get();
+	Audio& audio = Audio::Get();
 
 #ifdef EDITOR
 	Editor& editor = Editor::Get();
@@ -158,6 +163,8 @@ void Engine::EngineClass::Run([[maybe_unused]] Name starterLevel)
 		world.Tick(deltaTime);
 		world.GetRenderer().Render();
 #endif  // EDITOR
+
+		audio.PlaySFX("Assets/Audio/SoundTEst.wav");
 
 		device.EndFrame();
 
