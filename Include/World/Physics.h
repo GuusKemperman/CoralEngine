@@ -1,12 +1,15 @@
 #pragma once
-#include "Components/TransformComponent.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE
 {
 	class World;
 	class TransformComponent;
-
+	struct TransformedDisk;
+	struct TransformedAABB;
+	struct TransformedPolygon;
+	struct CollisionRules;
+	
 	/**
 	 * \brief Stores the physics-related data to allow for faster queries.
 	 */
@@ -21,29 +24,14 @@ namespace CE
 		Physics& operator=(Physics&&) = delete;
 		Physics& operator=(const Physics&) = delete;
 
-		/** TODO Remove this
-		 * \brief Evaluates the WorldStatic layer to determine what the height is at a given position.
-		 * \return A value ranging between -infinity (if there is no terrain) and infinity (if the terrain is reaaallyy high).
-		 */
-		float GetHeightAtPosition(glm::vec2) const { return 0.0f; }
-
-		/** TODO Remove this
-		 * \brief Moves the transform to the requested position while preserving the height difference relative to the terrain.
-		 */
-		void Teleport(TransformComponent& transform, glm::vec2 toPosition) const { transform.SetWorldPosition(toPosition); }
-
-		/**
-		 * \brief The max height difference that kinematic/dynamic objects are able to traverse
-		 *
-		 * If a physics object wants to traverse from point A to B, the height at point A and point B
-		 * are compared. If it's smaller than sMaxTraversableHeightDifference, the movement is allowed.
-		 * Otherwise, the object stays at point B.
-		 */
-		static constexpr float sMaxTraversableHeightDifference = 1.0f;
-
-		static constexpr bool IsHeightDifferenceTraversable([[maybe_unused]] float heightDiff) { return true; }
+		std::vector<entt::entity> FindAllWithinShape(const TransformedDisk& shape, const CollisionRules& filter) const;
+		std::vector<entt::entity> FindAllWithinShape(const TransformedAABB& shape, const CollisionRules& filter) const;
+		std::vector<entt::entity> FindAllWithinShape(const TransformedPolygon& shape, const CollisionRules& filter) const;
 
 	private:
+		template<typename T>
+		std::vector<entt::entity> FindAllWithinShapeImpl(const T& shape, const CollisionRules& filter) const;
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(Physics);
@@ -51,8 +39,5 @@ namespace CE
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
 		friend class World;
 		std::reference_wrapper<World> mWorld;
-
-		template<typename ColliderType>
-		void GetHeightAtPosition(glm::vec2 position, float& highestHeight) const;
 	};
 }

@@ -9,8 +9,6 @@ struct Physics2DUnitTestAccess;
 
 namespace CE
 {
-	class Physics;
-	class Registry;
 	class MetaFunc;
 	class PhysicsBody2DComponent;
 
@@ -72,14 +70,13 @@ namespace CE
 
 		struct ResolvedCollision
 		{
-			glm::vec3 mResolvedPosition{};
+			glm::vec2 mResolvedPosition{};
 			glm::vec2 mImpulse{};
 		};
-		static ResolvedCollision ResolveDiskCollision(const Physics& physics,
-			const CollisionData& collisionToResolve,
+		static ResolvedCollision ResolveDiskCollision(const CollisionData& collisionToResolve,
 			const PhysicsBody2DComponent& bodyToMove,
 			const PhysicsBody2DComponent& otherBody,
-			const glm::vec3& bodyPosition,
+			const glm::vec2& bodyPosition,
 			float multiplicant = 1.0f);
 
 		void RegisterCollision(std::vector<CollisionData>& currentCollisions,
@@ -90,11 +87,6 @@ namespace CE
 		static bool CollisionCheckDiskPolygon(TransformedDiskColliderComponent disk, const TransformedPolygonColliderComponent& polygon, CollisionData& result);
 
 		static bool CollisionCheckDiskAABB(TransformedDiskColliderComponent disk, TransformedAABBColliderComponent aabb, CollisionData& result);
-
-		static glm::vec3 GetAllowedWorldPos(const Physics& physics, 
-			const PhysicsBody2DComponent& body, 
-			glm::vec3 currentWorldPos, 
-			glm::vec2 translation);
 
 		std::vector<CollisionData> mPreviousCollisions{};
 
