@@ -23,8 +23,6 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 	Device::sIsHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
 
-	JobManager::StartUp();
-
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
 

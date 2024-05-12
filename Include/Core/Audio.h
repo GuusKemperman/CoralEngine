@@ -15,7 +15,7 @@ namespace FMOD
 	}  // namespace Studio
 }  // namespace FMOD
 
-namespace Engine
+namespace CE
 {
 	/// <summary>
 	/// A class with a number of functions for audio handling in our engine. 
@@ -110,4 +110,4 @@ namespace Engine
 		std::unordered_map<int, FMOD::Studio::EventInstance*> m_events;
 		int m_nextEventID = 0;
 	};
-}  // namespace Engine
+}
