@@ -119,7 +119,7 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 				continue;
 			}
 
-			const glm::vec2 entity2Pos = transform2.GetWorldPosition2D();
+			const glm::vec2 entity2Pos = transformedDiskCollider2.mCentre;
 
 			if (CollisionCheckDiskDisk(transformedDiskCollider1, transformedDiskCollider2, collision))
 			{
