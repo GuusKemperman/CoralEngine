@@ -16,6 +16,8 @@ namespace CE
 		Sound(std::string_view name);
 		Sound(AssetLoadInfo& loadInfo);
 
+		~Sound();
+
 		Sound(Sound&&) noexcept = delete;
 		Sound(const Sound&) = delete;
 

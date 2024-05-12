@@ -24,7 +24,7 @@ CE::Sound::Sound(AssetLoadInfo& loadInfo) :
     info.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
     info.length = static_cast<int>(soundInMemory.size());
 
-    const FMOD_RESULT result = Audio::Get().m_core_system->createSound(soundInMemory.data(), mode, &info, &mSound);
+    const FMOD_RESULT result = Audio::Get().GetCoreSystem().createSound(soundInMemory.data(), mode, &info, &mSound);
 
     if (result != FMOD_OK)
     {
@@ -55,7 +55,7 @@ void CE::Sound::Play() const
         return;
     }
 
-    Audio::Get().m_core_system->playSound(mSound, nullptr, false, nullptr);
+    Audio::Get().GetCoreSystem().playSound(mSound, nullptr, false, nullptr);
 }
 
 CE::MetaType CE::Sound::Reflect()
