@@ -1,5 +1,7 @@
 #pragma once
+
 #include "Meta/MetaReflect.h"
+#include "Utilities/Imgui/ImguiInspect.h"
 
 namespace CE
 {
@@ -42,6 +44,10 @@ namespace CE
 
 			bool operator==(const AbilityEffect& effectSettings) const;
 			bool operator!=(const AbilityEffect& effectSettings) const;
+
+#ifdef EDITOR
+			void DisplayWidget();
+#endif // EDITOR
 
 		private:
 			friend ReflectAccess;
@@ -88,9 +94,9 @@ namespace CE
 	};
 
 	template<class Archive>
-	void serialize([[maybe_unused]] Archive& ar, [[maybe_unused]] const AbilityFunctionality::AbilityEffect& value)
+	void serialize(Archive& ar, AbilityFunctionality::AbilityEffect& v)
 	{
-		// We don't need to actually serialize it, but otherwise we get a compilation error
+		ar(v.mStat, v.mAmount, v.mFlatOrPercentage, v.mIncreaseOrDecrease, v.mClampToMax);
 	}
 }
 
@@ -144,3 +150,7 @@ struct CE::EnumStringPairsImpl<CE::AbilityFunctionality::IncreaseOrDecrease>
 		{ AbilityFunctionality::IncreaseOrDecrease::Decrease, "Decrease" },
 	};
 };
+
+#ifdef EDITOR
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::AbilityFunctionality::AbilityEffect, var.DisplayWidget(); (void)name;)
+#endif // EDITOR

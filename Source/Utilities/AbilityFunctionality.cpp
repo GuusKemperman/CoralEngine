@@ -23,51 +23,51 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<AbilityFunctionality>{}, "AbilityFunctionality" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax)
+	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax });
+			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, abilityEffect);
 
 		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
-		const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent&, entt::entity, AbilityEffect>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-		metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration)
+	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, abilityEffect, duration);
+
+		}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
+		const CharacterComponent&, entt::entity, AbilityEffect, float>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration, int ticks)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			ApplyOverTimeEffect(*world, castByCharacterData, affectedEntity, abilityEffect, duration, ticks);
+
+		}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
+		const CharacterComponent&, entt::entity, AbilityEffect, float, int>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy) -> entt::entity
+		{
+			if (prefab == nullptr)
 			{
-				World* world = World::TryGetWorldAtTopOfStack();
-				ASSERT(world != nullptr);
+				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
+				return entt::null;
+			}
 
-				ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration);
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
 
-			}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
-			const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			return SpawnAbilityPrefab(*world, *prefab, castBy);
 
-			metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration, int ticks)
-				{
-					World* world = World::TryGetWorldAtTopOfStack();
-					ASSERT(world != nullptr);
-
-					ApplyOverTimeEffect(*world, castByCharacterData, affectedEntity, AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration, ticks);
-
-				}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
-				const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float, int>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
-
-				metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy) -> entt::entity
-					{
-						if (prefab == nullptr)
-						{
-							LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
-							return entt::null;
-						}
-
-						World* world = World::TryGetWorldAtTopOfStack();
-						ASSERT(world != nullptr);
-
-						return SpawnAbilityPrefab(*world, *prefab, castBy);
-
-					}, "SpawnAbilityPrefab", MetaFunc::ExplicitParams<
-					const AssetHandle<Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "SpawnAbilityPrefab", MetaFunc::ExplicitParams<
+		const AssetHandle<Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 					return metaType;
 }
@@ -312,16 +312,39 @@ bool CE::AbilityFunctionality::AbilityEffect::operator!=(const AbilityEffect& ot
 		mClampToMax != other.mClampToMax;
 }
 
+#ifdef EDITOR
+void CE::AbilityFunctionality::AbilityEffect::DisplayWidget()
+{
+	const MetaType& weapon = MetaManager::Get().GetType<AbilityEffect>();
+	MetaAny ref{ *this };
+	for (const MetaField& field : weapon.EachField())
+	{
+		MetaAny refToMember = field.MakeRef(ref);
+		ShowInspectUI(std::string{ field.GetName() }, refToMember);
+	}
+}
+#endif // EDITOR
+
 CE::MetaType CE::AbilityFunctionality::AbilityEffect::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<AbilityEffect>{}, "AbilityEffect" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddField(&AbilityEffect::mStat, "mStat").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-	metaType.AddField(&AbilityEffect::mAmount, "mAmount").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-	metaType.AddField(&AbilityEffect::mFlatOrPercentage, "mFlatOrPercentage").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-	metaType.AddField(&AbilityEffect::mIncreaseOrDecrease, "mIncreaseOrDecrease").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-	metaType.AddField(&AbilityEffect::mClampToMax, "mClampToMax").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
+	metaType.AddField(&AbilityEffect::mStat, "mStat").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&AbilityEffect::mAmount, "mAmount").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&AbilityEffect::mFlatOrPercentage, "mFlatOrPercentage").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&AbilityEffect::mIncreaseOrDecrease, "mIncreaseOrDecrease").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&AbilityEffect::mClampToMax, "mClampToMax").GetProperties().Add(Props::sIsScriptableTag);
 
+	metaType.AddFunc([](const Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			return AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax };
+
+		}, "MakeAbilityEffect", MetaFunc::ExplicitParams<Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool>{}, "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
+	ReflectFieldType<AbilityEffect>(metaType);
 	return metaType;
 }
