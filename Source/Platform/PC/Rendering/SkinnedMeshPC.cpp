@@ -179,8 +179,6 @@ CE::SkinnedMesh::SkinnedMesh(AssetLoadInfo& loadInfo) :
     }
 
     *serializedBoneMap >> mBoneInfoMap;
-
-
 }
 
 CE::SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) noexcept = default;

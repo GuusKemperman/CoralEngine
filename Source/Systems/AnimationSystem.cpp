@@ -3,65 +3,84 @@
 
 #include "World/World.h"
 #include "World/Registry.h"
-#include "Components/TransformComponent.h"
 #include "Assets/SkinnedMesh.h"
 #include "Components/SkinnedMeshComponent.h"
-#include "Components/AnimationRootComponent.h"
 #include "Assets/Animation/Animation.h"
 #include "Assets/Animation/Bone.h"
 #include "Meta/MetaType.h"
-#include "Meta/MetaManager.h"
 
-void CE::AnimationSystem::CalculateBoneTransformRecursive(const AnimNode& node, 
+
+void CE::AnimationSystem::CalculateBoneTransformRecursive(const AnimMeshInfo& animMeshInfo,
 	const glm::mat4x4& parenTransform, 
-	const std::unordered_map<std::string, BoneInfo>& boneMap,
-	const SkinnedMeshComponent& mesh,
-	const AssetHandle<Animation>& animation, 
-	std::vector<glm::mat4x4>& finalBoneMatrices)
+	SkinnedMeshComponent& meshComponent)
 {
-	const Bone* bone = animation->FindBone(node.mName);
-
-	glm::mat4x4 nodeTransform = node.mTransform;
+	glm::mat4x4 nodeTransform = animMeshInfo.mAnimNode.get().mTransform;
 	
-	if (bone)
+	if (animMeshInfo.mAnimNode.get().mBone != nullptr)
 	{
-		nodeTransform = bone->GetInterpolatedTransform(mesh.mCurrentTime);
+		nodeTransform = animMeshInfo.mAnimNode.get().mBone->GetInterpolatedTransform(meshComponent.mCurrentTime);
 	}
 
-	glm::mat4x4 globalTransform = parenTransform * nodeTransform;
+	const glm::mat4x4 globalTransform = parenTransform * nodeTransform;
 
-	if (boneMap.find(node.mName) != boneMap.end())
+	if (animMeshInfo.mBoneInfo != nullptr)
 	{
-		int index = boneMap.at(node.mName).mId;
-		
-		finalBoneMatrices.at(index) = globalTransform * boneMap.at(node.mName).mOffset;
+		const int index = animMeshInfo.mBoneInfo->mId;
+		meshComponent.mFinalBoneMatrices[index] = globalTransform * animMeshInfo.mBoneInfo->mOffset;
 	}
 
-	for (size_t i = 0; i < node.mChildren.size(); i++)
+	for (const AnimMeshInfo& child : animMeshInfo.mChildren)
 	{
-		CalculateBoneTransformRecursive(node.mChildren[i], globalTransform, boneMap, mesh, mesh.mAnimation, finalBoneMatrices);
+		CalculateBoneTransformRecursive(child, globalTransform, meshComponent);
 	}
 }
 
 void CE::AnimationSystem::Update(World& world, float dt)
 {
-	auto& reg = world.GetRegistry();
+	Registry& reg = world.GetRegistry();
 
+	for (auto [entity, skinnedMesh] : reg.View<SkinnedMeshComponent>().each())
 	{
-		const auto& view = reg.View<SkinnedMeshComponent>();
-
-		for (auto [entity, skinnedMesh] : view.each())
+		if (skinnedMesh.mAnimation == nullptr
+			|| skinnedMesh.mSkinnedMesh == nullptr)
 		{
-			if (skinnedMesh.mAnimation == nullptr)
-			{
-				continue;
-			}
-
-			skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * skinnedMesh.mAnimationSpeed * dt;
-			skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
-
-			CalculateBoneTransformRecursive(skinnedMesh.mAnimation->mRootNode, glm::mat4x4(1.0f), skinnedMesh.mSkinnedMesh->GetBoneMap(), skinnedMesh, skinnedMesh.mAnimation, skinnedMesh.mFinalBoneMatrices);
+			continue;
 		}
+
+		skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * skinnedMesh.mAnimationSpeed * dt;
+		skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
+
+		const uint32 hash = Internal::CombineHashes(
+			Name::HashString(skinnedMesh.mAnimation.GetMetaData().GetName()),
+			Name::HashString(skinnedMesh.mSkinnedMesh.GetMetaData().GetName()));
+		
+		auto existingInfo = mAnimMeshInfoMap.find(hash);
+
+		if (existingInfo == mAnimMeshInfoMap.end())
+		{
+			existingInfo = mAnimMeshInfoMap.emplace(std::piecewise_construct,
+				std::forward_as_tuple(hash),
+				std::forward_as_tuple(skinnedMesh.mAnimation->mRootNode, *skinnedMesh.mSkinnedMesh)).first;
+		}
+
+		CalculateBoneTransformRecursive(existingInfo->second, glm::mat4x4{ 1.0f }, skinnedMesh);
+	}
+}
+
+CE::AnimationSystem::AnimMeshInfo::AnimMeshInfo(const AnimNode& node, const SkinnedMesh& mesh) :
+	mAnimNode(node)
+{
+	const auto boneIt = mesh.GetBoneMap().find(node.mName);
+
+	if (boneIt != mesh.GetBoneMap().end())
+	{
+		mBoneInfo = &boneIt->second;
+	}
+
+	mChildren.reserve(node.mChildren.size());
+	for (const AnimNode& child : node.mChildren)
+	{
+		mChildren.emplace_back(child, mesh);
 	}
 }
 
