@@ -42,7 +42,7 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 		Renderer::StartUp();
 	}
 
-	Audio::StartUp().LoadSFX("Assets/Audio/SoundTEst.wav", false);
+	Audio::StartUp();
 	Input::StartUp();
 
 #ifdef EDITOR
@@ -138,7 +138,6 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 
 	Input& input = Input::Get();
 	Device& device = Device::Get();
-	Audio& audio = Audio::Get();
 
 #ifdef EDITOR
 	Editor& editor = Editor::Get();
@@ -183,8 +182,6 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 			Renderer::Get().Render(world);
 		}
 #endif  // EDITOR
-
-		audio.PlaySFX("Assets/Audio/SoundTEst.wav");
 
 		device.EndFrame();
 

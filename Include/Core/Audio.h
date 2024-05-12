@@ -98,10 +98,10 @@ namespace CE
 		/// <param name="paused">true if the channel should be paused; false if it should resume playing.</param>
 		void SetChannelPaused(int channelID, bool paused);
 
-	private:
 		FMOD::Studio::System* m_system = nullptr;
 		FMOD::System* m_core_system = nullptr;
 
+	private:
 		std::unordered_map<int, FMOD::Sound*> m_sounds;
 		FMOD::SoundGroup* m_soundGroupSFX = nullptr;
 		FMOD::SoundGroup* m_soundGroupMusic = nullptr;
