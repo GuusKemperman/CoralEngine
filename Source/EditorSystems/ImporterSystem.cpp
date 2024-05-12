@@ -240,6 +240,13 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::
 	if (importer == nullptr)
 	{
 		LOG(LogAssets, Error, "No importer that can import {}.", fileToImport.string());
+		return;
+	}
+
+	if (!std::filesystem::exists(fileToImport))
+	{
+		LOG(LogAssets, Error, "Cannot import {}, the file does not exist.", fileToImport.string());
+		return;
 	}
 
 	ImportRequest request{ fileToImport, std::string{ reasonForImporting } };
