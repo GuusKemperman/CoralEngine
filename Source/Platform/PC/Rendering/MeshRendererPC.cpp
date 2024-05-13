@@ -248,10 +248,17 @@ void CE::MeshRenderer::Render(const World& world)
     commandList->SetPipelineState(mPBRSkinnedPipeline.Get());
 
     {
+        int skinnedMeshCounter = 0;
         const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
         
         for (auto [entity, skinnedMeshComponent, transform] : view.each())
         {
+            if (skinnedMeshCounter >= MAX_SKINNED_MESHES)
+            {
+                LOG(LogRendering, Warning, "Attempted to draw more skinned meshes: {} than maximum: {}", skinnedMeshCounter, MAX_SKINNED_MESHES);
+                break;
+            }
+
             if (!skinnedMeshComponent.mSkinnedMesh)
             {
                 continue;
@@ -290,6 +297,7 @@ void CE::MeshRenderer::Render(const World& world)
 
             skinnedMeshComponent.mSkinnedMesh->DrawMesh();
 
+            skinnedMeshCounter++;
             meshCounter++;
         }
     }
@@ -327,10 +335,17 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
     commandList->SetPipelineState(mZSkinnedPipeline.Get());
 
     {
+        int skinnedMeshCounter = 0;
         const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
 
         for (auto [entity, skinnedMeshComponent, transform] : view.each()) 
         {
+            skinnedMeshCounter++;if (skinnedMeshCounter >= MAX_SKINNED_MESHES)
+            {
+                LOG(LogRendering, Warning, "Attempted to draw more skinned meshes: {} than maximum: {}", skinnedMeshCounter, MAX_SKINNED_MESHES);
+                break;
+            }
+
             if (!skinnedMeshComponent.mSkinnedMesh)
             {
                 continue;
@@ -341,6 +356,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
             gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
 
             skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
+            skinnedMeshCounter++;
             meshCounter++;
         }
     }
@@ -442,17 +458,26 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
     commandList->SetPipelineState(mCullClusterSkinnedMeshPipeline.Get());
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
+    int skinnedMeshCounter = 0;
     const auto skinnedView = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
     for (auto [entity, skinnedMeshComponent, transform] : skinnedView.each())
     {
+        if (skinnedMeshCounter >= MAX_SKINNED_MESHES)
+        {
+            LOG(LogRendering, Warning, "Attempted to draw more skinned meshes: {} than maximum: {}", skinnedMeshCounter, MAX_SKINNED_MESHES);
+            break;
+        }
+        
+        if (!skinnedMeshComponent.mSkinnedMesh)
+            continue;
+
         gpuWorld.GetModelMatrixBuffer().Bind(commandList, 4, meshCounter, frameIndex);
 
         gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
 
-        if (!skinnedMeshComponent.mSkinnedMesh)
-            continue;
 
         skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
+        skinnedMeshCounter++;
         meshCounter++;
     }
 
@@ -588,9 +613,16 @@ void CE::MeshRenderer::RenderShadowMaps(const World& world)
 
         commandList->SetPipelineState(mShadowMapSkinnedPipeline.Get());
         {
+            int skinnedMeshCounter = 0;
             const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
             for (auto [entity2, skinnedMeshComponent, transform2] : view.each())
             {
+                if (skinnedMeshCounter >= MAX_SKINNED_MESHES)
+                {
+                    LOG(LogRendering, Warning, "Attempted to draw more skinned meshes: {} than maximum: {}", skinnedMeshCounter, MAX_SKINNED_MESHES);
+                    break;
+                }
+
                 if (!skinnedMeshComponent.mSkinnedMesh)
                 {
                     continue;
@@ -600,6 +632,7 @@ void CE::MeshRenderer::RenderShadowMaps(const World& world)
                 gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
 
                 skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
+                skinnedMeshCounter++;
                 meshCounter++;
             }
         }
