@@ -332,7 +332,9 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
         {
             if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
             {
-                metaFunc->InvokeUncheckedUnpacked(world, castBy);
+                entt::sparse_set* storage = world.GetRegistry().Storage(metaType->GetTypeId());
+                MetaAny component{ *metaType, storage->value(castBy), false };
+                metaFunc->InvokeUncheckedUnpacked(component, world, castBy);
             }
         }
         else
