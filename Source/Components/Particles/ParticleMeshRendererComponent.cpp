@@ -1,11 +1,17 @@
 #include "Precomp.h"
 #include "Components/Particles/ParticleMeshRendererComponent.h"
+#include "Components/Particles/ParticleEmitterComponent.h"
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/StaticMesh.h"
 #include "Assets/Material.h"
+
+bool CE::ParticleMeshRendererComponent::AreAnyVisible(const CE::ParticleEmitterComponent& emitter) const
+{
+	return emitter.IsPlaying() && mParticleMesh; 
+}
 
 CE::MetaType CE::ParticleMeshRendererComponent::Reflect()
 {

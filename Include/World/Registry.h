@@ -20,7 +20,7 @@ namespace CE
 	class Registry
 	{
 	public:
-		Registry(World& world);
+		explicit Registry(World& world);
 
 		Registry(Registry&&) = delete;
 		Registry(const Registry&) = delete;
