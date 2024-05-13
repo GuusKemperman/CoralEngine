@@ -1,7 +1,6 @@
 #include "Precomp.h"
 #include "Utilities/Imgui/WorldInspect.h"
 
-#include "Assets/Level.h"
 #include "imgui/ImGuizmo.h"
 #include "imgui/imgui_internal.h"
 
@@ -16,8 +15,11 @@
 #include "Components/StaticMeshComponent.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/StaticMesh.h"
+#include "Assets/SkinnedMesh.h"
 #include "Assets/Material.h"
 #include "Components/ComponentFilter.h"
+#include "Components/FlyCamControllerComponent.h"
+#include "Components/SkinnedMeshComponent.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
@@ -29,6 +31,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Archiver.h"
 #include "Rendering/Renderer.h"
+#include "Utilities/Geometry3d.h"
 
 namespace
 {
@@ -49,6 +52,7 @@ namespace
 	glm::vec3 sCurrentSnapToVec3{};
 
 	void RemoveInvalidEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
+	void ToggleIsEntitySelected(std::vector<entt::entity>& selectedEntities, entt::entity toSelect);
 
 	void DeleteEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
 	std::string CopyToClipBoard(const CE::World& world, const std::vector<entt::entity>& selectedEntities);
@@ -60,6 +64,19 @@ namespace
 
 	void CheckShortcuts(CE::World& world, std::vector<entt::entity>& selectedEntities);
 	void ReceiveDragDrops(CE::World& world);
+
+	struct EditorCameraTag
+	{
+		friend CE::ReflectAccess;
+		static CE::MetaType Reflect()
+		{
+			using namespace CE;
+			MetaType metaType = MetaType{ MetaType::T<EditorCameraTag>{}, "EditorCameraTag" };
+			ReflectComponentType<EditorCameraTag>(metaType);
+			return metaType;
+		}
+		REFLECT_AT_START_UP(EditorCameraTag);
+	};
 }
 
 CE::WorldInspectHelper::WorldInspectHelper(World&& worldThatHasNotYetBegunPlay) :
@@ -89,12 +106,14 @@ CE::World& CE::WorldInspectHelper::BeginPlay()
 		return GetWorld();
 	}
 	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay() && "Do not call BeginPlay on the world yourself, use WorldInspectHelper::BeginPlay");
+
 	mWorldAfterBeginPlay = std::make_unique<World>(false);
 
 	// Duplicate our level world
 	const BinaryGSONObject serializedWorld = Archiver::Serialize(*mWorldBeforeBeginPlay);
 	Archiver::Deserialize(*mWorldAfterBeginPlay, serializedWorld);
 
+	SwitchToPlayCam();
 	mWorldAfterBeginPlay->BeginPlay();
 	return GetWorld();
 }
@@ -111,6 +130,7 @@ CE::World& CE::WorldInspectHelper::EndPlay()
 	mWorldAfterBeginPlay->EndPlay();
 	mWorldAfterBeginPlay.reset();
 
+	SwitchToFlyCam();
 	return GetWorld();
 }
 
@@ -120,9 +140,9 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 	ImGui::Splitter(true, &mViewportWidth, &mHierarchyAndDetailsWidth);
 
-	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, -2.0f }, false, ImGuiWindowFlags_NoScrollbar))
+	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, -2.0f }, false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoNav))
 	{
-		const ImVec2 beginPlayPos = ImGui::GetWindowContentRegionMin() + ImVec2{ ImGui::GetContentRegionAvail().x / 2.0f, 10.0f };
+		const ImVec2 firstButtonPos = ImGui::GetWindowContentRegionMin() + ImVec2{ ImGui::GetContentRegionAvail().x / 2.0f - 16.0f, 10.0f };
 		const ImVec2 viewportPos = ImGui::GetCursorPos();
 
 		ImDrawList* drawList = ImGui::GetCurrentWindow()->DrawList;
@@ -133,7 +153,6 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 		if (!mSelectedEntities.empty())
 		{
-
 			if (ImGui::RadioButton("Translate", sGuizmoOperation == ImGuizmo::TRANSLATE))
 				sGuizmoOperation = ImGuizmo::TRANSLATE;
 			ImGui::SameLine();
@@ -192,47 +211,76 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			}
 		}
 
-		ImGui::SetCursorPos(beginPlayPos);
+		ImGui::SetCursorPos(firstButtonPos);
+		ImGui::SetNextItemAllowOverlap();
 
 		if (!GetWorld().HasBegunPlay())
 		{
-			ImGui::SetNextItemAllowOverlap();
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 0.0f, 1.0f, 0.0f, 1.0f });
 			if (ImGui::Button(ICON_FA_PLAY))
 			{
 				(void)BeginPlay();
 			}
+			ImGui::PopStyleColor();
 			ImGui::SetItemTooltip("Begin play");
+		}
+		else if (!GetWorld().IsPaused())
+		{
+			if (ImGui::Button(ICON_FA_PAUSE))
+			{
+				GetWorld().Pause();
+			}
+			ImGui::SetItemTooltip("Pause");
 		}
 		else
 		{
-			if (GetWorld().IsPaused())
+			if (ImGui::Button(ICON_FA_PLAY))
 			{
-				ImGui::SetNextItemAllowOverlap();
-				if (ImGui::Button(ICON_FA_PLAY))
-				{
-					GetWorld().Unpause();
-				}
-				ImGui::SetItemTooltip("Resume play");
+				GetWorld().Unpause();
 			}
-			else
-			{
-				ImGui::SetNextItemAllowOverlap();
-				if (ImGui::Button(ICON_FA_PAUSE))
-				{
-					GetWorld().Pause();
-				}
-				ImGui::SetItemTooltip("Pause");
-			}
+			ImGui::SetItemTooltip("Resume play");
+		}
 
-			ImGui::SameLine();
-			ImGui::SetCursorPosY(beginPlayPos.y);
+		ImGui::SameLine();
+		ImGui::SetCursorPosY(firstButtonPos.y);
+		ImGui::SetNextItemAllowOverlap();
 
-			ImGui::SetNextItemAllowOverlap();
+		if (GetWorld().HasBegunPlay())
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.0f, 0.0f, 0.0f, 1.0f });
 			if (ImGui::Button(ICON_FA_STOP))
 			{
 				(void)EndPlay();
 			}
+			ImGui::PopStyleColor();
 			ImGui::SetItemTooltip("Stop");
+		}
+		else
+		{
+			ImGui::BeginDisabled();
+			ImGui::Button(ICON_FA_STOP);
+			ImGui::EndDisabled();
+		}
+
+		ImGui::SameLine();
+		ImGui::SetCursorPosY(firstButtonPos.y);
+		ImGui::SetNextItemAllowOverlap();
+
+		if (mSelectedCameraBeforeWeSwitchedToFlyCam.has_value())
+		{
+			if (ImGui::Button(ICON_FA_GAMEPAD))
+			{
+				SwitchToPlayCam();
+			}
+			ImGui::SetItemTooltip("Switch to the play camera");
+		}
+		else
+		{
+			if (ImGui::Button(ICON_FA_EJECT))
+			{
+				SwitchToFlyCam();
+			}
+			ImGui::SetItemTooltip("Switch to the fly camera");
 		}
 
 		// World will not change anymore
@@ -282,9 +330,19 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		drawList->ChannelsSetCurrent(0);
 		ImGui::SetCursorPos(viewportPos);
 
-		world.Tick(deltaTime);
+		if (mSelectedCameraBeforeWeSwitchedToFlyCam.has_value())
+		{
+			SpawnFlyCam();
+		}
 
+		world.Tick(deltaTime);
 		WorldViewportPanel::Display(world, *mViewportFrameBuffer, &mSelectedEntities);
+
+		if (mSelectedCameraBeforeWeSwitchedToFlyCam.has_value())
+		{
+			DestroyFlyCam();
+		}
+
 		drawList->ChannelsMerge();
 
 		World::PopWorld();
@@ -325,6 +383,8 @@ void CE::WorldInspectHelper::SaveState(BinaryGSONObject& state)
 	state.AddGSONMember("detailsWidth") << mDetailsHeight;
 	state.AddGSONMember("viewportWidth") << mViewportWidth;
 	state.AddGSONMember("hierarchyAndDetailsWidth") << mHierarchyAndDetailsWidth;
+	state.AddGSONMember("selectedCam") << mSelectedCameraBeforeWeSwitchedToFlyCam;
+	state.AddGSONMember("flycamWorldMat") << mFlyCamWorldMatrix;
 }
 
 void CE::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
@@ -350,10 +410,117 @@ void CE::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
 	*detailsWidth >> mDetailsHeight;
 	*viewportWidth >> mViewportWidth;
 	*hierarchyAndDetailsWidth >> mHierarchyAndDetailsWidth;
+
+	const BinaryGSONMember* const selectedCam = state.TryGetGSONMember("selectedCam");
+
+	if (selectedCam != nullptr)
+	{
+		*selectedCam >> mSelectedCameraBeforeWeSwitchedToFlyCam;
+	}
+
+	const BinaryGSONMember* const flycamWorldMat = state.TryGetGSONMember("flycamWorldMat");
+
+	if (flycamWorldMat != nullptr)
+	{
+		*flycamWorldMat >> mFlyCamWorldMatrix;
+	}
+}
+
+void CE::WorldInspectHelper::SaveFlyCam()
+{
+	Registry& reg = GetWorld().GetRegistry();
+
+	entt::entity flyCam = reg.View<EditorCameraTag>().front();
+	mFlyCamWorldMatrix = {};
+
+	if (flyCam == entt::null)
+	{
+		return;
+	}
+
+	const TransformComponent* const transform = reg.TryGet<TransformComponent>(flyCam);
+
+	if (transform != nullptr)
+	{
+		mFlyCamWorldMatrix = transform->GetWorldMatrix();
+	}
+}
+
+void CE::WorldInspectHelper::SwitchToFlyCam()
+{
+	mSelectedCameraBeforeWeSwitchedToFlyCam = CameraComponent::GetSelected(GetWorld());
+}
+
+void CE::WorldInspectHelper::SwitchToPlayCam()
+{
+	Registry& reg = GetWorld().GetRegistry();
+
+	for (const entt::entity entity : reg.View<EditorCameraTag>())
+	{
+		reg.Destroy(entity, true);
+	}
+	reg.RemovedDestroyed();
+
+	if (mSelectedCameraBeforeWeSwitchedToFlyCam.has_value()
+		&& reg.Valid(*mSelectedCameraBeforeWeSwitchedToFlyCam))
+	{
+		CameraComponent::Select(GetWorld(), *mSelectedCameraBeforeWeSwitchedToFlyCam);
+		mFlyCamWorldMatrix = {};
+	}
+
+	mSelectedCameraBeforeWeSwitchedToFlyCam.reset();
+}
+
+void CE::WorldInspectHelper::SpawnFlyCam()
+{
+	Registry& reg = GetWorld().GetRegistry();
+
+	for (const entt::entity entity : reg.View<EditorCameraTag>())
+	{
+		reg.Destroy(entity, true);
+	}
+	reg.RemovedDestroyed();
+
+	const entt::entity flyCam = reg.Create();
+	reg.AddComponent<CameraComponent>(flyCam);
+	reg.AddComponent<FlyCamControllerComponent>(flyCam);
+	reg.AddComponent<EditorCameraTag>(flyCam);
+	reg.AddComponent<TransformComponent>(flyCam);
+
+	if (mFlyCamWorldMatrix == glm::mat4{})
+	{
+		const TransformComponent* playCamera = reg.TryGet<TransformComponent>(mSelectedCameraBeforeWeSwitchedToFlyCam.value_or(entt::null));
+
+		if (playCamera != nullptr)
+		{
+			reg.Get<TransformComponent>(flyCam).SetWorldMatrix(playCamera->GetWorldMatrix());
+		}
+	}
+	else
+	{
+		reg.Get<TransformComponent>(flyCam).SetWorldMatrix(mFlyCamWorldMatrix);
+	}
+
+	CameraComponent::Select(GetWorld(), flyCam);
+}
+
+void CE::WorldInspectHelper::DestroyFlyCam()
+{
+	SaveFlyCam();
+
+	Registry& reg = GetWorld().GetRegistry();
+
+	for (const entt::entity entity : reg.View<EditorCameraTag>())
+	{
+		reg.Destroy(entity, true);
+	}
+	reg.RemovedDestroyed();
+
+	CameraComponent::Select(GetWorld(), mSelectedCameraBeforeWeSwitchedToFlyCam.value_or(entt::null));
 }
 
 void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
-	std::vector<entt::entity>* selectedEntities)
+                                     std::vector<entt::entity>* selectedEntities)
 {
 	const glm::vec2 windowPos = ImGui::GetWindowPos();
 	const glm::vec2 contentMin = ImGui::GetWindowContentRegionMin();
@@ -393,17 +560,127 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 		ImVec2(0, 0),
 		ImVec2(1, 1));
 
+	bool shouldSelectEntityUnderneathMouse = ImGui::IsItemClicked();
+
 	// Since it is our 'image' that receives the drag drop, we call this right after the image call.
 	ReceiveDragDrops(world);
 
 	ImGui::SetCursorPos(contentMin);
 
 	// There is no need to try to draw gizmos/manipulate transforms when nothing is selected
-	if (!selectedEntities->empty())
+	if (!selectedEntities->empty()
+		&& Input::Get().HasFocus()) // ImGuizmo has a global state, so we can only draw one at a time,
+									// otherwise translating one object translates it in all open viewports.
 	{
 		ShowComponentGizmos(world, *selectedEntities);
-		GizmoManipulateSelectedTransforms(world, *selectedEntities, world.GetRegistry().Get<CameraComponent>(cameraOwner));
+
+		// We don't change the selection if we are interacting with the gizmos
+		shouldSelectEntityUnderneathMouse &= !GizmoManipulateSelectedTransforms(world, *selectedEntities, world.GetRegistry().Get<CameraComponent>(cameraOwner));
 	}
+
+	if (shouldSelectEntityUnderneathMouse)
+	{
+		const entt::entity hoveringOver = GetEntityThatMouseIsHoveringOver(world);
+
+		if (hoveringOver != entt::null)
+		{
+			ToggleIsEntitySelected(*selectedEntities, hoveringOver);
+		}
+		else
+		{
+			selectedEntities->clear();
+		}
+	}
+}
+
+namespace
+{
+	const CE::AssetHandle<CE::StaticMesh>& GetMesh(const CE::StaticMeshComponent& component)
+	{
+		return component.mStaticMesh;
+	}
+
+	const CE::AssetHandle<CE::SkinnedMesh>& GetMesh(const CE::SkinnedMeshComponent& component)
+	{
+		return component.mSkinnedMesh;
+	}
+
+	template<typename MeshComponentType>
+	void DoRaycastAgainstMeshComponents(const CE::World& world, CE::Ray3D ray, float& nearestT, entt::entity& nearestEntity)
+	{
+		static std::vector<glm::vec3> transformedPoints{};
+
+		for (auto [entity, transform, meshComponent] : world.GetRegistry().View<CE::TransformComponent, MeshComponentType>().each())
+		{
+			auto mesh = GetMesh(meshComponent);
+
+			if (mesh == nullptr
+				|| meshComponent.mMaterial == nullptr)
+			{
+				continue;
+			}
+
+			const glm::mat4 worldMat = transform.GetWorldMatrix();
+			const glm::mat4 inversedWorldMat = glm::inverse(worldMat);
+			CE::Ray3D rayInMeshLocalSpace = { inversedWorldMat * glm::vec4{ ray.mOrigin, 1.0f }, inversedWorldMat * glm::vec4{ ray.mDirection, 0.0f } };
+			rayInMeshLocalSpace.mDirection = glm::normalize(rayInMeshLocalSpace.mDirection);
+
+			if (!CE::AreOverlapping(rayInMeshLocalSpace, mesh->GetBoundingBox()))
+			{
+				continue;
+			}
+
+			transformedPoints.clear();
+			transformedPoints.insert(transformedPoints.end(), mesh->GetVertices().begin(), mesh->GetVertices().end());
+
+			for (glm::vec3& point : transformedPoints)
+			{
+				point = worldMat * glm::vec4{ point, 1.0f };
+			}
+
+			const auto& indices = mesh->GetIndices();
+
+			for (uint32 i = 0; i < indices.size(); i += 3)
+			{
+				const float t = TimeOfRayIntersection(ray, { transformedPoints[indices[i]], transformedPoints[indices[i + 1]], transformedPoints[indices[i + 2]] });
+
+				if (t < nearestT)
+				{
+					nearestT = t;
+					nearestEntity = entity;
+					// Don't break because some triangles may be even
+					// closer to the camera.
+				}
+			}
+		}
+	}
+}
+
+entt::entity CE::WorldViewportPanel::GetEntityThatMouseIsHoveringOver(const World& world)
+{
+	const entt::entity camera = CameraComponent::GetSelected(world);
+
+	if (camera == entt::null)
+	{
+		return entt::null;
+	}
+
+	const TransformComponent* transform = world.GetRegistry().TryGet<TransformComponent>(camera);
+
+	if (transform == nullptr)
+	{
+		return entt::null;
+	}
+
+	const Ray3D ray{ transform->GetWorldPosition(), world.GetViewport().GetScreenToWorldDirection(Input::Get().GetMousePosition()) };
+
+	float nearestT = std::numeric_limits<float>::infinity();
+	entt::entity nearestEntity = entt::null;
+
+	DoRaycastAgainstMeshComponents<StaticMeshComponent>(world, ray, nearestT, nearestEntity);
+	DoRaycastAgainstMeshComponents<SkinnedMeshComponent>(world, ray, nearestT, nearestEntity);
+
+	return nearestEntity;
 }
 
 void CE::WorldViewportPanel::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
@@ -448,13 +725,12 @@ void CE::WorldViewportPanel::ShowComponentGizmos(World& world, const std::vector
 	}
 }
 
-
 void CE::WorldViewportPanel::SetGizmoRect(const glm::vec2 windowPos, glm::vec2 windowSize)
 {
 	ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
 }
 
-void CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
+bool CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 	const std::vector<entt::entity>& selectedEntities,
 	const CameraComponent& camera)
 {
@@ -501,8 +777,9 @@ void CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 		&avgMatrix[0][0]);
 
 	glm::mat4 delta;
+	bool isSelected{};
 
-	if (Manipulate(value_ptr(view), value_ptr(proj), sGuizmoOperation, sGuizmoMode, value_ptr(avgMatrix), value_ptr(delta), snap))
+	if (Manipulate(value_ptr(view), value_ptr(proj), sGuizmoOperation, sGuizmoMode, value_ptr(avgMatrix), value_ptr(delta), snap, nullptr, nullptr, &isSelected))
 	{
 		// Apply the delta to all transformComponents
 		for (const auto transformComponent : transformComponents)
@@ -534,6 +811,8 @@ void CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 			transformComponent->SetWorldMatrix(transformMatrix);
 		}
 	}
+
+	return isSelected;
 }
 
 void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selectedEntities)
@@ -974,23 +1253,7 @@ void CE::WorldHierarchy::DisplayEntity(Registry& registry, entt::entity entity, 
 
 			if (ImGui::Selectable(name.data(), &isSelected, 0, selectableAreaSize))
 			{
-				if (!Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
-				{
-					selectedEntities.clear();
-				}
-
-				if (isSelected)
-				{
-					if (std::find(selectedEntities.begin(), selectedEntities.end(), entity) == selectedEntities.end())
-					{
-						selectedEntities.push_back(entity);
-					}
-				}
-				else
-				{
-					selectedEntities.erase(std::remove(selectedEntities.begin(), selectedEntities.end(), entity),
-						selectedEntities.end());
-				}
+				ToggleIsEntitySelected(selectedEntities, entity);
 			}
 
 			ImGui::SetItemTooltip(Format("Entity {}", entt::to_integral(entity)).c_str());
@@ -1123,6 +1386,25 @@ namespace
 			{
 				return !world.GetRegistry().Valid(entity);
 			}), selectedEntities.end());
+	}
+
+	void ToggleIsEntitySelected(std::vector<entt::entity>& selectedEntities, entt::entity toSelect)
+	{
+		if (!CE::Input::Get().IsKeyboardKeyHeld(CE::Input::KeyboardKey::LeftControl))
+		{
+			selectedEntities.clear();
+		}
+
+		const auto it = std::find(selectedEntities.begin(), selectedEntities.end(), toSelect);
+
+		if (it == selectedEntities.end())
+		{
+			selectedEntities.push_back(toSelect);
+		}
+		else
+		{
+			selectedEntities.erase(it);
+		}
 	}
 
 	void DeleteEntities(CE::World& world, std::vector<entt::entity>& selectedEntities)

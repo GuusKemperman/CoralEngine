@@ -21,7 +21,6 @@ namespace CE
             Editor = 1 << 7,
             AccelStructs = 1 << 8,
             Particles = 1 << 9,
-            TerrainHeight = 1 << 10,
             All = 0xFFFFFFFF
         };
     };

@@ -31,8 +31,6 @@ namespace CE
 		std::unique_ptr<WorldInspectHelper> mWorldHelper{};
 
 		entt::entity mPrefabInstance{};
-		entt::entity mCameraInstance{};
-		entt::entity mLightInstance{};
 	};
 }
 #endif // EDITOR

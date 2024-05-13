@@ -1,52 +1,76 @@
 #include "Precomp.h"
 #include "World/Physics.h"
 
-#include "Components/TransformComponent.h"
-#include "Utilities/Geometry2d.h"
 #include "Components/Physics2D/AABBColliderComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
-#include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "World/World.h"
 #include "World/Registry.h"
+#include "Meta/MetaType.h"
+#include "Meta/MetaProps.h"
+#include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 CE::Physics::Physics(World& world) :
 	mWorld(world)
 {
 }
 
-float CE::Physics::GetHeightAtPosition(glm::vec2 position2D) const
+template <typename T>
+std::vector<entt::entity> CE::Physics::FindAllWithinShapeImpl(const T& shape, const CollisionRules& filter) const
 {
-	float highestHeight = -std::numeric_limits<float>::infinity();
+	const Registry& reg = mWorld.get().GetRegistry();
 
-	GetHeightAtPosition<TransformedDiskColliderComponent>(position2D, highestHeight);
-	GetHeightAtPosition<TransformedAABBColliderComponent>(position2D, highestHeight);
-	GetHeightAtPosition<TransformedPolygonColliderComponent>(position2D, highestHeight);
+	const auto diskView = reg.View<PhysicsBody2DComponent, TransformedDiskColliderComponent>();
+	const auto aabbView = reg.View<PhysicsBody2DComponent, TransformedAABBColliderComponent>();
+	const auto polyView = reg.View<PhysicsBody2DComponent, TransformedPolygonColliderComponent>();
 
-	return highestHeight;
+	std::vector<entt::entity> returnValue{};
+	returnValue.reserve(diskView.size_hint() + aabbView.size_hint() + polyView.size_hint());
+
+	for (const entt::entity entity : diskView)
+	{
+		if (diskView.get<PhysicsBody2DComponent>(entity).mRules.GetResponse(filter) != CollisionResponse::Ignore
+			&& AreOverlapping(diskView.get<TransformedDiskColliderComponent>(entity), shape))
+		{
+			returnValue.emplace_back(entity);
+		}
+	}
+
+	for (const entt::entity entity : aabbView)
+	{
+		if (aabbView.get<PhysicsBody2DComponent>(entity).mRules.GetResponse(filter) != CollisionResponse::Ignore
+			&& AreOverlapping(aabbView.get<TransformedAABBColliderComponent>(entity), shape))
+		{
+			returnValue.emplace_back(entity);
+		}
+	}
+
+	for (const entt::entity entity : polyView)
+	{
+		if (polyView.get<PhysicsBody2DComponent>(entity).mRules.GetResponse(filter) != CollisionResponse::Ignore
+			&& AreOverlapping(polyView.get<TransformedPolygonColliderComponent>(entity), shape))
+		{
+			returnValue.emplace_back(entity);
+		}
+	}
+
+	return returnValue;
 }
 
-void CE::Physics::Teleport(TransformComponent& transform, glm::vec2 toPosition) const
+std::vector<entt::entity> CE::Physics::FindAllWithinShape(const TransformedDisk& shape, const CollisionRules& filter) const
 {
-	const glm::vec3 currentPos = transform.GetWorldPosition();
+	return FindAllWithinShapeImpl(shape, filter);
+}
 
-	float currHeight = GetHeightAtPosition(To2DRightForward(currentPos));
-	float destHeight = GetHeightAtPosition(toPosition);
+std::vector<entt::entity> CE::Physics::FindAllWithinShape(const TransformedAABB& shape, const CollisionRules& filter) const
+{
+	return FindAllWithinShapeImpl(shape, filter);
+}
 
-	glm::vec3 targetPosition = To3DRightForward(toPosition);
-
-	if (currHeight == -std::numeric_limits<float>::infinity())
-	{
-		currHeight = currentPos[Axis::Up];
-	}
-
-	if (destHeight == -std::numeric_limits<float>::infinity())
-	{
-		destHeight = currentPos[Axis::Up];
-	}
-
-	targetPosition[Axis::Up] = currentPos[Axis::Up] + destHeight - currHeight;
-	transform.SetWorldPosition(targetPosition);
+std::vector<entt::entity> CE::Physics::FindAllWithinShape(const TransformedPolygon& shape, const CollisionRules& filter) const
+{
+	return FindAllWithinShapeImpl(shape, filter);
 }
 
 CE::MetaType CE::Physics::Reflect()
@@ -54,47 +78,15 @@ CE::MetaType CE::Physics::Reflect()
 	MetaType type = MetaType{ MetaType::T<Physics>{}, "Physics" };
 	type.GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](TransformComponent& transform, glm::vec2 toPosition)
+	type.AddFunc([](glm::vec2 centre, float radius, const CollisionRules& filter)
 		{
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			world->GetPhysics().Teleport(transform, toPosition);
-		}, "Teleport", MetaFunc::ExplicitParams<TransformComponent&, glm::vec2>{}, "Transform", "ToPosition").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			return World::TryGetWorldAtTopOfStack()->GetPhysics().FindAllWithinShape(TransformedDisk{ centre, radius }, filter);
+		}, "Find all bodies in radius", MetaFunc::ExplicitParams<glm::vec2, float, const CollisionRules&>{}, "Centre", "Radius", "Filter").GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](glm::vec2 pos)
-	{
-		World* world = World::TryGetWorldAtTopOfStack();
-		ASSERT(world != nullptr);
-		return world->GetPhysics().GetHeightAtPosition(pos);
-	}, "GetHeightAtPosition", MetaFunc::ExplicitParams<glm::vec2>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+	type.AddFunc([](glm::vec2 min, glm::vec2 max, const CollisionRules& filter)
+		{
+			return World::TryGetWorldAtTopOfStack()->GetPhysics().FindAllWithinShape(TransformedAABB{ min, max }, filter);
+		}, "Find all bodies in box", MetaFunc::ExplicitParams<glm::vec2, glm::vec2, const CollisionRules&>{}, "Min", "Max", "Filter").GetProperties().Add(Props::sIsScriptableTag);
 
 	return type;
-}
-
-template <typename ColliderType>
-void CE::Physics::GetHeightAtPosition(glm::vec2 position, float& highestHeight) const
-{
-	const Registry& reg = mWorld.get().GetRegistry();
-
-	auto view = reg.View<const TransformComponent, const PhysicsBody2DComponent, const ColliderType>();
-
-	// Don't do .each, as we may be able to do an early out, preventing us from
-	// having to retrieve the other components at all.
-	for (entt::entity entity : view)
-	{
-		// Only colliders in the terrain layer influence the height
-		if (view.template get<const PhysicsBody2DComponent>(entity).mRules.mLayer != CollisionLayer::Terrain)
-		{
-			continue;
-		}
-
-		const glm::vec3 worldPos = view.template get<const TransformComponent>(entity).GetWorldPosition();
-		const float height = worldPos[Axis::Up];
-
-		if (height > highestHeight
-			&& AreOverlapping(view.template get<const ColliderType>(entity), position))
-		{
-			highestHeight = height;
-		}
-	}
 }
