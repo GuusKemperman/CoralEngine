@@ -4,6 +4,8 @@
 
 namespace CE
 {
+	class WeaponEditorSystem;
+
 	class Weapon :
 		public Ability
 	{
@@ -30,6 +32,7 @@ namespace CE
 		int mPiercing{};
 
 		friend ReflectAccess;
+		friend WeaponEditorSystem;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(Weapon);
 	};

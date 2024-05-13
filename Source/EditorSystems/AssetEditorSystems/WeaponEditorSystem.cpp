@@ -2,6 +2,8 @@
 #include "EditorSystems/AssetEditorSystems/WeaponEditorSystem.h"
 
 #include "Utilities/Imgui/ImguiInspect.h"
+#include "Assets/Script.h"
+#include "Assets/Texture.h"
 #include "Meta/MetaManager.h"
 
 CE::WeaponEditorSystem::WeaponEditorSystem(Weapon&& asset)
@@ -24,16 +26,42 @@ void CE::WeaponEditorSystem::Tick(float deltaTime)
 		ShowSaveButton();
 		ImGui::EndMenuBar();
 	}
+	ImGui::PushItemWidth(100.f);
+	ShowInspectUI("Shot Delay", mAsset.mTimeBetweenShots);
+	ImGui::SameLine();
+	ShowInspectUI("Fire Speed", mAsset.mFireSpeed);
+	ImGui::SameLine();
+	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+	ImGui::Text("Fire Rate: %.2f", 1.f / (mAsset.mTimeBetweenShots * mAsset.mFireSpeed));
+	ImGui::PopStyleColor();
 
-	const MetaType& weapon = MetaManager::Get().GetType<Weapon>();
+	ShowInspectUI("Reload Time", mAsset.mRequirementToUse);
+	ImGui::SameLine();
+	ShowInspectUI("Reload Speed", mAsset.mReloadSpeed);
 
-	MetaAny refToMat{ mAsset };
+	ShowInspectUI("Projectile Count", mAsset.mProjectileCount);
+	ShowInspectUI("Projectile Spread", mAsset.mSpread);
+	ImGui::SameLine();
+	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+	ImGui::Text("Projectile Angles: %.2f", static_cast<float>(mAsset.mProjectileCount) / mAsset.mSpread);
+	ImGui::PopStyleColor();
 
-	for (const MetaField& field : weapon.EachField())
-	{
-		MetaAny refToMember = field.MakeRef(refToMat);
-		ShowInspectUI(std::string{ field.GetName() }, refToMember);
-	}
+	ShowInspectUI("Ammo Count", mAsset.mCharges);
+	ShowInspectUI("Projectile Effect", mAsset.mEffects);
+	ShowInspectUI("Projectile Size", mAsset.mProjectileSize);
+	ShowInspectUI("Projectile Speed", mAsset.mProjectileSpeed);
+	ShowInspectUI("Projectile Range", mAsset.mProjectileRange);
+	ShowInspectUI("Pierce Count", mAsset.mPiercing);
+	ShowInspectUI("Knockback", mAsset.mKnockback);
+
+	ImGui::Separator();
+
+	ShowInspectUI("OnAbilityActivateScript", mAsset.mOnAbilityActivateScript);
+	ShowInspectUI("IconTexture", mAsset.mIconTexture);
+	ShowInspectUI("Description", mAsset.mDescription);
+	ShowInspectUI("GlobalCooldown", mAsset.mGlobalCooldown);
+
+	ImGui::PopItemWidth();
 	End();
 }
 
