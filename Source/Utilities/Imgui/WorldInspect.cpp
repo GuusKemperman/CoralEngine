@@ -1,7 +1,6 @@
 #include "Precomp.h"
 #include "Utilities/Imgui/WorldInspect.h"
 
-#include "Assets/Level.h"
 #include "imgui/ImGuizmo.h"
 #include "imgui/imgui_internal.h"
 
@@ -16,8 +15,10 @@
 #include "Components/StaticMeshComponent.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/StaticMesh.h"
+#include "Assets/SkinnedMesh.h"
 #include "Assets/Material.h"
 #include "Components/ComponentFilter.h"
+#include "Components/SkinnedMeshComponent.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
@@ -29,6 +30,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Archiver.h"
 #include "Rendering/Renderer.h"
+#include "Utilities/Geometry3d.h"
 
 namespace
 {
@@ -49,6 +51,7 @@ namespace
 	glm::vec3 sCurrentSnapToVec3{};
 
 	void RemoveInvalidEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
+	void ToggleIsEntitySelected(std::vector<entt::entity>& selectedEntities, entt::entity toSelect);
 
 	void DeleteEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
 	std::string CopyToClipBoard(const CE::World& world, const std::vector<entt::entity>& selectedEntities);
@@ -393,6 +396,8 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 		ImVec2(0, 0),
 		ImVec2(1, 1));
 
+	bool shouldSelectEntityUnderneathMouse = ImGui::IsItemClicked();
+
 	// Since it is our 'image' that receives the drag drop, we call this right after the image call.
 	ReceiveDragDrops(world);
 
@@ -402,8 +407,110 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 	if (!selectedEntities->empty())
 	{
 		ShowComponentGizmos(world, *selectedEntities);
-		GizmoManipulateSelectedTransforms(world, *selectedEntities, world.GetRegistry().Get<CameraComponent>(cameraOwner));
+
+		// We don't change the selection if we are interacting with the gizmos
+		shouldSelectEntityUnderneathMouse &= !GizmoManipulateSelectedTransforms(world, *selectedEntities, world.GetRegistry().Get<CameraComponent>(cameraOwner));
 	}
+
+	if (shouldSelectEntityUnderneathMouse)
+	{
+		const entt::entity hoveringOver = GetEntityThatMouseIsHoveringOver(world);
+
+		if (hoveringOver != entt::null)
+		{
+			ToggleIsEntitySelected(*selectedEntities, hoveringOver);
+		}
+	}
+}
+
+namespace
+{
+	const CE::AssetHandle<CE::StaticMesh>& GetMesh(const CE::StaticMeshComponent& component)
+	{
+		return component.mStaticMesh;
+	}
+
+	const CE::AssetHandle<CE::SkinnedMesh>& GetMesh(const CE::SkinnedMeshComponent& component)
+	{
+		return component.mSkinnedMesh;
+	}
+
+	template<typename MeshComponentType>
+	void DoRaycastAgainstMeshComponents(const CE::World& world, CE::Ray3D ray, float& nearestT, entt::entity& nearestEntity)
+	{
+		static std::vector<glm::vec3> transformedPoints{};
+
+		for (auto [entity, transform, meshComponent] : world.GetRegistry().View<CE::TransformComponent, MeshComponentType>().each())
+		{
+			auto mesh = GetMesh(meshComponent);
+
+			if (mesh == nullptr
+				|| meshComponent.mMaterial == nullptr)
+			{
+				continue;
+			}
+
+			const glm::mat4 worldMat = transform.GetWorldMatrix();
+			const glm::mat4 inversedWorldMat = glm::inverse(worldMat);
+			CE::Ray3D rayInMeshLocalSpace = { inversedWorldMat * glm::vec4{ ray.mOrigin, 1.0f }, inversedWorldMat * glm::vec4{ ray.mDirection, 0.0f } };
+			rayInMeshLocalSpace.mDirection = glm::normalize(rayInMeshLocalSpace.mDirection);
+
+			if (!CE::AreOverlapping(rayInMeshLocalSpace, mesh->GetBoundingBox()))
+			{
+				continue;
+			}
+
+			transformedPoints.clear();
+			transformedPoints.insert(transformedPoints.end(), mesh->GetVertices().begin(), mesh->GetVertices().end());
+
+			for (glm::vec3& point : transformedPoints)
+			{
+				point = worldMat * glm::vec4{ point, 1.0f };
+			}
+
+			const auto& indices = mesh->GetIndices();
+
+			for (uint32 i = 0; i < indices.size(); i += 3)
+			{
+				const float t = TimeOfRayIntersection(ray, { transformedPoints[indices[i]], transformedPoints[indices[i + 1]], transformedPoints[indices[i + 2]] });
+
+				if (t < nearestT)
+				{
+					nearestT = t;
+					nearestEntity = entity;
+					// Don't break because some triangles may be even
+					// closer to the camera.
+				}
+			}
+		}
+	}
+}
+
+entt::entity CE::WorldViewportPanel::GetEntityThatMouseIsHoveringOver(const World& world)
+{
+	const entt::entity camera = CameraComponent::GetSelected(world);
+
+	if (camera == entt::null)
+	{
+		return entt::null;
+	}
+
+	const TransformComponent* transform = world.GetRegistry().TryGet<TransformComponent>(camera);
+
+	if (transform == nullptr)
+	{
+		return entt::null;
+	}
+
+	const Ray3D ray{ transform->GetWorldPosition(), world.GetViewport().GetScreenToWorldDirection(Input::Get().GetMousePosition()) };
+
+	float nearestT = std::numeric_limits<float>::infinity();
+	entt::entity nearestEntity = entt::null;
+
+	DoRaycastAgainstMeshComponents<StaticMeshComponent>(world, ray, nearestT, nearestEntity);
+	DoRaycastAgainstMeshComponents<SkinnedMeshComponent>(world, ray, nearestT, nearestEntity);
+
+	return nearestEntity;
 }
 
 void CE::WorldViewportPanel::ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities)
@@ -448,13 +555,12 @@ void CE::WorldViewportPanel::ShowComponentGizmos(World& world, const std::vector
 	}
 }
 
-
 void CE::WorldViewportPanel::SetGizmoRect(const glm::vec2 windowPos, glm::vec2 windowSize)
 {
 	ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
 }
 
-void CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
+bool CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 	const std::vector<entt::entity>& selectedEntities,
 	const CameraComponent& camera)
 {
@@ -501,8 +607,9 @@ void CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 		&avgMatrix[0][0]);
 
 	glm::mat4 delta;
+	bool isSelected{};
 
-	if (Manipulate(value_ptr(view), value_ptr(proj), sGuizmoOperation, sGuizmoMode, value_ptr(avgMatrix), value_ptr(delta), snap))
+	if (Manipulate(value_ptr(view), value_ptr(proj), sGuizmoOperation, sGuizmoMode, value_ptr(avgMatrix), value_ptr(delta), snap, nullptr, nullptr, &isSelected))
 	{
 		// Apply the delta to all transformComponents
 		for (const auto transformComponent : transformComponents)
@@ -534,6 +641,8 @@ void CE::WorldViewportPanel::GizmoManipulateSelectedTransforms(World& world,
 			transformComponent->SetWorldMatrix(transformMatrix);
 		}
 	}
+
+	return isSelected;
 }
 
 void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selectedEntities)
@@ -974,23 +1083,7 @@ void CE::WorldHierarchy::DisplayEntity(Registry& registry, entt::entity entity, 
 
 			if (ImGui::Selectable(name.data(), &isSelected, 0, selectableAreaSize))
 			{
-				if (!Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
-				{
-					selectedEntities.clear();
-				}
-
-				if (isSelected)
-				{
-					if (std::find(selectedEntities.begin(), selectedEntities.end(), entity) == selectedEntities.end())
-					{
-						selectedEntities.push_back(entity);
-					}
-				}
-				else
-				{
-					selectedEntities.erase(std::remove(selectedEntities.begin(), selectedEntities.end(), entity),
-						selectedEntities.end());
-				}
+				ToggleIsEntitySelected(selectedEntities, entity);
 			}
 
 			ImGui::SetItemTooltip(Format("Entity {}", entt::to_integral(entity)).c_str());
@@ -1123,6 +1216,25 @@ namespace
 			{
 				return !world.GetRegistry().Valid(entity);
 			}), selectedEntities.end());
+	}
+
+	void ToggleIsEntitySelected(std::vector<entt::entity>& selectedEntities, entt::entity toSelect)
+	{
+		if (!CE::Input::Get().IsKeyboardKeyHeld(CE::Input::KeyboardKey::LeftControl))
+		{
+			selectedEntities.clear();
+		}
+
+		const auto it = std::find(selectedEntities.begin(), selectedEntities.end(), toSelect);
+
+		if (it == selectedEntities.end())
+		{
+			selectedEntities.push_back(toSelect);
+		}
+		else
+		{
+			selectedEntities.erase(it);
+		}
 	}
 
 	void DeleteEntities(CE::World& world, std::vector<entt::entity>& selectedEntities)

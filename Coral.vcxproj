@@ -1702,6 +1702,7 @@
     <ClInclude Include="Include\Components\Physics2D\PhysicsBody2DComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
     <ClInclude Include="Include\Components\PrefabOriginComponent.h" />
+    <ClInclude Include="Include\Utilities\Geometry3d.h" />
     <ClInclude Include="Include\Utilities\ManyStrings.h" />
     <ClInclude Include="Include\Utilities\CommonMetaProperties.h" />
     <ClInclude Include="Include\Core\VirtualMachine.h" />
