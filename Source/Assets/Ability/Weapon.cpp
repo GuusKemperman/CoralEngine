@@ -53,11 +53,11 @@ CE::Weapon::Weapon(AssetLoadInfo& loadInfo) :
 		return;
 	}
 
-	*serializedTimeBetweenShots >> mOnAbilityActivateScript;
-	*serializedFireSpeed >> mIconTexture;
-	*serializedReloadSpeed >> mDescription;
-	*serializedProjectileCount >> mGlobalCooldown;
-	*serializedSpread >> mRequirementType;
+	*serializedTimeBetweenShots >> mTimeBetweenShots;
+	*serializedFireSpeed >> mFireSpeed;
+	*serializedReloadSpeed >> mReloadSpeed;
+	*serializedProjectileCount >> mProjectileCount;
+	*serializedSpread >> mSpread;
 
 	*serializedEffects >> mEffects;
 	*serializedProjectileSize >> mProjectileSize;
