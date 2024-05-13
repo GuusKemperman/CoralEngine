@@ -8,7 +8,7 @@
 #include "Assets/Script.h"
 
 CE::Weapon::Weapon(std::string_view name) :
-	Ability(name)
+	Ability(name, MakeTypeId<Weapon>())
 {
 }
 

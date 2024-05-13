@@ -16,6 +16,11 @@ CE::Ability::Ability(std::string_view name) :
 {
 }
 
+CE::Ability::Ability(std::string_view name, TypeId typeId) :
+	Asset(name, typeId)
+{
+}
+
 CE::Ability::Ability(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {

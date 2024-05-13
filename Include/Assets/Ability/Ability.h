@@ -15,6 +15,7 @@ namespace CE
 	{
 	public:
         Ability(std::string_view name);
+        Ability(std::string_view name, TypeId typeId);
         Ability(AssetLoadInfo& loadInfo);
 
 		enum RequirementType
