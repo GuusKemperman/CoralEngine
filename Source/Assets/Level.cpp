@@ -103,6 +103,11 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 	{
 		for (const DiffedPrefabFactory& diffedFactory : diffedPrefab.mDifferencesBetweenExistingFactories)
 		{
+			if (diffedFactory.mNamesOfRemovedComponents.empty())
+			{
+				continue;
+			}
+
 			const std::vector<entt::entity> entitiesMadeWithThisFactory = GetIds(diffedFactory.mSerializedFactory);
 
 			for (const std::string& componentClassName : diffedFactory.mNamesOfRemovedComponents)
@@ -159,7 +164,7 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 
 			if (parent == nullptr)
 			{
-				LOG(LogAssets, Error, "While loading {}: An error occured with a prefab. The factory id of the root entity was changed somehow? This should not be possible. The level will not be loaded in correctly. Resolve the errors with the prefab and try again",
+				LOG(LogAssets, Error, "While loading {}: An error occured with a prefab. The factory id of the root entity was changed, the prefab has likely been renamed & resaved. Any instances in the level will no longer be updated if changes have been made to the prefab. This can be fixed by reverting the prefab to the name it had when you placed it into the level.",
 					GetName());
 				continue;
 			}
@@ -304,8 +309,7 @@ CE::World CE::Level::CreateDefaultWorld()
 	{
 		const entt::entity camera = reg.Create();
 		reg.AddComponent<CameraComponent>(camera);
-		reg.AddComponent<FlyCamControllerComponent>(camera);
-		reg.AddComponent<NameComponent>(camera, "Camera");
+		reg.AddComponent<NameComponent>(camera, "Main Camera");
 
 		TransformComponent& transform = reg.AddComponent<TransformComponent>(camera);
 		transform.SetLocalPosition({ 5.5f, 2.5f, -7.5f });
@@ -469,6 +473,7 @@ CE::Level::DiffedPrefabFactory CE::Level::DiffPrefabFactory(const BinaryGSONObje
 CE::Level::DiffedPrefab CE::Level::DiffPrefab(const BinaryGSONObject& serializedPrefab)
 {
 	const std::string& prefabName = serializedPrefab.GetName();
+
 	DiffedPrefab returnValue{ serializedPrefab.GetName() };
 
 	const AssetHandle<Prefab> prefab = AssetManager::Get().TryGetAsset<Prefab>(prefabName);
@@ -499,8 +504,20 @@ CE::Level::DiffedPrefab CE::Level::DiffPrefab(const BinaryGSONObject& serialized
 		const std::string serializedFactoryId = ToBinary(factory.GetId());
 
 		auto serializedCounterpart = std::find_if(indicesOfSerializedFactories.begin(), indicesOfSerializedFactories.end(),
-			[&serializedFactoryId, &serializedFactories](const uint32 serializedFactoryIndex)
+			[&serializedFactoryId, &serializedFactories, &factory](const uint32 serializedFactoryIndex)
 			{
+				// Check if the serialised prefab factory
+				// was the root factory.
+				if (serializedFactories[serializedFactoryIndex].TryGetGSONMember("ParentId") == nullptr)
+				{
+					// We don't care if the Ids match,
+					// its possible the prefab got renamed;
+					// because of my lack of fore-sight, the
+					// root factory's id is based on the
+					// prefab's name.
+					return factory.GetParent() == nullptr;
+				}
+
 				return serializedFactories[serializedFactoryIndex].GetName() == serializedFactoryId;
 			});
 
@@ -657,8 +674,10 @@ std::vector<entt::entity> CE::GetAllEntitiesCreatedUsingFactory(const BinaryGSON
 
 	ids.reserve(serializedPrefabOrigins->GetChildren().size());
 
-	const std::string prefabHashNameAsString = ToBinary(Name::HashString(prefabName));
+	const uint32 hashedPrefabName = Name::HashString(prefabName);
+	const std::string prefabHashNameAsString = ToBinary(hashedPrefabName);
 	const std::string factoryIdAsString = ToBinary(factoryId);
+	const bool isRootFactory = factoryId == hashedPrefabName;
 
 	for (const BinaryGSONObject& serializedPrefabOrigin : serializedPrefabOrigins->GetChildren())
 	{
@@ -672,8 +691,25 @@ std::vector<entt::entity> CE::GetAllEntitiesCreatedUsingFactory(const BinaryGSON
 			continue;
 		}
 
-		if (serializedHashedPrefabName->GetData() == prefabHashNameAsString
-			&& serializedFactoryId->GetData() == factoryIdAsString)
+		if (serializedHashedPrefabName->GetData() != prefabHashNameAsString)
+		{
+			// Let's check if the prefab got renamed
+			Name::HashType oldHashedPrefabName{};
+			*serializedHashedPrefabName >> oldHashedPrefabName;
+			const WeakAssetHandle<Prefab> prefab = AssetManager::Get().TryGetWeakAsset<Prefab>(oldHashedPrefabName);
+
+			if (prefab == nullptr
+				|| prefab.GetMetaData().GetName() != prefabName)
+			{
+				continue;
+			}
+
+			// The prefab got renamed, carry on
+		}
+
+		if (serializedFactoryId->GetData() == factoryIdAsString
+			// If the prefab got renamed, the factoryId will also have been updated
+			|| (isRootFactory && serializedHashedPrefabName->GetData() == serializedFactoryId->GetData()))
 		{
 			ids.emplace_back(FromBinary<entt::entity>(serializedPrefabOrigin.GetName()));
 		}

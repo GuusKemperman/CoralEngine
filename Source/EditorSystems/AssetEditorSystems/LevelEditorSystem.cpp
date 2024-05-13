@@ -8,6 +8,7 @@ CE::LevelEditorSystem::LevelEditorSystem(Level&& asset) :
 	AssetEditorSystem(std::move(asset)),
 	mWorldHelper(std::make_unique<WorldInspectHelper>(mAsset.CreateWorld(false)))
 {
+	mWorldHelper->SwitchToFlyCam();
 }
 
 CE::LevelEditorSystem::~LevelEditorSystem() = default;

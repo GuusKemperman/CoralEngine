@@ -43,6 +43,13 @@ namespace CE
 			std::string mState{};
 			bool mDoIsNeeded{};
 
+			// If the engine was refreshed,
+			// we should re-serialize this
+			// state in order to take into
+			// account any changes made to
+			// any assets.
+			bool mRequiresReserialization{};
+
 			std::string mNameOfAssetEditor{};
 
 			// Mutable because the result is cached, but it does not influence the state
@@ -177,8 +184,6 @@ namespace CE
 				SaveToMemory,
 				ReloadFromMemory,
 				ResaveToMemory,
-				ReloadTopState,
-				ResaveTopState,
 				Compare,
 				CheckIfSavedToFile,
 				NUM_OF_STAGES,
@@ -189,7 +194,7 @@ namespace CE
 			std::optional<T> mTemporarilyDeserializedAsset{};
 		};
 		DifferenceCheckState mDifferenceCheckState{};
-		Cooldown mUpdateStateCooldown{ .25f };
+		Cooldown mUpdateStateCooldown{ .2f };
 
 		// Used for checking if our asset has unsaved changes. Kept in memory for performance reasons.
 		// May not always be up to date, it's updated when needed.
@@ -380,6 +385,15 @@ namespace CE
 		{
 			mDifferenceCheckState.mAction.mNameOfAssetEditor = GetName();
 			mDifferenceCheckState.mAction.mState = SaveToMemory().ToString();
+
+			if (mMementoStack.PeekTop() != nullptr
+				&& mDifferenceCheckState.mAction.mState == mMementoStack.PeekTop()->mState)
+			{
+				mUpdateStateCooldown.mAmountOfTimePassed = -mUpdateStateCooldown.mCooldown * (static_cast<float>(DifferenceCheckState::Stage::NUM_OF_STAGES) - 1.0f);
+				mDifferenceCheckState.mStage = DifferenceCheckState::Stage::CheckIfSavedToFile;
+				return;
+			}
+
 			break;
 		}
 		case DifferenceCheckState::Stage::ReloadFromMemory:
@@ -389,7 +403,7 @@ namespace CE
 			if (!loadInfo.has_value())
 			{
 				LOG(LogEditor, Error, "Failed to load metadata, metadata was invalid somehow?");
-				mDifferenceCheckState.mStage = DifferenceCheckState::Stage::FirstStage;
+				mDifferenceCheckState.mStage = DifferenceCheckState::Stage::CheckIfSavedToFile;
 				return;
 			}
 
@@ -401,44 +415,9 @@ namespace CE
 			mDifferenceCheckState.mAction.mState = mDifferenceCheckState.mTemporarilyDeserializedAsset->Save().ToString();
 			break;
 		}
-		case DifferenceCheckState::Stage::ReloadTopState:
-		{
-			MementoAction* const top = mMementoStack.PeekTop();
-
-			if (top == nullptr)
-			{
-				mDifferenceCheckState.mStage = DifferenceCheckState::Stage::Compare;
-				return;
-			}
-
-			std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromStream(std::make_unique<view_istream>(top->mState));
-
-			if (!loadInfo.has_value())
-			{
-				LOG(LogEditor, Error, "Failed to load metadata, metadata was invalid somehow?");
-				mDifferenceCheckState.mStage = DifferenceCheckState::Stage::Compare;
-				return;
-			}
-
-			mDifferenceCheckState.mTemporarilyDeserializedAsset.emplace(*loadInfo);
-			break;
-		}
-		case DifferenceCheckState::Stage::ResaveTopState:
-		{
-			MementoAction* const top = mMementoStack.PeekTop();
-
-			if (top == nullptr)
-			{
-				mDifferenceCheckState.mStage = DifferenceCheckState::Stage::Compare;
-				return;
-			}
-
-			top->mState = mDifferenceCheckState.mTemporarilyDeserializedAsset->Save().ToString();
-			break;
-		}
 		case DifferenceCheckState::Stage::Compare:
 		{
-			const MementoAction* const topAction = mMementoStack.PeekTop();
+			MementoAction* const topAction = mMementoStack.PeekTop();
 
 			if (topAction == nullptr)
 			{
@@ -448,8 +427,16 @@ namespace CE
 				mDifferenceCheckState.mAction.mIsSameAsFile = true;
 
 				mMementoStack.Do(std::move(mDifferenceCheckState.mAction));
+				break;
 			}
-			else if (topAction->mState != mDifferenceCheckState.mAction.mState)
+
+			if (topAction->mRequiresReserialization)
+			{
+				topAction->mState = Reserialize(topAction->mState);
+				topAction->mRequiresReserialization = false;
+			}
+
+			if (topAction->mState != mDifferenceCheckState.mAction.mState)
 			{
 				LOG(LogEditor, Verbose, "Change detected for {}", GetName());
 
@@ -521,14 +508,9 @@ namespace CE
 	template <typename T>
 	void AssetEditorSystem<T>::CompleteDifferenceCheckCycle()
 	{
-		for (int i = static_cast<int>(mDifferenceCheckState.mStage); i < static_cast<int>(DifferenceCheckState::Stage::NUM_OF_STAGES); i++)
+		for (int i = 0; i < static_cast<int>(DifferenceCheckState::Stage::NUM_OF_STAGES) * 2; i++)
 		{
 			CheckForDifferences();
-
-			if (mDifferenceCheckState.mStage == DifferenceCheckState::Stage::FirstStage)
-			{
-				break;
-			}
 		}
 	}
 
@@ -541,6 +523,11 @@ namespace CE
 			|| (mUpdateStateCooldown.mAmountOfTimePassed != 0.0f || mDifferenceCheckState.mStage != DifferenceCheckState::Stage::FirstStage))
 		{
 			CompleteDifferenceCheckCycle();
+		}
+
+		for (std::unique_ptr<MementoAction>& action : mMementoStack.GetAllStoredActions())
+		{
+			action->mRequiresReserialization = true;
 		}
 
 		return std::move(mMementoStack);
