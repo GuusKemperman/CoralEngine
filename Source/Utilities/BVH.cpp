@@ -9,10 +9,10 @@
 #include "Utilities/DrawDebugHelpers.h"
 #include "World/Physics.h"
 
-CE::BVH::BVH(Physics& physics) :
-    mPhysics(physics)
+CE::BVH::BVH(Physics& physics, CollisionLayer layer) :
+    mPhysics(&physics),
+	mLayer(layer)
 {
-    Build();
 }
 
 void CE::BVH::Build()
@@ -21,13 +21,42 @@ void CE::BVH::Build()
     mNodes.resize(2);
     mIds.clear();
 
-    const Registry& reg = mPhysics.get().GetWorld().GetRegistry();
+    const Registry& reg = mPhysics->GetWorld().GetRegistry();
 
-    const auto aabbView = reg.View<TransformedAABBColliderComponent>();
-    const auto circlesView = reg.View<TransformedDiskColliderComponent>();
-    const auto polygonView = reg.View<TransformedPolygonColliderComponent>();
-    
-    const uint32 totalNumObjects = static_cast<uint32>(aabbView.size() + circlesView.size() + polygonView.size());
+    const auto aabbView = reg.View<PhysicsBody2DComponent, TransformedAABBColliderComponent>();
+    const auto circlesView = reg.View<PhysicsBody2DComponent, TransformedDiskColliderComponent>();
+    const auto polygonView = reg.View<PhysicsBody2DComponent, TransformedPolygonColliderComponent>();
+
+    for (const entt::entity entity : aabbView)
+    {
+        if (aabbView.get<PhysicsBody2DComponent>(entity).mRules.mLayer == mLayer)
+        {
+            mIds.emplace_back(entity);
+        }
+    }
+
+    const uint32 numOfAABBs = static_cast<uint32>(mIds.size());
+
+    for (const entt::entity entity : circlesView)
+    {
+        if (circlesView.get<PhysicsBody2DComponent>(entity).mRules.mLayer == mLayer)
+        {
+            mIds.emplace_back(entity);
+        }
+    }
+
+    const uint32 numOfCircles = static_cast<uint32>(mIds.size()) - numOfAABBs;
+
+    for (const entt::entity entity : polygonView)
+    {
+        if (polygonView.get<PhysicsBody2DComponent>(entity).mRules.mLayer == mLayer)
+        {
+            mIds.emplace_back(entity);
+        }
+    }
+
+    const uint32 numOfPolygons = static_cast<uint32>(mIds.size()) - numOfAABBs - numOfCircles;
+    const uint32 totalNumObjects = numOfAABBs + numOfCircles + numOfPolygons;
 
     if (totalNumObjects != 0)
     {
@@ -38,8 +67,8 @@ void CE::BVH::Build()
 	Node& root = mNodes[0];
     root.mStartIndex = 0;
 
-    root.mNumOfAABBS = static_cast<uint32>(aabbView.size());
-    root.mNumOfCircles = static_cast<uint32>(circlesView.size());
+    root.mNumOfAABBS = numOfAABBs;
+    root.mNumOfCircles = numOfCircles;
     root.mTotalNumOfObjects = totalNumObjects;
 
     mEmpty = root.mTotalNumOfObjects == 0;
@@ -48,22 +77,6 @@ void CE::BVH::Build()
     {
         mNodes.resize(4);
         return;
-    }
-
-    uint32 idIndex = 0;
-    for (const entt::entity entity : aabbView)
-    {
-        mIds[idIndex++] = entity;
-    }
-
-    for (const entt::entity entity : circlesView)
-    {
-        mIds[idIndex++] = entity;
-    }
-
-    for (const entt::entity entity : polygonView)
-    {
-        mIds[idIndex++] = entity;
     }
 
     UpdateNodeBounds(root);
@@ -112,13 +125,18 @@ void CE::BVH::DebugDraw() const
     }
 }
 
+const CE::Registry& CE::BVH::GetRegistry() const
+{
+    return mPhysics->GetWorld().GetRegistry();
+}
+
 void CE::BVH::UpdateNodeBounds(Node& node)
 {
     node.mBoundingBox.mMin = glm::vec2(INFINITY);
     node.mBoundingBox.mMax = glm::vec2(-INFINITY);
 
     uint32 indexOfId = node.mStartIndex;
-    const Registry& reg = mPhysics.get().GetWorld().GetRegistry();
+    const Registry& reg = mPhysics->GetWorld().GetRegistry();
 
     for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
     {
@@ -169,15 +187,24 @@ void CE::BVH::Subdivide(Node& node)
         children[i]->mNumOfAABBS = children[i]->mNumOfCircles = 0;
     }
 
-    const Registry& reg = mPhysics.get().GetWorld().GetRegistry();
+    const Registry& reg = mPhysics->GetWorld().GetRegistry();
     uint32 indexOfId = node.mStartIndex;
+    bool edgeCaseFlipper{};
+
     for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
         const TransformedAABB& collider = reg.Get<TransformedAABBColliderComponent>(owner);
 
         const glm::vec2 centre = collider.GetCentre();
-        const bool childIndex = centre[splitPoint.mAxis] < splitPoint.mPosition;
+        const float posOnAxis = centre[splitPoint.mAxis];
+        bool childIndex = posOnAxis < splitPoint.mPosition;
+
+        if (posOnAxis == splitPoint.mPosition)
+        {
+            childIndex = edgeCaseFlipper;
+            edgeCaseFlipper = !edgeCaseFlipper;
+        }
 
         childrenIds[childIndex].push_back(owner);
         children[childIndex]->mNumOfAABBS++;
@@ -188,8 +215,15 @@ void CE::BVH::Subdivide(Node& node)
         const entt::entity owner = mIds[indexOfId];
         const TransformedDisk& collider = reg.Get<TransformedDiskColliderComponent>(owner);
 
-        const glm::vec2 centre = collider.mCentre;
-        const bool childIndex = centre[splitPoint.mAxis] < splitPoint.mPosition;
+        const glm::vec2 centre = collider.GetCentre();
+        const float posOnAxis = centre[splitPoint.mAxis];
+        bool childIndex = posOnAxis < splitPoint.mPosition;
+
+        if (posOnAxis == splitPoint.mPosition)
+        {
+            childIndex = edgeCaseFlipper;
+            edgeCaseFlipper = !edgeCaseFlipper;
+        }
 
         childrenIds[childIndex].push_back(owner);
         children[childIndex]->mNumOfCircles++;
@@ -202,7 +236,14 @@ void CE::BVH::Subdivide(Node& node)
         const TransformedPolygon& polygon = reg.Get<TransformedPolygonColliderComponent>(owner);
 
         const glm::vec2 centre = polygon.mBoundingBox.GetCentre();
-        const bool childIndex = centre[splitPoint.mAxis] < splitPoint.mPosition;
+        const float posOnAxis = centre[splitPoint.mAxis];
+        bool childIndex = posOnAxis < splitPoint.mPosition;
+
+        if (posOnAxis == splitPoint.mPosition)
+        {
+            childIndex = edgeCaseFlipper;
+            edgeCaseFlipper = !edgeCaseFlipper;
+        }
 
         childrenIds[childIndex].push_back(owner);
     }
@@ -246,7 +287,7 @@ void CE::BVH::Subdivide(Node& node)
 
 void CE::BVH::DebugDraw(const Node& node) const
 {
-    DrawDebugRectangle(mPhysics.get().GetWorld(), DebugCategory::AccelStructs, To3DRightForward(node.mBoundingBox.GetCentre()), node.mBoundingBox.GetSize() * .5f, glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
+    DrawDebugRectangle(mPhysics->GetWorld(), DebugCategory::AccelStructs, To3DRightForward(node.mBoundingBox.GetCentre()), node.mBoundingBox.GetSize() * .5f, glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
 
     if (node.mTotalNumOfObjects == 0)
     {
@@ -265,7 +306,7 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
     uint32 amountOfObjects[2]{};
 
 	uint32 indexOfId = node.mStartIndex;
-    const Registry& reg = mPhysics.get().GetWorld().GetRegistry();
+    const Registry& reg = mPhysics->GetWorld().GetRegistry();
 
 	for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
     {
@@ -297,7 +338,7 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
         const entt::entity owner = mIds[indexOfId];
         const TransformedPolygon& polygon = reg.Get<TransformedPolygonColliderComponent>(owner);
 
-        const glm::vec2 centre = polygon.GetCentre();
+        const glm::vec2 centre = polygon.GetBoundingBox().GetCentre();
         const bool childIndex = centre[splitPoint.mAxis] < splitPoint.mPosition;
 
         amountOfObjects[childIndex]++;
@@ -312,7 +353,7 @@ CE::BVH::SplitPoint CE::BVH::DetermineSplitPos(const Node& node)
 {
     TransformedAABB centroidsBoundingBox = { glm::vec2{INFINITY}, glm::vec2{-INFINITY} };
 
-    const Registry& reg = mPhysics.get().GetWorld().GetRegistry();
+    const Registry& reg = mPhysics->GetWorld().GetRegistry();
     uint32 indexOfId = node.mStartIndex;
     for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
     {

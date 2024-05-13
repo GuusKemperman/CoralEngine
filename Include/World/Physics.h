@@ -1,4 +1,6 @@
 #pragma once
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Utilities/BVH.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE
@@ -9,7 +11,6 @@ namespace CE
 	struct TransformedAABB;
 	struct TransformedPolygon;
 	struct CollisionRules;
-	class BVH;
 
 	/**
 	 * \brief Stores the physics-related data to allow for faster queries.
@@ -30,8 +31,10 @@ namespace CE
 		std::vector<entt::entity> FindAllWithinShape(const TransformedAABB& shape, const CollisionRules& filter) const;
 		std::vector<entt::entity> FindAllWithinShape(const TransformedPolygon& shape, const CollisionRules& filter) const;
 
-		BVH& GetBVH() { return *mBVH; }
-		const BVH& GetBVH() const { return *mBVH; }
+		using BVHS = std::array<BVH, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>;
+
+		BVHS& GetBVHs() { return mBVHs; }
+		const BVHS& GetBVHs() const { return mBVHs; }
 
 		World& GetWorld() { return mWorld; }
 		const World& GetWorld() const { return mWorld; }
@@ -48,6 +51,6 @@ namespace CE
 		friend class World;
 		std::reference_wrapper<World> mWorld;
 
-		std::unique_ptr<BVH> mBVH{};
+		BVHS mBVHs;
 	};
 }

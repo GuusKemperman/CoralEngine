@@ -13,9 +13,12 @@
 #include "Utilities/BVH.h"
 
 CE::Physics::Physics(World& world) :
-	mWorld(world),
-	mBVH(std::make_unique<BVH>(*this))
+	mWorld(world)
 {
+	for (size_t i = 0; i < mBVHs.size(); i++)
+	{
+		mBVHs[i] = BVH{ *this, static_cast<CollisionLayer>(i) };
+	}
 }
 
 CE::Physics::~Physics() = default;
