@@ -6,34 +6,33 @@ namespace CE
 {
 	class Animation;
 	class World;
+	class TransformComponent;
 }
 
 namespace Game
 {
-	class ChargeDashState
+	class DashRechargeState
 	{
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
 		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
-		void OnAIStateEnterEvent(CE::World& world, entt::entity owner);
-
-		bool IsDashCharged() const;
+		static void OnAIStateEnterEvent(CE::World& world, entt::entity owner);
 
 		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
 			entt::entity owner) const;
 
-		float mCurrentChargeTimer = 0.0f;
+		float mCurrentRechargeTimer = 0.0f;
 
 	private:
 		entt::entity mTargetEntity{};
 		float mRadius{};
 
-		float mMaxChargeTime = 10.0f;
+		float mMaxRechargeTime = 5.0f;
 
-		CE::AssetHandle<CE::Animation> mChargingAnimation{};
+		CE::AssetHandle<CE::Animation> mDashingAnimation{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
-		REFLECT_AT_START_UP(ChargeDashState);
+		REFLECT_AT_START_UP(DashRechargeState);
 	};
 }

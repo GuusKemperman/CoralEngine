@@ -349,6 +349,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\UtilityAi\States\DashRechargeState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\DashingState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChargeDashState.cpp" />
     <ClCompile Include="Source\Components\SpawnerComponent.cpp" />
     <ClCompile Include="Source\Systems\SpawnerSystem.cpp" />
@@ -381,6 +383,8 @@
     <ClCompile Include="Source\Components\WavesComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\UtililtyAi\States\DashRechargeState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\DashingState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\ChargeDashState.h" />
     <ClInclude Include="Include\Components\SpawnerComponent.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\AttackingState.h" />
