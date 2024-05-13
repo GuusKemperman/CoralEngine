@@ -499,8 +499,6 @@ CE::Level::DiffedPrefab CE::Level::DiffPrefab(const BinaryGSONObject& serialized
 	std::vector<uint32> indicesOfSerializedFactories(serializedFactories.size());
 	std::iota(indicesOfSerializedFactories.begin(), indicesOfSerializedFactories.end(), 0);
 
-	const std::string serializedHashedPrefabName = ToBinary(Name::HashString(prefabName));
-
 	for (const PrefabEntityFactory& factory : currentFactories)
 	{
 		const std::string serializedFactoryId = ToBinary(factory.GetId());
