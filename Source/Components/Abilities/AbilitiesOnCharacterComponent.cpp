@@ -41,7 +41,16 @@ void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity e
 		}
 		const MetaType* scriptType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName());
 
-		if (scriptType != nullptr)
+		if (scriptType != nullptr && !world.GetRegistry().HasComponent(scriptType->GetTypeId(), entity))
+		{
+			world.GetRegistry().AddComponent(*scriptType, entity);
+		}
+	}
+	for (auto& weapon : mWeaponsToInput)
+	{
+		const MetaType* scriptType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+
+		if (scriptType != nullptr && !world.GetRegistry().HasComponent(scriptType->GetTypeId(), entity))
 		{
 			world.GetRegistry().AddComponent(*scriptType, entity);
 		}
