@@ -25,7 +25,7 @@ namespace CE
 
 		const AssetHandle<Texture>& GetIconTexture() const { return mIconTexture; }
 
-	private:
+	protected:
 		friend AbilitySystem;
 		friend AbilityInstance;
 		friend AbilitiesOnCharacterComponent;

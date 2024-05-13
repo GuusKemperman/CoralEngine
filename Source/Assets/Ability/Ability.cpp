@@ -81,7 +81,7 @@ CE::MetaType CE::Ability::Reflect()
 	type.AddField(&Ability::mDescription, "mDescription");
 	type.AddField(&Ability::mGlobalCooldown, "mGlobalCooldown");
 	type.AddField(&Ability::mRequirementType, "mRequirementType");
-	type.AddField(&Ability::mRequirementToUse, "mRequirementToUse");
+	type.AddField(&Ability::mRequirementToUse, "mRequirementValue");
 	type.AddField(&Ability::mCharges, "mCharges");
 
 	type.AddFunc([](const AssetHandle<Ability>& script) -> AssetHandle<Texture>
