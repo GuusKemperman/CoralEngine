@@ -104,6 +104,7 @@
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\GamePC.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\GameDebugPC.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">
@@ -112,8 +113,10 @@
     <Import Project="..\..\Properties\Game***REMOVED***.props" />
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\Game***REMOVED***Debug.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">
+    <Import Project="..\..\Properties\Game***REMOVED***Release.props" />
     <Import Project="..\..\Properties\Game***REMOVED***.props" />
     <Import Project="..\..\Properties\EngineAndGame***REMOVED***.props" />
     <Import Project="..\..\Properties\EngineAndGameRelease.props" />
@@ -129,6 +132,7 @@
     <Import Project="..\..\Properties\EngineAndGameRelease.props" />
     <Import Project="..\..\Properties\GamePC.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\GameReleasePC.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -137,6 +141,7 @@
     <Import Project="..\..\Properties\EngineAndGameRelease.props" />
     <Import Project="..\..\Properties\GamePC.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\GameReleasePC.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">
     <Import Project="..\..\Properties\GameEditorDebug.props" />
@@ -147,6 +152,7 @@
     <Import Project="..\..\Properties\EngineAndGamePC.props" />
     <Import Project="..\..\Properties\GamePC.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\GameDebugPC.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
