@@ -36,10 +36,29 @@ namespace CE
 		REFLECT_AT_START_UP(AbilityInstance);
 	};
 
+	struct WeaponInstance : AbilityInstance
+	{
+		float mTimeBetweenShotsCounter{};
+		bool mAmmoConsumption = true;
+
+		bool operator==(const WeaponInstance& other) const;
+		bool operator!=(const WeaponInstance& other) const;
+
+#ifdef EDITOR
+		void DisplayWidget();
+#endif // EDITOR
+
+	private:
+		friend ReflectAccess;
+		static MetaType Reflect();
+		REFLECT_AT_START_UP(WeaponInstance);
+	};
+
 	class AbilitiesOnCharacterComponent
 	{
 	public:
 		std::vector<AbilityInstance> mAbilitiesToInput{};
+		std::vector<WeaponInstance> mWeaponsToInput{};
 
 	private:
 		friend ReflectAccess;
@@ -52,18 +71,19 @@ namespace CE
 	};
 
 	template<class Archive>
-	void save(Archive& ar, const AbilityInstance& value)
+	void serialize(Archive& ar, AbilityInstance& value)
 	{
 		ar(value.mAbilityAsset, value.mRequirementCounter, value.mChargesCounter, value.mKeyboardKeys, value.mGamepadButtons);
 	}
 
 	template<class Archive>
-	void load(Archive& ar, AbilityInstance& value)
+	void serialize(Archive& ar, WeaponInstance& value)
 	{
-		ar(value.mAbilityAsset, value.mRequirementCounter, value.mChargesCounter, value.mKeyboardKeys, value.mGamepadButtons);
+		ar(value.mAbilityAsset, value.mRequirementCounter, value.mChargesCounter, value.mKeyboardKeys, value.mGamepadButtons, value.mTimeBetweenShotsCounter, value.mAmmoConsumption);
 	}
 }
 
 #ifdef EDITOR
 IMGUI_AUTO_DEFINE_INLINE(template<>, CE::AbilityInstance, var.DisplayWidget(); (void)name;)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::WeaponInstance, var.DisplayWidget(); (void)name;)
 #endif // EDITOR

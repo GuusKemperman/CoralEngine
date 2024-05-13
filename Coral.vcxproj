@@ -523,6 +523,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Assets\Core\AssetHandle.cpp" />
+    <ClCompile Include="Source\Components\Abilities\AbilityInstance.cpp" />
     <ClCompile Include="Source\Components\FogComponent.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetInternal.cpp" />
     <ClCompile Include="Source\Components\AnimationRootComponent.cpp" />
