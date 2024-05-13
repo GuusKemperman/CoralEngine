@@ -105,10 +105,9 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 {
     Assimp::Importer importer{};
     const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_LimitBoneWeights | aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
-
 	if (***REMOVED***ne == nullptr)
 	{
-		LOG(LogAssets, Error, "Loading of file {} failed: assimp returned null ***REMOVED***ne", file.string());
+		LOG(LogAssets, Error, "Loading of file {} failed: assimp returned null ***REMOVED***ne - {}", file.string(), importer.GetErrorString());
 		return Importer::ImportResult{};
 	}
 
