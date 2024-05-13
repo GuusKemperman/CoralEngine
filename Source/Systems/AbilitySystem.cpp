@@ -276,7 +276,9 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
         {
             if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
             {
-                metaFunc->InvokeUncheckedUnpacked(world, castBy);
+                entt::sparse_set* storage = world.GetRegistry().Storage(metaType->GetTypeId());
+                MetaAny component{ *metaType, storage->value(castBy), false };
+                metaFunc->InvokeUncheckedUnpacked(component, world, castBy);
             }
         }
         else
