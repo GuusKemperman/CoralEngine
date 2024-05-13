@@ -5,10 +5,11 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
-#include "Utilities/Imgui/ImguiInspect.h"
 #include "Assets/Ability/Ability.h"
+#include "Assets/Ability/Weapon.h"
 #include "Systems/AbilitySystem.h"
 #include "World/World.h"
+#include "Utilities/Reflect/ReflectAssetType.h"
 
 void CE::AbilityInstance::MakeAbilityReadyToBeActivated()
 {
@@ -50,67 +51,68 @@ CE::MetaType CE::AbilityInstance::Reflect()
 
 		}, "ActivateAbility", MetaFunc::ExplicitParams<AbilityInstance&, entt::entity, CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-		metaType.AddFunc([](const AbilityInstance& ability, const CharacterComponent& characterData)
-			{
-				return AbilitySystem::CanAbilityBeActivated(characterData, ability);
+	metaType.AddFunc([](const AbilityInstance& ability, const CharacterComponent& characterData)
+		{
+			return AbilitySystem::CanAbilityBeActivated(characterData, ability);
 
-			}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<const AbilityInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<const AbilityInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-			metaType.AddFunc([](AbilityInstance& ability)
-				{
-					ability.MakeAbilityReadyToBeActivated();
-				}, "MakeAbilityReadyToBeActivated", MetaFunc::ExplicitParams<AbilityInstance&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+	metaType.AddFunc([](AbilityInstance& ability)
+		{
+			ability.MakeAbilityReadyToBeActivated();
+		}, "MakeAbilityReadyToBeActivated", MetaFunc::ExplicitParams<AbilityInstance&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-				ReflectFieldType<AbilityInstance>(metaType);
-				return metaType;
+	ReflectFieldType<AbilityInstance>(metaType);
+	return metaType;
 }
 
 bool CE::WeaponInstance::operator==(const WeaponInstance& other) const
 {
-	return AbilityInstance::operator==(other);
+	return mWeaponAsset == other.mWeaponAsset &&
+		mKeyboardKeys == other.mKeyboardKeys &&
+		mGamepadButtons == other.mGamepadButtons;
 }
 
 bool CE::WeaponInstance::operator!=(const WeaponInstance& other) const
 {
-	return AbilityInstance::operator!=(other);
+	return mWeaponAsset != other.mWeaponAsset ||
+		mKeyboardKeys != other.mKeyboardKeys ||
+		mGamepadButtons != other.mGamepadButtons;
 }
 
 CE::MetaType CE::WeaponInstance::Reflect()
 {
-
-	MetaType metaType = MetaType{ MetaType::T<WeaponInstance>{}, "WeaponInstance", MetaType::Base<AbilityInstance>{} };
+	MetaType metaType = MetaType{ MetaType::T<WeaponInstance>{}, "WeaponInstance"};
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-
-	//metaType.AddField(MetaManager::Get().GetType<AssetHandle<Ability>>(), static_cast<uint32>(offsetof(WeaponInstance, mAbilityAsset)), "mWeaponAsset").GetProperties().Add(Props::sIsScriptableTag);
-	//metaType.AddField(MetaManager::Get().GetType<float>(), static_cast<uint32>(offsetof(WeaponInstance, mRequirementCounter)), "mCooldownCounter").GetProperties().Add(Props::sIsScriptableTag);
-	//metaType.AddField(MetaManager::Get().GetType<int>(), static_cast<uint32>(offsetof(WeaponInstance, mChargesCounter)), "mChargesCounter").GetProperties().Add(Props::sIsScriptableTag);
-
-	//metaType.AddField(MetaManager::Get().GetType<Input::KeyboardKey>(), static_cast<uint32>(offsetof(WeaponInstance, mKeyboardKeys)), "mKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
-	//metaType.AddField(MetaManager::Get().GetType<Input::GamepadButton>(), static_cast<uint32>(offsetof(WeaponInstance, mGamepadButtons)), "mGamepadButtons").GetProperties().Add(Props::sIsScriptableTag);
 
 	metaType.AddField(&WeaponInstance::mTimeBetweenShotsCounter, "mTimeBetweenShotsCounter").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mAmmoConsumption, "mAmmoConsumption").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mWeaponAsset, "mWeaponAsset").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mReloadCounter, "mReloadCounter").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mAmmoCounter, "mAmmoCounter").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mKeyboardKeys, "mKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mGamepadButtons, "mGamepadButtons").GetProperties().Add(Props::sIsScriptableTag);
 
-	metaType.AddFunc([](WeaponInstance& ability, entt::entity castBy, CharacterComponent& characterData)
-		{
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
+	//metaType.AddFunc([](WeaponInstance& ability, entt::entity castBy, CharacterComponent& characterData)
+	//	{
+	//		World* world = World::TryGetWorldAtTopOfStack();
+	//		ASSERT(world != nullptr);
 
-			return AbilitySystem::ActivateAbility(*world, castBy, characterData, ability);
+	//		return AbilitySystem::ActivateAbility(*world, castBy, characterData, ability);
 
-		}, "ActivateWeapon", MetaFunc::ExplicitParams<WeaponInstance&, entt::entity, CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+	//	}, "ActivateWeapon", MetaFunc::ExplicitParams<WeaponInstance&, entt::entity, CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-		metaType.AddFunc([](const WeaponInstance& ability, const CharacterComponent& characterData)
-			{
-				return AbilitySystem::CanAbilityBeActivated(characterData, ability);
+	//metaType.AddFunc([](const WeaponInstance& ability, const CharacterComponent& characterData)
+	//	{
+	//		return AbilitySystem::CanAbilityBeActivated(characterData, ability);
 
-			}, "CanWeaponBeActivated", MetaFunc::ExplicitParams<const WeaponInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+	//	}, "CanWeaponBeActivated", MetaFunc::ExplicitParams<const WeaponInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-			metaType.AddFunc([](WeaponInstance& ability)
-				{
-					ability.MakeAbilityReadyToBeActivated();
-				}, "MakeWeaponReadyToBeActivated", MetaFunc::ExplicitParams<WeaponInstance&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+	//metaType.AddFunc([](WeaponInstance& ability)
+	//	{
+	//		ability.MakeAbilityReadyToBeActivated();
+	//	}, "MakeWeaponReadyToBeActivated", MetaFunc::ExplicitParams<WeaponInstance&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-				ReflectFieldType<WeaponInstance>(metaType);
-				return metaType;
+	ReflectFieldType<WeaponInstance>(metaType);
+	return metaType;
 }

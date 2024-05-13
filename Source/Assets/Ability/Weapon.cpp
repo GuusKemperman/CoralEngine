@@ -1,11 +1,14 @@
 #include "Precomp.h"
 #include "Assets/Ability/Weapon.h"
 
+#include "Meta/MetaType.h"
+#include "Meta/MetaProps.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 #include "Assets/Texture.h"
 #include "Assets/Script.h"
+#include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 CE::Weapon::Weapon(std::string_view name) :
 	Ability(name, MakeTypeId<Weapon>())
@@ -92,14 +95,6 @@ void CE::Weapon::OnSave(AssetSaveInfo& saveInfo) const
 CE::MetaType CE::Weapon::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Weapon>{}, "Weapon", MetaType::Base<Ability>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
-
-	//type.AddField(&Ability::mOnAbilityActivateScript, "mOnAbilityActivateScript");
-	//type.AddField(&Ability::mIconTexture, "mIconTexture");
-	//type.AddField(&Ability::mDescription, "mDescription");
-	//type.AddField(&Ability::mGlobalCooldown, "mGlobalCooldown");
-	//type.AddField(&Ability::mRequirementType, "mRequirementType");
-	//type.AddField(&Ability::mRequirementToUse, "mRequirementToUse");
-	//type.AddField(&Ability::mCharges, "mCharges");
 
 	type.AddField(&Weapon::mTimeBetweenShots, "mTimeBetweenShots");
 	type.AddField(&Weapon::mFireSpeed, "mFireSpeed");

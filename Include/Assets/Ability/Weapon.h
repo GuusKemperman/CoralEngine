@@ -14,6 +14,7 @@ namespace CE
 		Weapon(AssetLoadInfo& loadInfo);
 
 	private:
+		friend AbilitySystem;
 		void OnSave(AssetSaveInfo& saveInfo) const override;
 
 		// weapon

@@ -8,7 +8,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Assets/Ability/Ability.h"
-#include "Systems/AbilitySystem.h"
+#include "Assets/Ability/Weapon.h"
 #include "World/World.h"
 
 CE::MetaType CE::AbilitiesOnCharacterComponent::Reflect()
@@ -79,9 +79,9 @@ void CE::AbilityInstance::DisplayWidget()
 
 void CE::WeaponInstance::DisplayWidget()
 {
-	ShowInspectUI("mWeaponAsset", mAbilityAsset);
-	ShowInspectUIReadOnly("mRequirementCounter", mRequirementCounter);
-	ShowInspectUIReadOnly("mChargesCounter", mChargesCounter);
+	ShowInspectUI("mWeaponAsset", mWeaponAsset);
+	ShowInspectUIReadOnly("mReloadCounter", mReloadCounter);
+	ShowInspectUIReadOnly("mAmmoCounter", mAmmoCounter);
 	ShowInspectUIReadOnly("mTimeBetweenShotsCounter", mTimeBetweenShotsCounter);
 	ShowInspectUI("mAmmoConsumption", mAmmoConsumption);
 	if (isPlayer)

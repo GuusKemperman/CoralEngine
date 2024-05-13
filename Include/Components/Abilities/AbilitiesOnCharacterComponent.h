@@ -11,6 +11,7 @@ namespace CE
 {
 	class World;
 	class Ability;
+	class Weapon;
 	
 	struct AbilityInstance
 	{
@@ -36,10 +37,18 @@ namespace CE
 		REFLECT_AT_START_UP(AbilityInstance);
 	};
 
-	struct WeaponInstance : AbilityInstance
+	// Would be nice to inherit from Ability instance,
+	// but WeaponInstance needs to hold a Weapon asset and not an Ability asset.
+	struct WeaponInstance
 	{
+		AssetHandle<Weapon> mWeaponAsset{};
+		float mReloadCounter{};
+		int mAmmoCounter{};
 		float mTimeBetweenShotsCounter{};
 		bool mAmmoConsumption = true;
+
+		std::vector<Input::KeyboardKey> mKeyboardKeys{};
+		std::vector<Input::GamepadButton> mGamepadButtons{};
 
 		bool operator==(const WeaponInstance& other) const;
 		bool operator!=(const WeaponInstance& other) const;
@@ -79,7 +88,7 @@ namespace CE
 	template<class Archive>
 	void serialize(Archive& ar, WeaponInstance& value)
 	{
-		ar(value.mAbilityAsset, value.mRequirementCounter, value.mChargesCounter, value.mKeyboardKeys, value.mGamepadButtons, value.mTimeBetweenShotsCounter, value.mAmmoConsumption);
+		ar(value.mWeaponAsset, value.mReloadCounter, value.mAmmoCounter, value.mTimeBetweenShotsCounter, value.mAmmoConsumption, value.mKeyboardKeys, value.mGamepadButtons);
 	}
 }
 
