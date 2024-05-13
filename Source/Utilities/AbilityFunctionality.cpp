@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Utilities/AbilityFunctionality.h"
 
+#include "Assets/Ability/Weapon.h"
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/ActiveAbilityComponent.h"
 #include "Components/Abilities/AbilityLifetimeComponent.h"
@@ -69,7 +70,27 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "SpawnAbilityPrefab", MetaFunc::ExplicitParams<
 		const AssetHandle<Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-					return metaType;
+	metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy, const AssetHandle<Weapon>& weapon) -> entt::entity
+		{
+			if (prefab == nullptr)
+			{
+				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
+				return {};
+			}
+			if (weapon == nullptr)
+			{
+				LOG(LogWorld, Warning, "Attempted to spawn NULL weapon.");
+				return {};
+			}
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			return SpawnWeaponPrefab(*world, *prefab, castBy, weapon);
+
+		}, "SpawnWeaponPrefab", MetaFunc::ExplicitParams<
+		const AssetHandle<Prefab>&, entt::entity, const AssetHandle<Weapon>&>{}, "Prefab", "Cast By", "Weapon").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	return metaType;
 }
 
 std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect)
@@ -215,6 +236,33 @@ entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Pr
 		//prefabTransform->SetLocalPosition(projectileSpawnPos);
 		// I will leave commented code here for future use
 	}
+
+	return prefabEntity;
+}
+
+entt::entity CE::AbilityFunctionality::SpawnWeaponPrefab(World& world, const Prefab& prefab, entt::entity castBy, const AssetHandle<Weapon>& weapon)
+{
+	entt::entity prefabEntity = SpawnAbilityPrefab(world, prefab, castBy);
+	if (prefabEntity == entt::null)
+	{
+		return {};
+	}
+	auto& reg = world.GetRegistry();
+
+	auto& projectileComponent = reg.Get<ProjectileComponent>(prefabEntity);
+	projectileComponent.mSpeed = weapon.Get()->mProjectileSpeed;
+	projectileComponent.mRange = weapon.Get()->mProjectileRange;
+
+	auto& physicsBodyComponent = reg.Get<PhysicsBody2DComponent>(prefabEntity);
+
+	// Calculate the 2D orientation of the character.
+	const auto characterTransform = reg.TryGet<TransformComponent>(castBy);
+	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+	// Set the velocity.
+	physicsBodyComponent.mLinearVelocity = characterDir * projectileComponent.mSpeed;
+
+	auto& transformComponent = reg.Get<TransformComponent>(prefabEntity);
+	transformComponent.SetLocalScale(glm::vec3(weapon.Get()->mProjectileSize));
 
 	return prefabEntity;
 }
