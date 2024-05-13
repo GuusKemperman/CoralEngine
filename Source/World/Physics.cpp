@@ -10,11 +10,15 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
+#include "Utilities/BVH.h"
 
 CE::Physics::Physics(World& world) :
-	mWorld(world)
+	mWorld(world),
+	mBVH(std::make_unique<BVH>(*this))
 {
 }
+
+CE::Physics::~Physics() = default;
 
 template <typename T>
 std::vector<entt::entity> CE::Physics::FindAllWithinShapeImpl(const T& shape, const CollisionRules& filter) const

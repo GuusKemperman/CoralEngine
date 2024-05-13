@@ -9,9 +9,11 @@
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "Rendering/DebugRenderer.h"
+#include "Utilities/BVH.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Utilities/DrawDebugHelpers.h"
+#include "World/Physics.h"
 
 CE::PhysicsSystem::PhysicsSystem() :
 	mOnCollisionEntryEvents(GetAllBoundEvents(sCollisionEntryEvent)),
@@ -32,6 +34,8 @@ void CE::PhysicsSystem::Update(World& world, float dt)
 	UpdateTransformedColliders<AABBColliderComponent, TransformedAABBColliderComponent>(world);
 	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(world);
 
+	world.GetPhysics().GetBVH().Build();
+
 	if (world.HasBegunPlay()
 		&& !world.IsPaused())
 	{
@@ -43,6 +47,7 @@ void CE::PhysicsSystem::Update(World& world, float dt)
 void CE::PhysicsSystem::Render(const World& world)
 {
 	DebugDrawing(world);
+	world.GetPhysics().GetBVH().DebugDraw();
 }
 
 void CE::PhysicsSystem::ApplyVelocities(World& world, float dt)

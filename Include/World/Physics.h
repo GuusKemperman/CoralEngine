@@ -9,7 +9,8 @@ namespace CE
 	struct TransformedAABB;
 	struct TransformedPolygon;
 	struct CollisionRules;
-	
+	class BVH;
+
 	/**
 	 * \brief Stores the physics-related data to allow for faster queries.
 	 */
@@ -17,6 +18,7 @@ namespace CE
 	{
 	public:
 		Physics(World& world);
+		~Physics();
 
 		Physics(Physics&&) = delete;
 		Physics(const Physics&) = delete;
@@ -27,6 +29,12 @@ namespace CE
 		std::vector<entt::entity> FindAllWithinShape(const TransformedDisk& shape, const CollisionRules& filter) const;
 		std::vector<entt::entity> FindAllWithinShape(const TransformedAABB& shape, const CollisionRules& filter) const;
 		std::vector<entt::entity> FindAllWithinShape(const TransformedPolygon& shape, const CollisionRules& filter) const;
+
+		BVH& GetBVH() { return *mBVH; }
+		const BVH& GetBVH() const { return *mBVH; }
+
+		World& GetWorld() { return mWorld; }
+		const World& GetWorld() const { return mWorld; }
 
 	private:
 		template<typename T>
@@ -39,5 +47,7 @@ namespace CE
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
 		friend class World;
 		std::reference_wrapper<World> mWorld;
+
+		std::unique_ptr<BVH> mBVH{};
 	};
 }
