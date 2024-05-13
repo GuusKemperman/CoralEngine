@@ -1,5 +1,6 @@
 #ifdef EDITOR
 #pragma once
+#include "GSON/GSONBinary.h"
 
 namespace CE
 {
@@ -9,7 +10,6 @@ namespace CE
 	class World;
 	class CameraComponent;
 	class FrameBuffer;
-	class BinaryGSONObject;
 
 	/*
 	A little helper class that manages the BeginPlay / EndPlay logic for you, and nicely
@@ -55,15 +55,26 @@ namespace CE
 		void SaveState(BinaryGSONObject& state);
 		void LoadState(const BinaryGSONObject& state);
 
+		void SwitchToFlyCam();
+		void SwitchToPlayCam();
+
 		// Can be passed to WorldViewport::Display/WorldHierarchy::Display/WorldDetails::Display, etc.
 		std::vector<entt::entity> mSelectedEntities{};
 
 		std::unique_ptr<FrameBuffer> mViewportFrameBuffer{};
 
 	private:
+		void SaveFlyCam();
+
+		void SpawnFlyCam();
+		void DestroyFlyCam();
+
 		// Never nullptr
 		std::unique_ptr<World> mWorldBeforeBeginPlay{};
 		std::unique_ptr<World> mWorldAfterBeginPlay{};
+
+		glm::mat4 mFlyCamWorldMatrix{};
+		std::optional<entt::entity> mSelectedCameraBeforeWeSwitchedToFlyCam{};
 
 		float mHierarchyHeight = .5f;
 		float mDetailsHeight = .5f;
@@ -97,10 +108,12 @@ namespace CE
 			std::vector<entt::entity>* selectedEntities);
 
 	private:
+		static entt::entity GetEntityThatMouseIsHoveringOver(const World& world);
+
 		static void ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities);
 		static void SetGizmoRect(glm::vec2 windowPos, glm::vec2 windowSize);
 
-		static void GizmoManipulateSelectedTransforms(World& world,
+		static bool GizmoManipulateSelectedTransforms(World& world,
 			const std::vector<entt::entity>& selectedEntities,
 			const CameraComponent& camera);
 	};

@@ -1717,6 +1717,7 @@
     <ClInclude Include="Include\Components\Physics2D\PhysicsBody2DComponent.h" />
     <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
     <ClInclude Include="Include\Components\PrefabOriginComponent.h" />
+    <ClInclude Include="Include\Utilities\Geometry3d.h" />
     <ClInclude Include="Include\Utilities\ManyStrings.h" />
     <ClInclude Include="Include\Utilities\CommonMetaProperties.h" />
     <ClInclude Include="Include\Core\VirtualMachine.h" />
@@ -1928,7 +1929,6 @@
     <ClInclude Include="include\Systems\Particles\ParticleColorSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleDebugVisualizationSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleLifeTimeSystem.h" />
-    <ClInclude Include="include\Systems\Particles\ParticleMeshRenderingSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticlePhysicsSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleScaleOverTimeSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleSpawnPrefabOnDeathSystem.h" />

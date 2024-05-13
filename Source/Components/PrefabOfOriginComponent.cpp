@@ -32,7 +32,24 @@ const CE::Prefab* CE::PrefabOriginComponent::TryGetPrefab() const
 const CE::PrefabEntityFactory* CE::PrefabOriginComponent::TryGetFactory() const
 {
 	const Prefab* prefab = TryGetPrefab();
-	return prefab == nullptr ? nullptr : prefab->TryFindFactory(mFactoryId);
+
+	if (prefab == nullptr
+		|| prefab->GetFactories().empty())
+	{
+		return nullptr;
+	}
+
+	// This is the root factory. The id
+	// of the root factory is based on the
+	// prefab name. This branch makes sure
+	// references are not broken when the
+	// prefab is renamed.
+	if (mFactoryId == mHashedPrefabName)
+	{
+		return &prefab->GetFactories().front();
+	}
+
+	return prefab->TryFindFactory(mFactoryId);
 }
 
 CE::MetaType CE::PrefabOriginComponent::Reflect()

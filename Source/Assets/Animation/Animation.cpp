@@ -51,17 +51,28 @@ CE::Animation::Animation(const std::string_view name)
 {
 }
 
-void LoadHierarchyFromGSON(const CE::BinaryGSONObject& obj, CE::AnimNode& dest)
+static void LoadHierarchyFromGSON(const CE::Animation& animation, const CE::BinaryGSONObject& obj, CE::AnimNode& dest)
 {
 	obj.GetGSONMember("Transform") >> dest.mTransform;
 	obj.GetGSONMember("Name") >> dest.mName;
-	
+
+	auto iter = std::find_if(animation.mBones.begin(), animation.mBones.end(),
+		[&dest](const CE::Bone& bone)
+		{
+			return bone.mName == dest.mName;
+		}
+	);
+	if (iter != animation.mBones.end())
+	{
+		dest.mBone = &*iter;
+	}
+
 	const std::vector<CE::BinaryGSONObject>& children = obj.GetChildren();
 
 	for (CE::BinaryGSONObject child : children)
 	{
 		CE::AnimNode newNode;
-		LoadHierarchyFromGSON(child, newNode);
+		LoadHierarchyFromGSON(animation, child, newNode);
 		dest.mChildren.push_back(newNode);
 	}
 }
@@ -109,7 +120,7 @@ CE::Animation::Animation(AssetLoadInfo& loadInfo) :
 
 	auto& bones = serializedBones->GetChildren();
 
-	mBones = std::vector<Bone>();
+	mBones.reserve(bones.size());
 
 	for (BinaryGSONObject bone : bones)
 	{
@@ -121,13 +132,13 @@ CE::Animation::Animation(AssetLoadInfo& loadInfo) :
 		bone.GetGSONMember("KeyRotations") >> data.mRotations;
 		bone.GetGSONMember("KeyScalings") >> data.mScales;
 
-		mBones.push_back(Bone(name, data));
+		mBones.emplace_back(name, data);
 	}
 
-	LoadHierarchyFromGSON(serializedHierarchy->GetChildren().at(0), mRootNode);
+	LoadHierarchyFromGSON(*this, serializedHierarchy->GetChildren().at(0), mRootNode);
 }
 
-void SaveHierarchyToGSON(const CE::AnimNode& node, CE::BinaryGSONObject& obj)
+static void SaveHierarchyToGSON(const CE::AnimNode& node, CE::BinaryGSONObject& obj)
 {
 	auto& currentNode = obj.AddGSONObject(node.mName);
 
@@ -177,22 +188,4 @@ CE::MetaType CE::Animation::Reflect()
 
 	ReflectAssetType<Animation>(type);
 	return type;
-}
-
-const CE::Bone* CE::Animation::FindBone(const std::string_view name) const
-{
-	auto iter = std::find_if(mBones.begin(), mBones.end(),
-		[&](const CE::Bone& bone)
-		{
-			return bone.mName == name; 
-		}
-	);
-	if (iter == mBones.end())
-	{
-		return nullptr;
-	}
-	else
-	{
-		return &(*iter);
-	}
 }

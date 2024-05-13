@@ -156,13 +156,9 @@ void CE::ContentBrowserEditorSystem::DisplayFolderHierarchyPanel()
 			ImGui::OpenPopup("CreateNewAssetMenu");
 		}
 		ImGui::SetItemTooltip("Create a new asset");
-		ImGui::SameLine();
-		Search::Begin();
 
 		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 		DisplayFolder(mRootFolder);
-
-		Search::End();
 
 		if (ImGui::BeginPopup("CreateNewAssetMenu"))
 		{
@@ -272,103 +268,98 @@ void CE::ContentBrowserEditorSystem::DisplayFolder(const ContentFolder& folder)
 {
 	const bool displayAsTreeNode = !folder.mChildren.empty();
 
-	Search::BeginCategory(folder.mFolderName,
-		[&folder, this, displayAsTreeNode](std::string_view folderName) -> bool
+	bool isSelected = &mSelectedFolder.get() == &folder;
+
+	auto recursiveCheckIfChildIsSelected = [this, &folder](const auto& self, const ContentFolder& folderToCheck) -> bool
 		{
-			bool isSelected = &mSelectedFolder.get() == &folder;
-
-			auto recursiveCheckIfChildIsSelected = [this, &folder](const auto& self, const ContentFolder& folderToCheck) -> bool
-				{
-					if (&folder == &folderToCheck)
-					{
-						return true;
-					}
-
-					if (folderToCheck.mParent == nullptr)
-					{
-						return false;
-					}
-					return self(self, *folderToCheck.mParent);
-				};
-
-			const bool isOneOfChildrenSelected = recursiveCheckIfChildIsSelected(recursiveCheckIfChildIsSelected, mSelectedFolder);
-
-			bool isOpen{};
-			if (displayAsTreeNode)
+			if (&folder == &folderToCheck)
 			{
-				if (isOneOfChildrenSelected)
-				{
-					ImGui::SetNextItemOpen(true);
-				}
-
-				isOpen = ImGui::TreeNode(Format("##{}", folderName).data());
-				ImGui::SameLine();
-			}
-			else
-			{
-				// The three node arrow take up space
-				// this makes sure that all folders are
-				// aligned, regardless of whether they
-				// have content
-				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 24.0f);
+				return true;
 			}
 
-			const ImVec2 selectableAreaSize = { ImGui::GetContentRegionAvail().x, ImGui::GetTextLineHeight() };
-
-			if (isOneOfChildrenSelected
-				&& !isSelected)
+			if (folderToCheck.mParent == nullptr)
 			{
-				const glm::vec4 col = ImGui::GetStyle().Colors[ImGuiCol_TabUnfocused];
-				ImGui::RenderFrame(ImGui::GetCursorScreenPos(), ImGui::GetCursorScreenPos() + selectableAreaSize, ImColor{ col }, false, 0.0f);
+				return false;
 			}
+			return self(self, *folderToCheck.mParent);
+		};
 
-			if (ImGui::Selectable(Format("{} {}", isOpen ? ICON_FA_FOLDER_OPEN : ICON_FA_FOLDER, folderName).data(), &isSelected, 0, selectableAreaSize))
-			{
-				if (isSelected)
-				{
-					SelectFolder(folder);
-				}
-				else
-				{
-					SelectFolder(mRootFolder);
-				}
-			}
+	const bool isOneOfChildrenSelected = recursiveCheckIfChildIsSelected(recursiveCheckIfChildIsSelected, mSelectedFolder);
 
-			if (&folder != &mRootFolder)
-			{
-				WeakAssetHandle receivedAsset = DragDrop::PeekAsset<Asset>();
+	bool isOpen{};
+	if (displayAsTreeNode)
+	{
+		if (isOneOfChildrenSelected)
+		{
+			ImGui::SetNextItemOpen(true);
+		}
 
-				if (receivedAsset != nullptr
-					&& receivedAsset.GetFileOfOrigin().has_value()
-					&& DragDrop::AcceptAsset())
-				{
-					AssetManager::Get().MoveAsset(receivedAsset, folder.mActualPath / receivedAsset.GetFileOfOrigin()->filename());
-				}
-			}
+		isOpen = ImGui::TreeNode(Format("##{}", folder.mFolderName).data());
+		ImGui::SameLine();
+	}
+	else
+	{
+		// The three node arrow take up space
+		// this makes sure that all folders are
+		// aligned, regardless of whether they
+		// have content
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 24.0f);
+	}
 
-			if (ImGui::IsItemClicked(1))
-			{
-				ImGui::OpenPopup(GetRightClickPopUpMenuName(GetName(folder)).data());
-			}
+	const ImVec2 selectableAreaSize = { ImGui::GetContentRegionAvail().x, ImGui::GetTextLineHeight() };
 
-			DisplayRightClickMenu(folder);
+	if (isOneOfChildrenSelected
+		&& !isSelected)
+	{
+		const glm::vec4 col = ImGui::GetStyle().Colors[ImGuiCol_TabUnfocused];
+		ImGui::RenderFrame(ImGui::GetCursorScreenPos(), ImGui::GetCursorScreenPos() + selectableAreaSize, ImColor{ col }, false, 0.0f);
+	}
 
-			return isOpen;
-		});
+	if (ImGui::Selectable(Format("{} {}", isOpen ? ICON_FA_FOLDER_OPEN : ICON_FA_FOLDER, folder.mFolderName).data(), &isSelected, 0, selectableAreaSize))
+	{
+		if (isSelected)
+		{
+			SelectFolder(folder);
+		}
+		else
+		{
+			SelectFolder(mRootFolder);
+		}
+	}
+
+	if (&folder != &mRootFolder)
+	{
+		WeakAssetHandle receivedAsset = DragDrop::PeekAsset<Asset>();
+
+		if (receivedAsset != nullptr
+			&& receivedAsset.GetFileOfOrigin().has_value()
+			&& DragDrop::AcceptAsset())
+		{
+			AssetManager::Get().MoveAsset(receivedAsset, folder.mActualPath / receivedAsset.GetFileOfOrigin()->filename());
+		}
+	}
+
+	if (ImGui::IsItemClicked(1))
+	{
+		ImGui::OpenPopup(GetRightClickPopUpMenuName(GetName(folder)).data());
+	}
+
+	DisplayRightClickMenu(folder);
+
+	if (!isOpen)
+	{
+		return;
+	}
 
 	for (const ContentFolder& child : folder.mChildren)
 	{
 		DisplayFolder(child);
 	}
 
-	Search::EndCategory(
-		[displayAsTreeNode]
-		{
-			if (displayAsTreeNode)
-			{
-				ImGui::TreePop();
-			}
-		});
+	if (displayAsTreeNode)
+	{
+		ImGui::TreePop();
+	}
 }
 
 template <typename T>
