@@ -25,11 +25,24 @@ CE::UIRenderer::UIRenderer()
     CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     depth.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
+    auto blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    blendDesc.RenderTarget[0].BlendEnable = TRUE;
+    blendDesc.RenderTarget[0].LogicOpEnable = FALSE;
+    blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+    blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+    blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
+    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
     mPipeline = DXPipelineBuilder()
     .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
     .AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 1)
     .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
     .SetDepthState(depth)
+    .SetBlendState(blendDesc)
     .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
     .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"UI RENDER PIPELINE");
 }
