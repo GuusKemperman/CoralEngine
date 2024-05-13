@@ -13,6 +13,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Utilities/DrawDebugHelpers.h"
+#include "Utilities/Time.h"
 #include "World/Physics.h"
 
 CE::PhysicsSystem::PhysicsSystem() :
@@ -34,9 +35,18 @@ void CE::PhysicsSystem::Update(World& world, float dt)
 	UpdateTransformedColliders<AABBColliderComponent, TransformedAABBColliderComponent>(world);
 	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(world);
 
+	static Cooldown cooldown{ 5.0f };
+	static size_t index = 0;
+
+	if (cooldown.IsReady(dt))
+	{
+		world.GetPhysics().GetBVHs()[index++].Build();
+		index %= world.GetPhysics().GetBVHs().size();
+	}
+
 	for (BVH& bvh : world.GetPhysics().GetBVHs())
 	{
-		bvh.Build();
+		bvh.Refit();
 	}
 
 	if (world.HasBegunPlay()

@@ -13,6 +13,7 @@ CE::BVH::BVH(Physics& physics, CollisionLayer layer) :
     mPhysics(&physics),
 	mLayer(layer)
 {
+    Build();
 }
 
 void CE::BVH::Build()

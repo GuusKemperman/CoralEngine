@@ -26,6 +26,38 @@ CE::Physics::~Physics() = default;
 template <typename T>
 std::vector<entt::entity> CE::Physics::FindAllWithinShapeImpl(const T& shape, const CollisionRules& filter) const
 {
+	//std::vector<entt::entity> ret{};
+
+	//struct OnIntersect
+	//{
+	//	static void Callback(const TransformedDiskColliderComponent&, entt::entity entity, std::vector<entt::entity>& returnValue)
+	//	{
+	//		returnValue.emplace_back(entity);
+	//	}
+
+	//	static void Callback(const TransformedAABBColliderComponent&, entt::entity entity, std::vector<entt::entity>& returnValue)
+	//	{
+	//		returnValue.emplace_back(entity);
+	//	}
+
+	//	static void Callback(const TransformedPolygonColliderComponent&, entt::entity entity, std::vector<entt::entity>& returnValue)
+	//	{
+	//		returnValue.emplace_back(entity);
+	//	}
+	//};
+
+	//for (const BVH& bvh : mBVHs)
+	//{
+	//	if (filter.mResponses[static_cast<int>(bvh.GetLayer())] == CollisionResponse::Ignore)
+	//	{
+	//		continue;
+	//	}
+
+	//	bvh.Query<OnIntersect, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<false>>(shape, ret);
+	//}
+
+	//return ret;
+
 	const Registry& reg = mWorld.get().GetRegistry();
 
 	const auto diskView = reg.View<PhysicsBody2DComponent, TransformedDiskColliderComponent>();
