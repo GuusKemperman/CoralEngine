@@ -29,6 +29,7 @@ using namespace Microsoft::WRL;
 
 #define FRAME_BUFFER_COUNT 2
 #define MAX_MESHES 65000
+#define MAX_PARTICLES 65000
 #define MAX_SKINNED_MESHES 1024
 
 //DESCRIPTOR HEAPS

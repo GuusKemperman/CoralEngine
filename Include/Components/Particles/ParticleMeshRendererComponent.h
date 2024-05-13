@@ -6,12 +6,14 @@ namespace CE
 {
 	class StaticMesh;
 	class Material;
+	class ParticleEmitterComponent;
 
 	class ParticleMeshRendererComponent
 	{
 	public:
 		AssetHandle<StaticMesh> mParticleMesh{};
 		AssetHandle<Material> mParticleMaterial{};
+		bool AreAnyVisible(const CE::ParticleEmitterComponent& emitter) const;
 
 	private:
 		friend ReflectAccess;
