@@ -100,7 +100,7 @@ CE::MetaType Reflector<CE::CollisionLayer>::Reflect()
 	using T = CollisionLayer;
 	MetaType type{ MetaType::T<T>{}, "CollisionLayer" };
 
-	type.GetProperties().Add(Props::sIsScriptableTag);
+	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 	type.AddFunc(std::equal_to<T>(), OperatorType::equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	ReflectFieldType<T>(type);
@@ -112,6 +112,8 @@ CE::MetaType Reflector<CE::CollisionRules>::Reflect()
 {
 	using namespace CE;
 	MetaType type{ MetaType::T<CollisionRules>{}, "CollisionRules" };
+	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+
 	ReflectFieldType<CollisionRules>(type);
 	return type;
 }
@@ -123,5 +125,12 @@ void cereal::save(BinaryOutputArchive& ar, const CE::CollisionRules& value)
 
 void cereal::load(BinaryInputArchive& ar, CE::CollisionRules& value)
 {
-	ar(value.mLayer, value.mResponses);
+	try
+	{
+		ar(value.mLayer, value.mResponses);
+	}
+	catch (...)
+	{
+		// If the number of collision layer changes, this will throw.
+	}
 }

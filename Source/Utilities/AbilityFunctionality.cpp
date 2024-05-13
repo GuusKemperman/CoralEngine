@@ -16,7 +16,6 @@
 #include "World/World.h"
 #include "Utilities/Math.h"
 #include "Assets/Prefabs/Prefab.h"
-#include "World/Physics.h"
 
 CE::MetaType CE::AbilityFunctionality::Reflect()
 {
@@ -188,9 +187,8 @@ entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Pr
 	activeAbility->mCastByCharacterData = *characterComponent;
 
 	// Set the position.
-	const Physics& physics = world.GetPhysics();
-	const glm::vec2 pos2D = characterTransform->GetWorldPosition2D();
-	prefabTransform->SetLocalPosition(To3DRightForward(pos2D, physics.GetHeightAtPosition(pos2D)));
+	const glm::vec3 pos = characterTransform->GetWorldPosition();
+	prefabTransform->SetLocalPosition(pos);
 
 	// Check for projectile component.
 	auto projectileComponent = reg.TryGet<ProjectileComponent>(prefabEntity);
