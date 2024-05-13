@@ -18,6 +18,9 @@ namespace CE
 		void Bind() const;
 		void Unbind() const;
 
+		void BindSRVDepthToCompute(int rootSlot) const;
+		void CopyInto(const std::unique_ptr<DXResource>& resource);
+
 		void Resize(glm::ivec2 newSize);
 		glm::ivec2 GetSize() const { return mSize; }
 
@@ -41,6 +44,7 @@ namespace CE
 		std::unique_ptr<DXResource> mDepthResource;
 		DXHeapHandle mFrameBufferHandle[FRAME_BUFFER_COUNT];
 		DXHeapHandle mFrameBufferRscHandle[FRAME_BUFFER_COUNT];
+		DXHeapHandle mFrameBufferUAVHandle[FRAME_BUFFER_COUNT];
 		DXHeapHandle mDepthStencilHandle;
 		DXHeapHandle mDepthStencilSRVHandle;
 

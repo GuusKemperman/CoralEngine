@@ -102,6 +102,27 @@ void CE::FrameBuffer::Unbind() const
 
 }
 
+void CE::FrameBuffer::BindSRVDepthToCompute(int rootSlot) const
+{
+	Device& engineDevice = Device::Get();
+	std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
+	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+
+	resourceHeap->BindToCompute(commandList, rootSlot, mDepthStencilSRVHandle);
+}
+
+void CE::FrameBuffer::CopyInto(const std::unique_ptr<DXResource>& resource)
+{
+	Device& engineDevice = Device::Get();
+	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+	int frameIndex = engineDevice.GetFrameIndex();
+
+	mResource[frameIndex]->ChangeState(commandList, D3D12_RESOURCE_STATE_COPY_DEST);
+	resource->ChangeState(commandList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+
+	commandList->CopyResource(mResource[frameIndex]->Get(), resource->Get());
+}
+
 void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 {
 	if (mSize == newSize)

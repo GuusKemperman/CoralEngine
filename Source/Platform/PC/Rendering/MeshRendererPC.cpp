@@ -129,7 +129,6 @@ CE::MeshRenderer::MeshRenderer()
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
 
-
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     CD3DX12_RASTERIZER_DESC rast = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
@@ -153,7 +152,6 @@ CE::MeshRenderer::MeshRenderer()
         .SetRasterizer(rast)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED SHADOW MAPPING PIPELINE");
-
 }
 
 CE::MeshRenderer::~MeshRenderer() = default;
@@ -179,6 +177,11 @@ void CE::MeshRenderer::Render(const World& world)
 #endif // EDITOR
 
     DepthPrePass(world, gpuWorld);
+
+#ifdef EDITOR
+    Renderer::Get().GetFrameBuffer().Bind();
+#endif // EDITOR
+
     ClusteredShading(world);
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
@@ -194,10 +197,11 @@ void CE::MeshRenderer::Render(const World& world)
     resourceHeap->BindToGraphics(commandList, 14, gpuWorld.GetPointLigthHeapSlot());
     resourceHeap->BindToGraphics(commandList, 15, gpuWorld.GetLigthGridSRVSlot());
     resourceHeap->BindToGraphics(commandList, 16, gpuWorld.GetLightIndicesSRVSlot());
+
     auto shadowMap = gpuWorld.GetShadowMap();
     shadowMap->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
     resourceHeap->BindToGraphics(commandList, 17, shadowMap->mDepthSRVHandle);
-
+    
     int meshCounter = 0;
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
@@ -320,7 +324,9 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
             gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
 
             staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
+
             meshCounter++;
+
         }
     }
 
@@ -345,6 +351,48 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         }
     }
 
+    meshCounter = 0;
+    gpuWorld.GetSelectedMeshFrameBuffer().Bind();
+
+    commandList->SetPipelineState(mZPipeline.Get());
+    gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
+    {
+        const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
+
+        for (auto [entity, staticMeshComponent, transform] : view.each()) 
+        {
+            if (!staticMeshComponent.mStaticMesh || !staticMeshComponent.mHighlightedMesh)
+            {
+                continue;
+            }
+
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
+            staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
+
+            meshCounter++;
+
+        }
+    }
+
+    commandList->SetPipelineState(mZSkinnedPipeline.Get());
+
+    {
+        const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
+
+        for (auto [entity, skinnedMeshComponent, transform] : view.each()) 
+        {
+            if (!skinnedMeshComponent.mSkinnedMesh || !skinnedMeshComponent.mHighlightedMesh)
+            {
+                continue;
+            }
+
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
+            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
+
+            skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
+            meshCounter++;
+        }
+    }
 }
 
 void CE::MeshRenderer::HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex)

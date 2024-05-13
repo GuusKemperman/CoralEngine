@@ -7,6 +7,7 @@ namespace CE
 	class World;
 	class FrameBuffer;
 	class DebugRenderer;
+	class PostProcessingRenderer;
 	class ISubRenderer;
 
 	class Renderer final :
@@ -38,6 +39,7 @@ namespace CE
 
 		std::unique_ptr<ISubRenderer> mMeshRenderer;
 		std::unique_ptr<ISubRenderer> mUIRenderer;
+		std::unique_ptr<ISubRenderer> mPostProcessSubRenderer;
 		std::unique_ptr<DebugRenderer> mDebugRenderer;
 
 #ifdef EDITOR

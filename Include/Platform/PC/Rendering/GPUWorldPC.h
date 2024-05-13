@@ -12,6 +12,7 @@ namespace CE
 {
     class Material;
     class CameraComponent;
+    class FrameBuffer;
 
     class DebugRenderingData
     {
@@ -44,6 +45,25 @@ namespace CE
         D3D12_VERTEX_BUFFER_VIEW mTexCoordBufferView;
         D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
     };
+
+    class GPUWorld;
+    class PosProcRenderingData
+    {
+    public:
+        PosProcRenderingData();
+        void Update(const World& world);
+
+        std::unique_ptr<DXResource> mQuadVResource;
+        std::unique_ptr<DXResource> mQuadUVResource;
+        std::unique_ptr<DXResource> mIndicesResource;
+
+        std::unique_ptr<DXConstBuffer> mOutlineBuffer;
+
+        D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
+        D3D12_VERTEX_BUFFER_VIEW mTexCoordBufferView;
+        D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
+    };
+
 
 	class GPUWorld final : 
 		public IGPUWorld
@@ -82,10 +102,13 @@ namespace CE
         const DXHeapHandle& GetLightIndicesUAVSlot() const { return mLightIndicesUAVSlot; };
         const DXHeapHandle& GetLigthGridUAVSlot() const { return mLightGridUAVSlot; };
         const DXHeapHandle& GetPointLightCounterUAVSlot() const { return mPointLightCounterUAVSlot; };
+
         const InfoStruct::DXShadowMapInfo* GetShadowMap() const { return mShadowMap.get(); }
 
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
         UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
+        PosProcRenderingData& GetPostProcData() { return mPostProcData; };
+        FrameBuffer& GetSelectedMeshFrameBuffer() const { return *mSelectedMeshFrameBuffer; };
 
         glm::ivec3 GetClusterGrid() const { return mClusterGrid; }
         int GetNumberOfClusters() const { return mNumberOfClusters; }
@@ -97,11 +120,14 @@ namespace CE
 
 		std::unique_ptr<DXConstBuffer> mConstBuffers[InfoStruct::NUM_CBS];
 		std::unique_ptr<DXResource> mStructuredBuffers[InfoStruct::NUM_SB];
-		InfoStruct::DXLightInfo mLights;
+        std::unique_ptr<FrameBuffer> mSelectedMeshFrameBuffer;
+
+        InfoStruct::DXLightInfo mLightInfo;
+
         std::vector<InfoStruct::DXDirLightInfo> mDirectionalLights;
         std::vector<InfoStruct::DXPointLightInfo> mPointLights;
         std::unique_ptr<InfoStruct::DXShadowMapInfo> mShadowMap;
-        InfoStruct::DXLightInfo mLightInfo;
+
         int mNumberOfClusters = 0;
         glm::ivec3 mClusterGrid;
 
@@ -122,6 +148,7 @@ namespace CE
 
         DebugRenderingData mDebugRenderingData;
         UIRenderingData mUIRenderingData;
+        PosProcRenderingData mPostProcData;
 	};
 }
 

@@ -75,7 +75,6 @@ void CE::UIRenderer::Render(const World& world)
 
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-
     commandList->SetPipelineState(mPipeline.Get());
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 

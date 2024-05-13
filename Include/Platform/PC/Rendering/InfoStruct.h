@@ -120,6 +120,13 @@ namespace CE::InfoStruct
         uint32 padding = {};
     };
 
+    struct DXOutlineInfo
+    {
+        glm::vec4 mOutlineColor;
+        float mThreshold;
+        uint32 padding[3];
+    };
+
     namespace Clustering
     {
         // Number of threads for cluster culling.

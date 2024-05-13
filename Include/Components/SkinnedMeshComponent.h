@@ -22,6 +22,8 @@ namespace CE
         float mCurrentTime = 0.0f;
         float mAnimationSpeed = 1.0f;
 
+        bool mHighlightedMesh = false;
+
     private:
         friend ReflectAccess;
         static MetaType Reflect();
