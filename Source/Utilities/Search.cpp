@@ -123,12 +123,6 @@ void CE::Search::Begin(SearchFlags flags)
 	SearchContext& context = sContextStack.emplace(sContexts[imId]);
 	context.mInput.mFlags = flags;
 
-	if (ImGui::IsWindowAppearing())
-	{
-		ImGui::SetKeyboardFocusHere();
-		context.mInput.mUserQuery.clear();
-	}
-
 	ImGui::InputTextWithHint(sDefaultLabel.data(), sDefaultHint.data(), &context.mInput.mUserQuery);
 
 	context.mHasEnterBeenConsumed = !ImGui::IsItemFocused()
@@ -386,6 +380,13 @@ bool CE::Search::BeginPopup(std::string_view name, SearchFlags searchFlags)
 	}
 
 	Begin(searchFlags);
+
+	if (ImGui::IsWindowAppearing())
+	{
+		ImGui::SetKeyboardFocusHere(-1);
+		sContextStack.top().get().mInput.mUserQuery.clear();
+	}
+
 	return true;
 }
 

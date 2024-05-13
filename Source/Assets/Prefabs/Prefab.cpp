@@ -146,6 +146,14 @@ void CE::Prefab::LoadFromGSON(BinaryGSONObject& object)
 		mFactories.emplace_back(*this, object, factoryData.mEntity, factoryData.mFactoryId, parentChildRelation.first, std::move(parentChildRelation.second));
 	}
 
+	if (!mFactories.empty())
+	{
+		// A long time ago i made the assumption that the id
+		// of the root factory would also be based on the prefabs name.
+		// Unfortunately, i did not foresee renaming. So we update the id,
+		// and our level deserializer takes this possibility into account.
+		mFactories.front().mId = Name::HashString(GetName());
+	}
 }
 
 CE::BinaryGSONObject CE::Prefab::SaveToGSONObject(const std::string& prefabName, World& world, const entt::entity rootEntity, std::optional<uint32> factorySeed)

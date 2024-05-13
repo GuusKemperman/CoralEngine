@@ -14,10 +14,16 @@ void CE::AssetManager::PostConstruct()
 	mLookUp.reserve(1024);
 
 	std::vector<std::filesystem::path> assetFiles{};
-	std::vector<std::filesystem::path> renameFiles{};
+
+	struct RenameLink
+	{
+		std::string mOldName{};
+		std::string mNewName{};
+		std::filesystem::path mRenameFile{};
+	};
+	std::list<RenameLink> renameLinks{};
 
 	assetFiles.reserve(2048);
-	renameFiles.reserve(256);
 
 	auto openDirectory = [&](const std::filesystem::path& directory)
 		{
@@ -46,7 +52,24 @@ void CE::AssetManager::PostConstruct()
 				}
 				else if (extension == sRenameExtension)
 				{
-					renameFiles.emplace_back(path);
+					std::ifstream file{ path };
+
+					if (!file.is_open())
+					{
+						LOG(LogAssets, Warning, "Could not process rename file {}, as the file could not be opened", path.string());
+						continue;
+					}
+
+					std::string newName{};
+					std::getline(file, newName);
+
+					std::string oldName{};
+					if (!std::getline(file, oldName))
+					{
+						oldName = path.filename().replace_extension().string();
+					}
+
+					renameLinks.emplace_back(RenameLink{ oldName, newName, path });
 				}
 			}
 
@@ -61,34 +84,43 @@ void CE::AssetManager::PostConstruct()
 		OpenAsset(assetPath);
 	}
 
-	for (const std::filesystem::path& renamePath : renameFiles)
+	bool anyResolved;
+
+	do
 	{
-		std::ifstream file{ renamePath };
+		anyResolved = false;
 
-		if (!file.is_open())
+		for (auto it = renameLinks.begin(); it != renameLinks.end();)
 		{
-			LOG(LogAssets, Warning, "Could not process rename file {}, as the file could not be opened", renamePath.string());
-			continue;
+			Internal::AssetInternal* const assetWithNewName = TryGetAssetInternal(it->mNewName, MakeTypeId<Asset>());
+
+			if (assetWithNewName == nullptr)
+			{
+				++it;
+				continue;
+			}
+
+			const auto insertResult = mLookUp.emplace(Name::HashString(it->mOldName), *assetWithNewName);
+
+			if (insertResult.second)
+			{
+				assetWithNewName->mOldNames.emplace_back(it->mRenameFile);
+				anyResolved = true;
+			}
+			else
+			{
+				LOG(LogAssets, Error, "Could not create link from old asset {} to new asset {}", it->mOldName, it->mNewName);
+			}
+
+			it = renameLinks.erase(it);
 		}
+	} while (anyResolved);
 
-		const std::string oldName = renamePath.filename().replace_extension().string();
-		std::string newName{};
-		file >> newName;
-		file.close();
-
-		Internal::AssetInternal* const assetWithNewName = TryGetAssetInternal(newName, MakeTypeId<Asset>());
-
-		if (assetWithNewName == nullptr)
-		{
-			LOG(LogAssets, Message, "An asset was once renamed from {} to {}, but {} has now been deleted. The rename file {} will now also be removed.",
-				oldName, newName, newName, renamePath.string());
-
-			TRY_CATCH_LOG(std::filesystem::remove(renamePath));
-			continue;
-		}
-
-		mLookUp.emplace(Name::HashString(oldName), *assetWithNewName);
-		assetWithNewName->mOldNames.emplace_back(renamePath);
+	for (const RenameLink& link : renameLinks)
+	{
+		LOG(LogAssets, Message, "An asset was once renamed from {} to {}, but {} has now been deleted. The rename file {} will now also be removed.",
+			link.mOldName, link.mNewName, link.mRenameFile.string());
+		TRY_CATCH_LOG(std::filesystem::remove(link.mRenameFile));
 	}
 }
 
@@ -254,6 +286,15 @@ void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view new
 
 					file << newName;
 
+					// Due to a legacy bug,
+					// there are some assets
+					// whose names contain invalid
+					// characters for a filepath.
+					if (renamePath.filename().replace_extension() != oldName)
+					{
+						file << '\n' << oldName;
+					}
+
 					assetInternal->mOldNames.emplace_back(renamePath);
 				}
 
@@ -265,7 +306,7 @@ void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view new
 
 			if (!emplaceResult.second)
 			{
-				LOG(LogAssets, Error, "Cannot rename asset {}, inesrtion somehow failed. Assets is deleted from memory, but still exists on file", oldName);
+				LOG(LogAssets, Error, "Failed to rename asset {}", oldName);
 			}
 		};
 

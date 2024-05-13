@@ -42,9 +42,14 @@ namespace CE
 		Character,
 
 		/**
-		 * \brief The terrain, determines the height at a given point. Used for pathfinding
+		 * \brief The terrain, used for pathfinding. The AI can walk on this.
 		 */
 		Terrain,
+
+		/**
+		 * \brief For queries, for operations such as finding all objects within a radius.
+		 */
+		Query,
 
 		NUM_OF_LAYERS
 	};
@@ -91,6 +96,7 @@ namespace CE
 					CollisionResponse::Blocking,	// WorldDynamic
 					CollisionResponse::Blocking,	// Character
 					CollisionResponse::Blocking,	// Terrain
+					CollisionResponse::Overlap,		// Query
 				}
 			}
 		};
@@ -105,6 +111,7 @@ namespace CE
 					CollisionResponse::Blocking,	// WorldDynamic
 					CollisionResponse::Blocking,	// Character
 					CollisionResponse::Ignore,		// Terrain
+					CollisionResponse::Ignore,		// Query
 				}
 			}
 		};
@@ -119,6 +126,7 @@ namespace CE
 					CollisionResponse::Blocking,	// WorldDynamic
 					CollisionResponse::Blocking,	// Character
 					CollisionResponse::Ignore,		// Terrain
+					CollisionResponse::Ignore,		// Query
 				}
 			}
 		};
@@ -133,6 +141,7 @@ namespace CE
 					CollisionResponse::Blocking,	// WorldDynamic
 					CollisionResponse::Blocking,	// Character
 					CollisionResponse::Blocking,	// Terrain
+					CollisionResponse::Overlap,		// Query
 				}
 			}
 		};
@@ -144,7 +153,6 @@ namespace CE
 		CollisionPresets::sWorldDynamic,
 		CollisionPresets::sStaticObstacles,
 		CollisionPresets::sCharacter,
-
 	};
 
 	class PhysicsBody2DComponent
@@ -242,6 +250,7 @@ struct CE::EnumStringPairsImpl<CE::CollisionLayer>
 		{ CollisionLayer::StaticObstacles, "StaticObstacles" },
 		{ CollisionLayer::WorldDynamic, "WorldDynamic" },
 		{ CollisionLayer::Character, "Character" },
+		{ CollisionLayer::Query, "Query" },
 	};
 };
 
