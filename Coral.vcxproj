@@ -1914,7 +1914,6 @@
     <ClInclude Include="include\Systems\Particles\ParticleColorSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleDebugVisualizationSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleLifeTimeSystem.h" />
-    <ClInclude Include="include\Systems\Particles\ParticleMeshRenderingSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticlePhysicsSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleScaleOverTimeSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleSpawnPrefabOnDeathSystem.h" />
