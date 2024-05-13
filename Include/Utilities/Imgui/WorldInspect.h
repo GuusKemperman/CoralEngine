@@ -97,10 +97,12 @@ namespace CE
 			std::vector<entt::entity>* selectedEntities);
 
 	private:
+		static entt::entity GetEntityThatMouseIsHoveringOver(const World& world);
+
 		static void ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities);
 		static void SetGizmoRect(glm::vec2 windowPos, glm::vec2 windowSize);
 
-		static void GizmoManipulateSelectedTransforms(World& world,
+		static bool GizmoManipulateSelectedTransforms(World& world,
 			const std::vector<entt::entity>& selectedEntities,
 			const CameraComponent& camera);
 	};

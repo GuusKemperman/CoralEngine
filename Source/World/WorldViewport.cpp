@@ -38,7 +38,7 @@ glm::vec3 CE::WorldViewport::GetScreenToWorldDirection(glm::vec2 screenPosition)
 	farResult /= farResult.w;
 	const glm::vec3 dir = glm::normalize(glm::vec3(farResult) - glm::vec3(nearResult));
 
-	return normalize(dir);
+	return dir;
 }
 
 glm::vec3 CE::WorldViewport::ScreenToWorld(glm::vec2 screenPosition, float distanceFromCamera) const

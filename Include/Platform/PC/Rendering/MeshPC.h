@@ -1,9 +1,7 @@
 #pragma once
-#include <optional>
-#include <variant>
-
 #include "DX12Classes/DXDefines.h"
 #include "Assets/Asset.h"
+#include "Utilities/Geometry3d.h"
 
 class DXResource;
 
@@ -28,6 +26,17 @@ namespace CE
         StaticMesh& operator=(StaticMesh&&) = delete;
         StaticMesh& operator=(const StaticMesh&) = delete;
 
+#ifdef EDITOR
+    	// There is no reason why this NEEDS to be editor only,
+        // feel free to remove all the ifdefs if you require this
+        // data in non-editor builds. But since we likely won't need
+        // it for non-editor builds and because it does take up additional
+        // RAM, these buffers are, for now, editor only.
+        Span<const glm::vec3> GetVertices() const { return mCPUVertexBuffer; }
+        Span<const uint32> GetIndices() const { return mCPUIndexBuffer; }
+        AABB3D GetBoundingBox() const { return mBoundingBox; }
+#endif
+
     private:
         friend class ModelImporter;
 
@@ -42,8 +51,18 @@ namespace CE
         friend ReflectAccess;
         static MetaType Reflect();
 
-    private:
         bool LoadMesh(const char* indices, unsigned int indexCount, unsigned int size_of_index_type, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, unsigned int vertexCount);
+
+#ifdef EDITOR
+        // There is no reason why this NEEDS to be editor only,
+        // feel free to remove all the ifdefs if you require this
+        // data in non-editor builds. But since we likely won't need
+        // it for non-editor builds and because it does take up additional
+        // RAM, these buffers are, for now, editor only.
+        std::vector<glm::vec3> mCPUVertexBuffer{};
+        std::vector<uint32> mCPUIndexBuffer{};
+        AABB3D mBoundingBox{};
+#endif
 
         std::shared_ptr<DXResource> mVertexBuffer;
         std::shared_ptr<DXResource> mNormalBuffer;

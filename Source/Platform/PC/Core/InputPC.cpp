@@ -33,12 +33,6 @@ namespace
     glm::vec2 previousmousepos;
     float mousewheelDelta = 0;
 
-    void cursor_position_callback(GLFWwindow*, double xpos, double ypos)
-    {
-        mousepos.x = (float)xpos;
-        mousepos.y = (float)ypos;
-    }
-
     void scroll_callback(GLFWwindow*, double, double yoffset) { mousewheelDelta = (float)yoffset; }
 
     void key_callback(GLFWwindow*, int key, int, int action, int)
@@ -62,7 +56,6 @@ Input::Input()
     GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
 
     // glfwSetJoystickCallback(joystick_callback);
-    glfwSetCursorPosCallback(window, cursor_position_callback);
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mousebutton_callback);
     glfwSetScrollCallback(window, scroll_callback);
@@ -120,6 +113,20 @@ void Input::NewFrame()
         if (glfwJoystickPresent(i) && glfwJoystickIsGamepad(i))
             gamepad_connected[i] = static_cast<bool>(glfwGetGamepadState(i, &gamepad_state[i]));
     }
+
+    GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
+
+    double mouse_x, mouse_y;
+    glfwGetCursorPos(window, &mouse_x, &mouse_y);
+
+    // Multi-viewport mode: mouse position in OS absolute coordinates (io.MousePos is (0,0) when the mouse is on the upper-left of the primary monitor)
+    int window_x, window_y;
+    glfwGetWindowPos(window, &window_x, &window_y);
+    mouse_x += window_x;
+    mouse_y += window_y;
+    
+    mousepos.x = static_cast<float>(mouse_x);
+    mousepos.y = static_cast<float>(mouse_y);
 }
 
 bool Input::IsGamepadAvailable(int gamepadID) const
