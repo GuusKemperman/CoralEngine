@@ -50,14 +50,9 @@ namespace CE
 		void DebugDraw() const;
 
 		CollisionLayer GetLayer() const { return mLayer; }
-		// We make the assumption that if there is
-// any leaf node, that is has objects in it.
-// If it doesnt have objects, we assume its a
-// node with children. We have this boolean to
-// prevent an edge case when there are no objects
-// at all.
-		bool mIsRootNodeEmpty = true;
-		bool mIsInsertNodeEmpty = true;
+
+		float GetRebuildDesire() const { return mAmountRefitted + static_cast<float>(mNodes[2].mTotalNumOfObjects) * 1000.0f; }
+
 	private:
 		const Registry& GetRegistry() const;
 
@@ -71,7 +66,7 @@ namespace CE
 		};
 		static_assert(sizeof(Node) == 32);
 
-		void UpdateNodeBounds(Node& node);
+		float UpdateNodeBounds(Node& node);
 		void Subdivide(Node& node);
 		void DebugDraw(const Node& node) const;
 
@@ -92,7 +87,19 @@ namespace CE
 		std::vector<entt::entity> mIds{};
 		std::vector<Node> mNodes{};
 
+		// We make the assumption that if there is
+		// any leaf node, that is has objects in it.
+		// If it doesnt have objects, we assume its a
+		// node with children. We have this boolean to
+		// prevent an edge case when there are no objects
+		// at all.
+		bool mIsRootNodeEmpty = true;
+		bool mIsInsertNodeEmpty = true;
 
+		// The higher this is,
+		// the more this BVH would
+		// benefit from being rebuild.
+		float mAmountRefitted{};
 	};
 
 	template <typename OnIntersectFunction, typename ShouldCheckFunction, typename ShouldReturnFunction, typename

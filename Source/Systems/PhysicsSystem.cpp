@@ -45,6 +45,9 @@ void CE::PhysicsSystem::Update(World& world, float dt)
 
 	static Cooldown cooldown{ 3.0f };
 
+	LOG(LogPhysics, Message, "Rebuild desire 0: {}", world.GetPhysics().GetBVHs()[0].GetRebuildDesire());
+	LOG(LogPhysics, Message, "Rebuild desire 1: {}", world.GetPhysics().GetBVHs()[1].GetRebuildDesire());
+
 	if (cooldown.IsReady(world.GetScaledDeltaTime()))
 	{
 		for (BVH& bvh : world.GetPhysics().GetBVHs())

@@ -22,6 +22,8 @@ void CE::BVH::Build()
     mNodes.resize(3);
     mIds.clear();
 
+    mAmountRefitted = 0.0f;
+
     const Registry& reg = mPhysics->GetWorld().GetRegistry();
 
     const auto aabbView = reg.View<PhysicsBody2DComponent, TransformedAABBColliderComponent>();
@@ -98,16 +100,11 @@ void CE::BVH::Refit()
 {
     for (int i = static_cast<int>(mNodes.size()) - 1; i >= 0; i--)
     {
-        if (i == 1)
-        {
-            continue;
-        }
-
         Node& node = mNodes[i];
         if (node.mTotalNumOfObjects != 0)
         {
             // leaf node: adjust bounds to contained triangles
-            UpdateNodeBounds(node);
+            mAmountRefitted += UpdateNodeBounds(node);
             continue;
         }
 
@@ -179,6 +176,8 @@ void CE::BVH::DebugDraw() const
     {
         DebugDraw(mNodes[2]);
     }
+
+    DrawDebugRectangle(mPhysics->GetWorld(), DebugCategory::AccelStructs, To3DRightForward(mNodes[0].mBoundingBox.GetCentre()), mNodes[0].mBoundingBox.GetSize() * .5f, glm::vec4{0.0f, 1.0f, 1.0f, 1.0f});
 }
 
 const CE::Registry& CE::BVH::GetRegistry() const
@@ -186,8 +185,10 @@ const CE::Registry& CE::BVH::GetRegistry() const
     return mPhysics->GetWorld().GetRegistry();
 }
 
-void CE::BVH::UpdateNodeBounds(Node& node)
+float CE::BVH::UpdateNodeBounds(Node& node)
 {
+    TransformedAABBColliderComponent initialAABB = node.mBoundingBox;
+
     node.mBoundingBox.mMin = glm::vec2(INFINITY);
     node.mBoundingBox.mMax = glm::vec2(-INFINITY);
 
@@ -227,6 +228,8 @@ void CE::BVH::UpdateNodeBounds(Node& node)
             node.mBoundingBox.CombineWith(polygon->GetBoundingBox());
         }
     }
+
+    return glm::distance2(initialAABB.mMin, node.mBoundingBox.mMin) + glm::distance2(initialAABB.mMax, node.mBoundingBox.mMax);
 }
 
 void CE::BVH::Subdivide(Node& node)
