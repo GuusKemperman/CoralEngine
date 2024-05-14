@@ -4,7 +4,7 @@
 
 CE::MetaType CE::PostPrOutlineComponent::Reflect()
 {
-	MetaType metaType = MetaType{ MetaType::T<PostPrOutlineComponent>{}, "PostPr_OutlineComponent" };
+	MetaType metaType = MetaType{ MetaType::T<PostPrOutlineComponent>{}, "PostPrOutlineComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
 
 	metaType.AddField(&PostPrOutlineComponent::mColor, "mColor").GetProperties().Add(Props::sIsScriptableTag);
