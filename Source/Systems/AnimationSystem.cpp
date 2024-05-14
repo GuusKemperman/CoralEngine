@@ -76,7 +76,7 @@ void CE::AnimationSystem::Update(World& world, float dt)
 
 	for (auto [entity, attachToBone, transform] : reg.View<AttachToBoneComponent, TransformComponent>().each())
 	{
-		if (attachToBone.mBoneName == "")
+		if (attachToBone.mBoneName.empty())
 		{
 			continue;
 		}
@@ -101,6 +101,7 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		if (it == boneMap.end() 
 			|| skinnedMesh->mAnimation == nullptr)
 		{
+			static_assert(false, "You are dereferencing the iterator, even if it == boneMap.end()");
 			transform.SetLocalMatrix(it->second.mOffset);
 			continue;
 		}
