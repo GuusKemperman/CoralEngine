@@ -222,8 +222,8 @@ void CE::AbilitySystem::IterateWeaponsVector(AbilitiesOnCharacterComponent& abil
         }
 
         // Update counters
-        weapon.mReloadCounter = std::min(weapon.mReloadCounter + dt, weapon.mWeaponAsset->mRequirementToUse);
-        weapon.mTimeBetweenShotsCounter = std::min(weapon.mTimeBetweenShotsCounter + dt, weapon.mWeaponAsset->mTimeBetweenShots);
+        weapon.mReloadCounter = std::min(weapon.mReloadCounter + dt * weapon.mWeaponAsset->mReloadSpeed, weapon.mWeaponAsset->mRequirementToUse);
+        weapon.mTimeBetweenShotsCounter = std::min(weapon.mTimeBetweenShotsCounter + dt * weapon.mWeaponAsset->mFireSpeed, weapon.mWeaponAsset->mTimeBetweenShots);
 
         // Activate abilities for the player based on input
         if (auto playerComponent = world.GetRegistry().TryGet<PlayerComponent>(entity))
