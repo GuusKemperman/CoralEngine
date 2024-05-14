@@ -3,19 +3,16 @@
 
 namespace CE
 {
-	struct BoneInfo;
 	class World;
 
 	class AttachToBoneComponent
 	{
 	public:
-		void OnConstruct(World&, entt::entity owner);
-
-		entt::entity mOwner{};
-
-		std::shared_ptr<BoneInfo> mConnectedBone{}; 
+		std::string mBoneName{};
 
 	private:
+		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AttachToBoneComponent);

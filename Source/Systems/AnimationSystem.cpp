@@ -81,7 +81,7 @@ void CE::AnimationSystem::Update(World& world, float dt)
 			continue;
 		}
 	
-		auto* skinnedMesh = reg.TryGet<SkinnedMeshComponent>(attachToBone.mOwner);
+		auto* skinnedMesh = reg.TryGet<SkinnedMeshComponent>(entity);
 
 		if (skinnedMesh == nullptr)
 		{
