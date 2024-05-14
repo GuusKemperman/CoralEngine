@@ -19,7 +19,7 @@ CE::BVH::BVH(Physics& physics, CollisionLayer layer) :
 void CE::BVH::Build()
 {
     mNodes.clear();
-    mNodes.resize(2);
+    mNodes.resize(3);
     mIds.clear();
 
     const Registry& reg = mPhysics->GetWorld().GetRegistry();
@@ -27,6 +27,8 @@ void CE::BVH::Build()
     const auto aabbView = reg.View<PhysicsBody2DComponent, TransformedAABBColliderComponent>();
     const auto circlesView = reg.View<PhysicsBody2DComponent, TransformedDiskColliderComponent>();
     const auto polygonView = reg.View<PhysicsBody2DComponent, TransformedPolygonColliderComponent>();
+
+    mIds.reserve(aabbView.size_hint() + circlesView.size_hint() + polygonView.size_hint());
 
     for (const entt::entity entity : aabbView)
     {
@@ -59,49 +61,41 @@ void CE::BVH::Build()
     const uint32 numOfPolygons = static_cast<uint32>(mIds.size()) - numOfAABBs - numOfCircles;
     const uint32 totalNumObjects = numOfAABBs + numOfCircles + numOfPolygons;
 
-    if (totalNumObjects != 0)
-    {
-        mIds.resize(totalNumObjects);
-        mNodes.reserve(2 * totalNumObjects - 1);
-    }
+	mNodes.reserve(2 * totalNumObjects);
 
 	Node& root = mNodes[0];
-    root.mStartIndex = 0;
+    root.mStartIndex = 1;
 
-    root.mNumOfAABBS = numOfAABBs;
-    root.mNumOfCircles = numOfCircles;
-    root.mTotalNumOfObjects = totalNumObjects;
+    Node& actualRoot = mNodes[1];
 
-    mEmpty = root.mTotalNumOfObjects == 0;
+    actualRoot.mNumOfAABBS = numOfAABBs;
+    actualRoot.mNumOfCircles = numOfCircles;
+    actualRoot.mTotalNumOfObjects = totalNumObjects;
 
-    if (mEmpty)
+    Node& nodeToInsertInto = mNodes[2];
+    nodeToInsertInto = Node{};
+    nodeToInsertInto.mStartIndex = static_cast<uint32>(mIds.size());
+
+    mIsRootNodeEmpty = actualRoot.mTotalNumOfObjects == 0;
+    mIsInsertNodeEmpty = true;
+
+    if (mIsRootNodeEmpty)
     {
-        mNodes.resize(4);
         return;
     }
 
-    UpdateNodeBounds(root);
+    UpdateNodeBounds(actualRoot);
 
-    if (root.mTotalNumOfObjects > 2)
+    if (actualRoot.mTotalNumOfObjects > 2)
     {
-        Subdivide(root);
+        Subdivide(actualRoot);
     }
 }
 
 void CE::BVH::Refit()
 {
-    if (mEmpty)
-    {
-        return;
-    }
-
     for (int i = static_cast<int>(mNodes.size()) - 1; i >= 0; i--)
     {
-        if (i == 1)
-        {
-            continue;
-        }
-
         Node& node = mNodes[i];
         if (node.mTotalNumOfObjects != 0)
         {
@@ -118,11 +112,65 @@ void CE::BVH::Refit()
     }
 }
 
+template <>
+void CE::BVH::Insert<CE::TransformedAABB>(const Span<entt::entity>& entities)
+{
+    if (entities.empty())
+    {
+        return;
+    }
+
+    Node& nodeToInsertInto = mNodes[2];
+    mIds.insert(mIds.begin() + nodeToInsertInto.mStartIndex + nodeToInsertInto.mNumOfAABBS, entities.begin(), entities.end());
+    nodeToInsertInto.mNumOfAABBS += static_cast<uint32>(entities.size());
+    nodeToInsertInto.mTotalNumOfObjects += static_cast<uint32>(entities.size());
+    mIsInsertNodeEmpty = false;
+}
+
+template <>
+void CE::BVH::Insert<CE::TransformedPolygon>(const Span<entt::entity>& entities)
+{
+    if (entities.empty())
+    {
+        return;
+    }
+
+    Node& nodeToInsertInto = mNodes[2];
+    mIds.insert(mIds.begin() + nodeToInsertInto.mStartIndex + nodeToInsertInto.mTotalNumOfObjects, entities.begin(), entities.end());
+    nodeToInsertInto.mTotalNumOfObjects += static_cast<uint32>(entities.size());
+    mIsInsertNodeEmpty = false;
+}
+
+template <>
+void CE::BVH::Insert<CE::TransformedDisk>(const Span<entt::entity>& entities)
+{
+    if (entities.empty())
+    {
+        return;
+    }
+
+    Node& nodeToInsertInto = mNodes[2];
+    mIds.insert(mIds.begin() + nodeToInsertInto.mStartIndex + nodeToInsertInto.mNumOfAABBS + nodeToInsertInto.mNumOfCircles, entities.begin(), entities.end());
+    nodeToInsertInto.mNumOfCircles += static_cast<uint32>(entities.size());
+    nodeToInsertInto.mTotalNumOfObjects += static_cast<uint32>(entities.size());
+    mIsInsertNodeEmpty = false;
+}
+
 void CE::BVH::DebugDraw() const
 {
-    if (!mEmpty)
+    if (!DebugRenderer::IsCategoryVisible(DebugCategory::AccelStructs))
     {
-        DebugDraw(mNodes[0]);
+        return;
+    }
+
+    if (!mIsRootNodeEmpty)
+    {
+        DebugDraw(mNodes[1]);
+    }
+
+    if (!mIsInsertNodeEmpty)
+    {
+        DebugDraw(mNodes[2]);
     }
 }
 
@@ -142,23 +190,35 @@ void CE::BVH::UpdateNodeBounds(Node& node)
     for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
-        const TransformedAABB& aabb = reg.Get<TransformedAABBColliderComponent>(owner);
-    	node.mBoundingBox.CombineWith(aabb);
+        const TransformedAABB* aabb = reg.TryGet<TransformedAABBColliderComponent>(owner);
+
+        if (aabb != nullptr)
+        {
+    		node.mBoundingBox.CombineWith(*aabb);
+        }
     }
 
     for (uint32 i = 0; i < node.mNumOfCircles; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
-        const TransformedDisk& circle = reg.Get<TransformedDiskColliderComponent>(owner);
-    	node.mBoundingBox.CombineWith(circle.GetBoundingBox());
+        const TransformedDisk* circle = reg.TryGet<TransformedDiskColliderComponent>(owner);
+
+        if (circle != nullptr)
+        {
+    		node.mBoundingBox.CombineWith(circle->GetBoundingBox());
+        }
     }
 
     const uint32 numOfPolygons = node.mTotalNumOfObjects - node.mNumOfAABBS - node.mNumOfCircles;
     for (uint32 i = 0; i < numOfPolygons; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
-        const TransformedPolygon& polygon = reg.Get<TransformedPolygonColliderComponent>(owner);
-    	node.mBoundingBox.CombineWith(polygon.GetBoundingBox());
+        const TransformedPolygon* polygon = reg.TryGet<TransformedPolygonColliderComponent>(owner);
+
+        if (polygon != nullptr)
+        {
+            node.mBoundingBox.CombineWith(polygon->GetBoundingBox());
+        }
     }
 }
 
@@ -173,7 +233,7 @@ void CE::BVH::Subdivide(Node& node)
     childrenIds[1].reserve(node.mTotalNumOfObjects);
 
     ASSERT(mNodes.size() + 2 <= mNodes.capacity());
-    uint32 firstNodeIndex = static_cast<uint32>(mNodes.size());
+    const uint32 firstNodeIndex = static_cast<uint32>(mNodes.size());
     mNodes.emplace_back();
     mNodes.emplace_back();
 

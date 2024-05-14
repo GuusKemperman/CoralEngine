@@ -26,75 +26,37 @@ CE::Physics::~Physics() = default;
 template <typename T>
 std::vector<entt::entity> CE::Physics::FindAllWithinShapeImpl(const T& shape, const CollisionRules& filter) const
 {
-	//std::vector<entt::entity> ret{};
+	std::vector<entt::entity> ret{};
 
-	//struct OnIntersect
-	//{
-	//	static void Callback(const TransformedDiskColliderComponent&, entt::entity entity, std::vector<entt::entity>& returnValue)
-	//	{
-	//		returnValue.emplace_back(entity);
-	//	}
-
-	//	static void Callback(const TransformedAABBColliderComponent&, entt::entity entity, std::vector<entt::entity>& returnValue)
-	//	{
-	//		returnValue.emplace_back(entity);
-	//	}
-
-	//	static void Callback(const TransformedPolygonColliderComponent&, entt::entity entity, std::vector<entt::entity>& returnValue)
-	//	{
-	//		returnValue.emplace_back(entity);
-	//	}
-	//};
-
-	//for (const BVH& bvh : mBVHs)
-	//{
-	//	if (filter.mResponses[static_cast<int>(bvh.GetLayer())] == CollisionResponse::Ignore)
-	//	{
-	//		continue;
-	//	}
-
-	//	bvh.Query<OnIntersect, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<false>>(shape, ret);
-	//}
-
-	//return ret;
-
-	const Registry& reg = mWorld.get().GetRegistry();
-
-	const auto diskView = reg.View<PhysicsBody2DComponent, TransformedDiskColliderComponent>();
-	const auto aabbView = reg.View<PhysicsBody2DComponent, TransformedAABBColliderComponent>();
-	const auto polyView = reg.View<PhysicsBody2DComponent, TransformedPolygonColliderComponent>();
-
-	std::vector<entt::entity> returnValue{};
-	returnValue.reserve(diskView.size_hint() + aabbView.size_hint() + polyView.size_hint());
-
-	for (const entt::entity entity : diskView)
+	struct OnIntersect
 	{
-		if (diskView.get<PhysicsBody2DComponent>(entity).mRules.GetResponse(filter) != CollisionResponse::Ignore
-			&& AreOverlapping(diskView.get<TransformedDiskColliderComponent>(entity), shape))
+		static void Callback(const TransformedDiskColliderComponent&, entt::entity entity, std::vector<entt::entity>& returnValue)
 		{
 			returnValue.emplace_back(entity);
 		}
-	}
 
-	for (const entt::entity entity : aabbView)
-	{
-		if (aabbView.get<PhysicsBody2DComponent>(entity).mRules.GetResponse(filter) != CollisionResponse::Ignore
-			&& AreOverlapping(aabbView.get<TransformedAABBColliderComponent>(entity), shape))
+		static void Callback(const TransformedAABBColliderComponent&, entt::entity entity, std::vector<entt::entity>& returnValue)
 		{
 			returnValue.emplace_back(entity);
 		}
-	}
 
-	for (const entt::entity entity : polyView)
-	{
-		if (polyView.get<PhysicsBody2DComponent>(entity).mRules.GetResponse(filter) != CollisionResponse::Ignore
-			&& AreOverlapping(polyView.get<TransformedPolygonColliderComponent>(entity), shape))
+		static void Callback(const TransformedPolygonColliderComponent&, entt::entity entity, std::vector<entt::entity>& returnValue)
 		{
 			returnValue.emplace_back(entity);
 		}
+	};
+
+	for (const BVH& bvh : mBVHs)
+	{
+		if (filter.mResponses[static_cast<int>(bvh.GetLayer())] == CollisionResponse::Ignore)
+		{
+			continue;
+		}
+
+		bvh.Query<OnIntersect, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<false>>(shape, ret);
 	}
 
-	return returnValue;
+	return ret;
 }
 
 std::vector<entt::entity> CE::Physics::FindAllWithinShape(const TransformedDisk& shape, const CollisionRules& filter) const

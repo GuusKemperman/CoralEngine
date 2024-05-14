@@ -36,25 +36,28 @@ void CE::PhysicsSystem::Update(World& world, float dt)
 	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(world);
 
 	static Cooldown cooldown{ 5.0f };
-	static size_t index = 0;
 
 	if (cooldown.IsReady(dt))
 	{
-		world.GetPhysics().GetBVHs()[index++].Build();
-		index %= world.GetPhysics().GetBVHs().size();
+		for (BVH& bvh : world.GetPhysics().GetBVHs())
+		{
+			bvh.Build();
+		}
+	}
+	else
+	{
+		for (BVH& bvh : world.GetPhysics().GetBVHs())
+		{
+			bvh.Refit();
+		}
 	}
 
-	for (BVH& bvh : world.GetPhysics().GetBVHs())
-	{
-		bvh.Refit();
-	}
 
 	if (world.HasBegunPlay()
 		&& !world.IsPaused())
 	{
 		UpdateCollisions(world);
 	}
-
 }
 
 void CE::PhysicsSystem::Render(const World& world)
@@ -300,11 +303,29 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 	std::swap(mPreviousCollisions, currentCollisions);
 }
 
+static std::vector<entt::entity> sIdsBuffer{};
+
 template <typename Collider, typename TransformedCollider>
 void CE::PhysicsSystem::UpdateTransformedColliders(World& world)
 {
 	Registry& reg = world.GetRegistry();
-	const auto collidersWithoutTransformed = reg.View<Collider>(entt::exclude_t<TransformedCollider>{});
+	const auto collidersWithoutTransformed = reg.View<const PhysicsBody2DComponent, const Collider>(entt::exclude_t<TransformedCollider>{});
+
+	for (BVH& bvh : world.GetPhysics().GetBVHs())
+	{
+		sIdsBuffer.clear();
+		for (entt::entity entity : collidersWithoutTransformed)
+		{
+			const PhysicsBody2DComponent& body = collidersWithoutTransformed.template get<PhysicsBody2DComponent>(entity);
+			if (body.mRules.mLayer == bvh.GetLayer())
+			{
+				sIdsBuffer.emplace_back(entity);
+			}
+		}
+
+		bvh.Insert<TransformedCollider>(sIdsBuffer);
+	}
+
 	reg.AddComponents<TransformedCollider>(collidersWithoutTransformed.begin(), collidersWithoutTransformed.end());
 
 	const auto transformedWithoutColliders = reg.View<TransformedCollider>(entt::exclude_t<Collider>{});
