@@ -38,19 +38,19 @@ CE::Weapon::Weapon(AssetLoadInfo& loadInfo) :
 	const BinaryGSONMember* serializedProjectileSpeed = obj.TryGetGSONMember("ProjectileSpeed");
 	const BinaryGSONMember* serializedProjectileRange = obj.TryGetGSONMember("ProjectileRange");
 	const BinaryGSONMember* serializedKnockback = obj.TryGetGSONMember("Knockback");
-	const BinaryGSONMember* serializedPiercing = obj.TryGetGSONMember("Piercing");
+	const BinaryGSONMember* serializedPierceCount = obj.TryGetGSONMember("PierceCount");
 
 	if (serializedTimeBetweenShots == nullptr
 		|| serializedFireSpeed == nullptr
 		|| serializedReloadSpeed == nullptr
 		|| serializedProjectileCount == nullptr
-		|| serializedSpread == nullptr 
+		|| serializedSpread == nullptr
 		|| serializedEffects == nullptr
 		|| serializedProjectileSize == nullptr
 		|| serializedProjectileSpeed == nullptr
 		|| serializedProjectileRange == nullptr
 		|| serializedKnockback == nullptr
-		|| serializedPiercing == nullptr)
+		|| serializedPierceCount == nullptr)
 	{
 		LOG(LogAssets, Error, "Could not load weapon {}, as there were missing values.", GetName());
 		return;
@@ -67,7 +67,7 @@ CE::Weapon::Weapon(AssetLoadInfo& loadInfo) :
 	*serializedProjectileSpeed >> mProjectileSpeed;
 	*serializedProjectileRange >> mProjectileRange;
 	*serializedKnockback >> mKnockback;
-	*serializedPiercing >> mPiercing;
+	*serializedPierceCount >> mPierceCount;
 }
 
 void CE::Weapon::OnSave(AssetSaveInfo& saveInfo) const
@@ -87,7 +87,7 @@ void CE::Weapon::OnSave(AssetSaveInfo& saveInfo) const
 	obj.AddGSONMember("ProjectileSpeed") << mProjectileSpeed;
 	obj.AddGSONMember("ProjectileRange") << mProjectileRange;
 	obj.AddGSONMember("Knockback") << mKnockback;
-	obj.AddGSONMember("Piercing") << mPiercing;
+	obj.AddGSONMember("PierceCount") << mPierceCount;
 
 	obj.SaveToBinary(saveInfo.GetStream());
 }
@@ -107,7 +107,7 @@ CE::MetaType CE::Weapon::Reflect()
 	type.AddField(&Weapon::mProjectileSpeed, "mProjectileSpeed");
 	type.AddField(&Weapon::mProjectileRange, "mProjectileRange");
 	type.AddField(&Weapon::mKnockback, "mKnockback");
-	type.AddField(&Weapon::mPiercing, "mPiercing");
+	type.AddField(&Weapon::mPierceCount, "mPierceCount");
 
 	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
 		{

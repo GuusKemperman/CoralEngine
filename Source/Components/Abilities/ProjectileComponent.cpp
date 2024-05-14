@@ -13,6 +13,8 @@ CE::MetaType CE::ProjectileComponent::Reflect()
 	metaType.AddField(&ProjectileComponent::mRange, "mRange").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&ProjectileComponent::mCurrentRange, "mCurrentRange").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
 	metaType.AddField(&ProjectileComponent::mSpeed, "mSpeed").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&ProjectileComponent::mPierceCount, "mPierceCount").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&ProjectileComponent::mCurrentPierceCount, "mCurrentPierceCount").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
 
 #ifdef EDITOR
 	BindEvent(metaType, sInspectEvent, &ProjectileComponent::OnInspect);

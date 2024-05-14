@@ -51,7 +51,7 @@ void CE::WeaponEditorSystem::Tick(float deltaTime)
 	ShowInspectUI("Projectile Size", mAsset.mProjectileSize);
 	ShowInspectUI("Projectile Speed", mAsset.mProjectileSpeed);
 	ShowInspectUI("Projectile Range", mAsset.mProjectileRange);
-	ShowInspectUI("Pierce Count", mAsset.mPiercing);
+	ShowInspectUI("Pierce Count", mAsset.mPierceCount);
 	ShowInspectUI("Knockback", mAsset.mKnockback);
 
 	ImGui::Separator();

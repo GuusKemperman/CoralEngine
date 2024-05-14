@@ -33,7 +33,7 @@ namespace CE
 		float mProjectileSpeed = 1.f;
 		float mProjectileRange = 1.f;
 		float mKnockback{};
-		int mPiercing{};
+		int mPierceCount{};
 
 		friend ReflectAccess;
 		friend WeaponEditorSystem;

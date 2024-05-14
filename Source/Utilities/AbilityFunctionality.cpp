@@ -251,6 +251,7 @@ entt::entity CE::AbilityFunctionality::SpawnWeaponPrefab(World& world, const Pre
 	auto& projectileComponent = reg.Get<ProjectileComponent>(prefabEntity);
 	projectileComponent.mSpeed = weaponRef.mProjectileSpeed;
 	projectileComponent.mRange = weaponRef.mProjectileRange;
+	projectileComponent.mPierceCount = weaponRef.mPierceCount;
 
 	auto& physicsBodyComponent = reg.Get<PhysicsBody2DComponent>(prefabEntity);
 
