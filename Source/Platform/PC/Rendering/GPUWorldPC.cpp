@@ -366,7 +366,7 @@ void CE::GPUWorld::Update()
     Device& engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
 
-    mSelectedMeshFrameBuffer->Resize(glm::vec2(ImGui::GetContentRegionAvail()));
+   // mSelectedMeshFrameBuffer->Resize(glm::vec2(ImGui::GetContentRegionAvail()));
     // Get main camera
     entt::entity cameraOwner = CameraComponent::GetSelected(mWorld);
 

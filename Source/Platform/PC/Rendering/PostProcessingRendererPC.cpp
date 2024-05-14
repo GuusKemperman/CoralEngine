@@ -59,24 +59,24 @@ void CE::PostProcessingRenderer::Render(const World& world)
     RenderOutline(world);
 }
 
-void CE::PostProcessingRenderer::RenderOutline(const World&)
+void CE::PostProcessingRenderer::RenderOutline(const World& world)
 {
-    //const auto view = world.GetRegistry().View<const PostPrOutlineComponent>();
-    //if (view.empty())
-    //    return;
+    const auto view = world.GetRegistry().View<const PostPrOutlineComponent>();
+    if (view.empty())
+        return;
 
-    //Device& engineDevice = Device::Get();
-    //ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
-    //GPUWorld& gpuWorld = world.GetGPUWorld();
-    //PosProcRenderingData& postProcData = gpuWorld.GetPostProcData();
-    //int frameIndex = engineDevice.GetFrameIndex();
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    GPUWorld& gpuWorld = world.GetGPUWorld();
+    PosProcRenderingData& postProcData = gpuWorld.GetPostProcData();
+    int frameIndex = engineDevice.GetFrameIndex();
 
-    //commandList->SetPipelineState(mOutlinePipeline.Get());
-    //postProcData.mOutlineBuffer->Bind(commandList, 0, 0, frameIndex);
-    //gpuWorld.GetSelectionFramebuffer().BindSRVDepthToGraphics(8);
-    //
-    //commandList->IASetVertexBuffers(0, 1, &postProcData.mVertexBufferView);
-    //commandList->IASetVertexBuffers(1, 1, &postProcData.mTexCoordBufferView);
-    //commandList->IASetIndexBuffer(&postProcData.mIndexBufferView);
-    //commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+    commandList->SetPipelineState(mOutlinePipeline.Get());
+    postProcData.mOutlineBuffer->Bind(commandList, 0, 0, frameIndex);
+    gpuWorld.GetSelectionFramebuffer().BindSRVDepthToGraphics(8);
+    
+    commandList->IASetVertexBuffers(0, 1, &postProcData.mVertexBufferView);
+    commandList->IASetVertexBuffers(1, 1, &postProcData.mTexCoordBufferView);
+    commandList->IASetIndexBuffer(&postProcData.mIndexBufferView);
+    commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }
