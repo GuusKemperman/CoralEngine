@@ -108,7 +108,7 @@ namespace CE
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
         UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
         PosProcRenderingData& GetPostProcData() { return mPostProcData; };
-        FrameBuffer& GetSelectedMeshFrameBuffer() const { return *mSelectedMeshFrameBuffer; };
+        FrameBuffer& GetSelectionFramebuffer() const { return *mSelectedMeshFrameBuffer; }
 
         glm::ivec3 GetClusterGrid() const { return mClusterGrid; }
         int GetNumberOfClusters() const { return mNumberOfClusters; }
@@ -122,13 +122,13 @@ namespace CE
 
 		std::unique_ptr<DXConstBuffer> mConstBuffers[InfoStruct::NUM_CBS];
 		std::unique_ptr<DXResource> mStructuredBuffers[InfoStruct::NUM_SB];
-        std::unique_ptr<FrameBuffer> mSelectedMeshFrameBuffer;
 
         InfoStruct::DXLightInfo mLightInfo;
 
         std::vector<InfoStruct::DXDirLightInfo> mDirectionalLights;
         std::vector<InfoStruct::DXPointLightInfo> mPointLights;
         std::unique_ptr<InfoStruct::DXShadowMapInfo> mShadowMap;
+        std::unique_ptr<FrameBuffer> mSelectedMeshFrameBuffer;
 
         int mNumberOfClusters = 0;
         glm::ivec3 mClusterGrid;

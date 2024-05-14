@@ -18,8 +18,7 @@ namespace CE
 		void Bind() const;
 		void Unbind() const;
 
-		void BindSRVDepthToCompute(int rootSlot) const;
-		void CopyInto(const std::unique_ptr<DXResource>& resource);
+		void BindSRVDepthToGraphics(int rootSlot) const;
 
 		void Resize(glm::ivec2 newSize);
 		glm::ivec2 GetSize() const { return mSize; }

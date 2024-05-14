@@ -79,10 +79,12 @@ CE::MeshRenderer::MeshRenderer()
     
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZPixel.hlsl");
+    p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
     mZPipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
-        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZSkinnedVertex.hlsl");
@@ -209,11 +211,11 @@ void CE::MeshRenderer::Render(const World& world)
     int meshCounter = 0;
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
-        //RENDERING
         for (auto [entity, staticMeshComponent, transform] : view.each())
         {
             if (!staticMeshComponent.mStaticMesh)
             {
+                meshCounter++;
                 continue;
             }
 
@@ -236,7 +238,6 @@ void CE::MeshRenderer::Render(const World& world)
 
     // Render skinned meshes
     commandList->SetPipelineState(mPBRSkinnedPipeline.Get());
-
     {
         const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
         
@@ -244,6 +245,7 @@ void CE::MeshRenderer::Render(const World& world)
         {
             if (!skinnedMeshComponent.mSkinnedMesh)
             {
+                meshCounter++;
                 continue;
             }
 
@@ -263,7 +265,6 @@ void CE::MeshRenderer::Render(const World& world)
             meshCounter++;
         }
     }
-
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 }
@@ -285,6 +286,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         {
             if (!staticMeshComponent.mStaticMesh)
             {
+                meshCounter++;
                 continue;
             }
 
@@ -294,6 +296,26 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
 
             meshCounter++;
 
+        }
+    }
+
+    commandList->SetPipelineState(mZSkinnedPipeline.Get());
+    {
+        const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
+
+        for (auto [entity, skinnedMeshComponent, transform] : view.each()) 
+        {
+            if (!skinnedMeshComponent.mSkinnedMesh)
+            {
+                meshCounter++;
+                continue;
+            }
+
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
+            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
+
+            skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
+            meshCounter++;
         }
     }
 
@@ -370,28 +392,10 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
     }
 
 
-    commandList->SetPipelineState(mZSkinnedPipeline.Get());
-
-    {
-        const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
-
-        for (auto [entity, skinnedMeshComponent, transform] : view.each()) 
-        {
-            if (!skinnedMeshComponent.mSkinnedMesh)
-            {
-                continue;
-            }
-
-            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
-            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
-
-            skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
-            meshCounter++;
-        }
-    }
 
     meshCounter = 0;
-    gpuWorld.GetSelectedMeshFrameBuffer().Bind();
+    gpuWorld.GetSelectionFramebuffer().Bind();
+    gpuWorld.GetSelectionFramebuffer().Clear();
 
     commandList->SetPipelineState(mZPipeline.Get());
     gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
@@ -402,6 +406,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         {
             if (!staticMeshComponent.mStaticMesh || !staticMeshComponent.mHighlightedMesh)
             {
+                meshCounter++;
                 continue;
             }
 
@@ -422,6 +427,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         {
             if (!skinnedMeshComponent.mSkinnedMesh || !skinnedMeshComponent.mHighlightedMesh)
             {
+                meshCounter++;
                 continue;
             }
 
@@ -520,7 +526,10 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
         gpuWorld.GetModelMatrixBuffer().Bind(commandList, 4, meshCounter, frameIndex);
 
         if (!staticMeshComponent.mStaticMesh)
+        {
+            meshCounter++;
             continue;
+        }
 
         staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
         meshCounter++;
@@ -609,7 +618,10 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
         gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
 
         if (!skinnedMeshComponent.mSkinnedMesh)
+        {
+            meshCounter++;
             continue;
+        }
 
         skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
         meshCounter++;
@@ -735,6 +747,7 @@ void CE::MeshRenderer::RenderShadowMaps(const World& world)
             {
                 if (!staticMeshComponent.mStaticMesh)
                 {
+                    meshCounter++;
                     continue;
                 }
 
@@ -752,6 +765,7 @@ void CE::MeshRenderer::RenderShadowMaps(const World& world)
             {
                 if (!skinnedMeshComponent.mSkinnedMesh)
                 {
+                    meshCounter++;
                     continue;
                 }
 

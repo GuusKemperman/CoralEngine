@@ -75,7 +75,6 @@ void CE::Renderer::Render(const World& world, glm::vec2 viewportSize)
 
 	mMeshRenderer->Render(world);
 	mDebugRenderer->Render(world);
-	mPostProcessSubRenderer->Render(world);
 	mUIRenderer->Render(world);
-
+	mPostProcessSubRenderer->Render(world);
 }

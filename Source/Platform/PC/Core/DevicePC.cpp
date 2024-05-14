@@ -16,6 +16,7 @@
 #include "Platform/PC/Rendering/TexturePC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 #include "Utilities/StringFunctions.h"
+#include "Rendering/Renderer.h"
 
 CE::Device::Device()
 {
@@ -282,9 +283,9 @@ void CE::Device::InitializeDevice()
     mSwapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
 
     //CREATE DESCRIPTOR HEAPS
-    mDescriptorHeaps[RT_HEAP] = DXDescHeap::Construct(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
-    mDescriptorHeaps[DEPTH_HEAP] = DXDescHeap::Construct(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
-    mDescriptorHeaps[RESOURCE_HEAP] = DXDescHeap::Construct(mDevice, 5000, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"RESOURCE HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    mDescriptorHeaps[RT_HEAP] = DXDescHeap::Construct(mDevice, 2000, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
+    mDescriptorHeaps[DEPTH_HEAP] = DXDescHeap::Construct(mDevice, 2000, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
+    mDescriptorHeaps[RESOURCE_HEAP] = DXDescHeap::Construct(mDevice, 50000, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"RESOURCE HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
     mDescriptorHeaps[SAMPLER_HEAP] = DXDescHeap::Construct(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, L"SAMPLER HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     //CREATE RENDER TARGETS
@@ -379,6 +380,7 @@ void CE::Device::InitializeDevice()
     mGenMipmapsPipeline = DXPipelineBuilder()
         .SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize())
         .Build(mDevice, mComputeSignature, L"GENERATE MIPMAPS COMPUTE SHADER");
+
 
     SubmitCommands();
 }

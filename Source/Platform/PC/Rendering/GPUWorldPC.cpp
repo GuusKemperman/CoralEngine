@@ -135,7 +135,6 @@ CE::PosProcRenderingData::PosProcRenderingData()
     ID3D12GraphicsCommandList4* uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetUploadCommandList());
     engineDevice.StartUploadCommands();
 
-
     std::vector<glm::vec3> positions =
     {
         glm::vec3(-1.f, 1.f, 0.0f),  // Top Left
@@ -143,6 +142,7 @@ CE::PosProcRenderingData::PosProcRenderingData()
         glm::vec3(-1.f, -1.f, 0.0f), // Bottom Left
         glm::vec3(1.f, -1.f, 0.0f),  // Bottom Right
     };
+
     std::vector<glm::vec2> uvs = 
     {
         glm::vec2(0.f),
@@ -211,6 +211,7 @@ void CE::PosProcRenderingData::Update(const World& world)
         {
             outlineInfo.mOutlineColor = outlineComponent.mColor;
             outlineInfo.mThreshold = outlineComponent.mThreshold;
+            outlineInfo.mThickness = outlineComponent.mThickness;
         }
         mOutlineBuffer->Update(&outlineInfo, sizeof(InfoStruct::DXOutlineInfo), 0, frameIndex);
     }
@@ -353,9 +354,9 @@ CE::GPUWorld::GPUWorld(const World& world)
 
     uavDesc.Buffer.NumElements = 1;
     mPointLightCounterUAVSlot =  engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER].get(), &uavDesc); 
-    mSelectedMeshFrameBuffer = std::make_unique<FrameBuffer>(glm::vec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
 
     InitializeShadowMaps();
+    mSelectedMeshFrameBuffer = std::make_unique<FrameBuffer>(glm::vec2(1920, 1080));
 }
 
 CE::GPUWorld::~GPUWorld() = default;
@@ -365,6 +366,7 @@ void CE::GPUWorld::Update()
     Device& engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
 
+    mSelectedMeshFrameBuffer->Resize(glm::vec2(ImGui::GetContentRegionAvail()));
     // Get main camera
     entt::entity cameraOwner = CameraComponent::GetSelected(mWorld);
 
@@ -384,8 +386,6 @@ void CE::GPUWorld::Update()
     matrixInfo.ivm = glm::inverse(matrixInfo.vm);
     mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
 
-    mSelectedMeshFrameBuffer->Resize(glm::vec2(ImGui::GetContentRegionAvail()));
-    mSelectedMeshFrameBuffer->Clear();
 
     // Update lights
     const auto pointLightView = mWorld.get().GetRegistry().View<const PointLightComponent, const TransformComponent>();
@@ -472,6 +472,7 @@ void CE::GPUWorld::Update()
         {
             if (!staticMeshComponent.mStaticMesh)
             {
+                meshCounter++;
                 continue;
             }
 
@@ -506,6 +507,7 @@ void CE::GPUWorld::Update()
         {
             if (!skinnedMeshComponent.mSkinnedMesh)
             {
+                meshCounter++;
                 continue;
             }
 

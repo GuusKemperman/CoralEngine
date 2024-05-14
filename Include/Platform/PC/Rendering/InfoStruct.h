@@ -127,7 +127,8 @@ namespace CE::InfoStruct
     {
         glm::vec4 mOutlineColor;
         float mThreshold;
-        uint32 padding[3];
+        float mThickness;
+        float padding[2];
     };
 
     namespace Clustering

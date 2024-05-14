@@ -30,6 +30,7 @@ namespace CE
 			bool clearBufferFirst = true);
 
 		const FrameBuffer& GetFrameBuffer() const { return *mFrameBuffer; }
+		const bool HasFrameBuffer() const { return mFrameBuffer; }
 #endif // EDITOR
 
 		const DebugRenderer& GetDebugRenderer() const { return *mDebugRenderer; };
