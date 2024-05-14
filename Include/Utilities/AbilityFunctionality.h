@@ -6,6 +6,7 @@
 
 namespace CE
 {
+	class ProjectileComponent;
 	struct DurationalEffect;
 	class Prefab;
 	class CharacterComponent;
@@ -21,7 +22,9 @@ namespace CE
 		static void RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect);
 		static void ApplyOverTimeEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f, int ticks = 1);
 		static entt::entity SpawnAbilityPrefab(World& world, const Prefab& prefab, entt::entity castBy);
-		static entt::entity SpawnWeaponPrefab(World& world, const Prefab& prefab, entt::entity castBy, const AssetHandle<Weapon>& weapon);
+		static entt::entity SpawnProjectilePrefab(World& world, const Prefab& prefab, entt::entity castBy, const AssetHandle<Weapon>& weapon);
+		static bool IncreasePierceCountAndReturnTrueIfExceeded(ProjectileComponent& projectileComponent);
+		static bool WasTheAbilityCastByAnEnemy(World& world, entt::entity entityToAffect, entt::entity abilityEntity);
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);

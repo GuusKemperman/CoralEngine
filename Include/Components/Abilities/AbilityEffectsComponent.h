@@ -30,7 +30,7 @@ namespace CE
 		float mAmount{};
 		FlatOrPercentage mFlatOrPercentage = FlatOrPercentage::Flat;
 		IncreaseOrDecrease mIncreaseOrDecrease = IncreaseOrDecrease::Decrease;
-		bool mClampToMax = true;
+		bool mClampToMax{};
 
 		bool operator==(const AbilityEffect& effectSettings) const;
 		bool operator!=(const AbilityEffect& effectSettings) const;

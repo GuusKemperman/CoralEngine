@@ -73,21 +73,33 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		{
 			if (prefab == nullptr)
 			{
-				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
+				LOG(LogWorld, Warning, "SpawnProjectilePrefab - Attempted to spawn NULL prefab.");
 				return {};
 			}
 			if (weapon == nullptr)
 			{
-				LOG(LogWorld, Warning, "Attempted to spawn NULL weapon.");
+				LOG(LogWorld, Warning, "SpawnProjectilePrefab - Weapon is NULL.");
 				return {};
 			}
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			return SpawnWeaponPrefab(*world, *prefab, castBy, weapon);
+			return SpawnProjectilePrefab(*world, *prefab, castBy, weapon);
 
-		}, "SpawnWeaponPrefab", MetaFunc::ExplicitParams<
+		}, "SpawnProjectilePrefab", MetaFunc::ExplicitParams<
 		const AssetHandle<Prefab>&, entt::entity, const AssetHandle<Weapon>&>{}, "Prefab", "Cast By", "Weapon").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc(&AbilityFunctionality::IncreasePierceCountAndReturnTrueIfExceeded, "IncreasePierceCountAndReturnTrueIfExceeded").GetProperties().Add(Props::sIsScriptableTag);
+
+	metaType.AddFunc([](entt::entity entityToAffect, entt::entity abilityEntity) -> bool
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			return WasTheAbilityCastByAnEnemy(*world, entityToAffect, abilityEntity);
+
+		}, "WasTheAbilityCastByAnEnemy", MetaFunc::ExplicitParams<
+		entt::entity, entt::entity>{}, "Entity To Affect", "Ability Entity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	return metaType;
 }
@@ -238,7 +250,7 @@ entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Pr
 	return prefabEntity;
 }
 
-entt::entity CE::AbilityFunctionality::SpawnWeaponPrefab(World& world, const Prefab& prefab, entt::entity castBy, const AssetHandle<Weapon>& weapon)
+entt::entity CE::AbilityFunctionality::SpawnProjectilePrefab(World& world, const Prefab& prefab, entt::entity castBy, const AssetHandle<Weapon>& weapon)
 {
 	entt::entity prefabEntity = SpawnAbilityPrefab(world, prefab, castBy);
 	if (prefabEntity == entt::null)
@@ -268,6 +280,31 @@ entt::entity CE::AbilityFunctionality::SpawnWeaponPrefab(World& world, const Pre
 	effectsComponent.mEffects = weaponRef.mEffects;
 
 	return prefabEntity;
+}
+
+bool CE::AbilityFunctionality::IncreasePierceCountAndReturnTrueIfExceeded(ProjectileComponent& projectileComponent)
+{
+	projectileComponent.mCurrentPierceCount++;
+	return projectileComponent.mCurrentPierceCount > projectileComponent.mPierceCount;
+}
+
+bool CE::AbilityFunctionality::WasTheAbilityCastByAnEnemy(World& world, entt::entity entityToAffect, entt::entity abilityEntity)
+{
+	auto& reg = world.GetRegistry();
+	const auto entityToAffectCharacterComponent = reg.TryGet<CharacterComponent>(entityToAffect);
+	if (entityToAffectCharacterComponent == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "WasTheAbilityCastByAnEnemy - entityToAffect does not have a Character Component attached.");
+		return false;
+	}
+	const auto activeAbilityComponent = reg.TryGet<ActiveAbilityComponent>(abilityEntity);
+	if (activeAbilityComponent == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "WasTheAbilityCastByAnEnemy - entityToAffect does not have an Active Ability Component attached.");
+		return false;
+	}
+	
+	return entityToAffectCharacterComponent->mTeamId != activeAbilityComponent->mCastByCharacterData.mTeamId;
 }
 
 std::pair<float&, float&> CE::AbilityFunctionality::GetStat(Stat stat, CharacterComponent& characterComponent)
