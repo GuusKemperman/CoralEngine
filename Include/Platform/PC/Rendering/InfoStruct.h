@@ -126,9 +126,8 @@ namespace CE::InfoStruct
     struct DXOutlineInfo
     {
         glm::vec4 mOutlineColor;
-        float mThreshold;
         float mThickness;
-        float padding[2];
+        float padding[3];
     };
 
     namespace Clustering

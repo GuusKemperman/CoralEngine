@@ -8,7 +8,6 @@ CE::MetaType CE::PostPrOutlineComponent::Reflect()
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
 
 	metaType.AddField(&PostPrOutlineComponent::mColor, "mColor").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&PostPrOutlineComponent::mThreshold, "mThreshold").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&PostPrOutlineComponent::mThickness, "mThickness").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectComponentType<PostPrOutlineComponent>(metaType);

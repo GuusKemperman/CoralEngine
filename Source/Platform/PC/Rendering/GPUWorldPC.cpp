@@ -210,7 +210,6 @@ void CE::PosProcRenderingData::Update(const World& world)
         for (auto [entity, outlineComponent] : view.each())
         {
             outlineInfo.mOutlineColor = outlineComponent.mColor;
-            outlineInfo.mThreshold = outlineComponent.mThreshold;
             outlineInfo.mThickness = outlineComponent.mThickness;
         }
         mOutlineBuffer->Update(&outlineInfo, sizeof(InfoStruct::DXOutlineInfo), 0, frameIndex);
@@ -366,8 +365,6 @@ void CE::GPUWorld::Update()
     Device& engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
 
-   // mSelectedMeshFrameBuffer->Resize(glm::vec2(ImGui::GetContentRegionAvail()));
-    // Get main camera
     entt::entity cameraOwner = CameraComponent::GetSelected(mWorld);
 
     if (cameraOwner == entt::null)
@@ -385,7 +382,6 @@ void CE::GPUWorld::Update()
     matrixInfo.ipm = glm::inverse(matrixInfo.pm);
     matrixInfo.ivm = glm::inverse(matrixInfo.vm);
     mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&matrixInfo, sizeof(InfoStruct::DXMatrixInfo), 0, frameIndex);
-
 
     // Update lights
     const auto pointLightView = mWorld.get().GetRegistry().View<const PointLightComponent, const TransformComponent>();
