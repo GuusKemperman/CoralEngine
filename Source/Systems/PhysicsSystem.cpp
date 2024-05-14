@@ -25,6 +25,14 @@ CE::PhysicsSystem::PhysicsSystem() :
 
 void CE::PhysicsSystem::Update(World& world, float dt)
 {
+	if (world.GetCurrentTimeReal() == 0.0f)
+	{
+		for (BVH& bvh : world.GetPhysics().GetBVHs())
+		{
+			bvh.Build();
+		}
+	}
+
 	if (world.HasBegunPlay()
 		&& !world.IsPaused())
 	{
@@ -35,9 +43,9 @@ void CE::PhysicsSystem::Update(World& world, float dt)
 	UpdateTransformedColliders<AABBColliderComponent, TransformedAABBColliderComponent>(world);
 	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(world);
 
-	static Cooldown cooldown{ 5.0f };
+	static Cooldown cooldown{ 3.0f };
 
-	if (cooldown.IsReady(dt))
+	if (cooldown.IsReady(world.GetScaledDeltaTime()))
 	{
 		for (BVH& bvh : world.GetPhysics().GetBVHs())
 		{

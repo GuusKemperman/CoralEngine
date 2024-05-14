@@ -64,9 +64,11 @@ void CE::BVH::Build()
 	mNodes.reserve(2 * totalNumObjects);
 
 	Node& root = mNodes[0];
+    root = Node{};
     root.mStartIndex = 1;
 
     Node& actualRoot = mNodes[1];
+    actualRoot = Node{};
 
     actualRoot.mNumOfAABBS = numOfAABBs;
     actualRoot.mNumOfCircles = numOfCircles;
@@ -96,6 +98,11 @@ void CE::BVH::Refit()
 {
     for (int i = static_cast<int>(mNodes.size()) - 1; i >= 0; i--)
     {
+        if (i == 1)
+        {
+            continue;
+        }
+
         Node& node = mNodes[i];
         if (node.mTotalNumOfObjects != 0)
         {

@@ -50,7 +50,14 @@ namespace CE
 		void DebugDraw() const;
 
 		CollisionLayer GetLayer() const { return mLayer; }
-
+		// We make the assumption that if there is
+// any leaf node, that is has objects in it.
+// If it doesnt have objects, we assume its a
+// node with children. We have this boolean to
+// prevent an edge case when there are no objects
+// at all.
+		bool mIsRootNodeEmpty = true;
+		bool mIsInsertNodeEmpty = true;
 	private:
 		const Registry& GetRegistry() const;
 
@@ -85,14 +92,7 @@ namespace CE
 		std::vector<entt::entity> mIds{};
 		std::vector<Node> mNodes{};
 
-		// We make the assumption that if there is
-		// any leaf node, that is has objects in it.
-		// If it doesnt have objects, we assume its a
-		// node with children. We have this boolean to
-		// prevent an edge case when there are no objects
-		// at all.
-		bool mIsRootNodeEmpty = true;
-		bool mIsInsertNodeEmpty = true;
+
 	};
 
 	template <typename OnIntersectFunction, typename ShouldCheckFunction, typename ShouldReturnFunction, typename
