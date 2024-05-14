@@ -246,10 +246,11 @@ entt::entity CE::AbilityFunctionality::SpawnWeaponPrefab(World& world, const Pre
 		return {};
 	}
 	auto& reg = world.GetRegistry();
+	const Weapon& weaponRef = *weapon.Get();
 
 	auto& projectileComponent = reg.Get<ProjectileComponent>(prefabEntity);
-	projectileComponent.mSpeed = weapon.Get()->mProjectileSpeed;
-	projectileComponent.mRange = weapon.Get()->mProjectileRange;
+	projectileComponent.mSpeed = weaponRef.mProjectileSpeed;
+	projectileComponent.mRange = weaponRef.mProjectileRange;
 
 	auto& physicsBodyComponent = reg.Get<PhysicsBody2DComponent>(prefabEntity);
 
@@ -260,7 +261,10 @@ entt::entity CE::AbilityFunctionality::SpawnWeaponPrefab(World& world, const Pre
 	physicsBodyComponent.mLinearVelocity = characterDir * projectileComponent.mSpeed;
 
 	auto& transformComponent = reg.Get<TransformComponent>(prefabEntity);
-	transformComponent.SetLocalScale(glm::vec3(weapon.Get()->mProjectileSize));
+	transformComponent.SetLocalScale(glm::vec3(weaponRef.mProjectileSize));
+
+	auto& effectsComponent = reg.Get<AbilityEffectsComponent>(prefabEntity);
+	effectsComponent.mEffects = weaponRef.mEffects;
 
 	return prefabEntity;
 }
