@@ -7,6 +7,12 @@
 #include "Meta/MetaProps.h"
 #include "Assets/SkinnedMesh.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "World/World.h"
+
+void CE::AttachToBoneComponent::OnConstruct(World&, entt::entity owner)
+{
+	mOwner = owner;
+}
 
 void CE::AttachToBoneComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
 {
@@ -95,7 +101,26 @@ CE::MetaType CE::AttachToBoneComponent::Reflect()
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
 	type.AddField(&AttachToBoneComponent::mBoneName, "mBone").GetProperties().Add(Props::sNoInspectTag);
+	type.AddField(&AttachToBoneComponent::mLocalTranslation, "mLocalTranslation");
+	type.AddField(&AttachToBoneComponent::mLocalRotation, "mLocalRotation");
+	type.AddField(&AttachToBoneComponent::mLocalScale, "mLocalScale");
+
+	type.AddFunc([](AttachToBoneComponent& attachToBone)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			TransformComponent* transform = world->GetRegistry().TryGet<TransformComponent>(attachToBone.mOwner);
+
+			attachToBone.mLocalTranslation = transform->GetLocalPosition();
+			attachToBone.mLocalRotation = transform->GetLocalOrientation();
+			attachToBone.mLocalScale = transform->GetLocalScale();
+
+		}, "CopyTransformValues", MetaFunc::ExplicitParams<AttachToBoneComponent&>{}
+		).GetProperties().Add(Props::sCallFromEditorTag);
+	
 	BindEvent(type, sInspectEvent, &AttachToBoneComponent::OnInspect);
+	BindEvent(type, sConstructEvent, &AttachToBoneComponent::OnConstruct);
 
 	ReflectComponentType<AttachToBoneComponent>(type);
 	return type;

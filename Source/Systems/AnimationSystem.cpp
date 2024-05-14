@@ -107,7 +107,8 @@ void CE::AnimationSystem::Update(World& world, float dt)
 
 		const glm::mat4x4& boneMat = skinnedMesh->mFinalBoneMatrices[it->second.mId];
 	
-		transform.SetLocalMatrix(it->second.mOffset * boneMat);
+		transform.SetLocalMatrix(boneMat *
+			TransformComponent::ToMatrix(attachToBone.mLocalTranslation, attachToBone.mLocalScale, attachToBone.mLocalRotation));
 	}
 }
 
