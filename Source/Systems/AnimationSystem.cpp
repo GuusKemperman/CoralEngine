@@ -41,6 +41,12 @@ void CE::AnimationSystem::Update(World& world, float dt)
 
 	for (auto [entity, skinnedMesh] : reg.View<SkinnedMeshComponent>().each())
 	{
+		if (skinnedMesh.mFinalBoneMatrices.size() != skinnedMesh.mSkinnedMesh->GetBoneMap().size())
+		{
+			size_t newSize = glm::min(static_cast<size_t>(MAX_BONES), skinnedMesh.mSkinnedMesh->GetBoneMap().size());
+			skinnedMesh.mFinalBoneMatrices = std::vector<glm::mat4x4>(newSize, glm::mat4x4(1.0f));
+		}
+		
 		if (skinnedMesh.mAnimation == nullptr
 			|| skinnedMesh.mSkinnedMesh == nullptr)
 		{
