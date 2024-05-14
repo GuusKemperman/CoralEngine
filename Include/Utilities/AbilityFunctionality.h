@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Assets/Core/AssetHandle.h"
+#include "Components/Abilities/AbilityEffectsComponent.h"
 #include "Meta/MetaReflect.h"
-#include "Utilities/Imgui/ImguiInspect.h"
 
 namespace CE
 {
@@ -15,47 +15,6 @@ namespace CE
 	class AbilityFunctionality
 	{
 	public:
-
-		enum class Stat
-		{
-			Health,
-			MovementSpeed,
-			DealtDamageModifier,
-			ReceivedDamageModifier
-		};
-
-		enum class FlatOrPercentage
-		{
-			Flat,
-			Percentage
-		};
-
-		enum class IncreaseOrDecrease
-		{
-			Decrease,
-			Increase
-		};
-
-		struct AbilityEffect
-		{
-			Stat mStat = Stat::Health;
-			float mAmount{};
-			FlatOrPercentage mFlatOrPercentage = FlatOrPercentage::Flat;
-			IncreaseOrDecrease mIncreaseOrDecrease = IncreaseOrDecrease::Decrease;
-			bool mClampToMax = true;
-
-			bool operator==(const AbilityEffect& effectSettings) const;
-			bool operator!=(const AbilityEffect& effectSettings) const;
-
-#ifdef EDITOR
-			void DisplayWidget();
-#endif // EDITOR
-
-		private:
-			friend ReflectAccess;
-			static MetaType Reflect();
-			REFLECT_AT_START_UP(AbilityEffect);
-		};
 
 		static std::optional<float> ApplyInstantEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect);
 		static void ApplyDurationalEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f);
@@ -95,65 +54,4 @@ namespace CE
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AbilityFunctionality);
 	};
-
-	template<class Archive>
-	void serialize(Archive& ar, AbilityFunctionality::AbilityEffect& v)
-	{
-		ar(v.mStat, v.mAmount, v.mFlatOrPercentage, v.mIncreaseOrDecrease, v.mClampToMax);
-	}
 }
-
-template<>
-struct Reflector<CE::AbilityFunctionality::Stat>
-{
-	static CE::MetaType Reflect();
-	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(Stat, CE::AbilityFunctionality::Stat);
-
-template<>
-struct CE::EnumStringPairsImpl<CE::AbilityFunctionality::Stat>
-{
-	static constexpr EnumStringPairs<AbilityFunctionality::Stat, 4> value = {
-		EnumStringPair<AbilityFunctionality::Stat>{ AbilityFunctionality::Stat::Health, "Health" },
-		{ AbilityFunctionality::Stat::MovementSpeed, "MovementSpeed" },
-		{ AbilityFunctionality::Stat::DealtDamageModifier, "DealtDamageModifier" },
-		{ AbilityFunctionality::Stat::ReceivedDamageModifier, "ReceivedDamageModifier" },
-	};
-};
-
-template<>
-struct Reflector<CE::AbilityFunctionality::FlatOrPercentage>
-{
-	static CE::MetaType Reflect();
-	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(FlatOrPercentage, CE::AbilityFunctionality::FlatOrPercentage);
-
-template<>
-struct CE::EnumStringPairsImpl<CE::AbilityFunctionality::FlatOrPercentage>
-{
-	static constexpr EnumStringPairs<AbilityFunctionality::FlatOrPercentage, 2> value = {
-		EnumStringPair<AbilityFunctionality::FlatOrPercentage>{ AbilityFunctionality::FlatOrPercentage::Flat, "Flat" },
-		{ AbilityFunctionality::FlatOrPercentage::Percentage, "Percentage" },
-	};
-};
-
-
-template<>
-struct Reflector<CE::AbilityFunctionality::IncreaseOrDecrease>
-{
-	static CE::MetaType Reflect();
-	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(IncreaseOrDecrease, CE::AbilityFunctionality::IncreaseOrDecrease);
-
-template<>
-struct CE::EnumStringPairsImpl<CE::AbilityFunctionality::IncreaseOrDecrease>
-{
-	static constexpr EnumStringPairs<AbilityFunctionality::IncreaseOrDecrease, 2> value = {
-		EnumStringPair<AbilityFunctionality::IncreaseOrDecrease>{ AbilityFunctionality::IncreaseOrDecrease::Increase, "Increase" },
-		{ AbilityFunctionality::IncreaseOrDecrease::Decrease, "Decrease" },
-	};
-};
-
-#ifdef EDITOR
-IMGUI_AUTO_DEFINE_INLINE(template<>, CE::AbilityFunctionality::AbilityEffect, var.DisplayWidget(); (void)name;)
-#endif // EDITOR

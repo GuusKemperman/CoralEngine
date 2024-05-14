@@ -522,6 +522,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\Abilities\AbilityEffectsComponent.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetHandle.cpp" />
     <ClCompile Include="Source\Components\Abilities\AbilityInstance.cpp" />
     <ClCompile Include="Source\Components\FogComponent.cpp" />
@@ -1547,6 +1548,7 @@
     <ClCompile Include="Source\EditorSystems\AssetEditorSystems\WeaponEditorSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\Abilities\AbilityEffectsComponent.h" />
     <ClInclude Include="Include\Assets\Core\AssetHandle.h" />
     <ClInclude Include="Include\Components\FogComponent.h" />
     <ClInclude Include="Include\Assets\Core\AssetInternal.h" />

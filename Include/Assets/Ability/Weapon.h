@@ -1,9 +1,11 @@
 #pragma once
 #include "Ability.h"
-#include "Utilities/AbilityFunctionality.h"
+#include "Components/Abilities/AbilityEffectsComponent.h"
+
 
 namespace CE
 {
+	class AbilityFunctionality;
 	class WeaponEditorSystem;
 
 	class Weapon :
@@ -26,7 +28,7 @@ namespace CE
 		float mSpread{};
 
 		// projectile
-		std::vector<AbilityFunctionality::AbilityEffect> mEffects{};
+		std::vector<AbilityEffect> mEffects{};
 		float mProjectileSize = 1.f;
 		float mProjectileSpeed = 1.f;
 		float mProjectileRange = 1.f;
