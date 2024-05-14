@@ -2010,6 +2010,12 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
     </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\InstancedDepth_vv.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
+    </WavePsslc>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\DepthSkinned_vv.pssl">
       <Profile Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">VSVS</Profile>
       <Profile Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">VSVS</Profile>
