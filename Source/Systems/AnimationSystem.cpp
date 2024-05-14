@@ -76,22 +76,38 @@ void CE::AnimationSystem::Update(World& world, float dt)
 
 	for (auto [entity, attachToBone, transform] : reg.View<AttachToBoneComponent, TransformComponent>().each())
 	{
-		if (attachToBone.mConnectedBone == nullptr)
+		if (attachToBone.mBoneName == "")
 		{
 			continue;
 		}
+
+		const TransformComponent* parent = transform.GetParent();
 	
-		auto* skinnedMesh = reg.TryGet<SkinnedMeshComponent>(entity);
+		if (parent == nullptr)
+		{
+			continue;
+		}
+
+		const SkinnedMeshComponent* skinnedMesh = reg.TryGet<SkinnedMeshComponent>(parent->GetOwner());
 
 		if (skinnedMesh == nullptr)
 		{
-			transform.SetLocalMatrix(attachToBone.mConnectedBone->mOffset);
 			continue;
 		}
 
-		glm::mat4x4& boneMat = skinnedMesh->mFinalBoneMatrices[attachToBone.mConnectedBone->mId];
+		auto& boneMap = skinnedMesh->mSkinnedMesh->GetBoneMap();
+		auto it = boneMap.find(attachToBone.mBoneName);
+
+		if (it == boneMap.end() 
+			|| skinnedMesh->mAnimation == nullptr)
+		{
+			transform.SetLocalMatrix(it->second.mOffset);
+			continue;
+		}
+
+		const glm::mat4x4& boneMat = skinnedMesh->mFinalBoneMatrices[it->second.mId];
 	
-		transform.SetLocalMatrix(TransformComponent::ToMatrix(attachToBone.mLocalTranslation, glm::vec3(1.0f), attachToBone.mLocalRotation) * boneMat);
+		transform.SetLocalMatrix(it->second.mOffset * boneMat);
 	}
 }
 

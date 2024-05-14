@@ -2,6 +2,7 @@
 #include "Components/AttachToBoneComponent.h"
 
 #include "Components/SkinnedMeshComponent.h"
+#include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Assets/SkinnedMesh.h"
@@ -17,7 +18,21 @@ void CE::AttachToBoneComponent::OnInspect(World& world, const std::vector<entt::
 
 	for (entt::entity entity : entities)
 	{
-		const SkinnedMeshComponent* skinnedMeshComponent = reg.TryGet<SkinnedMeshComponent>(entity);
+		const TransformComponent* transform = reg.TryGet<TransformComponent>(entity);
+
+		if (transform == nullptr)
+		{
+			continue;
+		}
+
+		const TransformComponent* parent = transform->GetParent();
+
+		if (parent == nullptr)
+		{
+			continue;
+		}
+
+		const SkinnedMeshComponent* skinnedMeshComponent = reg.TryGet<SkinnedMeshComponent>(parent->GetOwner());
 
 		if (skinnedMeshComponent == nullptr)
 		{
@@ -80,13 +95,6 @@ CE::MetaType CE::AttachToBoneComponent::Reflect()
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
 	type.AddField(&AttachToBoneComponent::mBoneName, "mBone").GetProperties().Add(Props::sNoInspectTag);
-
-
-
-	type.AddField(&AttachToBoneComponent::mLocalTranslation, "mLocalTranslation").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&AttachToBoneComponent::mLocalRotation, "mLocalRotation").GetProperties().Add(Props::sIsScriptableTag);
-
-	// Todo: field to select bone in parent skinned mesh
 	BindEvent(type, sInspectEvent, &AttachToBoneComponent::OnInspect);
 
 	ReflectComponentType<AttachToBoneComponent>(type);
