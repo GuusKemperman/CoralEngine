@@ -5,6 +5,8 @@
 #include "World/Registry.h"
 #include "Assets/SkinnedMesh.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Components/AttachToBoneComponent.h"
+#include "Components/TransformComponent.h"
 #include "Assets/Animation/Animation.h"
 #include "Assets/Animation/Bone.h"
 #include "Meta/MetaType.h"
@@ -70,6 +72,26 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		}
 
 		CalculateBoneTransformRecursive(existingInfo->second, glm::mat4x4{ 1.0f }, skinnedMesh);
+	}
+
+	for (auto [entity, attachToBone, transform] : reg.View<AttachToBoneComponent, TransformComponent>().each())
+	{
+		if (attachToBone.mConnectedBone == nullptr)
+		{
+			continue;
+		}
+	
+		auto* skinnedMesh = reg.TryGet<SkinnedMeshComponent>(attachToBone.mOwner);
+
+		if (skinnedMesh == nullptr)
+		{
+			transform.SetLocalMatrix(attachToBone.mConnectedBone->mOffset);
+			continue;
+		}
+
+		glm::mat4x4& boneMat = skinnedMesh->mFinalBoneMatrices[attachToBone.mConnectedBone->mId];
+	
+		transform.SetLocalMatrix(TransformComponent::ToMatrix(attachToBone.mLocalTranslation, glm::vec3(1.0f), attachToBone.mLocalRotation) * boneMat);
 	}
 }
 
