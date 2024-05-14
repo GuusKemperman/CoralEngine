@@ -526,6 +526,16 @@
     <ClCompile Include="Source\Platform\PC\Rendering\PostProcessingRendererPC.cpp" />
     <ClCompile Include="Source\Rendering\PostProcessingRenderer.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetHandle.cpp" />
+    <ClCompile Include="Source\Assets\Importers\AudioImporter.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Assets\Sound.cpp" />
+    <ClCompile Include="Source\Components\AudioEmitterComponent.cpp" />
     <ClCompile Include="Source\Components\FogComponent.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetInternal.cpp" />
     <ClCompile Include="Source\Components\AnimationRootComponent.cpp" />
@@ -585,6 +595,7 @@
     <ClCompile Include="Source\Components\Physics2D\AABBColliderComponent.cpp" />
     <ClCompile Include="Source\Components\UI\UIButtonComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\EnemyAiControllerComponent.cpp" />
+    <ClCompile Include="Source\Core\Audio.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\UIRendererPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -1548,6 +1559,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Assets\Core\AssetHandle.h" />
+    <ClInclude Include="Include\Assets\Importers\AudioImporter.h" />
+    <ClInclude Include="Include\Assets\Sound.h" />
     <ClInclude Include="Include\Components\FogComponent.h" />
     <ClInclude Include="Include\Assets\Core\AssetInternal.h" />
     <ClInclude Include="Include\Components\AnimationRootComponent.h" />
@@ -1555,6 +1568,7 @@
     <ClInclude Include="Include\Components\MaterialRootComponent.h" />
     <ClInclude Include="Include\Components\OutlineComponent.h" />
     <ClInclude Include="Include\Components\PlayerComponent.h" />
+    <ClInclude Include="Include\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
     <ClInclude Include="Include\Utilities\ASync.h" />
     <ClInclude Include="Include\Utilities\Geometry2d.h" />
@@ -1574,6 +1588,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClInclude Include="Include\Core\Audio.h" />
     <ClInclude Include="Include\Rendering\SkinnedMeshDefines.h" />
     <ClInclude Include="Include\Components\Physics2D\AABBColliderComponent.h" />
     <ClInclude Include="Include\Utilities\DrawDebugHelpers.h" />
@@ -2000,6 +2015,12 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\InstancedDepth_vv.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
     </WavePsslc>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\DepthSkinned_vv.pssl">
       <Profile Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">VSVS</Profile>
