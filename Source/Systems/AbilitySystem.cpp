@@ -73,7 +73,7 @@ void CE::AbilitySystem::Update(World& world, float dt)
             {
                 it->mTicksCounter++;
             	it->mDurationTimer = 0.f;
-                AbilityFunctionality::ApplyInstantEffect(world, it->mCastByCharacterData, entity, it->mEffectSettings);
+                AbilityFunctionality::ApplyInstantEffect(world, &it->mCastByCharacterData, entity, it->mEffectSettings);
             }
             if (it->mTicksCounter >= it->mNumberOfTicks)
             {
