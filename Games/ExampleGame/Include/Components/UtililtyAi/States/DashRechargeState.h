@@ -18,18 +18,14 @@ namespace Game
 		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 		static void OnAIStateEnterEvent(CE::World& world, entt::entity owner);
 
-		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
-			entt::entity owner) const;
-
 		float mCurrentRechargeTimer = 0.0f;
 
 	private:
 		entt::entity mTargetEntity{};
-		float mRadius{};
 
 		float mMaxRechargeTime = 5.0f;
 
-		CE::AssetHandle<CE::Animation> mDashingAnimation{};
+		CE::AssetHandle<CE::Animation> mDashRechargeAnimation{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

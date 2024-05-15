@@ -17,6 +17,8 @@ void Game::AttackingState::OnAiTick(CE::World& world, entt::entity owner, float)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
+	if (animationRootComponent == nullptr) { return; }
+
 	animationRootComponent->SwitchAnimation(world.GetRegistry(), mAttackingAnimation, 0.0f);
 
 	auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);

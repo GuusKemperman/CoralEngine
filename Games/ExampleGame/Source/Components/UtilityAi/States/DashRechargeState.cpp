@@ -21,7 +21,9 @@ void Game::DashRechargeState::OnAiTick(CE::World& world, entt::entity owner, flo
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
-	animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashingAnimation, 0.0f);
+	if (animationRootComponent == nullptr) { return; }
+
+	animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashRechargeAnimation, 0.0f);
 
 	if (mTargetEntity != entt::null)
 	{
@@ -33,19 +35,31 @@ void Game::DashRechargeState::OnAiTick(CE::World& world, entt::entity owner, flo
 	}
 
 	mCurrentRechargeTimer += dt;
+
+	auto* dashingState = world.GetRegistry().TryGet<DashingState>(owner);
+
+	if (dashingState == nullptr) { return; }
+
+	auto* chargeDashingState = world.GetRegistry().TryGet<ChargeDashState>(owner);
+
+	if (chargeDashingState == nullptr) { return; }
+
+	if (mCurrentRechargeTimer >= mMaxRechargeTime)
+	{
+		chargeDashingState->mCurrentChargeTimer = 0;
+		dashingState->mCurrentDashTimer = 0;
+	}
 }
 
 float Game::DashRechargeState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
 {
-	//auto [score, entity] = GetBestScoreAndTarget(world, owner);
-
 	auto* dashingState = world.GetRegistry().TryGet<DashingState>(owner);
 
 	if (dashingState == nullptr) { return 0; }
 
-	if (dashingState->IsDashCharged() && mCurrentRechargeTimer >= mMaxRechargeTime)
+	if (dashingState->IsDashCharged() && mCurrentRechargeTimer < mMaxRechargeTime)
 	{
-		return 0.9f;
+		return 1;
 	}
 
 	return 0;
@@ -60,55 +74,18 @@ void Game::DashRechargeState::OnAIStateEnterEvent(CE::World& world, entt::entity
 	navMeshAgent->StopNavMesh();
 }
 
-std::pair<float, entt::entity> Game::DashRechargeState::GetBestScoreAndTarget(const CE::World& world,
-	entt::entity owner) const
-{
-	const auto targetsView = world.GetRegistry().View<CE::NavMeshTargetTag, CE::TransformComponent>();
-	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-	if (transformComponent == nullptr)
-	{
-		return { 0.0f, entt::null };
-	}
-
-	float highestScore = 0.0f;
-	entt::entity entityId = entt::null;
-
-	for (auto [targetId, targetTransform] : targetsView.each())
-	{
-		const float distance = glm::distance(transformComponent->GetWorldPosition(),
-			targetTransform.GetWorldPosition());
-
-		float score = 0.0f;
-
-		if (distance < mRadius)
-		{
-			score = 1 / distance;
-			score += 1 / mRadius;
-		}
-
-		if (highestScore < score)
-		{
-			highestScore = score;
-			entityId = targetId;
-		}
-	}
-
-	return { highestScore, entityId };
-}
-
 CE::MetaType Game::DashRechargeState::Reflect()
 {
 	auto type = CE::MetaType{ CE::MetaType::T<DashRechargeState>{}, "DashRechargeState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&DashRechargeState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DashRechargeState::mMaxRechargeTime, "mMaxRechargeTime").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &DashRechargeState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &DashRechargeState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &DashRechargeState::OnAIStateEnterEvent);
 
-	type.AddField(&DashRechargeState::mDashingAnimation, "mDashingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DashRechargeState::mDashRechargeAnimation, "mDashRechargeAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<DashRechargeState>(type);
 	return type;

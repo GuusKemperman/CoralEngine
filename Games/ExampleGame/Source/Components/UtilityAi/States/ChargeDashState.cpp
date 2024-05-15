@@ -19,6 +19,8 @@ void Game::ChargeDashState::OnAiTick(CE::World& world, const entt::entity owner,
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
+	if (animationRootComponent == nullptr) { return; }
+
 	animationRootComponent->SwitchAnimation(world.GetRegistry(), mChargingAnimation, 0.0f);
 
 	//auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
@@ -63,12 +65,17 @@ float Game::ChargeDashState::OnAiEvaluate(const CE::World& world, entt::entity o
 {
 	auto [score, entity] = GetBestScoreAndTarget(world, owner);
 
-	if (mCurrentChargeTimer >= mMaxChargeTime)
+	if (mCurrentChargeTimer > 0 && mCurrentChargeTimer < mMaxChargeTime)
 	{
-		return 0;
+		return 0.9f;
 	}
 
-	return score;
+	if (mCurrentChargeTimer < mMaxChargeTime)
+	{
+		return score;
+	}
+
+	return 0;
 }
 
 void Game::ChargeDashState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)

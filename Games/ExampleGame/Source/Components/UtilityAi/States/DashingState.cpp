@@ -14,16 +14,17 @@
 #include "Components/AnimationRootComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeDashState.h"
+#include "Components/UtililtyAi/States/ChasingState.h"
+#include "Components/UtililtyAi/States/DashRechargeState.h"
 
 
 void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
-	animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashingAnimation, 0.0f);
+	if (animationRootComponent == nullptr) { return; }
 
-	/*auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
-	mTargetEntity = targetEntity;
+	animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashingAnimation, 0.0f);
 
 	const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
 	if (characterData == nullptr)
@@ -42,27 +43,16 @@ void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt
 		return;
 	}
 
-	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);*/
+	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
 
-	if (mTargetEntity != entt::null)
-	{
-		const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(mTargetEntity);
+	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
-		if (transformComponent == nullptr) { return; }
+	if (physicsBody2DComponent == nullptr) { return; }
 
-		const auto* ownerTransformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-		if (ownerTransformComponent == nullptr) { return; }
-
-		auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
-
-		if (physicsBody2DComponent == nullptr) { return; }
-
-		physicsBody2DComponent->mLinearVelocity = glm::normalize(transformComponent->GetWorldPosition() - ownerTransformComponent->GetWorldPosition()) * mSpeedDash;
-	}
+	physicsBody2DComponent->mLinearVelocity = mDashDirection * mSpeedDash;
 
 	mCurrentDashTimer += dt;
-}
+ }
 
 float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
 {
@@ -72,7 +62,7 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owne
 
 	if (chargeDashState == nullptr) { return 0; }
 
-	if (chargeDashState->IsDashCharged() && mCurrentDashTimer >= mMaxDashTime)
+	if (chargeDashState->IsDashCharged() && mCurrentDashTimer < mMaxDashTime)
 	{
 		return 0.9f;
 	}
@@ -87,6 +77,41 @@ void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owne
 	if (navMeshAgent == nullptr) { return; }
 
 	navMeshAgent->StopNavMesh();
+
+	const auto* target = world.GetRegistry().TryGet<Game::ChasingState>(owner);
+
+	if (target == nullptr) { return; }
+
+	const auto targetsView = world.GetRegistry().View<CE::NavMeshTargetTag, CE::TransformComponent>();
+
+	mTargetEntity = targetsView.front();
+
+	if (mTargetEntity != entt::null)
+	{
+		const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(mTargetEntity);
+
+		if (transformComponent == nullptr) { return; }
+
+		const auto* ownerTransformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+
+		if (ownerTransformComponent == nullptr) { return; }
+
+		const auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
+
+		if (physicsBody2DComponent == nullptr) { return; }
+
+		const glm::vec2 targetT = { transformComponent->GetWorldPosition().x, transformComponent->GetWorldPosition().z };
+
+		const glm::vec2 ownerT = { ownerTransformComponent->GetWorldPosition().x, ownerTransformComponent->GetWorldPosition().z };
+
+		mDashDirection = glm::normalize(targetT - ownerT);
+	}
+
+	auto* recoverState = world.GetRegistry().TryGet<DashRechargeState>(owner);
+
+	if (recoverState == nullptr) { return; }
+
+	recoverState->mCurrentRechargeTimer = 0;
 }
 
 bool Game::DashingState::IsDashCharged() const
@@ -94,56 +119,19 @@ bool Game::DashingState::IsDashCharged() const
 	return mCurrentDashTimer >= mMaxDashTime;
 }
 
-std::pair<float, entt::entity> Game::DashingState::GetBestScoreAndTarget(const CE::World& world,
-                                                                         entt::entity owner) const
-{
-	const auto targetsView = world.GetRegistry().View<CE::NavMeshTargetTag, CE::TransformComponent>();
-	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-	if (transformComponent == nullptr)
-	{
-		return { 0.0f, entt::null };
-	}
-
-	float highestScore = 0.0f;
-	entt::entity entityId = entt::null;
-
-	for (auto [targetId, targetTransform] : targetsView.each())
-	{
-		const float distance = glm::distance(transformComponent->GetWorldPosition(),
-			targetTransform.GetWorldPosition());
-
-		float score = 0.0f;
-
-		if (distance < mRadius)
-		{
-			score = 1 / distance;
-			score += 1 / mRadius;
-		}
-
-		if (highestScore < score)
-		{
-			highestScore = score;
-			entityId = targetId;
-		}
-	}
-
-	return { highestScore, entityId };
-}
-
 CE::MetaType Game::DashingState::Reflect()
 {
 	auto type = CE::MetaType{ CE::MetaType::T<DashingState>{}, "DashingState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
-
-	type.AddField(&DashingState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	
 	type.AddField(&DashingState::mSpeedDash, "mSpeedDash").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DashingState::mMaxDashTime, "mMaxDashTime").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &DashingState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &DashingState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &DashingState::OnAIStateEnterEvent);
 
-	type.AddField(&DashingState::mDashingAnimation, "mAttackingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DashingState::mDashingAnimation, "mDashingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<DashingState>(type);
 	return type;
