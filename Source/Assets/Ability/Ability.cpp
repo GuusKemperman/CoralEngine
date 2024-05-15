@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Assets/Ability.h"
+#include "Assets/Ability/Ability.h"
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
@@ -13,6 +13,11 @@
 
 CE::Ability::Ability(std::string_view name) :
 	Asset(name, MakeTypeId<Ability>())
+{
+}
+
+CE::Ability::Ability(std::string_view name, TypeId typeId) :
+	Asset(name, typeId)
 {
 }
 
@@ -81,7 +86,7 @@ CE::MetaType CE::Ability::Reflect()
 	type.AddField(&Ability::mDescription, "mDescription");
 	type.AddField(&Ability::mGlobalCooldown, "mGlobalCooldown");
 	type.AddField(&Ability::mRequirementType, "mRequirementType");
-	type.AddField(&Ability::mRequirementToUse, "mRequirementToUse");
+	type.AddField(&Ability::mRequirementToUse, "mRequirementValue");
 	type.AddField(&Ability::mCharges, "mCharges");
 
 	type.AddFunc([](const AssetHandle<Ability>& script) -> AssetHandle<Texture>
