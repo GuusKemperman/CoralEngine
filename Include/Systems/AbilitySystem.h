@@ -14,8 +14,8 @@ namespace CE
 	public:
 		void Update(World& world, float dt) override;
 
-		void IterateAbilitiesVector(AbilitiesOnCharacterComponent& abilities, CharacterComponent& characterData, entt::entity entity, World& world, float dt);
-		void IterateWeaponsVector(AbilitiesOnCharacterComponent& abilities, CharacterComponent& characterData, entt::entity entity, World& world, float dt);
+		void UpdateAbilitiesVector(AbilitiesOnCharacterComponent& abilities, CharacterComponent& characterData, entt::entity entity, World& world, float dt);
+		void UpdateWeaponsVector(AbilitiesOnCharacterComponent& abilities, CharacterComponent& characterData, entt::entity entity, World& world, float dt);
 
 		// Checks for cooldowns/charges/requirements to see if an ability can be activated
 		static bool CanAbilityBeActivated(const CharacterComponent& characterData, const AbilityInstance& ability);
@@ -25,11 +25,10 @@ namespace CE
 		// Returns whether the ability was activated.
 		static bool ActivateAbility(World& world, entt::entity castBy, CharacterComponent& characterData, AbilityInstance& ability);
 
-		// Checks the same things CanAbilityBeActivated() plus extra weapon specific things.
+		// Checks the same things CanAbilityBeActivated() plus extra weapon-specific things.
 		static bool CanWeaponBeActivated(const CharacterComponent& characterData, const WeaponInstance& weapon);
 
-		//  
-		// Returns whether the ability was activated.
+		// Functions the same as ActivateAbility() plus extra weapon-specific things.
 		static bool ActivateWeapon(World& world, entt::entity castBy, CharacterComponent& characterData, WeaponInstance& weapon);
 
 	private:

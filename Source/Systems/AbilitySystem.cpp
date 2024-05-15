@@ -158,12 +158,12 @@ void CE::AbilitySystem::Update(World& world, float dt)
         // Update GDC
         characterData.mGlobalCooldownTimer = std::max(characterData.mGlobalCooldownTimer - dt, 0.0f);
 
-        IterateAbilitiesVector(abilities, characterData, entity, world, dt);
-        IterateWeaponsVector(abilities, characterData, entity, world, dt);
+        UpdateAbilitiesVector(abilities, characterData, entity, world, dt);
+        UpdateWeaponsVector(abilities, characterData, entity, world, dt);
     }
 }
 
-void CE::AbilitySystem::IterateAbilitiesVector(AbilitiesOnCharacterComponent& abilities, CharacterComponent& characterData, entt::entity entity, World& world, float dt)
+void CE::AbilitySystem::UpdateAbilitiesVector(AbilitiesOnCharacterComponent& abilities, CharacterComponent& characterData, entt::entity entity, World& world, float dt)
 {
     const auto& input = Input::Get();
     for (auto& ability : abilities.mAbilitiesToInput)
@@ -211,7 +211,7 @@ void CE::AbilitySystem::IterateAbilitiesVector(AbilitiesOnCharacterComponent& ab
     }
 }
 
-void CE::AbilitySystem::IterateWeaponsVector(AbilitiesOnCharacterComponent& abilities, CharacterComponent& characterData, entt::entity entity, World& world, float dt)
+void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abilities, CharacterComponent& characterData, entt::entity entity, World& world, float dt)
 {
     const auto& input = Input::Get();
     for (auto& weapon : abilities.mWeaponsToInput)
@@ -274,11 +274,14 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
     {
         if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName()))
         {
-            if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
+            if (world.GetRegistry().HasComponent(metaType->GetTypeId(), castBy))
             {
-                entt::sparse_set* storage = world.GetRegistry().Storage(metaType->GetTypeId());
-                MetaAny component{ *metaType, storage->value(castBy), false };
-                metaFunc->InvokeUncheckedUnpacked(component, world, castBy);
+                if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
+                {
+                    entt::sparse_set* storage = world.GetRegistry().Storage(metaType->GetTypeId());
+                    MetaAny component{ *metaType, storage->value(castBy), false };
+                    metaFunc->InvokeUncheckedUnpacked(component, world, castBy);
+                }
             }
         }
         else
@@ -330,11 +333,14 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     {
         if (auto metaType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName()))
         {
-            if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
+            if (world.GetRegistry().HasComponent(metaType->GetTypeId(), castBy))
             {
-                entt::sparse_set* storage = world.GetRegistry().Storage(metaType->GetTypeId());
-                MetaAny component{ *metaType, storage->value(castBy), false };
-                metaFunc->InvokeUncheckedUnpacked(component, world, castBy);
+                if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
+                {
+                    entt::sparse_set* storage = world.GetRegistry().Storage(metaType->GetTypeId());
+                    MetaAny component{ *metaType, storage->value(castBy), false };
+                    metaFunc->InvokeUncheckedUnpacked(component, world, castBy);
+                }
             }
         }
         else
