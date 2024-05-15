@@ -81,14 +81,19 @@ void CE::AnimationSystem::Update(World& world, float dt)
 			continue;
 		}
 
-		const SkinnedMeshComponent* skinnedMesh = AttachToBoneComponent::FindSkinnedMeshParentRecursive(reg, transform);
+		const TransformComponent* parent = transform.GetParent();
+
+		if (parent == nullptr)
+		{
+			continue;
+		}
+
+		const SkinnedMeshComponent* skinnedMesh = AttachToBoneComponent::FindSkinnedMeshParentRecursive(reg, *parent);
 
 		if (skinnedMesh == nullptr)
 		{
 			continue;
 		}
-
-		// From here on we are certain that the transform has a parent
 
 		auto& boneMap = skinnedMesh->mSkinnedMesh->GetBoneMap();
 		auto it = boneMap.find(attachToBone.mBoneName);
@@ -96,7 +101,7 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		if (it == boneMap.end() 
 			|| skinnedMesh->mAnimation == nullptr)
 		{
-			transform.SetLocalMatrix(transform.GetParent()->GetWorldMatrix() * 
+			transform.SetLocalMatrix(parent->GetWorldMatrix() * 
 				TransformComponent::ToMatrix(attachToBone.mLocalTranslation, attachToBone.mLocalScale, attachToBone.mLocalRotation));
 			continue;
 		}

@@ -27,12 +27,13 @@ void CE::AttachToBoneComponent::OnInspect(World& world, const std::vector<entt::
 	{
 		const TransformComponent* transform = reg.TryGet<TransformComponent>(entity);
 
-		if (transform == nullptr)
+		if (transform == nullptr
+			|| transform->GetParent() == nullptr)
 		{
 			continue;
 		}
 
-		const SkinnedMeshComponent* skinnedMeshComponent = FindSkinnedMeshParentRecursive(reg, *transform);
+		const SkinnedMeshComponent* skinnedMeshComponent = FindSkinnedMeshParentRecursive(reg, *transform->GetParent());
 
 		if (skinnedMeshComponent == nullptr)
 		{
@@ -64,16 +65,17 @@ void CE::AttachToBoneComponent::OnInspect(World& world, const std::vector<entt::
 		bonePreviewName = "None";
 	}
 
+	if (skinnedMesh == nullptr)
+	{
+		ImGui::Text("No SkinnedMesh in hierarchy above");
+		return;
+	}
+
 	if (Search::BeginCombo("mBone", bonePreviewName))
 	{
 		if (Search::Button("None"))
 		{
 			bone.clear();
-		}
-
-		if (skinnedMesh == nullptr)
-		{
-			return;
 		}
 
 		for (const auto [boneName, _] : skinnedMesh->GetBoneMap())
