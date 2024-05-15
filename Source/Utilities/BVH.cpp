@@ -11,17 +11,15 @@
 
 CE::BVH::BVH(Physics& physics, CollisionLayer layer) :
     mPhysics(&physics),
-	mLayer(layer)
+    mLayer(layer)
 {
-    Build();
+    mNodes.resize(4);
 }
 
 void CE::BVH::Build()
 {
     mNodes.clear();
-    mNodes.resize(3);
     mIds.clear();
-
     mAmountRefitted = 0.0f;
 
     const Registry& reg = mPhysics->GetWorld().GetRegistry();
@@ -29,8 +27,6 @@ void CE::BVH::Build()
     const auto aabbView = reg.View<PhysicsBody2DComponent, TransformedAABBColliderComponent>();
     const auto circlesView = reg.View<PhysicsBody2DComponent, TransformedDiskColliderComponent>();
     const auto polygonView = reg.View<PhysicsBody2DComponent, TransformedPolygonColliderComponent>();
-
-    mIds.reserve(aabbView.size_hint() + circlesView.size_hint() + polygonView.size_hint());
 
     for (const entt::entity entity : aabbView)
     {
@@ -63,44 +59,47 @@ void CE::BVH::Build()
     const uint32 numOfPolygons = static_cast<uint32>(mIds.size()) - numOfAABBs - numOfCircles;
     const uint32 totalNumObjects = numOfAABBs + numOfCircles + numOfPolygons;
 
-	mNodes.reserve(2 * totalNumObjects);
+    if (totalNumObjects != 0)
+    {
+        mIds.resize(totalNumObjects);
+        mNodes.reserve(2 * totalNumObjects - 1);
+    }
 
-	Node& root = mNodes[0];
-    root = Node{};
-    root.mStartIndex = 1;
+    Node& root = mNodes.emplace_back();
+    root.mStartIndex = 0;
 
-    Node& actualRoot = mNodes[1];
-    actualRoot = Node{};
+    root.mNumOfAABBS = numOfAABBs;
+    root.mNumOfCircles = numOfCircles;
+    root.mTotalNumOfObjects = totalNumObjects;
 
-    actualRoot.mNumOfAABBS = numOfAABBs;
-    actualRoot.mNumOfCircles = numOfCircles;
-    actualRoot.mTotalNumOfObjects = totalNumObjects;
+    mEmpty = root.mTotalNumOfObjects == 0;
 
-    Node& nodeToInsertInto = mNodes[2];
-    nodeToInsertInto = Node{};
-    nodeToInsertInto.mStartIndex = static_cast<uint32>(mIds.size());
-
-    mIsRootNodeEmpty = actualRoot.mTotalNumOfObjects == 0;
-    mIsInsertNodeEmpty = true;
-
-    if (mIsRootNodeEmpty)
+    if (mEmpty)
     {
         return;
     }
 
-    UpdateNodeBounds(actualRoot);
+    // Empty dummy node, is just
+    // there for cache alignment.
+    mNodes.emplace_back();
 
-    if (actualRoot.mTotalNumOfObjects > 2)
+    UpdateNodeBounds(root);
+
+    if (root.mTotalNumOfObjects > 2)
     {
-        Subdivide(actualRoot);
+        Subdivide(root);
     }
 }
 
 void CE::BVH::Refit()
 {
+    if (mEmpty)
+    {
+        return;
+    }
+
     for (int i = static_cast<int>(mNodes.size()) - 1; i >= 0; i--)
     {
-        // Not sure what this does
         if (i == 1)
         {
             continue;
@@ -122,68 +121,12 @@ void CE::BVH::Refit()
     }
 }
 
-template <>
-void CE::BVH::Insert<CE::TransformedAABB>(const Span<entt::entity>& entities)
-{
-    if (entities.empty())
-    {
-        return;
-    }
-
-    Node& nodeToInsertInto = mNodes[2];
-    mIds.insert(mIds.begin() + nodeToInsertInto.mStartIndex + nodeToInsertInto.mNumOfAABBS, entities.begin(), entities.end());
-    nodeToInsertInto.mNumOfAABBS += static_cast<uint32>(entities.size());
-    nodeToInsertInto.mTotalNumOfObjects += static_cast<uint32>(entities.size());
-    mIsInsertNodeEmpty = false;
-}
-
-template <>
-void CE::BVH::Insert<CE::TransformedPolygon>(const Span<entt::entity>& entities)
-{
-    if (entities.empty())
-    {
-        return;
-    }
-
-    Node& nodeToInsertInto = mNodes[2];
-    mIds.insert(mIds.begin() + nodeToInsertInto.mStartIndex + nodeToInsertInto.mTotalNumOfObjects, entities.begin(), entities.end());
-    nodeToInsertInto.mTotalNumOfObjects += static_cast<uint32>(entities.size());
-    mIsInsertNodeEmpty = false;
-}
-
-template <>
-void CE::BVH::Insert<CE::TransformedDisk>(const Span<entt::entity>& entities)
-{
-    if (entities.empty())
-    {
-        return;
-    }
-
-    Node& nodeToInsertInto = mNodes[2];
-    mIds.insert(mIds.begin() + nodeToInsertInto.mStartIndex + nodeToInsertInto.mNumOfAABBS + nodeToInsertInto.mNumOfCircles, entities.begin(), entities.end());
-    nodeToInsertInto.mNumOfCircles += static_cast<uint32>(entities.size());
-    nodeToInsertInto.mTotalNumOfObjects += static_cast<uint32>(entities.size());
-    mIsInsertNodeEmpty = false;
-}
-
 void CE::BVH::DebugDraw() const
 {
-    if (!DebugRenderer::IsCategoryVisible(DebugCategory::AccelStructs))
+    if (!mEmpty)
     {
-        return;
+        DebugDraw(mNodes[0]);
     }
-
-    if (!mIsRootNodeEmpty)
-    {
-        DebugDraw(mNodes[1]);
-    }
-
-    if (!mIsInsertNodeEmpty)
-    {
-        DebugDraw(mNodes[2]);
-    }
-
-    DrawDebugRectangle(mPhysics->GetWorld(), DebugCategory::AccelStructs, To3DRightForward(mNodes[0].mBoundingBox.GetCentre()), mNodes[0].mBoundingBox.GetSize() * .5f, glm::vec4{0.0f, 1.0f, 1.0f, 1.0f});
 }
 
 const CE::Registry& CE::BVH::GetRegistry() const
@@ -193,7 +136,7 @@ const CE::Registry& CE::BVH::GetRegistry() const
 
 float CE::BVH::UpdateNodeBounds(Node& node)
 {
-    TransformedAABBColliderComponent initialAABB = node.mBoundingBox;
+    TransformedAABB initialAABB = node.mBoundingBox;
 
     node.mBoundingBox.mMin = glm::vec2(INFINITY);
     node.mBoundingBox.mMax = glm::vec2(-INFINITY);
@@ -204,35 +147,23 @@ float CE::BVH::UpdateNodeBounds(Node& node)
     for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
-        const TransformedAABB* aabb = reg.TryGet<TransformedAABBColliderComponent>(owner);
-
-        if (aabb != nullptr)
-        {
-    		node.mBoundingBox.CombineWith(*aabb);
-        }
+        const TransformedAABB& aabb = reg.Get<TransformedAABBColliderComponent>(owner);
+        node.mBoundingBox.CombineWith(aabb);
     }
 
     for (uint32 i = 0; i < node.mNumOfCircles; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
-        const TransformedDisk* circle = reg.TryGet<TransformedDiskColliderComponent>(owner);
-
-        if (circle != nullptr)
-        {
-    		node.mBoundingBox.CombineWith(circle->GetBoundingBox());
-        }
+        const TransformedDisk& circle = reg.Get<TransformedDiskColliderComponent>(owner);
+        node.mBoundingBox.CombineWith(circle.GetBoundingBox());
     }
 
     const uint32 numOfPolygons = node.mTotalNumOfObjects - node.mNumOfAABBS - node.mNumOfCircles;
     for (uint32 i = 0; i < numOfPolygons; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
-        const TransformedPolygon* polygon = reg.TryGet<TransformedPolygonColliderComponent>(owner);
-
-        if (polygon != nullptr)
-        {
-            node.mBoundingBox.CombineWith(polygon->GetBoundingBox());
-        }
+        const TransformedPolygon& polygon = reg.Get<TransformedPolygonColliderComponent>(owner);
+        node.mBoundingBox.CombineWith(polygon.GetBoundingBox());
     }
 
     return glm::distance2(initialAABB.mMin, node.mBoundingBox.mMin) + glm::distance2(initialAABB.mMax, node.mBoundingBox.mMax);
@@ -245,11 +176,11 @@ void CE::BVH::Subdivide(Node& node)
     static std::vector<entt::entity> childrenIds[2]{};
     childrenIds[0].clear();
     childrenIds[1].clear();
-	childrenIds[0].reserve(node.mTotalNumOfObjects);
+    childrenIds[0].reserve(node.mTotalNumOfObjects);
     childrenIds[1].reserve(node.mTotalNumOfObjects);
 
     ASSERT(mNodes.size() + 2 <= mNodes.capacity());
-    const uint32 firstNodeIndex = static_cast<uint32>(mNodes.size());
+    uint32 firstNodeIndex = static_cast<uint32>(mNodes.size());
     mNodes.emplace_back();
     mNodes.emplace_back();
 
@@ -382,10 +313,10 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
     };
     uint32 amountOfObjects[2]{};
 
-	uint32 indexOfId = node.mStartIndex;
+    uint32 indexOfId = node.mStartIndex;
     const Registry& reg = mPhysics->GetWorld().GetRegistry();
 
-	for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
+    for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
         const TransformedAABB& collider = reg.Get<TransformedAABBColliderComponent>(owner);
@@ -452,7 +383,7 @@ CE::BVH::SplitPoint CE::BVH::DetermineSplitPos(const Node& node)
 
         const glm::vec2 centre = collider.mCentre;
 
-    	centroidsBoundingBox.mMin.x = glm::min(centroidsBoundingBox.mMin.x, centre.x);
+        centroidsBoundingBox.mMin.x = glm::min(centroidsBoundingBox.mMin.x, centre.x);
         centroidsBoundingBox.mMin.y = glm::min(centroidsBoundingBox.mMin.y, centre.y);
         centroidsBoundingBox.mMax.x = glm::max(centroidsBoundingBox.mMax.x, centre.x);
         centroidsBoundingBox.mMax.y = glm::max(centroidsBoundingBox.mMax.y, centre.y);

@@ -25,25 +25,32 @@ CE::PhysicsSystem::PhysicsSystem() :
 
 void CE::PhysicsSystem::Update(World& world, float dt)
 {
-	if (world.GetCurrentTimeReal() == 0.0f)
-	{
-		for (BVH& bvh : world.GetPhysics().GetBVHs())
-		{
-			bvh.Build();
-		}
-	}
-
 	if (world.HasBegunPlay()
 		&& !world.IsPaused())
 	{
 		ApplyVelocities(world, dt);
 	}
 
-	UpdateTransformedColliders<DiskColliderComponent, TransformedDiskColliderComponent>(world);
-	UpdateTransformedColliders<AABBColliderComponent, TransformedAABBColliderComponent>(world);
-	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(world);
+	std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> wereItemsAddedToLayer{};
 
-	UpdateBVHs(world);
+	UpdateTransformedColliders<DiskColliderComponent, TransformedDiskColliderComponent>(world, wereItemsAddedToLayer);
+	UpdateTransformedColliders<AABBColliderComponent, TransformedAABBColliderComponent>(world, wereItemsAddedToLayer);
+	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(world, wereItemsAddedToLayer);
+
+	for (int i = 0; i < static_cast<int>(CollisionLayer::NUM_OF_LAYERS); i++)
+	{
+		BVH& bvh = world.GetPhysics().GetBVHs()[i];
+
+		if (wereItemsAddedToLayer[i]
+			|| bvh.GetAmountRefitted() > 10'000.f)
+		{
+			bvh.Build();
+		}
+		else
+		{
+			bvh.Refit();
+		}
+	}
 
 	if (world.HasBegunPlay()
 		&& !world.IsPaused())
@@ -295,27 +302,17 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 	std::swap(mPreviousCollisions, currentCollisions);
 }
 
-static std::vector<entt::entity> sIdsBuffer{};
 
 template <typename Collider, typename TransformedCollider>
-void CE::PhysicsSystem::UpdateTransformedColliders(World& world)
+void CE::PhysicsSystem::UpdateTransformedColliders(World& world, std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>& wereItemsAddedToLayer)
 {
 	Registry& reg = world.GetRegistry();
 	const auto collidersWithoutTransformed = reg.View<const PhysicsBody2DComponent, const Collider>(entt::exclude_t<TransformedCollider>{});
 
-	for (BVH& bvh : world.GetPhysics().GetBVHs())
+	for (entt::entity entity : collidersWithoutTransformed)
 	{
-		sIdsBuffer.clear();
-		for (entt::entity entity : collidersWithoutTransformed)
-		{
-			const PhysicsBody2DComponent& body = collidersWithoutTransformed.template get<PhysicsBody2DComponent>(entity);
-			if (body.mRules.mLayer == bvh.GetLayer())
-			{
-				sIdsBuffer.emplace_back(entity);
-			}
-		}
-
-		bvh.Insert<TransformedCollider>(sIdsBuffer);
+		const PhysicsBody2DComponent& body = collidersWithoutTransformed.template get<PhysicsBody2DComponent>(entity);
+		wereItemsAddedToLayer[static_cast<int>(body.mRules.mLayer)] = true;
 	}
 
 	reg.AddComponents<TransformedCollider>(collidersWithoutTransformed.begin(), collidersWithoutTransformed.end());
@@ -541,42 +538,6 @@ bool CE::PhysicsSystem::CollisionCheckDiskAABB(TransformedDiskColliderComponent 
 	}
 
 	return CollisionCheckDiskPolygon(disk, aabb.GetAsPolygon(), result);
-}
-
-void CE::PhysicsSystem::UpdateBVHs(World& world)
-{
-	auto& bvhs = world.GetPhysics().GetBVHs();
-
-	for (BVH& bvh : bvhs)
-	{
-		if (bvh.GetRebuildDesire() >= sMaxBVHRebuildDesire)
-		{
-			bvh.Build();
-		}
-		else
-		{
-			bvh.Refit();
-		}
-	}
-
-	if (!mRebuildBVHCooldown.IsReady(world.GetRealDeltaTime()))
-	{
-		return;
-	}
-
-	const auto mostOutOfDataBVH = std::max_element(bvhs.begin(), bvhs.end(),
-		[](const BVH& lhs, const BVH& rhs)
-		{
-			return lhs.GetRebuildDesire() < rhs.GetRebuildDesire();
-		});
-
-	if (mostOutOfDataBVH == bvhs.end()
-		|| mostOutOfDataBVH->GetRebuildDesire() == 0.0f)
-	{
-		return;
-	}
-
-	mostOutOfDataBVH->Build();
 }
 
 CE::MetaType CE::PhysicsSystem::Reflect()

@@ -1,6 +1,7 @@
 #pragma once
 #include "Components/Physics2D/AABBColliderComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "Systems/System.h"
 #include "Utilities/Events.h"
@@ -36,7 +37,7 @@ namespace CE
 		void ApplyVelocities(World& world, float dt);
 
 		template<typename Collider, typename TransformedCollider>
-		void UpdateTransformedColliders(World& world);
+		void UpdateTransformedColliders(World& world, std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>& wereItemsAddedToLayer);
 
 		friend Physics2DUnitTestAccess;
 
@@ -88,8 +89,6 @@ namespace CE
 		static bool CollisionCheckDiskPolygon(TransformedDiskColliderComponent disk, const TransformedPolygonColliderComponent& polygon, CollisionData& result);
 
 		static bool CollisionCheckDiskAABB(TransformedDiskColliderComponent disk, TransformedAABBColliderComponent aabb, CollisionData& result);
-
-		void UpdateBVHs(World& world);
 
 		Cooldown mRebuildBVHCooldown{ 10.00f };
 		static constexpr float sMaxBVHRebuildDesire = 10'000.f;

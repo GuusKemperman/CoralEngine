@@ -19,18 +19,6 @@ namespace CE
 		void Build();
 		void Refit();
 
-		template<typename TransformedColliderType>
-		void Insert(const Span<entt::entity>& entities) = delete;
-
-		template<>
-		void Insert<TransformedDiskColliderComponent>(const Span<entt::entity>& entities);
-
-		template<>
-		void Insert<TransformedAABBColliderComponent>(const Span<entt::entity>& entities);
-
-		template<>
-		void Insert<TransformedPolygonColliderComponent>(const Span<entt::entity>& entities);
-
 		template<bool AlwaysReturnValue>
 		struct DefaultShouldReturnFunction
 		{
@@ -51,9 +39,7 @@ namespace CE
 
 		CollisionLayer GetLayer() const { return mLayer; }
 
-		float GetRebuildDesire() const { return mAmountRefitted + static_cast<float>(mNodes[2].mTotalNumOfObjects) * 500.0f; }
-
-		uint32 GetNumOfInsertedItems() const { return mNodes[2].mTotalNumOfObjects; }
+		float GetAmountRefitted() const { return mAmountRefitted; }
 
 	private:
 		const Registry& GetRegistry() const;
@@ -89,18 +75,7 @@ namespace CE
 		std::vector<entt::entity> mIds{};
 		std::vector<Node> mNodes{};
 
-		// We make the assumption that if there is
-		// any leaf node, that is has objects in it.
-		// If it doesnt have objects, we assume its a
-		// node with children. We have this boolean to
-		// prevent an edge case when there are no objects
-		// at all.
-		bool mIsRootNodeEmpty = true;
-		bool mIsInsertNodeEmpty = true;
-
-		// The higher this is,
-		// the more this BVH would
-		// benefit from being rebuild.
+		bool mEmpty = true;
 		float mAmountRefitted{};
 	};
 
@@ -220,7 +195,7 @@ namespace CE
 	bool BVH::TestAgainstObject(const InquirerShapeType inquirerShape, const ObjectShapeType& object,
 		entt::entity owner, CallbackAdditionalArgs&&... args)
 	{
-		if (!ShouldCheckFunction::template Callback(object, owner, std::forward<CallbackAdditionalArgs>(args)...) 
+		if (!ShouldCheckFunction::template Callback(object, owner, std::forward<CallbackAdditionalArgs>(args)...)
 			|| !AreOverlapping(object, inquirerShape))
 		{
 			return false;
