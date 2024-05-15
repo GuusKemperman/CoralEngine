@@ -23,8 +23,10 @@ namespace CE
 		glm::quat mLocalRotation = glm::identity<glm::quat>();
 
 	private:
+#ifdef EDITOR
 		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
-		
+#endif // EDITOR
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AttachToBoneComponent);

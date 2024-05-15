@@ -14,6 +14,7 @@ void CE::AttachToBoneComponent::OnConstruct(World&, entt::entity owner)
 	mOwner = owner;
 }
 
+#ifdef EDITOR
 void CE::AttachToBoneComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
 {
 	AssetHandle<SkinnedMesh> skinnedMesh{};
@@ -92,6 +93,7 @@ void CE::AttachToBoneComponent::OnInspect(World& world, const std::vector<entt::
 		Search::EndCombo();
 	}
 }
+#endif // EDITOR
 
 CE::SkinnedMeshComponent* CE::AttachToBoneComponent::FindSkinnedMeshParentRecursive(Registry& reg, const TransformComponent& transform)
 {
@@ -136,8 +138,9 @@ CE::MetaType CE::AttachToBoneComponent::Reflect()
 
 		}, "CopyTransformValues", MetaFunc::ExplicitParams<AttachToBoneComponent&>{}
 		).GetProperties().Add(Props::sCallFromEditorTag);
-	
+#ifdef EDITOR
 	BindEvent(type, sInspectEvent, &AttachToBoneComponent::OnInspect);
+#endif // EDITOR
 	BindEvent(type, sConstructEvent, &AttachToBoneComponent::OnConstruct);
 
 	ReflectComponentType<AttachToBoneComponent>(type);
