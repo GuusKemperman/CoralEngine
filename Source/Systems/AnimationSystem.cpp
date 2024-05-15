@@ -88,13 +88,15 @@ void CE::AnimationSystem::Update(World& world, float dt)
 			continue;
 		}
 
+		// From here on we are certain that the transform has a parent
+
 		auto& boneMap = skinnedMesh->mSkinnedMesh->GetBoneMap();
 		auto it = boneMap.find(attachToBone.mBoneName);
 
 		if (it == boneMap.end() 
 			|| skinnedMesh->mAnimation == nullptr)
 		{
-			transform.SetLocalMatrix(transform.GetWorldMatrix() *
+			transform.SetLocalMatrix(transform.GetParent()->GetWorldMatrix() * 
 				TransformComponent::ToMatrix(attachToBone.mLocalTranslation, attachToBone.mLocalScale, attachToBone.mLocalRotation));
 			continue;
 		}
