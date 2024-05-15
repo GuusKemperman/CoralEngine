@@ -56,6 +56,9 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * skinnedMesh.mAnimationSpeed * dt;
 		skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
 
+		skinnedMesh.mPrevAnimTime += skinnedMesh.mPreviousAnimation->mTickPerSecond * skinnedMesh.mAnimationSpeed * dt;
+		skinnedMesh.mPrevAnimTime = fmod(skinnedMesh.mPrevAnimTime, skinnedMesh.mPreviousAnimation->mDuration);
+
 		const uint32 hash = Internal::CombineHashes(
 			Name::HashString(skinnedMesh.mAnimation.GetMetaData().GetName()),
 			Name::HashString(skinnedMesh.mSkinnedMesh.GetMetaData().GetName()));

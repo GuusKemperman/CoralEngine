@@ -10,15 +10,18 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void CE::AnimationRootComponent::SwitchAnimationRecursive(Registry& reg, const entt::entity entity, const AssetHandle<Animation> animation, float timeStamp, float animationSpeed)
+void CE::AnimationRootComponent::SwitchAnimationRecursive(Registry& reg, const entt::entity entity, const AssetHandle<Animation> animation, float timeStamp, float animationSpeed, float blendSpeed)
 {
 	auto skinnedMesh = reg.TryGet<SkinnedMeshComponent>(entity);
 
 	if (skinnedMesh != nullptr)
 	{
+		skinnedMesh->mPreviousAnimation = skinnedMesh->mAnimation;
 		skinnedMesh->mAnimation = animation;
+		skinnedMesh->mPrevAnimTime = skinnedMesh->mCurrentTime;
 		skinnedMesh->mCurrentTime = timeStamp;
 		skinnedMesh->mAnimationSpeed = animationSpeed;
+		skinnedMesh->mBlendSpeed = blendSpeed;
 	}
 
 	auto transform = reg.TryGet<TransformComponent>(entity);
@@ -30,7 +33,7 @@ void CE::AnimationRootComponent::SwitchAnimationRecursive(Registry& reg, const e
 
 	for (const TransformComponent& child : transform->GetChildren())
 	{
-		SwitchAnimationRecursive(reg, child.GetOwner(), animation, timeStamp, animationSpeed);
+		SwitchAnimationRecursive(reg, child.GetOwner(), animation, timeStamp, animationSpeed, blendSpeed);
 	}
 }
 
@@ -44,10 +47,10 @@ void CE::AnimationRootComponent::SwitchAnimation()
 	World* world = World::TryGetWorldAtTopOfStack();
 	ASSERT(world != nullptr);
 
-	SwitchAnimationRecursive(world->GetRegistry(), mOwner, mWantedAnimation, mWantedTimeStamp, mWantedAnimationSpeed);
+	SwitchAnimationRecursive(world->GetRegistry(), mOwner, mWantedAnimation, mWantedTimeStamp, mWantedAnimationSpeed, mWantedBlendSpeed);
 }
 
-void CE::AnimationRootComponent::SwitchAnimation(Registry& reg, const AssetHandle<Animation>& animation, float timeStamp, float animationSpeed)
+void CE::AnimationRootComponent::SwitchAnimation(Registry& reg, const AssetHandle<Animation>& animation, float timeStamp, float animationSpeed, float blendSpeed)
 {
 	if (animation == mWantedAnimation)
 	{
@@ -57,8 +60,9 @@ void CE::AnimationRootComponent::SwitchAnimation(Registry& reg, const AssetHandl
 	mWantedAnimation = animation;
 	mWantedTimeStamp = timeStamp;
 	mWantedAnimationSpeed = animationSpeed;
+	mWantedBlendSpeed = blendSpeed;
 
-	SwitchAnimationRecursive(reg, mOwner, mWantedAnimation, mWantedTimeStamp, mWantedAnimationSpeed);
+	SwitchAnimationRecursive(reg, mOwner, mWantedAnimation, mWantedTimeStamp, mWantedAnimationSpeed, mWantedBlendSpeed);
 }
 
 CE::MetaType CE::AnimationRootComponent::Reflect()
@@ -73,7 +77,7 @@ CE::MetaType CE::AnimationRootComponent::Reflect()
 
 	type.AddFunc(static_cast<void (AnimationRootComponent::*)()>(&AnimationRootComponent::SwitchAnimation), "SwitchAnimationEditor").GetProperties().Add(Props::sCallFromEditorTag);
 
-	type.AddFunc([](AnimationRootComponent& animationRoot, const AssetHandle<Animation>& animation, float timeStamp, float animationSpeed)
+	type.AddFunc([](AnimationRootComponent& animationRoot, const AssetHandle<Animation>& animation, float timeStamp, float animationSpeed, float blendSpeed)
 		{
 			if (animation == nullptr)
 			{
@@ -84,10 +88,10 @@ CE::MetaType CE::AnimationRootComponent::Reflect()
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			animationRoot.SwitchAnimation(world->GetRegistry(), animation, timeStamp, animationSpeed);
+			animationRoot.SwitchAnimation(world->GetRegistry(), animation, timeStamp, animationSpeed, blendSpeed);
 
 		}, "SwitchAnimation", MetaFunc::ExplicitParams<AnimationRootComponent&,
-		const AssetHandle<Animation>&, float, float>{}, "AnimationRootComponent", "Animation", "Time Stamp", "Animation Speed").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const AssetHandle<Animation>&, float, float, float>{}, "AnimationRootComponent", "Animation", "Time Stamp", "Animation Speed", "Blend Speed").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	BindEvent(type, sConstructEvent, &AnimationRootComponent::OnConstruct);
 

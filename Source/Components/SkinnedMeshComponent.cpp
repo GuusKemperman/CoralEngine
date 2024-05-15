@@ -16,8 +16,12 @@ CE::MetaType CE::SkinnedMeshComponent::Reflect()
 	type.AddField(&SkinnedMeshComponent::mSkinnedMesh, "mSkinnnedMesh").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&SkinnedMeshComponent::mMaterial, "mMaterial").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&SkinnedMeshComponent::mAnimation, "mAnimation").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&SkinnedMeshComponent::mPreviousAnimation, "mPreviousAnimation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&SkinnedMeshComponent::mCurrentTime, "mCurrentTime").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&SkinnedMeshComponent::mPrevAnimTime, "mPrevAnimTime").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&SkinnedMeshComponent::mAnimationSpeed, "mAnimationSpeed").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&SkinnedMeshComponent::mBlendSpeed, "mBlendSpeed").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&SkinnedMeshComponent::mBlendWeight, "mBlendWeight").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&SkinnedMeshComponent::mHighlightedMesh, "mHighlightedMesh").GetProperties().Add(Props::sIsScriptableTag);
 	ReflectComponentType<SkinnedMeshComponent>(type);
 	return type;
