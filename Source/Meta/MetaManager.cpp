@@ -3,6 +3,7 @@
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
+#include "Utilities/NameLookUp.h"
 #include "Utilities/StringFunctions.h"
 
 namespace CE::Internal
@@ -67,8 +68,13 @@ CE::MetaType& CE::MetaManager::AddType(MetaType&& type)
 
 	MetaType& returnValue = typeInsertResult.first->second;
 
-	[[maybe_unused]] const auto nameInsertResult = mTypeByName.emplace(Name::HashString(returnValue.GetName()), returnValue);
+	Name::HashType currentNameHashed = Name::HashString(returnValue.GetName());
+
+	[[maybe_unused]] const auto nameInsertResult = mTypeByName.emplace(currentNameHashed, returnValue);
 	ASSERT(nameInsertResult.second);
+
+	sNameLookUpMutex.lock();
+	sNameLookUp.emplace(currentNameHashed, returnValue.GetName());
 
 	const MetaProps& props = returnValue.GetProperties();
 	const std::optional<std::string> oldNames = props.TryGetValue<std::string>(Props::sOldNames);
@@ -77,10 +83,15 @@ CE::MetaType& CE::MetaManager::AddType(MetaType&& type)
 	{
 		for (const std::string_view oldName : StringFunctions::SplitString(*oldNames, ","))
 		{
+			const uint32 hash = Name::HashString(oldName);
 			[[maybe_unused]] const auto oldNameInsertResult = mTypeByName.emplace(Name::HashString(oldName), returnValue);
+			sNameLookUp.emplace(hash, oldName);
+
 			ASSERT(oldNameInsertResult.second);
 		}
 	}
+
+	sNameLookUpMutex.unlock();
 
 	return returnValue;
 }

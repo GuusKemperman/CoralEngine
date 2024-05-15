@@ -1868,6 +1868,7 @@
     <ClInclude Include="Include\Utilities\Events.h" />
     <ClInclude Include="Include\Utilities\MemFunctions.h" />
     <ClInclude Include="Include\Utilities\IterableRange.h" />
+    <ClInclude Include="Include\Utilities\NameLookUp.h" />
     <ClInclude Include="Include\Utilities\Search.h" />
     <ClInclude Include="Include\Utilities\Imgui\WorldInspect.h" />
     <ClInclude Include="include\GSON\GSON.h" />
