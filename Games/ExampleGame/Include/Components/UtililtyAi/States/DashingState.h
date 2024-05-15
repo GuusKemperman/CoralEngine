@@ -22,6 +22,8 @@ namespace Game
 
 		float mCurrentDashTimer = 0.0f;
 
+		CE::AssetHandle<CE::Animation> mDashingAnimation{};
+
 	private:
 		entt::entity mTargetEntity = entt::null;
 
@@ -29,8 +31,6 @@ namespace Game
 
 		float mSpeedDash{};
 		float mMaxDashTime = 1.0f;
-
-		CE::AssetHandle<CE::Animation> mDashingAnimation{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

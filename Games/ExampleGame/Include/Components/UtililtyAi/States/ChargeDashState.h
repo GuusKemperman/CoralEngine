@@ -24,13 +24,13 @@ namespace Game
 
 		float mCurrentChargeTimer = 0.0f;
 
+		CE::AssetHandle<CE::Animation> mChargingAnimation{};
+
 	private:
-		entt::entity mTargetEntity{};
+		entt::entity mTargetEntity = entt::null;
 		float mRadius{};
 
 		float mMaxChargeTime = 10.0f;
-
-		CE::AssetHandle<CE::Animation> mChargingAnimation{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

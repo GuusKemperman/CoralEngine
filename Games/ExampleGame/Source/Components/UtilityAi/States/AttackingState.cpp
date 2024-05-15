@@ -17,9 +17,10 @@ void Game::AttackingState::OnAiTick(CE::World& world, entt::entity owner, float)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
-	if (animationRootComponent == nullptr) { return; }
-
-	animationRootComponent->SwitchAnimation(world.GetRegistry(), mAttackingAnimation, 0.0f);
+	if (animationRootComponent != nullptr)
+	{
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), mAttackingAnimation, 0.0f);
+	}
 
 	auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
 	mTargetEntity = targetEntity;
@@ -45,21 +46,28 @@ void Game::AttackingState::OnAiTick(CE::World& world, entt::entity owner, float)
 
 	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
-	if (navMeshAgent == nullptr) { return; }
+	if (navMeshAgent == nullptr)
+	{
+		return;
+	}
 
 	if (mTargetEntity != entt::null)
 	{
 		const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(mTargetEntity);
 
-		if (transformComponent == nullptr) { return; }
+		if (transformComponent == nullptr)
+		{
+			return;
+		}
 
 		navMeshAgent->UpdateTargetPosition(*transformComponent);
 	}
 }
 
-float Game::AttackingState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
+float Game::AttackingState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 {
 	auto [score, entity] = GetBestScoreAndTarget(world, owner);
+	mTargetEntity = entity;
 	return score;
 }
 
@@ -67,7 +75,10 @@ void Game::AttackingState::OnAIStateEnterEvent(CE::World& world, entt::entity ow
 {
 	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
-	if (navMeshAgent == nullptr) { return; }
+	if (navMeshAgent == nullptr)
+	{
+		return;
+	}
 
 	navMeshAgent->StopNavMesh();
 }
@@ -75,38 +86,45 @@ void Game::AttackingState::OnAIStateEnterEvent(CE::World& world, entt::entity ow
 std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const CE::World& world,
                                                                            entt::entity owner) const
 {
-	const auto targetsView = world.GetRegistry().View<CE::NavMeshTargetTag, CE::TransformComponent>();
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+
+	entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
+
+	if (entityId == entt::null)
+	{
+		return { 0.0f, entt::null };
+	}
 
 	if (transformComponent == nullptr)
 	{
-		return {0.0f, entt::null};
+		return { 0.0f, entt::null };
 	}
 
 	float highestScore = 0.0f;
-	entt::entity entityId = entt::null;
 
-	for (auto [targetId, targetTransform] : targetsView.each())
+	auto* targetComponent = world.GetRegistry().TryGet<CE::TransformComponent>(entityId);
+
+	if (transformComponent == nullptr)
 	{
-		const float distance = glm::distance(transformComponent->GetWorldPosition(),
-		                                     targetTransform.GetWorldPosition());
-
-		float score = 0.0f;
-
-		if (distance < mRadius)
-		{
-			score = 1 / distance;
-			score += 1 / mRadius;
-		}
-
-		if (highestScore < score)
-		{
-			highestScore = score;
-			entityId = targetId;
-		}
+		return { 0.0f, entt::null };
 	}
 
-	return {highestScore, entityId};
+	const float distance = glm::distance(transformComponent->GetWorldPosition(), targetComponent->GetWorldPosition());
+
+	float score = 0.0f;
+
+	if (distance < mRadius)
+	{
+		score = 1 / distance;
+		score += 1 / mRadius;
+	}
+
+	if (highestScore < score)
+	{
+		highestScore = score;
+	}
+
+	return { highestScore, entityId };
 }
 
 CE::MetaType Game::AttackingState::Reflect()

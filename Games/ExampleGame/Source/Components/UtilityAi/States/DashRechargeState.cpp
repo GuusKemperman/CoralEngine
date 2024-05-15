@@ -21,28 +21,36 @@ void Game::DashRechargeState::OnAiTick(CE::World& world, entt::entity owner, flo
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
-	if (animationRootComponent == nullptr) { return; }
-
-	animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashRechargeAnimation, 0.0f);
-
-	if (mTargetEntity != entt::null)
+	if (animationRootComponent != nullptr)
 	{
-		auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
-
-		if (physicsBody2DComponent == nullptr) { return; }
-
-		physicsBody2DComponent->mLinearVelocity = {0,0};
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashRechargeAnimation, 0.0f);
 	}
+	
+	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
+
+	if (physicsBody2DComponent == nullptr)
+	{
+		return;
+	}
+
+	physicsBody2DComponent->mLinearVelocity = {0,0};
 
 	mCurrentRechargeTimer += dt;
 
+
 	auto* dashingState = world.GetRegistry().TryGet<DashingState>(owner);
 
-	if (dashingState == nullptr) { return; }
+	if (dashingState == nullptr)
+	{
+		return;
+	}
 
 	auto* chargeDashingState = world.GetRegistry().TryGet<ChargeDashState>(owner);
 
-	if (chargeDashingState == nullptr) { return; }
+	if (chargeDashingState == nullptr)
+	{
+		return;
+	}
 
 	if (mCurrentRechargeTimer >= mMaxRechargeTime)
 	{
@@ -55,7 +63,10 @@ float Game::DashRechargeState::OnAiEvaluate(const CE::World& world, entt::entity
 {
 	auto* dashingState = world.GetRegistry().TryGet<DashingState>(owner);
 
-	if (dashingState == nullptr) { return 0; }
+	if (dashingState == nullptr)
+	{
+		return 0;
+	}
 
 	if (dashingState->IsDashCharged() && mCurrentRechargeTimer < mMaxRechargeTime)
 	{
@@ -69,7 +80,10 @@ void Game::DashRechargeState::OnAIStateEnterEvent(CE::World& world, entt::entity
 {
 	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
-	if (navMeshAgent == nullptr) { return; }
+	if (navMeshAgent == nullptr)
+	{
+		return;
+	}
 
 	navMeshAgent->StopNavMesh();
 }

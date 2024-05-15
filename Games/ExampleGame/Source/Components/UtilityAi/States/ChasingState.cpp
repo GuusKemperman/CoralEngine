@@ -15,69 +15,83 @@ void Game::ChasingState::OnAiTick(CE::World& world, entt::entity owner, float)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
-	if (animationRootComponent == nullptr) { return; }
-
-	animationRootComponent->SwitchAnimation(world.GetRegistry(), mChasingAnimation, 0.0f);
+	if (animationRootComponent != nullptr)
+	{
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), mChasingAnimation, 0.0f);
+	}
 
 	auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
 	mTargetEntity = targetEntity;
 
 	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
-	if (navMeshAgent == nullptr) { return; }
+	if (navMeshAgent == nullptr)
+	{
+		return;
+	}
 
 	if (mTargetEntity != entt::null)
 	{
 		const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(mTargetEntity);
 
-		if (transformComponent == nullptr) { return; }
+		if (transformComponent == nullptr)
+		{
+			return;
+		}
 
 		navMeshAgent->SetTargetPosition(*transformComponent);
 	}
 }
 
-float Game::ChasingState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
+float Game::ChasingState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 {
 	auto [score, entity] = GetBestScoreAndTarget(world, owner);
+	mTargetEntity = entity;
 	return score;
 }
 
 std::pair<float, entt::entity> Game::ChasingState::GetBestScoreAndTarget(
 	const CE::World& world, entt::entity owner) const
 {
-	const auto targetsView = world.GetRegistry().View<CE::NavMeshTargetTag, CE::TransformComponent>();
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+
+	entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
+
+	if (entityId == entt::null)
+	{
+		return { 0.0f, entt::null };
+	}
 
 	if (transformComponent == nullptr)
 	{
-		return {0.0f, entt::null};
+		return { 0.0f, entt::null };
 	}
 
-	float highestScore{};
-	entt::entity entityId{};
+	float highestScore = 0.0f;
 
-	for (auto [targetId, targetTransform] : targetsView.each())
+	auto* targetComponent = world.GetRegistry().TryGet<CE::TransformComponent>(entityId);
+
+	if (transformComponent == nullptr)
 	{
-		const float distance = glm::distance(transformComponent->GetWorldPosition(),
-		                                     targetTransform.GetWorldPosition());
-
-		float score{};
-
-		if (distance < mRadius)
-		{
-			score = 1 / distance;
-		}
-
-		//score = std::max(0.0f, std::min(mRadius, score));
-
-		if (highestScore < score)
-		{
-			highestScore = score;
-			entityId = targetId;
-		}
+		return { 0.0f, entt::null };
 	}
 
-	return {highestScore, entityId};
+	const float distance = glm::distance(transformComponent->GetWorldPosition(), targetComponent->GetWorldPosition());
+
+	float score = 0.0f;
+
+	if (distance < mRadius)
+	{
+		score = 1 / distance;
+		score += 1 / mRadius;
+	}
+
+	if (highestScore < score)
+	{
+		highestScore = score;
+	}
+
+	return { highestScore, entityId };
 }
 
 void Game::ChasingState::DebugRender(CE::World& world, entt::entity owner) const

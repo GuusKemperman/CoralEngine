@@ -19,44 +19,10 @@ void Game::ChargeDashState::OnAiTick(CE::World& world, const entt::entity owner,
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
-	if (animationRootComponent == nullptr) { return; }
-
-	animationRootComponent->SwitchAnimation(world.GetRegistry(), mChargingAnimation, 0.0f);
-
-	//auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
-	//mTargetEntity = targetEntity;
-
-	/*const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
-	if (characterData == nullptr)
+	if (animationRootComponent != nullptr)
 	{
-		return;
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), mChargingAnimation, 0.0f);
 	}
-
-	const auto abilities = world.GetRegistry().TryGet<CE::AbilitiesOnCharacterComponent>(owner);
-	if (abilities == nullptr)
-	{
-		return;
-	}
-
-	if (abilities->mAbilitiesToInput.empty())
-	{
-		return;
-	}
-
-	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);*/
-
-	/*auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr) { return; }
-
-	if (mTargetEntity != entt::null)
-	{
-		const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(mTargetEntity);
-
-		if (transformComponent == nullptr) { return; }
-
-		navMeshAgent->UpdateTargetPosition(*transformComponent);
-	}*/
 
 	mCurrentChargeTimer += dt;
 }
@@ -82,7 +48,10 @@ void Game::ChargeDashState::OnAIStateEnterEvent(CE::World& world, entt::entity o
 {
 	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
-	if (navMeshAgent == nullptr) { return; }
+	if (navMeshAgent == nullptr)
+	{
+		return;
+	}
 
 	navMeshAgent->StopNavMesh();
 }
@@ -95,8 +64,14 @@ bool Game::ChargeDashState::IsDashCharged() const
 std::pair<float, entt::entity> Game::ChargeDashState::GetBestScoreAndTarget(const CE::World& world,
                                                                             entt::entity owner) const
 {
-	const auto targetsView = world.GetRegistry().View<CE::NavMeshTargetTag, CE::TransformComponent>();
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+
+	entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
+
+	if (entityId == entt::null)
+	{
+		return { 0.0f, entt::null };
+	}
 
 	if (transformComponent == nullptr)
 	{
@@ -104,26 +79,27 @@ std::pair<float, entt::entity> Game::ChargeDashState::GetBestScoreAndTarget(cons
 	}
 
 	float highestScore = 0.0f;
-	entt::entity entityId = entt::null;
 
-	for (auto [targetId, targetTransform] : targetsView.each())
+	auto* targetComponent = world.GetRegistry().TryGet<CE::TransformComponent>(entityId);
+
+	if (transformComponent == nullptr)
 	{
-		const float distance = glm::distance(transformComponent->GetWorldPosition(),
-			targetTransform.GetWorldPosition());
+		return { 0.0f, entt::null };
+	}
 
-		float score = 0.0f;
+	const float distance = glm::distance(transformComponent->GetWorldPosition(), targetComponent->GetWorldPosition());
 
-		if (distance < mRadius)
-		{
-			score = 1 / distance;
-			score += 1 / mRadius;
-		}
+	float score = 0.0f;
 
-		if (highestScore < score)
-		{
-			highestScore = score;
-			entityId = targetId;
-		}
+	if (distance < mRadius)
+	{
+		score = 1 / distance;
+		score += 1 / mRadius;
+	}
+
+	if (highestScore < score)
+	{
+		highestScore = score;
 	}
 
 	return { highestScore, entityId };

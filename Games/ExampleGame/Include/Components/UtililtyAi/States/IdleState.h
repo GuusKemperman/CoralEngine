@@ -17,9 +17,9 @@ namespace Game
 		static float OnAiEvaluate(const CE::World& world, entt::entity owner);
 		static void OnAIStateEnterEvent(CE::World& world, entt::entity owner);
 
-	private:
 		CE::AssetHandle<CE::Animation> mIdleAnimation;
 
+	private:
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(IdleState);

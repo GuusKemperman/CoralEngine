@@ -20,12 +20,12 @@ namespace Game
 
 		float mCurrentRechargeTimer = 0.0f;
 
+		CE::AssetHandle<CE::Animation> mDashRechargeAnimation{};
+
 	private:
-		entt::entity mTargetEntity{};
+		entt::entity mTargetEntity = entt::null;
 
 		float mMaxRechargeTime = 5.0f;
-
-		CE::AssetHandle<CE::Animation> mDashRechargeAnimation{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

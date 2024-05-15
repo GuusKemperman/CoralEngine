@@ -12,7 +12,10 @@ void Game::IdleState::OnAiTick(CE::World& world, entt::entity owner, float)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
-	if (animationRootComponent == nullptr) { return; }
+	if (animationRootComponent == nullptr)
+	{
+		return;
+	}
 
 	animationRootComponent->SwitchAnimation( world.GetRegistry(), mIdleAnimation, 0.0f);
 }

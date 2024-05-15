@@ -15,18 +15,18 @@ namespace Game
 	{
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
-		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
+		float OnAiEvaluate(const CE::World& world, entt::entity owner);
 
 		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
 		                                                             entt::entity owner) const;
 
 		void DebugRender(CE::World& world, entt::entity owner) const;
 
-	private:
-		entt::entity mTargetEntity{};
-		float mRadius{};
-
 		CE::AssetHandle<CE::Animation> mChasingAnimation{};
+
+	private:
+		entt::entity mTargetEntity = entt::null;
+		float mRadius{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

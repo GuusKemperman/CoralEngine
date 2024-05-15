@@ -20,38 +20,23 @@
 
 void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt)
 {
+	mCurrentDashTimer += dt;
+
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
-	if (animationRootComponent == nullptr) { return; }
-
-	animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashingAnimation, 0.0f);
-
-	const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
-	if (characterData == nullptr)
+	if (animationRootComponent != nullptr)
 	{
-		return;
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashingAnimation, 0.0f);
 	}
-
-	const auto abilities = world.GetRegistry().TryGet<CE::AbilitiesOnCharacterComponent>(owner);
-	if (abilities == nullptr)
-	{
-		return;
-	}
-
-	if (abilities->mAbilitiesToInput.empty())
-	{
-		return;
-	}
-
-	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
-	if (physicsBody2DComponent == nullptr) { return; }
+	if (physicsBody2DComponent == nullptr)
+	{
+		return;
+	}
 
 	physicsBody2DComponent->mLinearVelocity = mDashDirection * mSpeedDash;
-
-	mCurrentDashTimer += dt;
  }
 
 float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
@@ -60,7 +45,10 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owne
 
 	auto* chargeDashState = world.GetRegistry().TryGet<ChargeDashState>(owner);
 
-	if (chargeDashState == nullptr) { return 0; }
+	if (chargeDashState == nullptr)
+	{
+		return 0;
+	}
 
 	if (chargeDashState->IsDashCharged() && mCurrentDashTimer < mMaxDashTime)
 	{
@@ -72,44 +60,58 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owne
 
 void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 {
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr) { return; }
-
-	navMeshAgent->StopNavMesh();
-
 	const auto* target = world.GetRegistry().TryGet<Game::ChasingState>(owner);
 
-	if (target == nullptr) { return; }
+	if (target == nullptr)
+	{
+		return;
+	}
 
-	const auto targetsView = world.GetRegistry().View<CE::NavMeshTargetTag, CE::TransformComponent>();
+	const entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
 
-	mTargetEntity = targetsView.front();
+	if (entityId == entt::null)
+	{
+		return;
+	}
+
+	mTargetEntity = entityId;
 
 	if (mTargetEntity != entt::null)
 	{
 		const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(mTargetEntity);
 
-		if (transformComponent == nullptr) { return; }
+		if (transformComponent == nullptr)
+		{
+			return;
+		}
 
 		const auto* ownerTransformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
-		if (ownerTransformComponent == nullptr) { return; }
+		if (ownerTransformComponent == nullptr)
+		{
+			return;
+		}
 
 		const auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
-		if (physicsBody2DComponent == nullptr) { return; }
+		if (physicsBody2DComponent == nullptr)
+		{
+			return;
+		}
 
-		const glm::vec2 targetT = { transformComponent->GetWorldPosition().x, transformComponent->GetWorldPosition().z };
+		const glm::vec2 targetT = transformComponent->GetWorldPosition2D();
 
-		const glm::vec2 ownerT = { ownerTransformComponent->GetWorldPosition().x, ownerTransformComponent->GetWorldPosition().z };
+		const glm::vec2 ownerT = ownerTransformComponent->GetWorldPosition2D();
 
 		mDashDirection = glm::normalize(targetT - ownerT);
 	}
 
 	auto* recoverState = world.GetRegistry().TryGet<DashRechargeState>(owner);
 
-	if (recoverState == nullptr) { return; }
+	if (recoverState == nullptr)
+	{
+		return;
+	}
 
 	recoverState->mCurrentRechargeTimer = 0;
 }

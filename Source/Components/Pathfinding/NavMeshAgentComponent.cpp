@@ -46,6 +46,16 @@ bool CE::NavMeshAgentComponent::IsChasing() const
 	return mIsChasing;
 }
 
+bool CE::NavMeshAgentComponent::WasJustStopped()
+{
+	if (mJustStopped == true)
+	{
+		mJustStopped = false;
+		return true;
+	}
+	return false;
+}
+
 CE::MetaType CE::NavMeshAgentComponent::Reflect()
 {
 	auto metaType = MetaType{MetaType::T<NavMeshAgentComponent>{}, "NavMeshAgentComponent"};

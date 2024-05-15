@@ -63,9 +63,8 @@ void NavigationSystem::Update(World& world, float dt)
 
 		if (!targetPosition.has_value() || !navMeshAgent.IsChasing())
 		{
-			if (navMeshAgent.mJustStopped) {
+			if (navMeshAgent.WasJustStopped()) {
 				agentBody.mLinearVelocity = { 0.0f, 0.0f };
-				navMeshAgent.mJustStopped = false;
 			}
 			continue;
 		}
