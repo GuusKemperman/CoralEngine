@@ -5,7 +5,6 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
-#include "World/World.h"
 #include "Utilities/Math.h"
 
 CE::MetaType Reflector<CE::Stat>::Reflect()
@@ -94,9 +93,6 @@ CE::MetaType CE::AbilityEffect::Reflect()
 
 	metaType.AddFunc([](const Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax)
 		{
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
 			return AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax };
 
 		}, "MakeAbilityEffect", MetaFunc::ExplicitParams<Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool>{}, "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
