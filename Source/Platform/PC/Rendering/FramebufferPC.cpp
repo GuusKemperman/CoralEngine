@@ -1,5 +1,4 @@
 #include "Precomp.h"
-#ifdef EDITOR
 #include "Platform/PC/Rendering/FramebufferPC.h"
 #include "Core/Device.h"
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
@@ -15,8 +14,11 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 
 	Device& engineDevice = Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
-	mSize = initialSize;
+	auto rscHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
+	auto rtHeap = engineDevice.GetDescriptorHeap(RT_HEAP);
+	auto depthHeap = engineDevice.GetDescriptorHeap(DEPTH_HEAP);
 
+	mSize = initialSize;
 	mViewport.Width = static_cast<FLOAT>(mSize.x);
 	mViewport.Height = static_cast<FLOAT>(mSize.y);
 	mViewport.TopLeftX = 0;
@@ -54,8 +56,8 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 
-		mFrameBufferHandle[i] = engineDevice.GetDescriptorHeap(RT_HEAP)->AllocateRenderTarget(mResource[i].get(), &rtvDesc);
-		mFrameBufferRscHandle[i] = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mResource[i].get(), &srvDesc);
+		mFrameBufferHandle[i] = rtHeap->AllocateRenderTarget(mResource[i].get(), &rtvDesc);
+		mFrameBufferRscHandle[i] = rscHeap->AllocateResource(mResource[i].get(), &srvDesc);
 	}
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -71,7 +73,7 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 	heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, static_cast<UINT>(mSize.x), static_cast<UINT>(mSize.y), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 	mDepthResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
-	mDepthStencilHandle = engineDevice.GetDescriptorHeap(DEPTH_HEAP)->AllocateDepthStencil(mDepthResource.get(), &depthStencilDesc);
+	mDepthStencilHandle = depthHeap->AllocateDepthStencil(mDepthResource.get(), &depthStencilDesc);
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -80,7 +82,8 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 
-	mDepthStencilSRVHandle = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mDepthResource.get(), &srvDesc);
+	mDepthStencilSRVHandle = rscHeap->AllocateResource(mDepthResource.get(), &srvDesc);
+
 }
 
 CE::FrameBuffer::~FrameBuffer() = default;
@@ -100,6 +103,16 @@ void CE::FrameBuffer::Bind() const
 void CE::FrameBuffer::Unbind() const
 {
 
+}
+
+void CE::FrameBuffer::BindSRVDepthToGraphics(int rootSlot) const
+{
+	Device& engineDevice = Device::Get();
+	std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
+	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+
+	mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
+	resourceHeap->BindToGraphics(commandList, rootSlot, mDepthStencilSRVHandle);
 }
 
 void CE::FrameBuffer::Resize(glm::ivec2 newSize)
@@ -192,4 +205,3 @@ size_t CE::FrameBuffer::GetColorTextureId()
 	Device& engineDevice = Device::Get();
 	return mFrameBufferRscHandle[engineDevice.GetFrameIndex()].GetAddressGPU().ptr;
 }
-#endif

@@ -156,7 +156,6 @@ CE::MeshRenderer::MeshRenderer()
         .SetRasterizer(rast)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED SHADOW MAPPING PIPELINE");
-
 }
 
 CE::MeshRenderer::~MeshRenderer() = default;
@@ -182,6 +181,11 @@ void CE::MeshRenderer::Render(const World& world)
 #endif // EDITOR
 
     DepthPrePass(world, gpuWorld);
+
+#ifdef EDITOR
+    Renderer::Get().GetFrameBuffer().Bind();
+#endif // EDITOR
+
     ClusteredShading(world);
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
@@ -201,15 +205,15 @@ void CE::MeshRenderer::Render(const World& world)
     auto shadowMap = gpuWorld.GetShadowMap();
     shadowMap->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
     resourceHeap->BindToGraphics(commandList, 17, shadowMap->mDepthSRVHandle);
-
+    
     int meshCounter = 0;
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
-        //RENDERING
         for (auto [entity, staticMeshComponent, transform] : view.each())
         {
             if (!staticMeshComponent.mStaticMesh)
             {
+                meshCounter++;
                 continue;
             }
 
@@ -232,7 +236,6 @@ void CE::MeshRenderer::Render(const World& world)
 
     // Render skinned meshes
     commandList->SetPipelineState(mPBRSkinnedPipeline.Get());
-
     {
         int skinnedMeshCounter = 0;
         const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
@@ -247,6 +250,7 @@ void CE::MeshRenderer::Render(const World& world)
 
             if (!skinnedMeshComponent.mSkinnedMesh)
             {
+                meshCounter++;
                 continue;
             }
 
@@ -268,7 +272,6 @@ void CE::MeshRenderer::Render(const World& world)
         }
     }
 
-
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 }
 
@@ -289,12 +292,35 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         {
             if (!staticMeshComponent.mStaticMesh)
             {
+                meshCounter++;
                 continue;
             }
 
             gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
 
             staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
+
+            meshCounter++;
+
+        }
+    }
+
+    commandList->SetPipelineState(mZSkinnedPipeline.Get());
+    {
+        const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
+
+        for (auto [entity, skinnedMeshComponent, transform] : view.each()) 
+        {
+            if (!skinnedMeshComponent.mSkinnedMesh)
+            {
+                meshCounter++;
+                continue;
+            }
+
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
+            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
+
+            skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
             meshCounter++;
         }
     }
@@ -371,6 +397,29 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         }
     }
 
+    meshCounter = 0;
+    gpuWorld.GetSelectionFramebuffer().Bind();
+    gpuWorld.GetSelectionFramebuffer().Clear();
+
+    commandList->SetPipelineState(mZPipeline.Get());
+    {
+        const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
+
+        for (auto [entity, staticMeshComponent, transform] : view.each()) 
+        {
+            if (!staticMeshComponent.mStaticMesh || !staticMeshComponent.mHighlightedMesh)
+            {
+                meshCounter++;
+                continue;
+            }
+
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
+            staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
+
+            meshCounter++;
+
+        }
+    }
 
     commandList->SetPipelineState(mZSkinnedPipeline.Get());
 
@@ -380,14 +429,9 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
 
         for (auto [entity, skinnedMeshComponent, transform] : view.each()) 
         {
-            skinnedMeshCounter++;if (skinnedMeshCounter >= MAX_SKINNED_MESHES)
+            if (!skinnedMeshComponent.mSkinnedMesh || !skinnedMeshComponent.mHighlightedMesh)
             {
-                LOG(LogRendering, Warning, "Attempted to draw more skinned meshes: {} than maximum: {}", skinnedMeshCounter, MAX_SKINNED_MESHES);
-                break;
-            }
-
-            if (!skinnedMeshComponent.mSkinnedMesh)
-            {
+                meshCounter++;
                 continue;
             }
 
@@ -399,9 +443,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
             meshCounter++;
         }
     }
-
-
-
+    Device::Get().BindSwapchainRT();
 }
 
 void CE::MeshRenderer::HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex)
@@ -490,7 +532,10 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
         gpuWorld.GetModelMatrixBuffer().Bind(commandList, 4, meshCounter, frameIndex);
 
         if (!staticMeshComponent.mStaticMesh)
+        {
+            meshCounter++;
             continue;
+        }
 
         staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
         meshCounter++;
@@ -531,7 +576,6 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
             }
         }
     }
-
     {
         const auto view2 = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent, const ParticleColorOverTimeComponent>();
 
@@ -567,7 +611,6 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
         }
     }
 
-
     commandList->SetPipelineState(mCullClusterSkinnedMeshPipeline.Get());
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
@@ -588,6 +631,11 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
 
         gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 5, meshCounter, frameIndex);
 
+        if (!skinnedMeshComponent.mSkinnedMesh)
+        {
+            meshCounter++;
+            continue;
+        }
 
         skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
         skinnedMeshCounter++;
@@ -714,6 +762,7 @@ void CE::MeshRenderer::RenderShadowMaps(const World& world)
             {
                 if (!staticMeshComponent.mStaticMesh)
                 {
+                    meshCounter++;
                     continue;
                 }
 
@@ -738,6 +787,7 @@ void CE::MeshRenderer::RenderShadowMaps(const World& world)
 
                 if (!skinnedMeshComponent.mSkinnedMesh)
                 {
+                    meshCounter++;
                     continue;
                 }
 
