@@ -100,6 +100,12 @@ void CE::BVH::Refit()
 {
     for (int i = static_cast<int>(mNodes.size()) - 1; i >= 0; i--)
     {
+        // Not sure what this does
+        if (i == 1)
+        {
+            continue;
+        }
+
         Node& node = mNodes[i];
         if (node.mTotalNumOfObjects != 0)
         {

@@ -51,7 +51,9 @@ namespace CE
 
 		CollisionLayer GetLayer() const { return mLayer; }
 
-		float GetRebuildDesire() const { return mAmountRefitted + static_cast<float>(mNodes[2].mTotalNumOfObjects) * 1000.0f; }
+		float GetRebuildDesire() const { return mAmountRefitted + static_cast<float>(mNodes[2].mTotalNumOfObjects) * 500.0f; }
+
+		uint32 GetNumOfInsertedItems() const { return mNodes[2].mTotalNumOfObjects; }
 
 	private:
 		const Registry& GetRegistry() const;

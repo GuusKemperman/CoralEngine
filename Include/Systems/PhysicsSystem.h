@@ -4,6 +4,7 @@
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "Systems/System.h"
 #include "Utilities/Events.h"
+#include "Utilities/Time.h"
 
 struct Physics2DUnitTestAccess;
 
@@ -87,6 +88,11 @@ namespace CE
 		static bool CollisionCheckDiskPolygon(TransformedDiskColliderComponent disk, const TransformedPolygonColliderComponent& polygon, CollisionData& result);
 
 		static bool CollisionCheckDiskAABB(TransformedDiskColliderComponent disk, TransformedAABBColliderComponent aabb, CollisionData& result);
+
+		void UpdateBVHs(World& world);
+
+		Cooldown mRebuildBVHCooldown{ 10.00f };
+		static constexpr float sMaxBVHRebuildDesire = 10'000.f;
 
 		std::vector<CollisionData> mPreviousCollisions{};
 

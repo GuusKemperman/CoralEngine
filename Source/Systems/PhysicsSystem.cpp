@@ -43,26 +43,7 @@ void CE::PhysicsSystem::Update(World& world, float dt)
 	UpdateTransformedColliders<AABBColliderComponent, TransformedAABBColliderComponent>(world);
 	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(world);
 
-	static Cooldown cooldown{ 3.0f };
-
-	LOG(LogPhysics, Message, "Rebuild desire 0: {}", world.GetPhysics().GetBVHs()[0].GetRebuildDesire());
-	LOG(LogPhysics, Message, "Rebuild desire 1: {}", world.GetPhysics().GetBVHs()[1].GetRebuildDesire());
-
-	if (cooldown.IsReady(world.GetScaledDeltaTime()))
-	{
-		for (BVH& bvh : world.GetPhysics().GetBVHs())
-		{
-			bvh.Build();
-		}
-	}
-	else
-	{
-		for (BVH& bvh : world.GetPhysics().GetBVHs())
-		{
-			bvh.Refit();
-		}
-	}
-
+	UpdateBVHs(world);
 
 	if (world.HasBegunPlay()
 		&& !world.IsPaused())
@@ -560,6 +541,42 @@ bool CE::PhysicsSystem::CollisionCheckDiskAABB(TransformedDiskColliderComponent 
 	}
 
 	return CollisionCheckDiskPolygon(disk, aabb.GetAsPolygon(), result);
+}
+
+void CE::PhysicsSystem::UpdateBVHs(World& world)
+{
+	auto& bvhs = world.GetPhysics().GetBVHs();
+
+	for (BVH& bvh : bvhs)
+	{
+		if (bvh.GetRebuildDesire() >= sMaxBVHRebuildDesire)
+		{
+			bvh.Build();
+		}
+		else
+		{
+			bvh.Refit();
+		}
+	}
+
+	if (!mRebuildBVHCooldown.IsReady(world.GetRealDeltaTime()))
+	{
+		return;
+	}
+
+	const auto mostOutOfDataBVH = std::max_element(bvhs.begin(), bvhs.end(),
+		[](const BVH& lhs, const BVH& rhs)
+		{
+			return lhs.GetRebuildDesire() < rhs.GetRebuildDesire();
+		});
+
+	if (mostOutOfDataBVH == bvhs.end()
+		|| mostOutOfDataBVH->GetRebuildDesire() == 0.0f)
+	{
+		return;
+	}
+
+	mostOutOfDataBVH->Build();
 }
 
 CE::MetaType CE::PhysicsSystem::Reflect()
