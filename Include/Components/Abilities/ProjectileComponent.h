@@ -21,6 +21,12 @@ namespace CE
 		// Initial speed to set the velocity of the physics body.
 		float mSpeed{};
 
+		// How many characters the projectile can affect before getting destroyed.
+		int mPierceCount{};
+
+		// How many characters the projectile has affected.
+		int mCurrentPierceCount{};
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
