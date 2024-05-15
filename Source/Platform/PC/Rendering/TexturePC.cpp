@@ -84,7 +84,7 @@ void CE::Texture::SendToGPU() const
 	resourceDescription.Width = mLoadedPixels->mWidth;
 	resourceDescription.Height = mLoadedPixels->mHeight;
 	resourceDescription.DepthOrArraySize = 1;
-	resourceDescription.MipLevels = 4;
+	resourceDescription.MipLevels = resourceDescription.Width <=5 ? 1 :4;
 	resourceDescription.Format = dxgiformat;
 	resourceDescription.SampleDesc.Count = 1;
 	resourceDescription.SampleDesc.Quality = 0;
@@ -110,12 +110,12 @@ void CE::Texture::SendToGPU() const
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format = resourceDescription.Format;
-	srvDesc.Texture2D.MipLevels = 4;
+	srvDesc.Texture2D.MipLevels = resourceDescription.MipLevels;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	self.mHeapSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mTextureBuffer.get(), &srvDesc);
 
-	for (int i = 1; i < 4; i++)
+	for (int i = 1; i < resourceDescription.MipLevels; i++)
 	{
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 		uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
@@ -218,7 +218,7 @@ void CE::Texture::GenerateMipmaps() const
 	auto resource = self.mTextureBuffer->GetResource();
 	auto resourceDesc = resource->GetDesc();
 
-	if (resourceDesc.Width <= 4 || resourceDesc.Height <=4)
+	if (resourceDesc.MipLevels < 4)
 		return;
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};

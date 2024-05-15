@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Utilities/AbilityFunctionality.h"
 
+#include "Assets/Ability/Weapon.h"
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/ActiveAbilityComponent.h"
 #include "Components/Abilities/AbilityLifetimeComponent.h"
@@ -16,59 +17,92 @@
 #include "World/World.h"
 #include "Utilities/Math.h"
 #include "Assets/Prefabs/Prefab.h"
+#include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 CE::MetaType CE::AbilityFunctionality::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<AbilityFunctionality>{}, "AbilityFunctionality" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax)
+	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax });
+			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, abilityEffect);
 
 		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
-		const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent&, entt::entity, AbilityEffect>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-		metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration)
+	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, abilityEffect, duration);
+
+		}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
+		const CharacterComponent&, entt::entity, AbilityEffect, float>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration, int ticks)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			ApplyOverTimeEffect(*world, castByCharacterData, affectedEntity, abilityEffect, duration, ticks);
+
+		}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
+		const CharacterComponent&, entt::entity, AbilityEffect, float, int>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy) -> entt::entity
+		{
+			if (prefab == nullptr)
 			{
-				World* world = World::TryGetWorldAtTopOfStack();
-				ASSERT(world != nullptr);
+				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
+				return entt::null;
+			}
 
-				ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration);
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
 
-			}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
-			const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			return SpawnAbilityPrefab(*world, *prefab, castBy);
 
-			metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float duration, int ticks)
-				{
-					World* world = World::TryGetWorldAtTopOfStack();
-					ASSERT(world != nullptr);
+		}, "SpawnAbilityPrefab", MetaFunc::ExplicitParams<
+		const AssetHandle<Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-					ApplyOverTimeEffect(*world, castByCharacterData, affectedEntity, AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax }, duration, ticks);
+	metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy, const AssetHandle<Weapon>& weapon) -> std::vector<entt::entity>
+		{
+			if (prefab == nullptr)
+			{
+				LOG(LogWorld, Warning, "SpawnProjectilePrefabs - Attempted to spawn NULL prefab.");
+				return {};
+			}
+			if (weapon == nullptr)
+			{
+				LOG(LogWorld, Warning, "SpawnProjectilePrefabs - Weapon is NULL.");
+				return {};
+			}
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
 
-				}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
-				const CharacterComponent&, entt::entity, Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float, int>{}, "CastByCharacterData", "ApplyToEntity", "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			return SpawnProjectilePrefabs(*world, *prefab, castBy, weapon);
 
-				metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy) -> entt::entity
-					{
-						if (prefab == nullptr)
-						{
-							LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
-							return entt::null;
-						}
+		}, "SpawnProjectilePrefabs", MetaFunc::ExplicitParams<
+		const AssetHandle<Prefab>&, entt::entity, const AssetHandle<Weapon>&>{}, "Prefab", "Cast By", "Weapon").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-						World* world = World::TryGetWorldAtTopOfStack();
-						ASSERT(world != nullptr);
+	metaType.AddFunc(&AbilityFunctionality::IncreasePierceCountAndReturnTrueIfExceeded, "IncreasePierceCountAndReturnTrueIfExceeded").GetProperties().Add(Props::sIsScriptableTag);
 
-						return SpawnAbilityPrefab(*world, *prefab, castBy);
+	metaType.AddFunc([](entt::entity entityToAffect, entt::entity abilityEntity) -> bool
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
 
-					}, "SpawnAbilityPrefab", MetaFunc::ExplicitParams<
-					const AssetHandle<Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			return WasTheAbilityCastByAnEnemy(*world, entityToAffect, abilityEntity);
 
-					return metaType;
+		}, "WasTheAbilityCastByAnEnemy", MetaFunc::ExplicitParams<
+		entt::entity, entt::entity>{}, "Entity To Affect", "Ability Entity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
+	return metaType;
 }
 
 std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect)
@@ -217,6 +251,98 @@ entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Pr
 	return prefabEntity;
 }
 
+entt::entity CE::AbilityFunctionality::SpawnProjectilePrefab(World& world, const Prefab& prefab, entt::entity castBy, const AssetHandle<Weapon>& weapon)
+{
+	entt::entity prefabEntity = SpawnAbilityPrefab(world, prefab, castBy);
+	if (prefabEntity == entt::null)
+	{
+		LOG(LogAbilitySystem, Error, "The prefab does not have a PhysicsBody2DComponent attached.");
+		return {};
+	}
+	auto& reg = world.GetRegistry();
+	const Weapon& weaponRef = *weapon.Get();
+
+	auto& projectileComponent = reg.Get<ProjectileComponent>(prefabEntity);
+	projectileComponent.mSpeed = weaponRef.mProjectileSpeed;
+	projectileComponent.mRange = weaponRef.mProjectileRange;
+	projectileComponent.mPierceCount = weaponRef.mPierceCount;
+
+	auto& physicsBodyComponent = reg.Get<PhysicsBody2DComponent>(prefabEntity);
+
+	const auto characterTransform = reg.TryGet<TransformComponent>(castBy);
+	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+	physicsBodyComponent.mLinearVelocity = characterDir * projectileComponent.mSpeed;
+
+	auto& transformComponent = reg.Get<TransformComponent>(prefabEntity);
+	transformComponent.SetLocalScale(glm::vec3(weaponRef.mProjectileSize));
+
+	auto& effectsComponent = reg.Get<AbilityEffectsComponent>(prefabEntity);
+	effectsComponent.mEffects = weaponRef.mEffects;
+
+	return prefabEntity;
+}
+
+std::vector<entt::entity> CE::AbilityFunctionality::SpawnProjectilePrefabs(World& world, const Prefab& prefab, entt::entity castBy,
+	const AssetHandle<Weapon>& weapon)
+{
+	const Weapon& weaponRef = *weapon.Get();
+	if (weaponRef.mProjectileCount < 1)
+	{
+		LOG(LogAbilitySystem, Error, "Weapon {} Projectile Count is less than 1.");
+		return {};
+	}
+	if (weaponRef.mProjectileCount == 1)
+	{
+		return { SpawnProjectilePrefab(world, prefab, castBy, weapon) };
+	}
+
+	// else more than 1 projectile
+	auto& reg = world.GetRegistry();
+	const float spreadInRadians = glm::radians(weaponRef.mSpread);
+	const float angleBetweenProjectiles = spreadInRadians / static_cast<float>(weaponRef.mProjectileCount - 1);
+	const auto characterTransform = reg.TryGet<TransformComponent>(castBy);
+	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+	const float directionInRadians = atan2(characterDir.y, characterDir.x);
+	const float firstProjectileAngle = directionInRadians - spreadInRadians / 2.f;
+
+	std::vector<entt::entity> projectilesVector{};
+	for (int i = 0; i < weaponRef.mProjectileCount; i++)
+	{
+		auto projectile = SpawnProjectilePrefab(world, prefab, castBy, weapon);
+		// Calculate and set the direction.
+		auto& physicsBody = reg.Get<PhysicsBody2DComponent>(projectile);
+		const auto projectileAngle = firstProjectileAngle + static_cast<float>(i) * angleBetweenProjectiles;
+		physicsBody.mLinearVelocity = glm::vec2(cos(projectileAngle), sin(projectileAngle)) * weaponRef.mProjectileSpeed;
+		projectilesVector.push_back(projectile);
+	}
+	return projectilesVector;
+}
+
+bool CE::AbilityFunctionality::IncreasePierceCountAndReturnTrueIfExceeded(ProjectileComponent& projectileComponent)
+{
+	projectileComponent.mCurrentPierceCount++;
+	return projectileComponent.mCurrentPierceCount > projectileComponent.mPierceCount;
+}
+
+bool CE::AbilityFunctionality::WasTheAbilityCastByAnEnemy(World& world, entt::entity entityToAffect, entt::entity abilityEntity)
+{
+	auto& reg = world.GetRegistry();
+	const auto entityToAffectCharacterComponent = reg.TryGet<CharacterComponent>(entityToAffect);
+	if (entityToAffectCharacterComponent == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "WasTheAbilityCastByAnEnemy - entityToAffect does not have a Character Component attached.");
+		return false;
+	}
+	const auto activeAbilityComponent = reg.TryGet<ActiveAbilityComponent>(abilityEntity);
+	if (activeAbilityComponent == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "WasTheAbilityCastByAnEnemy - entityToAffect does not have an Active Ability Component attached.");
+		return false;
+	}
+	
+	return entityToAffectCharacterComponent->mTeamId != activeAbilityComponent->mCastByCharacterData.mTeamId;
+}
+
 std::pair<float&, float&> CE::AbilityFunctionality::GetStat(Stat stat, CharacterComponent& characterComponent)
 {
 	switch (stat)
@@ -248,78 +374,4 @@ glm::vec3 CE::AbilityFunctionality::GetEffectColor(Stat stat, IncreaseOrDecrease
 		color = sDefaultEffectColors[std::make_pair(std::nullopt, increaseOrDecrease)];
 	}
 	return color;
-}
-
-CE::MetaType Reflector<CE::AbilityFunctionality::Stat>::Reflect()
-{
-	using namespace CE;
-	using T = AbilityFunctionality::Stat;
-	MetaType type{ MetaType::T<T>{}, "Stat" };
-
-	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-	type.AddFunc(std::equal_to<T>(), OperatorType::equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	ReflectFieldType<T>(type);
-
-	return type;
-}
-
-CE::MetaType Reflector<CE::AbilityFunctionality::FlatOrPercentage>::Reflect()
-{
-	using namespace CE;
-	using T = AbilityFunctionality::FlatOrPercentage;
-	MetaType type{ MetaType::T<T>{}, "FlatOrPercentage" };
-
-	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-	type.AddFunc(std::equal_to<T>(), OperatorType::equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	ReflectFieldType<T>(type);
-
-	return type;
-}
-
-CE::MetaType Reflector<CE::AbilityFunctionality::IncreaseOrDecrease>::Reflect()
-{
-	using namespace CE;
-	using T = AbilityFunctionality::IncreaseOrDecrease;
-	MetaType type{ MetaType::T<T>{}, "IncreaseOrDecrease" };
-
-	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-	type.AddFunc(std::equal_to<T>(), OperatorType::equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	ReflectFieldType<T>(type);
-
-	return type;
-}
-
-bool CE::AbilityFunctionality::AbilityEffect::operator==(const AbilityEffect& other) const
-{
-	return mStat == other.mStat &&
-		Math::AreFloatsEqual(mAmount, other.mAmount) &&
-		mFlatOrPercentage == other.mFlatOrPercentage &&
-		mIncreaseOrDecrease == other.mIncreaseOrDecrease &&
-		mClampToMax == other.mClampToMax;
-}
-
-bool CE::AbilityFunctionality::AbilityEffect::operator!=(const AbilityEffect& other) const
-{
-	return mStat != other.mStat ||
-		!Math::AreFloatsEqual(mAmount, other.mAmount) ||
-		mFlatOrPercentage != other.mFlatOrPercentage ||
-		mIncreaseOrDecrease != other.mIncreaseOrDecrease ||
-		mClampToMax != other.mClampToMax;
-}
-
-CE::MetaType CE::AbilityFunctionality::AbilityEffect::Reflect()
-{
-	MetaType metaType = MetaType{ MetaType::T<AbilityEffect>{}, "AbilityEffect" };
-	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-
-	metaType.AddField(&AbilityEffect::mStat, "mStat").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-	metaType.AddField(&AbilityEffect::mAmount, "mAmount").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-	metaType.AddField(&AbilityEffect::mFlatOrPercentage, "mFlatOrPercentage").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-	metaType.AddField(&AbilityEffect::mIncreaseOrDecrease, "mIncreaseOrDecrease").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-	metaType.AddField(&AbilityEffect::mClampToMax, "mClampToMax").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
-
-	return metaType;
 }

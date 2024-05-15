@@ -282,9 +282,9 @@ void CE::Device::InitializeDevice()
     mSwapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
 
     //CREATE DESCRIPTOR HEAPS
-    mDescriptorHeaps[RT_HEAP] = DXDescHeap::Construct(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
-    mDescriptorHeaps[DEPTH_HEAP] = DXDescHeap::Construct(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
-    mDescriptorHeaps[RESOURCE_HEAP] = DXDescHeap::Construct(mDevice, 5000, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"RESOURCE HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    mDescriptorHeaps[RT_HEAP] = DXDescHeap::Construct(mDevice, 2000, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
+    mDescriptorHeaps[DEPTH_HEAP] = DXDescHeap::Construct(mDevice, 2000, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
+    mDescriptorHeaps[RESOURCE_HEAP] = DXDescHeap::Construct(mDevice, 50000, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"RESOURCE HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
     mDescriptorHeaps[SAMPLER_HEAP] = DXDescHeap::Construct(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, L"SAMPLER HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     //CREATE RENDER TARGETS
@@ -379,6 +379,7 @@ void CE::Device::InitializeDevice()
     mGenMipmapsPipeline = DXPipelineBuilder()
         .SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize())
         .Build(mDevice, mComputeSignature, L"GENERATE MIPMAPS COMPUTE SHADER");
+
 
     SubmitCommands();
 }
@@ -480,15 +481,8 @@ void CE::Device::NewFrame() {
 #endif // EDITOR
 
     SendTexturesToGPU();
-
-    mCommandList->RSSetViewports(1, &mViewport); 
-    mCommandList->RSSetScissorRects(1, &mScissorRect); 
-    mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
-    mCommandList->SetGraphicsRootSignature(mSignature.Get());
-
+    BindSwapchainRT();
     glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
-    mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mRenderTargetHandles[mFrameIndex], mDepthHandle);
     mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mRenderTargetHandles[mFrameIndex], &clearColor[0]);
     mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, mDepthHandle);
 }
@@ -655,11 +649,8 @@ void CE::Device::BindSwapchainRT()
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
     mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 
-    glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
     mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mRenderTargetHandles[mFrameIndex], mDepthHandle);
-    mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mRenderTargetHandles[mFrameIndex], &clearColor[0]);
-    mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, mDepthHandle);
 }
 
 #ifdef EDITOR

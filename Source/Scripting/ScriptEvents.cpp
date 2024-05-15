@@ -150,7 +150,7 @@ CE::MetaFunc::InvokeT  CE::ScriptAIEvaluateEvent::GetScriptInvoker(const ScriptF
 }
 
 CE::ScriptAbilityActivateEvent::ScriptAbilityActivateEvent() :
-	ScriptEvent(sAbilityActivateEvent, { { MakeTypeTraits<entt::entity>(), "CastByEntity" } }, std::nullopt)
+	ScriptEvent(sAbilityActivateEvent, {  }, std::nullopt)
 {
 }
 
@@ -161,7 +161,7 @@ CE::MetaFunc::InvokeT  CE::ScriptAbilityActivateEvent::GetScriptInvoker(const Sc
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
 		{
 			// The script knows about world, but we do have to provide entt::entity
-			Span<MetaAny, 1> scriptArgs{ &args[1], 1 };
+			Span<MetaAny, 1> scriptArgs{ &args[0], 1 };
 			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
 		};
 }

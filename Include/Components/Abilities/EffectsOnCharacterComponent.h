@@ -2,7 +2,7 @@
 
 #include "CharacterComponent.h"
 #include "Meta/MetaReflect.h"
-#include "Utilities/AbilityFunctionality.h"
+#include "Components/Abilities/AbilityEffectsComponent.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 
 namespace CE
@@ -17,7 +17,7 @@ namespace CE
 		float mDurationTimer{};
 
 		// Which stat has been modified.
-		AbilityFunctionality::Stat mStatAffected{};
+		Stat mStatAffected{};
 
 		// The amount with which the stat has been modified and will be inversely applied with.
 		float mAmount{}; 
@@ -51,7 +51,7 @@ namespace CE
 		int mTicksCounter{};
 
 		// The effect to apply.
-		AbilityFunctionality::AbilityEffect mEffectSettings{};
+		AbilityEffect mEffectSettings{};
 
 		// This is needed only if the effect is health decrease (damage).
 		// It needs to be stored because the dealt damage modifer of the character

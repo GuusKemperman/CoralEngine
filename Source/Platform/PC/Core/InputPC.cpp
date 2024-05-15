@@ -161,6 +161,16 @@ bool Input::IsGamepadButtonHeld(int gamepadID, GamepadButton button, bool checkF
     {
         return false;
     }
+
+    if (button == GamepadButton::TriggerRight)
+    {
+        return GetGamepadAxis(gamepadID, GamepadAxis::TriggerRight, checkFocus) > sTriggerThreshold;
+    }
+    if (button == GamepadButton::TriggerLeft)
+    {
+        return GetGamepadAxis(gamepadID, GamepadAxis::TriggerLeft, checkFocus) > sTriggerThreshold;
+    }
+
     int b = static_cast<int>(button);
     ASSERT(b >= 0 && b <= GLFW_GAMEPAD_BUTTON_LAST);
     return static_cast<bool>(gamepad_state[gamepadID].buttons[b]);
@@ -174,13 +184,9 @@ bool Input::WasGamepadButtonPressed(int gamepadID, GamepadButton button, bool ch
         return false;
     }
 
-    if (button == GamepadButton::TriggerRight)
+    if (button == GamepadButton::TriggerRight || button == GamepadButton::TriggerLeft)
     {
-        return GetGamepadAxis(gamepadID, GamepadAxis::TriggerRight, checkFocus) > sTriggerThreshold;
-    }
-    if (button == GamepadButton::TriggerLeft)
-    {
-        return GetGamepadAxis(gamepadID, GamepadAxis::TriggerLeft, checkFocus) > sTriggerThreshold;
+        return false;
     }
 
     int b = static_cast<int>(button);
@@ -194,6 +200,11 @@ bool Input::WasGamepadButtonReleased(int gamepadID, GamepadButton button, bool c
 {
     if (!IsGamepadAvailable(gamepadID)
         || !HasFocus(checkFocus))
+    {
+        return false;
+    }
+
+    if (button == GamepadButton::TriggerRight || button == GamepadButton::TriggerLeft)
     {
         return false;
     }
