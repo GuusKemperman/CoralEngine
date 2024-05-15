@@ -6,7 +6,7 @@ namespace CE
 	class Prefab;
 	class World;
 
-	class GridSpawner
+	class GridSpawnerComponent
 	{
 	public:
 		void OnConstruct(World&, entt::entity owner);
@@ -27,6 +27,6 @@ namespace CE
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(GridSpawner);
+		REFLECT_AT_START_UP(GridSpawnerComponent);
 	};
 }
