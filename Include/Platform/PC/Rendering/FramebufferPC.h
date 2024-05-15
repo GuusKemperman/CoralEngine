@@ -1,4 +1,3 @@
-#ifdef EDITOR
 #pragma once
 #include "DX12Classes/DXDefines.h"
 #include "glm/glm.hpp"
@@ -17,6 +16,8 @@ namespace CE
 
 		void Bind() const;
 		void Unbind() const;
+
+		void BindSRVDepthToGraphics(int rootSlot) const;
 
 		void Resize(glm::ivec2 newSize);
 		glm::ivec2 GetSize() const { return mSize; }
@@ -41,6 +42,7 @@ namespace CE
 		std::unique_ptr<DXResource> mDepthResource;
 		DXHeapHandle mFrameBufferHandle[FRAME_BUFFER_COUNT];
 		DXHeapHandle mFrameBufferRscHandle[FRAME_BUFFER_COUNT];
+		DXHeapHandle mFrameBufferUAVHandle[FRAME_BUFFER_COUNT];
 		DXHeapHandle mDepthStencilHandle;
 		DXHeapHandle mDepthStencilSRVHandle;
 
@@ -51,4 +53,3 @@ namespace CE
 
 	};
 }
-#endif // EDITOR

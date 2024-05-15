@@ -12,12 +12,14 @@
 #include "Rendering/MeshRenderer.h"
 #include "Rendering/UIRenderer.h"
 #include "Rendering/DebugRenderer.h"
+#include "Rendering/PostProcessingRenderer.h"
 
 CE::Renderer::Renderer()
 {
 	mMeshRenderer = std::make_unique<MeshRenderer>();
 	mUIRenderer = std::make_unique<UIRenderer>();
 	mDebugRenderer = std::make_unique<DebugRenderer>();
+	mPostProcessRenderer = std::make_unique<PostProcessingRenderer>();
 }
 
 CE::Renderer::~Renderer() = default;
@@ -73,5 +75,7 @@ void CE::Renderer::Render(const World& world, glm::vec2 viewportSize)
 
 	mMeshRenderer->Render(world);
 	mDebugRenderer->Render(world);
+	mPostProcessRenderer->Render(world);
 	mUIRenderer->Render(world);
+
 }
