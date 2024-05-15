@@ -81,14 +81,7 @@ void CE::AnimationSystem::Update(World& world, float dt)
 			continue;
 		}
 
-		const TransformComponent* parent = transform.GetParent();
-	
-		if (parent == nullptr)
-		{
-			continue;
-		}
-
-		const SkinnedMeshComponent* skinnedMesh = reg.TryGet<SkinnedMeshComponent>(parent->GetOwner());
+		const SkinnedMeshComponent* skinnedMesh = AttachToBoneComponent::FindSkinnedMeshParentRecursive(reg, transform);
 
 		if (skinnedMesh == nullptr)
 		{
@@ -101,8 +94,8 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		if (it == boneMap.end() 
 			|| skinnedMesh->mAnimation == nullptr)
 		{
-			static_assert(false, "You are dereferencing the iterator, even if it == boneMap.end()");
-			transform.SetLocalMatrix(it->second.mOffset);
+			transform.SetLocalMatrix(transform.GetWorldMatrix() *
+				TransformComponent::ToMatrix(attachToBone.mLocalTranslation, attachToBone.mLocalScale, attachToBone.mLocalRotation));
 			continue;
 		}
 

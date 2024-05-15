@@ -4,11 +4,15 @@
 namespace CE
 {
 	class World;
+	class Registry;
+	class SkinnedMeshComponent;
+	class TransformComponent;
 
 	class AttachToBoneComponent
 	{
 	public:
 		void OnConstruct(World&, entt::entity owner);
+		static SkinnedMeshComponent* FindSkinnedMeshParentRecursive(Registry& reg, const TransformComponent& transform);
 
 		entt::entity mOwner{};
 
@@ -20,7 +24,7 @@ namespace CE
 
 	private:
 		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
-
+		
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AttachToBoneComponent);

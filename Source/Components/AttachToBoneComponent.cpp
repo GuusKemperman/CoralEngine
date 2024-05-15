@@ -31,14 +31,7 @@ void CE::AttachToBoneComponent::OnInspect(World& world, const std::vector<entt::
 			continue;
 		}
 
-		const TransformComponent* parent = transform->GetParent();
-
-		if (parent == nullptr)
-		{
-			continue;
-		}
-
-		const SkinnedMeshComponent* skinnedMeshComponent = reg.TryGet<SkinnedMeshComponent>(parent->GetOwner());
+		const SkinnedMeshComponent* skinnedMeshComponent = FindSkinnedMeshParentRecursive(reg, *transform);
 
 		if (skinnedMeshComponent == nullptr)
 		{
@@ -77,6 +70,11 @@ void CE::AttachToBoneComponent::OnInspect(World& world, const std::vector<entt::
 			bone.clear();
 		}
 
+		if (skinnedMesh == nullptr)
+		{
+			return;
+		}
+
 		for (const auto [boneName, _] : skinnedMesh->GetBoneMap())
 		{
 			if (Search::Button(boneName))
@@ -94,6 +92,26 @@ void CE::AttachToBoneComponent::OnInspect(World& world, const std::vector<entt::
 		Search::EndCombo();
 	}
 }
+
+CE::SkinnedMeshComponent* CE::AttachToBoneComponent::FindSkinnedMeshParentRecursive(Registry& reg, const TransformComponent& transform)
+{
+	SkinnedMeshComponent* skinnedMesh = reg.TryGet<SkinnedMeshComponent>(transform.GetOwner()); 
+
+	if (skinnedMesh != nullptr)
+	{
+		return skinnedMesh;
+	}
+
+	const TransformComponent* parent = transform.GetParent();
+
+	if (parent == nullptr)
+	{
+		return nullptr;
+	}
+
+	return FindSkinnedMeshParentRecursive(reg, *parent);
+}
+
 
 CE::MetaType CE::AttachToBoneComponent::Reflect()
 {
