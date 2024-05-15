@@ -10,7 +10,7 @@
 		</Link>
 		<PostBuildEvent>
 			<Command>
-				IF NOT EXIST "$(TargetDir)assimp-vc143-mtd.dll" COPY /Y "$(EngineDir)External\assimp\$(Platform)\Debug\assimp-vc143-mtd.dll" "$(TargetDir)"
+				IF NOT EXIST "$(TargetDir)assimp-vc143-mtd.dll" COPY "$(EngineDir)External\assimp\$(Platform)\Debug\assimp-vc143-mtd.dll" "$(TargetDir)"
 			</Command>
 		</PostBuildEvent>
 	</ItemDefinitionGroup>

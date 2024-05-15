@@ -11,6 +11,7 @@
 #include "Core/VirtualMachine.h"
 #include "Meta/MetaManager.h"
 #include "Core/UnitTests.h"
+#include "Core/Audio.h"
 #include "Assets/Level.h"
 #include "World/World.h"
 #include "Utilities/Benchmark.h"
@@ -41,7 +42,9 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 		Renderer::StartUp();
 	}
 
+	Audio::StartUp();
 	Input::StartUp();
+
 #ifdef EDITOR
 	if (!Device::IsHeadless())
 	{
@@ -101,6 +104,7 @@ CE::Engine::~Engine()
 	VirtualMachine::ShutDown();
 	AssetManager::ShutDown();
 	MetaManager::ShutDown();
+	Audio::ShutDown();
 	Input::ShutDown();
 
 	if (!Device::IsHeadless())
