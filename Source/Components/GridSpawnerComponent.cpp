@@ -9,12 +9,12 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
-void CE::GridSpawner::OnConstruct(World&, entt::entity owner)
+void CE::GridSpawnerComponent::OnConstruct(World&, entt::entity owner)
 {
 	mOwner = owner;
 }
 
-void CE::GridSpawner::SpawnGrid()
+void CE::GridSpawnerComponent::SpawnGrid()
 {
 	if (mTiles.empty())
 	{
@@ -130,23 +130,24 @@ void CE::GridSpawner::SpawnGrid()
 	}
 }
 
-CE::MetaType CE::GridSpawner::Reflect()
+CE::MetaType CE::GridSpawnerComponent::Reflect()
 {
-	auto type = MetaType{ MetaType::T<GridSpawner>{}, "GridSpawner" };
+	auto type = MetaType{ MetaType::T<GridSpawnerComponent>{}, "GridSpawnerComponent" };
 	MetaProps& props = type.GetProperties();
+	props.Set(Props::sOldNames, "GridSpawner");
 	props.Add(Props::sIsScriptableTag);
 
-	type.AddField(&GridSpawner::mSpacing, "mSpacing").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&GridSpawner::mHeight, "mHeight").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&GridSpawner::mWidth, "mWidth").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&GridSpawner::mTiles, "mTiles").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&GridSpawner::mSpawnChances, "mChances").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&GridSpawner::mIsCentered, "mIsCentered").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mSpacing, "mSpacing").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mHeight, "mHeight").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mWidth, "mWidth").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mTiles, "mTiles").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mSpawnChances, "mChances").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mIsCentered, "mIsCentered").GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc(&GridSpawner::SpawnGrid, "Spawn Grid").GetProperties().Add(Props::sCallFromEditorTag);
+	type.AddFunc(&GridSpawnerComponent::SpawnGrid, "Spawn Grid").GetProperties().Add(Props::sCallFromEditorTag);
 
-	BindEvent(type, sConstructEvent, &GridSpawner::OnConstruct);
+	BindEvent(type, sConstructEvent, &GridSpawnerComponent::OnConstruct);
 
-	ReflectComponentType<GridSpawner>(type);
+	ReflectComponentType<GridSpawnerComponent>(type);
 	return type;
 }
