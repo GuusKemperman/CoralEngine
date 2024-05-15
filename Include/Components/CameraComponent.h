@@ -34,7 +34,7 @@ namespace CE
 		static void Deselect(World& world);
 
 		float mFar = 5000.0f;		
-		float mNear = 1.0f;
+		float mNear = 1.f;
 		float mFOV = glm::radians(45.0f);
 		glm::vec2 mViewportSize;
 
