@@ -198,8 +198,7 @@ CE::Editor::~Editor()
 	const std::filesystem::path pathToSavedState = GetFileLocationOfSystemState("Editor");
 	create_directories(pathToSavedState.parent_path());
 
-	{
-
+	{ // <-- forces the file to be closed and writing to be finished before we start destroying systems, as those might crash the program in some cases.
 		std::ofstream editorSavedState{ pathToSavedState, std::ofstream::binary };
 
 		if (!editorSavedState.is_open())
@@ -207,45 +206,47 @@ CE::Editor::~Editor()
 			LOG(LogEditor, Warning, "Could not save editor state, {} could not be opened", pathToSavedState.string());
 		}
 
-		cereal::BinaryOutputArchive ar{ editorSavedState };
+		{ // <-- forces BinaryOutputArchive destructor to be called before that of std::ofstream
+			cereal::BinaryOutputArchive ar{ editorSavedState };
 
-		static constexpr uint32 savedDataVersion = 2;
-		ar(savedDataVersion);
+			static constexpr uint32 savedDataVersion = 2;
+			ar(savedDataVersion);
 
-		const uint32 flags = DebugRenderer::GetDebugCategoryFlags();
-		ar(flags);
+			const uint32 flags = DebugRenderer::GetDebugCategoryFlags();
+			ar(flags);
 
-		sNameLookUpMutex.lock();
-		ar(sNameLookUp);
-		sNameLookUpMutex.unlock();
+			sNameLookUpMutex.lock();
+			ar(sNameLookUp);
+			sNameLookUpMutex.unlock();
 
-		uint32 numOfOpenSystems{};
+			uint32 numOfOpenSystems{};
 
-		for (const auto& [typeId, system] : mSystems)
-		{
-			if (editorSavedState.is_open()
-				&& MetaManager::Get().TryGetType(typeId) != nullptr)
+			for (const auto& [typeId, system] : mSystems)
 			{
-				numOfOpenSystems++;
-			}
-		}
-
-		ar(numOfOpenSystems);
-
-		// Give each system a chance to save their state
-		for (const auto& [typeId, system] : mSystems)
-		{
-			if (editorSavedState.is_open())
-			{
-				const MetaType* const systemType = MetaManager::Get().TryGetType(typeId);
-
-				if (systemType != nullptr)
+				if (editorSavedState.is_open()
+					&& MetaManager::Get().TryGetType(typeId) != nullptr)
 				{
-					ar(systemType->GetName(), system->GetName());
+					numOfOpenSystems++;
 				}
 			}
 
-			DestroySystem(system->GetName());
+			ar(numOfOpenSystems);
+
+			// Give each system a chance to save their state
+			for (const auto& [typeId, system] : mSystems)
+			{
+				if (editorSavedState.is_open())
+				{
+					const MetaType* const systemType = MetaManager::Get().TryGetType(typeId);
+
+					if (systemType != nullptr)
+					{
+						ar(systemType->GetName(), system->GetName());
+					}
+				}
+
+				DestroySystem(system->GetName());
+			}
 		}
 	}
 
