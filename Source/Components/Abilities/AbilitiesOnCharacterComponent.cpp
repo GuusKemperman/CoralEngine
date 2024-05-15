@@ -34,6 +34,10 @@ void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity e
 {
 	for (auto& ability : mAbilitiesToInput)
 	{
+		if (ability.mAbilityAsset == nullptr)
+		{
+			continue;
+		}
 		// Make all the cooldown abilities available on being play.
 		if (ability.mAbilityAsset->mRequirementType == Ability::Cooldown)
 		{
@@ -48,6 +52,10 @@ void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity e
 	}
 	for (auto& weapon : mWeaponsToInput)
 	{
+		if (weapon.mWeaponAsset == nullptr)
+		{
+			continue;
+		}
 		const MetaType* scriptType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
 
 		if (scriptType != nullptr && !world.GetRegistry().HasComponent(scriptType->GetTypeId(), entity))
