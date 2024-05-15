@@ -1,4 +1,3 @@
-#ifdef EDITOR
 #pragma once
 #include "DX12Classes/DXDefines.h"
 #include "glm/glm.hpp"
@@ -54,4 +53,3 @@ namespace CE
 
 	};
 }
-#endif // EDITOR

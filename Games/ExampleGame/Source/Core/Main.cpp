@@ -10,6 +10,6 @@
 int main(int argc, char* argv[])
 {
 	CE::Engine engine{ argc, argv, GAME_DIR };
-	engine.Run("MainMenu");
+	engine.Run("KayLevel");
 	return 0;
 }

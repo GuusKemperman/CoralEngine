@@ -72,7 +72,7 @@ void CE::PostProcessingRenderer::RenderOutline(const World& world)
     int frameIndex = engineDevice.GetFrameIndex();
 
     commandList->SetPipelineState(mOutlinePipeline.Get());
-    postProcData.mOutlineBuffer->Bind(commandList, 0, 0, frameIndex);
+    postProcData.mOutlineBuffer->Bind(commandList, 0,0, frameIndex);
     gpuWorld.GetSelectionFramebuffer().BindSRVDepthToGraphics(8);
     
     commandList->IASetVertexBuffers(0, 1, &postProcData.mVertexBufferView);

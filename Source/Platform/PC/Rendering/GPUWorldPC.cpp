@@ -27,7 +27,7 @@
 
 #include "Platform/PC/Core/DevicePC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
-#include "Platform/PC/Rendering/FramebufferPC.h"
+#include "Rendering/FrameBuffer.h"
 
 CE::DebugRenderingData::DebugRenderingData()
 {

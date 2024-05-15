@@ -397,14 +397,11 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         }
     }
 
-
-
     meshCounter = 0;
     gpuWorld.GetSelectionFramebuffer().Bind();
     gpuWorld.GetSelectionFramebuffer().Clear();
 
     commandList->SetPipelineState(mZPipeline.Get());
-    gpuWorld.GetCameraBuffer().Bind(commandList, 0, 0, frameIndex);
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
 
@@ -446,6 +443,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
             meshCounter++;
         }
     }
+    Device::Get().BindSwapchainRT();
 }
 
 void CE::MeshRenderer::HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex)
@@ -578,7 +576,6 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
             }
         }
     }
-
     {
         const auto view2 = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent, const ParticleColorOverTimeComponent>();
 
@@ -613,7 +610,6 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
             }
         }
     }
-
 
     commandList->SetPipelineState(mCullClusterSkinnedMeshPipeline.Get());
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);

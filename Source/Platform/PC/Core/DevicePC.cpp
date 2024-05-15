@@ -482,15 +482,8 @@ void CE::Device::NewFrame() {
 #endif // EDITOR
 
     SendTexturesToGPU();
-
-    mCommandList->RSSetViewports(1, &mViewport); 
-    mCommandList->RSSetScissorRects(1, &mScissorRect); 
-    mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
-    mCommandList->SetGraphicsRootSignature(mSignature.Get());
-
+    BindSwapchainRT();
     glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
-    mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mRenderTargetHandles[mFrameIndex], mDepthHandle);
     mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mRenderTargetHandles[mFrameIndex], &clearColor[0]);
     mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, mDepthHandle);
 }
@@ -657,11 +650,8 @@ void CE::Device::BindSwapchainRT()
     mCommandList->RSSetScissorRects(1, &mScissorRect); 
     mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
 
-    glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
     mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
     mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mRenderTargetHandles[mFrameIndex], mDepthHandle);
-    mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mRenderTargetHandles[mFrameIndex], &clearColor[0]);
-    mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, mDepthHandle);
 }
 
 #ifdef EDITOR
