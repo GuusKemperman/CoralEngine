@@ -49,7 +49,6 @@ CE::MeshRenderer::MeshRenderer()
     ComPtr<ID3DBlob> p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
     CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
-
     mPBRPipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1)
@@ -60,6 +59,41 @@ CE::MeshRenderer::MeshRenderer()
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
 
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRParticlePixel.hlsl");
+    p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
+
+    CD3DX12_BLEND_DESC blendDesc = {};
+    blendDesc.AlphaToCoverageEnable = FALSE;  // Keep as false unless using MSAA and need smooth edges on alpha textures
+    blendDesc.IndependentBlendEnable = FALSE; // Use the same blending setup for all render targets unless needed otherwise
+
+    // Configure the blend state for RenderTarget[0]
+    blendDesc.RenderTarget[0].BlendEnable = TRUE;
+    blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;      // Use source alpha to scale source color
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA; // Use (1 - source alpha) to scale destination color
+    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;          // Add the results of the source and destination blend
+
+    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;       // Use 1 to scale source alpha (keep source alpha)
+    blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;     // Use 0 to not affect destination alpha
+    blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;     // Add source and destination alphas
+
+    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL; // Write to all color components
+    blendDesc.RenderTarget[0].LogicOpEnable = FALSE; // No logical operations needed
+
+    depth.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+    depth.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+    mParticlePBRPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1)
+        .AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 2)
+        .AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 3)
+        .SetBlendState(blendDesc)
+        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .SetDepthState(depth)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
+
+    depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+    depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
     //CREATE PBR SKINNED PIPELINE
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRVertexSkinned.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
@@ -123,6 +157,17 @@ CE::MeshRenderer::MeshRenderer()
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
     
+    depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+    depth.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+    depth.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+    mCullClusterParticlePipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .SetDepthState(depth)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
+
+    depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+    depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/CullClustersSkinnedMeshVS.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     mCullClusterSkinnedMeshPipeline = DXPipelineBuilder()
@@ -232,8 +277,6 @@ void CE::MeshRenderer::Render(const World& world)
         }
     }
 
-    RenderParticles(world);
-
     // Render skinned meshes
     commandList->SetPipelineState(mPBRSkinnedPipeline.Get());
     {
@@ -271,6 +314,8 @@ void CE::MeshRenderer::Render(const World& world)
             meshCounter++;
         }
     }
+
+    RenderParticles(world);
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 }
@@ -325,77 +370,6 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         }
     }
 
-    uint32 particleCounter = 0;
-
-    {
-        const auto view = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>(entt::exclude<ParticleColorOverTimeComponent>);
-
-        for (auto [entity, emitter, meshRenderer, colorComponent] : view.each())
-        {
-            if (!meshRenderer.AreAnyVisible(emitter))
-            {
-                continue;
-            }
-
-            const size_t numOfParticles = emitter.GetNumOfParticles();
-            for (uint32 i = 0; i < numOfParticles; i++)
-            {
-                if (emitter.IsParticleAlive(i))
-                {
-                    if (particleCounter >= MAX_PARTICLES)
-                    {
-                        LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
-                        return;
-                    }
-
-                    if (!meshRenderer.mParticleMesh)
-                    {
-                        continue;
-                    }
-
-                    gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MODEL_MATRIX_CB).Bind(commandList, 1, particleCounter, frameIndex);
-                    meshRenderer.mParticleMesh->DrawMeshVertexOnly();
-
-                    particleCounter++;
-                }
-            }
-        }
-    }
-
-    {
-        const auto view = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent, const ParticleColorOverTimeComponent>();
-
-        for (auto [entity, emitter, meshRenderer, colorComponent, colorOverTime] : view.each())
-        {
-            if (!meshRenderer.AreAnyVisible(emitter))
-            {
-                continue;
-            }
-
-            const size_t numOfParticles = emitter.GetNumOfParticles();
-            for (uint32 i = 0; i < numOfParticles; i++)
-            {
-                if (emitter.IsParticleAlive(i))
-                {
-                    if (particleCounter >= MAX_PARTICLES)
-                    {
-                        LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
-                        return;
-                    }
-
-                    if (!meshRenderer.mParticleMesh)
-                    {
-                        continue;
-                    }
-
-                    gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MODEL_MATRIX_CB).Bind(commandList, 1, particleCounter, frameIndex);
-                    meshRenderer.mParticleMesh->DrawMeshVertexOnly();
-
-                    particleCounter++;
-                }
-            }
-        }
-    }
 
     meshCounter = 0;
     gpuWorld.GetSelectionFramebuffer().Bind();
@@ -540,8 +514,10 @@ void CE::MeshRenderer::CullClusters(const World& world, const GPUWorld& gpuWorld
         staticMeshComponent.mStaticMesh->DrawMeshVertexOnly();
         meshCounter++;
     }
+
     uint32 particleCounter = 0;
 
+    commandList->SetPipelineState(mCullClusterParticlePipeline.Get());
     {
         const auto view2 = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>(entt::exclude<ParticleColorOverTimeComponent>);
 
@@ -816,6 +792,7 @@ void CE::MeshRenderer::RenderParticles(const World& world)
     std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
     int frameIndex = engineDevice.GetFrameIndex();
     uint32 particleCounter = 0;
+    commandList->SetPipelineState(mParticlePBRPipeline.Get());
 
     {
         const auto view = world.GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>(entt::exclude<ParticleColorOverTimeComponent>);
