@@ -269,10 +269,8 @@ entt::entity CE::AbilityFunctionality::SpawnProjectilePrefab(World& world, const
 
 	auto& physicsBodyComponent = reg.Get<PhysicsBody2DComponent>(prefabEntity);
 
-	// Calculate the 2D orientation of the character.
 	const auto characterTransform = reg.TryGet<TransformComponent>(castBy);
 	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
-	// Set the velocity.
 	physicsBodyComponent.mLinearVelocity = characterDir * projectileComponent.mSpeed;
 
 	auto& transformComponent = reg.Get<TransformComponent>(prefabEntity);
@@ -298,12 +296,10 @@ std::vector<entt::entity> CE::AbilityFunctionality::SpawnProjectilePrefabs(World
 		return { SpawnProjectilePrefab(world, prefab, castBy, weapon) };
 	}
 
-	auto& reg = world.GetRegistry();
 	// else more than 1 projectile
+	auto& reg = world.GetRegistry();
 	const float spreadInRadians = glm::radians(weaponRef.mSpread);
-	const float angleBetweenProjectiles =
-		spreadInRadians / static_cast<float>(weaponRef.mProjectileCount - 1);
-	// Calculate the 2D orientation of the character.
+	const float angleBetweenProjectiles = spreadInRadians / static_cast<float>(weaponRef.mProjectileCount - 1);
 	const auto characterTransform = reg.TryGet<TransformComponent>(castBy);
 	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
 	const float directionInRadians = atan2(characterDir.y, characterDir.x);
@@ -313,11 +309,10 @@ std::vector<entt::entity> CE::AbilityFunctionality::SpawnProjectilePrefabs(World
 	for (int i = 0; i < weaponRef.mProjectileCount; i++)
 	{
 		auto projectile = SpawnProjectilePrefab(world, prefab, castBy, weapon);
-		// calculate direction
+		// Calculate and set the direction.
 		auto& physicsBody = reg.Get<PhysicsBody2DComponent>(projectile);
 		const auto projectileAngle = firstProjectileAngle + static_cast<float>(i) * angleBetweenProjectiles;
-		physicsBody.mLinearVelocity =
-			glm::vec2(cos(projectileAngle), sin(projectileAngle)) * weaponRef.mProjectileSpeed;
+		physicsBody.mLinearVelocity = glm::vec2(cos(projectileAngle), sin(projectileAngle)) * weaponRef.mProjectileSpeed;
 		projectilesVector.push_back(projectile);
 	}
 	return projectilesVector;
