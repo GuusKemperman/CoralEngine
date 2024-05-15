@@ -1,6 +1,6 @@
 #pragma once
 #include "Assets/Asset.h"
-#include "Core/AssetHandle.h"
+#include "Assets/Core/AssetHandle.h"
 
 namespace CE
 {
@@ -15,6 +15,7 @@ namespace CE
 	{
 	public:
         Ability(std::string_view name);
+        Ability(std::string_view name, TypeId typeId);
         Ability(AssetLoadInfo& loadInfo);
 
 		enum RequirementType
@@ -25,7 +26,7 @@ namespace CE
 
 		const AssetHandle<Texture>& GetIconTexture() const { return mIconTexture; }
 
-	private:
+	protected:
 		friend AbilitySystem;
 		friend AbilityInstance;
 		friend AbilitiesOnCharacterComponent;

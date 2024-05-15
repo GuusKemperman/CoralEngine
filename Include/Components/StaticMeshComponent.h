@@ -18,6 +18,8 @@ namespace CE
 
         float mTiling = 1;
 
+        bool mHighlightedMesh = false;
+
     private:
         friend ReflectAccess;
         static MetaType Reflect();
