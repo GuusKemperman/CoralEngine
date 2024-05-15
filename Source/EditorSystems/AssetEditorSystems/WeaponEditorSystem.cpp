@@ -43,7 +43,7 @@ void CE::WeaponEditorSystem::Tick(float deltaTime)
 	ShowInspectUI("Projectile Spread", mAsset.mSpread);
 	ImGui::SameLine();
 	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-	ImGui::Text("Projectile Angles: %.2f", static_cast<float>(mAsset.mProjectileCount) / mAsset.mSpread);
+	ImGui::Text("Projectile Angles: %.2f", mAsset.mSpread / static_cast<float>(mAsset.mProjectileCount));
 	ImGui::PopStyleColor();
 
 	ShowInspectUI("Ammo Count", mAsset.mCharges);

@@ -17,6 +17,7 @@
 #include "World/World.h"
 #include "Utilities/Math.h"
 #include "Assets/Prefabs/Prefab.h"
+#include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 CE::MetaType CE::AbilityFunctionality::Reflect()
 {
@@ -69,24 +70,24 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "SpawnAbilityPrefab", MetaFunc::ExplicitParams<
 		const AssetHandle<Prefab>&, entt::entity>{}, "Prefab", "Cast By").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy, const AssetHandle<Weapon>& weapon) -> entt::entity
+	metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy, const AssetHandle<Weapon>& weapon) -> std::vector<entt::entity>
 		{
 			if (prefab == nullptr)
 			{
-				LOG(LogWorld, Warning, "SpawnProjectilePrefab - Attempted to spawn NULL prefab.");
+				LOG(LogWorld, Warning, "SpawnProjectilePrefabs - Attempted to spawn NULL prefab.");
 				return {};
 			}
 			if (weapon == nullptr)
 			{
-				LOG(LogWorld, Warning, "SpawnProjectilePrefab - Weapon is NULL.");
+				LOG(LogWorld, Warning, "SpawnProjectilePrefabs - Weapon is NULL.");
 				return {};
 			}
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			return SpawnProjectilePrefab(*world, *prefab, castBy, weapon);
+			return SpawnProjectilePrefabs(*world, *prefab, castBy, weapon);
 
-		}, "SpawnProjectilePrefab", MetaFunc::ExplicitParams<
+		}, "SpawnProjectilePrefabs", MetaFunc::ExplicitParams<
 		const AssetHandle<Prefab>&, entt::entity, const AssetHandle<Weapon>&>{}, "Prefab", "Cast By", "Weapon").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	metaType.AddFunc(&AbilityFunctionality::IncreasePierceCountAndReturnTrueIfExceeded, "IncreasePierceCountAndReturnTrueIfExceeded").GetProperties().Add(Props::sIsScriptableTag);
@@ -255,6 +256,7 @@ entt::entity CE::AbilityFunctionality::SpawnProjectilePrefab(World& world, const
 	entt::entity prefabEntity = SpawnAbilityPrefab(world, prefab, castBy);
 	if (prefabEntity == entt::null)
 	{
+		LOG(LogAbilitySystem, Error, "The prefab does not have a PhysicsBody2DComponent attached.");
 		return {};
 	}
 	auto& reg = world.GetRegistry();
@@ -280,6 +282,45 @@ entt::entity CE::AbilityFunctionality::SpawnProjectilePrefab(World& world, const
 	effectsComponent.mEffects = weaponRef.mEffects;
 
 	return prefabEntity;
+}
+
+std::vector<entt::entity> CE::AbilityFunctionality::SpawnProjectilePrefabs(World& world, const Prefab& prefab, entt::entity castBy,
+	const AssetHandle<Weapon>& weapon)
+{
+	const Weapon& weaponRef = *weapon.Get();
+	if (weaponRef.mProjectileCount < 1)
+	{
+		LOG(LogAbilitySystem, Error, "Weapon {} Projectile Count is less than 1.");
+		return {};
+	}
+	if (weaponRef.mProjectileCount == 1)
+	{
+		return { SpawnProjectilePrefab(world, prefab, castBy, weapon) };
+	}
+
+	auto& reg = world.GetRegistry();
+	// else more than 1 projectile
+	const float spreadInRadians = glm::radians(weaponRef.mSpread);
+	const float angleBetweenProjectiles =
+		spreadInRadians / static_cast<float>(weaponRef.mProjectileCount - 1);
+	// Calculate the 2D orientation of the character.
+	const auto characterTransform = reg.TryGet<TransformComponent>(castBy);
+	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+	const float directionInRadians = atan2(characterDir.y, characterDir.x);
+	const float firstProjectileAngle = directionInRadians - spreadInRadians / 2.f;
+
+	std::vector<entt::entity> projectilesVector{};
+	for (int i = 0; i < weaponRef.mProjectileCount; i++)
+	{
+		auto projectile = SpawnProjectilePrefab(world, prefab, castBy, weapon);
+		// calculate direction
+		auto& physicsBody = reg.Get<PhysicsBody2DComponent>(projectile);
+		const auto projectileAngle = firstProjectileAngle + static_cast<float>(i) * angleBetweenProjectiles;
+		physicsBody.mLinearVelocity =
+			glm::vec2(cos(projectileAngle), sin(projectileAngle)) * weaponRef.mProjectileSpeed;
+		projectilesVector.push_back(projectile);
+	}
+	return projectilesVector;
 }
 
 bool CE::AbilityFunctionality::IncreasePierceCountAndReturnTrueIfExceeded(ProjectileComponent& projectileComponent)
