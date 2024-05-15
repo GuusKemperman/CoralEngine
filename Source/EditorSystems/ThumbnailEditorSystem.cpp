@@ -3,11 +3,12 @@
 
 #include "Core/AssetManager.h"
 #include "Core/FileIO.h"
-#include "Assets/Ability.h"
+#include "Assets/Ability/Ability.h"
 #include "Assets/Level.h"
 #include "Assets/Material.h"
 #include "Assets/StaticMesh.h"
 #include "Assets/Texture.h"
+#include "Assets/Ability/Weapon.h"
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -340,6 +341,19 @@ CE::GetThumbnailRet GetThumbNailImpl<CE::Ability>(const CE::WeakAssetHandle<CE::
 	if (icon == nullptr)
 	{
 		icon = CE::AssetManager::Get().TryGetAsset<CE::Texture>("T_AbilityIcon");
+	}
+
+	return icon;
+}
+
+template <>
+CE::GetThumbnailRet GetThumbNailImpl<CE::Weapon>(const CE::WeakAssetHandle<CE::Weapon>& forAsset)
+{
+	CE::AssetHandle icon = CE::AssetHandle<CE::Weapon>{ forAsset }->GetIconTexture();
+
+	if (icon == nullptr)
+	{
+		icon = CE::AssetManager::Get().TryGetAsset<CE::Texture>("T_WeaponIcon");
 	}
 
 	return icon;

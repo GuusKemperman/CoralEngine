@@ -75,7 +75,7 @@ namespace CE
 	 * 	World& The world the ability controller component is in. 
 	 * \entt::entity The owner of the ability controller component.  
 	 */
-	static constexpr Event<void(World&, entt::entity), true> sAbilityActivateEvent{ "OnAbilityActivate" };
+	static constexpr Event<void(World&, entt::entity), false> sAbilityActivateEvent{ "OnAbilityActivate" };
 
 	/**
 	 * \brief Called immediately when the component is constructed.
