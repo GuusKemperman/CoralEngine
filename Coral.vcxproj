@@ -1965,12 +1965,7 @@
     <ClInclude Include="Include\Rendering\Renderer.h" />
     <ClInclude Include="Include\Utilities\PathfindingInfo.h" />
     <ClInclude Include="Include\Rendering\PostProcessingRenderer.h" />
-    <ClInclude Include="Include\Platform\PC\Rendering\PostProcessingRendererPC.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
-    </ClInclude>
+    <ClInclude Include="Include\Platform\PC\Rendering\PostProcessingRendererPC.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />
