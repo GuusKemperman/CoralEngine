@@ -8,9 +8,14 @@ namespace CE
 
 	struct AnimNode
 	{
-		std::string mName;
-		glm::mat4x4 mTransform;
-		std::vector<AnimNode> mChildren;
+		std::string mName{};
+		glm::mat4x4 mTransform{};
+		std::vector<AnimNode> mChildren{};
+
+		// Pointers are stable,
+		// Animation::mBones does
+		// not need to reallocate.
+		const Bone* mBone{};
 	};
 
 	class Animation final 
@@ -20,12 +25,17 @@ namespace CE
 		Animation(const std::string_view name);
 		Animation(AssetLoadInfo& loadInfo);
 
-		const Bone* FindBone(const std::string_view name) const;
+		Animation(Animation&&) noexcept = delete;
+		Animation(const Animation&) = delete;
+
+		Animation& operator=(Animation&&) = delete;
+		Animation& operator=(const Animation&) = delete;
 
 		float mDuration = 0.0;
 		float mTickPerSecond = 0.0;
-		AnimNode mRootNode;
-		std::vector<Bone> mBones;
+		AnimNode mRootNode{};
+		std::vector<Bone> mBones{};
+
 	private:
 		friend class AnimationImporter;
 
@@ -35,8 +45,6 @@ namespace CE
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(Animation);
 	};
-
-
 }
 
 #include <cereal/types/vector.hpp>

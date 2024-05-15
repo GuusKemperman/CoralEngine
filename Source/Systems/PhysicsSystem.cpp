@@ -1,8 +1,6 @@
 #include "Precomp.h"
 #include "Systems/PhysicsSystem.h"
 
-#include "Components/CameraComponent.h"
-#include "Components/ComponentFilter.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Meta/MetaType.h"
 #include "Components/TransformComponent.h"
@@ -14,8 +12,6 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Utilities/DrawDebugHelpers.h"
-#include "World/Physics.h"
-#include "World/WorldViewport.h"
 
 CE::PhysicsSystem::PhysicsSystem() :
 	mOnCollisionEntryEvents(GetAllBoundEvents(sCollisionEntryEvent)),
@@ -52,7 +48,6 @@ void CE::PhysicsSystem::Render(const World& world)
 void CE::PhysicsSystem::ApplyVelocities(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
-	const Physics& physics = world.GetPhysics();
 
 	const auto view = reg.View<PhysicsBody2DComponent, TransformComponent>();
 	for (auto [entity, body, transform] : view.each())
@@ -60,7 +55,6 @@ void CE::PhysicsSystem::ApplyVelocities(World& world, float dt)
 		if (body.mIsAffectedByForces)
 		{
 			body.mLinearVelocity += body.mForce * body.mInvMass * dt;
-			//body.mLinearVelocity *= powf(body.mFriction, dt);
 		}
 
 		if (body.mLinearVelocity == glm::vec2{})
@@ -68,19 +62,13 @@ void CE::PhysicsSystem::ApplyVelocities(World& world, float dt)
 			continue;
 		}
 
-		const glm::vec2 translation = body.mLinearVelocity * dt;
-		const glm::vec3 oldPos = transform.GetWorldPosition();
-		const glm::vec3 newPos = GetAllowedWorldPos(physics, body, oldPos, translation);
-
-		body.mLinearVelocity = To2DRightForward(newPos - oldPos) / dt;
-		transform.SetWorldPosition(newPos);
+		transform.TranslateWorldPosition(body.mLinearVelocity * dt);
 	}
 }
 
 void CE::PhysicsSystem::UpdateCollisions(World& world)
 {
 	Registry& reg = world.GetRegistry();
-	const Physics& physics = world.GetPhysics();
 
 	const auto viewDisk = reg.View<TransformComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>();
 	const auto viewPolygon = reg.View<const PhysicsBody2DComponent, const TransformedPolygonColliderComponent>();
@@ -106,15 +94,15 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 		// Can be modified by ResolveCollision. Is only actually applied
 		// to the transform at the end of this loop, for performance
 		// reasons.
-		glm::vec3 entity1Pos = transform1.GetWorldPosition();
-		const glm::vec3 entity1PosAtStart = entity1Pos;
+		glm::vec2 entity1Pos = transform1.GetWorldPosition2D();
+		const glm::vec2 entity1PosAtStart = entity1Pos;
 		glm::vec2 entity1TotalImpulse{};
 
 		auto resolveCollisionFor1 = [&pointerToTransformedDiskCollider1, &entity1Pos, &entity1TotalImpulse](ResolvedCollision resolvedCollision)
 			{
 				entity1TotalImpulse += resolvedCollision.mImpulse;
 				entity1Pos = resolvedCollision.mResolvedPosition;
-				pointerToTransformedDiskCollider1->mCentre = To2DRightForward(entity1Pos);
+				pointerToTransformedDiskCollider1->mCentre = entity1Pos;
 			};
 
 		// disk-disk collisions
@@ -131,7 +119,7 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 				continue;
 			}
 
-			const glm::vec3 entity2Pos = transform2.GetWorldPosition();
+			const glm::vec2 entity2Pos = transformedDiskCollider2.mCentre;
 
 			if (CollisionCheckDiskDisk(transformedDiskCollider1, transformedDiskCollider2, collision))
 			{
@@ -141,15 +129,15 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 				{
 					if (body1.mIsAffectedByForces)
 					{
-						resolveCollisionFor1(ResolveDiskCollision(physics, collision, body1, body2, entity1Pos));
+						resolveCollisionFor1(ResolveDiskCollision(collision, body1, body2, entity1Pos));
 					}
 
 					if (body2.mIsAffectedByForces)
 					{
-						auto [newEntity2Pos, entity2Impulse] = ResolveDiskCollision(physics, collision, body2, body1, entity2Pos, -1.0f);
+						auto [newEntity2Pos, entity2Impulse] = ResolveDiskCollision(collision, body2, body1, entity2Pos, -1.0f);
 						body2.ApplyImpulse(entity2Impulse);
 						transform2.SetWorldPosition(newEntity2Pos);
-						transformedDiskCollider2.mCentre = To2DRightForward(newEntity2Pos);
+						transformedDiskCollider2.mCentre = newEntity2Pos;
 					}
 				}
 			}
@@ -172,7 +160,7 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 				if (response == CollisionResponse::Blocking
 					&& body1.mIsAffectedByForces)
 				{
-					resolveCollisionFor1(ResolveDiskCollision(physics, collision, body1, body2, entity1Pos));
+					resolveCollisionFor1(ResolveDiskCollision(collision, body1, body2, entity1Pos));
 				}
 			}
 		}
@@ -194,15 +182,14 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 				if (response == CollisionResponse::Blocking
 					&& body1.mIsAffectedByForces)
 				{
-					resolveCollisionFor1(ResolveDiskCollision(physics, collision, body1, body2, entity1Pos));
+					resolveCollisionFor1(ResolveDiskCollision(collision, body1, body2, entity1Pos));
 				}
 			}
 		}
 
-
 		if (entity1Pos != entity1PosAtStart)
 		{
-			transform1.SetWorldPosition(GetAllowedWorldPos(physics, body1, entity1PosAtStart, To2DRightForward(entity1Pos - entity1PosAtStart)));
+			transform1.SetWorldPosition(entity1Pos);
 		}
 
 		body1.ApplyImpulse(entity1TotalImpulse);
@@ -330,58 +317,6 @@ void CE::PhysicsSystem::DebugDrawing(const World& world)
 			DrawDebugRectangle(world, DebugCategory::Physics, To3DRightForward(aabb.GetCentre(), transform.GetWorldPosition()[Axis::Up]), aabb.GetSize() * .5f, color);
 		}
 	}
-
-	if (DebugRenderer::GetDebugCategoryFlags() & DebugCategory::TerrainHeight)
-	{
-		const Physics& physics = world.GetPhysics();
-
-		const entt::entity camera = CameraComponent::GetSelected(world);
-
-		if (camera == entt::null)
-		{
-			return;
-		}
-
-		const TransformComponent* const cameraTransform = world.GetRegistry().TryGet<const TransformComponent>(camera);
-
-		if (cameraTransform == nullptr)
-		{
-			return;
-		}
-
-		const glm::vec3 cameraWorldPos = cameraTransform->GetWorldPosition();
-		const glm::vec2 cameraPos2D = To2DRightForward(cameraWorldPos);
-
-		constexpr float range = 50.0f;
-		constexpr float spacing = 2.0f;
-		for (float x = -range; x < range; x += spacing)
-		{
-			for (float y = -range; y < range; y += spacing)
-			{
-				glm::vec2 worldPos2D = cameraPos2D + glm::vec2{ x, y };
-				worldPos2D.x -= fmodf(cameraPos2D.x + x, spacing);
-				worldPos2D.y -= fmodf(cameraPos2D.y + y, spacing);
-
-				const float height = physics.GetHeightAtPosition(worldPos2D);
-
-				if (height == -std::numeric_limits<float>::infinity())
-				{
-					continue;
-				}
-
-				const float maxExpectedHeight = cameraWorldPos[Axis::Up] + range * .5f;
-				const float minExpectedHeight = cameraWorldPos[Axis::Up] - range * .5f;
-				const float colorT = Math::lerpInv(minExpectedHeight, maxExpectedHeight,
-						glm::clamp(height, minExpectedHeight, maxExpectedHeight));
-
-				constexpr glm::vec4 minColor = { 0.0f, 0.0f, 5.0f, 1.0f };
-				constexpr glm::vec4 maxColor = { 5.0f, 0.0f, 0.0f, 1.0f };
-				const glm::vec4 color = Math::lerp(minColor, maxColor, colorT);
-
-				DrawDebugRectangle(world, DebugCategory::TerrainHeight, To3DRightForward(worldPos2D, height), glm::vec2{ spacing }, color);
-			}
-		}
-	}
 }
 
 void CE::PhysicsSystem::CallEvent(const BoundEvent& event, World& world, entt::sparse_set& storage,
@@ -408,16 +343,17 @@ void CE::PhysicsSystem::CallEvent(const BoundEvent& event, World& world, entt::s
 	}
 }
 
-CE::PhysicsSystem::ResolvedCollision CE::PhysicsSystem::ResolveDiskCollision(const Physics& physics,
-	const CollisionData& collisionToResolve, const PhysicsBody2DComponent& bodyToMove,
-	const PhysicsBody2DComponent& otherBody, const glm::vec3& bodyPosition, float multiplicant)
+CE::PhysicsSystem::ResolvedCollision CE::PhysicsSystem::ResolveDiskCollision(const CollisionData& collisionToResolve, 
+	const PhysicsBody2DComponent& bodyToMove,
+	const PhysicsBody2DComponent& otherBody, 
+	const glm::vec2& bodyPosition, 
+	float multiplicant)
 {
 	// displace the objects to resolve overlap
 	const float totalInvMass = bodyToMove.mInvMass + otherBody.mInvMass;
 	const glm::vec2 dist = (collisionToResolve.mDepth / totalInvMass) * collisionToResolve.mNormalFor1;
 
-	glm::vec3 resolvedPos = GetAllowedWorldPos(physics, bodyToMove, bodyPosition, multiplicant * dist * bodyToMove.mInvMass);
-
+	const glm::vec2 resolvedPos = bodyPosition + multiplicant * dist * bodyToMove.mInvMass;
 
 	// compute and apply impulses
 	const float dotProduct = dot(bodyToMove.mLinearVelocity - otherBody.mLinearVelocity, collisionToResolve.mNormalFor1);
@@ -530,30 +466,6 @@ bool CE::PhysicsSystem::CollisionCheckDiskAABB(TransformedDiskColliderComponent 
 	}
 
 	return CollisionCheckDiskPolygon(disk, aabb.GetAsPolygon(), result);
-}
-
-glm::vec3 CE::PhysicsSystem::GetAllowedWorldPos(const Physics& physics, 
-                                                      const PhysicsBody2DComponent& body, 
-                                                      glm::vec3 currentWorldPos,
-                                                      glm::vec2 translation)
-{
-	const glm::vec2 currentWorldPos2D = To2DRightForward(currentWorldPos);
-	const glm::vec2 desiredWorldPos2D = currentWorldPos2D + translation;
-
-	if (body.mRules.GetResponseIncludingTerrain(CollisionPresets::sTerrain.mRules) != CollisionResponse::Blocking)
-	{
-		return To3DRightForward(desiredWorldPos2D, currentWorldPos[Axis::Up]);
-	}
-
-	const float heightAtCurrPos = physics.GetHeightAtPosition(currentWorldPos2D);
-	const float heightAtDesiredPos = physics.GetHeightAtPosition(desiredWorldPos2D);
-	const float dtHeight = heightAtDesiredPos - heightAtCurrPos;
-
-	if (Physics::IsHeightDifferenceTraversable(dtHeight))
-	{
-		return To3DRightForward(desiredWorldPos2D, currentWorldPos[Axis::Up] + dtHeight);
-	}
-	return currentWorldPos;
 }
 
 CE::MetaType CE::PhysicsSystem::Reflect()
