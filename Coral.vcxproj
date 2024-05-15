@@ -522,9 +522,18 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Components\OutlineComponent.cpp" />
-    <ClCompile Include="Source\Platform\PC\Rendering\PostProcessingRendererPC.cpp" />
-    <ClCompile Include="Source\Rendering\PostProcessingRenderer.cpp" />
+    <ClCompile Include="Source\Components\OutlineComponent.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Platform\PC\Rendering\PostProcessingRendererPC.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Assets\Core\AssetHandle.cpp" />
     <ClCompile Include="Source\Assets\Importers\AudioImporter.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -1566,7 +1575,12 @@
     <ClInclude Include="Include\Components\AnimationRootComponent.h" />
     <ClInclude Include="Include\Components\IsAwaitingBeginPlayTag.h" />
     <ClInclude Include="Include\Components\MaterialRootComponent.h" />
-    <ClInclude Include="Include\Components\OutlineComponent.h" />
+    <ClInclude Include="Include\Components\OutlineComponent.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Include\Components\PlayerComponent.h" />
     <ClInclude Include="Include\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
@@ -1961,7 +1975,12 @@
     <ClInclude Include="Include\Rendering\Renderer.h" />
     <ClInclude Include="Include\Utilities\PathfindingInfo.h" />
     <ClInclude Include="Include\Rendering\PostProcessingRenderer.h" />
-    <ClInclude Include="Include\Platform\PC\Rendering\PostProcessingRendererPC.h" />
+    <ClInclude Include="Include\Platform\PC\Rendering\PostProcessingRendererPC.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />

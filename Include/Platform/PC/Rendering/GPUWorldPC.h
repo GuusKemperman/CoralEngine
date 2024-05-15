@@ -46,7 +46,6 @@ namespace CE
         D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
     };
 
-    class GPUWorld;
     class PosProcRenderingData
     {
     public:

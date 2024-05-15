@@ -16,7 +16,6 @@
 #include "Platform/PC/Rendering/TexturePC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 #include "Utilities/StringFunctions.h"
-#include "Rendering/Renderer.h"
 
 CE::Device::Device()
 {

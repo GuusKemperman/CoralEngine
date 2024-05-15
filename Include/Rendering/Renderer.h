@@ -30,7 +30,6 @@ namespace CE
 			bool clearBufferFirst = true);
 
 		const FrameBuffer& GetFrameBuffer() const { return *mFrameBuffer; }
-		const bool HasFrameBuffer() const { return mFrameBuffer; }
 #endif // EDITOR
 
 		const DebugRenderer& GetDebugRenderer() const { return *mDebugRenderer; };
@@ -40,7 +39,7 @@ namespace CE
 
 		std::unique_ptr<ISubRenderer> mMeshRenderer;
 		std::unique_ptr<ISubRenderer> mUIRenderer;
-		std::unique_ptr<ISubRenderer> mPostProcessSubRenderer;
+		std::unique_ptr<ISubRenderer> mPostProcessRenderer;
 		std::unique_ptr<DebugRenderer> mDebugRenderer;
 
 #ifdef EDITOR
