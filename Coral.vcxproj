@@ -1556,7 +1556,10 @@
     </ClCompile>
     <ClCompile Include="Source\Components\UI\UISpriteComponent.cpp" />
     <ClCompile Include="Source\Assets\Ability\Weapon.cpp" />
-    <ClCompile Include="Source\EditorSystems\AssetEditorSystems\WeaponEditorSystem.cpp" />
+    <ClCompile Include="Source\EditorSystems\AssetEditorSystems\WeaponEditorSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Components\Abilities\AbilityEffectsComponent.h" />

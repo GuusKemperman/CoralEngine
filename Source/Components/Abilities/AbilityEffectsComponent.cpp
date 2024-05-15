@@ -6,6 +6,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "World/World.h"
+#include "Utilities/Math.h"
 
 CE::MetaType Reflector<CE::Stat>::Reflect()
 {
