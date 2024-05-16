@@ -522,6 +522,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\GridSpawnerComponent.cpp" />
     <ClCompile Include="Source\Components\OutlineComponent.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\PostProcessingRendererPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -541,6 +542,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Assets\Sound.cpp" />
+    <ClCompile Include="Source\Components\AttachToBoneComponent.cpp" />
     <ClCompile Include="Source\Components\AudioEmitterComponent.cpp" />
     <ClCompile Include="Source\Components\FogComponent.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetInternal.cpp" />
@@ -557,6 +559,12 @@
     </ClCompile>
     <ClCompile Include="Source\Meta\MetaProps.cpp" />
     <ClCompile Include="Source\Components\PlayerComponent.cpp" />
+    <ClCompile Include="Source\Platform\***REMOVED***\Rendering\PostProcessingRenderer***REMOVED***.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\UnitTests\AssetHandleUnitTests.cpp" />
     <ClCompile Include="Source\Utilities\ASync.cpp" />
     <ClCompile Include="Source\Utilities\Events.cpp" />
@@ -1566,6 +1574,10 @@
     <ClCompile Include="Source\EditorSystems\AssetEditorSystems\WeaponEditorSystem.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1573,9 +1585,11 @@
     <ClInclude Include="Include\Assets\Core\AssetHandle.h" />
     <ClInclude Include="Include\Assets\Importers\AudioImporter.h" />
     <ClInclude Include="Include\Assets\Sound.h" />
+    <ClInclude Include="Include\Components\AttachToBoneComponent.h" />
     <ClInclude Include="Include\Components\FogComponent.h" />
     <ClInclude Include="Include\Assets\Core\AssetInternal.h" />
     <ClInclude Include="Include\Components\AnimationRootComponent.h" />
+    <ClInclude Include="Include\Components\GridSpawnerComponent.h" />
     <ClInclude Include="Include\Components\IsAwaitingBeginPlayTag.h" />
     <ClInclude Include="Include\Components\MaterialRootComponent.h" />
     <ClInclude Include="Include\Components\OutlineComponent.h" />
@@ -1866,6 +1880,7 @@
     <ClInclude Include="Include\Utilities\Events.h" />
     <ClInclude Include="Include\Utilities\MemFunctions.h" />
     <ClInclude Include="Include\Utilities\IterableRange.h" />
+    <ClInclude Include="Include\Utilities\NameLookUp.h" />
     <ClInclude Include="Include\Utilities\Search.h" />
     <ClInclude Include="Include\Utilities\Imgui\WorldInspect.h" />
     <ClInclude Include="include\GSON\GSON.h" />
@@ -2030,6 +2045,12 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
     </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Fullscreen_vv.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
+    </WavePsslc>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\InstancedDepth_vv.pssl">
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
@@ -2066,6 +2087,12 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\OutlinePostProcess_p.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
     </WavePsslc>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBRSkinned_vv.pssl">
       <FileType>Document</FileType>

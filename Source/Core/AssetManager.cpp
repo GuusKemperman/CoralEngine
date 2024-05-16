@@ -7,6 +7,7 @@
 #include "Meta/MetaType.h"
 #include "Core/Editor.h"
 #include "Utilities/ClassVersion.h"
+#include "Utilities/NameLookUp.h"
 #include "Utilities/StringFunctions.h"
 
 void CE::AssetManager::PostConstruct()
@@ -79,10 +80,25 @@ void CE::AssetManager::PostConstruct()
 	openDirectory(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""));
 	openDirectory(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""));
 
+	sNameLookUpMutex.lock();
+
+	for (const RenameLink& link : renameLinks)
+	{
+		sNameLookUp.emplace(Name::HashString(link.mOldName), link.mOldName);
+		sNameLookUp.emplace(Name::HashString(link.mNewName), link.mNewName);
+	}
+
 	for (const std::filesystem::path& assetPath : assetFiles)
 	{
-		OpenAsset(assetPath);
+		WeakAssetHandle<> asset = OpenAsset(assetPath);
+
+		if (asset != nullptr)
+		{
+			sNameLookUp.emplace(Name::HashString(asset.GetMetaData().GetName()), asset.GetMetaData().GetName());
+		}
 	}
+
+	sNameLookUpMutex.unlock();
 
 	bool anyResolved;
 
@@ -118,7 +134,7 @@ void CE::AssetManager::PostConstruct()
 
 	for (const RenameLink& link : renameLinks)
 	{
-		LOG(LogAssets, Message, "An asset was once renamed from {} to {}, but {} has now been deleted. The rename file {} will now also be removed.",
+		LOG(LogAssets, Message, "An asset was once renamed from {} to {}, but it has now been deleted. The rename file {} will now also be removed.",
 			link.mOldName, link.mNewName, link.mRenameFile.string());
 		TRY_CATCH_LOG(std::filesystem::remove(link.mRenameFile));
 	}
