@@ -56,7 +56,7 @@ void CE::GridSpawnerComponent::SpawnGrid()
 		chances.emplace_back(SpawnChance{ mTiles[i], i < mSpawnChances.size() ? mSpawnChances[i] : 0.0f });
 	}
 
-	for (const SpawnChance spawnChance : chances)
+	for (const SpawnChance& spawnChance : chances)
 	{
 		total += spawnChance.mChance;
 	}
@@ -97,7 +97,7 @@ void CE::GridSpawnerComponent::SpawnGrid()
 
 			int32 BestIndex = 0;
 
-			for (int32 i = 1; i < chances.size(); i++)
+			for (size_t i = 1; i < chances.size(); i++)
 			{
 				const float Value = chances[i].mChance > RandomNum ? chances[i].mChance : INFINITY;
 				const float BestValue = chances[BestIndex].mChance > RandomNum ? chances[BestIndex].mChance : INFINITY;
