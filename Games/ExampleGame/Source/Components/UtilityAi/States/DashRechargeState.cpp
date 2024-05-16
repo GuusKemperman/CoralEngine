@@ -25,11 +25,16 @@ void Game::DashRechargeState::OnAiTick(CE::World& world, entt::entity owner, flo
 	{
 		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashRechargeAnimation, 0.0f);
 	}
+	else
+	{
+		LOG(LogSeverity, Warning, "An animationRoot component is needed to run the DashRecharge State!");
+	}
 	
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
 	{
+		LOG(LogSeverity, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
 		return;
 	}
 
@@ -42,6 +47,7 @@ void Game::DashRechargeState::OnAiTick(CE::World& world, entt::entity owner, flo
 
 	if (dashingState == nullptr)
 	{
+		LOG(LogSeverity, Warning, "An DashingState is needed to run the DashRecharge State!");
 		return;
 	}
 
@@ -49,6 +55,7 @@ void Game::DashRechargeState::OnAiTick(CE::World& world, entt::entity owner, flo
 
 	if (chargeDashingState == nullptr)
 	{
+		LOG(LogSeverity, Warning, "A ChargeDashState is needed to run the DashRecharge State!");
 		return;
 	}
 
@@ -65,6 +72,7 @@ float Game::DashRechargeState::OnAiEvaluate(const CE::World& world, entt::entity
 
 	if (dashingState == nullptr)
 	{
+		LOG(LogSeverity, Warning, "A DashingState is needed to run the DashRecharge State!");
 		return 0;
 	}
 
@@ -82,6 +90,7 @@ void Game::DashRechargeState::OnAIStateEnterEvent(CE::World& world, entt::entity
 
 	if (navMeshAgent == nullptr)
 	{
+		LOG(LogSeverity, Warning, "An NavMeshAgent component is needed to run the DashRechargeState State!");
 		return;
 	}
 

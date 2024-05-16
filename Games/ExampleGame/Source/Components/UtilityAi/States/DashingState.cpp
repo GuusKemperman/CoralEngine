@@ -28,11 +28,16 @@ void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt
 	{
 		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashingAnimation, 0.0f);
 	}
+	else
+	{
+		LOG(LogSeverity, Warning, "An animationRoot component is needed to run the Dashing State!");
+	}
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
 	{
+		LOG(LogSeverity, Warning, "An PhysicsBody2D component is needed to run the Dashing State!");
 		return;
 	}
 
@@ -47,6 +52,7 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owne
 
 	if (chargeDashState == nullptr)
 	{
+		LOG(LogSeverity, Warning, "A chargeDashState is needed to run the Dashing State!");
 		return 0;
 	}
 
@@ -64,6 +70,7 @@ void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owne
 
 	if (target == nullptr)
 	{
+		LOG(LogSeverity, Warning, "An ChasingState is needed to run the Dashing State!");
 		return;
 	}
 
@@ -71,6 +78,7 @@ void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owne
 
 	if (entityId == entt::null)
 	{
+		LOG(LogSeverity, Warning, "An NavMeshTargetTag on the player entity is needed to run the Dashing State!");
 		return;
 	}
 
@@ -82,6 +90,7 @@ void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owne
 
 		if (transformComponent == nullptr)
 		{
+			LOG(LogSeverity, Warning, "An Transform component on the player entity is needed to run the Dashing State!");
 			return;
 		}
 
@@ -89,6 +98,7 @@ void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owne
 
 		if (ownerTransformComponent == nullptr)
 		{
+			LOG(LogSeverity, Warning, "A transform component is needed to run the Dashing State!");
 			return;
 		}
 
@@ -96,6 +106,7 @@ void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owne
 
 		if (physicsBody2DComponent == nullptr)
 		{
+			LOG(LogSeverity, Warning, "An PhysicsBody2D component is needed to run the Dashing State!");
 			return;
 		}
 
@@ -110,6 +121,7 @@ void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owne
 
 	if (recoverState == nullptr)
 	{
+		LOG(LogSeverity, Warning, "An DashRechargeState is needed to run the Dashing State!");
 		return;
 	}
 

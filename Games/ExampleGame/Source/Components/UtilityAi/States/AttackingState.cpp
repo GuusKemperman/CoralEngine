@@ -28,12 +28,14 @@ void Game::AttackingState::OnAiTick(CE::World& world, entt::entity owner, float)
 	const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
 	if (characterData == nullptr)
 	{
+		LOG(LogSeverity, Warning, "A character component is needed to run the Attacking State!");
 		return;
 	}
 
 	const auto abilities = world.GetRegistry().TryGet<CE::AbilitiesOnCharacterComponent>(owner);
 	if (abilities == nullptr)
 	{
+		LOG(LogSeverity, Warning, "A AbilitiesOnCharacter component is needed to run the Attacking State!");
 		return;
 	}
 
@@ -57,6 +59,7 @@ void Game::AttackingState::OnAiTick(CE::World& world, entt::entity owner, float)
 
 		if (transformComponent == nullptr)
 		{
+			LOG(LogSeverity, Warning, "A transform component on the player entity is needed to run the Attacking State!");
 			return;
 		}
 
@@ -77,6 +80,7 @@ void Game::AttackingState::OnAIStateEnterEvent(CE::World& world, entt::entity ow
 
 	if (navMeshAgent == nullptr)
 	{
+		LOG(LogSeverity, Warning, "A NavMeshAgent component is needed to run the Attacking State!");
 		return;
 	}
 
@@ -92,11 +96,13 @@ std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const
 
 	if (entityId == entt::null)
 	{
+		LOG(LogSeverity, Warning, "An entity with a NavMeshTarget component is needed to run the Attacking State!");
 		return { 0.0f, entt::null };
 	}
 
 	if (transformComponent == nullptr)
 	{
+		LOG(LogSeverity, Warning, "A transform component is needed to run the Attacking State!");
 		return { 0.0f, entt::null };
 	}
 
@@ -106,6 +112,7 @@ std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const
 
 	if (transformComponent == nullptr)
 	{
+		LOG(LogSeverity, Warning, "A transform component on the player entity is needed to run the Attacking State!");
 		return { 0.0f, entt::null };
 	}
 

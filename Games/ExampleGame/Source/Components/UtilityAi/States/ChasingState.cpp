@@ -27,6 +27,7 @@ void Game::ChasingState::OnAiTick(CE::World& world, entt::entity owner, float)
 
 	if (navMeshAgent == nullptr)
 	{
+		LOG(LogSeverity, Warning, "NavMeshAgentComponent is needed to run the Chasing State!");
 		return;
 	}
 
@@ -36,6 +37,7 @@ void Game::ChasingState::OnAiTick(CE::World& world, entt::entity owner, float)
 
 		if (transformComponent == nullptr)
 		{
+			LOG(LogSeverity, Warning, "An enitity with a TransformComponent is needed to run the Chasing State!");
 			return;
 		}
 
@@ -59,11 +61,13 @@ std::pair<float, entt::entity> Game::ChasingState::GetBestScoreAndTarget(
 
 	if (entityId == entt::null)
 	{
+		LOG(LogSeverity, Warning, "An entity with the NavMeshTargetTag is needed to run the Chasing State!");
 		return { 0.0f, entt::null };
 	}
 
 	if (transformComponent == nullptr)
 	{
+		LOG(LogSeverity, Warning, "A transform component is needed to run the Chasing State!");
 		return { 0.0f, entt::null };
 	}
 
@@ -73,6 +77,7 @@ std::pair<float, entt::entity> Game::ChasingState::GetBestScoreAndTarget(
 
 	if (transformComponent == nullptr)
 	{
+		LOG(LogSeverity, Warning, "The entity with the NavMeshTargetTag needs a TranformComponent is needed to run the Chasing State!");
 		return { 0.0f, entt::null };
 	}
 
@@ -100,6 +105,7 @@ void Game::ChasingState::DebugRender(CE::World& world, entt::entity owner) const
 
 	if (transformComponent == nullptr)
 	{
+		LOG(LogSeverity, Warning, "A transform component is needed to run the Chasing State!");
 		return;
 	}
 

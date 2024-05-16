@@ -27,7 +27,6 @@ namespace Game
 		CE::AssetHandle<CE::Animation> mChargingAnimation{};
 
 	private:
-		entt::entity mTargetEntity = entt::null;
 		float mRadius{};
 
 		float mMaxChargeTime = 10.0f;

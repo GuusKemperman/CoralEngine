@@ -24,11 +24,9 @@ namespace CE
 		/// \brief The quickest path from the NavMeshAgent to the KeyboardControl component
 		std::vector<glm::vec2> mPathFound = {};
 
-		bool WasJustStopped();
-
-	private:
 		bool mJustStopped = false;
 
+	private:
 		std::optional<glm::vec2> mTargetPosition{};
 		bool mIsChasing = true;
 
