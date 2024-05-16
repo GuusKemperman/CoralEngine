@@ -5,6 +5,7 @@
 #include "Core/Editor.h"
 #include "EditorSystems/ThumbnailEditorSystem.h"
 #include "Meta/Fwd/MetaTypeFwd.h"
+#include "Utilities/NameLookUp.h"
 #include "Utilities/Search.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 
@@ -156,10 +157,19 @@ void cereal::load(BinaryInputArchive& archive, CE::WeakAssetHandle<>& asset)
 
 	asset = CE::AssetManager::Get().TryGetWeakAsset(CE::Name{ assetNameHash });
 
-	if (asset == nullptr)
+	if (asset != nullptr)
 	{
-		LOG(LogAssets, Warning, "Asset whose name generated the hash {} no longer exists", assetNameHash);
+		return;
 	}
+
+#ifdef LOGGING_ENABLED
+	CE::sNameLookUpMutex.lock();
+	const auto it = CE::sNameLookUp.find(assetNameHash);
+	const std::string_view name = it == CE::sNameLookUp.end() ? std::string_view{ "(Unknown name)" } : std::string_view{ it->second };
+
+	LOG(LogAssets, Warning, "Asset {} (hash {}) no longer exists", name, assetNameHash);
+	CE::sNameLookUpMutex.unlock();
+#endif
 }
 
 #ifdef EDITOR
