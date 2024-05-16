@@ -118,7 +118,7 @@ void CE::AssetManager::PostConstruct()
 
 	for (const RenameLink& link : renameLinks)
 	{
-		LOG(LogAssets, Message, "An asset was once renamed from {} to {}, but {} has now been deleted. The rename file {} will now also be removed.",
+		LOG(LogAssets, Message, "An asset was once renamed from {} to {}, but it has now been deleted. The rename file {} will now also be removed.",
 			link.mOldName, link.mNewName, link.mRenameFile.string());
 		TRY_CATCH_LOG(std::filesystem::remove(link.mRenameFile));
 	}
