@@ -6,22 +6,29 @@ namespace CE
 {
 	class Animation;
 	class World;
+	class TransformComponent;
 }
 
 namespace Game
 {
-	class IdleState
+	class DashRechargeState
 	{
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
-		static float OnAiEvaluate(const CE::World& world, entt::entity owner);
+		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 		static void OnAIStateEnterEvent(CE::World& world, entt::entity owner);
 
-		CE::AssetHandle<CE::Animation> mIdleAnimation;
+		float mCurrentRechargeTimer = 0.0f;
+
+		CE::AssetHandle<CE::Animation> mDashRechargeAnimation{};
 
 	private:
+		entt::entity mTargetEntity = entt::null;
+
+		float mMaxRechargeTime = 5.0f;
+
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
-		REFLECT_AT_START_UP(IdleState);
+		REFLECT_AT_START_UP(DashRechargeState);
 	};
 }
