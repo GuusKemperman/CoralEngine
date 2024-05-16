@@ -7,8 +7,8 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Utilities/Imgui/ImguiInspect.h"
-#include "Assets/Ability.h"
-#include "Systems/AbilitySystem.h"
+#include "Assets/Ability/Ability.h"
+#include "Assets/Ability/Weapon.h"
 #include "World/World.h"
 
 CE::MetaType CE::AbilitiesOnCharacterComponent::Reflect()
@@ -17,6 +17,7 @@ CE::MetaType CE::AbilitiesOnCharacterComponent::Reflect()
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 	
 	metaType.AddField(&AbilitiesOnCharacterComponent::mAbilitiesToInput, "mAbilitiesToInput").GetProperties().Add(Props::sNoInspectTag).Add(Props::sIsScriptableTag);
+	metaType.AddField(&AbilitiesOnCharacterComponent::mWeaponsToInput, "mWeaponsToInput").GetProperties().Add(Props::sNoInspectTag).Add(Props::sIsScriptableTag);
 
 	BindEvent(metaType, sBeginPlayEvent, &AbilitiesOnCharacterComponent::OnBeginPlay);
 
@@ -29,14 +30,37 @@ CE::MetaType CE::AbilitiesOnCharacterComponent::Reflect()
 	return metaType;
 }
 
-void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World&, entt::entity)
+void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity entity)
 {
 	for (auto& ability : mAbilitiesToInput)
 	{
+		if (ability.mAbilityAsset == nullptr)
+		{
+			continue;
+		}
 		// Make all the cooldown abilities available on being play.
 		if (ability.mAbilityAsset->mRequirementType == Ability::Cooldown)
 		{
 			ability.mRequirementCounter = ability.mAbilityAsset->mRequirementToUse;
+		}
+		const MetaType* scriptType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+
+		if (scriptType != nullptr && !world.GetRegistry().HasComponent(scriptType->GetTypeId(), entity))
+		{
+			world.GetRegistry().AddComponent(*scriptType, entity);
+		}
+	}
+	for (auto& weapon : mWeaponsToInput)
+	{
+		if (weapon.mWeaponAsset == nullptr)
+		{
+			continue;
+		}
+		const MetaType* scriptType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+
+		if (scriptType != nullptr && !world.GetRegistry().HasComponent(scriptType->GetTypeId(), entity))
+		{
+			world.GetRegistry().AddComponent(*scriptType, entity);
 		}
 	}
 }
@@ -52,32 +76,12 @@ void CE::AbilitiesOnCharacterComponent::OnInspect(World& world, const std::vecto
 		return;
 	}
 	auto& abilities = reg.Get<AbilitiesOnCharacterComponent>(entities[0]);
-	auto player = reg.TryGet<PlayerComponent>(entities[0]);
+	const auto player = reg.TryGet<PlayerComponent>(entities[0]);
 	isPlayer = player != nullptr;
 	ShowInspectUI("Abilities", abilities.mAbilitiesToInput);
-}
-#endif // EDITOR
-
-void CE::AbilityInstance::MakeAbilityReadyToBeActivated()
-{
-	mRequirementCounter = mAbilityAsset->mRequirementToUse;
+	ShowInspectUI("Weapons", abilities.mWeaponsToInput);
 }
 
-bool CE::AbilityInstance::operator==(const AbilityInstance& other) const
-{
-	return mAbilityAsset == other.mAbilityAsset &&
-		mKeyboardKeys == other.mKeyboardKeys && 
-		mGamepadButtons == other.mGamepadButtons;
-}
-
-bool CE::AbilityInstance::operator!=(const AbilityInstance& other) const
-{
-	return mAbilityAsset != other.mAbilityAsset ||
-		mKeyboardKeys != other.mKeyboardKeys ||
-		mGamepadButtons != other.mGamepadButtons;
-}
-
-#ifdef EDITOR
 void CE::AbilityInstance::DisplayWidget()
 {
 	ShowInspectUI("mAbilityAsset", mAbilityAsset);
@@ -89,40 +93,18 @@ void CE::AbilityInstance::DisplayWidget()
 		ShowInspectUI("mGamepadButtons", mGamepadButtons);
 	}
 }
-#endif // EDITOR
 
-CE::MetaType CE::AbilityInstance::Reflect()
+void CE::WeaponInstance::DisplayWidget()
 {
-	MetaType metaType = MetaType{ MetaType::T<AbilityInstance>{}, "AbilityInstance" };
-	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-
-	metaType.AddField(&AbilityInstance::mAbilityAsset, "mAbilityAsset").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&AbilityInstance::mRequirementCounter, "mRequirementCounter").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&AbilityInstance::mChargesCounter, "mChargesCounter").GetProperties().Add(Props::sIsScriptableTag);
-
-	metaType.AddField(&AbilityInstance::mKeyboardKeys, "mKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&AbilityInstance::mGamepadButtons, "mGamepadButtons").GetProperties().Add(Props::sIsScriptableTag);
-
-	metaType.AddFunc([](AbilityInstance& ability, entt::entity castBy, CharacterComponent& characterData)
-		{
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
-			return AbilitySystem::ActivateAbility(*world, castBy, characterData, ability);
-
-		}, "ActivateAbility", MetaFunc::ExplicitParams<AbilityInstance&, entt::entity, CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
-
-	metaType.AddFunc([](const AbilityInstance& ability, const CharacterComponent& characterData)
-		{
-			return AbilitySystem::CanAbilityBeActivated(characterData, ability);
-
-		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<const AbilityInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
-
-	metaType.AddFunc([](AbilityInstance& ability)
-		{
-			ability.MakeAbilityReadyToBeActivated();
-		}, "MakeAbilityReadyToBeActivated", MetaFunc::ExplicitParams<AbilityInstance&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
-
-	ReflectFieldType<AbilityInstance>(metaType);
-	return metaType;
+	ShowInspectUI("mWeaponAsset", mWeaponAsset);
+	ShowInspectUIReadOnly("mReloadCounter", mReloadCounter);
+	ShowInspectUIReadOnly("mAmmoCounter", mAmmoCounter);
+	ShowInspectUIReadOnly("mTimeBetweenShotsCounter", mTimeBetweenShotsCounter);
+	ShowInspectUI("mAmmoConsumption", mAmmoConsumption);
+	if (isPlayer)
+	{
+		ShowInspectUI("mKeyboardKeys", mKeyboardKeys);
+		ShowInspectUI("mGamepadButtons", mGamepadButtons);
+	}
 }
+#endif // EDITOR

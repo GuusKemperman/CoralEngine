@@ -15,7 +15,8 @@ DXResource::DXResource(const ComPtr<ID3D12Device5>& device, const CD3DX12_HEAP_P
 	mState = state;
 	mDesc = descr;
 
-	if (FAILED(hr)) assert(false && "Resource creation failed");
+	if (FAILED(hr)) 
+		assert(false && "Resource creation failed");
 
 	wchar_t wString[4096];
 	MultiByteToWideChar(CP_ACP, 0, name, -1, wString, 4096);
