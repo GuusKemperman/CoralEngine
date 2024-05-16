@@ -50,7 +50,7 @@ void Game::ChargeDashState::OnAIStateEnterEvent(CE::World& world, entt::entity o
 
 	if (navMeshAgent == nullptr)
 	{
-		LOG(LogSeverity, Warning, "NavMeshAgentComponent is needed to run the Charge Dash State!");
+		LOG(LogAI, Warning, "NavMeshAgentComponent is needed to run the Charge Dash State!");
 		return;
 	}
 
@@ -71,13 +71,13 @@ std::pair<float, entt::entity> Game::ChargeDashState::GetBestScoreAndTarget(cons
 
 	if (entityId == entt::null)
 	{
-		LOG(LogSeverity, Warning, "An entity with a NavMeshTargetTag is needed to run the Charge Dash State!");
+		LOG(LogAI, Warning, "An entity with a NavMeshTargetTag is needed to run the Charge Dash State!");
 		return { 0.0f, entt::null };
 	}
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogSeverity, Warning, "TransformComponent is needed to run the Charge Dash State!");
+		LOG(LogAI, Warning, "TransformComponent is needed to run the Charge Dash State!");
 		return { 0.0f, entt::null };
 	}
 
@@ -87,7 +87,7 @@ std::pair<float, entt::entity> Game::ChargeDashState::GetBestScoreAndTarget(cons
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogSeverity, Warning, "The player entity needs a TransformComponent is needed to run the Charge Dash State!");
+		LOG(LogAI, Warning, "The player entity needs a TransformComponent is needed to run the Charge Dash State!");
 		return { 0.0f, entt::null };
 	}
 
