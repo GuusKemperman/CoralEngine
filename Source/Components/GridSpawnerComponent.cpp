@@ -56,7 +56,7 @@ void CE::GridSpawnerComponent::SpawnGrid()
 		chances.emplace_back(SpawnChance{ mTiles[i], i < mSpawnChances.size() ? mSpawnChances[i] : 0.0f });
 	}
 
-	for (const SpawnChance spawnChance : chances)
+	for (const SpawnChance& spawnChance : chances)
 	{
 		total += spawnChance.mChance;
 	}
