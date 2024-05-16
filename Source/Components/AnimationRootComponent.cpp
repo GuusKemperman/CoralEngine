@@ -81,6 +81,7 @@ CE::MetaType CE::AnimationRootComponent::Reflect()
 	type.AddField(&AnimationRootComponent::mWantedAnimation, "mWantedAnimation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&AnimationRootComponent::mWantedTimeStamp, "mWantedTimeStamp").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&AnimationRootComponent::mWantedAnimationSpeed, "mWantedAnimationSpeed").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&AnimationRootComponent::mWantedBlendSpeed, "mWantedBlendSpeed").GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddFunc(static_cast<void (AnimationRootComponent::*)()>(&AnimationRootComponent::SwitchAnimation), "SwitchAnimationEditor").GetProperties().Add(Props::sCallFromEditorTag);
 

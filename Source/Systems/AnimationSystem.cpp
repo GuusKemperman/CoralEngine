@@ -37,8 +37,8 @@ void CE::AnimationSystem::CalculateBoneTransformRecursive(const AnimMeshInfo& an
 
 void CE::AnimationSystem::BlendAnimations(SkinnedMeshComponent& meshComponent)
 {
-	static std::vector<Transform> layer0{meshComponent.mFinalBoneMatrices.size()};
-	static std::vector<Transform> layer1{meshComponent.mFinalBoneMatrices.size()};
+	static std::vector<Transform> layer0{MAX_BONES};
+	static std::vector<Transform> layer1{MAX_BONES};
 
 	// Layer 0
 	uint32 hash = Internal::CombineHashes(
@@ -54,7 +54,7 @@ void CE::AnimationSystem::BlendAnimations(SkinnedMeshComponent& meshComponent)
 			std::forward_as_tuple(meshComponent.mAnimation->mRootNode, *meshComponent.mSkinnedMesh)).first;
 	}
 
-	CalculateTransformsRecursive(existingInfo->second, meshComponent, layer0);
+	CalculateTransformsRecursive(existingInfo->second, meshComponent, meshComponent.mCurrentTime, layer0);
 
 	// Layer 1
 
@@ -71,7 +71,7 @@ void CE::AnimationSystem::BlendAnimations(SkinnedMeshComponent& meshComponent)
 			std::forward_as_tuple(meshComponent.mPreviousAnimation->mRootNode, *meshComponent.mSkinnedMesh)).first;
 	}
 
-	CalculateTransformsRecursive(existingInfo2->second, meshComponent, layer1);
+	CalculateTransformsRecursive(existingInfo2->second, meshComponent, meshComponent.mPrevAnimTime, layer1);
 
 	// Blending
 
@@ -79,8 +79,28 @@ void CE::AnimationSystem::BlendAnimations(SkinnedMeshComponent& meshComponent)
 
 }
 
-void CE::AnimationSystem::CalculateTransformsRecursive(const AnimMeshInfo& animMeshInfo, SkinnedMeshComponent& meshComponent, std::vector<Transform>& output)
+void CE::AnimationSystem::CalculateTransformsRecursive(const AnimMeshInfo& animMeshInfo, SkinnedMeshComponent& meshComponent, float timeStamp, std::vector<Transform>& output)
 {
+	const Bone* bone = animMeshInfo.mAnimNode.get().mBone;
+
+	if (animMeshInfo.mBoneInfo != nullptr
+		&& bone != nullptr)
+	{
+		const int index = animMeshInfo.mBoneInfo->mId;
+		
+		Transform transform{};
+
+		transform.mTranslation = bone->InterpolatePosition(timeStamp);
+		transform.mScale = bone->InterpolateScale(timeStamp);
+		transform.mRotation = bone->InterpolateRotation(timeStamp);
+
+		output[index] = transform;
+	}
+
+	for (const AnimMeshInfo& child : animMeshInfo.mChildren)
+	{
+		CalculateTransformsRecursive(child, meshComponent, timeStamp, output);
+	}
 }
 
 void CE::AnimationSystem::BlendTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::vector<Transform>& layer0, const std::vector<Transform>& layer1)
@@ -136,37 +156,17 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		{
 			skinnedMesh.mPrevAnimTime += skinnedMesh.mPreviousAnimation->mTickPerSecond * skinnedMesh.mAnimationSpeed * dt;
 			skinnedMesh.mPrevAnimTime = fmod(skinnedMesh.mPrevAnimTime, skinnedMesh.mPreviousAnimation->mDuration);
-			skinnedMesh.mBlendWeight = glm::clamp(skinnedMesh.mBlendSpeed * dt, 0.0f, 1.0f);
+			skinnedMesh.mBlendWeight = glm::clamp(skinnedMesh.mBlendWeight + 1.0f / skinnedMesh.mBlendSpeed * dt, 0.0f, 1.0f);
 		}
-
-		LOG(LogWorld, Verbose, "BlendWeight: {}", skinnedMesh.mBlendWeight);
 
 		if (skinnedMesh.mBlendWeight < 1.0f)
 		{	// Need to do blending between 2 animations
-			
-			
-			
+			BlendAnimations(skinnedMesh);
 		}
 		else // Only a single animation is being played
 		{
-			const uint32 hash = Internal::CombineHashes(
-			Name::HashString(skinnedMesh.mPreviousAnimation.GetMetaData().GetName()),
-			Name::HashString(skinnedMesh.mSkinnedMesh.GetMetaData().GetName()));
-		
-			auto existingInfo = mAnimMeshInfoMap.find(hash);
+			skinnedMesh.mPreviousAnimation = nullptr;
 
-			if (existingInfo == mAnimMeshInfoMap.end())
-			{
-				existingInfo = mAnimMeshInfoMap.emplace(std::piecewise_construct,
-					std::forward_as_tuple(hash),
-					std::forward_as_tuple(skinnedMesh.mAnimation->mRootNode, *skinnedMesh.mSkinnedMesh)).first;
-			}
-
-			CalculateBoneTransformRecursive(existingInfo->second, glm::mat4x4{ 1.0f }, skinnedMesh);
-		}
-
-
-		{
 			const uint32 hash = Internal::CombineHashes(
 			Name::HashString(skinnedMesh.mAnimation.GetMetaData().GetName()),
 			Name::HashString(skinnedMesh.mSkinnedMesh.GetMetaData().GetName()));
