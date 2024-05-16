@@ -79,6 +79,7 @@ CE::MeshRenderer::MeshRenderer()
     blendDesc.RenderTarget[0].LogicOpEnable = FALSE; // No logical operations needed
 
     depth.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+    depth.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
     mParticlePBRPipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1)

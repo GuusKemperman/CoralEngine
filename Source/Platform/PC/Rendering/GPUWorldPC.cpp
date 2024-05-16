@@ -734,12 +734,12 @@ CE::InfoStruct::DXMaterialInfo CE::GPUWorld::GetMaterial(const CE::Material* mat
         materialInfo.colorFactor = { material->mBaseColorFactor.r,
             material->mBaseColorFactor.g,
             material->mBaseColorFactor.b,
-            0.f };
+            material->mBaseColorFactor.a };
 
         materialInfo.emissiveFactor = { material->mEmissiveFactor.r,
             material->mEmissiveFactor.g,
             material->mEmissiveFactor.b,
-            0.f };
+            1.f};
 
         materialInfo.metallicFactor = material->mMetallicFactor;
         materialInfo.roughnessFactor = material->mRoughnessFactor;
@@ -753,8 +753,8 @@ CE::InfoStruct::DXMaterialInfo CE::GPUWorld::GetMaterial(const CE::Material* mat
     }
     else 
     {
-        materialInfo.colorFactor = { 0.f, 0.f, 0.f, 0.f };
-        materialInfo.emissiveFactor = { 0.f, 0.f, 0.f, 0.f };
+        materialInfo.colorFactor = { 1.f, 1.f, 1.f, 1.f };
+        materialInfo.emissiveFactor = { 1.f, 1.f, 1.f, 1.f };
         materialInfo.metallicFactor = 0.f;
         materialInfo.roughnessFactor = 0.f;
         materialInfo.normalScale = 1.f;
