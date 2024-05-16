@@ -66,7 +66,6 @@ CE::MeshRenderer::MeshRenderer()
     blendDesc.AlphaToCoverageEnable = FALSE;  // Keep as false unless using MSAA and need smooth edges on alpha textures
     blendDesc.IndependentBlendEnable = FALSE; // Use the same blending setup for all render targets unless needed otherwise
 
-    // Configure the blend state for RenderTarget[0]
     blendDesc.RenderTarget[0].BlendEnable = TRUE;
     blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;      // Use source alpha to scale source color
     blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA; // Use (1 - source alpha) to scale destination color
@@ -80,7 +79,6 @@ CE::MeshRenderer::MeshRenderer()
     blendDesc.RenderTarget[0].LogicOpEnable = FALSE; // No logical operations needed
 
     depth.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-    depth.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
     mParticlePBRPipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1)
