@@ -567,6 +567,7 @@
     </ClCompile>
     <ClCompile Include="Source\UnitTests\AssetHandleUnitTests.cpp" />
     <ClCompile Include="Source\Utilities\ASync.cpp" />
+    <ClCompile Include="Source\Utilities\BVH.cpp" />
     <ClCompile Include="Source\Utilities\Events.cpp" />
     <ClCompile Include="Source\Utilities\ManyStrings.cpp" />
     <ClCompile Include="Source\Utilities\PathfindingInfo.cpp" />
@@ -1597,6 +1598,7 @@
     <ClInclude Include="Include\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
     <ClInclude Include="Include\Utilities\ASync.h" />
+    <ClInclude Include="Include\Utilities\BVH.h" />
     <ClInclude Include="Include\Utilities\Geometry2d.h" />
     <ClInclude Include="Include\EditorSystems\ImporterSystem.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.h" />

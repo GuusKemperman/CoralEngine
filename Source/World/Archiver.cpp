@@ -93,6 +93,11 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 		return;
 	}
 
+	if (componentClass->GetProperties().Has(Props::sNoSerializeTag))
+	{
+		return;
+	}
+
 	const bool checkForFactoryOfOrigin = componentClass->GetTypeId() != MakeTypeId<PrefabOriginComponent>();
 
 	auto remapId = [&idRemappings](entt::entity entity) -> entt::entity
@@ -363,6 +368,11 @@ std::optional<CE::ComponentClassSerializeArg> CE::GetComponentClassSerializeArg(
 	if (componentClass == nullptr)
 	{
 		LOG(LogAssets, Warning, "Cannot serialize component of type {}, as it was not reflected", storage.type().name());
+		return std::nullopt;
+	}
+
+	if (componentClass->GetProperties().Has(Props::sNoSerializeTag))
+	{
 		return std::nullopt;
 	}
 
