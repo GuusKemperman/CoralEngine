@@ -5,6 +5,8 @@
 #include "World/Registry.h"
 #include "Assets/SkinnedMesh.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Components/AttachToBoneComponent.h"
+#include "Components/TransformComponent.h"
 #include "Assets/Animation/Animation.h"
 #include "Assets/Animation/Bone.h"
 #include "Meta/MetaType.h"
@@ -70,6 +72,44 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		}
 
 		CalculateBoneTransformRecursive(existingInfo->second, glm::mat4x4{ 1.0f }, skinnedMesh);
+	}
+
+	for (auto [entity, attachToBone, transform] : reg.View<AttachToBoneComponent, TransformComponent>().each())
+	{
+		if (attachToBone.mBoneName.empty())
+		{
+			continue;
+		}
+
+		const TransformComponent* parent = transform.GetParent();
+
+		if (parent == nullptr)
+		{
+			continue;
+		}
+
+		const SkinnedMeshComponent* skinnedMesh = AttachToBoneComponent::FindSkinnedMeshParentRecursive(reg, *parent);
+
+		if (skinnedMesh == nullptr)
+		{
+			continue;
+		}
+
+		auto& boneMap = skinnedMesh->mSkinnedMesh->GetBoneMap();
+		auto it = boneMap.find(attachToBone.mBoneName);
+
+		if (it == boneMap.end() 
+			|| skinnedMesh->mAnimation == nullptr)
+		{
+			transform.SetLocalMatrix(parent->GetWorldMatrix() * 
+				TransformComponent::ToMatrix(attachToBone.mLocalTranslation, attachToBone.mLocalScale, attachToBone.mLocalRotation));
+			continue;
+		}
+
+		const glm::mat4x4& boneMat = skinnedMesh->mFinalBoneMatrices[it->second.mId];
+	
+		transform.SetLocalMatrix(boneMat *
+			TransformComponent::ToMatrix(attachToBone.mLocalTranslation, attachToBone.mLocalScale, attachToBone.mLocalRotation));
 	}
 }
 
