@@ -97,7 +97,7 @@ void CE::GridSpawnerComponent::SpawnGrid()
 
 			int32 BestIndex = 0;
 
-			for (size_t i = 1; i < chances.size(); i++)
+			for (int32 i = 1; i < chances.size(); i++)
 			{
 				const float Value = chances[i].mChance > RandomNum ? chances[i].mChance : INFINITY;
 				const float BestValue = chances[BestIndex].mChance > RandomNum ? chances[BestIndex].mChance : INFINITY;
