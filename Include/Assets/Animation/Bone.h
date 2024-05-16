@@ -45,11 +45,11 @@ namespace CE
 		int GetRotationIndex(float timeStamp) const;
 		int GetScaleIndex(float timeStamp) const;
 
-	private:
-		float GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float currentTimeStamp) const;
-		
 		glm::mat4x4 InterpolatePosition(float timeStamp) const;
 		glm::mat4x4 InterpolateRotation(float timeStamp) const;
 		glm::mat4x4 InterpolateScale(float timeStamp) const;
+
+	private:
+		float GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float currentTimeStamp) const;
 	};
 }

@@ -16,9 +16,16 @@ void CE::AnimationRootComponent::SwitchAnimationRecursive(Registry& reg, const e
 
 	if (skinnedMesh != nullptr)
 	{
-		skinnedMesh->mPreviousAnimation = skinnedMesh->mAnimation;
-		skinnedMesh->mAnimation = animation;
-		skinnedMesh->mPrevAnimTime = skinnedMesh->mCurrentTime;
+		if (skinnedMesh->mAnimation != animation)
+		{
+			if (skinnedMesh->mAnimation != nullptr)
+			{
+				skinnedMesh->mPreviousAnimation = skinnedMesh->mAnimation;
+				skinnedMesh->mPrevAnimTime = skinnedMesh->mCurrentTime;
+				skinnedMesh->mBlendWeight = 0.0f;
+			}
+			skinnedMesh->mAnimation = animation;
+		}
 		skinnedMesh->mCurrentTime = timeStamp;
 		skinnedMesh->mAnimationSpeed = animationSpeed;
 		skinnedMesh->mBlendSpeed = blendSpeed;
