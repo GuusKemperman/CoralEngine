@@ -1,15 +1,16 @@
 #pragma once
 
+namespace cereal
+{
+	class BinaryInputArchive;
+}
+
 namespace CE
 {
 	class MetaType;
 
 	class AssetFileMetaData
 	{
-		friend class AssetManager;
-		friend class AssetSaveInfo;
-		friend class AssetLoadInfo;
-
 	public:
 		// For assets that were imported from somewhere, useful for when we are reimporting
 		struct ImporterInfo
@@ -39,15 +40,21 @@ namespace CE
 
 		const std::optional<ImporterInfo>& GetImporterInfo() const { return mImporterInfo; }
 
-	private:
 		static std::optional<AssetFileMetaData> ReadMetaData(std::istream& fromStream);
+		static std::optional<AssetFileMetaData> ReadMetaData(const std::filesystem::path& fromFile);
+
 		void WriteMetaData(std::ostream& toStream) const;
 
-		// Backwards compatibility
-		static std::optional<AssetFileMetaData> ReadMetaDataV0(std::istream& fromStream, uint32 version);
-		static std::optional<AssetFileMetaData> ReadMetaDataV1V2V3(std::istream& fromStream, uint32 version);
+	private:
+		friend class AssetManager;
+		friend class AssetLoadInfo;
+		friend class AssetSaveInfo;
 
-		static constexpr uint32 sMetaDataVersion = 3;
+		// Backwards compatibility
+		static std::optional<AssetFileMetaData> ReadMetaDataV1V2V3(std::istream& fromStream, uint32 version);
+		static std::optional<AssetFileMetaData> ReadMetaDataV4(cereal::BinaryInputArchive& fromArchive);
+
+		static constexpr uint32 sMetaDataVersion = 4;
 		uint32 mMetaDataVersion{};
 		uint32 mAssetVersion{};
 		std::string mAssetName{};
