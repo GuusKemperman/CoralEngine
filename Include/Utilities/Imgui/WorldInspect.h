@@ -151,8 +151,6 @@ namespace CE
 			std::vector<entt::entity>* selectedEntities);
 
 	private:
-		static void DisplayEntity(Registry& registry, entt::entity entity, std::vector<entt::entity>& selectedEntities);
-
 		// Nullopt to unparent them
 		static void ReceiveDragDropOntoParent(Registry& registry,
 			std::optional<entt::entity> parentAllToThisEntity);
