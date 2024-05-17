@@ -576,6 +576,8 @@ void CE::AssetManager::UpdateAssetsToLatestVersions()
 			continue;
 		}
 
+		LOG(LogAssets, Message, "Updating metadata on asset {} - will modify file {}", asset.mMetaData.GetName(), asset.mFileOfOrigin->string());
+
 		const uint32 oldVersion = asset.mMetaData.mMetaDataVersion;
 		asset.mMetaData.mMetaDataVersion = AssetFileMetaData::GetCurrentMetaDataVersion();
 		if (!ReplaceMetaData(*asset.mFileOfOrigin, asset.mMetaData))
