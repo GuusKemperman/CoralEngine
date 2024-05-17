@@ -41,7 +41,6 @@ namespace CE
 		const std::optional<ImporterInfo>& GetImporterInfo() const { return mImporterInfo; }
 
 		static std::optional<AssetFileMetaData> ReadMetaData(std::istream& fromStream);
-		static std::optional<AssetFileMetaData> ReadMetaData(const std::filesystem::path& fromFile);
 
 		void WriteMetaData(std::ostream& toStream) const;
 
