@@ -20,7 +20,6 @@
 #include "Components/OutlineComponent.h"
 #include "Rendering/GPUWorld.h"
 
-#include "Components/Particles/ParticleMeshRendererComponent.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
 #include "Components/Particles/ParticleColorComponent.h"
 #include "Components/Particles/ParticleColorOverTimeComponent.h"
@@ -356,6 +355,7 @@ CE::GPUWorld::GPUWorld(const World& world)
 
     InitializeShadowMaps();
     mSelectedMeshFrameBuffer = std::make_unique<FrameBuffer>(glm::vec2(1920, 1080));
+    mParticles.resize(MAX_PARTICLES);
 }
 
 CE::GPUWorld::~GPUWorld() = default;
@@ -538,7 +538,7 @@ void CE::GPUWorld::Update()
 
     mPostProcData.Update(mWorld);
     UpdateClusterData(camera);
-    UpdateParticles();
+    UpdateParticles(camera.mPosition);
 }
 
 uint32 CE::GPUWorld::ReadCompactClusterCounter() const
@@ -617,16 +617,17 @@ void CE::GPUWorld::InitializeShadowMaps()
     mShadowMap->mScissorRect.right = static_cast<LONG>(mShadowMap->mViewport.Width);
     mShadowMap->mScissorRect.bottom = static_cast<LONG>(mShadowMap->mViewport.Height);
 }
-void CE::GPUWorld::UpdateParticles()
+void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
 {
     Device& engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
     uint32 particleCounter = 0;
 
-    {
-        const auto view = mWorld.get().GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>(entt::exclude<ParticleColorOverTimeComponent>);
+    const auto simpleColorParticles = mWorld.get().GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>(entt::exclude<ParticleColorOverTimeComponent>);
+    const auto changingColorParticles = mWorld.get().GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent, const ParticleColorOverTimeComponent>();
 
-        for (auto [entity, emitter, meshRenderer, colorComponent] : view.each())
+    {
+        for (auto [entity, emitter, meshRenderer, colorComponent] : simpleColorParticles.each())
         {
             bool emitterPlaying = emitter.IsPlaying();
             bool meshPresent = meshRenderer.mParticleMesh;
@@ -653,20 +654,17 @@ void CE::GPUWorld::UpdateParticles()
                     return;
                 }
 
-                // Update material
-                InfoStruct::DXMaterialInfo materialInfo = GetMaterial(meshRenderer.mParticleMaterial.Get());
-                mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), particleCounter, frameIndex);
-
                 const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], sizes[i], orientations[i]);
-                glm::mat4x4 modelMatrices[2]{};
-                modelMatrices[0] = glm::transpose(mat);
-                modelMatrices[1] = glm::transpose(glm::inverse(mat));
-                mConstBuffers[InfoStruct::PARTICLE_MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, particleCounter, frameIndex);
 
-                InfoStruct::DXColorMultiplierInfo colorInfo;
-                colorInfo.colorMult = colors[i];
-                colorInfo.colorAdd = glm::vec4(0.f);
-                mConstBuffers[InfoStruct::PARTICLE_COLOR_CB]->Update(&colorInfo, sizeof(InfoStruct::DXColorMultiplierInfo), particleCounter, frameIndex);
+                InfoStruct::DXParticleInfo particleInfo{};
+                particleInfo.mMesh = const_cast<StaticMesh*>(meshRenderer.mParticleMesh.Get());
+                particleInfo.mMaterial = const_cast<Material*>(meshRenderer.mParticleMaterial.Get()); 
+                if(meshRenderer.mParticleMaterial)
+                    particleInfo.mMaterialInfo = GetMaterial(meshRenderer.mParticleMaterial.Get());
+                particleInfo.mDistanceToCamera = glm::length(positions[i] - cameraPos);
+                particleInfo.mColor = colors[i];
+                particleInfo.mMatrix = std::move(mat);
+                mParticles[particleCounter] = std::move(particleInfo);
 
                 particleCounter++;
             }          
@@ -674,9 +672,8 @@ void CE::GPUWorld::UpdateParticles()
     }
 
     {
-        const auto view = mWorld.get().GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent, const ParticleColorOverTimeComponent>();
 
-        for (auto [entity, emitter, meshRenderer, colorComponent, colorOverTime] : view.each())
+        for (auto [entity, emitter, meshRenderer, colorComponent, colorOverTime] : changingColorParticles.each())
         {
             bool emitterPlaying = emitter.IsPlaying();
             bool meshPresent = meshRenderer.mParticleMesh;
@@ -705,23 +702,35 @@ void CE::GPUWorld::UpdateParticles()
                     return;
                 }
 
-                InfoStruct::DXMaterialInfo materialInfo = GetMaterial(meshRenderer.mParticleMaterial.Get());
-                mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), particleCounter, frameIndex);
-
                 const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], sizes[i], orientations[i]);
-                glm::mat4x4 modelMatrices[2]{};
-                modelMatrices[0] = glm::transpose(mat);
-                modelMatrices[1] = glm::transpose(glm::inverse(mat));
-                mConstBuffers[InfoStruct::PARTICLE_MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, particleCounter, frameIndex);
 
-                InfoStruct::DXColorMultiplierInfo colorInfo;
-                colorInfo.colorMult = colors[i] * gradient.GetColorAt(lifeTimes[i]);
-                colorInfo.colorAdd = glm::vec4(0.f);
-                mConstBuffers[InfoStruct::PARTICLE_COLOR_CB]->Update(&colorInfo, sizeof(InfoStruct::DXColorMultiplierInfo), particleCounter, frameIndex);
+                InfoStruct::DXParticleInfo particleInfo{};
+                particleInfo.mMesh = const_cast<StaticMesh*>(meshRenderer.mParticleMesh.Get());
+                particleInfo.mMaterial = const_cast<Material*>(meshRenderer.mParticleMaterial.Get());
+                if(meshRenderer.mParticleMaterial)
+                    particleInfo.mMaterialInfo = GetMaterial(meshRenderer.mParticleMaterial.Get());
+                particleInfo.mDistanceToCamera = glm::length(positions[i] - cameraPos);
+                particleInfo.mColor = colors[i] * gradient.GetColorAt(lifeTimes[i]);
+                particleInfo.mMatrix = std::move(mat);
+                mParticles[particleCounter] = std::move(particleInfo);
 
                 particleCounter++;
             }
         }
+    }
+
+    mParticleCount = particleCounter;
+    std::sort(mParticles.begin(), mParticles.begin() + particleCounter, [&](InfoStruct::DXParticleInfo& a, InfoStruct::DXParticleInfo& b) {
+        return a.mDistanceToCamera > b.mDistanceToCamera;
+    });
+
+    for (uint32 i = 0; i < particleCounter; i++) {
+        mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB]->Update(&mParticles[i].mMaterialInfo, sizeof(InfoStruct::DXMaterialInfo), i, frameIndex);
+        glm::mat4x4 modelMatrices[2]{};
+        modelMatrices[0] = glm::transpose(mParticles[i].mMatrix);
+        modelMatrices[1] = glm::transpose(glm::inverse(mParticles[i].mMatrix));
+        mConstBuffers[InfoStruct::PARTICLE_MODEL_MATRIX_CB]->Update(modelMatrices, sizeof(glm::mat4x4) * 2, i, frameIndex);
+        mConstBuffers[InfoStruct::PARTICLE_COLOR_CB]->Update(&mParticles[i].mColor, sizeof(InfoStruct::DXColorMultiplierInfo), i, frameIndex);
     }
 }
 

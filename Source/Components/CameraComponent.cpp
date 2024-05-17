@@ -10,6 +10,7 @@
 void CE::CameraComponent::UpdateView(const glm::vec3 position, const glm::vec3 forward, const glm::vec3 up, bool recalulateViewProjection)
 {
 	mView = glm::lookAt(position, position + forward, up);
+	mPosition = position;
 
 	if (recalulateViewProjection)
 	{
@@ -20,6 +21,8 @@ void CE::CameraComponent::UpdateView(const glm::vec3 position, const glm::vec3 f
 void CE::CameraComponent::UpdateView(const TransformComponent& transform, bool recalulateViewProjection)
 {
 	UpdateView(transform.GetWorldPosition(), transform.GetWorldForward(), transform.GetWorldUp(), recalulateViewProjection);
+	mPosition = transform.GetWorldPosition();
+
 }
 
 void CE::CameraComponent::UpdateProjection(const glm::vec2 viewportSize, bool recalculateViewProjection)

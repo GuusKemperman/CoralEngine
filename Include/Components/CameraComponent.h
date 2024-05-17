@@ -37,6 +37,7 @@ namespace CE
 		float mNear = 1.0f;
 		float mFOV = glm::radians(45.0f);
 		glm::vec2 mViewportSize;
+		glm::vec3 mPosition; 
 
 		glm::mat4 mView{};
 		glm::mat4 mProjection{};
