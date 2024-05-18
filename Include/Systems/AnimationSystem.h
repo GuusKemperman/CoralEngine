@@ -27,20 +27,20 @@ namespace CE
 			std::vector<AnimMeshInfo> mChildren{};
 		};
 
-		struct Transform
+		struct AnimTransform
 		{
 			glm::vec3 mTranslation;
 			glm::vec3 mScale;
 			glm::quat mRotation;
 		};
 
-		void CalculateBoneTransformRecursive(const AnimMeshInfo& animMeshInfo,
-			const glm::mat4x4& parenTransform,
-			SkinnedMeshComponent& meshComponent);
+		AnimMeshInfo& FindAnimMeshInfo(const AssetHandle<Animation> animation, const AssetHandle<SkinnedMesh> skinnedMesh);
+
+		void CalculateBoneTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent);
 
 		void BlendAnimations(SkinnedMeshComponent& meshComponent);
-		void CalculateTransformsRecursive(const AnimMeshInfo& animMeshInfo,	SkinnedMeshComponent& meshComponent, float timeStamp, std::vector<Transform>& output);
-		void BlendTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::vector<Transform>& layer0, const std::vector<Transform>& layer1);
+		void CalculateAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo,	SkinnedMeshComponent& meshComponent, float timeStamp, std::vector<AnimTransform>& output);
+		void BlendTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::vector<AnimTransform>& layer0, const std::vector<AnimTransform>& layer1);
 
 		std::unordered_map<size_t, AnimMeshInfo> mAnimMeshInfoMap{};
 

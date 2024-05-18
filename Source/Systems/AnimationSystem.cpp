@@ -11,7 +11,25 @@
 #include "Assets/Animation/Bone.h"
 #include "Meta/MetaType.h"
 
-void CE::AnimationSystem::CalculateBoneTransformRecursive(const AnimMeshInfo& animMeshInfo,
+CE::AnimationSystem::AnimMeshInfo& CE::AnimationSystem::FindAnimMeshInfo(const AssetHandle<Animation> animation, const AssetHandle<SkinnedMesh> skinnedMesh)
+{
+	uint32 hash = Internal::CombineHashes(
+	Name::HashString(animation.GetMetaData().GetName()),
+	Name::HashString(skinnedMesh.GetMetaData().GetName()));
+		
+	auto existingInfo = mAnimMeshInfoMap.find(hash);
+
+	if (existingInfo == mAnimMeshInfoMap.end())
+	{
+		existingInfo = mAnimMeshInfoMap.emplace(std::piecewise_construct,
+			std::forward_as_tuple(hash),
+			std::forward_as_tuple(animation->mRootNode, *skinnedMesh)).first;
+	}
+
+	return existingInfo->second;
+}
+
+void CE::AnimationSystem::CalculateBoneTransformsRecursive(const AnimMeshInfo& animMeshInfo,
 	const glm::mat4x4& parenTransform, 
 	SkinnedMeshComponent& meshComponent)
 {
@@ -32,55 +50,25 @@ void CE::AnimationSystem::CalculateBoneTransformRecursive(const AnimMeshInfo& an
 
 	for (const AnimMeshInfo& child : animMeshInfo.mChildren)
 	{
-		CalculateBoneTransformRecursive(child, globalTransform, meshComponent);
+		CalculateBoneTransformsRecursive(child, globalTransform, meshComponent);
 	}
 }
 
 void CE::AnimationSystem::BlendAnimations(SkinnedMeshComponent& meshComponent)
 {
-	static std::vector<Transform> layer0{MAX_BONES};
-	static std::vector<Transform> layer1{MAX_BONES};
+	static std::vector<AnimTransform> layer0{MAX_BONES};
+	static std::vector<AnimTransform> layer1{MAX_BONES};
 
-	// Layer 0
-	uint32 hash = Internal::CombineHashes(
-	Name::HashString(meshComponent.mAnimation.GetMetaData().GetName()),
-	Name::HashString(meshComponent.mSkinnedMesh.GetMetaData().GetName()));
-		
-	auto existingInfo = mAnimMeshInfoMap.find(hash);
+	const AnimMeshInfo& info0 = FindAnimMeshInfo(meshComponent.mAnimation, meshComponent.mSkinnedMesh);
+	const AnimMeshInfo& info1 = FindAnimMeshInfo(meshComponent.mPreviousAnimation, meshComponent.mSkinnedMesh);
 
-	if (existingInfo == mAnimMeshInfoMap.end())
-	{
-		existingInfo = mAnimMeshInfoMap.emplace(std::piecewise_construct,
-			std::forward_as_tuple(hash),
-			std::forward_as_tuple(meshComponent.mAnimation->mRootNode, *meshComponent.mSkinnedMesh)).first;
-	}
+	CalculateAnimTransformsRecursive(info0, meshComponent, meshComponent.mCurrentTime, layer0);
+	CalculateAnimTransformsRecursive(info1, meshComponent, meshComponent.mPrevAnimTime, layer1);
 
-	CalculateTransformsRecursive(existingInfo->second, meshComponent, meshComponent.mCurrentTime, layer0);
-
-	// Layer 1
-
-	hash = Internal::CombineHashes(
-	Name::HashString(meshComponent.mPreviousAnimation.GetMetaData().GetName()),
-	Name::HashString(meshComponent.mSkinnedMesh.GetMetaData().GetName()));
-
-	auto existingInfo2 = mAnimMeshInfoMap.find(hash);
-
-	if (existingInfo2 == mAnimMeshInfoMap.end())
-	{
-		existingInfo2 = mAnimMeshInfoMap.emplace(std::piecewise_construct,
-			std::forward_as_tuple(hash),
-			std::forward_as_tuple(meshComponent.mPreviousAnimation->mRootNode, *meshComponent.mSkinnedMesh)).first;
-	}
-
-	CalculateTransformsRecursive(existingInfo2->second, meshComponent, meshComponent.mPrevAnimTime, layer1);
-
-	// Blending
-
-	BlendTransformsRecursive(existingInfo->second, glm::mat4x4{ 1.0f }, meshComponent, layer0, layer1);
-
+	BlendTransformsRecursive(info0, glm::mat4x4{ 1.0f }, meshComponent, layer0, layer1);
 }
 
-void CE::AnimationSystem::CalculateTransformsRecursive(const AnimMeshInfo& animMeshInfo, SkinnedMeshComponent& meshComponent, float timeStamp, std::vector<Transform>& output)
+void CE::AnimationSystem::CalculateAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo, SkinnedMeshComponent& meshComponent, float timeStamp, std::vector<AnimTransform>& output)
 {
 	const Bone* bone = animMeshInfo.mAnimNode.get().mBone;
 
@@ -89,7 +77,7 @@ void CE::AnimationSystem::CalculateTransformsRecursive(const AnimMeshInfo& animM
 	{
 		const int index = animMeshInfo.mBoneInfo->mId;
 		
-		Transform transform{};
+		AnimTransform transform{};
 
 		transform.mTranslation = bone->InterpolatePosition(timeStamp);
 		transform.mScale = bone->InterpolateScale(timeStamp);
@@ -100,11 +88,11 @@ void CE::AnimationSystem::CalculateTransformsRecursive(const AnimMeshInfo& animM
 
 	for (const AnimMeshInfo& child : animMeshInfo.mChildren)
 	{
-		CalculateTransformsRecursive(child, meshComponent, timeStamp, output);
+		CalculateAnimTransformsRecursive(child, meshComponent, timeStamp, output);
 	}
 }
 
-void CE::AnimationSystem::BlendTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::vector<Transform>& layer0, const std::vector<Transform>& layer1)
+void CE::AnimationSystem::BlendTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::vector<AnimTransform>& layer0, const std::vector<AnimTransform>& layer1)
 {
 	glm::mat4x4 globalTransform = animMeshInfo.mAnimNode.get().mTransform;
 
@@ -112,10 +100,10 @@ void CE::AnimationSystem::BlendTransformsRecursive(const AnimMeshInfo& animMeshI
 	{
 		const int index = animMeshInfo.mBoneInfo->mId;
 
-		const Transform& T0 = layer0[index];
-		const Transform& T1 = layer1[index];
+		const AnimTransform& T0 = layer0[index];
+		const AnimTransform& T1 = layer1[index];
 
-		Transform transform{};
+		AnimTransform transform{};
 
 		transform.mTranslation = T0.mTranslation * meshComponent.mBlendWeight + T1.mTranslation * (1.0f - meshComponent.mBlendWeight);
 		transform.mScale	   = T0.mScale * meshComponent.mBlendWeight + T1.mScale * (1.0f - meshComponent.mBlendWeight);
@@ -157,35 +145,20 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		skinnedMesh.mCurrentTime += skinnedMesh.mAnimation->mTickPerSecond * skinnedMesh.mAnimationSpeed * dt;
 		skinnedMesh.mCurrentTime = fmod(skinnedMesh.mCurrentTime, skinnedMesh.mAnimation->mDuration);
 
-		if (skinnedMesh.mPreviousAnimation != nullptr)
-		{
+		if (skinnedMesh.mPreviousAnimation != nullptr 
+			&& skinnedMesh.mBlendWeight < 1.0f)
+		{	
 			skinnedMesh.mPrevAnimTime += skinnedMesh.mPreviousAnimation->mTickPerSecond * skinnedMesh.mAnimationSpeed * dt;
 			skinnedMesh.mPrevAnimTime = fmod(skinnedMesh.mPrevAnimTime, skinnedMesh.mPreviousAnimation->mDuration);
-			skinnedMesh.mBlendWeight = glm::clamp(skinnedMesh.mBlendWeight + 1.0f / skinnedMesh.mBlendSpeed * dt, 0.0f, 1.0f);
-		}
+			skinnedMesh.mBlendWeight = glm::clamp(skinnedMesh.mBlendWeight + 1.0f / skinnedMesh.mBlendTime * dt, 0.0f, 1.0f);
 
-		if (skinnedMesh.mBlendWeight < 1.0f)
-		{	// Need to do blending between 2 animations
 			BlendAnimations(skinnedMesh);
 		}
 		else // Only a single animation is being played
 		{
-			skinnedMesh.mPreviousAnimation = nullptr;
+			const AnimMeshInfo& info = FindAnimMeshInfo(skinnedMesh.mAnimation, skinnedMesh.mSkinnedMesh);
 
-			const uint32 hash = Internal::CombineHashes(
-			Name::HashString(skinnedMesh.mAnimation.GetMetaData().GetName()),
-			Name::HashString(skinnedMesh.mSkinnedMesh.GetMetaData().GetName()));
-		
-			auto existingInfo = mAnimMeshInfoMap.find(hash);
-
-			if (existingInfo == mAnimMeshInfoMap.end())
-			{
-				existingInfo = mAnimMeshInfoMap.emplace(std::piecewise_construct,
-					std::forward_as_tuple(hash),
-					std::forward_as_tuple(skinnedMesh.mAnimation->mRootNode, *skinnedMesh.mSkinnedMesh)).first;
-			}
-
-			CalculateBoneTransformRecursive(existingInfo->second, glm::mat4x4{ 1.0f }, skinnedMesh);
+			CalculateBoneTransformsRecursive(info, glm::mat4x4{ 1.0f }, skinnedMesh);
 		}
 	}
 

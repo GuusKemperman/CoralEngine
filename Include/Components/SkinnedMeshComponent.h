@@ -26,7 +26,8 @@ namespace CE
         // Blend from previous animation 
         // Previous 0.0f to current 1.0f
         float mBlendWeight = 1.0f;
-        float mBlendSpeed = 1.0f;
+        // Time it takes to blend animations in seconds
+        float mBlendTime = 0.2f;
 
         bool mHighlightedMesh = false;
 
