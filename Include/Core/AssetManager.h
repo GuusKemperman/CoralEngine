@@ -1,6 +1,8 @@
 #pragma once
 #include "Core/EngineSubsystem.h"
 
+#include <forward_list>
+
 #include "Assets/Asset.h"
 #include "Assets/Core/AssetFileMetaData.h"
 #include "Assets/Core/AssetHandle.h"

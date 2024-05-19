@@ -31,7 +31,7 @@ void Game::IdleState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 
 	if (navMeshAgent == nullptr) { return; }
 
-	navMeshAgent->StopNavMesh();
+	navMeshAgent->ClearTarget(world);
 }
 
 CE::MetaType Game::IdleState::Reflect()

@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Assets/Level.h"
 
+#include <map>
 #include <numeric>
 
 #include "Core/AssetManager.h"
@@ -15,7 +16,6 @@
 #include "Assets/Core/AssetSaveInfo.h"
 #include "Components/CameraComponent.h"
 #include "Components/DirectionalLightComponent.h"
-#include "Components/FlyCamControllerComponent.h"
 #include "Components/NameComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"

@@ -55,15 +55,7 @@ void Game::AttackingState::OnAiTick(CE::World& world, entt::entity owner, float)
 
 	if (mTargetEntity != entt::null)
 	{
-		const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(mTargetEntity);
-
-		if (transformComponent == nullptr)
-		{
-			LOG(LogAI, Warning, "A transform component on the player entity is needed to run the Attacking State!");
-			return;
-		}
-
-		navMeshAgent->UpdateTargetPosition(*transformComponent);
+		navMeshAgent->SetTargetEntity(mTargetEntity);
 	}
 }
 
@@ -84,7 +76,7 @@ void Game::AttackingState::OnAIStateEnterEvent(CE::World& world, entt::entity ow
 		return;
 	}
 
-	navMeshAgent->StopNavMesh();
+	navMeshAgent->ClearTarget(world);
 }
 
 std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const CE::World& world,
