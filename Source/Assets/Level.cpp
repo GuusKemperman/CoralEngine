@@ -301,12 +301,13 @@ void CE::EraseSerializedComponents(World& world,
 	const std::optional<std::string>& nameOfClassToErase,
 	const std::vector<entt::entity>& eraseFromIds)
 {
-	const MetaType* typeToErase{};
-
-	if (nameOfClassToErase.has_value())
+	if (!nameOfClassToErase.has_value())
 	{
-		typeToErase = MetaManager::Get().TryGetType(*nameOfClassToErase);
+		world.GetRegistry().Destroy(eraseFromIds.begin(), eraseFromIds.end(), false);
+		return;
 	}
+
+	const MetaType* typeToErase = MetaManager::Get().TryGetType(*nameOfClassToErase);
 
 	for (const auto [typeId, storage] : world.GetRegistry().Storage())
 	{
@@ -331,6 +332,8 @@ void CE::EraseSerializedComponents(World& world,
 			}
 		}
 	}
+
+
 }
 
 void CE::EraseSerializedFactory(World& world,
