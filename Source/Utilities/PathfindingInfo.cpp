@@ -81,15 +81,9 @@ std::vector<const Pathfinding::Node*> Pathfinding::Graph::AStarSearch(
 		float mH{};
 	};
 
-	struct CompareNodes
-	{
-		bool operator()(const OpenListItem* lhs, const OpenListItem* rhs) const
-		{
-			return lhs->mG + lhs->mH > rhs->mG + rhs->mH;
-		}
-	};
-
-	std::vector<OpenListItem> openStorage{};
+	// Static, so we can reuse the buffer
+	static std::vector<OpenListItem> openStorage{};
+	openStorage.clear();
 	openStorage.resize(mNodes.size());
 
 	for (int i = 0; i < static_cast<int>(openStorage.size()); i++)
@@ -97,21 +91,35 @@ std::vector<const Pathfinding::Node*> Pathfinding::Graph::AStarSearch(
 		openStorage[i].mId = i;
 	}
 
-	// Initialize an empty vector to store the resulting path
-	std::vector<const Node*> nodePath = {};
+	const auto compareNodes = [](int lhsId, int rhsId)
+		{
+			const OpenListItem& lhs = openStorage[lhsId];
+			const OpenListItem& rhs = openStorage[rhsId];
+			return lhs.mG + lhs.mH > rhs.mG + rhs.mH;
+		};
 
-	std::priority_queue<OpenListItem*, std::vector<OpenListItem*>, CompareNodes> open = {};
-	
+	// Initialize an empty vector to store the resulting path
+	static std::vector<const Node*> nodePath = {};
+	nodePath.clear();
+
 	// Create the OpenListItem for the start node and add it to the map and priority queue
 	OpenListItem& startOpenListItem = openStorage[startNode->GetId()];
 	startOpenListItem.mH = Heuristic(*startNode, *endNode);
-	open.emplace(&startOpenListItem);
 
-	while (!open.empty())
+	// Static, so we can reuse the buffer
+	static std::vector<uint32> heap{};
+	heap.clear();
+	heap.reserve(mNodes.size());
+	heap.emplace_back(startOpenListItem.mId);
+	std::push_heap(heap.begin(), heap.end(), compareNodes);
+
+	while (!heap.empty())
 	{
 		// Get the node with the lowest F (H + G) from the priority queue
-		const OpenListItem& current = *open.top();
-		open.pop();
+		const OpenListItem& current = openStorage[heap.front()];
+
+		std::pop_heap(heap.begin(), heap.end(), compareNodes);
+		heap.pop_back();
 
 		// If the current node is the end node, construct the path and return it
 		if (current.mId == endNode->GetId())
@@ -155,7 +163,9 @@ std::vector<const Pathfinding::Node*> Pathfinding::Graph::AStarSearch(
 				neighbour.mG = newG;
 				neighbour.mH = Heuristic(mNodes[neighbour.mId], *endNode);
 				neighbour.mCameFromId = current.mId;
-				open.emplace(&neighbour);
+
+				heap.emplace_back(toNodeId);
+				std::push_heap(heap.begin(), heap.end(), compareNodes);
 			}
 		}
 	}

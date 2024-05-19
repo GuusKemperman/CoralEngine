@@ -19,6 +19,7 @@
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Components/TransformComponent.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "World/Registry.h"
@@ -36,6 +37,20 @@ void CE::NavMeshComponent::GenerateNavMesh(const World& world)
 	mCleanedPolygonList = GetDifferences(navMeshData);
 	Triangulation(mCleanedPolygonList);
 	mNavMeshNeedsUpdate = false;
+
+	mBVHWorld.emplace(false);
+	Registry& bvhReg = mBVHWorld->GetRegistry();
+
+	for (uint32 i = 0; i < mPolygonDataNavMesh.size(); i++)
+	{
+		const entt::entity entity = bvhReg.Create(entt::entity{ i });
+		ASSERT(entity == entt::entity{ i });
+		bvhReg.AddComponent<PhysicsBody2DComponent>(entity).mRules = CollisionPresets::sTerrain.mRules;
+		bvhReg.AddComponent<TransformedPolygonColliderComponent>(entity, mPolygonDataNavMesh[i]);
+	}
+
+	BVH& bvh = mBVHWorld->GetPhysics().GetBVHs()[static_cast<int>(CollisionPresets::sTerrain.mRules.mLayer)];
+	bvh.Build();
 }
 
 CE::NavMeshComponent::NavMeshData CE::NavMeshComponent::GenerateNavMeshData(const World& world) const
@@ -424,70 +439,50 @@ void CE::NavMeshComponent::UpdateNavMesh()
 	mNavMeshNeedsUpdate = true;
 }
 
-std::vector<glm::vec2> CE::NavMeshComponent::CleanupPathfinding(const std::vector<TransformedPolygon>& triangles,
+std::vector<glm::vec2> CE::NavMeshComponent::CleanupPathfinding(const std::vector<const Pathfinding::Node*>& nodes,
                                                             glm::vec2 start, glm::vec2 goal) const
 {
 	std::vector<glm::vec2> path{};
 
-	// Check if there are enough triangles to form a path
-	if (triangles.size() < 3)
-	{
-		return {};
-	}
+	path.reserve(nodes.size() + 2);
 
 	// Initialize the path with the start position
-	path.push_back(start);
+	path.emplace_back(start);
 
-	// Compute overlapping vertices between the first two triangles
-	std::vector<std::vector<glm::vec2>> overlappingSides;
-	for (auto currentTriangleVertex : triangles[0].mPoints)
+	// Check if there are enough nodes to form a path
+	if (nodes.size() < 3)
 	{
-		std::vector<glm::vec2> overlappingVertex;
-		for (auto nextTriangleVertex : triangles[1].mPoints)
-		{
-			if (currentTriangleVertex == nextTriangleVertex)
-			{
-				overlappingVertex.emplace_back(currentTriangleVertex);
-			}
-
-			if (overlappingVertex.size() == 2)
-			{
-				overlappingSides.emplace_back(overlappingVertex);
-			}
-		}
+		path.emplace_back(goal);
+		return path;
 	}
 
-
-	// Iterate through the remaining triangles
-	for (uint32 i = 1; i < triangles.size(); i++)
+	for (uint32 i = 1; i < nodes.size() - 1; i++)
 	{
-		std::vector<glm::vec2> overlappingVertex;
-		for (const auto& currentTriangleVertex : triangles[i - 1].mPoints)
+		std::array<glm::vec2, 2> line{};
+		uint32 numPointsFound{};
+
+		for (const glm::vec2& currentTriangleVertex : mPolygonDataNavMesh[nodes[i]->GetId()].mPoints)
 		{
-			for (const auto& nextTriangleVertex : triangles[i].mPoints)
+			for (const glm::vec2& nextTriangleVertex : mPolygonDataNavMesh[nodes[i + 1]->GetId()].mPoints)
 			{
 				if (currentTriangleVertex != nextTriangleVertex)
 				{
 					continue;
 				}
 
-				if (currentTriangleVertex == nextTriangleVertex)
+				line[numPointsFound++] = currentTriangleVertex;
+
+				if (numPointsFound != 2)
 				{
-					overlappingVertex.emplace_back(currentTriangleVertex);
+					continue;
 				}
 
-				if (overlappingVertex.size() == 2)
-				{
-					overlappingSides.emplace_back(overlappingVertex);
-				}
+				const glm::vec2 middlePoint = (line[0] + line[1]) * .5f;
+				path.emplace_back(middlePoint);
+				goto next;
 			}
 		}
-	}
-
-	for (const auto& currentSide : overlappingSides)
-	{
-		const glm::vec2 middlePoint = (currentSide[1] + currentSide[0]) / 2.0f;
-		path.emplace_back(middlePoint);
+	next:;
 	}
 
 	path.emplace_back(goal);
@@ -509,72 +504,49 @@ CE::MetaType CE::NavMeshComponent::Reflect()
 
 std::vector<glm::vec2> CE::NavMeshComponent::FindQuickestPath(glm::vec2 startPos, glm::vec2 endPos) const
 {
-	// Initialize pointers to the start and end nodes
-	const Pathfinding::Node* startNode = nullptr;
-	const Pathfinding::Node* endNode = nullptr;
+	std::vector<glm::vec2> pathFound{};
 
-	// Find the start and end nodes based on their positions
-	for (int i = 0; i < static_cast<int>(mPolygonDataNavMesh.size()); i++)
+	if (!mBVHWorld.has_value())
 	{
-		if (AreOverlapping(mPolygonDataNavMesh[i], startPos))
-		{
-			startNode = &mAStarGraph.mNodes[i];
-		}
-		if (AreOverlapping(endPos, mPolygonDataNavMesh[i]))
-		{
-			endNode = &mAStarGraph.mNodes[i];
-		}
-		if (startNode != nullptr && endNode != nullptr)
-		{
-			break;
-		}
+		LOG(LogWorld, Error, "Could not find path, navmesh was not build yet");
+		return pathFound;
 	}
+
+	// Initialize pointers to the start and end nodes
+	entt::entity startNodeOwner = entt::null;
+	entt::entity endNodeOwner = entt::null;
+
+	const BVH& bvh = mBVHWorld->GetPhysics().GetBVHs()[static_cast<int>(CollisionPresets::sTerrain.mRules.mLayer)];
+
+	struct OnIntersect
+	{
+		static void Callback(const TransformedPolygonColliderComponent&, entt::entity entity, entt::entity& out)
+		{
+			out = entity;
+		}
+
+		static void Callback(const TransformedDiskColliderComponent&, entt::entity, entt::entity&) {}
+		static void Callback(const TransformedAABBColliderComponent&, entt::entity, entt::entity&) {}
+	};
+
+	bvh.Query<OnIntersect, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<true>>(startPos, startNodeOwner);
+	bvh.Query<OnIntersect, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<true>>(endPos, endNodeOwner);
+
 
 	// Check if either the start or end node is not found
-	if (startNode == nullptr || endNode == nullptr)
+	if (startNodeOwner == entt::null
+		|| endNodeOwner == entt::null)
 	{
-		std::vector<glm::vec2> emptyList{};
-		emptyList.clear();
-		return emptyList;
+		return pathFound;
 	}
+
+	const Pathfinding::Node& start = mAStarGraph.mNodes[static_cast<int>(startNodeOwner)];
+	const Pathfinding::Node& end = mAStarGraph.mNodes[static_cast<int>(endNodeOwner)];
 
 	// Initialize a vector to store the node path found by the A* algorithm
-	std::vector<const Pathfinding::Node*> nodePathFound;
-	std::vector<TransformedPolygon> trianglePathFound; // This stores the polygons corresponding to the node path
+	const std::vector<const Pathfinding::Node*> nodePathFound = mAStarGraph.AStarSearch(&start, &end);
+	pathFound = CleanupPathfinding(nodePathFound, startPos, endPos);
 
-	// Perform A* search if start and end nodes are different
-	if (startNode != endNode)
-	{
-		nodePathFound = mAStarGraph.AStarSearch(startNode, endNode);
-
-		// Convert nodes to corresponding polygons
-		for (const auto& node : nodePathFound)
-		{
-			trianglePathFound.push_back(mPolygonDataNavMesh[node->GetId()]);
-		}
-	}
-	else
-	{
-		nodePathFound = {};
-	}
-
-	std::vector<glm::vec2> pathFound = {};
-
-	// Compute the shortest path with the funnel algorithm between start and end positions
-	pathFound = CleanupPathfinding(trianglePathFound, startPos, endPos);
-
-	// Modify the pathFound vector as needed
-	if (pathFound.empty())
-	{
-		pathFound = {startPos};
-	}
-	else
-	{
-		pathFound[1] = {startPos};
-		pathFound.erase(pathFound.begin());
-	}
-
-	pathFound.push_back({endPos});
 	return pathFound;
 }
 
