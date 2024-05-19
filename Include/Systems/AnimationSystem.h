@@ -40,7 +40,7 @@ namespace CE
 
 		void BlendAnimations(SkinnedMeshComponent& meshComponent);
 		void CalculateAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo,	SkinnedMeshComponent& meshComponent, float timeStamp, std::vector<AnimTransform>& output);
-		void BlendTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::vector<AnimTransform>& layer0, const std::vector<AnimTransform>& layer1);
+		void BlendAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::vector<AnimTransform>& layer0, const std::vector<AnimTransform>& layer1);
 
 		std::unordered_map<size_t, AnimMeshInfo> mAnimMeshInfoMap{};
 
