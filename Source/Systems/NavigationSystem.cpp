@@ -6,59 +6,47 @@
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Components/Pathfinding/NavMeshComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
 
-using namespace CE;
-
-void NavigationSystem::Update(World& world, float dt)
+void CE::NavigationSystem::Update(World& world, float dt)
 {
-	auto& registry = world.GetRegistry();
-	const auto navMeshComponentView = registry.View<NavMeshComponent>();
+	Registry& registry = world.GetRegistry();
 
-	for (const auto navMeshId : navMeshComponentView)
-	{
-		auto [navMeshComponent] = navMeshComponentView.get(navMeshId);
+	const entt::entity navMeshOwner = registry.View<NavMeshComponent>().front();
 
-		// ToDo Replace mNavMesh Needs with OnConstruct
-		if (navMeshComponent.mNavMeshNeedsUpdate)
-		{
-			navMeshComponent.GenerateNavMesh(world);
-		}
-	}
-
-	if (!world.HasBegunPlay())
+	if (navMeshOwner == entt::null)
 	{
 		return;
 	}
 
-	// Get the navmesh agent entities
-	const auto agentsView = registry.View<
-		NavMeshAgentComponent, TransformComponent, PhysicsBody2DComponent>();
+	NavMeshComponent& navMesh = registry.Get<NavMeshComponent>(navMeshOwner);
 
-	if (navMeshComponentView.empty()) { return; }
-
-	auto [naveMesh] = navMeshComponentView.get(navMeshComponentView.front());
-
-	// Iterate over the entities that have NavMeshAgent, Transform, and Physics::Body components simultaneously
-	for (auto [agentId, navMeshAgent, agentTransform, agentBody] : agentsView.each())
+	if(!navMesh.WasGenerated())
 	{
-		if (!navMeshAgent.IsChasing())
+		navMesh.GenerateNavMesh(world);
+	}
+
+	// Get the navmesh agent entities
+	const auto agentsView = registry.View<NavMeshAgentComponent, TransformComponent, PhysicsBody2DComponent>();
+
+	for (auto [agentId, agent, agentTransform, agentBody] : agentsView.each())
+	{
+		if (!agent.IsChasing())
 		{
 			continue;
 		}
 
-		std::optional<glm::vec2> targetPosition = navMeshAgent.GetTargetPosition(world);
+		std::optional<glm::vec2> targetPosition = agent.GetTargetPosition(world);
 
 		if (!targetPosition.has_value())
 		{
 			continue;
 		}
 
-		glm::vec2 agentWorldPosition = agentTransform.GetWorldPosition2D();
+		const glm::vec2 agentWorldPosition = agentTransform.GetWorldPosition2D();
 		const glm::vec2 toTarget = *targetPosition - agentWorldPosition;
 		const float length2 = glm::length2(toTarget);
 
@@ -76,10 +64,16 @@ void NavigationSystem::Update(World& world, float dt)
 				entt::to_integral(agentId));
 			continue;
 		}
-		float speed = characterComponent->mCurrentMovementSpeed;
+		const float speed = characterComponent->mCurrentMovementSpeed;
+		const float desiredDistToPoint2 = Math::sqr(speed * .1f);
 
-		navMeshAgent.mPath = naveMesh.FindQuickestPath(agentWorldPosition, *targetPosition);
-		const glm::vec2 moveTowards = navMeshAgent.mPath.size() < 2 ? *targetPosition : navMeshAgent.mPath[1];
+		agent.mPath.erase(agent.mPath.begin(), std::find_if(agent.mPath.begin(), agent.mPath.end(),
+			[desiredDistToPoint2, agentWorldPosition](const glm::vec2& point)
+			{
+				return glm::distance2(agentWorldPosition, point) > desiredDistToPoint2;
+			}));
+
+		const glm::vec2 moveTowards = agent.mPath.empty() ? *targetPosition : agent.mPath[0];
 
 		const glm::vec2 dVec2 = moveTowards - agentWorldPosition;
 
@@ -101,8 +95,13 @@ void NavigationSystem::Update(World& world, float dt)
 	}
 }
 
-void NavigationSystem::Render(const World& world)
+void CE::NavigationSystem::Render(const World& world)
 {
+	if (!DebugRenderer::IsCategoryVisible(DebugCategory::AINavigation))
+	{
+		return;
+	}
+
 	const auto agentsView = world.GetRegistry().View<NavMeshAgentComponent>();
 	for (const auto [agentId, n] : agentsView.each())
 	{
@@ -115,7 +114,7 @@ void NavigationSystem::Render(const World& world)
 					DebugCategory::AINavigation,
 					To3DRightForward(n.mPath[i]),
 					To3DRightForward(n.mPath[i + 1]),
-					{1.f, 0.f, 0.f, 1.f});
+					{ 1.f, 0.f, 0.f, 1.f });
 			}
 		}
 	}
@@ -127,7 +126,59 @@ void NavigationSystem::Render(const World& world)
 	}
 }
 
-MetaType NavigationSystem::Reflect()
+CE::MetaType CE::NavigationSystem::Reflect()
 {
 	return MetaType{MetaType::T<NavigationSystem>{}, "NavigationSystem", MetaType::Base<System>{}};
+}
+
+void CE::UpdatePathsSystem::Update(World& world, float)
+{
+	mNumOfTicksReceived++;
+
+	Registry& registry = world.GetRegistry();
+
+	const entt::entity navMeshOwner = registry.View<NavMeshComponent>().front();
+
+	if (navMeshOwner == entt::null)
+	{
+		return;
+	}
+
+	NavMeshComponent& navMesh = registry.Get<NavMeshComponent>(navMeshOwner);
+
+	if (!navMesh.WasGenerated())
+	{
+		return;
+	}
+
+	const auto agentsView = registry.View<NavMeshAgentComponent, TransformComponent>();
+	uint32 index{};
+
+	for (auto [agentId, agent, agentTransform] : agentsView.each())
+	{
+		if ((mNumOfTicksReceived + index++) % sUpdateEveryNthPath
+			|| !agent.IsChasing())
+		{
+			continue;
+		}
+
+		if (!agent.IsChasing())
+		{
+			continue;
+		}
+
+		std::optional<glm::vec2> targetPosition = agent.GetTargetPosition(world);
+
+		if (!targetPosition.has_value())
+		{
+			continue;
+		}
+
+		agent.mPath = navMesh.FindQuickestPath(agentTransform.GetWorldPosition2D(), *targetPosition);
+	}
+}
+
+CE::MetaType CE::UpdatePathsSystem::Reflect()
+{
+	return MetaType{ MetaType::T<UpdatePathsSystem>{}, "UpdatePathsSystem", MetaType::Base<System>{} };
 }

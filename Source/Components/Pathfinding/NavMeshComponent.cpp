@@ -495,8 +495,6 @@ CE::MetaType CE::NavMeshComponent::Reflect()
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
 
-	type.AddField(&NavMeshComponent::mSpaceBetweenTerrainSamples, "mSpaceBetweenTerrainSamples").GetProperties().Add(Props::sIsScriptableTag);
-
 	type.AddFunc(&NavMeshComponent::UpdateNavMesh, "UpdateNavMesh").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sCallFromEditorTag);
 	ReflectComponentType<NavMeshComponent>(type);
 	return type;

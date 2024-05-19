@@ -14,6 +14,8 @@ namespace CE
 	public:
 		void GenerateNavMesh(const World& world);
 
+		bool WasGenerated() const { return mBVHWorld.has_value(); }
+
 		/**
 		 * \brief
 		 * Finds the quickest path from one point to another, by doing an AStarSearch on the nav mesh.
@@ -33,10 +35,6 @@ namespace CE
 		void DebugDrawNavMesh(const World& world) const;
 
 		bool mNavMeshNeedsUpdate = true;
-
-		float mSpaceBetweenTerrainSamples = 1.0f;
-
-		size_t mMaxNumOfTerrainSamples = 32768;
 
 	private:
 		/// \brief The A* Graph object.
