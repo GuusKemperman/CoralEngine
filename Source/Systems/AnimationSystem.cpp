@@ -65,7 +65,7 @@ void CE::AnimationSystem::BlendAnimations(SkinnedMeshComponent& meshComponent)
 	CalculateAnimTransformsRecursive(info0, meshComponent, meshComponent.mCurrentTime, layer0);
 	CalculateAnimTransformsRecursive(info1, meshComponent, meshComponent.mPrevAnimTime, layer1);
 
-	BlendTransformsRecursive(info0, glm::mat4x4{ 1.0f }, meshComponent, layer0, layer1);
+	BlendAnimTransformsRecursive(info0, glm::mat4x4{ 1.0f }, meshComponent, layer0, layer1);
 }
 
 void CE::AnimationSystem::CalculateAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo, SkinnedMeshComponent& meshComponent, float timeStamp, std::vector<AnimTransform>& output)
@@ -92,7 +92,7 @@ void CE::AnimationSystem::CalculateAnimTransformsRecursive(const AnimMeshInfo& a
 	}
 }
 
-void CE::AnimationSystem::BlendTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::vector<AnimTransform>& layer0, const std::vector<AnimTransform>& layer1)
+void CE::AnimationSystem::BlendAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::vector<AnimTransform>& layer0, const std::vector<AnimTransform>& layer1)
 {
 	glm::mat4x4 globalTransform = animMeshInfo.mAnimNode.get().mTransform;
 
@@ -116,7 +116,7 @@ void CE::AnimationSystem::BlendTransformsRecursive(const AnimMeshInfo& animMeshI
 
 	for (const AnimMeshInfo& child : animMeshInfo.mChildren)
 	{
-		BlendTransformsRecursive(child, globalTransform, meshComponent, layer0, layer1);
+		BlendAnimTransformsRecursive(child, globalTransform, meshComponent, layer0, layer1);
 	}
 }
 
