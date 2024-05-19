@@ -350,9 +350,6 @@ CE::BinaryGSONObject CE::Archiver::SerializeInternal(const World& world, std::ve
 		std::sort(serializedComponentClass.GetChildren().begin(), serializedComponentClass.GetChildren().end(),
 			[](const BinaryGSONObject& lhs, const BinaryGSONObject& rhs)
 			{
-				ASSERT(lhs.GetName().size() == sizeof(entt::entity));
-				ASSERT(rhs.GetName().size() == sizeof(entt::entity));
-
 				// Faster than string comparisons
 				return *reinterpret_cast<const entt::entity*>(lhs.GetName().c_str()) < *reinterpret_cast<const entt::entity*>(rhs.GetName().c_str());
 			});
@@ -473,8 +470,7 @@ void CE::SerializeSingleComponent(const Registry& registry,
 			BinaryGSONMember& nonDefaultProperty = serializedComponent.AddGSONMember(hashedPropertyNameAsBinaryString);
 			MetaAny memberRef = data.MakeRef(component);
 
-			[[maybe_unused]] FuncResult result = (*serializeMemberFunc)(nonDefaultProperty, memberRef);
-			ASSERT_LOG(!result.HasError(), "{}", result.Error());
+			serializeMemberFunc->InvokeUncheckedUnpacked(nonDefaultProperty, memberRef);
 		};
 
 	// We only serialize the differences. Makes the save file smaller and any changes 
@@ -504,21 +500,21 @@ void CE::SerializeSingleComponent(const Registry& registry,
 
 		MetaAny valueInComponent = field.MakeRef(component);
 
-		FuncResult result;
-
 		// Check to see if this object was created by a prefab who has set a different default value for this field
 		const MetaAny* const valueAsOverridenByPrefabOfOrigin = factoryOfOrigin == nullptr ?
 			nullptr :
 			factoryOfOrigin->GetOverridenDefaultValue(field);
 
+		bool areEqual{};
+
 		if (valueAsOverridenByPrefabOfOrigin != nullptr)
 		{
-			result = (*equalityOperator)(valueInComponent, *valueAsOverridenByPrefabOfOrigin);
+			equalityOperator->InvokeUncheckedUnpackedWithRVO(&areEqual, valueInComponent, *valueAsOverridenByPrefabOfOrigin);
 		}
 		else if (arg.mComponentDefaultConstructed != nullptr)
 		{
-			MetaAny defaultvalue = field.MakeRef(const_cast<MetaAny&>(arg.mComponentDefaultConstructed));
-			result = (*equalityOperator)(valueInComponent, defaultvalue);
+			const MetaAny defaultvalue = field.MakeRef(const_cast<MetaAny&>(arg.mComponentDefaultConstructed));
+			equalityOperator->InvokeUncheckedUnpackedWithRVO(&areEqual, valueInComponent, defaultvalue);
 		}
 		else
 		{
@@ -527,13 +523,7 @@ void CE::SerializeSingleComponent(const Registry& registry,
 			continue;
 		}
 
-		ASSERT(!result.HasError());
-		ASSERT(result.HasReturnValue());
-
-		const bool* areEqual = result.GetReturnValue().As<bool>();
-		ASSERT(areEqual != nullptr);
-
-		if (!*areEqual)
+		if (!areEqual)
 		{
 			writeValue(field, i);
 		}
