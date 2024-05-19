@@ -136,7 +136,7 @@ const CE::Registry& CE::BVH::GetRegistry() const
 
 float CE::BVH::UpdateNodeBounds(Node& node)
 {
-    TransformedAABB initialAABB = node.mBoundingBox;
+    const TransformedAABB initialAABB = node.mBoundingBox;
 
     node.mBoundingBox.mMin = glm::vec2(INFINITY);
     node.mBoundingBox.mMax = glm::vec2(-INFINITY);
@@ -147,23 +147,35 @@ float CE::BVH::UpdateNodeBounds(Node& node)
     for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
-        const TransformedAABB& aabb = reg.Get<TransformedAABBColliderComponent>(owner);
-        node.mBoundingBox.CombineWith(aabb);
+        const TransformedAABB* const aabb = reg.TryGet<TransformedAABBColliderComponent>(owner);
+
+        if (aabb != nullptr)
+        {
+    		node.mBoundingBox.CombineWith(*aabb);
+        }
     }
 
     for (uint32 i = 0; i < node.mNumOfCircles; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
-        const TransformedDisk& circle = reg.Get<TransformedDiskColliderComponent>(owner);
-        node.mBoundingBox.CombineWith(circle.GetBoundingBox());
+        const TransformedDisk* const circle = reg.TryGet<TransformedDiskColliderComponent>(owner);
+
+        if (circle != nullptr)
+        {
+    		node.mBoundingBox.CombineWith(circle->GetBoundingBox());
+        }
     }
 
     const uint32 numOfPolygons = node.mTotalNumOfObjects - node.mNumOfAABBS - node.mNumOfCircles;
     for (uint32 i = 0; i < numOfPolygons; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
-        const TransformedPolygon& polygon = reg.Get<TransformedPolygonColliderComponent>(owner);
-        node.mBoundingBox.CombineWith(polygon.GetBoundingBox());
+        const TransformedPolygon* const polygon = reg.TryGet<TransformedPolygonColliderComponent>(owner);
+
+        if (polygon != nullptr)
+        {
+            node.mBoundingBox.CombineWith(polygon->GetBoundingBox());
+        }
     }
 
     return glm::distance2(initialAABB.mMin, node.mBoundingBox.mMin) + glm::distance2(initialAABB.mMax, node.mBoundingBox.mMax);
