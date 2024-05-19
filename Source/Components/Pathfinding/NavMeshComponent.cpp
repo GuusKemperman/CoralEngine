@@ -237,7 +237,7 @@ void CE::NavMeshComponent::Triangulation(const std::vector<TransformedPolygon>& 
 		{
 			if (cdt.triangles[k].neighbors[j] < cdt.triangles.size())
 			{
-				mAStarGraph.ListOfNodes[k].AddEdge(&mAStarGraph.ListOfNodes[cdt.triangles[k].neighbors[j]]);
+				mAStarGraph.mNodes[k].AddEdge(&mAStarGraph.mNodes[cdt.triangles[k].neighbors[j]]);
 			}
 		}
 	}
@@ -518,11 +518,11 @@ std::vector<glm::vec2> CE::NavMeshComponent::FindQuickestPath(glm::vec2 startPos
 	{
 		if (AreOverlapping(mPolygonDataNavMesh[i], startPos))
 		{
-			startNode = &mAStarGraph.ListOfNodes[i];
+			startNode = &mAStarGraph.mNodes[i];
 		}
 		if (AreOverlapping(endPos, mPolygonDataNavMesh[i]))
 		{
-			endNode = &mAStarGraph.ListOfNodes[i];
+			endNode = &mAStarGraph.mNodes[i];
 		}
 		if (startNode != nullptr && endNode != nullptr)
 		{

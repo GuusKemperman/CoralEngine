@@ -51,7 +51,6 @@ void NavigationSystem::Update(World& world, float dt)
 			continue;
 		}
 
-		glm::vec2 agentWorldPosition = {agentTransform.GetWorldPosition().x, agentTransform.GetWorldPosition().z};
 		std::optional<glm::vec2> targetPosition = navMeshAgent.GetTargetPosition(world);
 
 		if (!targetPosition.has_value())
@@ -59,6 +58,7 @@ void NavigationSystem::Update(World& world, float dt)
 			continue;
 		}
 
+		glm::vec2 agentWorldPosition = agentTransform.GetWorldPosition2D();
 		const glm::vec2 toTarget = *targetPosition - agentWorldPosition;
 		const float length2 = glm::length2(toTarget);
 
@@ -78,19 +78,11 @@ void NavigationSystem::Update(World& world, float dt)
 		}
 		float speed = characterComponent->mCurrentMovementSpeed;
 
-		// Find a path from the agent's position to the target's position
-		navMeshAgent.mPath = naveMesh.FindQuickestPath(agentWorldPosition,
-		                                                    targetPosition.value());
+		navMeshAgent.mPath = naveMesh.FindQuickestPath(agentWorldPosition, *targetPosition);
+		const glm::vec2 moveTowards = navMeshAgent.mPath.size() < 2 ? *targetPosition : navMeshAgent.mPath[1];
 
-		if (navMeshAgent.mPath.empty())
-		{
-			continue;
-		}
+		const glm::vec2 dVec2 = moveTowards - agentWorldPosition;
 
-		// Calculate the difference in X and Y coordinates
-		const glm::vec2 dVec2 = navMeshAgent.mPath[1] - agentWorldPosition;
-
-		// Calculate the distance between the agent and the next waypoint
 		const float distance = length(dVec2);
 
 		if (distance == 0.0f)
