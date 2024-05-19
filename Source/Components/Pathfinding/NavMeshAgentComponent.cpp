@@ -85,6 +85,7 @@ void save(cereal::BinaryOutputArchive& ar, const CE::NavMeshAgentComponent::Targ
 	ar(target);
 }
 
+#ifdef EDITOR
 namespace ImGui
 {
 	template<>
@@ -150,6 +151,7 @@ namespace ImGui
 		static constexpr bool sIsSpecialized = true;
 	};
 }
+#endif // EDITOR
 
 template<>
 struct Reflector<CE::NavMeshAgentComponent::TargetT>
