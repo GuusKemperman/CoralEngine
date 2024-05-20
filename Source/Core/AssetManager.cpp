@@ -576,7 +576,7 @@ void CE::AssetManager::UpdateAssetsToLatestVersions()
 			continue;
 		}
 
-		LOG(LogAssets, Message, "Updating metadata on asset {} - will modify file {}", asset.mMetaData.GetName(), asset.mFileOfOrigin->string());
+		LOG(LogAssets, Error, "Metadata of {} is of an older version. It will automatically be updated, make sure to submit the changes to {} to source control.", asset.mMetaData.GetName(), asset.mFileOfOrigin->string());
 
 		const uint32 oldVersion = asset.mMetaData.mMetaDataVersion;
 		asset.mMetaData.mMetaDataVersion = AssetFileMetaData::GetCurrentMetaDataVersion();
