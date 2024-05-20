@@ -2,6 +2,7 @@
 #include "Utilities/Imgui/WorldViewportPanel.h"
 
 #include <imgui/ImGuizmo.h>
+#include <imgui/imgui_internal.h>
 
 #include "Components/CameraComponent.h"
 #include "Components/TransformComponent.h"
@@ -33,6 +34,14 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 		return;
 	}
 
+
+	Internal::CheckShortcuts(world, *selectedEntities,
+		static_cast<Internal::ShortCutType>(
+			Internal::ShortCutType::SelectDeselect
+			| Internal::ShortCutType::CopyPaste
+			| Internal::ShortCutType::Delete
+			| Internal::ShortCutType::GuizmoModes));
+
 	std::vector<entt::entity> dummySelectedEntities{};
 	if (selectedEntities == nullptr)
 	{
@@ -49,7 +58,6 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 		return;
 	}
 
-	ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
 	ImGuizmo::SetRect(windowPos.x + contentMin.x, windowPos.y + contentMin.y, contentSize.x, contentSize.y);
 
 	Renderer::Get().RenderToFrameBuffer(world, frameBuffer, contentSize);
@@ -61,7 +69,7 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 		ImVec2(0, 0),
 		ImVec2(1, 1));
 
-	bool shouldSelectEntityUnderneathMouse = ImGui::IsItemClicked();
+	bool shouldSelectEntityUnderneathMouse = ImGui::IsItemClicked() && ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 
 	// Since it is our 'image' that receives the drag drop, we call this right after the image call.
 	Internal::ReceiveDragDrops(world);
@@ -70,7 +78,7 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 
 	// There is no need to try to draw gizmos/manipulate transforms when nothing is selected
 	if (!selectedEntities->empty()
-		&& Input::Get().HasFocus()) // ImGuizmo has a global state, so we can only draw one at a time,
+		&& ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) // ImGuizmo has a global state, so we can only draw one at a time,
 		// otherwise translating one object translates it in all open viewports.
 	{
 		Internal::CallDrawGizmoEvents(world, *selectedEntities);

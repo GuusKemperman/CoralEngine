@@ -128,7 +128,6 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		ImDrawList* drawList = ImGui::GetCurrentWindow()->DrawList;
 
 		drawList->ChannelsSplit(2);
-
 		drawList->ChannelsSetCurrent(1);
 
 		if (!mSelectedEntities.empty())
@@ -352,8 +351,6 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 	}
 
 	ImGui::EndChild();
-
-	Internal::CheckShortcuts(GetWorld(), mSelectedEntities);
 }
 
 void CE::WorldInspectHelper::SaveState(BinaryGSONObject& state)
@@ -537,7 +534,7 @@ void CE::Internal::RemoveInvalidEntities(CE::World& world, std::vector<entt::ent
 
 bool CE::Internal::ToggleIsEntitySelected(std::vector<entt::entity>& selectedEntities, entt::entity toSelect)
 {
-	if (!Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
+	if (!Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl, false))
 	{
 		selectedEntities.clear();
 	}
@@ -764,11 +761,12 @@ void CE::Internal::DoRaycastAgainstMeshComponents(const World& world, Ray3D ray,
 	}
 }
 
-void CE::Internal::CheckShortcuts(World& world, std::vector<entt::entity>& selectedEntities)
+void CE::Internal::CheckShortcuts(World& world, std::vector<entt::entity>& selectedEntities, ShortCutType types)
 {
 	RemoveInvalidEntities(world, selectedEntities);
 
-	if (Input::Get().WasKeyboardKeyReleased(Input::KeyboardKey::Delete))
+	if (types & ShortCutType::Delete
+		&& Input::Get().WasKeyboardKeyReleased(Input::KeyboardKey::Delete))
 	{
 		DeleteEntities(world, selectedEntities);
 	}
@@ -776,53 +774,62 @@ void CE::Internal::CheckShortcuts(World& world, std::vector<entt::entity>& selec
 	if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl)
 		|| Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
 	{
-		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::C))
+		if (types & ShortCutType::CopyPaste)
 		{
-			CopyToClipBoard(world, selectedEntities);
-		}
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::C))
+			{
+				CopyToClipBoard(world, selectedEntities);
+			}
 
-		std::optional<std::string_view> copiedEntities = GetSerializedEntitiesInClipboard();
-		if (copiedEntities.has_value()
-			&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
-		{
-			PasteClipBoard(world, selectedEntities, *copiedEntities);
-		}
+			std::optional<std::string_view> copiedEntities = GetSerializedEntitiesInClipboard();
+			if (copiedEntities.has_value()
+				&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
+			{
+				PasteClipBoard(world, selectedEntities, *copiedEntities);
+			}
 
-		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::X))
-		{
-			CutToClipBoard(world, selectedEntities);
-		}
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::X))
+			{
+				CutToClipBoard(world, selectedEntities);
+			}
 
-		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::D))
-		{
-			Duplicate(world, selectedEntities);
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::D))
+			{
+				Duplicate(world, selectedEntities);
+			}
 		}
+	
 
-		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::A))
+		if (types & ShortCutType::SelectDeselect
+			&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::A))
 		{
 			const auto& entityStorage = world.GetRegistry().Storage<entt::entity>();
 			selectedEntities = { entityStorage.begin(), entityStorage.end() };
 		}
 	}
 
-	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Escape))
+	if (types & ShortCutType::SelectDeselect
+		&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Escape))
 	{
 		selectedEntities.clear();
 	}
 
-	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::R))
+	if (types & ShortCutType::GuizmoModes)
 	{
-		sGuizmoOperation = ImGuizmo::SCALE;
-	}
+		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::R))
+		{
+			sGuizmoOperation = ImGuizmo::SCALE;
+		}
 
-	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::E))
-	{
-		sGuizmoOperation = ImGuizmo::ROTATE;
-	}
+		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::E))
+		{
+			sGuizmoOperation = ImGuizmo::ROTATE;
+		}
 
-	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::T))
-	{
-		sGuizmoOperation = ImGuizmo::TRANSLATE;
+		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::T))
+		{
+			sGuizmoOperation = ImGuizmo::TRANSLATE;
+		}
 	}
 }
 

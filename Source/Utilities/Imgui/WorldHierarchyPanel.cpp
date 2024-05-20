@@ -20,11 +20,18 @@ namespace CE::Internal
 
 void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* selectedEntities)
 {
+
 	std::vector<entt::entity> dummySelectedEntities{};
 	if (selectedEntities == nullptr)
 	{
 		selectedEntities = &dummySelectedEntities;
 	} // From here on out, we can assume selectedEntities != nullptr
+
+	Internal::CheckShortcuts(world, *selectedEntities,
+		static_cast<Internal::ShortCutType>(
+		Internal::ShortCutType::SelectDeselect 
+		| Internal::ShortCutType::CopyPaste
+		| Internal::ShortCutType::Delete));
 
 	if (ImGui::IsMouseClicked(1)
 		&& ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))

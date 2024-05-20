@@ -99,7 +99,15 @@ namespace CE
 		void PasteClipBoard(World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipboardData);
 		void Duplicate(World& world, std::vector<entt::entity>& selectedEntities);
 
-		void CheckShortcuts(CE::World& world, std::vector<entt::entity>& selectedEntities);
+		enum ShortCutType
+		{
+			Delete = 1 << 1,
+			CopyPaste = 1 << 2,
+			SelectDeselect = 1 << 3,
+			GuizmoModes = 1 << 4
+		};
+
+		void CheckShortcuts(World& world, std::vector<entt::entity>& selectedEntities, ShortCutType types);
 	}
 }
 #endif // EDITOR
