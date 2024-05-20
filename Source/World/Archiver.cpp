@@ -120,7 +120,7 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 	for (const BinaryGSONObject& serializedComponent : serializedStorage.GetChildren())
 	{
 		const std::vector<BinaryGSONMember>& serializedProperties = serializedComponent.GetGSONMembers();
-		const entt::entity owner = remapId(FromBinary<entt::entity>(serializedComponent.GetName()));
+		const entt::entity owner = remapId(*reinterpret_cast<const entt::entity*>(serializedComponent.GetName().data()));
 
 		if (!registry.Valid(owner))
 		{
@@ -164,7 +164,7 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 
 		for (const BinaryGSONMember& serializedProperty : serializedProperties)
 		{
-			const MetaField* const field = componentClass->TryGetField(FromBinary<Name::HashType>(serializedProperty.GetName()));
+			const MetaField* const field = componentClass->TryGetField(*reinterpret_cast<const Name::HashType*>(serializedProperty.GetName().data()));
 
 			if (field == nullptr)
 			{
@@ -181,23 +181,26 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 			const MetaType& memberType = field->GetType();
 
 			MetaAny fieldValue = field->MakeRef(component);
-			FuncResult deserializeMemberResult = memberType.CallFunction(sDeserializeMemberFuncName, serializedProperty, fieldValue);
 
-			if (deserializeMemberResult.HasError())
+			const MetaFunc* func = memberType.TryGetFunc(sDeserializeMemberFuncName);
+
+			if (func == nullptr)
 			{
-				LOG(LogAssets, Warning, "Could not deserialize {}::{} - {}",
+				LOG(LogAssets, Warning, "Could not deserialize {}::{} - No deserialize function",
 					componentClass->GetName(),
-					memberType.GetName(),
-					deserializeMemberResult.Error());
+					memberType.GetName());
+				continue;
 			}
-			else if (memberType.GetTypeId() == MakeTypeId<entt::entity>())
+
+			func->InvokeUncheckedUnpacked(serializedProperty, fieldValue);
+
+			if (memberType.GetTypeId() == MakeTypeId<entt::entity>())
 			{
 				entt::entity& asEntity = *fieldValue.As<entt::entity>();
 				asEntity = remapId(asEntity);
 			}
 		}
 	}
-
 
 	// TransformComponents are kinda dumb, back when i made them I added
 	// pointer stability, and the parent/child relations are stored by
@@ -448,7 +451,7 @@ void CE::SerializeSingleComponent(const Registry& registry,
 
 	// Note that this might be nullptr if it's an empty component
 	MetaAny component = MetaAny{ arg.mComponentClass, const_cast<void*>(arg.mStorage.value(entity)), false };
-	BinaryGSONObject& serializedComponent = parentObject.AddGSONObject(ToBinary(entity));
+	BinaryGSONObject& serializedComponent = parentObject.AddGSONObject(std::string_view{ reinterpret_cast<const char*>(&entity), sizeof(entity) });
 	serializedComponent.ReserveMembers(arg.mComponentClass.GetDirectFields().size());
 
 	const PrefabOriginComponent* prefabOriginComponent = registry.TryGet<PrefabOriginComponent>(entity);
@@ -465,9 +468,8 @@ void CE::SerializeSingleComponent(const Registry& registry,
 			}
 
 			// We only save the hash, which makes the save significantly smaller
-			const std::string hashedPropertyNameAsBinaryString = ToBinary(Name::HashString(data.GetName()));
-
-			BinaryGSONMember& nonDefaultProperty = serializedComponent.AddGSONMember(hashedPropertyNameAsBinaryString);
+			Name::HashType hashedPropertyName = Name::HashString(data.GetName());
+			BinaryGSONMember& nonDefaultProperty = serializedComponent.AddGSONMember(std::string_view{ reinterpret_cast<const char*>(&hashedPropertyName), sizeof(hashedPropertyName) });
 			MetaAny memberRef = data.MakeRef(component);
 
 			serializeMemberFunc->InvokeUncheckedUnpacked(nonDefaultProperty, memberRef);

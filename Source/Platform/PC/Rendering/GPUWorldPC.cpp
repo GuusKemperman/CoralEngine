@@ -418,7 +418,6 @@ void CE::GPUWorld::Update()
         glm::vec3 lightDirection = quatRotation * baseDir;
         float extent = lightComponent.mShadowExtent;
 
-        glm::vec3 lightForward = transform.GetWorldForward();
         glm::mat4x4 projection = glm::orthoLH_ZO(-extent, extent, -extent, extent, -extent, extent);
         glm::mat4x4 view = lightComponent.GetShadowView(mWorld, transform);
         
@@ -516,8 +515,13 @@ void CE::GPUWorld::Update()
             modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
             mConstBuffers[InfoStruct::MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
 
+            // Do we now have a loot of unused space?
+            // If we first draw 10'000 static meshes, then meshCounter will be 10'000,
+            // and the first 10'000 FINAL_BONE_MATRIX_CB slots will be unused, with
+            // each slot being quite large. This leads to buffer overflows with many
+            // static meshes - Guus
             const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
-            mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]->Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
+            mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]->Update(boneMatrices.data(), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
 
             meshCounter++;
         }
