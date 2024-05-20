@@ -52,7 +52,7 @@ namespace
 	glm::vec3 sCurrentSnapToVec3{};
 
 	void RemoveInvalidEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
-	void ToggleIsEntitySelected(std::vector<entt::entity>& selectedEntities, entt::entity toSelect);
+	bool ToggleIsEntitySelected(std::vector<entt::entity>& selectedEntities, entt::entity toSelect);
 
 	void DeleteEntities(CE::World& world, std::vector<entt::entity>& selectedEntities);
 	std::string CopyToClipBoard(const CE::World& world, const std::vector<entt::entity>& selectedEntities);
@@ -1189,6 +1189,12 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 	}
 	ImGui::SetItemTooltip("Create a new entity");
 
+	// Reuse the same buffer
+	static std::vector<entt::entity> displayOrder{};
+	displayOrder.clear();
+
+	entt::entity clickedEntity = entt::null;
+
 	ImGui::SameLine();
 
 	Search::Begin(Search::IgnoreParentScore);
@@ -1198,8 +1204,10 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 			const std::string displayName = NameComponent::GetDisplayName(reg, entity);
 
 			Search::BeginCategory(displayName,
-				[&reg, entity, &selectedEntities](std::string_view name) -> bool
+				[&, entity](std::string_view name) -> bool
 				{
+					displayOrder.emplace_back(entity);
+
 					ImGui::PushID(static_cast<int>(entity));
 
 					const TransformComponent* const transform = reg.TryGet<TransformComponent>(entity);
@@ -1256,7 +1264,7 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 					if (ImGui::Selectable(name.data(), &isSelected, 0, selectableAreaSize))
 					{
-						ToggleIsEntitySelected(*selectedEntities, entity);
+						clickedEntity = entity;
 					}
 
 					ImGui::SetItemTooltip(Format("Entity {}", entt::to_integral(entity)).c_str());
@@ -1342,6 +1350,50 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 	ImGui::InvisibleButton("DragToUnparent", glm::max(static_cast<glm::vec2>(ImGui::GetContentRegionAvail()), glm::vec2{ 1.0f }));
 	ReceiveDragDropOntoParent(reg, std::nullopt);
 	ReceiveDragDrops(world);
+
+	if (clickedEntity == entt::null)
+	{
+		return;
+	}
+
+	if (Input::Get().IsKeyboardKeyHeld(CE::Input::KeyboardKey::LeftShift)
+		&& !selectedEntities->empty())
+	{
+		// Select all the entities in between the clicked entity and the entity that was selected before that
+		const entt::entity previouslyClickedEntity = selectedEntities->back();
+
+		const auto previousInDisplayOrder = std::find(displayOrder.begin(), displayOrder.end(), previouslyClickedEntity);
+		const auto currentInDisplayOrder = std::find(displayOrder.begin(), displayOrder.end(), clickedEntity);
+
+		if (previousInDisplayOrder != displayOrder.end()
+			&& currentInDisplayOrder != displayOrder.end())
+		{
+			const auto begin = currentInDisplayOrder < previousInDisplayOrder ? currentInDisplayOrder : previousInDisplayOrder;
+			const auto end = currentInDisplayOrder < previousInDisplayOrder ? previousInDisplayOrder : currentInDisplayOrder;
+
+			// Only select them if they are not already
+			for (auto it = begin; it != end; ++it)
+			{
+				if (std::find(selectedEntities->begin(), selectedEntities->end(), *it) == selectedEntities->end())
+				{
+					selectedEntities->emplace_back(*it);
+				}
+			}
+		}
+
+		// Ensures the clicked entity is always at the end,
+		// so that that is considered the 'start' the next
+		// time they shift-click to select
+		if (const auto it = std::find(selectedEntities->begin(), selectedEntities->end(), clickedEntity); it != selectedEntities->end())
+		{
+			selectedEntities->erase(it);
+		}
+		selectedEntities->emplace_back(clickedEntity);
+	}
+	else
+	{
+		ToggleIsEntitySelected(*selectedEntities, clickedEntity);
+	}
 }
 
 void CE::WorldHierarchy::ReceiveDragDropOntoParent(Registry& registry,
@@ -1426,7 +1478,7 @@ namespace
 			}), selectedEntities.end());
 	}
 
-	void ToggleIsEntitySelected(std::vector<entt::entity>& selectedEntities, entt::entity toSelect)
+	bool ToggleIsEntitySelected(std::vector<entt::entity>& selectedEntities, entt::entity toSelect)
 	{
 		if (!CE::Input::Get().IsKeyboardKeyHeld(CE::Input::KeyboardKey::LeftControl))
 		{
@@ -1438,11 +1490,13 @@ namespace
 		if (it == selectedEntities.end())
 		{
 			selectedEntities.push_back(toSelect);
+			return true;
 		}
 		else
 		{
 			selectedEntities.erase(it);
 		}
+		return false;
 	}
 
 	void DeleteEntities(CE::World& world, std::vector<entt::entity>& selectedEntities)
