@@ -1,15 +1,11 @@
 #ifdef EDITOR
 #pragma once
-#include "GSON/GSONBinary.h"
 
 namespace CE
 {
 	class World;
-	class TransformComponent;
-	class Registry;
-	class World;
-	class CameraComponent;
 	class FrameBuffer;
+	class BinaryGSONObject;
 
 	/*
 	A little helper class that manages the BeginPlay / EndPlay logic for you, and nicely
@@ -86,76 +82,24 @@ namespace CE
 		float mDeltaTimeRunningAverage = 1.0f / 60.0f;
 	};
 
-	class WorldViewportPanel
+	namespace Internal
 	{
-	public:
-		WorldViewportPanel() = delete;
+		void RemoveInvalidEntities(World& world, std::vector<entt::entity>& selectedEntities);
+		void ReceiveDragDrops(World& world);
 
-		/*
-		Renders the world to an ImGui::Image and allows the user to interact with it through ImGuizmo and drag drop.
+		bool ToggleIsEntitySelected(std::vector<entt::entity>& selectedEntities, entt::entity toSelect);
 
-		The world is rendered to the framebuffer. The framebuffer will be resized if needed, a default constructed
-		framebuffer works just fine. The framebuffer should be kept alive across frames, don't create a framebuffer
-		on the stack and expect it to work.
+		entt::entity GetEntityThatMouseIsHoveringOver(const World& world);
 
-		doUndoStack may be nullptr. If DoUndo stack is nullptr, actions
-		may still be applied to the world, but the user won't be able to undo them.
+		void DeleteEntities(World& world, std::vector<entt::entity>& selectedEntities);
 
-		selectedEntities may be nullptr. If selectedEntities is nullptr, this widget will behave as if no entities are selected, and
-		no entities can be selected.
-		*/
-		static void Display(World& world, FrameBuffer& frameBuffer,
-			std::vector<entt::entity>* selectedEntities);
+		std::optional<std::string_view> GetSerializedEntitiesInClipboard();
+		std::string CopyToClipBoard(const World& world, const std::vector<entt::entity>& selectedEntities);
+		void CutToClipBoard(World& world, std::vector<entt::entity>& selectedEntities);
+		void PasteClipBoard(World& world, std::vector<entt::entity>& selectedEntities, std::string_view clipboardData);
+		void Duplicate(World& world, std::vector<entt::entity>& selectedEntities);
 
-	private:
-		static entt::entity GetEntityThatMouseIsHoveringOver(const World& world);
-
-		static void ShowComponentGizmos(World& world, const std::vector<entt::entity>& selectedEntities);
-		static void SetGizmoRect(glm::vec2 windowPos, glm::vec2 windowSize);
-
-		static bool GizmoManipulateSelectedTransforms(World& world,
-			const std::vector<entt::entity>& selectedEntities,
-			const CameraComponent& camera);
-	};
-
-	class WorldDetails
-	{
-	public:
-		WorldDetails() = delete;
-
-		/*
-		Display a details window where the components of the selected entities can be inspected, added or removed.
-
-		doUndoStack may be nullptr. If DoUndo stack is nullptr, actions
-		may still be applied to the world, but the user won't be able to undo them.
-		*/
-		static void Display(World& world, 
-			std::vector<entt::entity>& selectedEntities);
-	};
-
-	class WorldHierarchy
-	{
-	public:
-		WorldHierarchy() = delete;
-
-		/*
-		Display the world hierarchy, a small menu where you can select/deselect entities and reparent them.
-
-		doUndoStack may be nullptr. If DoUndo stack is nullptr, actions
-		may still be applied to the world, but the user won't be able to undo them.
-
-		selectedEntities may be nullptr. If selectedEntities is nullptr, this widget will behave as if no entities are selected, and
-		no entities can be selected.
-		*/
-		static void Display(World& world,
-			std::vector<entt::entity>* selectedEntities);
-
-	private:
-		// Nullopt to unparent them
-		static void ReceiveDragDropOntoParent(Registry& registry,
-			std::optional<entt::entity> parentAllToThisEntity);
-
-		static void DisplayRightClickPopUp(World& world, std::vector<entt::entity>& selectedEntities);
-	};
+		void CheckShortcuts(CE::World& world, std::vector<entt::entity>& selectedEntities);
+	}
 }
 #endif // EDITOR
