@@ -31,6 +31,7 @@ using namespace Microsoft::WRL;
 #define MAX_MESHES 65000
 #define MAX_PARTICLES 65000
 #define MAX_SKINNED_MESHES 5012
+#define MAX_LIGHTS_PER_CLUSTER 1024
 
 //DESCRIPTOR HEAPS
 #define RT_HEAP						0
