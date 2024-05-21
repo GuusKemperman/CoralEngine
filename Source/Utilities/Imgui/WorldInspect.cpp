@@ -151,13 +151,17 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			}
 
 			ImGui::Checkbox("Snap", &Internal::sShouldGuizmoSnap);
+			if (Input::Get().WasKeyboardKeyReleased(Input::KeyboardKey::LeftControl))
+			{
+				Internal::sShouldGuizmoSnap = Internal::sShouldGuizmoSnapPrevious;
+			}
 			if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
 			{
 				Internal::sShouldGuizmoSnap = true;
 			}
-			if (Input::Get().WasKeyboardKeyReleased(Input::KeyboardKey::LeftControl))
+			else
 			{
-				Internal::sShouldGuizmoSnap = false;
+				Internal::sShouldGuizmoSnapPrevious = Internal::sShouldGuizmoSnap;
 			}
 			ImGui::SameLine();
 

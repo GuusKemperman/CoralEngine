@@ -32,6 +32,7 @@ namespace CE
 		inline ImGuizmo::OPERATION sGuizmoOperation{ ImGuizmo::OPERATION::TRANSLATE };
 		inline ImGuizmo::MODE sGuizmoMode{ ImGuizmo::MODE::WORLD };
 		inline bool sShouldGuizmoSnap{};
+		inline bool sShouldGuizmoSnapPrevious{};
 
 		// Different variable for each operation.
 		inline float sTranslateSnapTo{ 1.0f };
