@@ -325,6 +325,7 @@ void CE::Device::InitializeDevice()
         .AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 9)//17  //Shadow maps
 
         .AddCBuffer(8, D3D12_SHADER_VISIBILITY_PIXEL) //18  //Fog info buffer
+        .AddCBuffer(9, D3D12_SHADER_VISIBILITY_PIXEL) //19  //Particle info buffer
         .AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP) //19  //Sampler
         .AddSampler(1, D3D12_SHADER_VISIBILITY_PIXEL,
                        D3D12_TEXTURE_ADDRESS_MODE_WRAP,

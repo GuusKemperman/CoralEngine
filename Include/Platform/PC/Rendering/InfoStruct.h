@@ -70,9 +70,12 @@ namespace CE::InfoStruct
     };
 
     struct DXParticleInfo {
-        float mDistanceToCamera =0.f;
         glm::mat4x4 mMatrix = glm::mat4(1.f);
         glm::vec4 mColor = glm::vec4(0.f);
+        bool mIsEmissive = false;
+        float mDistanceToCamera =0.f;
+        float mLightIntensity = 1.f;
+        float mLightRadius = 1.f;
         DXMaterialInfo mMaterialInfo{};
         StaticMesh* mMesh;
         Material* mMaterial;
@@ -110,6 +113,7 @@ namespace CE::InfoStruct
         PARTICLE_COLOR_CB,
         UI_MODEL_MAT_CB,
         FOG_CB,
+        PARTICLE_INFO_CB,
         NUM_CBS
     };
 
@@ -138,6 +142,13 @@ namespace CE::InfoStruct
         glm::vec4 mOutlineColor;
         float mThickness;
         float padding[3];
+    };
+
+    struct DXParticleBufferInfo
+    {
+        uint32 mIsEmissive = 0;
+        float mEmissionIntensity = 1.f;
+        float padding[2];
     };
 
     namespace Clustering

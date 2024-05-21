@@ -523,6 +523,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\OutlineComponent.cpp" />
+    <ClCompile Include="Source\Components\Particles\ParticleLightComponent.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\PostProcessingRendererPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
@@ -557,6 +558,7 @@
     </ClCompile>
     <ClCompile Include="Source\Meta\MetaProps.cpp" />
     <ClCompile Include="Source\Components\PlayerComponent.cpp" />
+    <ClCompile Include="Source\Systems\Particles\ParticleLightSystem.cpp" />
     <ClCompile Include="Source\UnitTests\AssetHandleUnitTests.cpp" />
     <ClCompile Include="Source\Utilities\ASync.cpp" />
     <ClCompile Include="Source\Utilities\Events.cpp" />
@@ -1579,9 +1581,11 @@
     <ClInclude Include="Include\Components\IsAwaitingBeginPlayTag.h" />
     <ClInclude Include="Include\Components\MaterialRootComponent.h" />
     <ClInclude Include="Include\Components\OutlineComponent.h" />
+    <ClInclude Include="Include\Components\Particles\ParticleLightComponent.h" />
     <ClInclude Include="Include\Components\PlayerComponent.h" />
     <ClInclude Include="Include\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
+    <ClInclude Include="Include\Systems\Particles\ParticleLightSystem.h" />
     <ClInclude Include="Include\Utilities\ASync.h" />
     <ClInclude Include="Include\Utilities\Geometry2d.h" />
     <ClInclude Include="Include\EditorSystems\ImporterSystem.h" />

@@ -739,9 +739,11 @@ void CE::MeshRenderer::RenderParticles(const World& world)
             BindMaterial(*particle.mMaterial);
         }
 
+
         gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MODEL_MATRIX_CB).Bind(commandList, 1, i, frameIndex);
         gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_COLOR_CB).Bind(commandList, 5, i, frameIndex);
         gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_MATERIAL_INFO_CB).Bind(commandList, 4, i, frameIndex);
+        gpuWorld.GetConstantBuffer(InfoStruct::PARTICLE_INFO_CB).Bind(commandList, 19, i, frameIndex);
         particle.mMesh->DrawMesh();
     }
 }

@@ -23,6 +23,7 @@
 #include "Components/Particles/ParticleEmitterComponent.h"
 #include "Components/Particles/ParticleColorComponent.h"
 #include "Components/Particles/ParticleColorOverTimeComponent.h"
+#include "Components/Particles/ParticleLightComponent.h"
 
 #include "Platform/PC/Core/DevicePC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
@@ -238,6 +239,7 @@ CE::GPUWorld::GPUWorld(const World& world)
     mConstBuffers[InfoStruct::CLUSTER_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::Clustering::DXCluster), 1, "Cluster creation data", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::CLUSTERING_CAM_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::Clustering::DXCameraClustering), 1, "Clustering camera data", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::FOG_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXFogInfo), 1, "Fog info", FRAME_BUFFER_COUNT);
+    mConstBuffers[InfoStruct::PARTICLE_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXParticleInfo), MAX_PARTICLES, "Particle info", FRAME_BUFFER_COUNT);
     
     // Create structured buffers
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
@@ -274,6 +276,7 @@ CE::GPUWorld::GPUWorld(const World& world)
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(unsigned int) * mNumberOfClusters, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER BUFFER");
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB]->CreateUploadBuffer(device, sizeof(unsigned int) * mNumberOfClusters, 0);
+    
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(unsigned int), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER COUNTER BUFFER");
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->CreateUploadBuffer(device, sizeof(unsigned int), 0);
@@ -386,11 +389,11 @@ void CE::GPUWorld::Update()
     // Update lights
     const auto pointLightView = mWorld.get().GetRegistry().View<const PointLightComponent, const TransformComponent>();
     const auto dirLightView = mWorld.get().GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
-    int pointLightCounter = 0;
     int dirLightCounter = 0;
+    mPointLightCounter = 0;
 
     for (auto [entity, lightComponent, transform] : pointLightView.each()) {
-        if(pointLightCounter >= mPointLights.size())
+        if(mPointLightCounter >= mPointLights.size())
         {
             mPointLights.resize(mPointLights.size() + 100);
             mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->mResizeBuffer = true;
@@ -400,8 +403,8 @@ void CE::GPUWorld::Update()
         pointLight.mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
         pointLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
         pointLight.mRadius = lightComponent.mRange;
-        mPointLights[pointLightCounter] = pointLight;
-        pointLightCounter++;
+        mPointLights[mPointLightCounter] = pointLight;
+        mPointLightCounter++;
     }
 
     mLightInfo.mActiveShadowingLight = -1;
@@ -450,7 +453,8 @@ void CE::GPUWorld::Update()
         dirLightCounter++;
     }
 
-    UpdateLights(dirLightCounter, pointLightCounter);
+    UpdateParticles(camera.mPosition);
+    UpdateLights(dirLightCounter, mPointLightCounter);
 
     // Update materials
     // 
@@ -538,7 +542,6 @@ void CE::GPUWorld::Update()
 
     mPostProcData.Update(mWorld);
     UpdateClusterData(camera);
-    UpdateParticles(camera.mPosition);
 }
 
 uint32 CE::GPUWorld::ReadCompactClusterCounter() const
@@ -617,14 +620,16 @@ void CE::GPUWorld::InitializeShadowMaps()
     mShadowMap->mScissorRect.right = static_cast<LONG>(mShadowMap->mViewport.Width);
     mShadowMap->mScissorRect.bottom = static_cast<LONG>(mShadowMap->mViewport.Height);
 }
+
 void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
 {
     Device& engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
-    uint32 particleCounter = 0;
 
     const auto simpleColorParticles = mWorld.get().GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>(entt::exclude<ParticleColorOverTimeComponent>);
     const auto changingColorParticles = mWorld.get().GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent, const ParticleColorOverTimeComponent>();
+
+    mParticleCount = 0;
 
     {
         for (auto [entity, emitter, meshRenderer, colorComponent] : simpleColorParticles.each())
@@ -642,13 +647,17 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
             Span<const glm::vec3> sizes = emitter.GetParticleSizes();
             Span<const glm::quat> orientations = emitter.GetParticleOrientations();
             Span<const LinearColor> colors = colorComponent.GetColors();
+            auto lightComponent = mWorld.get().GetRegistry().TryGet<ParticleLightComponent>(entity);
+            Span<const float> intensities;
+            if (lightComponent)
+                intensities = lightComponent->GetParticleLightIntensities();
 
             for (uint32 i = 0; i < numOfParticles; i++)
             {
                 if (!emitter.IsParticleAlive(i))
                     continue;
 
-                if (particleCounter >= MAX_PARTICLES)
+                if (mParticleCount >= MAX_PARTICLES)
                 {
                     LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
                     return;
@@ -664,9 +673,30 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                 particleInfo.mDistanceToCamera = glm::length(positions[i] - cameraPos);
                 particleInfo.mColor = colors[i];
                 particleInfo.mMatrix = std::move(mat);
-                mParticles[particleCounter] = std::move(particleInfo);
 
-                particleCounter++;
+                if (lightComponent)
+                {
+                    particleInfo.mIsEmissive = true;
+                    particleInfo.mLightRadius = lightComponent->mLightRadius;
+                    particleInfo.mLightIntensity = intensities[i];
+
+                    if(mPointLightCounter >= mPointLights.size())
+                    {
+                        mPointLights.resize(mPointLights.size() + 100);
+                        mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->mResizeBuffer = true;
+                    }
+
+                    InfoStruct::DXPointLightInfo pointLight;
+                    pointLight.mPosition = glm::vec4(positions[i],1.f);
+                    pointLight.mColorAndIntensity = glm::vec4(glm::vec3(particleInfo.mColor), particleInfo.mLightIntensity);
+                    pointLight.mRadius = lightComponent->mLightRadius;
+                    mPointLights[mPointLightCounter] = pointLight;
+                    mPointLightCounter++;
+                }
+
+                mParticles[mParticleCount] = std::move(particleInfo);
+
+                mParticleCount++;
             }          
         }
     }
@@ -690,13 +720,17 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
             Span<const glm::quat> orientations = emitter.GetParticleOrientations();
             Span<const LinearColor> colors = colorComponent.GetColors();
             const ColorGradient& gradient = colorOverTime.mGradient;
+            auto lightComponent = mWorld.get().GetRegistry().TryGet<ParticleLightComponent>(entity);
+            Span<const float> intensities;
+            if (lightComponent)
+                intensities = lightComponent->GetParticleLightIntensities();
 
             for (uint32 i = 0; i < numOfParticles; i++)
             {
                 if (!emitter.IsParticleAlive(i))
                     continue;
 
-                if (particleCounter >= MAX_PARTICLES)
+                if (mParticleCount >= MAX_PARTICLES)
                 {
                     LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
                     return;
@@ -706,31 +740,55 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
 
                 InfoStruct::DXParticleInfo particleInfo{};
                 particleInfo.mMesh = const_cast<StaticMesh*>(meshRenderer.mParticleMesh.Get());
-                particleInfo.mMaterial = const_cast<Material*>(meshRenderer.mParticleMaterial.Get());
+                particleInfo.mMaterial = const_cast<Material*>(meshRenderer.mParticleMaterial.Get()); 
                 if(meshRenderer.mParticleMaterial)
                     particleInfo.mMaterialInfo = GetMaterial(meshRenderer.mParticleMaterial.Get());
                 particleInfo.mDistanceToCamera = glm::length(positions[i] - cameraPos);
                 particleInfo.mColor = colors[i] * gradient.GetColorAt(lifeTimes[i]);
                 particleInfo.mMatrix = std::move(mat);
-                mParticles[particleCounter] = std::move(particleInfo);
+                if (lightComponent)
+                {
+                    particleInfo.mIsEmissive = true;
+                    particleInfo.mLightRadius = lightComponent->mLightRadius;
+                    particleInfo.mLightIntensity = intensities[i];
 
-                particleCounter++;
+                    if(mPointLightCounter >= mPointLights.size())
+                    {
+                        mPointLights.resize(mPointLights.size() + 100);
+                        mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->mResizeBuffer = true;
+                    }
+
+                    InfoStruct::DXPointLightInfo pointLight;
+                    pointLight.mPosition = glm::vec4(positions[i],1.f);
+                    pointLight.mColorAndIntensity = glm::vec4(glm::vec3(particleInfo.mColor), particleInfo.mLightIntensity);
+                    pointLight.mRadius = lightComponent->mLightRadius;
+                    mPointLights[mPointLightCounter] = pointLight;
+                    mPointLightCounter++;
+                }
+
+                mParticles[mParticleCount] = std::move(particleInfo);
+
+                mParticleCount++;
             }
         }
     }
 
-    mParticleCount = particleCounter;
-    std::sort(mParticles.begin(), mParticles.begin() + particleCounter, [&](InfoStruct::DXParticleInfo& a, InfoStruct::DXParticleInfo& b) {
+    std::sort(mParticles.begin(), mParticles.begin() + mParticleCount, [&](InfoStruct::DXParticleInfo& a, InfoStruct::DXParticleInfo& b) {
         return a.mDistanceToCamera > b.mDistanceToCamera;
     });
 
-    for (uint32 i = 0; i < particleCounter; i++) {
+    for (int i = 0; i < mParticleCount; i++) {
         mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB]->Update(&mParticles[i].mMaterialInfo, sizeof(InfoStruct::DXMaterialInfo), i, frameIndex);
         glm::mat4x4 modelMatrices[2]{};
         modelMatrices[0] = glm::transpose(mParticles[i].mMatrix);
         modelMatrices[1] = glm::transpose(glm::inverse(mParticles[i].mMatrix));
         mConstBuffers[InfoStruct::PARTICLE_MODEL_MATRIX_CB]->Update(modelMatrices, sizeof(glm::mat4x4) * 2, i, frameIndex);
         mConstBuffers[InfoStruct::PARTICLE_COLOR_CB]->Update(&mParticles[i].mColor, sizeof(InfoStruct::DXColorMultiplierInfo), i, frameIndex);
+        
+        InfoStruct::DXParticleBufferInfo particleInfo{};
+        particleInfo.mIsEmissive = mParticles[i].mIsEmissive;
+        particleInfo.mEmissionIntensity = mParticles[i].mLightIntensity;
+        mConstBuffers[InfoStruct::PARTICLE_INFO_CB]->Update(&particleInfo, sizeof(InfoStruct::DXParticleBufferInfo), i, frameIndex);
     }
 }
 
