@@ -196,13 +196,13 @@ namespace CE
 	bool BVH::TestAgainstObject(const InquirerShapeType inquirerShape, const ObjectShapeType& object,
 		entt::entity owner, CallbackAdditionalArgs&&... args)
 	{
-		if (!ShouldCheckFunction::template Callback(object, owner, std::forward<CallbackAdditionalArgs>(args)...)
+		if (!ShouldCheckFunction:: Callback(object, owner, std::forward<CallbackAdditionalArgs>(args)...)
 			|| !AreOverlapping(object, inquirerShape))
 		{
 			return false;
 		}
 
-		OnIntersectFunction::template Callback(object, owner, std::forward<CallbackAdditionalArgs>(args)...);
-		return ShouldReturnFunction::template Callback(object, owner, std::forward<CallbackAdditionalArgs>(args)...);
+		OnIntersectFunction:: Callback(object, owner, std::forward<CallbackAdditionalArgs>(args)...);
+		return ShouldReturnFunction:: Callback(object, owner, std::forward<CallbackAdditionalArgs>(args)...);
 	}
 }

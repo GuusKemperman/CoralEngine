@@ -176,6 +176,12 @@ namespace CE
 		static inline constexpr std::string_view sRenameExtension = ".rename";
 
 	private:
+		// Will attempt to bring all assets up to
+		// date to their latest version
+		void UpdateAssetsToLatestVersions();
+
+		static bool ReplaceMetaData(const std::filesystem::path& path, const AssetFileMetaData& metaData);
+
 		// Made a friend, as the AssetManager is the only one
 		// allowed to create weak assets. We have a ToWeakAsset function
 		// that EachAssetT is allowed to use, without exposing the constructor
