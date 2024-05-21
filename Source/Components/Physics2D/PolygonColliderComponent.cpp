@@ -14,7 +14,7 @@ CE::TransformedPolygon CE::PolygonColliderComponent::CreateTransformedCollider(c
 
 	for (uint32 i = 0; i < mPoints.size(); i++)
 	{
-		points[i] = worldMatrix * glm::vec4{ mPoints[i], 0.0f, 1.0f };
+		points[i] = To2DRightForward(worldMatrix * glm::vec4{ To3DRightForward(mPoints[i]), 1.0f });
 	}
 
 	return points;

@@ -24,7 +24,7 @@ void CE::DebugRenderer::AddCircle(const World& world, DebugCategory::Enum catego
 {
     if (!IsCategoryVisible(category)) return;
 
-    constexpr float dt = glm::two_pi<float>() / 64.0f;
+    constexpr float dt = glm::two_pi<float>() / 8.0f;
     float t = 0.0f;
     glm::vec3 v0{};
 

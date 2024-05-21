@@ -9,9 +9,12 @@
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "Rendering/DebugRenderer.h"
+#include "Utilities/BVH.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Utilities/DrawDebugHelpers.h"
+#include "Utilities/Time.h"
+#include "World/Physics.h"
 
 CE::PhysicsSystem::PhysicsSystem() :
 	mOnCollisionEntryEvents(GetAllBoundEvents(sCollisionEntryEvent)),
@@ -28,21 +31,42 @@ void CE::PhysicsSystem::Update(World& world, float dt)
 		ApplyVelocities(world, dt);
 	}
 
-	UpdateTransformedColliders<DiskColliderComponent, TransformedDiskColliderComponent>(world);
-	UpdateTransformedColliders<AABBColliderComponent, TransformedAABBColliderComponent>(world);
-	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(world);
+	std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> wereItemsAddedToLayer{};
+
+	UpdateTransformedColliders<DiskColliderComponent, TransformedDiskColliderComponent>(world, wereItemsAddedToLayer);
+	UpdateTransformedColliders<AABBColliderComponent, TransformedAABBColliderComponent>(world, wereItemsAddedToLayer);
+	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(world, wereItemsAddedToLayer);
+
+	for (int i = 0; i < static_cast<int>(CollisionLayer::NUM_OF_LAYERS); i++)
+	{
+		BVH& bvh = world.GetPhysics().GetBVHs()[i];
+
+		if (wereItemsAddedToLayer[i]
+			|| bvh.GetAmountRefitted() > 10'000.f)
+		{
+			bvh.Build();
+		}
+		else
+		{
+			bvh.Refit();
+		}
+	}
 
 	if (world.HasBegunPlay()
 		&& !world.IsPaused())
 	{
 		UpdateCollisions(world);
 	}
-
 }
 
 void CE::PhysicsSystem::Render(const World& world)
 {
 	DebugDrawing(world);
+
+	for (const BVH& bvh : world.GetPhysics().GetBVHs())
+	{
+		bvh.DebugDraw();
+	}
 }
 
 void CE::PhysicsSystem::ApplyVelocities(World& world, float dt)
@@ -70,9 +94,13 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 {
 	Registry& reg = world.GetRegistry();
 
-	const auto viewDisk = reg.View<TransformComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>();
-	const auto viewPolygon = reg.View<const PhysicsBody2DComponent, const TransformedPolygonColliderComponent>();
-	const auto viewAABB = reg.View<const PhysicsBody2DComponent, const TransformedAABBColliderComponent>();
+	static std::vector<std::pair<entt::entity, entt::entity>> diskDiskCollisions{};
+	static std::vector<std::pair<entt::entity, entt::entity>> diskAABBCollisions{};
+	static std::vector<std::pair<entt::entity, entt::entity>> diskPolygonCollisions{};
+
+	diskDiskCollisions.clear();
+	diskAABBCollisions.clear();
+	diskPolygonCollisions.clear();
 
 	CollisionData collision;
 
@@ -82,117 +110,153 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 	static std::vector<CollisionData> currentCollisions{};
 	currentCollisions.clear();
 
-	// collisions between a dynamic and static/kinematic body are only resolved if the dynamic body is a disk
-	for (auto it1 = viewDisk.begin(); it1 != viewDisk.end(); ++it1)
+	struct ShouldCheck
 	{
-		const entt::entity entity1 = *it1;
+		static bool Callback(const TransformedDiskColliderComponent&, entt::entity entity2, entt::entity entity1)
+		{
+			return entity1 < entity2;
+		}
+
+		static bool Callback(const TransformedAABBColliderComponent&, entt::entity entity2, entt::entity entity1)
+		{
+			return entity1 != entity2;
+		}
+
+		static bool Callback(const TransformedPolygonColliderComponent&, entt::entity entity2, entt::entity entity1)
+		{
+			return entity1 != entity2;
+		}
+	};
+
+	struct OnIntersect
+	{
+		static void Callback(const TransformedDiskColliderComponent&, entt::entity entity2, entt::entity entity1)
+		{
+			diskDiskCollisions.emplace_back(entity1, entity2);
+		}
+
+		static void Callback(const TransformedAABBColliderComponent&, entt::entity entity2, entt::entity entity1)
+		{
+			diskAABBCollisions.emplace_back(entity1, entity2);
+		}
+
+		static void Callback(const TransformedPolygonColliderComponent&, entt::entity entity2, entt::entity entity1)
+		{
+			diskPolygonCollisions.emplace_back(entity1, entity2);
+		}
+	};
+
+	const auto viewDisk = reg.View<PhysicsBody2DComponent, TransformedDiskColliderComponent, TransformComponent>();
+	const auto viewPolygon = reg.View<PhysicsBody2DComponent, TransformedPolygonColliderComponent>();
+	const auto viewAABB = reg.View<PhysicsBody2DComponent, TransformedAABBColliderComponent>();
+
+	const Physics::BVHS& bvhs = world.GetPhysics().GetBVHs();
+
+	// In the first pass we collect all the collision pairs,
+	// but we don't move anything to prevent the BVH from being
+	// invalidated.
+	for (entt::entity entity1 : viewDisk)
+	{
+		const auto [body1, disk1] = viewDisk.get<PhysicsBody2DComponent, TransformedDiskColliderComponent>(entity1);
+
+		for (const BVH& bvh : bvhs)
+		{
+			if (body1.mRules.mResponses[static_cast<int>(bvh.GetLayer())] == CollisionResponse::Ignore)
+			{
+				continue;
+			}
+
+			bvh.Query<OnIntersect, ShouldCheck, BVH::DefaultShouldReturnFunction<false>>(disk1, entity1);
+		}
+	}
+
+	for (auto [entity1, entity2] : diskDiskCollisions)
+	{
+		auto [body1, transformedDiskCollider1, transform1] = viewDisk.get<PhysicsBody2DComponent, TransformedDiskColliderComponent, TransformComponent>(entity1);
+		auto [body2, transformedDiskCollider2, transform2] = viewDisk.get<PhysicsBody2DComponent, TransformedDiskColliderComponent, TransformComponent>(entity2);
+
+		if (!CollisionCheckDiskDisk(transformedDiskCollider1, transformedDiskCollider2, collision))
+		{
+			continue;
+		}
+
+		RegisterCollision(currentCollisions, collision, entity1, entity2);
+		const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
+
+		if (response != CollisionResponse::Blocking)
+		{
+			continue;
+		}
+
+		if (body1.mIsAffectedByForces)
+		{
+			auto [newEntity1Pos, entity1Impulse] = ResolveDiskCollision(collision, body1, body2, transformedDiskCollider1.mCentre);
+			body1.ApplyImpulse(entity1Impulse);
+			transform1.SetWorldPosition(newEntity1Pos);
+			transformedDiskCollider1.mCentre = newEntity1Pos;
+		}
+
+		if (body2.mIsAffectedByForces)
+		{
+			auto [newEntity2Pos, entity2Impulse] = ResolveDiskCollision(collision, body2, body1, transformedDiskCollider2.mCentre, -1.0f);
+			body2.ApplyImpulse(entity2Impulse);
+			transform2.SetWorldPosition(newEntity2Pos);
+			transformedDiskCollider2.mCentre = newEntity2Pos;
+		}
+	}
+
+	for (const auto [entity1, entity2] : diskAABBCollisions)
+	{
 		auto [transform1, body1, transformedDiskCollider1] = viewDisk.get<TransformComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>(entity1);
+		auto [body2, transformedAABBCollider] = viewAABB.get<PhysicsBody2DComponent, TransformedAABBColliderComponent>(entity2);
 
-		// Workaround, because ***REMOVED*** doesn't like it otherwise
-		TransformedDiskColliderComponent* pointerToTransformedDiskCollider1 = &transformedDiskCollider1;
+		const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
 
-		// Can be modified by ResolveCollision. Is only actually applied
-		// to the transform at the end of this loop, for performance
-		// reasons.
-		glm::vec2 entity1Pos = transform1.GetWorldPosition2D();
-		const glm::vec2 entity1PosAtStart = entity1Pos;
-		glm::vec2 entity1TotalImpulse{};
-
-		auto resolveCollisionFor1 = [&pointerToTransformedDiskCollider1, &entity1Pos, &entity1TotalImpulse](ResolvedCollision resolvedCollision)
-			{
-				entity1TotalImpulse += resolvedCollision.mImpulse;
-				entity1Pos = resolvedCollision.mResolvedPosition;
-				pointerToTransformedDiskCollider1->mCentre = entity1Pos;
-			};
-
-		// disk-disk collisions
-		for (auto it2 = [&it1]{ auto tmp = it1; ++tmp; return tmp; }(); it2 != viewDisk.end(); ++it2)
+		if (response == CollisionResponse::Ignore)
 		{
-			const entt::entity entity2 = *it2;
-			ASSERT(entity1 != entity2);
-			auto [transform2, body2, transformedDiskCollider2] = viewDisk.get<TransformComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>(entity2);
-
-			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
-
-			if (response == CollisionResponse::Ignore)
-			{
-				continue;
-			}
-
-			const glm::vec2 entity2Pos = transformedDiskCollider2.mCentre;
-
-			if (CollisionCheckDiskDisk(transformedDiskCollider1, transformedDiskCollider2, collision))
-			{
-				RegisterCollision(currentCollisions, collision, entity1, entity2);
-
-				if (response == CollisionResponse::Blocking)
-				{
-					if (body1.mIsAffectedByForces)
-					{
-						resolveCollisionFor1(ResolveDiskCollision(collision, body1, body2, entity1Pos));
-					}
-
-					if (body2.mIsAffectedByForces)
-					{
-						auto [newEntity2Pos, entity2Impulse] = ResolveDiskCollision(collision, body2, body1, entity2Pos, -1.0f);
-						body2.ApplyImpulse(entity2Impulse);
-						transform2.SetWorldPosition(newEntity2Pos);
-						transformedDiskCollider2.mCentre = newEntity2Pos;
-					}
-				}
-			}
+			continue;
 		}
 
-		// disk-polygon collisions
-		for (const auto [entity2, body2, transformedPolygonCollider] : viewPolygon.each())
+		if (CollisionCheckDiskAABB(transformedDiskCollider1, transformedAABBCollider, collision))
 		{
-			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
+			RegisterCollision(currentCollisions, collision, entity1, entity2);
 
-			if (response == CollisionResponse::Ignore)
+			if (response == CollisionResponse::Blocking
+				&& body1.mIsAffectedByForces)
 			{
-				continue;
-			}
-
-			if (CollisionCheckDiskPolygon(transformedDiskCollider1, transformedPolygonCollider, collision))
-			{
-				RegisterCollision(currentCollisions, collision, entity1, entity2);
-
-				if (response == CollisionResponse::Blocking
-					&& body1.mIsAffectedByForces)
-				{
-					resolveCollisionFor1(ResolveDiskCollision(collision, body1, body2, entity1Pos));
-				}
+				auto [newEntity1Pos, entity1Impulse] = ResolveDiskCollision(collision, body1, body2, transformedDiskCollider1.mCentre);
+				body1.ApplyImpulse(entity1Impulse);
+				transform1.SetWorldPosition(newEntity1Pos);
+				transformedDiskCollider1.mCentre = newEntity1Pos;
 			}
 		}
+	}
 
-		// disk-aabb collisions
-		for (const auto [entity2, body2, transformedAABBCollider] : viewAABB.each())
+	for (auto [entity1, entity2] : diskPolygonCollisions)
+	{
+		auto [transform1, body1, transformedDiskCollider1] = viewDisk.get<TransformComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>(entity1);
+		auto [body2, transformedPolygonCollider2] = viewPolygon.get<PhysicsBody2DComponent, TransformedPolygonColliderComponent>(entity2);
+
+		const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
+
+		if (response == CollisionResponse::Ignore)
 		{
-			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
-
-			if (response == CollisionResponse::Ignore)
-			{
-				continue;
-			}
-
-			if (CollisionCheckDiskAABB(transformedDiskCollider1, transformedAABBCollider, collision))
-			{
-				RegisterCollision(currentCollisions, collision, entity1, entity2);
-
-				if (response == CollisionResponse::Blocking
-					&& body1.mIsAffectedByForces)
-				{
-					resolveCollisionFor1(ResolveDiskCollision(collision, body1, body2, entity1Pos));
-				}
-			}
+			continue;
 		}
 
-		if (entity1Pos != entity1PosAtStart)
+		if (CollisionCheckDiskPolygon(transformedDiskCollider1, transformedPolygonCollider2, collision))
 		{
-			transform1.SetWorldPosition(entity1Pos);
-		}
+			RegisterCollision(currentCollisions, collision, entity1, entity2);
 
-		body1.ApplyImpulse(entity1TotalImpulse);
+			if (response == CollisionResponse::Blocking
+				&& body1.mIsAffectedByForces)
+			{
+				auto [newEntity1Pos, entity1Impulse] = ResolveDiskCollision(collision, body1, body2, transformedDiskCollider1.mCentre);
+				body1.ApplyImpulse(entity1Impulse);
+				transform1.SetWorldPosition(newEntity1Pos);
+				transformedDiskCollider1.mCentre = newEntity1Pos;
+			}
+		}
 	}
 
 	static std::vector<std::reference_wrapper<const CollisionData>> enters{};
@@ -238,11 +302,19 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 	std::swap(mPreviousCollisions, currentCollisions);
 }
 
+
 template <typename Collider, typename TransformedCollider>
-void CE::PhysicsSystem::UpdateTransformedColliders(World& world)
+void CE::PhysicsSystem::UpdateTransformedColliders(World& world, std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>& wereItemsAddedToLayer)
 {
 	Registry& reg = world.GetRegistry();
-	const auto collidersWithoutTransformed = reg.View<Collider>(entt::exclude_t<TransformedCollider>{});
+	const auto collidersWithoutTransformed = reg.View<const PhysicsBody2DComponent, const Collider>(entt::exclude_t<TransformedCollider>{});
+
+	for (entt::entity entity : collidersWithoutTransformed)
+	{
+		const PhysicsBody2DComponent& body = collidersWithoutTransformed.template get<PhysicsBody2DComponent>(entity);
+		wereItemsAddedToLayer[static_cast<int>(body.mRules.mLayer)] = true;
+	}
+
 	reg.AddComponents<TransformedCollider>(collidersWithoutTransformed.begin(), collidersWithoutTransformed.end());
 
 	const auto transformedWithoutColliders = reg.View<TransformedCollider>(entt::exclude_t<Collider>{});
