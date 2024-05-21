@@ -48,11 +48,6 @@ void CE::AbilitySystem::Update(World& world, float dt)
     auto viewCharacters = reg.View<CharacterComponent, AbilitiesOnCharacterComponent, EffectsOnCharacterComponent>();
     for (auto [entity, characterData, abilities, effects] : viewCharacters.each())
     {
-        if (characterData.mCurrentHealth <= 0.0f)
-        {
-            reg.Destroy(entity, true);
-        }
-
         // Durational effects
         std::vector<DurationalEffect>& durationalEffects = effects.mDurationalEffects;
         for (auto it = durationalEffects.begin(); it != durationalEffects.end();)
