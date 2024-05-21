@@ -12,6 +12,7 @@
 #include "Components/AnimationRootComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Systems/AbilitySystem.h"
 
 
@@ -23,6 +24,16 @@ void Game::ChargeDashState::OnAiTick(CE::World& world, const entt::entity owner,
 	{
 		animationRootComponent->SwitchAnimation(world.GetRegistry(), mChargingAnimation, 0.0f);
 	}
+
+	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
+
+	if (physicsBody2DComponent == nullptr)
+	{
+		LOG(LogAI, Warning, "An PhysicsBody2D component is needed to run the Dashing State!");
+		return;
+	}
+
+	physicsBody2DComponent->mLinearVelocity = {};
 
 	mCurrentChargeTimer += dt;
 }
