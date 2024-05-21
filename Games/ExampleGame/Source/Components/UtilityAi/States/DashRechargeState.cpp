@@ -90,7 +90,7 @@ void Game::DashRechargeState::OnAIStateEnterEvent(CE::World& world, entt::entity
 		return;
 	}
 
-	navMeshAgent->StopNavMesh();
+	navMeshAgent->ClearTarget(world);
 }
 
 CE::MetaType Game::DashRechargeState::Reflect()

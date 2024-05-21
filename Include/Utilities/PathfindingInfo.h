@@ -95,7 +95,7 @@ namespace CE
 			explicit Graph(const std::vector<Node>& nodes);
 
 			/// \brief The vector containing all the nodes belonging to this graph
-			std::vector<Node> ListOfNodes{};
+			std::vector<Node> mNodes{};
 
 			/**
 			 * \brief AddNode, creates a default node based on it's location.
@@ -125,49 +125,6 @@ namespace CE
 			 * \return The heuristic estimate as a float
 			 */
 			[[nodiscard]] float Heuristic(const Node& currentNode, const Node& endNode) const;
-
-			/**
-			 * \brief
-			 * The OpenListItem struct is used in order to store info for each node.
-			 * Objects of this type are created each time the AStarSearch function is called upon in order to,
-			 * make sure that info between each iteration of AStarSearch per agent won't mess with each other
-			 */
-			struct OpenListItem
-			{
-				float mG = 0;
-				float mH = 0;
-				int mId{};
-
-				bool mVisited = false;
-
-				const Node* mActualNode = nullptr;
-				const Node* mParentNode = nullptr;
-
-				OpenListItem()
-				{
-					// Initialize members if needed
-					mId = 0;
-				}
-
-				/**
-				 * \brief Constructor to initialize the open list item
-				 * \param id The node's id
-				 * \param actualNode The open list item's node pointer
-				 */
-				OpenListItem(const int id, const Node* actualNode) : mId(id), mActualNode(actualNode)
-				{
-				}
-			};
-
-			/**
-			 * \brief
-			 * CompareNodes is a struct containing a boolean operator used to define how to compare OpenListItems
-			 * within the priority queue used in the AStarSearch.
-			 */
-			struct CompareNodes
-			{
-				bool operator()(const OpenListItem* lhs, const OpenListItem* rhs) const;
-			};
 		};
 	};
 }

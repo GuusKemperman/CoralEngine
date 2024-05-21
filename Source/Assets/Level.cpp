@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Assets/Level.h"
 
+#include <map>
 #include <numeric>
 
 #include "Core/AssetManager.h"
