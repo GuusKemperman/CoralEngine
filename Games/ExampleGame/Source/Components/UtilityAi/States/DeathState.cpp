@@ -1,7 +1,6 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/DeathState.h"
 
-#include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
@@ -22,7 +21,10 @@ void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, cons
 
 	physicsBody2DComponent->mLinearVelocity = { 0,0 };
 
-	if (!mDestroyEntityWhenDead) { return; }
+	if (!mDestroyEntityWhenDead)
+	{
+		return;
+	}
 
 	mCurrentDeathTimer += dt;
 
@@ -38,7 +40,7 @@ float Game::DeathState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 
 	if (characterComponent->mCurrentHealth <= 0.f)
 	{
-		return 1.f;
+		return std::numeric_limits<float>::infinity();
 	}
 
 	return 0.f;

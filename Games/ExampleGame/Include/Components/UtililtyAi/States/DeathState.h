@@ -23,8 +23,10 @@ namespace Game
 		float mCurrentDeathTimer = 0.0f;
 
 		bool mDestroyEntityWhenDead = false;
-	private:
+
 		float mMaxDeathTime = 5.0f;
+
+	private:
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
