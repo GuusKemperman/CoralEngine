@@ -25,10 +25,6 @@ void Game::DashRechargeState::OnAiTick(CE::World& world, entt::entity owner, flo
 	{
 		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashRechargeAnimation, 0.0f);
 	}
-	else
-	{
-		LOG(LogAI, Warning, "An animationRoot component is needed to run the DashRecharge State!");
-	}
 	
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
