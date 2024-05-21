@@ -205,7 +205,7 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 		}
 	}
 
-	for (const auto [entity1, entity2] : diskAABBCollisions)
+	for (const auto& [entity1, entity2] : diskAABBCollisions)
 	{
 		auto [transform1, body1, transformedDiskCollider1] = viewDisk.get<TransformComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>(entity1);
 		auto [body2, transformedAABBCollider] = viewAABB.get<PhysicsBody2DComponent, TransformedAABBColliderComponent>(entity2);
