@@ -8,8 +8,9 @@ env:
   # Path to the solution file relative to the root of the project
   SOLUTION_FILE_PATH: "Coral.sln"
 
+# Give permission to write to the release
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-and-upload:
@@ -24,14 +25,9 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: msbuild /p:Configuration=Release /p:Platform=x64 ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Uploading artifacts
-      uses: actions/upload-artifact@v4
+    - uses: AButler/upload-release-assets@v3.0
       with:
-        name: Lichgate
+        upload_url: ${{ github.event.release.upload_url }}
         # Yes. Our project is for now named ExampleGame, if we will change it, this will break. We also copy the engine and game assets
-        path: |
-          Games/ExampleGame/Build/x64/Release
-          Assets
-          Games/ExampleGame/Assets
-        if-no-files-found: error
-        retention-days: 90
+        files: "Games/ExampleGame/Build/x64/Release/*;Assets/;Games/ExampleGame/Assets/*"
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
