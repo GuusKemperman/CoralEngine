@@ -131,6 +131,7 @@ namespace CE
         std::vector<InfoStruct::DXPointLightInfo> mPointLights;
         std::vector<InfoStruct::DXParticleInfo> mParticles;
         int mParticleCount = 0;
+        int mPointLightCounter = 0;
 
         std::unique_ptr<InfoStruct::DXShadowMapInfo> mShadowMap;
         std::unique_ptr<FrameBuffer> mSelectedMeshFrameBuffer;
