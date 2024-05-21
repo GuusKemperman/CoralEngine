@@ -16,135 +16,36 @@ CE::AssetFileMetaData::AssetFileMetaData(std::string_view name, const MetaType& 
 	ASSERT(mClass.get().IsDerivedFrom<Asset>());
 }
 
-template<typename T>
-static std::optional<T> TryRead(std::istream& fromStream)
-{
-	T tmp{};
-	fromStream.read(reinterpret_cast<char*>(&tmp), sizeof(T));
-	const std::streamsize amountRead = fromStream.gcount();
-
-	if (amountRead != sizeof(T))
-	{
-		return std::optional<T>{};
-	}
-	return tmp;
-}
-
 std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaData(std::istream& fromStream)
 {
-	std::optional<uint32> version = TryRead<uint32>(fromStream);
-
-	if (!version.has_value())
+	try
 	{
-		LOG(LogAssets, Message, "Asset metadata was empty");
+		cereal::BinaryInputArchive ar{ fromStream };
+
+		uint32 version{};
+		ar(version);
+
+		switch(version)
+		{
+		case 1:
+		case 2:
+		case 3:
+			return ReadMetaDataV1V2V3(fromStream, version);
+		case 4:
+		{
+			return ReadMetaDataV4(ar);
+
+		}
+		default:
+			LOG(LogAssets, Message, "Asset metadata version {} is not recognised and not supported", version);
+			return std::nullopt;
+		}
+	}
+	catch ([[maybe_unused]] const std::exception& e)
+	{
+		LOG(LogAssets, Warning, "Asset metadata version could not be loaded - {}", e.what());
 		return std::nullopt;
 	}
-
-	switch(*version)
-	{
-	case 0: 
-		return ReadMetaDataV0(fromStream, *version);
-	case 1:
-	case 2:
-	case 3:
-		return ReadMetaDataV1V2V3(fromStream, *version);
-	default:
-		LOG(LogAssets, Message, "Asset metadata version {} is not recognised and not supported", *version);
-		return std::nullopt;
-	}
-}
-
-std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV0(std::istream& fromStream, uint32)
-{
-	// In earlier versions, every asset version was 0.
-	// we did not save the metadata version yet.
-	// So if the first version variable is 0,
-	// we assume that metadata version is 0.
-	//
-	// Starting from metaDataVersion 1, we save two version
-	// variables; the first one for the metadata version,
-	// the second for the asset version.
-	uint32 assetVersion = 0;
-
-	std::optional<TypeId> assetClassTypeId = TryRead<TypeId>(fromStream);
-
-	if (!assetClassTypeId.has_value())
-	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
-		return std::nullopt;
-	}
-
-	const MetaType* assetClass = MetaManager::Get().TryGetType(*assetClassTypeId);
-
-	if (assetClass == nullptr)
-	{
-		LOG(LogAssets, Error, "Asset metadata invalid: There is no class with typeid of \"{}\"", *assetClassTypeId);
-		return std::nullopt;
-	}
-
-	if (!assetClass->IsDerivedFrom<Asset>())
-	{
-		LOG(LogAssets, Error, "Asset metadata invalid: \"{}\" does not derive from Asset", assetClass->GetName());
-		return std::nullopt;
-	}
-
-	std::optional<uint16> nameSize = TryRead<uint16>(fromStream);
-
-	if (!nameSize.has_value())
-	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
-		return std::nullopt;
-	}
-
-	std::string name{};
-	name.resize(*nameSize);
-	if (fromStream.readsome(name.data(), *nameSize) != *nameSize)
-	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
-		return std::nullopt;
-	}
-
-	// Now that we know the name, we can give a proper warning message
-	LOG(LogAssets, Error, "Asset {} needs to be resaved - MetaData of version 0 is deprecated. This asset cannot be loaded on a different compiler than the one it was saved with.", name);
-
-	std::optional<bool> wasImportedFromFile = TryRead<bool>(fromStream);
-
-	if (!wasImportedFromFile.has_value())
-	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
-		return std::nullopt;
-	}
-
-	if (!*wasImportedFromFile)
-	{
-		return AssetFileMetaData{ name, *assetClass, assetVersion };
-	}
-
-	std::optional<uint32> importerVersion = TryRead<uint32>(fromStream);
-
-	if (!importerVersion.has_value())
-	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
-		return std::nullopt;
-	}
-
-	std::optional<uint16> pathSize = TryRead<uint16>(fromStream);
-
-	if (!pathSize.has_value())
-	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
-		return std::nullopt;
-	}
-
-	std::string filePath{};
-	filePath.resize(*pathSize);
-	if (fromStream.readsome(filePath.data(), *pathSize) != *pathSize)
-	{
-		LOG(LogAssets, Message, "Asset metadata was incomplete");
-		return std::nullopt;
-	}
-
-	return AssetFileMetaData{ name, *assetClass, assetVersion, ImporterInfo{ filePath, *importerVersion } };
 }
 
 std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV1V2V3(std::istream& fromStream, uint32 version)
@@ -233,23 +134,54 @@ std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV1V2V3(s
 	return metaData;
 }
 
+std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV4(cereal::BinaryInputArchive& fromArchive)
+{
+	uint32 assetVersion{};
+	Name::HashType hashedAssetClassName{};
+	std::string assetName{};
+	bool wasImported{};
+
+	fromArchive(assetVersion, hashedAssetClassName, assetName, wasImported);
+
+	const MetaType* assetClass = MetaManager::Get().TryGetType(Name{ hashedAssetClassName });
+
+	if (assetClass == nullptr)
+	{
+		LOG(LogAssets, Message, "Failed to load asset {} - Class {} has been deleted or renamed.", assetName, hashedAssetClassName);
+		return std::nullopt;
+	}
+
+	if (!assetClass->IsDerivedFrom<Asset>())
+	{
+		LOG(LogAssets, Message, "Failed to load asset {} - Class {} does not derive from Asset.", assetName, assetClass->GetName());
+		return std::nullopt;
+	}
+
+	std::optional<ImporterInfo> importerInfo{};
+
+	if (wasImported)
+	{
+		importerInfo.emplace();
+		std::string importedFromFile{};
+		fromArchive(importedFromFile, importerInfo->mImporterVersion, importerInfo->mWereEditsMadeAfterImporting);
+		importerInfo->mImportedFile = { std::move(importedFromFile) };
+	}
+
+	std::optional<AssetFileMetaData> metaData{};
+	metaData.emplace(std::move(assetName), *assetClass, assetVersion, std::move(importerInfo));
+	metaData->mMetaDataVersion = 4;
+	return metaData;
+}
+
 void CE::AssetFileMetaData::WriteMetaData(std::ostream& toStream) const
 {
-	toStream.write(reinterpret_cast<const char*>(&sMetaDataVersion), sizeof(sMetaDataVersion));
+	cereal::BinaryOutputArchive ar{ toStream };
 
-	BinaryGSONObject obj{};
-
-	obj.AddGSONMember("av") << mAssetVersion;
-	obj.AddGSONMember("tpId") << mClass.get().GetName();
-	obj.AddGSONMember("nm") << mAssetName;
+	ar(sMetaDataVersion, mAssetVersion, Name::HashString(mClass.get().GetName()), mAssetName, mImporterInfo.has_value());
 
 	if (mImporterInfo.has_value())
 	{
-		obj.AddGSONMember("iv") << mImporterInfo->mImporterVersion;
-		obj.AddGSONMember("iff") << mImporterInfo->mImportedFile.string();
-		obj.AddGSONMember("ed") << mImporterInfo->mWereEditsMadeAfterImporting;
+		ar(mImporterInfo->mImportedFile.string(), mImporterInfo->mImporterVersion, mImporterInfo->mWereEditsMadeAfterImporting);
 	}
-
-	obj.SaveToBinary(toStream);
 }
 
