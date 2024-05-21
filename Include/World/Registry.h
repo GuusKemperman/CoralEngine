@@ -152,7 +152,7 @@ namespace CE
 		friend class World;
 		std::reference_wrapper<World> mWorld; 
 		
-		entt::registry mRegistry;
+		entt::registry mRegistry{};
 
 		struct InternalSystem
 		{

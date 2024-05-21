@@ -15,7 +15,6 @@
 #include "Assets/Core/AssetSaveInfo.h"
 #include "Components/CameraComponent.h"
 #include "Components/DirectionalLightComponent.h"
-#include "Components/FlyCamControllerComponent.h"
 #include "Components/NameComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
@@ -23,34 +22,28 @@
 
 namespace CE
 {
-	static void EraseSerializedComponents(BinaryGSONObject& serializedWorld,
+	static void EraseSerializedComponents(World& world,
 		const std::optional<std::string>& nameOfClassToErase, // If nullopt, will erase it from all component types
 		const std::vector<entt::entity>& eraseFromIds);
 
-	static void EraseSerializedFactory(BinaryGSONObject& serializedComponents,
+	static void EraseSerializedFactory(World& world,
 		const BinaryGSONObject& serializedFactory,
 		const std::string& prefabName);
 
 	static std::vector<entt::entity> GetIds(const BinaryGSONObject& serializedFactory);
 
 	static std::vector<std::reference_wrapper<const BinaryGSONObject>> GetSerializedChildFactories(const BinaryGSONObject& serializedFactory);
-
-	static std::vector<entt::entity> GetAllEntitiesCreatedUsingFactory(const BinaryGSONObject& serializedWorld,
-		const std::string& prefabName,
-		uint32 factoryId);
 }
 
 CE::Level::Level(std::string_view name) :
 	Asset(name, MakeTypeId<Level>()),
-	mSerializedComponents(std::make_unique<BinaryGSONObject>())
+	mWorld(CreateDefaultWorld())
 {
-	World world = CreateDefaultWorld();
-
-	CreateFromWorld(world);
 }
 
 CE::Level::Level(AssetLoadInfo& loadInfo) :
-	Asset(loadInfo)
+	Asset(loadInfo),
+	mWorld(false)
 {
 	BinaryGSONObject savedData{};
 	savedData.LoadFromBinary(loadInfo.GetStream());
@@ -64,26 +57,7 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 		return;
 	}
 
-	// Remove components that no longer exist
-	std::vector<BinaryGSONObject>& serializedComponents = serializedWorld->GetChildren();
-	serializedComponents.erase(std::remove_if(serializedComponents.begin(), serializedComponents.end(),
-		[this](const BinaryGSONObject& serializedComponentClass)
-		{
-			// 'this' is not used if logging is not enabled.
-			(void)(this);
-
-			const std::string& className = serializedComponentClass.GetName();
-			const bool doesClassStillExist = MetaManager::Get().TryGetType(className) != nullptr;
-
-			if (!doesClassStillExist)
-			{
-				LOG(LogAssets, Warning, "Level {} has components of a type {}, but this class no longer exists",
-					GetName(),
-					className);
-			}
-
-			return !doesClassStillExist;
-		}), serializedComponents.end());
+	Archiver::Deserialize(*mWorld, *serializedWorld);
 
 	BinaryGSONObject* const serializedPrefabs = savedData.TryGetGSONObject("Prefabs");
 	if (serializedPrefabs == nullptr)
@@ -112,7 +86,7 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 
 			for (const std::string& componentClassName : diffedFactory.mNamesOfRemovedComponents)
 			{
-				EraseSerializedComponents(*serializedWorld, componentClassName, entitiesMadeWithThisFactory);
+				EraseSerializedComponents(*mWorld, componentClassName, entitiesMadeWithThisFactory);
 			}
 		}
 	}
@@ -122,38 +96,11 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 	{
 		for (const BinaryGSONObject& removedFactory : diffedPrefab.mSerializedFactoriesThatWereRemoved)
 		{
-			EraseSerializedFactory(*serializedWorld, removedFactory, diffedPrefab.mPrefabName);
+			EraseSerializedFactory(*mWorld, removedFactory, diffedPrefab.mPrefabName);
 		}
 	}
 
-
-	// Let's avoid deserializing the entire level unless needed
-	class PossiblyWorld
-	{
-	public:
-		PossiblyWorld(BinaryGSONObject& levelData) :
-			mSerializedComponents(levelData) {}
-
-		World& GetWorld()
-		{
-			if (mWorld == nullptr)
-			{
-				mWorld = std::make_unique<World>(false);
-				Archiver::Deserialize(*mWorld, mSerializedComponents);
-			}
-			return *mWorld;
-		}
-
-		World* TryGetWorld()
-		{
-			return mWorld.get();
-		}
-
-	private:
-		std::unique_ptr<World> mWorld{};
-		BinaryGSONObject& mSerializedComponents;
-	};
-	PossiblyWorld possiblyWorld{ *serializedWorld };
+	mWorld->GetRegistry().RemovedDestroyed();
 
 	// Add entire factories/prefabs
 	for (const DiffedPrefab& diffedPrefab : diffedPrefabs)
@@ -169,7 +116,7 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 				continue;
 			}
 
-			Registry& reg = possiblyWorld.GetWorld().GetRegistry();
+			Registry& reg = mWorld->GetRegistry();
 			const auto prefabOriginView = reg.View<TransformComponent, const PrefabOriginComponent>();
 
 			for (auto [parentEntity, parentTransform, parentOrigin] : prefabOriginView.each())
@@ -205,8 +152,7 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 		{
 			for (const ComponentFactory& componentToAdd : diffedFactory.mAddedComponents)
 			{
-				World& world = possiblyWorld.GetWorld();
-				Registry& reg = world.GetRegistry();
+				Registry& reg = mWorld->GetRegistry();
 
 				const auto prefabOriginView = reg.View<const PrefabOriginComponent>();
 
@@ -221,19 +167,6 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 			}
 		}
 	}
-
-	// The end goal is that level data will only contain the components object,
-	// we used the prefabs object to compare the prefabs and no longer need it;
-
-	if (const World* const world = possiblyWorld.TryGetWorld();
-		world != nullptr)
-	{
-		mSerializedComponents = std::make_unique<BinaryGSONObject>(Archiver::Serialize(*world));
-	}
-	else
-	{
-		mSerializedComponents = std::make_unique<BinaryGSONObject>(std::move(*serializedWorld));
-	}
 }
 
 CE::Level::Level(Level&&) noexcept = default;
@@ -242,26 +175,24 @@ CE::Level::~Level() = default;
 
 void CE::Level::OnSave(AssetSaveInfo& saveInfo) const
 {
-	if (mSerializedComponents == nullptr)
+	if (!mSerializedWorld.has_value())
 	{
-		LOG(LogAssets, Error, "Cannot save level {}, mSerializedComponents is nullptr",
-			GetName());
-		return;
-	}
+		if (!mWorld.has_value())
+		{
+			LOG(LogAssets, Error, "Cannot save level {}, mSerializedComponents and mWorld are null",
+				GetName());
+			return;
+		}
 
-	// Unfortunately when we are working in the editor,
-	// we have to deserialize the world. If the level
-	// was referencing any other assets AND those assets
-	// got renamed, then we need to have the updated names
-	// in our level when saving.
-	World world = CreateWorld(false);
+		mSerializedWorld.emplace(Archiver::Serialize(*mWorld));
+	}
 
 	BinaryGSONObject serializedLevel{};
 
 	std::vector<BinaryGSONObject>& children = serializedLevel.GetChildren();
 	children.reserve(2);
 
-	children.emplace_back(Archiver::Serialize(world));
+	children.emplace_back(std::move(*mSerializedWorld));
 
 	// We don't really care about the name anywhere else in the code,
 	// so instead of making sure we always initialize it with the name
@@ -271,27 +202,46 @@ void CE::Level::OnSave(AssetSaveInfo& saveInfo) const
 	children.emplace_back(GenerateCurrentStateOfPrefabs(children[0]));
 
 	serializedLevel.SaveToBinary(saveInfo.GetStream());
+
+	mSerializedWorld = std::move(children[0]);
 }
 
 void CE::Level::CreateFromWorld(const World& world)
 {
-	mSerializedComponents = std::make_unique<BinaryGSONObject>(Archiver::Serialize(world));
+	mWorld.reset();
+	mSerializedWorld.emplace(Archiver::Serialize(world));
 }
 
 CE::World CE::Level::CreateWorld(const bool callBeginPlayImmediately) const
 {
-	World world{ false };
-
-	if (mSerializedComponents == nullptr)
+	if (mWorld.has_value())
 	{
+		World world = std::move(*mWorld);
+		mWorld.reset();
+
+		if (!mSerializedWorld.has_value())
+		{
+			mSerializedWorld.emplace(Archiver::Serialize(world));
+		}
+
 		if (callBeginPlayImmediately)
 		{
 			world.BeginPlay();
 		}
+
 		return world;
 	}
 
-	Archiver::Deserialize(world, *mSerializedComponents);
+	World world{ false };
+
+	if (mSerializedWorld.has_value())
+	{
+		Archiver::Deserialize(world, *mSerializedWorld);
+	}
+	else
+	{
+		LOG(LogAssets, Warning, "mWorld and mSerializedWorld were both null for {}", GetName());
+	}
 
 	if (callBeginPlayImmediately)
 	{
@@ -347,63 +297,66 @@ std::vector<entt::entity> GetIds(const CE::BinaryGSONObject& serializedFactory)
 	return ids;
 }
 
-void CE::EraseSerializedComponents(BinaryGSONObject& serializedWorld,
+void CE::EraseSerializedComponents(World& world,
 	const std::optional<std::string>& nameOfClassToErase,
 	const std::vector<entt::entity>& eraseFromIds)
 {
-	for (BinaryGSONObject& serializedComponentClass : serializedWorld.GetChildren())
+	if (!nameOfClassToErase.has_value())
 	{
-		if (nameOfClassToErase.has_value()
-			&& serializedComponentClass.GetName() != nameOfClassToErase)
+		world.GetRegistry().Destroy(eraseFromIds.begin(), eraseFromIds.end(), false);
+		return;
+	}
+
+	const MetaType* typeToErase = MetaManager::Get().TryGetType(*nameOfClassToErase);
+
+	for (const auto [typeId, storage] : world.GetRegistry().Storage())
+	{
+		const MetaType* const type = MetaManager::Get().TryGetType(typeId);
+
+		if (type == nullptr)
 		{
 			continue;
 		}
 
-		std::vector<BinaryGSONObject>& serializedComponents = serializedComponentClass.GetChildren();
+		if (nameOfClassToErase.has_value()
+			&& typeToErase != type)
+		{
+			continue;
+		}
 
-		serializedComponents.erase(std::remove_if(serializedComponents.begin(), serializedComponents.end(),
-			[eraseFromIds](const BinaryGSONObject& serializedComponent)
+		for (const entt::entity entity : eraseFromIds)
+		{
+			if (world.GetRegistry().HasComponent(typeId, entity))
 			{
-				const entt::entity ownerOfSerializedComponent = FromBinary<entt::entity>(serializedComponent.GetName());
-				return std::find(eraseFromIds.begin(), eraseFromIds.end(), ownerOfSerializedComponent) != eraseFromIds.end();
-			}), serializedComponents.end());
+				storage.erase(entity);
+			}
+		}
 	}
+
+
 }
 
-void CE::EraseSerializedFactory(BinaryGSONObject& serializedWorld,
+void CE::EraseSerializedFactory(World& world,
 	const BinaryGSONObject& serializedFactory,
 	const std::string& prefabName)
 {
-	const std::vector<entt::entity> entitiesFromThisFactory = GetAllEntitiesCreatedUsingFactory(serializedWorld,
-		prefabName,
-		FromBinary<uint32>(serializedFactory.GetName()));
+	const Name::HashType hashedPrefabName = Name::HashString(prefabName);
+	const uint32 factoryId = FromBinary<uint32>(serializedFactory.GetName());
 
-	BinaryGSONMember* serializedEntities = serializedWorld.TryGetGSONMember("entities");
-
-	if (serializedEntities == nullptr)
+	for (const auto [entity, prefabOrigin] : world.GetRegistry().View<PrefabOriginComponent>().each())
 	{
-		LOG(LogAssets, Error, "Could not erase serialized factory, world does not contain an \"entities\" member");
-		return;
-	}
-
-	std::vector<entt::entity> allEntities{};
-	*serializedEntities >> allEntities;
-
-	allEntities.erase(std::remove_if(allEntities.begin(), allEntities.end(),
-		[&entitiesFromThisFactory](const entt::entity entity)
+		if (prefabOrigin.GetHashedPrefabName() == hashedPrefabName
+			&& prefabOrigin.GetFactoryId() == factoryId)
 		{
-			return std::find(entitiesFromThisFactory.begin(), entitiesFromThisFactory.end(), entity) != entitiesFromThisFactory.end();
-		}), allEntities.end());
-
-	*serializedEntities << allEntities;
-
-	EraseSerializedComponents(serializedWorld, std::nullopt, entitiesFromThisFactory);
+			world.GetRegistry().Destroy(entity, false);
+		}
+	}
 
 	const auto children = GetSerializedChildFactories(serializedFactory);
 
 	for (const BinaryGSONObject& serializedChildFactory : children)
 	{
-		EraseSerializedFactory(serializedWorld, serializedChildFactory, prefabName);
+		EraseSerializedFactory(world, serializedChildFactory, prefabName);
 	}
 }
 
@@ -655,67 +608,6 @@ CE::BinaryGSONObject CE::Level::GenerateCurrentStateOfPrefabs(const BinaryGSONOb
 	}
 
 	return prefabsObject;
-}
-
-std::vector<entt::entity> CE::GetAllEntitiesCreatedUsingFactory(const BinaryGSONObject& serializedWorld,
-	const std::string& prefabName,
-	const uint32 factoryId)
-{
-	const MetaType& prefabOriginType = MetaManager::Get().GetType<PrefabOriginComponent>();
-
-	const BinaryGSONObject* const serializedPrefabOrigins = serializedWorld.TryGetGSONObject(prefabOriginType.GetName());
-
-	std::vector<entt::entity> ids{};
-
-	if (serializedPrefabOrigins == nullptr)
-	{
-		return ids;
-	}
-
-	ids.reserve(serializedPrefabOrigins->GetChildren().size());
-
-	const uint32 hashedPrefabName = Name::HashString(prefabName);
-	const std::string prefabHashNameAsString = ToBinary(hashedPrefabName);
-	const std::string factoryIdAsString = ToBinary(factoryId);
-	const bool isRootFactory = factoryId == hashedPrefabName;
-
-	for (const BinaryGSONObject& serializedPrefabOrigin : serializedPrefabOrigins->GetChildren())
-	{
-		const BinaryGSONMember* const serializedHashedPrefabName = serializedPrefabOrigin.TryGetGSONMember(ToBinary(Name::HashString("mHashedPrefabName")));
-		const BinaryGSONMember* const serializedFactoryId = serializedPrefabOrigin.TryGetGSONMember(ToBinary(Name::HashString("mFactoryId")));
-
-		if (serializedHashedPrefabName == nullptr
-			|| serializedFactoryId == nullptr)
-		{
-			LOG(LogAssets, Warning, "Prefab origin component not serialized as expected");
-			continue;
-		}
-
-		if (serializedHashedPrefabName->GetData() != prefabHashNameAsString)
-		{
-			// Let's check if the prefab got renamed
-			Name::HashType oldHashedPrefabName{};
-			*serializedHashedPrefabName >> oldHashedPrefabName;
-			const WeakAssetHandle<Prefab> prefab = AssetManager::Get().TryGetWeakAsset<Prefab>(oldHashedPrefabName);
-
-			if (prefab == nullptr
-				|| prefab.GetMetaData().GetName() != prefabName)
-			{
-				continue;
-			}
-
-			// The prefab got renamed, carry on
-		}
-
-		if (serializedFactoryId->GetData() == factoryIdAsString
-			// If the prefab got renamed, the factoryId will also have been updated
-			|| (isRootFactory && serializedHashedPrefabName->GetData() == serializedFactoryId->GetData()))
-		{
-			ids.emplace_back(FromBinary<entt::entity>(serializedPrefabOrigin.GetName()));
-		}
-	}
-
-	return ids;
 }
 
 std::vector<entt::entity> CE::GetIds(const BinaryGSONObject& serializedFactory)
