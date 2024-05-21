@@ -401,7 +401,7 @@ CE::MetaType* CE::Script::DeclareMetaType()
 	AddCopyAssign(metaType, false);
 	AddDestructor(metaType, false);
 
-	Internal::ReflectComponentType(metaType, false);
+	Internal::ReflectRuntimeComponentType(metaType, false);
 
 	return &metaType;
 }
