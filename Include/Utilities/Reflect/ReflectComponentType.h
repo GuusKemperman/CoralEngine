@@ -15,7 +15,7 @@ namespace CE
 			return Format("Add {}", componentTypeName);
 		}
 
-		void ReflectComponentType(MetaType& type, bool isEmpty);
+		void ReflectRuntimeComponentType(MetaType& type, bool isEmpty);
 
 		// Removes the functions added during ReflectComponentType
 		void UnreflectComponentType(MetaType& type);
@@ -66,6 +66,6 @@ namespace CE
 			addComponentFunc.GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 		}
 
-		Internal::ReflectComponentType(type, isEmpty);
+		Internal::ReflectRuntimeComponentType(type, isEmpty);
 	}
 }

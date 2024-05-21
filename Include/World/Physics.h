@@ -1,4 +1,6 @@
 #pragma once
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Utilities/BVH.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE
@@ -9,7 +11,7 @@ namespace CE
 	struct TransformedAABB;
 	struct TransformedPolygon;
 	struct CollisionRules;
-	
+
 	/**
 	 * \brief Stores the physics-related data to allow for faster queries.
 	 */
@@ -17,6 +19,7 @@ namespace CE
 	{
 	public:
 		Physics(World& world);
+		~Physics();
 
 		Physics(Physics&&) = delete;
 		Physics(const Physics&) = delete;
@@ -27,6 +30,14 @@ namespace CE
 		std::vector<entt::entity> FindAllWithinShape(const TransformedDisk& shape, const CollisionRules& filter) const;
 		std::vector<entt::entity> FindAllWithinShape(const TransformedAABB& shape, const CollisionRules& filter) const;
 		std::vector<entt::entity> FindAllWithinShape(const TransformedPolygon& shape, const CollisionRules& filter) const;
+
+		using BVHS = std::array<BVH, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>;
+
+		BVHS& GetBVHs() { return mBVHs; }
+		const BVHS& GetBVHs() const { return mBVHs; }
+
+		World& GetWorld() { return mWorld; }
+		const World& GetWorld() const { return mWorld; }
 
 	private:
 		template<typename T>
@@ -39,5 +50,7 @@ namespace CE
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
 		friend class World;
 		std::reference_wrapper<World> mWorld;
+
+		BVHS mBVHs;
 	};
 }

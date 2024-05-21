@@ -38,6 +38,7 @@ void CE::NavMeshAgentComponent::UpdateTargetPosition(const TransformComponent& t
 void CE::NavMeshAgentComponent::StopNavMesh()
 {
 	mIsChasing = false;
+	mJustStopped = true;
 }
 
 bool CE::NavMeshAgentComponent::IsChasing() const

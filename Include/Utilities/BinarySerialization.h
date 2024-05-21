@@ -57,9 +57,9 @@ namespace CE
 			cereal::BinaryInputArchive inArchive{ view };
 			inArchive(out);
 		}
-		catch (cereal::Exception)
+		catch ([[maybe_unused]] const std::exception& e)
 		{
-			LOG(LogCore, Warning, "Invalid value serialized");
+			LOG(LogCore, Warning, "Invalid value serialized - {}", e.what());
 		}
 	}
 
