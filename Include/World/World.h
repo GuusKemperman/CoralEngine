@@ -87,15 +87,14 @@ namespace CE
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(World);
 
+		ScalableTimer mTime{};
+		bool mHasBegunPlay{};
+
 		std::unique_ptr<Registry> mRegistry{};
 		std::unique_ptr<WorldViewport> mViewport{};
 		std::unique_ptr<GPUWorld> mGPUWorld{};
 		std::unique_ptr<Physics> mPhysics{};
 
 		AssetHandle<Level> mLevelToTransitionTo{};
-
-		ScalableTimer mTime{};
-
-		bool mHasBegunPlay{};
 	};
 }

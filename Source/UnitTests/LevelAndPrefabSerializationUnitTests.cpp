@@ -14,6 +14,7 @@
 #include "Components/PrefabOriginComponent.h"
 #include "Components/TopDownCamControllerComponent.h"
 #include "Components/TransformComponent.h"
+#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "World/Archiver.h"
 
 using namespace CE;
@@ -165,15 +166,15 @@ UNIT_TEST(Serialization, EmptyComponentLevelSerialization)
 	Registry& reg = world.GetRegistry();
 
 	const entt::entity entity = reg.Create();
-	reg.AddComponent<IsDestroyedTag>(entity);
-	TEST_ASSERT(reg.HasComponent<IsDestroyedTag>(entity));
+	reg.AddComponent<NavMeshTargetTag>(entity);
+	TEST_ASSERT(reg.HasComponent<NavMeshTargetTag>(entity));
 
 	World reloadedWorld = ReloadUsingLevel(std::move(world));
 	Registry& reloadedReg = reloadedWorld.GetRegistry();
 
 	TEST_ASSERT(reloadedReg.Valid(entity));
 	TEST_ASSERT(reloadedReg.Storage<entt::entity>().in_use() == 1);
-	TEST_ASSERT(reloadedReg.HasComponent<IsDestroyedTag>(entity));
+	TEST_ASSERT(reloadedReg.HasComponent<NavMeshTargetTag>(entity));
 
 	return UnitTest::Success;
 }
