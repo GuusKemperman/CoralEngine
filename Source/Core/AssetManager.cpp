@@ -2,6 +2,7 @@
 #include "Core/AssetManager.h"
 
 #include "Core/FileIO.h"
+#include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
 #include "Meta/MetaTools.h"
 #include "Meta/MetaType.h"
@@ -12,10 +13,6 @@
 
 void CE::AssetManager::PostConstruct()
 {
-	mLookUp.reserve(1024);
-
-	std::vector<std::filesystem::path> assetFiles{};
-
 	struct RenameLink
 	{
 		std::string mOldName{};
@@ -23,6 +20,7 @@ void CE::AssetManager::PostConstruct()
 		std::filesystem::path mRenameFile{};
 	};
 	std::list<RenameLink> renameLinks{};
+	std::vector<std::filesystem::path> assetFiles{};
 
 	assetFiles.reserve(2048);
 
@@ -80,6 +78,13 @@ void CE::AssetManager::PostConstruct()
 	openDirectory(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""));
 	openDirectory(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""));
 
+	mLookUp.reserve(assetFiles.size() + renameLinks.size());
+
+	for (const std::filesystem::path& assetPath : assetFiles)
+	{
+		OpenAsset(assetPath);
+	}
+
 	sNameLookUpMutex.lock();
 
 	for (const RenameLink& link : renameLinks)
@@ -88,14 +93,9 @@ void CE::AssetManager::PostConstruct()
 		sNameLookUp.emplace(Name::HashString(link.mNewName), link.mNewName);
 	}
 
-	for (const std::filesystem::path& assetPath : assetFiles)
+	for (const WeakAssetHandle<>& asset : GetAllAssets<>())
 	{
-		WeakAssetHandle<> asset = OpenAsset(assetPath);
-
-		if (asset != nullptr)
-		{
-			sNameLookUp.emplace(Name::HashString(asset.GetMetaData().GetName()), asset.GetMetaData().GetName());
-		}
+		sNameLookUp.emplace(Name::HashString(asset.GetMetaData().GetName()), asset.GetMetaData().GetName());
 	}
 
 	sNameLookUpMutex.unlock();
@@ -138,6 +138,8 @@ void CE::AssetManager::PostConstruct()
 			link.mOldName, link.mNewName, link.mRenameFile.string());
 		TRY_CATCH_LOG(std::filesystem::remove(link.mRenameFile));
 	}
+
+	UpdateAssetsToLatestVersions();
 }
 
 CE::AssetManager::~AssetManager()
@@ -193,7 +195,7 @@ void CE::AssetManager::UnloadAllUnusedAssets()
 				|| asset.mRefCounters[static_cast<int>(Internal::AssetInternal::RefCountType::Strong)] > 0 // Someone is holding a reference
 				|| !asset.mFileOfOrigin.has_value() // This asset was generated at runtime; if we unload it, we won't be able to load if back in again. 
 				|| asset.mHasBeenDereferencedSinceGarbageCollect) // While this asset is unloaded, it was recently loaded. Maybe something 
-															// is only briefly loading it every ~30 seconds, so lets not unload this.
+				// is only briefly loading it every ~30 seconds, so lets not unload this.
 			{
 				continue;
 			}
@@ -260,33 +262,11 @@ void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view new
 					return;
 				}
 
-				std::string fileContents{};
-
+				if (!ReplaceMetaData(newPath, newMetaData))
 				{
-					std::ifstream file{ newPath, std::ifstream::binary };
+					LOG(LogAssets, Error, "Cannot rename asset {}, could not replace metadata in file {}", asset.GetMetaData().GetName(), newPath.string());
 
-					if (!file.is_open())
-					{
-						LOG(LogAssets, Error, "Cannot rename asset {}, could not open file {} for read", asset.GetMetaData().GetName(), newPath.string());
-						return;
-					}
-
-					(void)AssetFileMetaData::ReadMetaData(file);
-
-					fileContents = StringFunctions::StreamToString(file);
-				}
-
-				{
-					std::ofstream file{ newPath, std::ofstream::binary };
-
-					if (!file.is_open())
-					{
-						LOG(LogAssets, Error, "Cannot rename asset {}, could not open file {} for writing", oldName, newPath.string());
-						return;
-					}
-
-					newMetaData.WriteMetaData(file);
-					file.write(fileContents.c_str(), fileContents.size());
+					return;
 				}
 
 				{
@@ -350,7 +330,7 @@ void CE::AssetManager::DeleteAsset(WeakAssetHandle<>&& asset)
 			const uint32 numOfReferences = asset->mRefCounters[0] + asset->mRefCounters[1];
 			if (numOfReferences != 0)
 			{
-				LOG(LogAssets, Error, "Could not safely delete asset {}, as it was still referenced {} time(s).", 
+				LOG(LogAssets, Error, "Could not safely delete asset {}, as it was still referenced {} time(s).",
 					assetName,
 					numOfReferences);
 				return;
@@ -586,6 +566,62 @@ CE::WeakAssetHandle<> CE::AssetManager::OpenAsset(const std::filesystem::path& p
 	return { TryConstruct(path) };
 }
 
+void CE::AssetManager::UpdateAssetsToLatestVersions()
+{
+	for (Internal::AssetInternal& asset : mAssets)
+	{
+		if (!asset.mFileOfOrigin.has_value()
+			|| asset.mMetaData.GetMetaDataVersion() == AssetFileMetaData::GetCurrentMetaDataVersion())
+		{
+			continue;
+		}
+
+		LOG(LogAssets, Error, "Metadata of {} is of an older version. It will automatically be updated, make sure to submit the changes to {} to source control.", asset.mMetaData.GetName(), asset.mFileOfOrigin->string());
+
+		const uint32 oldVersion = asset.mMetaData.mMetaDataVersion;
+		asset.mMetaData.mMetaDataVersion = AssetFileMetaData::GetCurrentMetaDataVersion();
+		if (!ReplaceMetaData(*asset.mFileOfOrigin, asset.mMetaData))
+		{
+			// It failed, make sure the metadata version is reset
+			asset.mMetaData.mMetaDataVersion = oldVersion;
+		}
+	}
+}
+
+bool CE::AssetManager::ReplaceMetaData(const std::filesystem::path& path, const AssetFileMetaData& metaData)
+{
+	std::string fileContents{};
+
+	{
+		std::ifstream file{ path, std::ifstream::binary };
+
+		if (!file.is_open())
+		{
+			LOG(LogAssets, Error, "Cannot replace metadata, could not open file {} for read", path.string());
+			return false;
+		}
+
+		(void)AssetFileMetaData::ReadMetaData(file);
+
+		fileContents = StringFunctions::StreamToString(file);
+	}
+
+	{
+		std::ofstream file{ path, std::ofstream::binary };
+
+		if (!file.is_open())
+		{
+			LOG(LogAssets, Error, "Cannot replace metadata, could not open file {} for write", path.string());
+			return false;
+		}
+
+		metaData.WriteMetaData(file);
+		file.write(fileContents.c_str(), fileContents.size());
+	}
+
+	return true;
+}
+
 CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::filesystem::path& path)
 {
 	if (path.extension() != sAssetExtension)
@@ -597,15 +633,9 @@ CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::filesyste
 		return nullptr;
 	}
 
-	std::ifstream istream{ path, std::ifstream::binary };
+	std::ifstream file{ path, std::ifstream::binary };
 
-	if (!istream.is_open())
-	{
-		LOG(LogAssets, Warning, "Failed to construct asset {}: Could not open file", path.string());
-		return nullptr;
-	}
-
-	std::optional<AssetFileMetaData> metaData = AssetFileMetaData::ReadMetaData(istream);
+	std::optional<AssetFileMetaData> metaData = AssetFileMetaData::ReadMetaData(file);
 
 	if (!metaData.has_value())
 	{
@@ -625,7 +655,7 @@ CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::optional<
 	}
 
 	Internal::AssetInternal& assetInternal = mAssets.emplace_front(std::move(metaData), path);
-	
+
 	const auto emplaceResult = mLookUp.emplace(Name::HashString(assetInternal.mMetaData.GetName()), assetInternal);
 
 	if (!emplaceResult.second)
