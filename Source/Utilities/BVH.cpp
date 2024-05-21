@@ -151,7 +151,7 @@ float CE::BVH::UpdateNodeBounds(Node& node)
 
         if (aabb != nullptr)
         {
-    		node.mBoundingBox.CombineWith(*aabb);
+    		    node.mBoundingBox.CombineWith(*aabb);
         }
     }
 
@@ -162,7 +162,7 @@ float CE::BVH::UpdateNodeBounds(Node& node)
 
         if (circle != nullptr)
         {
-    		node.mBoundingBox.CombineWith(circle->GetBoundingBox());
+			      node.mBoundingBox.CombineWith(circle->GetBoundingBox());
         }
     }
 
