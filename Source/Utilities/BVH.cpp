@@ -157,7 +157,7 @@ const CE::Registry& CE::BVH::GetRegistry() const
 
 float CE::BVH::UpdateNodeBounds(Node& node)
 {
-    TransformedAABB initialAABB = node.mBoundingBox;
+    const TransformedAABB initialAABB = node.mBoundingBox;
 
     node.mBoundingBox.mMin = glm::vec2(INFINITY);
     node.mBoundingBox.mMax = glm::vec2(-INFINITY);
@@ -172,7 +172,7 @@ float CE::BVH::UpdateNodeBounds(Node& node)
 
         if (aabb != nullptr)
         {
-			node.mBoundingBox.CombineWith(*aabb);
+    		    node.mBoundingBox.CombineWith(*aabb);
         }
     }
 
@@ -183,7 +183,7 @@ float CE::BVH::UpdateNodeBounds(Node& node)
 
         if (circle != nullptr)
         {
-			node.mBoundingBox.CombineWith(circle->GetBoundingBox());
+			      node.mBoundingBox.CombineWith(circle->GetBoundingBox());
         }
     }
 
@@ -195,7 +195,7 @@ float CE::BVH::UpdateNodeBounds(Node& node)
 
         if (polygon != nullptr)
         {
-			node.mBoundingBox.CombineWith(polygon->GetBoundingBox());
+            node.mBoundingBox.CombineWith(polygon->GetBoundingBox());
         }
     }
 

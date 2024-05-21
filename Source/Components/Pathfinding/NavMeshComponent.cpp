@@ -57,8 +57,6 @@ CE::NavMeshComponent::NavMeshData CE::NavMeshComponent::GenerateNavMeshData(cons
 {
 	NavMeshData data{};
 
-	glm::vec2 terrainStart{};
-
 	{ // Generate obstacles
 		const auto& polygonView = world.GetRegistry().View<TransformedPolygonColliderComponent, PhysicsBody2DComponent>();
 		for (const auto [entity, polygonCollider, body] : polygonView.each())
@@ -72,7 +70,6 @@ CE::NavMeshComponent::NavMeshData CE::NavMeshComponent::GenerateNavMeshData(cons
 			else if (body.mRules.mLayer == CollisionLayer::Terrain)
 			{
 				partOfList = &data.mWalkable;
-				terrainStart = polygonCollider.GetCentre();
 			}
 			else
 			{
@@ -94,7 +91,6 @@ CE::NavMeshComponent::NavMeshData CE::NavMeshComponent::GenerateNavMeshData(cons
 			else if (body.mRules.mLayer == CollisionLayer::Terrain)
 			{
 				partOfList = &data.mWalkable;
-				terrainStart = diskCollider.mCentre;
 			}
 			else
 			{
@@ -116,7 +112,6 @@ CE::NavMeshComponent::NavMeshData CE::NavMeshComponent::GenerateNavMeshData(cons
 			else if (body.mRules.mLayer == CollisionLayer::Terrain)
 			{
 				partOfList = &data.mWalkable;
-				terrainStart = aabbCollider.GetCentre();
 			}
 			else
 			{
