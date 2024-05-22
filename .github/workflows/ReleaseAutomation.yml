@@ -1,0 +1,43 @@
+name: ReleaseAutomation
+
+on:
+  release:
+    types: [published]
+
+env:
+  # Path to the solution file relative to the root of the project
+  SOLUTION_FILE_PATH: "Coral.sln"
+
+# Give permission to write to the release
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build project
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild /p:Configuration=Release /p:Platform=x64 ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Delete unneeded files
+      shell: pwsh
+      run: |
+        Del Assets\* -recurse -exclude '*.asset' '*.rename' '*.hlsl'
+        Del Games\ExampleGame\Assets\* -recurse -exclude '*.asset' '*.rename' '*.hlsl'
+
+    # Yes. Our project is for now named ExampleGame, if we will change it, this will break. We also copy the engine and game assets
+    - name: Zip build
+      shell: pwsh
+      run: 7z a -tzip Lichgate.zip Games/ExampleGame/Build/x64/Release/ Assets/ Games/ExampleGame/Assets/
+
+    - name: Upload build
+      uses: AButler/upload-release-assets@v3.0
+      with:
+        files: "Lichgate.zip"
+        repo-token: ${{ secrets.GITHUB_TOKEN }}

@@ -5,9 +5,19 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "Assets/Animation/Animation.h"
+#include "Components/AnimationRootComponent.h"
 
-void Game::IdleState::OnAiTick(CE::World&, entt::entity, float)
+void Game::IdleState::OnAiTick(CE::World& world, entt::entity owner, float)
 {
+	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+
+	if (animationRootComponent == nullptr)
+	{
+		return;
+	}
+
+	animationRootComponent->SwitchAnimation( world.GetRegistry(), mIdleAnimation, 0.0f);
 }
 
 float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
@@ -21,7 +31,7 @@ void Game::IdleState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 
 	if (navMeshAgent == nullptr) { return; }
 
-	navMeshAgent->StopNavMesh();
+	navMeshAgent->ClearTarget(world);
 }
 
 CE::MetaType Game::IdleState::Reflect()
@@ -32,6 +42,8 @@ CE::MetaType Game::IdleState::Reflect()
 	BindEvent(type, CE::sAITickEvent, &IdleState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &IdleState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &IdleState::OnAIStateEnterEvent);
+
+	type.AddField(&IdleState::mIdleAnimation, "mIdleAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<IdleState>(type);
 	return type;

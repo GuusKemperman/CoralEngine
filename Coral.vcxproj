@@ -559,9 +559,34 @@
     </ClCompile>
     <ClCompile Include="Source\Meta\MetaProps.cpp" />
     <ClCompile Include="Source\Components\PlayerComponent.cpp" />
+    <ClCompile Include="Source\Platform\***REMOVED***\Rendering\PostProcessingRenderer***REMOVED***.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\UnitTests\AssetHandleUnitTests.cpp" />
     <ClCompile Include="Source\Utilities\ASync.cpp" />
+    <ClCompile Include="Source\Utilities\BVH.cpp" />
     <ClCompile Include="Source\Utilities\Events.cpp" />
+    <ClCompile Include="Source\Utilities\Imgui\WorldDetailsPanel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Utilities\Imgui\WorldHierarchyPanel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Utilities\Imgui\WorldViewportPanel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Utilities\ManyStrings.cpp" />
     <ClCompile Include="Source\Utilities\PathfindingInfo.cpp" />
     <ClCompile Include="Source\EditorSystems\ImporterSystem.cpp">
@@ -1569,6 +1594,10 @@
     <ClCompile Include="Source\EditorSystems\AssetEditorSystems\WeaponEditorSystem.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1588,6 +1617,7 @@
     <ClInclude Include="Include\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
     <ClInclude Include="Include\Utilities\ASync.h" />
+    <ClInclude Include="Include\Utilities\BVH.h" />
     <ClInclude Include="Include\Utilities\Geometry2d.h" />
     <ClInclude Include="Include\EditorSystems\ImporterSystem.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\GPUWorld***REMOVED***.h" />
@@ -1741,6 +1771,9 @@
     <ClInclude Include="Include\Components\Physics2D\PolygonColliderComponent.h" />
     <ClInclude Include="Include\Components\PrefabOriginComponent.h" />
     <ClInclude Include="Include\Utilities\Geometry3d.h" />
+    <ClInclude Include="Include\Utilities\Imgui\WorldDetailsPanel.h" />
+    <ClInclude Include="Include\Utilities\Imgui\WorldHierarchyPanel.h" />
+    <ClInclude Include="Include\Utilities\Imgui\WorldViewportPanel.h" />
     <ClInclude Include="Include\Utilities\ManyStrings.h" />
     <ClInclude Include="Include\Utilities\CommonMetaProperties.h" />
     <ClInclude Include="Include\Core\VirtualMachine.h" />
@@ -1871,6 +1904,7 @@
     <ClInclude Include="Include\Utilities\Events.h" />
     <ClInclude Include="Include\Utilities\MemFunctions.h" />
     <ClInclude Include="Include\Utilities\IterableRange.h" />
+    <ClInclude Include="Include\Utilities\NameLookUp.h" />
     <ClInclude Include="Include\Utilities\Search.h" />
     <ClInclude Include="Include\Utilities\Imgui\WorldInspect.h" />
     <ClInclude Include="include\GSON\GSON.h" />
@@ -2035,6 +2069,12 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
     </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Fullscreen_vv.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
+    </WavePsslc>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\InstancedDepth_vv.pssl">
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
@@ -2071,6 +2111,12 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\OutlinePostProcess_p.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
     </WavePsslc>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBRSkinned_vv.pssl">
       <FileType>Document</FileType>

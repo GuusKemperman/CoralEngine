@@ -14,6 +14,7 @@
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
 #include "Utilities/view_istream.h"
 #include "GSON/GSONBinary.h"
+#include "Utilities/NameLookUp.h"
 
 namespace
 {
@@ -39,7 +40,7 @@ void CE::Editor::PostConstruct()
 
 	const std::filesystem::path pathToSavedState = GetFileLocationOfSystemState("Editor");
 
-	std::ifstream editorSavedState{ pathToSavedState };
+	std::ifstream editorSavedState{ pathToSavedState, std::ifstream::binary };
 
 	std::function<void(const MetaType&)> recursivelyStart = [this, &recursivelyStart, &editorSavedState](const MetaType& type)
 		{
@@ -71,89 +72,182 @@ void CE::Editor::PostConstruct()
 	}
 
 	uint32 savedDataVersion{};
-	editorSavedState >> savedDataVersion;
 
-	if (savedDataVersion == 0)
+	switch (editorSavedState.peek())
 	{
+	case '0':
 		return;
+	case '1':
+		savedDataVersion = 1;
+		editorSavedState.get();
+		break;
+	default:
+	{
+		try
+		{
+			cereal::BinaryInputArchive ar{ editorSavedState };
+			ar(savedDataVersion);
+		}
+		catch (const std::exception& e)
+		{
+			LOG(LogError, Error, "Invalid editor saved state - {}", e.what());
+			return;
+		}
+	}
 	}
 
-	// Currently not being used, but if we ever
-	// change the format, we can support
-	// backwards compatibility.
-	(void)savedDataVersion;
+	const auto openSystem = [this](const std::string& systemTypeName, const std::string& systemName)
+		{
+			const MetaType* const typeOfSystem = MetaManager::Get().TryGetType(systemTypeName);
 
-	uint32 debugFlags{};
-	editorSavedState >> debugFlags;
-	DebugRenderer::SetDebugCategoryFlags(static_cast<DebugCategory::Enum>(debugFlags));
+			if (typeOfSystem == nullptr
+				|| !typeOfSystem->IsDerivedFrom<EditorSystem>())
+			{
+				return;
+			}
 
-	while (editorSavedState)
+			if (typeOfSystem->IsDefaultConstructible()
+				&& !typeOfSystem->GetProperties().Has(Props::sEditorSystemAlwaysOpenTag))
+			{
+				TryAddSystemInternal(*typeOfSystem);
+				return;
+			}
+
+			std::string assetName = Internal::GetAssetNameBasedOnSystemName(systemName);
+			WeakAssetHandle asset = AssetManager::Get().TryGetWeakAsset<Asset>(assetName);
+
+			if (asset != nullptr)
+			{
+				TryOpenAssetForEdit(asset);
+			}
+		};
+
+	switch (savedDataVersion)
 	{
-		std::string systemTypeName{};
-		std::string systemName{};
+	default:
+	case 0:
+		return;
+	case 1:
+	{
+		uint32 debugFlags{};
+		editorSavedState >> debugFlags;
+		DebugRenderer::SetDebugCategoryFlags(static_cast<DebugCategory::Enum>(debugFlags));
 
-		editorSavedState >> systemTypeName;
-		editorSavedState >> systemName;
-
-		const MetaType* const typeOfSystem = MetaManager::Get().TryGetType(systemTypeName);
-
-		if (typeOfSystem == nullptr
-			|| !typeOfSystem->IsDerivedFrom<EditorSystem>())
+		while (editorSavedState)
 		{
-			continue;
+			std::string systemTypeName{};
+			std::string systemName{};
+
+			editorSavedState >> systemTypeName;
+			editorSavedState >> systemName;
+
+			openSystem(systemTypeName, systemName);
 		}
 
-		if (typeOfSystem->IsDefaultConstructible()
-			&& !typeOfSystem->GetProperties().Has(Props::sEditorSystemAlwaysOpenTag))
+		break;
+	}
+	case 2:
+	{
+		try
 		{
-			TryAddSystemInternal(*typeOfSystem);
-			continue;
+			cereal::BinaryInputArchive ar{ editorSavedState };
+
+			uint32 debugFlags{};
+			ar(debugFlags);
+			DebugRenderer::SetDebugCategoryFlags(static_cast<DebugCategory::Enum>(debugFlags));
+
+			std::unordered_map<Name::HashType, std::string> serializedLookUp{};
+			ar(serializedLookUp);
+
+			sNameLookUpMutex.lock();
+
+			for (auto& [hash, str] : serializedLookUp)
+			{
+				sNameLookUp.emplace(hash, std::move(str));
+			}
+
+			sNameLookUpMutex.unlock();
+
+			uint32 numOfPairs{};
+			ar(numOfPairs);
+
+			for (uint32 i = 0; i < numOfPairs; i++)
+			{
+				std::string systemTypeName{};
+				std::string systemName{};
+
+				ar(systemTypeName);
+				ar(systemName);
+
+				openSystem(systemTypeName, systemName);
+			}
+		}
+		catch (const std::exception& e)
+		{
+			LOG(LogError, Error, "Invalid editor saved state - {}", e.what());
 		}
 
-		std::string assetName = Internal::GetAssetNameBasedOnSystemName(systemName);
-		WeakAssetHandle asset = AssetManager::Get().TryGetWeakAsset<Asset>(assetName);
-
-		if (asset != nullptr)
-		{
-			TryOpenAssetForEdit(asset);
-		}
+		break;
+	}
 	}
 }
 
 CE::Editor::~Editor()
 {
 	DestroyRequestedSystems();
-
 	const std::filesystem::path pathToSavedState = GetFileLocationOfSystemState("Editor");
 	create_directories(pathToSavedState.parent_path());
 
-	std::ofstream editorSavedState{ pathToSavedState };
+	{ // <-- forces the file to be closed and writing to be finished before we start destroying systems, as those might crash the program in some cases.
+		std::ofstream editorSavedState{ pathToSavedState, std::ofstream::binary };
 
-	if (!editorSavedState.is_open())
-	{
-		LOG(LogEditor, Warning, "Could not save editor state, {} could not be opened", pathToSavedState.string());
-	}
-
-	static constexpr uint32 savedDataVersion = 1;
-	editorSavedState << savedDataVersion << '\n';
-
-	const uint32 flags = DebugRenderer::GetDebugCategoryFlags();
-	editorSavedState << flags << '\n';
-
-	// Give each system a chance to save their state
-	for (const auto& [typeId, system] : mSystems)
-	{
-		if (editorSavedState.is_open())
+		if (!editorSavedState.is_open())
 		{
-			const MetaType* const systemType = MetaManager::Get().TryGetType(typeId);
-
-			if (systemType != nullptr)
-			{
-				editorSavedState << systemType->GetName() << '\n' << system->GetName() << '\n';
-			}
+			LOG(LogEditor, Warning, "Could not save editor state, {} could not be opened", pathToSavedState.string());
 		}
 
-		DestroySystem(system->GetName());
+		{ // <-- forces BinaryOutputArchive destructor to be called before that of std::ofstream
+			cereal::BinaryOutputArchive ar{ editorSavedState };
+
+			static constexpr uint32 savedDataVersion = 2;
+			ar(savedDataVersion);
+
+			const uint32 flags = DebugRenderer::GetDebugCategoryFlags();
+			ar(flags);
+
+			sNameLookUpMutex.lock();
+			ar(sNameLookUp);
+			sNameLookUpMutex.unlock();
+
+			uint32 numOfOpenSystems{};
+
+			for (const auto& [typeId, system] : mSystems)
+			{
+				if (editorSavedState.is_open()
+					&& MetaManager::Get().TryGetType(typeId) != nullptr)
+				{
+					numOfOpenSystems++;
+				}
+			}
+
+			ar(numOfOpenSystems);
+
+			// Give each system a chance to save their state
+			for (const auto& [typeId, system] : mSystems)
+			{
+				if (editorSavedState.is_open())
+				{
+					const MetaType* const systemType = MetaManager::Get().TryGetType(typeId);
+
+					if (systemType != nullptr)
+					{
+						ar(systemType->GetName(), system->GetName());
+					}
+				}
+
+				DestroySystem(system->GetName());
+			}
+		}
 	}
 
 	DestroyRequestedSystems();
@@ -383,7 +477,7 @@ system->GetName());
 		}
 
 		if (!TRY_CATCH_LOG(
-			if (!asset.GetFileOfOrigin().has_value() 
+			if (!asset.GetFileOfOrigin().has_value()
 				|| *asset.GetFileOfOrigin() != nonOffloadedAsset.mFile
 				|| !std::filesystem::exists(nonOffloadedAsset.mFile)
 				|| toSysClock(std::filesystem::last_write_time(nonOffloadedAsset.mFile)) >= mTimeOfLastRefresh)
@@ -618,7 +712,7 @@ void CE::Editor::DestroyRequestedSystems()
 
 		// Give the system a chance to save it's settings
 		SaveSystemState(*it->second);
-		
+
 		*it = std::move(mSystems.back());
 		mSystems.pop_back();
 	}
@@ -697,10 +791,10 @@ CE::EditorSystem* CE::Editor::TryAddSystemInternal(const MetaType& type)
 CE::EditorSystem* CE::Editor::TryGetSystemInternal(const std::string_view systemName)
 {
 	const auto it = std::find_if(mSystems.begin(), mSystems.end(),
-	                             [systemName](const std::pair<TypeId, SystemPtr<EditorSystem>>& other)
-	                             {
-		                             return other.second->GetName() == systemName;
-	                             });
+		[systemName](const std::pair<TypeId, SystemPtr<EditorSystem>>& other)
+		{
+			return other.second->GetName() == systemName;
+		});
 
 	return it == mSystems.end() ? nullptr : it->second.get();
 }
@@ -708,10 +802,10 @@ CE::EditorSystem* CE::Editor::TryGetSystemInternal(const std::string_view system
 CE::EditorSystem* CE::Editor::TryGetSystemInternal(const TypeId typeId)
 {
 	const auto it = std::find_if(mSystems.begin(), mSystems.end(),
-	                             [typeId](const std::pair<TypeId, SystemPtr<EditorSystem>>& other)
-	                             {
-		                             return other.first == typeId;
-	                             });
+		[typeId](const std::pair<TypeId, SystemPtr<EditorSystem>>& other)
+		{
+			return other.first == typeId;
+		});
 
 	return it == mSystems.end() ? nullptr : it->second.get();
 }

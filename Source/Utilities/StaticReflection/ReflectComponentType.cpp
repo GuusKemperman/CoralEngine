@@ -22,7 +22,7 @@ namespace
 	}
 }
 
-void CE::Internal::ReflectComponentType(MetaType& type, bool isEmpty)
+void CE::Internal::ReflectRuntimeComponentType(MetaType& type, bool isEmpty)
 {
 	type.GetProperties().Add(Props::sComponentTag);
 

@@ -24,6 +24,7 @@ DXConstBuffer::DXConstBuffer(const ComPtr<ID3D12Device5>& device, size_t dataSiz
 
 void DXConstBuffer::Update(const void* data, size_t dataSize, int offsetIndex, int frameIndex)
 {
+	ASSERT_LOG(mBufferPerObjectAlignedSize * offsetIndex + dataSize <= mBufferSize, "No more room in buffer");
 	memcpy(mBufferGPUAddress[frameIndex] + (mBufferPerObjectAlignedSize * offsetIndex), data, dataSize);
 }
 

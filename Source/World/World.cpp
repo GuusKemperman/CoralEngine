@@ -58,6 +58,11 @@ CE::World::~World()
 
 CE::World& CE::World::operator=(World&& other) noexcept
 {
+	if (&other == this)
+	{
+		return *this;
+	}
+
 	mRegistry = std::move(other.mRegistry);
 	mViewport = std::move(other.mViewport);
 	mGPUWorld = std::move(other.mGPUWorld);
