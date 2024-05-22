@@ -21,12 +21,17 @@ jobs:
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v2
 
-    - name: Build
+    - name: Build project
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: msbuild /p:Configuration=Release /p:Platform=x64 ${{env.SOLUTION_FILE_PATH}}
 
-    - uses: AButler/upload-release-assets@v3.0
+    # Yes. Our project is for now named ExampleGame, if we will change it, this will break. We also copy the engine and game assets
+    - name: Zip build
+      shell: pwsh
+      run: 7z a -tzip Lichgate.zip Games/ExampleGame/Build/x64/Release/ Assets/ Games/ExampleGame/Assets/
+
+    - name: Upload build
+      uses: AButler/upload-release-assets@v3.0
       with:
-        # Yes. Our project is for now named ExampleGame, if we will change it, this will break. We also copy the engine and game assets
-        files: "Games/ExampleGame/Build/x64/Release/*;Assets/;Games/ExampleGame/Assets/*"
+        files: "Lichgate.zip"
         repo-token: ${{ secrets.GITHUB_TOKEN }}
