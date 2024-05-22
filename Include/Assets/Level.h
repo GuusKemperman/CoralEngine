@@ -1,6 +1,7 @@
 #pragma once
 #include "Assets/Asset.h"
 
+#include "World/World.h"
 #include "GSON/GSONBinary.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/Prefabs/PrefabEntityFactory.h"
@@ -8,9 +9,6 @@
 
 namespace CE
 {
-	class World;
-	class Prefab;
-
 	/*
 	A level is a way for you to serialize and deserialize world.
 
@@ -69,7 +67,12 @@ namespace CE
 
 		static BinaryGSONObject GenerateCurrentStateOfPrefabs(const BinaryGSONObject& serializedWorld);
 
-		std::unique_ptr<BinaryGSONObject> mSerializedComponents{};
+		// A world is created as a byproduct
+		// when loading the level. Instead of
+		// discarding the world, we return this
+		// one on the first call to CreateWorld
+		mutable std::optional<World> mWorld{};
+		mutable std::optional<BinaryGSONObject> mSerializedWorld{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();

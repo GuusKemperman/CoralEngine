@@ -185,10 +185,10 @@ bool CE::AreOverlapping(const TransformedDisk diskA, const TransformedDisk diskB
 
 bool CE::AreOverlapping(const TransformedAABB boxA, const TransformedAABB boxB)
 {
-	return boxA.mMin.x < boxB.mMax.x
-		&& boxA.mMax.x > boxB.mMin.x
-		&& boxA.mMax.y > boxB.mMin.y
-		&& boxA.mMin.y < boxB.mMax.y;
+	return boxA.mMin.x <= boxB.mMax.x
+		&& boxA.mMax.x >= boxB.mMin.x
+		&& boxA.mMax.y >= boxB.mMin.y
+		&& boxA.mMin.y <= boxB.mMax.y;
 }
 
 bool CE::AreOverlapping(const TransformedPolygon& polygonA, const TransformedPolygon& polygonB)

@@ -56,7 +56,6 @@ namespace CE
 
 		float UpdateNodeBounds(Node& node);
 		void Subdivide(Node& node);
-		void DebugDraw(const Node& node) const;
 
 		template<typename OnIntersectFunction, typename ShouldCheckFunction, typename ShouldReturnFunction, typename InquirerShapeType, typename ObjectShapeType, typename ...CallbackAdditionalArgs>
 		static FORCE_INLINE bool TestAgainstObject(const InquirerShapeType inquirerShape, const ObjectShapeType& object, entt::entity owner, CallbackAdditionalArgs&& ...args);
@@ -83,7 +82,8 @@ namespace CE
 		InquirerShape, typename ... CallbackAdditionalArgs>
 	bool BVH::Query(const InquirerShape inquirerShape, CallbackAdditionalArgs&&... args) const
 	{
-		const Node* stack[64];
+		static constexpr uint32 stackSize = 64;
+		const Node* stack[stackSize];
 		uint32 stackPtr = 0;
 
 		const Node* node = &mNodes[0];
@@ -123,6 +123,7 @@ namespace CE
 					node = child1;
 					if (intersect2)
 					{
+						ASSERT(stackPtr + 1 < stackSize);
 						stack[stackPtr++] = child2;
 					}
 				}

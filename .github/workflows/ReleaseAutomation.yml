@@ -1,0 +1,33 @@
+name: ReleaseAutomation
+
+on:
+  release:
+    types: [published]
+
+env:
+  # Path to the solution file relative to the root of the project
+  SOLUTION_FILE_PATH: "Coral.sln"
+
+# Give permission to write to the release
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild /p:Configuration=Release /p:Platform=x64 ${{env.SOLUTION_FILE_PATH}}
+
+    - uses: AButler/upload-release-assets@v3.0
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        # Yes. Our project is for now named ExampleGame, if we will change it, this will break. We also copy the engine and game assets
+        files: "Games/ExampleGame/Build/x64/Release/*;Assets/;Games/ExampleGame/Assets/*"
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
