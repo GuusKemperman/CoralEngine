@@ -44,7 +44,7 @@ float Game::DanceState::OnAiEvaluate(const CE::World& world, entt::entity)
 
 	if (characterComponent->mCurrentHealth <= 0.f)
 	{
-		return std::numeric_limits<float>::infinity();
+		return 1.f;
 	}
 
 	return 0.f;
