@@ -7,6 +7,7 @@ namespace CE
 {
 	class AbilityFunctionality;
 	class WeaponEditorSystem;
+	struct WeaponInstance;
 
 	class Weapon :
 		public Ability
@@ -18,6 +19,7 @@ namespace CE
 	private:
 		friend AbilitySystem;
 		friend AbilityFunctionality;
+		friend WeaponInstance;
 		void OnSave(AssetSaveInfo& saveInfo) const override;
 
 		// weapon
