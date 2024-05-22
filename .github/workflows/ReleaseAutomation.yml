@@ -33,6 +33,11 @@ jobs:
         Get-ChildItem -Exclude *.asset, *.rename, *.hlsl, *hlsli -Path Assets\ -Recurse -File | Remove-Item
         Get-ChildItem -Exclude *.asset, *.rename, *.hlsl, *hlsli -Path Games\ExampleGame\Assets\ -Recurse -File | Remove-Item
 
+    # Moving build files to the root folder, which makes sure .exe is in the first folder for the user and the assets are in the correct place
+    - name: Move build files
+      shell: pwsh
+      run: Move-Item -Path Games/ExampleGame/Build/x64/Release/*
+
     # Yes. Our project is for now named ExampleGame, if we will change it, this will break. We also copy the engine and game assets
     - name: Zip build
       shell: pwsh
