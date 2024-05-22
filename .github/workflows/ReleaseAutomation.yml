@@ -38,10 +38,10 @@ jobs:
       shell: pwsh
       run: Move-Item -Path Games/ExampleGame/Build/x64/Release/*
 
-    # Yes. Our project is for now named ExampleGame, if we will change it, this will break. We also copy the engine and game assets
+    # We zip all the assets with the exe and needed dll's
     - name: Zip build
       shell: pwsh
-      run: 7z a -tzip Lichgate.zip Games/ExampleGame/Build/x64/Release/ Assets/ Games/ExampleGame/Assets/
+      run: 7z a -tzip Lichgate.zip Assets/ Games/ExampleGame/Assets/ ExampleGame.exe *.dll
 
     - name: Upload build
       uses: AButler/upload-release-assets@v3.0
