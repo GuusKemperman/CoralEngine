@@ -327,10 +327,7 @@ void CE::EraseSerializedComponents(World& world,
 
 		for (const entt::entity entity : eraseFromIds)
 		{
-			if (world.GetRegistry().HasComponent(typeId, entity))
-			{
-				storage.erase(entity);
-			}
+			world.GetRegistry().RemoveComponentIfEntityHasIt(typeId, entity);
 		}
 	}
 
