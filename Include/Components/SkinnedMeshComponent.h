@@ -15,12 +15,19 @@ namespace CE
         AssetHandle<SkinnedMesh> mSkinnedMesh{};
 
         AssetHandle<Animation> mAnimation{};
+        AssetHandle<Animation> mPreviousAnimation{};
 
         AssetHandle<Material> mMaterial{};
 
         std::vector<glm::mat4x4> mFinalBoneMatrices{MAX_BONES, glm::mat4x4(1.0f)};
         float mCurrentTime = 0.0f;
+        float mPrevAnimTime = 0.0f;
         float mAnimationSpeed = 1.0f;
+        // Blend from previous animation 
+        // Previous 0.0f to current 1.0f
+        float mBlendWeight = 1.0f;
+        // Time it takes to blend animations in seconds
+        float mBlendTime = 0.2f;
 
         bool mHighlightedMesh = false;
 
