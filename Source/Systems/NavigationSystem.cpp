@@ -8,6 +8,7 @@
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Components/Pathfinding/NavMeshComponent.h"
+#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
@@ -37,14 +38,14 @@ namespace CE::Internal
 	static glm::vec2 CalculateAvoidanceVelocity(const World& world,
 		const entt::entity self,
 		const TransformComponent& transform,
-		const CharacterComponent& character, 
+		const NavMeshAgentComponent& agent,
 		const PhysicsBody2DComponent& body,
 		const TransformedDiskColliderComponent& characterCollider)
 	{
 		const glm::vec2 myWorldPos = characterCollider.mCentre;
 
 		TransformedDisk avoidanceDisk = characterCollider;
-		avoidanceDisk.mRadius += character.mAvoidanceDistance * transform.GetWorldScaleUniform2D();
+		avoidanceDisk.mRadius += agent.mAvoidanceDistance * transform.GetWorldScaleUniform2D();
 		avoidanceDisk.mRadius *= 2.0f;
 
 		std::vector<entt::entity> collidedWith = world.GetPhysics().FindAllWithinShape(avoidanceDisk, body.mRules);
@@ -53,12 +54,11 @@ namespace CE::Internal
 
 		for (const entt::entity obstacle : collidedWith)
 		{
-			// Ignore myself
-			if (obstacle == self)
+			if (obstacle == self // Ignore myself
+				|| world.GetRegistry().HasComponent<NavMeshTargetTag>(obstacle)) // Do not avoid the target
 			{
 				continue;
 			}
-
 
 			const TransformComponent* obstacleTransform = world.GetRegistry().TryGet<TransformComponent>(obstacle);
 			if (obstacleTransform == nullptr)
@@ -93,7 +93,7 @@ namespace CE::Internal
 
 	static glm::vec2 CalculatePathFollowingVelocity(const World& world,
 		const TransformComponent& transform,
-		const CharacterComponent& character, 
+		const CharacterComponent& character,
 		NavMeshAgentComponent& agent,
 		float dt)
 	{
@@ -102,44 +102,79 @@ namespace CE::Internal
 			return {};
 		}
 
-		std::optional<glm::vec2> targetPosition = agent.GetTargetPosition(world);
+		std::optional<glm::vec2> destination = agent.GetTargetPosition(world);
 
-		if (!targetPosition.has_value())
+		if (!destination.has_value())
 		{
 			return {};
 		}
 
 		const glm::vec2 agentWorldPosition = transform.GetWorldPosition2D();
+		glm::vec2 targetPoint = *destination;
 
-		const float speed = character.mCurrentMovementSpeed;
-		const float desiredDistToPoint2 = Math::sqr(speed * .1f);
+		if (!agent.mPath.empty())
+		{
+			size_t bestIndex{};
 
-		agent.mPath.erase(agent.mPath.begin(), std::find_if(agent.mPath.begin(), agent.mPath.end(),
-			[desiredDistToPoint2, agentWorldPosition](const glm::vec2& point)
+			for (size_t i = 1; i < agent.mPath.size() - 1; i++)
 			{
-				return glm::distance2(agentWorldPosition, point) > desiredDistToPoint2;
-			}));
+				Line line{ agent.mPath[i], agent.mPath[i + 1] };
 
-		const glm::vec2 moveTowards = agent.mPath.empty() ? *targetPosition : agent.mPath[0];
+				DrawDebugLine(
+					world,
+					DebugCategory::AINavigation,
+					To3DRightForward(line.mStart),
+					To3DRightForward(line.mEnd),
+					{ 1.f, 1.f, 1.f, 1.f });
 
-		const glm::vec2 dVec2 = moveTowards - agentWorldPosition;
-		const float distance = length(dVec2);
+				if (line.SignedDistance(agentWorldPosition) <= Line{ agent.mPath[bestIndex], agent.mPath[bestIndex + 1] }.SignedDistance(agentWorldPosition))
+				{
+					bestIndex = i;
+				}
+			}
 
-		if (distance == 0.0f)
+			float distLeft = agent.mAdditionalDistanceAlongPathToTarget;
+			targetPoint = Line{ agent.mPath[bestIndex], agent.mPath[bestIndex + 1] }.ClosestPointOnLine(agentWorldPosition);
+
+			for (size_t i = bestIndex; i < agent.mPath.size() - 1 && distLeft > 0.0f; i++)
+			{
+				Line line{ targetPoint, agent.mPath[i + 1] };
+
+				const float lineLength = glm::distance(line.mStart, line.mEnd);
+
+				if (lineLength == 0.0f)
+				{
+					continue;
+				}
+
+				const glm::vec2 dir = (line.mEnd - line.mStart) / lineLength;
+
+				const float distToAdd = glm::min(lineLength, distLeft);
+				distLeft -= distToAdd;
+				targetPoint += dir * distToAdd;
+			}
+		}
+
+		DrawDebugLine(world, DebugCategory::AINavigation, agentWorldPosition, targetPoint, glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+
+		const float howFarWeCanMove = character.mCurrentMovementSpeed * dt;
+		const glm::vec2 toTarget = targetPoint - agentWorldPosition;
+		const float distToTarget = glm::length(toTarget);
+
+		// Dont overshoot
+		if (distToTarget > howFarWeCanMove)
+		{
+			return toTarget / howFarWeCanMove;
+		}
+
+		if (distToTarget == 0.0f)
 		{
 			return {};
 		}
 
-		const float howFarWeCanMove = speed * dt;
-
-		if (distance > howFarWeCanMove)
-		{
-			return dVec2 / howFarWeCanMove;
-		}
-		return glm::normalize(dVec2);
+		return toTarget / distToTarget;
 	}
 }
-
 
 void CE::NavigationSystem::Update(World& world, float dt)
 {
@@ -166,15 +201,14 @@ void CE::NavigationSystem::Update(World& world, float dt)
 	for (auto [entity, navMeshComponent, characterComponent, transform, body, transformedDisk] : agentsView.each())
 	{
 		const glm::vec2 desiredVel = Internal::CombineVelocities(
-			Internal::CalculateAvoidanceVelocity(world, entity, transform, characterComponent, body, transformedDisk),
+			Internal::CalculateAvoidanceVelocity(world, entity, transform, navMeshComponent, body, transformedDisk),
 			Internal::CalculatePathFollowingVelocity(world, transform, characterComponent, navMeshComponent, dt));
 
 		const float length2 = glm::length2(desiredVel);
 
 		if (length2 != 0.0f)
 		{
-			const glm::quat orientationQuat = Math::Direction2DToXZQuatOrientation(desiredVel);
-			transform.SetLocalOrientation(orientationQuat);
+			transform.SetWorldOrientation(Math::Direction2DToXZQuatOrientation(desiredVel / glm::sqrt(length2)));
 		}
 
 		body.mLinearVelocity = desiredVel * characterComponent.mCurrentMovementSpeed;
@@ -188,22 +222,19 @@ void CE::NavigationSystem::Render(const World& world)
 		return;
 	}
 
-	const auto agentsView = world.GetRegistry().View<NavMeshAgentComponent>();
-	for (const auto [agentId, n] : agentsView.each())
+	for (const auto [entity, agent] : world.GetRegistry().View<NavMeshAgentComponent>().each())
 	{
-		if (!n.mPath.empty())
+		if (agent.mPath.empty())
 		{
-			for (size_t i = 0; i < n.mPath.size() - 1; i++)
-			{
-				DrawDebugLine(
-					world,
-					DebugCategory::AINavigation,
-					To3DRightForward(n.mPath[i]),
-					To3DRightForward(n.mPath[i + 1]),
-					{ 1.f, 0.f, 0.f, 1.f });
-			}
+			continue;
+		}
+
+		for (size_t i = 0; i < agent.mPath.size() - 1; i++)
+		{
+			DrawDebugLine(world, DebugCategory::AINavigation, agent.mPath[i], agent.mPath[i + 1], glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
 		}
 	}
+
 	const auto navMeshView = world.GetRegistry().View<NavMeshComponent>();
 	for (const auto& navMeshId : navMeshView)
 	{
