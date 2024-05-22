@@ -63,23 +63,20 @@ CE::MeshRenderer::MeshRenderer()
     p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
 
     CD3DX12_BLEND_DESC blendDesc = {};
-    blendDesc.AlphaToCoverageEnable = FALSE;  // Keep as false unless using MSAA and need smooth edges on alpha textures
-    blendDesc.IndependentBlendEnable = FALSE; // Use the same blending setup for all render targets unless needed otherwise
-
+    blendDesc.AlphaToCoverageEnable = FALSE;
+    blendDesc.IndependentBlendEnable = FALSE;
     blendDesc.RenderTarget[0].BlendEnable = TRUE;
-    blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;      // Use source alpha to scale source color
-    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA; // Use (1 - source alpha) to scale destination color
-    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;          // Add the results of the source and destination blend
-
-    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;       // Use 1 to scale source alpha (keep source alpha)
-    blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;     // Use 0 to not affect destination alpha
-    blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;     // Add source and destination alphas
-
-    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL; // Write to all color components
-    blendDesc.RenderTarget[0].LogicOpEnable = FALSE; // No logical operations needed
-
+    blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+    blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+    blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+    blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
+    blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+    blendDesc.RenderTarget[0].LogicOpEnable = FALSE;
     depth.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
     depth.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+
     mParticlePBRPipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1)
@@ -91,9 +88,9 @@ CE::MeshRenderer::MeshRenderer()
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
 
+    //CREATE PBR SKINNED PIPELINE
     depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
-    //CREATE PBR SKINNED PIPELINE
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRVertexSkinned.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
@@ -156,6 +153,7 @@ CE::MeshRenderer::MeshRenderer()
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
     
+    //Requires different depth settings because of particle transparency, therefore it needs a separate PSO
     depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     depth.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
     depth.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
