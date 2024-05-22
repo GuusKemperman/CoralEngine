@@ -58,6 +58,7 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 		return;
 	}
 
+	ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
 	ImGuizmo::SetRect(windowPos.x + contentMin.x, windowPos.y + contentMin.y, contentSize.x, contentSize.y);
 
 	Renderer::Get().RenderToFrameBuffer(world, frameBuffer, contentSize);

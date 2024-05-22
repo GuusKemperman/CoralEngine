@@ -21,13 +21,30 @@ jobs:
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v2
 
-    - name: Build
+    - name: Build project
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: msbuild /p:Configuration=Release /p:Platform=x64 ${{env.SOLUTION_FILE_PATH}}
 
-    - uses: AButler/upload-release-assets@v3.0
+    # Del or Remove-Item has a bug where if you try to exclude file types recursivly, the command breaks and deletes random files
+    # So here we first gather all the files we want for deletion and then only delete those files
+    - name: Delete unneeded files
+      shell: pwsh
+      run: |
+        Get-ChildItem -Exclude *.asset, *.rename, *.hlsl, *hlsli -Path Assets\ -Recurse -File | Remove-Item
+        Get-ChildItem -Exclude *.asset, *.rename, *.hlsl, *hlsli -Path Games\ExampleGame\Assets\ -Recurse -File | Remove-Item
+
+    # Moving build files to the root folder, which makes sure .exe is in the first folder for the user and the assets are in the correct place
+    - name: Move build files
+      shell: pwsh
+      run: Move-Item -Path Games/ExampleGame/Build/x64/Release/*
+
+    # We zip all the assets with the exe and needed dll's
+    - name: Zip build
+      shell: pwsh
+      run: 7z a -tzip Lichgate.zip Assets/ Games/ExampleGame/Assets/ ExampleGame.exe *.dll
+
+    - name: Upload build
+      uses: AButler/upload-release-assets@v3.0
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        # Yes. Our project is for now named ExampleGame, if we will change it, this will break. We also copy the engine and game assets
-        files: "Games/ExampleGame/Build/x64/Release/*;Assets/;Games/ExampleGame/Assets/*"
+        files: "Lichgate.zip"
         repo-token: ${{ secrets.GITHUB_TOKEN }}
