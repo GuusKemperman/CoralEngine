@@ -27,7 +27,6 @@ jobs:
 
     - uses: AButler/upload-release-assets@v3.0
       with:
-        upload_url: ${{ github.event.release.upload_url }}
         # Yes. Our project is for now named ExampleGame, if we will change it, this will break. We also copy the engine and game assets
         files: "Games/ExampleGame/Build/x64/Release/*;Assets/;Games/ExampleGame/Assets/*"
         repo-token: ${{ secrets.GITHUB_TOKEN }}
