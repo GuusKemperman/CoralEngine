@@ -12,7 +12,7 @@ CE::Bone::Bone(const std::string_view name, const AnimData& animData)
 
 glm::mat4x4 CE::Bone::GetInterpolatedTransform(float timeStamp) const
 {
-	return InterpolatePosition(timeStamp) * InterpolateRotation(timeStamp) * InterpolateScale(timeStamp);
+	return InterpolatePositionMatrix(timeStamp) * InterpolateRotationMatrix(timeStamp) * InterpolateScaleMatrix(timeStamp);
 }
 
 int CE::Bone::GetPositionIndex(float timeStamp) const
@@ -64,11 +64,11 @@ float CE::Bone::GetScaleFactor(float lastTimeStamp, float nextTimeStamp, float c
 	return midWayLength / framesDiff;
 }
 
-glm::mat4x4 CE::Bone::InterpolatePosition(float timeStamp) const
+glm::vec3 CE::Bone::InterpolatePosition(float timeStamp) const
 {
 	if (mPositions.size() == 1)
 	{
-		return glm::translate(glm::mat4x4(1.0f), mPositions[0].position);
+		return mPositions[0].position;
 	}
 
 	int p0Index = GetPositionIndex(timeStamp);
@@ -78,14 +78,14 @@ glm::mat4x4 CE::Bone::InterpolatePosition(float timeStamp) const
 
 	glm::vec3 finalPosition = glm::mix(mPositions[p0Index].position, mPositions[p1Index].position, scaleFactor);
 
-	return glm::translate(glm::mat4x4(1.0f),finalPosition);
+	return finalPosition;
 }
 
-glm::mat4x4 CE::Bone::InterpolateRotation(float timeStamp) const
+glm::quat CE::Bone::InterpolateRotation(float timeStamp) const
 {
 	if (mRotations.size() == 1)
 	{
-		return glm::toMat4(glm::normalize(mRotations[0].orientation));
+		return glm::normalize(mRotations[0].orientation);
 	}
 
 	int p0Index = GetRotationIndex(timeStamp);
@@ -95,14 +95,14 @@ glm::mat4x4 CE::Bone::InterpolateRotation(float timeStamp) const
 
 	glm::quat finalRotation = glm::slerp(mRotations[p0Index].orientation, mRotations[p1Index].orientation, scaleFactor);
 
-	return glm::toMat4(glm::normalize(finalRotation));
+	return glm::normalize(finalRotation);
 }
 
-glm::mat4x4 CE::Bone::InterpolateScale(float timeStamp) const
+glm::vec3 CE::Bone::InterpolateScale(float timeStamp) const
 {
 	if (mScales.size() == 1)
 	{
-		return glm::scale(glm::mat4x4(1.0f), mScales[0].scale);
+		return mScales[0].scale;
 	}
 	int p0Index = GetScaleIndex(timeStamp);
 	int p1Index = p0Index + 1;
@@ -111,5 +111,20 @@ glm::mat4x4 CE::Bone::InterpolateScale(float timeStamp) const
 
 	glm::vec3 finalScale = glm::mix(mScales[p0Index].scale, mScales[p1Index].scale, scaleFactor);
 
-	return glm::scale(glm::mat4x4(1.0f), finalScale);
+	return finalScale;
+}
+
+glm::mat4x4 CE::Bone::InterpolatePositionMatrix(float timeStamp) const
+{
+	return glm::translate(glm::mat4x4(1.0f), InterpolatePosition(timeStamp));
+}
+
+glm::mat4x4 CE::Bone::InterpolateRotationMatrix(float timeStamp) const
+{
+	return toMat4(InterpolateRotation(timeStamp));
+}
+
+glm::mat4x4 CE::Bone::InterpolateScaleMatrix(float timeStamp) const
+{
+	return glm::scale(glm::mat4x4(1.0f), InterpolateScale(timeStamp));
 }
