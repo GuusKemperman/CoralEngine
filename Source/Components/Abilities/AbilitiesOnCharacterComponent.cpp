@@ -38,13 +38,11 @@ void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity e
 		{
 			continue;
 		}
-		// Make all the cooldown abilities available on being play.
-		if (ability.mAbilityAsset->mRequirementType == Ability::Cooldown)
-		{
-			ability.mRequirementCounter = ability.mAbilityAsset->mRequirementToUse;
-		}
-		const MetaType* scriptType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+		// Make all the cooldown abilities available on begin play.
+		ability.ResetCooldownAndCharges();
 
+		// Add On Ability Activate scripts.
+		const MetaType* scriptType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName());
 		if (scriptType != nullptr && !world.GetRegistry().HasComponent(scriptType->GetTypeId(), entity))
 		{
 			world.GetRegistry().AddComponent(*scriptType, entity);
@@ -56,8 +54,12 @@ void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity e
 		{
 			continue;
 		}
-		const MetaType* scriptType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
 
+		// Make all the weapons available on begin play.
+		weapon.ResetCooldownAndAmmo();
+
+		// Add On Ability Activate scripts.
+		const MetaType* scriptType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
 		if (scriptType != nullptr && !world.GetRegistry().HasComponent(scriptType->GetTypeId(), entity))
 		{
 			world.GetRegistry().AddComponent(*scriptType, entity);
@@ -92,6 +94,10 @@ void CE::AbilityInstance::DisplayWidget()
 		ShowInspectUI("mKeyboardKeys", mKeyboardKeys);
 		ShowInspectUI("mGamepadButtons", mGamepadButtons);
 	}
+	if (ImGui::Button("ResetCooldownAndCharges"))
+	{
+		ResetCooldownAndCharges();
+	}
 }
 
 void CE::WeaponInstance::DisplayWidget()
@@ -105,6 +111,10 @@ void CE::WeaponInstance::DisplayWidget()
 	{
 		ShowInspectUI("mKeyboardKeys", mKeyboardKeys);
 		ShowInspectUI("mGamepadButtons", mGamepadButtons);
+	}
+	if (ImGui::Button("ResetCooldownAndAmmo"))
+	{
+		ResetCooldownAndAmmo();
 	}
 }
 #endif // EDITOR
