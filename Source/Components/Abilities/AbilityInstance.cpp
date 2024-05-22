@@ -13,7 +13,11 @@
 
 void CE::AbilityInstance::MakeAbilityReadyToBeActivated()
 {
-	mRequirementCounter = mAbilityAsset->mRequirementToUse;
+	mRequirementCounter = 0.f;
+	if (mAbilityAsset != nullptr)
+	{
+		mChargesCounter = mAbilityAsset->mCharges;
+	}
 }
 
 bool CE::AbilityInstance::operator==(const AbilityInstance& other) const
@@ -57,13 +61,19 @@ CE::MetaType CE::AbilityInstance::Reflect()
 
 		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<const AbilityInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	metaType.AddFunc([](AbilityInstance& ability)
-		{
-			ability.MakeAbilityReadyToBeActivated();
-		}, "MakeAbilityReadyToBeActivated", MetaFunc::ExplicitParams<AbilityInstance&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+	metaType.AddFunc(&AbilityInstance::MakeAbilityReadyToBeActivated, "MakeAbilityReadyToBeActivated").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sCallFromEditorTag).Set(Props::sIsScriptPure, false);
 
 	ReflectFieldType<AbilityInstance>(metaType);
 	return metaType;
+}
+
+void CE::WeaponInstance::MakeWeaponReadyToBeActivated()
+{
+	mReloadCounter = 0.f;
+	if (mWeaponAsset != nullptr)
+	{
+		mAmmoCounter = mWeaponAsset->mCharges;
+	}
 }
 
 bool CE::WeaponInstance::operator==(const WeaponInstance& other) const
@@ -107,6 +117,8 @@ CE::MetaType CE::WeaponInstance::Reflect()
 			return AbilitySystem::CanWeaponBeActivated(characterData, weapon);
 
 		}, "CanWeaponBeActivated", MetaFunc::ExplicitParams<const WeaponInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
+	metaType.AddFunc(&WeaponInstance::MakeWeaponReadyToBeActivated, "MakeWeaponReadyToBeActivated").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sCallFromEditorTag).Set(Props::sIsScriptPure, false);
 
 	ReflectFieldType<WeaponInstance>(metaType);
 	return metaType;

@@ -178,7 +178,7 @@ void CE::AbilitySystem::UpdateAbilitiesVector(AbilitiesOnCharacterComponent& abi
         {
         case Ability::Cooldown:
         {
-            ability.mRequirementCounter = std::min(ability.mRequirementCounter + dt, ability.mAbilityAsset->mRequirementToUse);
+            ability.mRequirementCounter = std::max(ability.mRequirementCounter - dt, 0.f);
             break;
         }
         case Ability::Mana:
@@ -222,7 +222,7 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
         }
 
         // Update counters
-        weapon.mReloadCounter = std::min(weapon.mReloadCounter + dt * weapon.mWeaponAsset->mReloadSpeed, weapon.mWeaponAsset->mRequirementToUse);
+        weapon.mReloadCounter = std::max(weapon.mReloadCounter - dt * weapon.mWeaponAsset->mReloadSpeed, 0.f);
         weapon.mTimeBetweenShotsCounter = std::min(weapon.mTimeBetweenShotsCounter + dt * weapon.mWeaponAsset->mFireSpeed, weapon.mWeaponAsset->mTimeBetweenShots);
 
         // Activate abilities for the player based on input
@@ -255,8 +255,8 @@ bool CE::AbilitySystem::CanAbilityBeActivated(const CharacterComponent& characte
     {
         return false;
     }
-    return ability.mRequirementCounter >= ability.mAbilityAsset->mRequirementToUse &&
-        ability.mChargesCounter < ability.mAbilityAsset->mCharges &&
+    return ability.mRequirementCounter <= 0.f &&
+        ability.mChargesCounter > 0 &&
         (ability.mAbilityAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
 }
 
@@ -296,11 +296,11 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
         LOG(LogAbilitySystem, Error, "Ability {} does not have a script selected.", ability.mAbilityAsset.GetMetaData().GetName());
     }
     characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
-    ability.mChargesCounter++;
-    if (ability.mChargesCounter >= ability.mAbilityAsset->mCharges)
+    ability.mChargesCounter--;
+    if (ability.mChargesCounter <= 0.f)
     {
-        ability.mChargesCounter = 0;
-        ability.mRequirementCounter = 0;
+        ability.mChargesCounter = ability.mAbilityAsset->mCharges;
+        ability.mRequirementCounter = ability.mAbilityAsset->mRequirementToUse;
     }
 
     return true;
@@ -312,8 +312,8 @@ bool CE::AbilitySystem::CanWeaponBeActivated(const CharacterComponent& character
     {
         return false;
     }
-    return weapon.mReloadCounter >= weapon.mWeaponAsset->mRequirementToUse &&
-        weapon.mAmmoCounter < weapon.mWeaponAsset->mCharges &&
+    return weapon.mReloadCounter <= 0.f &&
+        weapon.mAmmoCounter > 0 &&
         weapon.mTimeBetweenShotsCounter >= weapon.mWeaponAsset->mTimeBetweenShots &&
         (weapon.mWeaponAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
 }
@@ -358,12 +358,12 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     weapon.mTimeBetweenShotsCounter = 0.f;
     if (weapon.mAmmoConsumption == true)
     {
-        weapon.mAmmoCounter++;
+        weapon.mAmmoCounter--;
     }
-    if (weapon.mAmmoCounter >= weapon.mWeaponAsset->mCharges)
+    if (weapon.mAmmoCounter <= 0)
     {
-        weapon.mAmmoCounter = 0;
-        weapon.mReloadCounter = 0;
+        weapon.mAmmoCounter = weapon.mWeaponAsset->mCharges;
+        weapon.mReloadCounter = weapon.mWeaponAsset->mRequirementToUse;
     }
 
     return true;

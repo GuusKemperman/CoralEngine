@@ -50,6 +50,8 @@ namespace CE
 		std::vector<Input::KeyboardKey> mKeyboardKeys{};
 		std::vector<Input::GamepadButton> mGamepadButtons{};
 
+		void MakeWeaponReadyToBeActivated();
+
 		bool operator==(const WeaponInstance& other) const;
 		bool operator!=(const WeaponInstance& other) const;
 
