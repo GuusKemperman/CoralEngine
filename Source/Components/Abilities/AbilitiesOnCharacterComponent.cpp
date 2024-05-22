@@ -39,7 +39,7 @@ void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity e
 			continue;
 		}
 		// Make all the cooldown abilities available on begin play.
-		ability.MakeAbilityReadyToBeActivated();
+		ability.ResetCooldownAndCharges();
 
 		// Add On Ability Activate scripts.
 		const MetaType* scriptType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName());
@@ -56,7 +56,7 @@ void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity e
 		}
 
 		// Make all the weapons available on begin play.
-		weapon.MakeWeaponReadyToBeActivated();
+		weapon.ResetCooldownAndAmmo();
 
 		// Add On Ability Activate scripts.
 		const MetaType* scriptType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
@@ -94,9 +94,9 @@ void CE::AbilityInstance::DisplayWidget()
 		ShowInspectUI("mKeyboardKeys", mKeyboardKeys);
 		ShowInspectUI("mGamepadButtons", mGamepadButtons);
 	}
-	if (ImGui::Button("MakeAbilityReadyToBeActivated"))
+	if (ImGui::Button("ResetCooldownAndCharges"))
 	{
-		MakeAbilityReadyToBeActivated();
+		ResetCooldownAndCharges();
 	}
 }
 
@@ -112,9 +112,9 @@ void CE::WeaponInstance::DisplayWidget()
 		ShowInspectUI("mKeyboardKeys", mKeyboardKeys);
 		ShowInspectUI("mGamepadButtons", mGamepadButtons);
 	}
-	if (ImGui::Button("MakeWeaponReadyToBeActivated"))
+	if (ImGui::Button("ResetCooldownAndAmmo"))
 	{
-		MakeWeaponReadyToBeActivated();
+		ResetCooldownAndAmmo();
 	}
 }
 #endif // EDITOR

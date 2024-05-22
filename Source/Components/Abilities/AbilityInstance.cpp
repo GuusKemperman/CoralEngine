@@ -11,7 +11,7 @@
 #include "World/World.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 
-void CE::AbilityInstance::MakeAbilityReadyToBeActivated()
+void CE::AbilityInstance::ResetCooldownAndCharges()
 {
 	mRequirementCounter = 0.f;
 	if (mAbilityAsset != nullptr)
@@ -61,13 +61,13 @@ CE::MetaType CE::AbilityInstance::Reflect()
 
 		}, "CanAbilityBeActivated", MetaFunc::ExplicitParams<const AbilityInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	metaType.AddFunc(&AbilityInstance::MakeAbilityReadyToBeActivated, "MakeAbilityReadyToBeActivated").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sCallFromEditorTag).Set(Props::sIsScriptPure, false);
+	metaType.AddFunc(&AbilityInstance::ResetCooldownAndCharges, "ResetCooldownAndCharges").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sCallFromEditorTag);
 
 	ReflectFieldType<AbilityInstance>(metaType);
 	return metaType;
 }
 
-void CE::WeaponInstance::MakeWeaponReadyToBeActivated()
+void CE::WeaponInstance::ResetCooldownAndAmmo()
 {
 	mReloadCounter = 0.f;
 	if (mWeaponAsset != nullptr)
@@ -118,7 +118,7 @@ CE::MetaType CE::WeaponInstance::Reflect()
 
 		}, "CanWeaponBeActivated", MetaFunc::ExplicitParams<const WeaponInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	metaType.AddFunc(&WeaponInstance::MakeWeaponReadyToBeActivated, "MakeWeaponReadyToBeActivated").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sCallFromEditorTag).Set(Props::sIsScriptPure, false);
+	metaType.AddFunc(&WeaponInstance::ResetCooldownAndAmmo, "ResetCooldownAndAmmo").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sCallFromEditorTag);
 
 	ReflectFieldType<WeaponInstance>(metaType);
 	return metaType;

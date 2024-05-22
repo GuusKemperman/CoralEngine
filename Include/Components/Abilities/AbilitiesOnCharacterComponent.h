@@ -22,7 +22,7 @@ namespace CE
 		std::vector<Input::KeyboardKey> mKeyboardKeys{};
 		std::vector<Input::GamepadButton> mGamepadButtons{};
 
-		void MakeAbilityReadyToBeActivated();
+		void ResetCooldownAndCharges();
 
 		bool operator==(const AbilityInstance& other) const;
 		bool operator!=(const AbilityInstance& other) const;
@@ -50,7 +50,7 @@ namespace CE
 		std::vector<Input::KeyboardKey> mKeyboardKeys{};
 		std::vector<Input::GamepadButton> mGamepadButtons{};
 
-		void MakeWeaponReadyToBeActivated();
+		void ResetCooldownAndAmmo();
 
 		bool operator==(const WeaponInstance& other) const;
 		bool operator!=(const WeaponInstance& other) const;
