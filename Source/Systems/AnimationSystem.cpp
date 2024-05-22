@@ -56,8 +56,8 @@ void CE::AnimationSystem::CalculateBoneTransformsRecursive(const AnimMeshInfo& a
 
 void CE::AnimationSystem::BlendAnimations(SkinnedMeshComponent& meshComponent)
 {
-	static std::vector<AnimTransform> layer0{MAX_BONES};
-	static std::vector<AnimTransform> layer1{MAX_BONES};
+	static std::array<AnimTransform, MAX_BONES> layer0;
+	static std::array<AnimTransform, MAX_BONES> layer1;
 
 	const AnimMeshInfo& info0 = FindAnimMeshInfo(meshComponent.mAnimation, meshComponent.mSkinnedMesh);
 	const AnimMeshInfo& info1 = FindAnimMeshInfo(meshComponent.mPreviousAnimation, meshComponent.mSkinnedMesh);
@@ -68,7 +68,7 @@ void CE::AnimationSystem::BlendAnimations(SkinnedMeshComponent& meshComponent)
 	BlendAnimTransformsRecursive(info0, glm::mat4x4{ 1.0f }, meshComponent, layer0, layer1);
 }
 
-void CE::AnimationSystem::CalculateAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo, SkinnedMeshComponent& meshComponent, float timeStamp, std::vector<AnimTransform>& output)
+void CE::AnimationSystem::CalculateAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo, SkinnedMeshComponent& meshComponent, float timeStamp, std::array<AnimTransform, MAX_BONES>& output)
 {
 	const Bone* bone = animMeshInfo.mAnimNode.get().mBone;
 
@@ -92,7 +92,7 @@ void CE::AnimationSystem::CalculateAnimTransformsRecursive(const AnimMeshInfo& a
 	}
 }
 
-void CE::AnimationSystem::BlendAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::vector<AnimTransform>& layer0, const std::vector<AnimTransform>& layer1)
+void CE::AnimationSystem::BlendAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::array<AnimTransform, MAX_BONES>& layer0, const std::array<AnimTransform, MAX_BONES>& layer1)
 {
 	glm::mat4x4 globalTransform = animMeshInfo.mAnimNode.get().mTransform;
 

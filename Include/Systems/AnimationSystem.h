@@ -1,6 +1,7 @@
 #pragma once
 #include "Assets/Animation/Animation.h"
 #include "Assets/Core/AssetHandle.h"
+#include "Rendering/SkinnedMeshDefines.h"
 #include "Systems/System.h"
 
 namespace CE
@@ -39,8 +40,8 @@ namespace CE
 		void CalculateBoneTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent);
 
 		void BlendAnimations(SkinnedMeshComponent& meshComponent);
-		void CalculateAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo,	SkinnedMeshComponent& meshComponent, float timeStamp, std::vector<AnimTransform>& output);
-		void BlendAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::vector<AnimTransform>& layer0, const std::vector<AnimTransform>& layer1);
+		void CalculateAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo,	SkinnedMeshComponent& meshComponent, float timeStamp, std::array<AnimTransform, MAX_BONES>& output);
+		void BlendAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::array<AnimTransform, MAX_BONES>& layer0, const std::array<AnimTransform, MAX_BONES>& layer1);
 
 		std::unordered_map<size_t, AnimMeshInfo> mAnimMeshInfoMap{};
 
