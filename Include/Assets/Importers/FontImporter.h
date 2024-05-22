@@ -4,7 +4,7 @@
 
 namespace CE
 {
-	class AudioImporter :
+	class FontImporter :
 		public Importer
 	{
 	public:
@@ -12,15 +12,13 @@ namespace CE
 
 		std::vector<std::filesystem::path> CanImportExtensions() const override
 		{
-			return {
-				".wav", ".mp3", ".mp2"
-			};
+			return { ".ttf" };
 		}
 
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(AudioImporter);
+		REFLECT_AT_START_UP(FontImporter);
 	};
 }
 #endif // EDITOR
