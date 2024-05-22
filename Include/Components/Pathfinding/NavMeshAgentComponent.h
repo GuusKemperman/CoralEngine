@@ -3,32 +3,30 @@
 
 namespace CE
 {
-	class TransformComponent;
+	class World;
 
 	class NavMeshAgentComponent
 	{
 	public:
+		void OnConstruct(World& world, entt::entity owner);
 
-		[[nodiscard]] std::optional<glm::vec2> GetTargetPosition() const;
+		std::optional<glm::vec2> GetTargetPosition(const World& world) const;
+		entt::entity GetTargetEntity() const;
 
 		void SetTargetPosition(glm::vec2 targetPosition);
-		void SetTargetPosition(const TransformComponent& transformComponent);
+		void SetTargetEntity(entt::entity entity);
 
-		void UpdateTargetPosition(glm::vec2 targetPosition);
-		void UpdateTargetPosition(const TransformComponent& transformComponent);
-
-		void StopNavMesh();
+		void ClearTarget(World& world);
 
 		bool IsChasing() const;
 
-		/// \brief The quickest path from the NavMeshAgent to the KeyboardControl component
-		std::vector<glm::vec2> mPathFound = {};
+		std::vector<glm::vec2> mPath{};
 
-		bool mJustStopped = false;
+		using TargetT = std::variant<std::monostate, glm::vec2, entt::entity>;
+		TargetT mTarget{};
 
 	private:
-		std::optional<glm::vec2> mTargetPosition{};
-		bool mIsChasing = true;
+		entt::entity mOwner{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();

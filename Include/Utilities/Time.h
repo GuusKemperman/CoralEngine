@@ -1,44 +1,49 @@
 #pragma once
+#include "Meta/MetaReflect.h"
+#include "Utilities/Imgui/ImguiInspect.h"
 
 namespace CE
 {
 	struct Cooldown
 	{
-		Cooldown(float cooldown) :
-			mCooldown(cooldown)
-		{}
+		bool IsReady(float dt);
 
-		bool IsReady(float dt)
-		{
-			mAmountOfTimePassed += dt;
+#ifdef EDITOR
+		void DisplayWidget(const std::string& name);
+#endif // EDITOR
 
-			if (mAmountOfTimePassed >= mCooldown)
-			{
-				mAmountOfTimePassed = 0.0f;
-				return true;
-			}
-			return false;
-		}
+		bool operator==(const Cooldown& other) const;
+		bool operator!=(const Cooldown& other) const;
 
-		float mCooldown{};
+		float mCooldown = 1.0f;
 		float mAmountOfTimePassed{};
+
+	private:
+		friend ReflectAccess;
+		static MetaType Reflect();
+		REFLECT_AT_START_UP(Cooldown);
 	};
 
 	struct Timer
 	{
-		Timer() :
-			mStart(std::chrono::high_resolution_clock::now()){}
+		Timer();
 
-		float GetSecondsElapsed() const
-		{
-			return std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::high_resolution_clock::now() - mStart).count();
-		}
+		float GetSecondsElapsed() const;
 
-		void Reset()
-		{
-			mStart = std::chrono::high_resolution_clock::now();
-		}
-
+		void Reset();
 		std::chrono::high_resolution_clock::time_point mStart{};
 	};
 }
+
+namespace cereal
+{
+	class BinaryOutputArchive;
+	class BinaryInputArchive;
+
+	void save(BinaryOutputArchive& ar, const CE::Cooldown& value);
+	void load(BinaryInputArchive& ar, CE::Cooldown& value);
+}
+
+#ifdef EDITOR
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::Cooldown, var.DisplayWidget(name);)
+#endif // EDITOR

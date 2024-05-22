@@ -2,6 +2,7 @@
 #include "Utilities/Geometry2d.h"
 #include "Utilities/PathfindingInfo.h"
 #include "Meta/MetaReflect.h"
+#include "Utilities/BVH.h"
 
 namespace CE
 {
@@ -12,6 +13,8 @@ namespace CE
 	{
 	public:
 		void GenerateNavMesh(const World& world);
+
+		bool WasGenerated() const { return mBVHWorld.has_value(); }
 
 		/**
 		 * \brief
@@ -32,10 +35,6 @@ namespace CE
 		void DebugDrawNavMesh(const World& world) const;
 
 		bool mNavMeshNeedsUpdate = true;
-
-		float mSpaceBetweenTerrainSamples = 1.0f;
-
-		size_t mMaxNumOfTerrainSamples = 32768;
 
 	private:
 		/// \brief The A* Graph object.
@@ -83,8 +82,10 @@ namespace CE
 		                                                     glm::vec2 start, glm::vec2 goal) const;
 		void UpdateNavMesh();
 
-		std::vector<glm::vec2> CleanupPathfinding(const std::vector<TransformedPolygon>& triangles,
+		std::vector<glm::vec2> CleanupPathfinding(const std::vector<const Pathfinding::Node*>& nodes,
 		                                          glm::vec2 start, glm::vec2 goal) const;
+
+		std::optional<World> mBVHWorld{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();

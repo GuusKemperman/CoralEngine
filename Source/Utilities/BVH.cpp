@@ -62,7 +62,13 @@ void CE::BVH::Build()
     if (totalNumObjects != 0)
     {
         mIds.resize(totalNumObjects);
-        mNodes.reserve(2 * totalNumObjects - 1);
+
+        size_t maxSize = (2 * totalNumObjects - 1) * 2;
+
+        if (mNodes.capacity() < maxSize)
+        {
+            mNodes.reserve(maxSize + maxSize / 2);
+        }
     }
 
     Node& root = mNodes.emplace_back();
@@ -76,6 +82,7 @@ void CE::BVH::Build()
 
     if (mEmpty)
     {
+        mNodes.resize(4);
         return;
     }
 
@@ -123,9 +130,23 @@ void CE::BVH::Refit()
 
 void CE::BVH::DebugDraw() const
 {
-    if (!mEmpty)
+    if (mEmpty)
     {
-        DebugDraw(mNodes[0]);
+        return;
+    }
+
+    for (int i = static_cast<int>(mNodes.size()) - 1; i >= 0; i--)
+    {
+        if (i == 1)
+        {
+            continue;
+        }
+
+        const Node& node = mNodes[i];
+        if (node.mTotalNumOfObjects == 0)
+        {
+            DrawDebugRectangle(mPhysics->GetWorld(), DebugCategory::AccelStructs, To3DRightForward(node.mBoundingBox.GetCentre()), node.mBoundingBox.GetSize() * .5f, glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
+        }
     }
 }
 
@@ -209,7 +230,7 @@ void CE::BVH::Subdivide(Node& node)
 
     const Registry& reg = mPhysics->GetWorld().GetRegistry();
     uint32 indexOfId = node.mStartIndex;
-    bool edgeCaseFlipper{};
+    static bool edgeCaseFlipper{};
 
     for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
     {
@@ -305,17 +326,6 @@ void CE::BVH::Subdivide(Node& node)
     }
 }
 
-void CE::BVH::DebugDraw(const Node& node) const
-{
-    DrawDebugRectangle(mPhysics->GetWorld(), DebugCategory::AccelStructs, To3DRightForward(node.mBoundingBox.GetCentre()), node.mBoundingBox.GetSize() * .5f, glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
-
-    if (node.mTotalNumOfObjects == 0)
-    {
-        DebugDraw(mNodes[node.mStartIndex]);
-        DebugDraw(mNodes[node.mStartIndex + 1]);
-    }
-}
-
 float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) const
 {
     TransformedAABB boxes[2]
@@ -326,6 +336,7 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
     uint32 amountOfObjects[2]{};
 
     uint32 indexOfId = node.mStartIndex;
+
     const Registry& reg = mPhysics->GetWorld().GetRegistry();
 
     for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
@@ -334,7 +345,8 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
         const TransformedAABB& collider = reg.Get<TransformedAABBColliderComponent>(owner);
 
         const glm::vec2 centre = collider.GetCentre();
-        const bool childIndex = centre[splitPoint.mAxis] < splitPoint.mPosition;
+        const float posOnAxis = centre[splitPoint.mAxis];
+        const bool childIndex = posOnAxis < splitPoint.mPosition;
 
         amountOfObjects[childIndex]++;
         boxes[childIndex].CombineWith(collider);
@@ -346,7 +358,8 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
         const TransformedDisk& collider = reg.Get<TransformedDiskColliderComponent>(owner);
 
         const glm::vec2 centre = collider.GetCentre();
-        const bool childIndex = centre[splitPoint.mAxis] < splitPoint.mPosition;
+        const float posOnAxis = centre[splitPoint.mAxis];
+        const bool childIndex = posOnAxis < splitPoint.mPosition;
 
         amountOfObjects[childIndex]++;
         boxes[childIndex].CombineWith(collider.GetBoundingBox());
@@ -359,7 +372,8 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
         const TransformedPolygon& polygon = reg.Get<TransformedPolygonColliderComponent>(owner);
 
         const glm::vec2 centre = polygon.GetBoundingBox().GetCentre();
-        const bool childIndex = centre[splitPoint.mAxis] < splitPoint.mPosition;
+        const float posOnAxis = centre[splitPoint.mAxis];
+        const bool childIndex = posOnAxis < splitPoint.mPosition;
 
         amountOfObjects[childIndex]++;
         boxes[childIndex].CombineWith(polygon.GetBoundingBox());
