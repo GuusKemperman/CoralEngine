@@ -7,20 +7,12 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/Pathfinding/NavMeshAgentComponent.h"
+#include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 
 void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
-
-	if (physicsBody2DComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
-		return;
-	}
-
-	physicsBody2DComponent->mLinearVelocity = { 0,0 };
-
 	if (!mDestroyEntityWhenDead)
 	{
 		return;
@@ -54,6 +46,30 @@ void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 	{
 		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDeathAnimation, 0.0f);
 	}
+
+	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
+
+	if (physicsBody2DComponent == nullptr)
+	{
+		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the Death State!");
+		return;
+	}
+
+	physicsBody2DComponent->mLinearVelocity = { 0,0 };
+
+	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
+
+	if (navMeshAgent == nullptr)
+	{
+		LOG(LogAI, Warning, "NavMeshAgentComponent is needed to run the Death State!");
+		return;
+	}
+
+	navMeshAgent->ClearTarget(world);
+
+	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::PhysicsBody2DComponent>(owner);
+
+	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::DiskColliderComponent>(owner);
 }
 
 CE::MetaType Game::DeathState::Reflect()
