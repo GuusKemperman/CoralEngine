@@ -25,11 +25,13 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: msbuild /p:Configuration=Release /p:Platform=x64 ${{env.SOLUTION_FILE_PATH}}
 
+    # Del or Remove-Item has a bug where if you try to exclude file types recursivly, the command breaks and deletes random files
+    # So here we first gather all the files we want for deletion and then only delete those files
     - name: Delete unneeded files
       shell: pwsh
       run: |
-        Del Assets\* -recurse -exclude '*.asset', '*.rename', '*.hlsl'
-        Del Games\ExampleGame\Assets\* -recurse -exclude '*.asset', '*.rename', '*.hlsl'
+        Get-ChildItem -Exclude *.asset, *.rename, *.hlsl, *hlsli -Path Assets\ -Recurse -File | Remove-Item
+        Get-ChildItem -Exclude *.asset, *.rename, *.hlsl, *hlsli -Path Games\ExampleGame\Assets\ -Recurse -File | Remove-Item
 
     # Yes. Our project is for now named ExampleGame, if we will change it, this will break. We also copy the engine and game assets
     - name: Zip build
