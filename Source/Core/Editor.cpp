@@ -1,5 +1,8 @@
 #include "Precomp.h"
 #include "Core/Editor.h"
+
+#include <Assets/Font.h>
+
 #include "Core/Device.h"
 
 #include "Core/AssetManager.h"
@@ -941,27 +944,47 @@ namespace
 	void SetCustomTheme()
 	{
 		ImGuiIO& io = ImGui::GetIO();
-		const std::string fontPath = CE::FileIO::Get().GetPath(CE::FileIO::Directory::EngineAssets, "Fonts/Roboto-Regular.ttf");
-		const std::string iconsPath = CE::FileIO::Get().GetPath(CE::FileIO::Directory::EngineAssets, "Fonts/fontawesome-webfont.ttf");
 
-		ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 16.0f);
+		const CE::AssetHandle<CE::Font> defaultFont = CE::AssetManager::Get().TryGetAsset<CE::Font>("Roboto-Regular");
+		ImFont* defaultImFont{};
 
-		if (font == nullptr)
+		if (defaultFont != nullptr)
 		{
-			LOG(LogEditor, Warning, "Failed to load custom font {}. Using ImGui's default font instead", fontPath.c_str());
-			io.Fonts->AddFontDefault();
+			// const_cast is fine, the buffer has been made mutable in imgui's API in case
+			// you'd have the congfig set to FontAtlasOwnsFontData
+			defaultImFont = io.Fonts->AddFontFromMemoryTTF(const_cast<char*>(defaultFont->GetData().c_str()), static_cast<int>(defaultFont->GetData().size()), 16.0f);
+
+			if (defaultImFont == nullptr)
+			{
+				LOG(LogEditor, Warning, "Failed to load custom font {}", defaultFont.GetMetaData().GetName());
+			}
 		}
 		else
 		{
-			io.FontDefault = font;
+			LOG(LogEditor, Warning, "The default font used by the editor was not present");
 		}
 
-		// Merge icons into default font
-		ImFontConfig config;
-		config.MergeMode = true;
-		config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
-		static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-		io.Fonts->AddFontFromFileTTF(iconsPath.c_str(), 13.0f, &config, icon_ranges);
+		const CE::AssetHandle<CE::Font> iconFont = CE::AssetManager::Get().TryGetAsset<CE::Font>("fontawesome-webfont");
+
+		if (iconFont != nullptr)
+		{
+			// Merge icons into default font
+			ImFontConfig config;
+			config.MergeMode = true;
+			config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
+			static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+
+			// const_cast is fine, the buffer has been made mutable in imgui's API in case
+			// you'd have the congfig set to FontAtlasOwnsFontData
+			if (io.Fonts->AddFontFromMemoryTTF(const_cast<char*>(iconFont->GetData().c_str()), static_cast<int>(iconFont->GetData().size()), 13.0f, &config, icon_ranges) == nullptr)
+			{
+				LOG(LogEditor, Warning, "Failed to load icon font {}", defaultFont.GetMetaData().GetName());
+			};
+		}
+		else
+		{
+			LOG(LogEditor, Warning, "The icon font used by the editor was not present");
+		}
 
 		ImGui::GetStyle().FrameRounding = 4.0f;
 		ImGui::GetStyle().GrabRounding = 4.0f;
