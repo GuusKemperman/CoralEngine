@@ -17,6 +17,7 @@ CE::MetaType CE::CharacterComponent::Reflect()
 	metaType.AddField(&CharacterComponent::mCurrentHealth, "mCurrentHealth").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&CharacterComponent::mBaseMovementSpeed, "mBaseMovementSpeed").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&CharacterComponent::mCurrentMovementSpeed, "mCurrentMovementSpeed").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&CharacterComponent::mAvoidanceDistance, "mAvoidanceDistance").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&CharacterComponent::mBaseDealtDamageModifier, "mBaseDealtDamageModifier").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&CharacterComponent::mCurrentDealtDamageModifier, "mCurrentDealtDamageModifier").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&CharacterComponent::mBaseReceivedDamageModifier, "mBaseReceivedDamageModifier").GetProperties().Add(Props::sIsScriptableTag);

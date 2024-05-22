@@ -23,6 +23,8 @@ namespace CE
 		float mBaseReceivedDamageModifier = 0.f;
 		float mCurrentReceivedDamageModifier = mBaseReceivedDamageModifier;
 
+		float mAvoidanceDistance = 5.0f;
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
