@@ -86,7 +86,7 @@ namespace CE
         glm::vec2,
         glm::vec2,
         const glm::vec4&,
-        Plane::Enum) {};
+        Plane::Enum = Plane::XZ) {};
 
     inline void DrawDebugCircle(
         const World&,
