@@ -33,15 +33,7 @@ void Game::ChasingState::OnAiTick(CE::World& world, entt::entity owner, float)
 
 	if (mTargetEntity != entt::null)
 	{
-		const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(mTargetEntity);
-
-		if (transformComponent == nullptr)
-		{
-			LOG(LogAI, Warning, "An enitity with a TransformComponent is needed to run the Chasing State!");
-			return;
-		}
-
-		navMeshAgent->SetTargetPosition(*transformComponent);
+		navMeshAgent->SetTargetEntity(mTargetEntity);
 	}
 }
 
