@@ -12,6 +12,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
 
 void Game::AttackingState::OnAiTick(CE::World& world, entt::entity owner, float)
 {
@@ -57,6 +58,16 @@ void Game::AttackingState::OnAiTick(CE::World& world, entt::entity owner, float)
 	{
 		navMeshAgent->SetTargetEntity(mTargetEntity);
 	}
+
+	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
+
+	if (physicsBody2DComponent == nullptr)
+	{
+		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
+		return;
+	}
+
+	physicsBody2DComponent->mLinearVelocity = { 0,0 };
 }
 
 float Game::AttackingState::OnAiEvaluate(const CE::World& world, entt::entity owner)
@@ -77,6 +88,15 @@ void Game::AttackingState::OnAIStateEnterEvent(CE::World& world, entt::entity ow
 	}
 
 	navMeshAgent->ClearTarget(world);
+	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
+
+	if (physicsBody2DComponent == nullptr)
+	{
+		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
+		return;
+	}
+
+	physicsBody2DComponent->mLinearVelocity = { 0,0 };
 }
 
 std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const CE::World& world,

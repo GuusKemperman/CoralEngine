@@ -554,6 +554,11 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 
 	RemoveComponents<IsAwaitingBeginPlayTag>(entities, entities + numOfEntities);
 
+	if (!mWorld.get().HasBegunPlay())
+	{
+		return;
+	}
+
 	for (const BoundEvent& boundEvent : mBoundBeginPlayEvents)
 	{
 		entt::sparse_set* storage = Storage(boundEvent.mType.get().GetTypeId());
@@ -597,6 +602,7 @@ CE::AnyStorage::AnyStorage(const MetaType& type) :
 	mType(type),
 	mOnConstruct(TryGetEvent(type, sConstructEvent)),
 	mOnBeginPlay(TryGetEvent(type, sBeginPlayEvent)),
+	mOnDestruct(TryGetEvent(type, sDestructEvent)),
 	mTypeInfo(type.GetTypeId(), type.GetTypeInfo(), type.GetName())
 {
 	ASSERT(CanTypeBeUsed(type));
