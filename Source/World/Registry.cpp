@@ -554,6 +554,11 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 
 	RemoveComponents<IsAwaitingBeginPlayTag>(entities, entities + numOfEntities);
 
+	if (!mWorld.get().HasBegunPlay())
+	{
+		return;
+	}
+
 	for (const BoundEvent& boundEvent : mBoundBeginPlayEvents)
 	{
 		entt::sparse_set* storage = Storage(boundEvent.mType.get().GetTypeId());

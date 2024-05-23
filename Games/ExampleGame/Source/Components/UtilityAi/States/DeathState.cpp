@@ -44,7 +44,7 @@ void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 
 	if (animationRootComponent != nullptr)
 	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDeathAnimation, 0.0f);
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDeathAnimation, 0.0f, 1.0f, 1.5f);
 	}
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
@@ -78,6 +78,7 @@ CE::MetaType Game::DeathState::Reflect()
 	type.AddField(&DeathState::mDeathAnimation, "mDeathAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mDestroyEntityWhenDead, "mDestroyEntityWhenDead").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mMaxDeathTime, "mMaxDeathTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DeathState::mAnimationBlendTime, "mAnimationBlendTime").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<DeathState>(type);
 	return type;

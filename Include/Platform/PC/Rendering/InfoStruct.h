@@ -2,6 +2,7 @@
 
 #include "DX12Classes/DXDefines.h"
 #include "glm/glm.hpp"
+#include "Components/Particles/ParticleMeshRendererComponent.h"
 
 namespace CE::InfoStruct
 {
@@ -42,16 +43,16 @@ namespace CE::InfoStruct
 
     struct DXMaterialInfo
     {
-        glm::vec4 colorFactor;
-        glm::vec4 emissiveFactor;
-        float metallicFactor;
-        float roughnessFactor;
-        float normalScale;
-        uint32 useColorTex;
-        uint32 useEmissiveTex;
-        uint32 useMetallicRoughnessTex;
-        uint32 useNormalTex;
-        uint32 useOcclusionTex;
+        glm::vec4 colorFactor = glm::vec4(1.f);
+        glm::vec4 emissiveFactor =  glm::vec4(1.f);
+        float metallicFactor = 0.f;
+        float roughnessFactor = 0.f;
+        float normalScale = 1.f;
+        uint32 useColorTex = 0;
+        uint32 useEmissiveTex = 0;
+        uint32 useMetallicRoughnessTex = 0;
+        uint32 useNormalTex = 0;
+        uint32 useOcclusionTex = 0;
         glm::vec4 uvScale = glm::vec4(1);            
     };
 
@@ -66,6 +67,18 @@ namespace CE::InfoStruct
         glm::vec4 mColor;
         uint32 mUseTexture;
         uint32 mPadding[3];
+    };
+
+    struct DXParticleInfo {
+        glm::mat4x4 mMatrix = glm::mat4(1.f);
+        glm::vec4 mColor = glm::vec4(0.f);
+        bool mIsEmissive = false;
+        float mDistanceToCamera =0.f;
+        float mLightIntensity = 1.f;
+        float mLightRadius = 1.f;
+        DXMaterialInfo mMaterialInfo{};
+        StaticMesh* mMesh;
+        Material* mMaterial;
     };
 
     enum DXStructuredBuffers
@@ -100,6 +113,7 @@ namespace CE::InfoStruct
         PARTICLE_COLOR_CB,
         UI_MODEL_MAT_CB,
         FOG_CB,
+        PARTICLE_INFO_CB,
         NUM_CBS
     };
 
@@ -128,6 +142,13 @@ namespace CE::InfoStruct
         glm::vec4 mOutlineColor;
         float mThickness;
         float padding[3];
+    };
+
+    struct DXParticleBufferInfo
+    {
+        uint32 mIsEmissive = 0;
+        float mEmissionIntensity = 1.f;
+        float padding[2];
     };
 
     namespace Clustering
