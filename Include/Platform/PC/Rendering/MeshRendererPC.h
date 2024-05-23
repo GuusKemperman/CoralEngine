@@ -31,9 +31,11 @@ namespace CE
         void BindMaterial(const CE::Material& material);
 
         ComPtr<ID3D12PipelineState>  mPBRPipeline;
+        ComPtr<ID3D12PipelineState>  mParticlePBRPipeline;
         ComPtr<ID3D12PipelineState>  mPBRSkinnedPipeline;
         ComPtr<ID3D12PipelineState>  mClusterGridPipeline;
         ComPtr<ID3D12PipelineState>  mCullClusterPipeline;
+        ComPtr<ID3D12PipelineState>  mCullClusterParticlePipeline;
         ComPtr<ID3D12PipelineState>  mCullClusterSkinnedMeshPipeline;
         ComPtr<ID3D12PipelineState>  mCompactClusterPipeline;
         ComPtr<ID3D12PipelineState>  mAssignLigthsPipeline;
