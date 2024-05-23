@@ -27,13 +27,13 @@ CE::World::World(const bool beginPlayImmediately) :
 }
 
 CE::World::World(World&& other) noexcept :
+	mTime(other.mTime),
+	mHasBegunPlay(other.mHasBegunPlay),
 	mRegistry(std::move(other.mRegistry)),
 	mViewport(std::move(other.mViewport)),
 	mGPUWorld(std::move(other.mGPUWorld)),
 	mPhysics(std::move(other.mPhysics)),
-	mLevelToTransitionTo(std::move(other.mLevelToTransitionTo)),
-	mTime(other.mTime),
-	mHasBegunPlay(other.mHasBegunPlay)
+	mLevelToTransitionTo(std::move(other.mLevelToTransitionTo))
 {
 	mRegistry->mWorld = *this;
 	mViewport->mWorld = *this;
