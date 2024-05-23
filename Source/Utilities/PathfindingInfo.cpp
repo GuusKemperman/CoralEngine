@@ -60,95 +60,112 @@ int Pathfinding::Node::GetId() const
 	return mId;
 }
 
-Pathfinding::Graph::Graph(const std::vector<Node>& nodes) : ListOfNodes(nodes)
+Pathfinding::Graph::Graph(const std::vector<Node>& nodes) : mNodes(nodes)
 {
 }
 
 void Pathfinding::Graph::AddNode(const float x, const float y)
 {
-	const Node nodeToAdd = {static_cast<int>(ListOfNodes.size()), {x, y}};
-	ListOfNodes.push_back(nodeToAdd);
+	const Node nodeToAdd = {static_cast<int>(mNodes.size()), {x, y}};
+	mNodes.push_back(nodeToAdd);
 }
 
 std::vector<const Pathfinding::Node*> Pathfinding::Graph::AStarSearch(
 	const Node* startNode, const Node* endNode) const
 {
-	// Initialize an empty vector to store the resulting path
-	std::vector<const Node*> nodePath = {};
+	struct OpenListItem
+	{
+		int mId;
+		int mCameFromId{ -1 };
+		float mG{};
+		float mH{};
+	};
 
-	// Initialize a map to keep track of OpenListItems and a priority queue to manage nodes
-	std::unordered_map<int, OpenListItem> openListItemMap = {};
-	std::priority_queue<OpenListItem*, std::vector<OpenListItem*>, CompareNodes> open = {};
+	// Static, so we can reuse the buffer
+	static std::vector<OpenListItem> openStorage{};
+	openStorage.clear();
+	openStorage.resize(mNodes.size());
+
+	for (int i = 0; i < static_cast<int>(openStorage.size()); i++)
+	{
+		openStorage[i].mId = i;
+	}
+
+	const auto compareNodes = [](int lhsId, int rhsId)
+		{
+			const OpenListItem& lhs = openStorage[lhsId];
+			const OpenListItem& rhs = openStorage[rhsId];
+			return lhs.mG + lhs.mH > rhs.mG + rhs.mH;
+		};
+
+	// Initialize an empty vector to store the resulting path
+	static std::vector<const Node*> nodePath = {};
+	nodePath.clear();
 
 	// Create the OpenListItem for the start node and add it to the map and priority queue
-	OpenListItem startOpenListItem((startNode->GetId()), startNode);
+	OpenListItem& startOpenListItem = openStorage[startNode->GetId()];
 	startOpenListItem.mH = Heuristic(*startNode, *endNode);
-	openListItemMap[startNode->GetId()] = startOpenListItem;
-	open.push(&openListItemMap[startNode->GetId()]);
 
-	while (!open.empty())
+	// Static, so we can reuse the buffer
+	static std::vector<uint32> heap{};
+	heap.clear();
+	heap.reserve(mNodes.size());
+	heap.emplace_back(startOpenListItem.mId);
+	std::push_heap(heap.begin(), heap.end(), compareNodes);
+
+	while (!heap.empty())
 	{
 		// Get the node with the lowest F (H + G) from the priority queue
-		OpenListItem* v = open.top();
-		open.pop();
+		const OpenListItem& current = openStorage[heap.front()];
+
+		std::pop_heap(heap.begin(), heap.end(), compareNodes);
+		heap.pop_back();
 
 		// If the current node is the end node, construct the path and return it
-		if (v->mActualNode == endNode)
+		if (current.mId == endNode->GetId())
 		{
-			const Node* pastNode = v->mActualNode;
-			while (openListItemMap[pastNode->GetId()].mParentNode != nullptr)
+			const OpenListItem* pastItem = &current;
+
+			while(true)
 			{
-				nodePath.push_back(pastNode);
-				pastNode = openListItemMap[pastNode->GetId()].mParentNode;
+				nodePath.emplace_back(&mNodes[pastItem->mId]);
+
+				if (pastItem->mCameFromId == -1)
+				{
+					break;
+				}
+				pastItem = &openStorage[pastItem->mCameFromId];
 			}
-			nodePath.push_back(startNode);
+
 			std::reverse(nodePath.begin(), nodePath.end());
 			return nodePath;
 		}
 
-		if (v->mVisited)
-		{
-			// Skip nodes that have already been visited
-			continue;
-		}
-		v->mVisited = true;
-
 		// Explore neighbouring nodes
-		for (const auto edge : v->mActualNode->GetConnectingEdges())
+		for (const Edge& edge : mNodes[current.mId].GetConnectingEdges())
 		{
 			const int toNodeId = edge.GetToNode()->GetId();
-			const auto it = openListItemMap.find(toNodeId);
-			OpenListItem* toNode;
+			OpenListItem& neighbour = openStorage[toNodeId];
 
-			if (it == openListItemMap.end())
-			{
-				// Create a new OpenListItem and insert it into the map
-				const OpenListItem newItem(toNodeId, edge.GetToNode());
-				openListItemMap[toNodeId] = newItem;
-				toNode = &openListItemMap[toNodeId];
-			}
-			else
-			{
-				// Node already exists in the map
-				toNode = &it->second;
-			}
-
-			if (toNode->mVisited)
+			if (neighbour.mCameFromId != -1
+				|| &neighbour == &startOpenListItem)
 			{
 				// Skip visited nodes
 				continue;
 			}
 
 			// Calculate the new G (cost from start node to the current node)
-			const auto newG = v->mG + edge.GetCost();
+			const auto newG = current.mG + edge.GetCost();
 
 			// Update node information if this is a better path
-			if (newG < toNode->mG || toNode->mG == 0.0f)
+			if (newG < neighbour.mG || neighbour.mG == 0.0f)
 			{
-				toNode->mG = newG;
-				toNode->mH = Heuristic(*toNode->mActualNode, *endNode);
-				toNode->mParentNode = v->mActualNode;
-				open.push(toNode);
+				neighbour.mG = newG;
+				neighbour.mH = Heuristic(mNodes[neighbour.mId], *endNode);
+				neighbour.mCameFromId = current.mId;
+
+				heap.emplace_back(toNodeId);
+				std::push_heap(heap.begin(), heap.end(), compareNodes);
 			}
 		}
 	}
@@ -157,14 +174,12 @@ std::vector<const Pathfinding::Node*> Pathfinding::Graph::AStarSearch(
 
 float Pathfinding::Graph::Heuristic(const Node& currentNode, const Node& endNode) const
 {
-	return sqrt(
-		static_cast<float>(pow(endNode.GetPosition().x - currentNode.GetPosition().x, 2)) + static_cast<float>(pow(
-			endNode.GetPosition().y - currentNode.GetPosition().y, 2)));
+	return glm::distance(endNode.GetPosition(), currentNode.GetPosition());
 }
 
 void Pathfinding::Graph::DebugDrawAStarGraph(const World& world) const
 {
-	for (const auto& n : ListOfNodes)
+	for (const auto& n : mNodes)
 	{
 		DrawDebugCircle(world, DebugCategory::Gameplay, glm::vec3{n.GetPosition().x, 0, n.GetPosition().y},
 		                0.2f,
@@ -179,7 +194,3 @@ void Pathfinding::Graph::DebugDrawAStarGraph(const World& world) const
 	}
 }
 
-bool Pathfinding::Graph::CompareNodes::operator()(const OpenListItem* lhs, const OpenListItem* rhs) const
-{
-	return lhs->mG + lhs->mH > rhs->mG + rhs->mH;
-}

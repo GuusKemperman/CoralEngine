@@ -324,7 +324,7 @@ bool Input::HasFocus() const
 {
 #ifdef EDITOR
     return !Device::IsHeadless()  // ImGui may not have been initialised
-		&& ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+		&& ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 #else
     // No editor windows, so assume we always have focus.
     return true;

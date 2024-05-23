@@ -50,6 +50,24 @@ static_assert(false, "EngineDebug or EngineRelease configuration is not supporte
 #pragma warning(pop)
 #endif
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 5054)
+#endif
+
+#include "cereal/cereal.hpp"
+#include "cereal/types/pair.hpp"
+#include "cereal/types/glm.hpp"
+#include "cereal/types/vector.hpp"
+#include "cereal/types/unordered_map.hpp"
+#include "cereal/types/optional.hpp"
+#include "cereal/types/string.hpp"
+#include "cereal/archives/binary.hpp"
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 #ifdef PLATFORM_WINDOWS
 #define DX12
 #endif // PLATFORM_WINDOWS
@@ -70,6 +88,16 @@ namespace CE {}
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_stdlib.h"
 #include "imgui/IconsFontAwesome.h"
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4201)
+#pragma warning(disable : 4201)
+#endif
+#include "imgui/auto.h"
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif // EDITOR
 

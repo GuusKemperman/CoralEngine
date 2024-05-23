@@ -24,7 +24,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<AbilityFunctionality>{}, "AbilityFunctionality" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect)
+	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
@@ -32,9 +32,9 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, abilityEffect);
 
 		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
-		const CharacterComponent&, entt::entity, AbilityEffect>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent*, entt::entity, AbilityEffect>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration)
+	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
@@ -42,9 +42,9 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 			ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, abilityEffect, duration);
 
 		}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
-		const CharacterComponent&, entt::entity, AbilityEffect, float>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent*, entt::entity, AbilityEffect, float>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	metaType.AddFunc([](const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration, int ticks)
+	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration, int ticks)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
@@ -52,7 +52,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 			ApplyOverTimeEffect(*world, castByCharacterData, affectedEntity, abilityEffect, duration, ticks);
 
 		}, "ApplyOverTimeEffect", MetaFunc::ExplicitParams<
-		const CharacterComponent&, entt::entity, AbilityEffect, float, int>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent*, entt::entity, AbilityEffect, float, int>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "TickDuration", "NumberOfTicks").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy) -> entt::entity
 		{
@@ -102,10 +102,26 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "WasTheAbilityCastByAnEnemy", MetaFunc::ExplicitParams<
 		entt::entity, entt::entity>{}, "Entity To Affect", "Ability Entity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
+	metaType.AddFunc([](float& toChange, float percentage) -> float&
+		{
+
+			return IncreaseValueByPercentage(toChange, percentage);
+
+		}, "IncreaseValueByPercentage (by reference)", MetaFunc::ExplicitParams<
+		float&, float>{}, "Value To Change", "Percentage").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](float toChange, float percentage) -> float
+		{
+
+			return IncreaseValueByPercentage(toChange, percentage);
+
+		}, "IncreaseValueByPercentage (by value)", MetaFunc::ExplicitParams<
+		float, float>{}, "Value To Change", "Percentage").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
 	return metaType;
 }
 
-std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect)
+std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect)
 {
 	auto& reg = world.GetRegistry();
 	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
@@ -125,7 +141,11 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 	{
 		if (effect.mStat == Stat::Health)
 		{
-			const float damageModifier = characterComponent->mCurrentReceivedDamageModifier + castByCharacterData.mCurrentDealtDamageModifier;
+			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
+			if (castByCharacterData != nullptr)
+			{
+				damageModifier += castByCharacterData->mCurrentDealtDamageModifier;
+			}
 			effect.mAmount += effect.mAmount * damageModifier * 0.01f;
 		}
 
@@ -151,7 +171,7 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 	return effect.mAmount;
 }
 
-void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const CharacterComponent& castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration)
+void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration)
 {
 	const auto calculatedAmount = ApplyInstantEffect(world, castByCharacterData, affectedEntity, effect);
 	if (!calculatedAmount.has_value())
@@ -173,7 +193,7 @@ void CE::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& charac
 	currentStat -= durationalEffect.mAmount;
 }
 
-void CE::AbilityFunctionality::ApplyOverTimeEffect(World& world, const CharacterComponent&, entt::entity affectedEntity, AbilityEffect effect, float duration, int ticks)
+void CE::AbilityFunctionality::ApplyOverTimeEffect(World& world, const CharacterComponent*, entt::entity affectedEntity, AbilityEffect effect, float duration, int ticks)
 {
 	auto& reg = world.GetRegistry();
 	auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
@@ -341,6 +361,13 @@ bool CE::AbilityFunctionality::WasTheAbilityCastByAnEnemy(World& world, entt::en
 	}
 	
 	return entityToAffectCharacterComponent->mTeamId != activeAbilityComponent->mCastByCharacterData.mTeamId;
+}
+
+float& CE::AbilityFunctionality::IncreaseValueByPercentage(float& toChange, float percentage)
+{
+	const float increase = percentage * 0.01f * toChange;
+	toChange += increase;
+	return toChange;
 }
 
 std::pair<float&, float&> CE::AbilityFunctionality::GetStat(Stat stat, CharacterComponent& characterComponent)

@@ -264,9 +264,9 @@ CE::GPUWorld::GPUWorld(const World& world)
     mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "POINT LIGHT COUNTER BUFFER");
     mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER]->CreateUploadBuffer(device, sizeof(uint32), 0);
 
-    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(int32) * mNumberOfClusters, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
+    resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(int32) * mNumberOfClusters * MAX_LIGHTS_PER_CLUSTER, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::LIGHT_INDICES] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "LIGHTI INDICES BUFFER");
-    mStructuredBuffers[InfoStruct::LIGHT_INDICES]->CreateUploadBuffer(device, sizeof(int32) * mNumberOfClusters, 0);
+    mStructuredBuffers[InfoStruct::LIGHT_INDICES]->CreateUploadBuffer(device, sizeof(int32) * mNumberOfClusters * MAX_LIGHTS_PER_CLUSTER, 0);
 
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32) * mNumberOfClusters, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::ACTIVE_CLUSTER_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "ACTIVE CLUSTER BUFFER");
@@ -318,10 +318,12 @@ CE::GPUWorld::GPUWorld(const World& world)
     //Active clusters
     srvDesc.Buffer.StructureByteStride = sizeof(uint32);
     mActiveClusterSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::ACTIVE_CLUSTER_SB].get(), &srvDesc); 
-    srvDesc.Buffer.StructureByteStride = sizeof(int32);
+    srvDesc.Buffer.StructureByteStride = sizeof(uint32);
+    srvDesc.Buffer.NumElements = mNumberOfClusters * MAX_LIGHTS_PER_CLUSTER;
     mLightIndicesSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::LIGHT_INDICES].get(), &srvDesc); 
 
-    //Compact clusters
+    //Compact cluster
+    srvDesc.Buffer.NumElements = mNumberOfClusters;
     srvDesc.Buffer.StructureByteStride = sizeof(uint32);
     mCompactClusterSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB].get(), &srvDesc); 
 
@@ -343,10 +345,12 @@ CE::GPUWorld::GPUWorld(const World& world)
     //Active clusters
     uavDesc.Buffer.StructureByteStride = sizeof(uint32);
     mActiveClusterUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::ACTIVE_CLUSTER_SB].get(), &uavDesc); 
-    uavDesc.Buffer.StructureByteStride = sizeof(int32);
+    uavDesc.Buffer.StructureByteStride = sizeof(uint32);
+    uavDesc.Buffer.NumElements = mNumberOfClusters * MAX_LIGHTS_PER_CLUSTER;
     mLightIndicesUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::LIGHT_INDICES].get(), &uavDesc); 
 
     //Compact clusters
+    uavDesc.Buffer.NumElements = mNumberOfClusters;
     uavDesc.Buffer.StructureByteStride = sizeof(uint32);
     uavDesc.Buffer.CounterOffsetInBytes = 0;
     mCompactClusterUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB].get(), &uavDesc, mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER].get()); 
@@ -418,7 +422,6 @@ void CE::GPUWorld::Update()
         glm::vec3 lightDirection = quatRotation * baseDir;
         float extent = lightComponent.mShadowExtent;
 
-        glm::vec3 lightForward = transform.GetWorldForward();
         glm::mat4x4 projection = glm::orthoLH_ZO(-extent, extent, -extent, extent, -extent, extent);
         glm::mat4x4 view = lightComponent.GetShadowView(mWorld, transform);
         
@@ -516,8 +519,13 @@ void CE::GPUWorld::Update()
             modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
             mConstBuffers[InfoStruct::MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
 
+            // Do we now have a loot of unused space?
+            // If we first draw 10'000 static meshes, then meshCounter will be 10'000,
+            // and the first 10'000 FINAL_BONE_MATRIX_CB slots will be unused, with
+            // each slot being quite large. This leads to buffer overflows with many
+            // static meshes - Guus
             const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
-            mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]->Update(&boneMatrices.at(0), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
+            mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]->Update(boneMatrices.data(), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
 
             meshCounter++;
         }
@@ -777,7 +785,7 @@ void CE::GPUWorld::UpdateClusterData(const CameraComponent& camera)
     clusterInfo.mNumClustersX = mClusterGrid.x;
     clusterInfo.mNumClustersY = mClusterGrid.y;
     clusterInfo.mNumClustersZ = mClusterGrid.z;
-    clusterInfo.mMaxLightsInCluster = 50;
+    clusterInfo.mMaxLightsInCluster = MAX_LIGHTS_PER_CLUSTER;
     mConstBuffers[InfoStruct::CLUSTER_INFO_CB]->Update(&clusterInfo, sizeof(InfoStruct::Clustering::DXCluster), 0, frameIndex);
 
     InfoStruct::Clustering::DXCameraClustering clusteringCam;
@@ -790,7 +798,7 @@ void CE::GPUWorld::UpdateClusterData(const CameraComponent& camera)
 #ifdef EDITOR
     clusteringCam.mScreenDimensions = ImGui::GetContentRegionAvail();
 #else
-    clusteringCam.mScreenDimensions = camera.mViewportSize;
+    clusteringCam.mScreenDimensions = engineDevice.GetDisplaySize();
 #endif
     clusteringCam.mTileSize = glm::vec2(clusteringCam.mScreenDimensions.x / clusterInfo.mNumClustersX, clusteringCam.mScreenDimensions.y / clusterInfo.mNumClustersY);
     mConstBuffers[InfoStruct::CLUSTERING_CAM_CB]->Update(&clusteringCam, sizeof(InfoStruct::Clustering::DXCameraClustering), 0, frameIndex);
@@ -808,10 +816,10 @@ void CE::GPUWorld::ClearClusterData()
     data.SlicePitch = sizeof(uint32) * mNumberOfClusters;
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
-    std::vector<int32> lightIndicesClear(mNumberOfClusters, -1);
+    std::vector<int32> lightIndicesClear(mNumberOfClusters*MAX_LIGHTS_PER_CLUSTER, -1);
     data.pData = lightIndicesClear.data();
     data.RowPitch = sizeof(int32);
-    data.SlicePitch = sizeof(int32) * mNumberOfClusters;
+    data.SlicePitch = sizeof(int32) * mNumberOfClusters * MAX_LIGHTS_PER_CLUSTER;
     mStructuredBuffers[InfoStruct::LIGHT_INDICES]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
     uint32 counterValue = 0;

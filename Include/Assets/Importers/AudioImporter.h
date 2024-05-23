@@ -4,8 +4,6 @@
 
 namespace CE
 {
-	struct BoneInfo;
-
 	class AudioImporter :
 		public Importer
 	{

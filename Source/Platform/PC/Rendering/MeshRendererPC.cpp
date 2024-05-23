@@ -305,26 +305,6 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         }
     }
 
-    commandList->SetPipelineState(mZSkinnedPipeline.Get());
-    {
-        const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
-
-        for (auto [entity, skinnedMeshComponent, transform] : view.each()) 
-        {
-            if (!skinnedMeshComponent.mSkinnedMesh)
-            {
-                meshCounter++;
-                continue;
-            }
-
-            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
-            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
-
-            skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
-            meshCounter++;
-        }
-    }
-
     uint32 particleCounter = 0;
 
     {
@@ -396,6 +376,28 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
             }
         }
     }
+
+
+    commandList->SetPipelineState(mZSkinnedPipeline.Get());
+    {
+        const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
+
+        for (auto [entity, skinnedMeshComponent, transform] : view.each()) 
+        {
+            if (!skinnedMeshComponent.mSkinnedMesh)
+            {
+                meshCounter++;
+                continue;
+            }
+
+            gpuWorld.GetModelMatrixBuffer().Bind(commandList, 1, meshCounter, frameIndex);
+            gpuWorld.GetBoneMatrixBuffer().Bind(commandList, 2, meshCounter, frameIndex);
+
+            skinnedMeshComponent.mSkinnedMesh->DrawMeshVertexOnly();
+            meshCounter++;
+        }
+    }
+
 
     meshCounter = 0;
     gpuWorld.GetSelectionFramebuffer().Bind();
@@ -696,19 +698,21 @@ void CE::MeshRenderer::AssignLights(const GPUWorld& gpuWorld, int compactCluster
 
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrier.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::POINT_LIGHT_COUNTER).Get(); // The resource that you're synchronizing.
+    barrier.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::POINT_LIGHT_COUNTER).Get();
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
     commandList->ResourceBarrier(1, &barrier);
 
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrier.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::LIGHT_GRID_SB).Get(); // The resource that you're synchronizing.
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    commandList->ResourceBarrier(1, &barrier);
+    D3D12_RESOURCE_BARRIER barrier2 = {};
+    barrier2.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    barrier2.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::LIGHT_GRID_SB).Get();
+    barrier2.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    commandList->ResourceBarrier(1, &barrier2);
 
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-    barrier.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::LIGHT_INDICES).Get(); // The resource that you're synchronizing.
-    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    commandList->ResourceBarrier(1, &barrier);
+    D3D12_RESOURCE_BARRIER barrier3 = {};
+    barrier3.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+    barrier3.UAV.pResource = gpuWorld.GetStructuredBuffer(InfoStruct::LIGHT_INDICES).Get();
+    barrier3.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+    commandList->ResourceBarrier(1, &barrier3);
 }
 
 void CE::MeshRenderer::ClusteredShading(const World& world)

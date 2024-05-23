@@ -65,7 +65,7 @@ void Game::ChargeDashState::OnAIStateEnterEvent(CE::World& world, entt::entity o
 		return;
 	}
 
-	navMeshAgent->StopNavMesh();
+	navMeshAgent->ClearTarget(world);
 }
 
 bool Game::ChargeDashState::IsDashCharged() const
