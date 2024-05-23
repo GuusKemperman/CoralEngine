@@ -6,6 +6,7 @@
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Meta/MetaType.h"
+#include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
