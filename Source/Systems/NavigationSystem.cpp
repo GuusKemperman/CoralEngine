@@ -1,8 +1,6 @@
 #include "Precomp.h"
 #include "Systems/NavigationSystem.h"
 
-#include <intsafe.h>
-
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
