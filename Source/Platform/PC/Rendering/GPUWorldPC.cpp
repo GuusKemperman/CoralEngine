@@ -781,10 +781,6 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
         }
     }
 
-    std::sort(mParticles.begin(), mParticles.begin() + mParticleCount, [&](InfoStruct::DXParticleInfo& a, InfoStruct::DXParticleInfo& b) {
-        return a.mDistanceToCamera > b.mDistanceToCamera;
-    });
-
     for (int i = 0; i < mParticleCount; i++) {
         mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB]->Update(&mParticles[i].mMaterialInfo, sizeof(InfoStruct::DXMaterialInfo), i, frameIndex);
         glm::mat4x4 modelMatrices[2]{};
