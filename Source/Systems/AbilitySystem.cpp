@@ -134,19 +134,20 @@ void CE::AbilitySystem::Update(World& world, float dt)
             }
             else
             {
-                std::function<void(const TransformComponent&)> SetMeshColor = [&reg, &color, &changedMeshColor](const TransformComponent& parent)
+                const auto setMeshColor = [&reg, &color, &changedMeshColor](const auto& self, const TransformComponent& current) -> void
                     {
-                        for (const auto& child : parent.GetChildren())
+                        for (const TransformComponent& child : current.GetChildren())
                         {
-                            auto meshColor = reg.TryGet<MeshColorComponent>(child.get().GetOwner());
+                            MeshColorComponent* const meshColor = reg.TryGet<MeshColorComponent>(child.GetOwner());
                             if (meshColor != nullptr)
                             {
                                 meshColor->mColorAddition = color;
                                 changedMeshColor = true;
                             }
+                            self(self, child);
                         }
                     };
-                SetMeshColor(*transform);
+                setMeshColor(setMeshColor, *transform);
             }
 
             if (changedMeshColor == false)
