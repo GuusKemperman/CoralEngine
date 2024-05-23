@@ -380,7 +380,7 @@ void CE::GPUWorld::Update()
     }
 
     const CameraComponent& camera = mWorld.get().GetRegistry().Get<const CameraComponent>(cameraOwner);
-
+    const TransformComponent& cameraTransform = mWorld.get().GetRegistry().Get<const TransformComponent>(cameraOwner);
     // Update camera
     InfoStruct::DXMatrixInfo matrixInfo{};
     matrixInfo.pm = glm::transpose(camera.GetProjection());
@@ -456,7 +456,7 @@ void CE::GPUWorld::Update()
         dirLightCounter++;
     }
 
-    UpdateParticles(camera.mPosition);
+    UpdateParticles(cameraTransform.GetLocalPosition());
     UpdateLights(dirLightCounter, mPointLightCounter);
 
     // Update materials
