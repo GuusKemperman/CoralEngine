@@ -26,6 +26,8 @@ namespace Game
 
 		float mMaxDeathTime = 5.0f;
 
+		float mAnimationBlendTime = 1.5f;
+
 	private:
 
 		friend CE::ReflectAccess;

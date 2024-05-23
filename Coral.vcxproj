@@ -531,6 +531,7 @@
     </ClCompile>
     <ClCompile Include="Source\Components\GridSpawnerComponent.cpp" />
     <ClCompile Include="Source\Components\OutlineComponent.cpp" />
+    <ClCompile Include="Source\Components\SpawnPrefabOnDestructComponent.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\PostProcessingRendererPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
@@ -1624,6 +1625,7 @@
     <ClInclude Include="Include\Components\OutlineComponent.h" />
     <ClInclude Include="Include\Components\PlayerComponent.h" />
     <ClInclude Include="Include\Components\AudioEmitterComponent.h" />
+    <ClInclude Include="Include\Components\SpawnPrefabOnDestructComponent.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
     <ClInclude Include="Include\Utilities\ASync.h" />
     <ClInclude Include="Include\Utilities\BVH.h" />
