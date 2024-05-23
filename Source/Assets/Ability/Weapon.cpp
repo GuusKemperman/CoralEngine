@@ -215,7 +215,8 @@ CE::MetaType CE::Weapon::Reflect()
 		"GetEffects", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](AssetHandle<Weapon>& weapon, AbilityEffect effect, int index)
 		{
-			if (weapon == nullptr || weapon->mEffects.size() <= index)
+			int numEffects = static_cast<int>(weapon->mEffects.size());
+			if (weapon == nullptr || numEffects <= index)
 			{
 				return;
 			}
