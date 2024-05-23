@@ -11,27 +11,25 @@
 
 void CE::SpawnPrefabOnDestructComponent::OnDestruct(World& world, entt::entity entity)
 {
+	if (mPrefab.empty())
+	{
+		LOG(LogWorld, Warning, "SpawnPrefabOnDestructComponent does not have any prefabs to spawn");
+		return;
+	}
+
 	const TransformComponent* transform = world.GetRegistry().TryGet<TransformComponent>(entity);
-
-	if (transform == nullptr)
+	
+	for (auto& prefab : mPrefab)
 	{
-		LOG(LogWorld, Warning, "Tried to construct a Prefab but no transform was found");
-		return;
-	}
-
-	if (mPrefab == nullptr)
-	{
-		LOG(LogWorld, Warning, "SpawnPrefabOnDestructComponent does not have a prefab to spawn");
-		return;
-	}
-
-	entt::entity newEntity = world.GetRegistry().CreateFromPrefab(*mPrefab);
-
-	TransformComponent* newTransform = world.GetRegistry().TryGet<TransformComponent>(newEntity);
-
-	if (newTransform != nullptr)
-	{
-		newTransform->SetWorldMatrix(transform->GetWorldMatrix());
+		entt::entity newEntity = world.GetRegistry().CreateFromPrefab(*prefab);
+		
+		TransformComponent* newTransform = world.GetRegistry().TryGet<TransformComponent>(newEntity);
+		
+		if (transform != nullptr
+			&& newTransform != nullptr)
+		{
+			newTransform->SetWorldMatrix(transform->GetWorldMatrix());
+		}
 	}
 }
 

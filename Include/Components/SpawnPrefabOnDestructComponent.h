@@ -12,7 +12,7 @@ namespace CE
 	public:
 		void OnDestruct(World& world, entt::entity entity);
 
-		AssetHandle<Prefab> mPrefab{};
+		std::vector<AssetHandle<Prefab>> mPrefab{};
 
 	private:
 		
