@@ -409,6 +409,9 @@
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
       <ExtraWarnings />
+      <OptimizationLevel>Level3</OptimizationLevel>
+      <UnrollLoops>true</UnrollLoops>
+      <LinkTimeOptimization>true</LinkTimeOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -429,6 +432,7 @@
     </ProjectReference>
     <WavePsslc>
       <AdditionalIncludeDirectories>$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>O4</Optimization>
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">
