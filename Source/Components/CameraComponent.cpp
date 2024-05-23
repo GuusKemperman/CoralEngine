@@ -31,12 +31,12 @@ void CE::CameraComponent::UpdateProjection(const glm::vec2 viewportSize, bool re
 void CE::CameraComponent::UpdateProjection(const float aspectRatio, bool recalculateViewProjection)
 {
 	mProjection = glm::perspective(mFOV, aspectRatio, mNear, mFar);
+	mViewportSize = glm::vec2(ImGui::GetContentRegionAvail());
 
 	// Calculating the orthographic projection is a matter to discuss and look into further, 
-	// since it may not work as well on different resolutions
-	const float halfAspectRatio = aspectRatio * 0.5f;
-	mOrthographicProjection = glm::ortho(-halfAspectRatio, halfAspectRatio, -halfAspectRatio, halfAspectRatio, -1.0f, 1.0f);
-
+	// since it may not work as well on different resolution
+	mOrthographicProjection = glm::ortho(-aspectRatio, aspectRatio, -1.f, 1.f, -1.0f, 1.0f);
+	
 	if (recalculateViewProjection)
 	{
 		RecalculateViewProjection();

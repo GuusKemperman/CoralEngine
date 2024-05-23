@@ -71,10 +71,10 @@ void CE::UIRenderer::Render(const World& world)
     }
 
     std::sort(drawRequests.begin(), drawRequests.end(),
-        [](const DrawRequest& lhs, const DrawRequest& rhs)
-        {
-            return lhs.mDepth > rhs.mDepth;
-        });
+    [](const DrawRequest& lhs, const DrawRequest& rhs)
+    {
+        return lhs.mDepth > rhs.mDepth;
+    });
 
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -84,13 +84,12 @@ void CE::UIRenderer::Render(const World& world)
     UIRenderingData& renderingData = gpuWorld.GetUIRenderingData();
 
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
-
-
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
     commandList->SetPipelineState(mPipeline.Get());
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
-
+    gpuWorld.GetCameraBuffer().Bind(commandList, 0, 2, frameIndex);
+ 
     for (int i = 0; i < drawRequests.size(); i++)
     {
         const entt::entity entity = drawRequests[i].mEntity;
@@ -101,8 +100,8 @@ void CE::UIRenderer::Render(const World& world)
         modelMat.mModel = glm::transpose(transform.GetWorldMatrix());
         modelMat.mTransposed = glm::transpose(modelMat.mModel);
         renderingData.mModelMatBuffer->Update(&modelMat, sizeof(ModelMat), i, frameIndex);
-        renderingData.mModelMatBuffer->Bind(commandList, 0, i, frameIndex);
-
+        renderingData.mModelMatBuffer->Bind(commandList, 1, i, frameIndex);
+        
         InfoStruct::ColorInfo colorInfo;
         colorInfo.mColor = sprite.mColor;
         if (sprite.mTexture != nullptr)
