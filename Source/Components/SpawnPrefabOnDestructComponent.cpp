@@ -14,7 +14,6 @@ void CE::SpawnPrefabOnDestructComponent::OnDestruct(World& world, entt::entity e
 {
 	if (mPrefab.empty())
 	{
-		LOG(LogWorld, Warning, "SpawnPrefabOnDestructComponent does not have any prefabs to spawn");
 		return;
 	}
 
@@ -22,6 +21,11 @@ void CE::SpawnPrefabOnDestructComponent::OnDestruct(World& world, entt::entity e
 	
 	for (auto& prefab : mPrefab)
 	{
+		if (prefab == nullptr)
+		{
+			continue;
+		}
+		
 		entt::entity newEntity = world.GetRegistry().CreateFromPrefab(*prefab);
 		
 		TransformComponent* newTransform = world.GetRegistry().TryGet<TransformComponent>(newEntity);
