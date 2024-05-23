@@ -798,7 +798,7 @@ void CE::GPUWorld::UpdateClusterData(const CameraComponent& camera)
 #ifdef EDITOR
     clusteringCam.mScreenDimensions = ImGui::GetContentRegionAvail();
 #else
-    clusteringCam.mScreenDimensions = camera.mViewportSize;
+    clusteringCam.mScreenDimensions = engineDevice.GetDisplaySize();
 #endif
     clusteringCam.mTileSize = glm::vec2(clusteringCam.mScreenDimensions.x / clusterInfo.mNumClustersX, clusteringCam.mScreenDimensions.y / clusterInfo.mNumClustersY);
     mConstBuffers[InfoStruct::CLUSTERING_CAM_CB]->Update(&clusteringCam, sizeof(InfoStruct::Clustering::DXCameraClustering), 0, frameIndex);

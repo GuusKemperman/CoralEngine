@@ -25,7 +25,6 @@ void CE::CameraComponent::UpdateView(const TransformComponent& transform, bool r
 void CE::CameraComponent::UpdateProjection(const glm::vec2 viewportSize, bool recalculateViewProjection)
 {
 	UpdateProjection(viewportSize.x / viewportSize.y, recalculateViewProjection);
-	mViewportSize = viewportSize;
 }
 
 void CE::CameraComponent::UpdateProjection(const float aspectRatio, bool recalculateViewProjection)
