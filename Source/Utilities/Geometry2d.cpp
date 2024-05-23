@@ -5,6 +5,41 @@
 
 #include <glm/gtx/norm.hpp>
 
+float CE::Line::SignedDistance(glm::vec2 toPoint) const
+{
+	glm::vec2 pa = toPoint - mStart, ba = mEnd - mStart;
+	float h = glm::clamp(glm::dot(pa, ba) / glm::dot(ba, ba), 0.0f, 1.0f);
+	return glm::length(pa - ba * h);
+}
+
+glm::vec2 CE::Line::ClosestPointOnLine(glm::vec2 toPoint) const
+{
+	// Vector from start to end
+	glm::vec2 lineVec = mEnd - mStart;
+
+	// Vector from start to the point in question
+	glm::vec2 pointVec = toPoint - mStart;
+
+	// Calculate the projection of pointVec onto lineVec using the dot product
+	float lineLengthSquared = glm::dot(lineVec, lineVec); // |lineVec|^2
+
+	// Avoid division by zero if start and end are the same point
+	if (lineLengthSquared == 0.0f) 
+	{
+		return mStart;
+	}
+
+	float t = glm::dot(pointVec, lineVec) / lineLengthSquared;
+
+	// Clamp t to the range [0, 1] to ensure the closest point is on the segment
+	t = glm::clamp(t, 0.0f, 1.0f);
+
+	// Calculate the closest point on the line segment
+	glm::vec2 closestPoint = mStart + t * lineVec;
+
+	return closestPoint;
+}
+
 float CE::TransformedAABB::SignedDistance(glm::vec2 toPoint) const
 {
 	const glm::vec2 halfExtends = (mMax - mMin) * 0.5f;

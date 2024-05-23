@@ -8,6 +8,9 @@ namespace CE
 
 	struct Line
 	{
+		float SignedDistance(glm::vec2 toPoint) const;
+		glm::vec2 ClosestPointOnLine(glm::vec2 toPoint) const;
+
 		glm::vec2 mStart{};
 		glm::vec2 mEnd{};
 	};
