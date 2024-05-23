@@ -602,6 +602,7 @@ CE::AnyStorage::AnyStorage(const MetaType& type) :
 	mType(type),
 	mOnConstruct(TryGetEvent(type, sConstructEvent)),
 	mOnBeginPlay(TryGetEvent(type, sBeginPlayEvent)),
+	mOnDestruct(TryGetEvent(type, sDestructEvent)),
 	mTypeInfo(type.GetTypeId(), type.GetTypeInfo(), type.GetName())
 {
 	ASSERT(CanTypeBeUsed(type));
