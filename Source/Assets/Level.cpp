@@ -310,28 +310,13 @@ void CE::EraseSerializedComponents(World& world,
 
 	const MetaType* typeToErase = MetaManager::Get().TryGetType(*nameOfClassToErase);
 
-	for (const auto [typeId, storage] : world.GetRegistry().Storage())
+	if (typeToErase != nullptr)
 	{
-		const MetaType* const type = MetaManager::Get().TryGetType(typeId);
-
-		if (type == nullptr)
-		{
-			continue;
-		}
-
-		if (nameOfClassToErase.has_value()
-			&& typeToErase != type)
-		{
-			continue;
-		}
-
 		for (const entt::entity entity : eraseFromIds)
 		{
-			world.GetRegistry().RemoveComponentIfEntityHasIt(typeId, entity);
+			world.GetRegistry().RemoveComponentIfEntityHasIt(typeToErase->GetTypeId(), entity);
 		}
 	}
-
-
 }
 
 void CE::EraseSerializedFactory(World& world,
@@ -377,6 +362,17 @@ CE::Level::DiffedPrefabFactory CE::Level::DiffPrefabFactory(const BinaryGSONObje
 		serializedComponentNames != nullptr)
 	{
 		*serializedComponentNames >> componentNames;
+
+		// In case any of our components got renamed
+		for (std::string& name : componentNames)
+		{
+			const MetaType* componentType = MetaManager::Get().TryGetType(name);
+
+			if (componentType != nullptr)
+			{
+				name = componentType->GetName();
+			}
+		}
 	}
 	else
 	{
