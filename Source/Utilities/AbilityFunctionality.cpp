@@ -102,6 +102,22 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "WasTheAbilityCastByAnEnemy", MetaFunc::ExplicitParams<
 		entt::entity, entt::entity>{}, "Entity To Affect", "Ability Entity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
+	metaType.AddFunc([](float& toChange, float percentage) -> float&
+		{
+
+			return IncreaseValueByPercentage(toChange, percentage);
+
+		}, "IncreaseValueByPercentage (by reference)", MetaFunc::ExplicitParams<
+		float&, float>{}, "Value To Change", "Percentage").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](float toChange, float percentage) -> float
+		{
+
+			return IncreaseValueByPercentage(toChange, percentage);
+
+		}, "IncreaseValueByPercentage (by value)", MetaFunc::ExplicitParams<
+		float, float>{}, "Value To Change", "Percentage").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
 	return metaType;
 }
 
@@ -345,6 +361,13 @@ bool CE::AbilityFunctionality::WasTheAbilityCastByAnEnemy(World& world, entt::en
 	}
 	
 	return entityToAffectCharacterComponent->mTeamId != activeAbilityComponent->mCastByCharacterData.mTeamId;
+}
+
+float& CE::AbilityFunctionality::IncreaseValueByPercentage(float& toChange, float percentage)
+{
+	const float increase = percentage * 0.01f * toChange;
+	toChange += increase;
+	return toChange;
 }
 
 std::pair<float&, float&> CE::AbilityFunctionality::GetStat(Stat stat, CharacterComponent& characterComponent)
