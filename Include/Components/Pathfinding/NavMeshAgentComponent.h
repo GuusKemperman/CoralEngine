@@ -25,6 +25,10 @@ namespace CE
 		using TargetT = std::variant<std::monostate, glm::vec2, entt::entity>;
 		TargetT mTarget{};
 
+		float mAvoidanceDistance = 5.0f;
+
+		float mAdditionalDistanceAlongPathToTarget = 25.0f;
+
 	private:
 		entt::entity mOwner{};
 
