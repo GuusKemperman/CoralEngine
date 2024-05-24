@@ -466,6 +466,38 @@ void CE::GPUWorld::Update()
     // do it here instead. The only downside is that we have to iterate over the static meshes
     // twice, but in entt this is surprisingly fast.
     int meshCounter = 0;
+    {
+        // We get transform to make sure the mesh count is correct, since the user can have a mesh without a transform
+        const auto view = mWorld.get().GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
+
+        for (auto [entity, skinnedMeshComponent, transformComponent] : view.each())
+        {
+            if (!skinnedMeshComponent.mSkinnedMesh)
+            {
+                meshCounter++;
+                continue;
+            }
+
+            // Update material
+            InfoStruct::DXMaterialInfo materialInfo = GetMaterial(skinnedMeshComponent.mMaterial.Get());
+            mConstBuffers[InfoStruct::MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
+
+            glm::mat4x4 modelMatrices[2]{};
+            modelMatrices[0] = glm::transpose(transformComponent.GetWorldMatrix());
+            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
+            mConstBuffers[InfoStruct::MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+
+            // Do we now have a loot of unused space?
+            // If we first draw 10'000 static meshes, then meshCounter will be 10'000,
+            // and the first 10'000 FINAL_BONE_MATRIX_CB slots will be unused, with
+            // each slot being quite large. This leads to buffer overflows with many
+            // static meshes - Guus
+            const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
+            mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]->Update(boneMatrices.data(), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
+
+            meshCounter++;
+        }
+    }
 
     {
         // We get transform to make sure the mesh count is correct, since the user can have a mesh without a transform
@@ -502,38 +534,6 @@ void CE::GPUWorld::Update()
         }
     }
 
-    {
-        // We get transform to make sure the mesh count is correct, since the user can have a mesh without a transform
-        const auto view = mWorld.get().GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
-
-        for (auto [entity, skinnedMeshComponent, transformComponent] : view.each())
-        {
-            if (!skinnedMeshComponent.mSkinnedMesh)
-            {
-                meshCounter++;
-                continue;
-            }
-
-            // Update material
-            InfoStruct::DXMaterialInfo materialInfo = GetMaterial(skinnedMeshComponent.mMaterial.Get());
-            mConstBuffers[InfoStruct::MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
-
-            glm::mat4x4 modelMatrices[2]{};
-            modelMatrices[0] = glm::transpose(transformComponent.GetWorldMatrix());
-            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-            mConstBuffers[InfoStruct::MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
-
-            // Do we now have a loot of unused space?
-            // If we first draw 10'000 static meshes, then meshCounter will be 10'000,
-            // and the first 10'000 FINAL_BONE_MATRIX_CB slots will be unused, with
-            // each slot being quite large. This leads to buffer overflows with many
-            // static meshes - Guus
-            const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
-            mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]->Update(boneMatrices.data(), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
-
-            meshCounter++;
-        }
-    }
 
     {
         InfoStruct::DXFogInfo fog{};
