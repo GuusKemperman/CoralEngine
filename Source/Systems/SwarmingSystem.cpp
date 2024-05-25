@@ -233,6 +233,9 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 			{
 				float lowestDist = std::numeric_limits<float>::infinity();
 
+				// Captured bindings...
+				SwarmingTargetComponent& targetRef = target;
+
 				const auto checkNbr = [&](int nbrX, int nbrY)
 					{
 						if (nbrY < 0
@@ -246,17 +249,12 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 						const int nbrIndex = nbrX + nbrY * fieldWidth;
 						const float dist = distanceField[nbrIndex];
 
-						if (fabsf(lowestDist - dist) < 0.5f
+						if ((fabsf(lowestDist - dist) < 0.5f
 							&& ((nbrX & 1) || (nbrY & 1)))
+							|| dist < lowestDist)
 						{
 							lowestDist = dist;
-							target.mFlowField[x + y * fieldWidth] = glm::normalize(glm::vec2{ static_cast<float>(nbrX - x), static_cast<float>(nbrY - y) });
-						}
-
-						if (dist < lowestDist)
-						{
-							lowestDist = dist;
-							target.mFlowField[x + y * fieldWidth] = glm::normalize(glm::vec2{ static_cast<float>(nbrX - x), static_cast<float>(nbrY - y) });
+							targetRef.mFlowField[x + y * fieldWidth] = glm::normalize(glm::vec2{ static_cast<float>(nbrX - x), static_cast<float>(nbrY - y) });
 						}
 					};
 
