@@ -28,7 +28,7 @@ namespace CE
 		SystemStaticTraits GetStaticTraits() const override
 		{
 			SystemStaticTraits traits{};
-			traits.mFixedTickInterval = .5f;
+			traits.mFixedTickInterval = .7f;
 			return traits;
 		}
 

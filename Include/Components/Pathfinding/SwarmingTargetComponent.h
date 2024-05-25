@@ -10,7 +10,7 @@ namespace CE
 		// The space between cells,
 		// and the space used for
 		// local avoidance.
-		float mSpacing = 5.0f;
+		float mSpacing = 2.5f;
 
 		float mDesiredRadius = 150.0f;
 
