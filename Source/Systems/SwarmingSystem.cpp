@@ -95,7 +95,7 @@ void CE::SwarmingAgentSystem::Update(World& world, float)
 				);
 		}
 
-		const glm::vec2 avoidanceDir = CalculateAvoidanceVelocity(world, entity, target.mSpacing, transform, collider);
+		const glm::vec2 avoidanceDir = CalculateAvoidanceVelocity(world, entity, collider.mRadius * 2.0f, transform, collider);
 
 		const glm::vec2 desiredDir = CombineVelocities(avoidanceDir, flowFieldDir);
 
@@ -115,9 +115,18 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 	Registry& reg = world.GetRegistry();
 	const BVH& bvh = world.GetPhysics().GetBVHs()[static_cast<int>(CollisionLayer::StaticObstacles)];
 
-	for (auto [entity, target, transform] : reg.View<SwarmingTargetComponent, TransformComponent>().each())
+	float minRadius = std::numeric_limits<float>::infinity();
+	const auto agentView = reg.View<SwarmingAgentTag, TransformedDiskColliderComponent>();
+
+	for (auto [entity, disk] : agentView.each())
 	{
-		const glm::vec2 targetPosition = transform.GetWorldPosition2D();
+		minRadius = std::min(disk.mRadius, minRadius);
+	}
+
+	for (auto [entity, target, disk] : reg.View<SwarmingTargetComponent, TransformedDiskColliderComponent>().each())
+	{
+		const glm::vec2 targetPosition = disk.mCentre;
+		target.mSpacing = std::min(disk.mRadius, minRadius);
 
 		int fieldWidth = std::max(static_cast<int>((target.mDesiredRadius * 2.0f) / target.mSpacing), 3);
 
@@ -133,7 +142,8 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 		target.mFlowField.resize(static_cast<size_t>(fieldWidth * fieldWidth));
 
 		// A floodfill does not cover enclosed areas.
-		// We initialize 
+		// We initialize all cells with the direction
+		// to the player
 		for (int y = 0; y < target.mFlowFieldWidth; y++)
 		{
 			for (int x = 0; x < target.mFlowFieldWidth; x++)
@@ -147,6 +157,17 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 				}
 
 				target.mFlowField[x + y * fieldWidth] = glm::normalize(toTarget);
+			}
+		}
+
+		std::vector isBlocked(target.mFlowField.size(), false);
+
+		for (int y = 0; y < target.mFlowFieldWidth; y++)
+		{
+			for (int x = 0; x < target.mFlowFieldWidth; x++)
+			{
+				const TransformedAABB cell = target.GetCellBox(x, y);
+				isBlocked[x + y * target.mFlowFieldWidth] = bvh.Query<BVH::DefaultOnIntersectFunction, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<true>>(cell);
 			}
 		}
 
@@ -179,18 +200,13 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 						return;
 					}
 
-					TransformedAABB cell = target.GetCellBox(x, y);
+					const int nbrIndex = nbrX + nbrY * fieldWidth;
 
-					const glm::vec2 extraSize = cell.GetSize() * .5f;
-					cell.mMin -= extraSize;
-					cell.mMax += extraSize;
-
-					if (bvh.Query<BVH::DefaultOnIntersectFunction, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<true>>(cell))
+					if (isBlocked[nbrIndex])
 					{
 						return;
 					}
 
-					const int nbrIndex = nbrX + nbrY * fieldWidth;
 					const float nbrDist = currentDist + distIncease;
 
 					if (nbrDist < distanceField[nbrIndex])
@@ -200,10 +216,10 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 					}
 				};
 
-			exploreNbr(x - 1, y - 1, 1.4f);
-			exploreNbr(x + 1, y + 1, 1.4f);
-			exploreNbr(x + 1, y - 1, 1.4f);
-			exploreNbr(x - 1, y + 1, 1.4f);
+			exploreNbr(x - 1, y - 1, 1.41421357f);
+			exploreNbr(x + 1, y + 1, 1.41421357f);
+			exploreNbr(x + 1, y - 1, 1.41421357f);
+			exploreNbr(x - 1, y + 1, 1.41421357f);
 
 			exploreNbr(x - 1, y, 1.0f);
 			exploreNbr(x, y - 1, 1.0f);
@@ -229,13 +245,19 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 
 						const int nbrIndex = nbrX + nbrY * fieldWidth;
 						const float dist = distanceField[nbrIndex];
-						if (dist >= lowestDist)
+
+						if (fabsf(lowestDist - dist) < 0.5f
+							&& ((nbrX & 1) || (nbrY & 1)))
 						{
-							return;
+							lowestDist = dist;
+							target.mFlowField[x + y * fieldWidth] = glm::normalize(glm::vec2{ static_cast<float>(nbrX - x), static_cast<float>(nbrY - y) });
 						}
 
-						lowestDist = dist;
-						target.mFlowField[x + y * fieldWidth] = glm::normalize(glm::vec2{ static_cast<float>(nbrX - x), static_cast<float>(nbrY - y) });
+						if (dist < lowestDist)
+						{
+							lowestDist = dist;
+							target.mFlowField[x + y * fieldWidth] = glm::normalize(glm::vec2{ static_cast<float>(nbrX - x), static_cast<float>(nbrY - y) });
+						}
 					};
 
 				checkNbr(x - 1, y - 1);
