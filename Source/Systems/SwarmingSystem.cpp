@@ -96,7 +96,17 @@ void CE::SwarmingAgentSystem::Update(World& world, float)
 		}
 
 		const glm::vec2 avoidanceDir = CalculateAvoidanceVelocity(world, entity, target.mSpacing, transform, collider);
-		body.mLinearVelocity = CombineVelocities(avoidanceDir, flowFieldDir) * character.mCurrentMovementSpeed;
+
+		const glm::vec2 desiredDir = CombineVelocities(avoidanceDir, flowFieldDir);
+
+		const float length2 = glm::length2(desiredDir);
+
+		if (length2 != 0.0f)
+		{
+			transform.SetWorldOrientation(Math::Direction2DToXZQuatOrientation(desiredDir / glm::sqrt(length2)));
+		}
+
+		body.mLinearVelocity = desiredDir * character.mCurrentMovementSpeed;
 	}
 }
 
