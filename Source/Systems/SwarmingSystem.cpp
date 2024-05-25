@@ -179,7 +179,12 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 						return;
 					}
 
-					const TransformedAABB cell = target.GetCellBox(x, y);
+					TransformedAABB cell = target.GetCellBox(x, y);
+
+					const glm::vec2 extraSize = cell.GetSize() * .5f;
+					cell.mMin -= extraSize;
+					cell.mMax += extraSize;
+
 					if (bvh.Query<BVH::DefaultOnIntersectFunction, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<true>>(cell))
 					{
 						return;
