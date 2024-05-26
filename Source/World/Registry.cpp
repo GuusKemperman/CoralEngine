@@ -682,7 +682,9 @@ void CE::AnyStorage::pop(basic_iterator first, basic_iterator last)
 	{
 		const entt::entity entity = *first;
 		MetaAny component = element_at(index(entity));
-		if (mOnDestruct != nullptr)
+
+		if (mOnDestruct != nullptr
+			&& world.HasBegunPlay())
 		{
 			mOnDestruct->InvokeUncheckedUnpacked(component, world, entity);
 		}
