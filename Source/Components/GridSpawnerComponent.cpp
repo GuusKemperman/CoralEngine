@@ -14,13 +14,16 @@ void CE::GridSpawnerComponent::OnConstruct(World&, entt::entity owner)
 	mOwner = owner;
 }
 
-void CE::GridSpawnerComponent::SpawnGrid()
+void CE::GridSpawnerComponent::OnBeginPlay(World&, entt::entity) const
 {
-	if (mTiles.empty())
+	if (mShouldSpawnOnBeginPlay)
 	{
-		return;
+		SpawnGrid();
 	}
+}
 
+void CE::GridSpawnerComponent::ClearGrid() const
+{
 	World* const world = World::TryGetWorldAtTopOfStack();
 
 	if (world == nullptr)
@@ -40,6 +43,31 @@ void CE::GridSpawnerComponent::SpawnGrid()
 	for (const TransformComponent& child : transform->GetChildren())
 	{
 		reg.Destroy(child.GetOwner(), true);
+	}
+}
+
+void CE::GridSpawnerComponent::SpawnGrid() const
+{
+	if (mTiles.empty())
+	{
+		return;
+	}
+
+	World* const world = World::TryGetWorldAtTopOfStack();
+
+	if (world == nullptr)
+	{
+		return;
+	}
+
+	ClearGrid();
+
+	Registry& reg = world->GetRegistry();
+	TransformComponent* transform = reg.TryGet<TransformComponent>(mOwner);
+
+	if (transform == nullptr)
+	{
+		return;
 	}
 
 	float total{};
@@ -144,10 +172,13 @@ CE::MetaType CE::GridSpawnerComponent::Reflect()
 	type.AddField(&GridSpawnerComponent::mTiles, "mTiles").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mSpawnChances, "mChances").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mIsCentered, "mIsCentered").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mShouldSpawnOnBeginPlay, "mShouldSpawnOnBeginPlay").GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddFunc(&GridSpawnerComponent::SpawnGrid, "Spawn Grid").GetProperties().Add(Props::sCallFromEditorTag);
+	type.AddFunc(&GridSpawnerComponent::ClearGrid, "Clear Grid").GetProperties().Add(Props::sCallFromEditorTag);
 
 	BindEvent(type, sConstructEvent, &GridSpawnerComponent::OnConstruct);
+	BindEvent(type, sBeginPlayEvent, &GridSpawnerComponent::OnBeginPlay);
 
 	ReflectComponentType<GridSpawnerComponent>(type);
 	return type;

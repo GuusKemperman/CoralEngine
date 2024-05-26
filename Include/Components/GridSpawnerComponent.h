@@ -10,8 +10,10 @@ namespace CE
 	{
 	public:
 		void OnConstruct(World&, entt::entity owner);
+		void OnBeginPlay(World&, entt::entity) const;
 
-		void SpawnGrid();
+		void ClearGrid() const;
+		void SpawnGrid() const;
 
 		std::vector<AssetHandle<Prefab>> mTiles{};
 		std::vector<float> mSpawnChances{ 1.0f };
@@ -20,6 +22,7 @@ namespace CE
 		uint32 mWidth = 1;
 		uint32 mHeight = 1;
 
+		bool mShouldSpawnOnBeginPlay{};
 		bool mIsCentered{};
 
 		entt::entity mOwner{};

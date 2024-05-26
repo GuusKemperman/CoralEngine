@@ -227,6 +227,8 @@ namespace CE
 				}
 			}();
 
+		World::PushWorld(mWorld);
+
 		if constexpr (sIsReflectable<ComponentType>)
 		{
 			if (const_cast<const Registry&>(*this).Storage<ComponentType>() == nullptr
@@ -285,6 +287,8 @@ namespace CE
 					}
 				}
 			}
+
+			World::PopWorld();
 
 			return component;
 		}

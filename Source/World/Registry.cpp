@@ -559,6 +559,8 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 		return;
 	}
 
+	World::PushWorld(mWorld);
+
 	for (const BoundEvent& boundEvent : mBoundBeginPlayEvents)
 	{
 		entt::sparse_set* storage = Storage(boundEvent.mType.get().GetTypeId());
@@ -587,6 +589,8 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 			}
 		}
 	}
+
+	World::PopWorld();
 }
 
 bool CE::Registry::ShouldWeCallBeginPlayImmediatelyAfterConstruct(entt::entity ownerOfNewlyConstructedComponent) const
