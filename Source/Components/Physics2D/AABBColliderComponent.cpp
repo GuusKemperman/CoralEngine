@@ -11,30 +11,7 @@ CE::TransformedAABB CE::AABBColliderComponent::CreateTransformedCollider(const T
 	const glm::vec2 worldPosition = transform.GetWorldPosition2D();
 	const glm::vec2 scale = transform.GetWorldScale2D();
 	const glm::vec2 scaledHalfExtends = mHalfExtends * scale;
-
-	const glm::vec2 vertices[4] =
-	{
-		-scaledHalfExtends,
-		{ -scaledHalfExtends.x, scaledHalfExtends.y },
-		{ scaledHalfExtends.x, -scaledHalfExtends.y },
-		scaledHalfExtends
-	};
-
-	TransformedAABBColliderComponent rotatedAABB{ glm::vec2{ std::numeric_limits<float>::infinity() }, glm::vec2{ -std::numeric_limits<float>::infinity() } };
-	const glm::quat orientation = transform.GetWorldOrientation();
-
-	for (int i = 0; i < 4; i++)
-	{
-		const glm::vec2 transformedVertex = To2DRightForward(Math::RotateVector(To3DRightForward(vertices[i], 0.0f), orientation));
-
-		rotatedAABB.mMin = glm::min(rotatedAABB.mMin, transformedVertex);
-		rotatedAABB.mMax = glm::max(rotatedAABB.mMax, transformedVertex);
-	}
-
-	rotatedAABB.mMin += worldPosition;
-	rotatedAABB.mMax += worldPosition;
-
-	return rotatedAABB;
+	return { worldPosition - scaledHalfExtends, worldPosition + scaledHalfExtends };
 }
 
 CE::MetaType CE::AABBColliderComponent::Reflect()
