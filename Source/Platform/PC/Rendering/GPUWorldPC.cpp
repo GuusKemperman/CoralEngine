@@ -872,6 +872,8 @@ void CE::GPUWorld::ClearClusterData()
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 
+    // This uses a loot of memory and is quite slow,
+    // is there not a DX equivalent for memset? - Guus
     const size_t zeroBufferSize = std::max(mNumberOfClusters * sizeof(uint32), mNumberOfClusters * sizeof(InfoStruct::Clustering::DXLightGridElement));
     static std::vector<uint8> manyZeroes(zeroBufferSize, 0);
 	manyZeroes.resize(zeroBufferSize, 0);

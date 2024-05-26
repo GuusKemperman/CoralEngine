@@ -22,6 +22,8 @@ namespace CE
 		uint32 mWidth = 1;
 		uint32 mHeight = 1;
 
+		uint32 mNumOfPossibleRotations = 1;
+
 		bool mShouldSpawnOnBeginPlay{};
 		bool mIsCentered{};
 
