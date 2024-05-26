@@ -323,7 +323,7 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 		const MetaFunc* const onBeginPlay = asAnyStorage->GetOnBeginPlay();
 
 		if (onBeginPlay != nullptr
-			&& GetWorld().HasBegunPlay())
+			&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
 		{
 			onBeginPlay->InvokeUncheckedUnpacked(componentToReturn, GetWorld(), toEntity);
 		}
