@@ -156,7 +156,9 @@ void CE::GridSpawnerComponent::SpawnGrid() const
 			}
 
 			child->SetParent(transform);
-			child->SetLocalPosition(position);
+
+			const glm::vec2 offset = { Random::Range(0.0f, mMaxRandomOffset), Random::Range(0.0f, mMaxRandomOffset) };
+			child->SetLocalPosition(position + offset);
 
 			const uint32 orientation = Random::Range(1u, mNumOfPossibleRotations);
 			const float angle = static_cast<float>(orientation) * angleStep;
@@ -176,6 +178,7 @@ CE::MetaType CE::GridSpawnerComponent::Reflect()
 	type.AddField(&GridSpawnerComponent::mHeight, "mHeight").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mWidth, "mWidth").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mNumOfPossibleRotations, "mNumOfPossibleRotations").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mMaxRandomOffset, "mMaxRandomOffset").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mTiles, "mTiles").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mSpawnChances, "mChances").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mIsCentered, "mIsCentered").GetProperties().Add(Props::sIsScriptableTag);

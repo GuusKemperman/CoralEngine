@@ -23,6 +23,7 @@ namespace CE
 		uint32 mHeight = 1;
 
 		uint32 mNumOfPossibleRotations = 1;
+		float mMaxRandomOffset = 0.0f;
 
 		bool mShouldSpawnOnBeginPlay{};
 		bool mIsCentered{};
