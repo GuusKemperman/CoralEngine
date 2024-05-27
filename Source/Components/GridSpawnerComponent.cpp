@@ -5,16 +5,14 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Assets/Prefabs/Prefab.h"
-#include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 void CE::GridSpawnerComponent::OnConstruct(World&, entt::entity owner)
 {
 	mOwner = owner;
 }
 
-void CE::GridSpawnerComponent::OnBeginPlay(World&, entt::entity) const
+void CE::GridSpawnerComponent::OnBeginPlay(World&, entt::entity)
 {
 	if (mShouldSpawnOnBeginPlay)
 	{
@@ -22,7 +20,7 @@ void CE::GridSpawnerComponent::OnBeginPlay(World&, entt::entity) const
 	}
 }
 
-void CE::GridSpawnerComponent::ClearGrid() const
+void CE::GridSpawnerComponent::ClearGrid()
 {
 	World* const world = World::TryGetWorldAtTopOfStack();
 
@@ -46,9 +44,9 @@ void CE::GridSpawnerComponent::ClearGrid() const
 	}
 }
 
-void CE::GridSpawnerComponent::SpawnGrid() const
+void CE::GridSpawnerComponent::SpawnGrid()
 {
-	if (mTiles.empty())
+	if (mDistribution.mWeights.empty())
 	{
 		return;
 	}
@@ -69,42 +67,6 @@ void CE::GridSpawnerComponent::SpawnGrid() const
 	{
 		return;
 	}
-
-	float total{};
-
-	struct SpawnChance
-	{
-		AssetHandle<Prefab> mTile{};
-		float mChance{};
-	};
-	std::vector<SpawnChance> chances{};
-
-	for (uint32 i = 0; i < mTiles.size(); i++)
-	{
-		chances.emplace_back(SpawnChance{ mTiles[i], i < mSpawnChances.size() ? mSpawnChances[i] : 0.0f });
-	}
-
-	for (const SpawnChance& spawnChance : chances)
-	{
-		total += spawnChance.mChance;
-	}
-
-	std::sort(chances.begin(), chances.end(),
-		[](const SpawnChance& Left, const SpawnChance& Right)
-		{
-			return Left.mChance < Right.mChance;
-		});
-
-	// Normalize and cumulate
-	float cumulative{};
-	for (SpawnChance& spawnChance : chances)
-	{
-		spawnChance.mChance /= total;
-
-		spawnChance.mChance += cumulative;
-		cumulative = spawnChance.mChance;
-	}
-
 	const float angleStep = TWOPI / static_cast<float>(mNumOfPossibleRotations);
 
 	for (uint32 x = 0; x < mWidth; x++)
@@ -123,30 +85,16 @@ void CE::GridSpawnerComponent::SpawnGrid() const
 				position.y -= static_cast<float>(mHeight - 1) * mSpacing.y * .5f;
 			}
 
-			const double randomNum = Random::Range(0.0f, 1.0f);
 
-			int32 bestIndex = 0;
-			int32 numChances = static_cast<int32>(chances.size());
+			const AssetHandle<Prefab>* tile = mDistribution.GetNext();
 
-			for (int32 i = 1; i < numChances; i++)
-			{
-				const float Value = chances[i].mChance > randomNum ? chances[i].mChance : INFINITY;
-				const float BestValue = chances[bestIndex].mChance > randomNum ? chances[bestIndex].mChance : INFINITY;
-
-				if (Value < BestValue)
-				{
-					bestIndex = i;
-				}
-			}
-
-			AssetHandle<Prefab> tile = chances[bestIndex].mTile;
-
-			if (tile == nullptr)
+			if (tile == nullptr
+				|| *tile == nullptr)
 			{
 				continue;
 			}
 
-			const entt::entity entity = reg.CreateFromPrefab(*tile);
+			const entt::entity entity = reg.CreateFromPrefab(**tile);
 
 			TransformComponent* child = reg.TryGet<TransformComponent>(entity);
 
@@ -179,8 +127,7 @@ CE::MetaType CE::GridSpawnerComponent::Reflect()
 	type.AddField(&GridSpawnerComponent::mWidth, "mWidth").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mNumOfPossibleRotations, "mNumOfPossibleRotations").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mMaxRandomOffset, "mMaxRandomOffset").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&GridSpawnerComponent::mTiles, "mTiles").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&GridSpawnerComponent::mSpawnChances, "mChances").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mDistribution, "mDistribution").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mIsCentered, "mIsCentered").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mShouldSpawnOnBeginPlay, "mShouldSpawnOnBeginPlay").GetProperties().Add(Props::sIsScriptableTag);
 
