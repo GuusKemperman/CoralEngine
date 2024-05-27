@@ -1,94 +1,19 @@
 #include "Precomp.h"
-#include "Systems/NavigationSystem.h"
+#include "Systems/NavMeshSystem.h"
 
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Components/Pathfinding/NavMeshComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
-#include "World/Physics.h"
+#include "Utilities/SteeringBehaviours.h"
 
 namespace CE::Internal
 {
-	static glm::vec2 CombineVelocities(const glm::vec2 dominantVelocity, const glm::vec2 recessiveVelocity)
-	{
-		const float oldRecessiveLength = glm::length(recessiveVelocity);
-
-		if (oldRecessiveLength == 0.0f) // Prevents divide by zero
-		{
-			return dominantVelocity;
-		}
-
-		// Floating point errors require the min..
-		const float dominantLength = std::min(glm::length(dominantVelocity), 1.0f);
-
-		const float newRecessiveLength = std::min(1.0f - dominantLength, oldRecessiveLength);
-		const glm::vec2 newRecessive = (recessiveVelocity / oldRecessiveLength) * newRecessiveLength;
-
-		return dominantVelocity + newRecessive;
-	}
-
-	static glm::vec2 CalculateAvoidanceVelocity(const World& world,
-		const entt::entity self,
-		const TransformComponent& transform,
-		const NavMeshAgentComponent& agent,
-		const PhysicsBody2DComponent& body,
-		const TransformedDiskColliderComponent& characterCollider)
-	{
-		const glm::vec2 myWorldPos = characterCollider.mCentre;
-
-		TransformedDisk avoidanceDisk = characterCollider;
-		avoidanceDisk.mRadius += agent.mAvoidanceDistance * transform.GetWorldScaleUniform2D();
-		avoidanceDisk.mRadius *= 2.0f;
-
-		std::vector<entt::entity> collidedWith = world.GetPhysics().FindAllWithinShape(avoidanceDisk, body.mRules);
-
-		glm::vec2 avoidanceVelocity{};
-
-		for (const entt::entity obstacle : collidedWith)
-		{
-			if (obstacle == self // Ignore myself
-				|| world.GetRegistry().HasComponent<NavMeshTargetTag>(obstacle)) // Do not avoid the target
-			{
-				continue;
-			}
-
-			const TransformComponent* obstacleTransform = world.GetRegistry().TryGet<TransformComponent>(obstacle);
-			if (obstacleTransform == nullptr)
-			{
-				continue;
-			}
-
-			const glm::vec2 obstaclePosition2D = obstacleTransform->GetWorldPosition2D();
-			glm::vec2 deltaPos = myWorldPos - obstaclePosition2D;
-
-			float deltaPosLength = length(deltaPos);
-
-			// Prevents division by 0
-			if (deltaPosLength == 0.0f)
-			{
-				deltaPos = glm::vec2{ 0.01f };
-				deltaPosLength = length(deltaPos);
-			}
-
-			const float avoidanceStrength = std::clamp((1.0f - (deltaPosLength / avoidanceDisk.mRadius)), 0.0f, 1.0f);
-
-			avoidanceVelocity += (deltaPos / deltaPosLength) * avoidanceStrength;
-		}
-
-		if (glm::length2(avoidanceVelocity) > 1.0f)
-		{
-			avoidanceVelocity = normalize(avoidanceVelocity);
-		}
-
-		return avoidanceVelocity;
-	}
-
 	static glm::vec2 CalculatePathFollowingVelocity(const World& world,
 		const TransformComponent& transform,
 		const CharacterComponent& character,
@@ -174,7 +99,7 @@ namespace CE::Internal
 	}
 }
 
-void CE::NavigationSystem::Update(World& world, float dt)
+void CE::NavMeshAgentSystem::Update(World& world, float dt)
 {
 	Registry& registry = world.GetRegistry();
 
@@ -198,8 +123,8 @@ void CE::NavigationSystem::Update(World& world, float dt)
 
 	for (auto [entity, navMeshComponent, characterComponent, transform, body, transformedDisk] : agentsView.each())
 	{
-		const glm::vec2 desiredVel = Internal::CombineVelocities(
-			Internal::CalculateAvoidanceVelocity(world, entity, transform, navMeshComponent, body, transformedDisk),
+		const glm::vec2 desiredVel = CombineVelocities(
+			CalculateAvoidanceVelocity(world, entity, navMeshComponent.mAvoidanceDistance, transform, transformedDisk),
 			Internal::CalculatePathFollowingVelocity(world, transform, characterComponent, navMeshComponent, dt));
 
 		const float length2 = glm::length2(desiredVel);
@@ -213,7 +138,7 @@ void CE::NavigationSystem::Update(World& world, float dt)
 	}
 }
 
-void CE::NavigationSystem::Render(const World& world)
+void CE::NavMeshAgentSystem::Render(const World& world)
 {
 	if (!DebugRenderer::IsCategoryVisible(DebugCategory::AINavigation))
 	{
@@ -241,12 +166,12 @@ void CE::NavigationSystem::Render(const World& world)
 	}
 }
 
-CE::MetaType CE::NavigationSystem::Reflect()
+CE::MetaType CE::NavMeshAgentSystem::Reflect()
 {
-	return MetaType{MetaType::T<NavigationSystem>{}, "NavigationSystem", MetaType::Base<System>{}};
+	return MetaType{MetaType::T<NavMeshAgentSystem>{}, "NavMeshAgentSystem", MetaType::Base<System>{}};
 }
 
-void CE::UpdatePathsSystem::Update(World& world, float)
+void CE::NavMeshPathingSystem::Update(World& world, float)
 {
 	mNumOfTicksReceived++;
 
@@ -293,7 +218,7 @@ void CE::UpdatePathsSystem::Update(World& world, float)
 	}
 }
 
-CE::MetaType CE::UpdatePathsSystem::Reflect()
+CE::MetaType CE::NavMeshPathingSystem::Reflect()
 {
-	return MetaType{ MetaType::T<UpdatePathsSystem>{}, "UpdatePathsSystem", MetaType::Base<System>{} };
+	return MetaType{ MetaType::T<NavMeshPathingSystem>{}, "NavMeshPathingSystem", MetaType::Base<System>{} };
 }

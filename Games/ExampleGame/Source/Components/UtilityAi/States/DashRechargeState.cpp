@@ -1,21 +1,15 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/DashRechargeState.h"
 
-#include "Components/TransformComponent.h"
-#include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
-#include "Systems/AbilitySystem.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeDashState.h"
 #include "Components/UtililtyAi/States/DashingState.h"
-
+#include "Assets/Animation/Animation.h"
 
 void Game::DashRechargeState::OnAiTick(CE::World& world, entt::entity owner, float dt)
 {
@@ -80,19 +74,6 @@ float Game::DashRechargeState::OnAiEvaluate(const CE::World& world, entt::entity
 	return 0;
 }
 
-void Game::DashRechargeState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
-{
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr)
-	{
-		LOG(LogAI, Warning, "An NavMeshAgent component is needed to run the DashRechargeState State!");
-		return;
-	}
-
-	navMeshAgent->ClearTarget(world);
-}
-
 CE::MetaType Game::DashRechargeState::Reflect()
 {
 	auto type = CE::MetaType{ CE::MetaType::T<DashRechargeState>{}, "DashRechargeState" };
@@ -102,7 +83,6 @@ CE::MetaType Game::DashRechargeState::Reflect()
 
 	BindEvent(type, CE::sAITickEvent, &DashRechargeState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &DashRechargeState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &DashRechargeState::OnAIStateEnterEvent);
 
 	type.AddField(&DashRechargeState::mDashRechargeAnimation, "mDashRechargeAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
