@@ -876,14 +876,19 @@ void CE::GPUWorld::ClearClusterData()
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 
-    std::vector<uint32> clusterCompactData(mNumberOfClusters, 0);
+    // This uses a loot of memory and is quite slow,
+    // is there not a DX equivalent for memset? - Guus
+    const size_t zeroBufferSize = std::max(mNumberOfClusters * sizeof(uint32), mNumberOfClusters * sizeof(InfoStruct::Clustering::DXLightGridElement));
+    static std::vector<uint8> manyZeroes(zeroBufferSize, 0);
+	manyZeroes.resize(zeroBufferSize, 0);
+
     D3D12_SUBRESOURCE_DATA data;
-    data.pData = clusterCompactData.data();
+    data.pData = manyZeroes.data();
     data.RowPitch = sizeof(uint32);
     data.SlicePitch = sizeof(uint32) * mNumberOfClusters;
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
-    std::vector<int32> lightIndicesClear(mNumberOfClusters*MAX_LIGHTS_PER_CLUSTER, -1);
+    static std::vector<int32> lightIndicesClear(mNumberOfClusters*MAX_LIGHTS_PER_CLUSTER, -1);
     data.pData = lightIndicesClear.data();
     data.RowPitch = sizeof(int32);
     data.SlicePitch = sizeof(int32) * mNumberOfClusters * MAX_LIGHTS_PER_CLUSTER;
@@ -896,8 +901,7 @@ void CE::GPUWorld::ClearClusterData()
     mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
-    std::vector<InfoStruct::Clustering::DXLightGridElement> lightGridClear(mNumberOfClusters, InfoStruct::Clustering::DXLightGridElement{});
-    data.pData = lightGridClear.data();
+    data.pData = manyZeroes.data();
     data.RowPitch = sizeof(InfoStruct::Clustering::DXLightGridElement);
     data.SlicePitch = sizeof(InfoStruct::Clustering::DXLightGridElement) * mNumberOfClusters;
     mStructuredBuffers[InfoStruct::LIGHT_GRID_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
