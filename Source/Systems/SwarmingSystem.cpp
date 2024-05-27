@@ -14,11 +14,6 @@
 #include "World/Physics.h"
 #include "World/Registry.h"
 
-namespace CE::Internal
-{
-
-}
-
 void CE::SwarmingAgentSystem::Update(World& world, float)
 {
 	Registry& reg = world.GetRegistry();
@@ -190,7 +185,7 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 			const int x = current % fieldWidth;
 			const int y = current / fieldWidth;
 
-			const auto exploreNbr = [&](int nbrX, int nbrY, float distIncease)
+			const auto exploreNbr = [&](const int nbrX, const int nbrY, const float distIncease)
 				{
 					if (nbrY < 0
 						|| nbrY >= fieldWidth
@@ -236,7 +231,7 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 				// Captured bindings...
 				SwarmingTargetComponent& targetRef = target;
 
-				const auto checkNbr = [&](int nbrX, int nbrY)
+				const auto checkNbr = [&](const int nbrX, const int nbrY)
 					{
 						if (nbrY < 0
 							|| nbrY >= fieldWidth
