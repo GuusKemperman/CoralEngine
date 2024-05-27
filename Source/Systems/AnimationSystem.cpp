@@ -216,7 +216,8 @@ void CE::AnimationSystem::Update(World& world, float dt)
 
 		const SkinnedMeshComponent* skinnedMesh = AttachToBoneComponent::FindSkinnedMeshParentRecursive(reg, *parent);
 
-		if (skinnedMesh == nullptr)
+		if (skinnedMesh == nullptr
+			|| skinnedMesh->mSkinnedMesh == nullptr)
 		{
 			continue;
 		}
