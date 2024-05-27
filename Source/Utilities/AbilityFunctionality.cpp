@@ -17,6 +17,7 @@
 #include "World/World.h"
 #include "Utilities/Math.h"
 #include "Assets/Prefabs/Prefab.h"
+#include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 CE::MetaType CE::AbilityFunctionality::Reflect()
@@ -89,6 +90,21 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 
 		}, "SpawnProjectilePrefabs", MetaFunc::ExplicitParams<
 		const AssetHandle<Prefab>&, entt::entity, const AssetHandle<Weapon>&>{}, "Prefab", "Cast By", "Weapon").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy, const WeaponInstance& weapon) -> std::vector<entt::entity>
+		{
+			if (prefab == nullptr)
+			{
+				LOG(LogWorld, Warning, "SpawnProjectilePrefabsFromWeaponInstance - Attempted to spawn NULL prefab.");
+				return {};
+			}
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			return SpawnProjectilePrefabsFromWeaponInstance(*world, *prefab, castBy, weapon);
+
+		}, "SpawnProjectilePrefabsFromWeaponInstance", MetaFunc::ExplicitParams<
+		const AssetHandle<Prefab>&, entt::entity, const WeaponInstance&>{}, "Prefab", "Cast By", "Weapon").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	metaType.AddFunc(&AbilityFunctionality::IncreasePierceCountAndReturnTrueIfExceeded, "IncreasePierceCountAndReturnTrueIfExceeded").GetProperties().Add(Props::sIsScriptableTag);
 
@@ -302,6 +318,42 @@ entt::entity CE::AbilityFunctionality::SpawnProjectilePrefab(World& world, const
 	return prefabEntity;
 }
 
+entt::entity CE::AbilityFunctionality::SpawnProjectilePrefabFromWeaponInstance(World& world, const Prefab& prefab, entt::entity castBy, const WeaponInstance& weapon)
+{
+	if (!weapon.mRuntimeWeapon.has_value())
+	{
+		LOG(LogAbilitySystem, Error, "SpawnProjectilePrefabFromWeaponInstance - mRuntimeWeapon was never initialized.");
+		return {};
+	}
+	entt::entity prefabEntity = SpawnAbilityPrefab(world, prefab, castBy);
+	if (prefabEntity == entt::null)
+	{
+		LOG(LogAbilitySystem, Error, "The prefab does not have a PhysicsBody2DComponent attached.");
+		return {};
+	}
+	auto& reg = world.GetRegistry();
+	const Weapon& weaponRef = weapon.mRuntimeWeapon.value();
+
+	auto& projectileComponent = reg.Get<ProjectileComponent>(prefabEntity);
+	projectileComponent.mSpeed = weaponRef.mProjectileSpeed;
+	projectileComponent.mRange = weaponRef.mProjectileRange;
+	projectileComponent.mPierceCount = weaponRef.mPierceCount;
+
+	auto& physicsBodyComponent = reg.Get<PhysicsBody2DComponent>(prefabEntity);
+
+	const auto characterTransform = reg.TryGet<TransformComponent>(castBy);
+	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+	physicsBodyComponent.mLinearVelocity = characterDir * projectileComponent.mSpeed;
+
+	auto& transformComponent = reg.Get<TransformComponent>(prefabEntity);
+	transformComponent.SetLocalScale(glm::vec3(weaponRef.mProjectileSize));
+
+	auto& effectsComponent = reg.Get<AbilityEffectsComponent>(prefabEntity);
+	effectsComponent.mEffects = weaponRef.mEffects;
+
+	return prefabEntity;
+}
+
 std::vector<entt::entity> CE::AbilityFunctionality::SpawnProjectilePrefabs(World& world, const Prefab& prefab, entt::entity castBy,
 	const AssetHandle<Weapon>& weapon)
 {
@@ -329,6 +381,46 @@ std::vector<entt::entity> CE::AbilityFunctionality::SpawnProjectilePrefabs(World
 	for (int i = 0; i < weaponRef.mProjectileCount; i++)
 	{
 		auto projectile = SpawnProjectilePrefab(world, prefab, castBy, weapon);
+		// Calculate and set the direction.
+		auto& physicsBody = reg.Get<PhysicsBody2DComponent>(projectile);
+		const auto projectileAngle = firstProjectileAngle + static_cast<float>(i) * angleBetweenProjectiles;
+		physicsBody.mLinearVelocity = glm::vec2(cos(projectileAngle), sin(projectileAngle)) * weaponRef.mProjectileSpeed;
+		projectilesVector.push_back(projectile);
+	}
+	return projectilesVector;
+}
+
+std::vector<entt::entity> CE::AbilityFunctionality::SpawnProjectilePrefabsFromWeaponInstance(World& world, const Prefab& prefab, entt::entity castBy, const WeaponInstance& weapon)
+{
+	if (!weapon.mRuntimeWeapon.has_value())
+	{
+		LOG(LogAbilitySystem, Error, "SpawnProjectilePrefabsFromWeaponInstance - mRuntimeWeapon was never initialized.");
+		return {};
+	}
+	const Weapon& weaponRef = weapon.mRuntimeWeapon.value();
+	if (weaponRef.mProjectileCount < 1)
+	{
+		LOG(LogAbilitySystem, Error, "SpawnProjectilePrefabsFromWeaponInstance - Projectile Count is less than 1.");
+		return {};
+	}
+	if (weaponRef.mProjectileCount == 1)
+	{
+		return { SpawnProjectilePrefabFromWeaponInstance(world, prefab, castBy, weapon) };
+	}
+
+	// else more than 1 projectile
+	auto& reg = world.GetRegistry();
+	const float spreadInRadians = glm::radians(weaponRef.mSpread);
+	const float angleBetweenProjectiles = spreadInRadians / static_cast<float>(weaponRef.mProjectileCount - 1);
+	const auto characterTransform = reg.TryGet<TransformComponent>(castBy);
+	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+	const float directionInRadians = atan2(characterDir.y, characterDir.x);
+	const float firstProjectileAngle = directionInRadians - spreadInRadians / 2.f;
+
+	std::vector<entt::entity> projectilesVector{};
+	for (int i = 0; i < weaponRef.mProjectileCount; i++)
+	{
+		auto projectile = SpawnProjectilePrefabFromWeaponInstance(world, prefab, castBy, weapon);
 		// Calculate and set the direction.
 		auto& physicsBody = reg.Get<PhysicsBody2DComponent>(projectile);
 		const auto projectileAngle = firstProjectileAngle + static_cast<float>(i) * angleBetweenProjectiles;
