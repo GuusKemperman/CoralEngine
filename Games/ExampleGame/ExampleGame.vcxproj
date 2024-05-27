@@ -389,6 +389,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Components\WavesComponent.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\StompStartState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Components\UtililtyAi\States\DanceState.h" />
@@ -409,6 +410,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Include\Components\WavesComponent.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\StompStartState.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
