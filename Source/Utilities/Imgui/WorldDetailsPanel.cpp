@@ -63,7 +63,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 			return lhs.GetName() > rhs.GetName();
 		});
 
-	ImGui::TextUnformatted(NameComponent::GetDisplayName(reg, selectedEntities[0]).c_str());
+	ImGui::TextUnformatted(NameComponent::GetDisplayName(reg, selectedEntities[0]).data());
 
 	if (selectedEntities.size() > 1)
 	{
