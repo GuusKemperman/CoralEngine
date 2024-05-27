@@ -2,20 +2,16 @@
 #include "Components/UtililtyAi/States/DashingState.h"
 
 #include "Components/TransformComponent.h"
-#include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
-#include "Systems/AbilitySystem.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeDashState.h"
-#include "Components/UtililtyAi/States/ChasingState.h"
 #include "Components/UtililtyAi/States/DashRechargeState.h"
+#include "Assets/Animation/Animation.h"
 
 
 void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt)
@@ -46,8 +42,6 @@ void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt
 
 float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
 {
-	//auto [score, entity] = GetBestScoreAndTarget(world, owner);
-
 	auto* chargeDashState = world.GetRegistry().TryGet<ChargeDashState>(owner);
 
 	if (chargeDashState == nullptr)
@@ -66,19 +60,10 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owne
 
 void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 {
-	const auto* target = world.GetRegistry().TryGet<Game::ChasingState>(owner);
-
-	if (target == nullptr)
-	{
-		LOG(LogAI, Warning, "An ChasingState is needed to run the Dashing State!");
-		return;
-	}
-
-	const entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
+	const entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
 	if (entityId == entt::null)
 	{
-		LOG(LogAI, Warning, "An NavMeshTargetTag on the player entity is needed to run the Dashing State!");
 		return;
 	}
 

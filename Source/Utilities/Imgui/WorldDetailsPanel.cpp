@@ -63,7 +63,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 			return lhs.GetName() > rhs.GetName();
 		});
 
-	ImGui::TextUnformatted(NameComponent::GetDisplayName(reg, selectedEntities[0]).c_str());
+	ImGui::TextUnformatted(NameComponent::GetDisplayName(reg, selectedEntities[0]).data());
 
 	if (selectedEntities.size() > 1)
 	{
@@ -89,7 +89,6 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 			[&world, &reg, &selectedEntities, &componentClass](std::string_view name)
 			{
 				bool removeButtonPressed{};
-
 				const bool isHeaderOpen = ImGui::CollapsingHeaderWithButton(name.data(), "X", &removeButtonPressed);
 
 				if (removeButtonPressed)
@@ -104,6 +103,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 
 				if (isHeaderOpen)
 				{
+					ImGui::PushID(name.data(), name.data() + name.size());
 					const MetaFunc* const onInspect = TryGetEvent(componentClass, sInspectEvent);
 
 					if (onInspect != nullptr)
@@ -319,7 +319,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 				});
 		}
 
-		Search::EndCategory({});
+		Search::EndCategory([]{ ImGui::PopID(); });
 	}
 
 	Search::End();

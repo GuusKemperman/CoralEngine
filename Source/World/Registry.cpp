@@ -323,7 +323,7 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 		const MetaFunc* const onBeginPlay = asAnyStorage->GetOnBeginPlay();
 
 		if (onBeginPlay != nullptr
-			&& GetWorld().HasBegunPlay())
+			&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
 		{
 			onBeginPlay->InvokeUncheckedUnpacked(componentToReturn, GetWorld(), toEntity);
 		}
@@ -559,6 +559,8 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 		return;
 	}
 
+	World::PushWorld(mWorld);
+
 	for (const BoundEvent& boundEvent : mBoundBeginPlayEvents)
 	{
 		entt::sparse_set* storage = Storage(boundEvent.mType.get().GetTypeId());
@@ -587,6 +589,8 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 			}
 		}
 	}
+
+	World::PopWorld();
 }
 
 bool CE::Registry::ShouldWeCallBeginPlayImmediatelyAfterConstruct(entt::entity ownerOfNewlyConstructedComponent) const
@@ -678,7 +682,9 @@ void CE::AnyStorage::pop(basic_iterator first, basic_iterator last)
 	{
 		const entt::entity entity = *first;
 		MetaAny component = element_at(index(entity));
-		if (mOnDestruct != nullptr)
+
+		if (mOnDestruct != nullptr
+			&& world.HasBegunPlay())
 		{
 			mOnDestruct->InvokeUncheckedUnpacked(component, world, entity);
 		}

@@ -300,7 +300,7 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 				{
 					for (entt::entity possibleCamera : possibleCamerasView)
 					{
-						if (ImGui::MenuItem(NameComponent::GetDisplayName(world.GetRegistry(), possibleCamera).c_str(), nullptr, possibleCamera == cameraEntity))
+						if (ImGui::MenuItem(NameComponent::GetDisplayName(world.GetRegistry(), possibleCamera).data(), nullptr, possibleCamera == cameraEntity))
 						{
 							CameraComponent::Select(world, possibleCamera);
 						}

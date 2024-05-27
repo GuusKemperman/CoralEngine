@@ -16,7 +16,6 @@ namespace Game
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
 		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
-		static void OnAIStateEnterEvent(CE::World& world, entt::entity owner);
 
 		float mCurrentRechargeTimer = 0.0f;
 
