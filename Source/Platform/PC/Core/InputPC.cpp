@@ -28,6 +28,13 @@ namespace
     bool gamepad_connected[max_nr_gamepads];
     GLFWgamepadstate gamepad_state[max_nr_gamepads];
     GLFWgamepadstate prev_gamepad_state[max_nr_gamepads];
+    // Triggers as buttons.
+    std::unordered_map<Input::GamepadButton, bool> initial_triggers_state =
+    { { Input::GamepadButton::TriggerLeft, false },
+     { Input::GamepadButton::TriggerRight, false } };
+    std::array<std::unordered_map<Input::GamepadButton, bool>, max_nr_gamepads> triggers_state = {
+    initial_triggers_state, initial_triggers_state, initial_triggers_state, initial_triggers_state };
+    std::array<std::unordered_map<Input::GamepadButton, bool>, max_nr_gamepads> prev_triggers_state = triggers_state;
 
     glm::vec2 mousepos;
     glm::vec2 previousmousepos;
@@ -106,12 +113,17 @@ void Input::NewFrame()
     }
 
     // update gamepad states
+    prev_triggers_state = triggers_state;
     for (int i = 0; i < max_nr_gamepads; ++i)
     {
         prev_gamepad_state[i] = gamepad_state[i];
 
         if (glfwJoystickPresent(i) && glfwJoystickIsGamepad(i))
             gamepad_connected[i] = static_cast<bool>(glfwGetGamepadState(i, &gamepad_state[i]));
+
+        // Triggers as buttons
+        triggers_state[i][GamepadButton::TriggerLeft] = IsGamepadButtonHeld(i, GamepadButton::TriggerLeft, false);
+        triggers_state[i][GamepadButton::TriggerRight] = IsGamepadButtonHeld(i, GamepadButton::TriggerRight, false);
     }
 
     GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
@@ -186,7 +198,8 @@ bool Input::WasGamepadButtonPressed(int gamepadID, GamepadButton button, bool ch
 
     if (button == GamepadButton::TriggerRight || button == GamepadButton::TriggerLeft)
     {
-        return false;
+        return triggers_state[gamepadID][button] == true &&
+            triggers_state[gamepadID][button] != prev_triggers_state[gamepadID][button];
     }
 
     int b = static_cast<int>(button);
@@ -206,7 +219,8 @@ bool Input::WasGamepadButtonReleased(int gamepadID, GamepadButton button, bool c
 
     if (button == GamepadButton::TriggerRight || button == GamepadButton::TriggerLeft)
     {
-        return false;
+        return triggers_state[gamepadID][button] == false &&
+            triggers_state[gamepadID][button] != prev_triggers_state[gamepadID][button];
     }
 
     int b = static_cast<int>(button);
