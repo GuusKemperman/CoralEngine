@@ -2,16 +2,17 @@
 #include "Components/UtililtyAi/States/ChasingState.h"
 
 #include "Components/TransformComponent.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/PlayerComponent.h"
+#include "Components/Pathfinding/SwarmingAgentTag.h"
+#include "Assets/Animation/Animation.h"
 
-void Game::ChasingState::OnAiTick(CE::World& world, entt::entity owner, float)
+void Game::ChasingState::OnAIStateEnter(CE::World& world, entt::entity owner)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
@@ -20,27 +21,17 @@ void Game::ChasingState::OnAiTick(CE::World& world, entt::entity owner, float)
 		animationRootComponent->SwitchAnimation(world.GetRegistry(), mChasingAnimation, 0.0f);
 	}
 
-	auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
-	mTargetEntity = targetEntity;
-
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr)
-	{
-		LOG(LogAI, Warning, "NavMeshAgentComponent is needed to run the Chasing State!");
-		return;
-	}
-
-	if (mTargetEntity != entt::null)
-	{
-		navMeshAgent->SetTargetEntity(mTargetEntity);
-	}
+	CE::SwarmingAgentTag::StartMovingToTarget(world, owner);
 }
 
-float Game::ChasingState::OnAiEvaluate(const CE::World& world, entt::entity owner)
+void Game::ChasingState::OnAIStateExit(CE::World& world, entt::entity owner)
+{
+	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
+}
+
+float Game::ChasingState::OnAIEvaluate(const CE::World& world, entt::entity owner)
 {
 	auto [score, entity] = GetBestScoreAndTarget(world, owner);
-	mTargetEntity = entity;
 	return score;
 }
 
@@ -49,11 +40,10 @@ std::pair<float, entt::entity> Game::ChasingState::GetBestScoreAndTarget(
 {
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
-	entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
+	entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
 	if (entityId == entt::null)
 	{
-		LOG(LogAI, Warning, "An entity with the NavMeshTargetTag is needed to run the Chasing State!");
 		return { 0.0f, entt::null };
 	}
 
@@ -114,8 +104,9 @@ CE::MetaType Game::ChasingState::Reflect()
 
 	type.AddField(&ChasingState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &ChasingState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &ChasingState::OnAiEvaluate);
+	BindEvent(type, CE::sAIStateEnterEvent, &ChasingState::OnAIStateEnter);
+	BindEvent(type, CE::sAIStateExitEvent, &ChasingState::OnAIStateExit);
+	BindEvent(type, CE::sAIEvaluateEvent, &ChasingState::OnAIEvaluate);
 
 	type.AddField(&ChasingState::mChasingAnimation, "mChasingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

@@ -366,27 +366,25 @@ void CE::PhysicsSystem::DebugDrawing(const World& world)
 		constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
 		for (auto [entity, disk, transform] : diskView.each())
 		{
-			DrawDebugCircle(world, DebugCategory::Physics, To3DRightForward(disk.mCentre, transform.GetWorldPosition()[Axis::Up]), disk.mRadius + 0.00001f, color);
+			DrawDebugCircle(world, DebugCategory::Physics, To3DRightForward(disk.mCentre), disk.mRadius + 0.00001f, color);
 		}
 
 		const auto polyView = reg.View<const TransformedPolygonColliderComponent, const TransformComponent>();
 		for (auto [entity, poly, transform] : polyView.each())
 		{
-			float height = transform.GetWorldPosition()[Axis::Up];
-
 			const size_t pointCount = poly.mPoints.size();
 			for (size_t i = 0; i < pointCount; ++i)
 			{
 				const glm::vec2 from = poly.mPoints[i];
 				const glm::vec2 to = poly.mPoints[(i + 1) % pointCount];
-				DrawDebugLine(world, DebugCategory::Physics, To3DRightForward(from, height), To3DRightForward(to, height), color);
+				DrawDebugLine(world, DebugCategory::Physics, To3DRightForward(from), To3DRightForward(to), color);
 			}
 		}
 
 		const auto aabbView = reg.View<const TransformedAABBColliderComponent, const TransformComponent>();
 		for (auto [entity, aabb, transform] : aabbView.each())
 		{
-			DrawDebugRectangle(world, DebugCategory::Physics, To3DRightForward(aabb.GetCentre(), transform.GetWorldPosition()[Axis::Up]), aabb.GetSize() * .5f, color);
+			DrawDebugRectangle(world, DebugCategory::Physics, To3DRightForward(aabb.GetCentre()), aabb.GetSize() * .5f, color);
 		}
 	}
 }

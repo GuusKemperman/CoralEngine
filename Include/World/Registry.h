@@ -227,6 +227,8 @@ namespace CE
 				}
 			}();
 
+		World::PushWorld(mWorld);
+
 		if constexpr (sIsReflectable<ComponentType>)
 		{
 			if (const_cast<const Registry&>(*this).Storage<ComponentType>() == nullptr
@@ -286,6 +288,8 @@ namespace CE
 				}
 			}
 
+			World::PopWorld();
+
 			return component;
 		}
 	}
@@ -332,6 +336,13 @@ namespace CE
 		}
 
 		World& world = *World::TryGetWorldAtTopOfStack();
+
+		// We only call this event if
+		// we've begun play.
+		if (!world.HasBegunPlay())
+		{
+			return;
+		}
 
 		if constexpr (entt::component_traits<Component>::page_size == 0)
 		{

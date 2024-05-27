@@ -226,7 +226,7 @@ CE::GPUWorld::GPUWorld(const World& world)
     mNumberOfClusters = mClusterGrid.x * mClusterGrid.y * mClusterGrid.z;
 
     // Create constant buffers
-    mConstBuffers[InfoStruct::CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 2, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
+    mConstBuffers[InfoStruct::CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 3, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::MATERIAL_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Model material info", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_PARTICLES, "Model material info", FRAME_BUFFER_COUNT);
@@ -466,6 +466,38 @@ void CE::GPUWorld::Update()
     // do it here instead. The only downside is that we have to iterate over the static meshes
     // twice, but in entt this is surprisingly fast.
     int meshCounter = 0;
+    {
+        // We get transform to make sure the mesh count is correct, since the user can have a mesh without a transform
+        const auto view = mWorld.get().GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
+
+        for (auto [entity, skinnedMeshComponent, transformComponent] : view.each())
+        {
+            if (!skinnedMeshComponent.mSkinnedMesh)
+            {
+                meshCounter++;
+                continue;
+            }
+
+            // Update material
+            InfoStruct::DXMaterialInfo materialInfo = GetMaterial(skinnedMeshComponent.mMaterial.Get());
+            mConstBuffers[InfoStruct::MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
+
+            glm::mat4x4 modelMatrices[2]{};
+            modelMatrices[0] = glm::transpose(transformComponent.GetWorldMatrix());
+            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
+            mConstBuffers[InfoStruct::MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
+
+            // Do we now have a loot of unused space?
+            // If we first draw 10'000 static meshes, then meshCounter will be 10'000,
+            // and the first 10'000 FINAL_BONE_MATRIX_CB slots will be unused, with
+            // each slot being quite large. This leads to buffer overflows with many
+            // static meshes - Guus
+            const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
+            mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]->Update(boneMatrices.data(), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
+
+            meshCounter++;
+        }
+    }
 
     {
         // We get transform to make sure the mesh count is correct, since the user can have a mesh without a transform
@@ -502,38 +534,6 @@ void CE::GPUWorld::Update()
         }
     }
 
-    {
-        // We get transform to make sure the mesh count is correct, since the user can have a mesh without a transform
-        const auto view = mWorld.get().GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
-
-        for (auto [entity, skinnedMeshComponent, transformComponent] : view.each())
-        {
-            if (!skinnedMeshComponent.mSkinnedMesh)
-            {
-                meshCounter++;
-                continue;
-            }
-
-            // Update material
-            InfoStruct::DXMaterialInfo materialInfo = GetMaterial(skinnedMeshComponent.mMaterial.Get());
-            mConstBuffers[InfoStruct::MATERIAL_INFO_CB]->Update(&materialInfo, sizeof(InfoStruct::DXMaterialInfo), meshCounter, frameIndex);
-
-            glm::mat4x4 modelMatrices[2]{};
-            modelMatrices[0] = glm::transpose(transformComponent.GetWorldMatrix());
-            modelMatrices[1] = glm::transpose(glm::inverse(modelMatrices[0]));
-            mConstBuffers[InfoStruct::MODEL_MATRIX_CB]->Update(&modelMatrices, sizeof(glm::mat4x4) * 2, meshCounter, frameIndex);
-
-            // Do we now have a loot of unused space?
-            // If we first draw 10'000 static meshes, then meshCounter will be 10'000,
-            // and the first 10'000 FINAL_BONE_MATRIX_CB slots will be unused, with
-            // each slot being quite large. This leads to buffer overflows with many
-            // static meshes - Guus
-            const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
-            mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]->Update(boneMatrices.data(), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
-
-            meshCounter++;
-        }
-    }
 
     {
         InfoStruct::DXFogInfo fog{};
@@ -547,6 +547,10 @@ void CE::GPUWorld::Update()
         }
         mConstBuffers[InfoStruct::FOG_CB]->Update(&fog, sizeof(InfoStruct::DXFogInfo), 0, frameIndex);
     }
+
+    InfoStruct::DXMatrixInfo UIcamera;
+    UIcamera.pm = glm::transpose(camera.GetOrthographicProjection());
+    mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&UIcamera, sizeof(InfoStruct::DXMatrixInfo), 2, frameIndex);
 
     mPostProcData.Update(mWorld);
     UpdateClusterData(camera);
@@ -872,14 +876,19 @@ void CE::GPUWorld::ClearClusterData()
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 
-    std::vector<uint32> clusterCompactData(mNumberOfClusters, 0);
+    // This uses a loot of memory and is quite slow,
+    // is there not a DX equivalent for memset? - Guus
+    const size_t zeroBufferSize = std::max(mNumberOfClusters * sizeof(uint32), mNumberOfClusters * sizeof(InfoStruct::Clustering::DXLightGridElement));
+    static std::vector<uint8> manyZeroes(zeroBufferSize, 0);
+	manyZeroes.resize(zeroBufferSize, 0);
+
     D3D12_SUBRESOURCE_DATA data;
-    data.pData = clusterCompactData.data();
+    data.pData = manyZeroes.data();
     data.RowPitch = sizeof(uint32);
     data.SlicePitch = sizeof(uint32) * mNumberOfClusters;
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
-    std::vector<int32> lightIndicesClear(mNumberOfClusters*MAX_LIGHTS_PER_CLUSTER, -1);
+    static std::vector<int32> lightIndicesClear(mNumberOfClusters*MAX_LIGHTS_PER_CLUSTER, -1);
     data.pData = lightIndicesClear.data();
     data.RowPitch = sizeof(int32);
     data.SlicePitch = sizeof(int32) * mNumberOfClusters * MAX_LIGHTS_PER_CLUSTER;
@@ -892,8 +901,7 @@ void CE::GPUWorld::ClearClusterData()
     mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
-    std::vector<InfoStruct::Clustering::DXLightGridElement> lightGridClear(mNumberOfClusters, InfoStruct::Clustering::DXLightGridElement{});
-    data.pData = lightGridClear.data();
+    data.pData = manyZeroes.data();
     data.RowPitch = sizeof(InfoStruct::Clustering::DXLightGridElement);
     data.SlicePitch = sizeof(InfoStruct::Clustering::DXLightGridElement) * mNumberOfClusters;
     mStructuredBuffers[InfoStruct::LIGHT_GRID_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
