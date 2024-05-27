@@ -390,6 +390,7 @@
     </ClCompile>
     <ClCompile Include="Source\Components\WavesComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\StompStartState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\StompExecutionState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Components\UtililtyAi\States\DanceState.h" />
@@ -411,6 +412,7 @@
     </ClInclude>
     <ClInclude Include="Include\Components\WavesComponent.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\StompStartState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\StompExecutionState.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

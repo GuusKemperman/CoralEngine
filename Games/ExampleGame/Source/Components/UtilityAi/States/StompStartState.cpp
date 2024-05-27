@@ -2,19 +2,20 @@
 #include "Components/UtililtyAi/States/StompStartState.h"
 
 #include "Components/TransformComponent.h"
-#include "Components/Abilities/CharacterComponent.h"
-#include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Components/Pathfinding/NavMeshTargetTag.h"
-#include "Systems/AbilitySystem.h"
 #include "Meta/MetaType.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
-#include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Components/Abilities/AbilitiesOnCharacterComponent.h"
+#include "Components/Abilities/CharacterComponent.h"
+#include "Systems/AbilitySystem.h"
 
-void Game::StompStartState::OnAiTick(CE::World& world, entt::entity owner, float)
+
+void Game::StompStartState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
@@ -23,37 +24,24 @@ void Game::StompStartState::OnAiTick(CE::World& world, entt::entity owner, float
 		animationRootComponent->SwitchAnimation(world.GetRegistry(), mStompStartAnimation, 0.0f);
 	}
 
-	auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
-	mTargetEntity = targetEntity;
-
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr)
-	{
-		return;
-	}
-
-	if (mTargetEntity != entt::null)
-	{
-		navMeshAgent->SetTargetEntity(mTargetEntity);
-	}
-
-	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
-
-	if (physicsBody2DComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
-		return;
-	}
-
-	physicsBody2DComponent->mLinearVelocity = { 0,0 };
+	mCurrentStompStartTimer += dt;
 }
 
-float Game::StompStartState::OnAiEvaluate(const CE::World& world, entt::entity owner)
+float Game::StompStartState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
 {
 	auto [score, entity] = GetBestScoreAndTarget(world, owner);
-	mTargetEntity = entity;
-	return score;
+
+	if (mCurrentStompStartTimer > 0 && mCurrentStompStartTimer < mMaxStompStartTime)
+	{
+		return 0.9f;
+	}
+
+	if (mCurrentStompStartTimer < mMaxStompStartTime)
+	{
+		return score;
+	}
+
+	return 0;
 }
 
 void Game::StompStartState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
@@ -62,20 +50,16 @@ void Game::StompStartState::OnAIStateEnterEvent(CE::World& world, entt::entity o
 
 	if (navMeshAgent == nullptr)
 	{
-		LOG(LogAI, Warning, "A NavMeshAgent component is needed to run the Attacking State!");
+		LOG(LogAI, Warning, "NavMeshAgentComponent is needed to run the Stomp Start State!");
 		return;
 	}
 
 	navMeshAgent->ClearTarget(world);
-	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
+}
 
-	if (physicsBody2DComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
-		return;
-	}
-
-	physicsBody2DComponent->mLinearVelocity = { 0,0 };
+bool Game::StompStartState::IsStompCharged() const
+{
+	return (mCurrentStompStartTimer >= mMaxStompStartTime);
 }
 
 std::pair<float, entt::entity> Game::StompStartState::GetBestScoreAndTarget(const CE::World& world,
@@ -87,13 +71,13 @@ std::pair<float, entt::entity> Game::StompStartState::GetBestScoreAndTarget(cons
 
 	if (entityId == entt::null)
 	{
-		LOG(LogAI, Warning, "An entity with a NavMeshTarget component is needed to run the Attacking State!");
+		LOG(LogAI, Warning, "An entity with a NavMeshTargetTag is needed to run the Stomp Start State!");
 		return { 0.0f, entt::null };
 	}
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "A transform component is needed to run the Attacking State!");
+		LOG(LogAI, Warning, "TransformComponent is needed to run the Stomp Start State!");
 		return { 0.0f, entt::null };
 	}
 
@@ -103,7 +87,7 @@ std::pair<float, entt::entity> Game::StompStartState::GetBestScoreAndTarget(cons
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "A transform component on the player entity is needed to run the Attacking State!");
+		LOG(LogAI, Warning, "The player entity needs a TransformComponent is needed to run the Stomp Start State!");
 		return { 0.0f, entt::null };
 	}
 
@@ -131,6 +115,7 @@ CE::MetaType Game::StompStartState::Reflect()
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	type.AddField(&StompStartState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&StompStartState::mMaxStompStartTime, "mMaxStompStartTime").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &StompStartState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &StompStartState::OnAiEvaluate);

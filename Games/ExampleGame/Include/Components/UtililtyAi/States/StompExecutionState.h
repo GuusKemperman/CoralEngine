@@ -11,7 +11,7 @@ namespace CE
 namespace Game
 {
 
-	class StompStartState
+	class StompExecutionState
 	{
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
@@ -23,18 +23,18 @@ namespace Game
 		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
 			entt::entity owner) const;
 
-		float mCurrentStompStartTimer = 0.0f;
+		float mCurrentStompTimer = 0.0f;
 
-		CE::AssetHandle<CE::Animation> mStompStartAnimation{};
+		CE::AssetHandle<CE::Animation> mStompAnimation{};
 
 	private:
 		float mRadius{};
 
-		float mMaxStompStartTime = 10.0f;
+		float mMaxStompTime = 10.0f;
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
-		REFLECT_AT_START_UP(StompStartState);
+		REFLECT_AT_START_UP(StompExecutionState);
 	};
 
 }
