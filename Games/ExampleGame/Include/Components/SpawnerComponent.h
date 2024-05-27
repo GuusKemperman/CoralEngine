@@ -1,4 +1,5 @@
 #pragma once
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE
@@ -12,10 +13,12 @@ namespace Game
 	{
 	public:
 		// The range in which the player has to be for the spawner to be active.
-		float mMin = 5.0f;
-		float mMax = 10.0f;
+		float mMinSpawnRange = 50.0f;
 
-		bool mActive = false;
+		float mSpacing = 5.0f;
+
+		CE::AssetHandle<CE::Prefab> mPrefabToSpawn{};
+		float mAmountToSpawnPerSecond = 1.0f;
 
 	private:
 		friend CE::ReflectAccess;
