@@ -14,7 +14,7 @@
 #include "Components/AnimationRootComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 
-void Game::StompExecutionState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
+void Game::StompExecutionState::OnAiTick(CE::World&, const entt::entity, const float dt)
 {
 	mCurrentStompTimer += dt;
 }
