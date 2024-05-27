@@ -25,17 +25,18 @@ CE::UIRenderer::UIRenderer()
     CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     depth.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
-    auto blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    CD3DX12_BLEND_DESC blendDesc = {};
+    blendDesc.AlphaToCoverageEnable = FALSE;
+    blendDesc.IndependentBlendEnable = FALSE;
     blendDesc.RenderTarget[0].BlendEnable = TRUE;
-    blendDesc.RenderTarget[0].LogicOpEnable = FALSE;
     blendDesc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
     blendDesc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
     blendDesc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
     blendDesc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-    blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+    blendDesc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ONE;
     blendDesc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-    blendDesc.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
     blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+    blendDesc.RenderTarget[0].LogicOpEnable = FALSE;
 
     mPipeline = DXPipelineBuilder()
     .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
@@ -71,10 +72,10 @@ void CE::UIRenderer::Render(const World& world)
     }
 
     std::sort(drawRequests.begin(), drawRequests.end(),
-        [](const DrawRequest& lhs, const DrawRequest& rhs)
-        {
-            return lhs.mDepth > rhs.mDepth;
-        });
+    [](const DrawRequest& lhs, const DrawRequest& rhs)
+    {
+        return lhs.mDepth > rhs.mDepth;
+    });
 
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
@@ -84,13 +85,12 @@ void CE::UIRenderer::Render(const World& world)
     UIRenderingData& renderingData = gpuWorld.GetUIRenderingData();
 
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
-
-
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
     commandList->SetPipelineState(mPipeline.Get());
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
-
+    gpuWorld.GetCameraBuffer().Bind(commandList, 0, 2, frameIndex);
+ 
     for (int i = 0; i < drawRequests.size(); i++)
     {
         const entt::entity entity = drawRequests[i].mEntity;
@@ -101,8 +101,8 @@ void CE::UIRenderer::Render(const World& world)
         modelMat.mModel = glm::transpose(transform.GetWorldMatrix());
         modelMat.mTransposed = glm::transpose(modelMat.mModel);
         renderingData.mModelMatBuffer->Update(&modelMat, sizeof(ModelMat), i, frameIndex);
-        renderingData.mModelMatBuffer->Bind(commandList, 0, i, frameIndex);
-
+        renderingData.mModelMatBuffer->Bind(commandList, 1, i, frameIndex);
+        
         InfoStruct::ColorInfo colorInfo;
         colorInfo.mColor = sprite.mColor;
         if (sprite.mTexture != nullptr)
