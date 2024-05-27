@@ -5,11 +5,11 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Assets/Animation/Animation.h"
 
 void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {

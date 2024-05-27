@@ -4,17 +4,16 @@
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Systems/AbilitySystem.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Assets/Animation/Animation.h"
 
-void Game::AttackingState::OnAiTick(CE::World& world, entt::entity owner, float)
+void Game::AttackingState::OnAITick(CE::World& world, entt::entity owner, float)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
@@ -47,70 +46,35 @@ void Game::AttackingState::OnAiTick(CE::World& world, entt::entity owner, float)
 
 	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
 
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr)
-	{
-		return;
-	}
-
-	if (mTargetEntity != entt::null)
-	{
-		navMeshAgent->SetTargetEntity(mTargetEntity);
-	}
-
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
+		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the Attack State!");
 		return;
 	}
 
 	physicsBody2DComponent->mLinearVelocity = { 0,0 };
 }
 
-float Game::AttackingState::OnAiEvaluate(const CE::World& world, entt::entity owner)
+float Game::AttackingState::OnAIEvaluate(const CE::World& world, entt::entity owner)
 {
 	auto [score, entity] = GetBestScoreAndTarget(world, owner);
 	mTargetEntity = entity;
 	return score;
 }
 
-void Game::AttackingState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
+std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const CE::World& world, entt::entity owner) const
 {
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
-	if (navMeshAgent == nullptr)
-	{
-		LOG(LogAI, Warning, "A NavMeshAgent component is needed to run the Attacking State!");
-		return;
-	}
-
-	navMeshAgent->ClearTarget(world);
-	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
-
-	if (physicsBody2DComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
-		return;
-	}
-
-	physicsBody2DComponent->mLinearVelocity = { 0,0 };
-}
-
-std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const CE::World& world,
-                                                                           entt::entity owner) const
-{
-	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-	entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
+	entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
 	if (entityId == entt::null)
 	{
-		LOG(LogAI, Warning, "An entity with a NavMeshTarget component is needed to run the Attacking State!");
 		return { 0.0f, entt::null };
 	}
+
+	const CE::TransformComponent* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
 	if (transformComponent == nullptr)
 	{
@@ -120,7 +84,7 @@ std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const
 
 	float highestScore = 0.0f;
 
-	auto* targetComponent = world.GetRegistry().TryGet<CE::TransformComponent>(entityId);
+	const CE::TransformComponent* targetComponent = world.GetRegistry().TryGet<CE::TransformComponent>(entityId);
 
 	if (transformComponent == nullptr)
 	{
@@ -153,9 +117,8 @@ CE::MetaType Game::AttackingState::Reflect()
 
 	type.AddField(&AttackingState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &AttackingState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &AttackingState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &AttackingState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAITickEvent, &AttackingState::OnAITick);
+	BindEvent(type, CE::sAIEvaluateEvent, &AttackingState::OnAIEvaluate);
 
 	type.AddField(&AttackingState::mAttackingAnimation, "mAttackingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

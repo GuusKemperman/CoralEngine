@@ -3,7 +3,7 @@
 
 namespace CE
 {
-	class NavigationSystem final
+	class NavMeshAgentSystem final
 		: public System
 	{
 	public:
@@ -21,10 +21,10 @@ namespace CE
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(NavigationSystem);
+		REFLECT_AT_START_UP(NavMeshAgentSystem);
 	};
 
-	class UpdatePathsSystem final
+	class NavMeshPathingSystem final
 		: public System
 	{
 	public:
@@ -44,6 +44,6 @@ namespace CE
 
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(UpdatePathsSystem);
+		REFLECT_AT_START_UP(NavMeshPathingSystem);
 	};
 }

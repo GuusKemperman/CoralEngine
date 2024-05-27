@@ -13,9 +13,8 @@ namespace Game
 	class AttackingState
 	{
 	public:
-		void OnAiTick(CE::World& world, entt::entity owner, float dt);
-		float OnAiEvaluate(const CE::World& world, entt::entity owner);
-		void OnAIStateEnterEvent( CE::World& world, entt::entity owner);
+		void OnAITick(CE::World& world, entt::entity owner, float dt);
+		float OnAIEvaluate(const CE::World& world, entt::entity owner);
 
 		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
 		                                                             entt::entity owner) const;

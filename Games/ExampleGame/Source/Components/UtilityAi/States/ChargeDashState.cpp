@@ -2,20 +2,16 @@
 #include "Components/UtililtyAi/States/ChargeDashState.h"
 
 #include "Components/TransformComponent.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/PlayerComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Components/Abilities/CharacterComponent.h"
-#include "Systems/AbilitySystem.h"
+#include "Assets/Animation/Animation.h"
 
-
-void Game::ChargeDashState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
+void Game::ChargeDashState::OnAITick(CE::World& world, const entt::entity owner, const float dt)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
@@ -27,7 +23,7 @@ void Game::ChargeDashState::OnAiTick(CE::World& world, const entt::entity owner,
 	mCurrentChargeTimer += dt;
 }
 
-float Game::ChargeDashState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
+float Game::ChargeDashState::OnAIEvaluate(const CE::World& world, entt::entity owner) const
 {
 	auto [score, entity] = GetBestScoreAndTarget(world, owner);
 
@@ -44,19 +40,6 @@ float Game::ChargeDashState::OnAiEvaluate(const CE::World& world, entt::entity o
 	return 0;
 }
 
-void Game::ChargeDashState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
-{
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr)
-	{
-		LOG(LogAI, Warning, "NavMeshAgentComponent is needed to run the Charge Dash State!");
-		return;
-	}
-
-	navMeshAgent->ClearTarget(world);
-}
-
 bool Game::ChargeDashState::IsDashCharged() const
 {
 	return (mCurrentChargeTimer >= mMaxChargeTime);
@@ -67,11 +50,10 @@ std::pair<float, entt::entity> Game::ChargeDashState::GetBestScoreAndTarget(cons
 {
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
-	entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
+	entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
 	if (entityId == entt::null)
 	{
-		LOG(LogAI, Warning, "An entity with a NavMeshTargetTag is needed to run the Charge Dash State!");
 		return { 0.0f, entt::null };
 	}
 
@@ -117,9 +99,8 @@ CE::MetaType Game::ChargeDashState::Reflect()
 	type.AddField(&ChargeDashState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChargeDashState::mMaxChargeTime, "mMaxChargeTime").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &ChargeDashState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &ChargeDashState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &ChargeDashState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAITickEvent, &ChargeDashState::OnAITick);
+	BindEvent(type, CE::sAIEvaluateEvent, &ChargeDashState::OnAIEvaluate);
 
 	type.AddField(&ChargeDashState::mChargingAnimation, "mChargingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
