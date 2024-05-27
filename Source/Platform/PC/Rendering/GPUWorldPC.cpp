@@ -226,7 +226,7 @@ CE::GPUWorld::GPUWorld(const World& world)
     mNumberOfClusters = mClusterGrid.x * mClusterGrid.y * mClusterGrid.z;
 
     // Create constant buffers
-    mConstBuffers[InfoStruct::CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 2, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
+    mConstBuffers[InfoStruct::CAM_MATRIX_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMatrixInfo), 3, "Matrix buffer default shader", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::LIGHT_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXLightInfo), 1, "Point light buffer", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::MATERIAL_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_MESHES + 2, "Model material info", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXMaterialInfo), MAX_PARTICLES, "Model material info", FRAME_BUFFER_COUNT);
@@ -547,6 +547,10 @@ void CE::GPUWorld::Update()
         }
         mConstBuffers[InfoStruct::FOG_CB]->Update(&fog, sizeof(InfoStruct::DXFogInfo), 0, frameIndex);
     }
+
+    InfoStruct::DXMatrixInfo UIcamera;
+    UIcamera.pm = glm::transpose(camera.GetOrthographicProjection());
+    mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&UIcamera, sizeof(InfoStruct::DXMatrixInfo), 2, frameIndex);
 
     mPostProcData.Update(mWorld);
     UpdateClusterData(camera);
