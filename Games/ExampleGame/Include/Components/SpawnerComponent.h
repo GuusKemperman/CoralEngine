@@ -33,7 +33,9 @@ namespace Game
 				std::optional<uint32> mMaxAmountAlive{};
 				std::optional<uint32> mAmountToSpawnAtStartOfWave{};
 
+#ifdef EDITOR
 				void DisplayWidget(const std::string& name);
+#endif // EDITOR
 
 			private:
 				friend CE::ReflectAccess;
@@ -43,7 +45,9 @@ namespace Game
 			bool operator!=(const Wave& wave) const;
 			bool operator==(const Wave& wave) const;
 
+#ifdef EDITOR
 			void DisplayWidget(const std::string& name);
+#endif // EDITOR
 
 			std::vector<EnemyType> mEnemies{};
 

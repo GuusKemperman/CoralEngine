@@ -21,6 +21,7 @@ bool Game::SpawnerComponent::Wave::EnemyType::operator==(const EnemyType& enemy)
 	return !(enemy != *this);
 }
 
+#ifdef EDITOR
 void Game::SpawnerComponent::Wave::EnemyType::DisplayWidget(const std::string& name)
 {
 	ImGui::TextUnformatted(name.c_str(), name.c_str() + name.size());
@@ -35,6 +36,7 @@ void Game::SpawnerComponent::Wave::EnemyType::DisplayWidget(const std::string& n
 	ImGui::Unindent();
 	ImGui::PopID();
 }
+#endif // EDITOR
 
 CE::MetaType Game::SpawnerComponent::Wave::EnemyType::Reflect()
 {
@@ -65,6 +67,7 @@ bool Game::SpawnerComponent::Wave::operator==(const Wave& wave) const
 	return !(wave != *this);
 }
 
+#ifdef EDITOR
 void Game::SpawnerComponent::Wave::DisplayWidget(const std::string& name)
 {
 	ImGui::TextUnformatted(name.c_str(), name.c_str() + name.size());
@@ -80,6 +83,7 @@ void Game::SpawnerComponent::Wave::DisplayWidget(const std::string& name)
 	ImGui::Unindent();
 	ImGui::PopID();
 }
+#endif // EDITOR
 
 CE::MetaType Game::SpawnerComponent::Wave::Reflect()
 {
