@@ -12,8 +12,7 @@ on:
     branches: [ "dev" ]
 
 concurrency:
-  # Workflow name - pull request number or branch name if not a pull request
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
 
   # Cancel in-progress runs when a new workflow with the same group name is triggered
   cancel-in-progress: true
