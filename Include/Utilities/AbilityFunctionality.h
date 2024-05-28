@@ -30,6 +30,7 @@ namespace CE
 		static bool IncreasePierceCountAndReturnTrueIfExceeded(ProjectileComponent& projectileComponent);
 		static bool WasTheAbilityCastByAnEnemy(World& world, entt::entity entityToAffect, entt::entity abilityEntity);
 		static float& IncreaseValueByPercentage(float& toChange, float percentage);
+		static void CallAllAbilityHitEvents(World& world, entt::entity castByEntity, entt::entity abilityEntity);
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);

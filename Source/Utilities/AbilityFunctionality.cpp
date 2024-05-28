@@ -462,6 +462,31 @@ float& CE::AbilityFunctionality::IncreaseValueByPercentage(float& toChange, floa
 	return toChange;
 }
 
+void CE::AbilityFunctionality::CallAllAbilityHitEvents(World& world, entt::entity castByEntity, entt::entity abilityEntity)
+{
+	const std::vector<BoundEvent> boundEvents = GetAllBoundEvents(sAbilityHitEvent);
+	for (const BoundEvent& boundEvent : boundEvents)
+	{
+		entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
+
+		if (storage == nullptr
+			|| !storage->contains(castByEntity))
+		{
+			continue;
+		}
+
+		if (boundEvent.mIsStatic)
+		{
+			boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, castByEntity, abilityEntity);
+		}
+		else
+		{
+			MetaAny component{ boundEvent.mType, storage->value(castByEntity), false };
+			boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, castByEntity, abilityEntity);
+		}
+	}
+}
+
 std::pair<float&, float&> CE::AbilityFunctionality::GetStat(Stat stat, CharacterComponent& characterComponent)
 {
 	switch (stat)

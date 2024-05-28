@@ -71,6 +71,14 @@ namespace CE
 	static constexpr Event<void(World&, entt::entity)> sAIStateExitEvent{ "OnAIStateExit" };
 
 	/**
+	 * \brief
+	 * 	World& The world the ability controller component is in.
+	 * \entt::entity The entity that has cast the ability (projectile).
+	 * \entt::entity The ability (projectile) entity.
+	 */
+	static constexpr Event<void(World&, entt::entity, entt::entity), false> sAbilityHitEvent{ "OnAbilityHit" };
+
+	/**
 	 * \brief 
 	 * 	World& The world the ability controller component is in. 
 	 * \entt::entity The owner of the ability controller component.  
