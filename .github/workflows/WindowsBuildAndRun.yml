@@ -11,6 +11,12 @@ on:
   pull_request:
     branches: [ "dev" ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+
+  # Cancel in-progress runs when a new workflow with the same group name is triggered
+  cancel-in-progress: true
+
 env:
   # Path to the solution file relative to the root of the project.
   SOLUTION_FILE_PATH: "Coral.sln"
