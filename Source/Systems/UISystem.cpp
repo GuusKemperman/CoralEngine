@@ -148,10 +148,10 @@ entt::entity CE::UISystem::CheckNavigation(World& world,
 		|| isAxisActive(axis1)
 		|| isAxisActive(axis2))
 	{
-		bool button = world.GetRegistry().HasComponent<UIButtonTag>(currentEntity);
+		const bool hasButton = world.GetRegistry().HasComponent<UIButtonTag>(currentEntity);
 		const TransformComponent* const transform = world.GetRegistry().TryGet<TransformComponent>(currentEntity);
 
-		if (!button 
+		if (!hasButton 
 			|| transform == nullptr)
 		{
 			return currentEntity;
@@ -185,7 +185,9 @@ entt::entity CE::UISystem::CheckNavigation(World& world,
 				continue;
 			}
 
-			glm::vec2 UIPosition = { UITransform.GetWorldPosition().x, UITransform.GetWorldPosition().y };
+			const glm::vec3 worldPosition = UITransform.GetWorldPosition();
+
+			const glm::vec2 UIPosition = { worldPosition.x, worldPosition.y };
 
 			if (isLocatedInDirection(UIPosition) 
 				&& glm::distance(pos, UIPosition) < lowestDistance)
