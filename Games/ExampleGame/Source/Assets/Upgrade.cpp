@@ -6,12 +6,14 @@
 #include "Meta/Fwd/MetaTypeFwd.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 
-CE::Upgrade::Upgrade(std::string_view name) :
+using namespace CE;
+
+Game::Upgrade::Upgrade(std::string_view name) :
 	Asset(name, MakeTypeId<Upgrade>())
 {
 }
 
-CE::Upgrade::Upgrade(AssetLoadInfo& loadInfo) :
+Game::Upgrade::Upgrade(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {
 	BinaryGSONObject obj{};
@@ -43,7 +45,7 @@ CE::Upgrade::Upgrade(AssetLoadInfo& loadInfo) :
 	*serializedIconTexture >> mIconTexture;
 }
 
-void CE::Upgrade::OnSave(AssetSaveInfo& saveInfo) const
+void Game::Upgrade::OnSave(AssetSaveInfo& saveInfo) const
 {
 	BinaryGSONObject obj{};
 
@@ -55,7 +57,7 @@ void CE::Upgrade::OnSave(AssetSaveInfo& saveInfo) const
 	obj.SaveToBinary(saveInfo.GetStream());
 }
 
-CE::MetaType CE::Upgrade::Reflect()
+CE::MetaType Game::Upgrade::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Upgrade>{}, "Upgrade", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);

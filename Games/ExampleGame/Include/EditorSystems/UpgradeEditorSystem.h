@@ -4,12 +4,10 @@
 
 #include "Assets/Upgrade.h"
 
-namespace CE
+namespace Game
 {
-	class World;
-
 	class UpgradeEditorSystem final :
-		public AssetEditorSystem<Upgrade>
+		public CE::AssetEditorSystem<Upgrade>
 	{
 	public:
 		UpgradeEditorSystem(Upgrade&& asset);
@@ -17,8 +15,8 @@ namespace CE
 		void Tick(float deltaTime) override;
 
 	private:
-		friend ReflectAccess;
-		static MetaType Reflect();
+		friend CE::ReflectAccess;
+		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(UpgradeEditorSystem);
 	};
 }

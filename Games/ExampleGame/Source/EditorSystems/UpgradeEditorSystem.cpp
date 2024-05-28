@@ -1,15 +1,17 @@
 #include "Precomp.h"
-#include "EditorSystems/AssetEditorSystems/UpgradeEditorSystem.h"
+#include "EditorSystems/UpgradeEditorSystem.h"
 
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Meta/MetaManager.h"
 
-CE::UpgradeEditorSystem::UpgradeEditorSystem(Upgrade&& asset)
+using namespace CE;
+
+Game::UpgradeEditorSystem::UpgradeEditorSystem(Upgrade&& asset)
 	: AssetEditorSystem(std::move(asset))
 {
 }
 
-void CE::UpgradeEditorSystem::Tick(float deltaTime)
+void Game::UpgradeEditorSystem::Tick(float deltaTime)
 {
 	if (!Begin(ImGuiWindowFlags_MenuBar))
 	{
@@ -37,7 +39,7 @@ void CE::UpgradeEditorSystem::Tick(float deltaTime)
 	End();
 }
 
-CE::MetaType CE::UpgradeEditorSystem::Reflect()
+CE::MetaType Game::UpgradeEditorSystem::Reflect()
 {
 	return { MetaType::T<UpgradeEditorSystem>{}, "UpgradeEditorSystem",
 		MetaType::Base<AssetEditorSystem<Upgrade>>{},

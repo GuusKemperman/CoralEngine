@@ -1617,8 +1617,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Assets\Upgrade.cpp" />
-    <ClCompile Include="Source\EditorSystems\AssetEditorSystems\UpgradeEditorSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Assets\Font.h" />
@@ -1674,8 +1672,6 @@
     <ClInclude Include="Include\Components\UI\UISpriteComponent.h" />
     <ClInclude Include="Include\Assets\Ability\Weapon.h" />
     <ClInclude Include="Include\EditorSystems\AssetEditorSystems\WeaponEditorSystem.h" />
-    <ClInclude Include="Include\Assets\Upgrade.h" />
-    <ClInclude Include="Include\EditorSystems\AssetEditorSystems\UpgradeEditorSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Platform\PC\Rendering\InfoStruct.h" />
