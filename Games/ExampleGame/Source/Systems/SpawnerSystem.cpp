@@ -14,66 +14,76 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 {
 	CE::Registry& reg = world.GetRegistry();
 
-
-	std::unordered_map<CE::AssetHandle<CE::Prefab>, uint32> enemyCount{};
-
-	uint32 numOfEnemies{};
-	const auto enemyView = reg.View<CE::CharacterComponent, CE::PrefabOriginComponent>(entt::exclude_t<CE::PlayerComponent>{});
-	for (const entt::entity entity : enemyView)
-	{
-		const CE::PrefabOriginComponent& origin = enemyView.get<CE::PrefabOriginComponent>(entity);
-		const CE::AssetHandle<CE::Prefab> prefab = origin.TryGetPrefab();
-
-		if (prefab != nullptr)
-		{
-			enemyCount[prefab]++;
-			numOfEnemies++;
-		}
-	}
-
-	for (auto [entity, spawnerComponent, spawnerTransform] : reg.View<SpawnerComponent, CE::TransformComponent>().each())
+	for (auto [_, spawnerComponent, spawnerTransform] : reg.View<SpawnerComponent, CE::TransformComponent>().each())
 	{
 		SpawnerComponent::Wave* previousWave{};
 		SpawnerComponent::Wave* currentWave{};
 
-		const float currentTime = world.GetCurrentTimeScaled();
-		const float previousTime = currentTime - dt;
+		{ // Get the current wave
+			const float currentTime = world.GetCurrentTimeScaled();
+			const float previousTime = currentTime - dt;
 
-		float waveTimeAccumulated{};
+			float waveTimeAccumulated{};
 
-		for (SpawnerComponent::Wave& wave : spawnerComponent.mWaves)
-		{
-			const float nextWaveTimeAccumulated = waveTimeAccumulated + wave.mDuration;
-
-			if (currentTime >= waveTimeAccumulated
-				&& currentTime <= nextWaveTimeAccumulated)
+			for (SpawnerComponent::Wave& wave : spawnerComponent.mWaves)
 			{
-				currentWave = &wave;
+				const float nextWaveTimeAccumulated = waveTimeAccumulated + wave.mDuration;
+
+				if (currentTime >= waveTimeAccumulated
+					&& currentTime <= nextWaveTimeAccumulated)
+				{
+					currentWave = &wave;
+				}
+
+				if (previousTime >= waveTimeAccumulated
+					&& previousTime <= nextWaveTimeAccumulated)
+				{
+					previousWave = &wave;
+				}
+
+				waveTimeAccumulated = nextWaveTimeAccumulated;
 			}
 
-			if (previousTime >= waveTimeAccumulated
-				&& previousTime <= nextWaveTimeAccumulated)
+			if (currentWave == nullptr)
 			{
-				previousWave = &wave;
+				LOG(LogGame, Message, "There is no active wave for the current time");
+				continue;
 			}
 
-			waveTimeAccumulated = nextWaveTimeAccumulated;
 		}
 
-		if (currentWave == nullptr)
-		{
-			LOG(LogGame, Message, "There is no active wave for the current time");
-			continue;
+		std::unordered_map<CE::AssetHandle<CE::Prefab>, uint32> enemyCount{};
+		const glm::vec2 spawnerPos = spawnerTransform.GetWorldPosition2D();
+		std::vector<entt::entity> waveOutputs{};
+
+		uint32 numOfEnemies{};
+
+		{ // Count the number of enemies, and teleport far away enemies back
+			const auto enemyView = reg.View<CE::TransformComponent, CE::CharacterComponent, CE::PrefabOriginComponent>(entt::exclude_t<CE::PlayerComponent>{});
+			for (const entt::entity entity : enemyView)
+			{
+				const CE::PrefabOriginComponent& origin = enemyView.get<CE::PrefabOriginComponent>(entity);
+				const CE::AssetHandle<CE::Prefab> prefab = origin.TryGetPrefab();
+
+				if (prefab == nullptr)
+				{
+					continue;
+				}
+
+				enemyCount[prefab]++;
+				numOfEnemies++;
+
+				// Enemies that are too far away get teleported back
+				const CE::TransformComponent& transform = enemyView.get<CE::TransformComponent>(entity);
+
+				if (glm::distance2(transform.GetWorldPosition2D(), spawnerPos) >= CE::Math::sqr(spawnerComponent.mMaxEnemyDistance))
+				{
+					waveOutputs.emplace_back(entity);
+				}
+			}
 		}
 
-		struct WaveOutput
-		{
-			CE::AssetHandle<CE::Prefab> mPrefab{};
-			uint32 mAmount{};
-		};
-
-		std::vector<CE::AssetHandle<CE::Prefab>> waveOutputs{};
-
+		// Spawn the initial amount of enemies
 		if (previousWave != currentWave)
 		{
 			for (const SpawnerComponent::Wave::EnemyType& enemyType : currentWave->mEnemies)
@@ -84,7 +94,12 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 				}
 
 				const uint32 amountToSpawn = enemyType.mAmountToSpawnAtStartOfWave.value_or(0u);
-				waveOutputs.insert(waveOutputs.end(), amountToSpawn, enemyType.mPrefab);
+				enemyCount[enemyType.mPrefab] += amountToSpawn;
+
+				for (uint32 i = 0; i < amountToSpawn; i++)
+				{
+					waveOutputs.emplace_back(reg.CreateFromPrefab(*enemyType.mPrefab));
+				}
 			}
 		}
 
@@ -104,6 +119,7 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 			}
 		}
 
+		// Determine which entity to spawn based on their chance
 		for (uint32 i = 0; i < numOfObjects; i++)
 		{
 			distribution.mWeights.erase(std::remove_if(distribution.mWeights.begin(), distribution.mWeights.end(),
@@ -126,13 +142,9 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 				return;
 			}
 
-			waveOutputs.emplace_back(enemyToSpawn->mPrefab);
+			waveOutputs.emplace_back(reg.CreateFromPrefab(*enemyToSpawn->mPrefab));
 			enemyCount[enemyToSpawn->mPrefab]++;
 		}
-
-		const glm::vec2 spawnerPos = spawnerTransform.GetWorldPosition2D();
-
-		uint32 numOfObjectsSpawned{};
 
 		// Generate points
 		float distFromCentre = spawnerComponent.mMinSpawnRange;
@@ -145,31 +157,31 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 
 			for (uint32 pointNum = 0; 
 				pointNum < numberOfPointsInLayer 
-				&& numOfObjectsSpawned < numOfObjects;
-				pointNum++, numOfObjectsSpawned++, angle += angleStepSize)
+				&& !waveOutputs.empty();
+				pointNum++, angle += angleStepSize)
 			{
-				const CE::AssetHandle<CE::Prefab>& enemyToSpawn = waveOutputs[numOfObjectsSpawned];
+				const glm::vec2 worldPos = spawnerPos + CE::Math::AngleToVec2(angle + world.GetCurrentTimeScaled()) * distFromCentre;
+				CE::DrawDebugCircle(world, CE::DebugCategory::Gameplay, CE::To3DRightForward(worldPos), 1.0f, glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
 
-				if (enemyToSpawn == nullptr)
+				// Shuffle the enemies
+				const uint32 index = CE::Random::Range(0u, static_cast<uint32>(waveOutputs.size()));
+				const entt::entity spawnedEntity = waveOutputs[index];
+				waveOutputs[index] = waveOutputs.back();
+				waveOutputs.pop_back();
+
+				CE::TransformComponent* transform = world.GetRegistry().TryGet<CE::TransformComponent>(spawnedEntity);
+
+				if (transform == nullptr)
 				{
+					LOG(LogGame, Warning, "Enemy did not have a transform and could not be moved to spawn position");
 					continue;
 				}
 
-				const glm::vec2 worldPos = spawnerPos + CE::Math::AngleToVec2(angle + world.GetCurrentTimeScaled()) * distFromCentre;
-
-				const entt::entity spawnedEntity = world.GetRegistry().CreateFromPrefab(*enemyToSpawn);
-				CE::TransformComponent* transform = world.GetRegistry().TryGet<CE::TransformComponent>(spawnedEntity);
-
-				CE::DrawDebugCircle(world, CE::DebugCategory::Gameplay, CE::To3DRightForward(worldPos), 1.0f, glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
-
-				if (transform != nullptr)
-				{
-					transform->SetWorldPosition(worldPos);
-				}
+				transform->SetWorldPosition(worldPos);
 			}
 
 			distFromCentre += spawnerComponent.mSpacing;
-		} while (numOfObjectsSpawned < numOfObjects);
+		} while (!waveOutputs.empty());
 	}
 }
 

@@ -14,7 +14,9 @@ namespace Game
 	{
 	public:
 		// The range in which the player has to be for the spawner to be active.
-		float mMinSpawnRange = 50.0f;
+		float mMinSpawnRange = 100.0f;
+
+		float mMaxEnemyDistance = 500.0f;
 
 		float mSpacing = 5.0f;
 

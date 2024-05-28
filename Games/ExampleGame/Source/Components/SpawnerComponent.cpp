@@ -30,7 +30,7 @@ void Game::SpawnerComponent::Wave::EnemyType::DisplayWidget(const std::string& n
 	CE::ShowInspectUI("mPrefab", mPrefab);
 	CE::ShowInspectUI("mSpawnChance", mSpawnChance);
 	CE::ShowInspectUI("mMaxAmountAlive", mMaxAmountAlive);
-	CE::ShowInspectUI("mMinSpawnRange", mAmountToSpawnAtStartOfWave);
+	CE::ShowInspectUI("mAmountToSpawnAtStartOfWave", mAmountToSpawnAtStartOfWave);
 
 	ImGui::Unindent();
 	ImGui::PopID();
@@ -72,7 +72,7 @@ void Game::SpawnerComponent::Wave::DisplayWidget(const std::string& name)
 	ImGui::Indent();
 
 	CE::ShowInspectUI("mDuration", mDuration);
-	CE::ShowInspectUI("mAmountOfEnemies", mAmountToSpawnPerSecond);
+	CE::ShowInspectUI("mAmountToSpawnPerSecond", mAmountToSpawnPerSecond);
 	CE::ShowInspectUI("mAmountToSpawnPerSecondWhenBelowMinimum", mAmountToSpawnPerSecondWhenBelowMinimum);
 	CE::ShowInspectUI("mDesiredMinimumNumberOfEnemies", mDesiredMinimumNumberOfEnemies);
 	CE::ShowInspectUI("mEnemies", mEnemies);
@@ -103,6 +103,7 @@ CE::MetaType Game::SpawnerComponent::Reflect()
 	props.Add(CE::Props::sIsScriptableTag);
 
 	type.AddField(&SpawnerComponent::mMinSpawnRange, "mMinSpawnRange").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&SpawnerComponent::mMaxEnemyDistance, "mMaxEnemyDistance").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&SpawnerComponent::mWaves, "mWaves").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<SpawnerComponent>(type);
