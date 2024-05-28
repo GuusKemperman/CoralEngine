@@ -27,6 +27,7 @@ namespace CE
         std::vector<glm::vec3> mPositions{};
         std::vector<glm::vec4> mColors{};
         uint32 mLineCount = 0;
+        uint32 mWantedLineCount = 0;
     };
 
     class UIRenderingData 
