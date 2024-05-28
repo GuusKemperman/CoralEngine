@@ -63,9 +63,9 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 	Search::Begin(Search::IgnoreParentScore);
 
-	const auto displayEntity = [&](const auto& self, entt::entity entity) -> void
+	const auto displayEntity = [&](const auto& self, entt::entity entity, const TransformComponent* transform) -> void
 		{
-			const std::string displayName = NameComponent::GetDisplayName(reg, entity);
+			const std::string_view displayName = NameComponent::GetDisplayName(reg, entity);
 
 			Search::BeginCategory(displayName,
 				[&, entity](std::string_view name) -> bool
@@ -168,40 +168,29 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 					return isTreeNodeOpen;
 				});
 
-			const TransformComponent* const transform = reg.TryGet<TransformComponent>(entity);
-
 			if (transform != nullptr)
 			{
 				for (const TransformComponent& child : transform->GetChildren())
 				{
-					self(self, child.GetOwner());
+					self(self, child.GetOwner(), &child);
 				}
 			}
 
 			Search::TreePop();
 		};
 
-	// First we display all entities without transforms
 	{
 		for (const auto [entity] : reg.Storage<entt::entity>().each())
 		{
-			if (!reg.HasComponent<TransformComponent>(entity))
-			{
-				displayEntity(displayEntity, entity);
-			}
-		}
-	}
+			const TransformComponent* transform = reg.TryGet<TransformComponent>(entity);
 
-	// Now we display only entities with transforms
-	{
-		for (auto [entity, transform] : reg.View<TransformComponent>().each())
-		{
-			// We recursively display children.
-			// So we only call display if
-			// this transform does not have a parent.
-			if (transform.IsOrphan())
+			if (transform == nullptr // We display all entities without transforms
+				// We recursively display children.
+				// So we only call display if
+				// this transform does not have a parent.
+				|| transform->IsOrphan())
 			{
-				displayEntity(displayEntity, entity);
+				displayEntity(displayEntity, entity, transform);
 			}
 		}
 	}

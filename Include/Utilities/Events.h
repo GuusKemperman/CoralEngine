@@ -125,7 +125,8 @@ namespace CE
 	static constexpr float sFixedTickEventStepSize = 0.2f;
 
 	/**
-	 * \brief Called just before the C++ destructor. 
+	 * \brief Called just before the C++ destructor, and only if the
+	 * world has begun play.
 	 * \World& The world this component is in.
 	 * \entt::entity The owner of this component.
 	 */

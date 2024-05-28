@@ -5,22 +5,23 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Assets/Prefabs/Prefab.h"
-#include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 void CE::GridSpawnerComponent::OnConstruct(World&, entt::entity owner)
 {
 	mOwner = owner;
 }
 
-void CE::GridSpawnerComponent::SpawnGrid()
+void CE::GridSpawnerComponent::OnBeginPlay(World&, entt::entity)
 {
-	if (mTiles.empty())
+	if (mShouldSpawnOnBeginPlay)
 	{
-		return;
+		SpawnGrid();
 	}
+}
 
+void CE::GridSpawnerComponent::ClearGrid()
+{
 	World* const world = World::TryGetWorldAtTopOfStack();
 
 	if (world == nullptr)
@@ -41,42 +42,33 @@ void CE::GridSpawnerComponent::SpawnGrid()
 	{
 		reg.Destroy(child.GetOwner(), true);
 	}
+}
 
-	float total{};
-
-	struct SpawnChance
+void CE::GridSpawnerComponent::SpawnGrid()
+{
+	if (mDistribution.mWeights.empty())
 	{
-		AssetHandle<Prefab> mTile{};
-		float mChance{};
-	};
-	std::vector<SpawnChance> chances{};
-
-	for (uint32 i = 0; i < mTiles.size(); i++)
-	{
-		chances.emplace_back(SpawnChance{ mTiles[i], i < mSpawnChances.size() ? mSpawnChances[i] : 0.0f });
+		return;
 	}
 
-	for (const SpawnChance& spawnChance : chances)
+	World* const world = World::TryGetWorldAtTopOfStack();
+
+	if (world == nullptr)
 	{
-		total += spawnChance.mChance;
+		return;
 	}
 
-	std::sort(chances.begin(), chances.end(),
-		[](const SpawnChance& Left, const SpawnChance& Right)
-		{
-			return Left.mChance < Right.mChance;
-		});
+	ClearGrid();
 
-	// Normalize and cumulate
-	float cumulative{};
-	for (SpawnChance& spawnChance : chances)
+	Registry& reg = world->GetRegistry();
+	TransformComponent* transform = reg.TryGet<TransformComponent>(mOwner);
+
+	if (transform == nullptr)
 	{
-		spawnChance.mChance /= total;
-
-		spawnChance.mChance += cumulative;
-		cumulative = spawnChance.mChance;
+		return;
 	}
-	
+	const float angleStep = TWOPI / static_cast<float>(mNumOfPossibleRotations);
+
 	for (uint32 x = 0; x < mWidth; x++)
 	{
 		for (uint32 y = 0; y < mHeight; y++)
@@ -93,30 +85,16 @@ void CE::GridSpawnerComponent::SpawnGrid()
 				position.y -= static_cast<float>(mHeight - 1) * mSpacing.y * .5f;
 			}
 
-			const double RandomNum = Random::Range(0.0f, 1.0f);
 
-			int32 BestIndex = 0;
-			int32 numChances = static_cast<int32>(chances.size());
+			const AssetHandle<Prefab>* tile = mDistribution.GetNext();
 
-			for (int32 i = 1; i < numChances; i++)
-			{
-				const float Value = chances[i].mChance > RandomNum ? chances[i].mChance : INFINITY;
-				const float BestValue = chances[BestIndex].mChance > RandomNum ? chances[BestIndex].mChance : INFINITY;
-
-				if (Value < BestValue)
-				{
-					BestIndex = i;
-				}
-			}
-
-			AssetHandle<Prefab> tile = chances[BestIndex].mTile;
-
-			if (tile == nullptr)
+			if (tile == nullptr
+				|| *tile == nullptr)
 			{
 				continue;
 			}
 
-			const entt::entity entity = reg.CreateFromPrefab(*tile);
+			const entt::entity entity = reg.CreateFromPrefab(**tile);
 
 			TransformComponent* child = reg.TryGet<TransformComponent>(entity);
 
@@ -126,7 +104,13 @@ void CE::GridSpawnerComponent::SpawnGrid()
 			}
 
 			child->SetParent(transform);
-			child->SetLocalPosition(position);
+
+			const glm::vec2 offset = { Random::Range(0.0f, mMaxRandomOffset), Random::Range(0.0f, mMaxRandomOffset) };
+			child->SetLocalPosition(position + offset);
+
+			const uint32 orientation = Random::Range(1u, mNumOfPossibleRotations);
+			const float angle = static_cast<float>(orientation) * angleStep;
+			child->SetLocalOrientation(sUp * angle);
 		}
 	}
 }
@@ -141,13 +125,17 @@ CE::MetaType CE::GridSpawnerComponent::Reflect()
 	type.AddField(&GridSpawnerComponent::mSpacing, "mSpacing").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mHeight, "mHeight").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mWidth, "mWidth").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&GridSpawnerComponent::mTiles, "mTiles").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&GridSpawnerComponent::mSpawnChances, "mChances").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mNumOfPossibleRotations, "mNumOfPossibleRotations").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mMaxRandomOffset, "mMaxRandomOffset").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mDistribution, "mDistribution").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mIsCentered, "mIsCentered").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mShouldSpawnOnBeginPlay, "mShouldSpawnOnBeginPlay").GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc(&GridSpawnerComponent::SpawnGrid, "Spawn Grid").GetProperties().Add(Props::sCallFromEditorTag);
+	type.AddFunc(&GridSpawnerComponent::SpawnGrid, "Spawn Grid").GetProperties().Add(Props::sCallFromEditorTag).Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+	type.AddFunc(&GridSpawnerComponent::ClearGrid, "Clear Grid").GetProperties().Add(Props::sCallFromEditorTag).Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	BindEvent(type, sConstructEvent, &GridSpawnerComponent::OnConstruct);
+	BindEvent(type, sBeginPlayEvent, &GridSpawnerComponent::OnBeginPlay);
 
 	ReflectComponentType<GridSpawnerComponent>(type);
 	return type;
