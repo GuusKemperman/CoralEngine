@@ -125,11 +125,11 @@ namespace CE
 		                                   const AssetHandle<Script>& script) const override;
 	};
 
-	class OnAbilityHitEvent final :
+	class ScriptAbilityHitEvent final :
 		public ScriptEvent
 	{
 	public:
-		OnAbilityHitEvent();
+		ScriptAbilityHitEvent();
 
 	private:
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
@@ -181,12 +181,13 @@ namespace CE
 	static const ScriptOnlyPassComponentEvent sOnAIStateExitScriptEvent{ sAIStateExitEvent };
 	static const ScriptAIEvaluateEvent sAIEvaluateScriptEvent{};
 	static const ScriptAbilityActivateEvent sScriptAbilityActivateEvent{};
+	static const ScriptAbilityHitEvent sScriptAbilityHitEvent{};
 	static const CollisionEvent sOnCollisionEntryScriptEvent{ sCollisionEntryEvent };
 	static const CollisionEvent sOnCollisionStayScriptEvent{ sCollisionStayEvent };
 	static const CollisionEvent sOnCollisionExitScriptEvent{ sCollisionExitEvent };
 	static const ScriptOnlyPassComponentEvent sOnButtonPressedScriptEvent{ sButtonPressEvent };
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 14> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 15> sAllScriptableEvents
 	{
 		sOnConstructScriptEvent,
 		sOnDestructScriptEvent,
@@ -198,6 +199,7 @@ namespace CE
 		sOnAIStateExitScriptEvent,
 		sAIEvaluateScriptEvent,
 		sScriptAbilityActivateEvent,
+		sScriptAbilityHitEvent,
 		sOnCollisionEntryScriptEvent,
 		sOnCollisionStayScriptEvent,
 		sOnCollisionExitScriptEvent,

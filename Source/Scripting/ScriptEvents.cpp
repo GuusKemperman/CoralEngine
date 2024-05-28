@@ -166,12 +166,12 @@ CE::MetaFunc::InvokeT  CE::ScriptAbilityActivateEvent::GetScriptInvoker(const Sc
 		};
 }
 
-CE::OnAbilityHitEvent::OnAbilityHitEvent() :
+CE::ScriptAbilityHitEvent::ScriptAbilityHitEvent() :
 	ScriptEvent(sAbilityHitEvent, { { MakeTypeTraits<entt::entity>(), "Hit by" } }, {})
 {
 }
 
-CE::MetaFunc::InvokeT CE::OnAbilityHitEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+CE::MetaFunc::InvokeT CE::ScriptAbilityHitEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
 	const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
