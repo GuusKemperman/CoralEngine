@@ -95,8 +95,7 @@ void CE::DebugRenderer::Impl::Render(GPUWorld& gpuWorld)
 
 	if (data.mWantedLineCount > data.mLineCount)
 	{
-		uint32 lineCountAboveLimit = data.mWantedLineCount - MAX_LINES;
-		LOG(LogCore, Warning, "Trying to render {} more debug lines than the max amount of {}", lineCountAboveLimit, MAX_LINES);
+		LOG(LogCore, Warning, "Trying to render {} debug lines, which is more than the max possible amount of {}", data.mWantedLineCount, MAX_LINES);
 	}
 
 	Device& engineDevice = Device::Get();
