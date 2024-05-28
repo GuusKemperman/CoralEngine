@@ -134,6 +134,36 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "IncreaseValueByPercentage (by value)", MetaFunc::ExplicitParams<
 		float, float>{}, "Value To Change", "Percentage").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
+	metaType.AddFunc([](entt::entity entity, WeaponInstance weapon)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			AddWeaponToEnd(*world, entity, weapon);
+
+		}, "AddWeaponToEnd", MetaFunc::ExplicitParams<
+		entt::entity, WeaponInstance>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](entt::entity entity, int index)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			RemoveWeaponAtIndex(*world, entity, index);
+
+		}, "RemoveWeaponAtIndex", MetaFunc::ExplicitParams<
+		entt::entity, int>{}, "Entity", "Index").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			CallAllAbilityHitEvents(*world, characterEntity, hitEntity, abilityEntity);
+
+		}, "CallAllAbilityHitEvents", MetaFunc::ExplicitParams<
+		entt::entity, entt::entity, entt::entity>{}, "CharacterEntity", "HitEntity", "AbilityEntity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
 	return metaType;
 }
 
@@ -255,6 +285,7 @@ entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Pr
 	// Store a copy of the cast-by character's CharacterComponent
 	// so that effect calculations and team checks can be performed even if the character dies in the meantime.
 	activeAbility->mCastByCharacterData = *characterComponent;
+	activeAbility->mCastByEntity = castBy;
 
 	// Set the position.
 	const glm::vec3 pos = characterTransform->GetWorldPosition();
@@ -462,7 +493,47 @@ float& CE::AbilityFunctionality::IncreaseValueByPercentage(float& toChange, floa
 	return toChange;
 }
 
-void CE::AbilityFunctionality::CallAllAbilityHitEvents(World& world, entt::entity castByEntity, entt::entity abilityEntity)
+void CE::AbilityFunctionality::RemoveWeaponAtIndex(World& world, entt::entity entity, int index)
+{
+	const auto abilities = world.GetRegistry().TryGet<AbilitiesOnCharacterComponent>(entity);
+	if (abilities == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "RemoveWeaponAtIndex - entity {} does not have an Active Ability Component attached.", entt::to_integral(entity));
+		return;
+	}
+	auto& weaponsVector = abilities->mWeaponsToInput;
+	if (index >= static_cast<int>(weaponsVector.size()))
+	{
+		LOG(LogAbilitySystem, Error, "RemoveWeaponAtIndex - index out of range in entity {} with weapons vector with size {}.", index, entt::to_integral(entity), static_cast<int>(weaponsVector.size()));
+		return;
+	}
+	const MetaType* scriptType = MetaManager::Get().TryGetType(weaponsVector[index].mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+	if (scriptType != nullptr && world.GetRegistry().HasComponent(scriptType->GetTypeId(), entity))
+	{
+		world.GetRegistry().RemoveComponent(scriptType->GetTypeId(), entity);
+	}
+	weaponsVector.erase(weaponsVector.begin() + index);
+}
+
+void CE::AbilityFunctionality::AddWeaponToEnd(World& world, entt::entity entity, WeaponInstance& weapon)
+{
+	const auto abilities = world.GetRegistry().TryGet<AbilitiesOnCharacterComponent>(entity);
+	if (abilities == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "AddWeapon - entity does not have an Active Ability Component attached.");
+		return;
+	}
+	abilities->mWeaponsToInput.push_back(weapon);
+	weapon.InitializeRuntimeWeapon();
+	// Add On Ability Activate script.
+	const MetaType* scriptType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+	if (scriptType != nullptr && !world.GetRegistry().HasComponent(scriptType->GetTypeId(), entity))
+	{
+		world.GetRegistry().AddComponent(*scriptType, entity);
+	}
+}
+
+void CE::AbilityFunctionality::CallAllAbilityHitEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity)
 {
 	const std::vector<BoundEvent> boundEvents = GetAllBoundEvents(sAbilityHitEvent);
 	for (const BoundEvent& boundEvent : boundEvents)
@@ -470,19 +541,19 @@ void CE::AbilityFunctionality::CallAllAbilityHitEvents(World& world, entt::entit
 		entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
 
 		if (storage == nullptr
-			|| !storage->contains(castByEntity))
+			|| !storage->contains(characterEntity))
 		{
 			continue;
 		}
 
 		if (boundEvent.mIsStatic)
 		{
-			boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, castByEntity, abilityEntity);
+			boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, characterEntity, hitEntity, abilityEntity);
 		}
 		else
 		{
-			MetaAny component{ boundEvent.mType, storage->value(castByEntity), false };
-			boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, castByEntity, abilityEntity);
+			MetaAny component{ boundEvent.mType, storage->value(characterEntity), false };
+			boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, characterEntity, hitEntity, abilityEntity);
 		}
 	}
 }

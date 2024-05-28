@@ -1,11 +1,13 @@
 #pragma once
 
 #include "Assets/Core/AssetHandle.h"
+#include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Abilities/AbilityEffectsComponent.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE
 {
+	class AbilitiesOnCharacterComponent;
 	struct WeaponInstance;
 	class ProjectileComponent;
 	struct DurationalEffect;
@@ -30,7 +32,9 @@ namespace CE
 		static bool IncreasePierceCountAndReturnTrueIfExceeded(ProjectileComponent& projectileComponent);
 		static bool WasTheAbilityCastByAnEnemy(World& world, entt::entity entityToAffect, entt::entity abilityEntity);
 		static float& IncreaseValueByPercentage(float& toChange, float percentage);
-		static void CallAllAbilityHitEvents(World& world, entt::entity castByEntity, entt::entity abilityEntity);
+		static void RemoveWeaponAtIndex(World& world, entt::entity entity, int index);
+		static void AddWeaponToEnd(World& world, entt::entity entity, WeaponInstance& weapon);
+		static void CallAllAbilityHitEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity);
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);

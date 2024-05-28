@@ -167,7 +167,8 @@ CE::MetaFunc::InvokeT  CE::ScriptAbilityActivateEvent::GetScriptInvoker(const Sc
 }
 
 CE::ScriptAbilityHitEvent::ScriptAbilityHitEvent() :
-	ScriptEvent(sAbilityHitEvent, { { MakeTypeTraits<entt::entity>(), "Hit by" } }, {})
+	ScriptEvent(sAbilityHitEvent, { { MakeTypeTraits<entt::entity>(), "Hit Entity" },
+	{ MakeTypeTraits<entt::entity>(), "Ability Entity" } }, {})
 {
 }
 
@@ -177,7 +178,7 @@ CE::MetaFunc::InvokeT CE::ScriptAbilityHitEvent::GetScriptInvoker(const ScriptFu
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 		(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
 		{
-			std::array<MetaAny, 2> scriptArgs{ std::move(args[0]), std::move(args[3]) };
+			std::array<MetaAny, 3> scriptArgs{ std::move(args[0]), std::move(args[3]), std::move(args[4])};
 			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
 		};
 }
