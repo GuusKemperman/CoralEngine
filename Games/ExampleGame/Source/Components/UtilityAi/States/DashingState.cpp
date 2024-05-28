@@ -9,13 +9,26 @@
 #include "Components/AnimationRootComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Components/UtililtyAi/States/ChargeDashState.h"
+#include "Components/UtililtyAi/States/ChargingUpState.h"
 #include "Components/UtililtyAi/States/DashRechargeState.h"
 #include "Assets/Animation/Animation.h"
 
 
 void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt)
 {
+	// If NotReadyYet
+	// Show outline, increase NotReadyYet timer
+	// else
+	// Dash forward
+	//
+
+	// OnAIEvaulate
+	// If dashing timer finished && ChargeUpS timer finished return 0.0f
+
+	// OnAIExit
+	// Set rest timer on RestComponent to N seconds
+
+
 	mCurrentDashTimer += dt;
 
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
@@ -42,15 +55,15 @@ void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt
 
 float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
 {
-	auto* chargeDashState = world.GetRegistry().TryGet<ChargeDashState>(owner);
+	auto* chargingUpState = world.GetRegistry().TryGet<ChargingUpState>(owner);
 
-	if (chargeDashState == nullptr)
+	if (chargingUpState == nullptr)
 	{
-		LOG(LogAI, Warning, "A chargeDashState is needed to run the Dashing State!");
+		LOG(LogAI, Warning, "A ChargingUpState is needed to run the Dashing State!");
 		return 0;
 	}
 
-	if (chargeDashState->IsDashCharged() && mCurrentDashTimer < mMaxDashTime)
+	if (chargingUpState->IsCharged() && mCurrentDashTimer < mMaxDashTime)
 	{
 		return 0.9f;
 	}

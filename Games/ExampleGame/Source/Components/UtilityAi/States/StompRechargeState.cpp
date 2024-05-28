@@ -12,6 +12,7 @@
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Components/UtililtyAi/States/ChargingUpState.h"
 #include "Components/UtililtyAi/States/StompExecutionState.h"
 #include "Components/UtililtyAi/States/StompStartState.h"
 
@@ -37,16 +38,15 @@ void Game::StompRechargeState::OnAiTick(CE::World& world, entt::entity owner, fl
 
 	mCurrentRechargeTimer += dt;
 
+	auto* stompState = world.GetRegistry().TryGet<StompExecutionState>(owner);
 
-	auto* dashingState = world.GetRegistry().TryGet<StompExecutionState>(owner);
-
-	if (dashingState == nullptr)
+	if (stompState == nullptr)
 	{
 		LOG(LogAI, Warning, "An DashingState is needed to run the DashRecharge State!");
 		return;
 	}
 
-	auto* chargeDashingState = world.GetRegistry().TryGet<StompStartState>(owner);
+	auto* chargeDashingState = world.GetRegistry().TryGet<ChargingUpState>(owner);
 
 	if (chargeDashingState == nullptr)
 	{
@@ -56,8 +56,8 @@ void Game::StompRechargeState::OnAiTick(CE::World& world, entt::entity owner, fl
 
 	if (mCurrentRechargeTimer >= mMaxRechargeTime)
 	{
-		chargeDashingState->mCurrentStompStartTimer = 0;
-		dashingState->mCurrentStompTimer = 0;
+		chargeDashingState->mCurrentChargeTimer = 0;
+		stompState->mCurrentStompTimer = 0;
 	}
 }
 

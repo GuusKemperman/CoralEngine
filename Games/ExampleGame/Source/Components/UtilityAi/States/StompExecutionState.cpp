@@ -13,6 +13,7 @@
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Components/UtililtyAi/States/ChargingUpState.h"
 
 void Game::StompExecutionState::OnAiTick(CE::World&, const entt::entity, const float dt)
 {
@@ -21,16 +22,19 @@ void Game::StompExecutionState::OnAiTick(CE::World&, const entt::entity, const f
 
 float Game::StompExecutionState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
 {
-	auto [score, entity] = GetBestScoreAndTarget(world, owner);
+	// if (!ChargingUpState::IsCharged()) { return 0.0f; } 
 
-	if (mCurrentStompTimer > 0 && mCurrentStompTimer < mMaxStompTime)
+	auto* chargingUpState = world.GetRegistry().TryGet<ChargingUpState>(owner);
+
+	if (chargingUpState == nullptr)
 	{
-		return 0.9f;
+		LOG(LogAI, Warning, "A ChargingUpState is needed to run the Dashing State!");
+		return 0;
 	}
 
-	if (mCurrentStompTimer < mMaxStompTime)
+	if (chargingUpState->IsCharged() && mCurrentStompTimer < mMaxStompTime)
 	{
-		return score;
+		return 0.9f;
 	}
 
 	return 0;
@@ -55,6 +59,10 @@ void Game::StompExecutionState::OnAIStateEnterEvent(CE::World& world, entt::enti
 		animationRootComponent->SwitchAnimation(world.GetRegistry(), mStompAnimation, 0.0f);
 	}
 }
+
+// OnAIStateExit()
+// // Check if it has the recharge state
+// If we have one, set the timer to X seconds
 
 bool Game::StompExecutionState::IsStompCharged() const
 {
