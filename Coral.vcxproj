@@ -409,6 +409,9 @@
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
       <ExtraWarnings />
+      <OptimizationLevel>Level3</OptimizationLevel>
+      <UnrollLoops>true</UnrollLoops>
+      <LinkTimeOptimization>true</LinkTimeOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -429,6 +432,7 @@
     </ProjectReference>
     <WavePsslc>
       <AdditionalIncludeDirectories>$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>O4</Optimization>
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">
@@ -532,6 +536,8 @@
     <ClCompile Include="Source\Components\GridSpawnerComponent.cpp" />
     <ClCompile Include="Source\Components\OutlineComponent.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticleLightComponent.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\SwarmingAgentTag.cpp" />
+    <ClCompile Include="Source\Components\Pathfinding\SwarmingTargetComponent.cpp" />
     <ClCompile Include="Source\Components\SpawnPrefabOnDestructComponent.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\PostProcessingRendererPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -575,6 +581,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Systems\SwarmingSystem.cpp" />
     <ClCompile Include="Source\UnitTests\AssetHandleUnitTests.cpp" />
     <ClCompile Include="Source\Utilities\ASync.cpp" />
     <ClCompile Include="Source\Utilities\BVH.cpp" />
@@ -1144,7 +1151,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Systems\NavigationSystem.cpp" />
+    <ClCompile Include="Source\Systems\NavMeshSystem.cpp" />
     <ClCompile Include="Source\Components\IsDestroyedTag.cpp" />
     <ClCompile Include="Source\Components\NameComponent.cpp" />
     <ClCompile Include="Source\Components\PrefabOfOriginComponent.cpp" />
@@ -1585,6 +1592,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Utilities\StaticReflection\ReflectComponentType.cpp" />
+    <ClCompile Include="Source\Utilities\SteeringBehaviours.cpp" />
     <ClCompile Include="Source\Utilities\StringFunctions.cpp" />
     <ClCompile Include="Source\Utilities\Time.cpp" />
     <ClCompile Include="Source\World\Archiver.cpp" />
@@ -1626,11 +1634,14 @@
     <ClInclude Include="Include\Components\MaterialRootComponent.h" />
     <ClInclude Include="Include\Components\OutlineComponent.h" />
     <ClInclude Include="Include\Components\Particles\ParticleLightComponent.h" />
+    <ClInclude Include="Include\Components\Pathfinding\SwarmingAgentTag.h" />
+    <ClInclude Include="Include\Components\Pathfinding\SwarmingTargetComponent.h" />
     <ClInclude Include="Include\Components\PlayerComponent.h" />
     <ClInclude Include="Include\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Include\Components\SpawnPrefabOnDestructComponent.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
     <ClInclude Include="Include\Systems\Particles\ParticleLightSystem.h" />
+    <ClInclude Include="Include\Systems\SwarmingSystem.h" />
     <ClInclude Include="Include\Utilities\ASync.h" />
     <ClInclude Include="Include\Utilities\BVH.h" />
     <ClInclude Include="Include\Utilities\Geometry2d.h" />
@@ -1908,7 +1919,7 @@
     <ClInclude Include="Include\Assets\Animation\Bone.h" />
     <ClInclude Include="Include\Systems\AnimationSystem.h" />
     <ClInclude Include="Include\Systems\TickEventSystems.h" />
-    <ClInclude Include="Include\Systems\NavigationSystem.h" />
+    <ClInclude Include="Include\Systems\NavMeshSystem.h" />
     <ClInclude Include="Include\Systems\PhysicsSystem.h" />
     <ClInclude Include="Include\Systems\UISystem.h" />
     <ClInclude Include="Include\Systems\UpdateTopDownCamSystem.h" />
@@ -1947,6 +1958,7 @@
     <ClInclude Include="Include\Utilities\Expected.h" />
     <ClInclude Include="Include\Rendering\FrameBuffer.h" />
     <ClInclude Include="Include\Utilities\Benchmark.h" />
+    <ClInclude Include="Include\Utilities\SteeringBehaviours.h" />
     <ClInclude Include="Include\Utilities\Time.h" />
     <ClInclude Include="Include\Utilities\view_istream.h" />
     <ClInclude Include="include\core\ecs.h" />
@@ -2083,6 +2095,18 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Clustering\CullClusters_vv.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+    </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Clustering\CullClusters_p.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+    </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBRParticle_p.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
     </WavePsslc>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Fullscreen_vv.pssl">
