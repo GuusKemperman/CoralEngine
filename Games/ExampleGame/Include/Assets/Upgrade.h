@@ -10,6 +10,8 @@ namespace CE
 
 namespace Game
 {
+	class UpgradeSystem;
+
 	class Upgrade :
 		public CE::Asset
 	{
@@ -18,6 +20,7 @@ namespace Game
 		Upgrade(CE::AssetLoadInfo& loadInfo);
 
 	private:
+		friend UpgradeSystem;
 		CE::ComponentFilter mUpgradeScript{};
 		std::vector<CE::ComponentFilter> mRequiredUpgrades{};
 		bool mAllRequiredUpgradesNeeded{};
