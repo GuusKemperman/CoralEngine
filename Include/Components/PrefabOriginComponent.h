@@ -1,5 +1,6 @@
 #pragma once
 #include "Meta/MetaReflect.h"
+#include "Assets/Core/AssetHandle.h"
 
 namespace CE
 {
@@ -18,7 +19,7 @@ namespace CE
 
 		void SetFactoryOfOrigin(const PrefabEntityFactory& factory);
 
-		const Prefab* TryGetPrefab() const;
+		AssetHandle<Prefab> TryGetPrefab() const;
 		const PrefabEntityFactory* TryGetFactory() const;
 
 		Name::HashType GetHashedPrefabName() const { return mHashedPrefabName; }
