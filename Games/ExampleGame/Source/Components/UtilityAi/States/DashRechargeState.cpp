@@ -7,9 +7,10 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Components/AnimationRootComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Components/UtililtyAi/States/ChargeDashState.h"
+#include "Components/UtililtyAi/States/ChargeUpDashState.h"
 #include "Components/UtililtyAi/States/DashingState.h"
 #include "Assets/Animation/Animation.h"
+#include "Components/UtililtyAi/States/ChargeUpDashState.h"
 
 void Game::DashRechargeState::OnAiTick(CE::World& world, entt::entity owner, float dt)
 {
@@ -41,7 +42,7 @@ void Game::DashRechargeState::OnAiTick(CE::World& world, entt::entity owner, flo
 		return;
 	}
 
-	auto* chargeDashingState = world.GetRegistry().TryGet<ChargeDashState>(owner);
+	auto* chargeDashingState = world.GetRegistry().TryGet<ChargeUpDashState>(owner);
 
 	if (chargeDashingState == nullptr)
 	{

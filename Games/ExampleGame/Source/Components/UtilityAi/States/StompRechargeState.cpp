@@ -12,9 +12,9 @@
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Components/UtililtyAi/States/ChargingUpState.h"
-#include "Components/UtililtyAi/States/StompExecutionState.h"
-#include "Components/UtililtyAi/States/StompStartState.h"
+#include "Components/UtililtyAi/States/ChargeUpDashState.h"
+#include "Components/UtililtyAi/States/StompState.h"
+#include "Components/UtililtyAi/States/ChargeUpStompState.h"
 
 
 void Game::StompRechargeState::OnAiTick(CE::World& world, entt::entity owner, float dt)
@@ -38,7 +38,7 @@ void Game::StompRechargeState::OnAiTick(CE::World& world, entt::entity owner, fl
 
 	mCurrentRechargeTimer += dt;
 
-	auto* stompState = world.GetRegistry().TryGet<StompExecutionState>(owner);
+	auto* stompState = world.GetRegistry().TryGet<StompState>(owner);
 
 	if (stompState == nullptr)
 	{
@@ -46,7 +46,7 @@ void Game::StompRechargeState::OnAiTick(CE::World& world, entt::entity owner, fl
 		return;
 	}
 
-	auto* chargeDashingState = world.GetRegistry().TryGet<ChargingUpState>(owner);
+	auto* chargeDashingState = world.GetRegistry().TryGet<ChargeUpDashState>(owner);
 
 	if (chargeDashingState == nullptr)
 	{
@@ -63,7 +63,7 @@ void Game::StompRechargeState::OnAiTick(CE::World& world, entt::entity owner, fl
 
 float Game::StompRechargeState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
 {
-	auto* dashingState = world.GetRegistry().TryGet<StompExecutionState>(owner);
+	auto* dashingState = world.GetRegistry().TryGet<StompState>(owner);
 
 	if (dashingState == nullptr)
 	{

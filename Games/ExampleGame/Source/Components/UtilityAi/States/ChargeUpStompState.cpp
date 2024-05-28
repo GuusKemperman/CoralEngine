@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Components/UtililtyAi/States/ChargingUpState.h"
+#include "Components/UtililtyAi/States/ChargeUpStompState.h"
 
 #include "Components/TransformComponent.h"
 #include "Components/Pathfinding/NavMeshAgentComponent.h"
@@ -16,7 +16,7 @@
 #include "Systems/AbilitySystem.h"
 
 
-void Game::ChargingUpState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
+void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
@@ -38,22 +38,20 @@ void Game::ChargingUpState::OnAiTick(CE::World& world, const entt::entity owner,
 	mCurrentChargeTimer += dt;
 }
 
-float Game::ChargingUpState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
+float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
 {
-	// If current timer != 0.0f
-	// return 1.0f
+
+	if (mChargeCooldown.mAmountOfTimePassed != 0.0f)
+	{
+		return 0.8f;
+	}
 
 	auto [score, entity] = GetBestScoreAndTarget(world, owner);
-
-	if (mCurrentChargeTimer > 0 && mCurrentChargeTimer < mMaxChargeTime)
-	{
-		return 0.9f;
-	}
 
 	return score;
 }
 
-void Game::ChargingUpState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
+void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 {
 	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
@@ -64,19 +62,23 @@ void Game::ChargingUpState::OnAiStateEnterEvent(CE::World& world, entt::entity o
 	}
 
 	navMeshAgent->ClearTarget(world);
+
+	mChargeCooldown.mCooldown = mMaxChargeTime;
+	mChargeCooldown.mAmountOfTimePassed = 0.0f;
 }
 
-bool Game::ChargingUpState::IsCharged() const
+bool Game::ChargeUpStompState::IsCharged() const
 {
-	// Do we have a charging up state?
-	// Is it the current state?
-	// Has the charging up state finished its timer
-
-	return // !IsCurrentStateRechargeState();
+	if (mChargeCooldown.mAmountOfTimePassed >= mChargeCooldown.mCooldown)
+	{
+		return true;
+	}
+	
+	return false;
 }
 
-std::pair<float, entt::entity> Game::ChargingUpState::GetBestScoreAndTarget(const CE::World& world,
-                                                                            entt::entity owner) const
+std::pair<float, entt::entity> Game::ChargeUpStompState::GetBestScoreAndTarget(const CE::World& world,
+	entt::entity owner) const
 {
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
@@ -122,20 +124,20 @@ std::pair<float, entt::entity> Game::ChargingUpState::GetBestScoreAndTarget(cons
 	return { highestScore, entityId };
 }
 
-CE::MetaType Game::ChargingUpState::Reflect()
+CE::MetaType Game::ChargeUpStompState::Reflect()
 {
-	auto type = CE::MetaType{ CE::MetaType::T<ChargingUpState>{}, "ChargingUpState" };
+	auto type = CE::MetaType{ CE::MetaType::T<ChargeUpStompState>{}, "ChargeUpStompState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&ChargingUpState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&ChargingUpState::mMaxChargeTime, "mMaxChargeTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpStompState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpStompState::mMaxChargeTime, "mMaxChargeTime").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &ChargingUpState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &ChargingUpState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &ChargingUpState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sAITickEvent, &ChargeUpStompState::OnAiTick);
+	BindEvent(type, CE::sAIEvaluateEvent, &ChargeUpStompState::OnAiEvaluate);
+	BindEvent(type, CE::sAIStateEnterEvent, &ChargeUpStompState::OnAiStateEnterEvent);
 
-	type.AddField(&ChargingUpState::mChargingAnimation, "mChargingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpStompState::mChargingAnimation, "mChargingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	CE::ReflectComponentType<ChargingUpState>(type);
+	CE::ReflectComponentType<ChargeUpStompState>(type);
 	return type;
 }

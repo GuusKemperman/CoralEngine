@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Components/UtililtyAi/States/StompExecutionState.h"
+#include "Components/UtililtyAi/States/StompState.h"
 
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
@@ -13,26 +13,32 @@
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Components/UtililtyAi/States/ChargingUpState.h"
+#include "Components/UtililtyAi/States/ChargeUpDashState.h"
+#include "Components/UtililtyAi/States/ChargeUpStompState.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
-void Game::StompExecutionState::OnAiTick(CE::World&, const entt::entity, const float dt)
+void Game::StompState::OnAiTick(CE::World&, const entt::entity, const float dt)
 {
 	mCurrentStompTimer += dt;
 }
 
-float Game::StompExecutionState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
+float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
 {
-	// if (!ChargingUpState::IsCharged()) { return 0.0f; } 
-
-	auto* chargingUpState = world.GetRegistry().TryGet<ChargingUpState>(owner);
+	auto* chargingUpState = world.GetRegistry().TryGet<ChargeUpStompState>(owner);
 
 	if (chargingUpState == nullptr)
 	{
-		LOG(LogAI, Warning, "A ChargingUpState is needed to run the Dashing State!");
+		LOG(LogAI, Warning, "A ChargeUpStompState is needed to run the Stomp State!");
 		return 0;
 	}
 
-	if (chargingUpState->IsCharged() && mCurrentStompTimer < mMaxStompTime)
+	if (!chargingUpState->IsCharged())
+	{
+		return 0.0f;
+	}
+
+	if (CE::MakeTypeId<ChargeUpStompState>() == world.GetRegistry().Get<CE::EnemyAiControllerComponent>(owner).mCurrentState->GetTypeId()
+		|| mCurrentStompTimer < mMaxStompTime)
 	{
 		return 0.9f;
 	}
@@ -40,7 +46,7 @@ float Game::StompExecutionState::OnAiEvaluate(const CE::World& world, entt::enti
 	return 0;
 }
 
-void Game::StompExecutionState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
+void Game::StompState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 {
 	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
@@ -64,12 +70,12 @@ void Game::StompExecutionState::OnAIStateEnterEvent(CE::World& world, entt::enti
 // // Check if it has the recharge state
 // If we have one, set the timer to X seconds
 
-bool Game::StompExecutionState::IsStompCharged() const
+bool Game::StompState::IsStompCharged() const
 {
 	return (mCurrentStompTimer >= mMaxStompTime);
 }
 
-std::pair<float, entt::entity> Game::StompExecutionState::GetBestScoreAndTarget(const CE::World& world,
+std::pair<float, entt::entity> Game::StompState::GetBestScoreAndTarget(const CE::World& world,
 	entt::entity owner) const
 {
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
@@ -116,20 +122,20 @@ std::pair<float, entt::entity> Game::StompExecutionState::GetBestScoreAndTarget(
 	return { highestScore, entityId };
 }
 
-CE::MetaType Game::StompExecutionState::Reflect()
+CE::MetaType Game::StompState::Reflect()
 {
-	auto type = CE::MetaType{ CE::MetaType::T<StompExecutionState>{}, "StompExecutionState" };
+	auto type = CE::MetaType{ CE::MetaType::T<StompState>{}, "StompState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&StompExecutionState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&StompExecutionState::mMaxStompTime, "mMaxStompTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&StompState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&StompState::mMaxStompTime, "mMaxStompTime").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &StompExecutionState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &StompExecutionState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &StompExecutionState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAITickEvent, &StompState::OnAiTick);
+	BindEvent(type, CE::sAIEvaluateEvent, &StompState::OnAiEvaluate);
+	BindEvent(type, CE::sAIStateEnterEvent, &StompState::OnAIStateEnterEvent);
 
-	type.AddField(&StompExecutionState::mStompAnimation, "mStompAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&StompState::mStompAnimation, "mStompAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	CE::ReflectComponentType<StompExecutionState>(type);
+	CE::ReflectComponentType<StompState>(type);
 	return type;
 }

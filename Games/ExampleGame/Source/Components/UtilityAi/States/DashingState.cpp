@@ -9,7 +9,7 @@
 #include "Components/AnimationRootComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Components/UtililtyAi/States/ChargingUpState.h"
+#include "Components/UtililtyAi/States/ChargeUpDashState.h"
 #include "Components/UtililtyAi/States/DashRechargeState.h"
 #include "Assets/Animation/Animation.h"
 
@@ -55,11 +55,11 @@ void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt
 
 float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
 {
-	auto* chargingUpState = world.GetRegistry().TryGet<ChargingUpState>(owner);
+	auto* chargingUpState = world.GetRegistry().TryGet<ChargeUpDashState>(owner);
 
 	if (chargingUpState == nullptr)
 	{
-		LOG(LogAI, Warning, "A ChargingUpState is needed to run the Dashing State!");
+		LOG(LogAI, Warning, "A ChargeUpDashState is needed to run the Dashing State!");
 		return 0;
 	}
 
