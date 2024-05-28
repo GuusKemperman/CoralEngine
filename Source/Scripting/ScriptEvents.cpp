@@ -166,8 +166,24 @@ CE::MetaFunc::InvokeT  CE::ScriptAbilityActivateEvent::GetScriptInvoker(const Sc
 		};
 }
 
-CE::MetaFunc::InvokeT CE::CollisionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+CE::OnAbilityHitEvent::OnAbilityHitEvent() :
+	ScriptEvent(sAbilityHitEvent, { { MakeTypeTraits<entt::entity>(), "Hit by" } }, {})
+{
+}
+
+CE::MetaFunc::InvokeT CE::OnAbilityHitEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
 	const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+		(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			std::array<MetaAny, 2> scriptArgs{ std::move(args[0]), std::move(args[3]) };
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
+CE::MetaFunc::InvokeT CE::CollisionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+                                                           const AssetHandle<Script>& script) const
 {
 	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
 	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult

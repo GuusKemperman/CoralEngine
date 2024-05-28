@@ -91,7 +91,6 @@ namespace CE
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
 			const AssetHandle<Script>& script) const override;
 	};
-	
 
 	class ScriptAITickEvent final :
 		public ScriptEvent
@@ -126,6 +125,17 @@ namespace CE
 		                                   const AssetHandle<Script>& script) const override;
 	};
 
+	class OnAbilityHitEvent final :
+		public ScriptEvent
+	{
+	public:
+		OnAbilityHitEvent();
+
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+			const AssetHandle<Script>& script) const override;
+	};
+
 	class CollisionEvent :
 		public ScriptEvent
 	{
@@ -137,7 +147,6 @@ namespace CE
 		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
 		                                   const AssetHandle<Script>& script) const override;
 	};
-
 
 	template <typename Ret, typename... Args, bool IsAlwaysStatic>
 	ScriptEvent::ScriptEvent(const Event<Ret(Args...), IsAlwaysStatic>& event,
