@@ -2026,6 +2026,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Include\Utilities\WeightedRandomDistribution.h" />
     <ClInclude Include="Include\World\Archiver.h" />
     <ClInclude Include="Include\World\Physics.h" />
     <ClInclude Include="include\World\World.h" />
