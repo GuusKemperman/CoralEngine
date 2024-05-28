@@ -66,7 +66,7 @@ bool CE::DebugRenderer::Impl::AddLine(const World& world, const glm::vec3& from,
 {
 	GPUWorld& gpuWorld = world.GetGPUWorld();
 	DebugRenderingData& data = gpuWorld.GetDebugRenderingData();
-	data.mWantedLineCount++;
+	data.mNumOfLinesRequested++;
 
 	if (data.mLineCount < MAX_LINES) 
 	{
@@ -93,9 +93,9 @@ void CE::DebugRenderer::Impl::Render(GPUWorld& gpuWorld)
 		return;
 	}
 
-	if (data.mWantedLineCount > data.mLineCount)
+	if (data.mNumOfLinesRequested > data.mLineCount)
 	{
-		LOG(LogCore, Warning, "Trying to render {} debug lines, which is more than the max possible amount of {}", data.mWantedLineCount, MAX_LINES);
+		LOG(LogCore, Warning, "Trying to render {} debug lines, which is more than the max possible amount of {}", data.mNumOfLinesRequested, MAX_LINES);
 	}
 
 	Device& engineDevice = Device::Get();
@@ -139,5 +139,5 @@ void CE::DebugRenderer::Impl::Render(GPUWorld& gpuWorld)
 	memset(data.mColors.data(), 0, sizeof(glm::vec4) * vertexCount);
 
 	data.mLineCount = 0;
-	data.mWantedLineCount = 0;
+	data.mNumOfLinesRequested = 0;
 }
