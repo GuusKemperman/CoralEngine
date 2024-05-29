@@ -395,6 +395,7 @@
     </ClCompile>
     <ClCompile Include="Source\Components\WavesComponent.cpp" />
     <ClCompile Include="Source\Systems\UpgradeSystem.cpp" />
+    <ClCompile Include="Source\Components\UpgradeStoringComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Assets\Upgrade.h" />
@@ -418,6 +419,7 @@
     </ClInclude>
     <ClInclude Include="Include\Components\WavesComponent.h" />
     <ClInclude Include="Include\Systems\UpgradeSystem.h" />
+    <ClInclude Include="Include\Components\UpgradeStoringComponent.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

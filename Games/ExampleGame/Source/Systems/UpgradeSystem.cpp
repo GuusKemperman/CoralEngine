@@ -3,6 +3,7 @@
 
 #include "Assets/Upgrade.h"
 #include "Components/PlayerComponent.h"
+#include "Components/UpgradeStoringComponent.h"
 #include "Components/UI/UISpriteComponent.h"
 #include "Core/AssetManager.h"
 #include "Meta/Fwd/MetaTypeFwd.h"
@@ -31,9 +32,10 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeSystem::OnLevelUp(C
 		{
 			continue;
 		}
-		if (loadedUpgrade->mRequiredUpgrades.empty())
+		if (loadedUpgrade->mRequiredUpgrades.empty() && 
+			!registry.HasComponent(loadedUpgrade->mUpgradeScript.Get()->GetTypeId(), playerEntity))
 		{
-			availableUpgrades.push_back(upgrade); // should I be storing weak assets instead?
+			availableUpgrades.push_back(upgrade);
 			continue;
 		}
 		bool allRequireUpgradesUnlocked = true;
@@ -54,26 +56,29 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeSystem::OnLevelUp(C
 			else
 			{
 				allRequireUpgradesUnlocked = false;
-				break;
+				if (loadedUpgrade->mAllRequiredUpgradesNeeded)
+				{
+					break;
+				}
 			}
 		}
 		if (loadedUpgrade->mAllRequiredUpgradesNeeded && allRequireUpgradesUnlocked)
 		{
 			availableUpgrades.push_back(upgrade);
 		}
+	}
 
-		if (availableUpgrades.empty())
-		{
-			break;
-		}
+	if (availableUpgrades.empty())
+	{
+		return {};
+	}
 
-		// Randomly choose upgrades to display.
-		for (int i = 0; i < numberOfOptions; i++)
-		{
-			const int randomNumber = CE::Random::Range(0, static_cast<int>(availableUpgrades.size()));
-			chosenUpgradesToDisplayThisLevel.push_back(availableUpgrades[randomNumber]);
-			availableUpgrades.erase(availableUpgrades.begin() + randomNumber);
-		}
+	// Randomly choose upgrades to display.
+	for (int i = 0; i < numberOfOptions && !availableUpgrades.empty(); i++)
+	{
+		const int randomNumber = CE::Random::Range(0, static_cast<int>(availableUpgrades.size()));
+		chosenUpgradesToDisplayThisLevel.push_back(availableUpgrades[randomNumber]);
+		availableUpgrades.erase(availableUpgrades.begin() + randomNumber);
 	}
 	return chosenUpgradesToDisplayThisLevel;
 }
@@ -82,23 +87,26 @@ void Game::UpgradeSystem::InitializeUpgradeOptions(CE::World& world, std::vector
 {
 	const auto chosenUpgradesToDisplayThisLevel = OnLevelUp(world, static_cast<int>(options.size()));
 
-	if (chosenUpgradesToDisplayThisLevel.empty())
-	{
-		return;
-	}
-
 	auto& registry = world.GetRegistry();
-	int i{};
-	for (auto entity : options)
+	const size_t numberOfOptions = options.size();
+	const size_t numberOfAvailableChosenUpgrades = chosenUpgradesToDisplayThisLevel.size();
+	for (size_t i = 0; i < numberOfAvailableChosenUpgrades && i < numberOfOptions; i++)
 	{
-		auto sprite = registry.TryGet<CE::UISpriteComponent>(entity);
+		auto sprite = registry.TryGet<CE::UISpriteComponent>(options[i]);
 		if (sprite == nullptr)
 		{
-			LOG(LogUpgradeSystem, Warning, "Entity {} does not have a UISpriteComponent attached.", entt::to_integral(entity));
+			LOG(LogUpgradeSystem, Warning, "Entity {} does not have a UISpriteComponent attached.", entt::to_integral(options[i]));
 			continue;
 		}
-		const CE::AssetHandle<Upgrade> loadedUpgrade{ chosenUpgradesToDisplayThisLevel[i++] };
+		auto upgrade = registry.TryGet<UpgradeStoringComponent>(options[i]);
+		if (upgrade == nullptr)
+		{
+			LOG(LogUpgradeSystem, Warning, "Entity {} does not have a UpgradeStoringComponent attached.", entt::to_integral(options[i]));
+			continue;
+		}
+		const CE::AssetHandle<Upgrade> loadedUpgrade{ chosenUpgradesToDisplayThisLevel[i] };
 		sprite->mTexture = loadedUpgrade.Get()->mIconTexture;
+		upgrade->mUpgrade = loadedUpgrade;
 	}
 }
 

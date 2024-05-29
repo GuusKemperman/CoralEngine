@@ -60,12 +60,23 @@ void Game::Upgrade::OnSave(AssetSaveInfo& saveInfo) const
 CE::MetaType Game::Upgrade::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Upgrade>{}, "Upgrade", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
-	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
+	type.GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddField(&Upgrade::mUpgradeScript, "mUpgradeScript").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&Upgrade::mRequiredUpgrades, "mRequiredUpgrades").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&Upgrade::mAllRequiredUpgradesNeeded, "mAllRequiredUpgradesNeeded").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&Upgrade::mIconTexture, "mIconTexture").GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const AssetHandle<Upgrade>& upgrade) -> ComponentFilter
+		{
+			if (upgrade == nullptr)
+			{
+				return nullptr;
+			}
+
+			return upgrade->mUpgradeScript;
+		},
+		"GetUpgradeScript", MetaFunc::ExplicitParams<const AssetHandle<Upgrade>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectAssetType<Upgrade>(type);
 	return type;
