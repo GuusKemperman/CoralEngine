@@ -13,13 +13,13 @@ CE::MetaType CE::UIButtonSelectedTag::Reflect()
 	return metaType;
 }
 
-void CE::UIButtonComponent::Select(World& world, entt::entity buttonOwner)
+void CE::UIButtonTag::Select(World& world, entt::entity buttonOwner)
 {
 	Deselect(world);
 	world.GetRegistry().AddComponent<UIButtonSelectedTag>(buttonOwner);
 }
 
-void CE::UIButtonComponent::Deselect(World& world)
+void CE::UIButtonTag::Deselect(World& world)
 {
 	auto view = world.GetRegistry().View<UIButtonSelectedTag>();
 
@@ -37,22 +37,18 @@ void CE::UIButtonComponent::Deselect(World& world)
 	}
 }
 
-bool CE::UIButtonComponent::IsSelected(const World& world, entt::entity buttonOwner)
+bool CE::UIButtonTag::IsSelected(const World& world, entt::entity buttonOwner)
 {
 	return world.GetRegistry().HasComponent<UIButtonSelectedTag>(buttonOwner);
 }
 
-CE::MetaType CE::UIButtonComponent::Reflect()
+CE::MetaType CE::UIButtonTag::Reflect()
 {
-	MetaType type = MetaType{ MetaType::T<UIButtonComponent>{}, "UIButtonComponent" };
+	MetaType type = MetaType{ MetaType::T<UIButtonTag>{}, "UIButtonTag" };
 
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
-
-	type.AddField(&UIButtonComponent::mButtonTopSide, "mButtonTopSide").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&UIButtonComponent::mButtonBottomSide, "mButtonBottomSide").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&UIButtonComponent::mButtonRightSide, "mButtonRightSide").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&UIButtonComponent::mButtonLeftSide, "mButtonLeftSide").GetProperties().Add(Props::sIsScriptableTag);
+	props.Set(Props::sOldNames, "UIButtonComponent");
 
 	type.AddFunc(
 		[](entt::entity buttonOwner)
@@ -76,7 +72,7 @@ CE::MetaType CE::UIButtonComponent::Reflect()
 			Deselect(world);
 		}, "Deselect").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	ReflectComponentType<UIButtonComponent>(type);
+	ReflectComponentType<UIButtonTag>(type);
 
 	return type;
 }
