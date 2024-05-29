@@ -12,7 +12,7 @@ void Game::DifficultyScalingSystem::Update(CE::World& world, float)
 
 	for (auto [entity, scalingComponent] : view.each())
 	{
-		float time = (world.GetCurrentTimeReal() - scalingComponent.mLoopsElapsed * scalingComponent.mScaleLength) / scalingComponent.mScaleLength;
+		float time = (world.GetCurrentTimeReal() - scalingComponent.mLoopsElapsed * scalingComponent.mScaleTime) / scalingComponent.mScaleTime;
 
 		if (!scalingComponent.mIsRepeating)
 		{
@@ -23,19 +23,19 @@ void Game::DifficultyScalingSystem::Update(CE::World& world, float)
 			if (time > 1.0f)
 			{
 				++scalingComponent.mLoopsElapsed;
-				float tempHp = scalingComponent.mMinHPMultiplier;
-				float tempDmg = scalingComponent.mMinDamageMultiplier;
+				float minHealth = scalingComponent.mMinHealthMultiplier;
+				float minDamage = scalingComponent.mMinDamageMultiplier;
 
-				scalingComponent.mMinHPMultiplier = scalingComponent.mMaxHPMultiplier;
+				scalingComponent.mMinHealthMultiplier = scalingComponent.mMaxHealthMultiplier;
 				scalingComponent.mMinDamageMultiplier = scalingComponent.mMaxDamageMultiplier;
-				scalingComponent.mMaxHPMultiplier += scalingComponent.mMaxHPMultiplier - tempHp;
-				scalingComponent.mMaxDamageMultiplier += scalingComponent.mMaxDamageMultiplier - tempDmg;
+				scalingComponent.mMaxHealthMultiplier += scalingComponent.mMaxHealthMultiplier - minHealth;
+				scalingComponent.mMaxDamageMultiplier += scalingComponent.mMaxDamageMultiplier - minDamage;
 			}
 
-			time = glm::mod((world.GetCurrentTimeReal() / scalingComponent.mScaleLength), 1.0f);
+			time = glm::mod((world.GetCurrentTimeReal() / scalingComponent.mScaleTime), 1.0f);
 		}
 
-		scalingComponent.mCurrentHPMultiplier = scalingComponent.mScaleHPOverTime.GetValueAt(time) * (scalingComponent.mMaxHPMultiplier - scalingComponent.mMinHPMultiplier) + scalingComponent.mMinHPMultiplier;
+		scalingComponent.mCurrentHealthMultiplier = scalingComponent.mScaleHPOverTime.GetValueAt(time) * (scalingComponent.mMaxHealthMultiplier - scalingComponent.mMinHealthMultiplier) + scalingComponent.mMinHealthMultiplier;
 		scalingComponent.mCurrentDamageMultiplier = scalingComponent.mScaleDamageOverTime.GetValueAt(time) * (scalingComponent.mMaxDamageMultiplier - scalingComponent.mMinDamageMultiplier) + scalingComponent.mMinDamageMultiplier;
 	}
 }

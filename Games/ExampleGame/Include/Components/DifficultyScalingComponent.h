@@ -14,15 +14,15 @@ namespace Game
 		unsigned int mLoopsElapsed = 0;
 
 		// In seconds
-		float mScaleLength = 60.0f;
+		float mScaleTime = 60.0f;
 
-		float mMinHPMultiplier = 1.0f;
-		float mMaxHPMultiplier = 5.0f;
+		float mMinHealthMultiplier = 1.0f;
+		float mMaxHealthMultiplier = 5.0f;
 
 		float mMinDamageMultiplier = 1.0f;
 		float mMaxDamageMultiplier = 5.0f;
 
-		float mCurrentHPMultiplier{};
+		float mCurrentHealthMultiplier{};
 		float mCurrentDamageMultiplier{};
 
 	private:
