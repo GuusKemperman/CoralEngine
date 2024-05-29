@@ -24,14 +24,14 @@ void CE::PrefabOriginComponent::SetFactoryOfOrigin(const PrefabEntityFactory& fa
 	mFactoryId = factory.GetId();
 }
 
-const CE::Prefab* CE::PrefabOriginComponent::TryGetPrefab() const
+CE::AssetHandle<CE::Prefab> CE::PrefabOriginComponent::TryGetPrefab() const
 {
-	return AssetManager::Get().TryGetAsset<Prefab>(mHashedPrefabName).Get();
+	return AssetManager::Get().TryGetAsset<Prefab>(mHashedPrefabName);
 }
 
 const CE::PrefabEntityFactory* CE::PrefabOriginComponent::TryGetFactory() const
 {
-	const Prefab* prefab = TryGetPrefab();
+	const Prefab* prefab = TryGetPrefab().Get();
 
 	if (prefab == nullptr
 		|| prefab->GetFactories().empty())

@@ -1,22 +1,20 @@
 #include "Precomp.h"
-#include "Components/UtililtyAi/States/ChargeUpDashState.h"
+#include "Components/UtililtyAi/States/ChargeDashState.h"
 
 #include "Components/TransformComponent.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/PlayerComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Systems/AbilitySystem.h"
+#include "Assets/Animation/Animation.h"
 
-
-void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
+void Game::ChargeDashState::OnAITick(CE::World& world, const entt::entity owner, const float dt)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
@@ -29,7 +27,7 @@ void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owne
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "An PhysicsBody2D component is needed to run the ChargingUp State!");
+		LOG(LogAI, Warning, "An PhysicsBody2D component is needed to run the Dashing State!");
 		return;
 	}
 
@@ -38,60 +36,43 @@ void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owne
 	mCurrentChargeTimer += dt;
 }
 
-float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
+float Game::ChargeDashState::OnAIEvaluate(const CE::World& world, entt::entity owner) const
 {
-	if (mChargeCooldown.mAmountOfTimePassed != 0.0f)
-	{
-		return 0.8f;
-	}
-
 	auto [score, entity] = GetBestScoreAndTarget(world, owner);
 
-	return score;
-}
-
-void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
-{
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr)
+	if (mCurrentChargeTimer > 0 && mCurrentChargeTimer < mMaxChargeTime)
 	{
-		LOG(LogAI, Warning, "NavMeshAgentComponent is needed to run the Charging Up State!");
-		return;
+		return 0.9f;
 	}
 
-	navMeshAgent->ClearTarget(world);
-
-	mChargeCooldown.mCooldown = mMaxChargeTime;
-	mChargeCooldown.mAmountOfTimePassed = 0.0f;
-}
-
-bool Game::ChargeUpDashState::IsCharged() const
-{
-	if (mChargeCooldown.mAmountOfTimePassed >= mChargeCooldown.mCooldown)
+	if (mCurrentChargeTimer < mMaxChargeTime)
 	{
-		return true;
+		return score;
 	}
 
-	return false;
+	return 0;
 }
 
-std::pair<float, entt::entity> Game::ChargeUpDashState::GetBestScoreAndTarget(const CE::World& world,
+bool Game::ChargeDashState::IsDashCharged() const
+{
+	return (mCurrentChargeTimer >= mMaxChargeTime);
+}
+
+std::pair<float, entt::entity> Game::ChargeDashState::GetBestScoreAndTarget(const CE::World& world,
                                                                             entt::entity owner) const
 {
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
-	entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
+	entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
 	if (entityId == entt::null)
 	{
-		LOG(LogAI, Warning, "An entity with a NavMeshTargetTag is needed to run the Charging Up State!");
 		return { 0.0f, entt::null };
 	}
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "TransformComponent is needed to run the Charging Up State!");
+		LOG(LogAI, Warning, "TransformComponent is needed to run the Charge Dash State!");
 		return { 0.0f, entt::null };
 	}
 
@@ -101,7 +82,7 @@ std::pair<float, entt::entity> Game::ChargeUpDashState::GetBestScoreAndTarget(co
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "The player entity needs a TransformComponent is needed to run the Charging Up State!");
+		LOG(LogAI, Warning, "The player entity needs a TransformComponent is needed to run the Charge Dash State!");
 		return { 0.0f, entt::null };
 	}
 
@@ -123,20 +104,19 @@ std::pair<float, entt::entity> Game::ChargeUpDashState::GetBestScoreAndTarget(co
 	return { highestScore, entityId };
 }
 
-CE::MetaType Game::ChargeUpDashState::Reflect()
+CE::MetaType Game::ChargeDashState::Reflect()
 {
-	auto type = CE::MetaType{ CE::MetaType::T<ChargeUpDashState>{}, "ChargeUpDashState" };
+	auto type = CE::MetaType{ CE::MetaType::T<ChargeDashState>{}, "ChargeDashState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&ChargeUpDashState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&ChargeUpDashState::mMaxChargeTime, "mMaxChargeTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeDashState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeDashState::mMaxChargeTime, "mMaxChargeTime").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &ChargeUpDashState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &ChargeUpDashState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &ChargeUpDashState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sAITickEvent, &ChargeDashState::OnAITick);
+	BindEvent(type, CE::sAIEvaluateEvent, &ChargeDashState::OnAIEvaluate);
 
-	type.AddField(&ChargeUpDashState::mChargingAnimation, "mChargingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeDashState::mChargingAnimation, "mChargingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	CE::ReflectComponentType<ChargeUpDashState>(type);
+	CE::ReflectComponentType<ChargeDashState>(type);
 	return type;
 }

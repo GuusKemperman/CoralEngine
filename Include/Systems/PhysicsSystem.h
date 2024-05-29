@@ -28,6 +28,7 @@ namespace CE
 		{
 			SystemStaticTraits traits{};
 			traits.mPriority = static_cast<int>(TickPriorities::Physics);
+			traits.mFixedTickInterval = 1 / 60.0f;
 			traits.mShouldTickBeforeBeginPlay = true;
 			traits.mShouldTickWhilstPaused = true;
 			return traits;

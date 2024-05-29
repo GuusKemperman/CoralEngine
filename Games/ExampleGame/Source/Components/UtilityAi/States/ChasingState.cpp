@@ -65,7 +65,7 @@ std::pair<float, entt::entity> Game::ChasingState::GetBestScoreAndTarget(
 
 	const float distance = glm::distance(transformComponent->GetWorldPosition(), targetComponent->GetWorldPosition());
 
-	float score = 0.0f;
+	float score = 0.1f;
 
 	if (distance < mRadius)
 	{
