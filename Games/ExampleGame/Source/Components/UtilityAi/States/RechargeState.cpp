@@ -33,7 +33,7 @@ void Game::RechargeState::OnAiTick(CE::World& world, entt::entity owner, float d
 
 	physicsBody2DComponent->mLinearVelocity = {0,0};
 
-	mRechargeCooldown.IsReady(dt);
+	mRechargeCooldown.mAmountOfTimePassed += dt;
 }
 
 float Game::RechargeState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
@@ -61,12 +61,9 @@ float Game::RechargeState::OnAiEvaluate(const CE::World& world, entt::entity own
 			return 0;
 		}
 
-		if (!dashingState->IsDashCharged())
-		{
-			return 0.0f;
-		}
-
-		if (mRechargeCooldown.mAmountOfTimePassed < mRechargeCooldown.mCooldown)
+		if (dashingState->IsDashCharged())
+		/*if ((CE::MakeTypeId<DashingState>() == enemyAiController->mCurrentState->GetTypeId() && dashingState->IsDashCharged())
+			|| (CE::MakeTypeId<RechargeState>() == enemyAiController->mCurrentState->GetTypeId() && mRechargeCooldown.mAmountOfTimePassed < mRechargeCooldown.mCooldown))*/
 		{
 			return 1.0f;
 		}
@@ -81,15 +78,14 @@ float Game::RechargeState::OnAiEvaluate(const CE::World& world, entt::entity own
 			return 0;
 		}
 
-		if (!stompState->IsStompCharged())
-		{
-			return 0.0f;
-		}
-
-		if (mRechargeCooldown.mAmountOfTimePassed < mRechargeCooldown.mCooldown)
+		if (stompState->IsStompCharged())
 		{
 			return 1.0f;
 		}
+	}
+	else if (CE::MakeTypeId<RechargeState>() == enemyAiController->mCurrentState->GetTypeId() && mRechargeCooldown.mAmountOfTimePassed < mRechargeCooldown.mCooldown)
+	{
+		return 1.0f;
 	}
 
 	return 0;

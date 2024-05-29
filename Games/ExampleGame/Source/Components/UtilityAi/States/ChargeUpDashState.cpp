@@ -34,7 +34,7 @@ void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owne
 
 	physicsBody2DComponent->mLinearVelocity = {};
 
-	mChargeCooldown.IsReady(dt);
+	mChargeCooldown.mAmountOfTimePassed += dt;
 }
 
 float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
@@ -62,6 +62,11 @@ void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, entt::entity
 	navMeshAgent->ClearTarget(world);
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
+	mChargeCooldown.mAmountOfTimePassed = 0.0f;
+}
+
+void Game::ChargeUpDashState::OnAiStateExitEvent(CE::World&, entt::entity)
+{
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
 }
 
@@ -132,6 +137,7 @@ CE::MetaType Game::ChargeUpDashState::Reflect()
 	BindEvent(type, CE::sAITickEvent, &ChargeUpDashState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &ChargeUpDashState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &ChargeUpDashState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sAIStateExitEvent, &ChargeUpDashState::OnAiStateExitEvent);
 
 	type.AddField(&ChargeUpDashState::mChargingAnimation, "mChargingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

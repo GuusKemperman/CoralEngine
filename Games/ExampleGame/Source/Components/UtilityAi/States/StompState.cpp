@@ -19,7 +19,7 @@
 
 void Game::StompState::OnAiTick(CE::World&, const entt::entity, const float dt)
 {
-	mStompCooldown.IsReady(dt);
+	mStompCooldown.mAmountOfTimePassed += dt;
 }
 
 float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
@@ -30,11 +30,6 @@ float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 	{
 		LOG(LogAI, Warning, "A ChargeUpStompState is needed to run the Stomp State!");
 		return 0;
-	}
-
-	if (!chargingUpState->IsCharged())
-	{
-		return 0.0f;
 	}
 
 	auto* enemyAiController = world.GetRegistry().TryGet<CE::EnemyAiControllerComponent>(owner);
@@ -50,8 +45,8 @@ float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 		return 0;
 	}
 
-	if (CE::MakeTypeId<ChargeUpStompState>() == enemyAiController->mCurrentState->GetTypeId()
-		|| mStompCooldown.mAmountOfTimePassed < mStompCooldown.mCooldown)
+	if ((CE::MakeTypeId<ChargeUpStompState>() == enemyAiController->mCurrentState->GetTypeId() && chargingUpState->IsCharged())
+		|| (CE::MakeTypeId<StompState>() == enemyAiController->mCurrentState->GetTypeId() && mStompCooldown.mAmountOfTimePassed < mStompCooldown.mCooldown))
 	{
 		return 0.9f;
 	}

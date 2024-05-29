@@ -35,7 +35,7 @@ void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity own
 
 	physicsBody2DComponent->mLinearVelocity = {};
 
-	mChargeCooldown.IsReady(dt);
+	mChargeCooldown.mAmountOfTimePassed += dt;
 }
 
 float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
@@ -49,6 +49,11 @@ float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, entt::entit
 	auto [score, entity] = GetBestScoreAndTarget(world, owner);
 
 	return score;
+}
+
+void Game::ChargeUpStompState::OnAiStateExitEvent(CE::World&, entt::entity)
+{
+	mChargeCooldown.mAmountOfTimePassed = 0.0f;
 }
 
 void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
@@ -135,6 +140,7 @@ CE::MetaType Game::ChargeUpStompState::Reflect()
 	BindEvent(type, CE::sAITickEvent, &ChargeUpStompState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &ChargeUpStompState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &ChargeUpStompState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sAIStateExitEvent, &ChargeUpStompState::OnAiStateExitEvent);
 
 	type.AddField(&ChargeUpStompState::mChargingAnimation, "mChargingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

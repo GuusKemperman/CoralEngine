@@ -17,7 +17,7 @@
 
 void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt)
 {
-	mDashCooldown.IsReady(dt);
+	mDashCooldown.mAmountOfTimePassed += dt;
 
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
@@ -51,11 +51,6 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owne
 		return 0;
 	}
 
-	if (!chargingUpState->IsCharged())
-	{
-		return 0.0f;
-	}
-
 	auto* enemyAiController = world.GetRegistry().TryGet<CE::EnemyAiControllerComponent>(owner);
 
 	if (enemyAiController == nullptr)
@@ -69,8 +64,8 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owne
 		return 0;
 	}
 
-	if (CE::MakeTypeId<ChargeUpDashState>() == enemyAiController->mCurrentState->GetTypeId()
-		|| mDashCooldown.mAmountOfTimePassed < mDashCooldown.mCooldown)
+	if ((CE::MakeTypeId<ChargeUpDashState>() == enemyAiController->mCurrentState->GetTypeId() && chargingUpState->IsCharged())
+		|| (CE::MakeTypeId<DashingState>() == enemyAiController->mCurrentState->GetTypeId() && mDashCooldown.mAmountOfTimePassed < mDashCooldown.mCooldown))
 	{
 		return 0.9f;
 	}
