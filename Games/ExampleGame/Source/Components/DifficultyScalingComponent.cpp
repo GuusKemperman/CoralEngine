@@ -22,6 +22,16 @@ CE::MetaType Game::DifficultyScalingComponent::Reflect()
 	type.AddField(&DifficultyScalingComponent::mMaxDamageMultiplier, "mMaxDamageMultiplier").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DifficultyScalingComponent::mCurrentDamageMultiplier, "mCurrentDamageMultiplier").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 
+	type.AddFunc([](const DifficultyScalingComponent& difficultyScalingComponent)
+		{
+			return difficultyScalingComponent.mCurrentHPMultiplier;
+
+		}, "GetCurrentHPMultiplier", CE::MetaFunc::ExplicitParams<DifficultyScalingComponent&>{}, "DifficultyScalingComponent").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, true);
+	type.AddFunc([](const DifficultyScalingComponent& difficultyScalingComponent)
+		{
+			return difficultyScalingComponent.mCurrentDamageMultiplier;
+		}, "GetCurrentDamageMultiplier", CE::MetaFunc::ExplicitParams<DifficultyScalingComponent&>{}, "DifficultyScalingComponent").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, true);
+	
 	CE::ReflectComponentType<DifficultyScalingComponent>(type);
 	return type;
 }
