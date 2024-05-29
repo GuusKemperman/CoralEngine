@@ -18,9 +18,6 @@ CE::MetaType Reflector<CE::ComponentFilter>::Reflect()
 	using namespace CE;
 	using T = ComponentFilter;
 
-	std::vector<ComponentFilter> vec1{};
-	std::vector<ComponentFilter> vec2{};
-
 	MetaType type{ MetaType::T<T>{}, "ComponentType" };
 
 	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
