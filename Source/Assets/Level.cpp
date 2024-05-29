@@ -272,14 +272,14 @@ CE::World CE::Level::CreateDefaultWorld()
 		reg.AddComponent<NameComponent>(light, "Main Light");
 		DirectionalLightComponent& lightComponent = reg.AddComponent<DirectionalLightComponent>(light);
 		lightComponent.mCastShadows = true;
-		lightComponent.mIntensity = .6f;
+		lightComponent.mIntensity = 6.0f;
 		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ DEG2RAD(-15.6), DEG2RAD(-47.6), DEG2RAD(51.6) });
 	}
 
 	{
 		const entt::entity light = reg.Create();
 		reg.AddComponent<NameComponent>(light, "Secondary Light");
-		reg.AddComponent<DirectionalLightComponent>(light).mIntensity = .6f;
+		reg.AddComponent<DirectionalLightComponent>(light).mIntensity = 3.0f;
 		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ DEG2RAD(113.8), DEG2RAD(53.54), DEG2RAD(90.7) });
 	}
 

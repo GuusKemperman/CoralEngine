@@ -12,14 +12,9 @@ namespace CE
 
 	class World;
 
-	class UIButtonComponent
+	class UIButtonTag
 	{
 	public:
-		entt::entity mButtonTopSide{ entt::null };
-		entt::entity mButtonBottomSide{ entt::null };
-		entt::entity mButtonRightSide{ entt::null };
-		entt::entity mButtonLeftSide{ entt::null };
-
 		static void Select(World& world, entt::entity buttonOwner);
 		static void Deselect(World& world);
 
@@ -28,6 +23,6 @@ namespace CE
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(UIButtonComponent);
+		REFLECT_AT_START_UP(UIButtonTag);
 	};
 }
