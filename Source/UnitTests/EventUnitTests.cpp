@@ -295,19 +295,19 @@ UNIT_TEST(Events, CollisionEvents)
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 0));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
-	world.Tick(1 / 60.0f);
+	world.Tick(1 / 60.0f - 0.001f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 1));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
-	world.Tick(1 / 60.0f);
+	world.Tick(1 / 60.0f - 0.001f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 2));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
-	world.Tick(1 / 60.0f);
+	world.Tick(1 / 60.0f - 0.001f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 3));
@@ -315,7 +315,7 @@ UNIT_TEST(Events, CollisionEvents)
 
 	otherTransform.SetWorldPosition(glm::vec2{100000.0f});
 
-	world.Tick(1 / 60.0f);
+	world.Tick(1 / 60.0f - 0.001f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 3));
