@@ -17,9 +17,29 @@
 #include "Components/UtililtyAi/States/ChargeUpStompState.h"
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
-void Game::StompState::OnAiTick(CE::World&, const entt::entity, const float dt)
+void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
 	mStompCooldown.mAmountOfTimePassed += dt;
+
+	const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
+	if (characterData == nullptr)
+	{
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a Character Component.", entt::to_integral(owner));
+		return;
+	}
+
+	const auto abilities = world.GetRegistry().TryGet<CE::AbilitiesOnCharacterComponent>(owner);
+	if (abilities == nullptr)
+	{
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
+		return;
+	}
+
+	if (abilities->mAbilitiesToInput.empty())
+	{
+		return;
+	}
+	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
 }
 
 float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
