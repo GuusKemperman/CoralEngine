@@ -11,13 +11,10 @@ namespace Game
 	{
 	public:
 		void Update(CE::World& world, float dt) override;
-		void OnLevelUp(CE::World& world);
+		static std::vector<CE::WeakAssetHandle<Upgrade>> OnLevelUp(CE::World& world, int numberOfOptions);
+		static void InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options);
 
 	private:
-		std::vector<CE::AssetHandle<Upgrade>> mAvailableUpgrades{};
-		static constexpr int sNumberOfUpgradesToDisplay = 4;
-		std::vector< CE::AssetHandle<Upgrade>> mChosenUpgradesToDisplayThisLevel{};
-
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(UpgradeSystem);
