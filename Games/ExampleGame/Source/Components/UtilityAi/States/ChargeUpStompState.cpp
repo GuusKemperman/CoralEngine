@@ -35,7 +35,7 @@ void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity own
 
 	physicsBody2DComponent->mLinearVelocity = {};
 
-	mCurrentChargeTimer += dt;
+	mChargeCooldown.IsReady(dt);
 }
 
 float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, entt::entity owner) const

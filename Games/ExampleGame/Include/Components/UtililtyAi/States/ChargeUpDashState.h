@@ -23,8 +23,6 @@ namespace Game
 		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
 			entt::entity owner) const;
 
-		float mCurrentChargeTimer = 0.0f;
-
 		CE::AssetHandle<CE::Animation> mChargingAnimation{};
 
 		CE::Cooldown mChargeCooldown;

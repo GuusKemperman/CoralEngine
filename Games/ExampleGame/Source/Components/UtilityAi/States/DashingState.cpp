@@ -10,26 +10,14 @@
 #include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
-#include "Components/UtililtyAi/States/DashRechargeState.h"
+#include "Components/UtililtyAi/States/RechargeState.h"
 #include "Assets/Animation/Animation.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 
 void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt)
 {
-	// If NotReadyYet
-	// Show outline, increase NotReadyYet timer
-	// else
-	// Dash forward
-	//
-
-	// OnAIEvaulate
-	// If dashing timer finished && ChargeUpS timer finished return 0.0f
-
-	// OnAIExit
-	// Set rest timer on RestComponent to N seconds
-
-
-	mCurrentDashTimer += dt;
+	mDashCooldown.IsReady(dt);
 
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
@@ -63,7 +51,26 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owne
 		return 0;
 	}
 
-	if (chargingUpState->IsCharged() && mCurrentDashTimer < mMaxDashTime)
+	if (!chargingUpState->IsCharged())
+	{
+		return 0.0f;
+	}
+
+	auto* enemyAiController = world.GetRegistry().TryGet<CE::EnemyAiControllerComponent>(owner);
+
+	if (enemyAiController == nullptr)
+	{
+		LOG(LogAI, Warning, "A EnemyAiController is needed to run the Stomp State!");
+		return 0;
+	}
+
+	if (enemyAiController->mCurrentState == nullptr)
+	{
+		return 0;
+	}
+
+	if (CE::MakeTypeId<ChargeUpDashState>() == enemyAiController->mCurrentState->GetTypeId()
+		|| mDashCooldown.mAmountOfTimePassed < mDashCooldown.mCooldown)
 	{
 		return 0.9f;
 	}
@@ -115,20 +122,18 @@ void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owne
 		mDashDirection = glm::normalize(targetT - ownerT);
 	}
 
-	auto* recoverState = world.GetRegistry().TryGet<DashRechargeState>(owner);
-
-	if (recoverState == nullptr)
-	{
-		LOG(LogAI, Warning, "An DashRechargeState is needed to run the Dashing State!");
-		return;
-	}
-
-	recoverState->mCurrentRechargeTimer = 0;
+	mDashCooldown.mCooldown = mMaxDashTime;
+	mDashCooldown.mAmountOfTimePassed = 0.0f;
 }
 
 bool Game::DashingState::IsDashCharged() const
 {
-	return mCurrentDashTimer >= mMaxDashTime;
+	if (mDashCooldown.mAmountOfTimePassed >= mDashCooldown.mCooldown)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 CE::MetaType Game::DashingState::Reflect()

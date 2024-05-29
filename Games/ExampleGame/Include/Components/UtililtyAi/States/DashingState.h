@@ -1,6 +1,7 @@
 #pragma once
 #include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
+#include "Utilities/Time.h"
 
 namespace CE
 {
@@ -20,9 +21,9 @@ namespace Game
 
 		bool IsDashCharged() const;
 
-		float mCurrentDashTimer = 0.0f;
-
 		CE::AssetHandle<CE::Animation> mDashingAnimation{};
+
+		CE::Cooldown mDashCooldown;
 
 	private:
 		entt::entity mTargetEntity = entt::null;

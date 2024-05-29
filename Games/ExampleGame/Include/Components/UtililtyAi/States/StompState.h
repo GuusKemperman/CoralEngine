@@ -1,6 +1,7 @@
 #pragma once
 #include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
+#include "Utilities/Time.h"
 
 namespace CE
 {
@@ -23,9 +24,9 @@ namespace Game
 		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
 			entt::entity owner) const;
 
-		float mCurrentStompTimer = 0.0f;
-
 		CE::AssetHandle<CE::Animation> mStompAnimation{};
+
+		CE::Cooldown mStompCooldown;
 
 	private:
 		float mRadius{};

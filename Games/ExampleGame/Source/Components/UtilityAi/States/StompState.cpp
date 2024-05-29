@@ -19,7 +19,7 @@
 
 void Game::StompState::OnAiTick(CE::World&, const entt::entity, const float dt)
 {
-	mCurrentStompTimer += dt;
+	mStompCooldown.IsReady(dt);
 }
 
 float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
@@ -37,8 +37,21 @@ float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 		return 0.0f;
 	}
 
-	if (CE::MakeTypeId<ChargeUpStompState>() == world.GetRegistry().Get<CE::EnemyAiControllerComponent>(owner).mCurrentState->GetTypeId()
-		|| mCurrentStompTimer < mMaxStompTime)
+	auto* enemyAiController = world.GetRegistry().TryGet<CE::EnemyAiControllerComponent>(owner);
+
+	if (enemyAiController == nullptr)
+	{
+		LOG(LogAI, Warning, "A enemyAiController is needed to run the Stomp State!");
+		return 0;
+	}
+
+	if (enemyAiController->mCurrentState == nullptr)
+	{
+		return 0;
+	}
+
+	if (CE::MakeTypeId<ChargeUpStompState>() == enemyAiController->mCurrentState->GetTypeId()
+		|| mStompCooldown.mAmountOfTimePassed < mStompCooldown.mCooldown)
 	{
 		return 0.9f;
 	}
@@ -64,6 +77,9 @@ void Game::StompState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 	{
 		animationRootComponent->SwitchAnimation(world.GetRegistry(), mStompAnimation, 0.0f);
 	}
+
+	mStompCooldown.mCooldown = mMaxStompTime;
+	mStompCooldown.mAmountOfTimePassed = 0.0f;
 }
 
 // OnAIStateExit()
@@ -72,7 +88,12 @@ void Game::StompState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 
 bool Game::StompState::IsStompCharged() const
 {
-	return (mCurrentStompTimer >= mMaxStompTime);
+	if (mStompCooldown.mAmountOfTimePassed >= mStompCooldown.mCooldown)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 std::pair<float, entt::entity> Game::StompState::GetBestScoreAndTarget(const CE::World& world,
