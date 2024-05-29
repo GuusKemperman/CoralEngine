@@ -3,6 +3,7 @@
 
 #include "World/Registry.h"
 #include "Components/UI/UIButtonComponent.h"
+#include "Components/TransformComponent.h"
 #include "Core/Input.h"
 
 void CE::UISystem::Update(World& world, float dt)
@@ -11,15 +12,15 @@ void CE::UISystem::Update(World& world, float dt)
 
 	Registry& reg = world.GetRegistry();
 
-	entt::entity selectedEntity = reg.View<UIButtonComponent, UIButtonSelectedTag>().front();
+	entt::entity selectedEntity = reg.View<UIButtonTag, UIButtonSelectedTag>().front();
 
 	if (selectedEntity == entt::null)
 	{
-		selectedEntity = reg.View<UIButtonComponent>().front();
+		selectedEntity = reg.View<UIButtonTag>().front();
 
 		if (selectedEntity != entt::null)
 		{
-			UIButtonComponent::Select(world, selectedEntity);
+			UIButtonTag::Select(world, selectedEntity);
 		}
 		else
 		{
@@ -29,7 +30,7 @@ void CE::UISystem::Update(World& world, float dt)
 
 	selectedEntity = CheckNavigation(world, 
 		selectedEntity, 
-		&UIButtonComponent::mButtonTopSide, 
+		UISystem::Edges::Top, 
 		Input::KeyboardKey::ArrowUp, 
 		Input::KeyboardKey::W, 
 		0, 
@@ -40,7 +41,7 @@ void CE::UISystem::Update(World& world, float dt)
 
 	selectedEntity = CheckNavigation(world,
 		selectedEntity,
-		&UIButtonComponent::mButtonBottomSide,
+		UISystem::Edges::Bottom,
 		Input::KeyboardKey::ArrowDown,
 		Input::KeyboardKey::S,
 		0,
@@ -51,7 +52,7 @@ void CE::UISystem::Update(World& world, float dt)
 
 	selectedEntity = CheckNavigation(world,
 		selectedEntity,
-		&UIButtonComponent::mButtonLeftSide,
+		UISystem::Edges::Left,
 		Input::KeyboardKey::ArrowLeft,
 		Input::KeyboardKey::A,
 		0,
@@ -62,7 +63,7 @@ void CE::UISystem::Update(World& world, float dt)
 
 	selectedEntity = CheckNavigation(world,
 		selectedEntity,
-		&UIButtonComponent::mButtonRightSide,
+		UISystem::Edges::Right,
 		Input::KeyboardKey::ArrowRight,
 		Input::KeyboardKey::D,
 		0,
@@ -118,7 +119,7 @@ void CE::UISystem::Update(World& world, float dt)
 
 entt::entity CE::UISystem::CheckNavigation(World& world, 
 	entt::entity currentEntity,
-	entt::entity UIButtonComponent::* ptrToField,
+	UISystem::Edges edge,
 	Input::KeyboardKey key1, 
 	Input::KeyboardKey key2, 
 	int gamePadId,
@@ -147,18 +148,59 @@ entt::entity CE::UISystem::CheckNavigation(World& world,
 		|| isAxisActive(axis1)
 		|| isAxisActive(axis2))
 	{
-		const UIButtonComponent* const button = world.GetRegistry().TryGet<UIButtonComponent>(currentEntity);
+		const bool hasButton = world.GetRegistry().HasComponent<UIButtonTag>(currentEntity);
+		const TransformComponent* const transform = world.GetRegistry().TryGet<TransformComponent>(currentEntity);
 
-		if (button != nullptr)
+		if (!hasButton 
+			|| transform == nullptr)
 		{
-			const entt::entity entityToNavigateTo = button->*ptrToField;
+			return currentEntity;
+		}
 
-			if (entityToNavigateTo != entt::null)
+		entt::entity entityToNavigateTo = entt::null;
+		glm::vec2 pos = { transform->GetWorldPosition().x, transform->GetWorldPosition().y };
+		float lowestDistance = std::numeric_limits<float>::infinity();
+
+		auto isLocatedInDirection = [&](const glm::vec2 pos2) -> bool 
 			{
-				UIButtonComponent::Select(world, entityToNavigateTo);
-				currentEntity = entityToNavigateTo;
-				mSecondsSinceLastNavigationChange = 0.0f;
+				switch (edge)
+				{
+				case UISystem::Edges::Top:
+					return pos2.y > pos.y ? true : false;
+				case UISystem::Edges::Right:
+					return pos2.x > pos.x ? true : false;
+				case UISystem::Edges::Bottom:
+					return pos2.y < pos.y ? true : false;
+				case UISystem::Edges::Left:
+					return pos2.x < pos.x ? true : false;
+				default:
+					return false;
+				}
+			};
+
+		for (auto [entity, UITransform] : world.GetRegistry().View<UIButtonTag, TransformComponent>().each())
+		{
+			if (entity == currentEntity)
+			{
+				continue;
 			}
+
+			const glm::vec3 worldPosition = UITransform.GetWorldPosition();
+
+			const glm::vec2 UIPosition = { worldPosition.x, worldPosition.y };
+
+			if (isLocatedInDirection(UIPosition) 
+				&& glm::distance(pos, UIPosition) < lowestDistance)
+			{
+				entityToNavigateTo = entity;
+			}
+		}
+
+		if (entityToNavigateTo != entt::null)
+		{
+			UIButtonTag::Select(world, entityToNavigateTo);
+			currentEntity = entityToNavigateTo;
+			mSecondsSinceLastNavigationChange = 0.0f;
 		}
 	}
 
