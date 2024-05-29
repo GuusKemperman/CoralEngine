@@ -10,7 +10,8 @@ namespace Game
 		CE::Bezier mScaleHPOverTime{};
 		CE::Bezier mScaleDamageOverTime{};
 
-		bool mDoesRepeat = false;
+		bool mIsRepeating = false;
+		unsigned int mLoopsElapsed = 0;
 
 		// In seconds
 		float mScaleLength = 60.0f;

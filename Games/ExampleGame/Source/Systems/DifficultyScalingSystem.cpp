@@ -12,7 +12,7 @@ void Game::DifficultyScalingSystem::Update(CE::World& world, float)
 
 	for (auto [entity, scalingComponent] : view.each())
 	{
-		float time = world.GetCurrentTimeReal() / scalingComponent.mScaleLength;
+		float time = (world.GetCurrentTimeReal() - scalingComponent.mLoopsElapsed * scalingComponent.mScaleLength) / scalingComponent.mScaleLength;
 
 		if (!scalingComponent.mIsRepeating)
 		{
@@ -22,6 +22,7 @@ void Game::DifficultyScalingSystem::Update(CE::World& world, float)
 		{
 			if (time > 1.0f)
 			{
+				++scalingComponent.mLoopsElapsed;
 				float tempHp = scalingComponent.mMinHPMultiplier;
 				float tempDmg = scalingComponent.mMinDamageMultiplier;
 
@@ -34,8 +35,8 @@ void Game::DifficultyScalingSystem::Update(CE::World& world, float)
 			time = glm::mod((world.GetCurrentTimeReal() / scalingComponent.mScaleLength), 1.0f);
 		}
 
-		scalingComponent.mCurrentHPMultiplier = scalingComponent.mScaleHPOverTime.GetValueAt(time) * scalingComponent.mMaxHPMultiplier + scalingComponent.mMinHPMultiplier;
-		scalingComponent.mCurrentDamageMultiplier = scalingComponent.mScaleDamageOverTime.GetValueAt(time) * scalingComponent.mMaxDamageMultiplier + scalingComponent.mMaxDamageMultiplier;
+		scalingComponent.mCurrentHPMultiplier = scalingComponent.mScaleHPOverTime.GetValueAt(time) * (scalingComponent.mMaxHPMultiplier - scalingComponent.mMinHPMultiplier) + scalingComponent.mMinHPMultiplier;
+		scalingComponent.mCurrentDamageMultiplier = scalingComponent.mScaleDamageOverTime.GetValueAt(time) * (scalingComponent.mMaxDamageMultiplier - scalingComponent.mMinDamageMultiplier) + scalingComponent.mMinDamageMultiplier;
 	}
 }
 

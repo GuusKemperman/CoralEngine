@@ -10,7 +10,8 @@ CE::MetaType Game::DifficultyScalingComponent::Reflect()
 	CE::MetaType type = CE::MetaType{ CE::MetaType::T<DifficultyScalingComponent>{}, "DifficultyScalingComponent" };
 	CE::MetaProps& props = type.GetProperties();
 	props.Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DifficultyScalingComponent::mDoesRepeat, "mDoesRepeat").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DifficultyScalingComponent::mIsRepeating, "mIsRepeating").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DifficultyScalingComponent::mLoopsElapsed, "mLoopsElapsed").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 	type.AddField(&DifficultyScalingComponent::mScaleLength, "mScaleLength").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DifficultyScalingComponent::mScaleHPOverTime, "mScaleHPOverTime");
 	type.AddField(&DifficultyScalingComponent::mMinHPMultiplier, "mMinHPMultiplier").GetProperties().Add(CE::Props::sIsScriptableTag);
