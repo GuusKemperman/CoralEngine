@@ -4,7 +4,7 @@
 
 namespace CE
 {
-	class UIButtonComponent;
+	class UIButtonTag;
 
 	class UISystem final :
 		public System
@@ -24,9 +24,17 @@ namespace CE
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(UISystem);
 
+		enum Edges
+		{
+			Top,
+			Right,
+			Bottom,
+			Left
+		};
+
 		entt::entity CheckNavigation(World& world,
 			entt::entity currentEntity,
-			entt::entity UIButtonComponent::* ptrToField,
+			UISystem::Edges edge,
 			Input::KeyboardKey key1, 
 			Input::KeyboardKey key2, 
 			int gamePadId, 
