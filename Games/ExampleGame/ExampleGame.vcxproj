@@ -358,13 +358,18 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+<<<<<<< tank
     <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpStompState.cpp" />
+=======
+    <ClCompile Include="Source\Components\DifficultyScalingComponent.cpp" />
+>>>>>>> dev
     <ClCompile Include="Source\Components\UtilityAi\States\DanceState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\DeathState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\RecoveryState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\DashingState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpDashState.cpp" />
     <ClCompile Include="Source\Components\SpawnerComponent.cpp" />
+    <ClCompile Include="Source\Systems\DifficultyScalingSystem.cpp" />
     <ClCompile Include="Source\Systems\SpawnerSystem.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\AttackingState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChasingState.cpp" />
@@ -396,7 +401,11 @@
     <ClCompile Include="Source\Components\UtilityAi\States\StompState.cpp" />
   </ItemGroup>
   <ItemGroup>
+<<<<<<< tank
     <ClInclude Include="Include\Components\UtililtyAi\States\ChargeUpStompState.h" />
+=======
+    <ClInclude Include="Include\Components\DifficultyScalingComponent.h" />
+>>>>>>> dev
     <ClInclude Include="Include\Components\UtililtyAi\States\DanceState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\DeathState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\RecoveryState.h" />
@@ -407,6 +416,7 @@
     <ClInclude Include="Include\Components\UtililtyAi\States\ChasingState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\IdleState.h" />
     <ClInclude Include="Include\ExampleGame\Precomp.h" />
+    <ClInclude Include="Include\Systems\DifficultyScalingSystem.h" />
     <ClInclude Include="Include\Systems\SpawnerSystem.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\UserMem\address_sanitizer_utils.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
