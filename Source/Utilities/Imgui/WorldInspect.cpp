@@ -329,6 +329,11 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		drawList->ChannelsMerge();
 
 		World::PopWorld();
+
+		if (world.HasRequestedEndPlay())
+		{
+			world.EndPlay();
+		}
 	}
 	ImGui::EndChild();
 

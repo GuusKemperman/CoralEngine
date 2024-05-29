@@ -43,6 +43,8 @@ namespace CE
 
 		bool HasBegunPlay() const { return mHasBegunPlay; }
 
+		bool HasRequestedEndPlay() const { return mHasEndPlayBeenRequested; }
+
 		// In seconds
 		float GetCurrentTimeScaled() const { return mTime.mScaledTotalTimeElapsed; }
 
@@ -96,5 +98,6 @@ namespace CE
 		std::unique_ptr<Physics> mPhysics{};
 
 		AssetHandle<Level> mLevelToTransitionTo{};
+		bool mHasEndPlayBeenRequested = false;
 	};
 }
