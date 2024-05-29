@@ -18,6 +18,10 @@ CE::BVH::BVH(Physics& physics, CollisionLayer layer) :
 
 void CE::BVH::Build()
 {
+    // Paranoia
+    memset(mNodes.data(), 0, mNodes.capacity() * sizeof(mNodes[0]));
+    memset(mIds.data(), 0, mIds.capacity() * sizeof(mIds[0]));
+
     mNodes.clear();
     mIds.clear();
     mAmountRefitted = 0.0f;

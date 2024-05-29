@@ -8,6 +8,7 @@
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Utilities/DrawDebugHelpers.h"
+#include "World/Physics.h"
 #include "World/Registry.h"
 
 void Game::SpawnerSystem::Update(CE::World& world, float dt)
@@ -138,8 +139,7 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 
 			if (enemyToSpawn == nullptr)
 			{
-				LOG(LogGames, Error, "No enemy to spawn!");
-				return;
+				break;
 			}
 
 			waveOutputs.emplace_back(reg.CreateFromPrefab(*enemyToSpawn->mPrefab));
@@ -148,6 +148,7 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 
 		// Generate points
 		float distFromCentre = spawnerComponent.mMinSpawnRange;
+		const CE::BVH& staticBVH = world.GetPhysics().GetBVHs()[static_cast<int>(CE::CollisionLayer::StaticObstacles)];
 
 		do
 		{
@@ -161,7 +162,12 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 				pointNum++, angle += angleStepSize)
 			{
 				const glm::vec2 worldPos = spawnerPos + CE::Math::AngleToVec2(angle + world.GetCurrentTimeScaled()) * distFromCentre;
-				CE::DrawDebugCircle(world, CE::DebugCategory::Gameplay, CE::To3DRightForward(worldPos), 1.0f, glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
+
+				const CE::TransformedDisk spawnArea = { worldPos, spawnerComponent.mSpacing * 2.0f };
+				if (staticBVH.Query<CE::BVH::DefaultOnIntersectFunction, CE::BVH::DefaultShouldReturnFunction<true>, CE::BVH::DefaultShouldReturnFunction<true>>(spawnArea))
+				{
+					continue;
+				}
 
 				// Shuffle the enemies
 				const uint32 index = CE::Random::Range(0u, static_cast<uint32>(waveOutputs.size()));
