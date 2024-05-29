@@ -118,6 +118,14 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "IncreaseValueByPercentage (by value)", MetaFunc::ExplicitParams<
 		float, float>{}, "Value To Change", "Percentage").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
+	metaType.AddFunc([](const glm::vec2 point, const glm::vec2 coneOrigin, const glm::vec2 coneDirection, const float coneAngle) -> bool
+		{
+
+			return IsPointInsideCone2D(point, coneOrigin, coneDirection, coneAngle);
+
+		}, "IsPointInsideCone2D", MetaFunc::ExplicitParams<
+		const glm::vec2, const glm::vec2, const glm::vec2, const float>{}, "Point To Check", "Cone Origin", "Cone Direction", "Cone Angle").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
 	return metaType;
 }
 
@@ -368,6 +376,22 @@ float& CE::AbilityFunctionality::IncreaseValueByPercentage(float& toChange, floa
 	const float increase = percentage * 0.01f * toChange;
 	toChange += increase;
 	return toChange;
+}
+
+bool CE::AbilityFunctionality::IsPointInsideCone2D(const glm::vec2 point, const glm::vec2 coneOrigin, const glm::vec2 coneDirection, const float coneAngle)
+{
+	//dot(m_dir, normalize(enemy->GetPos() - m_pos)) > DOTPROD45DEGREES)
+	const glm::vec2 coneDir = glm::normalize(coneDirection);
+	const glm::vec2 pointDir = glm::normalize(point - coneOrigin);
+
+	// Calculate the cosine of the angle between the cone direction and the point direction
+	const float cosAngle = glm::dot(coneDir, pointDir);
+
+	// Calculate the cosine of the cone angle
+	const float cosConeAngle = std::cos(glm::radians(coneAngle));
+
+	// The point is inside the cone if the cosine of the angle between the cone direction and the point direction is greater than or equal to the cosine of the cone angle
+	return cosAngle >= cosConeAngle;
 }
 
 std::pair<float&, float&> CE::AbilityFunctionality::GetStat(Stat stat, CharacterComponent& characterComponent)
