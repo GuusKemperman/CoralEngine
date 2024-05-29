@@ -166,7 +166,7 @@ namespace CE
 	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionExitEvent{ "OnCollisionExit" };
 
 	/**
-	 * \brief Called when the button is pressed. Must be attached to the entity with the UIButtonComponent.
+	 * \brief Called when the button is pressed. Must be attached to the entity with the UIButtonTag.
 	 * \World& The world this component is in.
 	 * \entt::entity The owner of this component.
 	 */

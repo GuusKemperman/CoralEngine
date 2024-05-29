@@ -8,6 +8,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectOptional.h"
 #include "Assets/Ability/Ability.h"
 #include "Assets/Ability/Weapon.h"
+#include "Components/PlayerComponent.h"
 #include "Systems/AbilitySystem.h"
 #include "World/World.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
@@ -140,6 +141,33 @@ CE::MetaType CE::WeaponInstance::Reflect()
 			return AbilitySystem::CanWeaponBeActivated(characterData, weapon);
 
 		}, "CanWeaponBeActivated", MetaFunc::ExplicitParams<const WeaponInstance&, const CharacterComponent&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
+	metaType.AddFunc([](const WeaponInstance& weapon, const PlayerComponent& playerData)
+	{
+		const auto& input = Input::Get();
+		bool hasAnyInput = false;
+
+		for (auto& key : weapon.mKeyboardKeys)
+		{
+			if (input.IsKeyboardKeyHeld(key))
+			{
+				hasAnyInput = true;
+				break;
+			}
+		}
+
+		for (auto& button : weapon.mGamepadButtons)
+		{
+			if (input.IsGamepadButtonHeld(playerData.mID, button))
+			{
+				hasAnyInput = true;
+				break;
+			}
+		}
+
+		return weapon.mReloadCounter <= 0.0f && hasAnyInput;
+
+	}, "IsPlayerShooting", MetaFunc::ExplicitParams<const WeaponInstance&, const PlayerComponent&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	metaType.AddFunc(&WeaponInstance::ResetCooldownAndAmmo, "ResetCooldownAndAmmo").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sCallFromEditorTag);
 	metaType.AddFunc(&WeaponInstance::InitializeRuntimeWeapon, "InitializeRuntimeWeapon").GetProperties().Add(Props::sIsScriptableTag);
