@@ -380,9 +380,14 @@ float& CE::AbilityFunctionality::IncreaseValueByPercentage(float& toChange, floa
 
 bool CE::AbilityFunctionality::IsPointInsideCone2D(const glm::vec2 point, const glm::vec2 coneOrigin, const glm::vec2 coneDirection, const float coneAngle)
 {
-	//dot(m_dir, normalize(enemy->GetPos() - m_pos)) > DOTPROD45DEGREES)
+	const glm::vec2 pointDirNotNormalized = point - coneOrigin;
+	if (coneDirection == glm::vec2(0.f) || pointDirNotNormalized == glm::vec2(0.f))
+	{
+		return false;
+	}
+
 	const glm::vec2 coneDir = glm::normalize(coneDirection);
-	const glm::vec2 pointDir = glm::normalize(point - coneOrigin);
+	const glm::vec2 pointDir = glm::normalize(pointDirNotNormalized);
 
 	// Calculate the cosine of the angle between the cone direction and the point direction
 	const float cosAngle = glm::dot(coneDir, pointDir);
