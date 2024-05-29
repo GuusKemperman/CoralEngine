@@ -26,7 +26,7 @@ namespace Game
 
 		CE::AssetHandle<CE::Animation> mChargingAnimation{};
 
-		CE::Cooldown mChargeCooldown;
+		CE::Cooldown mChargeCooldown{};
 
 	private:
 		float mRadius{};

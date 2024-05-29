@@ -26,7 +26,7 @@ namespace Game
 
 		CE::AssetHandle<CE::Animation> mStompAnimation{};
 
-		CE::Cooldown mStompCooldown;
+		CE::Cooldown mStompCooldown{};
 
 	private:
 		float mRadius{};

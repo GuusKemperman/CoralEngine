@@ -12,16 +12,17 @@ namespace CE
 
 namespace Game
 {
-	class RechargeState
+	class RecoveryState
 	{
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
 		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
+		void OnAiStateExitEvent(CE::World& world, entt::entity owner);
 
 		CE::AssetHandle<CE::Animation> mDashRechargeAnimation{};
 
-		CE::Cooldown mRechargeCooldown;
+		CE::Cooldown mRechargeCooldown{};
 
 	private:
 		entt::entity mTargetEntity = entt::null;
@@ -30,6 +31,6 @@ namespace Game
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
-		REFLECT_AT_START_UP(RechargeState);
+		REFLECT_AT_START_UP(RecoveryState);
 	};
 }
