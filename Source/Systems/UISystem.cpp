@@ -93,7 +93,6 @@ void CE::UISystem::Update(World& world, float dt)
 			continue;
 		}
 
-
 		if (boundEvent.mIsStatic)
 		{
 			boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, selectedEntity);
@@ -101,7 +100,7 @@ void CE::UISystem::Update(World& world, float dt)
 		else
 		{
 			MetaAny component{ boundEvent.mType.get(), storage->value(selectedEntity), false };
-			boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, selectedEntity);
+			boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, selectedEntity);
 		}
 	}
 }
