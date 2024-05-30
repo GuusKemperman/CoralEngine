@@ -288,7 +288,7 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
     }
     characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
     ability.mChargesCounter--;
-    if (ability.mChargesCounter <= 0.f)
+    if (ability.mChargesCounter <= 0)
     {
         ability.mChargesCounter = ability.mAbilityAsset->mCharges;
         ability.mRequirementCounter = ability.mAbilityAsset->mRequirementToUse;
