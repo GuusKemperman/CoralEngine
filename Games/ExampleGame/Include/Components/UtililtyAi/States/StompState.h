@@ -7,34 +7,35 @@ namespace CE
 {
 	class Animation;
 	class World;
-	class TransformComponent;
 }
 
 namespace Game
 {
-	class DashingState
+
+	class StompState
 	{
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
 		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 		void OnAIStateEnterEvent(CE::World& world, entt::entity owner);
 
-		bool IsDashCharged() const;
+		bool IsStompCharged() const;
 
-		CE::AssetHandle<CE::Animation> mDashingAnimation{};
+		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
+			entt::entity owner) const;
 
-		CE::Cooldown mDashCooldown{};
+		CE::AssetHandle<CE::Animation> mStompAnimation{};
+
+		CE::Cooldown mStompCooldown{};
 
 	private:
-		entt::entity mTargetEntity = entt::null;
+		float mRadius{};
 
-		glm::vec2 mDashDirection{};
-
-		float mSpeedDash{};
-		float mMaxDashTime = 1.0f;
+		float mMaxStompTime = 10.0f;
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
-		REFLECT_AT_START_UP(DashingState);
+		REFLECT_AT_START_UP(StompState);
 	};
+
 }
