@@ -111,16 +111,24 @@ CE::MetaType CE::Weapon::Reflect()
 	type.AddField(&Weapon::mPierceCount, "mPierceCount").GetProperties().Add(Props::sIsScriptableTag);
 
 	// Weapon pointer.
+	type.AddFunc([](Weapon* weapon, int index) -> AbilityEffect
+		{
+			if (weapon == nullptr || index >= static_cast<int>(weapon->mEffects.size()))
+			{
+				return {};
+			}
+			return weapon->mEffects[index];
+		},
+		"GetEffectAtIndex (Weapon Pointer)", MetaFunc::ExplicitParams<Weapon*, int>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 	type.AddFunc([](Weapon* weapon, AbilityEffect effect, int index)
 		{
-			int numEffects = static_cast<int>(weapon->mEffects.size());
-			if (weapon == nullptr || numEffects <= index)
+			if (weapon == nullptr || index >= static_cast<int>(weapon->mEffects.size()))
 			{
 				return;
 			}
 			weapon->mEffects[index] = effect;
 		},
-		"SetEffectAtIndex", MetaFunc::ExplicitParams<Weapon*, AbilityEffect, int>{}).GetProperties().Add(Props::sIsScriptableTag);
+		"SetEffectAtIndex (Weapon Pointer)", MetaFunc::ExplicitParams<Weapon*, AbilityEffect, int>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const Weapon* weapon) -> float
 		{
@@ -130,7 +138,7 @@ CE::MetaType CE::Weapon::Reflect()
 			}
 			return weapon->mRequirementToUse;
 		},
-		"GetReloadTime (Weapon Pointer)", MetaFunc::ExplicitParams<const Weapon*>{}).GetProperties().Add(Props::sIsScriptableTag);
+		"GetReloadTime (Weapon Pointer)", MetaFunc::ExplicitParams<const Weapon*>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 	type.AddFunc([](Weapon* weapon, float v)
 		{
 			if (weapon == nullptr)
@@ -139,7 +147,7 @@ CE::MetaType CE::Weapon::Reflect()
 			}
 			weapon->mRequirementToUse = v;
 		},
-		"SetReloadTime (Weapon Pointer)", MetaFunc::ExplicitParams<Weapon*, float>{}).GetProperties().Add(Props::sIsScriptableTag);
+		"SetReloadTime (Weapon Pointer)", MetaFunc::ExplicitParams<Weapon*, float>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const Weapon* weapon) -> int
 		{
@@ -149,7 +157,7 @@ CE::MetaType CE::Weapon::Reflect()
 			}
 			return weapon->mCharges;
 		},
-		"GetAmmo (Weapon Pointer)", MetaFunc::ExplicitParams<const Weapon*>{}).GetProperties().Add(Props::sIsScriptableTag);
+		"GetAmmo (Weapon Pointer)", MetaFunc::ExplicitParams<const Weapon*>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 	type.AddFunc([](Weapon* weapon, int v)
 		{
 			if (weapon == nullptr)
@@ -158,7 +166,7 @@ CE::MetaType CE::Weapon::Reflect()
 			}
 			weapon->mCharges = v;
 		},
-		"SetAmmo (Weapon Pointer)", MetaFunc::ExplicitParams<Weapon*, int>{}).GetProperties().Add(Props::sIsScriptableTag);
+		"SetAmmo (Weapon Pointer)", MetaFunc::ExplicitParams<Weapon*, int>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	// Weapon asset.
 	// Non-inherited members.

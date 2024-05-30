@@ -31,7 +31,7 @@ namespace CE
 		static std::vector<entt::entity> SpawnProjectilePrefabsFromWeaponInstance(World& world, const Prefab& prefab, entt::entity castBy, const WeaponInstance& weapon);
 		static bool IncreasePierceCountAndReturnTrueIfExceeded(ProjectileComponent& projectileComponent);
 		static bool WasTheAbilityCastByAnEnemy(World& world, entt::entity entityToAffect, entt::entity abilityEntity);
-		static float& IncreaseValueByPercentage(float& toChange, float percentage);
+		static float IncreaseValue1ByPercentageOfValue2(float value1, float value2, float percentage);
 		static bool IsPointInsideCone2D(glm::vec2 point, glm::vec2 coneOrigin, const glm::vec2 coneDirection, float coneAngle);
 		static void RemoveWeaponAtIndex(World& world, entt::entity entity, int index);
 		static void AddWeaponToEnd(World& world, entt::entity entity, WeaponInstance& weapon);

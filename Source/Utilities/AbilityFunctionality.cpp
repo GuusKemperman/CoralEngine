@@ -118,21 +118,13 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "WasTheAbilityCastByAnEnemy", MetaFunc::ExplicitParams<
 		entt::entity, entt::entity>{}, "Entity To Affect", "Ability Entity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	metaType.AddFunc([](float& toChange, float percentage) -> float&
+	metaType.AddFunc([](float value1, float value2, float percentage) -> float
 		{
 
-			return IncreaseValueByPercentage(toChange, percentage);
+			return IncreaseValue1ByPercentageOfValue2(value1, value2, percentage);
 
-		}, "IncreaseValueByPercentage (by reference)", MetaFunc::ExplicitParams<
-		float&, float>{}, "Value To Change", "Percentage").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
-
-	metaType.AddFunc([](float toChange, float percentage) -> float
-		{
-
-			return IncreaseValueByPercentage(toChange, percentage);
-
-		}, "IncreaseValueByPercentage (by value)", MetaFunc::ExplicitParams<
-		float, float>{}, "Value To Change", "Percentage").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "IncreaseValue1ByPercentageOfValue2", MetaFunc::ExplicitParams<
+		float, float, float>{}, "Value 1", "Value 2", "Percentage").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	metaType.AddFunc([](const glm::vec2 point, const glm::vec2 coneOrigin, const glm::vec2 coneDirection, const float coneAngle) -> bool
 			{
@@ -501,11 +493,10 @@ bool CE::AbilityFunctionality::WasTheAbilityCastByAnEnemy(World& world, entt::en
 	return entityToAffectCharacterComponent->mTeamId != activeAbilityComponent->mCastByCharacterData.mTeamId;
 }
 
-float& CE::AbilityFunctionality::IncreaseValueByPercentage(float& toChange, float percentage)
+float CE::AbilityFunctionality::IncreaseValue1ByPercentageOfValue2(float value1, float value2, float percentage)
 {
-	const float increase = percentage * 0.01f * toChange;
-	toChange += increase;
-	return toChange;
+	value1 += percentage * 0.01f * value2;
+	return value1;
 }
 
 bool CE::AbilityFunctionality::IsPointInsideCone2D(const glm::vec2 point, const glm::vec2 coneOrigin, const glm::vec2 coneDirection, const float coneAngle)
