@@ -24,7 +24,8 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 	{
 		const CE::AssetHandle<Upgrade> loadedUpgrade{ upgrade };
 
-		if (loadedUpgrade->mUpgradeScript == nullptr)
+		if (loadedUpgrade->mUpgradeScript == nullptr ||
+			registry.HasComponent(loadedUpgrade->mUpgradeScript.Get()->GetTypeId(), playerEntity))
 		{
 			continue;
 		}
@@ -34,7 +35,7 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 			availableUpgrades.push_back(upgrade);
 			continue;
 		}
-		bool allRequireUpgradesUnlocked = true;
+		bool allRequiredUpgradesUnlocked = true;
 		for (auto& requiredUpgrade : loadedUpgrade->mRequiredUpgrades)
 		{
 			if (requiredUpgrade == nullptr)
@@ -51,14 +52,14 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 			}
 			else
 			{
-				allRequireUpgradesUnlocked = false;
+				allRequiredUpgradesUnlocked = false;
 				if (loadedUpgrade->mAllRequiredUpgradesNeeded)
 				{
 					break;
 				}
 			}
 		}
-		if (loadedUpgrade->mAllRequiredUpgradesNeeded && allRequireUpgradesUnlocked)
+		if (loadedUpgrade->mAllRequiredUpgradesNeeded && allRequiredUpgradesUnlocked)
 		{
 			availableUpgrades.push_back(upgrade);
 		}
@@ -91,13 +92,13 @@ void Game::UpgradeFunctionality::InitializeUpgradeOptions(CE::World& world, std:
 		auto sprite = registry.TryGet<CE::UISpriteComponent>(options[i]);
 		if (sprite == nullptr)
 		{
-			LOG(LogUpgradeSystem, Warning, "Entity {} does not have a UISpriteComponent attached.", entt::to_integral(options[i]));
+			LOG(LogUpgradeFunctionality, Warning, "Entity {} does not have a UISpriteComponent attached.", entt::to_integral(options[i]));
 			continue;
 		}
 		auto upgrade = registry.TryGet<UpgradeStoringComponent>(options[i]);
 		if (upgrade == nullptr)
 		{
-			LOG(LogUpgradeSystem, Warning, "Entity {} does not have a UpgradeStoringComponent attached.", entt::to_integral(options[i]));
+			LOG(LogUpgradeFunctionality, Warning, "Entity {} does not have a UpgradeStoringComponent attached.", entt::to_integral(options[i]));
 			continue;
 		}
 		const CE::AssetHandle<Upgrade> loadedUpgrade{ chosenUpgradesToDisplayThisLevel[i] };
