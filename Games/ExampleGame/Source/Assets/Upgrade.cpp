@@ -78,6 +78,39 @@ CE::MetaType Game::Upgrade::Reflect()
 		},
 		"GetUpgradeScript", MetaFunc::ExplicitParams<const AssetHandle<Upgrade>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
+	type.AddFunc([](const AssetHandle<Upgrade>& upgrade) -> std::vector<ComponentFilter>
+		{
+			if (upgrade == nullptr)
+			{
+				return {};
+			}
+
+			return upgrade->mRequiredUpgrades;
+		},
+		"GetRequiredUpgrades", MetaFunc::ExplicitParams<const AssetHandle<Upgrade>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const AssetHandle<Upgrade>& upgrade) -> bool
+		{
+			if (upgrade == nullptr)
+			{
+				return false;
+			}
+
+			return upgrade->mAllRequiredUpgradesNeeded;
+		},
+		"GetAllRequiredUpgradesNeeded", MetaFunc::ExplicitParams<const AssetHandle<Upgrade>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const AssetHandle<Upgrade>& upgrade) -> AssetHandle<Texture>
+		{
+			if (upgrade == nullptr)
+			{
+				return nullptr;
+			}
+
+			return upgrade->mIconTexture;
+		},
+		"GetIconTexture", MetaFunc::ExplicitParams<const AssetHandle<Upgrade>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
 	ReflectAssetType<Upgrade>(type);
 	return type;
 }
