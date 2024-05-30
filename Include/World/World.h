@@ -43,6 +43,8 @@ namespace CE
 
 		bool HasBegunPlay() const { return mHasBegunPlay; }
 
+		bool HasRequestedEndPlay() const { return mHasEndPlayBeenRequested; }
+
 		// In seconds
 		float GetCurrentTimeScaled() const { return mTime.mScaledTotalTimeElapsed; }
 
@@ -64,6 +66,8 @@ namespace CE
 		void Unpause() { mTime.mIsPaused = false; }
 
 		void SetIsPaused(bool isPaused) { mTime.mIsPaused = isPaused; }
+
+		void RequestEndplay() { mHasEndPlayBeenRequested = true; }
 
 		static void PushWorld(World& world);
 		static void PopWorld(uint32 amountToPop = 1);
@@ -96,5 +100,6 @@ namespace CE
 		std::unique_ptr<Physics> mPhysics{};
 
 		AssetHandle<Level> mLevelToTransitionTo{};
+		bool mHasEndPlayBeenRequested = false;
 	};
 }
