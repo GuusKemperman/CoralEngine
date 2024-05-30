@@ -177,6 +177,11 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 #else
 		world.Tick(deltaTime);
 
+		if (world.HasRequestedEndPlay())
+		{
+			break;
+		}
+
 		if (!Device::IsHeadless())
 		{
 			Renderer::Get().Render(world);
