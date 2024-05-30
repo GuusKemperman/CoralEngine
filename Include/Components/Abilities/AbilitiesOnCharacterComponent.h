@@ -46,7 +46,7 @@ namespace CE
 		std::optional<Weapon> mRuntimeWeapon{};
 		float mReloadCounter{};
 		int mAmmoCounter{};
-		float mTimeBetweenShotsCounter{};
+		float mShotDelayCounter{};
 		bool mAmmoConsumption = true;
 
 		std::vector<Input::KeyboardKey> mKeyboardKeys{};
@@ -93,7 +93,7 @@ namespace CE
 	template<class Archive>
 	void serialize(Archive& ar, WeaponInstance& value)
 	{
-		ar(value.mWeaponAsset, value.mReloadCounter, value.mAmmoCounter, value.mTimeBetweenShotsCounter, value.mAmmoConsumption, value.mKeyboardKeys, value.mGamepadButtons);
+		ar(value.mWeaponAsset, value.mReloadCounter, value.mAmmoCounter, value.mShotDelayCounter, value.mAmmoConsumption, value.mKeyboardKeys, value.mGamepadButtons);
 	}
 }
 

@@ -91,11 +91,17 @@ CE::MetaType CE::AbilityEffect::Reflect()
 	metaType.AddField(&AbilityEffect::mIncreaseOrDecrease, "mIncreaseOrDecrease").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&AbilityEffect::mClampToMax, "mClampToMax").GetProperties().Add(Props::sIsScriptableTag);
 
-	metaType.AddFunc([](const Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax)
+	metaType.AddFunc([](const Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax) -> AbilityEffect
 		{
 			return AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax };
 
 		}, "MakeAbilityEffect", MetaFunc::ExplicitParams<Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool>{}, "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
+	metaType.AddFunc([](const AbilityEffect abilityEffect, float newAmount) -> AbilityEffect
+		{
+			return AbilityEffect{ abilityEffect.mStat, newAmount, abilityEffect.mFlatOrPercentage, abilityEffect.mIncreaseOrDecrease, abilityEffect.mClampToMax };
+
+		}, "GetAbilityEffectWithAmountChanged", MetaFunc::ExplicitParams<const AbilityEffect, float>{}, "AbilityEffect", "NewAmount").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	ReflectFieldType<AbilityEffect>(metaType);
 	return metaType;

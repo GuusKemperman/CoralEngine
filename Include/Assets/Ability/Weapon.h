@@ -23,7 +23,7 @@ namespace CE
 		void OnSave(AssetSaveInfo& saveInfo) const override;
 
 		// weapon
-		float mTimeBetweenShots{};
+		float mShotDelay{};
 		float mFireSpeed = 1.f;
 		float mReloadSpeed = 1.f;
 		int mProjectileCount = 1;

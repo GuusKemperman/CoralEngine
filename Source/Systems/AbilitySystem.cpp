@@ -224,7 +224,7 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
 
         // Update counters
         weapon.mReloadCounter = std::max(weapon.mReloadCounter - dt * weapon.mWeaponAsset->mReloadSpeed, 0.f);
-        weapon.mTimeBetweenShotsCounter = std::min(weapon.mTimeBetweenShotsCounter + dt * weapon.mWeaponAsset->mFireSpeed, weapon.mWeaponAsset->mTimeBetweenShots);
+        weapon.mShotDelayCounter = std::min(weapon.mShotDelayCounter + dt * weapon.mWeaponAsset->mFireSpeed, weapon.mWeaponAsset->mShotDelay);
 
         // Activate abilities for the player based on input
         if (auto playerComponent = world.GetRegistry().TryGet<PlayerComponent>(entity))
@@ -305,7 +305,7 @@ bool CE::AbilitySystem::CanWeaponBeActivated(const CharacterComponent& character
     }
     return weapon.mReloadCounter <= 0.f &&
         weapon.mAmmoCounter > 0 &&
-        weapon.mTimeBetweenShotsCounter >= weapon.mWeaponAsset->mTimeBetweenShots &&
+        weapon.mShotDelayCounter >= weapon.mWeaponAsset->mShotDelay &&
         (weapon.mWeaponAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
 }
 
@@ -336,7 +336,7 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
         LOG(LogAbilitySystem, Error, "Weapon {} does not have a script selected.", weapon.mWeaponAsset.GetMetaData().GetName());
     }
     characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
-    weapon.mTimeBetweenShotsCounter = 0.f;
+    weapon.mShotDelayCounter = 0.f;
     if (weapon.mAmmoConsumption == true)
     {
         weapon.mAmmoCounter--;

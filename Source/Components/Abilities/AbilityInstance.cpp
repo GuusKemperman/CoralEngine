@@ -111,7 +111,7 @@ CE::MetaType CE::WeaponInstance::Reflect()
 	metaType.AddField(&WeaponInstance::mWeaponAsset, "mWeaponAsset").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mReloadCounter, "mReloadCounter").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mAmmoCounter, "mAmmoCounter").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&WeaponInstance::mTimeBetweenShotsCounter, "mTimeBetweenShotsCounter").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mShotDelayCounter, "mShotDelayCounter").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mAmmoConsumption, "mAmmoConsumption").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mKeyboardKeys, "mKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mGamepadButtons, "mGamepadButtons").GetProperties().Add(Props::sIsScriptableTag);
