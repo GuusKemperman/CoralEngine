@@ -179,7 +179,7 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 
 		if (world.HasRequestedEndPlay())
 		{
-			
+			break;
 		}
 
 		if (!Device::IsHeadless())
