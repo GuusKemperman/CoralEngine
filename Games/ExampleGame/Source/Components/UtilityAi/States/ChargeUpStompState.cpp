@@ -2,18 +2,16 @@
 #include "Components/UtililtyAi/States/ChargeUpStompState.h"
 
 #include "Components/TransformComponent.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/PlayerComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Components/Abilities/CharacterComponent.h"
+#include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Systems/AbilitySystem.h"
 
 
 void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
@@ -58,15 +56,7 @@ void Game::ChargeUpStompState::OnAiStateExitEvent(CE::World&, entt::entity)
 
 void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 {
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr)
-	{
-		LOG(LogAI, Warning, "NavMeshAgentComponent is needed to run the Charging Up State!");
-		return;
-	}
-
-	navMeshAgent->ClearTarget(world);
+	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
@@ -87,11 +77,10 @@ std::pair<float, entt::entity> Game::ChargeUpStompState::GetBestScoreAndTarget(c
 {
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
-	entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
+	entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
 	if (entityId == entt::null)
 	{
-		LOG(LogAI, Warning, "An entity with a NavMeshTargetTag is needed to run the Charging Up State!");
 		return { 0.0f, entt::null };
 	}
 

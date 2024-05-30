@@ -12,6 +12,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
 #include "Components/UtililtyAi/States/ChargeUpStompState.h"
@@ -109,15 +110,7 @@ float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 
 void Game::StompState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 {
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr)
-	{
-		LOG(LogAI, Warning, "NavMeshAgentComponent is needed to run the Charge Dash State!");
-		return;
-	}
-
-	navMeshAgent->ClearTarget(world);
+	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 

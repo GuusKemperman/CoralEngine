@@ -6,10 +6,10 @@
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Components/AnimationRootComponent.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
+#include "Components/Pathfinding/SwarmingAgentTag.h"
 
 void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -54,12 +54,8 @@ void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 		physicsBody2DComponent->mLinearVelocity = { 0,0 };
 	}
 
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
+	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
-	if (navMeshAgent != nullptr)
-	{
-		navMeshAgent->ClearTarget(world);
-	}
 
 	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::PhysicsBody2DComponent>(owner);
 

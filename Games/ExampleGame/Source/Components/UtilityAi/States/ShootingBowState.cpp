@@ -4,8 +4,6 @@
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Systems/AbilitySystem.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
@@ -16,9 +14,7 @@
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
-#include "Components/UtililtyAi/States/ChargeUpStompState.h"
 #include "Components/UtililtyAi/States/RecoveryState.h"
-#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 void Game::ShootingBowState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -104,16 +100,6 @@ float Game::ShootingBowState::OnAiEvaluate(const CE::World& world, entt::entity 
 
 void Game::ShootingBowState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 {
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr)
-	{
-		LOG(LogAI, Warning, "NavMeshAgentComponent is needed to run the Charge Dash State!");
-		return;
-	}
-
-	navMeshAgent->ClearTarget(world);
-
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
