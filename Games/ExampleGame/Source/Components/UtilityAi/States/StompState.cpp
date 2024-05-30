@@ -15,11 +15,64 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
 #include "Components/UtililtyAi/States/ChargeUpStompState.h"
+#include "Components/UtililtyAi/States/RecoveryState.h"
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
-void Game::StompState::OnAiTick(CE::World&, const entt::entity, const float dt)
+void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
 	mStompCooldown.mAmountOfTimePassed += dt;
+
+	if (mStompCooldown.mAmountOfTimePassed >= mStompCooldown.mCooldown)
+	{
+		const auto rechargeState = world.GetRegistry().TryGet<Game::RecoveryState>(owner);
+
+		if (rechargeState == nullptr)
+		{
+			LOG(LogAI, Warning, "Stomp State - enemy {} does not have a RecoveryState Component.", entt::to_integral(owner));
+		}
+		else
+		{
+			rechargeState->mRechargeCooldown.mAmountOfTimePassed = 0.1f;
+		}
+	}
+
+	const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
+	if (characterData == nullptr)
+	{
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a Character Component.", entt::to_integral(owner));
+		return;
+	}
+
+	const auto abilities = world.GetRegistry().TryGet<CE::AbilitiesOnCharacterComponent>(owner);
+	if (abilities == nullptr)
+	{
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
+		return;
+	}
+
+	if (abilities->mAbilitiesToInput.empty())
+	{
+		return;
+	}
+	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
+
+	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+
+	if (animationRootComponent != nullptr)
+	{
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), mStompAnimation, 0.0f);
+	}
+
+	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
+
+	if (physicsBody2DComponent == nullptr)
+	{
+		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
+		return;
+	}
+
+	physicsBody2DComponent->mLinearVelocity = {};
+
 }
 
 float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
@@ -76,10 +129,6 @@ void Game::StompState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 	mStompCooldown.mCooldown = mMaxStompTime;
 	mStompCooldown.mAmountOfTimePassed = 0.0f;
 }
-
-// OnAIStateExit()
-// // Check if it has the recharge state
-// If we have one, set the timer to X seconds
 
 bool Game::StompState::IsStompCharged() const
 {

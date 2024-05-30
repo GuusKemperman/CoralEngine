@@ -10,7 +10,7 @@
 #include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
-#include "Components/UtililtyAi/States/RechargeState.h"
+#include "Components/UtililtyAi/States/RecoveryState.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
@@ -18,6 +18,20 @@
 void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt)
 {
 	mDashCooldown.mAmountOfTimePassed += dt;
+
+	if (mDashCooldown.mAmountOfTimePassed >= mDashCooldown.mCooldown)
+	{
+		const auto rechargeState = world.GetRegistry().TryGet<Game::RecoveryState>(owner);
+
+		if (rechargeState == nullptr)
+		{
+			LOG(LogAI, Warning, "Dash State - enemy {} does not have a RecoveryState Component.", entt::to_integral(owner));
+		}
+		else
+		{
+			rechargeState->mRechargeCooldown.mAmountOfTimePassed = 0.1f;
+		}
+	}
 
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 

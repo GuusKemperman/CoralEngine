@@ -358,12 +358,13 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpStompState.cpp" />
     <ClCompile Include="Source\Components\DifficultyScalingComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\DanceState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\DeathState.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\DashRechargeState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\RecoveryState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\DashingState.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\ChargeDashState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpDashState.cpp" />
     <ClCompile Include="Source\Components\SpawnerComponent.cpp" />
     <ClCompile Include="Source\Systems\DifficultyScalingSystem.cpp" />
     <ClCompile Include="Source\Systems\SpawnerSystem.cpp" />
@@ -394,14 +395,16 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Components\WavesComponent.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\StompState.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\UtililtyAi\States\ChargeUpStompState.h" />
     <ClInclude Include="Include\Components\DifficultyScalingComponent.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\DanceState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\DeathState.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\DashRechargeState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\RecoveryState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\DashingState.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\ChargeDashState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\ChargeUpDashState.h" />
     <ClInclude Include="Include\Components\SpawnerComponent.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\AttackingState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\ChasingState.h" />
@@ -416,6 +419,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Include\Components\WavesComponent.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\StompState.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

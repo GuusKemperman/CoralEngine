@@ -23,7 +23,7 @@ namespace Game
 
 		CE::AssetHandle<CE::Animation> mDashingAnimation{};
 
-		CE::Cooldown mDashCooldown;
+		CE::Cooldown mDashCooldown{};
 
 	private:
 		entt::entity mTargetEntity = entt::null;
