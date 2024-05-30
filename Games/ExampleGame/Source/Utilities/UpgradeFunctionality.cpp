@@ -24,7 +24,8 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 	{
 		const CE::AssetHandle<Upgrade> loadedUpgrade{ upgrade };
 
-		if (loadedUpgrade->mUpgradeScript == nullptr || registry.HasComponent(loadedUpgrade->mUpgradeScript.Get()->GetTypeId(), playerEntity))
+		if (loadedUpgrade->mUpgradeScript == nullptr ||
+			registry.HasComponent(loadedUpgrade->mUpgradeScript.Get()->GetTypeId(), playerEntity))
 		{
 			continue;
 		}
@@ -32,10 +33,6 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 			!registry.HasComponent(loadedUpgrade->mUpgradeScript.Get()->GetTypeId(), playerEntity))
 		{
 			availableUpgrades.push_back(upgrade);
-			if (loadedUpgrade->mUpgradeScript.Get()->GetName() == "S_Tank2")
-			{
-				LOG(LogUpgradeFunctionality, Warning, "1");
-			}
 			continue;
 		}
 		bool allRequiredUpgradesUnlocked = true;
@@ -50,10 +47,6 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 				if (loadedUpgrade->mAllRequiredUpgradesNeeded == false)
 				{
 					availableUpgrades.push_back(upgrade);
-					if (loadedUpgrade->mUpgradeScript.Get()->GetName() == "S_Tank2")
-					{
-						LOG(LogUpgradeFunctionality, Warning, "2");
-					}
 					break;
 				}
 			}
@@ -69,10 +62,6 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 		if (loadedUpgrade->mAllRequiredUpgradesNeeded && allRequiredUpgradesUnlocked)
 		{
 			availableUpgrades.push_back(upgrade);
-			if (loadedUpgrade->mUpgradeScript.Get()->GetName() == "S_Tank2")
-			{
-				LOG(LogUpgradeFunctionality, Warning, "3");
-			}
 		}
 	}
 

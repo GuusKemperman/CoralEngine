@@ -5,6 +5,8 @@
 #include "Assets/Core/AssetSaveInfo.h"
 #include "Meta/Fwd/MetaTypeFwd.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
+#include "Assets/Texture.h"
+#include "Assets/Script.h"
 
 using namespace CE;
 

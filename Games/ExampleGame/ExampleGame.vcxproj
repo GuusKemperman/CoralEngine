@@ -365,7 +365,12 @@
     <ClCompile Include="Source\Components\UtilityAi\States\DashingState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChargeDashState.cpp" />
     <ClCompile Include="Source\Components\SpawnerComponent.cpp" />
-    <ClCompile Include="Source\EditorSystems\UpgradeEditorSystem.cpp" />
+    <ClCompile Include="Source\EditorSystems\UpgradeEditorSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Systems\SpawnerSystem.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\AttackingState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChasingState.cpp" />
