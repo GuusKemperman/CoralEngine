@@ -99,7 +99,10 @@ void CE::PrefabEditorSystem::ApplyChangesToAsset()
 {
 	const Registry& reg = mWorldHelper->GetWorldBeforeBeginPlay().GetRegistry();
 
-	if (!reg.Valid(mPrefabInstance))
+	const TransformComponent* prefabInstanceTransform = reg.TryGet<TransformComponent>(mPrefabInstance);
+
+	if (!reg.Valid(mPrefabInstance)
+		|| (prefabInstanceTransform != nullptr && prefabInstanceTransform->GetParent()))
 	{
 		// See if there's a new instance
 		const auto* entityStorage = reg.Storage<entt::entity>();
