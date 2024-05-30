@@ -9,14 +9,29 @@
 #include "Components/AnimationRootComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Components/UtililtyAi/States/ChargeDashState.h"
-#include "Components/UtililtyAi/States/DashRechargeState.h"
+#include "Components/UtililtyAi/States/ChargeUpDashState.h"
+#include "Components/UtililtyAi/States/RecoveryState.h"
 #include "Assets/Animation/Animation.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 
 void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt)
 {
-	mCurrentDashTimer += dt;
+	mDashCooldown.mAmountOfTimePassed += dt;
+
+	if (mDashCooldown.mAmountOfTimePassed >= mDashCooldown.mCooldown)
+	{
+		const auto rechargeState = world.GetRegistry().TryGet<Game::RecoveryState>(owner);
+
+		if (rechargeState == nullptr)
+		{
+			LOG(LogAI, Warning, "Dash State - enemy {} does not have a RecoveryState Component.", entt::to_integral(owner));
+		}
+		else
+		{
+			rechargeState->mRechargeCooldown.mAmountOfTimePassed = 0.1f;
+		}
+	}
 
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
@@ -42,15 +57,29 @@ void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt
 
 float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
 {
-	auto* chargeDashState = world.GetRegistry().TryGet<ChargeDashState>(owner);
+	auto* chargingUpState = world.GetRegistry().TryGet<ChargeUpDashState>(owner);
 
-	if (chargeDashState == nullptr)
+	if (chargingUpState == nullptr)
 	{
-		LOG(LogAI, Warning, "A chargeDashState is needed to run the Dashing State!");
+		LOG(LogAI, Warning, "A ChargeUpDashState is needed to run the Dashing State!");
 		return 0;
 	}
 
-	if (chargeDashState->IsDashCharged() && mCurrentDashTimer < mMaxDashTime)
+	auto* enemyAiController = world.GetRegistry().TryGet<CE::EnemyAiControllerComponent>(owner);
+
+	if (enemyAiController == nullptr)
+	{
+		LOG(LogAI, Warning, "A EnemyAiController is needed to run the Stomp State!");
+		return 0;
+	}
+
+	if (enemyAiController->mCurrentState == nullptr)
+	{
+		return 0;
+	}
+
+	if ((CE::MakeTypeId<ChargeUpDashState>() == enemyAiController->mCurrentState->GetTypeId() && chargingUpState->IsCharged())
+		|| (CE::MakeTypeId<DashingState>() == enemyAiController->mCurrentState->GetTypeId() && mDashCooldown.mAmountOfTimePassed < mDashCooldown.mCooldown))
 	{
 		return 0.9f;
 	}
@@ -102,20 +131,18 @@ void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owne
 		mDashDirection = glm::normalize(targetT - ownerT);
 	}
 
-	auto* recoverState = world.GetRegistry().TryGet<DashRechargeState>(owner);
-
-	if (recoverState == nullptr)
-	{
-		LOG(LogAI, Warning, "An DashRechargeState is needed to run the Dashing State!");
-		return;
-	}
-
-	recoverState->mCurrentRechargeTimer = 0;
+	mDashCooldown.mCooldown = mMaxDashTime;
+	mDashCooldown.mAmountOfTimePassed = 0.0f;
 }
 
 bool Game::DashingState::IsDashCharged() const
 {
-	return mCurrentDashTimer >= mMaxDashTime;
+	if (mDashCooldown.mAmountOfTimePassed >= mDashCooldown.mCooldown)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 CE::MetaType Game::DashingState::Reflect()

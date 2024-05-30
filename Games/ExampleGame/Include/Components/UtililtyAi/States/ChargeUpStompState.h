@@ -1,6 +1,7 @@
 #pragma once
 #include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
+#include "Utilities/Time.h"
 
 namespace CE
 {
@@ -10,20 +11,22 @@ namespace CE
 
 namespace Game
 {
-	class ChargeDashState
+	class ChargeUpStompState
 	{
 	public:
-		void OnAITick(CE::World& world, entt::entity owner, float dt);
-		float OnAIEvaluate(const CE::World& world, entt::entity owner) const;
+		void OnAiTick(CE::World& world, entt::entity owner, float dt);
+		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
+		void OnAiStateExitEvent(CE::World& world, entt::entity entity);
+		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
 
-		bool IsDashCharged() const;
+		bool IsCharged() const;
 
 		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
 			entt::entity owner) const;
 
-		float mCurrentChargeTimer = 0.0f;
-
 		CE::AssetHandle<CE::Animation> mChargingAnimation{};
+
+		CE::Cooldown mChargeCooldown{};
 
 	private:
 		float mRadius{};
@@ -32,6 +35,7 @@ namespace Game
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
-		REFLECT_AT_START_UP(ChargeDashState);
+		REFLECT_AT_START_UP(ChargeUpStompState);
 	};
+
 }
