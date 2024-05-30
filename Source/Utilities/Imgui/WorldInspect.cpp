@@ -332,7 +332,7 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 		if (world.HasRequestedEndPlay())
 		{
-			world.EndPlay();
+			(void)EndPlay();
 		}
 	}
 	ImGui::EndChild();
