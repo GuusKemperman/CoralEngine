@@ -9,6 +9,8 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
 #include "Assets/Animation/Animation.h"
+#include "Components/PlayerComponent.h"
+#include "Components/TransformComponent.h"
 
 void Game::RecoveryState::OnAiTick(CE::World& world, entt::entity owner, float dt)
 {
@@ -30,6 +32,32 @@ void Game::RecoveryState::OnAiTick(CE::World& world, entt::entity owner, float d
 	physicsBody2DComponent->mLinearVelocity = {};
 
 	mRechargeCooldown.mAmountOfTimePassed += dt;
+
+	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
+
+	if (playerId == entt::null)
+	{
+		return;
+	}
+
+	const auto playerTransform = world.GetRegistry().TryGet<CE::TransformComponent>(playerId);
+	if (playerTransform == nullptr)
+	{
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
+		return;
+	}
+
+	const auto enemyTransform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+	if (enemyTransform == nullptr)
+	{
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
+		return;
+	}
+
+	const glm::vec3 direction = glm::normalize(playerTransform->GetWorldPosition() - enemyTransform->GetWorldPosition());
+
+	enemyTransform->SetWorldOrientation(direction);
+	enemyTransform->SetWorldForward(direction);
 }
 
 float Game::RecoveryState::OnAiEvaluate(const CE::World&, entt::entity) const
