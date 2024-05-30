@@ -1,22 +1,26 @@
 #pragma once
 #include "Assets/Core/AssetHandle.h"
-#include "Systems/System.h"
+#include "Meta/Fwd/MetaReflectFwd.h"
+
+namespace CE
+{
+	class World;
+}
 
 namespace Game
 {
 	class Upgrade;
 
-	class UpgradeSystem final :
-		public CE::System
+	class UpgradeFunctionality
 	{
 	public:
-		void Update(CE::World& world, float dt) override;
-		static std::vector<CE::WeakAssetHandle<Upgrade>> OnLevelUp(CE::World& world, int numberOfOptions);
+		static std::vector<CE::WeakAssetHandle<Upgrade>> GetAvailableUpgrades(CE::World& world, int numberOfOptions);
 		static void InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options);
 
 	private:
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
-		REFLECT_AT_START_UP(UpgradeSystem);
+		REFLECT_AT_START_UP(UpgradeFunctionality);
 	};
 }
+

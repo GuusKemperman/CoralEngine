@@ -394,8 +394,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Components\WavesComponent.cpp" />
-    <ClCompile Include="Source\Systems\UpgradeSystem.cpp" />
     <ClCompile Include="Source\Components\UpgradeStoringComponent.cpp" />
+    <ClCompile Include="Source\Utilities\UpgradeFunctionality.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Assets\Upgrade.h" />
@@ -418,8 +418,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Include\Components\WavesComponent.h" />
-    <ClInclude Include="Include\Systems\UpgradeSystem.h" />
     <ClInclude Include="Include\Components\UpgradeStoringComponent.h" />
+    <ClInclude Include="Include\Utilities\UpgradeFunctionality.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

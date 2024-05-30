@@ -1,21 +1,17 @@
 #include "Precomp.h"
-#include "Systems/UpgradeSystem.h"
+#include "Utilities/UpgradeFunctionality.h"
 
 #include "Assets/Upgrade.h"
 #include "Components/PlayerComponent.h"
 #include "Components/UpgradeStoringComponent.h"
 #include "Components/UI/UISpriteComponent.h"
 #include "Core/AssetManager.h"
-#include "Meta/Fwd/MetaTypeFwd.h"
 #include "Utilities/Random.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
-void Game::UpgradeSystem::Update(CE::World&, float)
-{
-}
-
-std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeSystem::OnLevelUp(CE::World& world, int numberOfOptions)
+std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetAvailableUpgrades(CE::World& world,
+	int numberOfOptions)
 {
 	auto& registry = world.GetRegistry();
 	const auto playerView = registry.View<CE::PlayerComponent>();
@@ -32,7 +28,7 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeSystem::OnLevelUp(C
 		{
 			continue;
 		}
-		if (loadedUpgrade->mRequiredUpgrades.empty() && 
+		if (loadedUpgrade->mRequiredUpgrades.empty() &&
 			!registry.HasComponent(loadedUpgrade->mUpgradeScript.Get()->GetTypeId(), playerEntity))
 		{
 			availableUpgrades.push_back(upgrade);
@@ -83,9 +79,9 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeSystem::OnLevelUp(C
 	return chosenUpgradesToDisplayThisLevel;
 }
 
-void Game::UpgradeSystem::InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options)
+void Game::UpgradeFunctionality::InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options)
 {
-	const auto chosenUpgradesToDisplayThisLevel = OnLevelUp(world, static_cast<int>(options.size()));
+	const auto chosenUpgradesToDisplayThisLevel = GetAvailableUpgrades(world, static_cast<int>(options.size()));
 
 	auto& registry = world.GetRegistry();
 	const size_t numberOfOptions = options.size();
@@ -110,9 +106,9 @@ void Game::UpgradeSystem::InitializeUpgradeOptions(CE::World& world, std::vector
 	}
 }
 
-CE::MetaType Game::UpgradeSystem::Reflect()
+CE::MetaType Game::UpgradeFunctionality::Reflect()
 {
-	auto metaType = CE::MetaType{ CE::MetaType::T<UpgradeSystem>{}, "UpgradeSystem", CE::MetaType::Base<System>{} };
+	auto metaType = CE::MetaType{ CE::MetaType::T<UpgradeFunctionality>{}, "UpgradeFunctionality" };
 	metaType.GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	metaType.AddFunc([](std::vector<entt::entity> options)
