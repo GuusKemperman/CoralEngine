@@ -126,11 +126,11 @@ CE::MetaType CE::Weapon::Reflect()
 		{
 			if (weapon == nullptr)
 			{
-				return 0.f;
+				return {};
 			}
 			return weapon->mRequirementToUse;
 		},
-		"GetReloadTime", MetaFunc::ExplicitParams<const Weapon*>{}).GetProperties().Add(Props::sIsScriptableTag);
+		"GetReloadTime (Weapon Pointer)", MetaFunc::ExplicitParams<const Weapon*>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](Weapon* weapon, float v)
 		{
 			if (weapon == nullptr)
@@ -139,17 +139,17 @@ CE::MetaType CE::Weapon::Reflect()
 			}
 			weapon->mRequirementToUse = v;
 		},
-		"SetReloadTime", MetaFunc::ExplicitParams<Weapon*, float>{}).GetProperties().Add(Props::sIsScriptableTag);
+		"SetReloadTime (Weapon Pointer)", MetaFunc::ExplicitParams<Weapon*, float>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddFunc([](const Weapon* weapon) -> int
 		{
 			if (weapon == nullptr)
 			{
-				return 0;
+				return {};
 			}
 			return weapon->mCharges;
 		},
-		"GetAmmo", MetaFunc::ExplicitParams<const Weapon*>{}).GetProperties().Add(Props::sIsScriptableTag);
+		"GetAmmo (Weapon Pointer)", MetaFunc::ExplicitParams<const Weapon*>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](Weapon* weapon, int v)
 		{
 			if (weapon == nullptr)
@@ -158,14 +158,15 @@ CE::MetaType CE::Weapon::Reflect()
 			}
 			weapon->mCharges = v;
 		},
-		"SetAmmo", MetaFunc::ExplicitParams<Weapon*, int>{}).GetProperties().Add(Props::sIsScriptableTag);
+		"SetAmmo (Weapon Pointer)", MetaFunc::ExplicitParams<Weapon*, int>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	// Weapon asset.
+	// Non-inherited members.
 	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
 		{
 			if (upgrade == nullptr)
 			{
-				return 0.f;
+				return {};
 			}
 
 			return upgrade->mShotDelay;
@@ -176,7 +177,7 @@ CE::MetaType CE::Weapon::Reflect()
 		{
 			if (upgrade == nullptr)
 			{
-				return 0.f;
+				return {};
 			}
 
 			return upgrade->mFireSpeed;
@@ -187,7 +188,7 @@ CE::MetaType CE::Weapon::Reflect()
 		{
 			if (upgrade == nullptr)
 			{
-				return 0.f;
+				return {};
 			}
 
 			return upgrade->mReloadSpeed;
@@ -198,7 +199,7 @@ CE::MetaType CE::Weapon::Reflect()
 		{
 			if (upgrade == nullptr)
 			{
-				return 0;
+				return {};
 			}
 
 			return upgrade->mProjectileCount;
@@ -209,7 +210,7 @@ CE::MetaType CE::Weapon::Reflect()
 		{
 			if (upgrade == nullptr)
 			{
-				return 0.f;
+				return {};
 			}
 
 			return upgrade->mSpread;
@@ -242,7 +243,7 @@ CE::MetaType CE::Weapon::Reflect()
 		{
 			if (upgrade == nullptr)
 			{
-				return 0.f;
+				return {};
 			}
 
 			return upgrade->mProjectileSize;
@@ -253,7 +254,7 @@ CE::MetaType CE::Weapon::Reflect()
 		{
 			if (upgrade == nullptr)
 			{
-				return 0.f;
+				return {};
 			}
 
 			return upgrade->mProjectileSpeed;
@@ -264,7 +265,7 @@ CE::MetaType CE::Weapon::Reflect()
 		{
 			if (upgrade == nullptr)
 			{
-				return 0.f;
+				return {};
 			}
 
 			return upgrade->mProjectileRange;
@@ -275,7 +276,7 @@ CE::MetaType CE::Weapon::Reflect()
 		{
 			if (upgrade == nullptr)
 			{
-				return 0.f;
+				return {};
 			}
 
 			return upgrade->mKnockback;
@@ -286,12 +287,81 @@ CE::MetaType CE::Weapon::Reflect()
 		{
 			if (upgrade == nullptr)
 			{
-				return 0;
+				return {};
 			}
 
 			return upgrade->mPierceCount;
 		},
 		"GetPierceCount", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	// Ability-inherited members.
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> AssetHandle<Script>
+		{
+			if (upgrade == nullptr)
+			{
+				return nullptr;
+			}
+
+			return upgrade->mOnAbilityActivateScript;
+		},
+		"GetOnAbilityActivateScript", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> AssetHandle<Texture>
+		{
+			if (upgrade == nullptr)
+			{
+				return nullptr;
+			}
+
+			return upgrade->mIconTexture;
+		},
+		"GetIconTexture", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> std::string
+		{
+			if (upgrade == nullptr)
+			{
+				return {};
+			}
+
+			return upgrade->mDescription;
+		},
+		"GetDescription", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> bool
+		{
+			if (upgrade == nullptr)
+			{
+				return {};
+			}
+
+			return upgrade->mGlobalCooldown;
+		},
+		"GetGlobalCooldown", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	// Skipping mRequirementType because it is not relevant for the weapons.
+
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+		{
+			if (upgrade == nullptr)
+			{
+				return {};
+			}
+
+			return upgrade->mRequirementToUse;
+		},
+		"GetReloadTime", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> int
+		{
+			if (upgrade == nullptr)
+			{
+				return {};
+			}
+
+			return upgrade->mCharges;
+		},
+		"GetAmmo", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectAssetType<Weapon>(type);
 	return type;
