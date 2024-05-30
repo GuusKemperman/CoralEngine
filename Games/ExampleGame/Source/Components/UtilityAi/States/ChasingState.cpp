@@ -20,7 +20,7 @@ void Game::ChasingState::OnAIStateEnter(CE::World& world, entt::entity owner)
 	{
 		animationRootComponent->SwitchAnimation(world.GetRegistry(), mChasingAnimation, 0.0f);
 	}
-
+	
 	CE::SwarmingAgentTag::StartMovingToTarget(world, owner);
 }
 

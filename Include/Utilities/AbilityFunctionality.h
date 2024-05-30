@@ -32,6 +32,7 @@ namespace CE
 		static bool IncreasePierceCountAndReturnTrueIfExceeded(ProjectileComponent& projectileComponent);
 		static bool WasTheAbilityCastByAnEnemy(World& world, entt::entity entityToAffect, entt::entity abilityEntity);
 		static float& IncreaseValueByPercentage(float& toChange, float percentage);
+		static bool IsPointInsideCone2D(glm::vec2 point, glm::vec2 coneOrigin, const glm::vec2 coneDirection, float coneAngle);
 		static void RemoveWeaponAtIndex(World& world, entt::entity entity, int index);
 		static void AddWeaponToEnd(World& world, entt::entity entity, WeaponInstance& weapon);
 		static void CallAllAbilityHitEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity);

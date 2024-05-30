@@ -50,6 +50,11 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc([](T& n, const T& l) -> T& { n *= l; return n; }, OperatorType::multiplies_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](T& n, const T& l) -> T& { n /= l; return n; }, OperatorType::divides_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
+	type.AddFunc([](const T n) -> std::string
+		{
+			return "X: " + std::to_string(n.x) + "; Y: " + std::to_string(n.y) + "; Z: " + std::to_string(n.z) + "; W: " + std::to_string(n.w);
+		}, "ToString", MetaFunc::ExplicitParams<const T>{}).GetProperties().Add(Props::sIsScriptableTag);
+
 	ReflectFieldType<T>(type);
 
 
