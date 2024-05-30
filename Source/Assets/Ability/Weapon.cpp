@@ -229,7 +229,7 @@ CE::MetaType CE::Weapon::Reflect()
 
 	type.AddFunc([](const AssetHandle<Weapon>& upgrade, int index) -> AbilityEffect
 		{
-			if (upgrade == nullptr || index >= upgrade->mEffects.size())
+			if (upgrade == nullptr || index >= static_cast<int>(upgrade->mEffects.size()))
 			{
 				return {};
 			}
