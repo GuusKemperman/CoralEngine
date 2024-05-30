@@ -336,6 +336,13 @@ CE::MetaType CE::World::Reflect()
 			return world->HasBegunPlay();
 		}, "HasBegunPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
+	type.AddFunc([]
+		{
+			World* world = TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+			world->RequestEndplay();
+		}, "RequestEndPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
 	type.AddFunc([](const AssetHandle<Level>& level)
 		{
 			World* world = TryGetWorldAtTopOfStack();

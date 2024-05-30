@@ -67,6 +67,8 @@ namespace CE
 
 		void SetIsPaused(bool isPaused) { mTime.mIsPaused = isPaused; }
 
+		void RequestEndplay() { mHasEndPlayBeenRequested = true; }
+
 		static void PushWorld(World& world);
 		static void PopWorld(uint32 amountToPop = 1);
 
