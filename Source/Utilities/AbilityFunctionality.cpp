@@ -25,25 +25,25 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<AbilityFunctionality>{}, "AbilityFunctionality" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect)
+	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, bool doNotApplyColor)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, abilityEffect);
+			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, abilityEffect, doNotApplyColor);
 
 		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
-		const CharacterComponent*, entt::entity, AbilityEffect>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent*, entt::entity, AbilityEffect, bool>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "DoNotApplyColor").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration)
+	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration, bool doNotApplyColor)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, abilityEffect, duration);
+			ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, abilityEffect, duration, doNotApplyColor);
 
 		}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
-		const CharacterComponent*, entt::entity, AbilityEffect, float>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent*, entt::entity, AbilityEffect, float, bool>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "Duration", "DoNotApplyColor").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration, int ticks)
 		{
@@ -167,7 +167,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 	return metaType;
 }
 
-std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect)
+std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, bool doNotApplyColor)
 {
 	auto& reg = world.GetRegistry();
 	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
@@ -206,20 +206,23 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 	}
 
 	// Visual effect
-	auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
-	if (effects == nullptr)
+	if (!doNotApplyColor)
 	{
-		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
-		return std::nullopt;
+		auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
+		if (effects == nullptr)
+		{
+			LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
+			return std::nullopt;
+		}
+		effects->mVisualEffects.push_back(VisualEffect{ GetEffectColor(effect.mStat, effect.mIncreaseOrDecrease) });
 	}
-	effects->mVisualEffects.push_back(VisualEffect{ GetEffectColor(effect.mStat, effect.mIncreaseOrDecrease) });
 
 	return effect.mAmount;
 }
 
-void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration)
+void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration, bool doNotApplyColor)
 {
-	const auto calculatedAmount = ApplyInstantEffect(world, castByCharacterData, affectedEntity, effect);
+	const auto calculatedAmount = ApplyInstantEffect(world, castByCharacterData, affectedEntity, effect, doNotApplyColor);
 	if (!calculatedAmount.has_value())
 	{
 		return;
@@ -230,7 +233,11 @@ void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const Charact
 	auto& effects = reg.Get<EffectsOnCharacterComponent>(affectedEntity);
 
 	effects.mDurationalEffects.push_back(DurationalEffect{ duration, 0.f, effect.mStat, calculatedAmount.value() });
-	effects.mVisualEffects.back().mDuration = duration;
+
+	if (!doNotApplyColor)
+	{
+		effects.mVisualEffects.back().mDuration = duration;
+	}
 }
 
 void CE::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect)
@@ -524,7 +531,7 @@ void CE::AbilityFunctionality::AddWeaponToEnd(World& world, entt::entity entity,
 		return;
 	}
 	abilities->mWeaponsToInput.push_back(weapon);
-	weapon.InitializeRuntimeWeapon();
+	abilities->mWeaponsToInput.back().InitializeRuntimeWeapon();
 	// Add On Ability Activate script.
 	const MetaType* scriptType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
 	if (scriptType != nullptr && !world.GetRegistry().HasComponent(scriptType->GetTypeId(), entity))

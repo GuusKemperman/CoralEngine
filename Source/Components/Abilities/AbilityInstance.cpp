@@ -85,7 +85,7 @@ CE::Weapon* CE::WeaponInstance::InitializeRuntimeWeapon()
 		LOG(LogAbilitySystem, Error, "mWeaponAsset not set.");
 		return nullptr;
 	}
-	mRuntimeWeapon = std::optional(*mWeaponAsset.Get());
+	mRuntimeWeapon.emplace(*mWeaponAsset.Get());
 	return &mRuntimeWeapon.value();
 }
 
