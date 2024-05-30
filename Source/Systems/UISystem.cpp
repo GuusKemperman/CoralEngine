@@ -189,10 +189,13 @@ entt::entity CE::UISystem::CheckNavigation(World& world,
 
 			const glm::vec2 UIPosition = { worldPosition.x, worldPosition.y };
 
+			float distance = glm::distance(pos, UIPosition); 
+
 			if (isLocatedInDirection(UIPosition) 
-				&& glm::distance(pos, UIPosition) < lowestDistance)
+				&& distance < lowestDistance)
 			{
 				entityToNavigateTo = entity;
+				lowestDistance = distance;
 			}
 		}
 
