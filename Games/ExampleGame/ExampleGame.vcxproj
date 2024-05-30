@@ -358,11 +358,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-<<<<<<< tank
     <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpStompState.cpp" />
-=======
     <ClCompile Include="Source\Components\DifficultyScalingComponent.cpp" />
->>>>>>> dev
     <ClCompile Include="Source\Components\UtilityAi\States\DanceState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\DeathState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\RecoveryState.cpp" />
@@ -401,11 +398,8 @@
     <ClCompile Include="Source\Components\UtilityAi\States\StompState.cpp" />
   </ItemGroup>
   <ItemGroup>
-<<<<<<< tank
     <ClInclude Include="Include\Components\UtililtyAi\States\ChargeUpStompState.h" />
-=======
     <ClInclude Include="Include\Components\DifficultyScalingComponent.h" />
->>>>>>> dev
     <ClInclude Include="Include\Components\UtililtyAi\States\DanceState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\DeathState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\RecoveryState.h" />
