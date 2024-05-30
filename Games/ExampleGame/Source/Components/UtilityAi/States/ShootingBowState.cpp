@@ -44,7 +44,7 @@ void Game::ShootingBowState::OnAiTick(CE::World& world, const entt::entity owner
 		}
 	}
 
-	const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
+	/*const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
 	if (characterData == nullptr)
 	{
 		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a Character Component.", entt::to_integral(owner));
@@ -62,7 +62,7 @@ void Game::ShootingBowState::OnAiTick(CE::World& world, const entt::entity owner
 	{
 		return;
 	}
-	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
+	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);*/
 
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
@@ -73,17 +73,29 @@ void Game::ShootingBowState::OnAiTick(CE::World& world, const entt::entity owner
 
 	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
-	if (entityId == entt::null)
+	if (playerId == entt::null)
 	{
 		return;
 	}
 
-	const auto playerTransform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-	if (abilities == nullptr)
+	const auto playerTransform = world.GetRegistry().TryGet<CE::TransformComponent>(playerId);
+	if (playerTransform == nullptr)
 	{
 		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
 		return;
 	}
+
+	const auto enemyTransform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+	if (enemyTransform == nullptr)
+	{
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
+		return;
+	}
+
+	const glm::vec3 direction = glm::normalize(playerTransform->GetWorldPosition() - enemyTransform->GetWorldPosition());
+
+	enemyTransform->SetWorldOrientation(direction);
+	enemyTransform->SetWorldForward(direction);
 }
 
 float Game::ShootingBowState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
