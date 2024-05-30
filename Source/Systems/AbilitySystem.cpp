@@ -273,24 +273,14 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
     // Ability activate event
     if (ability.mAbilityAsset->mOnAbilityActivateScript != nullptr)
     {
-        if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName()))
-        {
-            if (world.GetRegistry().HasComponent(metaType->GetTypeId(), castBy))
-            {
-                if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
-                {
-                    entt::sparse_set* storage = world.GetRegistry().Storage(metaType->GetTypeId());
-                    MetaAny component{ *metaType, storage->value(castBy), false };
-                    metaFunc->InvokeUncheckedUnpacked(component, world, castBy);
-                }
-            }
-        }
-        else
+        if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+            metaType == nullptr)
         {
             LOG(LogAbilitySystem, Error, "Did not find script {} when trying to activate ability {}",
                 ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName(),
                 ability.mAbilityAsset.GetMetaData().GetName());
         }
+        CallAllOnAbilityActivateEvents(world, castBy);
     }
     else
     {
@@ -332,24 +322,14 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     // Ability activate event
     if (weapon.mWeaponAsset->mOnAbilityActivateScript != nullptr)
     {
-        if (auto metaType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName()))
-        {
-            if (world.GetRegistry().HasComponent(metaType->GetTypeId(), castBy))
-            {
-                if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
-                {
-                    entt::sparse_set* storage = world.GetRegistry().Storage(metaType->GetTypeId());
-                    MetaAny component{ *metaType, storage->value(castBy), false };
-                    metaFunc->InvokeUncheckedUnpacked(component, world, castBy);
-                }
-            }
-        }
-        else
+        if (auto metaType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName()); 
+            metaType == nullptr)
         {
             LOG(LogAbilitySystem, Error, "Did not find script {} when trying to activate weapon {}",
                 weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName(),
                 weapon.mWeaponAsset.GetMetaData().GetName());
         }
+        CallAllOnAbilityActivateEvents(world, castBy);
     }
     else
     {
@@ -368,6 +348,31 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     }
 
     return true;
+}
+
+void CE::AbilitySystem::CallAllOnAbilityActivateEvents(World& world, entt::entity castBy)
+{
+    const std::vector<BoundEvent> boundEvents = GetAllBoundEvents(sAbilityActivateEvent);
+    for (const BoundEvent& boundEvent : boundEvents)
+    {
+        entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
+
+        if (storage == nullptr
+            || !storage->contains(castBy))
+        {
+            continue;
+        }
+
+        if (boundEvent.mIsStatic)
+        {
+            boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, castBy);
+        }
+        else
+        {
+            MetaAny component{ boundEvent.mType, storage->value(castBy), false };
+            boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, castBy);
+        }
+    }
 }
 
 CE::MetaType CE::AbilitySystem::Reflect()
