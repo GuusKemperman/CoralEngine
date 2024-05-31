@@ -134,7 +134,6 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 		target.mFlowFieldWidth = fieldWidth;
 		target.mFlowField.resize(static_cast<size_t>(fieldWidth * fieldWidth));
 
-
 		// A floodfill does not cover enclosed areas.
 		// We initialize all cells with the direction
 		// to the player
@@ -260,7 +259,6 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 				checkNbr(x, y + 1);
 			}
 		}
-
 
 		if (target.mNumberOfSmoothingSteps == 0)
 		{
