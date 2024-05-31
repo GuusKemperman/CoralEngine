@@ -26,7 +26,8 @@ void CE::SwarmingAgentSystem::Update(World& world, float)
 		return;
 	}
 
-	const auto& [target, targetTransform] = targetView.get(targetEntity);
+	const SwarmingTargetComponent& target = targetView.get<SwarmingTargetComponent>(targetEntity);
+	const TransformComponent& targetTransform = targetView.get<TransformComponent>(targetEntity);
 	const glm::vec2 targetPos = targetTransform.GetWorldPosition2D();
 	const float interpolationFactor = 1.0f / (target.mSpacing * target.mSpacing);
 
@@ -116,8 +117,12 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 		minRadius = std::min(disk.mRadius, minRadius);
 	}
 
-	for (auto [entity, target, disk] : reg.View<SwarmingTargetComponent, TransformedDiskColliderComponent>().each())
+	const auto targetView = reg.View<SwarmingTargetComponent, TransformedDiskColliderComponent>();
+	for (entt::entity entity : targetView)
 	{
+		SwarmingTargetComponent& target = targetView.get<SwarmingTargetComponent>(entity);
+		const TransformedDiskColliderComponent& disk = targetView.get<TransformedDiskColliderComponent>(entity);
+
 		const glm::vec2 targetPosition = disk.mCentre;
 		target.mSpacing = std::min(disk.mRadius, minRadius);
 
@@ -274,8 +279,6 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 				for (int x = 0; x < fieldWidth; x++)
 				{
 					glm::vec2 total = target.mFlowField[x + y * fieldWidth] * 2.0f;
-					// Captured bindings...
-					SwarmingTargetComponent& targetRef = target;
 
 					const auto addToTotal = [&](const int nbrX, const int nbrY)
 						{
@@ -284,12 +287,12 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 								|| nbrX < 0
 								|| nbrX >= fieldWidth)
 							{
-								total += glm::normalize(targetPosition - targetRef.GetCellBox(nbrX, nbrY).GetCentre());
+								total += glm::normalize(targetPosition - target.GetCellBox(nbrX, nbrY).GetCentre());
 								return;
 							}
 
 							const int nbrIndex = nbrX + nbrY * fieldWidth;
-							total += targetRef.mFlowField[nbrIndex];
+							total += target.mFlowField[nbrIndex];
 						};
 
 					addToTotal(x - 1, y - 1);
