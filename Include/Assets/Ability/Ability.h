@@ -18,6 +18,12 @@ namespace CE
         Ability(std::string_view name, TypeId typeId);
         Ability(AssetLoadInfo& loadInfo);
 
+		Ability(Ability&&) noexcept = default;
+		Ability(const Ability&) = default;
+
+		Ability& operator=(Ability&&) = delete;
+		Ability& operator=(const Ability&) = default;
+
 		enum RequirementType
 		{
 			Cooldown,
