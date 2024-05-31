@@ -18,7 +18,6 @@ namespace CE
 		glm::vec2 mCellsTopLeftWorldPosition{};
 		int mFlowFieldWidth{};
 
-
 		std::vector<glm::vec2> mFlowField{};
 
 		TransformedAABB GetCellBox(const int x, const int y) const
