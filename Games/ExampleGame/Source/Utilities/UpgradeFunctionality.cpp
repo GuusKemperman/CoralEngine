@@ -24,13 +24,12 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 	{
 		const CE::AssetHandle<Upgrade> loadedUpgrade{ upgrade };
 
-		if (loadedUpgrade->mUpgradeScript == nullptr ||
-			registry.HasComponent(loadedUpgrade->mUpgradeScript.Get()->GetTypeId(), playerEntity))
+		if (loadedUpgrade->mUpgradeComponent == nullptr ||
+			registry.HasComponent(loadedUpgrade->mUpgradeComponent.Get()->GetTypeId(), playerEntity))
 		{
 			continue;
 		}
-		if (loadedUpgrade->mRequiredUpgrades.empty() &&
-			!registry.HasComponent(loadedUpgrade->mUpgradeScript.Get()->GetTypeId(), playerEntity))
+		if (loadedUpgrade->mRequiredUpgrades.empty())
 		{
 			availableUpgrades.push_back(upgrade);
 			continue;
@@ -75,7 +74,8 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 	{
 		const int randomNumber = CE::Random::Range(0, static_cast<int>(availableUpgrades.size()));
 		chosenUpgradesToDisplayThisLevel.push_back(availableUpgrades[randomNumber]);
-		availableUpgrades.erase(availableUpgrades.begin() + randomNumber);
+		availableUpgrades[randomNumber] = std::move(availableUpgrades.back());
+		availableUpgrades.pop_back();
 	}
 	return chosenUpgradesToDisplayThisLevel;
 }

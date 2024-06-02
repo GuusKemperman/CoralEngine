@@ -11,6 +11,9 @@ namespace Game
 {
 	class Upgrade;
 
+	// Stores a reference to an upgrade asset.
+	// Currently being used for the UI visualization and selection of an upgrade,
+	// but it can be used for anything needing to store a reference to an upgrade.
 	class UpgradeStoringComponent
 	{
 	public:

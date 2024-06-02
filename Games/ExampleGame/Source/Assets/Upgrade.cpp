@@ -27,7 +27,7 @@ Game::Upgrade::Upgrade(AssetLoadInfo& loadInfo) :
 		return;
 	}
 
-	const BinaryGSONMember* serializedUpgradeScript = obj.TryGetGSONMember("mUpgradeScript");
+	const BinaryGSONMember* serializedUpgradeScript = obj.TryGetGSONMember("mUpgradeComponent");
 	const BinaryGSONMember* serializedRequiredUpgrades = obj.TryGetGSONMember("mRequiredUpgrades");
 	const BinaryGSONMember* serializedAllRequiredUpgradesNeeded = obj.TryGetGSONMember("mAllRequiredUpgradesNeeded");
 	const BinaryGSONMember* serializedIconTexture = obj.TryGetGSONMember("mIconTexture");
@@ -41,7 +41,7 @@ Game::Upgrade::Upgrade(AssetLoadInfo& loadInfo) :
 		return;
 	}
 
-	*serializedUpgradeScript >> mUpgradeScript;
+	*serializedUpgradeScript >> mUpgradeComponent;
 	*serializedRequiredUpgrades >> mRequiredUpgrades;
 	*serializedAllRequiredUpgradesNeeded >> mAllRequiredUpgradesNeeded;
 	*serializedIconTexture >> mIconTexture;
@@ -51,7 +51,7 @@ void Game::Upgrade::OnSave(AssetSaveInfo& saveInfo) const
 {
 	BinaryGSONObject obj{};
 
-	obj.AddGSONMember("mUpgradeScript") << mUpgradeScript;
+	obj.AddGSONMember("mUpgradeComponent") << mUpgradeComponent;
 	obj.AddGSONMember("mRequiredUpgrades") << mRequiredUpgrades;
 	obj.AddGSONMember("mAllRequiredUpgradesNeeded") << mAllRequiredUpgradesNeeded;
 	obj.AddGSONMember("mIconTexture") << mIconTexture;
@@ -64,7 +64,7 @@ CE::MetaType Game::Upgrade::Reflect()
 	MetaType type = MetaType{ MetaType::T<Upgrade>{}, "Upgrade", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 	type.GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddField(&Upgrade::mUpgradeScript, "mUpgradeScript").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&Upgrade::mUpgradeComponent, "mUpgradeComponent").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&Upgrade::mRequiredUpgrades, "mRequiredUpgrades").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&Upgrade::mAllRequiredUpgradesNeeded, "mAllRequiredUpgradesNeeded").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&Upgrade::mIconTexture, "mIconTexture").GetProperties().Add(Props::sIsScriptableTag);
@@ -76,7 +76,7 @@ CE::MetaType Game::Upgrade::Reflect()
 				return nullptr;
 			}
 
-			return upgrade->mUpgradeScript;
+			return upgrade->mUpgradeComponent;
 		},
 		"GetUpgradeScript", MetaFunc::ExplicitParams<const AssetHandle<Upgrade>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 

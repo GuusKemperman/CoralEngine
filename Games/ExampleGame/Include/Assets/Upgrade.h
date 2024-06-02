@@ -10,8 +10,6 @@ namespace CE
 
 namespace Game
 {
-	class UpgradeFunctionality;
-
 	class Upgrade :
 		public CE::Asset
 	{
@@ -19,13 +17,12 @@ namespace Game
 		Upgrade(std::string_view name);
 		Upgrade(CE::AssetLoadInfo& loadInfo);
 
-	private:
-		friend UpgradeFunctionality;
-		CE::ComponentFilter mUpgradeScript{};
+		CE::ComponentFilter mUpgradeComponent{};
 		std::vector<CE::ComponentFilter> mRequiredUpgrades{};
 		bool mAllRequiredUpgradesNeeded{};
 		CE::AssetHandle<CE::Texture> mIconTexture{};
 
+	private:
 		void OnSave(CE::AssetSaveInfo& saveInfo) const override;
 
 		friend CE::ReflectAccess;
