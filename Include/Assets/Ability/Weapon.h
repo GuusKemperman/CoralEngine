@@ -16,6 +16,12 @@ namespace CE
 		Weapon(std::string_view name);
 		Weapon(AssetLoadInfo& loadInfo);
 
+		Weapon(Weapon&&) noexcept = default;
+		Weapon(const Weapon&) = default;
+
+		Weapon& operator=(Weapon&&) = delete;
+		Weapon& operator=(const Weapon&) = default;
+
 	private:
 		friend AbilitySystem;
 		friend AbilityFunctionality;
