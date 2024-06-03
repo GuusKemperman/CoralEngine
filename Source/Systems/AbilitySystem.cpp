@@ -217,14 +217,14 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
     const auto& input = Input::Get();
     for (auto& weapon : abilities.mWeaponsToInput)
     {
-        if (weapon.mWeaponAsset == nullptr)
+        if (weapon.mWeaponAsset == nullptr || weapon.mRuntimeWeapon.has_value() == false)
         {
             continue;
         }
 
         // Update counters
-        weapon.mReloadCounter = std::max(weapon.mReloadCounter - dt * weapon.mWeaponAsset->mReloadSpeed, 0.f);
-        weapon.mShotDelayCounter = std::min(weapon.mShotDelayCounter + dt * weapon.mWeaponAsset->mFireSpeed, weapon.mWeaponAsset->mShotDelay);
+        weapon.mReloadCounter = std::max(weapon.mReloadCounter - dt * weapon.mRuntimeWeapon->mReloadSpeed, 0.f);
+        weapon.mShotDelayCounter = std::min(weapon.mShotDelayCounter + dt * weapon.mRuntimeWeapon->mFireSpeed, weapon.mRuntimeWeapon->mShotDelay);
 
         // Activate abilities for the player based on input
         if (auto playerComponent = world.GetRegistry().TryGet<PlayerComponent>(entity))
@@ -271,6 +271,13 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
     }
 
     // Ability activate event
+    characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
+    ability.mChargesCounter--;
+    if (ability.mChargesCounter <= 0)
+    {
+        ability.mChargesCounter = ability.mAbilityAsset->mCharges;
+        ability.mRequirementCounter = ability.mAbilityAsset->mRequirementToUse;
+    }
     if (ability.mAbilityAsset->mOnAbilityActivateScript != nullptr)
     {
         if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName());
@@ -286,27 +293,20 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
     {
         LOG(LogAbilitySystem, Error, "Ability {} does not have a script selected.", ability.mAbilityAsset.GetMetaData().GetName());
     }
-    characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
-    ability.mChargesCounter--;
-    if (ability.mChargesCounter <= 0)
-    {
-        ability.mChargesCounter = ability.mAbilityAsset->mCharges;
-        ability.mRequirementCounter = ability.mAbilityAsset->mRequirementToUse;
-    }
 
     return true;
 }
 
 bool CE::AbilitySystem::CanWeaponBeActivated(const CharacterComponent& characterData, const WeaponInstance& weapon)
 {
-    if (weapon.mWeaponAsset == nullptr)
+    if (weapon.mWeaponAsset == nullptr || weapon.mRuntimeWeapon.has_value() == false)
     {
         return false;
     }
     return weapon.mReloadCounter <= 0.f &&
         weapon.mAmmoCounter > 0 &&
-        weapon.mShotDelayCounter >= weapon.mWeaponAsset->mShotDelay &&
-        (weapon.mWeaponAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
+        weapon.mShotDelayCounter >= weapon.mRuntimeWeapon->mShotDelay &&
+        (weapon.mRuntimeWeapon->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
 }
 
 bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, CharacterComponent& characterData,
@@ -320,6 +320,17 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     }
 
     // Ability activate event
+    characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
+    weapon.mShotDelayCounter = 0.f;
+    if (weapon.mAmmoConsumption == true)
+    {
+        weapon.mAmmoCounter--;
+    }
+    if (weapon.mAmmoCounter <= 0)
+    {
+        weapon.mAmmoCounter = weapon.mRuntimeWeapon->mCharges;
+        weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
+    }
     if (weapon.mWeaponAsset->mOnAbilityActivateScript != nullptr)
     {
         if (auto metaType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName()); 
@@ -334,17 +345,6 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     else
     {
         LOG(LogAbilitySystem, Error, "Weapon {} does not have a script selected.", weapon.mWeaponAsset.GetMetaData().GetName());
-    }
-    characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
-    weapon.mShotDelayCounter = 0.f;
-    if (weapon.mAmmoConsumption == true)
-    {
-        weapon.mAmmoCounter--;
-    }
-    if (weapon.mAmmoCounter <= 0)
-    {
-        weapon.mAmmoCounter = weapon.mWeaponAsset->mCharges;
-        weapon.mReloadCounter = weapon.mWeaponAsset->mRequirementToUse;
     }
 
     return true;
