@@ -23,7 +23,7 @@ void Game::DanceState::OnAITick(CE::World& world, const entt::entity owner, cons
 	physicsBody2DComponent->mLinearVelocity = { 0,0 };
 }
 
-float Game::DanceState::OnAiEvaluate(const CE::World& world, entt::entity owner)
+float Game::DanceState::OnAiEvaluate(const CE::World& world, [[maybe_unused]] entt::entity owner)
 {
 	const entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
