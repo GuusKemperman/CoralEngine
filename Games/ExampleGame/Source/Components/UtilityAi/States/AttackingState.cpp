@@ -29,7 +29,7 @@ void Game::AttackingState::OnAITick(CE::World& world, entt::entity owner, float)
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the Attack State!");
+		LOG(LogAI, Warning, "Attacking State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 

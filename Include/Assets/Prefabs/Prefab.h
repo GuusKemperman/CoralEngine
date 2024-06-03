@@ -22,6 +22,11 @@ namespace CE
 		Prefab(AssetLoadInfo& loadInfo);
 		Prefab(Prefab&& other) noexcept;
 
+		Prefab(const Prefab&) = delete;
+
+		Prefab& operator=(Prefab&&) = delete;
+		Prefab& operator=(const Prefab&) = delete;
+
 		~Prefab() override;
 
 		void CreateFromEntity(World& world, entt::entity entity);

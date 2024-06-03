@@ -31,6 +31,10 @@ float Game::DeathState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 {
 	const auto characterComponent = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
 
+	if (characterComponent == nullptr) {
+		LOG(LogAI, Warning, "Death State - enemy {} does not have a Character Component.", entt::to_integral(owner));
+	}
+
 	if (characterComponent->mCurrentHealth <= 0.f)
 	{
 		return std::numeric_limits<float>::infinity();

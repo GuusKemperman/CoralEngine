@@ -17,6 +17,7 @@
 #include "World/World.h"
 #include "Utilities/Math.h"
 #include "Assets/Prefabs/Prefab.h"
+#include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 CE::MetaType CE::AbilityFunctionality::Reflect()
@@ -24,25 +25,25 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<AbilityFunctionality>{}, "AbilityFunctionality" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect)
+	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, bool doNotApplyColor)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, abilityEffect);
+			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, abilityEffect, doNotApplyColor);
 
 		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
-		const CharacterComponent*, entt::entity, AbilityEffect>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent*, entt::entity, AbilityEffect, bool>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "DoNotApplyColor").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration)
+	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration, bool doNotApplyColor)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, abilityEffect, duration);
+			ApplyDurationalEffect(*world, castByCharacterData, affectedEntity, abilityEffect, duration, doNotApplyColor);
 
 		}, "ApplyDurationalEffect", MetaFunc::ExplicitParams<
-		const CharacterComponent*, entt::entity, AbilityEffect, float>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "Duration").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent*, entt::entity, AbilityEffect, float, bool>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "Duration", "DoNotApplyColor").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration, int ticks)
 		{
@@ -90,6 +91,21 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "SpawnProjectilePrefabs", MetaFunc::ExplicitParams<
 		const AssetHandle<Prefab>&, entt::entity, const AssetHandle<Weapon>&>{}, "Prefab", "Cast By", "Weapon").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
+	metaType.AddFunc([](const AssetHandle<Prefab>& prefab, entt::entity castBy, const WeaponInstance& weapon) -> std::vector<entt::entity>
+		{
+			if (prefab == nullptr)
+			{
+				LOG(LogWorld, Warning, "SpawnProjectilePrefabsFromWeaponInstance - Attempted to spawn NULL prefab.");
+				return {};
+			}
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			return SpawnProjectilePrefabsFromWeaponInstance(*world, *prefab, castBy, weapon);
+
+		}, "SpawnProjectilePrefabsFromWeaponInstance", MetaFunc::ExplicitParams<
+		const AssetHandle<Prefab>&, entt::entity, const WeaponInstance&>{}, "Prefab", "Cast By", "Weapon").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
 	metaType.AddFunc(&AbilityFunctionality::IncreasePierceCountAndReturnTrueIfExceeded, "IncreasePierceCountAndReturnTrueIfExceeded").GetProperties().Add(Props::sIsScriptableTag);
 
 	metaType.AddFunc([](entt::entity entityToAffect, entt::entity abilityEntity) -> bool
@@ -102,34 +118,56 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "WasTheAbilityCastByAnEnemy", MetaFunc::ExplicitParams<
 		entt::entity, entt::entity>{}, "Entity To Affect", "Ability Entity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	metaType.AddFunc([](float& toChange, float percentage) -> float&
+	metaType.AddFunc([](float value1, float value2, float percentage) -> float
 		{
 
-			return IncreaseValueByPercentage(toChange, percentage);
+			return IncreaseValue1ByPercentageOfValue2(value1, value2, percentage);
 
-		}, "IncreaseValueByPercentage (by reference)", MetaFunc::ExplicitParams<
-		float&, float>{}, "Value To Change", "Percentage").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
-
-	metaType.AddFunc([](float toChange, float percentage) -> float
-		{
-
-			return IncreaseValueByPercentage(toChange, percentage);
-
-		}, "IncreaseValueByPercentage (by value)", MetaFunc::ExplicitParams<
-		float, float>{}, "Value To Change", "Percentage").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "IncreaseValue1ByPercentageOfValue2", MetaFunc::ExplicitParams<
+		float, float, float>{}, "Value 1", "Value 2", "Percentage").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	metaType.AddFunc([](const glm::vec2 point, const glm::vec2 coneOrigin, const glm::vec2 coneDirection, const float coneAngle) -> bool
+			{
+
+				return IsPointInsideCone2D(point, coneOrigin, coneDirection, coneAngle);
+
+			}, "IsPointInsideCone2D", MetaFunc::ExplicitParams<
+			const glm::vec2, const glm::vec2, const glm::vec2, const float>{}, "Point To Check", "Cone Origin", "Cone Direction", "Cone Angle").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
+	metaType.AddFunc([](entt::entity entity, WeaponInstance weapon)
 		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
 
-			return IsPointInsideCone2D(point, coneOrigin, coneDirection, coneAngle);
+			AddWeaponToEnd(*world, entity, weapon);
 
-		}, "IsPointInsideCone2D", MetaFunc::ExplicitParams<
-		const glm::vec2, const glm::vec2, const glm::vec2, const float>{}, "Point To Check", "Cone Origin", "Cone Direction", "Cone Angle").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "AddWeaponToEnd", MetaFunc::ExplicitParams<
+		entt::entity, WeaponInstance>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
+	metaType.AddFunc([](entt::entity entity, int index)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			RemoveWeaponAtIndex(*world, entity, index);
+
+		}, "RemoveWeaponAtIndex", MetaFunc::ExplicitParams<
+		entt::entity, int>{}, "Entity", "Index").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			CallAllAbilityHitEvents(*world, characterEntity, hitEntity, abilityEntity);
+
+		}, "CallAllAbilityHitEvents", MetaFunc::ExplicitParams<
+		entt::entity, entt::entity, entt::entity>{}, "CharacterEntity", "HitEntity", "AbilityEntity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+	
 	return metaType;
 }
 
-std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect)
+std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, bool doNotApplyColor)
 {
 	auto& reg = world.GetRegistry();
 	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
@@ -168,20 +206,23 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 	}
 
 	// Visual effect
-	auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
-	if (effects == nullptr)
+	if (!doNotApplyColor)
 	{
-		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
-		return std::nullopt;
+		auto effects = reg.TryGet<EffectsOnCharacterComponent>(affectedEntity);
+		if (effects == nullptr)
+		{
+			LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
+			return std::nullopt;
+		}
+		effects->mVisualEffects.push_back(VisualEffect{ GetEffectColor(effect.mStat, effect.mIncreaseOrDecrease) });
 	}
-	effects->mVisualEffects.push_back(VisualEffect{ GetEffectColor(effect.mStat, effect.mIncreaseOrDecrease) });
 
 	return effect.mAmount;
 }
 
-void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration)
+void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration, bool doNotApplyColor)
 {
-	const auto calculatedAmount = ApplyInstantEffect(world, castByCharacterData, affectedEntity, effect);
+	const auto calculatedAmount = ApplyInstantEffect(world, castByCharacterData, affectedEntity, effect, doNotApplyColor);
 	if (!calculatedAmount.has_value())
 	{
 		return;
@@ -192,7 +233,11 @@ void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const Charact
 	auto& effects = reg.Get<EffectsOnCharacterComponent>(affectedEntity);
 
 	effects.mDurationalEffects.push_back(DurationalEffect{ duration, 0.f, effect.mStat, calculatedAmount.value() });
-	effects.mVisualEffects.back().mDuration = duration;
+
+	if (!doNotApplyColor)
+	{
+		effects.mVisualEffects.back().mDuration = duration;
+	}
 }
 
 void CE::AbilityFunctionality::RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect)
@@ -247,6 +292,7 @@ entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Pr
 	// Store a copy of the cast-by character's CharacterComponent
 	// so that effect calculations and team checks can be performed even if the character dies in the meantime.
 	activeAbility->mCastByCharacterData = *characterComponent;
+	activeAbility->mCastByEntity = castBy;
 
 	// Set the position.
 	const glm::vec3 pos = characterTransform->GetWorldPosition();
@@ -310,6 +356,42 @@ entt::entity CE::AbilityFunctionality::SpawnProjectilePrefab(World& world, const
 	return prefabEntity;
 }
 
+entt::entity CE::AbilityFunctionality::SpawnProjectilePrefabFromWeaponInstance(World& world, const Prefab& prefab, entt::entity castBy, const WeaponInstance& weapon)
+{
+	if (!weapon.mRuntimeWeapon.has_value())
+	{
+		LOG(LogAbilitySystem, Error, "SpawnProjectilePrefabFromWeaponInstance - mRuntimeWeapon was never initialized.");
+		return {};
+	}
+	entt::entity prefabEntity = SpawnAbilityPrefab(world, prefab, castBy);
+	if (prefabEntity == entt::null)
+	{
+		LOG(LogAbilitySystem, Error, "The prefab does not have a PhysicsBody2DComponent attached.");
+		return {};
+	}
+	auto& reg = world.GetRegistry();
+	const Weapon& weaponRef = weapon.mRuntimeWeapon.value();
+
+	auto& projectileComponent = reg.Get<ProjectileComponent>(prefabEntity);
+	projectileComponent.mSpeed = weaponRef.mProjectileSpeed;
+	projectileComponent.mRange = weaponRef.mProjectileRange;
+	projectileComponent.mPierceCount = weaponRef.mPierceCount;
+
+	auto& physicsBodyComponent = reg.Get<PhysicsBody2DComponent>(prefabEntity);
+
+	const auto characterTransform = reg.TryGet<TransformComponent>(castBy);
+	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+	physicsBodyComponent.mLinearVelocity = characterDir * projectileComponent.mSpeed;
+
+	auto& transformComponent = reg.Get<TransformComponent>(prefabEntity);
+	transformComponent.SetLocalScale(glm::vec3(weaponRef.mProjectileSize));
+
+	auto& effectsComponent = reg.Get<AbilityEffectsComponent>(prefabEntity);
+	effectsComponent.mEffects = weaponRef.mEffects;
+
+	return prefabEntity;
+}
+
 std::vector<entt::entity> CE::AbilityFunctionality::SpawnProjectilePrefabs(World& world, const Prefab& prefab, entt::entity castBy,
 	const AssetHandle<Weapon>& weapon)
 {
@@ -346,6 +428,46 @@ std::vector<entt::entity> CE::AbilityFunctionality::SpawnProjectilePrefabs(World
 	return projectilesVector;
 }
 
+std::vector<entt::entity> CE::AbilityFunctionality::SpawnProjectilePrefabsFromWeaponInstance(World& world, const Prefab& prefab, entt::entity castBy, const WeaponInstance& weapon)
+{
+	if (!weapon.mRuntimeWeapon.has_value())
+	{
+		LOG(LogAbilitySystem, Error, "SpawnProjectilePrefabsFromWeaponInstance - mRuntimeWeapon was never initialized.");
+		return {};
+	}
+	const Weapon& weaponRef = weapon.mRuntimeWeapon.value();
+	if (weaponRef.mProjectileCount < 1)
+	{
+		LOG(LogAbilitySystem, Error, "SpawnProjectilePrefabsFromWeaponInstance - Projectile Count is less than 1.");
+		return {};
+	}
+	if (weaponRef.mProjectileCount == 1)
+	{
+		return { SpawnProjectilePrefabFromWeaponInstance(world, prefab, castBy, weapon) };
+	}
+
+	// else more than 1 projectile
+	auto& reg = world.GetRegistry();
+	const float spreadInRadians = glm::radians(weaponRef.mSpread);
+	const float angleBetweenProjectiles = spreadInRadians / static_cast<float>(weaponRef.mProjectileCount - 1);
+	const auto characterTransform = reg.TryGet<TransformComponent>(castBy);
+	const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+	const float directionInRadians = atan2(characterDir.y, characterDir.x);
+	const float firstProjectileAngle = directionInRadians - spreadInRadians / 2.f;
+
+	std::vector<entt::entity> projectilesVector{};
+	for (int i = 0; i < weaponRef.mProjectileCount; i++)
+	{
+		auto projectile = SpawnProjectilePrefabFromWeaponInstance(world, prefab, castBy, weapon);
+		// Calculate and set the direction.
+		auto& physicsBody = reg.Get<PhysicsBody2DComponent>(projectile);
+		const auto projectileAngle = firstProjectileAngle + static_cast<float>(i) * angleBetweenProjectiles;
+		physicsBody.mLinearVelocity = glm::vec2(cos(projectileAngle), sin(projectileAngle)) * weaponRef.mProjectileSpeed;
+		projectilesVector.push_back(projectile);
+	}
+	return projectilesVector;
+}
+
 bool CE::AbilityFunctionality::IncreasePierceCountAndReturnTrueIfExceeded(ProjectileComponent& projectileComponent)
 {
 	projectileComponent.mCurrentPierceCount++;
@@ -371,11 +493,10 @@ bool CE::AbilityFunctionality::WasTheAbilityCastByAnEnemy(World& world, entt::en
 	return entityToAffectCharacterComponent->mTeamId != activeAbilityComponent->mCastByCharacterData.mTeamId;
 }
 
-float& CE::AbilityFunctionality::IncreaseValueByPercentage(float& toChange, float percentage)
+float CE::AbilityFunctionality::IncreaseValue1ByPercentageOfValue2(float value1, float value2, float percentage)
 {
-	const float increase = percentage * 0.01f * toChange;
-	toChange += increase;
-	return toChange;
+	value1 += percentage * 0.01f * value2;
+	return value1;
 }
 
 bool CE::AbilityFunctionality::IsPointInsideCone2D(const glm::vec2 point, const glm::vec2 coneOrigin, const glm::vec2 coneDirection, const float coneAngle)
@@ -397,6 +518,71 @@ bool CE::AbilityFunctionality::IsPointInsideCone2D(const glm::vec2 point, const 
 
 	// The point is inside the cone if the cosine of the angle between the cone direction and the point direction is greater than or equal to the cosine of the cone angle
 	return cosAngle >= cosConeAngle;
+}
+
+void CE::AbilityFunctionality::RemoveWeaponAtIndex(World& world, entt::entity entity, int index)
+{
+	const auto abilities = world.GetRegistry().TryGet<AbilitiesOnCharacterComponent>(entity);
+	if (abilities == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "RemoveWeaponAtIndex - entity {} does not have an Active Ability Component attached.", entt::to_integral(entity));
+		return;
+	}
+	auto& weaponsVector = abilities->mWeaponsToInput;
+	if (index >= static_cast<int>(weaponsVector.size()))
+	{
+		LOG(LogAbilitySystem, Error, "RemoveWeaponAtIndex - index out of range in entity {} with weapons vector with size {}.", index, entt::to_integral(entity), static_cast<int>(weaponsVector.size()));
+		return;
+	}
+	const MetaType* scriptType = MetaManager::Get().TryGetType(weaponsVector[index].mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+	if (scriptType != nullptr && world.GetRegistry().HasComponent(scriptType->GetTypeId(), entity))
+	{
+		world.GetRegistry().RemoveComponent(scriptType->GetTypeId(), entity);
+	}
+	weaponsVector.erase(weaponsVector.begin() + index);
+}
+
+void CE::AbilityFunctionality::AddWeaponToEnd(World& world, entt::entity entity, WeaponInstance& weapon)
+{
+	const auto abilities = world.GetRegistry().TryGet<AbilitiesOnCharacterComponent>(entity);
+	if (abilities == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "AddWeapon - entity does not have an Active Ability Component attached.");
+		return;
+	}
+	abilities->mWeaponsToInput.push_back(weapon);
+	abilities->mWeaponsToInput.back().InitializeRuntimeWeapon();
+	// Add On Ability Activate script.
+	const MetaType* scriptType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+	if (scriptType != nullptr && !world.GetRegistry().HasComponent(scriptType->GetTypeId(), entity))
+	{
+		world.GetRegistry().AddComponent(*scriptType, entity);
+	}
+}
+
+void CE::AbilityFunctionality::CallAllAbilityHitEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity)
+{
+	const std::vector<BoundEvent> boundEvents = GetAllBoundEvents(sAbilityHitEvent);
+	for (const BoundEvent& boundEvent : boundEvents)
+	{
+		entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
+
+		if (storage == nullptr
+			|| !storage->contains(characterEntity))
+		{
+			continue;
+		}
+
+		if (boundEvent.mIsStatic)
+		{
+			boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, characterEntity, hitEntity, abilityEntity);
+		}
+		else
+		{
+			MetaAny component{ boundEvent.mType, storage->value(characterEntity), false };
+			boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, characterEntity, hitEntity, abilityEntity);
+		}
+	}
 }
 
 std::pair<float&, float&> CE::AbilityFunctionality::GetStat(Stat stat, CharacterComponent& characterComponent)

@@ -8,6 +8,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/PlayerComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
@@ -28,13 +29,44 @@ void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity own
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "An PhysicsBody2D component is needed to run the ChargingUp State!");
+		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
 	physicsBody2DComponent->mLinearVelocity = {};
 
 	mChargeCooldown.mAmountOfTimePassed += dt;
+
+	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
+
+	if (playerId == entt::null)
+	{
+		return;
+	}
+
+	const auto playerTransform = world.GetRegistry().TryGet<CE::TransformComponent>(playerId);
+	if (playerTransform == nullptr)
+	{
+		LOG(LogAI, Warning, "Charge Up Stomp State - player {} does not have a Transform Component.", entt::to_integral(playerId));
+		return;
+	}
+
+	const auto enemyTransform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+	if (enemyTransform == nullptr)
+	{
+		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+		return;
+	}
+
+	const glm::vec2 playerPosition2D = playerTransform->GetWorldPosition2D();
+	const glm::vec2 enemyPosition2D = enemyTransform->GetWorldPosition2D();
+
+	if (playerPosition2D != enemyPosition2D)
+	{
+		const glm::vec2 direction = glm::normalize(playerPosition2D - enemyPosition2D);
+
+		enemyTransform->SetWorldOrientation(CE::Math::Direction2DToXZQuatOrientation(direction));
+	}
 }
 
 float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, entt::entity owner) const

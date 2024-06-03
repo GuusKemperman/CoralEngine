@@ -9,6 +9,8 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
 #include "Assets/Animation/Animation.h"
+#include "Components/PlayerComponent.h"
+#include "Components/TransformComponent.h"
 
 void Game::RecoveryState::OnAiTick(CE::World& world, entt::entity owner, float dt)
 {
@@ -23,13 +25,44 @@ void Game::RecoveryState::OnAiTick(CE::World& world, entt::entity owner, float d
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
+		LOG(LogAI, Warning, "Recovery State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
 	physicsBody2DComponent->mLinearVelocity = {};
 
 	mRechargeCooldown.mAmountOfTimePassed += dt;
+
+	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
+
+	if (playerId == entt::null)
+	{
+		return;
+	}
+
+	const auto playerTransform = world.GetRegistry().TryGet<CE::TransformComponent>(playerId);
+	if (playerTransform == nullptr)
+	{
+		LOG(LogAI, Warning, "Recovery State - player {} does not have a Transform Component.", entt::to_integral(playerId));
+		return;
+	}
+
+	const auto enemyTransform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+	if (enemyTransform == nullptr)
+	{
+		LOG(LogAI, Warning, "Recovery State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+		return;
+	}
+
+	const glm::vec2 playerPosition2D = playerTransform->GetWorldPosition2D();
+	const glm::vec2 enemyPosition2D = enemyTransform->GetWorldPosition2D();
+
+	if (playerPosition2D != enemyPosition2D)
+	{
+		const glm::vec2 direction = glm::normalize(playerPosition2D - enemyPosition2D);
+
+		enemyTransform->SetWorldOrientation(CE::Math::Direction2DToXZQuatOrientation(direction));
+	}
 }
 
 float Game::RecoveryState::OnAiEvaluate(const CE::World&, entt::entity) const

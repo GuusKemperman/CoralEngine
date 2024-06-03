@@ -42,7 +42,7 @@ void Game::ChasingState::DebugRender(CE::World& world, entt::entity owner) const
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "A transform component is needed to run the Chasing State!");
+		LOG(LogAI, Warning, "Chasing State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return;
 	}
 
