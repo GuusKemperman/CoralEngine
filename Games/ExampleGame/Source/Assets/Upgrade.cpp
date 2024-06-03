@@ -7,6 +7,7 @@
 #include "Utilities/Reflect/ReflectAssetType.h"
 #include "Assets/Texture.h"
 #include "Assets/Script.h"
+#include "Core/AssetManager.h"
 
 using namespace CE;
 
@@ -58,6 +59,21 @@ void Game::Upgrade::OnSave(AssetSaveInfo& saveInfo) const
 
 	obj.SaveToBinary(saveInfo.GetStream());
 }
+
+#ifdef EDITOR
+template<>
+CE::GetThumbnailRet GetThumbNailImpl<Game::Upgrade>(const CE::WeakAssetHandle<Game::Upgrade>& forAsset)
+{
+	CE::AssetHandle icon = CE::AssetHandle<Game::Upgrade>{ forAsset }->mIconTexture;
+
+	if (icon == nullptr)
+	{
+		icon = CE::AssetManager::Get().TryGetAsset<CE::Texture>("T_UpgradeIcon");
+	}
+
+	return icon;
+}
+#endif // EDITOR
 
 CE::MetaType Game::Upgrade::Reflect()
 {
