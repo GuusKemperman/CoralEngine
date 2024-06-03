@@ -60,6 +60,7 @@ void Game::Upgrade::OnSave(AssetSaveInfo& saveInfo) const
 	obj.SaveToBinary(saveInfo.GetStream());
 }
 
+#ifdef EDITOR
 template<>
 CE::GetThumbnailRet GetThumbNailImpl<Game::Upgrade>(const CE::WeakAssetHandle<Game::Upgrade>& forAsset)
 {
@@ -72,6 +73,7 @@ CE::GetThumbnailRet GetThumbNailImpl<Game::Upgrade>(const CE::WeakAssetHandle<Ga
 
 	return icon;
 }
+#endif // EDITOR
 
 CE::MetaType Game::Upgrade::Reflect()
 {
