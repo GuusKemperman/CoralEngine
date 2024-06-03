@@ -32,13 +32,6 @@ namespace CE
 
 		const AssetHandle<Texture>& GetIconTexture() const { return mIconTexture; }
 
-	protected:
-		friend AbilitySystem;
-		friend AbilityInstance;
-		friend AbilitiesOnCharacterComponent;
-
-        void OnSave(AssetSaveInfo& saveInfo) const override;
-
 		AssetHandle<Script> mOnAbilityActivateScript{};
 
 		AssetHandle<Texture> mIconTexture{};
@@ -55,6 +48,9 @@ namespace CE
 
 		float mRequirementToUse{};
 		int mCharges = 1; // how many times the ability can be used before going back on cooldown
+
+	protected:
+        void OnSave(AssetSaveInfo& saveInfo) const override;
 
         friend ReflectAccess;
         static MetaType Reflect();

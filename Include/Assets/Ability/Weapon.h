@@ -22,12 +22,6 @@ namespace CE
 		Weapon& operator=(Weapon&&) = delete;
 		Weapon& operator=(const Weapon&) = default;
 
-	private:
-		friend AbilitySystem;
-		friend AbilityFunctionality;
-		friend WeaponInstance;
-		void OnSave(AssetSaveInfo& saveInfo) const override;
-
 		// weapon
 		float mShotDelay{};
 		float mFireSpeed = 1.f;
@@ -42,6 +36,9 @@ namespace CE
 		float mProjectileRange = 1.f;
 		float mKnockback{};
 		int mPierceCount{};
+
+	private:
+		void OnSave(AssetSaveInfo& saveInfo) const override;
 
 		friend ReflectAccess;
 		friend WeaponEditorSystem;
