@@ -155,7 +155,8 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 			}
 		}
 
-		std::vector isBlocked(target.mFlowField.size(), false);
+		// char because std::vector<bool> is slower
+		std::vector<char> isBlocked(target.mFlowField.size(), false);
 
 		for (int y = 0; y < target.mFlowFieldWidth; y++)
 		{
@@ -197,7 +198,7 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 
 					const int nbrIndex = nbrX + nbrY * fieldWidth;
 
-					if (isBlocked[nbrIndex])
+					if (isBlocked.data()[nbrIndex])
 					{
 						return;
 					}

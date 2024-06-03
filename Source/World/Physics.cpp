@@ -5,6 +5,7 @@
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Components/TransformComponent.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Meta/MetaType.h"
@@ -57,6 +58,56 @@ std::vector<entt::entity> CE::Physics::FindAllWithinShapeImpl(const T& shape, co
 	}
 
 	return ret;
+}
+
+void CE::Physics::RebuildBVHs(bool forceRebuild)
+{
+	std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> wereItemsAddedToLayer{};
+
+	UpdateTransformedColliders<DiskColliderComponent, TransformedDiskColliderComponent>(mWorld, wereItemsAddedToLayer);
+	UpdateTransformedColliders<AABBColliderComponent, TransformedAABBColliderComponent>(mWorld, wereItemsAddedToLayer);
+	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(mWorld, wereItemsAddedToLayer);
+
+	for (int i = 0; i < static_cast<int>(CollisionLayer::NUM_OF_LAYERS); i++)
+	{
+		BVH& bvh = mWorld.get().GetPhysics().GetBVHs()[i];
+
+		if (forceRebuild
+			|| wereItemsAddedToLayer[i]
+			|| bvh.GetAmountRefitted() > 10'000.f)
+		{
+			bvh.Build();
+		}
+		else
+		{
+			bvh.Refit();
+		}
+	}
+}
+
+template <typename Collider, typename TransformedCollider>
+void CE::Physics::UpdateTransformedColliders(World& world, std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>& wereItemsAddedToLayer)
+{
+	Registry& reg = world.GetRegistry();
+	const auto collidersWithoutTransformed = reg.View<const PhysicsBody2DComponent, const Collider>(entt::exclude_t<TransformedCollider>{});
+
+	for (entt::entity entity : collidersWithoutTransformed)
+	{
+		const PhysicsBody2DComponent& body = collidersWithoutTransformed.template get<PhysicsBody2DComponent>(entity);
+		wereItemsAddedToLayer[static_cast<int>(body.mRules.mLayer)] = true;
+	}
+
+	reg.AddComponents<TransformedCollider>(collidersWithoutTransformed.begin(), collidersWithoutTransformed.end());
+
+	const auto transformedWithoutColliders = reg.View<TransformedCollider>(entt::exclude_t<Collider>{});
+	reg.RemoveComponents<TransformedCollider>(transformedWithoutColliders.begin(), transformedWithoutColliders.end());
+
+	const auto colliderView = reg.View<TransformComponent, Collider, TransformedCollider>();
+
+	for (auto [entity, transform, collider, transformedCollider] : colliderView.each())
+	{
+		transformedCollider = collider.CreateTransformedCollider(transform);
+	}
 }
 
 std::vector<entt::entity> CE::Physics::FindAllWithinShape(const TransformedDisk& shape, const CollisionRules& filter) const

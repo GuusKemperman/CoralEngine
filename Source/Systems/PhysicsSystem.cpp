@@ -31,26 +31,8 @@ void CE::PhysicsSystem::Update(World& world, float dt)
 		ApplyVelocities(world, dt);
 	}
 
-	std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> wereItemsAddedToLayer{};
+	world.GetPhysics().RebuildBVHs();
 
-	UpdateTransformedColliders<DiskColliderComponent, TransformedDiskColliderComponent>(world, wereItemsAddedToLayer);
-	UpdateTransformedColliders<AABBColliderComponent, TransformedAABBColliderComponent>(world, wereItemsAddedToLayer);
-	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(world, wereItemsAddedToLayer);
-
-	for (int i = 0; i < static_cast<int>(CollisionLayer::NUM_OF_LAYERS); i++)
-	{
-		BVH& bvh = world.GetPhysics().GetBVHs()[i];
-
-		if (wereItemsAddedToLayer[i]
-			|| bvh.GetAmountRefitted() > 10'000.f)
-		{
-			bvh.Build();
-		}
-		else
-		{
-			bvh.Refit();
-		}
-	}
 
 	if (world.HasBegunPlay()
 		&& !world.IsPaused())
@@ -303,30 +285,6 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 }
 
 
-template <typename Collider, typename TransformedCollider>
-void CE::PhysicsSystem::UpdateTransformedColliders(World& world, std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>& wereItemsAddedToLayer)
-{
-	Registry& reg = world.GetRegistry();
-	const auto collidersWithoutTransformed = reg.View<const PhysicsBody2DComponent, const Collider>(entt::exclude_t<TransformedCollider>{});
-
-	for (entt::entity entity : collidersWithoutTransformed)
-	{
-		const PhysicsBody2DComponent& body = collidersWithoutTransformed.template get<PhysicsBody2DComponent>(entity);
-		wereItemsAddedToLayer[static_cast<int>(body.mRules.mLayer)] = true;
-	}
-
-	reg.AddComponents<TransformedCollider>(collidersWithoutTransformed.begin(), collidersWithoutTransformed.end());
-
-	const auto transformedWithoutColliders = reg.View<TransformedCollider>(entt::exclude_t<Collider>{});
-	reg.RemoveComponents<TransformedCollider>(transformedWithoutColliders.begin(), transformedWithoutColliders.end());
-
-	const auto colliderView = reg.View<TransformComponent, Collider, TransformedCollider>();
-
-	for (auto [entity, transform, collider, transformedCollider] : colliderView.each())
-	{
-		transformedCollider = collider.CreateTransformedCollider(transform);
-	}
-}
 
 template <typename CollisionDataContainer>
 void CE::PhysicsSystem::CallEvents(World& world, const CollisionDataContainer& collisions,
