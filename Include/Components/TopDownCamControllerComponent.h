@@ -27,6 +27,7 @@ namespace CE
 		float mRotateSensitivity = 100.0f;
 
 		float mHeightInterpolationFactor = 0.7f;
+		float mCameraLag = 2.f;
 
 		entt::entity mTarget{entt::null};
 		glm::vec3 mTargetLocation{};
