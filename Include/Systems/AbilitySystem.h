@@ -32,6 +32,8 @@ namespace CE
 		static bool ActivateWeapon(World& world, entt::entity castBy, CharacterComponent& characterData, WeaponInstance& weapon);
 
 	private:
+		static void CallAllOnAbilityActivateEvents(World& world, entt::entity castBy);
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AbilitySystem);

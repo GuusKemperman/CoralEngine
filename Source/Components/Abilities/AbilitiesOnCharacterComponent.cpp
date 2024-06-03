@@ -6,6 +6,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
+#include "Meta/ReflectedTypes/STD/ReflectOptional.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Assets/Ability/Ability.h"
 #include "Assets/Ability/Weapon.h"
@@ -55,6 +56,9 @@ void CE::AbilitiesOnCharacterComponent::OnBeginPlay(World& world, entt::entity e
 			continue;
 		}
 
+		// Initialize runtime weapon.
+		weapon.mRuntimeWeapon.emplace(*weapon.mWeaponAsset.Get());
+
 		// Make all the weapons available on begin play.
 		weapon.ResetCooldownAndAmmo();
 
@@ -103,9 +107,27 @@ void CE::AbilityInstance::DisplayWidget()
 void CE::WeaponInstance::DisplayWidget()
 {
 	ShowInspectUI("mWeaponAsset", mWeaponAsset);
+	if (!mRuntimeWeapon.has_value())
+	{
+		ImGui::TextDisabled("mRuntimeWeapon");
+	}
+	else
+	{
+		ImGui::Text("mRuntimeWeapon");
+		ImGui::BeginDisabled();
+		const MetaType* const materialType = MetaManager::Get().TryGetType<Weapon>();
+		ASSERT(materialType != nullptr);
+		MetaAny refToMetaAny{ mRuntimeWeapon.value() };
+		for (const MetaField& field : materialType->EachField())
+		{
+			MetaAny refToMember = field.MakeRef(refToMetaAny);
+			ShowInspectUI(std::string{ field.GetName() }, refToMember);
+		}
+		ImGui::EndDisabled();
+	}
 	ShowInspectUIReadOnly("mReloadCounter", mReloadCounter);
 	ShowInspectUIReadOnly("mAmmoCounter", mAmmoCounter);
-	ShowInspectUIReadOnly("mTimeBetweenShotsCounter", mTimeBetweenShotsCounter);
+	ShowInspectUIReadOnly("mShotDelayCounter", mShotDelayCounter);
 	ShowInspectUI("mAmmoConsumption", mAmmoConsumption);
 	if (isPlayer)
 	{

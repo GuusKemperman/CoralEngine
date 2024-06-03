@@ -25,6 +25,7 @@ CE::MetaType CE::ActiveAbilityComponent::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<ActiveAbilityComponent>{}, "ActiveAbilityComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
 
+	metaType.AddField(&ActiveAbilityComponent::mCastByEntity, "mCastByEntity").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoSerializeTag);
 	metaType.AddField(&ActiveAbilityComponent::mCastByCharacterData, "mCastByCharacterData").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag).Add(Props::sNoSerializeTag);
 #ifdef EDITOR
 	BindEvent(metaType, sInspectEvent, &ActiveAbilityComponent::OnInspect);

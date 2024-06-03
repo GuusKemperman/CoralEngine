@@ -2,6 +2,7 @@
 #include <cereal/types/memory.hpp>
 #include <cereal/types/vector.hpp>
 
+#include "Assets/Ability/Weapon.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Core/Input.h"
 #include "Meta/MetaReflect.h"
@@ -42,15 +43,17 @@ namespace CE
 	struct WeaponInstance
 	{
 		AssetHandle<Weapon> mWeaponAsset{};
+		std::optional<Weapon> mRuntimeWeapon{};
 		float mReloadCounter{};
 		int mAmmoCounter{};
-		float mTimeBetweenShotsCounter{};
+		float mShotDelayCounter{};
 		bool mAmmoConsumption = true;
 
 		std::vector<Input::KeyboardKey> mKeyboardKeys{};
 		std::vector<Input::GamepadButton> mGamepadButtons{};
 
 		void ResetCooldownAndAmmo();
+		Weapon* InitializeRuntimeWeapon();
 
 		bool operator==(const WeaponInstance& other) const;
 		bool operator!=(const WeaponInstance& other) const;
@@ -90,7 +93,7 @@ namespace CE
 	template<class Archive>
 	void serialize(Archive& ar, WeaponInstance& value)
 	{
-		ar(value.mWeaponAsset, value.mReloadCounter, value.mAmmoCounter, value.mTimeBetweenShotsCounter, value.mAmmoConsumption, value.mKeyboardKeys, value.mGamepadButtons);
+		ar(value.mWeaponAsset, value.mReloadCounter, value.mAmmoCounter, value.mShotDelayCounter, value.mAmmoConsumption, value.mKeyboardKeys, value.mGamepadButtons);
 	}
 }
 

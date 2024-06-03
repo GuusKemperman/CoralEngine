@@ -27,12 +27,12 @@ void CE::WeaponEditorSystem::Tick(float deltaTime)
 		ImGui::EndMenuBar();
 	}
 	ImGui::PushItemWidth(100.f);
-	ShowInspectUI("Shot Delay", mAsset.mTimeBetweenShots);
+	ShowInspectUI("Shot Delay", mAsset.mShotDelay);
 	ImGui::SameLine();
 	ShowInspectUI("Fire Speed", mAsset.mFireSpeed);
 	ImGui::SameLine();
 	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-	ImGui::Text("Fire Rate: %.2f", 1.f / (mAsset.mTimeBetweenShots * mAsset.mFireSpeed));
+	ImGui::Text("Fire Rate: %.2f", 1.f / (mAsset.mShotDelay * mAsset.mFireSpeed));
 	ImGui::PopStyleColor();
 
 	ShowInspectUI("Reload Time", mAsset.mRequirementToUse);
