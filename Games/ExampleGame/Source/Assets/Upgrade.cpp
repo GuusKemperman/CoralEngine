@@ -61,7 +61,7 @@ void Game::Upgrade::OnSave(AssetSaveInfo& saveInfo) const
 }
 
 template<>
-CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<Game::Upgrade>& forAsset)
+CE::GetThumbnailRet GetThumbNailImpl<Game::Upgrade>(const CE::WeakAssetHandle<Game::Upgrade>& forAsset)
 {
 	CE::AssetHandle icon = CE::AssetHandle<Game::Upgrade>{ forAsset }->mIconTexture;
 
