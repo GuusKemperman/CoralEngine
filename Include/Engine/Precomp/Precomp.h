@@ -107,3 +107,4 @@ template <class> constexpr bool AlwaysFalse = false;
 
 #include "Utilities/CommonMetaProperties.h"
 #include "Utilities/EnumString.h"
+#include "Meta/MetaType.h"

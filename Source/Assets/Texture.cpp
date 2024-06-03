@@ -1,6 +1,10 @@
 #include "Precomp.h"
 #include "Assets/Texture.h"
 
+#include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
+#include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
+#include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
+
 #include "Core/AssetManager.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 

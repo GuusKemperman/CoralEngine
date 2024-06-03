@@ -9,6 +9,30 @@
 #include "Utilities/Math.h"
 #include <numeric> 
 
+struct CE::SkinnedMesh::DXImpl
+{
+    std::shared_ptr<DXResource> mVertexBuffer{};
+    std::shared_ptr<DXResource> mNormalBuffer{};
+    std::shared_ptr<DXResource> mTangentBuffer{};
+    std::shared_ptr<DXResource> mTexCoordBuffer{};
+    std::shared_ptr<DXResource> mIndexBuffer{};
+    std::shared_ptr<DXResource> mBoneIdBuffer{};
+    std::shared_ptr<DXResource> mBoneWeightBuffer{};
+
+    D3D12_VERTEX_BUFFER_VIEW mVertexBufferView{};
+    D3D12_VERTEX_BUFFER_VIEW mNormalBufferView{};
+    D3D12_VERTEX_BUFFER_VIEW mTexCoordBufferView{};
+    D3D12_VERTEX_BUFFER_VIEW mTangentBufferView{};
+    D3D12_VERTEX_BUFFER_VIEW mBoneIdBufferView{};
+    D3D12_VERTEX_BUFFER_VIEW mBoneWeightBufferView{};
+    D3D12_INDEX_BUFFER_VIEW mIndexBufferView{};
+
+    int mIndexCount = 0;
+    int mVertexCount = 0;
+    DXGI_FORMAT mIndexFormat{};
+    bool mBeenUpdated = false;
+};
+
 namespace cereal
 {
     inline void save(BinaryOutputArchive& ar, const CE::BoneInfo& value)
@@ -185,35 +209,35 @@ CE::SkinnedMesh::SkinnedMesh(SkinnedMesh&& other) noexcept = default;
 
 void CE::SkinnedMesh::DrawMesh() const
 {
-    if (mVertexBuffer == nullptr)
+    if (mImpl->mVertexBuffer == nullptr)
         return;
 
 	Device& engineDevice = Device::Get();
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 
-	commandList->IASetVertexBuffers(0, 1, &mVertexBufferView);
-	commandList->IASetVertexBuffers(1, 1, &mNormalBufferView);
-	commandList->IASetVertexBuffers(2, 1, &mTexCoordBufferView);
-	commandList->IASetVertexBuffers(3, 1, &mTangentBufferView);
-    commandList->IASetVertexBuffers(4, 1, &mBoneIdBufferView);
-    commandList->IASetVertexBuffers(5, 1, &mBoneWeightBufferView);
-	commandList->IASetIndexBuffer(&mIndexBufferView);
-	commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
+	commandList->IASetVertexBuffers(0, 1, &mImpl->mVertexBufferView);
+	commandList->IASetVertexBuffers(1, 1, &mImpl->mNormalBufferView);
+	commandList->IASetVertexBuffers(2, 1, &mImpl->mTexCoordBufferView);
+	commandList->IASetVertexBuffers(3, 1, &mImpl->mTangentBufferView);
+    commandList->IASetVertexBuffers(4, 1, &mImpl->mBoneIdBufferView);
+    commandList->IASetVertexBuffers(5, 1, &mImpl->mBoneWeightBufferView);
+	commandList->IASetIndexBuffer(&mImpl->mIndexBufferView);
+	commandList->DrawIndexedInstanced(mImpl->mIndexCount, 1, 0, 0, 0);
 }
 
 void CE::SkinnedMesh::DrawMeshVertexOnly() const
 {
-    if (mVertexBuffer == nullptr)
+    if (mImpl->mVertexBuffer == nullptr)
         return;
 
     Device& engineDevice = Device::Get();
     ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 
-    commandList->IASetVertexBuffers(0, 1, &mVertexBufferView);
-    commandList->IASetVertexBuffers(1, 1, &mBoneIdBufferView);
-    commandList->IASetVertexBuffers(2, 1, &mBoneWeightBufferView);
-    commandList->IASetIndexBuffer(&mIndexBufferView);
-    commandList->DrawIndexedInstanced(mIndexCount, 1, 0, 0, 0);
+    commandList->IASetVertexBuffers(0, 1, &mImpl->mVertexBufferView);
+    commandList->IASetVertexBuffers(1, 1, &mImpl->mBoneIdBufferView);
+    commandList->IASetVertexBuffers(2, 1, &mImpl->mBoneWeightBufferView);
+    commandList->IASetIndexBuffer(&mImpl->mIndexBufferView);
+    commandList->DrawIndexedInstanced(mImpl->mIndexCount, 1, 0, 0, 0);
 }
 
 bool CE::SkinnedMesh::LoadMesh(const char* indices, unsigned int indexCount, unsigned int sizeOfIndexType, const float* positions, const float* normalsBuffer, const float* textureCoordinates, const float* tangents, const int* boneIds, const float* boneWeights, unsigned int vertexCount)
@@ -228,9 +252,9 @@ bool CE::SkinnedMesh::LoadMesh(const char* indices, unsigned int indexCount, uns
 
 	switch (sizeOfIndexType)
 	{
-		case sizeof(unsigned char):			mIndexFormat = DXGI_FORMAT_R8_UINT; break;
-			case sizeof(unsigned short):		mIndexFormat = DXGI_FORMAT_R16_UINT; break;
-				case sizeof(unsigned int):			mIndexFormat = DXGI_FORMAT_R32_UINT; break;
+		case sizeof(unsigned char): mImpl->mIndexFormat = DXGI_FORMAT_R8_UINT; break;
+			case sizeof(unsigned short): mImpl->mIndexFormat = DXGI_FORMAT_R16_UINT; break;
+				case sizeof(unsigned int): mImpl->mIndexFormat = DXGI_FORMAT_R32_UINT; break;
 				default: return false;
 	}
 
@@ -239,37 +263,37 @@ bool CE::SkinnedMesh::LoadMesh(const char* indices, unsigned int indexCount, uns
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
 	ID3D12GraphicsCommandList4* uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetUploadCommandList());
     engineDevice.StartUploadCommands();
-	mIndexCount = indexCount;
-	mVertexCount = vertexCount;
+    mImpl->mIndexCount = indexCount;
+    mImpl->mVertexCount = vertexCount;
 
-	int iBufferSize = sizeOfIndexType * mIndexCount;
-	int nBufferSize = sizeof(float) * mVertexCount * 3;
-	int tBufferSize = sizeof(float) * mVertexCount * 2;
-	int tanBufferSize = sizeof(float) * mVertexCount * 3;
-    int boneIdBufferSize = sizeof(int) * mVertexCount * 4;
-    int boneWeightBufferSize = sizeof(float) * mVertexCount * 4;
+	int iBufferSize = sizeOfIndexType * mImpl->mIndexCount;
+    int nBufferSize = sizeof(float) * mImpl->mVertexCount * 3;
+    int tBufferSize = sizeof(float) * mImpl->mVertexCount * 2;
+    int tanBufferSize = sizeof(float) * mImpl->mVertexCount * 3;
+    int boneIdBufferSize = sizeof(int) * mImpl->mVertexCount * 4;
+    int boneWeightBufferSize = sizeof(float) * mImpl->mVertexCount * 4;
 
-	mVertexBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(nBufferSize), nullptr, "Vertex resource buffer");
-	mTexCoordBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(tBufferSize), nullptr, "Texture coord resource buffer");
-	mNormalBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(nBufferSize), nullptr, "Normals resource buffer");
-	mTangentBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(tanBufferSize), nullptr, "Tangent resource buffer");
-    mBoneIdBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(boneIdBufferSize), nullptr, "BoneId resource buffer");
-    mBoneWeightBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(boneWeightBufferSize), nullptr, "BoneWeight resource buffer");
+	mImpl->mVertexBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(nBufferSize), nullptr, "Vertex resource buffer");
+	mImpl->mTexCoordBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(tBufferSize), nullptr, "Texture coord resource buffer");
+	mImpl->mNormalBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(nBufferSize), nullptr, "Normals resource buffer");
+	mImpl->mTangentBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(tanBufferSize), nullptr, "Tangent resource buffer");
+    mImpl->mBoneIdBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(boneIdBufferSize), nullptr, "BoneId resource buffer");
+    mImpl->mBoneWeightBuffer = std::make_shared<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(boneWeightBufferSize), nullptr, "BoneWeight resource buffer");
 
 	D3D12_SUBRESOURCE_DATA vData = {};
 	vData.pData = positions;
 	vData.RowPitch = sizeof(float) * 3;
 	vData.SlicePitch = nBufferSize;
-	mVertexBuffer->CreateUploadBuffer(device, nBufferSize, 0);
-	mVertexBuffer->Update(uploadCmdList, vData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+	mImpl->mVertexBuffer->CreateUploadBuffer(device, nBufferSize, 0);
+	mImpl->mVertexBuffer->Update(uploadCmdList, vData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 
 	if (textureCoordinates) {
 		D3D12_SUBRESOURCE_DATA tData = {};
 		tData.pData = textureCoordinates;
 		tData.RowPitch = sizeof(float) * 2;
 		tData.SlicePitch = tBufferSize;
-		mTexCoordBuffer->CreateUploadBuffer(device, tBufferSize, 0);
-		mTexCoordBuffer->Update(uploadCmdList, tData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+		mImpl->mTexCoordBuffer->CreateUploadBuffer(device, tBufferSize, 0);
+		mImpl->mTexCoordBuffer->Update(uploadCmdList, tData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 	}
 
 	if (normalsBuffer) {
@@ -277,8 +301,8 @@ bool CE::SkinnedMesh::LoadMesh(const char* indices, unsigned int indexCount, uns
 		nData.pData = normalsBuffer;
 		nData.RowPitch = sizeof(float) * 3;
 		nData.SlicePitch = nBufferSize;
-		mNormalBuffer->CreateUploadBuffer(device, nBufferSize, 0);
-		mNormalBuffer->Update(uploadCmdList, nData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+		mImpl->mNormalBuffer->CreateUploadBuffer(device, nBufferSize, 0);
+		mImpl->mNormalBuffer->Update(uploadCmdList, nData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 	}
 
 	if (tangents) {
@@ -286,8 +310,8 @@ bool CE::SkinnedMesh::LoadMesh(const char* indices, unsigned int indexCount, uns
 		tanData.pData = tangents;
 		tanData.RowPitch = sizeof(float) * 3;
 		tanData.SlicePitch = tanBufferSize;
-		mTangentBuffer->CreateUploadBuffer(device, tanBufferSize, 0);
-		mTangentBuffer->Update(uploadCmdList, tanData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+		mImpl->mTangentBuffer->CreateUploadBuffer(device, tanBufferSize, 0);
+		mImpl->mTangentBuffer->Update(uploadCmdList, tanData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 	}
 
     if (boneIds) {
@@ -295,8 +319,8 @@ bool CE::SkinnedMesh::LoadMesh(const char* indices, unsigned int indexCount, uns
         boneIdData.pData = boneIds;
         boneIdData.RowPitch = sizeof(int) * 4;
         boneIdData.SlicePitch = boneIdBufferSize;
-        mBoneIdBuffer->CreateUploadBuffer(device, boneIdBufferSize, 0);
-        mBoneIdBuffer->Update(uploadCmdList, boneIdData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+        mImpl->mBoneIdBuffer->CreateUploadBuffer(device, boneIdBufferSize, 0);
+        mImpl->mBoneIdBuffer->Update(uploadCmdList, boneIdData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
     }
 
     if (boneWeights)
@@ -305,45 +329,50 @@ bool CE::SkinnedMesh::LoadMesh(const char* indices, unsigned int indexCount, uns
         boneWeightData.pData = boneWeights;
         boneWeightData.RowPitch = sizeof(float) * 4;
         boneWeightData.SlicePitch = boneWeightBufferSize;
-        mBoneWeightBuffer->CreateUploadBuffer(device, boneWeightBufferSize, 0);
-        mBoneWeightBuffer->Update(uploadCmdList, boneWeightData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+        mImpl->mBoneWeightBuffer->CreateUploadBuffer(device, boneWeightBufferSize, 0);
+        mImpl->mBoneWeightBuffer->Update(uploadCmdList, boneWeightData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
     }
 
-	mIndexBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(iBufferSize), nullptr, "Index resource buffer");
+    mImpl->mIndexBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(iBufferSize), nullptr, "Index resource buffer");
 	D3D12_SUBRESOURCE_DATA iData = {};
 	iData.pData = indices;
 	iData.RowPitch = iBufferSize;
 	iData.SlicePitch = iBufferSize;
-	mIndexBuffer->CreateUploadBuffer(device, iBufferSize, 0);
-	mIndexBuffer->Update(uploadCmdList, iData, D3D12_RESOURCE_STATE_INDEX_BUFFER, 0, 1);
+	mImpl->mIndexBuffer->CreateUploadBuffer(device, iBufferSize, 0);
+	mImpl->mIndexBuffer->Update(uploadCmdList, iData, D3D12_RESOURCE_STATE_INDEX_BUFFER, 0, 1);
 
-	mVertexBufferView.BufferLocation = mVertexBuffer->GetResource()->GetGPUVirtualAddress();
-	mVertexBufferView.StrideInBytes = sizeof(float) * 3;
-	mVertexBufferView.SizeInBytes = nBufferSize;
+	mImpl->mVertexBufferView.BufferLocation = mImpl->mVertexBuffer->GetResource()->GetGPUVirtualAddress();
+	mImpl->mVertexBufferView.StrideInBytes = sizeof(float) * 3;
+	mImpl->mVertexBufferView.SizeInBytes = nBufferSize;
 
-	mNormalBufferView.BufferLocation = mNormalBuffer->GetResource()->GetGPUVirtualAddress();
-	mNormalBufferView.StrideInBytes = sizeof(float) * 3;
-	mNormalBufferView.SizeInBytes = nBufferSize;
+	mImpl->mNormalBufferView.BufferLocation = mImpl->mNormalBuffer->GetResource()->GetGPUVirtualAddress();
+	mImpl->mNormalBufferView.StrideInBytes = sizeof(float) * 3;
+	mImpl->mNormalBufferView.SizeInBytes = nBufferSize;
 
-	mTexCoordBufferView.BufferLocation = mTexCoordBuffer->GetResource()->GetGPUVirtualAddress();
-	mTexCoordBufferView.StrideInBytes = sizeof(float) * 2;
-	mTexCoordBufferView.SizeInBytes = tBufferSize;
+    mImpl->mTexCoordBufferView.BufferLocation = mImpl->mTexCoordBuffer->GetResource()->GetGPUVirtualAddress();
+    mImpl->mTexCoordBufferView.StrideInBytes = sizeof(float) * 2;
+    mImpl->mTexCoordBufferView.SizeInBytes = tBufferSize;
 
-	mTangentBufferView.BufferLocation = mTangentBuffer->GetResource()->GetGPUVirtualAddress();
-	mTangentBufferView.StrideInBytes = sizeof(float) * 3;
-	mTangentBufferView.SizeInBytes = tanBufferSize;
+    mImpl->mTangentBufferView.BufferLocation = mImpl->mTangentBuffer->GetResource()->GetGPUVirtualAddress();
+    mImpl->mTangentBufferView.StrideInBytes = sizeof(float) * 3;
+    mImpl->mTangentBufferView.SizeInBytes = tanBufferSize;
 
-    mBoneIdBufferView.BufferLocation = mBoneIdBuffer->GetResource()->GetGPUVirtualAddress();
-    mBoneIdBufferView.StrideInBytes = sizeof(int) * 4;
-    mBoneIdBufferView.SizeInBytes = boneIdBufferSize;
+    mImpl->mBoneIdBufferView.BufferLocation = mImpl->mBoneIdBuffer->GetResource()->GetGPUVirtualAddress();
+    mImpl->mBoneIdBufferView.StrideInBytes = sizeof(int) * 4;
+    mImpl->mBoneIdBufferView.SizeInBytes = boneIdBufferSize;
 
-    mBoneWeightBufferView.BufferLocation = mBoneWeightBuffer->GetResource()->GetGPUVirtualAddress();
-    mBoneWeightBufferView.StrideInBytes = sizeof(float) * 4;
-    mBoneWeightBufferView.SizeInBytes = boneWeightBufferSize;
+    mImpl->mBoneWeightBufferView.BufferLocation = mImpl->mBoneWeightBuffer->GetResource()->GetGPUVirtualAddress();
+    mImpl->mBoneWeightBufferView.StrideInBytes = sizeof(float) * 4;
+    mImpl->mBoneWeightBufferView.SizeInBytes = boneWeightBufferSize;
 
-	mIndexBufferView.BufferLocation = mIndexBuffer->GetResource()->GetGPUVirtualAddress();
-	mIndexBufferView.Format = mIndexFormat;
-	mIndexBufferView.SizeInBytes = iBufferSize;
+    mImpl->mIndexBufferView.BufferLocation = mImpl->mIndexBuffer->GetResource()->GetGPUVirtualAddress();
+    mImpl->mIndexBufferView.Format = mImpl->mIndexFormat;
+    mImpl->mIndexBufferView.SizeInBytes = iBufferSize;
     engineDevice.SubmitUploadCommands();
 	return true;
+}
+
+void CE::SkinnedMesh::DXImplDeleter::operator()(DXImpl* impl) const
+{
+    delete impl;
 }
