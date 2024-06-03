@@ -28,7 +28,7 @@ void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owne
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "An PhysicsBody2D component is needed to run the Dashing State!");
+		LOG(LogAI, Warning, "ChargeUpDash State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
@@ -94,7 +94,7 @@ std::pair<float, entt::entity> Game::ChargeUpDashState::GetBestScoreAndTarget(co
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "TransformComponent is needed to run the Charge Dash State!");
+		LOG(LogAI, Warning, "ChargeUpDash State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return { 0.0f, entt::null };
 	}
 
@@ -104,7 +104,7 @@ std::pair<float, entt::entity> Game::ChargeUpDashState::GetBestScoreAndTarget(co
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "The player entity needs a TransformComponent is needed to run the Charge Dash State!");
+		LOG(LogAI, Warning, "ChargeUpDash State - player {} does not have a Transform Component.", entt::to_integral(entityId));
 		return { 0.0f, entt::null };
 	}
 
