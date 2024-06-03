@@ -29,12 +29,10 @@ namespace
     GLFWgamepadstate gamepad_state[max_nr_gamepads];
     GLFWgamepadstate prev_gamepad_state[max_nr_gamepads];
     // Triggers as buttons.
-    std::unordered_map<Input::GamepadButton, bool> initial_triggers_state =
-    { { Input::GamepadButton::TriggerLeft, false },
-     { Input::GamepadButton::TriggerRight, false } };
-    std::array<std::unordered_map<Input::GamepadButton, bool>, max_nr_gamepads> triggers_state = {
-    initial_triggers_state, initial_triggers_state, initial_triggers_state, initial_triggers_state };
-    std::array<std::unordered_map<Input::GamepadButton, bool>, max_nr_gamepads> prev_triggers_state = triggers_state;
+    // TriggerLeft  - index 0
+    // TriggerRight - index 1
+    std::array<std::array<bool, 2>, max_nr_gamepads> triggers_state = {};
+    std::array<std::array<bool, 2>, max_nr_gamepads> prev_triggers_state = {};
 
     glm::vec2 mousepos;
     glm::vec2 previousmousepos;
@@ -122,8 +120,8 @@ void Input::NewFrame()
             gamepad_connected[i] = static_cast<bool>(glfwGetGamepadState(i, &gamepad_state[i]));
 
         // Triggers as buttons
-        triggers_state[i][GamepadButton::TriggerLeft] = IsGamepadButtonHeld(i, GamepadButton::TriggerLeft, false);
-        triggers_state[i][GamepadButton::TriggerRight] = IsGamepadButtonHeld(i, GamepadButton::TriggerRight, false);
+        triggers_state[i][0] = IsGamepadButtonHeld(i, GamepadButton::TriggerLeft, false);
+        triggers_state[i][1] = IsGamepadButtonHeld(i, GamepadButton::TriggerRight, false);
     }
 
     GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
@@ -198,8 +196,9 @@ bool Input::WasGamepadButtonPressed(int gamepadID, GamepadButton button, bool ch
 
     if (button == GamepadButton::TriggerRight || button == GamepadButton::TriggerLeft)
     {
-        return triggers_state[gamepadID][button] == true &&
-            triggers_state[gamepadID][button] != prev_triggers_state[gamepadID][button];
+        const int index = static_cast<int>(GamepadButton::TriggerLeft) - static_cast<int>(button);
+        return triggers_state[gamepadID][index] == true &&
+            triggers_state[gamepadID][index] != prev_triggers_state[gamepadID][index];
     }
 
     int b = static_cast<int>(button);
@@ -219,8 +218,9 @@ bool Input::WasGamepadButtonReleased(int gamepadID, GamepadButton button, bool c
 
     if (button == GamepadButton::TriggerRight || button == GamepadButton::TriggerLeft)
     {
-        return triggers_state[gamepadID][button] == false &&
-            triggers_state[gamepadID][button] != prev_triggers_state[gamepadID][button];
+        const int index = static_cast<int>(GamepadButton::TriggerLeft) - static_cast<int>(button);
+        return triggers_state[gamepadID][index] == false &&
+            triggers_state[gamepadID][index] != prev_triggers_state[gamepadID][index];
     }
 
     int b = static_cast<int>(button);
