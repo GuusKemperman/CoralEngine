@@ -134,9 +134,9 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Reflect()
 	CE::MetaProps& props = type.GetProperties();
 	props.Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&EnvironmentGeneratorComponent::mGenerateRadius, "mGenerateRadius").GetProperties().Add(CE::Props::sIsScriptableTag);;
-	type.AddField(&EnvironmentGeneratorComponent::mDestroyRadius, "mDestroyRadius").GetProperties().Add(CE::Props::sIsScriptableTag);;
-	type.AddField(&EnvironmentGeneratorComponent::mLayers, "mLayers").GetProperties().Add(CE::Props::sIsScriptableTag);;
+	type.AddField(&EnvironmentGeneratorComponent::mGenerateRadius, "mGenerateRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&EnvironmentGeneratorComponent::mDistToMoveBeforeRegeneration, "mDistToMoveBeforeRegeneration").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&EnvironmentGeneratorComponent::mLayers, "mLayers").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<EnvironmentGeneratorComponent>(type);
 	return type;

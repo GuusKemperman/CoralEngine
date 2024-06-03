@@ -36,7 +36,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 		return;
 	}
 
-
 	const CE::TransformComponent* generatorTransform = reg.TryGet<CE::TransformComponent>(generatorEntity);
 
 	if (generatorTransform == nullptr)
@@ -44,23 +43,19 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 		return;
 	}
 
+	EnvironmentGeneratorComponent& generator = reg.Get<EnvironmentGeneratorComponent>(generatorEntity);
 	const glm::vec2 generatorPosition = generatorTransform->GetWorldPosition2D();
 
-	EnvironmentGeneratorComponent& generator = reg.Get<EnvironmentGeneratorComponent>(generatorEntity);
-
-	// for each entity with PartOfGeneratedEnvironmentTag
-	//		if entity is orphan AND further than mDestroyRadius
-	//			destroy(entity);
-	//		end
-	// end
-	const float destroyDist2 = generator.mDestroyRadius * generator.mDestroyRadius;
-	for (const auto [entity, transform] : reg.View<CE::TransformComponent, Internal::PartOfGeneratedEnvironmentTag>().each())
+	// Only regenerate if we have moved a sufficiently large distance
+	if (glm::distance2(generatorPosition, generator.mLastGeneratedAtPosition) < CE::Math::sqr(generator.mDistToMoveBeforeRegeneration))
 	{
-		if (glm::distance2(transform.GetWorldPosition2D(), generatorPosition) >= destroyDist2)
-		{
-			reg.Destroy(entity, true);
-		}
+		return;
 	}
+	generator.mLastGeneratedAtPosition = generatorPosition;
+
+	// Clear the terrain
+	const auto createdEntities = reg.View<Internal::PartOfGeneratedEnvironmentTag>();
+	reg.Destroy(createdEntities.begin(), createdEntities.end(), true);
 
 	const std::array<std::reference_wrapper<const CE::BVH>, 2> bvhs
 	{
@@ -80,13 +75,10 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 		const uint32 numOfCellsEachAxis = static_cast<uint32>(ceilf((generator.mGenerateRadius + generator.mGenerateRadius) / layer.mCellSize)) + 1u;
 
 		const glm::vec2 generatorCellPos = generatorPosition - glm::vec2{ fmodf(generatorPosition.x, layer.mCellSize), fmodf(generatorPosition.y, layer.mCellSize) };
-		const glm::vec2 previousGeneratorCellPos = generator.mLastGeneratedAroundPosition - glm::vec2{ fmodf(generator.mLastGeneratedAroundPosition.x, layer.mCellSize),
-			fmodf(generator.mLastGeneratedAroundPosition.y, layer.mCellSize) };
 
 		const glm::vec2 topLeft = generatorCellPos - glm::vec2{ static_cast<float>(numOfCellsEachAxis) * .5f * layer.mCellSize };
 
 		const CE::TransformedDisk generationCircle{ generatorCellPos, generator.mGenerateRadius };
-		const CE::TransformedDisk prevGenerationCircle{ previousGeneratorCellPos, generator.mGenerateRadius };
 
 		for (uint32 cellX = 0; cellX < numOfCellsEachAxis; cellX++)
 		{
@@ -97,8 +89,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 				const CE::TransformedAABB cellAABB{ worldPosition, worldPosition + glm::vec2{ layer.mCellSize } };
 
-				if (CE::AreOverlapping(cellAABB, prevGenerationCircle)
-					|| !CE::AreOverlapping(cellAABB, generationCircle))
+				if (!CE::AreOverlapping(cellAABB, generationCircle))
 				{
 					continue;
 				}
@@ -167,7 +158,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 	}
 
-	generator.mLastGeneratedAroundPosition = generatorPosition;
 	//	//
 	//	// for each layer
 	//	//		for each possible cell

@@ -112,12 +112,11 @@ namespace Game
 		};
 		std::vector<Layer> mLayers{};
 
-		float mGenerateRadius = 50.0f;
-		float mDestroyRadius = 100.0f;
+		float mGenerateRadius = 200.0f;
 
-		// Not set to infinity because it leads to some NaNs later down
-		// the line
-		glm::vec2 mLastGeneratedAroundPosition{ 9999999999.0f };
+		float mDistToMoveBeforeRegeneration = 50.0f;
+
+		glm::vec2 mLastGeneratedAtPosition{ std::numeric_limits<float>::infinity() };
 
 	private:
 		friend CE::ReflectAccess;
