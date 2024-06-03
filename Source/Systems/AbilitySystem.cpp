@@ -231,18 +231,38 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
         {
             if (CanWeaponBeActivated(characterData, weapon))
             {
-                for (auto& key : weapon.mKeyboardKeys)
+                if (weapon.mRuntimeWeapon->mShootOnRelease == false)
                 {
-                    if (input.IsKeyboardKeyHeld(key))
+                    for (auto& key : weapon.mKeyboardKeys)
                     {
-                        ActivateWeapon(world, entity, characterData, weapon);
+                        if (input.IsKeyboardKeyHeld(key))
+                        {
+                            ActivateWeapon(world, entity, characterData, weapon);
+                        }
+                    }
+                    for (auto& button : weapon.mGamepadButtons)
+                    {
+                        if (input.IsGamepadButtonHeld(playerComponent->mID, button))
+                        {
+                            ActivateWeapon(world, entity, characterData, weapon);
+                        }
                     }
                 }
-                for (auto& button : weapon.mGamepadButtons)
+                else
                 {
-                    if (input.IsGamepadButtonHeld(playerComponent->mID, button))
+                    for (auto& key : weapon.mKeyboardKeys)
                     {
-                        ActivateWeapon(world, entity, characterData, weapon);
+                        if (input.WasKeyboardKeyReleased(key))
+                        {
+                            ActivateWeapon(world, entity, characterData, weapon);
+                        }
+                    }
+                    for (auto& button : weapon.mGamepadButtons)
+                    {
+                        if (input.WasGamepadButtonReleased(playerComponent->mID, button))
+                        {
+                            ActivateWeapon(world, entity, characterData, weapon);
+                        }
                     }
                 }
             }
