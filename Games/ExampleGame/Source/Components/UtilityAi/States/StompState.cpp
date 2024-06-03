@@ -95,10 +95,15 @@ void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, cons
 		return;
 	}
 
-	const glm::vec3 direction = glm::normalize(playerTransform->GetWorldPosition() - enemyTransform->GetWorldPosition());
+	const glm::vec2 playerPosition2D = playerTransform->GetWorldPosition2D();
+	const glm::vec2 enemyPosition2D = enemyTransform->GetWorldPosition2D();
 
-	enemyTransform->SetWorldOrientation(direction);
-	enemyTransform->SetWorldForward(direction);
+	if (playerPosition2D != enemyPosition2D)
+	{
+		const glm::vec2 direction = glm::normalize(playerPosition2D - enemyPosition2D);
+
+		enemyTransform->SetWorldOrientation(CE::Math::Direction2DToXZQuatOrientation(direction));
+	}
 }
 
 float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
