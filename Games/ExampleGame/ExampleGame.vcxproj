@@ -368,6 +368,7 @@
     <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpDashState.cpp" />
     <ClCompile Include="Source\Components\SpawnerComponent.cpp" />
     <ClCompile Include="Source\Systems\DifficultyScalingSystem.cpp" />
+    <ClCompile Include="Source\Systems\EnvironmentGeneratorSystem.cpp" />
     <ClCompile Include="Source\Systems\SpawnerSystem.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\AttackingState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChasingState.cpp" />
@@ -413,6 +414,7 @@
     <ClInclude Include="Include\Components\UtililtyAi\States\IdleState.h" />
     <ClInclude Include="Include\ExampleGame\Precomp.h" />
     <ClInclude Include="Include\Systems\DifficultyScalingSystem.h" />
+    <ClInclude Include="Include\Systems\EnvironmentGeneratorSystem.h" />
     <ClInclude Include="Include\Systems\SpawnerSystem.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\UserMem\address_sanitizer_utils.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>

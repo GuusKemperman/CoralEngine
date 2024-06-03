@@ -49,7 +49,7 @@ namespace Game
 			// We divide the layer into smaller
 			// cells, or 'tiles'. For each tile
 			// we determine which object to spawn.
-			float mCellSize{};
+			float mCellSize = 1.0f;
 
 			// Each spawned object can receive
 			// a random offset to its position.
@@ -113,40 +113,9 @@ namespace Game
 		float mGenerateRadius = 50.0f;
 		float mDestroyRadius = 100.0f;
 
-		// for each entity with PartOfGeneratedEnvironmentTag
-		//		if entity is orphan AND further than mDestroyRadius
-		//			destroy(entity);
-		//		end
-		// end
-		//
-		// for each layer
-		//		for each possible cell
-		//			if cell.boundingBox.distance(mLastGeneratedAroundPosition) <= mGenerateRadius || cell.boundingBox.distance(currentPosition) >= mGenerateRadius
-		//				continue;
-		//			end
-		//
-		//			if (isOccupiedByObjectInEarlierLayer) continue;
-		//	
-		//			noise = getNoise(cell.position);
-		//			prefab = getPrefab(noise);
-		//	
-		//			if (prefab == nullptr) continue;
-		//	
-		//			entity = spawnPrefab(prefab);
-		//			applyRandomRotation(entity, cell.position);
-		//			applyRandomOffset(entity, cell.position);
-		//	
-		//			for each child (recursively)
-		//				add PartOfGeneratedEnvironmentTag to entity
-		//				markGroundUnderneathAsOccupied(child);
-		//			end
-		//		 end
-
-		// This algorithm is deterministic, which means we do not
-		// need to 'store' which objects we placed where
-
-		// Is used to determine which 
-		glm::vec2 mLastGeneratedAroundPosition{};
+		// Not set to infinity because it leads to some NaNs later down
+		// the line
+		glm::vec2 mLastGeneratedAroundPosition{ 9999999999.0f };
 
 	private:
 		friend CE::ReflectAccess;
