@@ -1,4 +1,6 @@
 #include "Precomp.h"
+
+#include "Components/ComponentFilter.h"
 #include "Meta/MetaReflect.h"
 #include "Meta/ReflectedTypes/ReflectENTT.h"
 
@@ -61,6 +63,21 @@ MetaType Reflector<T>::Reflect()
 			ASSERT(world != nullptr);
 			return world->GetRegistry().Valid(entity);
 		}, "IsAlive", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+
+	type.AddFunc([](const entt::entity& entity, const ComponentFilter& component)
+		{
+			if (component == nullptr)
+			{
+				return;
+			}
+
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+			world->GetRegistry().AddComponent(*component.Get(), entity);
+
+		}, "AddComponent", MetaFunc::ExplicitParams<const T&, const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
 	ReflectFieldType<T>(type);
 
 	return type;
