@@ -17,10 +17,7 @@ namespace Game
 		void OnAIStateEnter(CE::World& world, entt::entity owner);
 		static void OnAIStateExit(CE::World& world, entt::entity owner);
 
-		float OnAIEvaluate(const CE::World& world, entt::entity owner);
-
-		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
-		                                                             entt::entity owner) const;
+		float OnAIEvaluate(const CE::World& world, entt::entity owner) const;
 
 		void DebugRender(CE::World& world, entt::entity owner) const;
 

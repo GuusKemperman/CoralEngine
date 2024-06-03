@@ -358,6 +358,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\BehaviourStuff.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpStompState.cpp" />
     <ClCompile Include="Source\Components\DifficultyScalingComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\DanceState.cpp" />
@@ -398,6 +399,7 @@
     <ClCompile Include="Source\Components\UtilityAi\States\StompState.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\BehaviourStuff.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\ChargeUpStompState.h" />
     <ClInclude Include="Include\Components\DifficultyScalingComponent.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\DanceState.h" />

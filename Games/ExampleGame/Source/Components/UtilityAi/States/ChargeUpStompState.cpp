@@ -14,6 +14,7 @@
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Systems/AbilitySystem.h"
+#include "BehaviourStuff.h"
 
 
 void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
@@ -46,7 +47,7 @@ float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, entt::entit
 		return 0.8f;
 	}
 
-	auto [score, entity] = GetBestScoreAndTarget(world, owner);
+	const auto score = Game::GetBestScoreBasedOnDetection(world, owner, mRadius);
 
 	return score;
 }
@@ -80,53 +81,6 @@ bool Game::ChargeUpStompState::IsCharged() const
 	}
 	
 	return false;
-}
-
-std::pair<float, entt::entity> Game::ChargeUpStompState::GetBestScoreAndTarget(const CE::World& world,
-	entt::entity owner) const
-{
-	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-	entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
-
-	if (entityId == entt::null)
-	{
-		LOG(LogAI, Warning, "An entity with a NavMeshTargetTag is needed to run the Charging Up State!");
-		return { 0.0f, entt::null };
-	}
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "TransformComponent is needed to run the Charging Up State!");
-		return { 0.0f, entt::null };
-	}
-
-	float highestScore = 0.0f;
-
-	auto* targetComponent = world.GetRegistry().TryGet<CE::TransformComponent>(entityId);
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "The player entity needs a TransformComponent is needed to run the Charging Up State!");
-		return { 0.0f, entt::null };
-	}
-
-	const float distance = glm::distance(transformComponent->GetWorldPosition(), targetComponent->GetWorldPosition());
-
-	float score = 0.0f;
-
-	if (distance < mRadius)
-	{
-		score = 1 / distance;
-		score += 1 / mRadius;
-	}
-
-	if (highestScore < score)
-	{
-		highestScore = score;
-	}
-
-	return { highestScore, entityId };
 }
 
 CE::MetaType Game::ChargeUpStompState::Reflect()
