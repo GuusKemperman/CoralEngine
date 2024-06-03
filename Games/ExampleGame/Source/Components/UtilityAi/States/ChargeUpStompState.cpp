@@ -2,8 +2,6 @@
 #include "Components/UtililtyAi/States/ChargeUpStompState.h"
 
 #include "Components/TransformComponent.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Events.h"
@@ -15,7 +13,7 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Systems/AbilitySystem.h"
 #include "BehaviourStuff.h"
-
+#include "Components/Pathfinding/SwarmingAgentTag.h"
 
 void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -59,15 +57,7 @@ void Game::ChargeUpStompState::OnAiStateExitEvent(CE::World&, entt::entity)
 
 void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 {
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr)
-	{
-		LOG(LogAI, Warning, "NavMeshAgentComponent is needed to run the Charging Up State!");
-		return;
-	}
-
-	navMeshAgent->ClearTarget(world);
+	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;

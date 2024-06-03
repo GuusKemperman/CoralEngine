@@ -14,4 +14,6 @@ namespace Game {
 	[[nodiscard]] float GetBestScoreBasedOnDetection(const CE::World& world,
 		entt::entity owner, float radius);
 
+	void ExecuteEnemyAbility(CE::World& world, entt::entity owner);
+
 }

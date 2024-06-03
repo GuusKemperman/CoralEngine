@@ -2,19 +2,23 @@
 #include "BehaviourStuff.h"
 
 #include "Components/TransformComponent.h"
+#include "Components/Abilities/CharacterComponent.h"
+#include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Pathfinding/NavMeshTargetTag.h"
+#include "Systems/AbilitySystem.h"
 #include "World/Registry.h"
 #include "World/World.h"
+#include "Components/Pathfinding/SwarmingTargetComponent.h"
 
 float Game::GetBestScoreBasedOnDetection(const CE::World& world, entt::entity owner, float radius)
 {
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
-	const entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
+	const entt::entity entityId = world.GetRegistry().View<CE::SwarmingTargetComponent>().front();
 
 	if (entityId == entt::null)
 	{
-		LOG(LogAI, Warning, "An entity with a NavMeshTargetTag is needed to run the Charging Up State!");
+		LOG(LogAI, Warning, "An entity with a SwarmAgentTag is needed to run the Charging Up State!");
 		return 0.0f;
 	}
 
@@ -50,4 +54,28 @@ float Game::GetBestScoreBasedOnDetection(const CE::World& world, entt::entity ow
 	}
 
 	return highestScore;
+}
+
+void Game::ExecuteEnemyAbility(CE::World& world, entt::entity owner)
+{
+	const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
+	if (characterData == nullptr)
+	{
+		LOG(LogAI, Warning, "A character component is needed to run the Attacking State!");
+		return;
+	}
+
+	const auto abilities = world.GetRegistry().TryGet<CE::AbilitiesOnCharacterComponent>(owner);
+	if (abilities == nullptr)
+	{
+		LOG(LogAI, Warning, "A AbilitiesOnCharacter component is needed to run the Attacking State!");
+		return;
+	}
+
+	if (abilities->mAbilitiesToInput.empty())
+	{
+		return;
+	}
+
+	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
 }
