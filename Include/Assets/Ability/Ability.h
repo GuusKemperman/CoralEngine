@@ -18,6 +18,12 @@ namespace CE
         Ability(std::string_view name, TypeId typeId);
         Ability(AssetLoadInfo& loadInfo);
 
+		Ability(Ability&&) noexcept = default;
+		Ability(const Ability&) = default;
+
+		Ability& operator=(Ability&&) = delete;
+		Ability& operator=(const Ability&) = default;
+
 		enum RequirementType
 		{
 			Cooldown,
@@ -25,13 +31,6 @@ namespace CE
 		};
 
 		const AssetHandle<Texture>& GetIconTexture() const { return mIconTexture; }
-
-	protected:
-		friend AbilitySystem;
-		friend AbilityInstance;
-		friend AbilitiesOnCharacterComponent;
-
-        void OnSave(AssetSaveInfo& saveInfo) const override;
 
 		AssetHandle<Script> mOnAbilityActivateScript{};
 
@@ -49,6 +48,9 @@ namespace CE
 
 		float mRequirementToUse{};
 		int mCharges = 1; // how many times the ability can be used before going back on cooldown
+
+	protected:
+        void OnSave(AssetSaveInfo& saveInfo) const override;
 
         friend ReflectAccess;
         static MetaType Reflect();
