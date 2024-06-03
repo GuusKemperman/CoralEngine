@@ -16,18 +16,20 @@ void Game::DanceState::OnAITick(CE::World& world, const entt::entity owner, cons
 
 	if (physicsBody2DComponent == nullptr)
 	{
+		LOG(LogAI, Warning, "Dance State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
 	physicsBody2DComponent->mLinearVelocity = { 0,0 };
 }
 
-float Game::DanceState::OnAiEvaluate(const CE::World& world, entt::entity)
+float Game::DanceState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 {
 	const entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
 	if (entityId == entt::null)
 	{
+		LOG(LogAI, Warning, "Dance State - enemy {} does not have a Player Component.", entt::to_integral(owner));
 		return 1.0f;
 	}
 
@@ -35,6 +37,7 @@ float Game::DanceState::OnAiEvaluate(const CE::World& world, entt::entity)
 
 	if (characterComponent->mCurrentHealth <= 0.f)
 	{
+		LOG(LogAI, Warning, "Dance State - player {} does not have a Character Component.", entt::to_integral(entityId));
 		return 1.0f;
 	}
 

@@ -30,7 +30,7 @@ void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity own
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "An PhysicsBody2D component is needed to run the ChargingUp State!");
+		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
@@ -48,14 +48,14 @@ void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity own
 	const auto playerTransform = world.GetRegistry().TryGet<CE::TransformComponent>(playerId);
 	if (playerTransform == nullptr)
 	{
-		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
+		LOG(LogAI, Warning, "Charge Up Stomp State - player {} does not have a Transform Component.", entt::to_integral(playerId));
 		return;
 	}
 
 	const auto enemyTransform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 	if (enemyTransform == nullptr)
 	{
-		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
+		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return;
 	}
 
@@ -129,7 +129,7 @@ std::pair<float, entt::entity> Game::ChargeUpStompState::GetBestScoreAndTarget(c
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "TransformComponent is needed to run the Charging Up State!");
+		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return { 0.0f, entt::null };
 	}
 
@@ -139,7 +139,7 @@ std::pair<float, entt::entity> Game::ChargeUpStompState::GetBestScoreAndTarget(c
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "The player entity needs a TransformComponent is needed to run the Charging Up State!");
+		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a Transform Component.", entt::to_integral(entityId));
 		return { 0.0f, entt::null };
 	}
 

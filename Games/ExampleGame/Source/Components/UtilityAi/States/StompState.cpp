@@ -68,7 +68,7 @@ void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, cons
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
@@ -84,14 +84,14 @@ void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, cons
 	const auto playerTransform = world.GetRegistry().TryGet<CE::TransformComponent>(playerId);
 	if (playerTransform == nullptr)
 	{
-		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
+		LOG(LogAI, Warning, "Stomp State - player {} does not have a Transform Component.", entt::to_integral(playerId));
 		return;
 	}
 
 	const auto enemyTransform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 	if (enemyTransform == nullptr)
 	{
-		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return;
 	}
 
@@ -112,7 +112,7 @@ float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 
 	if (chargingUpState == nullptr)
 	{
-		LOG(LogAI, Warning, "A ChargeUpStompState is needed to run the Stomp State!");
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a ChargeUpState State.", entt::to_integral(owner));
 		return 0;
 	}
 
@@ -120,7 +120,7 @@ float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 
 	if (enemyAiController == nullptr)
 	{
-		LOG(LogAI, Warning, "A enemyAiController is needed to run the Stomp State!");
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a EnemyAiController Component.", entt::to_integral(owner));
 		return 0;
 	}
 
@@ -186,7 +186,7 @@ std::pair<float, entt::entity> Game::StompState::GetBestScoreAndTarget(const CE:
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "TransformComponent is needed to run the Charge Dash State!");
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return { 0.0f, entt::null };
 	}
 
@@ -196,7 +196,7 @@ std::pair<float, entt::entity> Game::StompState::GetBestScoreAndTarget(const CE:
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "The player entity needs a TransformComponent is needed to run the Charge Dash State!");
+		LOG(LogAI, Warning, "Stomp State - player {} does not have a Transform Component.", entt::to_integral(entityId));
 		return { 0.0f, entt::null };
 	}
 

@@ -25,7 +25,7 @@ void Game::RecoveryState::OnAiTick(CE::World& world, entt::entity owner, float d
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
+		LOG(LogAI, Warning, "Recovery State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
@@ -43,14 +43,14 @@ void Game::RecoveryState::OnAiTick(CE::World& world, entt::entity owner, float d
 	const auto playerTransform = world.GetRegistry().TryGet<CE::TransformComponent>(playerId);
 	if (playerTransform == nullptr)
 	{
-		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
+		LOG(LogAI, Warning, "Recovery State - player {} does not have a Transform Component.", entt::to_integral(playerId));
 		return;
 	}
 
 	const auto enemyTransform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 	if (enemyTransform == nullptr)
 	{
-		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
+		LOG(LogAI, Warning, "Recovery State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return;
 	}
 
