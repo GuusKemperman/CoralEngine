@@ -13,7 +13,7 @@ void CE::TopDownCamControllerComponent::ApplyTranslation(TransformComponent& tra
 
 	glm::vec3 totalTranslation = target;
 	totalTranslation[Axis::Right] = localPos[Axis::Right] + mCameraLag * dt * ((totalTranslation[Axis::Right] + cos(glm::radians(mRotationAngle)) * mOffset.y) - worldPos[Axis::Right]);
-	totalTranslation[Axis::Up] = localPos[Axis::Up] + mHeightInterpolationFactor * dt * ((totalTranslation[Axis::Up] + mOffset.x + mOffsetHeight) - worldPos[Axis::Up]);
+	totalTranslation[Axis::Up] = localPos[Axis::Up] + mHeightInterpolationFactor * dt * ((totalTranslation[Axis::Up] + mOffset.x) - worldPos[Axis::Up]);
 	totalTranslation[Axis::Forward] = localPos[Axis::Forward] + mCameraLag * dt * ((totalTranslation[Axis::Forward] + sin(glm::radians(mRotationAngle)) * mOffset.y) - worldPos[Axis::Forward]);
 
 	transform.SetWorldPosition(totalTranslation);
@@ -27,9 +27,9 @@ void CE::TopDownCamControllerComponent::UpdateRotation(TransformComponent& trans
 
 	const glm::vec3 localPos = transform.GetLocalPosition();
 
-	mTargetLocation[Axis::Right] = prevPos[Axis::Right] + mCameraLag * dt * ((target[Axis::Right] + cos(glm::radians(mRotationAngle)) * mOffset.y) - localPos[Axis::Right]);
-	mTargetLocation[Axis::Forward] = prevPos[Axis::Forward] + mCameraLag * dt * ((target[Axis::Forward] + sin(glm::radians(mRotationAngle)) * mOffset.y) - localPos[Axis::Forward]);
-	mTargetLocation[Axis::Up] = prevPos[Axis::Up] + mHeightInterpolationFactor * dt * (target[Axis::Up] * mOffsetHeight - prevPos[Axis::Up]);
+	mTargetLocation[Axis::Right] = prevPos[Axis::Right] + mCameraLag * dt * (target[Axis::Right] - prevPos[Axis::Right]);
+	mTargetLocation[Axis::Forward] = prevPos[Axis::Forward] + mCameraLag * dt * (target[Axis::Forward] - prevPos[Axis::Forward]);
+	mTargetLocation[Axis::Up] = prevPos[Axis::Up] + mHeightInterpolationFactor * dt * (target[Axis::Up] + mOffsetHeight - prevPos[Axis::Up]);
 
 	const glm::vec3 direction = glm::normalize(mTargetLocation - transform.GetWorldPosition());
 
