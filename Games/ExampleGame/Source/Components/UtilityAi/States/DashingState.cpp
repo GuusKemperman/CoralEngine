@@ -41,14 +41,14 @@ void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt
 	}
 	else
 	{
-		LOG(LogAI, Warning, "An animationRoot component is needed to run the Dashing State!");
+		LOG(LogAI, Warning, "Dash State - enemy {} does not have a AnimationRoot Component.", entt::to_integral(owner));
 	}
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "An PhysicsBody2D component is needed to run the Dashing State!");
+		LOG(LogAI, Warning, "Dash State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
@@ -61,7 +61,7 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owne
 
 	if (chargingUpState == nullptr)
 	{
-		LOG(LogAI, Warning, "A ChargeUpDashState is needed to run the Dashing State!");
+		LOG(LogAI, Warning, "Dash State - enemy {} does not have a ChargeUpDash State.", entt::to_integral(owner));
 		return 0;
 	}
 
@@ -69,7 +69,7 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owne
 
 	if (enemyAiController == nullptr)
 	{
-		LOG(LogAI, Warning, "A EnemyAiController is needed to run the Stomp State!");
+		LOG(LogAI, Warning, "Dash State - enemy {} does not have a EnemyAiController Component.", entt::to_integral(owner));
 		return 0;
 	}
 
@@ -104,7 +104,7 @@ void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owne
 
 		if (transformComponent == nullptr)
 		{
-			LOG(LogAI, Warning, "An Transform component on the player entity is needed to run the Dashing State!");
+			LOG(LogAI, Warning, "Dash State - player {} does not have a Transform Component.", entt::to_integral(mTargetEntity));
 			return;
 		}
 
@@ -112,7 +112,7 @@ void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owne
 
 		if (ownerTransformComponent == nullptr)
 		{
-			LOG(LogAI, Warning, "A transform component is needed to run the Dashing State!");
+			LOG(LogAI, Warning, "Dash State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 			return;
 		}
 
@@ -120,7 +120,7 @@ void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owne
 
 		if (physicsBody2DComponent == nullptr)
 		{
-			LOG(LogAI, Warning, "An PhysicsBody2D component is needed to run the Dashing State!");
+			LOG(LogAI, Warning, "Dash State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 			return;
 		}
 
