@@ -358,6 +358,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\EnvironmentGeneratorComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpStompState.cpp" />
     <ClCompile Include="Source\Components\DifficultyScalingComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\DanceState.cpp" />

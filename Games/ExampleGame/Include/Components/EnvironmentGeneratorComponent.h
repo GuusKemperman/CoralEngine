@@ -32,6 +32,17 @@ namespace Game
 				// Can be used to, for example, scale down trees near the edges
 				// of forests
 				CE::Bezier mScaleAtNoiseValue{};
+
+#ifdef EDITOR
+				void DisplayWidget(const std::string& name);
+#endif // EDITOR
+
+				bool operator==(const Object& other) const;
+				bool operator!=(const Object& other) const;
+
+			private:
+				friend CE::ReflectAccess;
+				static CE::MetaType Reflect();
 			};
 			std::vector<Object> mObjects{};
 
@@ -59,6 +70,17 @@ namespace Game
 			{
 				uint32 mIndexOfOtherLayer{};
 				float mWeight = 1.0f;
+
+#ifdef EDITOR
+				void DisplayWidget(const std::string& name);
+#endif // EDITOR
+
+				bool operator==(const NoiseInfluence& other) const;
+				bool operator!=(const NoiseInfluence& other) const;
+
+			private:
+				friend CE::ReflectAccess;
+				static CE::MetaType Reflect();
 			};
 
 			// Can be used to have relations between
@@ -74,11 +96,22 @@ namespace Game
 			// value can be set to 0.0f to nullify
 			// the effects of your own noise.
 			float mWeight = 1.0f;
+
+#ifdef EDITOR
+			void DisplayWidget(const std::string& name);
+#endif // EDITOR
+
+			bool operator==(const Layer& other) const;
+			bool operator!=(const Layer& other) const;
+
+		private:
+			friend CE::ReflectAccess;
+			static CE::MetaType Reflect();
 		};
 		std::vector<Layer> mLayers{};
 
-		float mGenerateRadius{};
-		float mDestroyRadius{};
+		float mGenerateRadius = 50.0f;
+		float mDestroyRadius = 100.0f;
 
 		// for each entity with PartOfGeneratedEnvironmentTag
 		//		if entity is orphan AND further than mDestroyRadius
@@ -114,5 +147,49 @@ namespace Game
 
 		// Is used to determine which 
 		glm::vec2 mLastGeneratedAroundPosition{};
+
+	private:
+		friend CE::ReflectAccess;
+		static CE::MetaType Reflect();
+		REFLECT_AT_START_UP(EnvironmentGeneratorComponent);
 	};
 }
+
+CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 0);
+CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::Object, 0);
+CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::NoiseInfluence, 0);
+
+namespace cereal
+{
+	template<class Archive>
+	void serialize(Archive& ar, Game::EnvironmentGeneratorComponent::Layer& value, uint32)
+	{
+		ar(value.mObjects, 
+			value.mCellSize, 
+			value.mMaxRandomOffset, 
+			value.mNumberOfRandomRotations, 
+			value.mNoiseScale, 
+			value.mNoiseNumOfOctaves,
+			value.mNoisePersistence,
+			value.mInfluences,
+			value.mWeight);
+	}
+
+	template<class Archive>
+	void serialize(Archive& ar, Game::EnvironmentGeneratorComponent::Layer::Object& value, uint32)
+	{
+		ar(value.mBaseFrequency, value.mPrefab, value.mScaleAtNoiseValue, value.mSpawnFrequenciesAtNoiseValue);
+	}
+
+	template<class Archive>
+	void serialize(Archive& ar, Game::EnvironmentGeneratorComponent::Layer::NoiseInfluence& value, uint32)
+	{
+		ar(value.mWeight, value.mIndexOfOtherLayer);
+	}
+}
+
+#ifdef EDITOR
+IMGUI_AUTO_DEFINE_INLINE(template<>, Game::EnvironmentGeneratorComponent::Layer, var.DisplayWidget(name);)
+IMGUI_AUTO_DEFINE_INLINE(template<>, Game::EnvironmentGeneratorComponent::Layer::Object, var.DisplayWidget(name);)
+IMGUI_AUTO_DEFINE_INLINE(template<>, Game::EnvironmentGeneratorComponent::Layer::NoiseInfluence, var.DisplayWidget(name);)
+#endif // EDITOR
