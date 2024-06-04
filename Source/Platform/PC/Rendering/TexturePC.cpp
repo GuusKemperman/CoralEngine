@@ -6,22 +6,36 @@
 #include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
+#include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
+#include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
 #include "Utilities/StringFunctions.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 #include "Core/Device.h"
+#include "Rendering/FrameBuffer.h"
+
+struct CE::Texture::DXImpl
+{
+	std::unique_ptr<DXResource> mTextureBuffer{};
+	std::optional<DXHeapHandle> mHeapSlot{};
+
+	std::optional<DXHeapHandle> mUAVslots[3]{};
+	std::unique_ptr<DXConstBuffer> mMipmapCB{};
+};
 
 #ifdef EDITOR
 CE::Texture::Texture(std::string_view name, FrameBuffer&& frameBuffer) :
 	Asset(name, MakeTypeId<Texture>()),
-	mHeapSlot(std::move(frameBuffer.mFrameBufferRscHandle[Device::Get().GetFrameIndex()])),
-	mTextureBuffer(std::move(frameBuffer.mResource[Device::Get().GetFrameIndex()]))
+	mImpl(new DXImpl())
 {
+	mImpl->mHeapSlot = std::move(frameBuffer.GetCurrentHeapSlot());
+	mImpl->mTextureBuffer = std::move(frameBuffer.GetCurrentResource());
 }
 #endif // EDITOR
 
 CE::Texture::Texture(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo),
+	mImpl(new DXImpl()),
 	mLoadedPixels(std::make_shared<STBIPixels>()),
 	mLoadingThread([loadInfoMoved = std::make_shared<AssetLoadInfo>(std::move(loadInfo)), buffer = mLoadedPixels]
 		{
@@ -44,9 +58,14 @@ CE::Texture::~Texture()
 
 bool CE::Texture::IsReadyToBeSentToGpu() const
 {
-	return !mHeapSlot.has_value()
+	return !mImpl->mHeapSlot.has_value()
 		&& mLoadedPixels != nullptr
 		&& mLoadedPixels->mPixels != nullptr;
+}
+
+bool CE::Texture::WasSendToGPU() const
+{
+	return mImpl->mHeapSlot.has_value();
 }
 
 void CE::Texture::SendToGPU() const
@@ -92,20 +111,49 @@ void CE::Texture::SendToGPU() const
 	resourceDescription.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	self.mTextureBuffer = std::make_unique<DXResource>(device, heapProperties, resourceDescription, nullptr, "Texture Buffer Resource Heap");
+	self.mImpl->mTextureBuffer = std::make_unique<DXResource>(device, heapProperties, resourceDescription, nullptr, "Texture Buffer Resource Heap");
 
 	UINT64 textureUploadBufferSize;
 	device->GetCopyableFootprints(&resourceDescription, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
 
-	int bytesPerRow = (mLoadedPixels->mWidth * self.GetDXGIFormatBitsPerPixel(resourceDescription.Format)) / 8; // number of bytes in each row of the image data
+	const int bitsPerPixel = [&resourceDescription]
+		{
+			switch (resourceDescription.Format)
+			{
+			case DXGI_FORMAT_R32G32B32A32_FLOAT:
+				return 128;
+			case DXGI_FORMAT_R16G16B16A16_FLOAT:
+			case DXGI_FORMAT_R16G16B16A16_UNORM:
+				return 64;
+			case DXGI_FORMAT_R8G8B8A8_UNORM:
+			case DXGI_FORMAT_B8G8R8A8_UNORM:
+			case DXGI_FORMAT_B8G8R8X8_UNORM:
+			case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM:
+			case DXGI_FORMAT_R10G10B10A2_UNORM:
+			case DXGI_FORMAT_R32_FLOAT:
+				return 32;
+			case DXGI_FORMAT_B5G5R5A1_UNORM:
+			case DXGI_FORMAT_B5G6R5_UNORM:
+			case DXGI_FORMAT_R16_FLOAT:
+			case DXGI_FORMAT_R16_UNORM:
+				return 16;
+			case DXGI_FORMAT_R8_UNORM:
+			case DXGI_FORMAT_A8_UNORM:
+				return 8;
+			default:
+				return 0;
+			}
+		}();
+
+	int bytesPerRow = (mLoadedPixels->mWidth * bitsPerPixel) / 8; // number of bytes in each row of the image data
 
 	D3D12_SUBRESOURCE_DATA textureData = {};
 	textureData.pData = mLoadedPixels->mPixels; // pointer to our image data
 	textureData.RowPitch = bytesPerRow; // size of all our triangle vertex data
 	textureData.SlicePitch = bytesPerRow * resourceDescription.Height; // also the size of our triangle vertex data
 
-	mTextureBuffer->CreateUploadBuffer(device, static_cast<int>(textureUploadBufferSize), 0);
-	mTextureBuffer->Update(uploadCmdList, textureData, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1);
+	mImpl->mTextureBuffer->CreateUploadBuffer(device, static_cast<int>(textureUploadBufferSize), 0);
+	mImpl->mTextureBuffer->Update(uploadCmdList, textureData, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, 0, 1);
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -113,7 +161,7 @@ void CE::Texture::SendToGPU() const
 	srvDesc.Texture2D.MipLevels = resourceDescription.MipLevels;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	self.mHeapSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mTextureBuffer.get(), &srvDesc);
+	self.mImpl->mHeapSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mImpl->mTextureBuffer.get(), &srvDesc);
 
 	for (int i = 1; i < resourceDescription.MipLevels; i++)
 	{
@@ -123,24 +171,24 @@ void CE::Texture::SendToGPU() const
 		uavDesc.Texture2D.MipSlice = i;
 		uavDesc.Texture2D.PlaneSlice = 0;
 
-		self.mUAVslots[i-1] = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mTextureBuffer.get(), &uavDesc);
+		self.mImpl->mUAVslots[i-1] = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mImpl->mTextureBuffer.get(), &uavDesc);
 	}
 
 	GenerateMipmaps();
 
 	for (int i = 0; i < 3; i++)
 	{
-		self.mUAVslots[i].reset();
+		self.mImpl->mUAVslots[i].reset();
 	}
 
-	self.mMipmapCB = nullptr;
+	self.mImpl->mMipmapCB = nullptr;
 
 	engineDevice.SubmitUploadCommands();
 
 	self.mLoadedPixels.reset();
 }
 
-void CE::Texture::BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
+void CE::Texture::BindToGraphics(const ComPtr<ID3D12GraphicsCommandList4>& commandList, unsigned int rootSlot) const
 {
 	const DXHeapHandle* heapSlot = TryGetHeapSlot();
 
@@ -150,7 +198,7 @@ void CE::Texture::BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList,
 	}
 }
 
-void CE::Texture::BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const
+void CE::Texture::BindToCompute(const ComPtr<ID3D12GraphicsCommandList4>& commandList, unsigned int rootSlot) const
 {
 	const DXHeapHandle* heapSlot = TryGetHeapSlot();
 
@@ -173,35 +221,6 @@ ImTextureID CE::Texture::GetImGuiId() const
 }
 #endif // EDITOR
 
-int CE::Texture::GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat)
-{
-	switch (dxgiFormat)
-	{
-	case DXGI_FORMAT_R32G32B32A32_FLOAT:
-		return 128;
-	case DXGI_FORMAT_R16G16B16A16_FLOAT:
-	case DXGI_FORMAT_R16G16B16A16_UNORM:
-		return 64;
-	case DXGI_FORMAT_R8G8B8A8_UNORM:
-	case DXGI_FORMAT_B8G8R8A8_UNORM:
-	case DXGI_FORMAT_B8G8R8X8_UNORM:
-	case DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM:
-	case DXGI_FORMAT_R10G10B10A2_UNORM:
-	case DXGI_FORMAT_R32_FLOAT:
-		return 32;
-	case DXGI_FORMAT_B5G5R5A1_UNORM:
-	case DXGI_FORMAT_B5G6R5_UNORM:
-	case DXGI_FORMAT_R16_FLOAT:
-	case DXGI_FORMAT_R16_UNORM:
-		return 16;
-	case DXGI_FORMAT_R8_UNORM:
-	case DXGI_FORMAT_A8_UNORM:
-		return 8;
-	default:
-		return 0;
-	}
-}
-
 void CE::Texture::GenerateMipmaps() const
 {
 	//FROM: https://www.3dgep.com/learning-directx-12-4/#Generate_Mipmaps_Compute_Shader
@@ -215,7 +234,7 @@ void CE::Texture::GenerateMipmaps() const
 	DXGenerateMips generateMipsCB;
 	generateMipsCB.IsSRGB = false; //TODO: check if format is SRGB
 
-	auto resource = self.mTextureBuffer->GetResource();
+	auto resource = self.mImpl->mTextureBuffer->GetResource();
 	auto resourceDesc = resource->GetDesc();
 
 	if (resourceDesc.MipLevels < 4)
@@ -228,7 +247,7 @@ void CE::Texture::GenerateMipmaps() const
 	srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
 
 	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	self.mMipmapCB = std::make_unique<DXConstBuffer>(device, sizeof(DXGenerateMips), 1, "MIPMAP CREATION INFO BUFFER", FRAME_BUFFER_COUNT);
+	self.mImpl->mMipmapCB = std::make_unique<DXConstBuffer>(device, sizeof(DXGenerateMips), 1, "MIPMAP CREATION INFO BUFFER", FRAME_BUFFER_COUNT);
 
 
 	uint64_t srcWidth = resourceDesc.Width;
@@ -260,38 +279,43 @@ void CE::Texture::GenerateMipmaps() const
 	generateMipsCB.NumMipLevels = mipCount;
 	generateMipsCB.TexelSize.x = 1.0f / (float)dstWidth;
 	generateMipsCB.TexelSize.y = 1.0f / (float)dstHeight;
-	self.mMipmapCB->Update(&generateMipsCB, sizeof(DXGenerateMips), 0, engineDevice.GetFrameIndex());
+	self.mImpl->mMipmapCB->Update(&generateMipsCB, sizeof(DXGenerateMips), 0, engineDevice.GetFrameIndex());
 
 	uploadCmdList->SetPipelineState(reinterpret_cast<ID3D12PipelineState*>(engineDevice.GetMipmapPipeline()));
 	uploadCmdList->SetComputeRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()));
 	ID3D12DescriptorHeap* descriptorHeaps[] = {engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->Get()};
 	uploadCmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-	self.mMipmapCB->BindToCompute(uploadCmdList, 0, 0, engineDevice.GetFrameIndex());
-	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 10, *mHeapSlot);
-	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 6, *mUAVslots[0]);
-	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 7, *mUAVslots[1]);
-	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 8, *mUAVslots[2]);
+	self.mImpl->mMipmapCB->BindToCompute(uploadCmdList, 0, 0, engineDevice.GetFrameIndex());
+	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 10, *mImpl->mHeapSlot);
+	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 6, *mImpl->mUAVslots[0]);
+	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 7, *mImpl->mUAVslots[1]);
+	engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->BindToCompute(uploadCmdList, 8, *mImpl->mUAVslots[2]);
 
 	uploadCmdList->Dispatch(dstWidth /8, dstHeight / 8,  1);
 }
 
 const DXHeapHandle* CE::Texture::TryGetHeapSlot() const
 {
-	if (mHeapSlot.has_value())
+	if (mImpl->mHeapSlot.has_value())
 	{
-		return &*mHeapSlot;
+		return &*mImpl->mHeapSlot;
 	}
 
 	const AssetHandle defaultTexture = TryGetDefaultTexture();
 
 	if (defaultTexture != nullptr
-		&& defaultTexture->mHeapSlot.has_value())
+		&& defaultTexture->mImpl->mHeapSlot.has_value())
 	{
-		return  &*defaultTexture->mHeapSlot;
+		return  &*defaultTexture->mImpl->mHeapSlot;
 	}
 
 	return nullptr;
+}
+
+void CE::Texture::DXImplDeleter::operator()(DXImpl* impl) const
+{
+	delete impl;
 }
 
 CE::Texture::STBIPixels::~STBIPixels()

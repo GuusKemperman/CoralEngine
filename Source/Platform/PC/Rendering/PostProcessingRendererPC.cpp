@@ -11,6 +11,7 @@
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/OutlineComponent.h"
 #include "Platform/PC/Rendering/FramebufferPC.h"
+#include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
 
 CE::PostProcessingRenderer::PostProcessingRenderer()
 {

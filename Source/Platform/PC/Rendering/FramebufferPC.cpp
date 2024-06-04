@@ -3,9 +3,23 @@
 #include "Core/Device.h"
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
-#include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
+#include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
 
-CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
+struct CE::FrameBuffer::DXImpl
+{
+	std::unique_ptr<DXResource> mResource[FRAME_BUFFER_COUNT]{};
+	std::unique_ptr<DXResource> mDepthResource{};
+	DXHeapHandle mFrameBufferHandle[FRAME_BUFFER_COUNT]{};
+	DXHeapHandle mFrameBufferRscHandle[FRAME_BUFFER_COUNT]{};
+	DXHeapHandle mFrameBufferUAVHandle[FRAME_BUFFER_COUNT]{};
+	DXHeapHandle mDepthStencilHandle{};
+	DXHeapHandle mDepthStencilSRVHandle{};
+	D3D12_VIEWPORT mViewport{};
+	D3D12_RECT mScissorRect{};
+};
+
+CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize) :
+	mImpl(new DXImpl())
 {
 	if (Device::IsHeadless())
 	{
@@ -19,17 +33,17 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 	auto depthHeap = engineDevice.GetDescriptorHeap(DEPTH_HEAP);
 
 	mSize = initialSize;
-	mViewport.Width = static_cast<FLOAT>(mSize.x);
-	mViewport.Height = static_cast<FLOAT>(mSize.y);
-	mViewport.TopLeftX = 0;
-	mViewport.TopLeftY = 0;
-	mViewport.MinDepth = 0.0f;
-	mViewport.MaxDepth = 1.0f;
+	mImpl->mViewport.Width = static_cast<FLOAT>(mSize.x);
+	mImpl->mViewport.Height = static_cast<FLOAT>(mSize.y);
+	mImpl->mViewport.TopLeftX = 0;
+	mImpl->mViewport.TopLeftY = 0;
+	mImpl->mViewport.MinDepth = 0.0f;
+	mImpl->mViewport.MaxDepth = 1.0f;
 
-	mScissorRect.left = 0;
-	mScissorRect.top = 0;
-	mScissorRect.right = static_cast<LONG>(mViewport.Width);
-	mScissorRect.bottom = static_cast<LONG>(mViewport.Height);
+	mImpl->mScissorRect.left = 0;
+	mImpl->mScissorRect.top = 0;
+	mImpl->mScissorRect.right = static_cast<LONG>(mImpl->mViewport.Width);
+	mImpl->mScissorRect.bottom = static_cast<LONG>(mImpl->mViewport.Height);
 
 	D3D12_CLEAR_VALUE clearValue = {};
 	clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Use the format that matches your RTV format.
@@ -41,8 +55,9 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 	auto framebufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, static_cast<UINT>(mSize.x), static_cast<UINT>(mSize.y), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
-	for (int i = 0; i < FRAME_BUFFER_COUNT; i++) {
-		mResource[i] = std::make_unique<DXResource>(device, heapProperties, framebufferDesc, &clearValue, "Framebuffer");
+	for (int i = 0; i < FRAME_BUFFER_COUNT; i++) 
+	{
+		mImpl->mResource[i] = std::make_unique<DXResource>(device, heapProperties, framebufferDesc, &clearValue, "Framebuffer");
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -56,8 +71,8 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 
-		mFrameBufferHandle[i] = rtHeap->AllocateRenderTarget(mResource[i].get(), &rtvDesc);
-		mFrameBufferRscHandle[i] = rscHeap->AllocateResource(mResource[i].get(), &srvDesc);
+		mImpl->mFrameBufferHandle[i] = rtHeap->AllocateRenderTarget(mImpl->mResource[i].get(), &rtvDesc);
+		mImpl->mFrameBufferRscHandle[i] = rscHeap->AllocateResource(mImpl->mResource[i].get(), &srvDesc);
 	}
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -72,8 +87,8 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 
 	heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, static_cast<UINT>(mSize.x), static_cast<UINT>(mSize.y), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
-	mDepthResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
-	mDepthStencilHandle = depthHeap->AllocateDepthStencil(mDepthResource.get(), &depthStencilDesc);
+	mImpl->mDepthResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
+	mImpl->mDepthStencilHandle = depthHeap->AllocateDepthStencil(mImpl->mDepthResource.get(), &depthStencilDesc);
 
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -82,7 +97,7 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize)
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 
-	mDepthStencilSRVHandle = rscHeap->AllocateResource(mDepthResource.get(), &srvDesc);
+	mImpl->mDepthStencilSRVHandle = rscHeap->AllocateResource(mImpl->mDepthResource.get(), &srvDesc);
 
 }
 
@@ -93,11 +108,11 @@ void CE::FrameBuffer::Bind() const
 	Device& engineDevice = Device::Get();
 	std::shared_ptr<DXDescHeap> rtHeap = engineDevice.GetDescriptorHeap(RT_HEAP);
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
-	mResource[engineDevice.GetFrameIndex()]->ChangeState(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-	mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-	commandList->RSSetViewports(1, &mViewport);
-	commandList->RSSetScissorRects(1, &mScissorRect);
-	rtHeap->BindRenderTargets(commandList, &mFrameBufferHandle[engineDevice.GetFrameIndex()], mDepthStencilHandle);
+	mImpl->mResource[engineDevice.GetFrameIndex()]->ChangeState(commandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	mImpl->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+	commandList->RSSetViewports(1, &mImpl->mViewport);
+	commandList->RSSetScissorRects(1, &mImpl->mScissorRect);
+	rtHeap->BindRenderTargets(commandList, &mImpl->mFrameBufferHandle[engineDevice.GetFrameIndex()], mImpl->mDepthStencilHandle);
 }
 
 void CE::FrameBuffer::Unbind() const
@@ -111,8 +126,8 @@ void CE::FrameBuffer::BindSRVDepthToGraphics(int rootSlot) const
 	std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
 
-	mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
-	resourceHeap->BindToGraphics(commandList, rootSlot, mDepthStencilSRVHandle);
+	mImpl->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
+	resourceHeap->BindToGraphics(commandList, rootSlot, mImpl->mDepthStencilSRVHandle);
 }
 
 void CE::FrameBuffer::Resize(glm::ivec2 newSize)
@@ -129,17 +144,17 @@ void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 		return;
 	}
 
-	mViewport.Width = static_cast<FLOAT>(mSize.x);
-	mViewport.Height = static_cast<FLOAT>(mSize.y);
-	mViewport.TopLeftX = 0;
-	mViewport.TopLeftY = 0;
-	mViewport.MinDepth = 0.0f;
-	mViewport.MaxDepth = 1.0f;
+	mImpl->mViewport.Width = static_cast<FLOAT>(mSize.x);
+	mImpl->mViewport.Height = static_cast<FLOAT>(mSize.y);
+	mImpl->mViewport.TopLeftX = 0;
+	mImpl->mViewport.TopLeftY = 0;
+	mImpl->mViewport.MinDepth = 0.0f;
+	mImpl->mViewport.MaxDepth = 1.0f;
 
-	mScissorRect.left = 0;
-	mScissorRect.top = 0;
-	mScissorRect.right = static_cast<LONG>(mViewport.Width);
-	mScissorRect.bottom = static_cast<LONG>(mViewport.Height);
+	mImpl->mScissorRect.left = 0;
+	mImpl->mScissorRect.top = 0;
+	mImpl->mScissorRect.right = static_cast<LONG>(mImpl->mViewport.Width);
+	mImpl->mScissorRect.bottom = static_cast<LONG>(mImpl->mViewport.Height);
 
 	Device& engineDevice = Device::Get();
 	ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
@@ -154,14 +169,15 @@ void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 	auto framebufferDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, static_cast<UINT>(mSize.x), static_cast<UINT>(mSize.y), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
-	for (int i = 0; i < FRAME_BUFFER_COUNT; i++) {
-		mResource[i] = std::make_unique<DXResource>(device, heapProperties, framebufferDesc, &clearValue, "Framebuffer resource");
+	for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		mImpl->mResource[i] = std::make_unique<DXResource>(device, heapProperties, framebufferDesc, &clearValue, "Framebuffer resource");
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		rtvDesc.Texture2D.MipSlice = 0;
-		mFrameBufferHandle[i] = engineDevice.GetDescriptorHeap(RT_HEAP)->AllocateRenderTarget(mResource[i].get(), &rtvDesc);
+		mImpl->mFrameBufferHandle[i] = engineDevice.GetDescriptorHeap(RT_HEAP)->AllocateRenderTarget(mImpl->mResource[i].get(), &rtvDesc);
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -170,7 +186,7 @@ void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 
-		mFrameBufferRscHandle[i] = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mResource[i].get(), &srvDesc);
+		mImpl->mFrameBufferRscHandle[i] = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mImpl->mResource[i].get(), &srvDesc);
 	}
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -186,8 +202,8 @@ void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 	heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, static_cast<UINT>(mSize.x), static_cast<UINT>(mSize.y), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
-	mDepthResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, &depthOptimizedClearValue, "Framebuffer depth Resource");
-	mDepthStencilHandle = engineDevice.GetDescriptorHeap(DEPTH_HEAP)->AllocateDepthStencil(mDepthResource.get(), &depthStencilDesc);
+	mImpl->mDepthResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, &depthOptimizedClearValue, "Framebuffer depth Resource");
+	mImpl->mDepthStencilHandle = engineDevice.GetDescriptorHeap(DEPTH_HEAP)->AllocateDepthStencil(mImpl->mDepthResource.get(), &depthStencilDesc);
 }
 
 void CE::FrameBuffer::Clear()
@@ -196,12 +212,27 @@ void CE::FrameBuffer::Clear()
 	std::shared_ptr<DXDescHeap> rtHeap = engineDevice.GetDescriptorHeap(RT_HEAP);
 	std::shared_ptr<DXDescHeap> depthHeap = engineDevice.GetDescriptorHeap(DEPTH_HEAP);
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
-	rtHeap->ClearRenderTarget(commandList, mFrameBufferHandle[engineDevice.GetFrameIndex()], &mClearColor[0]);
-	depthHeap->ClearDepthStencil(commandList, mDepthStencilHandle);
+	rtHeap->ClearRenderTarget(commandList, mImpl->mFrameBufferHandle[engineDevice.GetFrameIndex()], &mClearColor[0]);
+	depthHeap->ClearDepthStencil(commandList, mImpl->mDepthStencilHandle);
 }
 
 size_t CE::FrameBuffer::GetColorTextureId()
 {
 	Device& engineDevice = Device::Get();
-	return mFrameBufferRscHandle[engineDevice.GetFrameIndex()].GetAddressGPU().ptr;
+	return mImpl->mFrameBufferRscHandle[engineDevice.GetFrameIndex()].GetAddressGPU().ptr;
+}
+
+DXHeapHandle& CE::FrameBuffer::GetCurrentHeapSlot()
+{
+	return mImpl->mFrameBufferRscHandle[Device::Get().GetFrameIndex()];
+}
+
+std::unique_ptr<DXResource>& CE::FrameBuffer::GetCurrentResource()
+{
+	return mImpl->mResource[Device::Get().GetFrameIndex()];
+}
+
+void CE::FrameBuffer::DXImplDeleter::operator()(DXImpl* impl) const
+{
+	delete impl;
 }

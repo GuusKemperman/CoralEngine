@@ -34,10 +34,6 @@ enum SkinnedMeshFlags : uint8
     hasBoneWeights = 1 << 7
 };
 
-CE::SkinnedMesh::SkinnedMesh(std::string_view name) :
-    Asset(name, MakeTypeId<SkinnedMesh>())
-{}
-
 bool CE::SkinnedMesh::OnSave(AssetSaveInfo& saveInfo,
     Span<const glm::vec3> positions, 
     std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices, 
