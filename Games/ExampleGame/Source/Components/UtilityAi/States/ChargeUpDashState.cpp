@@ -1,20 +1,14 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
 
-#include "AiFunctionality.h"
-#include "Components/TransformComponent.h"
+#include "Utilities/AiFunctionality.h"
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Components/AnimationRootComponent.h"
-#include "Components/PlayerComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Components/Abilities/CharacterComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Systems/AbilitySystem.h"
-#include "Assets/Animation/Animation.h"
-#include "Components/Pathfinding/SwarmingTargetComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 
 void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
@@ -39,7 +33,7 @@ void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owne
 	mChargeCooldown.mAmountOfTimePassed += dt;
 }
 
-float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
+float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
 	if (mChargeCooldown.mAmountOfTimePassed != 0.0f)
 	{
@@ -51,7 +45,7 @@ float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, entt::entity
 	return score;
 }
 
-void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
+void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 

@@ -1,26 +1,24 @@
 #include "Precomp.h"
-#include "AiFunctionality.h"
+#include "Utilities/AiFunctionality.h"
 
 #include "Components/AnimationRootComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Systems/AbilitySystem.h"
 #include "World/Registry.h"
 #include "World/World.h"
-#include "Components/Pathfinding/SwarmingTargetComponent.h"
 
 float Game::GetBestScoreBasedOnDetection(const CE::World& world, const entt::entity owner, const float radius)
 {
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
-	const entt::entity entityId = world.GetRegistry().View<CE::SwarmingTargetComponent>().front();
+	const entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
 	if (entityId == entt::null)
 	{
-		LOG(LogAI, Warning, "An entity with a SwarmAgentTag is needed to run the Charging Up State!");
+		LOG(LogAI, Warning, "An entity with a Player is needed to run the Charging Up State!");
 		return 0.0f;
 	}
 
@@ -82,13 +80,13 @@ void Game::ExecuteEnemyAbility(CE::World& world, const entt::entity owner)
 	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
 }
 
-void Game::AnimationInAi(CE::World& world, const entt::entity owner, const CE::AssetHandle<CE::Animation>& animation)
+void Game::AnimationInAi(CE::World& world, const entt::entity owner, const CE::AssetHandle<CE::Animation>& playAIAnimation)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
 	if (animationRootComponent != nullptr)
 	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), animation, 0.0f);
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), playAIAnimation, 0.0f);
 	}
 	else
 	{
@@ -98,7 +96,7 @@ void Game::AnimationInAi(CE::World& world, const entt::entity owner, const CE::A
 
 void Game::FaceThePlayer(CE::World& world, const entt::entity owner)
 {
-	const entt::entity playerId = world.GetRegistry().View<CE::SwarmingTargetComponent>().front();
+	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
 	if (playerId == entt::null)
 	{

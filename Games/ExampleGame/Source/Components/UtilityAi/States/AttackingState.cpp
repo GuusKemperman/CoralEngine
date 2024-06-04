@@ -1,18 +1,12 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/AttackingState.h"
 
-#include "AiFunctionality.h"
-#include "Components/TransformComponent.h"
-#include "Components/Abilities/CharacterComponent.h"
+#include "Utilities/AiFunctionality.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Systems/AbilitySystem.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "Components/AnimationRootComponent.h"
-#include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Assets/Animation/Animation.h"
 
 void Game::AttackingState::OnAITick(CE::World& world, const entt::entity owner, float) const
 {

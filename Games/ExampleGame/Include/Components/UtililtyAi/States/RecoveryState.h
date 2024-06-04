@@ -19,6 +19,7 @@ namespace Game
 		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
 		void OnAiStateExitEvent(CE::World& world, entt::entity owner);
+		void OnBeginPlayEvent(CE::World& world, entt::entity owner);
 
 		CE::AssetHandle<CE::Animation> mDashRechargeAnimation{};
 
