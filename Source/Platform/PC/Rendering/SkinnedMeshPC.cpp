@@ -58,8 +58,14 @@ enum SkinnedMeshFlags : uint8
     hasBoneWeights = 1 << 7
 };
 
+CE::SkinnedMesh::SkinnedMesh(std::string_view name) :
+    Asset(name, MakeTypeId<SkinnedMesh>()),
+    mImpl(new DXImpl())
+{}
+
 CE::SkinnedMesh::SkinnedMesh(AssetLoadInfo& loadInfo) :
-    Asset(loadInfo)
+    Asset(loadInfo),
+	mImpl(new DXImpl())
 {
     std::istream& str = loadInfo.GetStream();
 
