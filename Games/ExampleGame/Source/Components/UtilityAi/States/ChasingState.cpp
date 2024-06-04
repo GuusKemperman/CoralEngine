@@ -49,7 +49,7 @@ std::pair<float, entt::entity> Game::ChasingState::GetBestScoreAndTarget(
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "A transform component is needed to run the Chasing State!");
+		LOG(LogAI, Warning, "Chasing State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return { 0.0f, entt::null };
 	}
 
@@ -59,7 +59,7 @@ std::pair<float, entt::entity> Game::ChasingState::GetBestScoreAndTarget(
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "The entity with the NavMeshTargetTag needs a TranformComponent is needed to run the Chasing State!");
+		LOG(LogAI, Warning, "Chasing State - player {} does not have a Transform Component.", entt::to_integral(entityId));
 		return { 0.0f, entt::null };
 	}
 
@@ -87,7 +87,7 @@ void Game::ChasingState::DebugRender(CE::World& world, entt::entity owner) const
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "A transform component is needed to run the Chasing State!");
+		LOG(LogAI, Warning, "Chasing State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return;
 	}
 

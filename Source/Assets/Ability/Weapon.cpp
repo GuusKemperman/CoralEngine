@@ -56,7 +56,7 @@ CE::Weapon::Weapon(AssetLoadInfo& loadInfo) :
 		return;
 	}
 
-	*serializedTimeBetweenShots >> mTimeBetweenShots;
+	*serializedTimeBetweenShots >> mShotDelay;
 	*serializedFireSpeed >> mFireSpeed;
 	*serializedReloadSpeed >> mReloadSpeed;
 	*serializedProjectileCount >> mProjectileCount;
@@ -76,7 +76,7 @@ void CE::Weapon::OnSave(AssetSaveInfo& saveInfo) const
 
 	BinaryGSONObject obj{};
 
-	obj.AddGSONMember("TimeBetweenShots") << mTimeBetweenShots;
+	obj.AddGSONMember("TimeBetweenShots") << mShotDelay;
 	obj.AddGSONMember("FireSpeed") << mFireSpeed;
 	obj.AddGSONMember("ReloadSpeed") << mReloadSpeed;
 	obj.AddGSONMember("ProjectileCount") << mProjectileCount;
@@ -95,268 +95,166 @@ void CE::Weapon::OnSave(AssetSaveInfo& saveInfo) const
 CE::MetaType CE::Weapon::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Weapon>{}, "Weapon", MetaType::Base<Ability>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
+	type.GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddField(&Weapon::mTimeBetweenShots, "mTimeBetweenShots");
-	type.AddField(&Weapon::mFireSpeed, "mFireSpeed");
-	type.AddField(&Weapon::mReloadSpeed, "mReloadSpeed");
-	type.AddField(&Weapon::mProjectileCount, "mProjectileCount");
-	type.AddField(&Weapon::mSpread, "mSpread");
+	type.AddField(&Weapon::mShotDelay, "mShotDelay").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&Weapon::mFireSpeed, "mFireSpeed").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&Weapon::mReloadSpeed, "mReloadSpeed").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&Weapon::mProjectileCount, "mProjectileCount").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&Weapon::mSpread, "mSpread").GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddField(&Weapon::mEffects, "mEffects");
-	type.AddField(&Weapon::mProjectileSize, "mProjectileSize");
-	type.AddField(&Weapon::mProjectileSpeed, "mProjectileSpeed");
-	type.AddField(&Weapon::mProjectileRange, "mProjectileRange");
-	type.AddField(&Weapon::mKnockback, "mKnockback");
-	type.AddField(&Weapon::mPierceCount, "mPierceCount");
+	type.AddField(&Weapon::mEffects, "mEffects").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&Weapon::mProjectileSize, "mProjectileSize").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&Weapon::mProjectileSpeed, "mProjectileSpeed").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&Weapon::mProjectileRange, "mProjectileRange").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&Weapon::mKnockback, "mKnockback").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&Weapon::mPierceCount, "mPierceCount").GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
+	// Weapon pointer.
+	type.AddFunc([](Weapon& weapon) -> std::vector<AbilityEffect>&
 		{
-			if (weapon == nullptr)
-			{
-				return 0.0f;
-			}
-			return weapon->mTimeBetweenShots;
+			return weapon.mEffects;
 		},
-		"GetTimeBetweenShots", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, float v)
+		"GetEffects (Weapon Instance)", MetaFunc::ExplicitParams<Weapon&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](Weapon& weapon, AbilityEffect effect, int index)
 		{
-			if (weapon == nullptr)
+			if (index >= static_cast<int>(weapon.mEffects.size()) || index < 0)
 			{
+				LOG(LogAbilitySystem, Error, "Index {} out of range for weapon {}.", index, weapon.GetName());
 				return;
 			}
-			const_cast<Weapon&>(*weapon).mTimeBetweenShots = v;
+			weapon.mEffects[index] = effect;
 		},
-		"SetTimeBetweenShots", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, float>{}).GetProperties().Add(Props::sIsScriptableTag);
+		"SetEffectAtIndex (Weapon Instance)", MetaFunc::ExplicitParams<Weapon&, AbilityEffect, int>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
+	type.AddFunc([](const Weapon& weapon) -> float
 		{
-			if (weapon == nullptr)
-			{
-				return 0.0f;
-			}
-			return weapon->mFireSpeed;
+			return weapon.mRequirementToUse;
+		},
+		"GetReloadTime (Weapon Instance)", MetaFunc::ExplicitParams<const Weapon&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](Weapon& weapon, float v)
+		{
+			weapon.mRequirementToUse = v;
+		},
+		"SetReloadTime (Weapon Instance)", MetaFunc::ExplicitParams<Weapon&, float>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const Weapon& weapon) -> int
+		{
+			return weapon.mCharges;
+		},
+		"GetAmmo (Weapon Instance)", MetaFunc::ExplicitParams<const Weapon&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](Weapon& weapon, int v)
+		{
+			weapon.mCharges = v;
+		},
+		"SetAmmo (Weapon Instance)", MetaFunc::ExplicitParams<Weapon&, int>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	// Weapon asset.
+	// Non-inherited members.
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+		{
+			return upgrade->mShotDelay;
+		},
+		"GetShotDelay", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+		{
+			return upgrade->mFireSpeed;
 		},
 		"GetFireSpeed", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, float v)
-		{
-			if (weapon == nullptr)
-			{
-				return;
-			}
-			const_cast<Weapon&>(*weapon).mFireSpeed = v;
-		},
-		"SetFireSpeed", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, float>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
 		{
-			if (weapon == nullptr)
-			{
-				return 0.0f;
-			}
-			return weapon->mReloadSpeed;
+			return upgrade->mReloadSpeed;
 		},
 		"GetReloadSpeed", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, float v)
-		{
-			if (weapon == nullptr)
-			{
-				return;
-			}
-			const_cast<Weapon&>(*weapon).mReloadSpeed = v;
-		},
-		"SetReloadSpeed", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, float>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> int
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> int
 		{
-			if (weapon == nullptr)
-			{
-				return 0;
-			}
-			return weapon->mProjectileCount;
+			return upgrade->mProjectileCount;
 		},
 		"GetProjectileCount", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, int v)
-		{
-			if (weapon == nullptr)
-			{
-				return;
-			}
-			const_cast<Weapon&>(*weapon).mProjectileCount = v;
-		},
-		"SetProjectileCount", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, int>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
 		{
-			if (weapon == nullptr)
-			{
-				return 0.0f;
-			}
-			return weapon->mSpread;
+			return upgrade->mSpread;
 		},
 		"GetSpread", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, float v)
-		{
-			if (weapon == nullptr)
-			{
-				return;
-			}
-			const_cast<Weapon&>(*weapon).mSpread = v;
-		},
-		"SetSpread", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, float>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> std::vector<AbilityEffect>
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> std::vector<AbilityEffect>
 		{
-			if (weapon == nullptr)
-			{
-				return {};
-			}
-			return weapon->mEffects;
+			return upgrade->mEffects;
 		},
 		"GetEffects", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, AbilityEffect effect, int index)
-		{
-			int numEffects = static_cast<int>(weapon->mEffects.size());
-			if (weapon == nullptr || numEffects <= index)
-			{
-				return;
-			}
-			const_cast<Weapon&>(*weapon).mEffects[index] = effect;
-		},
-		"SetEffectAtIndex", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, AbilityEffect, int>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
 		{
-			if (weapon == nullptr)
-			{
-				return 0.0f;
-			}
-			return weapon->mProjectileSize;
+			return upgrade->mProjectileSize;
 		},
 		"GetProjectileSize", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, float v)
-		{
-			if (weapon == nullptr)
-			{
-				return;
-			}
-			const_cast<Weapon&>(*weapon).mProjectileSize = v;
-		},
-		"SetProjectileSize", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, float>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
 		{
-			if (weapon == nullptr)
-			{
-				return 0.0f;
-			}
-			return weapon->mProjectileSpeed;
+			return upgrade->mProjectileSpeed;
 		},
 		"GetProjectileSpeed", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, float v)
-		{
-			if (weapon == nullptr)
-			{
-				return;
-			}
-			const_cast<Weapon&>(*weapon).mProjectileSpeed = v;
-		},
-		"SetProjectileSpeed", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, float>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
 		{
-			if (weapon == nullptr)
-			{
-				return 0.0f;
-			}
-			return weapon->mProjectileRange;
+			return upgrade->mProjectileRange;
 		},
 		"GetProjectileRange", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, float v)
-		{
-			if (weapon == nullptr)
-			{
-				return;
-			}
-			const_cast<Weapon&>(*weapon).mProjectileRange = v;
-		},
-		"SetProjectileRange", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, float>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
 		{
-			if (weapon == nullptr)
-			{
-				return 0.0f;
-			}
-			return weapon->mKnockback;
+			return upgrade->mKnockback;
 		},
 		"GetKnockback", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, float v)
-		{
-			if (weapon == nullptr)
-			{
-				return;
-			}
-			const_cast<Weapon&>(*weapon).mKnockback = v;
-		},
-		"SetKnockback", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, float>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> int
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> int
 		{
-			if (weapon == nullptr)
-			{
-				return 0;
-			}
-			return weapon->mPierceCount;
+			return upgrade->mPierceCount;
 		},
 		"GetPierceCount", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, int v)
-		{
-			if (weapon == nullptr)
-			{
-				return;
-			}
-			const_cast<Weapon&>(*weapon).mPierceCount = v;
-		},
-		"SetPierceCount", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, int>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	// ability stats
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
+	// Ability-inherited members.
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> AssetHandle<Script>
 		{
-			if (weapon == nullptr)
-			{
-				return 0.f;
-			}
-			return weapon->mRequirementToUse;
+			return upgrade->mOnAbilityActivateScript;
+		},
+		"GetOnAbilityActivateScript", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> AssetHandle<Texture>
+		{
+			return upgrade->mIconTexture;
+		},
+		"GetIconTexture", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> std::string
+		{
+			return upgrade->mDescription;
+		},
+		"GetDescription", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> bool
+		{
+			return upgrade->mGlobalCooldown;
+		},
+		"GetGlobalCooldown", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	// Skipping mRequirementType because it is not relevant for the weapons.
+
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+		{
+			return upgrade->mRequirementToUse;
 		},
 		"GetReloadTime", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, float v)
-		{
-			if (weapon == nullptr)
-			{
-				return;
-			}
-			const_cast<Weapon&>(*weapon).mRequirementToUse = v;
-		},
-		"SetReloadTime", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, float>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> int
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> int
 		{
-			if (weapon == nullptr)
-			{
-				return 0;
-			}
-			return weapon->mCharges;
+			return upgrade->mCharges;
 		},
 		"GetAmmo", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](AssetHandle<Weapon>& weapon, int v)
-		{
-			if (weapon == nullptr)
-			{
-				return;
-			}
-			const_cast<Weapon&>(*weapon).mCharges = v;
-		},
-		"SetAmmo", MetaFunc::ExplicitParams<AssetHandle<Weapon>&, int>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectAssetType<Weapon>(type);
 	return type;

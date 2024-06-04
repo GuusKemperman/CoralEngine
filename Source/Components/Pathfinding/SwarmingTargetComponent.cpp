@@ -9,6 +9,7 @@ CE::MetaType CE::SwarmingTargetComponent::Reflect()
 	MetaType type{ MetaType::T<SwarmingTargetComponent>{}, "SwarmingTargetComponent" };
 
 	type.AddField(&SwarmingTargetComponent::mDesiredRadius, "mRadius");
+	type.AddField(&SwarmingTargetComponent::mNumberOfSmoothingSteps, "mNumberOfSmoothingSteps");
 
 	ReflectComponentType<SwarmingTargetComponent>(type);
 	return type;
