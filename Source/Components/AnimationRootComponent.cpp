@@ -54,6 +54,10 @@ void CE::AnimationRootComponent::SwitchAnimation()
 	World* world = World::TryGetWorldAtTopOfStack();
 	ASSERT(world != nullptr);
 
+	mCurrentTimeStamp = mWantedTimeStamp;
+	mCurrentAnimationSpeed = mWantedAnimationSpeed;
+	mCurrentAnimation = mWantedAnimation;
+
 	SwitchAnimationRecursive(world->GetRegistry(), mOwner, mWantedAnimation, mWantedTimeStamp, mWantedAnimationSpeed, mWantedBlendTime);
 }
 
@@ -68,6 +72,10 @@ void CE::AnimationRootComponent::SwitchAnimation(Registry& reg, const AssetHandl
 	mWantedTimeStamp = timeStamp;
 	mWantedAnimationSpeed = animationSpeed;
 	mWantedBlendTime = blendTime;
+
+	mCurrentTimeStamp = mWantedTimeStamp;
+	mCurrentAnimationSpeed = mWantedAnimationSpeed;
+	mCurrentAnimation = mWantedAnimation;
 
 	SwitchAnimationRecursive(reg, mOwner, mWantedAnimation, mWantedTimeStamp, mWantedAnimationSpeed, mWantedBlendTime);
 }
@@ -100,6 +108,10 @@ CE::MetaType CE::AnimationRootComponent::Reflect()
 
 		}, "SwitchAnimation", MetaFunc::ExplicitParams<AnimationRootComponent&,
 		const AssetHandle<Animation>&, float, float, float>{}, "AnimationRootComponent", "Animation", "Time Stamp", "Animation Speed", "Blend Time").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	type.AddField(&AnimationRootComponent::mCurrentAnimation, "mCurrentAnimation").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptReadOnlyTag);
+	type.AddField(&AnimationRootComponent::mCurrentTimeStamp, "mCurrentTimeStamp").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptReadOnlyTag);
+	type.AddField(&AnimationRootComponent::mCurrentAnimationSpeed, "mCurrentAnimationSpeed").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptReadOnlyTag);
 
 	BindEvent(type, sConstructEvent, &AnimationRootComponent::OnConstruct);
 

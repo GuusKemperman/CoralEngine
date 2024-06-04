@@ -4,6 +4,7 @@
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Assets/SkinnedMesh.h"
+#include "Components/AnimationRootComponent.h"
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/AttachToBoneComponent.h"
 #include "Components/TransformComponent.h"
@@ -124,6 +125,43 @@ void CE::AnimationSystem::Update(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
 
+	for (auto [entity, animationRootComponent] : reg.View<AnimationRootComponent>().each())
+	{
+		if (animationRootComponent.mCurrentAnimation == nullptr)
+		{
+			continue;
+		}
+
+		animationRootComponent.mCurrentTimeStamp += animationRootComponent.mCurrentAnimation->mTickPerSecond * animationRootComponent.mCurrentAnimationSpeed * dt;
+		
+		if ((animationRootComponent.mCurrentTimeStamp / animationRootComponent.mCurrentAnimation->mDuration) > 1.0f)
+		{
+			const std::vector<BoundEvent> boundEvents = GetAllBoundEvents(sAnimationFinishEvent);
+			for (const BoundEvent& boundEvent : boundEvents)
+			{
+				entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
+
+				if (storage == nullptr
+					|| !storage->contains(entity))
+				{
+					continue;
+				}
+
+				if (boundEvent.mIsStatic)
+				{
+					boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity);
+				}
+				else
+				{
+					MetaAny component{ boundEvent.mType, storage->value(entity), false };
+					boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, entity);
+				}
+			}
+		}
+		
+		animationRootComponent.mCurrentTimeStamp = fmod(animationRootComponent.mCurrentTimeStamp, animationRootComponent.mCurrentAnimation->mDuration);
+	}
+
 	for (auto [entity, skinnedMesh] : reg.View<SkinnedMeshComponent>().each())
 	{
 		if (skinnedMesh.mSkinnedMesh == nullptr)
@@ -179,45 +217,6 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		const SkinnedMeshComponent* skinnedMesh = AttachToBoneComponent::FindSkinnedMeshParentRecursive(reg, *parent);
 
 		if (skinnedMesh == nullptr)
-		{
-			continue;
-		}
-
-		auto& boneMap = skinnedMesh->mSkinnedMesh->GetBoneMap();
-		auto it = boneMap.find(attachToBone.mBoneName);
-
-		if (it == boneMap.end() 
-			|| skinnedMesh->mAnimation == nullptr)
-		{
-			transform.SetLocalMatrix(parent->GetWorldMatrix() * 
-				TransformComponent::ToMatrix(attachToBone.mLocalTranslation, attachToBone.mLocalScale, attachToBone.mLocalRotation));
-			continue;
-		}
-
-		const glm::mat4x4& boneMat = skinnedMesh->mFinalBoneMatrices[it->second.mId];
-	
-		transform.SetLocalMatrix(boneMat *
-			TransformComponent::ToMatrix(attachToBone.mLocalTranslation, attachToBone.mLocalScale, attachToBone.mLocalRotation));
-	}
-
-	for (auto [entity, attachToBone, transform] : reg.View<AttachToBoneComponent, TransformComponent>().each())
-	{
-		if (attachToBone.mBoneName.empty())
-		{
-			continue;
-		}
-
-		const TransformComponent* parent = transform.GetParent();
-
-		if (parent == nullptr)
-		{
-			continue;
-		}
-
-		const SkinnedMeshComponent* skinnedMesh = AttachToBoneComponent::FindSkinnedMeshParentRecursive(reg, *parent);
-
-		if (skinnedMesh == nullptr
-			|| skinnedMesh->mSkinnedMesh == nullptr)
 		{
 			continue;
 		}
