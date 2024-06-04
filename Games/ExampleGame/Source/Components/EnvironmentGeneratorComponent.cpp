@@ -86,7 +86,6 @@ void Game::EnvironmentGeneratorComponent::Layer::DisplayWidget(const std::string
 	CE::ShowInspectUI("mNoisePersistence", mNoisePersistence);
 	CE::ShowInspectUI("mInfluences", mInfluences);
 	CE::ShowInspectUI("mWeight", mWeight);
-	CE::ShowInspectUI("mCanSpawnInOccupiedSpace", mCanSpawnInOccupiedSpace);
 }
 #endif // EDITOR
 
@@ -99,8 +98,7 @@ bool Game::EnvironmentGeneratorComponent::Layer::operator==(const Layer& other) 
 		&& mNoiseNumOfOctaves == other.mNoiseNumOfOctaves
 		&& mNoisePersistence == other.mNoisePersistence
 		&& mInfluences == other.mInfluences
-		&& mWeight == other.mWeight
-		&& mCanSpawnInOccupiedSpace == other.mCanSpawnInOccupiedSpace;
+		&& mWeight == other.mWeight;
 }
 
 bool Game::EnvironmentGeneratorComponent::Layer::operator!=(const Layer& other) const
@@ -122,7 +120,6 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Layer::Reflect()
 	type.AddField(&Layer::mNoisePersistence, "mNoisePersistence").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mInfluences, "mInfluences").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mWeight, "mWeight").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&Layer::mCanSpawnInOccupiedSpace, "mCanSpawnInOccupiedSpace").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectFieldType<Layer>(type);
 	return type;

@@ -57,16 +57,8 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 	const auto createdEntities = reg.View<Internal::PartOfGeneratedEnvironmentTag>();
 	reg.Destroy(createdEntities.begin(), createdEntities.end(), true);
 
-	const std::array<std::reference_wrapper<const CE::BVH>, 2> bvhs
-	{
-		world.GetPhysics().GetBVHs()[static_cast<int>(CE::CollisionLayer::StaticObstacles)],
-		world.GetPhysics().GetBVHs()[static_cast<int>(CE::CollisionLayer::Terrain)],
-	};
-
 	for (const EnvironmentGeneratorComponent::Layer& layer : generator.mLayers)
 	{
-		world.GetPhysics().RebuildBVHs();
-
 		if (layer.mObjects.empty())
 		{
 			continue;
@@ -92,26 +84,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 				if (!CE::AreOverlapping(cellAABB, generationCircle))
 				{
 					continue;
-				}
-
-				if (!layer.mCanSpawnInOccupiedSpace)
-				{
-					bool anyCollisions{};
-
-					// Check if we already places an object here in an earlier layer
-					for (const CE::BVH& bvh : bvhs)
-					{
-						if (bvh.Query<CE::BVH::DefaultOnIntersectFunction, CE::BVH::DefaultShouldReturnFunction<true>, CE::BVH::DefaultShouldReturnFunction<true>>(cellAABB))
-						{
-							anyCollisions = true;
-							break;
-						}
-					}
-
-					if (anyCollisions)
-					{
-						continue;
-					}
 				}
 
 				// TODO replace with perlin

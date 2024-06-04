@@ -97,8 +97,6 @@ namespace Game
 			// the effects of your own noise.
 			float mWeight = 1.0f;
 
-			bool mCanSpawnInOccupiedSpace = false;
-
 #ifdef EDITOR
 			void DisplayWidget(const std::string& name);
 #endif // EDITOR
@@ -142,8 +140,7 @@ namespace cereal
 			value.mNoiseNumOfOctaves,
 			value.mNoisePersistence,
 			value.mInfluences,
-			value.mWeight,
-			value.mCanSpawnInOccupiedSpace);
+			value.mWeight);
 	}
 
 	template<class Archive>
