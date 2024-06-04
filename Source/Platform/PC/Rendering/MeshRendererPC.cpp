@@ -9,6 +9,7 @@
 #include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 #include "Platform/PC/Rendering/DX12Classes/DXResource.h"
+#include "Platform/PC/Rendering/FramebufferPC.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkinnedMeshComponent.h"

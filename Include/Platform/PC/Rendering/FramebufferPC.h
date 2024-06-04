@@ -1,13 +1,10 @@
 #pragma once
-#include "DX12Classes/DXDefines.h"
-#include "glm/glm.hpp"
-#include "DX12Classes/DXResource.h"
-#include "DX12Classes/DXHeapHandle.h"
+
+class DXResource;
+class DXHeapHandle;
 
 namespace CE
 {
-	class MyShader;
-
 	class FrameBuffer
 	{
 	public:
@@ -37,19 +34,21 @@ namespace CE
 		// declaration over exposing the
 		// stealing API to the user.
 		friend class Texture;
+		DXHeapHandle& GetCurrentHeapSlot();
+		std::unique_ptr<DXResource>& GetCurrentResource();
 
-		std::unique_ptr<DXResource> mResource[FRAME_BUFFER_COUNT];
-		std::unique_ptr<DXResource> mDepthResource;
-		DXHeapHandle mFrameBufferHandle[FRAME_BUFFER_COUNT];
-		DXHeapHandle mFrameBufferRscHandle[FRAME_BUFFER_COUNT];
-		DXHeapHandle mFrameBufferUAVHandle[FRAME_BUFFER_COUNT];
-		DXHeapHandle mDepthStencilHandle;
-		DXHeapHandle mDepthStencilSRVHandle;
+		// Prevents having to include the very
+		// large DX12 headers
+		struct DXImpl;
+
+		struct DXImplDeleter
+		{
+			void operator()(DXImpl* impl) const;
+		};
+
+		std::unique_ptr<DXImpl, DXImplDeleter> mImpl{};
 
 		glm::vec4 mClearColor{ .39f, .45f, .5f, 1.0f };
 		glm::ivec2 mSize{};
-		D3D12_VIEWPORT mViewport;
-		D3D12_RECT mScissorRect;
-
 	};
 }
