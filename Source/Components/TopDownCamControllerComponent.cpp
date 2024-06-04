@@ -33,8 +33,6 @@ void CE::TopDownCamControllerComponent::UpdateRotation(TransformComponent& trans
 	const glm::vec3 prevPos = mTargetLocation;
 
 	mTargetLocation = target;
-
-	const glm::vec3 localPos = transform.GetLocalPosition();
 	
 	if (mCameraLag != 0.f)
 	{
