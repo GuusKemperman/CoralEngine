@@ -27,6 +27,8 @@ namespace CE
 		Physics& operator=(Physics&&) = delete;
 		Physics& operator=(const Physics&) = delete;
 
+		void RebuildBVHs(bool forceRebuild = false);
+
 		std::vector<entt::entity> FindAllWithinShape(const TransformedDisk& shape, const CollisionRules& filter) const;
 		std::vector<entt::entity> FindAllWithinShape(const TransformedAABB& shape, const CollisionRules& filter) const;
 		std::vector<entt::entity> FindAllWithinShape(const TransformedPolygon& shape, const CollisionRules& filter) const;
@@ -42,6 +44,9 @@ namespace CE
 	private:
 		template<typename T>
 		std::vector<entt::entity> FindAllWithinShapeImpl(const T& shape, const CollisionRules& filter) const;
+
+		template<typename Collider, typename TransformedCollider>
+		void UpdateTransformedColliders(World& world, std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>& wereItemsAddedToLayer);
 
 		friend ReflectAccess;
 		static MetaType Reflect();
