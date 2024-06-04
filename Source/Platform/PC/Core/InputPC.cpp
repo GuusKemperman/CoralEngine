@@ -1,4 +1,7 @@
 #include "Precomp.h"
+
+#include <GLFW/glfw3.h>
+
 #include "Core/Input.h"
 #include "Core/Device.h"
 

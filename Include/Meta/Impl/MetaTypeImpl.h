@@ -68,10 +68,7 @@ CE::MetaType::MetaType(T<TypeT>, const std::string_view name, Args&&... args) :
 template<typename FuncPtr, typename... Args>
 CE::MetaFunc& CE::MetaType::AddFunc(FuncPtr&& funcPtr, const MetaFunc::NameOrTypeInit nameOrType, Args&& ...args)
 {
-	auto result = mFunctions.emplace(std::piecewise_construct,
-		std::forward_as_tuple(nameOrType),
-		std::forward_as_tuple(std::forward<FuncPtr>(funcPtr), nameOrType, std::forward<Args>(args)...));
-
+	const auto result = mFunctions.emplace(nameOrType, MetaFunc{ std::forward<FuncPtr>(funcPtr), nameOrType, std::forward<Args>(args)... });
 	return result->second;
 }
 

@@ -1,16 +1,17 @@
 #pragma once
 #include "Core/EngineSubsystem.h"
-#include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
-#include "glm/glm.hpp"
-#include "Platform/PC/Rendering/DX12Classes/DXResource.h"
-#include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
-#include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
-#include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
-#include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
 
 struct GLFWwindow;
 struct GLFWmonitor;
 class DXDescHeap;
+
+namespace Microsoft::WRL
+{
+    template <typename T>
+    class ComPtr;
+}
+
+struct ID3D12Resource;
 
 namespace CE
 {
@@ -29,15 +30,15 @@ namespace CE
         void EndFrame();
         bool ShouldClose() const { return !mIsWindowOpen; }
 
-        void* GetWindow() { return mWindow; }
-        void* GetSwapchain() { return mSwapChain.Get(); }
-        void* GetDevice() { return mDevice.Get(); }
-        void* GetCommandList() { return mCommandList.Get(); }
-        void* GetUploadCommandList() { return mUploadCommandList.Get(); }
-        void* GetCommandQueue() { return mCommandQueue.Get(); }
-        void* GetSignature() { return mSignature.Get(); }
-        void* GetComputeSignature() { return mComputeSignature.Get(); }
-        void* GetMipmapPipeline() { return mGenMipmapsPipeline.Get(); }
+        void* GetWindow();
+        void* GetSwapchain();
+        void* GetDevice();
+        void* GetCommandList();
+        void* GetUploadCommandList();
+        void* GetCommandQueue();
+        void* GetSignature();
+        void* GetComputeSignature();
+        void* GetMipmapPipeline();
 
 #ifdef EDITOR
         void CreateImguiContext();
@@ -45,10 +46,10 @@ namespace CE
 
 		void StartUploadCommands();
         void SubmitUploadCommands();
-        void AddToDeallocation(ComPtr<ID3D12Resource>&& res);
+        void AddToDeallocation(Microsoft::WRL::ComPtr<ID3D12Resource>&& res);
         void BindSwapchainRT();
 
-        glm::vec2 GetDisplaySize() { return glm::vec2(mViewport.Width, mViewport.Height); }
+        glm::vec2 GetDisplaySize();
 
         /**
          * \brief Some build/testing servers do not support graphics. This function can be used to check that.
@@ -59,8 +60,8 @@ namespace CE
         static bool IsHeadless() { return sIsHeadless; }
 
 		//Platform specific heap
-        std::shared_ptr<DXDescHeap> GetDescriptorHeap(int heap) { return mDescriptorHeaps[heap]; }
-        int GetFrameIndex() { return mFrameIndex; }
+        std::shared_ptr<DXDescHeap> GetDescriptorHeap(int heap);
+        int GetFrameIndex();
 
     private:
         friend Engine;
@@ -70,64 +71,32 @@ namespace CE
 
         void InitializeWindow();
         void InitializeDevice();
-        void WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent);
         void UpdateRenderTarget();
         void SubmitCommands();
         void StartRecordingCommands();
 
         void SendTexturesToGPU();
 
-        enum DXResources {
-            RT,
-            DEPTH_STENCIL_RSC = FRAME_BUFFER_COUNT,
-            NUM_RESOURCES = FRAME_BUFFER_COUNT + 1
+        // Prevents having to include the very
+		// large DX12 headers
+        struct DXImpl;
+
+        struct DXImplDeleter
+        {
+            void operator()(DXImpl* impl) const;
         };
+
+        std::unique_ptr<DXImpl, DXImplDeleter> mImpl{};
 
         bool mIsWindowOpen{};
 
-        GLFWwindow* mWindow;
-        GLFWmonitor* mMonitor;
-        D3D12_VIEWPORT mViewport;
-        D3D12_RECT mScissorRect;
-        unsigned int mFrameIndex = 0;
+        GLFWwindow* mWindow{};
+        GLFWmonitor* mMonitor{};
         bool mFullscreen = false;
 
-        int mPreviousWidth, mPreviousHeight;
-
-        ComPtr<ID3D12CommandQueue> mCommandQueue;
-        ComPtr<ID3D12CommandQueue> mUploadCommandQueue;
-        ComPtr<ID3D12CommandAllocator> mCommandAllocator[FRAME_BUFFER_COUNT];
-        ComPtr<ID3D12CommandAllocator> mUploadCommandAllocator;
-        ComPtr<ID3D12GraphicsCommandList4> mCommandList;
-        ComPtr<ID3D12GraphicsCommandList4> mUploadCommandList;
-
-        ComPtr<ID3D12Fence> mFence[FRAME_BUFFER_COUNT];
-        ComPtr<ID3D12Fence> mUploadFence;
-
-        std::shared_ptr<DXDescHeap> mDescriptorHeaps[NUM_DESC_HEAPS];
-        std::unique_ptr<DXResource> mResources[NUM_RESOURCES];
-        const DXGI_FORMAT mDepthFormat = DXGI_FORMAT_D32_FLOAT;
-
-        HANDLE mFenceEvent;
-        HANDLE mUploadFenceEvent;
-        UINT64 mFenceValue[FRAME_BUFFER_COUNT];
-        UINT64 mUploadFenceValue;
-        int mHeapResourceCount = 4;
-        int frameBufferCount = FRAME_BUFFER_COUNT;
-        int depthStencilCount = 1;
-        std::vector<ComPtr<ID3D12Resource>> mResourcesToDeallocate;
-
-        ComPtr<IDXGISwapChain3> mSwapChain;
-        ComPtr<ID3D12Device5> mDevice;
-        ComPtr<ID3D12RootSignature> mSignature;
-        ComPtr<ID3D12RootSignature> mComputeSignature;
-        ComPtr<ID3D12PipelineState> mGenMipmapsPipeline;
-
-        DXHeapHandle mRenderTargetHandles[FRAME_BUFFER_COUNT];
-        DXHeapHandle mDepthHandle;
+        int mPreviousWidth{};
+		int mPreviousHeight{};
 
         bool mUpdateWindow = false;
     };
 }
-
-
