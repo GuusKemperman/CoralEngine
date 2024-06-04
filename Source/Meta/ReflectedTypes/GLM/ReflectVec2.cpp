@@ -31,6 +31,10 @@ MetaType Reflector<T>::Reflect()
 	type.AddField(&T::x, "X").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&T::y, "Y").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<float(*)(const T&, const T&)>(&dot), "Dot", "DirectionA", "DirectionB").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](const T a, const T b) -> float
+		{
+			return cross(glm::vec3(a.x, 0.f, a.y), glm::vec3(b.x, 0.f, b.y)).y;
+		}, "2DCross", MetaFunc::ExplicitParams<const T, const T>{}, "DirectionA", "DirectionB").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<T(*)(const T&)>(&normalize), "Normalize").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<float(*)(const T&, const T&)>(&distance), "Distance", "LocationA", "LocationB").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<float(*)(const T&, const T&)>(&distance2), "Distance2", "LocationA", "LocationB").GetProperties().Add(Props::sIsScriptableTag);
