@@ -8,7 +8,7 @@ namespace CE
 	{
 	public:
 		float mDesiredRadius = 150.0f;
-
+		int mNumberOfSmoothingSteps = 2;
 
 		// The space between cells,
 		// and the space used for

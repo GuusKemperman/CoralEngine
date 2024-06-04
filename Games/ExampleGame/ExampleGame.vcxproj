@@ -359,6 +359,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\EnvironmentGeneratorComponent.cpp" />
+    <ClCompile Include="Source\Assets\Upgrade.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpStompState.cpp" />
     <ClCompile Include="Source\Components\DifficultyScalingComponent.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\DanceState.cpp" />
@@ -367,6 +368,12 @@
     <ClCompile Include="Source\Components\UtilityAi\States\DashingState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpDashState.cpp" />
     <ClCompile Include="Source\Components\SpawnerComponent.cpp" />
+    <ClCompile Include="Source\EditorSystems\UpgradeEditorSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Systems\DifficultyScalingSystem.cpp" />
     <ClCompile Include="Source\Systems\EnvironmentGeneratorSystem.cpp" />
     <ClCompile Include="Source\Systems\SpawnerSystem.cpp" />
@@ -397,6 +404,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Components\WavesComponent.cpp" />
+    <ClCompile Include="Source\Components\UpgradeStoringComponent.cpp" />
+    <ClCompile Include="Source\Utilities\UpgradeFunctionality.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\Assets\Upgrade.h" />
     <ClCompile Include="Source\Components\UtilityAi\States\StompState.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -412,6 +424,7 @@
     <ClInclude Include="Include\Components\UtililtyAi\States\AttackingState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\ChasingState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\IdleState.h" />
+    <ClInclude Include="Include\EditorSystems\UpgradeEditorSystem.h" />
     <ClInclude Include="Include\ExampleGame\Precomp.h" />
     <ClInclude Include="Include\Systems\DifficultyScalingSystem.h" />
     <ClInclude Include="Include\Systems\EnvironmentGeneratorSystem.h" />
@@ -423,6 +436,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Include\Components\WavesComponent.h" />
+    <ClInclude Include="Include\Components\UpgradeStoringComponent.h" />
+    <ClInclude Include="Include\Utilities\UpgradeFunctionality.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\StompState.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

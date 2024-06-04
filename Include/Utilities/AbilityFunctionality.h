@@ -1,11 +1,14 @@
 #pragma once
 
 #include "Assets/Core/AssetHandle.h"
+#include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Abilities/AbilityEffectsComponent.h"
 #include "Meta/MetaReflect.h"
 
 namespace CE
 {
+	class AbilitiesOnCharacterComponent;
+	struct WeaponInstance;
 	class ProjectileComponent;
 	struct DurationalEffect;
 	class Prefab;
@@ -17,17 +20,22 @@ namespace CE
 	{
 	public:
 
-		static std::optional<float> ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect);
-		static void ApplyDurationalEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f);
+		static std::optional<float> ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, bool doNotApplyColor = false);
+		static void ApplyDurationalEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f, bool doNotApplyColor = false);
 		static void RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect);
 		static void ApplyOverTimeEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f, int ticks = 1);
 		static entt::entity SpawnAbilityPrefab(World& world, const Prefab& prefab, entt::entity castBy);
 		static entt::entity SpawnProjectilePrefab(World& world, const Prefab& prefab, entt::entity castBy, const AssetHandle<Weapon>& weapon);
+		static entt::entity SpawnProjectilePrefabFromWeaponInstance(World& world, const Prefab& prefab, entt::entity castBy, const WeaponInstance& weapon);
 		static std::vector<entt::entity> SpawnProjectilePrefabs(World& world, const Prefab& prefab, entt::entity castBy, const AssetHandle<Weapon>& weapon);
+		static std::vector<entt::entity> SpawnProjectilePrefabsFromWeaponInstance(World& world, const Prefab& prefab, entt::entity castBy, const WeaponInstance& weapon);
 		static bool IncreasePierceCountAndReturnTrueIfExceeded(ProjectileComponent& projectileComponent);
 		static bool WasTheAbilityCastByAnEnemy(World& world, entt::entity entityToAffect, entt::entity abilityEntity);
-		static float& IncreaseValueByPercentage(float& toChange, float percentage);
+		static float IncreaseValue1ByPercentageOfValue2(float value1, float value2, float percentage);
 		static bool IsPointInsideCone2D(glm::vec2 point, glm::vec2 coneOrigin, const glm::vec2 coneDirection, float coneAngle);
+		static void RemoveWeaponAtIndex(World& world, entt::entity entity, int index);
+		static void AddWeaponToEnd(World& world, entt::entity entity, WeaponInstance& weapon);
+		static void CallAllAbilityHitEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity);
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);

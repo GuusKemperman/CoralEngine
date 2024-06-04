@@ -9,6 +9,8 @@ namespace CE
 	class ActiveAbilityComponent
 	{
 	public:
+		entt::entity mCastByEntity{};
+
 		// We need to store a copy of the character component of the character that cast the ability
 		// to use if the character dies.
 		CharacterComponent mCastByCharacterData{};

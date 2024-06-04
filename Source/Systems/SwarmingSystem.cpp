@@ -26,18 +26,15 @@ void CE::SwarmingAgentSystem::Update(World& world, float)
 		return;
 	}
 
-	const auto& [target, targetTransform] = targetView.get(targetEntity);
+	const SwarmingTargetComponent& target = targetView.get<SwarmingTargetComponent>(targetEntity);
+	const TransformComponent& targetTransform = targetView.get<TransformComponent>(targetEntity);
 	const glm::vec2 targetPos = targetTransform.GetWorldPosition2D();
 	const float interpolationFactor = 1.0f / (target.mSpacing * target.mSpacing);
 
 	for (auto [entity, transform, character, body, collider] : reg.View<SwarmingAgentTag, TransformComponent, CharacterComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>().each())
 	{
-		const glm::vec2 position = transform.GetWorldPosition2D();
-		const glm::vec2 positionInGridSpace = position - target.mCellsTopLeftWorldPosition;
-		const int cellX = static_cast<int>(positionInGridSpace.x / target.mSpacing);
-		const int cellY = static_cast<int>(positionInGridSpace.y / target.mSpacing);
-
-		const glm::vec2 toTarget = targetPos - position;
+		const glm::vec2 agentPosition = transform.GetWorldPosition2D();
+		const glm::vec2 toTarget = targetPos - agentPosition;
 		const float dist2ToTarget = glm::length2(toTarget);
 
 		if (dist2ToTarget == 0.0f)
@@ -45,52 +42,54 @@ void CE::SwarmingAgentSystem::Update(World& world, float)
 			continue;
 		}
 
-		glm::vec2 flowFieldDir{};
+		const auto getDirectionSample = [&](const glm::vec2 samplePosition) -> glm::vec2
+			{
+				const glm::vec2 positionInGridSpace = samplePosition - target.mCellsTopLeftWorldPosition;
+				const int cellX = static_cast<int>(positionInGridSpace.x / target.mSpacing);
+				const int cellY = static_cast<int>(positionInGridSpace.y / target.mSpacing);
 
-		if (cellX < 0
-			|| cellY < 0
-			|| cellX >= target.mFlowFieldWidth
-			|| cellY >= target.mFlowFieldWidth
-			|| dist2ToTarget < target.mSpacing * target.mSpacing)
-		{
-			flowFieldDir = toTarget / glm::sqrt(dist2ToTarget);
-		}
-		else
-		{
-			// Some bilinear interpolation
-			const uint32 sampleIndex = cellX + cellY * target.mFlowFieldWidth;
-			const bool onEdgeX = cellX + 1 >= target.mFlowFieldWidth;
-			const bool onEdgeZ = cellY + 1 >= target.mFlowFieldWidth;
+				if (cellX < 0
+					|| cellY < 0
+					|| cellX >= target.mFlowFieldWidth
+					|| cellY >= target.mFlowFieldWidth
+					|| dist2ToTarget < target.mSpacing * target.mSpacing)
+				{
+					return toTarget / glm::sqrt(dist2ToTarget);
+				}
 
-			const glm::vec2 sampleX0Z0 = target.mFlowField[sampleIndex];
-			const glm::vec2 sampleX1Z0 = onEdgeX ? sampleX0Z0 : target.mFlowField[sampleIndex + 1];
-			const glm::vec2 sampleX0Z1 = onEdgeZ ? sampleX0Z0 : target.mFlowField[sampleIndex + target.mFlowFieldWidth];
-			const glm::vec2 sampleX1Z1 = onEdgeX || onEdgeZ ? sampleX0Z0 : target.mFlowField[sampleIndex + target.mFlowFieldWidth + 1];
+				// Some bilinear interpolation
+				const uint32 sampleIndex = cellX + cellY * target.mFlowFieldWidth;
+				const bool onEdgeX = cellX + 1 >= target.mFlowFieldWidth;
+				const bool onEdgeZ = cellY + 1 >= target.mFlowFieldWidth;
 
-			const float weightX = fmodf(positionInGridSpace.x, target.mSpacing);
-			const float weightZ = fmodf(positionInGridSpace.y, target.mSpacing);
-			const float opposingWeightX = target.mSpacing - weightX;
-			const float opposingWeightY = target.mSpacing - weightZ;
+				const glm::vec2 sampleX0Z0 = target.mFlowField[sampleIndex];
+				const glm::vec2 sampleX1Z0 = onEdgeX ? sampleX0Z0 : target.mFlowField[sampleIndex + 1];
+				const glm::vec2 sampleX0Z1 = onEdgeZ ? sampleX0Z0 : target.mFlowField[sampleIndex + target.mFlowFieldWidth];
+				const glm::vec2 sampleX1Z1 = onEdgeX || onEdgeZ ? sampleX0Z0 : target.mFlowField[sampleIndex + target.mFlowFieldWidth + 1];
 
-			DrawDebugLine(world, DebugCategory::AINavigation, target.GetCellBox(cellX, cellY).GetCentre(), target.GetCellBox(cellX, cellY).GetCentre() + sampleX0Z0 * opposingWeightX * opposingWeightY, glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-			DrawDebugLine(world, DebugCategory::AINavigation, target.GetCellBox(cellX + 1, cellY).GetCentre(), target.GetCellBox(cellX + 1, cellY).GetCentre() + sampleX1Z0 * weightX * opposingWeightY, glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-			DrawDebugLine(world, DebugCategory::AINavigation, target.GetCellBox(cellX, cellY + 1).GetCentre(), target.GetCellBox(cellX, cellY + 1).GetCentre() + sampleX0Z1 * opposingWeightX * weightZ, glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-			DrawDebugLine(world, DebugCategory::AINavigation, target.GetCellBox(cellX + 1, cellY + 1).GetCentre(), target.GetCellBox(cellX + 1, cellY + 1).GetCentre() + sampleX1Z1 * weightX * weightZ, glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+				const float weightX = fmodf(positionInGridSpace.x, target.mSpacing);
+				const float weightZ = fmodf(positionInGridSpace.y, target.mSpacing);
+				const float opposingWeightX = target.mSpacing - weightX;
+				const float opposingWeightY = target.mSpacing - weightZ;
 
-			DrawDebugRectangle(world, DebugCategory::AINavigation, To3DRightForward(target.GetCellBox(cellX, cellY).GetCentre(), 0.0f), target.GetCellBox(cellX, cellY).GetSize() * .5f, glm::vec4{ 1.0f });
-			DrawDebugRectangle(world, DebugCategory::AINavigation, To3DRightForward(target.GetCellBox(cellX + 1, cellY).GetCentre(), 0.0f), target.GetCellBox(cellX, cellY).GetSize() * .5f, glm::vec4{ 0.5f });
-			DrawDebugRectangle(world, DebugCategory::AINavigation, To3DRightForward(target.GetCellBox(cellX, cellY + 1).GetCentre(), 0.0f), target.GetCellBox(cellX, cellY).GetSize() * .5f, glm::vec4{ 0.5f });
-			DrawDebugRectangle(world, DebugCategory::AINavigation, To3DRightForward(target.GetCellBox(cellX + 1, cellY + 1).GetCentre(), 0.0f), target.GetCellBox(cellX, cellY).GetSize() * .5f, glm::vec4{ .25f });
-
-			flowFieldDir = interpolationFactor * (
-				sampleX0Z0 * opposingWeightX * opposingWeightY +
-				sampleX1Z0 * weightX * opposingWeightY +
-				sampleX0Z1 * opposingWeightX * weightZ +
-				sampleX1Z1 * weightX * weightZ
-				);
-		}
+				return interpolationFactor * (
+					sampleX0Z0 * opposingWeightX * opposingWeightY +
+					sampleX1Z0 * weightX * opposingWeightY +
+					sampleX0Z1 * opposingWeightX * weightZ +
+					sampleX1Z1 * weightX * weightZ
+					);
+			};
 
 		const glm::vec2 avoidanceDir = CalculateAvoidanceVelocity(world, entity, collider.mRadius * 2.0f, transform, collider);
+
+		const float sampleSpacing = collider.mRadius;
+		const glm::vec2 flowFieldDir =
+			(getDirectionSample(agentPosition) * 2.0f
+				+ getDirectionSample({ agentPosition.x - sampleSpacing, agentPosition.y })
+				+ getDirectionSample({ agentPosition.x + sampleSpacing, agentPosition.y })
+				+ getDirectionSample({ agentPosition.x, agentPosition.y + sampleSpacing })
+				+ getDirectionSample({ agentPosition.x, agentPosition.y - sampleSpacing }) 
+				* (1.0f / 6.0f));
 
 		const glm::vec2 desiredDir = CombineVelocities(avoidanceDir, flowFieldDir);
 
@@ -118,8 +117,12 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 		minRadius = std::min(disk.mRadius, minRadius);
 	}
 
-	for (auto [entity, target, disk] : reg.View<SwarmingTargetComponent, TransformedDiskColliderComponent>().each())
+	const auto targetView = reg.View<SwarmingTargetComponent, TransformedDiskColliderComponent>();
+	for (entt::entity entity : targetView)
 	{
+		SwarmingTargetComponent& target = targetView.get<SwarmingTargetComponent>(entity);
+		const TransformedDiskColliderComponent& disk = targetView.get<TransformedDiskColliderComponent>(entity);
+
 		const glm::vec2 targetPosition = disk.mCentre;
 		target.mSpacing = std::min(disk.mRadius, minRadius);
 
@@ -229,9 +232,6 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 			{
 				float lowestDist = std::numeric_limits<float>::infinity();
 
-				// Captured bindings...
-				SwarmingTargetComponent& targetRef = target;
-
 				const auto checkNbr = [&](const int nbrX, const int nbrY)
 					{
 						if (nbrY < 0
@@ -246,11 +246,11 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 						const float dist = distanceField[nbrIndex];
 
 						if ((fabsf(lowestDist - dist) < 0.5f
-							&& ((nbrX & 1) || (nbrY & 1)))
+							&& (nbrIndex & 1))
 							|| dist < lowestDist)
 						{
 							lowestDist = dist;
-							targetRef.mFlowField[x + y * fieldWidth] = glm::normalize(glm::vec2{ static_cast<float>(nbrX - x), static_cast<float>(nbrY - y) });
+							target.mFlowField[x + y * fieldWidth] = glm::normalize(glm::vec2{ static_cast<float>(nbrX - x), static_cast<float>(nbrY - y) });
 						}
 					};
 
@@ -264,6 +264,61 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 				checkNbr(x + 1, y);
 				checkNbr(x, y + 1);
 			}
+		}
+
+		if (target.mNumberOfSmoothingSteps == 0)
+		{
+			continue;
+		}
+
+		std::vector<glm::vec2> smoothedField = target.mFlowField;
+
+		for (int i = 0; i < target.mNumberOfSmoothingSteps; i++)
+		{
+			for (int y = 0; y < fieldWidth; y++)
+			{
+				for (int x = 0; x < fieldWidth; x++)
+				{
+					glm::vec2 total = target.mFlowField[x + y * fieldWidth] * 2.0f;
+
+					const auto addToTotal = [&](const int nbrX, const int nbrY)
+						{
+							if (nbrY < 0
+								|| nbrY >= fieldWidth
+								|| nbrX < 0
+								|| nbrX >= fieldWidth)
+							{
+								total += glm::normalize(targetPosition - target.GetCellBox(nbrX, nbrY).GetCentre());
+								return;
+							}
+
+							const int nbrIndex = nbrX + nbrY * fieldWidth;
+							total += target.mFlowField[nbrIndex];
+						};
+
+					addToTotal(x - 1, y - 1);
+					addToTotal(x + 1, y + 1);
+					addToTotal(x + 1, y - 1);
+					addToTotal(x - 1, y + 1);
+
+					addToTotal(x - 1, y);
+					addToTotal(x, y - 1);
+					addToTotal(x + 1, y);
+					addToTotal(x, y + 1);
+
+					glm::vec2 average = total * (1.0f / 10.0f);
+					const float averageLength2 = glm::length2(average);
+
+					if (averageLength2 == 0.0f)
+					{
+						continue;
+					}
+
+					smoothedField[x + y * fieldWidth] = average / glm::sqrt(averageLength2);
+				}
+			}
+
+			std::swap(target.mFlowField, smoothedField);
 		}
 	}
 }
@@ -286,7 +341,7 @@ void CE::SwarmingTargetSystem::Render(const World& world)
 				const glm::vec2 pos = cell.GetCentre();
 				const glm::vec2 dir = target.mFlowField[x + y * target.mFlowFieldWidth];
 
-				DrawDebugLine(world, DebugCategory::AINavigation, pos, pos + dir, glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+				DrawDebugLine(world, DebugCategory::AINavigation, pos, pos + dir * target.mSpacing * .75f, glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
 			}
 		}
 	}
