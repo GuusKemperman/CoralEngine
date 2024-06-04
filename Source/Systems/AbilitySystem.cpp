@@ -226,9 +226,32 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
         weapon.mReloadCounter = std::max(weapon.mReloadCounter - dt * weapon.mRuntimeWeapon->mReloadSpeed, 0.f);
         weapon.mShotDelayCounter = std::min(weapon.mShotDelayCounter + dt * weapon.mRuntimeWeapon->mFireSpeed, weapon.mRuntimeWeapon->mShotDelay);
 
-        // Activate abilities for the player based on input
         if (auto playerComponent = world.GetRegistry().TryGet<PlayerComponent>(entity))
         {
+            // Reload
+            bool reload{};
+            for (auto& key : weapon.mReloadKeyboardKeys)
+            {
+                if (input.WasKeyboardKeyPressed(key))
+                {
+                    reload = true;
+                    break;
+                }
+            }
+            for (auto& button : weapon.mReloadGamepadButtons)
+            {
+                if (input.WasGamepadButtonPressed(playerComponent->mID, button))
+                {
+                    reload = true;
+                    break;
+                }
+            }
+            if (reload)
+            {
+                //weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
+            }
+
+            // Activate abilities for the player based on input
             if (CanWeaponBeActivated(characterData, weapon))
             {
                 if (weapon.mRuntimeWeapon->mShootOnRelease == false)
@@ -346,11 +369,6 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     {
         weapon.mAmmoCounter--;
     }
-    if (weapon.mAmmoCounter <= 0)
-    {
-        weapon.mAmmoCounter = weapon.mRuntimeWeapon->mCharges;
-        weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
-    }
     if (weapon.mWeaponAsset->mOnAbilityActivateScript != nullptr)
     {
         if (auto metaType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName()); 
@@ -365,6 +383,11 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     else
     {
         LOG(LogAbilitySystem, Error, "Weapon {} does not have a script selected.", weapon.mWeaponAsset.GetMetaData().GetName());
+    }
+    if (weapon.mAmmoCounter <= 0)
+    {
+        weapon.mAmmoCounter = weapon.mRuntimeWeapon->mCharges;
+        weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
     }
 
     return true;
