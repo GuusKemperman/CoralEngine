@@ -1,19 +1,26 @@
 #pragma once
-#include "Platform/PC/Rendering/DX12Classes/DXDefines.h"
-#include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
-#include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
 #include "Assets/Asset.h"
 #include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
-#include "Rendering/FrameBuffer.h"
 #include "Utilities/ASync.h"
 
+class DXHeapHandle;
 class DXDescHeap;
 class DXResource;
 
+namespace Microsoft::WRL
+{
+	template <typename T>
+	class ComPtr;
+}
+
+struct ID3D12GraphicsCommandList4;
+
 namespace CE
 {
-	class Texture :
+	class FrameBuffer;
+
+	class Texture final :
 		public Asset
 	{
 	public:
@@ -36,27 +43,31 @@ namespace CE
 		static AssetHandle<Texture> TryGetDefaultTexture();
 
 		bool IsReadyToBeSentToGpu() const;
-		bool WasSendToGPU() const { return mHeapSlot.has_value(); }
+		bool WasSendToGPU() const;
 		void SendToGPU() const;
 
-		void BindToGraphics(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
-		void BindToCompute(ComPtr<ID3D12GraphicsCommandList4> commandList, unsigned int rootSlot) const;
+		void BindToGraphics(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList, unsigned int rootSlot) const;
+		void BindToCompute(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList, unsigned int rootSlot) const;
 
 #ifdef EDITOR
 		ImTextureID GetImGuiId() const;
 #endif // EDITOR
 
 	private:
-		int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 		void GenerateMipmaps() const;
 
 		const DXHeapHandle* TryGetHeapSlot() const;
 
-		std::unique_ptr<DXResource> mTextureBuffer{};
-		std::optional<DXHeapHandle> mHeapSlot;
+		// Prevents having to include the very
+		// large DX12 headers
+		struct DXImpl;
 
-		std::optional<DXHeapHandle> mUAVslots[3];
-		std::unique_ptr<DXConstBuffer> mMipmapCB;
+		struct DXImplDeleter
+		{
+			void operator()(DXImpl* impl) const;
+		}; 
+
+		std::unique_ptr<DXImpl, DXImplDeleter> mImpl{};
 
 		struct STBIPixels
 		{

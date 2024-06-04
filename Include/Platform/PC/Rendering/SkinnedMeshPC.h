@@ -1,6 +1,5 @@
 #pragma once
 
-#include "DX12Classes/DXDefines.h"
 #include "Assets/Asset.h"
 #include "Assets/Animation/BoneInfo.h"
 #include "Utilities/Geometry3d.h"
@@ -69,27 +68,17 @@ namespace CE
         AABB3D mBoundingBox{};
 #endif
 
-        std::shared_ptr<DXResource> mVertexBuffer;
-        std::shared_ptr<DXResource> mNormalBuffer;
-        std::shared_ptr<DXResource> mTangentBuffer;
-        std::shared_ptr<DXResource> mTexCoordBuffer;
-        std::shared_ptr<DXResource> mIndexBuffer;
-        std::shared_ptr<DXResource> mBoneIdBuffer;
-        std::shared_ptr<DXResource> mBoneWeightBuffer;
+        // Prevents having to include the very
+		// large DX12 headers
+        struct DXImpl;
 
-        D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
-        D3D12_VERTEX_BUFFER_VIEW mNormalBufferView;
-        D3D12_VERTEX_BUFFER_VIEW mTexCoordBufferView;
-        D3D12_VERTEX_BUFFER_VIEW mTangentBufferView;
-        D3D12_VERTEX_BUFFER_VIEW mBoneIdBufferView;
-        D3D12_VERTEX_BUFFER_VIEW mBoneWeightBufferView;
-        D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
+        struct DXImplDeleter
+        {
+            void operator()(DXImpl* impl) const;
+        };
+
+        std::unique_ptr<DXImpl, DXImplDeleter> mImpl{};
 
         std::unordered_map<std::string, BoneInfo> mBoneInfoMap;
-
-        int mIndexCount = 0;
-        int mVertexCount = 0;
-        DXGI_FORMAT mIndexFormat;
-        bool mBeenUpdated = false;
     };
 }

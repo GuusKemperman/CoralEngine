@@ -5,6 +5,7 @@
 #include "Assets/Texture.h"
 #include "Utilities/Time.h"
 #include "Assets/Core/AssetHandle.h"
+#include "Rendering/FrameBuffer.h"
 
 namespace CE
 {
