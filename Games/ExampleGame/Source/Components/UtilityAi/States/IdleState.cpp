@@ -6,6 +6,8 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "Assets/Animation/Animation.h"
+#include "Components/AnimationRootComponent.h"
 
 void Game::IdleState::OnAiTick(CE::World& world, const entt::entity owner, float) const
 {

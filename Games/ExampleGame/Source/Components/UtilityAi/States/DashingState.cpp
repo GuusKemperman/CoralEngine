@@ -7,10 +7,12 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "Components/AnimationRootComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
 #include "Components/UtililtyAi/States/RecoveryState.h"
+#include "Assets/Animation/Animation.h"
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 

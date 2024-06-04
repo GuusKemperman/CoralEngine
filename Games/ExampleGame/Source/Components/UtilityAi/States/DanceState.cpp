@@ -7,8 +7,10 @@
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
+#include "Components/AnimationRootComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Components/Pathfinding/SwarmingTargetComponent.h"
 
 void Game::DanceState::OnAITick(CE::World& world, const entt::entity owner, const float)
 {
@@ -25,11 +27,11 @@ void Game::DanceState::OnAITick(CE::World& world, const entt::entity owner, cons
 
 float Game::DanceState::OnAiEvaluate(const CE::World& world, [[maybe_unused]] const entt::entity owner)
 {
-	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
+	const entt::entity playerId = world.GetRegistry().View<CE::SwarmingTargetComponent>().front();
 
 	if (playerId == entt::null)
 	{
-		LOG(LogAI, Warning, "Dance State - enemy {} does not have a Player Component.", entt::to_integral(owner));
+		LOG(LogAI, Warning, "Dance State - enemy {} does not have a SwarmingTarget Component.", entt::to_integral(owner));
 		return 1.0f;
 	}
 

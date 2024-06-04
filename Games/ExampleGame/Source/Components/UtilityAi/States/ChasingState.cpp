@@ -7,8 +7,11 @@
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "Assets/Animation/Animation.h"S
+#include "Assets/Animation/Animation.h"
+#include "Components/AnimationRootComponent.h"
+#include "Components/PlayerComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
+#include "Assets/Animation/Animation.h"
 
 void Game::ChasingState::OnAIStateEnter(CE::World& world, const entt::entity owner) const
 {

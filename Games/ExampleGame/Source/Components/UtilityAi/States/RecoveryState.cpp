@@ -6,7 +6,12 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "Components/AnimationRootComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Components/UtililtyAi/States/ChargeUpDashState.h"
+#include "Assets/Animation/Animation.h"
+#include "Components/PlayerComponent.h"
+#include "Components/TransformComponent.h"
 
 void Game::RecoveryState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -40,12 +45,12 @@ float Game::RecoveryState::OnAiEvaluate(const CE::World&, entt::entity) const
 void Game::RecoveryState::OnAiStateEnterEvent(CE::World&, entt::entity)
 {
 	mRechargeCooldown.mCooldown = mMaxRechargeTime;
-	mRechargeCooldown.mAmountOfTimePassed = 0.00000000000001f;
+	mRechargeCooldown.mAmountOfTimePassed = 0.0f;
 }
 
 void Game::RecoveryState::OnAiStateExitEvent(CE::World&, entt::entity)
 {
-	mRechargeCooldown.mAmountOfTimePassed = 0.0f;
+	//mRechargeCooldown.mAmountOfTimePassed = 0.0f;
 }
 
 void Game::RecoveryState::OnBeginPlayEvent(CE::World&, entt::entity)
