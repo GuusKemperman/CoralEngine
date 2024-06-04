@@ -2,6 +2,7 @@
 #include "Components/EnvironmentGeneratorComponent.h"
 
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
+#include "Meta/ReflectedTypes/STD/ReflectOptional.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Prefabs/Prefab.h"
 
@@ -81,6 +82,7 @@ void Game::EnvironmentGeneratorComponent::Layer::DisplayWidget(const std::string
 	CE::ShowInspectUI("mObjects", mObjects);
 	CE::ShowInspectUI("mCellSize", mCellSize);
 	CE::ShowInspectUI("mNumberOfRandomRotations", mNumberOfRandomRotations);
+	CE::ShowInspectUI("mMaxRandomOffset", mMaxRandomOffset);
 	CE::ShowInspectUI("mNoiseScale", mNoiseScale);
 	CE::ShowInspectUI("mNoiseNumOfOctaves", mNoiseNumOfOctaves);
 	CE::ShowInspectUI("mNoisePersistence", mNoisePersistence);
@@ -94,6 +96,7 @@ bool Game::EnvironmentGeneratorComponent::Layer::operator==(const Layer& other) 
 	return mObjects == other.mObjects
 		&& mCellSize == other.mCellSize
 		&& mNumberOfRandomRotations == other.mNumberOfRandomRotations
+		&& mMaxRandomOffset == other.mMaxRandomOffset
 		&& mNoiseScale == other.mNoiseScale
 		&& mNoiseNumOfOctaves == other.mNoiseNumOfOctaves
 		&& mNoisePersistence == other.mNoisePersistence
@@ -115,6 +118,7 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Layer::Reflect()
 	type.AddField(&Layer::mObjects, "mObjects").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mCellSize, "mCellSize").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mNumberOfRandomRotations, "mNumberOfRandomRotations").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Layer::mMaxRandomOffset, "mMaxRandomOffset").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mNoiseScale, "mNoiseScale").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mNoiseNumOfOctaves, "mNoiseNumOfOctaves").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mNoisePersistence, "mNoisePersistence").GetProperties().Add(CE::Props::sIsScriptableTag);
@@ -133,6 +137,7 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Reflect()
 
 	type.AddField(&EnvironmentGeneratorComponent::mGenerateRadius, "mGenerateRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mDistToMoveBeforeRegeneration, "mDistToMoveBeforeRegeneration").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&EnvironmentGeneratorComponent::mSeed, "mSeed").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mLayers, "mLayers").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<EnvironmentGeneratorComponent>(type);

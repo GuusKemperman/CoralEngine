@@ -114,6 +114,8 @@ namespace Game
 
 		float mDistToMoveBeforeRegeneration = 50.0f;
 
+		std::optional<uint32> mSeed{};
+
 		glm::vec2 mLastGeneratedAtPosition{ std::numeric_limits<float>::infinity() };
 
 	private:
