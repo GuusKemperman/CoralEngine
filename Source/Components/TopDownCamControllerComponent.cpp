@@ -12,9 +12,18 @@ void CE::TopDownCamControllerComponent::ApplyTranslation(TransformComponent& tra
 	const glm::vec3 localPos = transform.GetLocalPosition();
 
 	glm::vec3 totalTranslation = target;
-	totalTranslation[Axis::Right] = localPos[Axis::Right] + mCameraLag * dt * ((totalTranslation[Axis::Right] + cos(glm::radians(mRotationAngle)) * mOffset.y) - worldPos[Axis::Right]);
 	totalTranslation[Axis::Up] = localPos[Axis::Up] + mHeightInterpolationFactor * dt * ((totalTranslation[Axis::Up] + mOffset.x) - worldPos[Axis::Up]);
-	totalTranslation[Axis::Forward] = localPos[Axis::Forward] + mCameraLag * dt * ((totalTranslation[Axis::Forward] + sin(glm::radians(mRotationAngle)) * mOffset.y) - worldPos[Axis::Forward]);
+	totalTranslation[Axis::Right] = totalTranslation[Axis::Right] + cos(glm::radians(mRotationAngle)) * mOffset.y;
+	totalTranslation[Axis::Forward] = totalTranslation[Axis::Forward] + sin(glm::radians(mRotationAngle)) * mOffset.y;
+
+
+	if (mCameraLag != 0.f)
+	{
+		const float cameraLag = 1.f / mCameraLag * dt;
+
+		totalTranslation[Axis::Right] = localPos[Axis::Right] + cameraLag * (totalTranslation[Axis::Right] - worldPos[Axis::Right]);
+		totalTranslation[Axis::Forward] = localPos[Axis::Forward] + cameraLag * (totalTranslation[Axis::Forward] - worldPos[Axis::Forward]);
+	}
 
 	transform.SetWorldPosition(totalTranslation);
 }
@@ -26,9 +35,15 @@ void CE::TopDownCamControllerComponent::UpdateRotation(TransformComponent& trans
 	mTargetLocation = target;
 
 	const glm::vec3 localPos = transform.GetLocalPosition();
+	
+	if (mCameraLag != 0.f)
+	{
+		const float cameraLag = 1.f / mCameraLag * dt;
 
-	mTargetLocation[Axis::Right] = prevPos[Axis::Right] + mCameraLag * dt * (target[Axis::Right] - prevPos[Axis::Right]);
-	mTargetLocation[Axis::Forward] = prevPos[Axis::Forward] + mCameraLag * dt * (target[Axis::Forward] - prevPos[Axis::Forward]);
+		mTargetLocation[Axis::Right] = prevPos[Axis::Right] + cameraLag * (target[Axis::Right] - prevPos[Axis::Right]);
+		mTargetLocation[Axis::Forward] = prevPos[Axis::Forward] + cameraLag * (target[Axis::Forward] - prevPos[Axis::Forward]);
+	}
+
 	mTargetLocation[Axis::Up] = prevPos[Axis::Up] + mHeightInterpolationFactor * dt * (target[Axis::Up] + mOffsetHeight - prevPos[Axis::Up]);
 
 	const glm::vec3 direction = glm::normalize(mTargetLocation - transform.GetWorldPosition());
