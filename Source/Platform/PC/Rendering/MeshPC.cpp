@@ -46,7 +46,8 @@ CE::StaticMesh::StaticMesh(std::string_view name) :
 {}
 
 CE::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
-    Asset(loadInfo)
+    Asset(loadInfo),
+    mImpl(new DXImpl())
 {
     std::istream& str = loadInfo.GetStream();
 
