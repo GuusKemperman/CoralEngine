@@ -85,7 +85,6 @@ void CE::GridSpawnerComponent::SpawnGrid()
 				position.y -= static_cast<float>(mHeight - 1) * mSpacing.y * .5f;
 			}
 
-
 			const AssetHandle<Prefab>* tile = mDistribution.GetNext();
 
 			if (tile == nullptr
