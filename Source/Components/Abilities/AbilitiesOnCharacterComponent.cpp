@@ -125,6 +125,7 @@ void CE::WeaponInstance::DisplayWidget()
 		}
 		ImGui::EndDisabled();
 	}
+	ImGui::Separator();
 	ShowInspectUIReadOnly("mReloadCounter", mReloadCounter);
 	ShowInspectUIReadOnly("mAmmoCounter", mAmmoCounter);
 	ShowInspectUIReadOnly("mShotDelayCounter", mShotDelayCounter);
@@ -133,6 +134,9 @@ void CE::WeaponInstance::DisplayWidget()
 	{
 		ShowInspectUI("mKeyboardKeys", mKeyboardKeys);
 		ShowInspectUI("mGamepadButtons", mGamepadButtons);
+
+		ShowInspectUI("mReloadKeyboardKeys", mReloadKeyboardKeys);
+		ShowInspectUI("mReloadGamepadButtons", mReloadGamepadButtons);
 	}
 	if (ImGui::Button("ResetCooldownAndAmmo"))
 	{

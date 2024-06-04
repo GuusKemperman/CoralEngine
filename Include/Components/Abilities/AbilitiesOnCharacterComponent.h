@@ -52,6 +52,9 @@ namespace CE
 		std::vector<Input::KeyboardKey> mKeyboardKeys{};
 		std::vector<Input::GamepadButton> mGamepadButtons{};
 
+		std::vector<Input::KeyboardKey> mReloadKeyboardKeys{};
+		std::vector<Input::GamepadButton> mReloadGamepadButtons{};
+
 		void ResetCooldownAndAmmo();
 		Weapon* InitializeRuntimeWeapon();
 
@@ -93,7 +96,7 @@ namespace CE
 	template<class Archive>
 	void serialize(Archive& ar, WeaponInstance& value)
 	{
-		ar(value.mWeaponAsset, value.mReloadCounter, value.mAmmoCounter, value.mShotDelayCounter, value.mAmmoConsumption, value.mKeyboardKeys, value.mGamepadButtons);
+		ar(value.mWeaponAsset, value.mReloadCounter, value.mAmmoCounter, value.mShotDelayCounter, value.mAmmoConsumption, value.mKeyboardKeys, value.mGamepadButtons/*, value.mReloadKeyboardKeys, value.mReloadGamepadButtons*/);
 	}
 }
 

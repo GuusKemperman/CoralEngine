@@ -93,14 +93,14 @@ bool CE::WeaponInstance::operator==(const WeaponInstance& other) const
 {
 	return mWeaponAsset == other.mWeaponAsset &&
 		mKeyboardKeys == other.mKeyboardKeys &&
-		mGamepadButtons == other.mGamepadButtons;
+		mGamepadButtons == other.mGamepadButtons &&
+		mReloadKeyboardKeys == other.mReloadKeyboardKeys &&
+		mReloadGamepadButtons == other.mReloadGamepadButtons;
 }
 
 bool CE::WeaponInstance::operator!=(const WeaponInstance& other) const
 {
-	return mWeaponAsset != other.mWeaponAsset ||
-		mKeyboardKeys != other.mKeyboardKeys ||
-		mGamepadButtons != other.mGamepadButtons;
+	return !(*this == other);
 }
 
 CE::MetaType CE::WeaponInstance::Reflect()
@@ -115,6 +115,8 @@ CE::MetaType CE::WeaponInstance::Reflect()
 	metaType.AddField(&WeaponInstance::mAmmoConsumption, "mAmmoConsumption").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mKeyboardKeys, "mKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mGamepadButtons, "mGamepadButtons").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mReloadKeyboardKeys, "mReloadKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mReloadGamepadButtons, "mReloadGamepadButtons").GetProperties().Add(Props::sIsScriptableTag);
 
 	metaType.AddFunc([](WeaponInstance& weapon) -> Weapon*
 		{
