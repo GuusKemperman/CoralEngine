@@ -48,11 +48,6 @@ void Game::RecoveryState::OnAiStateEnterEvent(CE::World&, entt::entity)
 	mRechargeCooldown.mAmountOfTimePassed = 0.0f;
 }
 
-void Game::RecoveryState::OnAiStateExitEvent(CE::World&, entt::entity)
-{
-	//mRechargeCooldown.mAmountOfTimePassed = 0.0f;
-}
-
 void Game::RecoveryState::OnBeginPlayEvent(CE::World&, entt::entity)
 {
 	mRechargeCooldown.mAmountOfTimePassed = mRechargeCooldown.mCooldown;
@@ -69,7 +64,6 @@ CE::MetaType Game::RecoveryState::Reflect()
 	BindEvent(type, CE::sAITickEvent, &RecoveryState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &RecoveryState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &RecoveryState::OnAiStateEnterEvent);
-	BindEvent(type, CE::sAIStateExitEvent, &RecoveryState::OnAiStateExitEvent);
 	BindEvent(type, CE::sBeginPlayEvent, &RecoveryState::OnBeginPlayEvent);
 
 	type.AddField(&RecoveryState::mDashRechargeAnimation, "mDashRechargeAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
