@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/AttackingState.h"
 
-#include "BehaviourStuff.h"
+#include "AiFunctionality.h"
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
@@ -14,14 +14,11 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
 
-void Game::AttackingState::OnAITick(CE::World& world, entt::entity owner, float) const
+void Game::AttackingState::OnAITick(CE::World& world, const entt::entity owner, float) const
 {
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+	Game::AnimationInAi(world, owner, mAttackingAnimation);
 
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mAttackingAnimation, 0.0f);
-	}
+	Game::FaceThePlayer(world, owner);
 
 	Game::ExecuteEnemyAbility(world, owner);
 
@@ -36,7 +33,7 @@ void Game::AttackingState::OnAITick(CE::World& world, entt::entity owner, float)
 	physicsBody2DComponent->mLinearVelocity = { 0,0 };
 }
 
-float Game::AttackingState::OnAIEvaluate(const CE::World& world, entt::entity owner) const
+float Game::AttackingState::OnAIEvaluate(const CE::World& world, const entt::entity owner) const
 {
 	const auto score = GetBestScoreBasedOnDetection(world, owner, mRadius);
 	return score;

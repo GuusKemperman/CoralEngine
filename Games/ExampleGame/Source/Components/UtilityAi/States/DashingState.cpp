@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/DashingState.h"
 
+#include "AiFunctionality.h"
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Meta/MetaType.h"
@@ -15,7 +16,7 @@
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 
-void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt)
+void Game::DashingState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
 	mDashCooldown.mAmountOfTimePassed += dt;
 
@@ -33,16 +34,7 @@ void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt
 		}
 	}
 
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashingAnimation, 0.0f);
-	}
-	else
-	{
-		LOG(LogAI, Warning, "Dash State - enemy {} does not have a AnimationRoot Component.", entt::to_integral(owner));
-	}
+	Game::AnimationInAi(world, owner, mDashingAnimation);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
@@ -55,7 +47,7 @@ void Game::DashingState::OnAiTick(CE::World& world, entt::entity owner, float dt
 	physicsBody2DComponent->mLinearVelocity = mDashDirection * mSpeedDash;
  }
 
-float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
+float Game::DashingState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
 	auto* chargingUpState = world.GetRegistry().TryGet<ChargeUpDashState>(owner);
 
@@ -87,7 +79,7 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, entt::entity owne
 	return 0;
 }
 
-void Game::DashingState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
+void Game::DashingState::OnAIStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	const entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 

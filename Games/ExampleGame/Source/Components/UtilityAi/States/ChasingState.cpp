@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/ChasingState.h"
 
-#include "BehaviourStuff.h"
+#include "AiFunctionality.h"
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
@@ -13,30 +13,25 @@
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Assets/Animation/Animation.h"
 
-void Game::ChasingState::OnAIStateEnter(CE::World& world, entt::entity owner)
+void Game::ChasingState::OnAIStateEnter(CE::World& world, const entt::entity owner) const
 {
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+	Game::AnimationInAi(world, owner, mChasingAnimation);
 
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mChasingAnimation, 0.0f);
-	}
-	
 	CE::SwarmingAgentTag::StartMovingToTarget(world, owner);
 }
 
-void Game::ChasingState::OnAIStateExit(CE::World& world, entt::entity owner)
+void Game::ChasingState::OnAIStateExit(CE::World& world, const entt::entity owner)
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 }
 
-float Game::ChasingState::OnAIEvaluate(const CE::World& world, entt::entity owner) const
+float Game::ChasingState::OnAIEvaluate(const CE::World& world, const entt::entity owner) const
 {
 	const auto score = GetBestScoreBasedOnDetection(world, owner, mRadius);
 	return score;
 }
 
-void Game::ChasingState::DebugRender(CE::World& world, entt::entity owner) const
+void Game::ChasingState::DebugRender(CE::World& world, const entt::entity owner) const
 {
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 

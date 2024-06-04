@@ -1,6 +1,8 @@
 #include "Precomp.h"
-#include "BehaviourStuff.h"
+#include "AiFunctionality.h"
 
+#include "Components/AnimationRootComponent.h"
+#include "Components/PlayerComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
@@ -10,7 +12,7 @@
 #include "World/World.h"
 #include "Components/Pathfinding/SwarmingTargetComponent.h"
 
-float Game::GetBestScoreBasedOnDetection(const CE::World& world, entt::entity owner, float radius)
+float Game::GetBestScoreBasedOnDetection(const CE::World& world, const entt::entity owner, const float radius)
 {
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
@@ -56,7 +58,7 @@ float Game::GetBestScoreBasedOnDetection(const CE::World& world, entt::entity ow
 	return highestScore;
 }
 
-void Game::ExecuteEnemyAbility(CE::World& world, entt::entity owner)
+void Game::ExecuteEnemyAbility(CE::World& world, const entt::entity owner)
 {
 	const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
 	if (characterData == nullptr)
@@ -78,4 +80,52 @@ void Game::ExecuteEnemyAbility(CE::World& world, entt::entity owner)
 	}
 
 	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
+}
+
+void Game::AnimationInAi(CE::World& world, const entt::entity owner, const CE::AssetHandle<CE::Animation>& animation)
+{
+	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+
+	if (animationRootComponent != nullptr)
+	{
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), animation, 0.0f);
+	}
+	else
+	{
+		LOG(LogAI, Warning, "Enemy {} does not have a AnimationRoot Component.", entt::to_integral(owner));
+	}
+}
+
+void Game::FaceThePlayer(CE::World& world, const entt::entity owner)
+{
+	const entt::entity playerId = world.GetRegistry().View<CE::SwarmingTargetComponent>().front();
+
+	if (playerId == entt::null)
+	{
+		return;
+	}
+
+	const auto playerTransform = world.GetRegistry().TryGet<CE::TransformComponent>(playerId);
+	if (playerTransform == nullptr)
+	{
+		LOG(LogAI, Warning, "Charge Up Stomp State - player {} does not have a Transform Component.", entt::to_integral(playerId));
+		return;
+	}
+
+	const auto enemyTransform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+	if (enemyTransform == nullptr)
+	{
+		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+		return;
+	}
+
+	const glm::vec2 playerPosition2D = playerTransform->GetWorldPosition2D();
+	const glm::vec2 enemyPosition2D = enemyTransform->GetWorldPosition2D();
+
+	if (playerPosition2D != enemyPosition2D)
+	{
+		const glm::vec2 direction = glm::normalize(playerPosition2D - enemyPosition2D);
+
+		enemyTransform->SetWorldOrientation(CE::Math::Direction2DToXZQuatOrientation(direction));
+	}
 }

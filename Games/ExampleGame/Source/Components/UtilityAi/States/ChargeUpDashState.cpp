@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
 
-#include "BehaviourStuff.h"
+#include "AiFunctionality.h"
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
@@ -46,7 +46,7 @@ float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, entt::entity
 		return 0.8f;
 	}
 
-	const auto score = GetBestScoreBasedOnDetection(world, owner, mRadius);
+	const auto score = Game::GetBestScoreBasedOnDetection(world, owner, mRadius);
 
 	return score;
 }

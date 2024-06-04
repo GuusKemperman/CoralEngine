@@ -6,7 +6,7 @@
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Components/AnimationRootComponent.h"
-#include "BehaviourStuff.h"
+#include "AiFunctionality.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"

@@ -14,7 +14,7 @@ namespace Game
 	class ChasingState
 	{
 	public:
-		void OnAIStateEnter(CE::World& world, entt::entity owner);
+		void OnAIStateEnter(CE::World& world, entt::entity owner) const;
 		static void OnAIStateExit(CE::World& world, entt::entity owner);
 
 		float OnAIEvaluate(const CE::World& world, entt::entity owner) const;
