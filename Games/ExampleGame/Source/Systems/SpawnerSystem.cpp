@@ -15,7 +15,14 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 {
 	CE::Registry& reg = world.GetRegistry();
 
-	for (auto [_, spawnerComponent, spawnerTransform] : reg.View<SpawnerComponent, CE::TransformComponent>().each())
+	const CE::TransformComponent* playerTransform = reg.TryGet<CE::TransformComponent>(reg.View<CE::PlayerComponent>().front());
+
+	if (playerTransform == nullptr)
+	{
+		return;
+	}
+
+	for (auto [_, spawnerComponent] : reg.View<SpawnerComponent>().each())
 	{
 		SpawnerComponent::Wave* previousWave{};
 		SpawnerComponent::Wave* currentWave{};
@@ -54,7 +61,7 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 		}
 
 		std::unordered_map<CE::AssetHandle<CE::Prefab>, uint32> enemyCount{};
-		const glm::vec2 spawnerPos = spawnerTransform.GetWorldPosition2D();
+		const glm::vec2 spawnerPos = playerTransform->GetWorldPosition2D();
 		std::vector<entt::entity> waveOutputs{};
 
 		uint32 numOfEnemies{};
