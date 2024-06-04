@@ -7,6 +7,7 @@ namespace CE
 	struct Cooldown
 	{
 		bool IsReady(float dt);
+		void Reset();
 
 #ifdef EDITOR
 		void DisplayWidget(const std::string& name);
