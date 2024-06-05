@@ -14,7 +14,7 @@ namespace Game
 	class DanceState
 	{
 	public:
-		void OnAITick(CE::World& world, entt::entity owner, float dt);
+		static void OnAITick(CE::World& world, entt::entity owner, float dt);
 		static float OnAiEvaluate(const CE::World& world, entt::entity owner);
 		void OnAIStateEnterEvent(CE::World& world, entt::entity owner) const;
 
