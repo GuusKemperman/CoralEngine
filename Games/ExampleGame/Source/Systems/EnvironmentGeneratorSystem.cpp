@@ -6,6 +6,7 @@
 #include "Components/EnvironmentGeneratorComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/TransformComponent.h"
+#include "Core/Input.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Meta/MetaType.h"

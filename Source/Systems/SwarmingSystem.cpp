@@ -158,8 +158,11 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 			}
 		}
 
+		// Static, so we can reuse the buffer.
 		// char because std::vector<bool> is slower
-		std::vector<char> isBlocked(target.mFlowField.size(), false);
+		static std::vector<char> isBlocked{};
+		isBlocked.clear();
+		isBlocked.resize(target.mFlowField.size(), false);
 
 		for (int y = 0; y < target.mFlowFieldWidth; y++)
 		{
@@ -173,16 +176,30 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 		const int centre = fieldWidth / 2;
 		const int startIndex = centre + centre * fieldWidth;
 
-		std::queue<int> openIndices{};
-		openIndices.emplace(startIndex);
+		// Static, so we can reuse the buffer.
+		// Works functionally the same as a queue
+		static std::vector<int> openIndices{};
+		openIndices.clear();
+		openIndices.emplace_back(startIndex);
+		uint32 openCurrentIndex = 0;
 
-		std::vector distanceField(target.mFlowField.size(), std::numeric_limits<float>::infinity());
+		// Static, so we can reuse the buffer.
+		static std::vector<float> distanceField{};
+		distanceField.clear();
+		distanceField.resize(target.mFlowField.size(), std::numeric_limits<float>::infinity());
 		distanceField[startIndex] = 0.0f;
 
-		while (!openIndices.empty())
+		while (openCurrentIndex < openIndices.size())
 		{
-			const int current = openIndices.front();
-			openIndices.pop();
+			const int current = openIndices[openCurrentIndex];
+			openCurrentIndex++;
+
+			// Pop_front in bulk
+			if (openCurrentIndex >= 1024)
+			{
+				openIndices.erase(openIndices.begin(), openIndices.begin() + openCurrentIndex);
+				openCurrentIndex = 0;
+			}
 
 			const float currentDist = distanceField[current];
 
@@ -211,7 +228,7 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 					if (nbrDist < distanceField[nbrIndex])
 					{
 						distanceField[nbrIndex] = nbrDist;
-						openIndices.emplace(nbrIndex);
+						openIndices.emplace_back(nbrIndex);
 					}
 				};
 
@@ -271,7 +288,9 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 			continue;
 		}
 
-		std::vector<glm::vec2> smoothedField = target.mFlowField;
+		// Static, so we can reuse the buffer.
+		static std::vector<glm::vec2> smoothedField{};
+		smoothedField = target.mFlowField;
 
 		for (int i = 0; i < target.mNumberOfSmoothingSteps; i++)
 		{
