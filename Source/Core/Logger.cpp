@@ -117,7 +117,7 @@ void CE::Logger::Log(std::string_view message,
 	mEntryContents->Emplace(formattedMessage);
 	mMutex.unlock();
 
-	fputs(formattedMessage.c_str(), stdout);
+	std::cout << formattedMessage << std::endl;
 	
 	if (severity == Fatal)
 	{

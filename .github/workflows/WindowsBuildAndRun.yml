@@ -14,8 +14,6 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
 
-  # Cancel in-progress runs when a new workflow with the same group name is triggered
-  cancel-in-progress: true
 
 env:
   # Path to the solution file relative to the root of the project.
@@ -58,9 +56,9 @@ jobs:
 
         $process.Start() | Out-Null
 
+        $output = $process.StandardOutput.ReadToEnd() + $process.StandardError.ReadToEnd()
         $process.WaitForExit()
 
-        $output = $process.StandardOutput.ReadToEnd() + $process.StandardError.ReadToEnd()
         echo "Executable Output:"
         echo $output
 
