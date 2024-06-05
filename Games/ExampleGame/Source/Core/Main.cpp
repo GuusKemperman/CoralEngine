@@ -15,9 +15,6 @@ int main(int argc, char* argv[])
 		try
 		{
 			CE::Engine engine{ argc, argv, GAME_DIR };
-			std::cout << "Right before invalid" << std::endl;
-			char* nullpt = nullptr;
-			*nullpt = 0;
 			engine.Run("L_MainMenu");
 		}
 		catch (const std::exception& e)
