@@ -19,7 +19,7 @@ namespace Game
 			{
 				CE::AssetHandle<CE::Prefab> mPrefab{};
 
-				float mBaseFrequency{};
+				float mBaseFrequency = 1.0f;
 
 				// Can be used to, for example, make 'larger' rocks only spawn
 				// if the noise value is really high. This leads to larger rocks
@@ -31,7 +31,7 @@ namespace Game
 
 				// Can be used to, for example, scale down trees near the edges
 				// of forests
-				CE::Bezier mScaleAtNoiseValue{};
+				CE::Bezier mScaleAtNoiseValue{ { glm::vec2{ 0.0f, 1.0f }, glm::vec2{ 1.0f, 1.0f }, glm::vec2{ -1.0f } } };
 
 #ifdef EDITOR
 				void DisplayWidget(const std::string& name);
@@ -58,10 +58,10 @@ namespace Game
 			uint32 mNumberOfRandomRotations = 4;
 
 			// Number that determines at what distance to view the noisemap.
-			float mNoiseScale = 1.0f;
+			float mNoiseScale = 0.02f;
 
 			// The number of levels of detail you want you perlin noise to have.
-			uint32 mNoiseNumOfOctaves{};
+			uint32 mNoiseNumOfOctaves = 1;
 
 			// Number that determines how much each octave contributes to the overall shape(adjusts amplitude).
 			float mNoisePersistence = .5f;
@@ -97,6 +97,8 @@ namespace Game
 			// the effects of your own noise.
 			float mWeight = 1.0f;
 
+			bool mIsDebugDrawingEnabled = true;
+
 #ifdef EDITOR
 			void DisplayWidget(const std::string& name);
 #endif // EDITOR
@@ -118,6 +120,9 @@ namespace Game
 
 		glm::vec2 mLastGeneratedAtPosition{ std::numeric_limits<float>::infinity() };
 
+		float mDebugDrawNoiseHeight = 5.0f;
+		float mDebugDrawDistanceBetweenLayers = 5.0f;
+
 	private:
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
@@ -125,14 +130,14 @@ namespace Game
 	};
 }
 
-CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 0);
+CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 1);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::Object, 0);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::NoiseInfluence, 0);
 
 namespace cereal
 {
 	template<class Archive>
-	void serialize(Archive& ar, Game::EnvironmentGeneratorComponent::Layer& value, uint32)
+	void serialize(Archive& ar, Game::EnvironmentGeneratorComponent::Layer& value, uint32 version)
 	{
 		ar(value.mObjects, 
 			value.mCellSize, 
@@ -143,6 +148,11 @@ namespace cereal
 			value.mNoisePersistence,
 			value.mInfluences,
 			value.mWeight);
+
+		if (version >= 1)
+		{
+			ar(value.mIsDebugDrawingEnabled);
+		}
 	}
 
 	template<class Archive>

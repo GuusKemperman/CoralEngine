@@ -88,6 +88,7 @@ void Game::EnvironmentGeneratorComponent::Layer::DisplayWidget(const std::string
 	CE::ShowInspectUI("mNoisePersistence", mNoisePersistence);
 	CE::ShowInspectUI("mInfluences", mInfluences);
 	CE::ShowInspectUI("mWeight", mWeight);
+	CE::ShowInspectUI("mIsDebugDrawingEnabled", mIsDebugDrawingEnabled);
 }
 #endif // EDITOR
 
@@ -101,7 +102,8 @@ bool Game::EnvironmentGeneratorComponent::Layer::operator==(const Layer& other) 
 		&& mNoiseNumOfOctaves == other.mNoiseNumOfOctaves
 		&& mNoisePersistence == other.mNoisePersistence
 		&& mInfluences == other.mInfluences
-		&& mWeight == other.mWeight;
+		&& mWeight == other.mWeight
+		&& mIsDebugDrawingEnabled == other.mIsDebugDrawingEnabled;
 }
 
 bool Game::EnvironmentGeneratorComponent::Layer::operator!=(const Layer& other) const
@@ -124,6 +126,7 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Layer::Reflect()
 	type.AddField(&Layer::mNoisePersistence, "mNoisePersistence").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mInfluences, "mInfluences").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mWeight, "mWeight").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Layer::mIsDebugDrawingEnabled, "mIsDebugDrawingEnabled").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectFieldType<Layer>(type);
 	return type;
@@ -139,6 +142,8 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Reflect()
 	type.AddField(&EnvironmentGeneratorComponent::mDistToMoveBeforeRegeneration, "mDistToMoveBeforeRegeneration").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mSeed, "mSeed").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mLayers, "mLayers").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&EnvironmentGeneratorComponent::mDebugDrawNoiseHeight, "mDebugDrawNoiseHeight").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&EnvironmentGeneratorComponent::mDebugDrawDistanceBetweenLayers, "mDebugDrawDistanceBetweenLayers").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<EnvironmentGeneratorComponent>(type);
 	return type;
