@@ -234,7 +234,15 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
                 CheckGamepadInput<&Input::WasGamepadButtonPressed>(input, weapon.mReloadGamepadButtons, playerComponent->mID)) &&
                 weapon.mReloadCounter == 0.f)
             {
+                // Trigger reload
                 weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
+            }
+            if ((CheckKeyboardInput<&Input::WasKeyboardKeyPressed>(input, weapon.mKeyboardKeys) ||
+                CheckGamepadInput<&Input::WasGamepadButtonPressed>(input, weapon.mGamepadButtons, playerComponent->mID)) &&
+                weapon.mAmmoCounter > 0)
+            {
+                // Reload interrupted
+                weapon.mReloadCounter = 0.f;
             }
 
             // Activate abilities for the player based on input
