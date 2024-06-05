@@ -1,8 +1,10 @@
 #pragma once
+#include "Core/Input.h"
 #include "Systems/System.h"
 
 namespace CE
 {
+	class Input;
 	class AbilitiesOnCharacterComponent;
 	class CharacterComponent;
 	struct AbilityInstance;
@@ -34,8 +36,40 @@ namespace CE
 	private:
 		static void CallAllOnAbilityActivateEvents(World& world, entt::entity castBy);
 
+		template<bool (Input::*Func)(Input::KeyboardKey, bool) const>
+		static bool CheckKeyboardInput(const Input& input, const std::vector<Input::KeyboardKey>& keys);
+
+		template<bool (Input::* Func)(int, Input::GamepadButton, bool) const>
+		static bool CheckGamepadInput(const Input& input, const std::vector<Input::GamepadButton>& buttons, int playerID);
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AbilitySystem);
 	};
+
+	template <bool(Input::*Func)(Input::KeyboardKey, bool) const>
+	bool AbilitySystem::CheckKeyboardInput(const Input& input, const std::vector<Input::KeyboardKey>& keys)
+	{
+		for (auto& key : keys)
+		{
+			if ((input.*Func)(key, true))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	template <bool(Input::*Func)(int, Input::GamepadButton, bool) const>
+	bool AbilitySystem::CheckGamepadInput(const Input& input, const std::vector<Input::GamepadButton>& buttons, int playerID)
+	{
+		for (auto& button : buttons)
+		{
+			if ((input.*Func)(playerID, button, true))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 }

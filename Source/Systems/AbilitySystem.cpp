@@ -193,19 +193,10 @@ void CE::AbilitySystem::UpdateAbilitiesVector(AbilitiesOnCharacterComponent& abi
         {
             if (CanAbilityBeActivated(characterData, ability))
             {
-                for (auto& key : ability.mKeyboardKeys)
+                if (CheckKeyboardInput<&Input::IsKeyboardKeyHeld>(input, ability.mKeyboardKeys) ||
+                    CheckGamepadInput<&Input::IsGamepadButtonHeld>(input, ability.mGamepadButtons, playerComponent->mID))
                 {
-                    if (input.IsKeyboardKeyHeld(key))
-                    {
-                        ActivateAbility(world, entity, characterData, ability);
-                    }
-                }
-                for (auto& button : ability.mGamepadButtons)
-                {
-                    if (input.IsGamepadButtonHeld(playerComponent->mID, button))
-                    {
-                        ActivateAbility(world, entity, characterData, ability);
-                    }
+                    ActivateAbility(world, entity, characterData, ability);
                 }
             }
         }
@@ -248,7 +239,7 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
             }
             if (reload)
             {
-                //weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
+                weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
             }
 
             // Activate abilities for the player based on input
@@ -256,36 +247,18 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
             {
                 if (weapon.mRuntimeWeapon->mShootOnRelease == false)
                 {
-                    for (auto& key : weapon.mKeyboardKeys)
+                    if (CheckKeyboardInput<&Input::IsKeyboardKeyHeld>(input, weapon.mKeyboardKeys) || 
+                        CheckGamepadInput<&Input::IsGamepadButtonHeld>(input, weapon.mGamepadButtons, playerComponent->mID))
                     {
-                        if (input.IsKeyboardKeyHeld(key))
-                        {
-                            ActivateWeapon(world, entity, characterData, weapon);
-                        }
-                    }
-                    for (auto& button : weapon.mGamepadButtons)
-                    {
-                        if (input.IsGamepadButtonHeld(playerComponent->mID, button))
-                        {
-                            ActivateWeapon(world, entity, characterData, weapon);
-                        }
+                        ActivateWeapon(world, entity, characterData, weapon);
                     }
                 }
                 else
                 {
-                    for (auto& key : weapon.mKeyboardKeys)
+                    if (CheckKeyboardInput<&Input::WasKeyboardKeyReleased>(input, weapon.mKeyboardKeys) ||
+                        CheckGamepadInput<&Input::WasGamepadButtonReleased>(input, weapon.mGamepadButtons, playerComponent->mID))
                     {
-                        if (input.WasKeyboardKeyReleased(key))
-                        {
-                            ActivateWeapon(world, entity, characterData, weapon);
-                        }
-                    }
-                    for (auto& button : weapon.mGamepadButtons)
-                    {
-                        if (input.WasGamepadButtonReleased(playerComponent->mID, button))
-                        {
-                            ActivateWeapon(world, entity, characterData, weapon);
-                        }
+                        ActivateWeapon(world, entity, characterData, weapon);
                     }
                 }
             }
