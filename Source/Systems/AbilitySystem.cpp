@@ -213,31 +213,26 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
             continue;
         }
 
-        // Update counters
-        weapon.mReloadCounter = std::max(weapon.mReloadCounter - dt * weapon.mRuntimeWeapon->mReloadSpeed, 0.f);
+        // Shot Delay counter
         weapon.mShotDelayCounter = std::min(weapon.mShotDelayCounter + dt * weapon.mRuntimeWeapon->mFireSpeed, weapon.mRuntimeWeapon->mShotDelay);
+
+    	// Reload counter
+    	if (weapon.mReloadCounter > 0.f)
+        {
+	    	weapon.mReloadCounter = std::max(weapon.mReloadCounter - dt * weapon.mRuntimeWeapon->mReloadSpeed, 0.f);
+            if (weapon.mReloadCounter == 0.f)
+            {
+                // Reload completed
+                weapon.mAmmoCounter = weapon.mRuntimeWeapon->mCharges;
+            }
+        }
 
         if (auto playerComponent = world.GetRegistry().TryGet<PlayerComponent>(entity))
         {
             // Reload
-            bool reload{};
-            for (auto& key : weapon.mReloadKeyboardKeys)
-            {
-                if (input.WasKeyboardKeyPressed(key))
-                {
-                    reload = true;
-                    break;
-                }
-            }
-            for (auto& button : weapon.mReloadGamepadButtons)
-            {
-                if (input.WasGamepadButtonPressed(playerComponent->mID, button))
-                {
-                    reload = true;
-                    break;
-                }
-            }
-            if (reload)
+            if ((CheckKeyboardInput<&Input::WasKeyboardKeyPressed>(input, weapon.mReloadKeyboardKeys) ||
+                CheckGamepadInput<&Input::WasGamepadButtonPressed>(input, weapon.mReloadGamepadButtons, playerComponent->mID)) &&
+                weapon.mReloadCounter == 0.f)
             {
                 weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
             }
@@ -319,8 +314,8 @@ bool CE::AbilitySystem::CanWeaponBeActivated(const CharacterComponent& character
     {
         return false;
     }
-    return weapon.mReloadCounter <= 0.f &&
-        (weapon.mAmmoCounter > 0 && weapon.mRuntimeWeapon->mShootOnRelease == false || weapon.mRuntimeWeapon->mShootOnRelease == true) &&
+    return (weapon.mAmmoCounter > 0 && weapon.mRuntimeWeapon->mShootOnRelease == false || 
+        (weapon.mShotsAccumulated > 0 || weapon.mAmmoCounter > 0) && weapon.mRuntimeWeapon->mShootOnRelease == true) &&
         weapon.mShotDelayCounter >= weapon.mRuntimeWeapon->mShotDelay &&
         (weapon.mRuntimeWeapon->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
 }
@@ -357,9 +352,9 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     {
         LOG(LogAbilitySystem, Error, "Weapon {} does not have a script selected.", weapon.mWeaponAsset.GetMetaData().GetName());
     }
+    weapon.mReloadCounter = 0.f;
     if (weapon.mAmmoCounter <= 0)
     {
-        weapon.mAmmoCounter = weapon.mRuntimeWeapon->mCharges;
         weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
     }
 

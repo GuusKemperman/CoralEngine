@@ -113,6 +113,7 @@ CE::MetaType CE::WeaponInstance::Reflect()
 	metaType.AddField(&WeaponInstance::mAmmoCounter, "mAmmoCounter").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mShotDelayCounter, "mShotDelayCounter").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mAmmoConsumption, "mAmmoConsumption").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mShotsAccumulated, "mShotsAccumulated").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mKeyboardKeys, "mKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mGamepadButtons, "mGamepadButtons").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mReloadKeyboardKeys, "mReloadKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
@@ -147,27 +148,9 @@ CE::MetaType CE::WeaponInstance::Reflect()
 	metaType.AddFunc([](const WeaponInstance& weapon, const PlayerComponent& playerData)
 	{
 		const auto& input = Input::Get();
-		bool hasAnyInput = false;
-
-		for (auto& key : weapon.mKeyboardKeys)
-		{
-			if (input.IsKeyboardKeyHeld(key))
-			{
-				hasAnyInput = true;
-				break;
-			}
-		}
-
-		for (auto& button : weapon.mGamepadButtons)
-		{
-			if (input.IsGamepadButtonHeld(playerData.mID, button))
-			{
-				hasAnyInput = true;
-				break;
-			}
-		}
-
-		return weapon.mReloadCounter <= 0.0f && hasAnyInput;
+		return weapon.mReloadCounter == 0.0f &&
+			AbilitySystem::CheckKeyboardInput<&Input::IsKeyboardKeyHeld>(input, weapon.mKeyboardKeys) ||
+			AbilitySystem::CheckGamepadInput<&Input::IsGamepadButtonHeld>(input, weapon.mGamepadButtons, playerData.mID);
 
 	}, "IsPlayerShooting", MetaFunc::ExplicitParams<const WeaponInstance&, const PlayerComponent&>{}).GetProperties().Add(Props::sIsScriptableTag);
 

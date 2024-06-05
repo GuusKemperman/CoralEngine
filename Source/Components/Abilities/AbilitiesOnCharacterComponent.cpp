@@ -129,6 +129,10 @@ void CE::WeaponInstance::DisplayWidget()
 	ShowInspectUIReadOnly("mReloadCounter", mReloadCounter);
 	ShowInspectUIReadOnly("mAmmoCounter", mAmmoCounter);
 	ShowInspectUIReadOnly("mShotDelayCounter", mShotDelayCounter);
+	if (mWeaponAsset != nullptr && mWeaponAsset->mShootOnRelease == true)
+	{
+		ShowInspectUIReadOnly("mShotsAccumulated", mShotsAccumulated);
+	}
 	ShowInspectUI("mAmmoConsumption", mAmmoConsumption);
 	if (isPlayer)
 	{

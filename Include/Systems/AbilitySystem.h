@@ -33,14 +33,16 @@ namespace CE
 		// Functions the same as ActivateAbility() plus extra weapon-specific things.
 		static bool ActivateWeapon(World& world, entt::entity castBy, CharacterComponent& characterData, WeaponInstance& weapon);
 
-	private:
-		static void CallAllOnAbilityActivateEvents(World& world, entt::entity castBy);
-
-		template<bool (Input::*Func)(Input::KeyboardKey, bool) const>
+		// Checks all the provided keyboard keys based on the function provided and returns true at the first input found, otherwise returns false.
+		template<bool (Input::* Func)(Input::KeyboardKey, bool) const>
 		static bool CheckKeyboardInput(const Input& input, const std::vector<Input::KeyboardKey>& keys);
 
+		// Checks all the provided gamepad buttons based on the function provided and returns true at the first input found, otherwise returns false.
 		template<bool (Input::* Func)(int, Input::GamepadButton, bool) const>
 		static bool CheckGamepadInput(const Input& input, const std::vector<Input::GamepadButton>& buttons, int playerID);
+
+	private:
+		static void CallAllOnAbilityActivateEvents(World& world, entt::entity castBy);
 
 		friend ReflectAccess;
 		static MetaType Reflect();
