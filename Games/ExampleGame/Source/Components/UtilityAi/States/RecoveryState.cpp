@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/RecoveryState.h"
 
+#include "Utilities/AiFunctionality.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
@@ -12,14 +13,9 @@
 #include "Components/PlayerComponent.h"
 #include "Components/TransformComponent.h"
 
-void Game::RecoveryState::OnAiTick(CE::World& world, entt::entity owner, float dt)
+void Game::RecoveryState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDashRechargeAnimation, 0.0f);
-	}
+	Game::AnimationInAi(world, owner, mDashRechargeAnimation);
 	
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
@@ -33,41 +29,12 @@ void Game::RecoveryState::OnAiTick(CE::World& world, entt::entity owner, float d
 
 	mRechargeCooldown.mAmountOfTimePassed += dt;
 
-	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
-
-	if (playerId == entt::null)
-	{
-		return;
-	}
-
-	const auto playerTransform = world.GetRegistry().TryGet<CE::TransformComponent>(playerId);
-	if (playerTransform == nullptr)
-	{
-		LOG(LogAI, Warning, "Recovery State - player {} does not have a Transform Component.", entt::to_integral(playerId));
-		return;
-	}
-
-	const auto enemyTransform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-	if (enemyTransform == nullptr)
-	{
-		LOG(LogAI, Warning, "Recovery State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
-		return;
-	}
-
-	const glm::vec2 playerPosition2D = playerTransform->GetWorldPosition2D();
-	const glm::vec2 enemyPosition2D = enemyTransform->GetWorldPosition2D();
-
-	if (playerPosition2D != enemyPosition2D)
-	{
-		const glm::vec2 direction = glm::normalize(playerPosition2D - enemyPosition2D);
-
-		enemyTransform->SetWorldOrientation(CE::Math::Direction2DToXZQuatOrientation(direction));
-	}
+	Game::FaceThePlayer(world, owner);
 }
 
 float Game::RecoveryState::OnAiEvaluate(const CE::World&, entt::entity) const
 {
-	if (mRechargeCooldown.mAmountOfTimePassed != 0.0f && mRechargeCooldown.mAmountOfTimePassed < mRechargeCooldown.mCooldown)
+	if (mRechargeCooldown.mAmountOfTimePassed < mRechargeCooldown.mCooldown)
 	{
 		return 1.0f;
 	}
@@ -78,12 +45,12 @@ float Game::RecoveryState::OnAiEvaluate(const CE::World&, entt::entity) const
 void Game::RecoveryState::OnAiStateEnterEvent(CE::World&, entt::entity)
 {
 	mRechargeCooldown.mCooldown = mMaxRechargeTime;
-	mRechargeCooldown.mAmountOfTimePassed = 0.00000000000001f;
+	mRechargeCooldown.mAmountOfTimePassed = 0.0f;
 }
 
-void Game::RecoveryState::OnAiStateExitEvent(CE::World&, entt::entity)
+void Game::RecoveryState::OnBeginPlayEvent(CE::World&, entt::entity)
 {
-	mRechargeCooldown.mAmountOfTimePassed = 0.0f;
+	mRechargeCooldown.mAmountOfTimePassed = mRechargeCooldown.mCooldown;
 }
 
 CE::MetaType Game::RecoveryState::Reflect()
@@ -92,11 +59,12 @@ CE::MetaType Game::RecoveryState::Reflect()
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	type.AddField(&RecoveryState::mMaxRechargeTime, "mMaxRechargeTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&RecoveryState::mRechargeCooldown, "mRechargeCooldown").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &RecoveryState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &RecoveryState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &RecoveryState::OnAiStateEnterEvent);
-	BindEvent(type, CE::sAIStateExitEvent, &RecoveryState::OnAiStateExitEvent);
+	BindEvent(type, CE::sBeginPlayEvent, &RecoveryState::OnBeginPlayEvent);
 
 	type.AddField(&RecoveryState::mDashRechargeAnimation, "mDashRechargeAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
