@@ -98,8 +98,6 @@ namespace CE
 
 UNIT_TEST(Events, OnTick)
 {
-	TEST_ASSERT(false);
-
 	using namespace CE;
 
 	World world{true};
