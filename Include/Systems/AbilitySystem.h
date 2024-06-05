@@ -12,6 +12,8 @@ namespace CE
 		public System
 	{
 	public:
+		AbilitySystem();
+
 		void Update(World& world, float dt) override;
 
 		void UpdateAbilitiesVector(AbilitiesOnCharacterComponent& abilities, CharacterComponent& characterData, entt::entity entity, World& world, float dt);

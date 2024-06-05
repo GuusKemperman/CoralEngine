@@ -86,6 +86,13 @@ namespace CE
 	 */
 	static constexpr Event<void(World&, entt::entity)> sAbilityActivateEvent{ "OnAbilityActivate" };
 
+	/*
+	* \brief Called when an animation finishes.
+	* World& the world the animationRootComponent is in
+	* entt::entity The entity with the animationRootComponent which has finished its animation.
+	*/
+	static constexpr Event<void(World&, entt::entity)> sAnimationFinishEvent{ "OnAnimationFinish" };
+
 	/**
 	 * \brief Called immediately when the component is constructed.
 	 * \World& The world this component is in.

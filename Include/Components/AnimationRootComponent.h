@@ -18,6 +18,10 @@ namespace CE
 
 		entt::entity mOwner{};
 
+		float mCurrentTimeStamp{};
+		float mCurrentAnimationSpeed{};
+		AssetHandle<Animation> mCurrentAnimation{};
+
 		float mWantedTimeStamp = 0.0f;
 		float mWantedAnimationSpeed = 1.0f;
 		float mWantedBlendTime = 0.2f;
