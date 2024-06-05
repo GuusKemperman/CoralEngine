@@ -144,6 +144,19 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Reflect()
 	type.AddField(&EnvironmentGeneratorComponent::mLayers, "mLayers").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mDebugDrawNoiseHeight, "mDebugDrawNoiseHeight").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mDebugDrawDistanceBetweenLayers, "mDebugDrawDistanceBetweenLayers").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&EnvironmentGeneratorComponent::mShouldGenerateInEditor, "mShouldGenerateInEditor").GetProperties().Add(CE::Props::sNoInspectTag);
+
+	type.AddFunc([](EnvironmentGeneratorComponent& component)
+		{
+			component.mLastGeneratedAtPosition = glm::vec2{ std::numeric_limits<float>::infinity() };
+			component.mShouldGenerateInEditor = true;
+		}, "Generate", CE::MetaFunc::ExplicitParams<EnvironmentGeneratorComponent&>{}).GetProperties().Add(CE::Props::sCallFromEditorTag);
+
+	type.AddFunc([](EnvironmentGeneratorComponent& component)
+		{
+			component.mLastGeneratedAtPosition = glm::vec2{ std::numeric_limits<float>::infinity() };
+			component.mShouldGenerateInEditor = false;
+		}, "Clear", CE::MetaFunc::ExplicitParams<EnvironmentGeneratorComponent&>{}).GetProperties().Add(CE::Props::sCallFromEditorTag);
 
 	CE::ReflectComponentType<EnvironmentGeneratorComponent>(type);
 	return type;

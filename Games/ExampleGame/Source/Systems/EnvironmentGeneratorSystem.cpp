@@ -176,8 +176,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 	}
 
 	// Only regenerate if we have moved a sufficiently large distance
-	if (!world.HasBegunPlay()
-		|| glm::distance2(generatorPosition, generator.mLastGeneratedAtPosition) < CE::Math::sqr(generator.mDistToMoveBeforeRegeneration))
+	if (glm::distance2(generatorPosition, generator.mLastGeneratedAtPosition) < CE::Math::sqr(generator.mDistToMoveBeforeRegeneration))
 	{
 		return;
 	}
@@ -186,6 +185,12 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 	// Clear the terrain
 	const auto createdEntities = reg.View<Internal::PartOfGeneratedEnvironmentTag>();
 	reg.Destroy(createdEntities.begin(), createdEntities.end(), true);
+
+	if (!world.HasBegunPlay()
+		&& !generator.mShouldGenerateInEditor)
+	{
+		return;
+	}
 
 	for (uint32 i = 0; i < static_cast<uint32>(generator.mLayers.size()); i++)
 	{
