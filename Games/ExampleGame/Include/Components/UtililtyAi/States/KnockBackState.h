@@ -15,22 +15,17 @@ namespace Game
 	{
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
-		float OnAiEvaluate(const CE::World& world, entt::entity owner);
-		void OnAIStateEnterEvent(CE::World& world, entt::entity owner);
+		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
+		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
+		static void OnAiStateExitEvent(CE::World& world, entt::entity owner);
 
-		bool IsDashCharged() const;
-
-		void ResetKnockBackTime();
+		void ResetTimer();
 
 		float mCurrentKnockBackCountDownTimer = 0.0f;
 
 		CE::AssetHandle<CE::Animation> mKnockBackAnimation{};
 
-		bool mJustGotHit = false;
-
 	private:
-
-		entt::entity mTargetEntity = entt::null;
 
 		glm::vec2 mDashDirection{};
 

@@ -12,28 +12,18 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/PlayerComponent.h"
+#include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Components/UtililtyAi/States/ChargeUpDashState.h"
-#include "Components/UtililtyAi/States/ChasingState.h"
-#include "Components/UtililtyAi/States/DashingState.h"
-#include "Components/UtililtyAi/States/ChargeUpStompState.h"
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
+#include "Utilities/AiFunctionality.h"
 
 
-void Game::KnockBackState::OnAiTick(CE::World& world, entt::entity owner, float dt)
+void Game::KnockBackState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
 	mCurrentKnockBackCountDownTimer -= dt;
 
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mKnockBackAnimation, 0.0f);
-	}
-	else
-	{
-		LOG(LogAI, Warning, "An animationRoot component is needed to run the KnockBack State!");
-	}
+	Game::AnimationInAi(world, owner, mKnockBackAnimation );
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
@@ -48,65 +38,29 @@ void Game::KnockBackState::OnAiTick(CE::World& world, entt::entity owner, float 
 	physicsBody2DComponent->mLinearVelocity = -mDashDirection * ratio * mKnockBackSpeed;
 }
 
-float Game::KnockBackState::OnAiEvaluate(const CE::World& world, entt::entity owner)
+float Game::KnockBackState::OnAiEvaluate(const CE::World&, entt::entity) const
 {
-	//auto [score, entity] = GetBestScoreAndTarget(world, owner);
-
-	auto* rechargeDashState = world.GetRegistry().TryGet<ChargeUpDashState>(owner);
-
-	if (rechargeDashState != nullptr)
+	if (mCurrentKnockBackCountDownTimer > 0)
 	{
-		if (rechargeDashState->mChargeCooldown.mAmountOfTimePassed != 0.f)
-		{
-			return 0;
-		}
+ 		return 0.825f;
 	}
-
-	auto* dashingState = world.GetRegistry().TryGet<DashingState>(owner);
-
-	if (dashingState != nullptr)
-	{
-		if (dashingState->mDashCooldown.mAmountOfTimePassed != 0.f)
-		{
-			return 0;
-		}
-	}
-
-	if (mCurrentKnockBackCountDownTimer > 0 || (mJustGotHit))
-	{
-		mJustGotHit = false;
- 		return 1;
-	}
-	mJustGotHit = false;
 
 	return 0;
 }
 
-void Game::KnockBackState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
+void Game::KnockBackState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
-	const auto* target = world.GetRegistry().TryGet<Game::ChasingState>(owner);
+	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
-	mJustGotHit = false;
-
-	if (target == nullptr)
+	if (playerId == entt::null)
 	{
-		LOG(LogAI, Warning, "An ChasingState is needed to run the Dashing State!");
+		LOG(LogAI, Warning, "An PlayerComponent on the player entity is needed to run the Dashing State!");
 		return;
 	}
 
-	const entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
-
-	if (entityId == entt::null)
+	if (playerId != entt::null)
 	{
-		LOG(LogAI, Warning, "An NavMeshTargetTag on the player entity is needed to run the Dashing State!");
-		return;
-	}
-
-	mTargetEntity = entityId;
-
-	if (mTargetEntity != entt::null)
-	{
-		const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(mTargetEntity);
+		const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(playerId);
 
 		if (transformComponent == nullptr)
 		{
@@ -122,14 +76,6 @@ void Game::KnockBackState::OnAIStateEnterEvent(CE::World& world, entt::entity ow
 			return;
 		}
 
-		const auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
-
-		if (physicsBody2DComponent == nullptr)
-		{
-			LOG(LogAI, Warning, "An PhysicsBody2D component is needed to run the Dashing State!");
-			return;
-		}
-
 		const glm::vec2 targetT = transformComponent->GetWorldPosition2D();
 
 		const glm::vec2 ownerT = ownerTransformComponent->GetWorldPosition2D();
@@ -137,23 +83,15 @@ void Game::KnockBackState::OnAIStateEnterEvent(CE::World& world, entt::entity ow
 		mDashDirection = glm::normalize(targetT - ownerT);
 	}
 
-	auto* recoverState = world.GetRegistry().TryGet<ChargeUpDashState>(owner);
-
-	if (recoverState == nullptr)
-	{
-		LOG(LogAI, Warning, "An DashRechargeState is needed to run the Dashing State!");
-		return;
-	}
-
-	recoverState->mChargeCooldown.mAmountOfTimePassed = 0;
+	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 }
 
-bool Game::KnockBackState::IsDashCharged() const
+void Game::KnockBackState::OnAiStateExitEvent(CE::World& world, const entt::entity owner)
 {
-	return mCurrentKnockBackCountDownTimer <= 0;
+	CE::SwarmingAgentTag::StartMovingToTarget(world, owner);
 }
 
-void Game::KnockBackState::ResetKnockBackTime()
+void Game::KnockBackState::ResetTimer()
 {
 	mCurrentKnockBackCountDownTimer = mMaxKnockBackTime;
 }
@@ -168,11 +106,10 @@ CE::MetaType Game::KnockBackState::Reflect()
 
 	BindEvent(type, CE::sAITickEvent, &KnockBackState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &KnockBackState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &KnockBackState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAIStateEnterEvent, &KnockBackState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sAIStateExitEvent, &KnockBackState::OnAiStateExitEvent);
 
 	type.AddField(&KnockBackState::mKnockBackAnimation, "mKnockBackAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&KnockBackState::mJustGotHit, "mJustGotHit").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddFunc(&KnockBackState::ResetKnockBackTime, "ResetKnockBackTime").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<KnockBackState>(type);
 	return type;

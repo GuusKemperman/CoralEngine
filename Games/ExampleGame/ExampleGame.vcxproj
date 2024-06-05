@@ -358,6 +358,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\UtilityAi\KnockBackOnEnemies.cpp" />
     <ClCompile Include="Source\Utilities\AiFunctionality.cpp" />
     <ClCompile Include="Source\Components\EnvironmentGeneratorComponent.cpp" />
     <ClCompile Include="Source\Assets\Upgrade.cpp" />
@@ -433,6 +434,7 @@
     <ClInclude Include="Include\Systems\EnvironmentGeneratorSystem.h" />
     <ClInclude Include="Include\Systems\SpawnerSystem.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\KnockBackState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\KnockBackOnEnemies.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\UserMem\address_sanitizer_utils.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

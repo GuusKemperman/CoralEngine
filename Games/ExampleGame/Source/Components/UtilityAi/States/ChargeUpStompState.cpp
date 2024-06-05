@@ -40,7 +40,7 @@ float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, const entt:
 
 	if (mChargeCooldown.mAmountOfTimePassed != 0.0f)
 	{
-		return 0.8f;
+		return 0.85f;
 	}
 
 	const auto score = Game::GetBestScoreBasedOnDetection(world, owner, mRadius);
