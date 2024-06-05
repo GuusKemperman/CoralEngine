@@ -48,7 +48,7 @@ namespace CE
 
 		std::unordered_map<size_t, AnimMeshInfo> mAnimMeshInfoMap{};
 
-		const std::vector<BoundEvent> mOnAnimationFinishEvents{};
+		std::vector<BoundEvent> mOnAnimationFinishEvents{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();

@@ -20,6 +20,16 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/AbilityFunctionality.h"
 
+namespace
+{
+    static std::vector<CE::BoundEvent> abilityActivateEvents{};
+}
+
+CE::AbilitySystem::AbilitySystem()
+{   
+    abilityActivateEvents = CE::GetAllBoundEvents(CE::sAbilityActivateEvent);
+}
+
 void CE::AbilitySystem::Update(World& world, float dt)
 {
     Registry& reg = world.GetRegistry();
@@ -352,8 +362,7 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
 
 void CE::AbilitySystem::CallAllOnAbilityActivateEvents(World& world, entt::entity castBy)
 {
-    const std::vector<BoundEvent> boundEvents = GetAllBoundEvents(sAbilityActivateEvent);
-    for (const BoundEvent& boundEvent : boundEvents)
+    for (const BoundEvent& boundEvent : abilityActivateEvents)
     {
         entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
 
