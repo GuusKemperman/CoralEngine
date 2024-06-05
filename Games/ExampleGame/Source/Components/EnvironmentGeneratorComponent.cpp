@@ -12,7 +12,6 @@ void Game::EnvironmentGeneratorComponent::Layer::Object::DisplayWidget(const std
 	CE::ShowInspectUI("mPrefab", mPrefab);
 	CE::ShowInspectUI("mBaseFrequency", mBaseFrequency);
 	CE::ShowInspectUI("mSpawnFrequenciesAtNoiseValue", mSpawnFrequenciesAtNoiseValue);
-	CE::ShowInspectUI("mScaleAtNoiseValue", mScaleAtNoiseValue);
 }
 #endif // EDITOR
 
@@ -20,8 +19,7 @@ bool Game::EnvironmentGeneratorComponent::Layer::Object::operator==(const Object
 {
 	return mPrefab == other.mPrefab
 		&& mBaseFrequency == other.mBaseFrequency
-		&& mSpawnFrequenciesAtNoiseValue == other.mSpawnFrequenciesAtNoiseValue
-		&& mScaleAtNoiseValue == other.mScaleAtNoiseValue;
+		&& mSpawnFrequenciesAtNoiseValue == other.mSpawnFrequenciesAtNoiseValue;
 }
 
 bool Game::EnvironmentGeneratorComponent::Layer::Object::operator!=(const Object& other) const
@@ -38,7 +36,6 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Layer::Object::Reflect()
 	type.AddField(&Object::mPrefab, "mPrefab").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Object::mBaseFrequency, "mBaseFrequency").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Object::mSpawnFrequenciesAtNoiseValue, "mSpawnFrequenciesAtNoiseValue").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&Object::mScaleAtNoiseValue, "mScaleAtNoiseValue").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectFieldType<Object>(type);
 	return type;
@@ -82,12 +79,14 @@ void Game::EnvironmentGeneratorComponent::Layer::DisplayWidget(const std::string
 	CE::ShowInspectUI("mObjects", mObjects);
 	CE::ShowInspectUI("mCellSize", mCellSize);
 	CE::ShowInspectUI("mNumberOfRandomRotations", mNumberOfRandomRotations);
+	CE::ShowInspectUI("mScaleAtNoiseValue", mScaleAtNoiseValue);
 	CE::ShowInspectUI("mMaxRandomOffset", mMaxRandomOffset);
 	CE::ShowInspectUI("mNoiseScale", mNoiseScale);
 	CE::ShowInspectUI("mNoiseNumOfOctaves", mNoiseNumOfOctaves);
 	CE::ShowInspectUI("mNoisePersistence", mNoisePersistence);
 	CE::ShowInspectUI("mInfluences", mInfluences);
 	CE::ShowInspectUI("mWeight", mWeight);
+	CE::ShowInspectUI("mIsDebugDrawingEnabled", mIsDebugDrawingEnabled);
 }
 #endif // EDITOR
 
@@ -96,12 +95,14 @@ bool Game::EnvironmentGeneratorComponent::Layer::operator==(const Layer& other) 
 	return mObjects == other.mObjects
 		&& mCellSize == other.mCellSize
 		&& mNumberOfRandomRotations == other.mNumberOfRandomRotations
+		&& mScaleAtNoiseValue == other.mScaleAtNoiseValue
 		&& mMaxRandomOffset == other.mMaxRandomOffset
 		&& mNoiseScale == other.mNoiseScale
 		&& mNoiseNumOfOctaves == other.mNoiseNumOfOctaves
 		&& mNoisePersistence == other.mNoisePersistence
 		&& mInfluences == other.mInfluences
-		&& mWeight == other.mWeight;
+		&& mWeight == other.mWeight
+		&& mIsDebugDrawingEnabled == other.mIsDebugDrawingEnabled;
 }
 
 bool Game::EnvironmentGeneratorComponent::Layer::operator!=(const Layer& other) const
@@ -118,12 +119,14 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Layer::Reflect()
 	type.AddField(&Layer::mObjects, "mObjects").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mCellSize, "mCellSize").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mNumberOfRandomRotations, "mNumberOfRandomRotations").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Layer::mScaleAtNoiseValue, "mScaleAtNoiseValue").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mMaxRandomOffset, "mMaxRandomOffset").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mNoiseScale, "mNoiseScale").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mNoiseNumOfOctaves, "mNoiseNumOfOctaves").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mNoisePersistence, "mNoisePersistence").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mInfluences, "mInfluences").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mWeight, "mWeight").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Layer::mIsDebugDrawingEnabled, "mIsDebugDrawingEnabled").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectFieldType<Layer>(type);
 	return type;
@@ -139,6 +142,8 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Reflect()
 	type.AddField(&EnvironmentGeneratorComponent::mDistToMoveBeforeRegeneration, "mDistToMoveBeforeRegeneration").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mSeed, "mSeed").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mLayers, "mLayers").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&EnvironmentGeneratorComponent::mDebugDrawNoiseHeight, "mDebugDrawNoiseHeight").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&EnvironmentGeneratorComponent::mDebugDrawDistanceBetweenLayers, "mDebugDrawDistanceBetweenLayers").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<EnvironmentGeneratorComponent>(type);
 	return type;
