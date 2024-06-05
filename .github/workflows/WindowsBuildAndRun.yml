@@ -58,11 +58,12 @@ jobs:
 
         $process.Start() | Out-Null
 
-        $output = $process.StandardOutput.ReadToEnd() + $process.StandardError.ReadToEnd()
         $process.WaitForExit()
 
+        $output = $process.StandardOutput.ReadToEnd() + $process.StandardError.ReadToEnd()
         echo "Executable Output:"
         echo $output
 
         echo "Exit Code: "
         echo $process.ExitCode
+        exit $process.ExitCode
