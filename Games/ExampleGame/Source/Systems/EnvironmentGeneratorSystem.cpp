@@ -217,10 +217,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					continue;
 				}
 
-				const glm::vec<2, int64> seedVec = static_cast<glm::vec<2, int64>>(worldPosition / layer.mCellSize * 1234.987654321f);
-				const uint32 combinedHash = static_cast<uint32>(seedVec.y ^ (seedVec.x + 0x9e3779b9 + (seedVec.y << 6) + (seedVec.y >> 2)));
-
-				std::mt19937 cellGenerator{ CE::Internal::CombineHashes(combinedHash, layerSeed) };
+				std::mt19937 cellGenerator{ CE::Internal::CombineHashes(CE::Random::CreateSeed(worldPosition), layerSeed) };
 
 				const auto randomUint = [&cellGenerator](uint32 min, uint32 max)
 					{
@@ -234,13 +231,13 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 						return distribution(cellGenerator);
 					};
 
-				const glm::vec2 spawnPosition = cellAABB.GetCentre() +
+				const glm::vec2 spawnPosition2D = cellAABB.GetCentre() +
 					glm::vec2{
 						randomFloat(-layer.mMaxRandomOffset, layer.mMaxRandomOffset),
 						randomFloat(-layer.mMaxRandomOffset, layer.mMaxRandomOffset)
 				};
 
-				const std::optional<float> noise = getNoise(getNoise, spawnPosition, i);
+				const std::optional<float> noise = getNoise(getNoise, spawnPosition2D, i);
 
 				if (!noise.has_value())
 				{
@@ -269,7 +266,13 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					continue;
 				}
 
-				const entt::entity entity = reg.CreateFromPrefab(*prefabToSpawn);
+				const float angle = static_cast<float>(randomUint(1u, layer.mNumberOfRandomRotations)) * (TWOPI / static_cast<float>(layer.mNumberOfRandomRotations));
+
+				const glm::quat orientation = glm::quat{ CE::sUp * angle };
+				const glm::vec3 scale = glm::vec3{ layer.mScaleAtNoiseValue.GetValueAt(*noise) };
+				const glm::vec3 spawnPosition3D = CE::To3DRightForward(spawnPosition2D);
+
+				const entt::entity entity = reg.CreateFromPrefab(*prefabToSpawn, entt::null, &spawnPosition3D, &orientation, &scale);
 
 				if (entity == entt::null)
 				{
@@ -285,13 +288,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					continue;
 				}
 
-				const glm::vec3 scale = glm::vec3{ layer.mScaleAtNoiseValue.GetValueAt(*noise) };
-				const uint32 orientation = randomUint(1u, layer.mNumberOfRandomRotations);
-				const float angle = static_cast<float>(orientation) * (TWOPI / static_cast<float>(layer.mNumberOfRandomRotations));
 
-				objectTransform->SetWorldPosition(spawnPosition);
-				objectTransform->SetLocalOrientation(CE::sUp * angle);
-				objectTransform->SetWorldScale(scale);
 			}
 		}
 	}
