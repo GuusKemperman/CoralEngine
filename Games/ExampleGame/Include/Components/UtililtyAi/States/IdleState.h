@@ -13,11 +13,11 @@ namespace Game
 	class IdleState
 	{
 	public:
-		void OnAiTick(CE::World& world, entt::entity owner, float dt);
+		void OnAiTick(CE::World& world, entt::entity owner, float dt) const;
 		static float OnAiEvaluate(const CE::World& world, entt::entity owner);
 		static void OnAIStateEnterEvent(CE::World& world, entt::entity owner);
 
-		CE::AssetHandle<CE::Animation> mIdleAnimation;
+		CE::AssetHandle<CE::Animation> mIdleAnimation{};
 
 	private:
 		friend CE::ReflectAccess;
