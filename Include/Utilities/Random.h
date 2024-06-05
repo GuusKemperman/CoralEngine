@@ -52,6 +52,8 @@ namespace CE
 			return Range<uint32>(0, 1);
 		}
 
+		static uint32 CreateSeed(glm::vec2 position);
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
