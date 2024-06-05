@@ -123,8 +123,8 @@ namespace CE
 				CollisionLayer::Terrain,
 				{
 					CollisionResponse::Ignore,		// WorldStatic
-					CollisionResponse::Blocking,	// WorldDynamic
-					CollisionResponse::Blocking,	// Character
+					CollisionResponse::Ignore,		// WorldDynamic
+					CollisionResponse::Ignore,		// Character
 					CollisionResponse::Ignore,		// Terrain
 					CollisionResponse::Ignore,		// Query
 				}
