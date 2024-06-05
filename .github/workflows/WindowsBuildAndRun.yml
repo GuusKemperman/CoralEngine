@@ -39,8 +39,8 @@ jobs:
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: msbuild /m /p:Configuration=${{matrix.build-configuration}} /p:Platform=x64 ${{env.SOLUTION_FILE_PATH}}
-
+      run: msbuild /m /p:Configuration=${{matrix.build-configuration}} /p:Platform=x64 /p:LinkIncremental=false ${{env.SOLUTION_FILE_PATH}}
+      
     - name: Run Unit Tests
       working-directory: ${{env.GITHUB_WORKSPACE}}
       timeout-minutes: 1
