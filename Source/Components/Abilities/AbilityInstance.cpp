@@ -147,10 +147,9 @@ CE::MetaType CE::WeaponInstance::Reflect()
 
 	metaType.AddFunc([](const WeaponInstance& weapon, const PlayerComponent& playerData)
 	{
-		const auto& input = Input::Get();
 		return weapon.mReloadCounter == 0.0f &&
-			(AbilitySystem::CheckKeyboardInput<&Input::IsKeyboardKeyHeld>(input, weapon.mKeyboardKeys) ||
-			AbilitySystem::CheckGamepadInput<&Input::IsGamepadButtonHeld>(input, weapon.mGamepadButtons, playerData.mID));
+			(AbilitySystem::CheckKeyboardInput<&Input::IsKeyboardKeyHeld>(weapon.mKeyboardKeys) ||
+			AbilitySystem::CheckGamepadInput<&Input::IsGamepadButtonHeld>(weapon.mGamepadButtons, playerData.mID));
 
 	}, "IsPlayerShooting", MetaFunc::ExplicitParams<const WeaponInstance&, const PlayerComponent&>{}).GetProperties().Add(Props::sIsScriptableTag);
 

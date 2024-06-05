@@ -37,11 +37,11 @@ namespace CE
 
 		// Checks all the provided keyboard keys based on the function provided and returns true at the first input found, otherwise returns false.
 		template<bool (Input::* Func)(Input::KeyboardKey, bool) const>
-		static bool CheckKeyboardInput(const Input& input, const std::vector<Input::KeyboardKey>& keys);
+		static bool CheckKeyboardInput(const std::vector<Input::KeyboardKey>& keys);
 
 		// Checks all the provided gamepad buttons based on the function provided and returns true at the first input found, otherwise returns false.
 		template<bool (Input::* Func)(int, Input::GamepadButton, bool) const>
-		static bool CheckGamepadInput(const Input& input, const std::vector<Input::GamepadButton>& buttons, int playerID);
+		static bool CheckGamepadInput(const std::vector<Input::GamepadButton>& buttons, int playerID);
 
 	private:
 		static void CallAllOnAbilityActivateEvents(World& world, entt::entity castBy);
@@ -52,8 +52,9 @@ namespace CE
 	};
 
 	template <bool(Input::*Func)(Input::KeyboardKey, bool) const>
-	bool AbilitySystem::CheckKeyboardInput(const Input& input, const std::vector<Input::KeyboardKey>& keys)
+	bool AbilitySystem::CheckKeyboardInput(const std::vector<Input::KeyboardKey>& keys)
 	{
+		const auto& input = Input::Get();
 		for (auto& key : keys)
 		{
 			if ((input.*Func)(key, true))
@@ -65,8 +66,9 @@ namespace CE
 	}
 
 	template <bool(Input::*Func)(int, Input::GamepadButton, bool) const>
-	bool AbilitySystem::CheckGamepadInput(const Input& input, const std::vector<Input::GamepadButton>& buttons, int playerID)
+	bool AbilitySystem::CheckGamepadInput(const std::vector<Input::GamepadButton>& buttons, int playerID)
 	{
+		const auto& input = Input::Get();
 		for (auto& button : buttons)
 		{
 			if ((input.*Func)(playerID, button, true))
