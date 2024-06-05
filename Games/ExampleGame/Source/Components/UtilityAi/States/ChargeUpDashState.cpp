@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
 
+#include "Utilities/AiFunctionality.h"
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
@@ -13,7 +14,7 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Systems/AbilitySystem.h"
 #include "Assets/Animation/Animation.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
+#include "Components/Pathfinding/SwarmingAgentTag.h"
 
 void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -28,7 +29,7 @@ void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owne
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "An PhysicsBody2D component is needed to run the Dashing State!");
+		LOG(LogAI, Warning, "ChargeUpDash State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
@@ -37,29 +38,21 @@ void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owne
 	mChargeCooldown.mAmountOfTimePassed += dt;
 }
 
-float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
+float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
 	if (mChargeCooldown.mAmountOfTimePassed != 0.0f)
 	{
 		return 0.8f;
 	}
 
-	auto [score, entity] = GetBestScoreAndTarget(world, owner);
+	const auto score = Game::GetBestScoreBasedOnDetection(world, owner, mRadius);
 
 	return score;
 }
 
-void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
+void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr)
-	{
-		LOG(LogAI, Warning, "NavMeshAgentComponent is needed to run the Charging Up State!");
-		return;
-	}
-
-	navMeshAgent->ClearTarget(world);
+	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
@@ -78,52 +71,6 @@ bool Game::ChargeUpDashState::IsCharged() const
 	}
 
 	return false;
-}
-
-std::pair<float, entt::entity> Game::ChargeUpDashState::GetBestScoreAndTarget(const CE::World& world,
-                                                                            entt::entity owner) const
-{
-	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-	entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
-
-	if (entityId == entt::null)
-	{
-		return { 0.0f, entt::null };
-	}
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "TransformComponent is needed to run the Charge Dash State!");
-		return { 0.0f, entt::null };
-	}
-
-	float highestScore = 0.0f;
-
-	auto* targetComponent = world.GetRegistry().TryGet<CE::TransformComponent>(entityId);
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "The player entity needs a TransformComponent is needed to run the Charge Dash State!");
-		return { 0.0f, entt::null };
-	}
-
-	const float distance = glm::distance(transformComponent->GetWorldPosition(), targetComponent->GetWorldPosition());
-
-	float score = 0.0f;
-
-	if (distance < mRadius)
-	{
-		score = 1 / distance;
-		score += 1 / mRadius;
-	}
-
-	if (highestScore < score)
-	{
-		highestScore = score;
-	}
-
-	return { highestScore, entityId };
 }
 
 CE::MetaType Game::ChargeUpDashState::Reflect()

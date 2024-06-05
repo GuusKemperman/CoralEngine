@@ -69,6 +69,44 @@ void CE::GridSpawnerComponent::SpawnGrid()
 	}
 	const float angleStep = TWOPI / static_cast<float>(mNumOfPossibleRotations);
 
+	std::mt19937 cellGenerator{ Random::CreateSeed(transform->GetWorldPosition2D()) };
+
+	const std::function<uint32(uint32, uint32)> randomUint = mUseWorldPositionAsSeed ?
+		std::function
+		{
+			[&cellGenerator](uint32 min, uint32 max)
+			{
+				std::uniform_int_distribution distribution{ min, max == min ? max : max - 1 };
+				return distribution(cellGenerator);
+			}
+		}
+		:
+		std::function
+		{
+			[](uint32 min, uint32 max)
+			{
+				return Random::Range(min, max);
+			}
+		};
+
+	const auto randomFloat = mUseWorldPositionAsSeed ?
+		std::function
+		{
+			[&cellGenerator](float min, float max)
+			{
+				std::uniform_real_distribution distribution{ min, max };
+				return distribution(cellGenerator);
+			}
+		}
+		:
+		std::function
+		{
+			[](float min, float max)
+			{
+				return Random::Range(min, max);
+			}
+		};
+
 	for (uint32 x = 0; x < mWidth; x++)
 	{
 		for (uint32 y = 0; y < mHeight; y++)
@@ -85,8 +123,7 @@ void CE::GridSpawnerComponent::SpawnGrid()
 				position.y -= static_cast<float>(mHeight - 1) * mSpacing.y * .5f;
 			}
 
-
-			const AssetHandle<Prefab>* tile = mDistribution.GetNext();
+			const AssetHandle<Prefab>* tile = mDistribution.GetNext(randomFloat(0.0f, 1.0f));
 
 			if (tile == nullptr
 				|| *tile == nullptr)
@@ -105,10 +142,10 @@ void CE::GridSpawnerComponent::SpawnGrid()
 
 			child->SetParent(transform);
 
-			const glm::vec2 offset = { Random::Range(0.0f, mMaxRandomOffset), Random::Range(0.0f, mMaxRandomOffset) };
+			const glm::vec2 offset = { randomFloat(0.0f, mMaxRandomOffset), randomFloat(0.0f, mMaxRandomOffset) };
 			child->SetLocalPosition(position + offset);
 
-			const uint32 orientation = Random::Range(1u, mNumOfPossibleRotations);
+			const uint32 orientation = randomUint(1u, mNumOfPossibleRotations);
 			const float angle = static_cast<float>(orientation) * angleStep;
 			child->SetLocalOrientation(sUp * angle);
 		}
@@ -130,6 +167,7 @@ CE::MetaType CE::GridSpawnerComponent::Reflect()
 	type.AddField(&GridSpawnerComponent::mDistribution, "mDistribution").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mIsCentered, "mIsCentered").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mShouldSpawnOnBeginPlay, "mShouldSpawnOnBeginPlay").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mUseWorldPositionAsSeed, "mUseWorldPositionAsSeed").GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddFunc(&GridSpawnerComponent::SpawnGrid, "Spawn Grid").GetProperties().Add(Props::sCallFromEditorTag).Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 	type.AddFunc(&GridSpawnerComponent::ClearGrid, "Clear Grid").GetProperties().Add(Props::sCallFromEditorTag).Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);

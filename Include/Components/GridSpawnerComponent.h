@@ -30,6 +30,7 @@ namespace CE
 
 		entt::entity mOwner{};
 
+		bool mUseWorldPositionAsSeed = true;
 
 	private:
 		friend ReflectAccess;

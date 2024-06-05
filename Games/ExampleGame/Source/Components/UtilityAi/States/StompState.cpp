@@ -1,10 +1,10 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/StompState.h"
 
+#include "Utilities/AiFunctionality.h"
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Systems/AbilitySystem.h"
 #include "Meta/MetaType.h"
@@ -12,11 +12,13 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
 #include "Components/UtililtyAi/States/ChargeUpStompState.h"
 #include "Components/UtililtyAi/States/RecoveryState.h"
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
+#include "Components/Pathfinding/SwarmingAgentTag.h"
 
 void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -24,64 +26,41 @@ void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, cons
 
 	if (mStompCooldown.mAmountOfTimePassed >= mStompCooldown.mCooldown)
 	{
-		const auto rechargeState = world.GetRegistry().TryGet<Game::RecoveryState>(owner);
+		const auto recoveryState = world.GetRegistry().TryGet<Game::RecoveryState>(owner);
 
-		if (rechargeState == nullptr)
+		if (recoveryState == nullptr)
 		{
 			LOG(LogAI, Warning, "Stomp State - enemy {} does not have a RecoveryState Component.", entt::to_integral(owner));
 		}
 		else
 		{
-			rechargeState->mRechargeCooldown.mAmountOfTimePassed = 0.1f;
+			recoveryState->mRechargeCooldown.mAmountOfTimePassed = 0.0f;
 		}
 	}
+	Game::ExecuteEnemyAbility(world, owner);
 
-	const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
-	if (characterData == nullptr)
-	{
-		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a Character Component.", entt::to_integral(owner));
-		return;
-	}
-
-	const auto abilities = world.GetRegistry().TryGet<CE::AbilitiesOnCharacterComponent>(owner);
-	if (abilities == nullptr)
-	{
-		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
-		return;
-	}
-
-	if (abilities->mAbilitiesToInput.empty())
-	{
-		return;
-	}
-	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
-
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mStompAnimation, 0.0f);
-	}
+	Game::AnimationInAi(world, owner, mStompAnimation);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the DashRecharge State!");
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
 	physicsBody2DComponent->mLinearVelocity = {};
 
+	Game::FaceThePlayer(world, owner);
 }
 
-float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
+float Game::StompState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
 	auto* chargingUpState = world.GetRegistry().TryGet<ChargeUpStompState>(owner);
 
 	if (chargingUpState == nullptr)
 	{
-		LOG(LogAI, Warning, "A ChargeUpStompState is needed to run the Stomp State!");
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a ChargeUpState State.", entt::to_integral(owner));
 		return 0;
 	}
 
@@ -89,7 +68,7 @@ float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 
 	if (enemyAiController == nullptr)
 	{
-		LOG(LogAI, Warning, "A enemyAiController is needed to run the Stomp State!");
+		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a EnemyAiController Component.", entt::to_integral(owner));
 		return 0;
 	}
 
@@ -107,24 +86,11 @@ float Game::StompState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 	return 0;
 }
 
-void Game::StompState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
+void Game::StompState::OnAIStateEnterEvent(CE::World& world, const entt::entity owner)
 {
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
+	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
-	if (navMeshAgent == nullptr)
-	{
-		LOG(LogAI, Warning, "NavMeshAgentComponent is needed to run the Charge Dash State!");
-		return;
-	}
-
-	navMeshAgent->ClearTarget(world);
-
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mStompAnimation, 0.0f);
-	}
+	Game::AnimationInAi(world, owner, mStompAnimation);
 
 	mStompCooldown.mCooldown = mMaxStompTime;
 	mStompCooldown.mAmountOfTimePassed = 0.0f;
@@ -138,53 +104,6 @@ bool Game::StompState::IsStompCharged() const
 	}
 
 	return false;
-}
-
-std::pair<float, entt::entity> Game::StompState::GetBestScoreAndTarget(const CE::World& world,
-	entt::entity owner) const
-{
-	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-	entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
-
-	if (entityId == entt::null)
-	{
-		LOG(LogAI, Warning, "An entity with a NavMeshTargetTag is needed to run the Charge Dash State!");
-		return { 0.0f, entt::null };
-	}
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "TransformComponent is needed to run the Charge Dash State!");
-		return { 0.0f, entt::null };
-	}
-
-	float highestScore = 0.0f;
-
-	auto* targetComponent = world.GetRegistry().TryGet<CE::TransformComponent>(entityId);
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "The player entity needs a TransformComponent is needed to run the Charge Dash State!");
-		return { 0.0f, entt::null };
-	}
-
-	const float distance = glm::distance(transformComponent->GetWorldPosition(), targetComponent->GetWorldPosition());
-
-	float score = 0.0f;
-
-	if (distance < mRadius)
-	{
-		score = 1 / distance;
-		score += 1 / mRadius;
-	}
-
-	if (highestScore < score)
-	{
-		highestScore = score;
-	}
-
-	return { highestScore, entityId };
 }
 
 CE::MetaType Game::StompState::Reflect()
