@@ -379,7 +379,7 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 
 	World::PushWorld(mWorld);
 
-	FuncResult result = (*addComponentFunc)(toEntity);
+	FuncResult result = addComponentFunc->InvokeUncheckedUnpacked(toEntity);
 
 	World::PopWorld();
 

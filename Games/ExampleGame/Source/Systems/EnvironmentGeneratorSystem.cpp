@@ -6,6 +6,7 @@
 #include "Components/EnvironmentGeneratorComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/TransformComponent.h"
+#include "Core/Input.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Meta/MetaType.h"
@@ -13,6 +14,7 @@
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Geometry2d.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "World/Physics.h"
 
 namespace Game::Internal
 {
@@ -190,8 +192,81 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 		return;
 	}
 
+	const std::array<std::reference_wrapper<const CE::BVH>, 2> bvhs =
+	{
+		world.GetPhysics().GetBVHs()[static_cast<int>(CE::CollisionLayer::StaticObstacles)],
+		world.GetPhysics().GetBVHs()[static_cast<int>(CE::CollisionLayer::Terrain)]
+	};
+
+	bool areBVHsDirty = true;
+
+	const auto& isBlocked = [&reg, &bvhs, &areBVHsDirty](const auto& self, const CE::TransformComponent& current) -> bool
+		{
+			if (const auto* collider = reg.TryGet<CE::AABBColliderComponent>(current.GetOwner());
+				collider != nullptr)
+			{
+				const auto transformed = collider->CreateTransformedCollider(current);
+				areBVHsDirty = true; // A collider was present on a newly created entity
+
+				for (const CE::BVH& bvh : bvhs)
+				{
+					if (bvh.Query(transformed))
+					{
+						return true;
+					}
+				}
+			}
+
+			if (const auto* collider = reg.TryGet<CE::DiskColliderComponent>(current.GetOwner());
+				collider != nullptr)
+			{
+				const auto transformed = collider->CreateTransformedCollider(current);
+				areBVHsDirty = true; // A collider was present on a newly created entity
+
+				for (const CE::BVH& bvh : bvhs)
+				{
+					if (bvh.Query(transformed))
+					{
+						return true;
+					}
+				}
+			}
+
+			if (const auto* collider = reg.TryGet<CE::PolygonColliderComponent>(current.GetOwner());
+				collider != nullptr)
+			{
+				const auto transformed = collider->CreateTransformedCollider(current);
+				areBVHsDirty = true; // A collider was present on a newly created entity
+
+				for (const CE::BVH& bvh : bvhs)
+				{
+					if (bvh.Query(transformed))
+					{
+						return true;
+					}
+				}
+			}
+
+			for (const CE::TransformComponent& child : current.GetChildren())
+			{
+				if (self(self, child))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		};
+
 	for (uint32 i = 0; i < static_cast<uint32>(generator.mLayers.size()); i++)
 	{
+		if (areBVHsDirty)
+		{
+			reg.RemovedDestroyed();
+			world.GetPhysics().RebuildBVHs();
+			areBVHsDirty = false;
+		}
+
 		const EnvironmentGeneratorComponent::Layer& layer = generator.mLayers[i];
 		const uint32 layerSeed = layerSeedGenerator();
 
@@ -282,16 +357,17 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					continue;
 				}
 
-				reg.AddComponent<Internal::PartOfGeneratedEnvironmentTag>(entity);
+				const CE::TransformComponent* transform = reg.TryGet<CE::TransformComponent>(entity);
 
-				CE::TransformComponent* objectTransform = reg.TryGet<CE::TransformComponent>(entity);
-
-				if (objectTransform == nullptr)
+				if (transform != nullptr
+					&& isBlocked(isBlocked, *transform))
 				{
-					continue;
+					reg.Destroy(entity, true);
 				}
-
-
+				else
+				{
+					reg.AddComponent<Internal::PartOfGeneratedEnvironmentTag>(entity);
+				}
 			}
 		}
 	}
