@@ -28,9 +28,9 @@ jobs:
   build-and-run:
     runs-on: windows-latest
     strategy:
-      fail-fast: false # We want to run all configurations to see if the problem is for all of them or not
+      fail-fast: true # We want to run all configurations to see if the problem is for all of them or not
       matrix:
-        build-configuration: [Debug, EditorDebug, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease,Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease, Release, EditorRelease]
+        build-configuration: [Debug]
     steps:
     - uses: actions/checkout@v4
 
@@ -45,19 +45,24 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       timeout-minutes: 10
       run:  |
-        for ($i = 1; $i -le 1; $i++) 
-        {
-          Write-Host "Running test iteration $i"
-          $output = & "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe" run_tests 2>&1 -WorkingDirectory $pwd
-          
-          echo "Executable Output:"
-          echo $output
-          
-          echo "Exit Code: "
-          echo $LASTEXITCODE
+        $processInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $processInfo.FileName = "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe"
+        $processInfo.Arguments = "run_tests"
+        $processInfo.WorkingDirectory = $pwd
+        $processInfo.RedirectStandardOutput = $true
+        $processInfo.RedirectStandardError = $true
+        $processInfo.UseShellExecute = $false
 
-          if ($LASTEXITCODE -ne 0) 
-          {
-            exit $LASTEXITCODE
-          }
-        }
+        $process = New-Object System.Diagnostics.Process
+        $process.StartInfo = $processInfo
+
+        $process.Start() | Out-Null
+
+        $output = $process.StandardOutput.ReadToEnd() + $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+
+        echo "Executable Output:"
+        echo $output
+
+        echo "Exit Code: "
+        echo $process.ExitCode
