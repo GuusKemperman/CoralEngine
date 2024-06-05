@@ -159,9 +159,9 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ReplaceWeaponFromEnd(*world, entity, weaponAsset);
+			ReplaceWeaponAtEnd(*world, entity, weaponAsset);
 
-		}, "ReplaceWeaponFromEnd", MetaFunc::ExplicitParams<
+		}, "ReplaceWeaponAtEnd", MetaFunc::ExplicitParams<
 		entt::entity, AssetHandle<Weapon>>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	metaType.AddFunc([](entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity)
@@ -570,18 +570,18 @@ void CE::AbilityFunctionality::AddWeaponToEnd(World& world, entt::entity entity,
 	}
 }
 
-void CE::AbilityFunctionality::ReplaceWeaponFromEnd(World& world, entt::entity entity, AssetHandle<Weapon>& weaponAsset)
+void CE::AbilityFunctionality::ReplaceWeaponAtEnd(World& world, entt::entity entity, AssetHandle<Weapon>& weaponAsset)
 {
 	const auto abilities = world.GetRegistry().TryGet<AbilitiesOnCharacterComponent>(entity);
 	if (abilities == nullptr)
 	{
-		LOG(LogAbilitySystem, Error, "ReplaceWeaponFromEnd - entity {} does not have an Active Ability Component attached.", entt::to_integral(entity));
+		LOG(LogAbilitySystem, Error, "ReplaceWeaponAtEnd - entity {} does not have an Active Ability Component attached.", entt::to_integral(entity));
 		return;
 	}
 	auto& weaponsVector = abilities->mWeaponsToInput;
 	if (weaponsVector.empty())
 	{
-		LOG(LogAbilitySystem, Error, "ReplaceWeaponFromEnd - no weapons found on entity {}.", entt::to_integral(entity));
+		LOG(LogAbilitySystem, Error, "ReplaceWeaponAtEnd - no weapons found on entity {}.", entt::to_integral(entity));
 		return;
 	}
 	auto& weaponInstance = abilities->mWeaponsToInput.back();

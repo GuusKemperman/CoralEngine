@@ -35,7 +35,7 @@ namespace CE
 		static bool IsPointInsideCone2D(glm::vec2 point, glm::vec2 coneOrigin, const glm::vec2 coneDirection, float coneAngle);
 		static void RemoveWeaponAtIndex(World& world, entt::entity entity, int index);
 		static void AddWeaponToEnd(World& world, entt::entity entity, WeaponInstance& weapon);
-		static void ReplaceWeaponFromEnd(World& world, entt::entity entity, AssetHandle<Weapon>& weaponAsset);
+		static void ReplaceWeaponAtEnd(World& world, entt::entity entity, AssetHandle<Weapon>& weaponAsset);
 		static void CallAllAbilityHitEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity);
 
 	private:
