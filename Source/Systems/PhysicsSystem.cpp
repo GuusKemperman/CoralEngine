@@ -94,35 +94,59 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 
 	struct ShouldCheck
 	{
-		static bool Callback(const TransformedDiskColliderComponent&, entt::entity entity2, entt::entity entity1)
+		static bool Callback(const TransformedDiskColliderComponent&, entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent& body1, const Registry& reg)
 		{
-			return entity1 < entity2;
+			if (entity1 >= entity2)
+			{
+				return false;
+			}
+
+			const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
+
+			return body2 != nullptr
+				&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
 		}
 
-		static bool Callback(const TransformedAABBColliderComponent&, entt::entity entity2, entt::entity entity1)
+		static bool Callback(const TransformedAABBColliderComponent&, entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent& body1, const Registry& reg)
 		{
-			return entity1 != entity2;
+			if (entity1 == entity2)
+			{
+				return false;
+			}
+
+			const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
+
+			return body2 != nullptr
+				&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
 		}
 
-		static bool Callback(const TransformedPolygonColliderComponent&, entt::entity entity2, entt::entity entity1)
+		static bool Callback(const TransformedPolygonColliderComponent&, entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent& body1, const Registry& reg)
 		{
-			return entity1 != entity2;
+			if (entity1 == entity2)
+			{
+				return false;
+			}
+
+			const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
+
+			return body2 != nullptr
+				&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
 		}
 	};
 
 	struct OnIntersect
 	{
-		static void Callback(const TransformedDiskColliderComponent&, entt::entity entity2, entt::entity entity1)
+		static void Callback(const TransformedDiskColliderComponent&, entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent&, const Registry&)
 		{
 			diskDiskCollisions.emplace_back(entity1, entity2);
 		}
 
-		static void Callback(const TransformedAABBColliderComponent&, entt::entity entity2, entt::entity entity1)
+		static void Callback(const TransformedAABBColliderComponent&, entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent&, const Registry&)
 		{
 			diskAABBCollisions.emplace_back(entity1, entity2);
 		}
 
-		static void Callback(const TransformedPolygonColliderComponent&, entt::entity entity2, entt::entity entity1)
+		static void Callback(const TransformedPolygonColliderComponent&, entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent&, const Registry&)
 		{
 			diskPolygonCollisions.emplace_back(entity1, entity2);
 		}
@@ -148,7 +172,7 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 				continue;
 			}
 
-			bvh.Query<OnIntersect, ShouldCheck, BVH::DefaultShouldReturnFunction<false>>(disk1, entity1);
+			bvh.Query<OnIntersect, ShouldCheck, BVH::DefaultShouldReturnFunction<false>>(disk1, entity1, body1, reg);
 		}
 	}
 
