@@ -26,15 +26,15 @@ void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, cons
 
 	if (mStompCooldown.mAmountOfTimePassed >= mStompCooldown.mCooldown)
 	{
-		const auto rechargeState = world.GetRegistry().TryGet<Game::RecoveryState>(owner);
+		const auto recoveryState = world.GetRegistry().TryGet<Game::RecoveryState>(owner);
 
-		if (rechargeState == nullptr)
+		if (recoveryState == nullptr)
 		{
 			LOG(LogAI, Warning, "Stomp State - enemy {} does not have a RecoveryState Component.", entt::to_integral(owner));
 		}
 		else
 		{
-			rechargeState->mRechargeCooldown.mAmountOfTimePassed = 0.1f;
+			recoveryState->mRechargeCooldown.mAmountOfTimePassed = 0.0f;
 		}
 	}
 	Game::ExecuteEnemyAbility(world, owner);
