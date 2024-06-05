@@ -21,9 +21,6 @@ namespace Game
 
 		bool IsCharged() const;
 
-		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
-			entt::entity owner) const;
-
 		CE::AssetHandle<CE::Animation> mChargingAnimation{};
 
 		CE::Cooldown mChargeCooldown{};

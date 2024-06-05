@@ -358,6 +358,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Utilities\AiFunctionality.cpp" />
     <ClCompile Include="Source\Components\EnvironmentGeneratorComponent.cpp" />
     <ClCompile Include="Source\Assets\Upgrade.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpStompState.cpp" />
@@ -413,6 +414,7 @@
     <ClCompile Include="Source\Components\UtilityAi\States\StompState.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Utilities\AiFunctionality.h" />
     <ClInclude Include="Include\Components\EnvironmentGeneratorComponent.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\ChargeUpStompState.h" />
     <ClInclude Include="Include\Components\DifficultyScalingComponent.h" />
