@@ -41,7 +41,7 @@ void CE::ParticleEmitterShapeSphere::OnParticleSpawn(ParticleEmitterComponent& e
 	const float y = r * sinPhi * sinTheta;
 	const float z = r * cosPhi;
 
-	emitter.GetParticlePositions()[i] = { x, y, z };
+	emitter.GetParticlePositions()[i] = emitterMatrix * glm::vec4{ x, y, z, 1.0f };
 	Internal::RandomScale(emitter, i, mMinScale, mMaxScale, emitterWorldScale);
 	Internal::RandomOrientation(emitter, i, mMinOrientation, mMinOrientation, emitterWorldOrientation);
 }
