@@ -4,6 +4,14 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 
+uint32 CE::Random::CreateSeed(glm::vec2 position)
+{
+	glm::vec3 p3 = glm::fract(glm::vec3{ position.x, position.y, position.x } * .1031f);
+	p3 += dot(p3, glm::vec3{ p3.y, p3.z, p3.x } + 33.33f);
+	const float noise = glm::fract((p3.x + p3.y) * p3.z);
+	return static_cast<uint32>(noise * static_cast<float>(std::numeric_limits<uint32>::max()));
+}
+
 CE::MetaType CE::Random::Reflect()
 {
     MetaType type{ MetaType::T<Random>{}, "Random" };

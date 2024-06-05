@@ -1,14 +1,20 @@
 #include "Precomp.h"
 #include "Systems/EnvironmentGeneratorSystem.h"
 
+#include "Utilities/PerlinNoise.h"
+
 #include "Components/EnvironmentGeneratorComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/TransformComponent.h"
+#include "Core/Input.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Meta/MetaType.h"
+#include "Rendering/DebugRenderer.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Geometry2d.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "World/Physics.h"
 
 namespace Game::Internal
 {
@@ -17,7 +23,7 @@ namespace Game::Internal
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect()
 		{
-			CE::MetaType metaType = CE::MetaType{CE::MetaType::T<PartOfGeneratedEnvironmentTag>{}, "PartOfGeneratedEnvironmentTag" };
+			CE::MetaType metaType = CE::MetaType{ CE::MetaType::T<PartOfGeneratedEnvironmentTag>{}, "PartOfGeneratedEnvironmentTag" };
 			CE::ReflectComponentType<PartOfGeneratedEnvironmentTag>(metaType);
 			return metaType;
 		}
@@ -27,7 +33,7 @@ namespace Game::Internal
 void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 {
 	CE::Registry& reg = world.GetRegistry();
-	
+
 	const entt::entity generatorEntity = reg.View<EnvironmentGeneratorComponent>().front();
 
 	if (generatorEntity == entt::null)
@@ -45,7 +51,129 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 	EnvironmentGeneratorComponent& generator = reg.Get<EnvironmentGeneratorComponent>(generatorEntity);
 
+	if (!generator.mSeed.has_value())
+	{
+		generator.mSeed = CE::Random::Value<uint32>();
+	}
+	std::mt19937 layerSeedGenerator{ *generator.mSeed };
+
+	std::vector<siv::PerlinNoise> perlinGenerators{};
+	perlinGenerators.reserve(generator.mLayers.size());
+	for (size_t i = 0; i < generator.mLayers.size(); i++)
+	{
+		perlinGenerators.emplace_back(layerSeedGenerator());
+	}
+
+	const auto getNoise = [&](const auto& self, glm::vec2 position, uint32 indexOfLayer, uint32 depth = 0) -> std::optional<float>
+		{
+			if (indexOfLayer >= perlinGenerators.size())
+			{
+				LOG(LogGame, Error, "Cannot sample noise at index {}, there are only {} layers", indexOfLayer, perlinGenerators.size());
+				return std::nullopt;
+			}
+
+			if (depth > perlinGenerators.size())
+			{
+				LOG(LogGame, Error, "Feedback loop detected, some noise influences map to eachother.", indexOfLayer, perlinGenerators.size());
+				return std::nullopt;
+			}
+
+			const EnvironmentGeneratorComponent::Layer& layer = generator.mLayers[indexOfLayer];
+
+			const float noiseSample = perlinGenerators[indexOfLayer].octave2D_01(position.x * layer.mNoiseScale, position.y * layer.mNoiseScale, layer.mNoiseNumOfOctaves, layer.mNoisePersistence);
+			float noise = noiseSample * layer.mWeight;
+			float max = layer.mWeight;
+
+			for (const EnvironmentGeneratorComponent::Layer::NoiseInfluence& influence : layer.mInfluences)
+			{
+				std::optional<float> otherSample = self(self, position, influence.mIndexOfOtherLayer, depth + 1);
+
+				if (otherSample == std::nullopt)
+				{
+					return std::nullopt;
+				}
+
+				noise += *otherSample * influence.mWeight;
+				max += influence.mWeight;
+			}
+
+			if (max == 0.0f)
+			{
+				return 0.0f;
+			}
+			// Normalized
+			return noise / max;
+		};
 	const glm::vec2 generatorPosition = generatorTransform->GetWorldPosition2D();
+
+	static constexpr CE::DebugCategory::Enum debugCategory = CE::DebugCategory::Editor;
+
+	const auto& getNumOfCellsEachAxis = [&](const EnvironmentGeneratorComponent::Layer& layer)
+		{
+			return static_cast<uint32>(ceilf((generator.mGenerateRadius + generator.mGenerateRadius) / layer.mCellSize)) + 1u;
+		};
+
+	const auto& getLayerTopLeft = [&](const EnvironmentGeneratorComponent::Layer& layer)
+		{
+			const glm::vec2 generatorCellPos = generatorPosition - glm::vec2{ fmodf(generatorPosition.x, layer.mCellSize), fmodf(generatorPosition.y, layer.mCellSize) };
+
+			return generatorCellPos - glm::vec2{ static_cast<float>(getNumOfCellsEachAxis(layer)) * .5f * layer.mCellSize };
+		};
+
+	if (CE::DebugRenderer::IsCategoryVisible(debugCategory))
+	{
+		for (uint32 i = 0; i < static_cast<uint32>(generator.mLayers.size()); i++)
+		{
+			const EnvironmentGeneratorComponent::Layer& layer = generator.mLayers[i];
+
+			if (!layer.mIsDebugDrawingEnabled)
+			{
+				continue;
+			}
+
+			const glm::vec4 colour =
+			{
+				(i & 1) ? 0.0f : 1.0f,
+				((i >> 1) & 1) ? 0.0f : 1.0f,
+				((i >> 2) & 1) ? 0.0f : 1.0f,
+				1.0f
+			};
+
+			const uint32 numOfCellsEachAxis = getNumOfCellsEachAxis(layer);
+			const glm::vec2 topLeft = getLayerTopLeft(layer);
+
+			for (uint32 cellX = 0; cellX < numOfCellsEachAxis; cellX++)
+			{
+				for (uint32 cellZ = 0; cellZ < numOfCellsEachAxis; cellZ++)
+				{
+					const glm::vec2 x0z0Pos2D = topLeft + layer.mCellSize *
+						glm::vec2{ static_cast<float>(cellX), static_cast<float>(cellZ) };
+
+					const glm::vec2 x1z0Pos2D = { x0z0Pos2D.x + layer.mCellSize, x0z0Pos2D.y };
+					const glm::vec2 x0z1Pos2D = { x0z0Pos2D.x, x0z0Pos2D.y + layer.mCellSize };
+
+					const std::optional<float> x0z0Noise = getNoise(getNoise, x0z0Pos2D, i);
+					const std::optional<float> x1z0Noise = getNoise(getNoise, x1z0Pos2D, i);
+					const std::optional<float> x0z1Noise = getNoise(getNoise, x0z1Pos2D, i);
+
+					if (!x0z0Noise.has_value()
+						|| !x1z0Noise.has_value()
+						|| !x0z1Noise.has_value())
+					{
+						continue;
+					}
+
+					const float layerHeight = 3.0f + static_cast<float>((static_cast<uint32>(generator.mLayers.size() - 1) - i)) * generator.mDebugDrawDistanceBetweenLayers;
+					const glm::vec3 x0z0 = CE::To3DRightForward(x0z0Pos2D, *x0z0Noise * generator.mDebugDrawNoiseHeight + layerHeight);
+					const glm::vec3 x1z0 = CE::To3DRightForward(x1z0Pos2D, *x1z0Noise * generator.mDebugDrawNoiseHeight + layerHeight);
+					const glm::vec3 x0z1 = CE::To3DRightForward(x0z1Pos2D, *x0z1Noise * generator.mDebugDrawNoiseHeight + layerHeight);
+
+					CE::DrawDebugLine(world, debugCategory, x0z0, x1z0, colour);
+					CE::DrawDebugLine(world, debugCategory, x0z0, x0z1, colour);
+				}
+			}
+		}
+	}
 
 	// Only regenerate if we have moved a sufficiently large distance
 	if (glm::distance2(generatorPosition, generator.mLastGeneratedAtPosition) < CE::Math::sqr(generator.mDistToMoveBeforeRegeneration))
@@ -58,14 +186,88 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 	const auto createdEntities = reg.View<Internal::PartOfGeneratedEnvironmentTag>();
 	reg.Destroy(createdEntities.begin(), createdEntities.end(), true);
 
-	if (!generator.mSeed.has_value())
+	if (!world.HasBegunPlay()
+		&& !generator.mShouldGenerateInEditor)
 	{
-		generator.mSeed = CE::Random::Value<uint32>();
+		return;
 	}
-	std::mt19937 layerSeedGenerator{ *generator.mSeed };
 
-	for (const EnvironmentGeneratorComponent::Layer& layer : generator.mLayers)
+	const std::array<std::reference_wrapper<const CE::BVH>, 2> bvhs =
 	{
+		world.GetPhysics().GetBVHs()[static_cast<int>(CE::CollisionLayer::StaticObstacles)],
+		world.GetPhysics().GetBVHs()[static_cast<int>(CE::CollisionLayer::Terrain)]
+	};
+
+	bool areBVHsDirty = true;
+
+	const auto& isBlocked = [&reg, &bvhs, &areBVHsDirty](const auto& self, const CE::TransformComponent& current) -> bool
+		{
+			if (const auto* collider = reg.TryGet<CE::AABBColliderComponent>(current.GetOwner());
+				collider != nullptr)
+			{
+				const auto transformed = collider->CreateTransformedCollider(current);
+				areBVHsDirty = true; // A collider was present on a newly created entity
+
+				for (const CE::BVH& bvh : bvhs)
+				{
+					if (bvh.Query(transformed))
+					{
+						return true;
+					}
+				}
+			}
+
+			if (const auto* collider = reg.TryGet<CE::DiskColliderComponent>(current.GetOwner());
+				collider != nullptr)
+			{
+				const auto transformed = collider->CreateTransformedCollider(current);
+				areBVHsDirty = true; // A collider was present on a newly created entity
+
+				for (const CE::BVH& bvh : bvhs)
+				{
+					if (bvh.Query(transformed))
+					{
+						return true;
+					}
+				}
+			}
+
+			if (const auto* collider = reg.TryGet<CE::PolygonColliderComponent>(current.GetOwner());
+				collider != nullptr)
+			{
+				const auto transformed = collider->CreateTransformedCollider(current);
+				areBVHsDirty = true; // A collider was present on a newly created entity
+
+				for (const CE::BVH& bvh : bvhs)
+				{
+					if (bvh.Query(transformed))
+					{
+						return true;
+					}
+				}
+			}
+
+			for (const CE::TransformComponent& child : current.GetChildren())
+			{
+				if (self(self, child))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		};
+
+	for (uint32 i = 0; i < static_cast<uint32>(generator.mLayers.size()); i++)
+	{
+		if (areBVHsDirty)
+		{
+			reg.RemovedDestroyed();
+			world.GetPhysics().RebuildBVHs();
+			areBVHsDirty = false;
+		}
+
+		const EnvironmentGeneratorComponent::Layer& layer = generator.mLayers[i];
 		const uint32 layerSeed = layerSeedGenerator();
 
 		if (layer.mObjects.empty())
@@ -73,13 +275,11 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 			continue;
 		}
 
-		const uint32 numOfCellsEachAxis = static_cast<uint32>(ceilf((generator.mGenerateRadius + generator.mGenerateRadius) / layer.mCellSize)) + 1u;
+		const uint32 numOfCellsEachAxis = getNumOfCellsEachAxis(layer);
 
-		const glm::vec2 generatorCellPos = generatorPosition - glm::vec2{ fmodf(generatorPosition.x, layer.mCellSize), fmodf(generatorPosition.y, layer.mCellSize) };
+		const glm::vec2 topLeft = getLayerTopLeft(layer);
 
-		const glm::vec2 topLeft = generatorCellPos - glm::vec2{ static_cast<float>(numOfCellsEachAxis) * .5f * layer.mCellSize };
-
-		const CE::TransformedDisk generationCircle{ generatorCellPos, generator.mGenerateRadius };
+		const CE::TransformedDisk generationCircle{ generatorPosition, generator.mGenerateRadius };
 
 		for (uint32 cellX = 0; cellX < numOfCellsEachAxis; cellX++)
 		{
@@ -95,20 +295,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					continue;
 				}
 
-				// TODO replace with perlin
-				const float noise = 0.5f;
-
-				CE::WeightedRandomDistribution<std::reference_wrapper<const EnvironmentGeneratorComponent::Layer::Object>> distribution{};
-
-				for (const EnvironmentGeneratorComponent::Layer::Object& object : layer.mObjects)
-				{
-					distribution.mWeights.emplace_back(std::cref(object), object.mBaseFrequency * object.mSpawnFrequenciesAtNoiseValue.GetValueAt(noise));
-				}
-
-				const glm::vec<2, int64> seedVec = static_cast<glm::vec<2, int64>>(worldPosition / layer.mCellSize * 1234.987654321f);
-				const uint32 combinedHash = static_cast<uint32>(seedVec.y ^ (seedVec.x + 0x9e3779b9 + (seedVec.y << 6) + (seedVec.y >> 2)));
-
-				std::mt19937 cellGenerator{ CE::Internal::CombineHashes(combinedHash, layerSeed) };
+				std::mt19937 cellGenerator{ CE::Internal::CombineHashes(CE::Random::CreateSeed(worldPosition), layerSeed) };
 
 				const auto randomUint = [&cellGenerator](uint32 min, uint32 max)
 					{
@@ -118,9 +305,29 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 				const auto randomFloat = [&cellGenerator](float min, float max)
 					{
-						std::uniform_real_distribution<float> distribution{ min, max };
+						std::uniform_real_distribution distribution{ min, max };
 						return distribution(cellGenerator);
 					};
+
+				const glm::vec2 spawnPosition2D = cellAABB.GetCentre() +
+					glm::vec2{
+						randomFloat(-layer.mMaxRandomOffset, layer.mMaxRandomOffset),
+						randomFloat(-layer.mMaxRandomOffset, layer.mMaxRandomOffset)
+				};
+
+				const std::optional<float> noise = getNoise(getNoise, spawnPosition2D, i);
+
+				if (!noise.has_value())
+				{
+					continue;
+				}
+
+				CE::WeightedRandomDistribution<std::reference_wrapper<const EnvironmentGeneratorComponent::Layer::Object>> distribution{};
+
+				for (const EnvironmentGeneratorComponent::Layer::Object& object : layer.mObjects)
+				{
+					distribution.mWeights.emplace_back(std::cref(object), object.mBaseFrequency * object.mSpawnFrequenciesAtNoiseValue.GetValueAt(*noise));
+				}
 
 				const auto* objectToSpawn = distribution.GetNext(randomFloat(0.0f, 1.0f));
 
@@ -137,93 +344,33 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					continue;
 				}
 
-				const entt::entity entity = reg.CreateFromPrefab(*prefabToSpawn);
+				const float angle = static_cast<float>(randomUint(1u, layer.mNumberOfRandomRotations)) * (TWOPI / static_cast<float>(layer.mNumberOfRandomRotations));
+
+				const glm::quat orientation = glm::quat{ CE::sUp * angle };
+				const glm::vec3 scale = glm::vec3{ layer.mScaleAtNoiseValue.GetValueAt(*noise) };
+				const glm::vec3 spawnPosition3D = CE::To3DRightForward(spawnPosition2D);
+
+				const entt::entity entity = reg.CreateFromPrefab(*prefabToSpawn, entt::null, &spawnPosition3D, &orientation, &scale);
 
 				if (entity == entt::null)
 				{
 					continue;
 				}
 
-				reg.AddComponent<Internal::PartOfGeneratedEnvironmentTag>(entity);
+				const CE::TransformComponent* transform = reg.TryGet<CE::TransformComponent>(entity);
 
-				CE::TransformComponent* objectTransform = reg.TryGet<CE::TransformComponent>(entity);
-
-				if (objectTransform == nullptr)
+				if (transform != nullptr
+					&& isBlocked(isBlocked, *transform))
 				{
-					continue;
+					reg.Destroy(entity, true);
 				}
-
-				const glm::vec2 spawnPosition = cellAABB.GetCentre() +
-					glm::vec2{
-						randomFloat(-layer.mMaxRandomOffset, layer.mMaxRandomOffset),
-						randomFloat(-layer.mMaxRandomOffset, layer.mMaxRandomOffset)
-				};
-
-				const uint32 orientation = randomUint(1u, layer.mNumberOfRandomRotations);
-
-				const float angle = static_cast<float>(orientation) * (TWOPI / static_cast<float>(layer.mNumberOfRandomRotations));
-
-				objectTransform->SetWorldPosition(spawnPosition);
-				objectTransform->SetLocalOrientation(CE::sUp * angle);
+				else
+				{
+					reg.AddComponent<Internal::PartOfGeneratedEnvironmentTag>(entity);
+				}
 			}
 		}
-
 	}
-
-	//	//
-	//	// for each layer
-	//	//		for each possible cell
-	//	//			if cell.boundingBox.distance(mLastGeneratedAroundPosition) <= mGenerateRadius || cell.boundingBox.distance(currentPosition) >= mGenerateRadius
-	//	//				continue;
-	//	//			end
-	//	//
-	//	//			if (isOccupiedByObjectInEarlierLayer) continue;
-	//	//	
-	//	//			noise = getNoise(cell.position);
-	//	//			prefab = getPrefab(noise);
-	//	//	
-	//	//			if (prefab == nullptr) continue;
-	//	//	
-	//	//			entity = spawnPrefab(prefab);
-	//	//			applyRandomRotation(entity, cell.position);
-	//	//			applyRandomOffset(entity, cell.position);
-	//	//	
-	//	//			add PartOfGeneratedEnvironmentTag to entity
-	//	//		 end
-
-	//	// This algorithm is deterministic, which means we do not
-	//	// need to 'store' which objects we placed where
-
-	//const auto view = world.GetRegistry().View<DifficultyScalingComponent>();
-
-	//for (auto [entity, scalingComponent] : view.each())
-	//{
-	//	float time = (world.GetCurrentTimeScaled() - scalingComponent.mLoopsElapsed * scalingComponent.mScaleTime) / scalingComponent.mScaleTime;
-
-	//	if (!scalingComponent.mIsRepeating)
-	//	{
-	//		time = glm::min(time, 1.0f);
-	//	}
-	//	else
-	//	{
-	//		if (time > 1.0f)
-	//		{
-	//			++scalingComponent.mLoopsElapsed;
-	//			float minHealth = scalingComponent.mMinHealthMultiplier;
-	//			float minDamage = scalingComponent.mMinDamageMultiplier;
-
-	//			scalingComponent.mMinHealthMultiplier = scalingComponent.mMaxHealthMultiplier;
-	//			scalingComponent.mMinDamageMultiplier = scalingComponent.mMaxDamageMultiplier;
-	//			scalingComponent.mMaxHealthMultiplier += scalingComponent.mMaxHealthMultiplier - minHealth;
-	//			scalingComponent.mMaxDamageMultiplier += scalingComponent.mMaxDamageMultiplier - minDamage;
-	//		}
-
-	//		time = glm::mod((world.GetCurrentTimeScaled() / scalingComponent.mScaleTime), 1.0f);
-	//	}
-
-	//	scalingComponent.mCurrentHealthMultiplier = scalingComponent.mScaleHPOverTime.GetValueAt(time) * (scalingComponent.mMaxHealthMultiplier - scalingComponent.mMinHealthMultiplier) + scalingComponent.mMinHealthMultiplier;
-	//	scalingComponent.mCurrentDamageMultiplier = scalingComponent.mScaleDamageOverTime.GetValueAt(time) * (scalingComponent.mMaxDamageMultiplier - scalingComponent.mMinDamageMultiplier) + scalingComponent.mMinDamageMultiplier;
-	//}
 }
 
 CE::MetaType Game::EnvironmentGeneratorSystem::Reflect()

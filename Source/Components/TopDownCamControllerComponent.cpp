@@ -6,35 +6,43 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void CE::TopDownCamControllerComponent::ApplyTranslation(TransformComponent& transform,  const glm::vec3& target, glm::vec2 CD, float dt) const
+void CE::TopDownCamControllerComponent::ApplyTranslation(TransformComponent& transform,  const glm::vec3& target, glm::vec2 , float dt) const
 {
-	const float sn = sin(glm::radians(mRotationAngle - 90.0f));
-	const float cs = cos(glm::radians(mRotationAngle - 90.0f));
-
-	const glm::vec2 CDRotated = glm::vec2( CD.x * cs - CD.y * sn, CD.x * sn + CD.y * cs );
+	const glm::vec3 worldPos = transform.GetWorldPosition();
+	const glm::vec3 localPos = transform.GetLocalPosition();
 
 	glm::vec3 totalTranslation = target;
-	totalTranslation[Axis::Right] += cos(glm::radians(mRotationAngle)) * mOffset.y + CDRotated.x * mCursorOffsetFactor;
-	totalTranslation[Axis::Up] = transform.GetLocalPosition()[Axis::Up] + mHeightInterpolationFactor * dt * ((totalTranslation[Axis::Up] + mOffset.x + mOffsetHeight) - transform.GetWorldPosition()[Axis::Up]);
-	totalTranslation[Axis::Forward] += sin(glm::radians(mRotationAngle)) * mOffset.y + CDRotated.y * mCursorOffsetFactor;
+	totalTranslation[Axis::Up] = localPos[Axis::Up] + mHeightInterpolationFactor * dt * ((totalTranslation[Axis::Up] + mOffset.x) - worldPos[Axis::Up]);
+	totalTranslation[Axis::Right] = totalTranslation[Axis::Right] + cos(glm::radians(mRotationAngle)) * mOffset.y;
+	totalTranslation[Axis::Forward] = totalTranslation[Axis::Forward] + sin(glm::radians(mRotationAngle)) * mOffset.y;
+
+
+	if (mCameraLag != 0.f)
+	{
+		const float cameraLag = 1.f / mCameraLag * dt;
+
+		totalTranslation[Axis::Right] = localPos[Axis::Right] + cameraLag * (totalTranslation[Axis::Right] - worldPos[Axis::Right]);
+		totalTranslation[Axis::Forward] = localPos[Axis::Forward] + cameraLag * (totalTranslation[Axis::Forward] - worldPos[Axis::Forward]);
+	}
 
 	transform.SetWorldPosition(totalTranslation);
 }
 
-void CE::TopDownCamControllerComponent::UpdateRotation(TransformComponent& transform, const glm::vec3& target, glm::vec2 CD, float dt)
+void CE::TopDownCamControllerComponent::UpdateRotation(TransformComponent& transform, const glm::vec3& target, glm::vec2 , float dt)
 {
-	float previousHeight = mTargetLocation[Axis::Up];
+	const glm::vec3 prevPos = mTargetLocation;
 
 	mTargetLocation = target;
+	
+	if (mCameraLag != 0.f)
+	{
+		const float cameraLag = 1.f / mCameraLag * dt;
 
-	const float sn = sin(glm::radians(mRotationAngle - 90.0f));
-	const float cs = cos(glm::radians(mRotationAngle - 90.0f));
+		mTargetLocation[Axis::Right] = prevPos[Axis::Right] + cameraLag * (target[Axis::Right] - prevPos[Axis::Right]);
+		mTargetLocation[Axis::Forward] = prevPos[Axis::Forward] + cameraLag * (target[Axis::Forward] - prevPos[Axis::Forward]);
+	}
 
-	const glm::vec2 CDRotated = glm::vec2( CD.x * cs - CD.y * sn, CD.x * sn + CD.y * cs );
-
-	mTargetLocation[Axis::Right] += CDRotated.x * mCursorOffsetFactor;
-	mTargetLocation[Axis::Forward] += CDRotated.y * mCursorOffsetFactor;
-	mTargetLocation[Axis::Up] = previousHeight + mHeightInterpolationFactor * dt * (target[Axis::Up] + mOffsetHeight - previousHeight);
+	mTargetLocation[Axis::Up] = prevPos[Axis::Up] + mHeightInterpolationFactor * dt * (target[Axis::Up] + mOffsetHeight - prevPos[Axis::Up]);
 
 	const glm::vec3 direction = glm::normalize(mTargetLocation - transform.GetWorldPosition());
 
@@ -75,6 +83,7 @@ CE::MetaType CE::TopDownCamControllerComponent::Reflect()
 	type.AddField(&TopDownCamControllerComponent::mZoomSensitivity, "mZoomSensitivity").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&TopDownCamControllerComponent::mRotateSensitivity, "mRotateSensitivity").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&TopDownCamControllerComponent::mHeightInterpolationFactor, "mHeightInterpolationFactor").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&TopDownCamControllerComponent::mCameraLag, "mCameraLag").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&TopDownCamControllerComponent::mTarget, "mTarget").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&TopDownCamControllerComponent::mUseArrowKeysToEdit, "mUseArrowKeysToEdit").GetProperties().Add(Props::sIsScriptableTag);
 	ReflectComponentType<TopDownCamControllerComponent>(type);

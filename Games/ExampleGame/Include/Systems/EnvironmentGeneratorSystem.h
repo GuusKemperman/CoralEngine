@@ -12,7 +12,11 @@ namespace Game
 		CE::SystemStaticTraits GetStaticTraits() const override
 		{
 			CE::SystemStaticTraits traits{};
-			traits.mFixedTickInterval = 1.0f;
+
+			// We do debug rendering even
+			// whilst paused or before begin play
+			traits.mShouldTickBeforeBeginPlay = true;
+			traits.mShouldTickWhilstPaused = true;
 			return traits;
 		}
 
