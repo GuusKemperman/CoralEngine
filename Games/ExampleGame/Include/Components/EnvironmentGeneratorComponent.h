@@ -123,6 +123,8 @@ namespace Game
 		float mDebugDrawNoiseHeight = 5.0f;
 		float mDebugDrawDistanceBetweenLayers = 5.0f;
 
+		bool mShouldGenerateInEditor{};
+
 	private:
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
