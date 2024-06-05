@@ -285,7 +285,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					continue;
 				}
 
-				const glm::vec3 scale = glm::vec3{ objectToSpawn->get().mScaleAtNoiseValue.GetValueAt(*noise) };
+				const glm::vec3 scale = glm::vec3{ layer.mScaleAtNoiseValue.GetValueAt(*noise) };
 				const uint32 orientation = randomUint(1u, layer.mNumberOfRandomRotations);
 				const float angle = static_cast<float>(orientation) * (TWOPI / static_cast<float>(layer.mNumberOfRandomRotations));
 

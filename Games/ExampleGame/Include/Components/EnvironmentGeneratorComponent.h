@@ -29,10 +29,6 @@ namespace Game
 				// spawnChance = mBaseFrequency * mSpawnFrequenciesAtNoiseValue.At(noiseValue).
 				CE::Bezier mSpawnFrequenciesAtNoiseValue{};
 
-				// Can be used to, for example, scale down trees near the edges
-				// of forests
-				CE::Bezier mScaleAtNoiseValue{ { glm::vec2{ 0.0f, 1.0f }, glm::vec2{ 1.0f, 1.0f }, glm::vec2{ -1.0f } } };
-
 #ifdef EDITOR
 				void DisplayWidget(const std::string& name);
 #endif // EDITOR
@@ -56,6 +52,10 @@ namespace Game
 			float mMaxRandomOffset{};
 
 			uint32 mNumberOfRandomRotations = 4;
+
+			// Can be used to, for example, scale down trees near the edges
+			// of forests
+			CE::Bezier mScaleAtNoiseValue{ { glm::vec2{ 0.0f, 1.0f }, glm::vec2{ 1.0f, 1.0f }, glm::vec2{ -1.0f } } };
 
 			// Number that determines at what distance to view the noisemap.
 			float mNoiseScale = 0.02f;
@@ -131,7 +131,7 @@ namespace Game
 }
 
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 1);
-CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::Object, 0);
+CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::Object, 1);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::NoiseInfluence, 0);
 
 namespace cereal
@@ -153,12 +153,25 @@ namespace cereal
 		{
 			ar(value.mIsDebugDrawingEnabled);
 		}
+
+		if (version >= 2)
+		{
+			ar(value.mScaleAtNoiseValue);
+		}
 	}
 
 	template<class Archive>
-	void serialize(Archive& ar, Game::EnvironmentGeneratorComponent::Layer::Object& value, uint32)
+	void serialize(Archive& ar, Game::EnvironmentGeneratorComponent::Layer::Object& value, uint32 version)
 	{
-		ar(value.mBaseFrequency, value.mPrefab, value.mScaleAtNoiseValue, value.mSpawnFrequenciesAtNoiseValue);
+		ar(value.mBaseFrequency, value.mPrefab);
+
+		if (version == 0)
+		{
+			CE::Bezier dummy{};
+			ar(dummy);
+		}
+
+		ar(value.mSpawnFrequenciesAtNoiseValue);
 	}
 
 	template<class Archive>
