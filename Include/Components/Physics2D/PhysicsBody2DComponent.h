@@ -95,7 +95,7 @@ namespace CE
 					CollisionResponse::Blocking,	// WorldStatic
 					CollisionResponse::Blocking,	// WorldDynamic
 					CollisionResponse::Blocking,	// Character
-					CollisionResponse::Blocking,	// Terrain
+					CollisionResponse::Ignore,		// Terrain
 					CollisionResponse::Overlap,		// Query
 				}
 			}
@@ -140,7 +140,7 @@ namespace CE
 					CollisionResponse::Blocking,	// WorldStatic
 					CollisionResponse::Blocking,	// WorldDynamic
 					CollisionResponse::Blocking,	// Character
-					CollisionResponse::Blocking,	// Terrain
+					CollisionResponse::Ignore,		// Terrain
 					CollisionResponse::Overlap,		// Query
 				}
 			}

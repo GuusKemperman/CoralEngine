@@ -197,12 +197,15 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 		world.GetPhysics().GetBVHs()[static_cast<int>(CE::CollisionLayer::Terrain)]
 	};
 
-	const auto& isBlocked = [&reg, &bvhs](const auto& self, const CE::TransformComponent& current) -> bool
+	bool areBVHsDirty = true;
+
+	const auto& isBlocked = [&reg, &bvhs, &areBVHsDirty](const auto& self, const CE::TransformComponent& current) -> bool
 		{
 			if (const auto* collider = reg.TryGet<CE::AABBColliderComponent>(current.GetOwner());
 				collider != nullptr)
 			{
 				const auto transformed = collider->CreateTransformedCollider(current);
+				areBVHsDirty = true; // A collider was present on a newly created entity
 
 				for (const CE::BVH& bvh : bvhs)
 				{
@@ -217,6 +220,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 				collider != nullptr)
 			{
 				const auto transformed = collider->CreateTransformedCollider(current);
+				areBVHsDirty = true; // A collider was present on a newly created entity
 
 				for (const CE::BVH& bvh : bvhs)
 				{
@@ -231,6 +235,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 				collider != nullptr)
 			{
 				const auto transformed = collider->CreateTransformedCollider(current);
+				areBVHsDirty = true; // A collider was present on a newly created entity
 
 				for (const CE::BVH& bvh : bvhs)
 				{
@@ -254,8 +259,12 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 	for (uint32 i = 0; i < static_cast<uint32>(generator.mLayers.size()); i++)
 	{
-		reg.RemovedDestroyed();
-		world.GetPhysics().RebuildBVHs();
+		if (areBVHsDirty)
+		{
+			reg.RemovedDestroyed();
+			world.GetPhysics().RebuildBVHs();
+			areBVHsDirty = false;
+		}
 
 		const EnvironmentGeneratorComponent::Layer& layer = generator.mLayers[i];
 		const uint32 layerSeed = layerSeedGenerator();
