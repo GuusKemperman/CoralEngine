@@ -136,17 +136,6 @@ namespace CE
 			const AssetHandle<Script>& script) const override;
 	};
 
-	class ScriptAnimationFinishEvent final :
-		public ScriptEvent
-	{
-	public:
-		ScriptAnimationFinishEvent();
-
-	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
-			const AssetHandle<Script>& script) const override;
-	};
-
 	class CollisionEvent :
 		public ScriptEvent
 	{
@@ -193,7 +182,7 @@ namespace CE
 	static const ScriptAIEvaluateEvent sAIEvaluateScriptEvent{};
 	static const ScriptAbilityActivateEvent sScriptAbilityActivateEvent{};
 	static const ScriptAbilityHitEvent sScriptAbilityHitEvent{};
-	static const ScriptAnimationFinishEvent sAnimationFinishScriptEvent{};
+	static const ScriptOnlyPassComponentEvent sAnimationFinishScriptEvent{ sAnimationFinishEvent };
 	static const CollisionEvent sOnCollisionEntryScriptEvent{ sCollisionEntryEvent };
 	static const CollisionEvent sOnCollisionStayScriptEvent{ sCollisionStayEvent };
 	static const CollisionEvent sOnCollisionExitScriptEvent{ sCollisionExitEvent };

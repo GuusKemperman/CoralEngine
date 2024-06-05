@@ -183,23 +183,6 @@ CE::MetaFunc::InvokeT CE::ScriptAbilityHitEvent::GetScriptInvoker(const ScriptFu
 		};
 }
 
-CE::ScriptAnimationFinishEvent::ScriptAnimationFinishEvent() :
-	ScriptEvent(sAnimationFinishEvent, {  }, std::nullopt)
-{
-}
-
-CE::MetaFunc::InvokeT CE::ScriptAnimationFinishEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
-	const AssetHandle<Script>& script) const
-{
-	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
-		(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
-		{
-			// The script knows about world, but we do have to provide entt::entity
-			Span<MetaAny, 1> scriptArgs{ &args[0], 1 };
-			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
-		};
-}
-
 CE::MetaFunc::InvokeT CE::CollisionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
                                                            const AssetHandle<Script>& script) const
 {

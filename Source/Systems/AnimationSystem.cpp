@@ -121,6 +121,11 @@ void CE::AnimationSystem::BlendAnimTransformsRecursive(const AnimMeshInfo& animM
 	}
 }
 
+CE::AnimationSystem::AnimationSystem() :
+	mOnAnimationFinishEvents(GetAllBoundEvents(sAnimationFinishEvent))
+{
+}
+
 void CE::AnimationSystem::Update(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
@@ -136,8 +141,7 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		
 		if ((animationRootComponent.mCurrentTimeStamp / animationRootComponent.mCurrentAnimation->mDuration) > 1.0f)
 		{
-			const std::vector<BoundEvent> boundEvents = GetAllBoundEvents(sAnimationFinishEvent);
-			for (const BoundEvent& boundEvent : boundEvents)
+			for (const BoundEvent& boundEvent : mOnAnimationFinishEvents)
 			{
 				entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
 

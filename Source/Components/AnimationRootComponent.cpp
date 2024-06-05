@@ -65,6 +65,7 @@ void CE::AnimationRootComponent::SwitchAnimation(Registry& reg, const AssetHandl
 {
 	if (animation == mWantedAnimation)
 	{
+		mCurrentAnimation = mWantedAnimation;
 		return;
 	}
 

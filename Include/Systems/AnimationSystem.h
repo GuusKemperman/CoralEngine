@@ -2,6 +2,7 @@
 #include "Assets/Animation/Animation.h"
 #include "Assets/Core/AssetHandle.h"
 #include "Rendering/SkinnedMeshDefines.h"
+#include "Utilities/Events.h"
 #include "Systems/System.h"
 
 namespace CE
@@ -17,6 +18,8 @@ namespace CE
 		public System
 	{
 	public:
+		AnimationSystem();
+
 		void Update(World& world, float dt) override;
 
 	private:
@@ -44,6 +47,8 @@ namespace CE
 		void BlendAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::array<AnimTransform, MAX_BONES>& layer0, const std::array<AnimTransform, MAX_BONES>& layer1);
 
 		std::unordered_map<size_t, AnimMeshInfo> mAnimMeshInfoMap{};
+
+		const std::vector<BoundEvent> mOnAnimationFinishEvents{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();
