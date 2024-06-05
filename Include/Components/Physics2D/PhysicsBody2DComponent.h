@@ -95,7 +95,7 @@ namespace CE
 					CollisionResponse::Blocking,	// WorldStatic
 					CollisionResponse::Blocking,	// WorldDynamic
 					CollisionResponse::Blocking,	// Character
-					CollisionResponse::Blocking,	// Terrain
+					CollisionResponse::Ignore,		// Terrain
 					CollisionResponse::Overlap,		// Query
 				}
 			}
@@ -123,8 +123,8 @@ namespace CE
 				CollisionLayer::Terrain,
 				{
 					CollisionResponse::Ignore,		// WorldStatic
-					CollisionResponse::Blocking,	// WorldDynamic
-					CollisionResponse::Blocking,	// Character
+					CollisionResponse::Ignore,		// WorldDynamic
+					CollisionResponse::Ignore,		// Character
 					CollisionResponse::Ignore,		// Terrain
 					CollisionResponse::Ignore,		// Query
 				}
@@ -140,7 +140,7 @@ namespace CE
 					CollisionResponse::Blocking,	// WorldStatic
 					CollisionResponse::Blocking,	// WorldDynamic
 					CollisionResponse::Blocking,	// Character
-					CollisionResponse::Blocking,	// Terrain
+					CollisionResponse::Ignore,		// Terrain
 					CollisionResponse::Overlap,		// Query
 				}
 			}
