@@ -30,8 +30,6 @@ namespace Game::Internal
 
 void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 {
-
-
 	CE::Registry& reg = world.GetRegistry();
 
 	const entt::entity generatorEntity = reg.View<EnvironmentGeneratorComponent>().front();

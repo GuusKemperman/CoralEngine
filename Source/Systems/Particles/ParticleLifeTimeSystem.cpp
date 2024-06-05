@@ -5,23 +5,67 @@
 #include "World/Registry.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
 #include "Components/TransformComponent.h"
+#include "Components/Particles/ParticleEmitterShapes.h"
 #include "Meta/MetaType.h"
-#include "Meta/MetaManager.h"
+#include "Utilities/Random.h"
 
 void CE::ParticleLifeTimeSystem::Update(World& world, float dt)
 {
-	Registry& reg = world.GetRegistry();
-
-	const auto emitterView = reg.View<ParticleEmitterComponent, const TransformComponent>();
-
 	// #define LOG_NUM_OF_PARTICLES
 
+	[[maybe_unused]] size_t totalNumOfAliveParticles{};
+	[[maybe_unused]] size_t numberOfEmittersWithShapes{};
+
+	totalNumOfAliveParticles += UpdateEmitters<ParticleEmitterShapeAABB>(world, dt, numberOfEmittersWithShapes);
+	totalNumOfAliveParticles += UpdateEmitters<ParticleEmitterShapeSphere>(world, dt, numberOfEmittersWithShapes);
+
+	[[maybe_unused]] size_t numberOfTotalEmitters = world.GetRegistry().View<ParticleEmitterComponent>().size();
+
+	if (numberOfEmittersWithShapes < numberOfTotalEmitters)
+	{
+		LOG(Particles, Warning, "{} emitter(s) did not have a ParticleEmitterShape component. Atleast one shaper per emitter is required", numberOfTotalEmitters - numberOfEmittersWithShapes);
+	}
+
+	if (numberOfEmittersWithShapes > numberOfTotalEmitters)
+	{
+		LOG(Particles, Warning, "{} emitter(s) have multiple ParticleEmitterShape components. Only one shape per emitter is supported.", numberOfEmittersWithShapes - numberOfTotalEmitters);
+	}
+
+#ifdef LOG_NUM_OF_PARTICLES
+	LOG(Particles, Verbose, "Num of particles: {}", totalNumOfAliveParticles);
+#endif
+}
+
+template <typename SpawnShapeType>
+size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t& numOfEmittersFound)
+{
 #ifdef LOG_NUM_OF_PARTICLES
 	size_t totalNumOfAliveParticles{};
 #endif // LOG_NUM_OF_PARTICLES
 
-	for (auto [entity, emitter, transform] : emitterView.each())
+	Registry& reg = world.GetRegistry();
+
+	const auto emitterView = reg.View<ParticleEmitterComponent, const TransformComponent, SpawnShapeType>();
+
+	static constexpr auto onParticleSpawn = [](ParticleEmitterComponent& emitter, 
+			SpawnShapeType& shape,
+			size_t particleIndex,
+			glm::quat emitterOrientation, 
+			glm::vec3 emitterScale, 
+			const glm::mat4& emitterMatrix)
+		{
+			const float lifeTime = Random::Range(emitter.mMinLifeTime, emitter.mMaxLifeTime);
+			emitter.mParticleLifeSpan[particleIndex] = lifeTime;
+			emitter.mParticleTimeAsPercentage[particleIndex] = 0.0f;
+
+			emitter.mParticlesSpawnedDuringLastStep.push_back(particleIndex);
+			shape.OnParticleSpawn(emitter, particleIndex, emitterOrientation, emitterScale, emitterMatrix);
+		};
+
+	for (auto [entity, emitter, transform, spawnShape] : emitterView.each())
 	{
+		numOfEmittersFound++;
+
 		emitter.mParticlesSpawnedDuringLastStep.clear();
 
 		if (emitter.mIsPaused)
@@ -66,11 +110,16 @@ void CE::ParticleLifeTimeSystem::Update(World& world, float dt)
 				continue;
 			}
 		}
-		
+
 		// Recyle the particles we killed the previous frame
 		for (size_t i = 0; numToSpawnThisFrame > 0 && i < emitter.mParticlesThatDiedDuringLastStep.size(); i++, numToSpawnThisFrame--)
 		{
-			emitter.OnParticleSpawn(emitter.mParticlesThatDiedDuringLastStep[i], emitterOrientation, emitterScale, emitterMatrix);
+			onParticleSpawn(emitter,
+				spawnShape,
+				emitter.mParticlesThatDiedDuringLastStep[i],
+				emitterOrientation,
+				emitterScale,
+				emitterMatrix);
 		}
 		emitter.mParticlesThatDiedDuringLastStep.clear();
 
@@ -98,13 +147,13 @@ void CE::ParticleLifeTimeSystem::Update(World& world, float dt)
 					emitter.mParticlesThatDiedDuringLastStep.push_back(i);
 					indexOfLastParticleInUse = i;
 				}
-				else if(numToSpawnThisFrame > 0)
+				else if (numToSpawnThisFrame > 0)
 				{
-					emitter.OnParticleSpawn(i, emitterOrientation, emitterScale, emitterMatrix);
+					onParticleSpawn(emitter, spawnShape, i, emitterOrientation, emitterScale, emitterMatrix);
 					indexOfLastParticleInUse = i;
 					--numToSpawnThisFrame;
 				}
-				
+
 				// The particle was neither respawned, nor did we kill it this frame.
 			}
 			else
@@ -123,13 +172,16 @@ void CE::ParticleLifeTimeSystem::Update(World& world, float dt)
 
 		for (size_t i = 0; i < numToSpawnThisFrame; i++)
 		{
-			emitter.OnParticleSpawn(numOfParticlesAliveBeforeLifeTimeUpdate + i, emitterOrientation, emitterScale, emitterMatrix);
+			onParticleSpawn(emitter, 
+				spawnShape, 
+				numOfParticlesAliveBeforeLifeTimeUpdate + i, 
+				emitterOrientation, 
+				emitterScale, 
+				emitterMatrix);
 		}
 
-
-
 #ifdef LOG_NUM_OF_PARTICLES
-		for (size_t i = 0; i < emitter.mParticleTimeAsPercentage.size(); i++) 
+		for (size_t i = 0; i < emitter.mParticleTimeAsPercentage.size(); i++)
 		{
 			totalNumOfAliveParticles += emitter.mParticleTimeAsPercentage[i] <= 1.0f;
 		}
@@ -137,8 +189,10 @@ void CE::ParticleLifeTimeSystem::Update(World& world, float dt)
 	}
 
 #ifdef LOG_NUM_OF_PARTICLES
-	LOG(Particles, Verbose, "Num of particles: {}", totalNumOfAliveParticles);
-#endif
+	return totalNumOfAliveParticles;
+#else
+	return 0;
+#endif // LOG_NUM_OF_PARTICLES
 }
 
 CE::MetaType CE::ParticleLifeTimeSystem::Reflect()
