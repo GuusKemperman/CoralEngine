@@ -50,7 +50,7 @@ namespace CE
 	{
 		int num{};
 
-		for (;num < std::tuple_size_v<ValueStorage>; num++)
+		for (;num < static_cast<int>(std::tuple_size_v<ValueStorage>); num++)
 		{
 			if (key[num * 2] < 0.0f
 				|| key[num * 2] > 1.0f)
