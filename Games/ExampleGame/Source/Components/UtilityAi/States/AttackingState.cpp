@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/AttackingState.h"
 
+#include "Utilities/AiFunctionality.h"
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
@@ -13,101 +14,29 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
 
-void Game::AttackingState::OnAITick(CE::World& world, entt::entity owner, float)
+void Game::AttackingState::OnAITick(CE::World& world, const entt::entity owner, float) const
 {
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+	Game::AnimationInAi(world, owner, mAttackingAnimation);
 
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mAttackingAnimation, 0.0f);
-	}
+	Game::FaceThePlayer(world, owner);
 
-	auto [score, targetEntity] = GetBestScoreAndTarget(world, owner);
-	mTargetEntity = targetEntity;
-
-	const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
-	if (characterData == nullptr)
-	{
-		LOG(LogAI, Warning, "A character component is needed to run the Attacking State!");
-		return;
-	}
-
-	const auto abilities = world.GetRegistry().TryGet<CE::AbilitiesOnCharacterComponent>(owner);
-	if (abilities == nullptr)
-	{
-		LOG(LogAI, Warning, "A AbilitiesOnCharacter component is needed to run the Attacking State!");
-		return;
-	}
-
-	if (abilities->mAbilitiesToInput.empty())
-	{
-		return;
-	}
-
-	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
+	Game::ExecuteEnemyAbility(world, owner);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "A PhysicsBody2D component is needed to run the Attack State!");
+		LOG(LogAI, Warning, "Attacking State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
 	physicsBody2DComponent->mLinearVelocity = { 0,0 };
 }
 
-float Game::AttackingState::OnAIEvaluate(const CE::World& world, entt::entity owner)
+float Game::AttackingState::OnAIEvaluate(const CE::World& world, const entt::entity owner) const
 {
-	auto [score, entity] = GetBestScoreAndTarget(world, owner);
-	mTargetEntity = entity;
+	const auto score = GetBestScoreBasedOnDetection(world, owner, mRadius);
 	return score;
-}
-
-std::pair<float, entt::entity> Game::AttackingState::GetBestScoreAndTarget(const CE::World& world, entt::entity owner) const
-{
-
-	entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
-
-	if (entityId == entt::null)
-	{
-		return { 0.0f, entt::null };
-	}
-
-	const CE::TransformComponent* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "A transform component is needed to run the Attacking State!");
-		return { 0.0f, entt::null };
-	}
-
-	float highestScore = 0.0f;
-
-	const CE::TransformComponent* targetComponent = world.GetRegistry().TryGet<CE::TransformComponent>(entityId);
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "A transform component on the player entity is needed to run the Attacking State!");
-		return { 0.0f, entt::null };
-	}
-
-	const float distance = glm::distance(transformComponent->GetWorldPosition(), targetComponent->GetWorldPosition());
-
-	float score = 0.0f;
-
-	if (distance < mRadius)
-	{
-		score = 1 / distance;
-		score += 1 / mRadius;
-	}
-
-	if (highestScore < score)
-	{
-		highestScore = score;
-	}
-
-	return { highestScore, entityId };
 }
 
 CE::MetaType Game::AttackingState::Reflect()

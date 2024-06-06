@@ -336,6 +336,13 @@ CE::MetaType CE::World::Reflect()
 			return world->HasBegunPlay();
 		}, "HasBegunPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
+	type.AddFunc([]
+		{
+			World* world = TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+			world->RequestEndplay();
+		}, "RequestEndPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
 	type.AddFunc([](const AssetHandle<Level>& level)
 		{
 			World* world = TryGetWorldAtTopOfStack();
@@ -394,6 +401,19 @@ CE::MetaType CE::World::Reflect()
 			ASSERT(world != nullptr);
 			return world->GetRegistry().CreateFromPrefab(*prefab);
 		}, "Spawn prefab", MetaFunc::ExplicitParams<const AssetHandle<Prefab>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
+	type.AddFunc([](const AssetHandle<Prefab>& prefab, const glm::vec3 position, const glm::quat orientation, const glm::vec3 scale, TransformComponent* parent)
+		{
+			if (prefab == nullptr)
+			{
+				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
+			}
+
+			World* world = TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+			return world->GetRegistry().CreateFromPrefab(*prefab, entt::null, &position, &orientation, &scale, parent);
+		}, "Spawn prefab at", MetaFunc::ExplicitParams<const AssetHandle<Prefab>&, glm::vec3, glm::quat, glm::vec3, TransformComponent*>{},
+			"Prefab", "LocalPosition", "LocalOrientation", "LocalScale", "Parent").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const entt::entity& entity, bool destroyChildren)
 		{

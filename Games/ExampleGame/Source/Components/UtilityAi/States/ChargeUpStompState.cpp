@@ -12,31 +12,30 @@
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-
+#include "Systems/AbilitySystem.h"
+#include "Utilities/AiFunctionality.h"
+#include "Components/Pathfinding/SwarmingAgentTag.h"
 
 void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mChargingAnimation, 0.0f);
-	}
+	AnimationInAi(world, owner, mChargingAnimation);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "An PhysicsBody2D component is needed to run the ChargingUp State!");
+		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
 	physicsBody2DComponent->mLinearVelocity = {};
 
 	mChargeCooldown.mAmountOfTimePassed += dt;
+
+	Game::FaceThePlayer(world, owner);
 }
 
-float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
+float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
 
 	if (mChargeCooldown.mAmountOfTimePassed != 0.0f)
@@ -44,7 +43,7 @@ float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, entt::entit
 		return 0.8f;
 	}
 
-	auto [score, entity] = GetBestScoreAndTarget(world, owner);
+	const auto score = Game::GetBestScoreBasedOnDetection(world, owner, mRadius);
 
 	return score;
 }
@@ -54,7 +53,7 @@ void Game::ChargeUpStompState::OnAiStateExitEvent(CE::World&, entt::entity)
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
 }
 
-void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
+void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
@@ -70,52 +69,6 @@ bool Game::ChargeUpStompState::IsCharged() const
 	}
 	
 	return false;
-}
-
-std::pair<float, entt::entity> Game::ChargeUpStompState::GetBestScoreAndTarget(const CE::World& world,
-	entt::entity owner) const
-{
-	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-	entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
-
-	if (entityId == entt::null)
-	{
-		return { 0.0f, entt::null };
-	}
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "TransformComponent is needed to run the Charging Up State!");
-		return { 0.0f, entt::null };
-	}
-
-	float highestScore = 0.0f;
-
-	auto* targetComponent = world.GetRegistry().TryGet<CE::TransformComponent>(entityId);
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "The player entity needs a TransformComponent is needed to run the Charging Up State!");
-		return { 0.0f, entt::null };
-	}
-
-	const float distance = glm::distance(transformComponent->GetWorldPosition(), targetComponent->GetWorldPosition());
-
-	float score = 0.0f;
-
-	if (distance < mRadius)
-	{
-		score = 1 / distance;
-		score += 1 / mRadius;
-	}
-
-	if (highestScore < score)
-	{
-		highestScore = score;
-	}
-
-	return { highestScore, entityId };
 }
 
 CE::MetaType Game::ChargeUpStompState::Reflect()

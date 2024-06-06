@@ -6,6 +6,7 @@
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Components/AnimationRootComponent.h"
+#include "Utilities/AiFunctionality.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
@@ -29,6 +30,10 @@ void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, cons
 float Game::DeathState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 {
 	const auto characterComponent = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
+
+	if (characterComponent == nullptr) {
+		LOG(LogAI, Warning, "Death State - enemy {} does not have a Character Component.", entt::to_integral(owner));
+	}
 
 	if (characterComponent->mCurrentHealth <= 0.f)
 	{
@@ -55,7 +60,6 @@ void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 	}
 
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
-
 
 	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::PhysicsBody2DComponent>(owner);
 

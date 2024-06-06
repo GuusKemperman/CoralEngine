@@ -20,6 +20,16 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/AbilityFunctionality.h"
 
+namespace
+{
+    static std::vector<CE::BoundEvent> abilityActivateEvents{};
+}
+
+CE::AbilitySystem::AbilitySystem()
+{   
+    abilityActivateEvents = CE::GetAllBoundEvents(CE::sAbilityActivateEvent);
+}
+
 void CE::AbilitySystem::Update(World& world, float dt)
 {
     Registry& reg = world.GetRegistry();
@@ -166,7 +176,6 @@ void CE::AbilitySystem::Update(World& world, float dt)
 
 void CE::AbilitySystem::UpdateAbilitiesVector(AbilitiesOnCharacterComponent& abilities, CharacterComponent& characterData, entt::entity entity, World& world, float dt)
 {
-    const auto& input = Input::Get();
     for (auto& ability : abilities.mAbilitiesToInput)
     {
         if (ability.mAbilityAsset == nullptr)
@@ -193,19 +202,10 @@ void CE::AbilitySystem::UpdateAbilitiesVector(AbilitiesOnCharacterComponent& abi
         {
             if (CanAbilityBeActivated(characterData, ability))
             {
-                for (auto& key : ability.mKeyboardKeys)
+                if (CheckKeyboardInput<&Input::IsKeyboardKeyHeld>(ability.mKeyboardKeys) ||
+                    CheckGamepadInput<&Input::IsGamepadButtonHeld>(ability.mGamepadButtons, playerComponent->mID))
                 {
-                    if (input.IsKeyboardKeyHeld(key))
-                    {
-                        ActivateAbility(world, entity, characterData, ability);
-                    }
-                }
-                for (auto& button : ability.mGamepadButtons)
-                {
-                    if (input.IsGamepadButtonHeld(playerComponent->mID, button))
-                    {
-                        ActivateAbility(world, entity, characterData, ability);
-                    }
+                    ActivateAbility(world, entity, characterData, ability);
                 }
             }
         }
@@ -214,33 +214,60 @@ void CE::AbilitySystem::UpdateAbilitiesVector(AbilitiesOnCharacterComponent& abi
 
 void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abilities, CharacterComponent& characterData, entt::entity entity, World& world, float dt)
 {
-    const auto& input = Input::Get();
     for (auto& weapon : abilities.mWeaponsToInput)
     {
-        if (weapon.mWeaponAsset == nullptr)
+        if (weapon.mWeaponAsset == nullptr || weapon.mRuntimeWeapon.has_value() == false)
         {
             continue;
         }
 
-        // Update counters
-        weapon.mReloadCounter = std::max(weapon.mReloadCounter - dt * weapon.mWeaponAsset->mReloadSpeed, 0.f);
-        weapon.mTimeBetweenShotsCounter = std::min(weapon.mTimeBetweenShotsCounter + dt * weapon.mWeaponAsset->mFireSpeed, weapon.mWeaponAsset->mTimeBetweenShots);
+        // Shot Delay counter
+        weapon.mShotDelayCounter = std::min(weapon.mShotDelayCounter + dt * weapon.mRuntimeWeapon->mFireSpeed, weapon.mRuntimeWeapon->mShotDelay);
 
-        // Activate abilities for the player based on input
+    	// Reload counter
+    	if (weapon.mReloadCounter > 0.f)
+        {
+	    	weapon.mReloadCounter = std::max(weapon.mReloadCounter - dt * weapon.mRuntimeWeapon->mReloadSpeed, 0.f);
+            if (weapon.mReloadCounter == 0.f)
+            {
+                // Reload completed
+                weapon.mAmmoCounter = weapon.mRuntimeWeapon->mCharges;
+            }
+        }
+
         if (auto playerComponent = world.GetRegistry().TryGet<PlayerComponent>(entity))
         {
+            // Reload
+            if ((CheckKeyboardInput<&Input::WasKeyboardKeyPressed>(weapon.mReloadKeyboardKeys) ||
+                CheckGamepadInput<&Input::WasGamepadButtonPressed>(weapon.mReloadGamepadButtons, playerComponent->mID)) &&
+                weapon.mReloadCounter == 0.f)
+            {
+                // Trigger reload
+                weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
+            }
+            if ((CheckKeyboardInput<&Input::WasKeyboardKeyPressed>(weapon.mKeyboardKeys) ||
+                CheckGamepadInput<&Input::WasGamepadButtonPressed>(weapon.mGamepadButtons, playerComponent->mID)) &&
+                weapon.mAmmoCounter > 0)
+            {
+                // Reload interrupted
+                weapon.mReloadCounter = 0.f;
+            }
+
+            // Activate abilities for the player based on input
             if (CanWeaponBeActivated(characterData, weapon))
             {
-                for (auto& key : weapon.mKeyboardKeys)
+                if (weapon.mRuntimeWeapon->mShootOnRelease == false)
                 {
-                    if (input.IsKeyboardKeyHeld(key))
+                    if (CheckKeyboardInput<&Input::IsKeyboardKeyHeld>(weapon.mKeyboardKeys) || 
+                        CheckGamepadInput<&Input::IsGamepadButtonHeld>(weapon.mGamepadButtons, playerComponent->mID))
                     {
                         ActivateWeapon(world, entity, characterData, weapon);
                     }
                 }
-                for (auto& button : weapon.mGamepadButtons)
+                else
                 {
-                    if (input.IsGamepadButtonHeld(playerComponent->mID, button))
+                    if (CheckKeyboardInput<&Input::WasKeyboardKeyReleased>(weapon.mKeyboardKeys) ||
+                        CheckGamepadInput<&Input::WasGamepadButtonReleased>(weapon.mGamepadButtons, playerComponent->mID))
                     {
                         ActivateWeapon(world, entity, characterData, weapon);
                     }
@@ -271,37 +298,27 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
     }
 
     // Ability activate event
+    characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
+    ability.mChargesCounter--;
+    if (ability.mChargesCounter <= 0)
+    {
+        ability.mChargesCounter = ability.mAbilityAsset->mCharges;
+        ability.mRequirementCounter = ability.mAbilityAsset->mRequirementToUse;
+    }
     if (ability.mAbilityAsset->mOnAbilityActivateScript != nullptr)
     {
-        if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName()))
-        {
-            if (world.GetRegistry().HasComponent(metaType->GetTypeId(), castBy))
-            {
-                if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
-                {
-                    entt::sparse_set* storage = world.GetRegistry().Storage(metaType->GetTypeId());
-                    MetaAny component{ *metaType, storage->value(castBy), false };
-                    metaFunc->InvokeUncheckedUnpacked(component, world, castBy);
-                }
-            }
-        }
-        else
+        if (auto metaType = MetaManager::Get().TryGetType(ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+            metaType == nullptr)
         {
             LOG(LogAbilitySystem, Error, "Did not find script {} when trying to activate ability {}",
                 ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName(),
                 ability.mAbilityAsset.GetMetaData().GetName());
         }
+        CallAllOnAbilityActivateEvents(world, castBy);
     }
     else
     {
         LOG(LogAbilitySystem, Error, "Ability {} does not have a script selected.", ability.mAbilityAsset.GetMetaData().GetName());
-    }
-    characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
-    ability.mChargesCounter--;
-    if (ability.mChargesCounter <= 0.f)
-    {
-        ability.mChargesCounter = ability.mAbilityAsset->mCharges;
-        ability.mRequirementCounter = ability.mAbilityAsset->mRequirementToUse;
     }
 
     return true;
@@ -309,14 +326,14 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
 
 bool CE::AbilitySystem::CanWeaponBeActivated(const CharacterComponent& characterData, const WeaponInstance& weapon)
 {
-    if (weapon.mWeaponAsset == nullptr)
+    if (weapon.mWeaponAsset == nullptr || weapon.mRuntimeWeapon.has_value() == false)
     {
         return false;
     }
-    return weapon.mReloadCounter <= 0.f &&
-        weapon.mAmmoCounter > 0 &&
-        weapon.mTimeBetweenShotsCounter >= weapon.mWeaponAsset->mTimeBetweenShots &&
-        (weapon.mWeaponAsset->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
+    return ((weapon.mAmmoCounter > 0 && weapon.mRuntimeWeapon->mShootOnRelease == false) || 
+        ((weapon.mShotsAccumulated > 0 || weapon.mAmmoCounter > 0) && weapon.mRuntimeWeapon->mShootOnRelease == true)) &&
+        weapon.mShotDelayCounter >= weapon.mRuntimeWeapon->mShotDelay &&
+        (weapon.mRuntimeWeapon->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
 }
 
 bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, CharacterComponent& characterData,
@@ -330,44 +347,58 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     }
 
     // Ability activate event
+    characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
+    weapon.mShotDelayCounter = 0.f;
+    if (weapon.mAmmoConsumption == true)
+    {
+        weapon.mAmmoCounter--;
+    }
     if (weapon.mWeaponAsset->mOnAbilityActivateScript != nullptr)
     {
-        if (auto metaType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName()))
-        {
-            if (world.GetRegistry().HasComponent(metaType->GetTypeId(), castBy))
-            {
-                if (auto metaFunc = TryGetEvent(*metaType, sAbilityActivateEvent))
-                {
-                    entt::sparse_set* storage = world.GetRegistry().Storage(metaType->GetTypeId());
-                    MetaAny component{ *metaType, storage->value(castBy), false };
-                    metaFunc->InvokeUncheckedUnpacked(component, world, castBy);
-                }
-            }
-        }
-        else
+        if (auto metaType = MetaManager::Get().TryGetType(weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName()); 
+            metaType == nullptr)
         {
             LOG(LogAbilitySystem, Error, "Did not find script {} when trying to activate weapon {}",
                 weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName(),
                 weapon.mWeaponAsset.GetMetaData().GetName());
         }
+        CallAllOnAbilityActivateEvents(world, castBy);
     }
     else
     {
         LOG(LogAbilitySystem, Error, "Weapon {} does not have a script selected.", weapon.mWeaponAsset.GetMetaData().GetName());
     }
-    characterData.mGlobalCooldownTimer = characterData.mGlobalCooldown;
-    weapon.mTimeBetweenShotsCounter = 0.f;
-    if (weapon.mAmmoConsumption == true)
-    {
-        weapon.mAmmoCounter--;
-    }
+    weapon.mReloadCounter = 0.f;
     if (weapon.mAmmoCounter <= 0)
     {
-        weapon.mAmmoCounter = weapon.mWeaponAsset->mCharges;
-        weapon.mReloadCounter = weapon.mWeaponAsset->mRequirementToUse;
+        weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
     }
 
     return true;
+}
+
+void CE::AbilitySystem::CallAllOnAbilityActivateEvents(World& world, entt::entity castBy)
+{
+    for (const BoundEvent& boundEvent : abilityActivateEvents)
+    {
+        entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
+
+        if (storage == nullptr
+            || !storage->contains(castBy))
+        {
+            continue;
+        }
+
+        if (boundEvent.mIsStatic)
+        {
+            boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, castBy);
+        }
+        else
+        {
+            MetaAny component{ boundEvent.mType, storage->value(castBy), false };
+            boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, castBy);
+        }
+    }
 }
 
 CE::MetaType CE::AbilitySystem::Reflect()

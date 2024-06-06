@@ -71,11 +71,27 @@ namespace CE
 	static constexpr Event<void(World&, entt::entity)> sAIStateExitEvent{ "OnAIStateExit" };
 
 	/**
+	 * \brief
+	 * 	World& The world the ability controller component is in.
+	 * \entt::entity The entity that has cast the ability (projectile).
+	 * \entt::entity The entity that was hit.
+	 * \entt::entity The ability (projectile) entity.
+	 */
+	static constexpr Event<void(World&, entt::entity, entt::entity, entt::entity)> sAbilityHitEvent{ "OnAbilityHit" };
+
+	/**
 	 * \brief 
 	 * 	World& The world the ability controller component is in. 
 	 * \entt::entity The owner of the ability controller component.  
 	 */
-	static constexpr Event<void(World&, entt::entity), false> sAbilityActivateEvent{ "OnAbilityActivate" };
+	static constexpr Event<void(World&, entt::entity)> sAbilityActivateEvent{ "OnAbilityActivate" };
+
+	/*
+	* \brief Called when an animation finishes.
+	* World& the world the animationRootComponent is in
+	* entt::entity The entity with the animationRootComponent which has finished its animation.
+	*/
+	static constexpr Event<void(World&, entt::entity)> sAnimationFinishEvent{ "OnAnimationFinish" };
 
 	/**
 	 * \brief Called immediately when the component is constructed.

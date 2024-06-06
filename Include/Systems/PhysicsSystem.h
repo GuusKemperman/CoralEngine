@@ -37,9 +37,6 @@ namespace CE
 	private:
 		void ApplyVelocities(World& world, float dt);
 
-		template<typename Collider, typename TransformedCollider>
-		void UpdateTransformedColliders(World& world, std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>& wereItemsAddedToLayer);
-
 		friend Physics2DUnitTestAccess;
 
 		/// <summary>

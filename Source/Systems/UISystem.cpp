@@ -28,14 +28,14 @@ void CE::UISystem::Update(World& world, float dt)
 		}
 	}
 
-	selectedEntity = CheckNavigation(world, 
-		selectedEntity, 
-		UISystem::Edges::Top, 
-		Input::KeyboardKey::ArrowUp, 
-		Input::KeyboardKey::W, 
-		0, 
-		Input::GamepadButton::DPadUp, 
-		Input::GamepadAxis::StickLeftY, 
+	selectedEntity = CheckNavigation(world,
+		selectedEntity,
+		UISystem::Edges::Top,
+		Input::KeyboardKey::ArrowUp,
+		Input::KeyboardKey::W,
+		0,
+		Input::GamepadButton::DPadUp,
+		Input::GamepadAxis::StickLeftY,
 		Input::GamepadAxis::StickRightY,
 		false);
 
@@ -83,38 +83,26 @@ void CE::UISystem::Update(World& world, float dt)
 		return;
 	}
 
-	for (auto&& [typeId, storage] : reg.Storage())
+	for (const BoundEvent& boundEvent : mOnClickEvents)
 	{
-		if (!storage.contains(selectedEntity))
+		entt::sparse_set* storage = reg.Storage(boundEvent.mType.get().GetTypeId());
+
+		if (storage == nullptr
+			|| !storage->contains(selectedEntity))
 		{
 			continue;
 		}
 
-		const MetaType* const metaType = MetaManager::Get().TryGetType(typeId);
-
-		if (metaType == nullptr)
+		if (boundEvent.mIsStatic)
 		{
-			continue;
-		}
-
-		const MetaFunc* const pressedEvent = TryGetEvent(*metaType, sButtonPressEvent);
-
-		if (pressedEvent == nullptr)
-		{
-			continue;
-		}
-
-		if (pressedEvent->GetProperties().Has(Props::sIsEventStaticTag))
-		{
-			pressedEvent->InvokeUncheckedUnpacked(world, selectedEntity);
+			boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, selectedEntity);
 		}
 		else
 		{
-			MetaAny component{ *metaType, storage.value(selectedEntity), false };
-			pressedEvent->InvokeUncheckedUnpacked(component, world, selectedEntity);
+			MetaAny component{ boundEvent.mType.get(), storage->value(selectedEntity), false };
+			boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, selectedEntity);
 		}
 	}
-
 }
 
 entt::entity CE::UISystem::CheckNavigation(World& world, 
@@ -189,10 +177,13 @@ entt::entity CE::UISystem::CheckNavigation(World& world,
 
 			const glm::vec2 UIPosition = { worldPosition.x, worldPosition.y };
 
+			float distance = glm::distance(pos, UIPosition); 
+
 			if (isLocatedInDirection(UIPosition) 
-				&& glm::distance(pos, UIPosition) < lowestDistance)
+				&& distance < lowestDistance)
 			{
 				entityToNavigateTo = entity;
+				lowestDistance = distance;
 			}
 		}
 

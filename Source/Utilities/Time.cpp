@@ -17,6 +17,11 @@ bool CE::Cooldown::IsReady(float dt)
 	return false;
 }
 
+void CE::Cooldown::Reset()
+{
+	mAmountOfTimePassed = 0.0f;
+}
+
 #ifdef EDITOR
 void CE::Cooldown::DisplayWidget(const std::string& name)
 {
@@ -48,6 +53,7 @@ CE::MetaType CE::Cooldown::Reflect()
 	type.AddField(&Cooldown::mAmountOfTimePassed, "mAmountOfTimePassed").GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddFunc(&Cooldown::IsReady, "IsReady", "", "DeltaTime").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&Cooldown::Reset, "Reset").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectFieldType<Cooldown>(type);
 	return type;

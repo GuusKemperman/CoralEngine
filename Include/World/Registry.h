@@ -40,8 +40,16 @@ namespace CE
 
 		template<typename It>
 		void Create(It first, It last);
-		
-		entt::entity CreateFromPrefab(const Prefab& prefab, entt::entity hint = entt::null);
+
+		// Positional data can be provided so that the entity can be
+		// placed at the correct position before OnBeginPlay is called.
+		// Otherwise, OnBeginPlay would also be called at 0,0,0.
+		entt::entity CreateFromPrefab(const Prefab& prefab, 
+			entt::entity hint = entt::null, 
+			const glm::vec3* localPosition = nullptr, 
+			const glm::quat* localOrientation = nullptr, 
+			const glm::vec3* localScale = nullptr, 
+			TransformComponent* parent = nullptr);
 
 		entt::entity CreateFromFactory(const PrefabEntityFactory& factory, bool createChildren, entt::entity hint = entt::null);
 

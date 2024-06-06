@@ -13,7 +13,7 @@ namespace CE
 		bool operator==(const WeightedRandomDistribution& other) const { return mWeights == other.mWeights; }
 		bool operator!=(const WeightedRandomDistribution& other) const { return mWeights != other.mWeights; }
 
-		ValueType* GetNext()
+		ValueType* GetNext(float randomValue = Random::Range(0.0f, 1.0f))
 		{
 			float total{};
 
@@ -28,7 +28,7 @@ namespace CE
 					return lhs.second < rhs.second;
 				});
 
-			const float randomNum = Random::Range(0.0f, total);
+			const float randomNum = randomValue * total;
 
 			float cumulative{};
 

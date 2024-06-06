@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/IdleState.h"
 
+#include "Utilities/AiFunctionality.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
@@ -8,16 +9,9 @@
 #include "Components/AnimationRootComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 
-void Game::IdleState::OnAiTick(CE::World& world, entt::entity owner, float)
+void Game::IdleState::OnAiTick(CE::World& world, const entt::entity owner, float) const
 {
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent == nullptr)
-	{
-		return;
-	}
-
-	animationRootComponent->SwitchAnimation( world.GetRegistry(), mIdleAnimation, 0.0f);
+	Game::AnimationInAi(world, owner, mIdleAnimation);
 }
 
 float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
@@ -25,7 +19,7 @@ float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
 	return 0.01f;
 }
 
-void Game::IdleState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
+void Game::IdleState::OnAIStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 }

@@ -156,7 +156,12 @@ entt::entity CE::Registry::Create(entt::entity hint)
 	return mRegistry.create(hint);
 }
 
-entt::entity CE::Registry::CreateFromPrefab(const Prefab& prefab, entt::entity hint)
+entt::entity CE::Registry::CreateFromPrefab(const Prefab& prefab, 
+	entt::entity hint,
+	const glm::vec3* localPosition,
+	const glm::quat* localOrientation,
+	const glm::vec3* localScale,
+	TransformComponent* parent)
 {
 	const std::vector<PrefabEntityFactory>& factories = prefab.GetFactories();
 
@@ -168,6 +173,34 @@ entt::entity CE::Registry::CreateFromPrefab(const Prefab& prefab, entt::entity h
 	}
 
 	const entt::entity entity = CreateFromFactory(factories[0], true, hint);
+
+	if (localPosition != nullptr
+		|| localOrientation != nullptr
+		|| localScale != nullptr
+		|| parent != nullptr)
+	{
+		TransformComponent* transform = TryGet<TransformComponent>(entity);
+
+		if (localPosition != nullptr)
+		{
+			transform->SetLocalPosition(*localPosition);
+		}
+
+		if (localOrientation != nullptr)
+		{
+			transform->SetLocalOrientation(*localOrientation);
+		}
+
+		if (localScale != nullptr)
+		{
+			transform->SetLocalScale(*localScale);
+		}
+
+		if (parent != nullptr)
+		{
+			transform->SetParent(parent, false);
+		}
+	}
 
 	// We wait with calling BeginPlay until all the
 	// components and children have been constructed.
@@ -346,7 +379,7 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 
 	World::PushWorld(mWorld);
 
-	FuncResult result = (*addComponentFunc)(toEntity);
+	FuncResult result = addComponentFunc->InvokeUncheckedUnpacked(toEntity);
 
 	World::PopWorld();
 

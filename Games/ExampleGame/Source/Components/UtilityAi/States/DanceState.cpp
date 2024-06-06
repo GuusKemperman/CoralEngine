@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/DanceState.h"
 
+#include "Utilities/AiFunctionality.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
@@ -16,39 +17,36 @@ void Game::DanceState::OnAITick(CE::World& world, const entt::entity owner, cons
 
 	if (physicsBody2DComponent == nullptr)
 	{
+		LOG(LogAI, Warning, "Dance State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
 	physicsBody2DComponent->mLinearVelocity = { 0,0 };
 }
 
-float Game::DanceState::OnAiEvaluate(const CE::World& world, entt::entity)
+float Game::DanceState::OnAiEvaluate(const CE::World& world, [[maybe_unused]] const entt::entity owner)
 {
-	const entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
+	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
-	if (entityId == entt::null)
+	if (playerId == entt::null)
 	{
 		return 1.0f;
 	}
 
-	const auto characterComponent = world.GetRegistry().TryGet<CE::CharacterComponent>(entityId);
+	const auto characterComponent = world.GetRegistry().TryGet<CE::CharacterComponent>(playerId);
 
 	if (characterComponent->mCurrentHealth <= 0.f)
 	{
+		LOG(LogAI, Warning, "Dance State - player {} does not have a Character Component.", entt::to_integral(playerId));
 		return 1.0f;
 	}
 
 	return 0.f;
 }
 
-void Game::DanceState::OnAIStateEnterEvent(CE::World& world, entt::entity owner) const
+void Game::DanceState::OnAIStateEnterEvent(CE::World& world, const entt::entity owner) const
 {
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDanceAnimation, 0.0f);
-	}
+	Game::AnimationInAi(world, owner, mDanceAnimation);
 }
 
 CE::MetaType Game::DanceState::Reflect()

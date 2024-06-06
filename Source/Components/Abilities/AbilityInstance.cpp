@@ -5,6 +5,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
+#include "Meta/ReflectedTypes/STD/ReflectOptional.h"
 #include "Assets/Ability/Ability.h"
 #include "Assets/Ability/Weapon.h"
 #include "Components/PlayerComponent.h"
@@ -77,18 +78,29 @@ void CE::WeaponInstance::ResetCooldownAndAmmo()
 	}
 }
 
+CE::Weapon* CE::WeaponInstance::InitializeRuntimeWeapon()
+{
+	if (mWeaponAsset == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "mWeaponAsset not set.");
+		return nullptr;
+	}
+	mRuntimeWeapon.emplace(*mWeaponAsset.Get());
+	return &mRuntimeWeapon.value();
+}
+
 bool CE::WeaponInstance::operator==(const WeaponInstance& other) const
 {
 	return mWeaponAsset == other.mWeaponAsset &&
 		mKeyboardKeys == other.mKeyboardKeys &&
-		mGamepadButtons == other.mGamepadButtons;
+		mGamepadButtons == other.mGamepadButtons &&
+		mReloadKeyboardKeys == other.mReloadKeyboardKeys &&
+		mReloadGamepadButtons == other.mReloadGamepadButtons;
 }
 
 bool CE::WeaponInstance::operator!=(const WeaponInstance& other) const
 {
-	return mWeaponAsset != other.mWeaponAsset ||
-		mKeyboardKeys != other.mKeyboardKeys ||
-		mGamepadButtons != other.mGamepadButtons;
+	return !(*this == other);
 }
 
 CE::MetaType CE::WeaponInstance::Reflect()
@@ -96,13 +108,27 @@ CE::MetaType CE::WeaponInstance::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<WeaponInstance>{}, "WeaponInstance"};
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddField(&WeaponInstance::mTimeBetweenShotsCounter, "mTimeBetweenShotsCounter").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&WeaponInstance::mAmmoConsumption, "mAmmoConsumption").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mWeaponAsset, "mWeaponAsset").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mReloadCounter, "mReloadCounter").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mAmmoCounter, "mAmmoCounter").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mShotDelayCounter, "mShotDelayCounter").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mAmmoConsumption, "mAmmoConsumption").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mShotsAccumulated, "mShotsAccumulated").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mKeyboardKeys, "mKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&WeaponInstance::mGamepadButtons, "mGamepadButtons").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mReloadKeyboardKeys, "mReloadKeyboardKeys").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&WeaponInstance::mReloadGamepadButtons, "mReloadGamepadButtons").GetProperties().Add(Props::sIsScriptableTag);
+
+	metaType.AddFunc([](WeaponInstance& weapon) -> Weapon*
+		{
+			if (!weapon.mRuntimeWeapon)
+			{
+				LOG(LogAbilitySystem, Error, "GetRuntimeWeapon - mRuntimeWeapon was not initialized.");
+				return nullptr;
+			}
+			return &weapon.mRuntimeWeapon.value();
+
+		}, "GetRuntimeWeapon", MetaFunc::ExplicitParams<WeaponInstance&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	metaType.AddFunc([](WeaponInstance& weapon, entt::entity castBy, CharacterComponent& characterData)
 		{
@@ -121,32 +147,14 @@ CE::MetaType CE::WeaponInstance::Reflect()
 
 	metaType.AddFunc([](const WeaponInstance& weapon, const PlayerComponent& playerData)
 	{
-		const auto& input = Input::Get();
-		bool hasAnyInput = false;
-
-		for (auto& key : weapon.mKeyboardKeys)
-		{
-			if (input.IsKeyboardKeyHeld(key))
-			{
-				hasAnyInput = true;
-				break;
-			}
-		}
-
-		for (auto& button : weapon.mGamepadButtons)
-		{
-			if (input.IsGamepadButtonHeld(playerData.mID, button))
-			{
-				hasAnyInput = true;
-				break;
-			}
-		}
-
-		return weapon.mReloadCounter <= 0.0f && hasAnyInput;
+		return weapon.mReloadCounter == 0.0f &&
+			(AbilitySystem::CheckKeyboardInput<&Input::IsKeyboardKeyHeld>(weapon.mKeyboardKeys) ||
+			AbilitySystem::CheckGamepadInput<&Input::IsGamepadButtonHeld>(weapon.mGamepadButtons, playerData.mID));
 
 	}, "IsPlayerShooting", MetaFunc::ExplicitParams<const WeaponInstance&, const PlayerComponent&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	metaType.AddFunc(&WeaponInstance::ResetCooldownAndAmmo, "ResetCooldownAndAmmo").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sCallFromEditorTag);
+	metaType.AddFunc(&WeaponInstance::InitializeRuntimeWeapon, "InitializeRuntimeWeapon").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectFieldType<WeaponInstance>(metaType);
 	return metaType;

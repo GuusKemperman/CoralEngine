@@ -15,6 +15,12 @@ namespace CE
 		Material(std::string_view name);
 		Material(AssetLoadInfo& loadInfo);
 
+		Material(Material&&) noexcept = default;
+		Material(const Material&) = default;
+
+		Material& operator=(Material&&) = delete;
+		Material& operator=(const Material&) = default;
+
 		static AssetHandle<Material> TryGetDefaultMaterial();
 
 		LinearColor mBaseColorFactor{ 1.0f };		

@@ -32,7 +32,7 @@ namespace CE
 			static void Callback(CallbackAdditionalArgs&& ...) { }
 		};
 
-		template<typename OnIntersectFunction, typename ShouldCheckFunction, typename ShouldReturnFunction, typename InquirerShape, typename ...CallbackAdditionalArgs>
+		template<typename OnIntersectFunction = DefaultOnIntersectFunction, typename ShouldCheckFunction = DefaultShouldReturnFunction<true>, typename ShouldReturnFunction = DefaultShouldReturnFunction<true>, typename InquirerShape, typename ...CallbackAdditionalArgs>
 		bool Query(const InquirerShape inquirerShape, CallbackAdditionalArgs&& ...args) const;
 
 		void DebugDraw() const;

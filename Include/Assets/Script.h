@@ -17,6 +17,12 @@ namespace CE
 		Script(std::string_view name);
 		Script(AssetLoadInfo& loadInfo);
 
+		Script(Script&&) noexcept = default;
+		Script(const Script&) = delete;
+
+		Script& operator=(Script&&) = delete;
+		Script& operator=(const Script&) = delete;
+
 		// May invalidate pointers holding onto any function from this script,
 		// if the internal vector resizes
 		ScriptFunc& AddFunc(std::string_view name);

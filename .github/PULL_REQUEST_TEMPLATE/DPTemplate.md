@@ -7,5 +7,4 @@
 ## Checklist
 - [ ] I made sure only the needed changes are made
 - [ ] I ensured the implementation matches the corresponding design document
-- [ ] Should be tested on another device on PC 
-- [ ] Should be tested on another device on ***REMOVED***
+- [ ] Should be tested on another device
