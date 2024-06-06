@@ -154,6 +154,16 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "RemoveWeaponAtIndex", MetaFunc::ExplicitParams<
 		entt::entity, int>{}, "Entity", "Index").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
+	metaType.AddFunc([](entt::entity entity, AssetHandle<Weapon> weaponAsset)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			ReplaceWeaponAtEnd(*world, entity, weaponAsset);
+
+		}, "ReplaceWeaponAtEnd", MetaFunc::ExplicitParams<
+		entt::entity, AssetHandle<Weapon>>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
 	metaType.AddFunc([](entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
@@ -529,7 +539,7 @@ void CE::AbilityFunctionality::RemoveWeaponAtIndex(World& world, entt::entity en
 		return;
 	}
 	auto& weaponsVector = abilities->mWeaponsToInput;
-	if (index >= static_cast<int>(weaponsVector.size()))
+	if (index >= static_cast<int>(weaponsVector.size()) || index < 0)
 	{
 		LOG(LogAbilitySystem, Error, "RemoveWeaponAtIndex - index out of range in entity {} with weapons vector with size {}.", index, entt::to_integral(entity), static_cast<int>(weaponsVector.size()));
 		return;
@@ -547,7 +557,7 @@ void CE::AbilityFunctionality::AddWeaponToEnd(World& world, entt::entity entity,
 	const auto abilities = world.GetRegistry().TryGet<AbilitiesOnCharacterComponent>(entity);
 	if (abilities == nullptr)
 	{
-		LOG(LogAbilitySystem, Error, "AddWeapon - entity does not have an Active Ability Component attached.");
+		LOG(LogAbilitySystem, Error, "AddWeapon - entity {} does not have an Active Ability Component attached.", entt::to_integral(entity));
 		return;
 	}
 	abilities->mWeaponsToInput.push_back(weapon);
@@ -558,6 +568,40 @@ void CE::AbilityFunctionality::AddWeaponToEnd(World& world, entt::entity entity,
 	{
 		world.GetRegistry().AddComponent(*scriptType, entity);
 	}
+}
+
+void CE::AbilityFunctionality::ReplaceWeaponAtEnd(World& world, entt::entity entity, AssetHandle<Weapon>& weaponAsset)
+{
+	const auto abilities = world.GetRegistry().TryGet<AbilitiesOnCharacterComponent>(entity);
+	if (abilities == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "ReplaceWeaponAtEnd - entity {} does not have an Active Ability Component attached.", entt::to_integral(entity));
+		return;
+	}
+	auto& weaponsVector = abilities->mWeaponsToInput;
+	if (weaponsVector.empty())
+	{
+		LOG(LogAbilitySystem, Error, "ReplaceWeaponAtEnd - no weapons found on entity {}.", entt::to_integral(entity));
+		return;
+	}
+	auto& weaponInstance = abilities->mWeaponsToInput.back();
+	// Remove old On Ability Activate script.
+	const MetaType* scriptTypeOld = MetaManager::Get().TryGetType(weaponInstance.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+	if (scriptTypeOld != nullptr && world.GetRegistry().HasComponent(scriptTypeOld->GetTypeId(), entity))
+	{
+		world.GetRegistry().RemoveComponent(scriptTypeOld->GetTypeId(), entity);
+	}
+
+	weaponInstance.mWeaponAsset = weaponAsset;
+	weaponInstance.InitializeRuntimeWeapon();
+	// Add new On Ability Activate script.
+	const MetaType* scriptTypeNew = MetaManager::Get().TryGetType(weaponInstance.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName());
+	if (scriptTypeNew != nullptr && !world.GetRegistry().HasComponent(scriptTypeNew->GetTypeId(), entity))
+	{
+		world.GetRegistry().AddComponent(*scriptTypeNew, entity);
+	}
+
+	weaponInstance.ResetCooldownAndAmmo();
 }
 
 void CE::AbilityFunctionality::CallAllAbilityHitEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity)
