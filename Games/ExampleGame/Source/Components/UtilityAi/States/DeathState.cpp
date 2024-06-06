@@ -21,11 +21,35 @@ void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, cons
 		return;
 	}
 
-	mCurrentDeathTimer += dt;
+	auto& registry = world.GetRegistry();
 
+	// Dim eye lights.
+	auto* transform = registry.TryGet<CE::TransformComponent>(owner);
+	if (transform == nullptr)
+	{
+		LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+		return;
+	}
+	const auto removeLights = [&registry, dt](const auto& self, const CE::TransformComponent& current, float maxDeathTime) -> void
+		{
+			for (const CE::TransformComponent& child : current.GetChildren())
+			{
+				auto light = registry.TryGet<CE::PointLightComponent>(child.GetOwner());
+				if (light != nullptr)
+				{
+					const float decreaseAmount = light->mIntensity * (dt / maxDeathTime);
+					light->mIntensity = std::max(light->mIntensity - decreaseAmount, 0.f);
+				}
+				self(self, child, maxDeathTime);
+			}
+		};
+	removeLights(removeLights, *transform, (mMaxDeathTime - mCurrentDeathTimer) * 0.5f);
+
+	// Update death timer.
+	mCurrentDeathTimer += dt;
 	if (mCurrentDeathTimer >= mMaxDeathTime )
 	{
-		world.GetRegistry().Destroy(owner, true);
+		registry.Destroy(owner, true);
 	}
 }
 
@@ -67,22 +91,6 @@ void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 	registry.RemoveComponentIfEntityHasIt<CE::PhysicsBody2DComponent>(owner);
 
 	registry.RemoveComponentIfEntityHasIt<CE::DiskColliderComponent>(owner);
-
-	auto* transform = registry.TryGet<CE::TransformComponent>(owner);
-	if (transform == nullptr)
-	{
-		LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
-		return;
-	}
-	const auto removeLights = [&registry](const auto& self, const CE::TransformComponent& current) -> void
-		{
-			for (const CE::TransformComponent& child : current.GetChildren())
-			{
-				registry.RemoveComponentIfEntityHasIt<CE::PointLightComponent>(child.GetOwner());
-				self(self, child);
-			}
-		};
-	removeLights(removeLights, *transform);
 }
 
 CE::MetaType Game::DeathState::Reflect()
