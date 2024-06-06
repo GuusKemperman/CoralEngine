@@ -19,7 +19,7 @@
 #include "Utilities/AiFunctionality.h"
 
 
-void Game::KnockBackState::OnAiTick(CE::World& world, const entt::entity owner, const float)
+void Game::KnockBackState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
 	Game::AnimationInAi(world, owner, mKnockBackAnimation );
 
@@ -31,7 +31,7 @@ void Game::KnockBackState::OnAiTick(CE::World& world, const entt::entity owner, 
 		return;
 	}
 
-	mKnockBackSpeed *= mFriction;
+	mKnockBackSpeed *= 1 / (1 + (dt * mFriction));
 	physicsBody2DComponent->mLinearVelocity = -mDashDirection * mKnockBackSpeed;
 }
 
