@@ -10,6 +10,8 @@
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
+#include "Components/PointLightComponent.h"
+#include "Components/TransformComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 
 void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
@@ -45,14 +47,15 @@ float Game::DeathState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 
 void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner) const
 {
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+	auto& registry = world.GetRegistry();
+	auto* animationRootComponent = registry.TryGet<CE::AnimationRootComponent>(owner);
 
 	if (animationRootComponent != nullptr)
 	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDeathAnimation, 0.0f, 1.0f, 1.5f);
+		animationRootComponent->SwitchAnimation(registry, mDeathAnimation, 0.0f, 1.0f, 1.5f);
 	}
 
-	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
+	auto* physicsBody2DComponent = registry.TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent != nullptr)
 	{
@@ -61,9 +64,25 @@ void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
-	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::PhysicsBody2DComponent>(owner);
+	registry.RemoveComponentIfEntityHasIt<CE::PhysicsBody2DComponent>(owner);
 
-	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::DiskColliderComponent>(owner);
+	registry.RemoveComponentIfEntityHasIt<CE::DiskColliderComponent>(owner);
+
+	auto* transform = registry.TryGet<CE::TransformComponent>(owner);
+	if (transform == nullptr)
+	{
+		LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+		return;
+	}
+	const auto removeLights = [&registry](const auto& self, const CE::TransformComponent& current) -> void
+		{
+			for (const CE::TransformComponent& child : current.GetChildren())
+			{
+				registry.RemoveComponentIfEntityHasIt<CE::PointLightComponent>(child.GetOwner());
+				self(self, child);
+			}
+		};
+	removeLights(removeLights, *transform);
 }
 
 CE::MetaType Game::DeathState::Reflect()
