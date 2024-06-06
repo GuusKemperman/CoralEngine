@@ -40,6 +40,8 @@ CE::Weapon::Weapon(AssetLoadInfo& loadInfo) :
 	const BinaryGSONMember* serializedKnockback = obj.TryGetGSONMember("Knockback");
 	const BinaryGSONMember* serializedPierceCount = obj.TryGetGSONMember("PierceCount");
 
+	const BinaryGSONMember* serializedShootOnRelease = obj.TryGetGSONMember("ShootOnRelease");
+
 	if (serializedTimeBetweenShots == nullptr
 		|| serializedFireSpeed == nullptr
 		|| serializedReloadSpeed == nullptr
@@ -50,7 +52,8 @@ CE::Weapon::Weapon(AssetLoadInfo& loadInfo) :
 		|| serializedProjectileSpeed == nullptr
 		|| serializedProjectileRange == nullptr
 		|| serializedKnockback == nullptr
-		|| serializedPierceCount == nullptr)
+		|| serializedPierceCount == nullptr
+		|| serializedShootOnRelease == nullptr)
 	{
 		LOG(LogAssets, Error, "Could not load weapon {}, as there were missing values.", GetName());
 		return;
@@ -68,6 +71,8 @@ CE::Weapon::Weapon(AssetLoadInfo& loadInfo) :
 	*serializedProjectileRange >> mProjectileRange;
 	*serializedKnockback >> mKnockback;
 	*serializedPierceCount >> mPierceCount;
+
+	*serializedShootOnRelease >> mShootOnRelease;
 }
 
 void CE::Weapon::OnSave(AssetSaveInfo& saveInfo) const
@@ -89,6 +94,8 @@ void CE::Weapon::OnSave(AssetSaveInfo& saveInfo) const
 	obj.AddGSONMember("Knockback") << mKnockback;
 	obj.AddGSONMember("PierceCount") << mPierceCount;
 
+	obj.AddGSONMember("ShootOnRelease") << mShootOnRelease;
+
 	obj.SaveToBinary(saveInfo.GetStream());
 }
 
@@ -109,6 +116,8 @@ CE::MetaType CE::Weapon::Reflect()
 	type.AddField(&Weapon::mProjectileRange, "mProjectileRange").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&Weapon::mKnockback, "mKnockback").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&Weapon::mPierceCount, "mPierceCount").GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddField(&Weapon::mShootOnRelease, "mShootOnRelease").GetProperties().Add(Props::sIsScriptableTag);
 
 	// Weapon pointer.
 	type.AddFunc([](Weapon& weapon) -> std::vector<AbilityEffect>&

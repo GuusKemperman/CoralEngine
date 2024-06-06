@@ -125,14 +125,22 @@ void CE::WeaponInstance::DisplayWidget()
 		}
 		ImGui::EndDisabled();
 	}
+	ImGui::Separator();
 	ShowInspectUIReadOnly("mReloadCounter", mReloadCounter);
 	ShowInspectUIReadOnly("mAmmoCounter", mAmmoCounter);
 	ShowInspectUIReadOnly("mShotDelayCounter", mShotDelayCounter);
+	if (mWeaponAsset != nullptr && mWeaponAsset->mShootOnRelease == true)
+	{
+		ShowInspectUIReadOnly("mShotsAccumulated", mShotsAccumulated);
+	}
 	ShowInspectUI("mAmmoConsumption", mAmmoConsumption);
 	if (isPlayer)
 	{
 		ShowInspectUI("mKeyboardKeys", mKeyboardKeys);
 		ShowInspectUI("mGamepadButtons", mGamepadButtons);
+
+		ShowInspectUI("mReloadKeyboardKeys", mReloadKeyboardKeys);
+		ShowInspectUI("mReloadGamepadButtons", mReloadGamepadButtons);
 	}
 	if (ImGui::Button("ResetCooldownAndAmmo"))
 	{

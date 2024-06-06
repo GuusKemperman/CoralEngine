@@ -32,8 +32,8 @@ namespace
     GLFWgamepadstate gamepad_state[max_nr_gamepads];
     GLFWgamepadstate prev_gamepad_state[max_nr_gamepads];
     // Triggers as buttons.
-    // TriggerLeft  - index 0
-    // TriggerRight - index 1
+    // TriggerRight - index 0
+    // TriggerLeft  - index 1
     std::array<std::array<bool, 2>, max_nr_gamepads> triggers_state = {};
     std::array<std::array<bool, 2>, max_nr_gamepads> prev_triggers_state = {};
 
@@ -123,8 +123,8 @@ void Input::NewFrame()
             gamepad_connected[i] = static_cast<bool>(glfwGetGamepadState(i, &gamepad_state[i]));
 
         // Triggers as buttons
-        triggers_state[i][0] = IsGamepadButtonHeld(i, GamepadButton::TriggerLeft, false);
-        triggers_state[i][1] = IsGamepadButtonHeld(i, GamepadButton::TriggerRight, false);
+        triggers_state[i][0] = IsGamepadButtonHeld(i, GamepadButton::TriggerRight, false);
+        triggers_state[i][1] = IsGamepadButtonHeld(i, GamepadButton::TriggerLeft, false);
     }
 
     GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
@@ -199,7 +199,7 @@ bool Input::WasGamepadButtonPressed(int gamepadID, GamepadButton button, bool ch
 
     if (button == GamepadButton::TriggerRight || button == GamepadButton::TriggerLeft)
     {
-        const int index = static_cast<int>(GamepadButton::TriggerLeft) - static_cast<int>(button);
+        const int index = static_cast<int>(GamepadButton::TriggerRight) - static_cast<int>(button);
         return triggers_state[gamepadID][index] == true &&
             triggers_state[gamepadID][index] != prev_triggers_state[gamepadID][index];
     }
@@ -221,7 +221,7 @@ bool Input::WasGamepadButtonReleased(int gamepadID, GamepadButton button, bool c
 
     if (button == GamepadButton::TriggerRight || button == GamepadButton::TriggerLeft)
     {
-        const int index = static_cast<int>(GamepadButton::TriggerLeft) - static_cast<int>(button);
+        const int index = static_cast<int>(GamepadButton::TriggerRight) - static_cast<int>(button);
         return triggers_state[gamepadID][index] == false &&
             triggers_state[gamepadID][index] != prev_triggers_state[gamepadID][index];
     }
