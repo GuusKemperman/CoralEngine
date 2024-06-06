@@ -358,6 +358,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\UtilityAi\States\ShootingBowState.cpp" />
     <ClCompile Include="Source\Utilities\AiFunctionality.cpp" />
     <ClCompile Include="Source\Components\EnvironmentGeneratorComponent.cpp" />
     <ClCompile Include="Source\Assets\Upgrade.cpp" />

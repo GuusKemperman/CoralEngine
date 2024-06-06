@@ -11,10 +11,12 @@
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
 #include "Components/PlayerComponent.h"
+#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
 #include "Components/UtililtyAi/States/RecoveryState.h"
+#include "Utilities/AiFunctionality.h"
 
 void Game::ShootingBowState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -44,25 +46,7 @@ void Game::ShootingBowState::OnAiTick(CE::World& world, const entt::entity owner
 		}
 	}
 
-	/*const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
-	if (characterData == nullptr)
-	{
-		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a Character Component.", entt::to_integral(owner));
-		return;
-	}
-
-	const auto abilities = world.GetRegistry().TryGet<CE::AbilitiesOnCharacterComponent>(owner);
-	if (abilities == nullptr)
-	{
-		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
-		return;
-	}
-
-	if (abilities->mAbilitiesToInput.empty())
-	{
-		return;
-	}
-	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);*/
+	Game::ExecuteEnemyAbility(world, owner);
 
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
