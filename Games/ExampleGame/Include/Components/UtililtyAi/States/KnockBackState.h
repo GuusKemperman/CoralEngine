@@ -21,8 +21,6 @@ namespace Game
 
 		void Initialize(float knockbackValue);
 
-		float mCurrentKnockBackCountDownTimer = 0.0f;
-
 		CE::AssetHandle<CE::Animation> mKnockBackAnimation{};
 
 	private:
@@ -30,7 +28,8 @@ namespace Game
 		glm::vec2 mDashDirection{};
 
 		float mKnockBackSpeed{};
-		float mMaxKnockBackTime = 1.0f;
+		float mFriction = 0.99f;
+		float mMinKnockBackSpeed;
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

@@ -21,8 +21,6 @@
 
 void Game::KnockBackState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	mCurrentKnockBackCountDownTimer -= dt;
-
 	Game::AnimationInAi(world, owner, mKnockBackAnimation );
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
@@ -33,14 +31,13 @@ void Game::KnockBackState::OnAiTick(CE::World& world, const entt::entity owner, 
 		return;
 	}
 
-	const float ratio = mCurrentKnockBackCountDownTimer / mMaxKnockBackTime;
-
-	physicsBody2DComponent->mLinearVelocity = -mDashDirection * ratio * mKnockBackSpeed;
+	mKnockBackSpeed *= mFriction;
+	physicsBody2DComponent->mLinearVelocity = -mDashDirection * mKnockBackSpeed;
 }
 
 float Game::KnockBackState::OnAiEvaluate(const CE::World&, entt::entity) const
 {
-	if (mCurrentKnockBackCountDownTimer > 0)
+	if (mKnockBackSpeed > mMinKnockBackSpeed)
 	{
  		return 0.825f;
 	}
@@ -93,8 +90,6 @@ void Game::KnockBackState::OnAiStateExitEvent(CE::World& world, const entt::enti
 
 void Game::KnockBackState::Initialize(const float knockbackValue)
 {
-	mCurrentKnockBackCountDownTimer = mMaxKnockBackTime;
-
 	mKnockBackSpeed = knockbackValue;
 }
 
@@ -103,8 +98,8 @@ CE::MetaType Game::KnockBackState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<KnockBackState>{}, "KnockBackState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&KnockBackState::mKnockBackSpeed, "mKnockBackSpeed").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&KnockBackState::mMaxKnockBackTime, "mMaxKnockBackTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&KnockBackState::mMinKnockBackSpeed, "mMinKnockbackSpeed").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&KnockBackState::mFriction, "mFriction").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &KnockBackState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &KnockBackState::OnAiEvaluate);
