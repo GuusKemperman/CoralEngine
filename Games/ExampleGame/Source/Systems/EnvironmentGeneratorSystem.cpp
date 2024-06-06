@@ -108,12 +108,12 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 	static constexpr CE::DebugCategory::Enum debugCategory = CE::DebugCategory::Editor;
 
-	const auto& getNumOfCellsEachAxis = [&](const EnvironmentGeneratorComponent::Layer& layer)
+	const auto getNumOfCellsEachAxis = [&](const EnvironmentGeneratorComponent::Layer& layer)
 		{
 			return static_cast<uint32>(ceilf((generator.mGenerateRadius + generator.mGenerateRadius) / layer.mCellSize)) + 1u;
 		};
 
-	const auto& getLayerTopLeft = [&](const EnvironmentGeneratorComponent::Layer& layer)
+	const auto getLayerTopLeft = [&](const EnvironmentGeneratorComponent::Layer& layer)
 		{
 			const glm::vec2 generatorCellPos = generatorPosition - glm::vec2{ fmodf(generatorPosition.x, layer.mCellSize), fmodf(generatorPosition.y, layer.mCellSize) };
 
@@ -185,7 +185,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 	// Clear the terrain
 	const auto createdEntities = reg.View<Internal::PartOfGeneratedEnvironmentTag>();
 	reg.Destroy(createdEntities.begin(), createdEntities.end(), true);
-
+	
 	if (!world.HasBegunPlay()
 		&& !generator.mShouldGenerateInEditor)
 	{
