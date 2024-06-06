@@ -19,7 +19,7 @@
 #include "Utilities/AiFunctionality.h"
 
 
-void Game::KnockBackState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
+void Game::KnockBackState::OnAiTick(CE::World& world, const entt::entity owner, const float)
 {
 	Game::AnimationInAi(world, owner, mKnockBackAnimation );
 

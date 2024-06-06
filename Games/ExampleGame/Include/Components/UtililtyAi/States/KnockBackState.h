@@ -29,7 +29,7 @@ namespace Game
 
 		float mKnockBackSpeed{};
 		float mFriction = 0.99f;
-		float mMinKnockBackSpeed;
+		float mMinKnockBackSpeed = 0.2f;
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
