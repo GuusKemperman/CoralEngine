@@ -47,10 +47,14 @@ namespace CE
 		float mReloadCounter{};
 		int mAmmoCounter{};
 		float mShotDelayCounter{};
+		int mShotsAccumulated{};
 		bool mAmmoConsumption = true;
 
 		std::vector<Input::KeyboardKey> mKeyboardKeys{};
 		std::vector<Input::GamepadButton> mGamepadButtons{};
+
+		std::vector<Input::KeyboardKey> mReloadKeyboardKeys{};
+		std::vector<Input::GamepadButton> mReloadGamepadButtons{};
 
 		void ResetCooldownAndAmmo();
 		Weapon* InitializeRuntimeWeapon();
@@ -90,10 +94,31 @@ namespace CE
 		ar(value.mAbilityAsset, value.mRequirementCounter, value.mChargesCounter, value.mKeyboardKeys, value.mGamepadButtons);
 	}
 
+	static constexpr uint32 sWeaponInstanceVersion = 1245960345u;
+
 	template<class Archive>
-	void serialize(Archive& ar, WeaponInstance& value)
+	void load(Archive& ar, WeaponInstance& value)
 	{
-		ar(value.mWeaponAsset, value.mReloadCounter, value.mAmmoCounter, value.mShotDelayCounter, value.mAmmoConsumption, value.mKeyboardKeys, value.mGamepadButtons);
+
+		uint32 version{};
+		ar(value.mWeaponAsset, version);
+		if (version == sWeaponInstanceVersion)
+		{
+			ar(value.mKeyboardKeys, value.mGamepadButtons, value.mReloadKeyboardKeys, value.mReloadGamepadButtons);
+		}
+		else
+		{
+			float floatDummy{};
+			int intDummy{};
+			bool boolDummy{};
+			ar(intDummy, floatDummy, boolDummy, value.mKeyboardKeys, value.mGamepadButtons);
+		}
+	}
+
+	template<class Archive>
+	void save(Archive & ar, const WeaponInstance & value)
+	{
+		ar(value.mWeaponAsset, sWeaponInstanceVersion, value.mKeyboardKeys, value.mGamepadButtons, value.mReloadKeyboardKeys, value.mReloadGamepadButtons);
 	}
 }
 

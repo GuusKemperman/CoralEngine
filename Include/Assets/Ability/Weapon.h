@@ -37,6 +37,9 @@ namespace CE
 		float mKnockback{};
 		int mPierceCount{};
 
+		// utility
+		bool mShootOnRelease{};
+
 	private:
 		void OnSave(AssetSaveInfo& saveInfo) const override;
 
