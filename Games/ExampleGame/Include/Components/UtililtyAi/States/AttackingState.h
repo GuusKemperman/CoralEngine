@@ -13,8 +13,8 @@ namespace Game
 	class AttackingState
 	{
 	public:
-		void OnAITick(CE::World& world, entt::entity owner, float dt) const;
-		float OnAIEvaluate(const CE::World& world, entt::entity owner) const;
+		void OnAiTick(CE::World& world, entt::entity owner, float dt) const;
+		[[nodiscard]] float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 
 		CE::AssetHandle<CE::Animation> mAttackingAnimation{};
 

@@ -15,11 +15,11 @@ namespace Game
 	{
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
-		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
+		[[nodiscard]] float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 		void OnAiStateExitEvent(CE::World& world, entt::entity entity);
 		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
 
-		bool IsCharged() const;
+		[[nodiscard]] bool IsCharged() const;
 
 		CE::AssetHandle<CE::Animation> mChargingAnimation{};
 

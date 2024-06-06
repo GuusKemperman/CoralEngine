@@ -79,7 +79,7 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, const entt::entit
 	return 0;
 }
 
-void Game::DashingState::OnAIStateEnterEvent(CE::World& world, const entt::entity owner)
+void Game::DashingState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	const entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
@@ -147,7 +147,7 @@ CE::MetaType Game::DashingState::Reflect()
 
 	BindEvent(type, CE::sAITickEvent, &DashingState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &DashingState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &DashingState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAIStateEnterEvent, &DashingState::OnAiStateEnterEvent);
 
 	type.AddField(&DashingState::mDashingAnimation, "mDashingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

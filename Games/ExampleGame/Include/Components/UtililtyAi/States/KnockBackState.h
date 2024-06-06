@@ -19,7 +19,7 @@ namespace Game
 		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
 		static void OnAiStateExitEvent(CE::World& world, entt::entity owner);
 
-		void ResetTimer();
+		void Initialize(float knockbackValue);
 
 		float mCurrentKnockBackCountDownTimer = 0.0f;
 

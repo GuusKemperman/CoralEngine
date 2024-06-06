@@ -19,7 +19,7 @@ float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
 	return 0.01f;
 }
 
-void Game::IdleState::OnAIStateEnterEvent(CE::World& world, const entt::entity owner)
+void Game::IdleState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
@@ -35,7 +35,7 @@ CE::MetaType Game::IdleState::Reflect()
 
 	BindEvent(type, CE::sAITickEvent, &IdleState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &IdleState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &IdleState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAIStateEnterEvent, &IdleState::OnAiStateEnterEvent);
 
 	type.AddField(&IdleState::mIdleAnimation, "mIdleAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

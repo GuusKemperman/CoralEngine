@@ -43,7 +43,7 @@ float Game::DeathState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 	return 0.f;
 }
 
-void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner) const
+void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner) const
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
@@ -73,7 +73,7 @@ CE::MetaType Game::DeathState::Reflect()
 
 	BindEvent(type, CE::sAITickEvent, &DeathState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &DeathState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &DeathState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAIStateEnterEvent, &DeathState::OnAiStateEnterEvent);
 
 	type.AddField(&DeathState::mDeathAnimation, "mDeathAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mDestroyEntityWhenDead, "mDestroyEntityWhenDead").GetProperties().Add(CE::Props::sIsScriptableTag);

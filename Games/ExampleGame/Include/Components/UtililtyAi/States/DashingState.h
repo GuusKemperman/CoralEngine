@@ -17,7 +17,7 @@ namespace Game
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
 		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
-		void OnAIStateEnterEvent(CE::World& world, entt::entity owner);
+		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
 
 		bool IsDashCharged() const;
 

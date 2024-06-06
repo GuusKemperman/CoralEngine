@@ -86,7 +86,7 @@ float Game::StompState::OnAiEvaluate(const CE::World& world, const entt::entity 
 	return 0;
 }
 
-void Game::StompState::OnAIStateEnterEvent(CE::World& world, const entt::entity owner)
+void Game::StompState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
@@ -116,7 +116,7 @@ CE::MetaType Game::StompState::Reflect()
 
 	BindEvent(type, CE::sAITickEvent, &StompState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &StompState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &StompState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAIStateEnterEvent, &StompState::OnAiStateEnterEvent);
 
 	type.AddField(&StompState::mStompAnimation, "mStompAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

@@ -14,7 +14,7 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
 
-void Game::AttackingState::OnAITick(CE::World& world, const entt::entity owner, float) const
+void Game::AttackingState::OnAiTick(CE::World& world, const entt::entity owner, float) const
 {
 	Game::AnimationInAi(world, owner, mAttackingAnimation);
 
@@ -33,7 +33,7 @@ void Game::AttackingState::OnAITick(CE::World& world, const entt::entity owner, 
 	physicsBody2DComponent->mLinearVelocity = { 0,0 };
 }
 
-float Game::AttackingState::OnAIEvaluate(const CE::World& world, const entt::entity owner) const
+float Game::AttackingState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
 	const auto score = GetBestScoreBasedOnDetection(world, owner, mRadius);
 	return score;
@@ -46,8 +46,8 @@ CE::MetaType Game::AttackingState::Reflect()
 
 	type.AddField(&AttackingState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &AttackingState::OnAITick);
-	BindEvent(type, CE::sAIEvaluateEvent, &AttackingState::OnAIEvaluate);
+	BindEvent(type, CE::sAITickEvent, &AttackingState::OnAiTick);
+	BindEvent(type, CE::sAIEvaluateEvent, &AttackingState::OnAiEvaluate);
 
 	type.AddField(&AttackingState::mAttackingAnimation, "mAttackingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

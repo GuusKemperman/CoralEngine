@@ -91,9 +91,11 @@ void Game::KnockBackState::OnAiStateExitEvent(CE::World& world, const entt::enti
 	CE::SwarmingAgentTag::StartMovingToTarget(world, owner);
 }
 
-void Game::KnockBackState::ResetTimer()
+void Game::KnockBackState::Initialize(const float knockbackValue)
 {
 	mCurrentKnockBackCountDownTimer = mMaxKnockBackTime;
+
+	mKnockBackSpeed = knockbackValue;
 }
 
 CE::MetaType Game::KnockBackState::Reflect()
