@@ -29,7 +29,9 @@ void CE::WeaponEditorSystem::Tick(float deltaTime)
 	ImGui::PushItemWidth(100.f);
 	ShowInspectUI("Shot Delay", mAsset.mShotDelay);
 	ImGui::SameLine();
+	ImGui::BeginDisabled();
 	ShowInspectUI("Fire Speed", mAsset.mFireSpeed);
+	ImGui::EndDisabled();
 	ImGui::SameLine();
 	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
 	ImGui::Text("Fire Rate: %.2f", 1.f / (mAsset.mShotDelay * mAsset.mFireSpeed));
@@ -37,7 +39,9 @@ void CE::WeaponEditorSystem::Tick(float deltaTime)
 
 	ShowInspectUI("Reload Time", mAsset.mRequirementToUse);
 	ImGui::SameLine();
+	ImGui::BeginDisabled();
 	ShowInspectUI("Reload Speed", mAsset.mReloadSpeed);
+	ImGui::EndDisabled();
 
 	ShowInspectUI("Projectile Count", mAsset.mProjectileCount);
 	ShowInspectUI("Projectile Spread", mAsset.mSpread);
@@ -53,6 +57,8 @@ void CE::WeaponEditorSystem::Tick(float deltaTime)
 	ShowInspectUI("Projectile Range", mAsset.mProjectileRange);
 	ShowInspectUI("Pierce Count", mAsset.mPierceCount);
 	ShowInspectUI("Knockback", mAsset.mKnockback);
+
+	ShowInspectUI("mShootOnRelease", mAsset.mShootOnRelease);
 
 	ImGui::Separator();
 
