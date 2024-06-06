@@ -30,17 +30,17 @@ void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, cons
 		LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return;
 	}
-	const auto removeLights = [&registry, dt](const auto& self, const CE::TransformComponent& current, float maxDeathTime) -> void
+	const auto removeLights = [&registry, dt](const auto& self, const CE::TransformComponent& current, float timeLeft) -> void
 		{
 			for (const CE::TransformComponent& child : current.GetChildren())
 			{
 				auto light = registry.TryGet<CE::PointLightComponent>(child.GetOwner());
 				if (light != nullptr)
 				{
-					const float decreaseAmount = light->mIntensity * (dt / maxDeathTime);
+					const float decreaseAmount = light->mIntensity * (dt / timeLeft);
 					light->mIntensity = std::max(light->mIntensity - decreaseAmount, 0.f);
 				}
-				self(self, child, maxDeathTime);
+				self(self, child, timeLeft);
 			}
 		};
 	removeLights(removeLights, *transform, (mMaxDeathTime - mCurrentDeathTimer) * 0.5f);
