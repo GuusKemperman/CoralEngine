@@ -20,6 +20,9 @@ namespace CE
 		}
 
 	private:
+		template<typename SpawnShapeType>
+		static size_t UpdateEmitters(World& world, float dt, size_t& numOfEmittersFound);
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(ParticleLifeTimeSystem);

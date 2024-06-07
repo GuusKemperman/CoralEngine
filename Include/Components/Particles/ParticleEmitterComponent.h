@@ -39,15 +39,6 @@ namespace CE
 		uint32 mNumOfParticlesToSpawn{ 1000 };
 		Bezier mParticleSpawnRateOverTime{};
 
-		glm::vec3 mMinInitialLocalPosition{};
-		glm::vec3 mMaxInitialLocalPosition{};
-
-		glm::vec3 mMinInitialScale{ 1.0f };
-		glm::vec3 mMaxInitialScale{ 1.0f };
-
-		glm::vec3 mMinInitialOrientation{};
-		glm::vec3 mMaxInitialOrientation{};
-
 		float mMinLifeTime = 1.0f;
 		float mMaxLifeTime = 10.0f;
 
@@ -59,8 +50,6 @@ namespace CE
 		float mCurrentTime{};
 
 	private:
-		void OnParticleSpawn(size_t particle, glm::quat emitterWorldOrientaton, glm::vec3 emitterWorldScale, const glm::mat4& emitterMatrix);
-
 		friend class ParticleLifeTimeSystem;
 
 		friend ReflectAccess;

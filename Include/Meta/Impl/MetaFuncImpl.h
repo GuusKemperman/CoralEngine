@@ -96,9 +96,10 @@ CE::MetaFunc::MetaFunc(const T& functor, const NameOrTypeInit typeOrName, const 
 
 namespace CE::Internal
 {
-	template<typename T>
-	T UnpackSingle(MetaAny& any)
+	template<typename T, size_t I>
+	T UnpackSingle(Span<MetaAny>& anies)
 	{
+		MetaAny& any = anies[I];
 		static constexpr TypeTraits traits = MakeTypeTraits<T>();
 
 		if constexpr (std::is_pointer_v<T>)
@@ -137,38 +138,20 @@ namespace CE::Internal
 		}
 	}
 
-	// We are doing some sketchy undefined behaviour stuff during unpacking.
-	// Unfortunately, this is platform dependent, and differs on ***REMOVED***.
-#ifdef PLATFORM_WINDOWS
-	static constexpr bool sReverseUnpack = true;
-#elif PLATFORM_***REMOVED***
-	static constexpr bool sReverseUnpack = false;
-#else
-	static_assert(false, "Platform not specified. sReverseUnpack should likely be set to true, but if you find that invoking a MetaFunc turns the arguments you passed into the function into garbage, you should set it to false");
-#endif
-
-	static constexpr size_t GetUnpackStart(size_t numOfArguments)
+	template <typename Ret, typename... ParamsT, size_t... Indices>
+	FuncResult DefaultInvokeImpl(const std::function<Ret(ParamsT...)>& functionToInvoke,
+		MetaFunc::DynamicArgs& runtimeArgs, 
+		MetaFunc::RVOBuffer rvoBuffer, 
+		std::index_sequence<Indices...>)
 	{
-		if constexpr (sReverseUnpack)
+		if constexpr (std::is_same_v<Ret, void>)
 		{
-			return numOfArguments;
+			functionToInvoke(UnpackSingle<ParamsT, Indices>(runtimeArgs)...);
+			return std::nullopt;
 		}
 		else
 		{
-			return 0;
-		}
-	}
-
-	template<typename T>
-	T Unpack(MetaFunc::DynamicArgs& args, size_t& index)
-	{
-		if constexpr (sReverseUnpack)
-		{
-			return UnpackSingle<T>(args[--index]);
-		}
-		else
-		{
-			return UnpackSingle<T>(args[index++]);
+			return MetaAny{ functionToInvoke(UnpackSingle<ParamsT, Indices>(runtimeArgs)...), rvoBuffer };
 		}
 	}
 }
@@ -211,17 +194,8 @@ template<typename Ret, typename... ParamsT>
 CE::FuncResult CE::MetaFunc::DefaultInvoke(const std::function<Ret(ParamsT...)>& functionToInvoke,
 	DynamicArgs runtimeArgs, RVOBuffer rvoBuffer)
 {
-	[[maybe_unused]] size_t argIndex = Internal::GetUnpackStart(sizeof...(ParamsT));
-
-	if constexpr (std::is_same_v<Ret, void>)
-	{
-		functionToInvoke(Internal::Unpack<ParamsT>(runtimeArgs, argIndex)...);
-		return std::nullopt;
-	}
-	else
-	{
-		return MetaAny{ functionToInvoke(Internal::Unpack<ParamsT>(runtimeArgs, argIndex)...), rvoBuffer };
-	}
+	std::make_index_sequence<sizeof...(ParamsT)> sequence{};
+	return Internal::DefaultInvokeImpl(functionToInvoke, runtimeArgs, rvoBuffer, sequence);
 }
 
 template <typename Arg>
