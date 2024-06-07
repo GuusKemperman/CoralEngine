@@ -264,7 +264,7 @@ CE::World CE::Level::CreateDefaultWorld()
 
 		TransformComponent& transform = reg.AddComponent<TransformComponent>(camera);
 		transform.SetLocalPosition({ 5.5f, 2.5f, -7.5f });
-		transform.SetLocalOrientation({ DEG2RAD(14.5f), DEG2RAD(-33.0f), 0.0f });
+		transform.SetLocalOrientation({ glm::radians(14.5f), glm::radians(-33.0f), 0.0f });
 	}
 
 	{
@@ -273,14 +273,14 @@ CE::World CE::Level::CreateDefaultWorld()
 		DirectionalLightComponent& lightComponent = reg.AddComponent<DirectionalLightComponent>(light);
 		lightComponent.mCastShadows = true;
 		lightComponent.mIntensity = 6.0f;
-		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ DEG2RAD(-15.6), DEG2RAD(-47.6), DEG2RAD(51.6) });
+		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ glm::radians(-15.6), glm::radians(-47.6), glm::radians(51.6) });
 	}
 
 	{
 		const entt::entity light = reg.Create();
 		reg.AddComponent<NameComponent>(light, "Secondary Light");
 		reg.AddComponent<DirectionalLightComponent>(light).mIntensity = 3.0f;
-		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ DEG2RAD(113.8), DEG2RAD(53.54), DEG2RAD(90.7) });
+		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ glm::radians(113.8), glm::radians(53.54), glm::radians(90.7) });
 	}
 
 	return world;
