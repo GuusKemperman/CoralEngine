@@ -27,6 +27,7 @@ namespace Game::Internal
 			CE::ReflectComponentType<PartOfGeneratedEnvironmentTag>(metaType);
 			return metaType;
 		}
+		REFLECT_AT_START_UP(PartOfGeneratedEnvironmentTag);
 	};
 }
 
@@ -51,11 +52,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 	EnvironmentGeneratorComponent& generator = reg.Get<EnvironmentGeneratorComponent>(generatorEntity);
 
-	if (!generator.mSeed.has_value())
-	{
-		generator.mSeed = CE::Random::Value<uint32>();
-	}
-	std::mt19937 layerSeedGenerator{ *generator.mSeed };
+	std::mt19937 layerSeedGenerator{ generator.mSeed };
 
 	std::vector<siv::PerlinNoise> perlinGenerators{};
 	perlinGenerators.reserve(generator.mLayers.size());
@@ -257,6 +254,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 			return false;
 		};
+	CE::WeightedRandomDistribution<std::reference_wrapper<const EnvironmentGeneratorComponent::Layer::Object>> distribution{};
 
 	for (uint32 i = 0; i < static_cast<uint32>(generator.mLayers.size()); i++)
 	{
@@ -273,6 +271,12 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 		if (layer.mObjects.empty())
 		{
 			continue;
+		}
+
+		distribution.mWeights.clear();
+		for (const EnvironmentGeneratorComponent::Layer::Object& object : layer.mObjects)
+		{
+			distribution.mWeights.emplace_back(std::cref(object), object.mFrequency);
 		}
 
 		const uint32 numOfCellsEachAxis = getNumOfCellsEachAxis(layer);
@@ -297,15 +301,20 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 				std::mt19937 cellGenerator{ CE::Internal::CombineHashes(CE::Random::CreateSeed(worldPosition), layerSeed) };
 
-				const auto randomUint = [&cellGenerator](uint32 min, uint32 max)
-					{
-						std::uniform_int_distribution distribution{ min, max == min ? max : max - 1 };
-						return distribution(cellGenerator);
-					};
-
 				const auto randomFloat = [&cellGenerator](float min, float max)
 					{
 						std::uniform_real_distribution distribution{ min, max };
+						return distribution(cellGenerator);
+					};
+
+				if (randomFloat(0.0f, 1.0f) > layer.mObjectSpawnChance)
+				{
+					continue;
+				}
+
+				const auto randomUint = [&cellGenerator](uint32 min, uint32 max)
+					{
+						std::uniform_int_distribution distribution{ min, max == min ? max : max - 1 };
 						return distribution(cellGenerator);
 					};
 
@@ -317,16 +326,11 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 				const std::optional<float> noise = getNoise(getNoise, spawnPosition2D, i);
 
-				if (!noise.has_value())
+				if (!noise.has_value()
+					|| *noise < layer.mMinNoiseValueToSpawn
+					|| *noise > layer.mMaxNoiseValueToSpawn)
 				{
 					continue;
-				}
-
-				CE::WeightedRandomDistribution<std::reference_wrapper<const EnvironmentGeneratorComponent::Layer::Object>> distribution{};
-
-				for (const EnvironmentGeneratorComponent::Layer::Object& object : layer.mObjects)
-				{
-					distribution.mWeights.emplace_back(std::cref(object), object.mBaseFrequency * object.mSpawnFrequenciesAtNoiseValue.GetValueAt(*noise));
 				}
 
 				const auto* objectToSpawn = distribution.GetNext(randomFloat(0.0f, 1.0f));
