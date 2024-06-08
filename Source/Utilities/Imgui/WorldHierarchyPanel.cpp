@@ -68,13 +68,11 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 			const std::string_view displayName = NameComponent::GetDisplayName(reg, entity);
 
 			Search::BeginCategory(displayName,
-				[&, entity](std::string_view name) -> bool
+				[&, entity, transform](std::string_view name) -> bool
 				{
 					displayOrder.emplace_back(entity);
 
 					ImGui::PushID(static_cast<int>(entity));
-
-					const TransformComponent* const transform = reg.TryGet<TransformComponent>(entity);
 
 					bool isTreeNodeOpen{};
 
@@ -111,7 +109,7 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 							ImGui::SetNextItemOpen(true);
 						}
 
-						isTreeNodeOpen = ImGui::TreeNode(Format("##{}", name).data());
+						isTreeNodeOpen = ImGui::TreeNode("##");
 						ImGui::SameLine();
 					}
 					else
@@ -131,7 +129,10 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 						clickedEntity = entity;
 					}
 
-					ImGui::SetItemTooltip(Format("Entity {}", entt::to_integral(entity)).c_str());
+					if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+					{
+						ImGui::SetTooltip(Format("Entity {}", entt::to_integral(entity)).c_str());
+					}
 
 					// Only objects with transforms can accept children
 					if (transform != nullptr)
