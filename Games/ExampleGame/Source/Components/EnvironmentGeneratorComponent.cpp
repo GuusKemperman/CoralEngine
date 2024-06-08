@@ -147,6 +147,7 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Reflect()
 	props.Add(CE::Props::sIsScriptableTag);
 
 	type.AddField(&EnvironmentGeneratorComponent::mGenerateRadius, "mGenerateRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&EnvironmentGeneratorComponent::mDestroyRadius, "mDestroyRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mDistToMoveBeforeRegeneration, "mDistToMoveBeforeRegeneration").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mSeed, "mSeed").GetProperties().Add(CE::Props::sIsScriptableTag).Add(CE::Props::sNoSerializeTag);
 	type.AddField(&EnvironmentGeneratorComponent::mLayers, "mLayers").GetProperties().Add(CE::Props::sIsScriptableTag);
@@ -157,12 +158,14 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Reflect()
 		{
 			component.mLastGeneratedAtPosition = glm::vec2{ std::numeric_limits<float>::infinity() };
 			component.mShouldGenerateInEditor = true;
+			component.mWasClearingRequested = true;
 		}, "Regenerate", CE::MetaFunc::ExplicitParams<EnvironmentGeneratorComponent&>{}).GetProperties().Add(CE::Props::sCallFromEditorTag);
 
 	type.AddFunc([](EnvironmentGeneratorComponent& component)
 		{
 			component.mLastGeneratedAtPosition = glm::vec2{ std::numeric_limits<float>::infinity() };
 			component.mShouldGenerateInEditor = true;
+			component.mWasClearingRequested = true;
 			component.mSeed = CE::Random::Value<uint32>();
 		}, "Generate", CE::MetaFunc::ExplicitParams<EnvironmentGeneratorComponent&>{}).GetProperties().Add(CE::Props::sCallFromEditorTag);
 
@@ -170,6 +173,7 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Reflect()
 		{
 			component.mLastGeneratedAtPosition = glm::vec2{ std::numeric_limits<float>::infinity() };
 			component.mShouldGenerateInEditor = false;
+			component.mWasClearingRequested = true;
 		}, "Clear", CE::MetaFunc::ExplicitParams<EnvironmentGeneratorComponent&>{}).GetProperties().Add(CE::Props::sCallFromEditorTag);
 
 	CE::ReflectComponentType<EnvironmentGeneratorComponent>(type);

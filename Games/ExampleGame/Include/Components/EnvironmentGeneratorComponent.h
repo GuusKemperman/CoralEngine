@@ -115,9 +115,10 @@ namespace Game
 		};
 		std::vector<Layer> mLayers{};
 
-		float mGenerateRadius = 200.0f;
+		float mGenerateRadius = 50.0f;
+		float mDestroyRadius = 80.0f;
 
-		float mDistToMoveBeforeRegeneration = 50.0f;
+		float mDistToMoveBeforeRegeneration = 10.0f;
 
 		uint32 mSeed = CE::Random::Value<uint32>();
 
@@ -127,6 +128,7 @@ namespace Game
 		float mDebugDrawDistanceBetweenLayers = 5.0f;
 
 		bool mShouldGenerateInEditor{};
+		bool mWasClearingRequested{};
 
 	private:
 		friend CE::ReflectAccess;

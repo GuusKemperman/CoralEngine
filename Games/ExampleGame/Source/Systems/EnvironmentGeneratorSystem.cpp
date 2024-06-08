@@ -18,16 +18,19 @@
 
 namespace Game::Internal
 {
-	struct PartOfGeneratedEnvironmentTag
+	struct PartOfGeneratedEnvironmentComponent
 	{
+		uint32 mLayerIndex{};
+		glm::vec2 mCellTopLeft{};
+
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect()
 		{
-			CE::MetaType metaType = CE::MetaType{ CE::MetaType::T<PartOfGeneratedEnvironmentTag>{}, "PartOfGeneratedEnvironmentTag" };
-			CE::ReflectComponentType<PartOfGeneratedEnvironmentTag>(metaType);
+			CE::MetaType metaType = CE::MetaType{ CE::MetaType::T<PartOfGeneratedEnvironmentComponent>{}, "PartOfGeneratedEnvironmentComponent" };
+			CE::ReflectComponentType<PartOfGeneratedEnvironmentComponent>(metaType);
 			return metaType;
 		}
-		REFLECT_AT_START_UP(PartOfGeneratedEnvironmentTag);
+		REFLECT_AT_START_UP(PartOfGeneratedEnvironmentComponent);
 	};
 }
 
@@ -42,7 +45,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 		return;
 	}
 
-	// Generate around camera
 	const CE::TransformComponent* generatorTransform = reg.TryGet<CE::TransformComponent>(reg.View<CE::PlayerComponent>().front());
 
 	if (generatorTransform == nullptr)
@@ -113,7 +115,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 	const auto getLayerTopLeft = [&](const EnvironmentGeneratorComponent::Layer& layer)
 		{
 			const glm::vec2 generatorCellPos = generatorPosition - glm::vec2{ fmodf(generatorPosition.x, layer.mCellSize), fmodf(generatorPosition.y, layer.mCellSize) };
-
 			return generatorCellPos - glm::vec2{ static_cast<float>(getNumOfCellsEachAxis(layer)) * .5f * layer.mCellSize };
 		};
 
@@ -172,6 +173,14 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 		}
 	}
 
+	if (generator.mWasClearingRequested)
+	{
+		auto createdEntities = reg.View<Internal::PartOfGeneratedEnvironmentComponent>();
+		reg.Destroy(createdEntities.begin(), createdEntities.end(), true);
+		reg.RemovedDestroyed();
+		generator.mWasClearingRequested = false;
+	}
+
 	// Only regenerate if we have moved a sufficiently large distance
 	if (glm::distance2(generatorPosition, generator.mLastGeneratedAtPosition) < CE::Math::sqr(generator.mDistToMoveBeforeRegeneration))
 	{
@@ -179,10 +188,70 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 	}
 	generator.mLastGeneratedAtPosition = generatorPosition;
 
+	// For each layer, an std::vector<char> representing a 2D grid.
+	// Only the 0 chars need to be filled in.
+	static std::vector<std::vector<char>> isEnvironmentFilledIn{};
+	isEnvironmentFilledIn.resize(generator.mLayers.size());
+
+	for (uint32 i = 0; i < static_cast<uint32>(generator.mLayers.size()); i++)
+	{
+		isEnvironmentFilledIn[i].clear();
+
+		const uint32 numOfCellsEachAxis = getNumOfCellsEachAxis(generator.mLayers[i]);
+		isEnvironmentFilledIn[i].resize(CE::Math::sqr(numOfCellsEachAxis));
+	}
+
+	const CE::TransformedDisk generationCircle{ generatorPosition, generator.mGenerateRadius };
+	const CE::TransformedDisk destroyCircle{ generatorPosition, generator.mDestroyRadius };
+
+	for (const auto [entity, generatedComponent] : reg.View<Internal::PartOfGeneratedEnvironmentComponent>().each())
+	{
+		if (generatedComponent.mLayerIndex >= isEnvironmentFilledIn.size())
+		{
+			reg.Destroy(entity, true);
+			continue;
+		}
+
+		const EnvironmentGeneratorComponent::Layer& layer = generator.mLayers[generatedComponent.mLayerIndex];
+		const CE::TransformedAABB cellAABB{ generatedComponent.mCellTopLeft, generatedComponent.mCellTopLeft + glm::vec2{ layer.mCellSize } };
+
+		if (!CE::AreOverlapping(cellAABB, destroyCircle))
+		{
+			reg.Destroy(entity, true);
+			continue;
+		}
+
+		std::vector<char>& grid = isEnvironmentFilledIn[generatedComponent.mLayerIndex];
+
+		const glm::vec2 gridTopLeft = getLayerTopLeft(layer);
+		const int gridSize = getNumOfCellsEachAxis(layer);
+
+		const glm::vec2 floatIndex = (generatedComponent.mCellTopLeft + glm::vec2{ layer.mCellSize * .5f } - gridTopLeft) / layer.mCellSize;
+
+		if (floatIndex.x < 0.0f
+			|| floatIndex.y < 0.0f)
+		{
+			continue;
+		}
+
+		const int indexX = static_cast<int>(floatIndex.x);
+		const int indexY = static_cast<int>(floatIndex.y);
+
+		if (indexX >= gridSize
+			|| indexY >= gridSize)
+		{
+			continue;
+		}
+
+		char& isFilledIn = grid[indexX + indexY * gridSize];
+		++isFilledIn;
+		if (isFilledIn > 1)
+		{
+			LOG(LogGame, Error, "Multiple cells mapped to the same cell, some terrain may not be properly cleared or some cells may be spawned twice");
+		}
+	}
+
 	// Clear the terrain
-	const auto createdEntities = reg.View<Internal::PartOfGeneratedEnvironmentTag>();
-	reg.Destroy(createdEntities.begin(), createdEntities.end(), true);
-	
 	if (!world.HasBegunPlay()
 		&& !generator.mShouldGenerateInEditor)
 	{
@@ -283,12 +352,16 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 		const glm::vec2 topLeft = getLayerTopLeft(layer);
 
-		const CE::TransformedDisk generationCircle{ generatorPosition, generator.mGenerateRadius };
 
 		for (uint32 cellX = 0; cellX < numOfCellsEachAxis; cellX++)
 		{
 			for (uint32 cellZ = 0; cellZ < numOfCellsEachAxis; cellZ++)
 			{
+				if (isEnvironmentFilledIn[i][cellX + cellZ * numOfCellsEachAxis])
+				{
+					continue;
+				}
+
 				const glm::vec2 worldPosition = topLeft + layer.mCellSize *
 					glm::vec2{ static_cast<float>(cellX), static_cast<float>(cellZ) };
 
@@ -370,7 +443,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 				}
 				else
 				{
-					reg.AddComponent<Internal::PartOfGeneratedEnvironmentTag>(entity);
+					reg.AddComponent<Internal::PartOfGeneratedEnvironmentComponent>(entity, i, cellAABB.mMin);
 				}
 			}
 		}
