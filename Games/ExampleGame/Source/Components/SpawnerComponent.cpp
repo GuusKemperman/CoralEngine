@@ -108,6 +108,7 @@ CE::MetaType Game::SpawnerComponent::Reflect()
 
 	type.AddField(&SpawnerComponent::mMinSpawnRange, "mMinSpawnRange").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&SpawnerComponent::mMaxEnemyDistance, "mMaxEnemyDistance").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&SpawnerComponent::mShouldSpawnInGroups, "mShouldSpawnInGroups").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&SpawnerComponent::mWaves, "mWaves").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<SpawnerComponent>(type);
