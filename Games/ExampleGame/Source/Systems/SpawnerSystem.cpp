@@ -171,7 +171,7 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 				const glm::vec2 worldPos = spawnerPos + CE::Math::AngleToVec2(angle + world.GetCurrentTimeScaled()) * distFromCentre;
 
 				const CE::TransformedDisk spawnArea = { worldPos, spawnerComponent.mSpacing * 2.0f };
-				if (staticBVH.Query<CE::BVH::DefaultOnIntersectFunction, CE::BVH::DefaultShouldReturnFunction<true>, CE::BVH::DefaultShouldReturnFunction<true>>(spawnArea))
+				if (staticBVH.Query(spawnArea))
 				{
 					continue;
 				}

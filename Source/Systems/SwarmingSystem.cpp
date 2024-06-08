@@ -188,7 +188,7 @@ void CE::SwarmingTargetSystem::Update(World& world, float dt)
 		for (int x = 0; x < mPendingFlowField.mFlowFieldWidth; x++)
 		{
 			const TransformedAABB cell = mPendingFlowField.GetCellBox(x, y);
-			mPendingIsBlocked[x + y * mPendingFlowField.mFlowFieldWidth] = bvh.Query<BVH::DefaultOnIntersectFunction, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<true>>(cell);
+			mPendingIsBlocked[x + y * mPendingFlowField.mFlowFieldWidth] = bvh.Query(cell);
 		}
 	}
 

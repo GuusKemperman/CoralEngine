@@ -54,7 +54,7 @@ std::vector<entt::entity> CE::Physics::FindAllWithinShapeImpl(const T& shape, co
 			continue;
 		}
 
-		bvh.Query<OnIntersect, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<false>>(shape, ret);
+		bvh.Query<OnIntersect, BVH::DefaultShouldCheckFunction<true>, BVH::DefaultShouldReturnFunction<false>>(shape, ret);
 	}
 
 	return ret;
