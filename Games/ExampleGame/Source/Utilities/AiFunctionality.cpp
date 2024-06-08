@@ -1,12 +1,14 @@
 #include "Precomp.h"
 #include "Utilities/AiFunctionality.h"
 
+#include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Systems/AbilitySystem.h"
+#include "Utilities/Random.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
@@ -80,18 +82,25 @@ void Game::ExecuteEnemyAbility(CE::World& world, const entt::entity owner)
 	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
 }
 
-void Game::AnimationInAi(CE::World& world, const entt::entity owner, const CE::AssetHandle<CE::Animation>& playAIAnimation)
+void Game::AnimationInAi(CE::World& world, const entt::entity owner, const CE::AssetHandle<CE::Animation>& playAIAnimation, bool startAtRandomTime)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), playAIAnimation, 0.0f);
-	}
-	else
+	if (animationRootComponent == nullptr)
 	{
 		LOG(LogAI, Warning, "Enemy {} does not have a AnimationRoot Component.", entt::to_integral(owner));
+		return;
 	}
+
+	float timeStamp = 0.0f;
+
+	if (playAIAnimation != nullptr
+		&& startAtRandomTime)
+	{
+		timeStamp = CE::Random::Range(0.0f, playAIAnimation->mDuration);
+	}
+
+	animationRootComponent->SwitchAnimation(world.GetRegistry(), playAIAnimation, timeStamp);
 }
 
 void Game::FaceThePlayer(CE::World& world, const entt::entity owner)
