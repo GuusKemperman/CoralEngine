@@ -5,6 +5,20 @@
 
 namespace CE
 {
+	class DefaultRandomEngine
+	{
+	public:
+		DefaultRandomEngine(uint32 seed = 0xbadC0ffe);
+
+		uint32 operator()();
+
+		static constexpr uint32 max() { return std::numeric_limits<uint32>::max(); }
+		static constexpr uint32 min() { return std::numeric_limits<uint32>::min(); }
+
+	private:
+		uint32 mSeed{};
+	};
+
 	class Random
 	{
 	public:
@@ -60,6 +74,6 @@ namespace CE
 		REFLECT_AT_START_UP(Random);
 
 		static inline std::random_device sDevice{};
-		static inline std::default_random_engine sEngine{sDevice()};
+		static inline DefaultRandomEngine sEngine{sDevice()};
 	};
 }

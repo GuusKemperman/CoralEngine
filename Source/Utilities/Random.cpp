@@ -4,6 +4,19 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 
+CE::DefaultRandomEngine::DefaultRandomEngine(uint32 seed) :
+	mSeed(seed)
+{
+}
+
+uint32 CE::DefaultRandomEngine::operator()()
+{
+	mSeed ^= mSeed << 13;
+	mSeed ^= mSeed >> 17;
+	mSeed ^= mSeed << 5;
+	return mSeed;
+}
+
 uint32 CE::Random::CreateSeed(glm::vec2 position)
 {
 	glm::vec3 p3 = glm::fract(glm::vec3{ position.x, position.y, position.x } * .1031f);

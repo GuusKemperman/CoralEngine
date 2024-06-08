@@ -372,7 +372,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					continue;
 				}
 
-				std::mt19937 cellGenerator{ CE::Internal::CombineHashes(CE::Random::CreateSeed(worldPosition), layerSeed) };
+				CE::DefaultRandomEngine cellGenerator{ CE::Internal::CombineHashes(CE::Random::CreateSeed(worldPosition), layerSeed) };
 
 				const auto randomFloat = [&cellGenerator](float min, float max)
 					{
@@ -427,7 +427,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 				const glm::vec3 scale = glm::vec3{ layer.mScaleAtNoiseValue.GetValueAt(*noise) };
 				const glm::vec3 spawnPosition3D = CE::To3DRightForward(spawnPosition2D);
 
-				const entt::entity entity = reg.CreateFromPrefab(*prefabToSpawn, entt::null, &spawnPosition3D, &orientation, &scale);
+				entt::entity entity = reg.CreateFromPrefab(*prefabToSpawn, entt::null, &spawnPosition3D, &orientation, &scale);
 
 				if (entity == entt::null)
 				{
@@ -440,11 +440,14 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					&& isBlocked(isBlocked, *transform))
 				{
 					reg.Destroy(entity, true);
+
+					// We still have to mark this spot as 'taken'
+					// Otherwise we would try to spawn this prefab
+					// again the very next time we move.
+					entity = reg.Create();
 				}
-				else
-				{
-					reg.AddComponent<Internal::PartOfGeneratedEnvironmentComponent>(entity, i, cellAABB.mMin);
-				}
+
+				reg.AddComponent<Internal::PartOfGeneratedEnvironmentComponent>(entity, i, cellAABB.mMin);
 			}
 		}
 	}
