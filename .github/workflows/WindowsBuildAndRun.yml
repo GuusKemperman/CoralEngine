@@ -86,6 +86,6 @@ jobs:
       with:
         name: ${{ matrix.build-configuration }}-build
         path: |
-          ${{ env.GITHUB_WORKSPACE }}/Games/ExampleGame/Build/x64/${{ matrix.build-configuration }}/
+          ${{ env.GITHUB_WORKSPACE }}\Games\ExampleGame\Build\x64\**\*
           # Add any other directories or files you want to include
-        retention-days: 2 
+        retention-days: 1
