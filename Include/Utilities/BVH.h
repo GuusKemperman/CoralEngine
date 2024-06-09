@@ -54,7 +54,11 @@ namespace CE
 
 		struct Node
 		{
-			TransformedAABB mBoundingBox{ { -INFINITY, -INFINITY }, { -INFINITY, -INFINITY } };
+			// Some of our overlap functions expect a 'valid'
+			// bounding box. This means we cant use std::numeric_limits<float>::infinity(),
+			// as some operations we use create NaNs.
+			static constexpr float sLargeNum = 123456789101112131415.0f;
+			TransformedAABB mBoundingBox{ glm::vec2{ -sLargeNum }, glm::vec2{ -sLargeNum + 1.0f} };
 			uint32 mStartIndex{};
 			uint32 mTotalNumOfObjects{}; // The number of polygons can be extracted since nunOfPolygons = total - aabbs - circles
 			uint32 mNumOfAABBS{};
@@ -90,7 +94,7 @@ namespace CE
 		InquirerShape, typename ... CallbackAdditionalArgs>
 	bool BVH::Query(const InquirerShape inquirerShape, CallbackAdditionalArgs&&... args) const
 	{
-		static constexpr uint32 stackSize = 64;
+		static constexpr uint32 stackSize = 256;
 		const Node* stack[stackSize];
 		uint32 stackPtr = 0;
 
