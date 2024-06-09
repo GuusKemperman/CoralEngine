@@ -42,6 +42,20 @@ glm::mat4 CE::TransformComponent::ToMatrix(const glm::vec3 position, const glm::
 	return translationMatrix * rotationMatrix * scaleMatrix;
 }
 
+std::tuple<glm::vec3, glm::vec3, glm::quat> CE::TransformComponent::FromMatrix(const glm::mat4& matrix)
+{
+	glm::vec3 eulerOrientationDegrees{};
+	glm::vec3 position{};
+	glm::vec3 scale{};
+
+	DecomposeMatrixToComponents(&matrix[0][0],
+		value_ptr(position),
+		value_ptr(eulerOrientationDegrees),
+		value_ptr(scale));
+
+	return { position, scale, glm::radians(eulerOrientationDegrees) };
+}
+
 glm::mat4 CE::TransformComponent::GetLocalMatrix() const
 {
 	return ToMatrix(mLocalPosition, mLocalScale, mLocalOrientation);
@@ -56,7 +70,7 @@ void CE::TransformComponent::SetLocalMatrix(const glm::mat4& matrix)
 	                                      value_ptr(eulerOrientationDegrees),
 	                                      value_ptr(mLocalScale));
 
-	SetLocalOrientation(eulerOrientationDegrees * (TWOPI / 360.0f));
+	SetLocalOrientation(glm::radians(eulerOrientationDegrees));
 }
 
 glm::mat4 CE::TransformComponent::GetWorldMatrix() const

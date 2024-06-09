@@ -33,20 +33,39 @@ namespace CE
 
 		struct AnimTransform
 		{
-			glm::vec3 mTranslation;
-			glm::vec3 mScale;
-			glm::quat mRotation;
+			glm::vec3 mTranslation{};
+			glm::vec3 mScale{};
+			glm::quat mRotation{};
 		};
 
-		AnimMeshInfo& FindAnimMeshInfo(const AssetHandle<Animation> animation, const AssetHandle<SkinnedMesh> skinnedMesh);
+		struct BakedAnimation
+		{
+			BakedAnimation(const AssetHandle<Animation>& animation, const AssetHandle<SkinnedMesh>& skinnedMesh);
 
-		void CalculateBoneTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent);
+			struct BakedFrame
+			{
+				std::array<AnimTransform, MAX_BONES> mBones{};
+				uint32 mNumOfBonesInUse{};
+			};
+			std::vector<BakedFrame> mFrames{};
+			static constexpr float sDesiredBakedFrameDuration = .2f;
+			float mBakedFrameDuration{};
+		};
+		static void Blend(const BakedAnimation::BakedFrame& frame1, const BakedAnimation::BakedFrame& frame2, BakedAnimation::BakedFrame& output, float mixAmount);
 
-		void BlendAnimations(SkinnedMeshComponent& meshComponent);
-		void CalculateAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo,	SkinnedMeshComponent& meshComponent, float timeStamp, std::array<AnimTransform, MAX_BONES>& output);
-		void BlendAnimTransformsRecursive(const AnimMeshInfo& animMeshInfo, const glm::mat4x4& parenTransform, SkinnedMeshComponent& meshComponent, const std::array<AnimTransform, MAX_BONES>& layer0, const std::array<AnimTransform, MAX_BONES>& layer1);
+		struct FramesToBlend
+		{
+			const BakedAnimation::BakedFrame& mFrame1;
+			const BakedAnimation::BakedFrame& mFrame2;
+			float mBlendWeight{};
+		};
 
-		std::unordered_map<size_t, AnimMeshInfo> mAnimMeshInfoMap{};
+		std::optional<FramesToBlend> GetFramesToBlendBetween(
+			const AssetHandle<Animation>& animation, 
+			const AssetHandle<SkinnedMesh>& skinnedMesh,
+			float currentDuration);
+
+		std::unordered_map<size_t, BakedAnimation> mBakedAnimations{};
 
 		std::vector<BoundEvent> mOnAnimationFinishEvents{};
 
