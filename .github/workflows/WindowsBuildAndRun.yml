@@ -20,8 +20,8 @@ env:
   SOLUTION_FILE_PATH: "Coral.sln"
 
 permissions:
-  contents: read
-
+  contents: write
+  
 jobs:
   build-and-run:
     runs-on: windows-latest
@@ -85,7 +85,6 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.build-configuration }}-build
-        path: |
-          ${{ env.GITHUB_WORKSPACE }}\Games\ExampleGame\Build\x64\**\*
-          # Add any other directories or files you want to include
+        # Add any other directories or files you want to include
+        path: ${{ env.GITHUB_WORKSPACE }}/Games/ExampleGame/Build/x64/**/*
         retention-days: 1
