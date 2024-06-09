@@ -1934,6 +1934,7 @@
     <ClInclude Include="Include\Utilities\MemFunctions.h" />
     <ClInclude Include="Include\Utilities\IterableRange.h" />
     <ClInclude Include="Include\Utilities\NameLookUp.h" />
+    <ClInclude Include="Include\Utilities\ParticleProperty.h" />
     <ClInclude Include="Include\Utilities\PerlinNoise.h" />
     <ClInclude Include="Include\Utilities\Search.h" />
     <ClInclude Include="Include\Utilities\Imgui\WorldInspect.h" />

@@ -15,16 +15,13 @@ namespace CE
 
 		Span<float> GetMasses() { return mParticleMasses; }
 		Span<const float> GetMasses() const { return mParticleMasses; }
-		
-		
+
 		glm::vec3 mMinInitialVelocity{};
 		glm::vec3 mMaxInitialVelocity{};
 
-		
 		glm::vec3 mMinInitialRotationalVelocity{};
 		glm::vec3 mMaxInitialRotationalVelocity{};
 
-		
 		float mMinMass{};
 		float mMaxMass{};
 
