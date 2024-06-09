@@ -17,6 +17,11 @@ uint32 CE::DefaultRandomEngine::operator()()
 	return mSeed;
 }
 
+void CE::DefaultRandomEngine::seed(uint32 seed)
+{
+	mSeed = seed;
+}
+
 uint32 CE::Random::CreateSeed(glm::vec2 position)
 {
 	glm::vec3 p3 = glm::fract(glm::vec3{ position.x, position.y, position.x } * .1031f);

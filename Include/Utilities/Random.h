@@ -8,9 +8,13 @@ namespace CE
 	class DefaultRandomEngine
 	{
 	public:
+		using result_type = uint32;
+
 		DefaultRandomEngine(uint32 seed = 0xbadC0ffe);
 
 		uint32 operator()();
+
+		void seed(uint32 seed);
 
 		static constexpr uint32 max() { return std::numeric_limits<uint32>::max(); }
 		static constexpr uint32 min() { return std::numeric_limits<uint32>::min(); }
