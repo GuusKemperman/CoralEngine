@@ -81,7 +81,7 @@ jobs:
         exit $process.ExitCode
 
     - name: Upload Build Artifacts
-      if: always()  # Ensure this runs even if the build or tests fail
+      if: failure()  # Ensure this runs even if the build or tests fail
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.build-configuration }}-build
