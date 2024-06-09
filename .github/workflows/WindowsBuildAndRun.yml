@@ -79,3 +79,13 @@ jobs:
         }
 
         exit $process.ExitCode
+
+    - name: Upload Build Artifacts
+      if: always()  # Ensure this runs even if the build or tests fail
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.build-configuration }}-build
+        path: |
+          ${{ env.GITHUB_WORKSPACE }}/Games/ExampleGame/Build/x64/${{ matrix.build-configuration }}/
+          # Add any other directories or files you want to include
+        retention-days: 2 
