@@ -5,35 +5,41 @@
 
 namespace CE
 {
-    class SkinnedMesh;
-    class Animation;
-    class Material;
+	class SkinnedMesh;
+	class Animation;
+	class Material;
 
-    class SkinnedMeshComponent
-    {
-    public:   
-        AssetHandle<SkinnedMesh> mSkinnedMesh{};
+	class SkinnedMeshComponent
+	{
+	public:
+		AssetHandle<SkinnedMesh> mSkinnedMesh{};
 
-        AssetHandle<Animation> mAnimation{};
-        AssetHandle<Animation> mPreviousAnimation{};
+		AssetHandle<Animation> mAnimation{};
+		AssetHandle<Animation> mPreviousAnimation{};
 
-        AssetHandle<Material> mMaterial{};
+		AssetHandle<Material> mMaterial{};
 
-        std::vector<glm::mat4x4> mFinalBoneMatrices{MAX_BONES, glm::mat4x4(1.0f)};
-        float mCurrentTime = 0.0f;
-        float mPrevAnimTime = 0.0f;
-        float mAnimationSpeed = 1.0f;
-        // Blend from previous animation 
-        // Previous 0.0f to current 1.0f
-        float mBlendWeight = 1.0f;
-        // Time it takes to blend animations in seconds
-        float mBlendTime = 0.2f;
+		float mCurrentTime = 0.0f;
+		float mPrevAnimTime = 0.0f;
+		float mAnimationSpeed = 1.0f;
+		// Blend from previous animation 
+		// Previous 0.0f to current 1.0f
+		float mBlendWeight = 1.0f;
+		// Time it takes to blend animations in seconds
+		float mBlendTime = 0.2f;
 
-        bool mHighlightedMesh = false;
+		bool mHighlightedMesh = false;
 
-    private:
-        friend ReflectAccess;
-        static MetaType Reflect();
-        REFLECT_AT_START_UP(SkinnedMeshComponent);
-    };
+		std::array<glm::mat4x4, MAX_BONES> mFinalBoneMatrices = []
+			{
+				std::array<glm::mat4x4, MAX_BONES> bones{};
+				std::fill(bones.begin(), bones.end(), glm::mat4x4{1.0f});
+				return bones;
+			}();
+
+	private:
+		friend ReflectAccess;
+		static MetaType Reflect();
+		REFLECT_AT_START_UP(SkinnedMeshComponent);
+	};
 }

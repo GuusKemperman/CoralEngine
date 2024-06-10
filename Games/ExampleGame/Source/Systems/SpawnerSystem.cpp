@@ -159,7 +159,12 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 
 		do
 		{
-			const uint32 numberOfPointsInLayer = static_cast<uint32>(PI / asin(spawnerComponent.mSpacing / distFromCentre)) + 1;
+			const uint32 maxNumberOfPointsInLayer = static_cast<uint32>(PI / asin(spawnerComponent.mSpacing / distFromCentre)) + 1;
+
+			const uint32 numberOfPointsInLayer = spawnerComponent.mShouldSpawnInGroups ? 
+				maxNumberOfPointsInLayer :
+				glm::min(static_cast<uint32>(waveOutputs.size()), maxNumberOfPointsInLayer);
+
 			const float angleStepSize = TWOPI / static_cast<float>(numberOfPointsInLayer);
 			float angle{};
 
@@ -171,7 +176,7 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 				const glm::vec2 worldPos = spawnerPos + CE::Math::AngleToVec2(angle + world.GetCurrentTimeScaled()) * distFromCentre;
 
 				const CE::TransformedDisk spawnArea = { worldPos, spawnerComponent.mSpacing * 2.0f };
-				if (staticBVH.Query<CE::BVH::DefaultOnIntersectFunction, CE::BVH::DefaultShouldReturnFunction<true>, CE::BVH::DefaultShouldReturnFunction<true>>(spawnArea))
+				if (staticBVH.Query(spawnArea))
 				{
 					continue;
 				}

@@ -20,6 +20,8 @@ namespace Game
 
 		float mSpacing = 5.0f;
 
+		bool mShouldSpawnInGroups = false;
+
 		struct Wave
 		{
 			struct EnemyType

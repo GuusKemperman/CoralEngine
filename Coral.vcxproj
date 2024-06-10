@@ -205,6 +205,7 @@
       <BuildStlModules>true</BuildStlModules>
       <WarningLevel>Level4</WarningLevel>
       <SupportJustMyCode>false</SupportJustMyCode>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -281,6 +282,7 @@
       <BuildStlModules>true</BuildStlModules>
       <WarningLevel>Level4</WarningLevel>
       <SupportJustMyCode>false</SupportJustMyCode>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -323,6 +325,7 @@
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
       <ExtraWarnings />
+      <FastMath>true</FastMath>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -366,6 +369,7 @@
       <SupportJustMyCode>false</SupportJustMyCode>
       <BuildStlModules>true</BuildStlModules>
       <WarningLevel>Level4</WarningLevel>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -454,6 +458,7 @@
       <SupportJustMyCode>false</SupportJustMyCode>
       <BuildStlModules>true</BuildStlModules>
       <WarningLevel>Level4</WarningLevel>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -500,6 +505,7 @@
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
       <ExtraWarnings />
+      <FastMath>true</FastMath>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
