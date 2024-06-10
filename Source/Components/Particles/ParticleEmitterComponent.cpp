@@ -1,27 +1,9 @@
 #include "Precomp.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
 
-#include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
-#include "Utilities/Math.h"
-
-void CE::ParticleEmitterComponent::OnParticleSpawn(const size_t i, 
-                                                       const glm::quat emitterWorldOrientaton, 
-                                                       const glm::vec3 emitterWorldScale, 
-                                                       const glm::mat4& emitterMatrix)
-{
-	const float lifeTime = Random::Range(mMinLifeTime, mMaxLifeTime);
-	mParticleLifeSpan[i] = lifeTime;
-	mParticleTimeAsPercentage[i] = 0.0f;
-
-	mParticleScales[i] = Math::lerp(mMinInitialScale, mMaxInitialScale, Random::Value<float>()) * emitterWorldScale;
-	mParticlePositions[i] = emitterMatrix * glm::vec4{ Random::Range(mMinInitialLocalPosition, mMaxInitialLocalPosition), 1.0f };
-	mParticleOrientations[i] = emitterWorldOrientaton * glm::quat{ Random::Range(mMinInitialOrientation, mMaxInitialOrientation) };
-
-	mParticlesSpawnedDuringLastStep.push_back(i);
-}
 
 void CE::ParticleEmitterComponent::PlayFromStart()
 {
@@ -44,12 +26,6 @@ CE::MetaType CE::ParticleEmitterComponent::Reflect()
 	props.Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mNumOfParticlesToSpawn, "mNumOfParticlesToSpawn").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mParticleSpawnRateOverTime, "mParticleSpawnRateOverTime");
-	type.AddField(&ParticleEmitterComponent::mMinInitialLocalPosition, "mMinInitialLocalPosition").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&ParticleEmitterComponent::mMaxInitialLocalPosition, "mMaxInitialLocalPosition").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&ParticleEmitterComponent::mMinInitialScale, "mMinInitialScale").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&ParticleEmitterComponent::mMaxInitialScale, "mMaxInitialScale").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&ParticleEmitterComponent::mMinInitialOrientation, "mMinInitialOrientation").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&ParticleEmitterComponent::mMaxInitialOrientation, "mMaxInitialOrientation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mMinLifeTime, "mMinLifeTime").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mMaxLifeTime, "mMaxLifeTime").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mLoop, "mLoop").GetProperties().Add(Props::sIsScriptableTag);
