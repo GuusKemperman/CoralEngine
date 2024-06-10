@@ -198,6 +198,10 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 		if (effect.mStat == Stat::Health)
 		{
 			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
+			if (characterComponent->mCurrentReceivedDamageModifier == 0.f)
+			{
+				doNotApplyColor = true;
+			}
 			if (castByCharacterData != nullptr)
 			{
 				damageModifier += castByCharacterData->mCurrentDealtDamageModifier;
