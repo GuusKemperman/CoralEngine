@@ -12,7 +12,11 @@ namespace CE
 	{
 	public:
 		void SwitchAnimation();
-		void SwitchAnimation(Registry& reg, const AssetHandle<Animation>& animation, float timeStamp, float animationSpeed = 1.0f, float blendTime = 0.2f);
+		/// <summary>
+		/// Switch the animation and related values for the root and children of this components owner
+		/// The timestamp will always be set when switching to a new animation
+		/// </summary>
+		void SwitchAnimation(Registry& reg, const AssetHandle<Animation>& animation, float timeStamp = 0.0f, float animationSpeed = 1.0f, float blendTime = 0.2f);
 
 		void OnConstruct(World&, entt::entity owner);
 
