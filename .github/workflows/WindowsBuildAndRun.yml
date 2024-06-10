@@ -81,10 +81,9 @@ jobs:
         exit $process.ExitCode
 
     - name: Upload Build Artifacts
-      if: failure()  # Ensure this runs even if the build or tests fail
+      if: failure()
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.build-configuration }}-build
-        # Add any other directories or files you want to include
         path: Games/ExampleGame/Build/**/*
         retention-days: 1
