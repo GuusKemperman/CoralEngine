@@ -1360,7 +1360,6 @@
     </ClCompile>
     <ClCompile Include="Source\BasicDataTypes\Colors\LinearColor.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticleColorComponent.cpp" />
-    <ClCompile Include="Source\Components\Particles\ParticleColorOverTimeComponent.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticleMeshRendererComponent.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticlePhysicsComponent.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticleScaleOverTimeComponent.cpp" />
@@ -1998,7 +1997,6 @@
     <ClInclude Include="include\FunctionLibraries\Strings\StringConversions\StringConversionsGLM.h" />
     <ClInclude Include="include\FunctionLibraries\Strings\StringConversions\StringConversionsSTD.h" />
     <ClInclude Include="include\Components\Particles\ParticleColorComponent.h" />
-    <ClInclude Include="include\Components\Particles\ParticleColorOverTimeComponent.h" />
     <ClInclude Include="include\Components\Particles\ParticleComponentTraits.h" />
     <ClInclude Include="include\Components\Particles\ParticleMeshRendererComponent.h" />
     <ClInclude Include="include\Components\Particles\ParticlePhysicsComponent.h" />

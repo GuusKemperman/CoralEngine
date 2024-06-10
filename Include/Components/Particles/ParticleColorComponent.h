@@ -1,17 +1,15 @@
 #pragma once
 #include "BasicDataTypes/Colors/LinearColor.h"
 #include "Meta/MetaReflect.h"
+#include "Utilities/ParticleProperty.h"
 
 namespace CE
 {
 	class ParticleColorComponent
 	{
 	public:
-		Span<LinearColor> GetColors() { return mParticleColors; }
-		Span<const LinearColor> GetColors() const { return mParticleColors; }
-
-		LinearColor mMinParticleColor{ 1.0f };
-		LinearColor mMaxParticleColor{ 1.0f };
+		ParticleProperty<LinearColor> mColor{};
+		ParticleProperty<float> mTest{};
 
 	private:
 		friend class ParticleColorSystem;
@@ -19,7 +17,5 @@ namespace CE
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(ParticleColorComponent);
-
-		std::vector<LinearColor> mParticleColors{};
 	};
 }
