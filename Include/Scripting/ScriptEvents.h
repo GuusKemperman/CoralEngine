@@ -143,6 +143,17 @@ namespace CE
 		ScriptReloadCompletedEvent();
 	};
 
+	class ScriptEnemyKilledEvent final :
+		public ScriptEvent
+	{
+	public:
+		ScriptEnemyKilledEvent();
+
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+			const AssetHandle<Script>& script) const override;
+	};
+
 	class CollisionEvent :
 		public ScriptEvent
 	{
@@ -190,13 +201,14 @@ namespace CE
 	static const ScriptAbilityActivateEvent sScriptAbilityActivateEvent{};
 	static const ScriptAbilityHitEvent sScriptAbilityHitEvent{};
 	static const ScriptReloadCompletedEvent sScriptReloadCompletedEvent{};
+	static const ScriptEnemyKilledEvent sScriptEnemyKilledEvent{};
 	static const ScriptOnlyPassComponentEvent sAnimationFinishScriptEvent{ sAnimationFinishEvent };
 	static const CollisionEvent sOnCollisionEntryScriptEvent{ sCollisionEntryEvent };
 	static const CollisionEvent sOnCollisionStayScriptEvent{ sCollisionStayEvent };
 	static const CollisionEvent sOnCollisionExitScriptEvent{ sCollisionExitEvent };
 	static const ScriptOnlyPassComponentEvent sOnButtonPressedScriptEvent{ sButtonPressEvent };
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 17> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 18> sAllScriptableEvents
 	{
 		sOnConstructScriptEvent,
 		sOnDestructScriptEvent,
@@ -210,6 +222,7 @@ namespace CE
 		sScriptAbilityActivateEvent,
 		sScriptAbilityHitEvent,
 		sScriptReloadCompletedEvent,
+		sScriptEnemyKilledEvent,
 		sAnimationFinishScriptEvent,
 		sOnCollisionEntryScriptEvent,
 		sOnCollisionStayScriptEvent,

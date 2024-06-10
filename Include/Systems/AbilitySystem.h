@@ -47,8 +47,7 @@ namespace CE
 	private:
 		static inline std::vector<CE::BoundEvent> sAbilityActivateEvents;
 		static inline std::vector<CE::BoundEvent> sReloadCompletedEvents;
-		static void CallBoundEvents(World& world, entt::entity castBy, const std::vector<CE::BoundEvent>& boundEvents);
-		static void CallAllOnReloadCompletedEvents(World& world, entt::entity castBy);
+		static void CallBoundEventsWithNoExtraParams(World& world, entt::entity castBy, const std::vector<CE::BoundEvent>& boundEvents);
 
 		friend ReflectAccess;
 		static MetaType Reflect();

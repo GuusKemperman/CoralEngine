@@ -238,7 +238,7 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
             // Reload
             if (reloadCompleted)
             {
-                CallBoundEvents(world, entity, sReloadCompletedEvents);
+                CallBoundEventsWithNoExtraParams(world, entity, sReloadCompletedEvents);
             }
             if ((CheckKeyboardInput<&Input::WasKeyboardKeyPressed>(weapon.mReloadKeyboardKeys) ||
                 CheckGamepadInput<&Input::WasGamepadButtonPressed>(weapon.mReloadGamepadButtons, playerComponent->mID)) &&
@@ -316,7 +316,7 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
                 ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName(),
                 ability.mAbilityAsset.GetMetaData().GetName());
         }
-        CallBoundEvents(world, castBy, sAbilityActivateEvents);
+        CallBoundEventsWithNoExtraParams(world, castBy, sAbilityActivateEvents);
     }
     else
     {
@@ -364,7 +364,7 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
                 weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName(),
                 weapon.mWeaponAsset.GetMetaData().GetName());
         }
-        CallBoundEvents(world, castBy, sAbilityActivateEvents);
+        CallBoundEventsWithNoExtraParams(world, castBy, sAbilityActivateEvents);
     }
     else
     {
@@ -379,7 +379,7 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     return true;
 }
 
-void CE::AbilitySystem::CallBoundEvents(World& world, entt::entity castBy,
+void CE::AbilitySystem::CallBoundEventsWithNoExtraParams(World& world, entt::entity castBy,
 	const std::vector<CE::BoundEvent>& boundEvents)
 {
     for (const BoundEvent& boundEvent : boundEvents)
