@@ -1641,6 +1641,7 @@
     <ClInclude Include="Include\Components\SpawnPrefabOnDestructComponent.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\DX12Classes\DXHeapHandle.h" />
+    <ClInclude Include="Include\Platform\***REMOVED***\Rendering\PostProcessingRenderer***REMOVED***.h" />
     <ClInclude Include="Include\Systems\Particles\ParticleLightSystem.h" />
     <ClInclude Include="Include\Systems\SwarmingSystem.h" />
     <ClInclude Include="Include\Utilities\ASync.h" />
@@ -2194,6 +2195,10 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\SSAO_p.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
     </WavePsslc>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
