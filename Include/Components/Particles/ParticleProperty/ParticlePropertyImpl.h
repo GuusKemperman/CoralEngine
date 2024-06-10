@@ -91,6 +91,7 @@ namespace CE
 		return Math::lerp(minSample, maxSample, lerpValue) * initialValue;
 	}
 
+#ifdef EDITOR
 	template <typename T>
 	void ParticleProperty<T>::DisplayWidget(const std::string& name)
 	{
@@ -236,6 +237,7 @@ namespace CE
 		}
 		ImGui::TreePop();
 	}
+#endif // EDITOR
 
 	template <typename T>
 	bool ParticleProperty<T>::operator==(const ParticleProperty& other) const
