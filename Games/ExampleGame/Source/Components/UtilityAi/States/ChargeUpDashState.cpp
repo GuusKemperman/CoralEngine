@@ -22,7 +22,7 @@ void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owne
 
 	if (animationRootComponent != nullptr)
 	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mChargingAnimation, 0.0f);
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), mChargingAnimation, animationRootComponent->mCurrentTimeStamp);
 	}
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);

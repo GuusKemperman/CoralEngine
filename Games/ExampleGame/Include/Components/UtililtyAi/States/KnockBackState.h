@@ -20,6 +20,7 @@ namespace Game
 		static void OnAiStateExitEvent(CE::World& world, entt::entity owner);
 
 		void Initialize(float knockbackValue);
+		void OnAnimationFinish(CE::World& world, entt::entity owner);
 
 		CE::AssetHandle<CE::Animation> mKnockBackAnimation{};
 

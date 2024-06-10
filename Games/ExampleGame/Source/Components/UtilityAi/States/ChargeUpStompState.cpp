@@ -18,7 +18,7 @@
 
 void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	AnimationInAi(world, owner, mChargingAnimation);
+	AnimationInAi(world, owner, mChargingAnimation, false);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 

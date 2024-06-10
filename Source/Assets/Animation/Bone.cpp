@@ -21,7 +21,7 @@ int CE::Bone::GetPositionIndex(float timeStamp) const
 
 	for (unsigned int i = 0; i < numPositions - 1; i++)
 	{
-		if (timeStamp < mPositions[i + 1].timeStamp)
+		if (timeStamp <= mPositions[i + 1].timeStamp)
 		{
 			return i;
 		}
@@ -35,7 +35,7 @@ int CE::Bone::GetRotationIndex(float timeStamp) const
 
 	for (unsigned int i = 0; i < numRotations - 1; i++)
 	{
-		if (timeStamp < mRotations[i + 1].timeStamp)
+		if (timeStamp <= mRotations[i + 1].timeStamp)
 		{
 			return i;
 		}
@@ -49,7 +49,7 @@ int CE::Bone::GetScaleIndex(float timeStamp) const
 
 	for (unsigned int i = 0; i < numScalings - 1; i++)
 	{
-		if (timeStamp < mScales[i + 1].timeStamp)
+		if (timeStamp <= mScales[i + 1].timeStamp)
 		{
 			return i;
 		}

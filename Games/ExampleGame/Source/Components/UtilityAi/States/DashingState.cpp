@@ -34,7 +34,7 @@ void Game::DashingState::OnAiTick(CE::World& world, const entt::entity owner, co
 		}
 	}
 
-	Game::AnimationInAi(world, owner, mDashingAnimation);
+	Game::AnimationInAi(world, owner, mDashingAnimation, false);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 

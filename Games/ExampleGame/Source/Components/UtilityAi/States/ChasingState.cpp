@@ -15,7 +15,7 @@
 
 void Game::ChasingState::OnAiStateEnter(CE::World& world, const entt::entity owner) const
 {
-	Game::AnimationInAi(world, owner, mChasingAnimation);
+	Game::AnimationInAi(world, owner, mChasingAnimation, true);
 
 	CE::SwarmingAgentTag::StartMovingToTarget(world, owner);
 }

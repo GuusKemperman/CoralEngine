@@ -20,11 +20,19 @@ namespace CE
 		void Refit();
 
 		template<bool AlwaysReturnValue>
+		struct DefaultShouldCheckFunction
+		{
+			template<typename TransformedColliderType, typename ...CallbackAdditionalArgs>
+			static bool Callback(CallbackAdditionalArgs&& ...) { return AlwaysReturnValue; }
+		};
+
+		template<bool AlwaysReturnValue>
 		struct DefaultShouldReturnFunction
 		{
 			template<typename ...CallbackAdditionalArgs>
 			static bool Callback(CallbackAdditionalArgs&& ...) { return AlwaysReturnValue; }
 		};
+
 
 		struct DefaultOnIntersectFunction
 		{
@@ -32,7 +40,7 @@ namespace CE
 			static void Callback(CallbackAdditionalArgs&& ...) { }
 		};
 
-		template<typename OnIntersectFunction = DefaultOnIntersectFunction, typename ShouldCheckFunction = DefaultShouldReturnFunction<true>, typename ShouldReturnFunction = DefaultShouldReturnFunction<true>, typename InquirerShape, typename ...CallbackAdditionalArgs>
+		template<typename OnIntersectFunction = DefaultOnIntersectFunction, typename ShouldCheckFunction = DefaultShouldCheckFunction<true>, typename ShouldReturnFunction = DefaultShouldReturnFunction<true>, typename InquirerShape, typename ...CallbackAdditionalArgs>
 		bool Query(const InquirerShape inquirerShape, CallbackAdditionalArgs&& ...args) const;
 
 		void DebugDraw() const;
@@ -46,7 +54,11 @@ namespace CE
 
 		struct Node
 		{
-			TransformedAABB mBoundingBox{ { -INFINITY, -INFINITY }, { -INFINITY, -INFINITY } };
+			// Some of our overlap functions expect a 'valid'
+			// bounding box. This means we cant use std::numeric_limits<float>::infinity(),
+			// as some operations we use create NaNs.
+			static constexpr float sLargeNum = 123456789101112131415.0f;
+			TransformedAABB mBoundingBox{ glm::vec2{ -sLargeNum }, glm::vec2{ -sLargeNum + 1.0f} };
 			uint32 mStartIndex{};
 			uint32 mTotalNumOfObjects{}; // The number of polygons can be extracted since nunOfPolygons = total - aabbs - circles
 			uint32 mNumOfAABBS{};
@@ -57,7 +69,7 @@ namespace CE
 		float UpdateNodeBounds(Node& node);
 		void Subdivide(Node& node);
 
-		template<typename OnIntersectFunction, typename ShouldCheckFunction, typename ShouldReturnFunction, typename InquirerShapeType, typename ObjectShapeType, typename ...CallbackAdditionalArgs>
+		template<typename OnIntersectFunction, typename ShouldReturnFunction, typename InquirerShapeType, typename ObjectShapeType, typename ...CallbackAdditionalArgs>
 		static FORCE_INLINE bool TestAgainstObject(const InquirerShapeType inquirerShape, const ObjectShapeType& object, entt::entity owner, CallbackAdditionalArgs&& ...args);
 
 		struct SplitPoint
@@ -82,7 +94,7 @@ namespace CE
 		InquirerShape, typename ... CallbackAdditionalArgs>
 	bool BVH::Query(const InquirerShape inquirerShape, CallbackAdditionalArgs&&... args) const
 	{
-		static constexpr uint32 stackSize = 64;
+		static constexpr uint32 stackSize = 256;
 		const Node* stack[stackSize];
 		uint32 stackPtr = 0;
 
@@ -135,6 +147,12 @@ namespace CE
 			for (uint32 i = 0; i < node->mNumOfAABBS; i++, indexOfId++)
 			{
 				const entt::entity owner = mIds[indexOfId];
+
+				if(!ShouldCheckFunction::template Callback<TransformedAABBColliderComponent>(owner, std::forward<CallbackAdditionalArgs>(args)...))
+				{
+					continue;
+				}
+
 				const TransformedAABB* aabb = reg.TryGet<TransformedAABBColliderComponent>(owner);
 
 				if (aabb == nullptr)
@@ -142,7 +160,7 @@ namespace CE
 					continue;
 				}
 
-				if (TestAgainstObject<OnIntersectFunction, ShouldCheckFunction, ShouldReturnFunction>(inquirerShape, *aabb, owner, std::forward<CallbackAdditionalArgs>(args)...))
+				if (TestAgainstObject<OnIntersectFunction, ShouldReturnFunction>(inquirerShape, *aabb, owner, std::forward<CallbackAdditionalArgs>(args)...))
 				{
 					return true;
 				}
@@ -151,6 +169,12 @@ namespace CE
 			for (uint32 i = 0; i < node->mNumOfCircles; i++, indexOfId++)
 			{
 				const entt::entity owner = mIds[indexOfId];
+
+				if (!ShouldCheckFunction::template Callback<TransformedDiskColliderComponent>(owner, std::forward<CallbackAdditionalArgs>(args)...))
+				{
+					continue;
+				}
+
 				const TransformedDisk* circle = reg.TryGet<TransformedDiskColliderComponent>(owner);
 
 				if (circle == nullptr)
@@ -158,7 +182,7 @@ namespace CE
 					continue;
 				}
 
-				if (TestAgainstObject<OnIntersectFunction, ShouldCheckFunction, ShouldReturnFunction>(inquirerShape, *circle, owner, std::forward<CallbackAdditionalArgs>(args)...))
+				if (TestAgainstObject<OnIntersectFunction, ShouldReturnFunction>(inquirerShape, *circle, owner, std::forward<CallbackAdditionalArgs>(args)...))
 				{
 					return true;
 				}
@@ -168,6 +192,12 @@ namespace CE
 			for (uint32 i = 0; i < numOfPolygons; i++, indexOfId++)
 			{
 				const entt::entity owner = mIds[indexOfId];
+
+				if (!ShouldCheckFunction::template Callback<TransformedPolygonColliderComponent>(owner, std::forward<CallbackAdditionalArgs>(args)...))
+				{
+					continue;
+				}
+
 				const TransformedPolygon* polygon = reg.TryGet<TransformedPolygonColliderComponent>(owner);
 
 				if (polygon == nullptr)
@@ -175,7 +205,7 @@ namespace CE
 					continue;
 				}
 
-				if (TestAgainstObject<OnIntersectFunction, ShouldCheckFunction, ShouldReturnFunction>(inquirerShape, *polygon, owner, std::forward<CallbackAdditionalArgs>(args)...))
+				if (TestAgainstObject<OnIntersectFunction, ShouldReturnFunction>(inquirerShape, *polygon, owner, std::forward<CallbackAdditionalArgs>(args)...))
 				{
 					return true;
 				}
@@ -191,13 +221,12 @@ namespace CE
 		return false;
 	}
 
-	template <typename OnIntersectFunction, typename ShouldCheckFunction, typename ShouldReturnFunction, typename
+	template <typename OnIntersectFunction, typename ShouldReturnFunction, typename
 		InquirerShapeType, typename ObjectShapeType, typename ... CallbackAdditionalArgs>
 	bool BVH::TestAgainstObject(const InquirerShapeType inquirerShape, const ObjectShapeType& object,
 		entt::entity owner, CallbackAdditionalArgs&&... args)
 	{
-		if (!ShouldCheckFunction:: Callback(object, owner, std::forward<CallbackAdditionalArgs>(args)...)
-			|| !AreOverlapping(object, inquirerShape))
+		if (!AreOverlapping(object, inquirerShape))
 		{
 			return false;
 		}

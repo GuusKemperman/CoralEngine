@@ -182,6 +182,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BuildStlModules>true</BuildStlModules>
       <SupportJustMyCode>false</SupportJustMyCode>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -236,6 +237,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BuildStlModules>true</BuildStlModules>
       <SupportJustMyCode>false</SupportJustMyCode>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -248,6 +250,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">
     <ClCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FastMath>true</FastMath>
     </ClCompile>
     <Link>
     </Link>
@@ -274,6 +277,8 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <SupportJustMyCode>false</SupportJustMyCode>
       <BuildStlModules>true</BuildStlModules>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -338,6 +343,8 @@
       <ExternalWarningLevel>Level2</ExternalWarningLevel>
       <SupportJustMyCode>false</SupportJustMyCode>
       <BuildStlModules>true</BuildStlModules>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -351,6 +358,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">
     <ClCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FastMath>true</FastMath>
     </ClCompile>
     <Link>
     </Link>

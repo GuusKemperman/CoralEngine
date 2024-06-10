@@ -15,23 +15,22 @@
 #include "Components/PlayerComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Components/UtililtyAi/States/ChargeUpStompState.h"
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
 #include "Utilities/AiFunctionality.h"
 
 
 void Game::KnockBackState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	Game::AnimationInAi(world, owner, mKnockBackAnimation );
-
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "An PhysicsBody2D component is needed to run the Dashing State!");
+		LOG(LogAI, Warning, "Knock Back State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
-	mKnockBackSpeed *= 1 / (1 + (dt * mFriction));
+	mKnockBackSpeed *= 1.f / (1.f + (dt * mFriction));
 	physicsBody2DComponent->mLinearVelocity = -mDashDirection * mKnockBackSpeed;
 }
 
@@ -47,11 +46,13 @@ float Game::KnockBackState::OnAiEvaluate(const CE::World&, entt::entity) const
 
 void Game::KnockBackState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
+	Game::AnimationInAi(world, owner, mKnockBackAnimation, false);
+
 	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
 	if (playerId == entt::null)
 	{
-		LOG(LogAI, Warning, "An PlayerComponent on the player entity is needed to run the Dashing State!");
+		LOG(LogAI, Warning, "Knock Back State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
 		return;
 	}
 
@@ -93,6 +94,30 @@ void Game::KnockBackState::Initialize(const float knockbackValue)
 	mKnockBackSpeed = knockbackValue;
 }
 
+void Game::KnockBackState::OnAnimationFinish(CE::World& world, entt::entity owner)
+{
+	const auto* enemy = world.GetRegistry().TryGet<CE::EnemyAiControllerComponent>(owner);
+
+	if (enemy == nullptr)
+	{
+		LOG(LogAI, Warning, "A enemyController component is needed to run the KnockingBack State!");
+		return;
+	}
+
+	if (CE::MakeTypeId<KnockBackState>() == enemy->mCurrentState->GetTypeId())
+	{
+		auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+
+		if (animationRootComponent == nullptr)
+		{
+			LOG(LogAI, Warning, "A animation root component is needed to run the KnockingBack State!");
+			return;
+		}
+
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), mKnockBackAnimation, animationRootComponent->mCurrentAnimation->mDuration - 1.0f, 0.0f, 0.0f  );
+	}
+}
+
 CE::MetaType Game::KnockBackState::Reflect()
 {
 	auto type = CE::MetaType{ CE::MetaType::T<KnockBackState>{}, "KnockBackState" };
@@ -105,6 +130,7 @@ CE::MetaType Game::KnockBackState::Reflect()
 	BindEvent(type, CE::sAIEvaluateEvent, &KnockBackState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &KnockBackState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sAIStateExitEvent, &KnockBackState::OnAiStateExitEvent);
+	BindEvent(type, CE::sAnimationFinishEvent, &KnockBackState::OnAnimationFinish);
 
 	type.AddField(&KnockBackState::mKnockBackAnimation, "mKnockBackAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

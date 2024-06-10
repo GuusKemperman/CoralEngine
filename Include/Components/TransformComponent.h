@@ -41,8 +41,6 @@ namespace CE
 	constexpr glm::vec3 sRight = ToVector3(Axis::Right);
 	constexpr glm::vec3 sUp = ToVector3(Axis::Up);
 
-
-
 	/**
 	 * \brief A component that manages the position, scale and orientation of an entity.
 	 */
@@ -54,6 +52,7 @@ namespace CE
 		void OnConstruct(World& world, entt::entity owner);
 
 		static glm::mat4 ToMatrix(glm::vec3 position, glm::vec3 scale, glm::quat orientation);
+		static std::tuple<glm::vec3, glm::vec3, glm::quat> FromMatrix(const glm::mat4& matrix);
 
 		glm::mat4 GetLocalMatrix() const;		
 		void SetLocalMatrix(const glm::mat4& matrix);

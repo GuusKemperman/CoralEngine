@@ -16,7 +16,7 @@
 
 void Game::AttackingState::OnAiTick(CE::World& world, const entt::entity owner, float) const
 {
-	Game::AnimationInAi(world, owner, mAttackingAnimation);
+	Game::AnimationInAi(world, owner, mAttackingAnimation, false);
 
 	Game::FaceThePlayer(world, owner);
 
