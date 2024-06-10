@@ -535,6 +535,7 @@
     </ClCompile>
     <ClCompile Include="Source\Components\GridSpawnerComponent.cpp" />
     <ClCompile Include="Source\Components\OutlineComponent.cpp" />
+    <ClCompile Include="Source\Components\Particles\ParticleEmitterShapes.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticleLightComponent.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\SwarmingAgentTag.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\SwarmingTargetComponent.cpp" />
@@ -1634,6 +1635,7 @@
     <ClInclude Include="Include\Components\MaterialRootComponent.h" />
     <ClInclude Include="Include\Components\OutlineComponent.h" />
     <ClInclude Include="Include\Components\Particles\ParticleLightComponent.h" />
+    <ClInclude Include="Include\Components\Particles\ParticleEmitterShapes.h" />
     <ClInclude Include="Include\Components\Pathfinding\SwarmingAgentTag.h" />
     <ClInclude Include="Include\Components\Pathfinding\SwarmingTargetComponent.h" />
     <ClInclude Include="Include\Components\PlayerComponent.h" />

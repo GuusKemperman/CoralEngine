@@ -8,9 +8,6 @@ constexpr float TWOPI = 6.28318530717958647692528f;
 constexpr float SQRT_PI_INV = 0.56418958355f;
 constexpr float LARGE_FLOAT = 1e34f;
 
-#define DEG2RAD(x) (x*PI)/180
-#define RAD2DEG(x) x*(180/PI)
-
 namespace CE
 {
 	class Math
