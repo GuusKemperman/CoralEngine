@@ -19,10 +19,9 @@ namespace CE
 		/// <param name="reg">Registry</param>
 		/// <param name="animation">Animation asset</param>
 		/// <param name="timeStamp">Timestamp in animation in milliseconds</param>
-		/// <param name="changeTimeStamp">Should the timestamp be changed by this call</param>
 		/// <param name="animationSpeed"></param>
 		/// <param name="blendTime"></param>
-		void SwitchAnimation(Registry& reg, const AssetHandle<Animation>& animation, float timeStamp, bool changeTimeStamp = false, float animationSpeed = 1.0f, float blendTime = 0.2f);
+		void SwitchAnimation(Registry& reg, const AssetHandle<Animation>& animation, float timeStamp = 0.0f, float animationSpeed = 1.0f, float blendTime = 0.2f);
 
 		void OnConstruct(World&, entt::entity owner);
 
