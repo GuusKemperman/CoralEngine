@@ -63,19 +63,21 @@ void CE::AnimationRootComponent::SwitchAnimation()
 
 void CE::AnimationRootComponent::SwitchAnimation(Registry& reg, const AssetHandle<Animation>& animation, float timeStamp, float animationSpeed, float blendTime)
 {
-	mWantedAnimationSpeed = animationSpeed;
-	mCurrentAnimationSpeed = mWantedAnimationSpeed;
-
-	if (animation == mWantedAnimation)
+	if (animation == mCurrentAnimation
+		&& timeStamp == mCurrentTimeStamp
+		&& animationSpeed == mCurrentAnimationSpeed)
 	{
-		mCurrentAnimation = mWantedAnimation;
-		SwitchAnimationRecursive(reg, mOwner, mCurrentAnimation, mCurrentTimeStamp, mCurrentAnimationSpeed);
 		return;
 	}
 
 	mWantedAnimation = animation;
 	mWantedTimeStamp = timeStamp;
-	mWantedBlendTime = blendTime;
+	mWantedAnimationSpeed = animationSpeed;
+	
+	if (mWantedAnimation != mCurrentAnimation)
+	{
+		mWantedBlendTime = blendTime;
+	}
 
 	mCurrentTimeStamp = mWantedTimeStamp;
 	mCurrentAnimationSpeed = mWantedAnimationSpeed;
@@ -113,9 +115,9 @@ CE::MetaType CE::AnimationRootComponent::Reflect()
 		}, "SwitchAnimation", MetaFunc::ExplicitParams<AnimationRootComponent&,
 		const AssetHandle<Animation>&, float, float, float>{}, "AnimationRootComponent", "Animation", "Time Stamp", "Animation Speed", "Blend Time").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddField(&AnimationRootComponent::mCurrentAnimation, "mCurrentAnimation").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptReadOnlyTag);
-	type.AddField(&AnimationRootComponent::mCurrentTimeStamp, "mCurrentTimeStamp").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptReadOnlyTag);
-	type.AddField(&AnimationRootComponent::mCurrentAnimationSpeed, "mCurrentAnimationSpeed").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptReadOnlyTag);
+	type.AddField(&AnimationRootComponent::mCurrentAnimation, "mCurrentAnimation").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptableTag).Add(Props::sIsScriptReadOnlyTag);
+	type.AddField(&AnimationRootComponent::mCurrentTimeStamp, "mCurrentTimeStamp").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptableTag).Add(Props::sIsScriptReadOnlyTag);
+	type.AddField(&AnimationRootComponent::mCurrentAnimationSpeed, "mCurrentAnimationSpeed").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptableTag).Add(Props::sIsScriptReadOnlyTag);
 
 	BindEvent(type, sConstructEvent, &AnimationRootComponent::OnConstruct);
 
