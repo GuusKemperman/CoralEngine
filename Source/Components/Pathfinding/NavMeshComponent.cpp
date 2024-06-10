@@ -522,8 +522,8 @@ std::vector<glm::vec2> CE::NavMeshComponent::FindQuickestPath(glm::vec2 startPos
 		static void Callback(const TransformedAABBColliderComponent&, entt::entity, entt::entity&) {}
 	};
 
-	bvh.Query<OnIntersect, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<true>>(startPos, startNodeOwner);
-	bvh.Query<OnIntersect, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<true>>(endPos, endNodeOwner);
+	bvh.Query<OnIntersect>(startPos, startNodeOwner);
+	bvh.Query<OnIntersect>(endPos, endNodeOwner);
 
 
 	// Check if either the start or end node is not found

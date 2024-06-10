@@ -10,16 +10,14 @@
 void Game::EnvironmentGeneratorComponent::Layer::Object::DisplayWidget(const std::string&)
 {
 	CE::ShowInspectUI("mPrefab", mPrefab);
-	CE::ShowInspectUI("mBaseFrequency", mBaseFrequency);
-	CE::ShowInspectUI("mSpawnFrequenciesAtNoiseValue", mSpawnFrequenciesAtNoiseValue);
+	CE::ShowInspectUI("mFrequency", mFrequency);
 }
 #endif // EDITOR
 
 bool Game::EnvironmentGeneratorComponent::Layer::Object::operator==(const Object& other) const
 {
 	return mPrefab == other.mPrefab
-		&& mBaseFrequency == other.mBaseFrequency
-		&& mSpawnFrequenciesAtNoiseValue == other.mSpawnFrequenciesAtNoiseValue;
+		&& mFrequency == other.mFrequency;
 }
 
 bool Game::EnvironmentGeneratorComponent::Layer::Object::operator!=(const Object& other) const
@@ -34,8 +32,7 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Layer::Object::Reflect()
 	props.Add(CE::Props::sIsScriptableTag).Add(CE::Props::sIsScriptOwnableTag);
 
 	type.AddField(&Object::mPrefab, "mPrefab").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&Object::mBaseFrequency, "mBaseFrequency").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&Object::mSpawnFrequenciesAtNoiseValue, "mSpawnFrequenciesAtNoiseValue").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Object::mFrequency, "mFrequency").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectFieldType<Object>(type);
 	return type;
@@ -78,6 +75,11 @@ void Game::EnvironmentGeneratorComponent::Layer::DisplayWidget(const std::string
 {
 	CE::ShowInspectUI("mObjects", mObjects);
 	CE::ShowInspectUI("mCellSize", mCellSize);
+
+	ImGui::SliderFloat("mMinNoiseValueToSpawn", &mMinNoiseValueToSpawn, 0.0f, 1.0f);
+	ImGui::SliderFloat("mMaxNoiseValueToSpawn", &mMaxNoiseValueToSpawn, 0.0f, 1.0f);
+	ImGui::SliderFloat("mObjectSpawnChance", &mObjectSpawnChance, 0.0f, 1.0f);
+
 	CE::ShowInspectUI("mNumberOfRandomRotations", mNumberOfRandomRotations);
 	CE::ShowInspectUI("mScaleAtNoiseValue", mScaleAtNoiseValue);
 	CE::ShowInspectUI("mMaxRandomOffset", mMaxRandomOffset);
@@ -102,7 +104,10 @@ bool Game::EnvironmentGeneratorComponent::Layer::operator==(const Layer& other) 
 		&& mNoisePersistence == other.mNoisePersistence
 		&& mInfluences == other.mInfluences
 		&& mWeight == other.mWeight
-		&& mIsDebugDrawingEnabled == other.mIsDebugDrawingEnabled;
+		&& mIsDebugDrawingEnabled == other.mIsDebugDrawingEnabled
+		&& mMinNoiseValueToSpawn == other.mMinNoiseValueToSpawn
+		&& mMaxNoiseValueToSpawn == other.mMaxNoiseValueToSpawn
+		&& mObjectSpawnChance == other.mObjectSpawnChance;
 }
 
 bool Game::EnvironmentGeneratorComponent::Layer::operator!=(const Layer& other) const
@@ -118,6 +123,9 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Layer::Reflect()
 
 	type.AddField(&Layer::mObjects, "mObjects").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mCellSize, "mCellSize").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Layer::mMinNoiseValueToSpawn, "mMinNoiseValueToSpawn").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Layer::mMaxNoiseValueToSpawn, "mMaxNoiseValueToSpawn").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Layer::mObjectSpawnChance, "mObjectSpawnChance").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mNumberOfRandomRotations, "mNumberOfRandomRotations").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mScaleAtNoiseValue, "mScaleAtNoiseValue").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mMaxRandomOffset, "mMaxRandomOffset").GetProperties().Add(CE::Props::sIsScriptableTag);
@@ -139,8 +147,9 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Reflect()
 	props.Add(CE::Props::sIsScriptableTag);
 
 	type.AddField(&EnvironmentGeneratorComponent::mGenerateRadius, "mGenerateRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&EnvironmentGeneratorComponent::mDestroyRadius, "mDestroyRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mDistToMoveBeforeRegeneration, "mDistToMoveBeforeRegeneration").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&EnvironmentGeneratorComponent::mSeed, "mSeed").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&EnvironmentGeneratorComponent::mSeed, "mSeed").GetProperties().Add(CE::Props::sIsScriptableTag).Add(CE::Props::sNoSerializeTag);
 	type.AddField(&EnvironmentGeneratorComponent::mLayers, "mLayers").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mDebugDrawNoiseHeight, "mDebugDrawNoiseHeight").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&EnvironmentGeneratorComponent::mDebugDrawDistanceBetweenLayers, "mDebugDrawDistanceBetweenLayers").GetProperties().Add(CE::Props::sIsScriptableTag);
@@ -149,12 +158,22 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Reflect()
 		{
 			component.mLastGeneratedAtPosition = glm::vec2{ std::numeric_limits<float>::infinity() };
 			component.mShouldGenerateInEditor = true;
+			component.mWasClearingRequested = true;
+		}, "Regenerate", CE::MetaFunc::ExplicitParams<EnvironmentGeneratorComponent&>{}).GetProperties().Add(CE::Props::sCallFromEditorTag);
+
+	type.AddFunc([](EnvironmentGeneratorComponent& component)
+		{
+			component.mLastGeneratedAtPosition = glm::vec2{ std::numeric_limits<float>::infinity() };
+			component.mShouldGenerateInEditor = true;
+			component.mWasClearingRequested = true;
+			component.mSeed = CE::Random::Value<uint32>();
 		}, "Generate", CE::MetaFunc::ExplicitParams<EnvironmentGeneratorComponent&>{}).GetProperties().Add(CE::Props::sCallFromEditorTag);
 
 	type.AddFunc([](EnvironmentGeneratorComponent& component)
 		{
 			component.mLastGeneratedAtPosition = glm::vec2{ std::numeric_limits<float>::infinity() };
 			component.mShouldGenerateInEditor = false;
+			component.mWasClearingRequested = true;
 		}, "Clear", CE::MetaFunc::ExplicitParams<EnvironmentGeneratorComponent&>{}).GetProperties().Add(CE::Props::sCallFromEditorTag);
 
 	CE::ReflectComponentType<EnvironmentGeneratorComponent>(type);

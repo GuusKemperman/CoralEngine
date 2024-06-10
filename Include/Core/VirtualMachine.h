@@ -8,6 +8,10 @@
 
 namespace CE
 {
+	// Profiling scripts comes at a performance cost,
+	// so we only enable it when we need to.
+	// #define SCRIPT_PROFILING
+
 	class Script;
 	class ScriptField;
 	class ScriptFunc;
@@ -25,7 +29,6 @@ namespace CE
 		friend EngineSubsystem;
 		void PostConstruct() override;
 		~VirtualMachine();
-
 
 	public:
 		/*
@@ -70,12 +73,18 @@ namespace CE
 		*/
 		FuncResult ExecuteScriptFunction(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer, const ScriptFunc& func, const ScriptNode& firstNode, const FunctionEntryScriptNode* entryNode);
 
-
 	private:
 		void PrintCompileErrors() const;
 
 		// When we recompile, we first have to clean up the result of the previous compilation
 		static void DestroyAllTypesCreatedThroughScripts();
+
+#ifdef SCRIPT_PROFILING
+		// The first string is the name of the script,
+		// the second string is the function name.
+		// float represents the number of seconds spend in the function
+		std::unordered_map<std::string, float> mNumOfSecondsSpentEachFunction{};
+#endif // SCRIPT_PROFILING
 
 		static constexpr uint32 sMaxNumOfNodesToExecutePerFunctionBeforeGivingUp = 10'000;
 		static constexpr uint32 sMaxStackSize = 1 << 16;
