@@ -61,20 +61,29 @@ void CE::AnimationRootComponent::SwitchAnimation()
 	SwitchAnimationRecursive(world->GetRegistry(), mOwner, mWantedAnimation, mWantedTimeStamp, mWantedAnimationSpeed, mWantedBlendTime);
 }
 
-void CE::AnimationRootComponent::SwitchAnimation(Registry& reg, const AssetHandle<Animation>& animation, float timeStamp, float animationSpeed, float blendTime)
+void CE::AnimationRootComponent::SwitchAnimation(Registry& reg, const AssetHandle<Animation>& animation, float timeStamp, bool changeTimeStamp, float animationSpeed, float blendTime)
 {
-	mWantedAnimationSpeed = animationSpeed;
-	mCurrentAnimationSpeed = mWantedAnimationSpeed;
-
 	if (animation == mWantedAnimation)
 	{
-		mCurrentAnimation = mWantedAnimation;
+		mCurrentAnimation = animation;
+
+		mWantedAnimationSpeed = animationSpeed;
+		mCurrentAnimationSpeed = mWantedAnimationSpeed;
+		
+		if (changeTimeStamp)
+		{
+			mWantedTimeStamp = timeStamp;
+			mCurrentTimeStamp = mWantedTimeStamp;
+		}
+
 		SwitchAnimationRecursive(reg, mOwner, mCurrentAnimation, mCurrentTimeStamp, mCurrentAnimationSpeed);
+	
 		return;
 	}
 
 	mWantedAnimation = animation;
 	mWantedTimeStamp = timeStamp;
+	mWantedAnimationSpeed = animationSpeed;
 	mWantedBlendTime = blendTime;
 
 	mCurrentTimeStamp = mWantedTimeStamp;
@@ -108,7 +117,7 @@ CE::MetaType CE::AnimationRootComponent::Reflect()
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			animationRoot.SwitchAnimation(world->GetRegistry(), animation, timeStamp, animationSpeed, blendTime);
+			animationRoot.SwitchAnimation(world->GetRegistry(), animation, timeStamp, false, animationSpeed, blendTime);
 
 		}, "SwitchAnimation", MetaFunc::ExplicitParams<AnimationRootComponent&,
 		const AssetHandle<Animation>&, float, float, float>{}, "AnimationRootComponent", "Animation", "Time Stamp", "Animation Speed", "Blend Time").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
