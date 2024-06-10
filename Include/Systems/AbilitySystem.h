@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Input.h"
 #include "Systems/System.h"
+#include "Utilities/Events.h"
 
 namespace CE
 {
@@ -44,6 +45,7 @@ namespace CE
 		static bool CheckGamepadInput(const std::vector<Input::GamepadButton>& buttons, int playerID);
 
 	private:
+		static inline std::vector<CE::BoundEvent> sAbilityActivateEvents;
 		static void CallAllOnAbilityActivateEvents(World& world, entt::entity castBy);
 
 		friend ReflectAccess;
