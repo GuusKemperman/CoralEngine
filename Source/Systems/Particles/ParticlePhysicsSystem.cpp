@@ -7,6 +7,7 @@
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
+#include "Components/Particles/ParticleProperty.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
@@ -24,7 +25,7 @@ void CE::ParticlePhysicsSystem::Update(World& world, float dt)
 		const size_t numOfParticles = emitter.GetNumOfParticles();
 		physics.mRotationalVelocitiesPerStep.resize(numOfParticles);
 		physics.mLinearVelocities.resize(numOfParticles);
-		physics.mParticleMasses.resize(numOfParticles);
+		physics.mMass.SetInitialValuesOfNewParticles(emitter);
 
 		const glm::quat emitterOrientation = transform.GetWorldOrientation();
 
@@ -36,7 +37,6 @@ void CE::ParticlePhysicsSystem::Update(World& world, float dt)
 			// TODO: This only works with fixed time step
 			physics.mRotationalVelocitiesPerStep[particle] = glm::quat(Random::Range(physics.mMinInitialRotationalVelocity, physics.mMaxInitialRotationalVelocity) * Particles::sParticleFixedTimeStep.value_or(1.0f / 60.0f));
 			physics.mLinearVelocities[particle] = Math::RotateVector(Random::Range(physics.mMinInitialVelocity, physics.mMaxInitialVelocity), emitterOrientation);
-			physics.mParticleMasses[particle] = Random::Range(physics.mMinMass, physics.mMaxMass);
 		}
 
 		const glm::vec3 timeScaledGrav = dt * physics.mGravity;
@@ -48,7 +48,7 @@ void CE::ParticlePhysicsSystem::Update(World& world, float dt)
 		for (size_t i = 0; i < numOfParticles; i++)
 		{
 			// Note that we are also moving the dead particles, but that doesn't matter as they won't get rendered
-			physics.mLinearVelocities[i] += timeScaledGrav * physics.mParticleMasses[i];
+			physics.mLinearVelocities[i] += timeScaledGrav * physics.mMass.GetValue(emitter, i);
 			positions[i] += physics.mLinearVelocities[i] * dt;
 			positions[i][Axis::Up] = (glm::max)(positions[i][Axis::Up], physics.mFloorHeight);
 
