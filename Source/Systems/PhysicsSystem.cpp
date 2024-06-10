@@ -72,6 +72,40 @@ void CE::PhysicsSystem::ApplyVelocities(World& world, float dt)
 	}
 }
 
+namespace CE::Internal
+{
+	struct ShouldCheckForCollision
+	{
+		template<typename ColliderType>
+		static bool Callback(entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent& body1, const Registry& reg)
+		{
+			if (entity1 == entity2)
+			{
+				return false;
+			}
+
+			const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
+
+			return body2 != nullptr
+				&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
+		}
+
+		template<>
+		STATIC_SPECIALIZATION bool Callback<TransformedDiskColliderComponent>(entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent& body1, const Registry& reg)
+		{
+			if (entity1 >= entity2)
+			{
+				return false;
+			}
+
+			const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
+
+			return body2 != nullptr
+				&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
+		}
+	};
+}
+
 void CE::PhysicsSystem::UpdateCollisions(World& world)
 {
 	Registry& reg = world.GetRegistry();
@@ -91,48 +125,6 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 	// buffer every frame, even if we have multiple worlds.
 	static std::vector<CollisionData> currentCollisions{};
 	currentCollisions.clear();
-
-	struct ShouldCheck
-	{
-		static bool Callback(const TransformedDiskColliderComponent&, entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent& body1, const Registry& reg)
-		{
-			if (entity1 >= entity2)
-			{
-				return false;
-			}
-
-			const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
-
-			return body2 != nullptr
-				&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
-		}
-
-		static bool Callback(const TransformedAABBColliderComponent&, entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent& body1, const Registry& reg)
-		{
-			if (entity1 == entity2)
-			{
-				return false;
-			}
-
-			const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
-
-			return body2 != nullptr
-				&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
-		}
-
-		static bool Callback(const TransformedPolygonColliderComponent&, entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent& body1, const Registry& reg)
-		{
-			if (entity1 == entity2)
-			{
-				return false;
-			}
-
-			const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
-
-			return body2 != nullptr
-				&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
-		}
-	};
 
 	struct OnIntersect
 	{
@@ -172,7 +164,7 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 				continue;
 			}
 
-			bvh.Query<OnIntersect, ShouldCheck, BVH::DefaultShouldReturnFunction<false>>(disk1, entity1, body1, reg);
+			bvh.Query<OnIntersect, Internal::ShouldCheckForCollision, BVH::DefaultShouldReturnFunction<false>>(disk1, entity1, body1, reg);
 		}
 	}
 
