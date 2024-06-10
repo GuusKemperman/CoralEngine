@@ -183,6 +183,11 @@ CE::MetaFunc::InvokeT CE::ScriptAbilityHitEvent::GetScriptInvoker(const ScriptFu
 		};
 }
 
+CE::ScriptReloadCompletedEvent::ScriptReloadCompletedEvent() :
+	ScriptOnlyPassComponentEvent(sReloadCompletedEvent)
+{
+}
+
 CE::MetaFunc::InvokeT CE::CollisionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
                                                            const AssetHandle<Script>& script) const
 {

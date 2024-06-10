@@ -86,6 +86,13 @@ namespace CE
 	 */
 	static constexpr Event<void(World&, entt::entity)> sAbilityActivateEvent{ "OnAbilityActivate" };
 
+	/**
+	 * \brief
+	 * 	World& The world player is in.
+	 * \entt::entity The player that finished reloading.
+	 */
+	static constexpr Event<void(World&, entt::entity)> sReloadCompletedEvent{ "OnReloadCompleted" };
+
 	/*
 	* \brief Called when an animation finishes.
 	* World& the world the animationRootComponent is in
