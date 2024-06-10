@@ -4,6 +4,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "Components/Particles/ParticleProperty.h"
 
 CE::MetaType CE::ParticleColorComponent::Reflect()
 {

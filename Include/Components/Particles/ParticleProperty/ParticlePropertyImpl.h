@@ -1,95 +1,42 @@
 #pragma once
-#include "Math.h"
-#include "Random.h"
+#include "Utilities/Math.h"
+#include "Utilities/Random.h"
+#include "Utilities/Reflect/ReflectFieldType.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
-#include "Meta/MetaType.h"
-#include "Reflect/ReflectFieldType.h"
-
-#include "BasicDataTypes/Colors/LinearColor.h"
-#include <cereal/types/array.hpp>
-#include <cereal/types/optional.hpp>
 
 namespace CE
 {
-	template<typename T>
-	struct ParticleProperty
+	template <typename T>
+	ParticleProperty<T>::ParticleProperty() = default;
+
+	template <typename T>
+	ParticleProperty<T>::ParticleProperty(T&& value) :
+		mInitialMin(value),
+		mInitialMax(value)
+	{}
+
+	template <typename T>
+	ParticleProperty<T>::ParticleProperty(T&& min, T&& max) :
+		mInitialMin(std::forward<T>(min)),
+		mInitialMax(std::forward<T>(max))
+	{}
+
+	template <typename T>
+	constexpr T ParticleProperty<T>::GetValue(const std::vector<typename ChangeOverTime::ValueAtTime>& points, float t)
 	{
-		static constexpr size_t sNumOfSamples = 8;
-
-		void SetInitialValuesOfNewParticles(const ParticleEmitterComponent& emitter);
-		T GetValue(const ParticleEmitterComponent& emitter, size_t particleIndex) const;
-
-		void DisplayWidget(const std::string& name);
-
-		bool operator==(const ParticleProperty& other) const;
-		bool operator!=(const ParticleProperty& other) const;
-
-		T mInitialMin{};
-		T mInitialMax{};
-
-		struct ChangeOverTime
+		for (size_t i = 0; i < points.size() - 1; i++)
 		{
-			bool operator==(const ChangeOverTime& other) const;
-
-			struct ValueAtTime
+			if (points[i + 1].mTime < t)
 			{
-				bool operator==(const ValueAtTime& other) const;
-
-				float mTime = -1.0f;
-				T mValue{};
-
-			private:
-				friend cereal::access;
-				template<class Archive>
-				void serialize(Archive& ar);
-			};
-
-			std::array<ValueAtTime, sNumOfSamples> mMinPoints{};
-
-			struct WithLerp
-			{
-				bool operator==(const WithLerp& other) const;
-
-				std::array<ValueAtTime, sNumOfSamples> mPoints{};
-				std::vector<float> mLerpTime{};
-
-
-			private:
-				friend cereal::access;
-				template<class Archive>
-				void serialize(Archive& ar);
-			};
-			std::optional<WithLerp> mMax{};
-
-		private:
-			friend cereal::access;
-			template<class Archive>
-			void serialize(Archive& ar);
-		};
-		std::optional<ChangeOverTime> mChangeOverTime{};
-
-		std::vector<T> mInitialValues{};
-
-	private:
-		static constexpr T GetValue(const std::array<typename ChangeOverTime::ValueAtTime, sNumOfSamples>& points, float t)
-		{
-			for (size_t i = 0; i < sNumOfSamples - 1; i++)
-			{
-				if (points[i + 1].mTime < t)
-				{
-					continue;
-				}
-
-				const float weight = Math::lerpInv(points[i].mTime, points[i + 1].mTime, t);
-				return Math::lerp(points[i].mValue, points[i + 1].mValue, weight);
+				continue;
 			}
 
-			return points.back().mValue;
+			const float weight = Math::lerpInv(points[i].mTime, points[i + 1].mTime, t);
+			return Math::lerp(points[i].mValue, points[i + 1].mValue, weight);
 		}
 
-		friend ReflectAccess;
-		static MetaType Reflect();
-	};
+		return points.back().mValue;
+	}
 
 	template <typename T>
 	void ParticleProperty<T>::SetInitialValuesOfNewParticles(const ParticleEmitterComponent& emitter)
@@ -123,7 +70,8 @@ namespace CE
 	{
 		const T& initialValue = mInitialValues[particleIndex];
 
-		if (!mChangeOverTime.has_value())
+		if (!mChangeOverTime.has_value()
+			|| mChangeOverTime->mMinPoints.empty())
 		{
 			return initialValue;
 		}
@@ -131,7 +79,8 @@ namespace CE
 
 		const T minSample = GetValue(mChangeOverTime->mMinPoints, sampleTime);
 
-		if (!mChangeOverTime->mMax.has_value())
+		if (!mChangeOverTime->mMax.has_value()
+			|| mChangeOverTime->mMax->mPoints.empty())
 		{
 			return minSample * initialValue;
 		}
@@ -143,27 +92,52 @@ namespace CE
 	}
 
 	template <typename T>
-	void ParticleProperty<T>::DisplayWidget(const std::string&)
+	void ParticleProperty<T>::DisplayWidget(const std::string& name)
 	{
-		//ShowInspectUI("mInitialMin", mInitialMin);
-		//ShowInspectUI("mInitialMax", mInitialMax);
+		if (!ImGui::TreeNode(name.c_str()))
+		{
+			return;
+		}
+
+		ShowInspectUI("mInitialMin", mInitialMin);
+		ShowInspectUI("mInitialMax", mInitialMax);
 
 		bool hasValue = mChangeOverTime.has_value();
 
-		const auto& showPoints = [](const auto& points)
+		const auto& showPoints = [](auto& points)
 			{
-				for (size_t i = 0; i < points.size(); i++)
+				ImGui::Separator();
+				ImGui::TextUnformatted("Points");
+				ImGui::Indent();
+
+				for (int i = 0; i < static_cast<int>(points.size()); i++)
 				{
-					ImGui::PushID(static_cast<int>(i));
+					ImGui::PushID(i);
 
-					//ShowInspectUI("mTime", points[i].mTime);
-
-					ImGui::SameLine();
-
-					//ShowInspectUI("mValue", points[i].mValue);
+					ImGui::SliderFloat("mTime", &points[i].mTime, 0.0f, 1.0f);
+					ShowInspectUI("mValue", points[i].mValue);
 
 					ImGui::PopID();
 				}
+
+				ImGui::Unindent();
+
+				if (ImGui::Button("+"))
+				{
+					points.emplace_back();
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::Button("-"))
+				{
+					if (!points.empty())
+					{
+						points.pop_back();
+					}
+				}
+
+				ImGui::Separator();
 			};
 
 		if (ImGui::TreeNode("mChangeOverTime"))
@@ -186,6 +160,8 @@ namespace CE
 
 				if (ImGui::TreeNode("RandomInRange"))
 				{
+					hasValue = mChangeOverTime->mMax.has_value();
+
 					if (ImGui::Checkbox("HasValue", &hasValue))
 					{
 						if (mChangeOverTime->mMax.has_value())
@@ -209,6 +185,56 @@ namespace CE
 
 			ImGui::TreePop();
 		}
+
+		static float previewTime = .5f;
+
+		T minValue = mInitialMin;
+		T avgValue = Math::lerp(mInitialMin, mInitialMax, .5f);
+		T maxValue = mInitialMax;
+
+		// Some code repetition with our GetValue function,
+		// but extracting the common parts would lead to a
+		// slight performance cost.
+		const auto& scaleValue = [this](T& value, float lerpValue)
+			{
+				if (!mChangeOverTime.has_value()
+					|| mChangeOverTime->mMinPoints.empty())
+				{
+					return;
+				}
+
+				const T minSample = GetValue(mChangeOverTime->mMinPoints, previewTime);
+
+				if (!mChangeOverTime->mMax.has_value()
+					|| mChangeOverTime->mMax->mPoints.empty())
+				{
+					value *= minSample;
+					return;
+				}
+
+				const T maxSample = GetValue(mChangeOverTime->mMax->mPoints, previewTime);
+				value *= Math::lerp(minSample, maxSample, lerpValue);
+			};
+
+		scaleValue(minValue, 0.0f);
+		scaleValue(avgValue, 0.5f);
+		scaleValue(maxValue, 1.0f);
+
+		if (ImGui::TreeNode("Preview"))
+		{
+			ImGui::SliderFloat("Preview time", &previewTime, 0.0f, 1.0f);
+
+			ImGui::BeginDisabled();
+
+			ShowInspectUIReadOnly("MinValue", minValue);
+			ShowInspectUIReadOnly("AvgValue", avgValue);
+			ShowInspectUIReadOnly("MaxValue", maxValue);
+
+			ImGui::EndDisabled();
+
+			ImGui::TreePop();
+		}
+		ImGui::TreePop();
 	}
 
 	template <typename T>
@@ -275,9 +301,6 @@ IMGUI_AUTO_DEFINE_INLINE(template<typename T>, CE::ParticleProperty<T>, var.Disp
 
 namespace cereal
 {
-
-
-
 	template<class Archive, typename T>
 	void serialize(Archive& ar, CE::ParticleProperty<T>& value)
 	{
@@ -304,13 +327,3 @@ namespace CE
 		return type;
 	}
 }
-
-
-
-
-
-// Particle colour (LinearColor)
-// Particle light radius (float)
-// Particle light intensity (float)
-// Particle mass (float)
-// Particle scale (vec3)

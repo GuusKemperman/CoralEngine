@@ -1362,7 +1362,6 @@
     <ClCompile Include="Source\Components\Particles\ParticleColorComponent.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticleMeshRendererComponent.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticlePhysicsComponent.cpp" />
-    <ClCompile Include="Source\Components\Particles\ParticleScaleOverTimeComponent.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticleSpawnPrefabOnDeathComponent.cpp" />
     <ClCompile Include="Source\Components\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Meta\MetaField.cpp" />
@@ -1573,7 +1572,6 @@
     <ClCompile Include="source\Systems\Particles\ParticleColorSystem.cpp" />
     <ClCompile Include="source\Systems\Particles\ParticleLifeTimeSystem.cpp" />
     <ClCompile Include="source\Systems\Particles\ParticlePhysicsSystem.cpp" />
-    <ClCompile Include="source\Systems\Particles\ParticleScaleOverTimeSystem.cpp" />
     <ClCompile Include="source\Systems\UpdateFlyCamSystem.cpp" />
     <ClCompile Include="Source\Utilities\Imgui\WorldInspect.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1635,6 +1633,9 @@
     <ClInclude Include="Include\Components\OutlineComponent.h" />
     <ClInclude Include="Include\Components\Particles\ParticleLightComponent.h" />
     <ClInclude Include="Include\Components\Particles\ParticleEmitterShapes.h" />
+    <ClInclude Include="Include\Components\Particles\ParticleProperty.h" />
+    <ClInclude Include="Include\Components\Particles\ParticleProperty\ParticlePropertyFwd.h" />
+    <ClInclude Include="Include\Components\Particles\ParticleProperty\ParticlePropertyImpl.h" />
     <ClInclude Include="Include\Components\Pathfinding\SwarmingAgentTag.h" />
     <ClInclude Include="Include\Components\Pathfinding\SwarmingTargetComponent.h" />
     <ClInclude Include="Include\Components\PlayerComponent.h" />
@@ -1933,7 +1934,6 @@
     <ClInclude Include="Include\Utilities\MemFunctions.h" />
     <ClInclude Include="Include\Utilities\IterableRange.h" />
     <ClInclude Include="Include\Utilities\NameLookUp.h" />
-    <ClInclude Include="Include\Utilities\ParticleProperty.h" />
     <ClInclude Include="Include\Utilities\PerlinNoise.h" />
     <ClInclude Include="Include\Utilities\Search.h" />
     <ClInclude Include="Include\Utilities\Imgui\WorldInspect.h" />
@@ -2000,7 +2000,6 @@
     <ClInclude Include="include\Components\Particles\ParticleComponentTraits.h" />
     <ClInclude Include="include\Components\Particles\ParticleMeshRendererComponent.h" />
     <ClInclude Include="include\Components\Particles\ParticlePhysicsComponent.h" />
-    <ClInclude Include="include\Components\Particles\ParticleScaleOverTimeComponent.h" />
     <ClInclude Include="include\Components\CameraComponent.h" />
     <ClInclude Include="Include\Assets\Prefabs\ComponentFactory.h" />
     <ClInclude Include="include\Components\FlyCamControllerComponent.h" />
@@ -2017,7 +2016,6 @@
     <ClInclude Include="include\Systems\Particles\ParticleDebugVisualizationSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleLifeTimeSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticlePhysicsSystem.h" />
-    <ClInclude Include="include\Systems\Particles\ParticleScaleOverTimeSystem.h" />
     <ClInclude Include="include\Systems\Particles\ParticleSpawnPrefabOnDeathSystem.h" />
     <ClInclude Include="include\Systems\RenderToCamerasSystem.h" />
     <ClInclude Include="include\Systems\UpdateCameraMatricesSystem.h" />

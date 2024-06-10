@@ -2,13 +2,9 @@
 #include "Platform/PC/Rendering/GPUWorldPC.h"
 
 #include "World/World.h"
-#include "World/WorldViewport.h"
 #include "World/Registry.h"
 
 #include "Assets/Material.h"
-#include "Assets/Texture.h"
-#include "Assets/StaticMesh.h"
-#include "Assets/SkinnedMesh.h"
 
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
@@ -18,8 +14,8 @@
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/FogComponent.h"
 #include "Components/OutlineComponent.h"
-#include "Rendering/GPUWorld.h"
 
+#include "Components/Particles/ParticleProperty.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
 #include "Components/Particles/ParticleColorComponent.h"
 #include "Components/Particles/ParticleLightComponent.h"
@@ -654,13 +650,10 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
             const size_t numOfParticles = emitter.GetNumOfParticles();
 
             Span<const glm::vec3> positions = emitter.GetParticlePositions();
-            Span<const glm::vec3> sizes = emitter.GetParticleSizes();
+            const ParticleProperty<glm::vec3> sizes = emitter.mScale;
             Span<const glm::quat> orientations = emitter.GetParticleOrientations();
             const ParticleProperty<LinearColor>& colors = colorComponent.mColor;
-            auto lightComponent = mWorld.get().GetRegistry().TryGet<ParticleLightComponent>(entity);
-            Span<const float> intensities;
-            if (lightComponent)
-                intensities = lightComponent->GetParticleLightIntensities();
+            const ParticleLightComponent* lightComponent = mWorld.get().GetRegistry().TryGet<ParticleLightComponent>(entity);
 
             for (uint32 i = 0; i < numOfParticles; i++)
             {
@@ -673,7 +666,7 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                     return;
                 }
 
-                const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], sizes[i], orientations[i]);
+                const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], emitter.mScale.GetValue(emitter, i), orientations[i]);
 
                 InfoStruct::DXParticleInfo particleInfo{};
                 particleInfo.mMesh = const_cast<StaticMesh*>(meshRenderer.mParticleMesh.Get());
@@ -684,11 +677,12 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                 particleInfo.mColor = colors.GetValue(emitter, i);
                 particleInfo.mMatrix = std::move(mat);
 
-                if (lightComponent)
+                if (lightComponent != nullptr)
                 {
+                    const float radius = lightComponent->mRadius.GetValue(emitter, i);
                     particleInfo.mIsEmissive = true;
-                    particleInfo.mLightRadius = lightComponent->mLightRadius;
-                    particleInfo.mLightIntensity = intensities[i];
+                    particleInfo.mLightRadius = radius;
+                    particleInfo.mLightIntensity = lightComponent->mIntensity.GetValue(emitter, i);
 
                     if(mPointLightCounter >= mPointLights.size())
                     {
@@ -699,7 +693,7 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                     InfoStruct::DXPointLightInfo pointLight;
                     pointLight.mPosition = glm::vec4(positions[i],1.f);
                     pointLight.mColorAndIntensity = glm::vec4(glm::vec3(particleInfo.mColor), particleInfo.mLightIntensity);
-                    pointLight.mRadius = lightComponent->mLightRadius;
+                    pointLight.mRadius = radius;
                     mPointLights[mPointLightCounter] = pointLight;
                     mPointLightCounter++;
                 }
