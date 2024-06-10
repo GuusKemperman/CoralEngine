@@ -89,17 +89,26 @@ CE::MetaField& CE::MetaType::AddField([[maybe_unused]] Args&& ... args)
 	return returnValue;
 }
 
+namespace CE::Internal
+{
+	template <typename TypeT, typename... ParamsT, size_t... Indices>
+	void ConstructObjectImpl(MetaFunc::DynamicArgs& runtimeArgs,
+		MetaFunc::RVOBuffer rvoBuffer,
+		std::index_sequence<Indices...>)
+	{
+		new (rvoBuffer) TypeT(UnpackSingle<ParamsT, Indices>(runtimeArgs)...);
+	}
+}
+
 template<typename TypeT, typename... Args>
 void CE::MetaType::AddFromArg(Ctor<Args...>)
 {
 	AddFunc(
-		// Maybe_unused is there in case sizeo...(Args) == 0
-		[]([[maybe_unused]] MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer buffer) -> FuncResult
+		[](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer buffer) -> FuncResult
 		{
 			ASSERT(buffer != nullptr && "The address provided to a constructor may never be nullptr");
-
-			[[maybe_unused]] size_t argIndex = Internal::GetUnpackStart(sizeof...(Args));
-			new (buffer) TypeT(Internal::Unpack<Args>(args, argIndex)...);
+			std::make_index_sequence<sizeof...(Args)> sequence{};
+			Internal::ConstructObjectImpl<TypeT, Args...>(args, buffer, sequence);
 			return std::nullopt;
 		},
 		OperatorType::constructor,

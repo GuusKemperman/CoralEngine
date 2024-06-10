@@ -66,5 +66,5 @@ CE::UnitTest::Result TestName()
 CE::UnitTest::Result TestName();																																		\
 [[maybe_unused]] static inline const bool CONCAT(__sTestDummyVariable, CONCAT(Category, TestName)) = CE::Internal::RegisterUnitTest(#Category, #TestName, &(TestName));		\
 
-#define TEST_ASSERT(Condition) if (!(Condition)) { LOG(UnitTests, Error, "{} evaluated to false", #Condition); return UnitTest::Failure; }; 
+#define TEST_ASSERT(Condition) if (!(Condition)) { LOG(UnitTests, Error, "{} evaluated to false", #Condition); return CE::UnitTest::Failure; }; 
 
