@@ -44,10 +44,12 @@ namespace CE
 		template<bool (Input::* Func)(int, Input::GamepadButton, bool) const>
 		static bool CheckGamepadInput(const std::vector<Input::GamepadButton>& buttons, int playerID);
 
+		// Call all bound events of a type based on the vector of bound events passed - only events that have the based parameters (world and owner entity).
+		static void CallBoundEventsWithNoExtraParams(World& world, entt::entity castBy, const std::vector<CE::BoundEvent>& boundEvents);
+
 	private:
 		static inline std::vector<CE::BoundEvent> sAbilityActivateEvents;
 		static inline std::vector<CE::BoundEvent> sReloadCompletedEvents;
-		static void CallBoundEventsWithNoExtraParams(World& world, entt::entity castBy, const std::vector<CE::BoundEvent>& boundEvents);
 
 		friend ReflectAccess;
 		static MetaType Reflect();

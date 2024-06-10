@@ -204,6 +204,11 @@ CE::MetaFunc::InvokeT CE::ScriptEnemyKilledEvent::GetScriptInvoker(const ScriptF
 		};
 }
 
+CE::ScriptGettingHitEvent::ScriptGettingHitEvent() :
+	ScriptOnlyPassComponentEvent(sGettingHitEvent)
+{
+}
+
 CE::MetaFunc::InvokeT CE::CollisionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
                                                            const AssetHandle<Script>& script) const
 {
