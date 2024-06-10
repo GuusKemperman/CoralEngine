@@ -11,7 +11,7 @@
 
 void Game::IdleState::OnAiTick(CE::World& world, const entt::entity owner, float) const
 {
-	Game::AnimationInAi(world, owner, mIdleAnimation);
+	Game::AnimationInAi(world, owner, mIdleAnimation, true);
 }
 
 float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)

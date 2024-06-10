@@ -26,72 +26,84 @@ void CE::SwarmingAgentSystem::Update(World& world, float)
 		return;
 	}
 
+	const BVH& bvh = world.GetPhysics().GetBVHs()[static_cast<int>(CollisionLayer::StaticObstacles)];
+
 	const SwarmingTargetComponent& target = targetView.get<SwarmingTargetComponent>(targetEntity);
 	const TransformComponent& targetTransform = targetView.get<TransformComponent>(targetEntity);
 	const glm::vec2 targetPos = targetTransform.GetWorldPosition2D();
-	const float interpolationFactor = 1.0f / (target.mSpacing * target.mSpacing);
+	const float interpolationFactor = 1.0f / (target.mCurrent.mSpacing * target.mCurrent.mSpacing);
 
 	for (auto [entity, transform, character, body, collider] : reg.View<SwarmingAgentTag, TransformComponent, CharacterComponent, PhysicsBody2DComponent, TransformedDiskColliderComponent>().each())
 	{
 		const glm::vec2 agentPosition = transform.GetWorldPosition2D();
-		const glm::vec2 toTarget = targetPos - agentPosition;
-		const float dist2ToTarget = glm::length2(toTarget);
-
-		if (dist2ToTarget == 0.0f)
-		{
-			continue;
-		}
-
-		const auto getDirectionSample = [&](const glm::vec2 samplePosition) -> glm::vec2
-			{
-				const glm::vec2 positionInGridSpace = samplePosition - target.mCellsTopLeftWorldPosition;
-				const int cellX = static_cast<int>(positionInGridSpace.x / target.mSpacing);
-				const int cellY = static_cast<int>(positionInGridSpace.y / target.mSpacing);
-
-				if (cellX < 0
-					|| cellY < 0
-					|| cellX >= target.mFlowFieldWidth
-					|| cellY >= target.mFlowFieldWidth
-					|| dist2ToTarget < target.mSpacing * target.mSpacing)
-				{
-					return toTarget / glm::sqrt(dist2ToTarget);
-				}
-
-				// Some bilinear interpolation
-				const uint32 sampleIndex = cellX + cellY * target.mFlowFieldWidth;
-				const bool onEdgeX = cellX + 1 >= target.mFlowFieldWidth;
-				const bool onEdgeZ = cellY + 1 >= target.mFlowFieldWidth;
-
-				const glm::vec2 sampleX0Z0 = target.mFlowField[sampleIndex];
-				const glm::vec2 sampleX1Z0 = onEdgeX ? sampleX0Z0 : target.mFlowField[sampleIndex + 1];
-				const glm::vec2 sampleX0Z1 = onEdgeZ ? sampleX0Z0 : target.mFlowField[sampleIndex + target.mFlowFieldWidth];
-				const glm::vec2 sampleX1Z1 = onEdgeX || onEdgeZ ? sampleX0Z0 : target.mFlowField[sampleIndex + target.mFlowFieldWidth + 1];
-
-				const float weightX = fmodf(positionInGridSpace.x, target.mSpacing);
-				const float weightZ = fmodf(positionInGridSpace.y, target.mSpacing);
-				const float opposingWeightX = target.mSpacing - weightX;
-				const float opposingWeightY = target.mSpacing - weightZ;
-
-				return interpolationFactor * (
-					sampleX0Z0 * opposingWeightX * opposingWeightY +
-					sampleX1Z0 * weightX * opposingWeightY +
-					sampleX0Z1 * opposingWeightX * weightZ +
-					sampleX1Z1 * weightX * weightZ
-					);
-			};
 
 		const glm::vec2 avoidanceDir = CalculateAvoidanceVelocity(world, entity, collider.mRadius * 2.0f, transform, collider);
 
-		const float sampleSpacing = collider.mRadius;
-		const glm::vec2 flowFieldDir =
-			(getDirectionSample(agentPosition) * 2.0f
-				+ getDirectionSample({ agentPosition.x - sampleSpacing, agentPosition.y })
-				+ getDirectionSample({ agentPosition.x + sampleSpacing, agentPosition.y })
-				+ getDirectionSample({ agentPosition.x, agentPosition.y + sampleSpacing })
-				+ getDirectionSample({ agentPosition.x, agentPosition.y - sampleSpacing }) 
-				* (1.0f / 6.0f));
+		Line line{ agentPosition, targetPos };
+		const glm::vec2 toTarget = targetPos - agentPosition;
+		glm::vec2 desiredDirectionTowardsTarget{};
 
-		const glm::vec2 desiredDir = CombineVelocities(avoidanceDir, flowFieldDir);
+		const float dist2ToTarget = glm::length2(toTarget);
+
+		if (dist2ToTarget != 0.0f)
+		{
+			// Check if we can see the target
+			if (bvh.Query(line))
+			{
+				const auto getDirectionSample = [&](const glm::vec2 samplePosition) -> glm::vec2
+					{
+						const glm::vec2 positionInGridSpace = samplePosition - target.mCurrent.mCellsTopLeftWorldPosition;
+						const int cellX = static_cast<int>(positionInGridSpace.x / target.mCurrent.mSpacing);
+						const int cellY = static_cast<int>(positionInGridSpace.y / target.mCurrent.mSpacing);
+
+						if (cellX < 0
+							|| cellY < 0
+							|| cellX >= target.mCurrent.mFlowFieldWidth
+							|| cellY >= target.mCurrent.mFlowFieldWidth
+							|| dist2ToTarget < target.mCurrent.mSpacing * target.mCurrent.mSpacing)
+						{
+							return toTarget / glm::sqrt(dist2ToTarget);
+						}
+
+						// Some bilinear interpolation
+						const uint32 sampleIndex = cellX + cellY * target.mCurrent.mFlowFieldWidth;
+						const bool onEdgeX = cellX + 1 >= target.mCurrent.mFlowFieldWidth;
+						const bool onEdgeZ = cellY + 1 >= target.mCurrent.mFlowFieldWidth;
+
+						const glm::vec2 sampleX0Z0 = target.mCurrent.mFlowField[sampleIndex];
+						const glm::vec2 sampleX1Z0 = onEdgeX ? sampleX0Z0 : target.mCurrent.mFlowField[sampleIndex + 1];
+						const glm::vec2 sampleX0Z1 = onEdgeZ ? sampleX0Z0 : target.mCurrent.mFlowField[sampleIndex + target.mCurrent.mFlowFieldWidth];
+						const glm::vec2 sampleX1Z1 = onEdgeX || onEdgeZ ? sampleX0Z0 : target.mCurrent.mFlowField[sampleIndex + target.mCurrent.mFlowFieldWidth + 1];
+
+						const float weightX = fmodf(positionInGridSpace.x, target.mCurrent.mSpacing);
+						const float weightZ = fmodf(positionInGridSpace.y, target.mCurrent.mSpacing);
+						const float opposingWeightX = target.mCurrent.mSpacing - weightX;
+						const float opposingWeightY = target.mCurrent.mSpacing - weightZ;
+
+						return interpolationFactor * (
+							sampleX0Z0 * opposingWeightX * opposingWeightY +
+							sampleX1Z0 * weightX * opposingWeightY +
+							sampleX0Z1 * opposingWeightX * weightZ +
+							sampleX1Z1 * weightX * weightZ
+							);
+					};
+
+				const float sampleSpacing = collider.mRadius;
+				desiredDirectionTowardsTarget =
+					(getDirectionSample(agentPosition) * 2.0f
+						+ getDirectionSample({ agentPosition.x - sampleSpacing, agentPosition.y })
+						+ getDirectionSample({ agentPosition.x + sampleSpacing, agentPosition.y })
+						+ getDirectionSample({ agentPosition.x, agentPosition.y + sampleSpacing })
+						+ getDirectionSample({ agentPosition.x, agentPosition.y - sampleSpacing })
+						* (1.0f / 6.0f));
+			}
+			else
+			{
+				desiredDirectionTowardsTarget = toTarget / glm::sqrt(dist2ToTarget);
+			}
+		}
+
+		const glm::vec2 desiredDir = CombineVelocities(avoidanceDir, desiredDirectionTowardsTarget);
 
 		const float length2 = glm::length2(desiredDir);
 
@@ -104,9 +116,47 @@ void CE::SwarmingAgentSystem::Update(World& world, float)
 	}
 }
 
-void CE::SwarmingTargetSystem::Update(World& world, float)
+CE::SwarmingTargetSystem::~SwarmingTargetSystem()
+{
+	if (mPendingThread.joinable())
+	{
+		mPendingThread.join();
+	}
+}
+
+void CE::SwarmingTargetSystem::Update(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
+	const auto targetView = reg.View<SwarmingTargetComponent, TransformedDiskColliderComponent>();
+
+	const entt::entity targetEntity = targetView.front();
+
+	if (targetEntity == entt::null)
+	{
+		return;
+	}
+
+	SwarmingTargetComponent& target = targetView.get<SwarmingTargetComponent>(targetEntity);
+
+	if (mPendingThread.joinable()
+		&& mIsPendingReady)
+	{
+		mPendingThread.join();
+		mIsPendingReady = false;
+
+		if (mPendingForEntity == targetEntity)
+		{
+			std::swap(target.mCurrent, mPendingFlowField);
+		}
+	}
+
+	if (!mStartNewThreadCooldown.IsReady(dt))
+	{
+		return;
+	}
+
+	mPendingForEntity = targetEntity;
+
 	const BVH& bvh = world.GetPhysics().GetBVHs()[static_cast<int>(CollisionLayer::StaticObstacles)];
 
 	float minRadius = std::numeric_limits<float>::infinity();
@@ -117,229 +167,218 @@ void CE::SwarmingTargetSystem::Update(World& world, float)
 		minRadius = std::min(disk.mRadius, minRadius);
 	}
 
-	const auto targetView = reg.View<SwarmingTargetComponent, TransformedDiskColliderComponent>();
-	for (entt::entity entity : targetView)
+	const TransformedDiskColliderComponent& targetDisk = targetView.get<TransformedDiskColliderComponent>(targetEntity);
+	const glm::vec2 targetPosition = targetDisk.mCentre;
+	mPendingFlowField.mSpacing = std::min(targetDisk.mRadius, minRadius);
+	mPendingFlowField.mFlowFieldWidth = std::max(static_cast<int>((target.mDesiredRadius * 2.0f) / mPendingFlowField.mSpacing), 3);
+
+	if ((mPendingFlowField.mFlowFieldWidth & 1) == 0)
 	{
-		SwarmingTargetComponent& target = targetView.get<SwarmingTargetComponent>(entity);
-		const TransformedDiskColliderComponent& disk = targetView.get<TransformedDiskColliderComponent>(entity);
+		mPendingFlowField.mFlowFieldWidth++;
+	}
 
-		const glm::vec2 targetPosition = disk.mCentre;
-		target.mSpacing = std::min(disk.mRadius, minRadius);
+	const float fieldWidthWorldSpace = static_cast<float>(mPendingFlowField.mFlowFieldWidth) * mPendingFlowField.mSpacing;
+	mPendingFlowField.mCellsTopLeftWorldPosition = targetPosition - glm::vec2{ fieldWidthWorldSpace } *.5f;
+	mPendingFlowField.mFlowField.resize(static_cast<size_t>(Math::sqr(mPendingFlowField.mFlowFieldWidth)));
 
-		int fieldWidth = std::max(static_cast<int>((target.mDesiredRadius * 2.0f) / target.mSpacing), 3);
+	mPendingIsBlocked.resize(mPendingFlowField.mFlowField.size());
 
-		if ((fieldWidth & 1) == 0)
+	for (int y = 0; y < mPendingFlowField.mFlowFieldWidth; y++)
+	{
+		for (int x = 0; x < mPendingFlowField.mFlowFieldWidth; x++)
 		{
-			fieldWidth++;
+			const TransformedAABB cell = mPendingFlowField.GetCellBox(x, y);
+			mPendingIsBlocked[x + y * mPendingFlowField.mFlowFieldWidth] = bvh.Query(cell);
 		}
+	}
 
-		const float fieldWidthWorldSpace = static_cast<float>(fieldWidth) * target.mSpacing;
-
-		target.mCellsTopLeftWorldPosition = targetPosition - glm::vec2{ fieldWidthWorldSpace } *.5f;
-		target.mFlowFieldWidth = fieldWidth;
-		target.mFlowField.resize(static_cast<size_t>(fieldWidth * fieldWidth));
-
-		// A floodfill does not cover enclosed areas.
-		// We initialize all cells with the direction
-		// to the player
-		for (int y = 0; y < target.mFlowFieldWidth; y++)
+	mPendingThread = std::thread
+	{
+		[this, targetPosition, numOfSmoothingSteps = target.mNumberOfSmoothingSteps]
 		{
-			for (int x = 0; x < target.mFlowFieldWidth; x++)
+			// A floodfill does not cover enclosed areas.
+			// We initialize all cells with the direction
+			// to the player
+			for (int y = 0; y < mPendingFlowField.mFlowFieldWidth; y++)
 			{
-				const glm::vec2 cellCentre = target.GetCellBox(x, y).GetCentre();
-				glm::vec2 toTarget = targetPosition - cellCentre;
-
-				if (toTarget == glm::vec2{})
+				for (int x = 0; x < mPendingFlowField.mFlowFieldWidth; x++)
 				{
-					toTarget = glm::vec2{ 1.0f, 0.0f };
+					const glm::vec2 cellCentre = mPendingFlowField.GetCellBox(x, y).GetCentre();
+					glm::vec2 toTarget = targetPosition - cellCentre;
+
+					if (toTarget == glm::vec2{})
+					{
+						toTarget = glm::vec2{ 1.0f, 0.0f };
+					}
+
+					mPendingFlowField.mFlowField[x + y * mPendingFlowField.mFlowFieldWidth] = glm::normalize(toTarget);
+				}
+			}
+
+			const int centre = mPendingFlowField.mFlowFieldWidth / 2;
+			const int startIndex = centre + centre * mPendingFlowField.mFlowFieldWidth;
+
+			// Works functionally the same as a queue
+			mPendingOpenIndices.clear();
+			mPendingOpenIndices.emplace_back(startIndex);
+			uint32 openCurrentIndex = 0;
+
+			mPendingDistanceField.clear();
+			mPendingDistanceField.resize(mPendingFlowField.mFlowField.size(), std::numeric_limits<float>::infinity());
+			mPendingDistanceField[startIndex] = 0.0f;
+
+			while (openCurrentIndex < mPendingOpenIndices.size())
+			{
+				const int current = mPendingOpenIndices[openCurrentIndex];
+				openCurrentIndex++;
+
+				// Pop_front in bulk
+				if (openCurrentIndex >= 1024)
+				{
+					mPendingOpenIndices.erase(mPendingOpenIndices.begin(), mPendingOpenIndices.begin() + openCurrentIndex);
+					openCurrentIndex = 0;
 				}
 
-				target.mFlowField[x + y * fieldWidth] = glm::normalize(toTarget);
-			}
-		}
+				const float currentDist = mPendingDistanceField[current];
 
-		// Static, so we can reuse the buffer.
-		// char because std::vector<bool> is slower
-		static std::vector<char> isBlocked{};
-		isBlocked.clear();
-		isBlocked.resize(target.mFlowField.size(), false);
+				const int x = current % mPendingFlowField.mFlowFieldWidth;
+				const int y = current / mPendingFlowField.mFlowFieldWidth;
 
-		for (int y = 0; y < target.mFlowFieldWidth; y++)
-		{
-			for (int x = 0; x < target.mFlowFieldWidth; x++)
-			{
-				const TransformedAABB cell = target.GetCellBox(x, y);
-				isBlocked[x + y * target.mFlowFieldWidth] = bvh.Query<BVH::DefaultOnIntersectFunction, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<true>>(cell);
-			}
-		}
-
-		const int centre = fieldWidth / 2;
-		const int startIndex = centre + centre * fieldWidth;
-
-		// Static, so we can reuse the buffer.
-		// Works functionally the same as a queue
-		static std::vector<int> openIndices{};
-		openIndices.clear();
-		openIndices.emplace_back(startIndex);
-		uint32 openCurrentIndex = 0;
-
-		// Static, so we can reuse the buffer.
-		static std::vector<float> distanceField{};
-		distanceField.clear();
-		distanceField.resize(target.mFlowField.size(), std::numeric_limits<float>::infinity());
-		distanceField[startIndex] = 0.0f;
-
-		while (openCurrentIndex < openIndices.size())
-		{
-			const int current = openIndices[openCurrentIndex];
-			openCurrentIndex++;
-
-			// Pop_front in bulk
-			if (openCurrentIndex >= 1024)
-			{
-				openIndices.erase(openIndices.begin(), openIndices.begin() + openCurrentIndex);
-				openCurrentIndex = 0;
-			}
-
-			const float currentDist = distanceField[current];
-
-			const int x = current % fieldWidth;
-			const int y = current / fieldWidth;
-
-			const auto exploreNbr = [&](const int nbrX, const int nbrY, const float distIncease)
-				{
-					if (nbrY < 0
-						|| nbrY >= fieldWidth
-						|| nbrX < 0
-						|| nbrX >= fieldWidth)
-					{
-						return;
-					}
-
-					const int nbrIndex = nbrX + nbrY * fieldWidth;
-
-					if (isBlocked.data()[nbrIndex])
-					{
-						return;
-					}
-
-					const float nbrDist = currentDist + distIncease;
-
-					if (nbrDist < distanceField[nbrIndex])
-					{
-						distanceField[nbrIndex] = nbrDist;
-						openIndices.emplace_back(nbrIndex);
-					}
-				};
-
-			exploreNbr(x - 1, y - 1, 1.41421357f);
-			exploreNbr(x + 1, y + 1, 1.41421357f);
-			exploreNbr(x + 1, y - 1, 1.41421357f);
-			exploreNbr(x - 1, y + 1, 1.41421357f);
-
-			exploreNbr(x - 1, y, 1.0f);
-			exploreNbr(x, y - 1, 1.0f);
-			exploreNbr(x + 1, y, 1.0f);
-			exploreNbr(x, y + 1, 1.0f);
-		}
-
-		for (int y = 0; y < fieldWidth; y++)
-		{
-			for (int x = 0; x < fieldWidth; x++)
-			{
-				float lowestDist = std::numeric_limits<float>::infinity();
-
-				const auto checkNbr = [&](const int nbrX, const int nbrY)
+				const auto exploreNbr = [&](const int nbrX, const int nbrY, const float distIncease)
 					{
 						if (nbrY < 0
-							|| nbrY >= fieldWidth
+							|| nbrY >= mPendingFlowField.mFlowFieldWidth
 							|| nbrX < 0
-							|| nbrX >= fieldWidth)
+							|| nbrX >= mPendingFlowField.mFlowFieldWidth)
 						{
 							return;
 						}
 
-						const int nbrIndex = nbrX + nbrY * fieldWidth;
-						const float dist = distanceField[nbrIndex];
+						const int nbrIndex = nbrX + nbrY * mPendingFlowField.mFlowFieldWidth;
 
-						if ((fabsf(lowestDist - dist) < 0.5f
-							&& (nbrIndex & 1))
-							|| dist < lowestDist)
+						if (mPendingIsBlocked.data()[nbrIndex])
 						{
-							lowestDist = dist;
-							target.mFlowField[x + y * fieldWidth] = glm::normalize(glm::vec2{ static_cast<float>(nbrX - x), static_cast<float>(nbrY - y) });
+							return;
+						}
+
+						const float nbrDist = currentDist + distIncease;
+
+						if (nbrDist < mPendingDistanceField[nbrIndex])
+						{
+							mPendingDistanceField[nbrIndex] = nbrDist;
+							mPendingOpenIndices.emplace_back(nbrIndex);
 						}
 					};
 
-				checkNbr(x - 1, y - 1);
-				checkNbr(x + 1, y + 1);
-				checkNbr(x + 1, y - 1);
-				checkNbr(x - 1, y + 1);
+				exploreNbr(x - 1, y - 1, 1.41421357f);
+				exploreNbr(x + 1, y + 1, 1.41421357f);
+				exploreNbr(x + 1, y - 1, 1.41421357f);
+				exploreNbr(x - 1, y + 1, 1.41421357f);
 
-				checkNbr(x - 1, y);
-				checkNbr(x, y - 1);
-				checkNbr(x + 1, y);
-				checkNbr(x, y + 1);
+				exploreNbr(x - 1, y, 1.0f);
+				exploreNbr(x, y - 1, 1.0f);
+				exploreNbr(x + 1, y, 1.0f);
+				exploreNbr(x, y + 1, 1.0f);
 			}
-		}
 
-		if (target.mNumberOfSmoothingSteps == 0)
-		{
-			continue;
-		}
-
-		// Static, so we can reuse the buffer.
-		static std::vector<glm::vec2> smoothedField{};
-		smoothedField = target.mFlowField;
-
-		for (int i = 0; i < target.mNumberOfSmoothingSteps; i++)
-		{
-			for (int y = 0; y < fieldWidth; y++)
+			for (int y = 0; y < mPendingFlowField.mFlowFieldWidth; y++)
 			{
-				for (int x = 0; x < fieldWidth; x++)
+				for (int x = 0; x < mPendingFlowField.mFlowFieldWidth; x++)
 				{
-					glm::vec2 total = target.mFlowField[x + y * fieldWidth] * 2.0f;
+					float lowestDist = std::numeric_limits<float>::infinity();
 
-					const auto addToTotal = [&](const int nbrX, const int nbrY)
+					const auto checkNbr = [&](const int nbrX, const int nbrY)
 						{
 							if (nbrY < 0
-								|| nbrY >= fieldWidth
+								|| nbrY >= mPendingFlowField.mFlowFieldWidth
 								|| nbrX < 0
-								|| nbrX >= fieldWidth)
+								|| nbrX >= mPendingFlowField.mFlowFieldWidth)
 							{
-								total += glm::normalize(targetPosition - target.GetCellBox(nbrX, nbrY).GetCentre());
 								return;
 							}
 
-							const int nbrIndex = nbrX + nbrY * fieldWidth;
-							total += target.mFlowField[nbrIndex];
+							const int nbrIndex = nbrX + nbrY * mPendingFlowField.mFlowFieldWidth;
+							const float dist = mPendingDistanceField[nbrIndex];
+
+							if ((fabsf(lowestDist - dist) < 0.5f
+								&& (nbrIndex & 1))
+								|| dist < lowestDist)
+							{
+								lowestDist = dist;
+								mPendingFlowField.mFlowField[x + y * mPendingFlowField.mFlowFieldWidth] = glm::normalize(glm::vec2{ static_cast<float>(nbrX - x), static_cast<float>(nbrY - y) });
+							}
 						};
 
-					addToTotal(x - 1, y - 1);
-					addToTotal(x + 1, y + 1);
-					addToTotal(x + 1, y - 1);
-					addToTotal(x - 1, y + 1);
+					checkNbr(x - 1, y - 1);
+					checkNbr(x + 1, y + 1);
+					checkNbr(x + 1, y - 1);
+					checkNbr(x - 1, y + 1);
 
-					addToTotal(x - 1, y);
-					addToTotal(x, y - 1);
-					addToTotal(x + 1, y);
-					addToTotal(x, y + 1);
-
-					glm::vec2 average = total * (1.0f / 10.0f);
-					const float averageLength2 = glm::length2(average);
-
-					if (averageLength2 == 0.0f)
-					{
-						continue;
-					}
-
-					smoothedField[x + y * fieldWidth] = average / glm::sqrt(averageLength2);
+					checkNbr(x - 1, y);
+					checkNbr(x, y - 1);
+					checkNbr(x + 1, y);
+					checkNbr(x, y + 1);
 				}
 			}
 
-			std::swap(target.mFlowField, smoothedField);
+			if (numOfSmoothingSteps == 0)
+			{
+				mIsPendingReady = true;
+				return;
+			}
+
+			mSmoothedDirections = mPendingFlowField.mFlowField;
+
+			for (int i = 0; i < numOfSmoothingSteps; i++)
+			{
+				for (int y = 0; y < mPendingFlowField.mFlowFieldWidth; y++)
+				{
+					for (int x = 0; x < mPendingFlowField.mFlowFieldWidth; x++)
+					{
+						glm::vec2 total = mPendingFlowField.mFlowField[x + y * mPendingFlowField.mFlowFieldWidth] * 2.0f;
+
+						const auto addToTotal = [&](const int nbrX, const int nbrY)
+							{
+								if (nbrY < 0
+									|| nbrY >= mPendingFlowField.mFlowFieldWidth
+									|| nbrX < 0
+									|| nbrX >= mPendingFlowField.mFlowFieldWidth)
+								{
+									total += glm::normalize(targetPosition - mPendingFlowField.GetCellBox(nbrX, nbrY).GetCentre());
+									return;
+								}
+
+								const int nbrIndex = nbrX + nbrY * mPendingFlowField.mFlowFieldWidth;
+								total += mPendingFlowField.mFlowField[nbrIndex];
+							};
+
+						addToTotal(x - 1, y - 1);
+						addToTotal(x + 1, y + 1);
+						addToTotal(x + 1, y - 1);
+						addToTotal(x - 1, y + 1);
+
+						addToTotal(x - 1, y);
+						addToTotal(x, y - 1);
+						addToTotal(x + 1, y);
+						addToTotal(x, y + 1);
+
+						glm::vec2 average = total * (1.0f / 10.0f);
+						const float averageLength2 = glm::length2(average);
+
+						if (averageLength2 == 0.0f)
+						{
+							continue;
+						}
+
+						mSmoothedDirections[x + y * mPendingFlowField.mFlowFieldWidth] = average / glm::sqrt(averageLength2);
+					}
+				}
+
+				std::swap(mPendingFlowField.mFlowField, mSmoothedDirections);
+			}
+			mIsPendingReady = true;
 		}
-	}
+	};
 }
 
 void CE::SwarmingTargetSystem::Render(const World& world)
@@ -351,16 +390,16 @@ void CE::SwarmingTargetSystem::Render(const World& world)
 
 	for (auto [entity, target] : world.GetRegistry().View<SwarmingTargetComponent>().each())
 	{
-		for (int y = 0; y < target.mFlowFieldWidth; y++)
+		for (int y = 0; y < target.mCurrent.mFlowFieldWidth; y++)
 		{
-			for (int x = 0; x < target.mFlowFieldWidth; x++)
+			for (int x = 0; x < target.mCurrent.mFlowFieldWidth; x++)
 			{
-				const TransformedAABB cell = target.GetCellBox(x, y);
+				const TransformedAABB cell = target.mCurrent.GetCellBox(x, y);
 
 				const glm::vec2 pos = cell.GetCentre();
-				const glm::vec2 dir = target.mFlowField[x + y * target.mFlowFieldWidth];
+				const glm::vec2 dir = target.mCurrent.mFlowField[x + y * target.mCurrent.mFlowFieldWidth];
 
-				DrawDebugLine(world, DebugCategory::AINavigation, pos, pos + dir * target.mSpacing * .75f, glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+				DrawDebugLine(world, DebugCategory::AINavigation, pos, pos + dir * target.mCurrent.mSpacing * .75f, glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
 			}
 		}
 	}

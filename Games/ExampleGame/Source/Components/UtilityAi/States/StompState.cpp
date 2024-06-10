@@ -40,7 +40,7 @@ void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, cons
 	}
 	Game::ExecuteEnemyAbility(world, owner);
 
-	Game::AnimationInAi(world, owner, mStompAnimation);
+	Game::AnimationInAi(world, owner, mStompAnimation, false);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
@@ -91,7 +91,7 @@ void Game::StompState::OnAIStateEnterEvent(CE::World& world, const entt::entity 
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
-	Game::AnimationInAi(world, owner, mStompAnimation);
+	Game::AnimationInAi(world, owner, mStompAnimation, false);
 
 	mStompCooldown.mCooldown = mMaxStompTime;
 	mStompCooldown.mAmountOfTimePassed = 0.0f;
