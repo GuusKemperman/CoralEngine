@@ -20,8 +20,8 @@ env:
   SOLUTION_FILE_PATH: "Coral.sln"
 
 permissions:
-  contents: read
-
+  contents: write
+  
 jobs:
   build-and-run:
     runs-on: windows-latest
@@ -79,3 +79,11 @@ jobs:
         }
 
         exit $process.ExitCode
+
+    - name: Upload Build Artifacts
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.build-configuration }}-build
+        path: Games/ExampleGame/Build/**/*
+        retention-days: 1
