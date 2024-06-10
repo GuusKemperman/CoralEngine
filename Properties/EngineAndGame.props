@@ -13,6 +13,7 @@
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FastMath>true</FastMath>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

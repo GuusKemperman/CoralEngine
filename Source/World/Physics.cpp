@@ -54,7 +54,7 @@ std::vector<entt::entity> CE::Physics::FindAllWithinShapeImpl(const T& shape, co
 			continue;
 		}
 
-		bvh.Query<OnIntersect, BVH::DefaultShouldReturnFunction<true>, BVH::DefaultShouldReturnFunction<false>>(shape, ret);
+		bvh.Query<OnIntersect, BVH::DefaultShouldCheckFunction<true>, BVH::DefaultShouldReturnFunction<false>>(shape, ret);
 	}
 
 	return ret;
@@ -91,21 +91,41 @@ void CE::Physics::UpdateTransformedColliders(World& world, std::array<bool, stat
 	Registry& reg = world.GetRegistry();
 	const auto collidersWithoutTransformed = reg.View<const PhysicsBody2DComponent, const Collider>(entt::exclude_t<TransformedCollider>{});
 
-	for (entt::entity entity : collidersWithoutTransformed)
+	for (const entt::entity entity : collidersWithoutTransformed)
 	{
 		const PhysicsBody2DComponent& body = collidersWithoutTransformed.template get<PhysicsBody2DComponent>(entity);
 		wereItemsAddedToLayer[static_cast<int>(body.mRules.mLayer)] = true;
-	}
 
-	reg.AddComponents<TransformedCollider>(collidersWithoutTransformed.begin(), collidersWithoutTransformed.end());
+		if (!IsCollisionLayerStatic(body.mRules.mLayer))
+		{
+			reg.AddComponent<TransformedCollider>(entity);
+			continue;
+		}
+
+		const TransformComponent* transform = reg.TryGet<const TransformComponent>(entity);
+
+		if (transform == nullptr)
+		{
+			continue;
+		}
+
+		const Collider& collider = collidersWithoutTransformed.template get<Collider>(entity);
+		reg.AddComponent<TransformedCollider>(entity, collider.CreateTransformedCollider(*transform));
+	}
 
 	const auto transformedWithoutColliders = reg.View<TransformedCollider>(entt::exclude_t<Collider>{});
 	reg.RemoveComponents<TransformedCollider>(transformedWithoutColliders.begin(), transformedWithoutColliders.end());
 
-	const auto colliderView = reg.View<TransformComponent, Collider, TransformedCollider>();
+	const auto colliderView = reg.View<PhysicsBody2DComponent, TransformComponent, Collider, TransformedCollider>();
 
-	for (auto [entity, transform, collider, transformedCollider] : colliderView.each())
+	for (auto [entity, body, transform, collider, transformedCollider] : colliderView.each())
 	{
+		if (IsCollisionLayerStatic(body.mRules.mLayer)
+			&& world.HasBegunPlay()) // We still update static colliders in the editor
+		{
+			continue;
+		}
+
 		transformedCollider = collider.CreateTransformedCollider(transform);
 	}
 }

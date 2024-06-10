@@ -63,15 +63,18 @@ void CE::AnimationRootComponent::SwitchAnimation()
 
 void CE::AnimationRootComponent::SwitchAnimation(Registry& reg, const AssetHandle<Animation>& animation, float timeStamp, float animationSpeed, float blendTime)
 {
+	mWantedAnimationSpeed = animationSpeed;
+	mCurrentAnimationSpeed = mWantedAnimationSpeed;
+
 	if (animation == mWantedAnimation)
 	{
 		mCurrentAnimation = mWantedAnimation;
+		SwitchAnimationRecursive(reg, mOwner, mCurrentAnimation, mCurrentTimeStamp, mCurrentAnimationSpeed);
 		return;
 	}
 
 	mWantedAnimation = animation;
 	mWantedTimeStamp = timeStamp;
-	mWantedAnimationSpeed = animationSpeed;
 	mWantedBlendTime = blendTime;
 
 	mCurrentTimeStamp = mWantedTimeStamp;

@@ -54,6 +54,11 @@ namespace CE
 		NUM_OF_LAYERS
 	};
 
+	static constexpr bool IsCollisionLayerStatic(CollisionLayer layer)
+	{
+		return layer == CollisionLayer::StaticObstacles || layer == CollisionLayer::Terrain;
+	}
+
 	struct CollisionRules
 	{
 #ifdef EDITOR

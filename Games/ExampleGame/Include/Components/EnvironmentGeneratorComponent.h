@@ -19,15 +19,7 @@ namespace Game
 			{
 				CE::AssetHandle<CE::Prefab> mPrefab{};
 
-				float mBaseFrequency = 1.0f;
-
-				// Can be used to, for example, make 'larger' rocks only spawn
-				// if the noise value is really high. This leads to larger rocks
-				// in the centre surrounded by a bunch of smaller rocks.
-				//
-				// The actual frequency used for determining which object to spawn is:
-				// spawnChance = mBaseFrequency * mSpawnFrequenciesAtNoiseValue.At(noiseValue).
-				CE::Bezier mSpawnFrequenciesAtNoiseValue{};
+				float mFrequency = 1.0f;
 
 #ifdef EDITOR
 				void DisplayWidget(const std::string& name);
@@ -41,6 +33,17 @@ namespace Game
 				static CE::MetaType Reflect();
 			};
 			std::vector<Object> mObjects{};
+
+			// Objects can only spawn when
+			// the noise at that position is
+			// within this range.
+			float mMinNoiseValueToSpawn = 0.0f;
+			float mMaxNoiseValueToSpawn = 1.0f;
+
+			// The chance of spawning any of the objects,
+			// if the noise at that position is
+			// in an acceptable range.
+			float mObjectSpawnChance = 1.0f;
 
 			// We divide the layer into smaller
 			// cells, or 'tiles'. For each tile
@@ -112,11 +115,12 @@ namespace Game
 		};
 		std::vector<Layer> mLayers{};
 
-		float mGenerateRadius = 200.0f;
+		float mGenerateRadius = 50.0f;
+		float mDestroyRadius = 80.0f;
 
-		float mDistToMoveBeforeRegeneration = 50.0f;
+		float mDistToMoveBeforeRegeneration = 10.0f;
 
-		std::optional<uint32> mSeed{};
+		uint32 mSeed = CE::Random::Value<uint32>();
 
 		glm::vec2 mLastGeneratedAtPosition{ std::numeric_limits<float>::infinity() };
 
@@ -124,6 +128,7 @@ namespace Game
 		float mDebugDrawDistanceBetweenLayers = 5.0f;
 
 		bool mShouldGenerateInEditor{};
+		bool mWasClearingRequested{};
 
 	private:
 		friend CE::ReflectAccess;
@@ -132,8 +137,8 @@ namespace Game
 	};
 }
 
-CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 1);
-CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::Object, 1);
+CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 2);
+CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::Object, 2);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::NoiseInfluence, 0);
 
 namespace cereal
@@ -158,14 +163,14 @@ namespace cereal
 
 		if (version >= 2)
 		{
-			ar(value.mScaleAtNoiseValue);
+			ar(value.mScaleAtNoiseValue, value.mMinNoiseValueToSpawn, value.mMaxNoiseValueToSpawn, value.mObjectSpawnChance);
 		}
 	}
 
 	template<class Archive>
 	void serialize(Archive& ar, Game::EnvironmentGeneratorComponent::Layer::Object& value, uint32 version)
 	{
-		ar(value.mBaseFrequency, value.mPrefab);
+		ar(value.mFrequency, value.mPrefab);
 
 		if (version == 0)
 		{
@@ -173,7 +178,12 @@ namespace cereal
 			ar(dummy);
 		}
 
-		ar(value.mSpawnFrequenciesAtNoiseValue);
+		if (version == 1)
+		{
+			CE::Bezier dummy{};
+			ar(dummy);
+			
+		}
 	}
 
 	template<class Archive>

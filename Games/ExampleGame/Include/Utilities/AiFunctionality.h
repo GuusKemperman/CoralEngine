@@ -17,7 +17,7 @@ namespace Game {
 
 	void ExecuteEnemyAbility(CE::World& world, entt::entity owner);
 
-	void AnimationInAi(CE::World& world, entt::entity owner, const CE::AssetHandle<CE::Animation>& animation);
+	void AnimationInAi(CE::World& world, entt::entity owner, const CE::AssetHandle<CE::Animation>& animation, bool startAtRandomTime);
 
 	void FaceThePlayer(CE::World& world, entt::entity owner);
 }
