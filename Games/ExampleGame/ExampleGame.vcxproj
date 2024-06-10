@@ -114,6 +114,7 @@
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\Game.props" />
     <Import Project="..\..\Properties\Game***REMOVED***Debug.props" />
+    <Import Project="..\..\Properties\EngineAndGameDebug***REMOVED***.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">
     <Import Project="..\..\Properties\Game***REMOVED***Release.props" />
