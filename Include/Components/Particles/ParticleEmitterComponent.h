@@ -1,6 +1,7 @@
 #pragma once
 #include "BasicDataTypes/Bezier.h"
 #include "Meta/MetaReflect.h"
+#include "Components/Particles/ParticleProperty/ParticlePropertyFwd.h"
 
 namespace CE
 {
@@ -18,9 +19,6 @@ namespace CE
 
 		Span<glm::vec3> GetParticlePositions() { return mParticlePositions; }
 		Span<const glm::vec3> GetParticlePositions() const { return mParticlePositions; }
-
-		Span<glm::vec3> GetParticleSizes() { return mParticleScales; }
-		Span<const glm::vec3> GetParticleSizes() const { return mParticleScales; }
 
 		Span<glm::quat> GetParticleOrientations() { return mParticleOrientations; }
 		Span<const glm::quat> GetParticleOrientations() const { return mParticleOrientations; }
@@ -48,6 +46,8 @@ namespace CE
 		bool mIsPaused = false;
 		float mDuration = 10.0f;
 		float mCurrentTime{};
+
+		ParticleProperty<glm::vec3> mScale{ glm::vec3{ 1.0f }  };
 
 	private:
 		friend class ParticleLifeTimeSystem;

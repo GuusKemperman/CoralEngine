@@ -825,12 +825,12 @@ void CE::Internal::CheckShortcuts(World& world, std::vector<entt::entity>& selec
 
 	if (types & ShortCutType::GuizmoModes)
 	{
-		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::R))
+		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::E))
 		{
 			sGuizmoOperation = ImGuizmo::SCALE;
 		}
 
-		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::E))
+		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::R))
 		{
 			sGuizmoOperation = ImGuizmo::ROTATE;
 		}

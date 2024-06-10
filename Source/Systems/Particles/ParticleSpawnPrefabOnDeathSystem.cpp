@@ -5,9 +5,9 @@
 #include "World/Registry.h"
 #include "Components/Particles/ParticleSpawnPrefabOnDeathComponent.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
+#include "Components/Particles/ParticleProperty.h"
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
-#include "Meta/MetaManager.h"
 
 void CE::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unused]] float dt)
 {
@@ -24,9 +24,8 @@ void CE::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unused]]
 
 		const Span<const size_t> particlesThatJustDied = emitter.GetParticlesThatDiedDuringLastStep();
 		const Span<const glm::vec3> positions = emitter.GetParticlePositions();
-		const Span<const glm::vec3> scales = emitter.GetParticleSizes();
+		const ParticleProperty<glm::vec3>& scales = emitter.mScale;
 		const Span<const glm::quat> orientations = emitter.GetParticleOrientations();
-
 
 		for (size_t i = 0; i < particlesThatJustDied.size(); i++)
 		{
@@ -42,7 +41,7 @@ void CE::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unused]]
 
 			transform->SetWorldPosition(positions[particle]);
 			transform->SetWorldOrientation(orientations[particle]);
-			transform->SetWorldScale(scales[particle]);
+			transform->SetWorldScale(scales.GetValue(emitter, particle));
 		}
 	}
 }
