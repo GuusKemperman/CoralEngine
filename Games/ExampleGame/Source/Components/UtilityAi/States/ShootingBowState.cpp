@@ -16,6 +16,7 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
 #include "Components/UtililtyAi/States/RecoveryState.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 #include "Utilities/AiFunctionality.h"
 
 void Game::ShootingBowState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
@@ -32,23 +33,9 @@ void Game::ShootingBowState::OnAiTick(CE::World& world, const entt::entity owner
 
 	mShootCooldown.mAmountOfTimePassed += dt;
 
-	if (mShootCooldown.mAmountOfTimePassed >= mShootCooldown.mCooldown)
-	{
-		const auto rechargeState = world.GetRegistry().TryGet<Game::RecoveryState>(owner);
-
-		if (rechargeState == nullptr)
-		{
-			LOG(LogAI, Warning, "Stomp State - enemy {} does not have a RecoveryState Component.", entt::to_integral(owner));
-		}
-		else
-		{
-			rechargeState->mRechargeCooldown.mAmountOfTimePassed = 0.1f;
-		}
-	}
-
 	Game::ExecuteEnemyAbility(world, owner);
 
-	Game::AnimationInAi(world, owner, mStompAnimation);
+	Game::AnimationInAi(world, owner, mShootingAnimation, false);
 
 	Game::FaceThePlayer(world, owner);
 }
@@ -67,7 +54,7 @@ void Game::ShootingBowState::OnAiStateEnterEvent(CE::World& world, const entt::e
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
-	Game::AnimationInAi(world, owner, mStompAnimation);
+	Game::AnimationInAi(world, owner, mShootingAnimation, false);
 
 	mShootCooldown.mCooldown = mMaxStompTime;
 	mShootCooldown.mAmountOfTimePassed = 0.0f;
@@ -76,6 +63,47 @@ void Game::ShootingBowState::OnAiStateEnterEvent(CE::World& world, const entt::e
 void Game::ShootingBowState::OnAiStateExitEvent(CE::World& , entt::entity)
 {
 	mShootCooldown.mAmountOfTimePassed = 0.0f;
+}
+
+void Game::ShootingBowState::OnFinishAnimationEvent(CE::World& world, entt::entity owner)
+{
+	const auto* enemyAiController = world.GetRegistry().TryGet<CE::EnemyAiControllerComponent>(owner);
+
+	if (enemyAiController == nullptr)
+	{
+		LOG(LogAI, Warning, "Dash State - enemy {} does not have a EnemyAiController Component.", entt::to_integral(owner));
+		return;
+	}
+
+	if (enemyAiController->mCurrentState == nullptr)
+	{
+		return;
+	}
+
+	if (CE::MakeTypeId<ShootingBowState>() == enemyAiController->mCurrentState->GetTypeId())
+	{
+		const auto recoveryState = world.GetRegistry().TryGet<Game::RecoveryState>(owner);
+
+		if (recoveryState == nullptr)
+		{
+			LOG(LogAI, Warning, "Stomp State - enemy {} does not have a RecoveryState Component.", entt::to_integral(owner));
+		}
+		else
+		{
+			/*auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+
+			if (animationRootComponent != nullptr)
+			{
+				animationRootComponent->SwitchAnimation(world.GetRegistry(), recoveryState->mRecoveryAnimation, 0.0f, 1, 0.0f);
+			}
+			else
+			{
+				LOG(LogAI, Warning, "Enemy {} does not have a AnimationRoot Component.", entt::to_integral(owner));
+			}*/
+
+			recoveryState->mRechargeCooldown.mAmountOfTimePassed = 0.1f;
+		}
+	}
 }
 
 bool Game::ShootingBowState::IsShootingCharged() const
@@ -100,8 +128,9 @@ CE::MetaType Game::ShootingBowState::Reflect()
 	BindEvent(type, CE::sAIEvaluateEvent, &ShootingBowState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &ShootingBowState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sAIStateExitEvent, &ShootingBowState::OnAiStateExitEvent);
+	BindEvent(type, CE::sAnimationFinishEvent, &ShootingBowState::OnFinishAnimationEvent);
 
-	type.AddField(&ShootingBowState::mStompAnimation, "mStompAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ShootingBowState::mShootingAnimation, "mShootingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<ShootingBowState>(type);
 	return type;

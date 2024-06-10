@@ -15,7 +15,7 @@
 
 void Game::RecoveryState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	Game::AnimationInAi(world, owner, mDashRechargeAnimation, false);
+	Game::AnimationInAi(world, owner, mRecoveryAnimation, false);
 	
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
@@ -66,7 +66,7 @@ CE::MetaType Game::RecoveryState::Reflect()
 	BindEvent(type, CE::sAIStateEnterEvent, &RecoveryState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sBeginPlayEvent, &RecoveryState::OnBeginPlayEvent);
 
-	type.AddField(&RecoveryState::mDashRechargeAnimation, "mDashRechargeAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&RecoveryState::mRecoveryAnimation, "mRecoveryAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<RecoveryState>(type);
 	return type;
