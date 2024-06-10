@@ -48,62 +48,26 @@ void Game::ShootingBowState::OnAiTick(CE::World& world, const entt::entity owner
 
 	Game::ExecuteEnemyAbility(world, owner);
 
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+	Game::AnimationInAi(world, owner, mStompAnimation);
 
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mStompAnimation, 0.0f);
-	}
-
-	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
-
-	if (playerId == entt::null)
-	{
-		return;
-	}
-
-	const auto playerTransform = world.GetRegistry().TryGet<CE::TransformComponent>(playerId);
-	if (playerTransform == nullptr)
-	{
-		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
-		return;
-	}
-
-	const auto enemyTransform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-	if (enemyTransform == nullptr)
-	{
-		LOG(LogAI, Warning, "Stomp State - enemy {} does not have a AbilitiesOnCharacter Component.", entt::to_integral(owner));
-		return;
-	}
-
-	const glm::vec3 direction = glm::normalize(playerTransform->GetWorldPosition() - enemyTransform->GetWorldPosition());
-
-	enemyTransform->SetWorldOrientation(direction);
-	enemyTransform->SetWorldForward(direction);
+	Game::FaceThePlayer(world, owner);
 }
 
-float Game::ShootingBowState::OnAiEvaluate(const CE::World& world, entt::entity owner) const
+float Game::ShootingBowState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
 	if (mShootCooldown.mAmountOfTimePassed != 0.0f)
 	{
 		return 0.8f;
 	}
 
-	auto [score, entity] = GetBestScoreAndTarget(world, owner);
-
-	return score;
+	return  Game::GetBestScoreBasedOnDetection(world, owner, mRadius);
 }
 
-void Game::ShootingBowState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
+void Game::ShootingBowState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mStompAnimation, 0.0f);
-	}
+	Game::AnimationInAi(world, owner, mStompAnimation);
 
 	mShootCooldown.mCooldown = mMaxStompTime;
 	mShootCooldown.mAmountOfTimePassed = 0.0f;
@@ -122,52 +86,6 @@ bool Game::ShootingBowState::IsShootingCharged() const
 	}
 
 	return false;
-}
-
-std::pair<float, entt::entity> Game::ShootingBowState::GetBestScoreAndTarget(const CE::World& world, entt::entity owner) const
-{
-	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-	entt::entity entityId = world.GetRegistry().View<CE::NavMeshTargetTag>().front();
-
-	if (entityId == entt::null)
-	{
-		LOG(LogAI, Warning, "An entity with a NavMeshTargetTag is needed to run the Charge Dash State!");
-		return { 0.0f, entt::null };
-	}
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "TransformComponent is needed to run the Charge Dash State!");
-		return { 0.0f, entt::null };
-	}
-
-	float highestScore = 0.0f;
-
-	auto* targetComponent = world.GetRegistry().TryGet<CE::TransformComponent>(entityId);
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "The player entity needs a TransformComponent is needed to run the Charge Dash State!");
-		return { 0.0f, entt::null };
-	}
-
-	const float distance = glm::distance(transformComponent->GetWorldPosition(), targetComponent->GetWorldPosition());
-
-	float score = 0.0f;
-
-	if (distance < mRadius)
-	{
-		score = 1 / distance;
-		score += 1 / mRadius;
-	}
-
-	if (highestScore < score)
-	{
-		highestScore = score;
-	}
-
-	return { highestScore, entityId };
 }
 
 CE::MetaType Game::ShootingBowState::Reflect()

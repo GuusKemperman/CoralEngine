@@ -22,9 +22,6 @@ namespace Game
 
 		bool IsShootingCharged() const;
 
-		[[nodiscard]] std::pair<float, entt::entity> GetBestScoreAndTarget(const CE::World& world,
-			entt::entity owner) const;
-
 		CE::AssetHandle<CE::Animation> mStompAnimation{};
 
 		CE::Cooldown mShootCooldown{};
