@@ -52,10 +52,13 @@ namespace CE
 		// Call all bound events of a type based on the vector of bound events passed - only events that have the based parameters (world and owner entity).
 		static void CallBoundEventsWithNoExtraParams(World& world, entt::entity castBy, const std::vector<CE::BoundEvent>& boundEvents);
 
+		static const std::vector<CE::BoundEvent>& GetEnemyKilledEvents() { return sEnemyKilledEvents; }
+		static const std::vector<CE::BoundEvent>& GetGettingHitEvents() { return sGettingHitEvents; }
+
 	private:
-		friend AbilityFunctionality;
 		static inline std::vector<CE::BoundEvent> sAbilityActivateEvents;
 		static inline std::vector<CE::BoundEvent> sReloadCompletedEvents;
+		static inline std::vector<CE::BoundEvent> sEnemyKilledEvents;
 		static inline std::vector<CE::BoundEvent> sGettingHitEvents;
 
 		friend ReflectAccess;

@@ -12,11 +12,7 @@
 #include "Assets/Animation/Animation.h"
 #include "Components/PlayerComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
-
-Game::DeathState::DeathState()
-{
-	sEnemyKilledEvents = CE::GetAllBoundEvents(CE::sEnemyKilledEvent);
-}
+#include "Systems/AbilitySystem.h"
 
 void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -56,7 +52,8 @@ void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 	if (!playerView.empty())
 	{
 		const auto player = playerView.front();
-		for (const CE::BoundEvent& boundEvent : sEnemyKilledEvents)
+		auto& boundEvents = CE::AbilitySystem::GetEnemyKilledEvents();
+		for (const CE::BoundEvent& boundEvent : boundEvents)
 		{
 			entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
 

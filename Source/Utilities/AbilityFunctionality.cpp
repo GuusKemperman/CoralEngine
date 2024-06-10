@@ -200,7 +200,7 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 		if (effect.mStat == Stat::Health)
 		{
 			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
-			if (characterComponent->mCurrentReceivedDamageModifier == 100.f)
+			if (Math::AreFloatsEqual(characterComponent->mCurrentReceivedDamageModifier, -100.f))
 			{
 				doNotApplyColor = true;
 			}
@@ -211,7 +211,7 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 			effect.mAmount += effect.mAmount * damageModifier * 0.01f;
 			if (const auto isPlayer = reg.TryGet<PlayerComponent>(affectedEntity); isPlayer)
 			{
-				AbilitySystem::CallBoundEventsWithNoExtraParams(world, affectedEntity, AbilitySystem::sGettingHitEvents);
+				AbilitySystem::CallBoundEventsWithNoExtraParams(world, affectedEntity, AbilitySystem::GetGettingHitEvents());
 			}
 		}
 
