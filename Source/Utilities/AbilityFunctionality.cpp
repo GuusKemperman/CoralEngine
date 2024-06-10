@@ -179,11 +179,6 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 	return metaType;
 }
 
-CE::AbilityFunctionality::AbilityFunctionality()
-{
-	sGettingHitEvents = CE::GetAllBoundEvents(CE::sGettingHitEvent);
-}
-
 std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, bool doNotApplyColor)
 {
 	auto& reg = world.GetRegistry();
@@ -205,7 +200,7 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 		if (effect.mStat == Stat::Health)
 		{
 			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
-			if (characterComponent->mCurrentReceivedDamageModifier == 0.f)
+			if (characterComponent->mCurrentReceivedDamageModifier == 100.f)
 			{
 				doNotApplyColor = true;
 			}
@@ -216,7 +211,7 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 			effect.mAmount += effect.mAmount * damageModifier * 0.01f;
 			if (const auto isPlayer = reg.TryGet<PlayerComponent>(affectedEntity); isPlayer)
 			{
-				AbilitySystem::CallBoundEventsWithNoExtraParams(world, affectedEntity, sGettingHitEvents);
+				AbilitySystem::CallBoundEventsWithNoExtraParams(world, affectedEntity, AbilitySystem::sGettingHitEvents);
 			}
 		}
 

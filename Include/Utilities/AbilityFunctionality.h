@@ -20,8 +20,6 @@ namespace CE
 	class AbilityFunctionality
 	{
 	public:
-		AbilityFunctionality();
-
 		static std::optional<float> ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, bool doNotApplyColor = false);
 		static void ApplyDurationalEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f, bool doNotApplyColor = false);
 		static void RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect);
@@ -41,8 +39,6 @@ namespace CE
 		static void CallAllAbilityHitEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity);
 
 	private:
-		static inline std::vector<CE::BoundEvent> sGettingHitEvents;
-
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);
 		static glm::vec3 GetEffectColor(Stat stat, IncreaseOrDecrease increaseOrDecrease);
 

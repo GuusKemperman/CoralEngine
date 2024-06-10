@@ -5,6 +5,11 @@
 
 namespace CE
 {
+	class AbilityFunctionality;
+}
+
+namespace CE
+{
 	class Input;
 	class AbilitiesOnCharacterComponent;
 	class CharacterComponent;
@@ -48,8 +53,10 @@ namespace CE
 		static void CallBoundEventsWithNoExtraParams(World& world, entt::entity castBy, const std::vector<CE::BoundEvent>& boundEvents);
 
 	private:
+		friend AbilityFunctionality;
 		static inline std::vector<CE::BoundEvent> sAbilityActivateEvents;
 		static inline std::vector<CE::BoundEvent> sReloadCompletedEvents;
+		static inline std::vector<CE::BoundEvent> sGettingHitEvents;
 
 		friend ReflectAccess;
 		static MetaType Reflect();
