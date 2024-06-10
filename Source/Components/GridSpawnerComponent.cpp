@@ -69,7 +69,7 @@ void CE::GridSpawnerComponent::SpawnGrid()
 	}
 	const float angleStep = TWOPI / static_cast<float>(mNumOfPossibleRotations);
 
-	std::mt19937 cellGenerator{ Random::CreateSeed(transform->GetWorldPosition2D()) };
+	CE::DefaultRandomEngine cellGenerator{ Random::CreateSeed(transform->GetWorldPosition2D()) };
 
 	const std::function<uint32(uint32, uint32)> randomUint = mUseWorldPositionAsSeed ?
 		std::function

@@ -15,7 +15,7 @@
 
 void Game::RecoveryState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	Game::AnimationInAi(world, owner, mDashRechargeAnimation);
+	Game::AnimationInAi(world, owner, mDashRechargeAnimation, false);
 	
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 

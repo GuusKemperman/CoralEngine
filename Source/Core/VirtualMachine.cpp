@@ -15,6 +15,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Scripting/ScriptConfig.h"
 #include "Scripting/ScriptEvents.h"
+#include "Utilities/Time.h"
 
 void CE::VirtualMachine::PostConstruct()
 {
@@ -26,6 +27,29 @@ CE::VirtualMachine::~VirtualMachine()
 	// I mean the meta manager will be destroyed right after us, so *technically* we can skip this step
 	// But it's still polite to clean up our own mess
 	DestroyAllTypesCreatedThroughScripts();
+
+#ifdef SCRIPT_PROFILING
+	std::vector<std::pair<std::string, float>> sortedTimesSpent{};
+	sortedTimesSpent.reserve(mNumOfSecondsSpentEachFunction.size());
+
+	for (const auto& [funcName, secondsSpent] : mNumOfSecondsSpentEachFunction)
+	{
+		sortedTimesSpent.emplace_back(funcName, secondsSpent);
+	}
+
+	std::sort(sortedTimesSpent.begin(), sortedTimesSpent.end(),
+		[](const std::pair<std::string, float>& lhs, const std::pair<std::string, float>& rhs)
+		{
+			return lhs.second > rhs.second;
+		});
+
+	std::string output{};
+	for (const auto& [funcName, timeSpent] : sortedTimesSpent)
+	{
+		output += Format("\n{:>64} -  {:.4f}", funcName, timeSpent);
+	}
+	LOG(LogScripting, Verbose, output);
+#endif // SCRIPT_PROFILING
 }
 
 void CE::VirtualMachine::Recompile()
@@ -105,7 +129,25 @@ CE::FuncResult CE::VirtualMachine::ExecuteScriptFunction(MetaFunc::DynamicArgs a
 	const ScriptNode& firstNode,
 	const FunctionEntryScriptNode* entryNode)
 {
-	// LOG(LogScripting, Verbose, "Calling {}::{}", func.GetNameOfScriptAsset(), func.GetName());
+#ifdef SCRIPT_PROFILING
+	struct Profiler
+	{
+		Profiler(float& numOfSecondsSpent) :
+			mNumOfSecondsSpent(numOfSecondsSpent)
+		{
+			
+		}
+		~Profiler()
+		{
+			mNumOfSecondsSpent += mTimer.GetSecondsElapsed();
+		}
+
+		float& mNumOfSecondsSpent;
+		Timer mTimer{};
+	};
+	Profiler profiler{ mNumOfSecondsSpentEachFunction[Format("{}::{}", func.GetNameOfScriptAsset(), func.GetName())] };
+#endif // SCRIPT_PROFILING
+
 	VMContext context{ func };
 
 	if (context.mCachedValues == nullptr)
