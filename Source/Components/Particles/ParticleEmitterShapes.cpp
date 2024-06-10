@@ -53,7 +53,7 @@ void CE::Internal::RandomScale(ParticleEmitterComponent& emitter, size_t i, glm:
 
 void CE::Internal::RandomOrientation(ParticleEmitterComponent& emitter, size_t i, glm::vec3 minOrientation, glm::vec3 maxOrientation, glm::quat emitterWorldOrientation)
 {
-	emitter.GetParticleOrientations()[i] = emitterWorldOrientation * glm::quat{ DEG2RAD(Random::Range(minOrientation, maxOrientation)) };
+	emitter.GetParticleOrientations()[i] = emitterWorldOrientation * glm::quat{ glm::radians(Random::Range(minOrientation, maxOrientation)) };
 }
 
 CE::MetaType CE::ParticleEmitterShapeAABB::Reflect()
