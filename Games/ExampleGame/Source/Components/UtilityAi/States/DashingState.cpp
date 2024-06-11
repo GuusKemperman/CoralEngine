@@ -142,14 +142,14 @@ CE::MetaType Game::DashingState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<DashingState>{}, "DashingState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 	
-	type.AddField(&DashingState::mSpeedDash, "mSpeedDash").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DashingState::mMaxDashTime, "mMaxDashTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DashingState::mSpeedDash, "Speed Of The Dash").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DashingState::mMaxDashTime, "Max Dash Time").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &DashingState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &DashingState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &DashingState::OnAiStateEnterEvent);
 
-	type.AddField(&DashingState::mDashingAnimation, "mDashingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DashingState::mDashingAnimation, "Dashing Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<DashingState>(type);
 	return type;

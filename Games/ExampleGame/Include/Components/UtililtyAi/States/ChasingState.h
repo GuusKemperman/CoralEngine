@@ -17,7 +17,8 @@ namespace Game
 		void OnAiStateEnter(CE::World& world, entt::entity owner) const;
 		static void OnAiStateExit(CE::World& world, entt::entity owner);
 
-		[[nodiscard]] float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
+		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
+		void OnBeginPlay(CE::World& world, entt::entity owner) const;
 
 		void DebugRender(CE::World& world, entt::entity owner) const;
 
@@ -25,6 +26,9 @@ namespace Game
 
 	private:
 		float mRadius{};
+
+		float mUpperSpeedRange = 0.2f;
+		float mLowerSpeedRange = -0.2f;
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
