@@ -22,12 +22,7 @@ void CE::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unused]]
 			continue;
 		}
 
-		const Span<const size_t> particlesThatJustDied = emitter.GetParticlesThatDiedDuringLastStep();
-		const Span<const glm::vec3> positions = emitter.GetParticlePositions();
-		const ParticleProperty<glm::vec3>& scales = emitter.mScale;
-		const Span<const glm::quat> orientations = emitter.GetParticleOrientations();
-
-		for (size_t i = 0; i < particlesThatJustDied.size(); i++)
+		for (const uint32 particle : emitter.GetParticlesThatDiedDuringLastStep())
 		{
 			const entt::entity spawnedEntity = reg.CreateFromPrefab(*spawner.mPrefabToSpawn);
 			TransformComponent* const transform = reg.TryGet<TransformComponent>(spawnedEntity);
@@ -37,11 +32,9 @@ void CE::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unused]]
 				continue;
 			}
 
-			const size_t particle = particlesThatJustDied[i];
-
-			transform->SetWorldPosition(positions[particle]);
-			transform->SetWorldOrientation(orientations[particle]);
-			transform->SetWorldScale(scales.GetValue(emitter, particle));
+			transform->SetWorldPosition(emitter.GetParticlePositionWorld(particle));
+			transform->SetWorldOrientation(emitter.GetParticleOrientationWorld(particle));
+			transform->SetWorldScale(emitter.mScale.GetValue(emitter, particle));
 		}
 	}
 }

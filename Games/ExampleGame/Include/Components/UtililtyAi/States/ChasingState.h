@@ -14,10 +14,10 @@ namespace Game
 	class ChasingState
 	{
 	public:
-		void OnAIStateEnter(CE::World& world, entt::entity owner) const;
-		static void OnAIStateExit(CE::World& world, entt::entity owner);
+		void OnAiStateEnter(CE::World& world, entt::entity owner) const;
+		static void OnAiStateExit(CE::World& world, entt::entity owner);
 
-		float OnAIEvaluate(const CE::World& world, entt::entity owner) const;
+		[[nodiscard]] float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 
 		void DebugRender(CE::World& world, entt::entity owner) const;
 

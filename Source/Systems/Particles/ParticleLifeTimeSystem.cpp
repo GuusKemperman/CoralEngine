@@ -50,7 +50,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 
 	static constexpr auto onParticleSpawn = [](ParticleEmitterComponent& emitter, 
 			SpawnShapeType& shape,
-			size_t particleIndex,
+			uint32 particleIndex,
 			glm::quat emitterOrientation, 
 			const glm::mat4& emitterMatrix)
 		{
@@ -74,9 +74,14 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 		}
 
 		const float totalSpawnRateSurface = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetween(0.0f, 1.0f, .05f);
-		const glm::mat4 emitterMatrix = transform.GetWorldMatrix();
-		const glm::vec3 emitterScale = transform.GetWorldScale();
-		const glm::quat emitterOrientation = transform.GetWorldOrientation();
+
+		emitter.mEmitterWorldMatrix = transform.GetWorldMatrix();;
+		emitter.mInverseEmitterWorldMatrix = glm::inverse(emitter.mEmitterWorldMatrix);
+		emitter.mEmitterOrientation = transform.GetWorldOrientation();
+		emitter.mInverseEmitterOrientation = glm::inverse(emitter.mEmitterOrientation);
+
+		const glm::mat4 spawnMatrix = emitter.mAreTransformsRelativeToEmitter ? glm::mat4{ 1.0f } : emitter.mEmitterWorldMatrix;
+		const glm::quat spawnOrientation = emitter.mAreTransformsRelativeToEmitter ? glm::quat{ 1.0f, 0.0f, 0.0f, 0.0f } : emitter.mEmitterOrientation;
 
 		const float t1 = emitter.mCurrentTime / emitter.mDuration;
 		const float dtAsEmitterLifeTimePercentage = dt / emitter.mDuration;
@@ -86,12 +91,12 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 
 		emitter.mNumOfParticlesToSpawnNextFrame += (surfaceAreaBetweenLastStepAndNow / totalSpawnRateSurface) * static_cast<float>(emitter.mNumOfParticlesToSpawn);
 		const float numToSpawnAsFloat = floorf(emitter.mNumOfParticlesToSpawnNextFrame);
-		size_t numToSpawnThisFrame{};
+		uint32 numToSpawnThisFrame{};
 
 		if (numToSpawnAsFloat > 0.0f)
 		{
 			emitter.mNumOfParticlesToSpawnNextFrame -= numToSpawnAsFloat;
-			numToSpawnThisFrame = static_cast<size_t>(numToSpawnAsFloat);
+			numToSpawnThisFrame = static_cast<uint32>(numToSpawnAsFloat);
 		}
 
 		emitter.mCurrentTime += dt;
@@ -112,22 +117,22 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 		}
 
 		// Recyle the particles we killed the previous frame
-		for (size_t i = 0; numToSpawnThisFrame > 0 && i < emitter.mParticlesThatDiedDuringLastStep.size(); i++, numToSpawnThisFrame--)
+		for (uint32 i = 0; numToSpawnThisFrame > 0 && i < emitter.mParticlesThatDiedDuringLastStep.size(); i++, numToSpawnThisFrame--)
 		{
 			onParticleSpawn(emitter,
 				spawnShape,
 				emitter.mParticlesThatDiedDuringLastStep[i],
-				emitterOrientation,
-				emitterMatrix);
+				spawnOrientation,
+				spawnMatrix);
 		}
 		emitter.mParticlesThatDiedDuringLastStep.clear();
 
-		const size_t numOfParticlesAliveBeforeLifeTimeUpdate = emitter.GetNumOfParticles();
+		const uint32 numOfParticlesAliveBeforeLifeTimeUpdate = emitter.GetNumOfParticles();
 
-		size_t indexOfLastParticleInUse{};
+		uint32 indexOfLastParticleInUse{};
 
 		// Kill/spawn particles
-		for (size_t i = 0; i < numOfParticlesAliveBeforeLifeTimeUpdate; i++)
+		for (uint32 i = 0; i < numOfParticlesAliveBeforeLifeTimeUpdate; i++)
 		{
 			const float totalLifeSpan = emitter.mParticleLifeSpan[i];
 			const float dtAsPercentageOfLifeSpan = dt / totalLifeSpan;
@@ -148,7 +153,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				}
 				else if (numToSpawnThisFrame > 0)
 				{
-					onParticleSpawn(emitter, spawnShape, i, emitterOrientation, emitterMatrix);
+					onParticleSpawn(emitter, spawnShape, i, spawnOrientation, spawnMatrix);
 					indexOfLastParticleInUse = i;
 					--numToSpawnThisFrame;
 				}
@@ -162,7 +167,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 		}
 
 
-		const size_t minPoolSize = indexOfLastParticleInUse + 1 + numToSpawnThisFrame;
+		const uint32 minPoolSize = indexOfLastParticleInUse + 1 + numToSpawnThisFrame;
 
 		emitter.mParticlePositions.resize(minPoolSize);
 		emitter.mParticleScales.resize(minPoolSize);
@@ -170,13 +175,13 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 		emitter.mParticleTimeAsPercentage.resize(minPoolSize);
 		emitter.mParticleLifeSpan.resize(minPoolSize);
 
-		for (size_t i = 0; i < numToSpawnThisFrame; i++)
+		for (uint32 i = 0; i < numToSpawnThisFrame; i++)
 		{
 			onParticleSpawn(emitter, 
 				spawnShape, 
 				numOfParticlesAliveBeforeLifeTimeUpdate + i, 
-				emitterOrientation, 
-				emitterMatrix);
+				spawnOrientation, 
+				spawnMatrix);
 		}
 
 		emitter.mScale.SetInitialValuesOfNewParticles(emitter);

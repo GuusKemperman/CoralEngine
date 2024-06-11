@@ -649,10 +649,6 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
 
             const size_t numOfParticles = emitter.GetNumOfParticles();
 
-            Span<const glm::vec3> positions = emitter.GetParticlePositions();
-            const ParticleProperty<glm::vec3> sizes = emitter.mScale;
-            Span<const glm::quat> orientations = emitter.GetParticleOrientations();
-            const ParticleProperty<LinearColor>& colors = colorComponent.mColor;
             const ParticleLightComponent* lightComponent = mWorld.get().GetRegistry().TryGet<ParticleLightComponent>(entity);
 
             for (uint32 i = 0; i < numOfParticles; i++)
@@ -666,15 +662,16 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                     return;
                 }
 
-                const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], emitter.mScale.GetValue(emitter, i), orientations[i]);
+                const glm::vec3 position = emitter.GetParticlePositionWorld(i);
+                const glm::mat4 mat = TransformComponent::ToMatrix(position, emitter.mScale.GetValue(emitter, i), emitter.GetParticleOrientationWorld(i));
 
                 InfoStruct::DXParticleInfo particleInfo{};
                 particleInfo.mMesh = const_cast<StaticMesh*>(meshRenderer.mParticleMesh.Get());
                 particleInfo.mMaterial = const_cast<Material*>(meshRenderer.mParticleMaterial.Get()); 
                 if(meshRenderer.mParticleMaterial)
                     particleInfo.mMaterialInfo = GetMaterial(meshRenderer.mParticleMaterial.Get());
-                particleInfo.mDistanceToCamera = glm::length(positions[i] - cameraPos);
-                particleInfo.mColor = colors.GetValue(emitter, i);
+                particleInfo.mDistanceToCamera = glm::length(position - cameraPos);
+                particleInfo.mColor = colorComponent.mColor.GetValue(emitter, i);
                 particleInfo.mMatrix = std::move(mat);
 
                 if (lightComponent != nullptr)
@@ -691,7 +688,7 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                     }
 
                     InfoStruct::DXPointLightInfo pointLight;
-                    pointLight.mPosition = glm::vec4(positions[i],1.f);
+                    pointLight.mPosition = glm::vec4(position, 1.f);
                     pointLight.mColorAndIntensity = glm::vec4(glm::vec3(particleInfo.mColor), particleInfo.mLightIntensity);
                     pointLight.mRadius = radius;
                     mPointLights[mPointLightCounter] = pointLight;
