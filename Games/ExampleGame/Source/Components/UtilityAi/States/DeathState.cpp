@@ -75,11 +75,7 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 		}
 	}
 
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDeathAnimation, 0.0f, 1.0f, 1.5f);
-	}
+	Game::AnimationInAi(world, owner, mDeathAnimation, false);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 	if (physicsBody2DComponent != nullptr)

@@ -37,9 +37,8 @@ void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, cons
 			recoveryState->mRechargeCooldown.mAmountOfTimePassed = 0.0f;
 		}
 	}
-	Game::ExecuteEnemyAbility(world, owner);
 
-	Game::AnimationInAi(world, owner, mStompAnimation, false);
+	Game::ExecuteEnemyAbility(world, owner);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 

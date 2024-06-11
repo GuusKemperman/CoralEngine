@@ -9,9 +9,8 @@
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
 
-void Game::IdleState::OnAiTick(CE::World& world, const entt::entity owner, float) const
+void Game::IdleState::OnAiTick(CE::World&, const entt::entity, float)
 {
-	Game::AnimationInAi(world, owner, mIdleAnimation, true);
 }
 
 float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
@@ -19,8 +18,10 @@ float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
 	return 0.01f;
 }
 
-void Game::IdleState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
+void Game::IdleState::OnAiStateEnterEvent(CE::World& world, entt::entity owner) const
 {
+	Game::AnimationInAi(world, owner, mIdleAnimation, true);
+
 	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
 	if (navMeshAgent == nullptr) { return; }

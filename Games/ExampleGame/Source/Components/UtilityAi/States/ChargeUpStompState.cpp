@@ -18,8 +18,6 @@
 
 void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	AnimationInAi(world, owner, mChargingAnimation, false);
-
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
@@ -56,6 +54,8 @@ void Game::ChargeUpStompState::OnAiStateExitEvent(CE::World&, entt::entity)
 void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
+
+	AnimationInAi(world, owner, mChargingAnimation, false);
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;

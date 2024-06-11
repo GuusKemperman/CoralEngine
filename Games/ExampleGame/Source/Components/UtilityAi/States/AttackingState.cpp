@@ -16,8 +16,6 @@
 
 void Game::AttackingState::OnAiTick(CE::World& world, const entt::entity owner, float) const
 {
-	Game::AnimationInAi(world, owner, mAttackingAnimation, false);
-
 	Game::FaceThePlayer(world, owner);
 
 	Game::ExecuteEnemyAbility(world, owner);
@@ -39,6 +37,11 @@ float Game::AttackingState::OnAiEvaluate(const CE::World& world, const entt::ent
 	return score;
 }
 
+void Game::AttackingState::OnAiStateEnter(CE::World& world, entt::entity owner)
+{
+	Game::AnimationInAi(world, owner, mAttackingAnimation, false);
+}
+
 CE::MetaType Game::AttackingState::Reflect()
 {
 	auto type = CE::MetaType{CE::MetaType::T<AttackingState>{}, "AttackingState"};
@@ -48,6 +51,7 @@ CE::MetaType Game::AttackingState::Reflect()
 
 	BindEvent(type, CE::sAITickEvent, &AttackingState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &AttackingState::OnAiEvaluate);
+	BindEvent(type, CE::sAIStateEnterEvent, &AttackingState::OnAiStateEnter);
 
 	type.AddField(&AttackingState::mAttackingAnimation, "mAttackingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

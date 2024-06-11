@@ -34,8 +34,6 @@ void Game::DashingState::OnAiTick(CE::World& world, const entt::entity owner, co
 		}
 	}
 
-	Game::AnimationInAi(world, owner, mDashingAnimation, false);
-
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
@@ -81,6 +79,8 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, const entt::entit
 
 void Game::DashingState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
+	Game::AnimationInAi(world, owner, mDashingAnimation, false);
+
 	const entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
 	if (entityId == entt::null)
