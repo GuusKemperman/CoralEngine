@@ -13,6 +13,7 @@
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/Abilities/CharacterComponent.h"
+#include "Utilities/Random.h"
 
 void Game::ChasingState::OnAiStateEnter(CE::World& world, const entt::entity owner) const
 {
@@ -32,7 +33,7 @@ float Game::ChasingState::OnAiEvaluate(const CE::World& world, const entt::entit
 	return score;
 }
 
-void Game::ChasingState::OnBeginPlay(CE::World& world, const entt::entity owner)
+void Game::ChasingState::OnBeginPlay(CE::World& world, const entt::entity owner) const
 {
 	auto* characterComponent = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
 
@@ -42,11 +43,7 @@ void Game::ChasingState::OnBeginPlay(CE::World& world, const entt::entity owner)
 		return;
 	}
 
-	std::srand(static_cast<unsigned int>(std::time(nullptr)));
-
-	constexpr float range = 0.2f;
-	const float randomOffset = static_cast<float>(std::rand()) / RAND_MAX * (2 * range) - range;
-	characterComponent->mCurrentMovementSpeed += randomOffset;
+	characterComponent->mCurrentMovementSpeed += CE::Random::Range(mLowerSpeedRange, mUpperSpeedRange);
 }
 
 void Game::ChasingState::DebugRender(CE::World& world, const entt::entity owner) const
@@ -71,6 +68,8 @@ CE::MetaType Game::ChasingState::Reflect()
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	type.AddField(&ChasingState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChasingState::mLowerSpeedRange, "The Lowest Random Speed Range").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChasingState::mUpperSpeedRange, "The Highest Random Speed Range").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAIStateEnterEvent, &ChasingState::OnAiStateEnter);
 	BindEvent(type, CE::sAIStateExitEvent, &ChasingState::OnAiStateExit);
