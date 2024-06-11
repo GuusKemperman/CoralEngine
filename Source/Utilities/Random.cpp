@@ -14,6 +14,12 @@ uint32 CE::DefaultRandomEngine::operator()()
 	mSeed ^= mSeed << 13;
 	mSeed ^= mSeed >> 17;
 	mSeed ^= mSeed << 5;
+
+	if (mSeed == 0)
+	{
+		mSeed = 0xbada55;
+	}
+
 	return mSeed;
 }
 
