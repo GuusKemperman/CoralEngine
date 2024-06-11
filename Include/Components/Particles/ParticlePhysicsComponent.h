@@ -23,7 +23,7 @@ namespace CE
 		ParticleProperty<float> mMass{ 1.0f };
 
 		glm::vec3 mGravity{ 1.0f };
-		float mFloorHeight{};
+		float mFloorHeight{ -std::numeric_limits<float>::infinity() };
 
 	private:
 		friend class ParticlePhysicsSystem;
