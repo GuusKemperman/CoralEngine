@@ -106,7 +106,14 @@ namespace CE
 	 * 	World& The world the player and enemy are in.
 	 * \entt::entity The player that was hit (only called for the player).
 	 */
-	static constexpr Event<void(World&, entt::entity, entt::entity)> sGettingHitEvent{ "OnGettingHit" };
+	static constexpr Event<void(World&, entt::entity)> sGettingHitEvent{ "OnGettingHit" };
+
+	/**
+	 * \brief
+	 * 	World& The world.
+	 * \entt::entity 
+	 */
+	static constexpr Event<void(World&, entt::entity)> sCritEvent{ "OnCrit" };
 
 	/*
 	* \brief Called when an animation finishes.

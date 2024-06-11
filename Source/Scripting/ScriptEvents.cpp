@@ -209,6 +209,11 @@ CE::ScriptGettingHitEvent::ScriptGettingHitEvent() :
 {
 }
 
+CE::ScriptCritEvent::ScriptCritEvent() :
+	ScriptOnlyPassComponentEvent(sCritEvent)
+{
+}
+
 CE::MetaFunc::InvokeT CE::CollisionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
                                                            const AssetHandle<Script>& script) const
 {
