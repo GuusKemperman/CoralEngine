@@ -35,8 +35,6 @@ void Game::ShootingBowState::OnAiTick(CE::World& world, const entt::entity owner
 
 	Game::ExecuteEnemyAbility(world, owner);
 
-	Game::AnimationInAi(world, owner, mShootingAnimation, false);
-
 	Game::FaceThePlayer(world, owner);
 }
 
@@ -90,7 +88,7 @@ void Game::ShootingBowState::OnFinishAnimationEvent(CE::World& world, entt::enti
 		}
 		else
 		{
-			/*auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+			auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
 			if (animationRootComponent != nullptr)
 			{
@@ -99,7 +97,7 @@ void Game::ShootingBowState::OnFinishAnimationEvent(CE::World& world, entt::enti
 			else
 			{
 				LOG(LogAI, Warning, "Enemy {} does not have a AnimationRoot Component.", entt::to_integral(owner));
-			}*/
+			}
 
 			recoveryState->mRechargeCooldown.mAmountOfTimePassed = 0.1f;
 		}

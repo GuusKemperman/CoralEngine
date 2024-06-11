@@ -11,6 +11,8 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/PlayerComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Components/TransformComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Systems/AbilitySystem.h"
 
@@ -102,7 +104,7 @@ void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 	if (animationRootComponent != nullptr)
 	{
-		animationRootComponent->SwitchAnimation(registry, mDeathAnimation, 0.0f, 1.0f, 1.5f);
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDeathAnimation, 0.0f, 1.0f, 1.5f);
 	}
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
@@ -113,9 +115,9 @@ void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner)
 
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
-	registry.RemoveComponentIfEntityHasIt<CE::PhysicsBody2DComponent>(owner);
+	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::PhysicsBody2DComponent>(owner);
 
-	registry.RemoveComponentIfEntityHasIt<CE::DiskColliderComponent>(owner);
+	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::DiskColliderComponent>(owner);
 }
 
 CE::MetaType Game::DeathState::Reflect()
