@@ -17,8 +17,10 @@
 #include "World/World.h"
 #include "Utilities/Math.h"
 #include "Assets/Prefabs/Prefab.h"
+#include "Components/PlayerComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
+#include "Systems/AbilitySystem.h"
 
 CE::MetaType CE::AbilityFunctionality::Reflect()
 {
@@ -198,11 +200,19 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 		if (effect.mStat == Stat::Health)
 		{
 			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
+			if (Math::AreFloatsEqual(characterComponent->mCurrentReceivedDamageModifier, -100.f))
+			{
+				doNotApplyColor = true;
+			}
 			if (castByCharacterData != nullptr)
 			{
 				damageModifier += castByCharacterData->mCurrentDealtDamageModifier;
 			}
 			effect.mAmount += effect.mAmount * damageModifier * 0.01f;
+			if (const auto isPlayer = reg.TryGet<PlayerComponent>(affectedEntity); isPlayer)
+			{
+				AbilitySystem::CallBoundEventsWithNoExtraParams(world, affectedEntity, AbilitySystem::GetGettingHitEvents());
+			}
 		}
 
 		effect.mAmount = -effect.mAmount;

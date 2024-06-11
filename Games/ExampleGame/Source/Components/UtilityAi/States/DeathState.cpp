@@ -10,9 +10,9 @@
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
-#include "Components/PointLightComponent.h"
-#include "Components/TransformComponent.h"
+#include "Components/PlayerComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
+#include "Systems/AbilitySystem.h"
 
 void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -71,16 +71,41 @@ float Game::DeathState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 
 void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner) const
 {
-	auto& registry = world.GetRegistry();
-	auto* animationRootComponent = registry.TryGet<CE::AnimationRootComponent>(owner);
+	// Call On Enemy Killed events.
+	auto playerView = world.GetRegistry().View<CE::PlayerComponent>();
+	if (!playerView.empty())
+	{
+		const auto player = playerView.front();
+		auto& boundEvents = CE::AbilitySystem::GetEnemyKilledEvents();
+		for (const CE::BoundEvent& boundEvent : boundEvents)
+		{
+			entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
 
+			if (storage == nullptr
+				|| !storage->contains(player))
+			{
+				continue;
+			}
+
+			if (boundEvent.mIsStatic)
+			{
+				boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, player);
+			}
+			else
+			{
+				CE::MetaAny component{ boundEvent.mType, storage->value(player), false };
+				boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, player, owner);
+			}
+		}
+	}
+
+	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 	if (animationRootComponent != nullptr)
 	{
 		animationRootComponent->SwitchAnimation(registry, mDeathAnimation, 0.0f, 1.0f, 1.5f);
 	}
 
-	auto* physicsBody2DComponent = registry.TryGet<CE::PhysicsBody2DComponent>(owner);
-
+	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 	if (physicsBody2DComponent != nullptr)
 	{
 		physicsBody2DComponent->mLinearVelocity = { 0,0 };
