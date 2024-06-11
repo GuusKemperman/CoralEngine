@@ -173,10 +173,9 @@ template<typename T> bool ImGui::detail::AutoContainerValuesVec(const std::strin
 			std::string itemname = "[" + std::to_string(i) + ']';
 
 			ImGui::PushID(i);
-			SetNextItemAllowOverlap();
-			const bool isOpen = ImGui::TreeNode(itemname.c_str());
+			const bool isOpen = ImGui::TreeNodeEx(itemname.c_str(), ImGuiTreeNodeFlags_AllowOverlap);
 
-			SameLine(GetWindowWidth() - 84.0f);
+			SameLine(GetWindowWidth() - 100.0f);
 
 			ImGui::BeginDisabled(i == 0);
 			if (ImGui::Button(ICON_FA_ARROW_UP))
