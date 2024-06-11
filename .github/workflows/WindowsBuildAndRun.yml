@@ -8,8 +8,14 @@ name: WindowsBuildAndRun
 on:
   push:
     branches: [ "dev" ]
+    paths-ignore:
+      - '**/*.asset'
+      - '!**/S_*.asset'
   pull_request:
     branches: [ "dev" ]
+    paths-ignore:
+    - '**/*.asset'
+    - '!**/S_*.asset'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -26,6 +32,7 @@ jobs:
   build-and-run:
     runs-on: windows-latest
     strategy:
+
       fail-fast: false # We want to run all configurations to see if the problem is for all of them or not
       matrix:
         build-configuration: [Debug, Release, EditorDebug, EditorRelease]

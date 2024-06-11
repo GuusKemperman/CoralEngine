@@ -168,7 +168,6 @@ template<typename T> bool ImGui::detail::AutoContainerValuesVec(const std::strin
 	{
 		ImGui::PushID(name.c_str());
 
-		
 		for (int i = 0; i < static_cast<int>(cont.size()); i++)
 		{
 			std::string itemname = "[" + std::to_string(i) + ']';

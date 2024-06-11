@@ -28,6 +28,7 @@ namespace CE
 		float mReloadSpeed = 1.f;
 		int mProjectileCount = 1;
 		float mSpread{};
+		float mShootingSlowdown = 1.0f;
 
 		// projectile
 		std::vector<AbilityEffect> mEffects{};
@@ -39,6 +40,7 @@ namespace CE
 
 		// utility
 		bool mShootOnRelease{};
+		
 
 	private:
 		void OnSave(AssetSaveInfo& saveInfo) const override;
