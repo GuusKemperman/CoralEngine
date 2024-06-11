@@ -172,6 +172,7 @@ template<typename T> bool ImGui::detail::AutoContainerValuesVec(const std::strin
 		{
 			std::string itemname = "[" + std::to_string(i) + ']';
 
+			ImGui::PushID(i);
 			SetNextItemAllowOverlap();
 			const bool isOpen = ImGui::TreeNode(itemname.c_str());
 
@@ -214,6 +215,7 @@ template<typename T> bool ImGui::detail::AutoContainerValuesVec(const std::strin
 			{
 				ImGui::TreePop();
 			}
+			ImGui::PopID();
 		}
 		ImGui::PopID();
 		ImGui::TreePop();
