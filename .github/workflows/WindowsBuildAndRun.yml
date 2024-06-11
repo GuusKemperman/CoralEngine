@@ -9,13 +9,11 @@ on:
   push:
     branches: [ "dev" ]
     paths-ignore:
-      - '**/*.asset'
-      - '!**/S_*.asset'
+    - '**.asset'
   pull_request:
     branches: [ "dev" ]
     paths-ignore:
-    - '**/*.asset'
-    - '!**/S_*.asset'
+    - '**.asset'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
