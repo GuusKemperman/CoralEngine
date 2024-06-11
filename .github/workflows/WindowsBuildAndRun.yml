@@ -8,8 +8,12 @@ name: WindowsBuildAndRun
 on:
   push:
     branches: [ "dev" ]
+    paths-ignore:
+    - '**.asset'
   pull_request:
     branches: [ "dev" ]
+    paths-ignore:
+    - '**.asset'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -23,19 +27,7 @@ permissions:
   contents: write
   
 jobs:
-  check-if-files-changed:
-    runs-on: windows-latest
-
-    steps:
-    - uses: actions/checkout@v4
-    - uses: dorny/paths-filter@v3
-      id: changes
-      with:
-        filters: |
-          filesChanged:
-            - '**.asset'
   build-and-run:
-    if:  ${{ needs.check-if-there-are-commits.steps.changes.outputs.filesChanged == 'true' }  
     runs-on: windows-latest
     strategy:
 
@@ -43,6 +35,8 @@ jobs:
       matrix:
         build-configuration: [Debug, Release, EditorDebug, EditorRelease]
     steps:
+    - uses: actions/checkout@v4
+
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v2
 
