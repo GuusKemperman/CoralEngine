@@ -31,7 +31,7 @@ void Game::KnockBackState::OnAiTick(CE::World& world, const entt::entity owner, 
 	}
 
 	mKnockBackSpeed *= 1.f / (1.f + (dt * mFriction));
-	physicsBody2DComponent->mLinearVelocity = -mDashDirection * mKnockBackSpeed;
+	physicsBody2DComponent->mLinearVelocity = -mKnockbackDirection * mKnockBackSpeed;
 }
 
 float Game::KnockBackState::OnAiEvaluate(const CE::World&, entt::entity) const
@@ -78,7 +78,10 @@ void Game::KnockBackState::OnAiStateEnterEvent(CE::World& world, const entt::ent
 
 		const glm::vec2 ownerT = ownerTransformComponent->GetWorldPosition2D();
 
-		mDashDirection = glm::normalize(targetT - ownerT);
+		if (targetT != ownerT)
+		{
+			mKnockbackDirection = glm::normalize(targetT - ownerT);
+		}
 	}
 
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
@@ -89,9 +92,9 @@ void Game::KnockBackState::OnAiStateExitEvent(CE::World& world, const entt::enti
 	CE::SwarmingAgentTag::StartMovingToTarget(world, owner);
 }
 
-void Game::KnockBackState::Initialize(const float knockbackValue)
+void Game::KnockBackState::AddKnockback(const float knockbackValue)
 {
-	mKnockBackSpeed = knockbackValue;
+	mKnockBackSpeed = std::max(mKnockBackSpeed, knockbackValue);
 }
 
 void Game::KnockBackState::OnAnimationFinish(CE::World& world, entt::entity owner)

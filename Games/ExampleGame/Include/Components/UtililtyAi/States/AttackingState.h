@@ -14,7 +14,7 @@ namespace Game
 	{
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt) const;
-		[[nodiscard]] float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
+		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 		void OnAiStateEnter(CE::World& world, entt::entity owner);
 
 		CE::AssetHandle<CE::Animation> mAttackingAnimation{};

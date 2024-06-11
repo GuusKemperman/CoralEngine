@@ -9,10 +9,6 @@
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
 
-void Game::IdleState::OnAiTick(CE::World&, const entt::entity, float)
-{
-}
-
 float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
 {
 	return 0.01f;
@@ -33,8 +29,7 @@ CE::MetaType Game::IdleState::Reflect()
 {
 	auto type = CE::MetaType{CE::MetaType::T<IdleState>{}, "IdleState"};
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
-
-	BindEvent(type, CE::sAITickEvent, &IdleState::OnAiTick);
+	
 	BindEvent(type, CE::sAIEvaluateEvent, &IdleState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &IdleState::OnAiStateEnterEvent);
 

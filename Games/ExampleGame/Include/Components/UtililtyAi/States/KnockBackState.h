@@ -19,14 +19,14 @@ namespace Game
 		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
 		static void OnAiStateExitEvent(CE::World& world, entt::entity owner);
 
-		void Initialize(float knockbackValue);
+		void AddKnockback(float knockbackValue);
 		void OnAnimationFinish(CE::World& world, entt::entity owner);
 
 		CE::AssetHandle<CE::Animation> mKnockBackAnimation{};
 
 	private:
 
-		glm::vec2 mDashDirection{};
+		glm::vec2 mKnockbackDirection{};
 
 		float mKnockBackSpeed{};
 		float mFriction = 0.99f;

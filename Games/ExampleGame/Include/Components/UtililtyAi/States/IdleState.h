@@ -13,7 +13,6 @@ namespace Game
 	class IdleState
 	{
 	public:
-		static void OnAiTick(CE::World& world, entt::entity owner, float dt);
 		static float OnAiEvaluate(const CE::World& world, entt::entity owner);
 		void OnAiStateEnterEvent(CE::World& world, entt::entity owner) const;
 

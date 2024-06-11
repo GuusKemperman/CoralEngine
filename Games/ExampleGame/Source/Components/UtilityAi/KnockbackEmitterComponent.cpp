@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "Components/UtililtyAi/KnockBackOnEnemies.h"
+#include "Components/UtililtyAi/KnockbackEmitterComponent.h"
 
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/UtililtyAi/States/KnockBackState.h"
@@ -7,7 +7,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 
-void KnockBackOnEnemies::OnAbilityHit(CE::World& world, const entt::entity castBy, const entt::entity target, entt::entity)
+void Game::KnockbackEmitterComponent::OnAbilityHit(CE::World& world, const entt::entity castBy, const entt::entity target, entt::entity)
 {
 	auto* knockBackState = world.GetRegistry().TryGet<Game::KnockBackState>(target);
 
@@ -35,16 +35,16 @@ void KnockBackOnEnemies::OnAbilityHit(CE::World& world, const entt::entity castB
 		return;
 	}
 
-	knockBackState->Initialize(weapon->mKnockback);
+	knockBackState->AddKnockback(weapon->mKnockback);
 }
 
-CE::MetaType KnockBackOnEnemies::Reflect()
+CE::MetaType Game::KnockbackEmitterComponent::Reflect()
 {
-	auto type = CE::MetaType{ CE::MetaType::T<KnockBackOnEnemies>{}, "KnockBackOnEnemies" };
+	auto type = CE::MetaType{ CE::MetaType::T<KnockbackEmitterComponent>{}, "KnockbackEmitterComponent" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAbilityHitEvent, &KnockBackOnEnemies::OnAbilityHit);
+	BindEvent(type, CE::sAbilityHitEvent, &KnockbackEmitterComponent::OnAbilityHit);
 
-	CE::ReflectComponentType<KnockBackOnEnemies>(type);
+	CE::ReflectComponentType<KnockbackEmitterComponent>(type);
 	return type;
 }
