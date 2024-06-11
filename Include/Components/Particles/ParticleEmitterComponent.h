@@ -1,13 +1,13 @@
 #pragma once
 #include "BasicDataTypes/Bezier.h"
 #include "Meta/MetaReflect.h"
+#include "Components/Particles/ParticleProperty/ParticlePropertyFwd.h"
 
 namespace CE
 {
 	class ParticleEmitterComponent
 	{
 	public:
-
 		bool IsPaused() const { return mIsPaused; }
 		bool IsPlaying() const { return mCurrentTime <= mDuration; }
 
@@ -16,14 +16,17 @@ namespace CE
 		bool DidParticleJustSpawn(const uint32 particle) const { return mParticleTimeAsPercentage[particle] == 0.0f; }
 		bool IsParticleAlive(const uint32 particle) const { return mParticleTimeAsPercentage[particle] <= 1.0f; }
 
-		Span<glm::vec3> GetParticlePositions() { return mParticlePositions; }
-		Span<const glm::vec3> GetParticlePositions() const { return mParticlePositions; }
+		glm::vec3 GetParticlePositionFast(uint32 particle) const;
+		void SetParticlePositionFast(uint32 particle, glm::vec3 position);
 
-		Span<glm::vec3> GetParticleSizes() { return mParticleScales; }
-		Span<const glm::vec3> GetParticleSizes() const { return mParticleScales; }
+		glm::vec3 GetParticlePositionWorld(uint32 particle) const;
+		void SetParticlePositionWorld(uint32 particle, glm::vec3 position);
 
-		Span<glm::quat> GetParticleOrientations() { return mParticleOrientations; }
-		Span<const glm::quat> GetParticleOrientations() const { return mParticleOrientations; }
+		glm::quat GetParticleOrientationFast(uint32 particle) const;
+		void SetParticleOrientationFast(uint32 particle, glm::quat orientation);
+
+		glm::quat GetParticleOrientationWorld(uint32 particle) const;
+		void SetParticleOrientationWorld(uint32 particle, glm::quat orientation);
 
 		Span<float> GetParticleLifeTimesAsPercentage() { return mParticleTimeAsPercentage; }
 		Span<const float> GetParticleLifeTimesAsPercentage() const { return mParticleTimeAsPercentage; }
@@ -31,8 +34,8 @@ namespace CE
 		Span<float> GetParticleLifeSpans() { return mParticleLifeSpan; }
 		Span<const float> GetParticleLifeSpans() const { return mParticleLifeSpan; }
 
-		Span<const size_t> GetParticlesThatSpawnedDuringLastStep() const { return mParticlesSpawnedDuringLastStep; }
-		Span<const size_t> GetParticlesThatDiedDuringLastStep() const { return mParticlesThatDiedDuringLastStep; }
+		Span<const uint32> GetParticlesThatSpawnedDuringLastStep() const { return mParticlesSpawnedDuringLastStep; }
+		Span<const uint32> GetParticlesThatDiedDuringLastStep() const { return mParticlesThatDiedDuringLastStep; }
 
 		void PlayFromStart();
 
@@ -42,12 +45,21 @@ namespace CE
 		float mMinLifeTime = 1.0f;
 		float mMaxLifeTime = 10.0f;
 
+		bool mAreTransformsRelativeToEmitter{};
+
 		bool mLoop = true;
 		bool mKeepExistingParticlesAliveWhenRestartingLoop = true;
 		bool mDestroyOnFinish = false;
 		bool mIsPaused = false;
 		float mDuration = 10.0f;
 		float mCurrentTime{};
+
+		ParticleProperty<glm::vec3> mScale{ glm::vec3{ 1.0f }  };
+
+		glm::mat4 mEmitterWorldMatrix{};
+		glm::mat4 mInverseEmitterWorldMatrix{};
+		glm::quat mEmitterOrientation{};
+		glm::quat mInverseEmitterOrientation{};
 
 	private:
 		friend class ParticleLifeTimeSystem;
@@ -65,8 +77,8 @@ namespace CE
 		std::vector<float> mParticleTimeAsPercentage{};
 		std::vector<float> mParticleLifeSpan{};
 
-		std::vector<size_t> mParticlesSpawnedDuringLastStep{};
-		std::vector<size_t> mParticlesThatDiedDuringLastStep{};
+		std::vector<uint32> mParticlesSpawnedDuringLastStep{};
+		std::vector<uint32> mParticlesThatDiedDuringLastStep{};
 
 		// Why is this a float you might ask?
 		// If you want to, for example, spawn .5f particles per frame, you can't do anything the first frame, as you can't spawn half a particle.

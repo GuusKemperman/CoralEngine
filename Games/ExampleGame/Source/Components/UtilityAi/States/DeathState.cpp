@@ -10,7 +10,9 @@
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
+#include "Components/PlayerComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
+#include "Systems/AbilitySystem.h"
 
 void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -43,17 +45,39 @@ float Game::DeathState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 	return 0.f;
 }
 
-void Game::DeathState::OnAIStateEnterEvent(CE::World& world, entt::entity owner) const
+void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner) const
 {
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent != nullptr)
+	// Call On Enemy Killed events.
+	auto playerView = world.GetRegistry().View<CE::PlayerComponent>();
+	if (!playerView.empty())
 	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDeathAnimation, 0.0f, 1.0f, 1.5f);
+		const auto player = playerView.front();
+		auto& boundEvents = CE::AbilitySystem::GetEnemyKilledEvents();
+		for (const CE::BoundEvent& boundEvent : boundEvents)
+		{
+			entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
+
+			if (storage == nullptr
+				|| !storage->contains(player))
+			{
+				continue;
+			}
+
+			if (boundEvent.mIsStatic)
+			{
+				boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, player);
+			}
+			else
+			{
+				CE::MetaAny component{ boundEvent.mType, storage->value(player), false };
+				boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, player, owner);
+			}
+		}
 	}
 
-	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
+	Game::AnimationInAi(world, owner, mDeathAnimation, false);
 
+	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 	if (physicsBody2DComponent != nullptr)
 	{
 		physicsBody2DComponent->mLinearVelocity = { 0,0 };
@@ -73,7 +97,7 @@ CE::MetaType Game::DeathState::Reflect()
 
 	BindEvent(type, CE::sAITickEvent, &DeathState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &DeathState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &DeathState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAIStateEnterEvent, &DeathState::OnAiStateEnterEvent);
 
 	type.AddField(&DeathState::mDeathAnimation, "mDeathAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mDestroyEntityWhenDead, "mDestroyEntityWhenDead").GetProperties().Add(CE::Props::sIsScriptableTag);

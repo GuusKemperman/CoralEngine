@@ -10,23 +10,20 @@
 
 namespace CE::Internal
 {
-	static void RandomScale(ParticleEmitterComponent& emitter, size_t i, glm::vec3 minScale, glm::vec3 maxScale, glm::vec3 emitterWorldScale);
-	static void RandomOrientation(ParticleEmitterComponent& emitter, size_t i, glm::vec3 minOrientation, glm::vec3 maxOrientation, glm::quat emitterWorldOrientation);
+	static void RandomOrientation(ParticleEmitterComponent& emitter, uint32 i, glm::vec3 minOrientation, glm::vec3 maxOrientation, glm::quat emitterWorldOrientation);
 }
 
 void CE::ParticleEmitterShapeAABB::OnParticleSpawn(ParticleEmitterComponent& emitter,
-	const size_t i,
+	const uint32 i,
 	const glm::quat emitterWorldOrientation,
-	const glm::vec3 emitterWorldScale,
 	const glm::mat4& emitterMatrix) const
 {
-	emitter.GetParticlePositions()[i] = emitterMatrix * glm::vec4{ Random::Range(mMinPosition, mMaxPosition), 1.0f };
-	Internal::RandomScale(emitter, i, mMinScale, mMaxScale, emitterWorldScale);
+	emitter.SetParticlePositionFast(i, emitterMatrix * glm::vec4{ Random::Range(mMinPosition, mMaxPosition), 1.0f });
 	Internal::RandomOrientation(emitter, i, mMinOrientation, mMinOrientation, emitterWorldOrientation);
 }
 
-void CE::ParticleEmitterShapeSphere::OnParticleSpawn(ParticleEmitterComponent& emitter, size_t i,
-	glm::quat emitterWorldOrientation, glm::vec3 emitterWorldScale, [[maybe_unused]] const glm::mat4& emitterMatrix) const
+void CE::ParticleEmitterShapeSphere::OnParticleSpawn(ParticleEmitterComponent& emitter, uint32 i,
+	glm::quat emitterWorldOrientation, [[maybe_unused]] const glm::mat4& emitterMatrix) const
 {
 	const float u = Random::Value<float>();
 	const float v = Random::Value<float>();
@@ -41,19 +38,13 @@ void CE::ParticleEmitterShapeSphere::OnParticleSpawn(ParticleEmitterComponent& e
 	const float y = r * sinPhi * sinTheta;
 	const float z = r * cosPhi;
 
-	emitter.GetParticlePositions()[i] = emitterMatrix * glm::vec4{ x, y, z, 1.0f };
-	Internal::RandomScale(emitter, i, mMinScale, mMaxScale, emitterWorldScale);
+	emitter.SetParticlePositionFast(i, emitterMatrix * glm::vec4{ x, y, z, 1.0f });
 	Internal::RandomOrientation(emitter, i, mMinOrientation, mMinOrientation, emitterWorldOrientation);
 }
 
-void CE::Internal::RandomScale(ParticleEmitterComponent& emitter, size_t i, glm::vec3 minScale, glm::vec3 maxScale, glm::vec3 emitterWorldScale)
+void CE::Internal::RandomOrientation(ParticleEmitterComponent& emitter, uint32 i, glm::vec3 minOrientation, glm::vec3 maxOrientation, glm::quat emitterWorldOrientation)
 {
-	emitter.GetParticleSizes()[i] = Math::lerp(minScale, maxScale, Random::Value<float>()) * emitterWorldScale;
-}
-
-void CE::Internal::RandomOrientation(ParticleEmitterComponent& emitter, size_t i, glm::vec3 minOrientation, glm::vec3 maxOrientation, glm::quat emitterWorldOrientation)
-{
-	emitter.GetParticleOrientations()[i] = emitterWorldOrientation * glm::quat{ glm::radians(Random::Range(minOrientation, maxOrientation)) };
+	emitter.SetParticleOrientationFast(i, emitterWorldOrientation * glm::quat{ glm::radians(Random::Range(minOrientation, maxOrientation)) });
 }
 
 CE::MetaType CE::ParticleEmitterShapeAABB::Reflect()
@@ -63,8 +54,6 @@ CE::MetaType CE::ParticleEmitterShapeAABB::Reflect()
 
 	type.AddField(&ParticleEmitterShapeAABB::mMinPosition, "mMinPosition").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterShapeAABB::mMaxPosition, "mMaxPosition").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&ParticleEmitterShapeAABB::mMinScale, "mMinScale").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&ParticleEmitterShapeAABB::mMaxScale, "mMaxScale").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterShapeAABB::mMinOrientation, "mMinOrientation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterShapeAABB::mMaxOrientation, "mMaxOrientation").GetProperties().Add(Props::sIsScriptableTag);
 
@@ -72,15 +61,12 @@ CE::MetaType CE::ParticleEmitterShapeAABB::Reflect()
 	return type;
 }
 
-
 CE::MetaType CE::ParticleEmitterShapeSphere::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<ParticleEmitterShapeSphere>{}, "ParticleEmitterShapeSphere" };
 	type.GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddField(&ParticleEmitterShapeSphere::mRadius, "mRadius").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&ParticleEmitterShapeSphere::mMinScale, "mMinScale").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&ParticleEmitterShapeSphere::mMaxScale, "mMaxScale").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterShapeSphere::mMinOrientation, "mMinOrientation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterShapeSphere::mMaxOrientation, "mMaxOrientation").GetProperties().Add(Props::sIsScriptableTag);
 

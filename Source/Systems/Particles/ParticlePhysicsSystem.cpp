@@ -7,6 +7,7 @@
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
+#include "Components/Particles/ParticleProperty.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
@@ -21,38 +22,38 @@ void CE::ParticlePhysicsSystem::Update(World& world, float dt)
 			continue;
 		}
 
-		const size_t numOfParticles = emitter.GetNumOfParticles();
+		const uint32 numOfParticles = emitter.GetNumOfParticles();
 		physics.mRotationalVelocitiesPerStep.resize(numOfParticles);
 		physics.mLinearVelocities.resize(numOfParticles);
-		physics.mParticleMasses.resize(numOfParticles);
+		physics.mMass.SetInitialValuesOfNewParticles(emitter);
 
 		const glm::quat emitterOrientation = transform.GetWorldOrientation();
 
-		Span<const size_t> newParticles = emitter.GetParticlesThatSpawnedDuringLastStep();
-
-		for (size_t i = 0; i < newParticles.size(); i++)
+		for (const uint32 particle : emitter.GetParticlesThatSpawnedDuringLastStep())
 		{
-			const size_t particle = newParticles[i];
 			// TODO: This only works with fixed time step
 			physics.mRotationalVelocitiesPerStep[particle] = glm::quat(Random::Range(physics.mMinInitialRotationalVelocity, physics.mMaxInitialRotationalVelocity) * Particles::sParticleFixedTimeStep.value_or(1.0f / 60.0f));
 			physics.mLinearVelocities[particle] = Math::RotateVector(Random::Range(physics.mMinInitialVelocity, physics.mMaxInitialVelocity), emitterOrientation);
-			physics.mParticleMasses[particle] = Random::Range(physics.mMinMass, physics.mMaxMass);
 		}
 
 		const glm::vec3 timeScaledGrav = dt * physics.mGravity;
 
-		Span<glm::vec3> positions = emitter.GetParticlePositions();
-		Span<glm::quat> orientations = emitter.GetParticleOrientations();
-
 		// Move the particles
-		for (size_t i = 0; i < numOfParticles; i++)
+		for (uint32 i = 0; i < numOfParticles; i++)
 		{
 			// Note that we are also moving the dead particles, but that doesn't matter as they won't get rendered
-			physics.mLinearVelocities[i] += timeScaledGrav * physics.mParticleMasses[i];
-			positions[i] += physics.mLinearVelocities[i] * dt;
-			positions[i][Axis::Up] = (glm::max)(positions[i][Axis::Up], physics.mFloorHeight);
+			physics.mLinearVelocities[i] += timeScaledGrav * physics.mMass.GetValue(emitter, i);
 
-			orientations[i] *= physics.mRotationalVelocitiesPerStep[i];
+			glm::vec3 position = emitter.GetParticlePositionFast(i);
+			glm::quat orientation = emitter.GetParticleOrientationFast(i);
+
+			position += physics.mLinearVelocities[i] * dt;
+			position[Axis::Up] = glm::max(position[Axis::Up], physics.mFloorHeight);
+
+			orientation *= physics.mRotationalVelocitiesPerStep[i];
+
+			emitter.SetParticleOrientationFast(i, position);
+			emitter.SetParticleOrientationFast(i, orientation);
 		}
 
 		// Benchmarked, and was slightly slower than combining the loops

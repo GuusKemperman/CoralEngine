@@ -9,13 +9,9 @@ namespace CE
 	{
 	public:
 		void OnParticleSpawn(ParticleEmitterComponent& emitter, 
-			size_t particle, 
+			uint32 particle, 
 			glm::quat emitterWorldOrientation, 
-			glm::vec3 emitterWorldScale, 
 			const glm::mat4& emitterMatrix) const;
-
-		glm::vec3 mMinScale{ 1.0f };
-		glm::vec3 mMaxScale{ 1.0f };
 
 		glm::vec3 mMinOrientation{};
 		glm::vec3 mMaxOrientation{ 360.0f };
@@ -33,13 +29,9 @@ namespace CE
 	{
 	public:
 		void OnParticleSpawn(ParticleEmitterComponent& emitter,
-			size_t particle,
+			uint32 particle,
 			glm::quat emitterWorldOrientation,
-			glm::vec3 emitterWorldScale,
 			const glm::mat4& emitterMatrix) const;
-
-		glm::vec3 mMinScale{ 1.0f };
-		glm::vec3 mMaxScale{ 1.0f };
 
 		glm::vec3 mMinOrientation{};
 		glm::vec3 mMaxOrientation{ 360.0f };

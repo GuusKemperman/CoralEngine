@@ -4,6 +4,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "Components/Particles/ParticleProperty.h"
 
 CE::MetaType CE::ParticlePhysicsComponent::Reflect()
 {
@@ -14,8 +15,7 @@ CE::MetaType CE::ParticlePhysicsComponent::Reflect()
 	type.AddField(&ParticlePhysicsComponent::mMaxInitialVelocity, "mMaxInitialVelocity").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticlePhysicsComponent::mMinInitialRotationalVelocity, "mMinInitialRotationalVelocity").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticlePhysicsComponent::mMaxInitialRotationalVelocity, "mMaxInitialRotationalVelocity").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&ParticlePhysicsComponent::mMinMass, "mMinMass").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&ParticlePhysicsComponent::mMaxMass, "mMaxMass").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&ParticlePhysicsComponent::mMass, "mMass").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticlePhysicsComponent::mGravity, "mGravity").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticlePhysicsComponent::mFloorHeight, "mFloorHeight").GetProperties().Add(Props::sIsScriptableTag);
 	ReflectComponentType<ParticlePhysicsComponent>(type);
