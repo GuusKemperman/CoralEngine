@@ -6,6 +6,67 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 
+glm::vec3 CE::ParticleEmitterComponent::GetParticlePositionFast(uint32 particle) const
+{
+	return mParticlePositions[particle];
+}
+
+void CE::ParticleEmitterComponent::SetParticlePositionFast(uint32 particle, glm::vec3 position)
+{
+	mParticlePositions[particle] = position;
+}
+
+
+glm::vec3 CE::ParticleEmitterComponent::GetParticlePositionWorld(uint32 particle) const
+{
+	if (!mAreTransformsRelativeToEmitter)
+	{
+		return GetParticlePositionFast(particle);
+	}
+
+	return mEmitterWorldMatrix * glm::vec4{ GetParticlePositionFast(particle), 1.0f };
+}
+
+void CE::ParticleEmitterComponent::SetParticlePositionWorld(uint32 particle, glm::vec3 position)
+{
+	if (!mAreTransformsRelativeToEmitter)
+	{
+		SetParticlePositionFast(particle, position);
+	}
+
+	SetParticlePositionFast(particle, mInverseEmitterWorldMatrix * glm::vec4{ GetParticlePositionFast(particle), 1.0f });
+}
+
+glm::quat CE::ParticleEmitterComponent::GetParticleOrientationFast(uint32 particle) const
+{
+	return mParticleOrientations[particle];
+}
+
+void CE::ParticleEmitterComponent::SetParticleOrientationFast(uint32 particle, glm::quat orientation)
+{
+	mParticleOrientations[particle] = orientation;
+}
+
+glm::quat CE::ParticleEmitterComponent::GetParticleOrientationWorld(uint32 particle) const
+{
+	if (!mAreTransformsRelativeToEmitter)
+	{
+		return GetParticleOrientationFast(particle);
+	}
+
+	return mEmitterOrientation * GetParticleOrientationFast(particle);
+}
+
+void CE::ParticleEmitterComponent::SetParticleOrientationWorld(uint32 particle, glm::quat orientation)
+{
+	if (!mAreTransformsRelativeToEmitter)
+	{
+		SetParticleOrientationFast(particle, orientation);
+	}
+
+	SetParticleOrientationFast(particle, mInverseEmitterOrientation * GetParticleOrientationFast(particle));
+}
+
 void CE::ParticleEmitterComponent::PlayFromStart()
 {
 	mCurrentTime = 0.0f;
@@ -32,6 +93,7 @@ CE::MetaType CE::ParticleEmitterComponent::Reflect()
 	type.AddField(&ParticleEmitterComponent::mScale, "mScale").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mLoop, "mLoop").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mKeepExistingParticlesAliveWhenRestartingLoop, "mKeepExistingParticlesAliveWhenRestartingLoop").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&ParticleEmitterComponent::mAreTransformsRelativeToEmitter, "mMoveParticlesWithEmitter").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mDestroyOnFinish, "mDestroyOnFinish").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mIsPaused, "mIsPaused").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mDuration, "mDuration").GetProperties().Add(Props::sIsScriptableTag);

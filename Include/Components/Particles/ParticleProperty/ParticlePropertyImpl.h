@@ -42,12 +42,9 @@ namespace CE
 	void ParticleProperty<T>::SetInitialValuesOfNewParticles(const ParticleEmitterComponent& emitter)
 	{
 		mInitialValues.resize(emitter.GetNumOfParticles());
-		const Span<const size_t> newParticles = emitter.GetParticlesThatSpawnedDuringLastStep();
 
-		for (size_t i = 0; i < newParticles.size(); i++)
+		for (const uint32 particle  : emitter.GetParticlesThatSpawnedDuringLastStep())
 		{
-			const size_t particle = newParticles[i];
-
 			const float t = Random::Value<float>();
 			mInitialValues[particle] = Math::lerp(mInitialMin, mInitialMax, t);
 		}
@@ -57,9 +54,8 @@ namespace CE
 		{
 			mChangeOverTime->mMax->mLerpTime.resize(emitter.GetNumOfParticles());
 
-			for (size_t i = 0; i < newParticles.size(); i++)
+			for (const uint32 particle : emitter.GetParticlesThatSpawnedDuringLastStep())
 			{
-				const size_t particle = newParticles[i];
 				mChangeOverTime->mMax->mLerpTime[particle] = Random::Value<float>();
 			}
 		}
