@@ -73,6 +73,13 @@ CE::Weapon::Weapon(AssetLoadInfo& loadInfo) :
 	*serializedPierceCount >> mPierceCount;
 
 	*serializedShootOnRelease >> mShootOnRelease;
+
+	const BinaryGSONMember* shootingSlowDown = obj.TryGetGSONMember("ShootingSlowdown");
+
+	if (shootingSlowDown != nullptr)
+	{
+		*shootingSlowDown >> mShootingSlowdown;
+	}
 }
 
 void CE::Weapon::OnSave(AssetSaveInfo& saveInfo) const
@@ -86,6 +93,7 @@ void CE::Weapon::OnSave(AssetSaveInfo& saveInfo) const
 	obj.AddGSONMember("ReloadSpeed") << mReloadSpeed;
 	obj.AddGSONMember("ProjectileCount") << mProjectileCount;
 	obj.AddGSONMember("Spread") << mSpread;
+	obj.AddGSONMember("ShootingSlowdown") << mShootingSlowdown;
 
 	obj.AddGSONMember("Effects") << mEffects;
 	obj.AddGSONMember("ProjectileSize") << mProjectileSize;
@@ -109,6 +117,7 @@ CE::MetaType CE::Weapon::Reflect()
 	type.AddField(&Weapon::mReloadSpeed, "mReloadSpeed").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&Weapon::mProjectileCount, "mProjectileCount").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&Weapon::mSpread, "mSpread").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&Weapon::mShootingSlowdown, "mShootingSlowdown").GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddField(&Weapon::mEffects, "mEffects").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&Weapon::mProjectileSize, "mProjectileSize").GetProperties().Add(Props::sIsScriptableTag);
@@ -119,7 +128,7 @@ CE::MetaType CE::Weapon::Reflect()
 
 	type.AddField(&Weapon::mShootOnRelease, "mShootOnRelease").GetProperties().Add(Props::sIsScriptableTag);
 
-	// Weapon pointer.
+	// Weapon.
 	type.AddFunc([](Weapon& weapon) -> std::vector<AbilityEffect>&
 		{
 			return weapon.mEffects;
@@ -187,6 +196,12 @@ CE::MetaType CE::Weapon::Reflect()
 	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
 		{
 			return upgrade->mSpread;
+		},
+		"GetSpread", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+		{
+			return upgrade->mShootingSlowdown;
 		},
 		"GetSpread", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
