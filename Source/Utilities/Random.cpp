@@ -4,9 +4,9 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 
-CE::DefaultRandomEngine::DefaultRandomEngine(uint32 seed) :
-	mSeed(seed)
+CE::DefaultRandomEngine::DefaultRandomEngine(uint32 s)
 {
+	seed(s);
 }
 
 uint32 CE::DefaultRandomEngine::operator()()
@@ -24,6 +24,11 @@ void CE::DefaultRandomEngine::seed(uint32 seed)
 
 uint32 CE::Random::CreateSeed(glm::vec2 position)
 {
+	if (position == glm::vec2{})
+	{
+		return 0xbadC0fee;
+	}
+
 	glm::vec3 p3 = glm::fract(glm::vec3{ position.x, position.y, position.x } * .1031f);
 	p3 += dot(p3, glm::vec3{ p3.y, p3.z, p3.x } + 33.33f);
 	const float noise = glm::fract((p3.x + p3.y) * p3.z);
