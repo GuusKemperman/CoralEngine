@@ -15,18 +15,12 @@
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/MeshColorComponent.h"
-#include "Components/PointLightComponent.h"
 #include "Components/DirectionalLightComponent.h"
-#include "Components/Particles/ParticleMeshRendererComponent.h"
-#include "Components/Particles/ParticleEmitterComponent.h"
-#include "Components/Particles/ParticleColorComponent.h"
-#include "Components/Particles/ParticleColorOverTimeComponent.h"
 
 #include "World/Registry.h"
 #include "World/World.h"
 
 #include "Rendering/GPUWorld.h"
-#include "Components/CameraComponent.h"
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
 #include "Assets/StaticMesh.h"

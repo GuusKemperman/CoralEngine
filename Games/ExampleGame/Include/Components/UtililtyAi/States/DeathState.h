@@ -1,6 +1,7 @@
 #pragma once
 #include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
+#include "Utilities/Events.h"
 
 namespace CE
 {
@@ -29,7 +30,6 @@ namespace Game
 		float mAnimationBlendTime = 1.5f;
 
 	private:
-
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(DeathState)
