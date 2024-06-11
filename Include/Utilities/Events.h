@@ -86,6 +86,28 @@ namespace CE
 	 */
 	static constexpr Event<void(World&, entt::entity)> sAbilityActivateEvent{ "OnAbilityActivate" };
 
+	/**
+	 * \brief
+	 * 	World& The world player is in.
+	 * \entt::entity The player that finished reloading.
+	 */
+	static constexpr Event<void(World&, entt::entity)> sReloadCompletedEvent{ "OnReloadCompleted" };
+
+	/**
+	 * \brief
+	 * 	World& The world the player and enemy are in.
+	 * \entt::entity The player.
+	 * \entt::entity The enemy that is about to die.
+	 */
+	static constexpr Event<void(World&, entt::entity, entt::entity)> sEnemyKilledEvent{ "OnEnemyKilled" };
+
+	/**
+	 * \brief
+	 * 	World& The world the player and enemy are in.
+	 * \entt::entity The player that was hit (only called for the player).
+	 */
+	static constexpr Event<void(World&, entt::entity, entt::entity)> sGettingHitEvent{ "OnGettingHit" };
+
 	/*
 	* \brief Called when an animation finishes.
 	* World& the world the animationRootComponent is in
