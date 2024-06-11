@@ -155,7 +155,7 @@ IMGUI_AUTO_DEFINE_BEGIN(template<typename T>, std::vector<T>)
 	if(ImGui::detail::AutoContainerValuesVec<T>("Array " + name, var))
 	{
 		ImGui::PushID(name.c_str());	ImGui::Indent();
-		ImGui::detail::AutoContainerPushBackButton(var); if (!var.empty()) ImGui::SameLine();
+		ImGui::detail::AutoContainerPushBackButton(var);
 		ImGui::PopID();					ImGui::Unindent();
 	}
 IMGUI_AUTO_DEFINE_END

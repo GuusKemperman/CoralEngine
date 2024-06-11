@@ -168,15 +168,14 @@ template<typename T> bool ImGui::detail::AutoContainerValuesVec(const std::strin
 	{
 		ImGui::PushID(name.c_str());
 
-		
 		for (int i = 0; i < static_cast<int>(cont.size()); i++)
 		{
 			std::string itemname = "[" + std::to_string(i) + ']';
 
-			SetNextItemAllowOverlap();
-			const bool isOpen = ImGui::TreeNode(itemname.c_str());
+			ImGui::PushID(i);
+			const bool isOpen = ImGui::TreeNodeEx(itemname.c_str(), ImGuiTreeNodeFlags_AllowOverlap);
 
-			SameLine(GetWindowWidth() - 84.0f);
+			SameLine(GetWindowWidth() - 100.0f);
 
 			ImGui::BeginDisabled(i == 0);
 			if (ImGui::Button(ICON_FA_ARROW_UP))
@@ -215,6 +214,7 @@ template<typename T> bool ImGui::detail::AutoContainerValuesVec(const std::strin
 			{
 				ImGui::TreePop();
 			}
+			ImGui::PopID();
 		}
 		ImGui::PopID();
 		ImGui::TreePop();

@@ -9,7 +9,7 @@ namespace CE
 	{
 	public:
 		void OnParticleSpawn(ParticleEmitterComponent& emitter, 
-			size_t particle, 
+			uint32 particle, 
 			glm::quat emitterWorldOrientation, 
 			const glm::mat4& emitterMatrix) const;
 
@@ -29,7 +29,7 @@ namespace CE
 	{
 	public:
 		void OnParticleSpawn(ParticleEmitterComponent& emitter,
-			size_t particle,
+			uint32 particle,
 			glm::quat emitterWorldOrientation,
 			const glm::mat4& emitterMatrix) const;
 

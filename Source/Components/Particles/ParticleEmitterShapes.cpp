@@ -10,19 +10,19 @@
 
 namespace CE::Internal
 {
-	static void RandomOrientation(ParticleEmitterComponent& emitter, size_t i, glm::vec3 minOrientation, glm::vec3 maxOrientation, glm::quat emitterWorldOrientation);
+	static void RandomOrientation(ParticleEmitterComponent& emitter, uint32 i, glm::vec3 minOrientation, glm::vec3 maxOrientation, glm::quat emitterWorldOrientation);
 }
 
 void CE::ParticleEmitterShapeAABB::OnParticleSpawn(ParticleEmitterComponent& emitter,
-	const size_t i,
+	const uint32 i,
 	const glm::quat emitterWorldOrientation,
 	const glm::mat4& emitterMatrix) const
 {
-	emitter.GetParticlePositions()[i] = emitterMatrix * glm::vec4{ Random::Range(mMinPosition, mMaxPosition), 1.0f };
+	emitter.SetParticlePositionFast(i, emitterMatrix * glm::vec4{ Random::Range(mMinPosition, mMaxPosition), 1.0f });
 	Internal::RandomOrientation(emitter, i, mMinOrientation, mMinOrientation, emitterWorldOrientation);
 }
 
-void CE::ParticleEmitterShapeSphere::OnParticleSpawn(ParticleEmitterComponent& emitter, size_t i,
+void CE::ParticleEmitterShapeSphere::OnParticleSpawn(ParticleEmitterComponent& emitter, uint32 i,
 	glm::quat emitterWorldOrientation, [[maybe_unused]] const glm::mat4& emitterMatrix) const
 {
 	const float u = Random::Value<float>();
@@ -38,13 +38,13 @@ void CE::ParticleEmitterShapeSphere::OnParticleSpawn(ParticleEmitterComponent& e
 	const float y = r * sinPhi * sinTheta;
 	const float z = r * cosPhi;
 
-	emitter.GetParticlePositions()[i] = emitterMatrix * glm::vec4{ x, y, z, 1.0f };
+	emitter.SetParticlePositionFast(i, emitterMatrix * glm::vec4{ x, y, z, 1.0f });
 	Internal::RandomOrientation(emitter, i, mMinOrientation, mMinOrientation, emitterWorldOrientation);
 }
 
-void CE::Internal::RandomOrientation(ParticleEmitterComponent& emitter, size_t i, glm::vec3 minOrientation, glm::vec3 maxOrientation, glm::quat emitterWorldOrientation)
+void CE::Internal::RandomOrientation(ParticleEmitterComponent& emitter, uint32 i, glm::vec3 minOrientation, glm::vec3 maxOrientation, glm::quat emitterWorldOrientation)
 {
-	emitter.GetParticleOrientations()[i] = emitterWorldOrientation * glm::quat{ glm::radians(Random::Range(minOrientation, maxOrientation)) };
+	emitter.SetParticleOrientationFast(i, emitterWorldOrientation * glm::quat{ glm::radians(Random::Range(minOrientation, maxOrientation)) });
 }
 
 CE::MetaType CE::ParticleEmitterShapeAABB::Reflect()
