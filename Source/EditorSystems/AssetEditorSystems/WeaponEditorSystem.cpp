@@ -50,6 +50,8 @@ void CE::WeaponEditorSystem::Tick(float deltaTime)
 	ImGui::Text("Projectile Angles: %.2f", mAsset.mSpread / static_cast<float>(mAsset.mProjectileCount));
 	ImGui::PopStyleColor();
 
+	ImGui::SliderFloat("Shooting slowdown", &mAsset.mShootingSlowdown, 0.0f, 100.0f);
+
 	ShowInspectUI("Ammo Count", mAsset.mCharges);
 	ShowInspectUI("Projectile Effect", mAsset.mEffects);
 	ShowInspectUI("Projectile Size", mAsset.mProjectileSize);

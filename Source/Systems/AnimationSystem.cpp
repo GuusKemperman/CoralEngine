@@ -33,7 +33,10 @@ CE::AnimationSystem::BakedAnimation::BakedAnimation(const AssetHandle<Animation>
 
 				frame.mNumOfBonesInUse = glm::max(static_cast<uint32>(index + 1), frame.mNumOfBonesInUse);
 
-				nodeTransform = node.mBone->GetInterpolatedTransform(time);
+				if (node.mBone != nullptr)
+				{
+					nodeTransform = node.mBone->GetInterpolatedTransform(time);
+				}
 			}
 
 			const glm::mat4 globalTransform = parent * nodeTransform;
