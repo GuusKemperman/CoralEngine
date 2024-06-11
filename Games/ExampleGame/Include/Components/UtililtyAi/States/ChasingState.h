@@ -17,7 +17,8 @@ namespace Game
 		void OnAiStateEnter(CE::World& world, entt::entity owner) const;
 		static void OnAiStateExit(CE::World& world, entt::entity owner);
 
-		[[nodiscard]] float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
+		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
+		static void OnBeginPlay(CE::World& world, entt::entity owner);
 
 		void DebugRender(CE::World& world, entt::entity owner) const;
 

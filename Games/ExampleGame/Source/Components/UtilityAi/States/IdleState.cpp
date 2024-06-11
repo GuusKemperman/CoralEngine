@@ -33,7 +33,7 @@ CE::MetaType Game::IdleState::Reflect()
 	BindEvent(type, CE::sAIEvaluateEvent, &IdleState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &IdleState::OnAiStateEnterEvent);
 
-	type.AddField(&IdleState::mIdleAnimation, "mIdleAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&IdleState::mIdleAnimation, "Idle Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<IdleState>(type);
 	return type;
