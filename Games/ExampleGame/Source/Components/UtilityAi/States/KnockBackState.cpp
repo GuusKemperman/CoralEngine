@@ -126,8 +126,8 @@ CE::MetaType Game::KnockBackState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<KnockBackState>{}, "KnockBackState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&KnockBackState::mMinKnockBackSpeed, "mMinKnockbackSpeed").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&KnockBackState::mFriction, "mFriction").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&KnockBackState::mMinKnockBackSpeed, "Minimum Knockback Speed Before It Stops").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&KnockBackState::mFriction, "Friction").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &KnockBackState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &KnockBackState::OnAiEvaluate);
@@ -135,7 +135,7 @@ CE::MetaType Game::KnockBackState::Reflect()
 	BindEvent(type, CE::sAIStateExitEvent, &KnockBackState::OnAiStateExitEvent);
 	BindEvent(type, CE::sAnimationFinishEvent, &KnockBackState::OnAnimationFinish);
 
-	type.AddField(&KnockBackState::mKnockBackAnimation, "mKnockBackAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&KnockBackState::mKnockBackAnimation, "Knockback Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<KnockBackState>(type);
 	return type;
