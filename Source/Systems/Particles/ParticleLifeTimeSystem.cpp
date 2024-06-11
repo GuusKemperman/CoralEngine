@@ -3,9 +3,10 @@
 
 #include "World/World.h"
 #include "World/Registry.h"
-#include "Components/Particles/ParticleEmitterComponent.h"
 #include "Components/TransformComponent.h"
+#include "Components/Particles/ParticleEmitterComponent.h"
 #include "Components/Particles/ParticleEmitterShapes.h"
+#include "Components/Particles/ParticleProperty.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Random.h"
 
@@ -51,7 +52,6 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 			SpawnShapeType& shape,
 			size_t particleIndex,
 			glm::quat emitterOrientation, 
-			glm::vec3 emitterScale, 
 			const glm::mat4& emitterMatrix)
 		{
 			const float lifeTime = Random::Range(emitter.mMinLifeTime, emitter.mMaxLifeTime);
@@ -59,7 +59,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 			emitter.mParticleTimeAsPercentage[particleIndex] = 0.0f;
 
 			emitter.mParticlesSpawnedDuringLastStep.push_back(particleIndex);
-			shape.OnParticleSpawn(emitter, particleIndex, emitterOrientation, emitterScale, emitterMatrix);
+			shape.OnParticleSpawn(emitter, particleIndex, emitterOrientation, emitterMatrix);
 		};
 
 	for (auto [entity, emitter, transform, spawnShape] : emitterView.each())
@@ -118,7 +118,6 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				spawnShape,
 				emitter.mParticlesThatDiedDuringLastStep[i],
 				emitterOrientation,
-				emitterScale,
 				emitterMatrix);
 		}
 		emitter.mParticlesThatDiedDuringLastStep.clear();
@@ -149,7 +148,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				}
 				else if (numToSpawnThisFrame > 0)
 				{
-					onParticleSpawn(emitter, spawnShape, i, emitterOrientation, emitterScale, emitterMatrix);
+					onParticleSpawn(emitter, spawnShape, i, emitterOrientation, emitterMatrix);
 					indexOfLastParticleInUse = i;
 					--numToSpawnThisFrame;
 				}
@@ -161,6 +160,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				indexOfLastParticleInUse = i;
 			}
 		}
+
 
 		const size_t minPoolSize = indexOfLastParticleInUse + 1 + numToSpawnThisFrame;
 
@@ -176,9 +176,11 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				spawnShape, 
 				numOfParticlesAliveBeforeLifeTimeUpdate + i, 
 				emitterOrientation, 
-				emitterScale, 
 				emitterMatrix);
 		}
+
+		emitter.mScale.SetInitialValuesOfNewParticles(emitter);
+
 
 #ifdef LOG_NUM_OF_PARTICLES
 		for (size_t i = 0; i < emitter.mParticleTimeAsPercentage.size(); i++)

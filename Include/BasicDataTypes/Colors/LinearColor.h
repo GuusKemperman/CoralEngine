@@ -23,5 +23,3 @@ namespace CE
 #ifdef EDITOR
 IMGUI_AUTO_DEFINE_INLINE(template<>, CE::LinearColor, ImGui::ColorEdit4(name.c_str(), static_cast<float*>(&var.r));)
 #endif // EDITOR
-
-

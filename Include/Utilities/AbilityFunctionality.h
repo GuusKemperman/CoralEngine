@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Events.h"
 #include "Assets/Core/AssetHandle.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Abilities/AbilityEffectsComponent.h"
@@ -19,7 +20,6 @@ namespace CE
 	class AbilityFunctionality
 	{
 	public:
-
 		static std::optional<float> ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, bool doNotApplyColor = false);
 		static void ApplyDurationalEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f, bool doNotApplyColor = false);
 		static void RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect);
