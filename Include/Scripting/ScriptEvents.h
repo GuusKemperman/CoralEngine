@@ -162,10 +162,14 @@ namespace CE
 	};
 
 	class ScriptCritEvent final :
-		public ScriptOnlyPassComponentEvent
+		public ScriptEvent
 	{
 	public:
 		ScriptCritEvent();
+
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+			const AssetHandle<Script>& script) const override;
 	};
 
 	class CollisionEvent :

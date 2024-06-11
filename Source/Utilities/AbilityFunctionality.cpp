@@ -28,15 +28,15 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 	MetaType metaType = MetaType{ MetaType::T<AbilityFunctionality>{}, "AbilityFunctionality" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 
-	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, bool doNotApplyColor)
+	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, bool doNotApplyColor) -> bool
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			ApplyInstantEffect(*world, castByCharacterData, affectedEntity, abilityEffect, doNotApplyColor);
+			return ApplyInstantEffect(*world, castByCharacterData, affectedEntity, abilityEffect, doNotApplyColor).second;
 
 		}, "ApplyInstantEffect", MetaFunc::ExplicitParams<
-		const CharacterComponent*, entt::entity, AbilityEffect, bool>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "DoNotApplyColor").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		const CharacterComponent*, entt::entity, AbilityEffect, bool>{}, "CastByCharacterData", "ApplyToEntity", "AbilityEffect", "DoNotApplyColor", "CriticalHit").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	metaType.AddFunc([](const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect abilityEffect, float duration, bool doNotApplyColor)
 		{
@@ -172,22 +172,32 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			CallAllAbilityHitEvents(*world, characterEntity, hitEntity, abilityEntity);
+			CallAllAbilityHitOrCritEvents(*world, characterEntity, hitEntity, abilityEntity, AbilitySystem::GetAbilityHitEvents());
 
 		}, "CallAllAbilityHitEvents", MetaFunc::ExplicitParams<
 		entt::entity, entt::entity, entt::entity>{}, "CharacterEntity", "HitEntity", "AbilityEntity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
-	
+
+	metaType.AddFunc([](entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			CallAllAbilityHitOrCritEvents(*world, characterEntity, hitEntity, abilityEntity, AbilitySystem::GetCritEvents());
+
+		}, "CallAllCritEvents", MetaFunc::ExplicitParams<
+		entt::entity, entt::entity, entt::entity>{}, "CharacterEntity", "HitEntity", "AbilityEntity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
 	return metaType;
 }
 
-std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, bool doNotApplyColor)
+std::pair<std::optional<float>, bool> CE::AbilityFunctionality::ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, bool doNotApplyColor)
 {
 	auto& reg = world.GetRegistry();
 	auto characterComponent = reg.TryGet<CharacterComponent>(affectedEntity);
 	if (characterComponent == nullptr)
 	{
 		LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} is not a character.", entt::to_integral(affectedEntity));
-		return std::nullopt;
+		return { std::nullopt, false };
 	}
 	auto [base, current] = GetStat(effect.mStat, *characterComponent);
 
@@ -196,6 +206,7 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 		effect.mAmount = effect.mAmount * 0.01f * base;
 	}
 
+	bool criticalHit{};
 	if (effect.mIncreaseOrDecrease == IncreaseOrDecrease::Decrease)
 	{
 		if (effect.mStat == Stat::Health)
@@ -204,6 +215,7 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 			{
 				// On Crit event
 				//AbilitySystem::CallBoundEventsWithNoExtraParams(world, , AbilitySystem::GetCritEvents());
+				criticalHit = true;
 				effect.mAmount += effect.mAmount * effect.mCritIncrease * 0.01f;
 			}
 			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
@@ -240,18 +252,18 @@ std::optional<float> CE::AbilityFunctionality::ApplyInstantEffect(World& world, 
 		if (effects == nullptr)
 		{
 			LOG(LogAbilitySystem, Error, "Apply Effect - AffectedEntity {} does not have EffectsOnCharacterComponent attached.", entt::to_integral(affectedEntity));
-			return std::nullopt;
+			return { std::nullopt, false };
 		}
 		effects->mVisualEffects.push_back(VisualEffect{ GetEffectColor(effect.mStat, effect.mIncreaseOrDecrease) });
 	}
 
-	return effect.mAmount;
+	return { effect.mAmount, criticalHit };
 }
 
 void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration, bool doNotApplyColor)
 {
 	const auto calculatedAmount = ApplyInstantEffect(world, castByCharacterData, affectedEntity, effect, doNotApplyColor);
-	if (!calculatedAmount.has_value())
+	if (!calculatedAmount.first.has_value())
 	{
 		return;
 	}
@@ -260,7 +272,7 @@ void CE::AbilityFunctionality::ApplyDurationalEffect(World& world, const Charact
 	// We do a Get() here because we have already checked for this component in ApplyInstantEffect()
 	auto& effects = reg.Get<EffectsOnCharacterComponent>(affectedEntity);
 
-	effects.mDurationalEffects.push_back(DurationalEffect{ duration, 0.f, effect.mStat, calculatedAmount.value() });
+	effects.mDurationalEffects.push_back(DurationalEffect{ duration, 0.f, effect.mStat, calculatedAmount.first.value() });
 
 	if (!doNotApplyColor)
 	{
@@ -622,9 +634,8 @@ void CE::AbilityFunctionality::ReplaceWeaponAtEnd(World& world, entt::entity ent
 	weaponInstance.ResetCooldownAndAmmo();
 }
 
-void CE::AbilityFunctionality::CallAllAbilityHitEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity)
+void CE::AbilityFunctionality::CallAllAbilityHitOrCritEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity, const std::vector<BoundEvent>& boundEvents)
 {
-	const std::vector<BoundEvent> boundEvents = GetAllBoundEvents(sAbilityHitEvent);
 	for (const BoundEvent& boundEvent : boundEvents)
 	{
 		entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
