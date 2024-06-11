@@ -15,6 +15,7 @@ CE::MetaType CE::ProjectileComponent::Reflect()
 	metaType.AddField(&ProjectileComponent::mSpeed, "mSpeed").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&ProjectileComponent::mPierceCount, "mPierceCount").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&ProjectileComponent::mCurrentPierceCount, "mCurrentPierceCount").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsEditorReadOnlyTag);
+	metaType.AddField(&ProjectileComponent::mDirectionOffsetAngle, "mDirectionOffsetAngle").GetProperties().Add(Props::sIsScriptableTag);
 
 #ifdef EDITOR
 	BindEvent(metaType, sInspectEvent, &ProjectileComponent::OnInspect);
