@@ -9,18 +9,15 @@
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
 
-void Game::IdleState::OnAiTick(CE::World& world, const entt::entity owner, float) const
-{
-	Game::AnimationInAi(world, owner, mIdleAnimation, true);
-}
-
 float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
 {
 	return 0.01f;
 }
 
-void Game::IdleState::OnAIStateEnterEvent(CE::World& world, const entt::entity owner)
+void Game::IdleState::OnAiStateEnterEvent(CE::World& world, entt::entity owner) const
 {
+	Game::AnimationInAi(world, owner, mIdleAnimation, true);
+
 	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
 
 	if (navMeshAgent == nullptr) { return; }
@@ -32,10 +29,9 @@ CE::MetaType Game::IdleState::Reflect()
 {
 	auto type = CE::MetaType{CE::MetaType::T<IdleState>{}, "IdleState"};
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
-
-	BindEvent(type, CE::sAITickEvent, &IdleState::OnAiTick);
+	
 	BindEvent(type, CE::sAIEvaluateEvent, &IdleState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &IdleState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAIStateEnterEvent, &IdleState::OnAiStateEnterEvent);
 
 	type.AddField(&IdleState::mIdleAnimation, "mIdleAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

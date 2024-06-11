@@ -15,16 +15,10 @@
 #include "Systems/AbilitySystem.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
+#include "Utilities/AiFunctionality.h"
 
 void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mChargingAnimation, 0.0f);
-	}
-
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
@@ -53,6 +47,8 @@ float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, const entt::
 void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
+
+	Game::AnimationInAi(world, owner, mChargingAnimation, false);
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;

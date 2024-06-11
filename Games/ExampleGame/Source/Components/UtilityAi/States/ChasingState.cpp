@@ -13,19 +13,19 @@
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Assets/Animation/Animation.h"
 
-void Game::ChasingState::OnAIStateEnter(CE::World& world, const entt::entity owner) const
+void Game::ChasingState::OnAiStateEnter(CE::World& world, const entt::entity owner) const
 {
 	Game::AnimationInAi(world, owner, mChasingAnimation, true);
 
 	CE::SwarmingAgentTag::StartMovingToTarget(world, owner);
 }
 
-void Game::ChasingState::OnAIStateExit(CE::World& world, const entt::entity owner)
+void Game::ChasingState::OnAiStateExit(CE::World& world, const entt::entity owner)
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 }
 
-float Game::ChasingState::OnAIEvaluate(const CE::World& world, const entt::entity owner) const
+float Game::ChasingState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
 	const auto score = GetBestScoreBasedOnDetection(world, owner, mRadius);
 	return score;
@@ -54,9 +54,9 @@ CE::MetaType Game::ChasingState::Reflect()
 
 	type.AddField(&ChasingState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAIStateEnterEvent, &ChasingState::OnAIStateEnter);
-	BindEvent(type, CE::sAIStateExitEvent, &ChasingState::OnAIStateExit);
-	BindEvent(type, CE::sAIEvaluateEvent, &ChasingState::OnAIEvaluate);
+	BindEvent(type, CE::sAIStateEnterEvent, &ChasingState::OnAiStateEnter);
+	BindEvent(type, CE::sAIStateExitEvent, &ChasingState::OnAiStateExit);
+	BindEvent(type, CE::sAIEvaluateEvent, &ChasingState::OnAiEvaluate);
 
 	type.AddField(&ChasingState::mChasingAnimation, "mChasingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

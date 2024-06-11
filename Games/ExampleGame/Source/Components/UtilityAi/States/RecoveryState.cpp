@@ -15,8 +15,6 @@
 
 void Game::RecoveryState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	Game::AnimationInAi(world, owner, mDashRechargeAnimation, false);
-	
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
@@ -42,8 +40,10 @@ float Game::RecoveryState::OnAiEvaluate(const CE::World&, entt::entity) const
 	return 0;
 }
 
-void Game::RecoveryState::OnAiStateEnterEvent(CE::World&, entt::entity)
+void Game::RecoveryState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 {
+	Game::AnimationInAi(world, owner, mDashRechargeAnimation, false);
+
 	mRechargeCooldown.mCooldown = mMaxRechargeTime;
 	mRechargeCooldown.mAmountOfTimePassed = 0.0f;
 }
