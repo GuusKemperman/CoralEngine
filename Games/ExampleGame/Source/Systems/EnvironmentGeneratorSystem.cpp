@@ -365,6 +365,12 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 				const glm::vec2 worldPosition = topLeft + layer.mCellSize *
 					glm::vec2{ static_cast<float>(cellX), static_cast<float>(cellZ) };
 
+				if (layer.mObjectsRadius.has_value()
+					&& glm::distance(worldPosition, generatorPosition) >= *layer.mObjectsRadius + generationCircle.mRadius)
+				{
+					continue;
+				}
+
 				const CE::TransformedAABB cellAABB{ worldPosition, worldPosition + glm::vec2{ layer.mCellSize } };
 
 				if (!CE::AreOverlapping(cellAABB, generationCircle))
