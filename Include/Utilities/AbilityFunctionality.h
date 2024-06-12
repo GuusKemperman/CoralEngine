@@ -36,6 +36,7 @@ namespace CE
 		static void RemoveWeaponAtIndex(World& world, entt::entity entity, int index);
 		static void AddWeaponToEnd(World& world, entt::entity entity, WeaponInstance& weapon);
 		static void ReplaceWeaponAtEnd(World& world, entt::entity entity, AssetHandle<Weapon>& weaponAsset);
+		static void CopyEffectsFromWeapon(AbilityEffectsComponent& target, const WeaponInstance& source);
 		static void CallAllAbilityHitOrCritEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity, const std::vector<BoundEvent>& boundEvents);
 
 	private:

@@ -167,6 +167,8 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "ReplaceWeaponAtEnd", MetaFunc::ExplicitParams<
 		entt::entity, AssetHandle<Weapon>>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
+		metaType.AddFunc(&AbilityFunctionality::CopyEffectsFromWeapon, "CopyEffectsFromWeapon", "Target", "Source").GetProperties().Add(Props::sIsScriptableTag);
+
 	metaType.AddFunc([](entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
@@ -655,6 +657,14 @@ void CE::AbilityFunctionality::CallAllAbilityHitOrCritEvents(World& world, entt:
 			MetaAny component{ boundEvent.mType, storage->value(characterEntity), false };
 			boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, characterEntity, hitEntity, abilityEntity);
 		}
+	}
+}
+
+void CE::AbilityFunctionality::CopyEffectsFromWeapon(AbilityEffectsComponent& target, const WeaponInstance& source)
+{
+	if (source.mWeaponAsset != nullptr)
+	{
+		target.mEffects = source.mWeaponAsset->mEffects;
 	}
 }
 
