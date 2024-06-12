@@ -2,12 +2,12 @@
 #include "Components/UtililtyAi/States/IdleState.h"
 
 #include "Utilities/AiFunctionality.h"
-#include "Components/Pathfinding/NavMeshAgentComponent.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/Pathfinding/SwarmingAgentTag.h"
 
 float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
 {
@@ -16,13 +16,8 @@ float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
 
 void Game::IdleState::OnAiStateEnterEvent(CE::World& world, entt::entity owner) const
 {
+	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 	Game::AnimationInAi(world, owner, mIdleAnimation, true);
-
-	auto* navMeshAgent = world.GetRegistry().TryGet<CE::NavMeshAgentComponent>(owner);
-
-	if (navMeshAgent == nullptr) { return; }
-
-	navMeshAgent->ClearTarget(world);
 }
 
 CE::MetaType Game::IdleState::Reflect()

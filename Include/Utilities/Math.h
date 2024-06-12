@@ -136,5 +136,7 @@ namespace CE
         const glm::vec3* const normals,
         const glm::vec2* const texCoords,
         const size_t numOfVertices);
+
+		static glm::vec2 RotateVec2ByAngleInRadians(glm::vec2 vector, float angle);
 	};
 }
