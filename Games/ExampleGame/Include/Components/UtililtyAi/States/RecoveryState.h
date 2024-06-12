@@ -20,7 +20,7 @@ namespace Game
 		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
 		void OnBeginPlayEvent(CE::World& world, entt::entity owner);
 
-		CE::AssetHandle<CE::Animation> mDashRechargeAnimation{};
+		CE::AssetHandle<CE::Animation> mRecoveryAnimation{};
 
 		CE::Cooldown mRechargeCooldown{};
 

@@ -27,6 +27,9 @@ namespace CE
 		// How many characters the projectile has affected.
 		int mCurrentPierceCount{};
 
+		// If the projectile shouldn't follow the exact character direction, but instead be offset to the side.
+		float mDirectionOffsetAngle{}; // Euler angle.
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
