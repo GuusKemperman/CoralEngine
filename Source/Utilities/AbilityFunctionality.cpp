@@ -217,11 +217,12 @@ std::pair<std::optional<float>, bool> CE::AbilityFunctionality::ApplyInstantEffe
 				criticalHit = true;
 				effect.mAmount += effect.mAmount * effect.mCritIncrease * 0.01f;
 			}
-			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
 			if (Math::AreFloatsEqual(characterComponent->mCurrentReceivedDamageModifier, -100.f))
 			{
-				doNotApplyColor = true;
+				// The character shouldn't take any damage.
+				return { 0.f, criticalHit };
 			}
+			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
 			if (castByCharacterData != nullptr)
 			{
 				damageModifier += castByCharacterData->mCurrentDealtDamageModifier;
