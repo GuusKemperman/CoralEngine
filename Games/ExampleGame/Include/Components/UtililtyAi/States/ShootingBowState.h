@@ -30,7 +30,7 @@ namespace Game
 	private:
 		float mRadius{};
 
-		float mMaxStompTime = 10.0f;
+		float mMaxShootTime = 10.0f;
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

@@ -54,7 +54,7 @@ void Game::ShootingBowState::OnAiStateEnterEvent(CE::World& world, const entt::e
 
 	Game::AnimationInAi(world, owner, mShootingAnimation, false);
 
-	mShootCooldown.mCooldown = mMaxStompTime;
+	mShootCooldown.mCooldown = mMaxShootTime;
 	mShootCooldown.mAmountOfTimePassed = 0.0f;
 }
 
@@ -119,8 +119,8 @@ CE::MetaType Game::ShootingBowState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<ShootingBowState>{}, "ShootingBowState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&ShootingBowState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&ShootingBowState::mMaxStompTime, "mMaxStompTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ShootingBowState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ShootingBowState::mMaxShootTime, "Max Shoot Time").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &ShootingBowState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &ShootingBowState::OnAiEvaluate);
@@ -128,7 +128,7 @@ CE::MetaType Game::ShootingBowState::Reflect()
 	BindEvent(type, CE::sAIStateExitEvent, &ShootingBowState::OnAiStateExitEvent);
 	BindEvent(type, CE::sAnimationFinishEvent, &ShootingBowState::OnFinishAnimationEvent);
 
-	type.AddField(&ShootingBowState::mShootingAnimation, "mShootingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ShootingBowState::mShootingAnimation, "Shooting Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<ShootingBowState>(type);
 	return type;
