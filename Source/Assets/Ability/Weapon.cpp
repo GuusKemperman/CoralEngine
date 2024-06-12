@@ -169,114 +169,204 @@ CE::MetaType CE::Weapon::Reflect()
 
 	// Weapon asset.
 	// Non-inherited members.
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
 		{
-			return upgrade->mShotDelay;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetShotDelay - weapon was NULL.");
+				return {};
+			}
+			return weapon->mShotDelay;
 		},
 		"GetShotDelay", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
 		{
-			return upgrade->mFireSpeed;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetFireSpeed - weapon was NULL.");
+				return {};
+			}
+			return weapon->mFireSpeed;
 		},
 		"GetFireSpeed", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
 		{
-			return upgrade->mReloadSpeed;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetReloadSpeed - weapon was NULL.");
+				return {};
+			}
+			return weapon->mReloadSpeed;
 		},
 		"GetReloadSpeed", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> int
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> int
 		{
-			return upgrade->mProjectileCount;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetProjectileCount - weapon was NULL.");
+				return {};
+			}
+			return weapon->mProjectileCount;
 		},
 		"GetProjectileCount", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
 		{
-			return upgrade->mSpread;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetSpread - weapon was NULL.");
+				return {};
+			}
+			return weapon->mSpread;
 		},
 		"GetSpread", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
 		{
-			return upgrade->mShootingSlowdown;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetShootingSlowdown - weapon was NULL.");
+				return {};
+			}
+			return weapon->mShootingSlowdown;
 		},
-		"GetSpread", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+		"GetShootingSlowdown", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> std::vector<AbilityEffect>
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> std::vector<AbilityEffect>
 		{
-			return upgrade->mEffects;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetEffects - weapon was NULL.");
+				return {};
+			}
+			return weapon->mEffects;
 		},
 		"GetEffects", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
 		{
-			return upgrade->mProjectileSize;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetProjectileSize - weapon was NULL.");
+				return {};
+			}
+			return weapon->mProjectileSize;
 		},
 		"GetProjectileSize", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
 		{
-			return upgrade->mProjectileSpeed;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetProjectileSpeed - weapon was NULL.");
+				return {};
+			}
+			return weapon->mProjectileSpeed;
 		},
 		"GetProjectileSpeed", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
 		{
-			return upgrade->mProjectileRange;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetProjectileRange - weapon was NULL.");
+				return {};
+			}
+			return weapon->mProjectileRange;
 		},
 		"GetProjectileRange", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
 		{
-			return upgrade->mKnockback;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetKnockback - weapon was NULL.");
+				return {};
+			}
+			return weapon->mKnockback;
 		},
 		"GetKnockback", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> int
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> int
 		{
-			return upgrade->mPierceCount;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetPierceCount - weapon was NULL.");
+				return {};
+			}
+			return weapon->mPierceCount;
 		},
 		"GetPierceCount", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	// Ability-inherited members.
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> AssetHandle<Script>
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> AssetHandle<Script>
 		{
-			return upgrade->mOnAbilityActivateScript;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetOnAbilityActivateScript - weapon was NULL.");
+				return {};
+			}
+			return weapon->mOnAbilityActivateScript;
 		},
 		"GetOnAbilityActivateScript", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> AssetHandle<Texture>
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> AssetHandle<Texture>
 		{
-			return upgrade->mIconTexture;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetIconTexture - weapon was NULL.");
+				return {};
+			}
+			return weapon->mIconTexture;
 		},
 		"GetIconTexture", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> std::string
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> std::string
 		{
-			return upgrade->mDescription;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetDescription - weapon was NULL.");
+				return {};
+			}
+			return weapon->mDescription;
 		},
 		"GetDescription", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> bool
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> bool
 		{
-			return upgrade->mGlobalCooldown;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetGlobalCooldown - weapon was NULL.");
+				return {};
+			}
+			return weapon->mGlobalCooldown;
 		},
 		"GetGlobalCooldown", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	// Skipping mRequirementType because it is not relevant for the weapons.
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> float
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> float
 		{
-			return upgrade->mRequirementToUse;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetReloadTime - weapon was NULL.");
+				return {};
+			}
+			return weapon->mRequirementToUse;
 		},
 		"GetReloadTime", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](const AssetHandle<Weapon>& upgrade) -> int
+	type.AddFunc([](const AssetHandle<Weapon>& weapon) -> int
 		{
-			return upgrade->mCharges;
+			if (weapon == nullptr)
+			{
+				LOG(LogAbilitySystem, Error, "GetAmmo - weapon was NULL.");
+				return {};
+			}
+			return weapon->mCharges;
 		},
 		"GetAmmo", MetaFunc::ExplicitParams<const AssetHandle<Weapon>&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
