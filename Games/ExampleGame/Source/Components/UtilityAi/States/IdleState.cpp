@@ -17,7 +17,7 @@ float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
 void Game::IdleState::OnAiStateEnterEvent(CE::World& world, entt::entity owner) const
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
-	Game::AnimationInAi(world, owner, mIdleAnimation, true);
+	AIFunctionality::AnimationInAi(world, owner, mIdleAnimation, true);
 }
 
 CE::MetaType Game::IdleState::Reflect()
