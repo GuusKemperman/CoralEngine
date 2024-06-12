@@ -23,7 +23,7 @@ namespace Game
 
 		float mCurrentDeathTimer = 0.0f;
 
-		bool mDestroyEntityWhenDead = false;
+		bool mDestroyEntityWhenDead = true;
 
 		float mMaxDeathTime = 5.0f;
 

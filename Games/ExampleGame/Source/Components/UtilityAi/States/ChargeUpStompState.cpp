@@ -10,7 +10,7 @@
 #include "Components/AnimationRootComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Components/Abilities/CharacterComponent.h"
+#include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Systems/AbilitySystem.h"
 #include "Utilities/AiFunctionality.h"

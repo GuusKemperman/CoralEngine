@@ -350,8 +350,12 @@ entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Pr
 		}
 		// Calculate the 2D orientation of the character.
 		const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+		// Offset.
+		const float radians = glm::radians(projectileComponent->mDirectionOffsetAngle); // Convert angle to radians
+		const float radiansLeftOrRight = Random::Range<int32>(0, 2) == 0 ? radians : -radians;
+		const glm::vec2 projectileDir = Math::RotateVec2ByAngleInRadians(characterDir, radiansLeftOrRight);
 		// Set the velocity.
-		prefabPhysicsBody->mLinearVelocity = characterDir * projectileComponent->mSpeed;
+		prefabPhysicsBody->mLinearVelocity = glm::normalize(projectileDir) * projectileComponent->mSpeed;
 
 		// Translate the spawn position by a certain amount
 		// so that the projectile does not spawn inside the character mesh.
