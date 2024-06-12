@@ -10,7 +10,7 @@
 
 bool CE::ParticleMeshRendererComponent::AreAnyVisible(const CE::ParticleEmitterComponent& emitter) const
 {
-	return emitter.IsPlaying() && mParticleMesh; 
+	return emitter.GetNumOfParticles() != 0 && mParticleMesh != nullptr && mParticleMaterial != nullptr; 
 }
 
 CE::MetaType CE::ParticleMeshRendererComponent::Reflect()
