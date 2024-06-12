@@ -58,15 +58,15 @@ CE::MetaType Game::RecoveryState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<RecoveryState>{}, "RecoveryState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&RecoveryState::mMaxRechargeTime, "mMaxRechargeTime").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&RecoveryState::mRechargeCooldown, "mRechargeCooldown").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&RecoveryState::mMaxRechargeTime, "Max Recovery Time").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&RecoveryState::mRechargeCooldown, "Recovery Cooldown").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &RecoveryState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &RecoveryState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &RecoveryState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sBeginPlayEvent, &RecoveryState::OnBeginPlayEvent);
 
-	type.AddField(&RecoveryState::mDashRechargeAnimation, "mDashRechargeAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&RecoveryState::mDashRechargeAnimation, "Recovery Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<RecoveryState>(type);
 	return type;
