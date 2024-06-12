@@ -26,7 +26,7 @@ namespace Game
 
 		bool mDestroyEntityWhenDead = true;
 
-		float mMaxDeathTime = 5.0f;
+		float mMaxDeathTime = 0.5f;
 
 		float mAnimationBlendTime = 1.5f;
 
@@ -34,7 +34,7 @@ namespace Game
 
 		bool mSink = false;
 
-		float mSinkDownSpeed = 0.1f;
+		float mSinkDownSpeed = 0.02f;
 		float mSinkSizeDown = 0.99f;
 
 		friend CE::ReflectAccess;
