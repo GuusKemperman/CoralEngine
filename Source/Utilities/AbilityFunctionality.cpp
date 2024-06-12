@@ -211,10 +211,9 @@ std::pair<std::optional<float>, bool> CE::AbilityFunctionality::ApplyInstantEffe
 	{
 		if (effect.mStat == Stat::Health)
 		{
-			if (Random::Range<float>(0.f, 100.f) <= effect.mCritChance)
+			if (Random::Range<float>(0.f, 100.f) < effect.mCritChance)
 			{
 				// On Crit event
-				//AbilitySystem::CallBoundEventsWithNoExtraParams(world, , AbilitySystem::GetCritEvents());
 				criticalHit = true;
 				effect.mAmount += effect.mAmount * effect.mCritIncrease * 0.01f;
 			}
