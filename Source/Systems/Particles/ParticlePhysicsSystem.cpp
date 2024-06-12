@@ -52,7 +52,7 @@ void CE::ParticlePhysicsSystem::Update(World& world, float dt)
 
 			orientation *= physics.mRotationalVelocitiesPerStep[i];
 
-			emitter.SetParticleOrientationFast(i, position);
+			emitter.SetParticlePositionFast(i, position);
 			emitter.SetParticleOrientationFast(i, orientation);
 		}
 
