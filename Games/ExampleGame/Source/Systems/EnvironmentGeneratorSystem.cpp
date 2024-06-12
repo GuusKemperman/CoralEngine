@@ -214,7 +214,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 		const EnvironmentGeneratorComponent::Layer& layer = generator.mLayers[generatedComponent.mLayerIndex];
 
-
 		if (layer.mObjectsRadius.has_value())
 		{
 			const CE::TransformComponent* transform = reg.TryGet<CE::TransformComponent>(entity);
@@ -226,15 +225,13 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 				continue;
 			}
 		}
-		else
-		{
-			const CE::TransformedAABB cellAABB{ generatedComponent.mCellTopLeft, generatedComponent.mCellTopLeft + glm::vec2{ layer.mCellSize } };
 
-			if (!CE::AreOverlapping(cellAABB, destroyCircle))
-			{
-				reg.Destroy(entity, true);
-				continue;
-			}
+		const CE::TransformedAABB cellAABB{ generatedComponent.mCellTopLeft, generatedComponent.mCellTopLeft + glm::vec2{ layer.mCellSize } };
+
+		if (!CE::AreOverlapping(cellAABB, destroyCircle))
+		{
+			reg.Destroy(entity, true);
+			continue;
 		}
 
 		std::vector<char>& grid = isEnvironmentFilledIn[generatedComponent.mLayerIndex];
