@@ -1,5 +1,6 @@
 #pragma once
 #include "Assets/Asset.h"
+#include <stb_image/stb_truetype.h>
 
 namespace CE
 {
@@ -27,6 +28,13 @@ namespace CE
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(Font);
 
+		static constexpr float sFontSize = 50.0f;
+		static constexpr uint32_t sFontAtlasMinCharacters = 32;
+		static constexpr uint32_t sFontAtlasNumCharacters = 96;
+
 		std::string mFileContents{};
+		std::vector<stbtt_packedchar> mPackedCharacters{};
+		stbtt_fontinfo mInfo{};
+		float mScale = 1.0f;
 	};
 }
