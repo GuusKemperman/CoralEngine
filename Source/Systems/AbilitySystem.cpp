@@ -26,6 +26,8 @@ CE::AbilitySystem::AbilitySystem()
     sReloadCompletedEvents = CE::GetAllBoundEvents(CE::sReloadCompletedEvent);
     sEnemyKilledEvents = CE::GetAllBoundEvents(CE::sEnemyKilledEvent);
     sGettingHitEvents = CE::GetAllBoundEvents(CE::sGettingHitEvent);
+    sAbilityHitEvents = CE::GetAllBoundEvents(CE::sAbilityHitEvent);
+    sCritEvents = CE::GetAllBoundEvents(CE::sCritEvent);
 }
 
 void CE::AbilitySystem::Update(World& world, float dt)

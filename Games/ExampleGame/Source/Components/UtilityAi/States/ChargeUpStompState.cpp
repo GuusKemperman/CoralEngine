@@ -18,8 +18,6 @@
 
 void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	AnimationInAi(world, owner, mChargingAnimation, false);
-
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
@@ -40,7 +38,7 @@ float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, const entt:
 
 	if (mChargeCooldown.mAmountOfTimePassed != 0.0f)
 	{
-		return 0.8f;
+		return 0.85f;
 	}
 
 	const auto score = Game::GetBestScoreBasedOnDetection(world, owner, mRadius);
@@ -56,6 +54,8 @@ void Game::ChargeUpStompState::OnAiStateExitEvent(CE::World&, entt::entity)
 void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
+
+	AnimationInAi(world, owner, mChargingAnimation, false);
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
@@ -76,15 +76,15 @@ CE::MetaType Game::ChargeUpStompState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<ChargeUpStompState>{}, "ChargeUpStompState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&ChargeUpStompState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&ChargeUpStompState::mMaxChargeTime, "mMaxChargeTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpStompState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpStompState::mMaxChargeTime, "Max Charge Time").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &ChargeUpStompState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &ChargeUpStompState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &ChargeUpStompState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sAIStateExitEvent, &ChargeUpStompState::OnAiStateExitEvent);
 
-	type.AddField(&ChargeUpStompState::mChargingAnimation, "mChargingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpStompState::mChargingAnimation, "Charging Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<ChargeUpStompState>(type);
 	return type;

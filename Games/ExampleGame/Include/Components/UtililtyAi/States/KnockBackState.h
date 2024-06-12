@@ -1,7 +1,6 @@
 #pragma once
 #include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
-#include "Utilities/Time.h"
 
 namespace CE
 {
@@ -12,29 +11,29 @@ namespace CE
 
 namespace Game
 {
-	class DashingState
+	class KnockBackState
 	{
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
 		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
+		static void OnAiStateExitEvent(CE::World& world, entt::entity owner);
 
-		bool IsDashCharged() const;
+		void AddKnockback(float knockbackValue);
+		void OnAnimationFinish(CE::World& world, entt::entity owner);
 
-		CE::AssetHandle<CE::Animation> mDashingAnimation{};
-
-		CE::Cooldown mDashCooldown{};
+		CE::AssetHandle<CE::Animation> mKnockBackAnimation{};
 
 	private:
-		entt::entity mTargetEntity = entt::null;
 
-		glm::vec2 mDashDirection{};
+		glm::vec2 mKnockbackDirection{};
 
-		float mSpeedDash{};
-		float mMaxDashTime = 1.0f;
+		float mKnockBackSpeed{};
+		float mFriction = 0.99f;
+		float mMinKnockBackSpeed = 0.2f;
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
-		REFLECT_AT_START_UP(DashingState);
+		REFLECT_AT_START_UP(KnockBackState);
 	};
 }

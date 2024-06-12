@@ -13,16 +13,10 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
+#include "Utilities/AiFunctionality.h"
 
 void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mChargingAnimation, 0.0f);
-	}
-
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
@@ -52,6 +46,8 @@ void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, const entt::
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
+	Game::AnimationInAi(world, owner, mChargingAnimation, false);
+
 	mChargeCooldown.mCooldown = mMaxChargeTime;
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
 }
@@ -76,15 +72,15 @@ CE::MetaType Game::ChargeUpDashState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<ChargeUpDashState>{}, "ChargeUpDashState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&ChargeUpDashState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&ChargeUpDashState::mMaxChargeTime, "mMaxChargeTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpDashState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpDashState::mMaxChargeTime, "Max Charge Time").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &ChargeUpDashState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &ChargeUpDashState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &ChargeUpDashState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sAIStateExitEvent, &ChargeUpDashState::OnAiStateExitEvent);
 
-	type.AddField(&ChargeUpDashState::mChargingAnimation, "mChargingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpDashState::mChargingAnimation, "Charging Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<ChargeUpDashState>(type);
 	return type;

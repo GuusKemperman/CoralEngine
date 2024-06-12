@@ -11,7 +11,7 @@
 #include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 
-void Game::DanceState::OnAITick(CE::World& world, const entt::entity owner, const float)
+void Game::DanceState::OnAiTick(CE::World& world, const entt::entity owner, const float)
 {
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
@@ -44,7 +44,7 @@ float Game::DanceState::OnAiEvaluate(const CE::World& world, [[maybe_unused]] co
 	return 0.f;
 }
 
-void Game::DanceState::OnAIStateEnterEvent(CE::World& world, const entt::entity owner) const
+void Game::DanceState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner) const
 {
 	Game::AnimationInAi(world, owner, mDanceAnimation, true);
 }
@@ -54,11 +54,11 @@ CE::MetaType Game::DanceState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<DanceState>{}, "DanceState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &DanceState::OnAITick);
+	BindEvent(type, CE::sAITickEvent, &DanceState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &DanceState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &DanceState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAIStateEnterEvent, &DanceState::OnAiStateEnterEvent);
 
-	type.AddField(&DanceState::mDanceAnimation, "mDanceAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DanceState::mDanceAnimation, "Dance Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<DanceState>(type);
 	return type;

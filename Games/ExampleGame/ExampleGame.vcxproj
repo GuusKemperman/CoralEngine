@@ -367,11 +367,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Components\UtilityAi\States\ShootingBowState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\KnockbackEmitterComponent.cpp" />
     <ClCompile Include="Source\Utilities\AiFunctionality.cpp" />
     <ClCompile Include="Source\Components\EnvironmentGeneratorComponent.cpp" />
     <ClCompile Include="Source\Assets\Upgrade.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpStompState.cpp" />
     <ClCompile Include="Source\Components\DifficultyScalingComponent.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\KnockBackState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\DanceState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\DeathState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\RecoveryState.cpp" />
@@ -441,6 +443,8 @@
     <ClInclude Include="Include\Systems\EnvironmentGeneratorSystem.h" />
     <ClInclude Include="Include\Systems\SpawnerSystem.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\ShootingBowState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\KnockBackState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\KnockbackEmitterComponent.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\UserMem\address_sanitizer_utils.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
