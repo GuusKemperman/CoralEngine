@@ -17,7 +17,7 @@
 
 void Game::ChasingState::OnAiStateEnter(CE::World& world, const entt::entity owner) const
 {
-	Game::AnimationInAi(world, owner, mChasingAnimation, true);
+	AIFunctionality::AnimationInAi(world, owner, mChasingAnimation, true);
 
 	CE::SwarmingAgentTag::StartMovingToTarget(world, owner);
 }
@@ -29,7 +29,7 @@ void Game::ChasingState::OnAiStateExit(CE::World& world, const entt::entity owne
 
 float Game::ChasingState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
-	const auto score = GetBestScoreBasedOnDetection(world, owner, mRadius);
+	const auto score = AIFunctionality::GetBestScoreBasedOnDetection(world, owner, mRadius);
 	return score;
 }
 
