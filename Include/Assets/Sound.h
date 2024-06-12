@@ -5,6 +5,7 @@
 namespace FMOD
 {
 	class Sound;
+	class Channel;
 }
 
 namespace CE
@@ -24,7 +25,7 @@ namespace CE
 		Sound& operator=(Sound&&) = delete;
 		Sound& operator=(const Sound&) = delete;
 
-		void Play() const;
+		FMOD::Channel* Play() const;
 
 	private:
 		friend ReflectAccess;

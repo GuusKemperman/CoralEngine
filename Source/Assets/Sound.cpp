@@ -48,14 +48,18 @@ CE::Sound::~Sound()
     }
 }
 
-void CE::Sound::Play() const
+FMOD::Channel* CE::Sound::Play() const
 {
     if (mSound == nullptr)
     {
-        return;
+        return nullptr;
     }
 
-    Audio::Get().GetCoreSystem().playSound(mSound, nullptr, false, nullptr);
+    FMOD::Channel* channel{};
+
+    Audio::Get().GetCoreSystem().playSound(mSound, nullptr, false, &channel);
+
+    return channel;
 }
 
 CE::MetaType CE::Sound::Reflect()
