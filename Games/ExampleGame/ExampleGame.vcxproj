@@ -366,6 +366,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\UtilityAi\States\ShootingBowState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\KnockbackEmitterComponent.cpp" />
     <ClCompile Include="Source\Utilities\AiFunctionality.cpp" />
     <ClCompile Include="Source\Components\EnvironmentGeneratorComponent.cpp" />
@@ -441,6 +442,7 @@
     <ClInclude Include="Include\Systems\DifficultyScalingSystem.h" />
     <ClInclude Include="Include\Systems\EnvironmentGeneratorSystem.h" />
     <ClInclude Include="Include\Systems\SpawnerSystem.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\ShootingBowState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\KnockBackState.h" />
     <ClInclude Include="Include\Components\UtililtyAi\KnockbackEmitterComponent.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\UserMem\address_sanitizer_utils.h">

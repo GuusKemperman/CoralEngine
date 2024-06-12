@@ -11,6 +11,8 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/PlayerComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Components/TransformComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Systems/AbilitySystem.h"
 
@@ -21,11 +23,35 @@ void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, cons
 		return;
 	}
 
-	mCurrentDeathTimer += dt;
+	auto& registry = world.GetRegistry();
 
+	// Dim eye lights.
+	auto* transform = registry.TryGet<CE::TransformComponent>(owner);
+	if (transform == nullptr)
+	{
+		LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+		return;
+	}
+	const auto removeLights = [&registry, dt](const auto& self, const CE::TransformComponent& current, float timeLeft) -> void
+		{
+			for (const CE::TransformComponent& child : current.GetChildren())
+			{
+				auto light = registry.TryGet<CE::PointLightComponent>(child.GetOwner());
+				if (light != nullptr)
+				{
+					const float decreaseAmount = light->mIntensity * (dt / timeLeft);
+					light->mIntensity = std::max(light->mIntensity - decreaseAmount, 0.f);
+				}
+				self(self, child, timeLeft);
+			}
+		};
+	removeLights(removeLights, *transform, (mMaxDeathTime - mCurrentDeathTimer) * 0.5f);
+
+	// Update death timer.
+	mCurrentDeathTimer += dt;
 	if (mCurrentDeathTimer >= mMaxDeathTime )
 	{
-		world.GetRegistry().Destroy(owner, true);
+		registry.Destroy(owner, true);
 	}
 }
 
