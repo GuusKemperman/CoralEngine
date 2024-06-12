@@ -28,7 +28,7 @@ namespace CE
 		float mReloadSpeed = 1.f;
 		int mProjectileCount = 1;
 		float mSpread{};
-		float mShootingSlowdown = 100.0f;
+		float mShootingSlowdown = 45.0f;
 
 		// projectile
 		std::vector<AbilityEffect> mEffects{};
