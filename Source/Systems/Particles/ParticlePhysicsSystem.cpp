@@ -27,13 +27,25 @@ void CE::ParticlePhysicsSystem::Update(World& world, float dt)
 		physics.mLinearVelocities.resize(numOfParticles);
 		physics.mMass.SetInitialValuesOfNewParticles(emitter);
 
-		const glm::quat emitterOrientation = transform.GetWorldOrientation();
-
-		for (const uint32 particle : emitter.GetParticlesThatSpawnedDuringLastStep())
+		if (emitter.mAreTransformsRelativeToEmitter)
 		{
-			// TODO: This only works with fixed time step
-			physics.mRotationalVelocitiesPerStep[particle] = glm::quat(Random::Range(physics.mMinInitialRotationalVelocity, physics.mMaxInitialRotationalVelocity) * Particles::sParticleFixedTimeStep.value_or(1.0f / 60.0f));
-			physics.mLinearVelocities[particle] = Math::RotateVector(Random::Range(physics.mMinInitialVelocity, physics.mMaxInitialVelocity), emitterOrientation);
+			for (const uint32 particle : emitter.GetParticlesThatSpawnedDuringLastStep())
+			{
+				// TODO: This only works with fixed time step
+				physics.mRotationalVelocitiesPerStep[particle] = glm::quat(Random::Range(physics.mMinInitialRotationalVelocity, physics.mMaxInitialRotationalVelocity) * Particles::sParticleFixedTimeStep.value_or(1.0f / 60.0f));
+				physics.mLinearVelocities[particle] = Random::Range(physics.mMinInitialVelocity, physics.mMaxInitialVelocity);
+			}
+		}
+		else
+		{
+			const glm::quat emitterOrientation = transform.GetWorldOrientation();
+
+			for (const uint32 particle : emitter.GetParticlesThatSpawnedDuringLastStep())
+			{
+				// TODO: This only works with fixed time step
+				physics.mRotationalVelocitiesPerStep[particle] = glm::quat(Random::Range(physics.mMinInitialRotationalVelocity, physics.mMaxInitialRotationalVelocity) * Particles::sParticleFixedTimeStep.value_or(1.0f / 60.0f));
+				physics.mLinearVelocities[particle] = Math::RotateVector(Random::Range(physics.mMinInitialVelocity, physics.mMaxInitialVelocity), emitterOrientation);
+			}
 		}
 
 		const glm::vec3 timeScaledGrav = dt * physics.mGravity;
