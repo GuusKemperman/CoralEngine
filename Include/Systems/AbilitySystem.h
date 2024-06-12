@@ -54,12 +54,16 @@ namespace CE
 
 		static const std::vector<CE::BoundEvent>& GetEnemyKilledEvents() { return sEnemyKilledEvents; }
 		static const std::vector<CE::BoundEvent>& GetGettingHitEvents() { return sGettingHitEvents; }
+		static const std::vector<CE::BoundEvent>& GetAbilityHitEvents() { return sAbilityHitEvents; }
+		static const std::vector<CE::BoundEvent>& GetCritEvents() { return sCritEvents; }
 
 	private:
 		static inline std::vector<CE::BoundEvent> sAbilityActivateEvents;
 		static inline std::vector<CE::BoundEvent> sReloadCompletedEvents;
 		static inline std::vector<CE::BoundEvent> sEnemyKilledEvents;
 		static inline std::vector<CE::BoundEvent> sGettingHitEvents;
+		static inline std::vector<CE::BoundEvent> sAbilityHitEvents;
+		static inline std::vector<CE::BoundEvent> sCritEvents;
 
 		friend ReflectAccess;
 		static MetaType Reflect();

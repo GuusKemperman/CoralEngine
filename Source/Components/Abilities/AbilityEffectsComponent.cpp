@@ -55,16 +55,14 @@ bool CE::AbilityEffect::operator==(const AbilityEffect& other) const
 		Math::AreFloatsEqual(mAmount, other.mAmount) &&
 		mFlatOrPercentage == other.mFlatOrPercentage &&
 		mIncreaseOrDecrease == other.mIncreaseOrDecrease &&
-		mClampToMax == other.mClampToMax;
+		mClampToMax == other.mClampToMax &&
+		Math::AreFloatsEqual(mCritChance, other.mCritChance) &&
+		Math::AreFloatsEqual(mCritIncrease, other.mCritIncrease);
 }
 
 bool CE::AbilityEffect::operator!=(const AbilityEffect& other) const
 {
-	return mStat != other.mStat ||
-		!Math::AreFloatsEqual(mAmount, other.mAmount) ||
-		mFlatOrPercentage != other.mFlatOrPercentage ||
-		mIncreaseOrDecrease != other.mIncreaseOrDecrease ||
-		mClampToMax != other.mClampToMax;
+	return !(*this == other);
 }
 
 #ifdef EDITOR
@@ -90,16 +88,18 @@ CE::MetaType CE::AbilityEffect::Reflect()
 	metaType.AddField(&AbilityEffect::mFlatOrPercentage, "mFlatOrPercentage").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&AbilityEffect::mIncreaseOrDecrease, "mIncreaseOrDecrease").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&AbilityEffect::mClampToMax, "mClampToMax").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&AbilityEffect::mCritChance, "mCritChance").GetProperties().Add(Props::sIsScriptableTag);
+	metaType.AddField(&AbilityEffect::mCritIncrease, "mCritIncrease").GetProperties().Add(Props::sIsScriptableTag);
 
-	metaType.AddFunc([](const Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax) -> AbilityEffect
+	metaType.AddFunc([](const Stat stat, float amount, FlatOrPercentage flatOrPercentage, IncreaseOrDecrease increaseOrDecrease, bool clampToMax, float critChance, float critIncrease) -> AbilityEffect
 		{
-			return AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax };
+			return AbilityEffect{ stat, amount, flatOrPercentage, increaseOrDecrease, clampToMax, critChance, critIncrease };
 
-		}, "MakeAbilityEffect", MetaFunc::ExplicitParams<Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool>{}, "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "MakeAbilityEffect", MetaFunc::ExplicitParams<Stat, float, FlatOrPercentage, IncreaseOrDecrease, bool, float, float>{}, "Stat", "Amount", "FlatOrPercentage", "IncreaseOrDecrease", "ClampToMax", "CritChance", "CritIncrease").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	metaType.AddFunc([](const AbilityEffect abilityEffect, float newAmount) -> AbilityEffect
 		{
-			return AbilityEffect{ abilityEffect.mStat, newAmount, abilityEffect.mFlatOrPercentage, abilityEffect.mIncreaseOrDecrease, abilityEffect.mClampToMax };
+			return AbilityEffect{ abilityEffect.mStat, newAmount, abilityEffect.mFlatOrPercentage, abilityEffect.mIncreaseOrDecrease, abilityEffect.mClampToMax, abilityEffect.mCritChance, abilityEffect.mCritIncrease };
 
 		}, "GetAbilityEffectWithAmountChanged", MetaFunc::ExplicitParams<const AbilityEffect, float>{}, "AbilityEffect", "NewAmount").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 

@@ -31,6 +31,8 @@ namespace CE
 		FlatOrPercentage mFlatOrPercentage = FlatOrPercentage::Flat;
 		IncreaseOrDecrease mIncreaseOrDecrease = IncreaseOrDecrease::Decrease;
 		bool mClampToMax{};
+		float mCritChance{};         // Percentage from 0 to 100
+		float mCritIncrease = 100.f; // Percentage from 0 to 100
 
 		bool operator==(const AbilityEffect& effectSettings) const;
 		bool operator!=(const AbilityEffect& effectSettings) const;
@@ -57,9 +59,15 @@ namespace CE
 	};
 
 	template<class Archive>
-	void serialize(Archive& ar, AbilityEffect& v)
+	void load(Archive& ar, AbilityEffect& v)
 	{
-		ar(v.mStat, v.mAmount, v.mFlatOrPercentage, v.mIncreaseOrDecrease, v.mClampToMax);
+		ar(v.mStat, v.mAmount, v.mFlatOrPercentage, v.mIncreaseOrDecrease, v.mClampToMax, v.mCritChance, v.mCritIncrease);
+	}
+
+	template<class Archive>
+	void save(Archive& ar, const AbilityEffect& v)
+	{
+		ar(v.mStat, v.mAmount, v.mFlatOrPercentage, v.mIncreaseOrDecrease, v.mClampToMax, v.mCritChance, v.mCritIncrease);
 	}
 }
 

@@ -26,6 +26,7 @@ jobs:
   build-and-run:
     runs-on: windows-latest
     strategy:
+
       fail-fast: false # We want to run all configurations to see if the problem is for all of them or not
       matrix:
         build-configuration: [Debug, Release, EditorDebug, EditorRelease]
