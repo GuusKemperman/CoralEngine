@@ -47,13 +47,13 @@ CE::MetaType Game::AttackingState::Reflect()
 	auto type = CE::MetaType{CE::MetaType::T<AttackingState>{}, "AttackingState"};
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&AttackingState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&AttackingState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &AttackingState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &AttackingState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &AttackingState::OnAiStateEnter);
 
-	type.AddField(&AttackingState::mAttackingAnimation, "mAttackingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&AttackingState::mAttackingAnimation, "Attacking Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<AttackingState>(type);
 	return type;

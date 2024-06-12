@@ -58,7 +58,7 @@ CE::MetaType Game::DanceState::Reflect()
 	BindEvent(type, CE::sAIEvaluateEvent, &DanceState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &DanceState::OnAiStateEnterEvent);
 
-	type.AddField(&DanceState::mDanceAnimation, "mDanceAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DanceState::mDanceAnimation, "Dance Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<DanceState>(type);
 	return type;

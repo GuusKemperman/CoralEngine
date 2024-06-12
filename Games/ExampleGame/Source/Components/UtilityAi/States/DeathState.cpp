@@ -99,10 +99,10 @@ CE::MetaType Game::DeathState::Reflect()
 	BindEvent(type, CE::sAIEvaluateEvent, &DeathState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &DeathState::OnAiStateEnterEvent);
 
-	type.AddField(&DeathState::mDeathAnimation, "mDeathAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DeathState::mDestroyEntityWhenDead, "mDestroyEntityWhenDead").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DeathState::mMaxDeathTime, "mMaxDeathTime").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DeathState::mAnimationBlendTime, "mAnimationBlendTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DeathState::mDeathAnimation, "Death Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DeathState::mDestroyEntityWhenDead, "Destroy The Entity When Dead").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DeathState::mMaxDeathTime, "Max Death Time").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DeathState::mAnimationBlendTime, "Animation Blend Time").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<DeathState>(type);
 	return type;
