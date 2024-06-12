@@ -58,14 +58,17 @@ void CE::WeaponEditorSystem::Tick(float deltaTime)
 	ShowInspectUI("Pierce Count", mAsset.mPierceCount);
 	ShowInspectUI("Knockback", mAsset.mKnockback);
 
-	ShowInspectUI("mShootOnRelease", mAsset.mShootOnRelease);
+	ShowInspectUI("Shooting Slowdown", mAsset.mShootingSlowdown);
+	mAsset.mShootingSlowdown = std::clamp(mAsset.mShootingSlowdown, 0.f, 100.f);
+
+	ShowInspectUI("Shoot On Release", mAsset.mShootOnRelease);
 
 	ImGui::Separator();
 
-	ShowInspectUI("OnAbilityActivateScript", mAsset.mOnAbilityActivateScript);
-	ShowInspectUI("IconTexture", mAsset.mIconTexture);
+	ShowInspectUI("On Ability Activate Script", mAsset.mOnAbilityActivateScript);
+	ShowInspectUI("Icon Texture", mAsset.mIconTexture);
 	ShowInspectUI("Description", mAsset.mDescription);
-	ShowInspectUI("GlobalCooldown", mAsset.mGlobalCooldown);
+	ShowInspectUI("Global Cooldown", mAsset.mGlobalCooldown);
 
 	ImGui::PopItemWidth();
 	End();
