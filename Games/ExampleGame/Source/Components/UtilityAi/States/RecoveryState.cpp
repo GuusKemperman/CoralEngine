@@ -44,7 +44,7 @@ float Game::RecoveryState::OnAiEvaluate(const CE::World&, entt::entity) const
 
 void Game::RecoveryState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 {
-	Game::AnimationInAi(world, owner, mDashRechargeAnimation, false);
+	Game::AnimationInAi(world, owner, mRecoveryAnimation, false);
 
 	mRechargeCooldown.mCooldown = mMaxRechargeTime;
 	mRechargeCooldown.mAmountOfTimePassed = 0.0f;
@@ -68,7 +68,7 @@ CE::MetaType Game::RecoveryState::Reflect()
 	BindEvent(type, CE::sAIStateEnterEvent, &RecoveryState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sBeginPlayEvent, &RecoveryState::OnBeginPlayEvent);
 
-	type.AddField(&RecoveryState::mDashRechargeAnimation, "Recovery Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&RecoveryState::mRecoveryAnimation, "Recovery Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<RecoveryState>(type);
 	return type;
