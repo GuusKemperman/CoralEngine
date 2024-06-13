@@ -19,6 +19,7 @@
 #include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
 #include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
 #include "Utilities/StringFunctions.h"
+#include "Rendering/FrameBuffer.h"
 
 struct CE::Device::DXImpl
 {
@@ -751,6 +752,23 @@ void CE::Device::BindSwapchainRT()
 
 	mImpl->mResources[mImpl->mFrameIndex]->ChangeState(mImpl->mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	mImpl->mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mImpl->mCommandList, &mImpl->mRenderTargetHandles[mImpl->mFrameIndex], mImpl->mDepthHandle);
+}
+
+void CE::Device::ResolveMsaa(FrameBuffer & msaaFramebuffer)
+{
+	if (msaaFramebuffer.GetSize() != glm::vec2(mImpl->mViewport.Width, mImpl->mViewport.Height))
+		return;
+
+	mImpl->mResources[mImpl->mFrameIndex]->ChangeState(mImpl->mCommandList, D3D12_RESOURCE_STATE_RESOLVE_DEST);
+
+	msaaFramebuffer.PrepareMsaaForResolve();
+
+	mImpl->mCommandList->ResolveSubresource(
+		mImpl->mResources[mImpl->mFrameIndex]->Get(),
+		0,
+		msaaFramebuffer.GetResource().Get(),
+		0,
+		DXGI_FORMAT_R8G8B8A8_UNORM);
 }
 
 glm::vec2 CE::Device::GetDisplaySize()

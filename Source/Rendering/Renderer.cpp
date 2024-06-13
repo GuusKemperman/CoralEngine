@@ -41,7 +41,6 @@ void CE::Renderer::RenderToFrameBuffer(
 	if (firstResizeBufferTo.has_value())
 	{
 		buffer.Resize(static_cast<glm::ivec2>(*firstResizeBufferTo));
-		world.GetGPUWorld().UpdateMSAA();
 	}
 
 	buffer.Bind();
@@ -75,7 +74,7 @@ void CE::Renderer::Render(const World& world, glm::vec2 viewportSize)
 	world.GetGPUWorld().Update();
 
 	mMeshRenderer->Render(world);
-	mDebugRenderer->Render(world);
 	mPostProcessRenderer->Render(world);
+	mDebugRenderer->Render(world);
 	mUIRenderer->Render(world);
 }

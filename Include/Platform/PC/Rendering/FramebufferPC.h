@@ -20,7 +20,7 @@ namespace CE
 
 		void Resize(glm::ivec2 newSize);
 
-		glm::ivec2 GetSize() const { return mSize; }
+		glm::vec2 GetSize() const { return mSize; }
 
 		void Clear();
 
@@ -53,7 +53,7 @@ namespace CE
 		std::unique_ptr<DXImpl, DXImplDeleter> mImpl{};
 
 		glm::vec4 mClearColor{ .39f, .45f, .5f, 1.0f };
-		glm::ivec2 mSize{};
+		glm::vec2 mSize{};
 		uint32 mMsaaCount = 0;
 		uint32 mMsaaQuality = 0;
 	};

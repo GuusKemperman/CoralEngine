@@ -377,6 +377,7 @@ void CE::GPUWorld::Update()
         return;
     }
 
+    UpdateMSAA();
 
     const CameraComponent& camera = mWorld.get().GetRegistry().Get<const CameraComponent>(cameraOwner);
     const TransformComponent& cameraTransform = mWorld.get().GetRegistry().Get<const TransformComponent>(cameraOwner);
@@ -837,6 +838,8 @@ void CE::GPUWorld::ClearClusterData()
 
 void CE::GPUWorld::UpdateMSAA()
 {
+    Device& engineDevice = Device::Get();
+
 #ifdef EDITOR
     mFrameBuffer->Resize(glm::ivec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
 #else

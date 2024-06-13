@@ -12,6 +12,8 @@
 #include "Components/OutlineComponent.h"
 #include "Platform/PC/Rendering/FramebufferPC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
+#include "Rendering/FrameBuffer.h"
+#include "Rendering/Renderer.h"
 
 CE::PostProcessingRenderer::PostProcessingRenderer()
 {
@@ -58,6 +60,17 @@ CE::PostProcessingRenderer::~PostProcessingRenderer()
 void CE::PostProcessingRenderer::Render(const World& world)
 {  
     RenderOutline(world);
+
+    //Resolving msaa
+#ifdef EDITOR
+
+    Renderer::Get().GetFrameBuffer().ResolveMsaa(world.GetGPUWorld().GetMsaaFrameBuffer());
+    Renderer::Get().GetFrameBuffer().Bind();
+#else
+    GPUWorld& gpuWorld = world.GetGPUWorld();
+    Device::Get().ResolveMsaa(gpuWorld.GetMsaaFrameBuffer());
+    Device::Get().BindSwapchainRT();
+#endif
 }
 
 void CE::PostProcessingRenderer::RenderOutline(const World& world)

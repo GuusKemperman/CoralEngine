@@ -10,8 +10,6 @@
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 #include "Assets/Texture.h"
 #include "Rendering/GPUWorld.h"
-#include "Rendering/FrameBuffer.h"
-#include "Rendering/Renderer.h"
 
 CE::UIRenderer::UIRenderer()
 {
@@ -46,7 +44,6 @@ CE::UIRenderer::UIRenderer()
     .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
     .SetDepthState(depth)
     .SetBlendState(blendDesc)
-    .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
     .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
     .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"UI RENDER PIPELINE");
 }
@@ -127,6 +124,4 @@ void CE::UIRenderer::Render(const World& world)
         commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
     }
 
-    Renderer::Get().GetFrameBuffer().ResolveMsaa(gpuWorld.GetMsaaFrameBuffer());
-    Renderer::Get().GetFrameBuffer().Bind();
 }

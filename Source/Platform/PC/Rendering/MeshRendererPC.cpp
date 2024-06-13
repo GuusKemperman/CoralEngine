@@ -27,10 +27,7 @@
 #include "Assets/StaticMesh.h"
 #include "Assets/SkinnedMesh.h"
 #include "Platform/PC/Rendering/InfoStruct.h"
-
-#ifdef EDITOR
 #include "Rendering/FrameBuffer.h"
-#endif
 
 CE::MeshRenderer::MeshRenderer()
 {

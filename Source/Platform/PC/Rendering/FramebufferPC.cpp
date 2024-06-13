@@ -34,7 +34,7 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize, uint32 msaaCount, uint32 ms
 	auto rtHeap = engineDevice.GetDescriptorHeap(RT_HEAP);
 	auto depthHeap = engineDevice.GetDescriptorHeap(DEPTH_HEAP);
 
-	mSize = initialSize;
+	mSize = glm::vec2(initialSize.x, initialSize.y);
 	mImpl->mViewport.Width = static_cast<FLOAT>(mSize.x);
 	mImpl->mViewport.Height = static_cast<FLOAT>(mSize.y);
 	mImpl->mViewport.TopLeftX = 0;
@@ -54,7 +54,7 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize, uint32 msaaCount, uint32 ms
 	clearValue.Color[2] = mClearColor.z; // Blue component
 	clearValue.Color[3] = mClearColor.w; // Alpha component
 
-	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, mSize.x, mSize.y, 1, 1, msaaCount, msaaQuality, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, initialSize.x, initialSize.y, 1, 1, msaaCount, msaaQuality, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
 	for (int i = 0; i < FRAME_BUFFER_COUNT; i++) 
@@ -88,7 +88,7 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize, uint32 msaaCount, uint32 ms
 	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
 	depthOptimizedClearValue.DepthStencil.Stencil = 0;
 	heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, mSize.x, mSize.y, 1, 1, msaaCount, msaaQuality, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+	resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, initialSize.x, initialSize.y, 1, 1, msaaCount, msaaQuality, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 	mImpl->mDepthResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
 	
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
@@ -140,7 +140,6 @@ void CE::FrameBuffer::ResolveMsaa(FrameBuffer& msaaFramebuffer)
 		return;
 
 	mImpl->mResource[engineDevice.GetFrameIndex()]->ChangeState(commandList, D3D12_RESOURCE_STATE_RESOLVE_DEST);
-
 	msaaFramebuffer.PrepareMsaaForResolve();
 
 	commandList->ResolveSubresource(
@@ -170,7 +169,7 @@ void CE::FrameBuffer::BindSRVDepthToGraphics(int rootSlot) const
 
 void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 {
-	if (mSize == newSize)
+	if (mSize == static_cast<glm::vec2>(newSize))
 	{
 		return;
 	}
@@ -207,7 +206,7 @@ void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 	clearValue.Color[2] = mClearColor.z; // Blue component
 	clearValue.Color[3] = mClearColor.w; // Alpha component
 
-	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, mSize.x, mSize.y, 1, 1, mMsaaCount, mMsaaQuality, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, newSize.x, newSize.y, 1, 1, mMsaaCount, mMsaaQuality, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
 	for (int i = 0; i < FRAME_BUFFER_COUNT; i++) 
@@ -241,7 +240,7 @@ void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
 	depthOptimizedClearValue.DepthStencil.Stencil = 0;
 	heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-	resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, mSize.x, mSize.y, 1, 1, mMsaaCount, mMsaaQuality, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+	resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, newSize.x, newSize.y, 1, 1, mMsaaCount, mMsaaQuality, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 	mImpl->mDepthResource = std::make_unique<DXResource>(device, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
 
 	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
