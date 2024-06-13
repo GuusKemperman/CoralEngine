@@ -7,12 +7,13 @@
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
+#include "Components/UtililtyAi/States/KnockBackState.h"
 #include "Systems/AbilitySystem.h"
 #include "Utilities/Random.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
-float Game::GetBestScoreBasedOnDetection(const CE::World& world, const entt::entity owner, const float radius)
+float Game::AIFunctionality::GetBestScoreBasedOnDetection(const CE::World& world, const entt::entity owner, const float radius)
 {
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
@@ -58,7 +59,7 @@ float Game::GetBestScoreBasedOnDetection(const CE::World& world, const entt::ent
 	return highestScore;
 }
 
-void Game::ExecuteEnemyAbility(CE::World& world, const entt::entity owner)
+void Game::AIFunctionality::ExecuteEnemyAbility(CE::World& world, const entt::entity owner)
 {
 	const auto characterData = world.GetRegistry().TryGet<CE::CharacterComponent>(owner);
 	if (characterData == nullptr)
@@ -82,7 +83,7 @@ void Game::ExecuteEnemyAbility(CE::World& world, const entt::entity owner)
 	CE::AbilitySystem::ActivateAbility(world, owner, *characterData, abilities->mAbilitiesToInput[0]);
 }
 
-void Game::AnimationInAi(CE::World& world, const entt::entity owner, const CE::AssetHandle<CE::Animation>& playAIAnimation, bool startAtRandomTime)
+void Game::AIFunctionality::AnimationInAi(CE::World& world, const entt::entity owner, const CE::AssetHandle<CE::Animation>& playAIAnimation, bool startAtRandomTime)
 {
 	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
 
@@ -103,7 +104,7 @@ void Game::AnimationInAi(CE::World& world, const entt::entity owner, const CE::A
 	animationRootComponent->SwitchAnimation(world.GetRegistry(), playAIAnimation, timeStamp);
 }
 
-void Game::FaceThePlayer(CE::World& world, const entt::entity owner)
+void Game::AIFunctionality::FaceThePlayer(CE::World& world, const entt::entity owner)
 {
 	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
@@ -135,4 +136,28 @@ void Game::FaceThePlayer(CE::World& world, const entt::entity owner)
 
 		enemyTransform->SetWorldOrientation(CE::Math::Direction2DToXZQuatOrientation(direction));
 	}
+}
+
+CE::MetaType Game::AIFunctionality::Reflect()
+{
+	auto metaType = CE::MetaType{ CE::MetaType::T<AIFunctionality>{}, "AIFunctionality" };
+	metaType.GetProperties().Add(CE::Props::sIsScriptableTag);
+
+	metaType.AddFunc([](entt::entity enemy, float knockbackValue)
+		{
+			CE::World* world = CE::World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			auto* knockBackState = world->GetRegistry().TryGet<KnockBackState>(enemy);
+			if (knockBackState == nullptr)
+			{
+				LOG(LogAI, Warning, "AddKnockback - enemy {} does not have a KnockBackState.", entt::to_integral(enemy));
+				return;
+			}
+			knockBackState->AddKnockback(knockbackValue);
+
+		}, "AddKnockback", CE::MetaFunc::ExplicitParams<
+		entt::entity, float>{}, "Enemy Entity", "Knockback Value").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, false);
+
+		return metaType;
 }

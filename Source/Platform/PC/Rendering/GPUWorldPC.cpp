@@ -19,6 +19,7 @@
 #include "Components/Particles/ParticleEmitterComponent.h"
 #include "Components/Particles/ParticleColorComponent.h"
 #include "Components/Particles/ParticleLightComponent.h"
+#include "Components/AmbientLightComponent.h"
 
 #include "Platform/PC/Core/DevicePC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
@@ -388,6 +389,7 @@ void CE::GPUWorld::Update()
     // Update lights
     const auto pointLightView = mWorld.get().GetRegistry().View<const PointLightComponent, const TransformComponent>();
     const auto dirLightView = mWorld.get().GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
+    const auto ambientLightView = mWorld.get().GetRegistry().View<const AmbientLightComponent>();
     int dirLightCounter = 0;
     mPointLightCounter = 0;
 
@@ -400,7 +402,7 @@ void CE::GPUWorld::Update()
 
         InfoStruct::DXPointLightInfo pointLight;
         pointLight.mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
-        pointLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+        pointLight.mColorAndIntensity = glm::vec4(lightComponent.mColor.r,lightComponent.mColor.g, lightComponent.mColor.b, lightComponent.mIntensity);
         pointLight.mRadius = lightComponent.mRange;
         mPointLights[mPointLightCounter] = pointLight;
         mPointLightCounter++;
@@ -436,7 +438,7 @@ void CE::GPUWorld::Update()
 
         InfoStruct::DXDirLightInfo dirLight;
         dirLight.mDir = glm::vec4(lightDirection, 1.f);
-        dirLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+        dirLight.mColorAndIntensity = glm::vec4(lightComponent.mColor.r,lightComponent.mColor.g, lightComponent.mColor.b, lightComponent.mIntensity);
         dirLight.mLightMat = glm::transpose(t*projection*view);
         dirLight.mBias = lightComponent.mShadowBias;
         dirLight.mCastsShadows = lightComponent.mCastShadows;
@@ -449,6 +451,14 @@ void CE::GPUWorld::Update()
             mLightInfo.mActiveShadowingLight = dirLightCounter;
 
         dirLightCounter++;
+    }
+
+    for (auto [entity, ambientLight] : ambientLightView.each())
+    {
+        mLightInfo.mAmbientAndIntensity.x = ambientLight.mColor.x;
+        mLightInfo.mAmbientAndIntensity.y = ambientLight.mColor.y;
+        mLightInfo.mAmbientAndIntensity.z = ambientLight.mColor.z;
+        mLightInfo.mAmbientAndIntensity.w = ambientLight.mIntensity;
     }
 
     UpdateParticles(cameraTransform.GetLocalPosition());
@@ -640,9 +650,7 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
     {
         for (auto [entity, emitter, meshRenderer, colorComponent] : simpleColorParticles.each())
         {
-            bool emitterPlaying = emitter.IsPlaying();
-            bool meshPresent = meshRenderer.mParticleMesh;
-            if (!emitterPlaying || !meshPresent)
+            if (!meshRenderer.AreAnyVisible(emitter))
             {
                 continue;
             }

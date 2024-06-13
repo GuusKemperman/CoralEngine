@@ -534,6 +534,7 @@
     </WavePsslc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\AmbientLightComponent.cpp" />
     <ClCompile Include="Source\Assets\Font.cpp" />
     <ClCompile Include="Source\Assets\Importers\FontImporter.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -1625,6 +1626,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\AmbientLightComponent.h" />
     <ClInclude Include="Include\Assets\Font.h" />
     <ClInclude Include="Include\Assets\Importers\FontImporter.h" />
     <ClInclude Include="Include\Components\Abilities\AbilityEffectsComponent.h" />

@@ -219,11 +219,6 @@ std::pair<std::optional<float>, bool> CE::AbilityFunctionality::ApplyInstantEffe
 				criticalHit = true;
 				effect.mAmount += effect.mAmount * effect.mCritIncrease * 0.01f;
 			}
-			if (Math::AreFloatsEqual(characterComponent->mCurrentReceivedDamageModifier, -100.f))
-			{
-				// The character shouldn't take any damage.
-				return { 0.f, criticalHit };
-			}
 			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
 			if (castByCharacterData != nullptr)
 			{
@@ -234,6 +229,11 @@ std::pair<std::optional<float>, bool> CE::AbilityFunctionality::ApplyInstantEffe
 			{
 				// On Getting Hit event
 				AbilitySystem::CallBoundEventsWithNoExtraParams(world, affectedEntity, AbilitySystem::GetGettingHitEvents());
+			}
+			if (Math::AreFloatsEqual(characterComponent->mCurrentReceivedDamageModifier, -100.f))
+			{
+				// The character shouldn't take any damage.
+				return { 0.f, criticalHit };
 			}
 		}
 

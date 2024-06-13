@@ -79,7 +79,7 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, const entt::entit
 
 void Game::DashingState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
-	Game::AnimationInAi(world, owner, mDashingAnimation, false);
+	AIFunctionality::AnimationInAi(world, owner, mDashingAnimation, false);
 
 	const entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
