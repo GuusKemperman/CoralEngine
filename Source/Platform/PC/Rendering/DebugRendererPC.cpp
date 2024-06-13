@@ -46,6 +46,7 @@ CE::DebugRenderer::Impl::Impl()
 		.AddInput("COLOR", DXGI_FORMAT_R32G32B32A32_FLOAT, 1)
 		.SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
 		.SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE)
+		.SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
 		.Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"Debug line pipeline");
 }
 

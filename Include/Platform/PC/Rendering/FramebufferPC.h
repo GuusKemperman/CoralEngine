@@ -8,21 +8,25 @@ namespace CE
 	class FrameBuffer
 	{
 	public:
-		FrameBuffer(glm::ivec2 initialSize = {1, 1});
+		FrameBuffer(glm::ivec2 initialSize = {1, 1}, uint32 msaaCount = 1, uint32 msaaQuality = 0);
 		~FrameBuffer();
 
 		void Bind() const;
 		void Unbind() const;
+		void ResolveMsaa(FrameBuffer& msaaFramebuffer);
+		void PrepareMsaaForResolve();
 
 		void BindSRVDepthToGraphics(int rootSlot) const;
 
 		void Resize(glm::ivec2 newSize);
+
 		glm::ivec2 GetSize() const { return mSize; }
 
 		void Clear();
 
 		void SetClearColor(glm::vec4 color) { mClearColor = color; }
 		const glm::vec4 GetClearColor() { return mClearColor; }
+		DXResource& GetResource() const;
 
 		size_t GetColorTextureId();
 
@@ -50,5 +54,7 @@ namespace CE
 
 		glm::vec4 mClearColor{ .39f, .45f, .5f, 1.0f };
 		glm::ivec2 mSize{};
+		uint32 mMsaaCount = 0;
+		uint32 mMsaaQuality = 0;
 	};
 }

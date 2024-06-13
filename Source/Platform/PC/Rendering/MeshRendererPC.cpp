@@ -2,6 +2,7 @@
 #include "Platform/PC/Rendering/MeshRendererPC.h"
 #include "Core/Device.h"
 #include "Rendering/Renderer.h"
+#include "Rendering/FrameBuffer.h"
 #include "Core/FileIO.h"
 
 #include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
@@ -43,14 +44,15 @@ CE::MeshRenderer::MeshRenderer()
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
     ComPtr<ID3DBlob> p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
     CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-    depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
+    depth.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
     mPBRPipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1)
         .AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 2)
         .AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 3)
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
-        .SetDepthState(depth)
+        //.SetDepthState(depth)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
 
@@ -79,6 +81,7 @@ CE::MeshRenderer::MeshRenderer()
         .AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 3)
         .SetBlendState(blendDesc)
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .SetDepthState(depth)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
@@ -98,7 +101,8 @@ CE::MeshRenderer::MeshRenderer()
         .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 4)
         .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 5)
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
-        .SetDepthState(depth)
+        //.SetDepthState(depth)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"PBR SKINNED RENDER PIPELINE");
     
@@ -108,6 +112,7 @@ CE::MeshRenderer::MeshRenderer()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZSkinnedVertex.hlsl");
@@ -118,6 +123,7 @@ CE::MeshRenderer::MeshRenderer()
         .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2)
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/ClusterGridCS.hlsl");
@@ -145,6 +151,7 @@ CE::MeshRenderer::MeshRenderer()
     mCullClusterPipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .SetDepthState(depth)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
     
@@ -155,6 +162,7 @@ CE::MeshRenderer::MeshRenderer()
     mCullClusterParticlePipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .SetDepthState(depth)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
 
@@ -167,6 +175,7 @@ CE::MeshRenderer::MeshRenderer()
         .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1)
         .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2)
         .SetDepthState(depth)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
 
@@ -210,20 +219,23 @@ void CE::MeshRenderer::Render(const World& world)
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
+//
+//    RenderShadowMaps(world);
+//
+//#ifdef EDITOR
+//    Renderer::Get().GetFrameBuffer().Bind();
+//#endif // EDITOR
+//
+//    DepthPrePass(world, gpuWorld);
+//
+//#ifdef EDITOR
+//    Renderer::Get().GetFrameBuffer().Bind();
+//#endif // EDITOR
+//
+//    ClusteredShading(world);
 
-    RenderShadowMaps(world);
-
-#ifdef EDITOR
-    Renderer::Get().GetFrameBuffer().Bind();
-#endif // EDITOR
-
-    DepthPrePass(world, gpuWorld);
-
-#ifdef EDITOR
-    Renderer::Get().GetFrameBuffer().Bind();
-#endif // EDITOR
-
-    ClusteredShading(world);
+    gpuWorld.GetMsaaFrameBuffer().Clear();
+    gpuWorld.GetMsaaFrameBuffer().Bind();
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 
@@ -308,8 +320,8 @@ void CE::MeshRenderer::Render(const World& world)
         }
     }
 
-
-    RenderParticles(world);
+    Renderer::Get().GetFrameBuffer().ResolveMsaa(gpuWorld.GetMsaaFrameBuffer());
+    //RenderParticles(world);
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 }

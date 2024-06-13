@@ -358,6 +358,8 @@ CE::GPUWorld::GPUWorld(const World& world)
     InitializeShadowMaps();
     mSelectedMeshFrameBuffer = std::make_unique<FrameBuffer>(glm::vec2(1920, 1080));
     mParticles.resize(MAX_PARTICLES);
+
+    mFrameBuffer = std::make_unique<FrameBuffer>(glm::vec2(1428, 929), MSAA_COUNT, MSAA_QUALITY);
 }
 
 CE::GPUWorld::~GPUWorld() = default;
@@ -373,6 +375,7 @@ void CE::GPUWorld::Update()
     {
         return;
     }
+
 
     const CameraComponent& camera = mWorld.get().GetRegistry().Get<const CameraComponent>(cameraOwner);
     const TransformComponent& cameraTransform = mWorld.get().GetRegistry().Get<const TransformComponent>(cameraOwner);
@@ -822,6 +825,16 @@ void CE::GPUWorld::ClearClusterData()
     data.RowPitch = sizeof(InfoStruct::Clustering::DXLightGridElement);
     data.SlicePitch = sizeof(InfoStruct::Clustering::DXLightGridElement) * mNumberOfClusters;
     mStructuredBuffers[InfoStruct::LIGHT_GRID_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+}
+
+void CE::GPUWorld::UpdateMSAA()
+{
+#ifdef EDITOR
+    mFrameBuffer->Resize(glm::ivec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
+#else
+    mFrameBuffer->Resize(engineDevice.GetDisplaySize());
+#endif
+
 }
 
 void CE::GPUWorld::UpdateLights(int numDirLights, int numPointLights)

@@ -44,6 +44,7 @@ CE::UIRenderer::UIRenderer()
     .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
     .SetDepthState(depth)
     .SetBlendState(blendDesc)
+    .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
     .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
     .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"UI RENDER PIPELINE");
 }
