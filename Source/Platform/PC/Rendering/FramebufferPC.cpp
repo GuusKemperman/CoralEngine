@@ -136,7 +136,11 @@ void CE::FrameBuffer::ResolveMsaa(FrameBuffer& msaaFramebuffer)
 {
 	Device& engineDevice = Device::Get();
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+	if (msaaFramebuffer.mSize != mSize)
+		return;
+
 	mImpl->mResource[engineDevice.GetFrameIndex()]->ChangeState(commandList, D3D12_RESOURCE_STATE_RESOLVE_DEST);
+
 	msaaFramebuffer.PrepareMsaaForResolve();
 
 	commandList->ResolveSubresource(

@@ -44,14 +44,14 @@ CE::MeshRenderer::MeshRenderer()
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
     ComPtr<ID3DBlob> p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
     CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-    depth.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+    depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
     mPBRPipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1)
         .AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 2)
         .AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 3)
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
-        //.SetDepthState(depth)
+        .SetDepthState(depth)
         .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
@@ -101,7 +101,7 @@ CE::MeshRenderer::MeshRenderer()
         .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 4)
         .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 5)
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
-        //.SetDepthState(depth)
+        .SetDepthState(depth)
         .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"PBR SKINNED RENDER PIPELINE");
@@ -219,23 +219,19 @@ void CE::MeshRenderer::Render(const World& world)
     ID3D12DescriptorHeap* descriptorHeaps[] = {resourceHeap->Get()};
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
-//
-//    RenderShadowMaps(world);
-//
-//#ifdef EDITOR
-//    Renderer::Get().GetFrameBuffer().Bind();
-//#endif // EDITOR
-//
-//    DepthPrePass(world, gpuWorld);
-//
-//#ifdef EDITOR
-//    Renderer::Get().GetFrameBuffer().Bind();
-//#endif // EDITOR
-//
-//    ClusteredShading(world);
 
-    gpuWorld.GetMsaaFrameBuffer().Clear();
     gpuWorld.GetMsaaFrameBuffer().Bind();
+    gpuWorld.GetMsaaFrameBuffer().Clear();
+
+    RenderShadowMaps(world);
+
+    gpuWorld.GetMsaaFrameBuffer().Bind();
+
+    DepthPrePass(world, gpuWorld);
+
+    gpuWorld.GetMsaaFrameBuffer().Bind();
+
+    ClusteredShading(world);
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 
@@ -321,7 +317,7 @@ void CE::MeshRenderer::Render(const World& world)
     }
 
     Renderer::Get().GetFrameBuffer().ResolveMsaa(gpuWorld.GetMsaaFrameBuffer());
-    //RenderParticles(world);
+    RenderParticles(world);
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 }
@@ -418,8 +414,6 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
             meshCounter++;
         }
     }
-
-    Device::Get().BindSwapchainRT();
 }
 
 void CE::MeshRenderer::HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex)
@@ -719,11 +713,9 @@ void CE::MeshRenderer::RenderShadowMaps(const World& world)
         }
         lightCounter++;
 
-        Device::Get().BindSwapchainRT();
         return;
     }
 
-    Device::Get().BindSwapchainRT();
 }
 
 void CE::MeshRenderer::RenderParticles(const World& world)
