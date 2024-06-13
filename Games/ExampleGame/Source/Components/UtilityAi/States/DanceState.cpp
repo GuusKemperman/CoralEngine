@@ -46,7 +46,7 @@ float Game::DanceState::OnAiEvaluate(const CE::World& world, [[maybe_unused]] co
 
 void Game::DanceState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner) const
 {
-	Game::AnimationInAi(world, owner, mDanceAnimation, true);
+	AIFunctionality::AnimationInAi(world, owner, mDanceAnimation, true);
 }
 
 CE::MetaType Game::DanceState::Reflect()

@@ -46,7 +46,7 @@ float Game::KnockBackState::OnAiEvaluate(const CE::World&, entt::entity) const
 
 void Game::KnockBackState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
-	Game::AnimationInAi(world, owner, mKnockBackAnimation, false);
+	AIFunctionality::AnimationInAi(world, owner, mKnockBackAnimation, false);
 
 	const entt::entity playerId = world.GetRegistry().View<CE::PlayerComponent>().front();
 

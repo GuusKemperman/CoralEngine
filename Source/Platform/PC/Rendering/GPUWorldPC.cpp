@@ -650,9 +650,7 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
     {
         for (auto [entity, emitter, meshRenderer, colorComponent] : simpleColorParticles.each())
         {
-            bool emitterPlaying = emitter.IsPlaying();
-            bool meshPresent = meshRenderer.mParticleMesh;
-            if (!emitterPlaying || !meshPresent)
+            if (!meshRenderer.AreAnyVisible(emitter))
             {
                 continue;
             }
