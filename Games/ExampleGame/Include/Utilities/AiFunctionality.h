@@ -12,12 +12,21 @@ namespace CE
 
 namespace Game {
 
-	[[nodiscard]] float GetBestScoreBasedOnDetection(const CE::World& world,
-		entt::entity owner, float radius);
+	class AIFunctionality
+	{
+	public:
+		[[nodiscard]] static float GetBestScoreBasedOnDetection(const CE::World& world,
+			entt::entity owner, float radius);
 
-	void ExecuteEnemyAbility(CE::World& world, entt::entity owner);
+		static void ExecuteEnemyAbility(CE::World& world, entt::entity owner);
 
-	void AnimationInAi(CE::World& world, entt::entity owner, const CE::AssetHandle<CE::Animation>& animation, bool startAtRandomTime);
+		static void AnimationInAi(CE::World& world, entt::entity owner, const CE::AssetHandle<CE::Animation>& animation, bool startAtRandomTime);
 
-	void FaceThePlayer(CE::World& world, entt::entity owner);
+		static void FaceThePlayer(CE::World& world, entt::entity owner);
+
+	private:
+		friend CE::ReflectAccess;
+		static CE::MetaType Reflect();
+		REFLECT_AT_START_UP(AIFunctionality);
+	};
 }

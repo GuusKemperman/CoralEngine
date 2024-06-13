@@ -213,6 +213,19 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 		}
 
 		const EnvironmentGeneratorComponent::Layer& layer = generator.mLayers[generatedComponent.mLayerIndex];
+
+		if (layer.mObjectsRadius.has_value())
+		{
+			const CE::TransformComponent* transform = reg.TryGet<CE::TransformComponent>(entity);
+
+			if (transform != nullptr
+				&& glm::distance(generatorPosition, transform->GetWorldPosition2D()) > destroyCircle.mRadius + *layer.mObjectsRadius)
+			{
+				reg.Destroy(entity, true);
+				continue;
+			}
+		}
+
 		const CE::TransformedAABB cellAABB{ generatedComponent.mCellTopLeft, generatedComponent.mCellTopLeft + glm::vec2{ layer.mCellSize } };
 
 		if (!CE::AreOverlapping(cellAABB, destroyCircle))
@@ -364,6 +377,12 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 				const glm::vec2 worldPosition = topLeft + layer.mCellSize *
 					glm::vec2{ static_cast<float>(cellX), static_cast<float>(cellZ) };
+
+				if (layer.mObjectsRadius.has_value()
+					&& glm::distance(worldPosition, generatorPosition) >= *layer.mObjectsRadius + generationCircle.mRadius)
+				{
+					continue;
+				}
 
 				const CE::TransformedAABB cellAABB{ worldPosition, worldPosition + glm::vec2{ layer.mCellSize } };
 

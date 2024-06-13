@@ -54,6 +54,15 @@ namespace Game
 			// a random offset to its position.
 			float mMaxRandomOffset{};
 
+			// By default, we spawn objects
+			// if their cell overlaps with our
+			// generate-range. This becomes a
+			// problem if the cell size is very
+			// large, as objects are then spawned
+			// even when its very far away from
+			// the player.
+			std::optional<float> mObjectsRadius{};
+
 			uint32 mNumberOfRandomRotations = 4;
 
 			// Can be used to, for example, scale down trees near the edges
@@ -137,7 +146,7 @@ namespace Game
 	};
 }
 
-CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 2);
+CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 3);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::Object, 2);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::NoiseInfluence, 0);
 
@@ -164,6 +173,11 @@ namespace cereal
 		if (version >= 2)
 		{
 			ar(value.mScaleAtNoiseValue, value.mMinNoiseValueToSpawn, value.mMaxNoiseValueToSpawn, value.mObjectSpawnChance);
+		}
+
+		if (version >= 3)
+		{
+			ar(value.mObjectsRadius);
 		}
 	}
 

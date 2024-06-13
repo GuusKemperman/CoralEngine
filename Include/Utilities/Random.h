@@ -17,7 +17,7 @@ namespace CE
 		void seed(uint32 seed);
 
 		static constexpr uint32 max() { return std::numeric_limits<uint32>::max(); }
-		static constexpr uint32 min() { return std::numeric_limits<uint32>::min(); }
+		static constexpr uint32 min() { return 1u; }
 
 	private:
 		uint32 mSeed{};
@@ -78,6 +78,6 @@ namespace CE
 		REFLECT_AT_START_UP(Random);
 
 		static inline std::random_device sDevice{};
-		static inline DefaultRandomEngine sEngine{sDevice()};
+		static inline DefaultRandomEngine sEngine{0};
 	};
 }

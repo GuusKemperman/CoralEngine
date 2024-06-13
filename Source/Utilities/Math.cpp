@@ -182,3 +182,12 @@ std::optional<std::vector<glm::vec3>> CE::Math::CalculateTangents(
 
 	return tangents;
 }
+
+glm::vec2 CE::Math::RotateVec2ByAngleInRadians(glm::vec2 vector, float angle)
+{
+	const float cosTheta = std::cos(angle);
+	const float sinTheta = std::sin(angle);
+	return {
+		vector.x * cosTheta - vector.y * sinTheta,
+		vector.x * sinTheta + vector.y * cosTheta };
+}

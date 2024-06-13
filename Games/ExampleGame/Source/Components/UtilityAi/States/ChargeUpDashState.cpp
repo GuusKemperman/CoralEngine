@@ -10,9 +10,7 @@
 #include "Components/AnimationRootComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Components/Abilities/CharacterComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
-#include "Systems/AbilitySystem.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Utilities/AiFunctionality.h"
@@ -39,7 +37,7 @@ float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, const entt::
 		return 0.8f;
 	}
 
-	const auto score = Game::GetBestScoreBasedOnDetection(world, owner, mRadius);
+	const auto score = AIFunctionality::GetBestScoreBasedOnDetection(world, owner, mRadius);
 
 	return score;
 }
@@ -48,7 +46,7 @@ void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, const entt::
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
-	Game::AnimationInAi(world, owner, mChargingAnimation, false);
+	AIFunctionality::AnimationInAi(world, owner, mChargingAnimation, false);
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;

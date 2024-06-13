@@ -39,6 +39,7 @@ namespace CE::InfoStruct
         uint32 numPointLights = 0;
         int mActiveShadowingLight = 0;
         uint32 padding;
+        glm::vec4 mAmbientAndIntensity = glm::vec4(0.f);
     };
 
     struct DXMaterialInfo

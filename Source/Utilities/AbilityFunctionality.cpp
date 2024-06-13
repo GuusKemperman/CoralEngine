@@ -211,18 +211,13 @@ std::pair<std::optional<float>, bool> CE::AbilityFunctionality::ApplyInstantEffe
 	{
 		if (effect.mStat == Stat::Health)
 		{
-			if (Random::Range<float>(0.f, 100.f) <= effect.mCritChance)
+			if (Random::Range<float>(0.f, 100.f) < effect.mCritChance)
 			{
 				// On Crit event
-				//AbilitySystem::CallBoundEventsWithNoExtraParams(world, , AbilitySystem::GetCritEvents());
 				criticalHit = true;
 				effect.mAmount += effect.mAmount * effect.mCritIncrease * 0.01f;
 			}
 			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
-			if (Math::AreFloatsEqual(characterComponent->mCurrentReceivedDamageModifier, -100.f))
-			{
-				doNotApplyColor = true;
-			}
 			if (castByCharacterData != nullptr)
 			{
 				damageModifier += castByCharacterData->mCurrentDealtDamageModifier;
@@ -232,6 +227,11 @@ std::pair<std::optional<float>, bool> CE::AbilityFunctionality::ApplyInstantEffe
 			{
 				// On Getting Hit event
 				AbilitySystem::CallBoundEventsWithNoExtraParams(world, affectedEntity, AbilitySystem::GetGettingHitEvents());
+			}
+			if (Math::AreFloatsEqual(characterComponent->mCurrentReceivedDamageModifier, -100.f))
+			{
+				// The character shouldn't take any damage.
+				return { 0.f, criticalHit };
 			}
 		}
 
@@ -350,8 +350,12 @@ entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Pr
 		}
 		// Calculate the 2D orientation of the character.
 		const glm::vec2 characterDir = Math::QuatToDirectionXZ(characterTransform->GetWorldOrientation());
+		// Offset.
+		const float radians = glm::radians(projectileComponent->mDirectionOffsetAngle); // Convert angle to radians
+		const float radiansLeftOrRight = Random::Range<int32>(0, 2) == 0 ? radians : -radians;
+		const glm::vec2 projectileDir = Math::RotateVec2ByAngleInRadians(characterDir, radiansLeftOrRight);
 		// Set the velocity.
-		prefabPhysicsBody->mLinearVelocity = characterDir * projectileComponent->mSpeed;
+		prefabPhysicsBody->mLinearVelocity = glm::normalize(projectileDir) * projectileComponent->mSpeed;
 
 		// Translate the spawn position by a certain amount
 		// so that the projectile does not spawn inside the character mesh.
