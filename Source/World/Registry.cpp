@@ -80,7 +80,7 @@ CE::Registry::Registry(World& world) :
 {
 	const MetaType* const systemType = MetaManager::Get().TryGetType<System>();
 	ASSERT(systemType != nullptr);
-
+	
 	std::function<void(const MetaType&)> registerChildren =
 		[&](const MetaType& type)
 		{

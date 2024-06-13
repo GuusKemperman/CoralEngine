@@ -32,9 +32,9 @@ namespace CE
 		StaticObstacles,
 
 		/**
-		 * \brief All obstacles that can be moved, whether that be through physics or by setting the position.
+		 * \brief All objects fired by the player or enemies.
 		 */
-		WorldDynamic,
+		Projectiles,
 
 		/**
 		 * \brief The players and enemies
@@ -91,14 +91,14 @@ namespace CE
 
 	namespace CollisionPresets
 	{
-		static constexpr CollisionPreset sWorldDynamic
+		static constexpr CollisionPreset sProjectiles
 		{
-			"WorldDynamic",
+			"Projectiles",
 			{
-				CollisionLayer::WorldDynamic,
+				CollisionLayer::Projectiles,
 				{
 					CollisionResponse::Blocking,	// WorldStatic
-					CollisionResponse::Blocking,	// WorldDynamic
+					CollisionResponse::Ignore,		// Projectiles
 					CollisionResponse::Blocking,	// Character
 					CollisionResponse::Ignore,		// Terrain
 					CollisionResponse::Overlap,		// Query
@@ -113,7 +113,7 @@ namespace CE
 				CollisionLayer::StaticObstacles,
 				{
 					CollisionResponse::Ignore,		// WorldStatic
-					CollisionResponse::Blocking,	// WorldDynamic
+					CollisionResponse::Blocking,	// Projectiles
 					CollisionResponse::Blocking,	// Character
 					CollisionResponse::Ignore,		// Terrain
 					CollisionResponse::Ignore,		// Query
@@ -128,7 +128,7 @@ namespace CE
 				CollisionLayer::Terrain,
 				{
 					CollisionResponse::Ignore,		// WorldStatic
-					CollisionResponse::Ignore,		// WorldDynamic
+					CollisionResponse::Ignore,		// Projectiles
 					CollisionResponse::Ignore,		// Character
 					CollisionResponse::Ignore,		// Terrain
 					CollisionResponse::Ignore,		// Query
@@ -143,7 +143,7 @@ namespace CE
 				CollisionLayer::Character,
 				{
 					CollisionResponse::Blocking,	// WorldStatic
-					CollisionResponse::Blocking,	// WorldDynamic
+					CollisionResponse::Blocking,	// Projectiles
 					CollisionResponse::Blocking,	// Character
 					CollisionResponse::Ignore,		// Terrain
 					CollisionResponse::Overlap,		// Query
@@ -155,7 +155,7 @@ namespace CE
 	static constexpr std::array<CollisionPreset, 4> sCollisionPresets
 	{
 		CollisionPresets::sTerrain,
-		CollisionPresets::sWorldDynamic,
+		CollisionPresets::sProjectiles,
 		CollisionPresets::sStaticObstacles,
 		CollisionPresets::sCharacter,
 	};
@@ -170,7 +170,7 @@ namespace CE
 			mInvMass = mass == 0.f ? 0.f : (1.f / mass);
 		}
 
-		CollisionRules mRules = CollisionPresets::sWorldDynamic.mRules;
+		CollisionRules mRules = CollisionPresets::sProjectiles.mRules;
 
 		float mInvMass = 1.f;
 		float mRestitution = 1.f;
@@ -253,7 +253,7 @@ struct CE::EnumStringPairsImpl<CE::CollisionLayer>
 	{
 		EnumStringPair<CollisionLayer>{ CollisionLayer::Terrain, "Terrain" },
 		{ CollisionLayer::StaticObstacles, "StaticObstacles" },
-		{ CollisionLayer::WorldDynamic, "WorldDynamic" },
+		{ CollisionLayer::Projectiles, "Projectiles" },
 		{ CollisionLayer::Character, "Character" },
 		{ CollisionLayer::Query, "Query" },
 	};
