@@ -1,5 +1,6 @@
 #pragma once
 #include "Assets/Asset.h"
+#include <stb_image/stb_truetype.h>
 
 namespace CE
 {

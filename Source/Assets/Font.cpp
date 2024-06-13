@@ -6,6 +6,9 @@
 #include "Utilities/StringFunctions.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 
+#include "glm/gtx/integer.hpp"
+#include "Utilities/Math.h"
+
 CE::Font::Font(std::string_view name) :
     Asset(name, MakeTypeId<Font>())
 {
