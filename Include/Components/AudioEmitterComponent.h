@@ -15,13 +15,11 @@ namespace CE
 	class AudioEmitterComponent
 	{
 	public:
-		void Play();
-		void SetLoops(int loops);
+		void Play(AssetHandle<Sound> sound);
+		void SetLoops(AssetHandle<Sound> sound, int loops);
 		void StopAll();
-		void SetPause(bool pause);
-		void StopChannel();
-
-		AssetHandle<Sound> mSound{};
+		void SetPause(AssetHandle<Sound> sound, bool pause);
+		void Stop(AssetHandle<Sound> sound);
 
 		std::unordered_map<uint32, FMOD::Channel*> mPlayingOnChannels{};
 
@@ -31,7 +29,7 @@ namespace CE
 		float mVolume = 1.0f;
 
 	private:
-		uint32 GetSoundNameHash();
+		uint32 GetSoundNameHash(AssetHandle<Sound> sound);
 
 		friend ReflectAccess;
 		static MetaType Reflect();

@@ -6,31 +6,28 @@
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void CE::AudioEmitterComponent::Play()
+void CE::AudioEmitterComponent::Play(AssetHandle<Sound> sound)
 {
 	mShouldStartPlay = true;
 
-	if (mSound != nullptr)
+	if (sound != nullptr)
 	{
-		uint32 hash = GetSoundNameHash();
+		uint32 hash = GetSoundNameHash(sound);
 
-		if (mPlayingOnChannels.find(hash) == mPlayingOnChannels.end())
+		FMOD::Channel* channel = sound->Play();
+
+		if (channel != nullptr)
 		{
-			FMOD::Channel* channel = mSound->Play();
-
-			if (channel != nullptr)
-			{
-				mPlayingOnChannels.emplace(hash, channel);
-			}
+			mPlayingOnChannels.emplace(hash, channel);
 		}
 	}
 }
 
-void CE::AudioEmitterComponent::SetLoops(int loops)
+void CE::AudioEmitterComponent::SetLoops(AssetHandle<Sound> sound, int loops)
 {
-	if (mSound != nullptr)
+	if (sound != nullptr)
 	{
-		uint32 hash = GetSoundNameHash();
+		uint32 hash = GetSoundNameHash(sound);
 
 		auto it = mPlayingOnChannels.find(hash);
 		if (it != mPlayingOnChannels.end())
@@ -50,11 +47,11 @@ void CE::AudioEmitterComponent::StopAll()
 	mPlayingOnChannels.clear();
 }
 
-void CE::AudioEmitterComponent::SetPause(bool pause)
+void CE::AudioEmitterComponent::SetPause(AssetHandle<Sound> sound, bool pause)
 {
-	if (mSound != nullptr)
+	if (sound != nullptr)
 	{
-		uint32 hash = GetSoundNameHash();
+		uint32 hash = GetSoundNameHash(sound);
 
 		auto it = mPlayingOnChannels.find(hash);
 		if (it != mPlayingOnChannels.end())
@@ -64,11 +61,11 @@ void CE::AudioEmitterComponent::SetPause(bool pause)
 	}
 }
 
-void CE::AudioEmitterComponent::StopChannel()
+void CE::AudioEmitterComponent::Stop(AssetHandle<Sound> sound)
 {
-	if (mSound != nullptr)
+	if (sound != nullptr)
 	{
-		uint32 hash = GetSoundNameHash();
+		uint32 hash = GetSoundNameHash(sound);
 
 		auto it = mPlayingOnChannels.find(hash);
 		if (it != mPlayingOnChannels.end())
@@ -79,9 +76,9 @@ void CE::AudioEmitterComponent::StopChannel()
 	}
 }
 
-uint32 CE::AudioEmitterComponent::GetSoundNameHash()
+uint32 CE::AudioEmitterComponent::GetSoundNameHash(AssetHandle<Sound> sound)
 {
-	return Name::HashString(mSound.GetMetaData().GetName());
+	return Name::HashString(sound.GetMetaData().GetName());
 }
 
 CE::MetaType CE::AudioEmitterComponent::Reflect()
@@ -90,10 +87,15 @@ CE::MetaType CE::AudioEmitterComponent::Reflect()
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
 
-	type.AddField(&AudioEmitterComponent::mSound, "mSound").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(&AudioEmitterComponent::Play, "Play").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sCallFromEditorTag);
-	type.AddFunc(&AudioEmitterComponent::SetPause, "SetPause", "", "Pause").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(&AudioEmitterComponent::SetLoops, "SetLoops", "Loops").GetProperties().Add(Props::sIsScriptableTag);
+	//type.AddField(&AudioEmitterComponent::mSound, "mSound").GetProperties().Add(Props::sIsScriptableTag);
+	
+	// Script functions
+	type.AddFunc(&AudioEmitterComponent::Play, "Play", "", "Sound").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&AudioEmitterComponent::SetPause, "SetPause", "", "Sound", "Pause").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&AudioEmitterComponent::SetLoops, "SetLoops", "", "Sound", "Loops").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&AudioEmitterComponent::StopAll, "StopAll").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&AudioEmitterComponent::Stop, "Stop", "", "Sound").GetProperties().Add(Props::sIsScriptableTag);
+
 
 	ReflectComponentType<AudioEmitterComponent>(type);
 
