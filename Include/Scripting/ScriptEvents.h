@@ -136,11 +136,25 @@ namespace CE
 			const AssetHandle<Script>& script) const override;
 	};
 
+	class ScriptReloadStartedEvent final :
+		public ScriptOnlyPassComponentEvent
+	{
+	public:
+		ScriptReloadStartedEvent();
+	};
+
 	class ScriptReloadCompletedEvent final :
 		public ScriptOnlyPassComponentEvent
 	{
 	public:
 		ScriptReloadCompletedEvent();
+	};
+
+	class ScriptReloadInterruptedEvent final :
+		public ScriptOnlyPassComponentEvent
+	{
+	public:
+		ScriptReloadInterruptedEvent();
 	};
 
 	class ScriptEnemyKilledEvent final :
@@ -218,7 +232,9 @@ namespace CE
 	static const ScriptAIEvaluateEvent sAIEvaluateScriptEvent{};
 	static const ScriptAbilityActivateEvent sScriptAbilityActivateEvent{};
 	static const ScriptAbilityHitEvent sScriptAbilityHitEvent{};
+	static const ScriptReloadStartedEvent sScriptReloadStartedEvent{};
 	static const ScriptReloadCompletedEvent sScriptReloadCompletedEvent{};
+	static const ScriptReloadInterruptedEvent sScriptReloadInterruptedEvent{};
 	static const ScriptEnemyKilledEvent sScriptEnemyKilledEvent{};
 	static const ScriptGettingHitEvent sScriptGettingHitEvent{};
 	static const ScriptCritEvent sScriptCritEvent{};
@@ -228,7 +244,7 @@ namespace CE
 	static const CollisionEvent sOnCollisionExitScriptEvent{ sCollisionExitEvent };
 	static const ScriptOnlyPassComponentEvent sOnButtonPressedScriptEvent{ sButtonPressEvent };
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 20> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 22> sAllScriptableEvents
 	{
 		sOnConstructScriptEvent,
 		sOnDestructScriptEvent,
@@ -241,7 +257,9 @@ namespace CE
 		sAIEvaluateScriptEvent,
 		sScriptAbilityActivateEvent,
 		sScriptAbilityHitEvent,
+		sScriptReloadStartedEvent,
 		sScriptReloadCompletedEvent,
+		sScriptReloadInterruptedEvent,
 		sScriptEnemyKilledEvent,
 		sScriptGettingHitEvent,
 		sScriptCritEvent,

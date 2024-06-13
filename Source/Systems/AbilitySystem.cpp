@@ -23,7 +23,9 @@
 CE::AbilitySystem::AbilitySystem()
 {
     sAbilityActivateEvents = CE::GetAllBoundEvents(CE::sAbilityActivateEvent);
+    sReloadStartedEvents = CE::GetAllBoundEvents(CE::sReloadStartedEvent);
     sReloadCompletedEvents = CE::GetAllBoundEvents(CE::sReloadCompletedEvent);
+    sReloadInterruptedEvents = CE::GetAllBoundEvents(CE::sReloadInterruptedEvent);
     sEnemyKilledEvents = CE::GetAllBoundEvents(CE::sEnemyKilledEvent);
     sGettingHitEvents = CE::GetAllBoundEvents(CE::sGettingHitEvent);
     sAbilityHitEvents = CE::GetAllBoundEvents(CE::sAbilityHitEvent);
@@ -250,6 +252,7 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
             {
                 // Trigger reload
                 weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
+                CallBoundEventsWithNoExtraParams(world, entity, sReloadStartedEvents);
             }
             if ((CheckKeyboardInput<&Input::WasKeyboardKeyPressed>(weapon.mKeyboardKeys) ||
                 CheckGamepadInput<&Input::WasGamepadButtonPressed>(weapon.mGamepadButtons, playerComponent->mID)) &&
@@ -257,6 +260,7 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
             {
                 // Reload interrupted
                 weapon.mReloadCounter = 0.f;
+                CallBoundEventsWithNoExtraParams(world, entity, sReloadInterruptedEvents);
             }
 
             // Activate abilities for the player based on input
@@ -377,7 +381,9 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     weapon.mReloadCounter = 0.f;
     if (weapon.mAmmoCounter <= 0)
     {
+        // Trigger reload
         weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
+        CallBoundEventsWithNoExtraParams(world, castBy, sReloadStartedEvents);
     }
 
     return true;

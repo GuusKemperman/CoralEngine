@@ -210,6 +210,12 @@ bool CE::DoesPinRequireLink(const ScriptFunc& func, const ScriptPin& pin)
 	{
 		return func.GetNode(pin.GetNodeId()).GetType() == ScriptNodeType::Rerout;
 	}
+
+	if (pin.GetTypeForm() == TypeForm::Ptr)
+	{
+		return false;
+	}
+
 	return true;
 }
 

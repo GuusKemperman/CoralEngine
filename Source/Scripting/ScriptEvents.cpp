@@ -183,8 +183,18 @@ CE::MetaFunc::InvokeT CE::ScriptAbilityHitEvent::GetScriptInvoker(const ScriptFu
 		};
 }
 
+CE::ScriptReloadStartedEvent::ScriptReloadStartedEvent() :
+	ScriptOnlyPassComponentEvent(sReloadStartedEvent)
+{
+}
+
 CE::ScriptReloadCompletedEvent::ScriptReloadCompletedEvent() :
 	ScriptOnlyPassComponentEvent(sReloadCompletedEvent)
+{
+}
+
+CE::ScriptReloadInterruptedEvent::ScriptReloadInterruptedEvent() :
+	ScriptOnlyPassComponentEvent(sReloadInterruptedEvent)
 {
 }
 
