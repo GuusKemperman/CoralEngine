@@ -1,6 +1,12 @@
 #pragma once
 #include "Core/Input.h"
 #include "Systems/System.h"
+#include "Utilities/Events.h"
+
+namespace CE
+{
+	class AbilityFunctionality;
+}
 
 namespace CE
 {
@@ -43,8 +49,21 @@ namespace CE
 		template<bool (Input::* Func)(int, Input::GamepadButton, bool) const>
 		static bool CheckGamepadInput(const std::vector<Input::GamepadButton>& buttons, int playerID);
 
+		// Call all bound events of a type based on the vector of bound events passed - only events that have the based parameters (world and owner entity).
+		static void CallBoundEventsWithNoExtraParams(World& world, entt::entity castBy, const std::vector<CE::BoundEvent>& boundEvents);
+
+		static const std::vector<CE::BoundEvent>& GetEnemyKilledEvents() { return sEnemyKilledEvents; }
+		static const std::vector<CE::BoundEvent>& GetGettingHitEvents() { return sGettingHitEvents; }
+		static const std::vector<CE::BoundEvent>& GetAbilityHitEvents() { return sAbilityHitEvents; }
+		static const std::vector<CE::BoundEvent>& GetCritEvents() { return sCritEvents; }
+
 	private:
-		static void CallAllOnAbilityActivateEvents(World& world, entt::entity castBy);
+		static inline std::vector<CE::BoundEvent> sAbilityActivateEvents;
+		static inline std::vector<CE::BoundEvent> sReloadCompletedEvents;
+		static inline std::vector<CE::BoundEvent> sEnemyKilledEvents;
+		static inline std::vector<CE::BoundEvent> sGettingHitEvents;
+		static inline std::vector<CE::BoundEvent> sAbilityHitEvents;
+		static inline std::vector<CE::BoundEvent> sCritEvents;
 
 		friend ReflectAccess;
 		static MetaType Reflect();

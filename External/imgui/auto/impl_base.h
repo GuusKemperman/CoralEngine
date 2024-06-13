@@ -152,11 +152,10 @@ IMGUI_AUTO_DEFINE_INLINE(template<typename ...Args>, const	std::tuple<Args...>, 
 #pragma region CONTAINERS
 #ifdef _VECTOR_
 IMGUI_AUTO_DEFINE_BEGIN(template<typename T>, std::vector<T>)
-	if(ImGui::detail::AutoContainerValues< std::vector<T> >("Array " + name, var))
+	if(ImGui::detail::AutoContainerValuesVec<T>("Array " + name, var))
 	{
 		ImGui::PushID(name.c_str());	ImGui::Indent();
-		ImGui::detail::AutoContainerPushBackButton(var); if (!var.empty()) ImGui::SameLine();
-		ImGui::detail::AutoContainerPopBackButton(var);
+		ImGui::detail::AutoContainerPushBackButton(var);
 		ImGui::PopID();					ImGui::Unindent();
 	}
 IMGUI_AUTO_DEFINE_END

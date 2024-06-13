@@ -183,6 +183,49 @@ CE::MetaFunc::InvokeT CE::ScriptAbilityHitEvent::GetScriptInvoker(const ScriptFu
 		};
 }
 
+CE::ScriptReloadCompletedEvent::ScriptReloadCompletedEvent() :
+	ScriptOnlyPassComponentEvent(sReloadCompletedEvent)
+{
+}
+
+CE::ScriptEnemyKilledEvent::ScriptEnemyKilledEvent() :
+	ScriptEvent(sEnemyKilledEvent, { { MakeTypeTraits<entt::entity>(), "Enemy about to die" }}, {})
+{
+}
+
+CE::MetaFunc::InvokeT CE::ScriptEnemyKilledEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+		(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			std::array<MetaAny, 2> scriptArgs{ std::move(args[0]), std::move(args[3]),};
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
+CE::ScriptGettingHitEvent::ScriptGettingHitEvent() :
+	ScriptOnlyPassComponentEvent(sGettingHitEvent)
+{
+}
+
+CE::ScriptCritEvent::ScriptCritEvent() :
+	ScriptEvent(sCritEvent, { { MakeTypeTraits<entt::entity>(), "Hit Entity" },
+	{ MakeTypeTraits<entt::entity>(), "Ability Entity" } }, {})
+{
+}
+
+CE::MetaFunc::InvokeT CE::ScriptCritEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			std::array<MetaAny, 3> scriptArgs{ std::move(args[0]), std::move(args[3]), std::move(args[4]) };
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
 CE::MetaFunc::InvokeT CE::CollisionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
                                                            const AssetHandle<Script>& script) const
 {

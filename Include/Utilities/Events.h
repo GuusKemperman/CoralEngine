@@ -71,6 +71,13 @@ namespace CE
 	static constexpr Event<void(World&, entt::entity)> sAIStateExitEvent{ "OnAIStateExit" };
 
 	/**
+	 * \brief 
+	 * 	World& The world the ability controller component is in. 
+	 * \entt::entity The owner of the ability controller component.  
+	 */
+	static constexpr Event<void(World&, entt::entity)> sAbilityActivateEvent{ "OnAbilityActivate" };
+
+	/**
 	 * \brief
 	 * 	World& The world the ability controller component is in.
 	 * \entt::entity The entity that has cast the ability (projectile).
@@ -80,11 +87,35 @@ namespace CE
 	static constexpr Event<void(World&, entt::entity, entt::entity, entt::entity)> sAbilityHitEvent{ "OnAbilityHit" };
 
 	/**
-	 * \brief 
-	 * 	World& The world the ability controller component is in. 
-	 * \entt::entity The owner of the ability controller component.  
+	 * \brief
+	 * 	World& The world player is in.
+	 * \entt::entity The player that finished reloading.
 	 */
-	static constexpr Event<void(World&, entt::entity)> sAbilityActivateEvent{ "OnAbilityActivate" };
+	static constexpr Event<void(World&, entt::entity)> sReloadCompletedEvent{ "OnReloadCompleted" };
+
+	/**
+	 * \brief
+	 * 	World& The world the player and enemy are in.
+	 * \entt::entity The player.
+	 * \entt::entity The enemy that is about to die.
+	 */
+	static constexpr Event<void(World&, entt::entity, entt::entity)> sEnemyKilledEvent{ "OnEnemyKilled" };
+
+	/**
+	 * \brief
+	 * 	World& The world the player and enemy are in.
+	 * \entt::entity The player that was hit (only called for the player).
+	 */
+	static constexpr Event<void(World&, entt::entity)> sGettingHitEvent{ "OnGettingHit" };
+
+	/**
+	 * \brief
+	 * 	World& The world the ability controller component is in.
+	 * \entt::entity The entity that has cast the ability (projectile).
+	 * \entt::entity The entity that was hit.
+	 * \entt::entity The ability (projectile) entity.
+	 */
+	static constexpr Event<void(World&, entt::entity, entt::entity, entt::entity)> sCritEvent{ "OnCrit" };
 
 	/*
 	* \brief Called when an animation finishes.

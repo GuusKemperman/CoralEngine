@@ -12,6 +12,7 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Components/UtililtyAi/States/ChargeUpDashState.h"
@@ -37,9 +38,8 @@ void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, cons
 			recoveryState->mRechargeCooldown.mAmountOfTimePassed = 0.0f;
 		}
 	}
-	Game::ExecuteEnemyAbility(world, owner);
 
-	Game::AnimationInAi(world, owner, mStompAnimation, false);
+	Game::ExecuteEnemyAbility(world, owner);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
@@ -86,7 +86,7 @@ float Game::StompState::OnAiEvaluate(const CE::World& world, const entt::entity 
 	return 0;
 }
 
-void Game::StompState::OnAIStateEnterEvent(CE::World& world, const entt::entity owner)
+void Game::StompState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
@@ -111,14 +111,14 @@ CE::MetaType Game::StompState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<StompState>{}, "StompState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&StompState::mRadius, "mRadius").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&StompState::mMaxStompTime, "mMaxStompTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&StompState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&StompState::mMaxStompTime, "Max Stomp Time").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &StompState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &StompState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &StompState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAIStateEnterEvent, &StompState::OnAiStateEnterEvent);
 
-	type.AddField(&StompState::mStompAnimation, "mStompAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&StompState::mStompAnimation, "Stomp Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<StompState>(type);
 	return type;

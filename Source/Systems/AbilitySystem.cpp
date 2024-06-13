@@ -20,14 +20,14 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/AbilityFunctionality.h"
 
-namespace
-{
-    static std::vector<CE::BoundEvent> abilityActivateEvents{};
-}
-
 CE::AbilitySystem::AbilitySystem()
-{   
-    abilityActivateEvents = CE::GetAllBoundEvents(CE::sAbilityActivateEvent);
+{
+    sAbilityActivateEvents = CE::GetAllBoundEvents(CE::sAbilityActivateEvent);
+    sReloadCompletedEvents = CE::GetAllBoundEvents(CE::sReloadCompletedEvent);
+    sEnemyKilledEvents = CE::GetAllBoundEvents(CE::sEnemyKilledEvent);
+    sGettingHitEvents = CE::GetAllBoundEvents(CE::sGettingHitEvent);
+    sAbilityHitEvents = CE::GetAllBoundEvents(CE::sAbilityHitEvent);
+    sCritEvents = CE::GetAllBoundEvents(CE::sCritEvent);
 }
 
 void CE::AbilitySystem::Update(World& world, float dt)
@@ -225,6 +225,7 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
         weapon.mShotDelayCounter = std::min(weapon.mShotDelayCounter + dt * weapon.mRuntimeWeapon->mFireSpeed, weapon.mRuntimeWeapon->mShotDelay);
 
     	// Reload counter
+        bool reloadCompleted{}; // Because it should only be called for the player.
     	if (weapon.mReloadCounter > 0.f)
         {
 	    	weapon.mReloadCounter = std::max(weapon.mReloadCounter - dt * weapon.mRuntimeWeapon->mReloadSpeed, 0.f);
@@ -232,12 +233,17 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
             {
                 // Reload completed
                 weapon.mAmmoCounter = weapon.mRuntimeWeapon->mCharges;
+                reloadCompleted = true;
             }
         }
 
         if (auto playerComponent = world.GetRegistry().TryGet<PlayerComponent>(entity))
         {
             // Reload
+            if (reloadCompleted)
+            {
+                CallBoundEventsWithNoExtraParams(world, entity, sReloadCompletedEvents);
+            }
             if ((CheckKeyboardInput<&Input::WasKeyboardKeyPressed>(weapon.mReloadKeyboardKeys) ||
                 CheckGamepadInput<&Input::WasGamepadButtonPressed>(weapon.mReloadGamepadButtons, playerComponent->mID)) &&
                 weapon.mReloadCounter == 0.f)
@@ -314,7 +320,7 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
                 ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName(),
                 ability.mAbilityAsset.GetMetaData().GetName());
         }
-        CallAllOnAbilityActivateEvents(world, castBy);
+        CallBoundEventsWithNoExtraParams(world, castBy, sAbilityActivateEvents);
     }
     else
     {
@@ -362,7 +368,7 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
                 weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName(),
                 weapon.mWeaponAsset.GetMetaData().GetName());
         }
-        CallAllOnAbilityActivateEvents(world, castBy);
+        CallBoundEventsWithNoExtraParams(world, castBy, sAbilityActivateEvents);
     }
     else
     {
@@ -377,9 +383,10 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     return true;
 }
 
-void CE::AbilitySystem::CallAllOnAbilityActivateEvents(World& world, entt::entity castBy)
+void CE::AbilitySystem::CallBoundEventsWithNoExtraParams(World& world, entt::entity castBy,
+	const std::vector<CE::BoundEvent>& boundEvents)
 {
-    for (const BoundEvent& boundEvent : abilityActivateEvents)
+    for (const BoundEvent& boundEvent : boundEvents)
     {
         entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
 

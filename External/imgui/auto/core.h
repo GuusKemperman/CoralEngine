@@ -15,6 +15,8 @@
 #	define IMGUI_AUTO_STRUCT_TO_TUPLE boost::pfr::structure_tie
 #endif
 
+#include "imgui/IconsFontAwesome.h"
+
 namespace ImGui
 {
 	//		IMGUI::AUTO() 
@@ -38,6 +40,8 @@ namespace detail {
 template<typename T>			bool AutoExpand(const std::string &name, T& value);
 template<typename Container>	bool AutoContainerTreeNode(const std::string &name, Container &cont);
 template<typename Container>	bool AutoContainerValues(const std::string &name, Container &cont); //Container must have .size(), .begin() and .end() methods and ::value_type.
+template<typename T>			bool AutoContainerValuesVec(const std::string& name, std::vector<T>& cont);
+
 template<typename Container>	bool AutoMapContainerValues(const std::string &name, Container &map); // Same as above but that iterates over pairs
 template<typename Container>	void AutoContainerPushFrontButton(Container &cont);
 template<typename Container>	void AutoContainerPushBackButton(Container &cont);
@@ -157,6 +161,68 @@ template<typename Container> bool ImGui::detail::AutoContainerValues(const std::
 	}
 	else return false;
 }
+
+template<typename T> bool ImGui::detail::AutoContainerValuesVec(const std::string& name, std::vector<T>& cont)
+{
+	if (ImGui::detail::AutoContainerTreeNode(name, cont))
+	{
+		ImGui::PushID(name.c_str());
+
+		for (int i = 0; i < static_cast<int>(cont.size()); i++)
+		{
+			std::string itemname = "[" + std::to_string(i) + ']';
+
+			ImGui::PushID(i);
+			const bool isOpen = ImGui::TreeNodeEx(itemname.c_str(), ImGuiTreeNodeFlags_AllowOverlap);
+
+			SameLine(GetWindowWidth() - 100.0f);
+
+			ImGui::BeginDisabled(i == 0);
+			if (ImGui::Button(ICON_FA_ARROW_UP))
+			{
+				std::swap(cont[i], cont[i - 1]);
+				ImGui::EndDisabled();
+				goto endAndGoToNext;
+			}
+			ImGui::EndDisabled();
+
+			ImGui::SameLine();
+
+			if (ImGui::Button(ICON_FA_WINDOW_CLOSE))
+			{
+				cont.erase(cont.begin() + i);
+				goto endAndGoToNext;
+			}
+			ImGui::SameLine();
+
+			ImGui::BeginDisabled(i + 1 == static_cast<int>(cont.size()));
+			if (ImGui::Button(ICON_FA_ARROW_DOWN))
+			{
+				std::swap(cont[i], cont[i + 1]);
+				ImGui::EndDisabled();
+				goto endAndGoToNext;
+			}
+			ImGui::EndDisabled();
+
+			if (isOpen)
+			{
+				ImGui::Auto(cont[i], itemname);
+			}
+
+			endAndGoToNext:
+			if (isOpen)
+			{
+				ImGui::TreePop();
+			}
+			ImGui::PopID();
+		}
+		ImGui::PopID();
+		ImGui::TreePop();
+		return true;
+	}
+	else return false;
+}
+
 template<typename Container> bool ImGui::detail::AutoMapContainerValues(const std::string &name, Container &cont)
 {
 	if (ImGui::detail::AutoContainerTreeNode(name, cont))

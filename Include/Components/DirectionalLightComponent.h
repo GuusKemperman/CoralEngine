@@ -1,5 +1,6 @@
 #pragma once
 #include "Meta/MetaReflect.h"
+#include "BasicDataTypes/Colors/LinearColor.h"
 
 namespace CE
 {
@@ -9,7 +10,7 @@ namespace CE
 	class DirectionalLightComponent
 	{
 	public:
-		glm::vec3 mColor = { 1.0f, 1.0f, 1.0f };
+		LinearColor mColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 		float mIntensity = 1.0f;
 		bool mCastShadows = false;
 		float mShadowExtent = 100.0f;

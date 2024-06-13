@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Events.h"
 #include "Assets/Core/AssetHandle.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/Abilities/AbilityEffectsComponent.h"
@@ -19,8 +20,7 @@ namespace CE
 	class AbilityFunctionality
 	{
 	public:
-
-		static std::optional<float> ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, bool doNotApplyColor = false);
+		static std::pair<std::optional<float>, bool> ApplyInstantEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, bool doNotApplyColor = false);
 		static void ApplyDurationalEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f, bool doNotApplyColor = false);
 		static void RevertDurationalEffect(CharacterComponent& characterComponent, const DurationalEffect& durationalEffect);
 		static void ApplyOverTimeEffect(World& world, const CharacterComponent* castByCharacterData, entt::entity affectedEntity, AbilityEffect effect, float duration = 0.f, int ticks = 1);
@@ -36,7 +36,7 @@ namespace CE
 		static void RemoveWeaponAtIndex(World& world, entt::entity entity, int index);
 		static void AddWeaponToEnd(World& world, entt::entity entity, WeaponInstance& weapon);
 		static void ReplaceWeaponAtEnd(World& world, entt::entity entity, AssetHandle<Weapon>& weaponAsset);
-		static void CallAllAbilityHitEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity);
+		static void CallAllAbilityHitOrCritEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity, const std::vector<BoundEvent>& boundEvents);
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);

@@ -1,25 +1,18 @@
 #pragma once
-#include "BasicDataTypes/Colors/LinearColor.h"
 #include "Meta/MetaReflect.h"
+#include "Components/Particles/ParticleProperty/ParticlePropertyFwd.h"
 
 namespace CE
 {
 	class ParticleLightComponent
 	{
 	public:
-		Span<const float> GetParticleLightIntensities() const { return mParticleLightIntensities; }
-
-		float mMinLightIntensity = 1.f;
-		float mMaxLightIntensity = 1.f;
-		float mLightRadius = 1.f;
+		ParticleProperty<float> mIntensity{ 1.0f };
+		ParticleProperty<float> mRadius{ 1.0f };
 
 	private:
-		friend class ParticleLightSystem;
-
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(ParticleLightComponent);
-
-		std::vector<float> mParticleLightIntensities{};
 	};
 }

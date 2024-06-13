@@ -1,6 +1,7 @@
 #pragma once
 #include "Assets/Texture.h"
 #include "Meta/MetaReflect.h"
+#include "Components/Particles/ParticleProperty/ParticlePropertyFwd.h"
 
 namespace CE
 {
@@ -13,23 +14,16 @@ namespace CE
 		Span<glm::quat> GetRotationalVelocitiesPerStep() { return mRotationalVelocitiesPerStep; }
 		Span<const glm::quat> GetRotationalVelocitiesPerStep() const { return mRotationalVelocitiesPerStep; }
 
-		Span<float> GetMasses() { return mParticleMasses; }
-		Span<const float> GetMasses() const { return mParticleMasses; }
-		
-		
 		glm::vec3 mMinInitialVelocity{};
 		glm::vec3 mMaxInitialVelocity{};
 
-		
 		glm::vec3 mMinInitialRotationalVelocity{};
 		glm::vec3 mMaxInitialRotationalVelocity{};
 
-		
-		float mMinMass{};
-		float mMaxMass{};
+		ParticleProperty<float> mMass{ 1.0f };
 
-		glm::vec3 mGravity{};
-		float mFloorHeight{};
+		glm::vec3 mGravity{ 1.0f };
+		float mFloorHeight{ -std::numeric_limits<float>::infinity() };
 
 	private:
 		friend class ParticlePhysicsSystem;
@@ -39,6 +33,5 @@ namespace CE
 
 		std::vector<glm::quat> mRotationalVelocitiesPerStep{};
 		std::vector<glm::vec3> mLinearVelocities{};
-		std::vector<float> mParticleMasses{};
 	};
 }

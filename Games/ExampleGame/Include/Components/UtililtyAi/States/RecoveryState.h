@@ -16,11 +16,11 @@ namespace Game
 	{
 	public:
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
-		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
+		[[nodiscard]] float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
 		void OnBeginPlayEvent(CE::World& world, entt::entity owner);
 
-		CE::AssetHandle<CE::Animation> mDashRechargeAnimation{};
+		CE::AssetHandle<CE::Animation> mRecoveryAnimation{};
 
 		CE::Cooldown mRechargeCooldown{};
 

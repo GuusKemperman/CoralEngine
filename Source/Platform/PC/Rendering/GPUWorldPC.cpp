@@ -2,13 +2,9 @@
 #include "Platform/PC/Rendering/GPUWorldPC.h"
 
 #include "World/World.h"
-#include "World/WorldViewport.h"
 #include "World/Registry.h"
 
 #include "Assets/Material.h"
-#include "Assets/Texture.h"
-#include "Assets/StaticMesh.h"
-#include "Assets/SkinnedMesh.h"
 
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
@@ -18,12 +14,12 @@
 #include "Components/SkinnedMeshComponent.h"
 #include "Components/FogComponent.h"
 #include "Components/OutlineComponent.h"
-#include "Rendering/GPUWorld.h"
 
+#include "Components/Particles/ParticleProperty.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
 #include "Components/Particles/ParticleColorComponent.h"
-#include "Components/Particles/ParticleColorOverTimeComponent.h"
 #include "Components/Particles/ParticleLightComponent.h"
+#include "Components/AmbientLightComponent.h"
 
 #include "Platform/PC/Core/DevicePC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
@@ -393,6 +389,7 @@ void CE::GPUWorld::Update()
     // Update lights
     const auto pointLightView = mWorld.get().GetRegistry().View<const PointLightComponent, const TransformComponent>();
     const auto dirLightView = mWorld.get().GetRegistry().View<const DirectionalLightComponent, const TransformComponent>();
+    const auto ambientLightView = mWorld.get().GetRegistry().View<const AmbientLightComponent>();
     int dirLightCounter = 0;
     mPointLightCounter = 0;
 
@@ -405,7 +402,7 @@ void CE::GPUWorld::Update()
 
         InfoStruct::DXPointLightInfo pointLight;
         pointLight.mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
-        pointLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+        pointLight.mColorAndIntensity = glm::vec4(lightComponent.mColor.r,lightComponent.mColor.g, lightComponent.mColor.b, lightComponent.mIntensity);
         pointLight.mRadius = lightComponent.mRange;
         mPointLights[mPointLightCounter] = pointLight;
         mPointLightCounter++;
@@ -441,7 +438,7 @@ void CE::GPUWorld::Update()
 
         InfoStruct::DXDirLightInfo dirLight;
         dirLight.mDir = glm::vec4(lightDirection, 1.f);
-        dirLight.mColorAndIntensity = glm::vec4(lightComponent.mColor, lightComponent.mIntensity);
+        dirLight.mColorAndIntensity = glm::vec4(lightComponent.mColor.r,lightComponent.mColor.g, lightComponent.mColor.b, lightComponent.mIntensity);
         dirLight.mLightMat = glm::transpose(t*projection*view);
         dirLight.mBias = lightComponent.mShadowBias;
         dirLight.mCastsShadows = lightComponent.mCastShadows;
@@ -454,6 +451,14 @@ void CE::GPUWorld::Update()
             mLightInfo.mActiveShadowingLight = dirLightCounter;
 
         dirLightCounter++;
+    }
+
+    for (auto [entity, ambientLight] : ambientLightView.each())
+    {
+        mLightInfo.mAmbientAndIntensity.x = ambientLight.mColor.x;
+        mLightInfo.mAmbientAndIntensity.y = ambientLight.mColor.y;
+        mLightInfo.mAmbientAndIntensity.z = ambientLight.mColor.z;
+        mLightInfo.mAmbientAndIntensity.w = ambientLight.mIntensity;
     }
 
     UpdateParticles(cameraTransform.GetLocalPosition());
@@ -638,8 +643,7 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
     Device& engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
 
-    const auto simpleColorParticles = mWorld.get().GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>(entt::exclude<ParticleColorOverTimeComponent>);
-    const auto changingColorParticles = mWorld.get().GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent, const ParticleColorOverTimeComponent>();
+    const auto simpleColorParticles = mWorld.get().GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>();
 
     mParticleCount = 0;
 
@@ -655,14 +659,7 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
 
             const size_t numOfParticles = emitter.GetNumOfParticles();
 
-            Span<const glm::vec3> positions = emitter.GetParticlePositions();
-            Span<const glm::vec3> sizes = emitter.GetParticleSizes();
-            Span<const glm::quat> orientations = emitter.GetParticleOrientations();
-            Span<const LinearColor> colors = colorComponent.GetColors();
-            auto lightComponent = mWorld.get().GetRegistry().TryGet<ParticleLightComponent>(entity);
-            Span<const float> intensities;
-            if (lightComponent)
-                intensities = lightComponent->GetParticleLightIntensities();
+            const ParticleLightComponent* lightComponent = mWorld.get().GetRegistry().TryGet<ParticleLightComponent>(entity);
 
             for (uint32 i = 0; i < numOfParticles; i++)
             {
@@ -675,22 +672,24 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                     return;
                 }
 
-                const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], sizes[i], orientations[i]);
+                const glm::vec3 position = emitter.GetParticlePositionWorld(i);
+                const glm::mat4 mat = TransformComponent::ToMatrix(position, emitter.mScale.GetValue(emitter, i), emitter.GetParticleOrientationWorld(i));
 
                 InfoStruct::DXParticleInfo particleInfo{};
                 particleInfo.mMesh = const_cast<StaticMesh*>(meshRenderer.mParticleMesh.Get());
                 particleInfo.mMaterial = const_cast<Material*>(meshRenderer.mParticleMaterial.Get()); 
                 if(meshRenderer.mParticleMaterial)
                     particleInfo.mMaterialInfo = GetMaterial(meshRenderer.mParticleMaterial.Get());
-                particleInfo.mDistanceToCamera = glm::length(positions[i] - cameraPos);
-                particleInfo.mColor = colors[i];
+                particleInfo.mDistanceToCamera = glm::length(position - cameraPos);
+                particleInfo.mColor = colorComponent.mColor.GetValue(emitter, i);
                 particleInfo.mMatrix = std::move(mat);
 
-                if (lightComponent)
+                if (lightComponent != nullptr)
                 {
+                    const float radius = lightComponent->mRadius.GetValue(emitter, i);
                     particleInfo.mIsEmissive = true;
-                    particleInfo.mLightRadius = lightComponent->mLightRadius;
-                    particleInfo.mLightIntensity = intensities[i];
+                    particleInfo.mLightRadius = radius;
+                    particleInfo.mLightIntensity = lightComponent->mIntensity.GetValue(emitter, i);
 
                     if(mPointLightCounter >= mPointLights.size())
                     {
@@ -699,9 +698,9 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                     }
 
                     InfoStruct::DXPointLightInfo pointLight;
-                    pointLight.mPosition = glm::vec4(positions[i],1.f);
+                    pointLight.mPosition = glm::vec4(position, 1.f);
                     pointLight.mColorAndIntensity = glm::vec4(glm::vec3(particleInfo.mColor), particleInfo.mLightIntensity);
-                    pointLight.mRadius = lightComponent->mLightRadius;
+                    pointLight.mRadius = radius;
                     mPointLights[mPointLightCounter] = pointLight;
                     mPointLightCounter++;
                 }
@@ -710,78 +709,6 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
 
                 mParticleCount++;
             }          
-        }
-    }
-
-    {
-
-        for (auto [entity, emitter, meshRenderer, colorComponent, colorOverTime] : changingColorParticles.each())
-        {
-            bool emitterPlaying = emitter.IsPlaying();
-            bool meshPresent = meshRenderer.mParticleMesh;
-            if (!emitterPlaying || !meshPresent)
-            {
-                continue;
-            }
-
-            const size_t numOfParticles = emitter.GetNumOfParticles();
-
-            Span<const float> lifeTimes = emitter.GetParticleLifeTimesAsPercentage();
-            Span<const glm::vec3> positions = emitter.GetParticlePositions();
-            Span<const glm::vec3> sizes = emitter.GetParticleSizes();
-            Span<const glm::quat> orientations = emitter.GetParticleOrientations();
-            Span<const LinearColor> colors = colorComponent.GetColors();
-            const ColorGradient& gradient = colorOverTime.mGradient;
-            auto lightComponent = mWorld.get().GetRegistry().TryGet<ParticleLightComponent>(entity);
-            Span<const float> intensities;
-            if (lightComponent)
-                intensities = lightComponent->GetParticleLightIntensities();
-
-            for (uint32 i = 0; i < numOfParticles; i++)
-            {
-                if (!emitter.IsParticleAlive(i))
-                    continue;
-
-                if (mParticleCount >= MAX_PARTICLES)
-                {
-                    LOG(LogCore, Warning, "Maximum of particles per frame reached. Tell a programmer to increase it :)");
-                    return;
-                }
-
-                const glm::mat4 mat = TransformComponent::ToMatrix(positions[i], sizes[i], orientations[i]);
-
-                InfoStruct::DXParticleInfo particleInfo{};
-                particleInfo.mMesh = const_cast<StaticMesh*>(meshRenderer.mParticleMesh.Get());
-                particleInfo.mMaterial = const_cast<Material*>(meshRenderer.mParticleMaterial.Get()); 
-                if(meshRenderer.mParticleMaterial)
-                    particleInfo.mMaterialInfo = GetMaterial(meshRenderer.mParticleMaterial.Get());
-                particleInfo.mDistanceToCamera = glm::length(positions[i] - cameraPos);
-                particleInfo.mColor = colors[i] * gradient.GetColorAt(lifeTimes[i]);
-                particleInfo.mMatrix = std::move(mat);
-                if (lightComponent)
-                {
-                    particleInfo.mIsEmissive = true;
-                    particleInfo.mLightRadius = lightComponent->mLightRadius;
-                    particleInfo.mLightIntensity = intensities[i];
-
-                    if(mPointLightCounter >= mPointLights.size())
-                    {
-                        mPointLights.resize(mPointLights.size() + 100);
-                        mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->mResizeBuffer = true;
-                    }
-
-                    InfoStruct::DXPointLightInfo pointLight;
-                    pointLight.mPosition = glm::vec4(positions[i],1.f);
-                    pointLight.mColorAndIntensity = glm::vec4(glm::vec3(particleInfo.mColor), particleInfo.mLightIntensity);
-                    pointLight.mRadius = lightComponent->mLightRadius;
-                    mPointLights[mPointLightCounter] = pointLight;
-                    mPointLightCounter++;
-                }
-
-                mParticles[mParticleCount] = std::move(particleInfo);
-
-                mParticleCount++;
-            }
         }
     }
 

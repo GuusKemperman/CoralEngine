@@ -34,8 +34,6 @@ void Game::DashingState::OnAiTick(CE::World& world, const entt::entity owner, co
 		}
 	}
 
-	Game::AnimationInAi(world, owner, mDashingAnimation, false);
-
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
 	if (physicsBody2DComponent == nullptr)
@@ -79,8 +77,10 @@ float Game::DashingState::OnAiEvaluate(const CE::World& world, const entt::entit
 	return 0;
 }
 
-void Game::DashingState::OnAIStateEnterEvent(CE::World& world, const entt::entity owner)
+void Game::DashingState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
+	Game::AnimationInAi(world, owner, mDashingAnimation, false);
+
 	const entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
 
 	if (entityId == entt::null)
@@ -142,14 +142,14 @@ CE::MetaType Game::DashingState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<DashingState>{}, "DashingState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 	
-	type.AddField(&DashingState::mSpeedDash, "mSpeedDash").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DashingState::mMaxDashTime, "mMaxDashTime").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DashingState::mSpeedDash, "Speed Of The Dash").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DashingState::mMaxDashTime, "Max Dash Time").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &DashingState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &DashingState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &DashingState::OnAIStateEnterEvent);
+	BindEvent(type, CE::sAIStateEnterEvent, &DashingState::OnAiStateEnterEvent);
 
-	type.AddField(&DashingState::mDashingAnimation, "mDashingAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DashingState::mDashingAnimation, "Dashing Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<DashingState>(type);
 	return type;

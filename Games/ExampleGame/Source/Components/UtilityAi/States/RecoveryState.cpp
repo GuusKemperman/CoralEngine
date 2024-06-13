@@ -15,7 +15,7 @@
 
 void Game::RecoveryState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	Game::AnimationInAi(world, owner, mDashRechargeAnimation, false);
+	Game::AnimationInAi(world, owner, mRecoveryAnimation, false);
 	
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
@@ -42,8 +42,10 @@ float Game::RecoveryState::OnAiEvaluate(const CE::World&, entt::entity) const
 	return 0;
 }
 
-void Game::RecoveryState::OnAiStateEnterEvent(CE::World&, entt::entity)
+void Game::RecoveryState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 {
+	Game::AnimationInAi(world, owner, mRecoveryAnimation, false);
+
 	mRechargeCooldown.mCooldown = mMaxRechargeTime;
 	mRechargeCooldown.mAmountOfTimePassed = 0.0f;
 }
@@ -58,15 +60,15 @@ CE::MetaType Game::RecoveryState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<RecoveryState>{}, "RecoveryState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddField(&RecoveryState::mMaxRechargeTime, "mMaxRechargeTime").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&RecoveryState::mRechargeCooldown, "mRechargeCooldown").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&RecoveryState::mMaxRechargeTime, "Max Recovery Time").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&RecoveryState::mRechargeCooldown, "Recovery Cooldown").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &RecoveryState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &RecoveryState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &RecoveryState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sBeginPlayEvent, &RecoveryState::OnBeginPlayEvent);
 
-	type.AddField(&RecoveryState::mDashRechargeAnimation, "mDashRechargeAnimation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&RecoveryState::mRecoveryAnimation, "Recovery Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<RecoveryState>(type);
 	return type;
