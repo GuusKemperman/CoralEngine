@@ -10,6 +10,8 @@
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
 #include "Assets/Texture.h"
 #include "Rendering/GPUWorld.h"
+#include "Rendering/FrameBuffer.h"
+#include "Rendering/Renderer.h"
 
 CE::UIRenderer::UIRenderer()
 {
@@ -124,4 +126,7 @@ void CE::UIRenderer::Render(const World& world)
         commandList->IASetIndexBuffer(&renderingData.mIndexBufferView);
         commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
     }
+
+    Renderer::Get().GetFrameBuffer().ResolveMsaa(gpuWorld.GetMsaaFrameBuffer());
+    Renderer::Get().GetFrameBuffer().Bind();
 }

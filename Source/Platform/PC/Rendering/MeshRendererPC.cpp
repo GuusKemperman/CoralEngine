@@ -316,7 +316,6 @@ void CE::MeshRenderer::Render(const World& world)
         }
     }
 
-    Renderer::Get().GetFrameBuffer().ResolveMsaa(gpuWorld.GetMsaaFrameBuffer());
     RenderParticles(world);
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));

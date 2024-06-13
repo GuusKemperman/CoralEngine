@@ -75,8 +75,7 @@ void CE::Renderer::Render(const World& world, glm::vec2 viewportSize)
 	world.GetGPUWorld().Update();
 
 	mMeshRenderer->Render(world);
-	//mDebugRenderer->Render(world);
-	//mPostProcessRenderer->Render(world);
-	//mUIRenderer->Render(world);
-
+	mDebugRenderer->Render(world);
+	mPostProcessRenderer->Render(world);
+	mUIRenderer->Render(world);
 }
