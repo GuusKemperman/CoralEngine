@@ -99,7 +99,6 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 			numToSpawnThisFrame = static_cast<uint32>(numToSpawnAsFloat);
 		}
 
-		emitter.mCurrentTime += dt;
 		if (!emitter.IsPlaying())
 		{
 			if (emitter.mLoop)
@@ -115,6 +114,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				continue;
 			}
 		}
+		emitter.mCurrentTime += dt;
 
 		// Recyle the particles we killed the previous frame
 		for (uint32 i = 0; numToSpawnThisFrame > 0 && i < emitter.mParticlesThatDiedDuringLastStep.size(); i++, numToSpawnThisFrame--)

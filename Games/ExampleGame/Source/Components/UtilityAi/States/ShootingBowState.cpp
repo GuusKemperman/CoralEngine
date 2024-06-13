@@ -33,9 +33,9 @@ void Game::ShootingBowState::OnAiTick(CE::World& world, const entt::entity owner
 
 	mShootCooldown.mAmountOfTimePassed += dt;
 
-	Game::ExecuteEnemyAbility(world, owner);
+	AIFunctionality::ExecuteEnemyAbility(world, owner);
 
-	Game::FaceThePlayer(world, owner);
+	AIFunctionality::FaceThePlayer(world, owner);
 }
 
 float Game::ShootingBowState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
@@ -45,14 +45,14 @@ float Game::ShootingBowState::OnAiEvaluate(const CE::World& world, const entt::e
 		return 0.8f;
 	}
 
-	return  Game::GetBestScoreBasedOnDetection(world, owner, mRadius);
+	return  AIFunctionality::GetBestScoreBasedOnDetection(world, owner, mRadius);
 }
 
 void Game::ShootingBowState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
-	Game::AnimationInAi(world, owner, mShootingAnimation, false);
+	AIFunctionality::AnimationInAi(world, owner, mShootingAnimation, false);
 
 	mShootCooldown.mCooldown = mMaxShootTime;
 	mShootCooldown.mAmountOfTimePassed = 0.0f;

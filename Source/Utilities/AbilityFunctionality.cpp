@@ -211,18 +211,13 @@ std::pair<std::optional<float>, bool> CE::AbilityFunctionality::ApplyInstantEffe
 	{
 		if (effect.mStat == Stat::Health)
 		{
-			if (Random::Range<float>(0.f, 100.f) <= effect.mCritChance)
+			if (Random::Range<float>(0.f, 100.f) < effect.mCritChance)
 			{
 				// On Crit event
-				//AbilitySystem::CallBoundEventsWithNoExtraParams(world, , AbilitySystem::GetCritEvents());
 				criticalHit = true;
 				effect.mAmount += effect.mAmount * effect.mCritIncrease * 0.01f;
 			}
 			float damageModifier = characterComponent->mCurrentReceivedDamageModifier;
-			if (Math::AreFloatsEqual(characterComponent->mCurrentReceivedDamageModifier, -100.f))
-			{
-				doNotApplyColor = true;
-			}
 			if (castByCharacterData != nullptr)
 			{
 				damageModifier += castByCharacterData->mCurrentDealtDamageModifier;
@@ -232,6 +227,11 @@ std::pair<std::optional<float>, bool> CE::AbilityFunctionality::ApplyInstantEffe
 			{
 				// On Getting Hit event
 				AbilitySystem::CallBoundEventsWithNoExtraParams(world, affectedEntity, AbilitySystem::GetGettingHitEvents());
+			}
+			if (Math::AreFloatsEqual(characterComponent->mCurrentReceivedDamageModifier, -100.f))
+			{
+				// The character shouldn't take any damage.
+				return { 0.f, criticalHit };
 			}
 		}
 

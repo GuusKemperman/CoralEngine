@@ -16,9 +16,9 @@
 
 void Game::AttackingState::OnAiTick(CE::World& world, const entt::entity owner, float) const
 {
-	Game::FaceThePlayer(world, owner);
+	AIFunctionality::FaceThePlayer(world, owner);
 
-	Game::ExecuteEnemyAbility(world, owner);
+	AIFunctionality::ExecuteEnemyAbility(world, owner);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
@@ -33,13 +33,13 @@ void Game::AttackingState::OnAiTick(CE::World& world, const entt::entity owner, 
 
 float Game::AttackingState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
-	const auto score = GetBestScoreBasedOnDetection(world, owner, mRadius);
+	const auto score = AIFunctionality::GetBestScoreBasedOnDetection(world, owner, mRadius);
 	return score;
 }
 
 void Game::AttackingState::OnAiStateEnter(CE::World& world, entt::entity owner)
 {
-	Game::AnimationInAi(world, owner, mAttackingAnimation, false);
+	AIFunctionality::AnimationInAi(world, owner, mAttackingAnimation, false);
 }
 
 CE::MetaType Game::AttackingState::Reflect()

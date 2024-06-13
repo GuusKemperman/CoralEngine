@@ -44,8 +44,8 @@ namespace CE
 			Input::GamepadAxis axis2,
 			bool negateAxis);
 
-		static constexpr float sJoyStickNavigationCooldown = 0.1f;
-		static constexpr float sJoyStickMinMovementToNavigate = 0.1f;
+		static constexpr float sJoyStickNavigationCooldown = 0.25f;
+		static constexpr float sJoyStickMinMovementToNavigate = 0.3f;
 		float mSecondsSinceLastNavigationChange{};
 
 		std::vector<BoundEvent> mOnClickEvents = GetAllBoundEvents(sButtonPressEvent);

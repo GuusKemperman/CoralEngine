@@ -39,7 +39,7 @@ void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, cons
 		}
 	}
 
-	Game::ExecuteEnemyAbility(world, owner);
+	AIFunctionality::ExecuteEnemyAbility(world, owner);
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 
@@ -51,7 +51,7 @@ void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, cons
 
 	physicsBody2DComponent->mLinearVelocity = {};
 
-	Game::FaceThePlayer(world, owner);
+	AIFunctionality::FaceThePlayer(world, owner);
 }
 
 float Game::StompState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
@@ -90,7 +90,7 @@ void Game::StompState::OnAiStateEnterEvent(CE::World& world, const entt::entity 
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
-	Game::AnimationInAi(world, owner, mStompAnimation, false);
+	AIFunctionality::AnimationInAi(world, owner, mStompAnimation, false);
 
 	mStompCooldown.mCooldown = mMaxStompTime;
 	mStompCooldown.mAmountOfTimePassed = 0.0f;

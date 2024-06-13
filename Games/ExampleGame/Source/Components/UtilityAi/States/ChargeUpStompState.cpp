@@ -30,7 +30,7 @@ void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity own
 
 	mChargeCooldown.mAmountOfTimePassed += dt;
 
-	Game::FaceThePlayer(world, owner);
+	AIFunctionality::FaceThePlayer(world, owner);
 }
 
 float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
@@ -41,7 +41,7 @@ float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, const entt:
 		return 0.85f;
 	}
 
-	const auto score = Game::GetBestScoreBasedOnDetection(world, owner, mRadius);
+	const auto score = AIFunctionality::GetBestScoreBasedOnDetection(world, owner, mRadius);
 
 	return score;
 }
@@ -55,7 +55,7 @@ void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, const entt:
 {
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
-	AnimationInAi(world, owner, mChargingAnimation, false);
+	AIFunctionality::AnimationInAi(world, owner, mChargingAnimation, false);
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
