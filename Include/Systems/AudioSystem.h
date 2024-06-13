@@ -13,6 +13,8 @@ namespace CE
 	{
 	public:
 
+		AudioSystem();
+
 		void Update(World& world, float dt) override;
 
 	private:

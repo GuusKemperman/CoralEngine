@@ -6,7 +6,13 @@
 #include "Core/Audio.h"
 #include "World/Registry.h"
 #include "Components/AudioEmitterComponent.h"
+#include "Components/AudioListenerComponent.h"
 #include "Meta/MetaType.h"
+
+CE::AudioSystem::AudioSystem()
+{
+	Audio::Get().GetCoreSystem().getMasterChannelGroup(&mMasterChannelGroup);
+}
 
 void CE::AudioSystem::Update(World& world, float)
 {
@@ -15,7 +21,14 @@ void CE::AudioSystem::Update(World& world, float)
 	// find listener component
 	// apply any filters or settings from the listenercomponent
 
-	Audio::Get().GetCoreSystem().getMasterChannelGroup(&mMasterChannelGroup);
+	entt::entity listenerEntity = reg.View<AudioListenerComponent>().front();
+
+	if (listenerEntity != entt::null)
+	{
+		AudioListenerComponent& listenerComponent = reg.Get<AudioListenerComponent>(listenerEntity);
+		
+		mMasterChannelGroup->setVolume(listenerComponent.mVolume);
+	}
 
 	auto view = reg.View<AudioEmitterComponent>();
 	for (auto [entity, emitter] : view.each())
