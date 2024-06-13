@@ -97,11 +97,11 @@ namespace CE
 			{
 				CollisionLayer::Projectiles,
 				{
-					CollisionResponse::Blocking,	// WorldStatic
+					CollisionResponse::Overlap,		// WorldStatic
 					CollisionResponse::Ignore,		// Projectiles
-					CollisionResponse::Blocking,	// Character
+					CollisionResponse::Overlap,		// Character
 					CollisionResponse::Ignore,		// Terrain
-					CollisionResponse::Overlap,		// Query
+					CollisionResponse::Ignore,		// Query
 				}
 			}
 		};
