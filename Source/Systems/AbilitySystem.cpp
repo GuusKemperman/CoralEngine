@@ -256,7 +256,8 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
             }
             if ((CheckKeyboardInput<&Input::WasKeyboardKeyPressed>(weapon.mKeyboardKeys) ||
                 CheckGamepadInput<&Input::WasGamepadButtonPressed>(weapon.mGamepadButtons, playerComponent->mID)) &&
-                weapon.mAmmoCounter > 0)
+                weapon.mAmmoCounter > 0
+                && weapon.mReloadCounter != 0.0f)
             {
                 // Reload interrupted
                 weapon.mReloadCounter = 0.f;
