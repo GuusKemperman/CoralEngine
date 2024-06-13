@@ -8,7 +8,7 @@ namespace CE
 	class FrameBuffer
 	{
 	public:
-		FrameBuffer(glm::ivec2 initialSize = {1, 1}, uint32 msaaCount = 1, uint32 msaaQuality = 0);
+		FrameBuffer(glm::ivec2 initialSize = {1, 1}, uint32 msaaCount = 1, uint32 msaaQuality = 0, bool floatingPoint = false);
 		~FrameBuffer();
 
 		void Bind() const;
@@ -17,6 +17,7 @@ namespace CE
 		void PrepareMsaaForResolve();
 
 		void BindSRVDepthToGraphics(int rootSlot) const;
+		void BindSRVRTToGraphics(int rootSlot) const;
 
 		void Resize(glm::ivec2 newSize);
 

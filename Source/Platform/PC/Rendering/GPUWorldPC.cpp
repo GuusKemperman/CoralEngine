@@ -357,10 +357,11 @@ CE::GPUWorld::GPUWorld(const World& world)
     mPointLightCounterUAVSlot =  engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER].get(), &uavDesc); 
 
     InitializeShadowMaps();
-    mSelectedMeshFrameBuffer = std::make_unique<FrameBuffer>(glm::vec2(1920, 1080));
+    mSelectedMeshFrameBuffer = std::make_unique<FrameBuffer>(glm::ivec2(1920, 1080));
     mParticles.resize(MAX_PARTICLES);
 
-    mFrameBuffer = std::make_unique<FrameBuffer>(glm::vec2(1428, 929), MSAA_COUNT, MSAA_QUALITY);
+    mMsaaFrameBuffer = std::make_unique<FrameBuffer>(glm::ivec2(1428, 929), MSAA_COUNT, MSAA_QUALITY, true);
+    mDefaultFrameBuffer = std::make_unique<FrameBuffer>(glm::ivec2(1428, 929), 1, 0, true);
 }
 
 CE::GPUWorld::~GPUWorld() = default;
@@ -838,12 +839,14 @@ void CE::GPUWorld::ClearClusterData()
 
 void CE::GPUWorld::UpdateMSAA()
 {
-    Device& engineDevice = Device::Get();
 
 #ifdef EDITOR
-    mFrameBuffer->Resize(glm::ivec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
+    mMsaaFrameBuffer->Resize(glm::ivec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
+    mDefaultFrameBuffer->Resize(glm::ivec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
 #else
+    Device& engineDevice = Device::Get();
     mFrameBuffer->Resize(engineDevice.GetDisplaySize());
+    mDefaultFrameBuffer->Resize(engineDevice.GetDisplaySize());
 #endif
 
 }

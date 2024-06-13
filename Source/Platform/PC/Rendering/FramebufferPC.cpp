@@ -16,9 +16,10 @@ struct CE::FrameBuffer::DXImpl
 	DXHeapHandle mDepthStencilSRVHandle{};
 	D3D12_VIEWPORT mViewport{};
 	D3D12_RECT mScissorRect{};
+	DXGI_FORMAT mRTFormat;
 };
 
-CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize, uint32 msaaCount, uint32 msaaQuality) :
+CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize, uint32 msaaCount, uint32 msaaQuality, bool floatingPoint) :
 	mImpl(new DXImpl())
 {
 	if (Device::IsHeadless())
@@ -47,14 +48,16 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize, uint32 msaaCount, uint32 ms
 	mImpl->mScissorRect.right = static_cast<LONG>(mImpl->mViewport.Width);
 	mImpl->mScissorRect.bottom = static_cast<LONG>(mImpl->mViewport.Height);
 
+	mImpl->mRTFormat = floatingPoint ? DXGI_FORMAT_R16G16B16A16_FLOAT : DXGI_FORMAT_R8G8B8A8_UNORM;
+	
 	D3D12_CLEAR_VALUE clearValue = {};
-	clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Use the format that matches your RTV format.
+	clearValue.Format = mImpl->mRTFormat; // Use the format that matches your RTV format.
 	clearValue.Color[0] = mClearColor.x; // Red component
 	clearValue.Color[1] = mClearColor.y; // Green component
 	clearValue.Color[2] = mClearColor.z; // Blue component
 	clearValue.Color[3] = mClearColor.w; // Alpha component
 
-	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, initialSize.x, initialSize.y, 1, 1, msaaCount, msaaQuality, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(mImpl->mRTFormat, initialSize.x, initialSize.y, 1, 1, msaaCount, msaaQuality, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
 	for (int i = 0; i < FRAME_BUFFER_COUNT; i++) 
@@ -62,7 +65,7 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize, uint32 msaaCount, uint32 ms
 		mImpl->mResource[i] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, &clearValue, "Framebuffer");
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		rtvDesc.Format = mImpl->mRTFormat;
 		if(msaaCount>1)
 			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
 		else
@@ -71,7 +74,7 @@ CE::FrameBuffer::FrameBuffer(glm::ivec2 initialSize, uint32 msaaCount, uint32 ms
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		srvDesc.Format = mImpl->mRTFormat;
 		srvDesc.Texture2D.MipLevels = 1;
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		if(msaaCount>1)
@@ -147,7 +150,7 @@ void CE::FrameBuffer::ResolveMsaa(FrameBuffer& msaaFramebuffer)
 		0,
 		msaaFramebuffer.GetResource().Get(),
 		0,
-		DXGI_FORMAT_R8G8B8A8_UNORM);
+		mImpl->mRTFormat);
 }
 
 void CE::FrameBuffer::PrepareMsaaForResolve()
@@ -165,6 +168,17 @@ void CE::FrameBuffer::BindSRVDepthToGraphics(int rootSlot) const
 
 	mImpl->mDepthResource->ChangeState(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
 	resourceHeap->BindToGraphics(commandList, rootSlot, mImpl->mDepthStencilSRVHandle);
+}
+
+void CE::FrameBuffer::BindSRVRTToGraphics(int rootSlot) const
+{
+	Device& engineDevice = Device::Get();
+	std::shared_ptr<DXDescHeap> resourceHeap = engineDevice.GetDescriptorHeap(RESOURCE_HEAP);
+	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+
+	mImpl->mResource[engineDevice.GetFrameIndex()]->ChangeState(commandList, D3D12_RESOURCE_STATE_GENERIC_READ);
+	resourceHeap->BindToGraphics(commandList, rootSlot, mImpl->mFrameBufferRscHandle[engineDevice.GetFrameIndex()]);
+
 }
 
 void CE::FrameBuffer::Resize(glm::ivec2 newSize)
@@ -200,13 +214,13 @@ void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 	auto depthHeap = engineDevice.GetDescriptorHeap(DEPTH_HEAP);
 
 	D3D12_CLEAR_VALUE clearValue = {};
-	clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Use the format that matches your RTV format.
+	clearValue.Format = mImpl->mRTFormat; // Use the format that matches your RTV format.
 	clearValue.Color[0] = mClearColor.x; // Red component
 	clearValue.Color[1] = mClearColor.y; // Green component
 	clearValue.Color[2] = mClearColor.z; // Blue component
 	clearValue.Color[3] = mClearColor.w; // Alpha component
 
-	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, newSize.x, newSize.y, 1, 1, mMsaaCount, mMsaaQuality, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(mImpl->mRTFormat, newSize.x, newSize.y, 1, 1, mMsaaCount, mMsaaQuality, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
 	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
 	for (int i = 0; i < FRAME_BUFFER_COUNT; i++) 
@@ -214,7 +228,7 @@ void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 		mImpl->mResource[i] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, &clearValue, "Framebuffer");
 
 		D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-		rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		rtvDesc.Format = mImpl->mRTFormat;
 		if(mMsaaCount>1)
 			rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMS;
 		else
@@ -223,7 +237,7 @@ void CE::FrameBuffer::Resize(glm::ivec2 newSize)
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		srvDesc.Format = mImpl->mRTFormat;
 		srvDesc.Texture2D.MipLevels = 1;
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		if(mMsaaCount>1)

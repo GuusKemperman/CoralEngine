@@ -48,9 +48,21 @@ CE::PostProcessingRenderer::PostProcessingRenderer()
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
         .SetDepthState(depth)
         .SetBlendState(blendDesc)
-        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"UI RENDER PIPELINE");
+
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ToneMappingVertex.hlsl");
+    v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ToneMappingPixel.hlsl");
+    p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0");
+    mToneMapPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 1)
+        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .SetDepthState(depth)
+        .SetBlendState(blendDesc)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"TONE MAPPING PIPELINE");
 }
 
 CE::PostProcessingRenderer::~PostProcessingRenderer()
@@ -59,18 +71,16 @@ CE::PostProcessingRenderer::~PostProcessingRenderer()
 
 void CE::PostProcessingRenderer::Render(const World& world)
 {  
-    RenderOutline(world);
+    world.GetGPUWorld().GetDefaultFrameBuffer().ResolveMsaa(world.GetGPUWorld().GetMsaaFrameBuffer());
 
-    //Resolving msaa
 #ifdef EDITOR
-
-    Renderer::Get().GetFrameBuffer().ResolveMsaa(world.GetGPUWorld().GetMsaaFrameBuffer());
     Renderer::Get().GetFrameBuffer().Bind();
 #else
-    GPUWorld& gpuWorld = world.GetGPUWorld();
-    Device::Get().ResolveMsaa(gpuWorld.GetMsaaFrameBuffer());
     Device::Get().BindSwapchainRT();
 #endif
+
+    ToneMap(world);
+    RenderOutline(world);
 }
 
 void CE::PostProcessingRenderer::RenderOutline(const World& world)
@@ -89,6 +99,22 @@ void CE::PostProcessingRenderer::RenderOutline(const World& world)
     postProcData.mOutlineBuffer->Bind(commandList, 0,0, frameIndex);
     gpuWorld.GetSelectionFramebuffer().BindSRVDepthToGraphics(8);
     
+    commandList->IASetVertexBuffers(0, 1, &postProcData.mVertexBufferView);
+    commandList->IASetVertexBuffers(1, 1, &postProcData.mTexCoordBufferView);
+    commandList->IASetIndexBuffer(&postProcData.mIndexBufferView);
+    commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+}
+
+void CE::PostProcessingRenderer::ToneMap(const World& world)
+{
+    Device& engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    GPUWorld& gpuWorld = world.GetGPUWorld();
+    PosProcRenderingData& postProcData = gpuWorld.GetPostProcData();
+
+    commandList->SetPipelineState(mToneMapPipeline.Get());
+    gpuWorld.GetDefaultFrameBuffer().BindSRVRTToGraphics(8);
+
     commandList->IASetVertexBuffers(0, 1, &postProcData.mVertexBufferView);
     commandList->IASetVertexBuffers(1, 1, &postProcData.mTexCoordBufferView);
     commandList->IASetIndexBuffer(&postProcData.mIndexBufferView);
