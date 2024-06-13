@@ -1,14 +1,10 @@
 #include "Precomp.h"
 #include "Assets/Font.h"
 
-#include <glm/gtx/integer.hpp>
-
 #include "Assets/Core/AssetLoadInfo.h"
+#include "Assets/Texture.h"
 #include "Utilities/StringFunctions.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
-#include "Utilities/Math.h"
-
-#include "stb_image/stbi_image_write.h"
 
 CE::Font::Font(std::string_view name) :
     Asset(name, MakeTypeId<Font>())
@@ -30,7 +26,7 @@ CE::Font::Font(AssetLoadInfo& loadInfo) :
     int de***REMOVED***nt;
     int lineGap;
     stbtt_GetFontVMetrics(&mInfo, &a***REMOVED***nt, &de***REMOVED***nt, &lineGap);
-    mScale = (sFontSize / a***REMOVED***nt - de***REMOVED***nt);
+    mScale = sFontSize / (a***REMOVED***nt - de***REMOVED***nt);
     
     // Calculate how big the font atlas image should be
     int requiredPixels = (int)sFontSize * (int)sFontSize * sFontAtlasNumCharacters;
@@ -52,23 +48,21 @@ CE::Font::Font(AssetLoadInfo& loadInfo) :
         mPackedCharacters.data());
     stbtt_PackEnd(&packContext);
 
-    // Make image monochrome
+    // Expand bitmap to all color channels
     unsigned char* rgba = new unsigned char[numPixels * 4];
     for (uint32_t i = 0; i < numPixels; ++i)
     {
         rgba[i * 4 + 0] = bitmap[i];
-        rgba[i * 4 + 1] = 0;
-        rgba[i * 4 + 2] = 0;
-        rgba[i * 4 + 3] = 255;
+        rgba[i * 4 + 1] = bitmap[i];
+        rgba[i * 4 + 2] = bitmap[i];
+        rgba[i * 4 + 3] = bitmap[i];
     }
 
-    std::string filename = std::string("FontAtlas-") + GetName() + ".png";
-    stbi_write_png(filename.c_str(), dimension, dimension, 4, rgba, 0);
+    mTexture = std::make_unique<Texture>(std::string("FontAtlas-") + GetName(), dimension, dimension, rgba);
 
     delete[] rgba;
     free(bitmap);
 }
-
 
 CE::MetaType CE::Font::Reflect()
 {
