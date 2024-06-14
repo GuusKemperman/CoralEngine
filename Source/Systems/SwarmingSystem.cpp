@@ -181,15 +181,55 @@ void CE::SwarmingTargetSystem::Update(World& world, float dt)
 	mPendingFlowField.mCellsTopLeftWorldPosition = targetPosition - glm::vec2{ fieldWidthWorldSpace } *.5f;
 	mPendingFlowField.mFlowField.resize(static_cast<size_t>(Math::sqr(mPendingFlowField.mFlowFieldWidth)));
 
+	// Set all to false
+	mPendingIsBlocked.clear();
 	mPendingIsBlocked.resize(mPendingFlowField.mFlowField.size());
 
-	for (int y = 0; y < mPendingFlowField.mFlowFieldWidth; y++)
+	struct BoundingBox
 	{
-		for (int x = 0; x < mPendingFlowField.mFlowFieldWidth; x++)
+		glm::ivec2 mStart{};
+		glm::ivec2 mEnd{};
+	};
+
+	std::vector<BoundingBox> boxesToCheck{ { glm::ivec2{ 0 }, glm::ivec2{ mPendingFlowField.mFlowFieldWidth } } };
+
+	while (!boxesToCheck.empty())
+	{
+		BoundingBox box = boxesToCheck.back();
+		boxesToCheck.pop_back();
+
+		const TransformedAABB worldBoundingBox =
+			{
+				mPendingFlowField.GetCellBox(box.mStart.x, box.mStart.y).mMin,
+				mPendingFlowField.GetCellBox(box.mEnd.x - 1, box.mEnd.y - 1).mMax
+			};
+		const char isTaken = bvh.Query(worldBoundingBox);
+
+		if (!isTaken)
 		{
-			const TransformedAABB cell = mPendingFlowField.GetCellBox(x, y);
-			mPendingIsBlocked[x + y * mPendingFlowField.mFlowFieldWidth] = bvh.Query(cell);
+			continue;
 		}
+
+		if (box.mStart + glm::ivec2{ 1 } == box.mEnd)
+		{
+			mPendingIsBlocked[box.mStart.x + box.mStart.y * mPendingFlowField.mFlowFieldWidth] = true;
+			continue;
+		}
+
+		// Split and recurse
+		const glm::ivec2 size = box.mEnd - box.mStart;
+
+		BoundingBox children[2]{ box, box };
+
+		bool indexToChange = size.y > size.x;
+
+		int size1 = size[indexToChange] / 2;
+
+		children[0].mEnd[indexToChange] = box.mStart[indexToChange] + size1;
+		children[1].mStart[indexToChange] = children[0].mEnd[indexToChange];
+
+		boxesToCheck.emplace_back(children[0]);
+		boxesToCheck.emplace_back(children[1]);
 	}
 
 	mPendingThread = std::thread
