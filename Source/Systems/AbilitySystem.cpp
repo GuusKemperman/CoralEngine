@@ -248,7 +248,7 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
             }
             if ((CheckKeyboardInput<&Input::WasKeyboardKeyPressed>(weapon.mReloadKeyboardKeys) ||
                 CheckGamepadInput<&Input::WasGamepadButtonPressed>(weapon.mReloadGamepadButtons, playerComponent->mID)) &&
-                weapon.mReloadCounter == 0.f)
+                weapon.mReloadCounter == 0.f && weapon.mAmmoCounter < weapon.mRuntimeWeapon->mCharges)
             {
                 // Trigger reload
                 weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
