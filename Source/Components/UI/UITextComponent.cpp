@@ -11,6 +11,7 @@ CE::MetaType CE::UITextComponent::Reflect()
 
 	type.AddField(&UITextComponent::mText, "mText").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&UITextComponent::mColor, "mColor").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&UITextComponent::mSpacing, "mSpacing").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&UITextComponent::mFont, "mFont").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectComponentType<UITextComponent>(type);
