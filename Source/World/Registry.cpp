@@ -78,6 +78,15 @@ CE::Registry::Registry(World& world) :
 	mWorld(world),
 	mBoundBeginPlayEvents(GetAllBoundEvents(sBeginPlayEvent))
 {
+	for (const BoundEvent& onDestruct : GetAllBoundEvents(sDestructEvent))
+	{
+		if (const MetaFunc* func = onDestruct.mType.get().TryGetFunc(Internal::DestroyCallBackInstaller::sFuncName);
+			func != nullptr)
+		{
+			func->InvokeUncheckedUnpacked(mRegistry);
+		}
+	}
+
 	const MetaType* const systemType = MetaManager::Get().TryGetType<System>();
 	ASSERT(systemType != nullptr);
 

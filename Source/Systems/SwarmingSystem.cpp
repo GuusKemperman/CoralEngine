@@ -150,7 +150,8 @@ void CE::SwarmingTargetSystem::Update(World& world, float dt)
 		}
 	}
 
-	if (!mStartNewThreadCooldown.IsReady(dt))
+	if (!mStartNewThreadCooldown.IsReady(dt)
+		|| mPendingThread.joinable())
 	{
 		return;
 	}

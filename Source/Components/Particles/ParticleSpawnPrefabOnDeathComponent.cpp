@@ -3,8 +3,8 @@
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
-#include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Prefabs/Prefab.h"
+#include "Components/Particles/ParticleUtilities.h"
 
 CE::MetaType CE::ParticleSpawnPrefabOnDeathComponent::Reflect()
 {
@@ -12,6 +12,6 @@ CE::MetaType CE::ParticleSpawnPrefabOnDeathComponent::Reflect()
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleSpawnPrefabOnDeathComponent::mPrefabToSpawn, "mPrefabToSpawn").GetProperties().Add(Props::sIsScriptableTag);
-	ReflectComponentType<ParticleSpawnPrefabOnDeathComponent>(type);
+	ReflectParticleComponentType<ParticleSpawnPrefabOnDeathComponent>(type);
 	return type;
 }

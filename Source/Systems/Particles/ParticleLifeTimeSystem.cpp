@@ -6,7 +6,7 @@
 #include "Components/TransformComponent.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
 #include "Components/Particles/ParticleEmitterShapes.h"
-#include "Components/Particles/ParticleProperty.h"
+#include "Components/Particles/ParticleUtilities.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Random.h"
 
@@ -75,7 +75,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 
 		const float totalSpawnRateSurface = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetween(0.0f, 1.0f, .05f);
 
-		emitter.mEmitterWorldMatrix = transform.GetWorldMatrix();;
+		emitter.mEmitterWorldMatrix = transform.GetWorldMatrix();
 		emitter.mInverseEmitterWorldMatrix = glm::inverse(emitter.mEmitterWorldMatrix);
 		emitter.mEmitterOrientation = transform.GetWorldOrientation();
 		emitter.mInverseEmitterOrientation = glm::inverse(emitter.mEmitterOrientation);
@@ -89,15 +89,28 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 
 		const float surfaceAreaBetweenLastStepAndNow = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetweenFast(t1, t2);
 
-		emitter.mNumOfParticlesToSpawnNextFrame += (surfaceAreaBetweenLastStepAndNow / totalSpawnRateSurface) * static_cast<float>(emitter.mNumOfParticlesToSpawn);
-		const float numToSpawnAsFloat = floorf(emitter.mNumOfParticlesToSpawnNextFrame);
+
 		uint32 numToSpawnThisFrame{};
 
-		if (numToSpawnAsFloat > 0.0f)
+		if (emitter.mOnlyStayAliveUntilExistingParticlesAreGone)
 		{
-			emitter.mNumOfParticlesToSpawnNextFrame -= numToSpawnAsFloat;
-			numToSpawnThisFrame = static_cast<uint32>(numToSpawnAsFloat);
+			if (emitter.GetNumOfParticles() == 0)
+			{
+				reg.Destroy(entity, true);
+			}
 		}
+		else
+		{
+			emitter.mNumOfParticlesToSpawnNextFrame += (surfaceAreaBetweenLastStepAndNow / totalSpawnRateSurface) * static_cast<float>(emitter.mNumOfParticlesToSpawn);
+			const float numToSpawnAsFloat = floorf(emitter.mNumOfParticlesToSpawnNextFrame);
+
+			if (numToSpawnAsFloat > 0.0f)
+			{
+				emitter.mNumOfParticlesToSpawnNextFrame -= numToSpawnAsFloat;
+				numToSpawnThisFrame = static_cast<uint32>(numToSpawnAsFloat);
+			}
+		}
+
 
 		if (!emitter.IsPlaying())
 		{
@@ -129,7 +142,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 
 		const uint32 numOfParticlesAliveBeforeLifeTimeUpdate = emitter.GetNumOfParticles();
 
-		uint32 indexOfLastParticleInUse{};
+		int32 indexOfLastParticleInUse{ -1 };
 
 		// Kill/spawn particles
 		for (uint32 i = 0; i < numOfParticlesAliveBeforeLifeTimeUpdate; i++)
@@ -149,12 +162,12 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 					// other components might need the 'state' of the particle
 					// at it's time of death to persist for one more step/frame.
 					emitter.mParticlesThatDiedDuringLastStep.push_back(i);
-					indexOfLastParticleInUse = i;
+					indexOfLastParticleInUse = static_cast<int32>(i);
 				}
 				else if (numToSpawnThisFrame > 0)
 				{
 					onParticleSpawn(emitter, spawnShape, i, spawnOrientation, spawnMatrix);
-					indexOfLastParticleInUse = i;
+					indexOfLastParticleInUse = static_cast<int32>(i);
 					--numToSpawnThisFrame;
 				}
 
@@ -162,12 +175,12 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 			}
 			else
 			{
-				indexOfLastParticleInUse = i;
+				indexOfLastParticleInUse = static_cast<int32>(i);
 			}
 		}
 
 
-		const uint32 minPoolSize = indexOfLastParticleInUse + 1 + numToSpawnThisFrame;
+		const uint32 minPoolSize = static_cast<uint32>(indexOfLastParticleInUse + 1) + numToSpawnThisFrame;
 
 		emitter.mParticlePositions.resize(minPoolSize);
 		emitter.mParticleScales.resize(minPoolSize);

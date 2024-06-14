@@ -4,7 +4,7 @@
 #include "World/Registry.h"
 #include "Components/Particles/ParticleLightComponent.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
-#include "Components/Particles/ParticleProperty.h"
+#include "Components/Particles/ParticleUtilities.h"
 #include "Meta/MetaType.h"
 
 void CE::ParticleLightSystem::Update(World& world, [[maybe_unused]] float dt)

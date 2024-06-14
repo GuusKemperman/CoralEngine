@@ -16,6 +16,11 @@ namespace CE
 	class TransformComponent;
 	class System;
 
+	namespace Internal
+	{
+		struct DestroyCallBackInstaller;
+	}
+
 	// Wrapper around the entt registry.
 	class Registry
 	{
@@ -157,7 +162,9 @@ namespace CE
 		static void DestroyCallback(entt::registry&, entt::entity entity);
 
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
-		friend class World;
+		friend World;
+		friend Internal::DestroyCallBackInstaller;
+
 		std::reference_wrapper<World> mWorld; 
 		
 		entt::registry mRegistry{};
@@ -236,15 +243,6 @@ namespace CE
 			}();
 
 		World::PushWorld(mWorld);
-
-		if constexpr (sIsReflectable<ComponentType>)
-		{
-			if (const_cast<const Registry&>(*this).Storage<ComponentType>() == nullptr
-				&& TryGetEvent(*events.mType, sDestructEvent) != nullptr)
-			{
-				mRegistry.on_destroy<ComponentType>().template connect<&DestroyCallback<ComponentType>>();
-			}
-		}
 
 		if constexpr (isEmpty)
 		{

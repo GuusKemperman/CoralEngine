@@ -1,8 +1,7 @@
 #include "Precomp.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
 
-#include "Components/Particles/ParticleProperty.h"
-#include "Utilities/Reflect/ReflectComponentType.h"
+#include "Components/Particles/ParticleUtilities.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 
@@ -15,7 +14,6 @@ void CE::ParticleEmitterComponent::SetParticlePositionFast(uint32 particle, glm:
 {
 	mParticlePositions[particle] = position;
 }
-
 
 glm::vec3 CE::ParticleEmitterComponent::GetParticlePositionWorld(uint32 particle) const
 {
@@ -93,6 +91,7 @@ CE::MetaType CE::ParticleEmitterComponent::Reflect()
 	type.AddField(&ParticleEmitterComponent::mScale, "mScale").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mLoop, "mLoop").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mKeepExistingParticlesAliveWhenRestartingLoop, "mKeepExistingParticlesAliveWhenRestartingLoop").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&ParticleEmitterComponent::mKeepParticlesAliveWhenEmitterIsDestroyed, "mKeepParticlesAliveWhenEmitterIsDestroyed").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mAreTransformsRelativeToEmitter, "mMoveParticlesWithEmitter").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mDestroyOnFinish, "mDestroyOnFinish").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mIsPaused, "mIsPaused").GetProperties().Add(Props::sIsScriptableTag);
@@ -104,6 +103,7 @@ CE::MetaType CE::ParticleEmitterComponent::Reflect()
 	type.AddFunc(&ParticleEmitterComponent::DidParticleJustSpawn, "DidParticleJustSpawn", "", "particle").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&ParticleEmitterComponent::IsParticleAlive, "IsParticleAlive", "", "particle").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&ParticleEmitterComponent::PlayFromStart, "PlayFromStart", "").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sCallFromEditorTag);
-	ReflectComponentType<ParticleEmitterComponent>(type);
+
+	ReflectParticleComponentType<ParticleEmitterComponent>(type);
 	return type;
 }
