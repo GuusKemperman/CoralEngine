@@ -11,7 +11,7 @@ namespace CE
 	public:
 		std::string mText{};
 		glm::vec4 mColor{ 1.0f };
-		float mSpacing = 0.02f;
+		float mSpacing = 0.0f;
 		AssetHandle<Font> mFont{};
 
 	private:
