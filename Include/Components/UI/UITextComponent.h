@@ -1,6 +1,7 @@
 #pragma once
 #include "Meta/MetaReflect.h"
 #include "Assets/Core/AssetHandle.h"
+#include "BasicDataTypes/Colors/LinearColor.h"
 
 namespace CE
 {
@@ -9,8 +10,8 @@ namespace CE
 	class UITextComponent
 	{
 	public:
-		std::string mText{};
-		glm::vec4 mColor{ 1.0f };
+		std::string mText = "Sample Text";
+		LinearColor mColor{ 1.0f };
 		float mSpacing = 0.0f;
 		AssetHandle<Font> mFont{};
 
