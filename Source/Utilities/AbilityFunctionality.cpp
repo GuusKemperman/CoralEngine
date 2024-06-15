@@ -334,9 +334,9 @@ entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Pr
 	activeAbility->mCastByCharacterData = *characterComponent;
 	activeAbility->mCastByEntity = castBy;
 
-	// Set the position.
-	const glm::vec3 pos = characterTransform->GetWorldPosition();
-	prefabTransform->SetLocalPosition(pos);
+	// Set the position and orientation.
+	prefabTransform->SetLocalPosition(characterTransform->GetWorldPosition());
+	prefabTransform->SetLocalOrientation(characterTransform->GetWorldOrientation());
 
 	// Check for projectile component.
 	auto projectileComponent = reg.TryGet<ProjectileComponent>(prefabEntity);
