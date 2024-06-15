@@ -34,13 +34,14 @@ void CE::ParticleEmitterShapeSphere::OnParticleSpawn(ParticleEmitterComponent& e
 	const float cosTheta = glm::cos(theta);
 	const float sinPhi = glm::sin(phi);
 	const float cosPhi = glm::cos(phi);
-	const float x = r * sinPhi * cosTheta;
-	const float y = r * sinPhi * sinTheta;
-	const float z = r * cosPhi;
+	const float x = mRadius * r * sinPhi * cosTheta;
+	const float y = mRadius * r * sinPhi * sinTheta;
+	const float z = mRadius * r * cosPhi;
 
 	emitter.SetParticlePositionFast(i, emitterMatrix * glm::vec4{ x, y, z, 1.0f });
 	Internal::RandomOrientation(emitter, i, mMinOrientation, mMinOrientation, emitterWorldOrientation);
 }
+// You'll never find me. 
 
 void CE::Internal::RandomOrientation(ParticleEmitterComponent& emitter, uint32 i, glm::vec3 minOrientation, glm::vec3 maxOrientation, glm::quat emitterWorldOrientation)
 {
