@@ -463,10 +463,18 @@ std::vector<entt::entity> CE::AbilityFunctionality::SpawnProjectilePrefabs(World
 	for (int i = 0; i < weaponRef.mProjectileCount; i++)
 	{
 		auto projectile = SpawnProjectilePrefab(world, prefab, castBy, weapon);
+		if (projectile == entt::null)
+		{
+			LOG(LogAbilitySystem, Error, "SpawnProjectilePrefabs - SpawnProjectilePrefab returned null.");
+			break;
+		}
 		// Calculate and set the direction.
 		auto& physicsBody = reg.Get<PhysicsBody2DComponent>(projectile);
 		const auto projectileAngle = firstProjectileAngle + static_cast<float>(i) * angleBetweenProjectiles;
-		physicsBody.mLinearVelocity = glm::vec2(cos(projectileAngle), sin(projectileAngle)) * weaponRef.mProjectileSpeed;
+		const auto projectileDirection = glm::normalize(glm::vec2(cos(projectileAngle), sin(projectileAngle)));
+		physicsBody.mLinearVelocity = projectileDirection * weaponRef.mProjectileSpeed;
+		auto& transformComponent = reg.Get<TransformComponent>(projectile);
+		transformComponent.SetLocalOrientation(glm::angleAxis(projectileAngle, glm::vec3(0.f, 1.f, 0.f)));
 		projectilesVector.push_back(projectile);
 	}
 	return projectilesVector;
