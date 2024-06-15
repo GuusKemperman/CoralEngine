@@ -116,14 +116,12 @@ void CE::Internal::CallDrawGizmoEvents(World& world, const std::vector<entt::ent
 			continue;
 		}
 
-		const MetaFunc* const event = TryGetEvent(*type, sDrawGizmoEvent);
+		const std::optional<BoundEvent> event = TryGetEvent(*type, sDrawGizmoEvent);
 
-		if (event == nullptr)
+		if (!event.has_value())
 		{
 			continue;
 		}
-
-		const bool isStatic = event->GetProperties().Has(Props::sIsEventStaticTag);
 
 		for (entt::entity entity : selectedEntities)
 		{
@@ -132,14 +130,14 @@ void CE::Internal::CallDrawGizmoEvents(World& world, const std::vector<entt::ent
 				continue;
 			}
 
-			if (isStatic)
+			if (event->mIsStatic)
 			{
-				event->InvokeUncheckedUnpacked(world, entity);
+				event->mFunc.get().InvokeUncheckedUnpacked(world, entity);
 			}
 			else
 			{
 				MetaAny component{ *type, storage.value(entity), false };
-				event->InvokeUncheckedUnpacked(component, world, entity);
+				event->mFunc.get().InvokeUncheckedUnpacked(component, world, entity);
 			}
 		}
 	}

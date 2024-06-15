@@ -158,6 +158,8 @@ namespace CE
 
 		bool ShouldWeCallBeginPlayImmediatelyAfterConstruct(entt::entity ownerOfNewlyConstructedComponent) const;
 
+		void CallEndPlayEventsForEntity(entt::sparse_set& storage, entt::entity entity, const BoundEvent& endPlayEvent);
+
 		template <typename Component>
 		static void DestroyCallback(entt::registry&, entt::entity entity);
 
@@ -193,7 +195,8 @@ namespace CE
 		std::vector<FixedTickSystem> mFixedTickSystems{};
 		std::vector<InternalSystem> mNonFixedSystems{};
 
-		std::vector<BoundEvent> mBoundBeginPlayEvents{};
+		std::vector<BoundEvent> mBoundBeginPlayEvents = GetAllBoundEvents(sBeginPlayEvent);
+		std::vector<BoundEvent> mBoundEndPlayEvents = GetAllBoundEvents(sEndPlayEvent);
 	};
 
 	template<typename ComponentType, typename ...AdditonalArgs>
@@ -201,11 +204,8 @@ namespace CE
 	{
 		struct ComponentEvents
 		{
-			const MetaType* mType{};
-			const MetaFunc* mOnConstruct{};
-			bool mDoesOnConstructHaveStaticTag{};
-			const MetaFunc* mOnBeginPlay{};
-			bool mDoesOnBeginPlayHaveStaticTag{};
+			std::optional<BoundEvent> mOnConstruct{};
+			std::optional<BoundEvent> mOnBeginPlay{};
 		};
 
 		static constexpr bool isEmpty = entt::component_traits<ComponentType>::page_size == 0;
@@ -216,24 +216,9 @@ namespace CE
 				if constexpr (sIsReflectable<ComponentType>)
 				{
 					ComponentEvents tmpEvents{};
-					tmpEvents.mType = &MetaManager::Get().GetType<ComponentType>();
-					tmpEvents.mOnConstruct = TryGetEvent(*tmpEvents.mType, sConstructEvent);
-					tmpEvents.mOnBeginPlay = TryGetEvent(*tmpEvents.mType, sBeginPlayEvent);
-
-					// If the component is empty, we can assume the event is always static.
-					if constexpr (!isEmpty)
-					{
-						if (tmpEvents.mOnConstruct != nullptr)
-						{
-							tmpEvents.mDoesOnConstructHaveStaticTag = tmpEvents.mOnConstruct->GetProperties().Has(Props::sIsEventStaticTag);
-						}
-
-						if (tmpEvents.mOnBeginPlay != nullptr)
-						{
-							tmpEvents.mDoesOnBeginPlayHaveStaticTag = tmpEvents.mOnBeginPlay->GetProperties().Has(Props::sIsEventStaticTag);
-						}
-					}
-
+					const MetaType& type = MetaManager::Get().GetType<ComponentType>();
+					tmpEvents.mOnConstruct = TryGetEvent(type, sConstructEvent);
+					tmpEvents.mOnBeginPlay = TryGetEvent(type, sBeginPlayEvent);
 					return tmpEvents;
 				}
 				else
@@ -250,15 +235,15 @@ namespace CE
 
 			if constexpr (sIsReflectable<ComponentType>)
 			{
-				if (events.mOnConstruct != nullptr)
+				if (events.mOnConstruct.has_value())
 				{
-					events.mOnConstruct->InvokeUncheckedUnpacked(GetWorld(), toEntity);
+					events.mOnConstruct->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
 				}
 
-				if (events.mOnBeginPlay != nullptr
+				if (events.mOnBeginPlay.has_value()
 					&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
 				{
-					events.mOnBeginPlay->InvokeUncheckedUnpacked(GetWorld(), toEntity);
+					events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
 				}
 			}
 		}
@@ -268,28 +253,28 @@ namespace CE
 
 			if constexpr (sIsReflectable<ComponentType>)
 			{
-				if (events.mOnConstruct != nullptr)
+				if (events.mOnConstruct.has_value())
 				{
-					if (events.mDoesOnConstructHaveStaticTag)
+					if (events.mOnConstruct->mIsStatic)
 					{
-						events.mOnConstruct->InvokeUncheckedUnpacked(GetWorld(), toEntity);
+						events.mOnConstruct->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
 					}
 					else
 					{
-						events.mOnConstruct->InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
+						events.mOnConstruct->mFunc.get().InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
 					}
 				}
 
-				if (events.mOnBeginPlay != nullptr
+				if (events.mOnBeginPlay.has_value()
 					&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
 				{
-					if (events.mDoesOnBeginPlayHaveStaticTag)
+					if (events.mOnBeginPlay->mIsStatic)
 					{
-						events.mOnBeginPlay->InvokeUncheckedUnpacked(GetWorld(), toEntity);
+						events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
 					}
 					else
 					{
-						events.mOnBeginPlay->InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
+						events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
 					}
 				}
 			}
@@ -331,8 +316,7 @@ namespace CE
 	void Registry::DestroyCallback(entt::registry&, entt::entity entity)
 	{
 		static const MetaType& metaType = MetaManager::Get().GetType<Component>();
-		static const MetaFunc& destroyEvent = *TryGetEvent(metaType, sDestructEvent);
-		static bool doesEventHaveStaticTag = destroyEvent.GetProperties().Has(Props::sIsEventStaticTag);
+		static const BoundEvent destroyEvent = *TryGetEvent(metaType, sEndPlayEvent);
 
 		if (World::TryGetWorldAtTopOfStack() == nullptr)
 		{
@@ -352,19 +336,19 @@ namespace CE
 
 		if constexpr (entt::component_traits<Component>::page_size == 0)
 		{
-			destroyEvent.InvokeUncheckedUnpacked(world, entity);
+			destroyEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity);
 		}
 		else
 		{
 			// OnDestruct may still be static
-			if (doesEventHaveStaticTag)
+			if (destroyEvent.mIsStatic)
 			{
-				destroyEvent.InvokeUncheckedUnpacked(world, entity);
+				destroyEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity);
 			}
 			else
 			{
 				Component& component = world.GetRegistry().Get<Component>(entity);
-				destroyEvent.InvokeUncheckedUnpacked(component, world, entity);
+				destroyEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, entity);
 			}
 		}
 	}
@@ -373,7 +357,35 @@ namespace CE
 	void Registry::RemoveComponent(entt::entity fromEntity)
 	{
 		World::PushWorld(mWorld);
-		mRegistry.erase<ComponentType>(fromEntity);
+		static constexpr TypeId componentClassTypeId = MakeStrippedTypeId<ComponentType>();
+		entt::sparse_set* storage = Storage(componentClassTypeId);
+		ASSERT(storage != nullptr);
+		ASSERT(storage->contains(fromEntity));
+
+		World::PushWorld(mWorld);
+
+		if constexpr (sIsReflectable<ComponentType>)
+		{
+			static std::optional<BoundEvent> endPlayEvent =
+				[]() -> std::optional<BoundEvent>
+				{
+					const MetaType* type = MetaManager::Get().TryGetType(componentClassTypeId);
+
+					if (type == nullptr)
+					{
+						return std::nullopt;
+					}
+
+					return TryGetEvent(*type, sEndPlayEvent);
+				}();
+
+			if (endPlayEvent.has_value())
+			{
+				CallEndPlayEventsForEntity(*storage, fromEntity, *endPlayEvent);
+			}
+		}
+
+		storage->erase(fromEntity);
 		World::PopWorld();
 	}
 
@@ -384,7 +396,7 @@ namespace CE
 
 		for (auto curr = first; curr != last; ++curr)
 		{
-			mRegistry.erase<ComponentType>(*curr);
+			RemoveComponent<ComponentType>(*curr);
 		}
 
 		World::PopWorld();
@@ -393,8 +405,44 @@ namespace CE
 	template<typename ComponentType>
 	void Registry::RemoveComponentIfEntityHasIt(entt::entity fromEntity)
 	{
+		static constexpr TypeId componentClassTypeId = MakeStrippedTypeId<ComponentType>();
+		entt::sparse_set* storage = Storage(componentClassTypeId);
+
+		if (storage == nullptr)
+		{
+			return;
+		}
+
 		World::PushWorld(mWorld);
-		mRegistry.remove<ComponentType>(fromEntity);
+
+		if constexpr (sIsReflectable<ComponentType>)
+		{
+			static std::optional<BoundEvent> endPlayEvent =
+				[]() -> std::optional<BoundEvent>
+				{
+					const MetaType* type = MetaManager::Get().TryGetType(componentClassTypeId);
+
+					if (type == nullptr)
+					{
+						return std::nullopt;
+					}
+
+					return TryGetEvent(*type, sEndPlayEvent);
+				}();
+
+			if (endPlayEvent.has_value())
+			{
+				if (!storage->contains(fromEntity))
+				{
+					World::PopWorld();
+					return;
+				}
+
+				CallEndPlayEventsForEntity(*storage, fromEntity, *endPlayEvent);
+			}
+		}
+
+		storage->remove(fromEntity);
 		World::PopWorld();
 	}
 

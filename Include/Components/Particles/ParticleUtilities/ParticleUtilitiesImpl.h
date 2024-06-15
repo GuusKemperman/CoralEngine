@@ -341,6 +341,6 @@ void CE::ReflectParticleComponentType(MetaType& type)
 			}
 		}, Internal::sTransferOwnershipName, MetaFunc::ExplicitParams<Registry&, entt::entity, entt::entity>{});
 
-	BindEvent(type, sDestructEvent, &Internal::OnParticleComponentDestruct);
+	BindEvent(type, sEndPlayEvent, &Internal::OnParticleComponentDestruct);
 	ReflectComponentType<ComponentType>(type);
 }

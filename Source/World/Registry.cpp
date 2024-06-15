@@ -1,5 +1,8 @@
 #include "Precomp.h"
 #include "World/Registry.h"
+
+#include <entt/entity/runtime_view.hpp>
+
 #include "Assets/Script.h"
 #include "World/World.h"
 #include "World/WorldViewport.h"
@@ -8,7 +11,6 @@
 #include "Assets/Prefabs/PrefabEntityFactory.h"
 #include "Components/CameraComponent.h"
 #include "Components/IsDestroyedTag.h"
-#include "Components/IsAwaitingBeginPlayTag.h"
 #include "Components/PrefabOriginComponent.h"
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
@@ -18,7 +20,7 @@
 #include "Scripting/ScriptTools.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-namespace CE
+namespace CE::Internal
 {
 	class AnyStorage final :
 		public entt::basic_sparse_set<>
@@ -72,13 +74,24 @@ namespace CE
 		size_t mCapacity{};
 		entt::type_info mTypeInfo;
 	};
+
+	class IsAwaitingBeginPlayTag
+	{
+		friend ReflectAccess;
+		static MetaType Reflect();
+	};
+
+	class IsAwaitingEndPlayTag
+	{
+		friend ReflectAccess;
+		static MetaType Reflect();
+	};
 }
 
 CE::Registry::Registry(World& world) :
-	mWorld(world),
-	mBoundBeginPlayEvents(GetAllBoundEvents(sBeginPlayEvent))
+	mWorld(world)
 {
-	for (const BoundEvent& onDestruct : GetAllBoundEvents(sDestructEvent))
+	for (const BoundEvent& onDestruct : GetAllBoundEvents(sEndPlayEvent))
 	{
 		if (const MetaFunc* func = onDestruct.mType.get().TryGetFunc(Internal::DestroyCallBackInstaller::sFuncName);
 			func != nullptr)
@@ -116,9 +129,9 @@ void CE::Registry::BeginPlay()
 {
 	for (const auto [entity] : Storage<entt::entity>().each())
 	{
-		if (!HasComponent<IsAwaitingBeginPlayTag>(entity))
+		if (!HasComponent<Internal::IsAwaitingBeginPlayTag>(entity))
 		{
-			AddComponent<IsAwaitingBeginPlayTag>(entity);
+			AddComponent<Internal::IsAwaitingBeginPlayTag>(entity);
 		}
 	}
 
@@ -224,7 +237,7 @@ entt::entity CE::Registry::CreateFromFactory(const PrefabEntityFactory& factory,
 
 	// We wait with calling BeginPlay until all the
 	// components and children have been constructed.
-	AddComponent<IsAwaitingBeginPlayTag>(entity);
+	AddComponent<Internal::IsAwaitingBeginPlayTag>(entity);
 
 	AddComponent<PrefabOriginComponent>(entity).SetFactoryOfOrigin(factory);
 
@@ -301,12 +314,78 @@ void CE::Registry::Destroy(entt::entity entity, bool destroyChildren)
 void CE::Registry::RemovedDestroyed()
 {
 	World::PushWorld(mWorld);
-	const auto view = View<const IsDestroyedTag>();
 
-	for (const auto [entity] : view.each())
+	while (true)
 	{
-		mRegistry.destroy(entity);
+		{
+			const auto isDestroyedView = View<const IsDestroyedTag>();
+
+			if (isDestroyedView.empty())
+			{
+				break;
+			}
+
+			if (!mWorld.get().HasBegunPlay())
+			{
+				for (const entt::entity entity : isDestroyedView)
+				{
+					mRegistry.destroy(entity);
+				}
+				continue;
+			}
+
+			AddComponents<Internal::IsAwaitingEndPlayTag>(isDestroyedView.begin(), isDestroyedView.end());
+		}
+
+		entt::sparse_set& awaitingEndPlayStorage = Storage<Internal::IsAwaitingEndPlayTag>();
+
+		// Dear bug hunter,
+		// This loop is nice for DOD purposes,
+		// but it does mean we are making a slight sacrifice;
+		// if someone calls RemoveComponent for some reason on
+		// an entity that we are currently destroying and one that
+		// we have already processed, the OnEndPlay event for
+		// that component will be called twice.
+		// This was done consciously as the chances of it
+		// occuring are tremendously low, and because using this
+		// approach is significantly faster.
+		for (const BoundEvent& endPlay : mBoundEndPlayEvents)
+		{
+			entt::sparse_set* componentStorage = Storage(endPlay.mType.get().GetTypeId());
+
+			if (componentStorage == nullptr)
+			{
+				continue;
+			}
+
+			entt::runtime_view view{};
+			view.iterate(awaitingEndPlayStorage);
+			view.iterate(*componentStorage);
+
+			for (const entt::entity entity : view)
+			{
+				if (endPlay.mIsStatic)
+				{
+					endPlay.mFunc.get().InvokeUncheckedUnpacked(GetWorld(), entity);
+				}
+				else
+				{
+					MetaAny component{ endPlay.mType, componentStorage->value(entity), false };
+					endPlay.mFunc.get().InvokeUncheckedUnpacked(component, GetWorld(), entity);
+				}
+			}
+		}
+
+		// Now that we are sure all the EndPlay events have been called,
+		// we actually permanently destroy the entities.
+		const auto toPermanentlyDestroyView = View<Internal::IsAwaitingEndPlayTag>();
+
+		for (const entt::entity entity : toPermanentlyDestroyView)
+		{
+			mRegistry.destroy(entity);
+		}
 	}
+
 	World::PopWorld();
 }
 
@@ -318,7 +397,7 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 
 		if (storage == nullptr)
 		{
-			if (!AnyStorage::CanTypeBeUsed(componentClass))
+			if (!Internal::AnyStorage::CanTypeBeUsed(componentClass))
 			{
 				LOG(LogWorld, Error, "Failed to add component {} to {} - This class was created through scripts, and because of a programmer error it does not have all the functionality a component needs. My bad!",
 					componentClass.GetName(),
@@ -326,14 +405,14 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 				return { componentClass, nullptr, false };
 			}
 
-			storage = &mRegistry.GuusEngineAddPool<AnyStorage>(componentClass);
+			storage = &mRegistry.GuusEngineAddPool<Internal::AnyStorage>(componentClass);
 			ASSERT(storage != nullptr);
 		}
-		ASSERT(dynamic_cast<AnyStorage*>(storage) != nullptr);
+		ASSERT(dynamic_cast<Internal::AnyStorage*>(storage) != nullptr);
 
 		storage = Storage(componentClass.GetTypeId());
 
-		AnyStorage* const asAnyStorage = static_cast<AnyStorage*>(storage);
+		Internal::AnyStorage* const asAnyStorage = static_cast<Internal::AnyStorage*>(storage);
 		const auto it = asAnyStorage->try_emplace(toEntity, false, nullptr);
 
 		MetaAny componentToReturn = asAnyStorage->element_at(it.index());
@@ -414,6 +493,23 @@ void CE::Registry::RemoveComponent(const TypeId componentClassTypeId, const entt
 	World::PushWorld(mWorld);
 	entt::sparse_set* storage = Storage(componentClassTypeId);
 	ASSERT(storage != nullptr);
+	ASSERT(storage->contains(fromEntity));
+
+	if (mWorld.get().HasBegunPlay())
+	{
+		const MetaType* type = MetaManager::Get().TryGetType(componentClassTypeId);
+
+		if (type != nullptr)
+		{
+			const std::optional<BoundEvent> endPlayEvent = TryGetEvent(*type, sEndPlayEvent);
+
+			if (endPlayEvent.has_value())
+			{
+				CallEndPlayEventsForEntity(*storage, fromEntity, *endPlayEvent);
+			}
+		}
+	}
+
 	storage->erase(fromEntity);
 	World::PopWorld();
 }
@@ -422,12 +518,36 @@ void CE::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassTypeI
 {
 	entt::sparse_set* storage = Storage(componentClassTypeId);
 
-	if (storage != nullptr)
+	if (storage == nullptr)
 	{
-		World::PushWorld(mWorld);
-		storage->remove(fromEntity);
-		World::PopWorld();
+		return;
 	}
+
+	World::PushWorld(mWorld);
+
+	if (mWorld.get().HasBegunPlay())
+	{
+		if (!storage->contains(fromEntity))
+		{
+			World::PopWorld();
+			return;
+		}
+
+		const MetaType* type = MetaManager::Get().TryGetType(componentClassTypeId);
+
+		if (type != nullptr)
+		{
+			const std::optional<BoundEvent> endPlayEvent = TryGetEvent(*type, sEndPlayEvent);
+
+			if (endPlayEvent.has_value())
+			{
+				CallEndPlayEventsForEntity(*storage, fromEntity, *endPlayEvent);
+			}
+		}
+	}
+
+	storage->remove(fromEntity);
+	World::PopWorld();
 }
 
 std::vector<CE::MetaAny> CE::Registry::GetComponents(entt::entity entity)
@@ -475,7 +595,15 @@ bool CE::Registry::HasComponent(TypeId componentClassTypeId, entt::entity entity
 void CE::Registry::Clear()
 {
 	World::PushWorld(mWorld);
-	mRegistry.clear();
+
+	for (const entt::entity entity : mRegistry.storage<entt::entity>())
+	{
+		if (!HasComponent<IsDestroyedTag>(entity))
+		{
+			AddComponent<IsDestroyedTag>(entity);
+		}
+	}
+	RemovedDestroyed();
 	World::PopWorld();
 }
 
@@ -575,7 +703,7 @@ void CE::Registry::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true
 
 void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 {
-	auto view = View<IsAwaitingBeginPlayTag>();
+	auto view = View<Internal::IsAwaitingBeginPlayTag>();
 
 	// We remove all the IsAwaitingBeginPlayTags in a bit.
 	// We do this to ensure that if Foo::BeginPlay adds the Bar component,
@@ -594,7 +722,7 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 		}
 	}
 
-	RemoveComponents<IsAwaitingBeginPlayTag>(entities, entities + numOfEntities);
+	RemoveComponents<Internal::IsAwaitingBeginPlayTag>(entities, entities + numOfEntities);
 
 	if (!mWorld.get().HasBegunPlay())
 	{
@@ -640,50 +768,75 @@ bool CE::Registry::ShouldWeCallBeginPlayImmediatelyAfterConstruct(entt::entity o
 	return mWorld.get().HasBegunPlay()
 		// If our entity is awaiting begin play, we can
 		// assume it'll be called later
-		&& !HasComponent<IsAwaitingBeginPlayTag>(ownerOfNewlyConstructedComponent);
+		&& !HasComponent<Internal::IsAwaitingBeginPlayTag>(ownerOfNewlyConstructedComponent);
 }
 
-CE::AnyStorage::AnyStorage(const MetaType& type) :
+void CE::Registry::CallEndPlayEventsForEntity(entt::sparse_set& storage, entt::entity entity, const BoundEvent& endPlayEvent)
+{
+	if (endPlayEvent.mIsStatic)
+	{
+		endPlayEvent.mFunc.get().InvokeUncheckedUnpacked(GetWorld(), entity);
+	}
+	else
+	{
+		MetaAny component{ endPlayEvent.mType, storage.value(entity), false };
+		endPlayEvent.mFunc.get().InvokeUncheckedUnpacked(component, GetWorld(), entity);
+	}
+}
+
+CE::Internal::AnyStorage::AnyStorage(const MetaType& type) :
 	BaseType(GetTypeInfo(), entt::deletion_policy::in_place),
 	mType(type),
-	mOnConstruct(TryGetEvent(type, sConstructEvent)),
-	mOnBeginPlay(TryGetEvent(type, sBeginPlayEvent)),
-	mOnDestruct(TryGetEvent(type, sDestructEvent)),
 	mTypeInfo(type.GetTypeId(), type.GetTypeInfo(), type.GetName())
 {
+	if (const std::optional<BoundEvent> boundEvent = TryGetEvent(type, sConstructEvent))
+	{
+		mOnConstruct = &boundEvent->mFunc.get();
+	}
+
+	if (const std::optional<BoundEvent> boundEvent = TryGetEvent(type, sBeginPlayEvent))
+	{
+		mOnBeginPlay = &boundEvent->mFunc.get();
+	}
+
+	if (const std::optional<BoundEvent> boundEvent = TryGetEvent(type, sDestructEvent))
+	{
+		mOnDestruct = &boundEvent->mFunc.get();
+	}
+
 	ASSERT(CanTypeBeUsed(type));
 	reserve(64);
 }
 
-CE::AnyStorage::~AnyStorage()
+CE::Internal::AnyStorage::~AnyStorage()
 {
 	pop_all();
 	FastFree(mData);
 }
 
-bool CE::AnyStorage::CanTypeBeUsed(const MetaType& type)
+bool CE::Internal::AnyStorage::CanTypeBeUsed(const MetaType& type)
 {
 	return type.IsDefaultConstructible() && type.IsCopyConstructible() && type.IsMoveConstructible();
 }
 
-const void* CE::AnyStorage::get_at(const std::size_t pos) const
+const void* CE::Internal::AnyStorage::get_at(const std::size_t pos) const
 {
 	ASSERT(pos < mCapacity);
 	return &mData[pos * GetType().GetSize()];
 }
 
-void* CE::AnyStorage::get_at(const std::size_t pos)
+void* CE::Internal::AnyStorage::get_at(const std::size_t pos)
 {
 	ASSERT(pos < mCapacity);
 	return &mData[pos * GetType().GetSize()];
 }
 
-CE::MetaAny CE::AnyStorage::element_at(const size_t pos)
+CE::MetaAny CE::Internal::AnyStorage::element_at(const size_t pos)
 {
 	return MetaAny{ mType, get_at(pos), false };
 }
 
-void CE::AnyStorage::swap_or_move(const std::size_t from, const std::size_t to)
+void CE::Internal::AnyStorage::swap_or_move(const std::size_t from, const std::size_t to)
 {
 	const MetaType& type = GetType();
 
@@ -714,7 +867,7 @@ void CE::AnyStorage::swap_or_move(const std::size_t from, const std::size_t to)
 	}
 }
 
-void CE::AnyStorage::pop(basic_iterator first, basic_iterator last)
+void CE::Internal::AnyStorage::pop(basic_iterator first, basic_iterator last)
 {
 	ASSERT(World::TryGetWorldAtTopOfStack() != nullptr);
 	World& world = *World::TryGetWorldAtTopOfStack();
@@ -736,7 +889,7 @@ void CE::AnyStorage::pop(basic_iterator first, basic_iterator last)
 	}
 }
 
-void CE::AnyStorage::pop_all()
+void CE::Internal::AnyStorage::pop_all()
 {
 	const MetaType& type = GetType();
 
@@ -751,7 +904,7 @@ void CE::AnyStorage::pop_all()
 	BaseType::pop_all();
 }
 
-CE::AnyStorage::BaseType::basic_iterator CE::AnyStorage::try_emplace(const entt::entity entt, const bool force_back, const void* value)
+CE::Internal::AnyStorage::BaseType::basic_iterator CE::Internal::AnyStorage::try_emplace(const entt::entity entt, const bool force_back, const void* value)
 {
 	const MetaType& type = GetType();
 	reserve_atleast(size() + 1);
@@ -778,7 +931,7 @@ CE::AnyStorage::BaseType::basic_iterator CE::AnyStorage::try_emplace(const entt:
 	return it;
 }
 
-void CE::AnyStorage::reserve(const size_type cap)
+void CE::Internal::AnyStorage::reserve(const size_type cap)
 {
 	BaseType::reserve(cap);
 
@@ -813,7 +966,7 @@ void CE::AnyStorage::reserve(const size_type cap)
 	mCapacity = cap;
 }
 
-void CE::AnyStorage::reserve_atleast(const size_type cap)
+void CE::Internal::AnyStorage::reserve_atleast(const size_type cap)
 {
 	if (mCapacity < cap)
 	{
@@ -825,4 +978,20 @@ void CE::AnyStorage::reserve_atleast(const size_type cap)
 
 		reserve(newCapacity);
 	}
+}
+
+CE::MetaType CE::Internal::IsAwaitingBeginPlayTag::Reflect()
+{
+	MetaType metaType = MetaType{ MetaType::T<IsAwaitingBeginPlayTag>{}, "IsAwaitingBeginPlayTag" };
+	metaType.GetProperties().Add(Props::sNoInspectTag).Add(Props::sNoSerializeTag);
+	ReflectComponentType<IsAwaitingBeginPlayTag>(metaType);
+	return metaType;
+}
+
+CE::MetaType CE::Internal::IsAwaitingEndPlayTag::Reflect()
+{
+	MetaType metaType = MetaType{ MetaType::T<IsAwaitingEndPlayTag>{}, "IsAwaitingEndPlayTag" };
+	metaType.GetProperties().Add(Props::sNoInspectTag).Add(Props::sNoSerializeTag);
+	ReflectComponentType<IsAwaitingEndPlayTag>(metaType);
+	return metaType;
 }

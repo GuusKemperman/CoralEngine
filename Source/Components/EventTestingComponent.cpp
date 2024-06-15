@@ -94,7 +94,7 @@ CE::MetaType CE::EmptyEventTestingComponent::Reflect()
 	type.GetProperties().Add(Props::sNoInspectTag);
 
 	BindEvent(type, sConstructEvent, &EmptyEventTestingComponent::OnConstruct);
-	BindEvent(type, sDestructEvent, &EmptyEventTestingComponent::OnDestruct);
+	BindEvent(type, sEndPlayEvent, &EmptyEventTestingComponent::OnDestruct);
 	BindEvent(type, sBeginPlayEvent, &EmptyEventTestingComponent::OnBeginPlay);
 	BindEvent(type, sTickEvent, &EmptyEventTestingComponent::OnTick);
 	BindEvent(type, sFixedTickEvent, &EmptyEventTestingComponent::OnFixedTick);
@@ -179,7 +179,7 @@ CE::MetaType CE::EventTestingComponent::Reflect()
 	BindEvent(type, sBeginPlayEvent, &EventTestingComponent::OnBeginPlay);
 	BindEvent(type, sTickEvent, &EventTestingComponent::OnTick);
 	BindEvent(type, sFixedTickEvent, &EventTestingComponent::OnFixedTick);
-	BindEvent(type, sDestructEvent, &EventTestingComponent::OnDestruct);
+	BindEvent(type, sEndPlayEvent, &EventTestingComponent::OnDestruct);
 	BindEvent(type, sAITickEvent, &EventTestingComponent::OnAiTick);
 	BindEvent(type, sAIEvaluateEvent, &EventTestingComponent::OnAiEvaluate);
 	BindEvent(type, sCollisionEntryEvent, &EventTestingComponent::OnCollisionEntry);

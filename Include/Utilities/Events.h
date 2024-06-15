@@ -49,11 +49,6 @@ namespace CE
 	namespace Props
 	{
 		/**
-		 * \brief Can be used to check if the MetaFunc returned from TryGetEvent should be called with an instance of the component.
-		 */
-		static constexpr std::string_view sIsEventStaticTag = "sIsEventStaticTag";
-
-		/**
 		 * \brief Can be added to the OnTick or OnFixedTick event to indicate that the event should be called even when the game is paused
 		 */
 		static constexpr std::string_view sShouldTickWhilstPausedTag = "sShouldTickWhilstPausedTag";
@@ -163,12 +158,34 @@ namespace CE
 	static constexpr float sFixedTickEventStepSize = 0.2f;
 
 	/**
-	 * \brief Called just before the C++ destructor, and only if the
-	 * world has begun play.
+	 * \brief Called for each component when an entity is destroyed,
+	 * or when an individual component was removed. Called even if the
+	 * world has not begun play.
+	 *
+	 * The order in which this event is called is random, you should
+	 * not try to retrieve any other components on the entity as you
+	 * may not assume that the other components have not already been
+	 * destroyed before you.
+	 *
 	 * \World& The world this component is in.
 	 * \entt::entity The owner of this component.
 	 */
 	static constexpr Event<void(World&, entt::entity)> sDestructEvent{ "OnDestruct" };
+
+	/**
+	 * \brief Called for each component when an entity is destroyed,
+	 * or when an individual component was removed. Only called if
+	 * the world has begun player.
+	 *
+	 * All EndPlay events are called before any of the component's C++ destructor is called.
+	 * This means if you destroy an entity with a TransformComponent, you can assume you can
+	 * still get that component in your EndPlay function, as the TransformComponent has
+	 * not been destroyed yet.
+	 *
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	static constexpr Event<void(World&, entt::entity)> sEndPlayEvent{ "OnEndPlay" };
 
 	/**
 	 * \brief Called the first frame two entities are colliding
@@ -272,20 +289,20 @@ namespace CE
 	template<typename FuncRet, typename... FuncParams, typename EventT>
 	void BindEvent(MetaType& type, const EventT& event, FuncRet(*func)(FuncParams...));
 
-	/**
-	 * \brief Returns the event bound during BindEvent, if any.
-	 *
-	 *  Example: TryGetEvent(componentType, sFixedTickEvent);
-	 */
-	template<typename EventT>
-	const MetaFunc* TryGetEvent(const MetaType& fromType, const EventT& event);
-
 	struct BoundEvent
 	{
 		std::reference_wrapper<const MetaType> mType;
 		std::reference_wrapper<const MetaFunc> mFunc;
 		bool mIsStatic{};
 	};
+
+	/**
+	 * \brief Returns the event bound during BindEvent, if any.
+	 *
+	 *  Example: TryGetEvent(componentType, sFixedTickEvent);
+	 */
+	template<typename EventT>
+	std::optional<BoundEvent> TryGetEvent(const MetaType& fromType, const EventT& event);
 
 	template <typename EventT>
 	std::vector<BoundEvent> GetAllBoundEvents(const EventT& event);
@@ -297,6 +314,11 @@ namespace CE
 	namespace Internal
 	{
 		static constexpr std::string_view sIsEventProp = "IsEvent";
+
+		/**
+		 * \brief Can be used to check if the MetaFunc returned from TryGetEvent should be called with an instance of the component.
+		 */
+		static constexpr std::string_view sIsEventStaticTag = "sIsEventStaticTag";
 	}
 
 	template<typename Class, typename Func, typename Ret, typename... Args, bool IsAlwaysStatic>
@@ -319,7 +341,7 @@ namespace CE
 			static_assert(std::is_invocable_v<decltype(func), Args...>, "The parameters of the event do not match the parameters of the function");
 
 			eventFunc = &type.AddFunc(std::function<Ret(Args...)>{ std::forward<Func>(func) }, event.mName);
-			eventFunc->GetProperties().Add(Props::sIsEventStaticTag);
+			eventFunc->GetProperties().Add(Internal::sIsEventStaticTag);
 		}
 		eventFunc->GetProperties().Add(Internal::sIsEventProp);
 	}
@@ -344,11 +366,11 @@ namespace CE
 
 	namespace Internal
 	{
-		const MetaFunc* TryGetEvent(const MetaType& fromType, std::string_view eventName);
+		std::optional<BoundEvent> TryGetEvent(const MetaType& fromType, std::string_view eventName);
 	}
 
 	template <typename EventT>
-	const MetaFunc* TryGetEvent(const MetaType& fromType, const EventT& event)
+	std::optional<BoundEvent> TryGetEvent(const MetaType& fromType, const EventT& event)
 	{
 		return Internal::TryGetEvent(fromType, event.mName);
 	}
