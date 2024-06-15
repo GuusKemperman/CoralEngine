@@ -68,7 +68,6 @@ void CE::ParticleEmitterComponent::SetParticleOrientationWorld(uint32 particle, 
 void CE::ParticleEmitterComponent::PlayFromStart()
 {
 	mCurrentTime = 0.0f;
-	mNumOfParticlesToSpawnNextFrame = 0.0f;
 
 	if (!mKeepExistingParticlesAliveWhenRestartingLoop)
 	{

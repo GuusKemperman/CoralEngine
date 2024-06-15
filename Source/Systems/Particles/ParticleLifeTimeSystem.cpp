@@ -89,7 +89,6 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 
 		const float surfaceAreaBetweenLastStepAndNow = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetweenFast(t1, t2);
 
-
 		uint32 numToSpawnThisFrame{};
 
 		if (emitter.mOnlyStayAliveUntilExistingParticlesAreGone)
@@ -110,7 +109,6 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				numToSpawnThisFrame = static_cast<uint32>(numToSpawnAsFloat);
 			}
 		}
-
 
 		if (!emitter.IsPlaying())
 		{
@@ -179,7 +177,6 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 			}
 		}
 
-
 		const uint32 minPoolSize = static_cast<uint32>(indexOfLastParticleInUse + 1) + numToSpawnThisFrame;
 
 		emitter.mParticlePositions.resize(minPoolSize);
@@ -198,7 +195,6 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 		}
 
 		emitter.mScale.SetInitialValuesOfNewParticles(emitter);
-
 
 #ifdef LOG_NUM_OF_PARTICLES
 		for (size_t i = 0; i < emitter.mParticleTimeAsPercentage.size(); i++)

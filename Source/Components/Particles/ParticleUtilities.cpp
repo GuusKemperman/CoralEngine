@@ -17,7 +17,7 @@ void CE::Internal::OnParticleComponentDestruct(World& world, entt::entity entity
 	const entt::entity newEntity = reg.Create();
 	reg.AddComponent<TransformComponent>(newEntity).SetWorldMatrix(emitter->mEmitterWorldMatrix);
 
-	std::vector<std::reference_wrapper<const MetaFunc>> particleTypes =
+	static std::vector<std::reference_wrapper<const MetaFunc>> particleTypes =
 		[]
 		{
 			std::vector<std::reference_wrapper<const MetaFunc>> types{};
@@ -25,7 +25,6 @@ void CE::Internal::OnParticleComponentDestruct(World& world, entt::entity entity
 			{
 				if (const MetaFunc* func = type.TryGetFunc(sTransferOwnershipName); func != nullptr)
 				{
-					std::cout << type.GetName() << std::endl;
 					types.emplace_back(*func);
 				}
 			}
