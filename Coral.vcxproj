@@ -549,6 +549,7 @@
     <ClCompile Include="Source\Components\Pathfinding\SwarmingAgentTag.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\SwarmingTargetComponent.cpp" />
     <ClCompile Include="Source\Components\SpawnPrefabOnDestructComponent.cpp" />
+    <ClCompile Include="Source\Components\ToneMappingComponent.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\PostProcessingRendererPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</ExcludedFromBuild>
@@ -1651,6 +1652,7 @@
     <ClInclude Include="Include\Components\PlayerComponent.h" />
     <ClInclude Include="Include\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Include\Components\SpawnPrefabOnDestructComponent.h" />
+    <ClInclude Include="Include\Components\ToneMappingComponent.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\DX12Classes\DXHeapHandle.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\PostProcessingRenderer***REMOVED***.h" />

@@ -372,6 +372,7 @@ void CE::GPUWorld::Update()
     int frameIndex = engineDevice.GetFrameIndex();
 
     entt::entity cameraOwner = CameraComponent::GetSelected(mWorld);
+    mLightInfo = InfoStruct::DXLightInfo{};
 
     if (cameraOwner == entt::null)
     {

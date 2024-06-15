@@ -7,8 +7,7 @@
 
 #include "Platform/PC/Rendering/PostProcessingRendererPC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
-#include "Components/StaticMeshComponent.h"
-#include "Components/SkinnedMeshComponent.h"
+#include "Components/ToneMappingComponent.h"
 #include "Components/OutlineComponent.h"
 #include "Platform/PC/Rendering/FramebufferPC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
@@ -113,6 +112,16 @@ void CE::PostProcessingRenderer::ToneMap(const World& world)
     PosProcRenderingData& postProcData = gpuWorld.GetPostProcData();
 
     commandList->SetPipelineState(mToneMapPipeline.Get());
+    float exposure = 1.f;
+    const auto view =  world.GetRegistry().View<const ToneMappingComponent>();
+
+
+    for (auto [entity, toneMapping] : view.each())
+    {
+        exposure = toneMapping.mExposure;
+    }
+
+    commandList->SetGraphicsRoot32BitConstants(20, 1, &exposure, 0);
     gpuWorld.GetDefaultFrameBuffer().BindSRVRTToGraphics(8);
 
     commandList->IASetVertexBuffers(0, 1, &postProcData.mVertexBufferView);
