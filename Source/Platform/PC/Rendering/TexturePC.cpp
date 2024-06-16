@@ -51,7 +51,7 @@ CE::Texture::Texture(std::string_view name, uint32_t, uint32_t, const unsigned c
 	mImpl(new DXImpl()),
 	mLoadedPixels(std::make_shared<STBIPixels>())
 {
-	// TODO: Implement for PC
+	// TODO: Implement for text rendering
 }
 
 CE::Texture::Texture(Texture&& other) noexcept = default;
