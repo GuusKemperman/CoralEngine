@@ -192,7 +192,9 @@ void CE::SwarmingTargetSystem::Update(World& world, float dt)
 		glm::ivec2 mEnd{};
 	};
 
-	std::vector<BoundingBox> boxesToCheck{ { glm::ivec2{ 0 }, glm::ivec2{ mPendingFlowField.mFlowFieldWidth } } };
+	static std::vector<BoundingBox> boxesToCheck{};
+	boxesToCheck.clear();
+	boxesToCheck.emplace_back(BoundingBox{ glm::ivec2{ 0 }, glm::ivec2{ mPendingFlowField.mFlowFieldWidth } });
 
 	while (!boxesToCheck.empty())
 	{
@@ -222,9 +224,8 @@ void CE::SwarmingTargetSystem::Update(World& world, float dt)
 
 		BoundingBox children[2]{ box, box };
 
-		bool indexToChange = size.y > size.x;
-
-		int size1 = size[indexToChange] / 2;
+		const bool indexToChange = size.y > size.x;
+		const int size1 = size[indexToChange] / 2;
 
 		children[0].mEnd[indexToChange] = box.mStart[indexToChange] + size1;
 		children[1].mStart[indexToChange] = children[0].mEnd[indexToChange];

@@ -327,13 +327,6 @@ namespace CE
 
 		World& world = *World::TryGetWorldAtTopOfStack();
 
-		// We only call this event if
-		// we've begun play.
-		if (!world.HasBegunPlay())
-		{
-			return;
-		}
-
 		if constexpr (entt::component_traits<Component>::page_size == 0)
 		{
 			destroyEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity);
