@@ -43,5 +43,9 @@ namespace CE
         ComPtr<ID3D12PipelineState>  mZSkinnedPipeline;
         ComPtr<ID3D12PipelineState>  mShadowMapPipeline;
         ComPtr<ID3D12PipelineState>  mShadowMapSkinnedPipeline;
+
+        ComPtr<ID3D12PipelineState>  mZSelectedPipeline;
+        ComPtr<ID3D12PipelineState>  mZSelectedSkinnedPipeline;
+
     };
 }

@@ -206,7 +206,8 @@ void CE::PosProcRenderingData::Update(const World& world)
         for (auto [entity, outlineComponent] : view.each())
         {
             outlineInfo.mOutlineColor = outlineComponent.mColor;
-            outlineInfo.mThickness = outlineComponent.mThickness;
+            outlineInfo.mThicknes = outlineComponent.mThickness;
+            outlineInfo.mBias = outlineComponent.mBias;
         }
         mOutlineBuffer->Update(&outlineInfo, sizeof(InfoStruct::DXOutlineInfo), 0, frameIndex);
     }
@@ -357,8 +358,11 @@ CE::GPUWorld::GPUWorld(const World& world)
     mPointLightCounterUAVSlot =  engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER].get(), &uavDesc); 
 
     InitializeShadowMaps();
-    mSelectedMeshFrameBuffer = std::make_unique<FrameBuffer>(glm::vec2(1920, 1080));
+    mSelectedMeshFrameBuffer = std::make_unique<FrameBuffer>(glm::ivec2(1920, 1080));
     mParticles.resize(MAX_PARTICLES);
+
+    mMsaaFrameBuffer = std::make_unique<FrameBuffer>(glm::ivec2(1428, 929), MSAA_COUNT, MSAA_QUALITY, true);
+    mDefaultFrameBuffer = std::make_unique<FrameBuffer>(glm::ivec2(1428, 929), 1, 0, true);
 }
 
 CE::GPUWorld::~GPUWorld() = default;
@@ -369,11 +373,14 @@ void CE::GPUWorld::Update()
     int frameIndex = engineDevice.GetFrameIndex();
 
     entt::entity cameraOwner = CameraComponent::GetSelected(mWorld);
+    mLightInfo = InfoStruct::DXLightInfo{};
 
     if (cameraOwner == entt::null)
     {
         return;
     }
+
+    UpdateMSAA();
 
     const CameraComponent& camera = mWorld.get().GetRegistry().Get<const CameraComponent>(cameraOwner);
     const TransformComponent& cameraTransform = mWorld.get().GetRegistry().Get<const TransformComponent>(cameraOwner);
@@ -460,6 +467,9 @@ void CE::GPUWorld::Update()
         mLightInfo.mAmbientAndIntensity.z = ambientLight.mColor.z;
         mLightInfo.mAmbientAndIntensity.w = ambientLight.mIntensity;
     }
+
+    if(ambientLightView.size() >1)
+        LOG(LogRendering, Warning, "There is more than one AmbientrLifgt component in the ***REMOVED***ne. Only the last one will be used.");
 
     UpdateParticles(cameraTransform.GetLocalPosition());
     UpdateLights(dirLightCounter, mPointLightCounter);
@@ -830,6 +840,20 @@ void CE::GPUWorld::ClearClusterData()
     data.RowPitch = sizeof(InfoStruct::Clustering::DXLightGridElement);
     data.SlicePitch = sizeof(InfoStruct::Clustering::DXLightGridElement) * mNumberOfClusters;
     mStructuredBuffers[InfoStruct::LIGHT_GRID_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
+}
+
+void CE::GPUWorld::UpdateMSAA()
+{
+
+#ifdef EDITOR
+    mMsaaFrameBuffer->Resize(glm::ivec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
+    mDefaultFrameBuffer->Resize(glm::ivec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
+#else
+    Device& engineDevice = Device::Get();
+    mMsaaFrameBuffer->Resize(engineDevice.GetDisplaySize());
+    mDefaultFrameBuffer->Resize(engineDevice.GetDisplaySize());
+#endif
+
 }
 
 void CE::GPUWorld::UpdateLights(int numDirLights, int numPointLights)

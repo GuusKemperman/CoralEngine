@@ -16,6 +16,7 @@ struct ID3D12Resource;
 namespace CE
 {
     class Engine;
+    class FrameBuffer;
 
 	class Device final : 
         public EngineSubsystem<Device>
@@ -48,7 +49,7 @@ namespace CE
         void SubmitUploadCommands();
         void AddToDeallocation(Microsoft::WRL::ComPtr<ID3D12Resource>&& res);
         void BindSwapchainRT();
-
+        void ResolveMsaa(FrameBuffer & msaaFramebuffer);
         glm::vec2 GetDisplaySize();
 
         /**

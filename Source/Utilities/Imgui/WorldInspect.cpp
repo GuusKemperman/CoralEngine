@@ -60,7 +60,7 @@ namespace CE::Internal
 }
 
 CE::WorldInspectHelper::WorldInspectHelper(World&& worldThatHasNotYetBegunPlay) :
-	mViewportFrameBuffer(std::make_unique<FrameBuffer>()),
+	mViewportFrameBuffer(std::make_unique<FrameBuffer>(glm::ivec2(1.f, 1.f))),
 	mWorldBeforeBeginPlay(std::make_unique<World>(std::move(worldThatHasNotYetBegunPlay)))
 {
 	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay());
