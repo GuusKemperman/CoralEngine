@@ -15,7 +15,7 @@ namespace Game
 	{
 	public:
 
-		///void OnTick(CE::World& world, entt::entity owner, float dt);
+		void OnTick(CE::World& world, entt::entity owner, float dt);
 		void OnAiTick(CE::World& world, entt::entity owner, float dt);
 		float OnAiEvaluate(const CE::World& world, entt::entity owner) const;
 		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
