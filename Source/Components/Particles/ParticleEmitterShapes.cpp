@@ -2,11 +2,11 @@
 #include "Components/Particles/ParticleEmitterShapes.h"
 
 #include "Components/Particles/ParticleEmitterComponent.h"
+#include "Components/Particles/ParticleUtilities.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Math.h"
 #include "Utilities/Random.h"
-#include "Utilities/Reflect/ReflectComponentType.h"
 
 namespace CE::Internal
 {
@@ -57,7 +57,7 @@ CE::MetaType CE::ParticleEmitterShapeAABB::Reflect()
 	type.AddField(&ParticleEmitterShapeAABB::mMinOrientation, "mMinOrientation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterShapeAABB::mMaxOrientation, "mMaxOrientation").GetProperties().Add(Props::sIsScriptableTag);
 
-	ReflectComponentType<ParticleEmitterShapeAABB>(type);
+	ReflectParticleComponentType<ParticleEmitterShapeAABB>(type);
 	return type;
 }
 
@@ -70,7 +70,7 @@ CE::MetaType CE::ParticleEmitterShapeSphere::Reflect()
 	type.AddField(&ParticleEmitterShapeSphere::mMinOrientation, "mMinOrientation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterShapeSphere::mMaxOrientation, "mMaxOrientation").GetProperties().Add(Props::sIsScriptableTag);
 
-	ReflectComponentType<ParticleEmitterShapeSphere>(type);
+	ReflectParticleComponentType<ParticleEmitterShapeSphere>(type);
 	return type;
 }
 

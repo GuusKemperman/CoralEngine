@@ -35,6 +35,8 @@ MetaType Reflector<T>::Reflect()
 	type.AddField(&T::w, "W").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<float(*)(const T&, const T&)>(&dot), "Dot", "DirectionA", "DirectionB").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<T(*)(const T&)>(&normalize), "Normalize").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(static_cast<T(*)(const T&)>(&radians), "ToRadians", "Degrees", "Radians").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(static_cast<T(*)(const T&)>(&degrees), "ToDegrees", "Radians", "Degrees").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<float(*)(const T&, const T&)>(&distance), "Distance", "LocationA", "LocationB").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<float(*)(const T&, const T&)>(&distance2), "Distance2", "LocationA", "LocationB").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<float(*)(const T&)>(&length), "Length").GetProperties().Add(Props::sIsScriptableTag);

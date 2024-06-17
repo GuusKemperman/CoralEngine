@@ -19,6 +19,27 @@
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
 #include "Utilities/AiFunctionality.h"
 
+//void Game::KnockBackState::OnTick(CE::World& world, entt::entity owner, float)
+//{
+//	const auto* enemyAiController = world.GetRegistry().TryGet<CE::EnemyAiControllerComponent>(owner);
+//
+//	if (enemyAiController == nullptr)
+//	{
+//		LOG(LogAI, Warning, "A enemyController component is needed to run the KnockBack State!");
+//		return;
+//	}
+//
+//	if (enemyAiController->mCurrentState == nullptr)
+//	{
+//		LOG(LogAI, Warning, "No current States in the enemyAIController!");
+//		return;
+//	}
+//
+//	if (CE::MakeTypeId<KnockBackState>() != enemyAiController->mCurrentState->GetTypeId())
+//	{
+//		mKnockBackSpeed = 0.f;
+//	}
+//}
 
 void Game::KnockBackState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -130,6 +151,7 @@ CE::MetaType Game::KnockBackState::Reflect()
 	type.AddField(&KnockBackState::mFriction, "Friction").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &KnockBackState::OnAiTick);
+	//BindEvent(type, CE::sTickEvent, &KnockBackState::OnTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &KnockBackState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &KnockBackState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sAIStateExitEvent, &KnockBackState::OnAiStateExitEvent);

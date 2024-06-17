@@ -155,7 +155,6 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 
 		// Generate points
 		float distFromCentre = spawnerComponent.mMinSpawnRange;
-		const CE::BVH& staticBVH = world.GetPhysics().GetBVHs()[static_cast<int>(CE::CollisionLayer::StaticObstacles)];
 
 		do
 		{
@@ -174,12 +173,6 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 				pointNum++, angle += angleStepSize)
 			{
 				const glm::vec2 worldPos = spawnerPos + CE::Math::AngleToVec2(angle + world.GetCurrentTimeScaled()) * distFromCentre;
-
-				const CE::TransformedDisk spawnArea = { worldPos, spawnerComponent.mSpacing * 2.0f };
-				if (staticBVH.Query(spawnArea))
-				{
-					continue;
-				}
 
 				// Shuffle the enemies
 				const uint32 index = CE::Random::Range(0u, static_cast<uint32>(waveOutputs.size()));
