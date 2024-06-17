@@ -467,6 +467,9 @@ void CE::GPUWorld::Update()
         mLightInfo.mAmbientAndIntensity.w = ambientLight.mIntensity;
     }
 
+    if(ambientLightView.size() >1)
+        LOG(LogRendering, Warning, "There is more than one AmbientrLifgt component in the ***REMOVED***ne. Only the last one will be used.");
+
     UpdateParticles(cameraTransform.GetLocalPosition());
     UpdateLights(dirLightCounter, mPointLightCounter);
 

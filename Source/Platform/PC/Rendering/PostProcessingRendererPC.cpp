@@ -112,7 +112,7 @@ void CE::PostProcessingRenderer::ToneMap(const World& world)
     PosProcRenderingData& postProcData = gpuWorld.GetPostProcData();
 
     commandList->SetPipelineState(mToneMapPipeline.Get());
-    float exposure = 1.f;
+    float exposure = 0.f;
     const auto view =  world.GetRegistry().View<const ToneMappingComponent>();
 
 
@@ -120,6 +120,9 @@ void CE::PostProcessingRenderer::ToneMap(const World& world)
     {
         exposure = toneMapping.mExposure;
     }
+
+    if(view.size() >1)
+        LOG(LogRendering, Warning, "There is more than one ToneMapping component in the ***REMOVED***ne. Only the last one will be used.");
 
     commandList->SetGraphicsRoot32BitConstants(20, 1, &exposure, 0);
     gpuWorld.GetDefaultFrameBuffer().BindSRVRTToGraphics(8);
