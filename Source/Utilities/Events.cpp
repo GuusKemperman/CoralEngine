@@ -1,16 +1,16 @@
 #include "Precomp.h"
 #include "Utilities/Events.h"
 
-const CE::MetaFunc* CE::Internal::TryGetEvent(const MetaType& fromType, std::string_view eventName)
+std::optional<CE::BoundEvent> CE::Internal::TryGetEvent(const MetaType& fromType, std::string_view eventName)
 {
 	const MetaFunc* func = fromType.TryGetFunc(eventName);
 
 	if (func != nullptr
 		&& func->GetProperties().Has(Internal::sIsEventProp))
 	{
-		return func;
+		return BoundEvent{ fromType, *func, func->GetProperties().Has(sIsEventStaticTag) };
 	}
-	return nullptr;
+	return std::nullopt;
 }
 
 std::vector<CE::BoundEvent> CE::Internal::GetAllBoundEvents(std::string_view eventName)
@@ -19,14 +19,14 @@ std::vector<CE::BoundEvent> CE::Internal::GetAllBoundEvents(std::string_view eve
 
 	for (const MetaType& type : MetaManager::Get().EachType())
 	{
-		const MetaFunc* const boundFunc = Internal::TryGetEvent(type, eventName);
+		std::optional<BoundEvent> boundEvent = Internal::TryGetEvent(type, eventName);
 
-		if (boundFunc == nullptr)
+		if (!boundEvent.has_value())
 		{
 			continue;
 		}
 
-		bound.emplace_back(BoundEvent{ type, *boundFunc, boundFunc->GetProperties().Has(Props::sIsEventStaticTag) });
+		bound.emplace_back(std::move(*boundEvent));
 	}
 
 	return bound;

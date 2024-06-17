@@ -226,6 +226,7 @@ namespace CE
 	static const ScriptTickEvent sOnTickScriptEvent{};
 	static const ScriptFixedTickEvent sOnFixedTickScriptEvent{};
 	static const ScriptOnlyPassComponentEvent sOnDestructScriptEvent{ sDestructEvent };
+	static const ScriptOnlyPassComponentEvent sOnEndPlayEvent{ sEndPlayEvent };
 	static const ScriptOnlyPassComponentEvent sOnAIStateEnterScriptEvent{ sAIStateEnterEvent };
 	static const ScriptAITickEvent sOnAITickScriptEvent{};
 	static const ScriptOnlyPassComponentEvent sOnAIStateExitScriptEvent{ sAIStateExitEvent };
@@ -249,6 +250,7 @@ namespace CE
 		sOnConstructScriptEvent,
 		sOnDestructScriptEvent,
 		sOnBeginPlayScriptEvent,
+		sOnEndPlayEvent,
 		sOnTickScriptEvent,
 		sOnFixedTickScriptEvent,
 		sOnAIStateEnterScriptEvent,
