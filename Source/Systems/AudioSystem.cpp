@@ -33,12 +33,15 @@ void CE::AudioSystem::Update(World& world, float)
 	// find listener component
 	// apply any filters or settings from the listenercomponent
 
-	entt::entity listenerEntity = reg.View<AudioListenerComponent>().front();
+	entt::entity listenerOwner = AudioListenerComponent::GetSelected(world);
 
-	if (listenerEntity != entt::null)
+	if (listenerOwner != entt::null)
 	{
-		AudioListenerComponent& listenerComponent = reg.Get<AudioListenerComponent>(listenerEntity);
+		AudioListenerComponent& listenerComponent = reg.Get<AudioListenerComponent>(listenerOwner);
 		
+		// handle dsp etc
+
+
 		mMasterChannelGroup->setVolume(listenerComponent.mVolume);
 	}
 
@@ -58,6 +61,7 @@ void CE::AudioSystem::Update(World& world, float)
 		}
 
 		for (auto hash : channelsToRemove) emitter.mPlayingOnChannels.erase(hash);
+
 	}
 }
 

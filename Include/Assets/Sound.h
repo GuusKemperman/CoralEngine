@@ -1,6 +1,6 @@
 #pragma once
 #include "Assets/Asset.h"
-
+#include "Core/Audio.h"
 
 namespace FMOD
 {
@@ -25,7 +25,7 @@ namespace CE
 		Sound& operator=(Sound&&) = delete;
 		Sound& operator=(const Sound&) = delete;
 
-		FMOD::Channel* Play() const;
+		FMOD::Channel* Play(Audio::Group group) const;
 
 	private:
 		friend ReflectAccess;

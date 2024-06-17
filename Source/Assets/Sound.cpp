@@ -48,7 +48,7 @@ CE::Sound::~Sound()
     }
 }
 
-FMOD::Channel* CE::Sound::Play() const
+FMOD::Channel* CE::Sound::Play(Audio::Group group) const
 {
     if (mSound == nullptr)
     {
@@ -57,7 +57,7 @@ FMOD::Channel* CE::Sound::Play() const
 
     FMOD::Channel* channel{};
 
-    Audio::Get().GetCoreSystem().playSound(mSound, nullptr, false, &channel);
+    Audio::Get().GetCoreSystem().playSound(mSound, &Audio::Get().GetChannelGroup(group), false, &channel);
 
     return channel;
 }
