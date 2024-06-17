@@ -4,6 +4,7 @@
 namespace FMOD
 {
 	class ChannelGroup;
+	class DSP;
 }
 
 namespace CE
@@ -20,6 +21,7 @@ namespace CE
 	private:
 
 		FMOD::ChannelGroup* mMasterChannelGroup{};
+		FMOD::DSP* mLowPassDSP{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();

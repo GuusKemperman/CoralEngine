@@ -12,6 +12,18 @@
 CE::AudioSystem::AudioSystem()
 {
 	Audio::Get().GetCoreSystem().getMasterChannelGroup(&mMasterChannelGroup);
+	
+	FMOD_RESULT result = Audio::Get().GetCoreSystem().createDSPByType(FMOD_DSP_TYPE_LOWPASS, &mLowPassDSP);
+	if (result != FMOD_OK)
+	{
+		LOG(LogAudio, Error, "FMOD was unable to create DSP");
+	}
+
+	result = mMasterChannelGroup->addDSP(0, mLowPassDSP);
+	if (result != FMOD_OK)
+	{
+		LOG(LogAudio, Error, "FMOD was unable to add DSP");
+	}
 }
 
 void CE::AudioSystem::Update(World& world, float)

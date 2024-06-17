@@ -3,6 +3,7 @@
 
 #include <fmod/fmod.hpp>
 #include "Assets/Sound.h"
+#include "Core/Audio.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
@@ -32,6 +33,12 @@ void CE::AudioEmitterComponent::SetLoops(AssetHandle<Sound> sound, int loops)
 		auto it = mPlayingOnChannels.find(hash);
 		if (it != mPlayingOnChannels.end())
 		{
+			FMOD_MODE mode{};
+			it->second->getMode(&mode);
+
+			mode = mode | FMOD_LOOP_NORMAL;
+
+			it->second->setMode(FMOD_LOOP_NORMAL);
 			it->second->setLoopCount(loops);
 		}
 	}
