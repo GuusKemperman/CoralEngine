@@ -3,8 +3,7 @@
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
-#include "Utilities/Reflect/ReflectComponentType.h"
-#include "Components/Particles/ParticleProperty.h"
+#include "Components/Particles/ParticleUtilities.h"
 
 CE::MetaType CE::ParticleLightComponent::Reflect()
 {
@@ -13,6 +12,6 @@ CE::MetaType CE::ParticleLightComponent::Reflect()
 	props.Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleLightComponent::mIntensity, "mIntensity").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleLightComponent::mRadius, "mRadius").GetProperties().Add(Props::sIsScriptableTag);
-	ReflectComponentType<ParticleLightComponent>(type);
+	ReflectParticleComponentType<ParticleLightComponent>(type);
 	return type;
 }

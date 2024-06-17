@@ -212,6 +212,7 @@ namespace CE
 	static const ScriptTickEvent sOnTickScriptEvent{};
 	static const ScriptFixedTickEvent sOnFixedTickScriptEvent{};
 	static const ScriptOnlyPassComponentEvent sOnDestructScriptEvent{ sDestructEvent };
+	static const ScriptOnlyPassComponentEvent sOnEndPlayEvent{ sEndPlayEvent };
 	static const ScriptOnlyPassComponentEvent sOnAIStateEnterScriptEvent{ sAIStateEnterEvent };
 	static const ScriptAITickEvent sOnAITickScriptEvent{};
 	static const ScriptOnlyPassComponentEvent sOnAIStateExitScriptEvent{ sAIStateExitEvent };
@@ -228,11 +229,12 @@ namespace CE
 	static const CollisionEvent sOnCollisionExitScriptEvent{ sCollisionExitEvent };
 	static const ScriptOnlyPassComponentEvent sOnButtonPressedScriptEvent{ sButtonPressEvent };
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 20> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 21> sAllScriptableEvents
 	{
 		sOnConstructScriptEvent,
 		sOnDestructScriptEvent,
 		sOnBeginPlayScriptEvent,
+		sOnEndPlayEvent,
 		sOnTickScriptEvent,
 		sOnFixedTickScriptEvent,
 		sOnAIStateEnterScriptEvent,

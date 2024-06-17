@@ -23,7 +23,15 @@ namespace CE
 		uint32 mHeight = 1;
 
 		uint32 mNumOfPossibleRotations = 1;
-		float mMaxRandomOffset = 0.0f;
+		float mMaxRandomOffset{};
+		float mMinRandomHeightOffset{};
+		float mMaxRandomHeightOffset{};
+
+		float mMinRandomScale{ 1.0f };
+		float mMaxRandomScale{ 1.0f };
+
+		glm::vec2 mMinRandomOrientation{};
+		glm::vec2 mMaxRandomOrientation{};
 
 		bool mShouldSpawnOnBeginPlay{};
 		bool mIsCentered{};
