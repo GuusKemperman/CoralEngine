@@ -245,7 +245,7 @@ namespace CE
 	static const CollisionEvent sOnCollisionExitScriptEvent{ sCollisionExitEvent };
 	static const ScriptOnlyPassComponentEvent sOnButtonPressedScriptEvent{ sButtonPressEvent };
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 22> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 23> sAllScriptableEvents
 	{
 		sOnConstructScriptEvent,
 		sOnDestructScriptEvent,
