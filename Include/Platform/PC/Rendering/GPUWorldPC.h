@@ -78,6 +78,7 @@ namespace CE
         /// </summary>
         void UpdateLights(int numDirLights, int numPointLights);
         void ClearClusterData();
+        void UpdateMSAA();
 
         DXResource& GetStructuredBuffer(InfoStruct::DXStructuredBuffers structuredBuffer) const { return *mStructuredBuffers[structuredBuffer]; }
         const DXConstBuffer& GetConstantBuffer(InfoStruct::DXConstantBuffers constantBuffer) const { return *mConstBuffers[constantBuffer]; }
@@ -111,11 +112,12 @@ namespace CE
         UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
         PosProcRenderingData& GetPostProcData() { return mPostProcData; };
         FrameBuffer& GetSelectionFramebuffer() const { return *mSelectedMeshFrameBuffer; }
+        FrameBuffer& GetDefaultFrameBuffer() const { return *mDefaultFrameBuffer.get(); }
+        FrameBuffer& GetMsaaFrameBuffer() const { return *mMsaaFrameBuffer.get(); }
 
         glm::ivec3 GetClusterGrid() const { return mClusterGrid; }
         int GetNumberOfClusters() const { return mNumberOfClusters; }
         uint32 ReadCompactClusterCounter() const;
-
 	private:
         void UpdateClusterData(const CameraComponent& camera);
         void InitializeShadowMaps();
@@ -158,6 +160,9 @@ namespace CE
         DebugRenderingData mDebugRenderingData;
         UIRenderingData mUIRenderingData;
         PosProcRenderingData mPostProcData;
+
+        std::unique_ptr<FrameBuffer> mMsaaFrameBuffer;
+        std::unique_ptr<FrameBuffer> mDefaultFrameBuffer;
 	};
 }
 

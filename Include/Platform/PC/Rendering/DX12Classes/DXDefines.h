@@ -43,3 +43,7 @@ using namespace Microsoft::WRL;
 //DEBUG RENDERER
 #define MAX_LINES 32760
 #define MAX_LINE_VERTICES MAX_LINES * 2
+
+//MSAA
+#define MSAA_COUNT 4
+#define MSAA_QUALITY 0
