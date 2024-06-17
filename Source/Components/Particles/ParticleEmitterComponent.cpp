@@ -96,6 +96,7 @@ CE::MetaType CE::ParticleEmitterComponent::Reflect()
 	type.AddField(&ParticleEmitterComponent::mIsPaused, "mIsPaused").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mDuration, "mDuration").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterComponent::mCurrentTime, "mCurrentTime").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&ParticleEmitterComponent::mNumOfParticlesToSpawnNextFrame, "mNumOfParticlesToSpawnNextFrame").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sNoSerializeTag);
 	type.AddFunc(&ParticleEmitterComponent::IsPaused, "IsPaused", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&ParticleEmitterComponent::IsPlaying, "IsPlaying", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&ParticleEmitterComponent::GetNumOfParticles, "GetNumOfParticles", "").GetProperties().Add(Props::sIsScriptableTag);
