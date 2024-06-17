@@ -849,7 +849,7 @@ void CE::GPUWorld::UpdateMSAA()
     mDefaultFrameBuffer->Resize(glm::ivec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
 #else
     Device& engineDevice = Device::Get();
-    mFrameBuffer->Resize(engineDevice.GetDisplaySize());
+    mMsaaFrameBuffer->Resize(engineDevice.GetDisplaySize());
     mDefaultFrameBuffer->Resize(engineDevice.GetDisplaySize());
 #endif
 
