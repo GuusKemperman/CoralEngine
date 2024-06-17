@@ -143,11 +143,18 @@ void CE::GridSpawnerComponent::SpawnGrid()
 			child->SetParent(transform);
 
 			const glm::vec2 offset = { randomFloat(0.0f, mMaxRandomOffset), randomFloat(0.0f, mMaxRandomOffset) };
-			child->SetLocalPosition(position + offset);
+			child->SetLocalPosition(To3DRightForward(position + offset, randomFloat(mMinRandomHeightOffset, mMaxRandomHeightOffset)));
+
+			child->SetLocalScale(randomFloat(mMinRandomScale, mMaxRandomScale));
 
 			const uint32 orientation = randomUint(1u, mNumOfPossibleRotations);
 			const float angle = static_cast<float>(orientation) * angleStep;
-			child->SetLocalOrientation(sUp * angle);
+			glm::quat quatOrientation{ glm::vec3{ sUp * angle } };
+
+			quatOrientation *= glm::quat{ sRight * glm::radians(randomFloat(mMinRandomOrientation.x, mMaxRandomOrientation.x)) };
+			quatOrientation *= glm::quat{ sForward * glm::radians(randomFloat(mMinRandomOrientation.y, mMaxRandomOrientation.y)) };
+
+			child->SetLocalOrientation(quatOrientation);
 		}
 	}
 }
@@ -164,6 +171,12 @@ CE::MetaType CE::GridSpawnerComponent::Reflect()
 	type.AddField(&GridSpawnerComponent::mWidth, "mWidth").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mNumOfPossibleRotations, "mNumOfPossibleRotations").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mMaxRandomOffset, "mMaxRandomOffset").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mMinRandomHeightOffset, "mMinRandomHeightOffset").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mMaxRandomHeightOffset, "mMaxRandomHeightOffset").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mMinRandomScale, "mMinRandomScale").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mMaxRandomScale, "mMaxRandomScale").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mMinRandomOrientation, "mMinRandomOrientation").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mMaxRandomOrientation, "mMaxRandomOrientation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mDistribution, "mDistribution").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mIsCentered, "mIsCentered").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mShouldSpawnOnBeginPlay, "mShouldSpawnOnBeginPlay").GetProperties().Add(Props::sIsScriptableTag);
