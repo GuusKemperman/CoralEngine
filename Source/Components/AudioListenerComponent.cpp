@@ -9,6 +9,8 @@ CE::MetaType CE::AudioListenerComponent::Reflect()
 	props.Add(Props::sIsScriptableTag);
 
 	type.AddField(&AudioListenerComponent::mVolume, "mVolume").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&AudioListenerComponent::mPitch, "mPitch").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&AudioListenerComponent::mUseLowPass, "mUseLowPass").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectComponentType<AudioListenerComponent>(type);
 
@@ -67,11 +69,11 @@ void CE::AudioListenerComponent::Deselect(World& world)
 
 CE::MetaType CE::AudioListenerSelectedTag::Reflect()
 {
-	MetaType metaType = MetaType{ MetaType::T<AudioListenerSelectedTag>{}, "AudioListenerSelectedTag" };
-	metaType.GetProperties().Add(Props::sNoInspectTag);
+	MetaType type = MetaType{ MetaType::T<AudioListenerSelectedTag>{}, "AudioListenerSelectedTag" };
+	type.GetProperties().Add(Props::sNoInspectTag);
 
-	ReflectComponentType<AudioListenerSelectedTag>(metaType);
+	ReflectComponentType<AudioListenerSelectedTag>(type);
 
-	return metaType;
+	return type;
 }
 

@@ -34,12 +34,25 @@ void CE::AudioEmitterComponent::SetLoops(AssetHandle<Sound> sound, int loops)
 		if (it != mPlayingOnChannels.end())
 		{
 			FMOD_MODE mode{};
-			it->second->getMode(&mode);
+			FMOD_RESULT result = it->second->getMode(&mode);
+			if (result != FMOD_OK)
+			{
+				LOG(LogAudio, Error, "FMOD Channel mode could not be retrieved, FMOD error {}", static_cast<int>(result));
+			}
 
 			mode = mode | FMOD_LOOP_NORMAL;
 
-			it->second->setMode(FMOD_LOOP_NORMAL);
-			it->second->setLoopCount(loops);
+			result = it->second->setMode(mode);
+			if (result != FMOD_OK)
+			{
+				LOG(LogAudio, Error, "FMOD Channel mode could not be set, FMOD error {}", static_cast<int>(result));
+			}
+
+			result = it->second->setLoopCount(loops);
+			if (result != FMOD_OK)
+			{
+				LOG(LogAudio, Error, "FMOD Channel loop count could not be set, FMOD error {}", static_cast<int>(result));
+			}
 		}
 	}
 }
@@ -48,7 +61,11 @@ void CE::AudioEmitterComponent::StopAll()
 {
 	for (auto& channel : mPlayingOnChannels)
 	{
-		channel.second->stop();
+		const FMOD_RESULT result = channel.second->stop();
+		if (result != FMOD_OK)
+		{
+			LOG(LogAudio, Error, "FMOD Channel could not be stopped, FMOD error {}", static_cast<int>(result));
+		}
 	}
 
 	mPlayingOnChannels.clear();
@@ -63,7 +80,11 @@ void CE::AudioEmitterComponent::SetPause(AssetHandle<Sound> sound, bool pause)
 		auto it = mPlayingOnChannels.find(hash);
 		if (it != mPlayingOnChannels.end())
 		{
-			it->second->setPaused(pause);
+			const FMOD_RESULT result = it->second->setPaused(pause);
+			if (result != FMOD_OK)
+			{
+				LOG(LogAudio, Error, "FMOD Channel could not be paused, FMOD error {}", static_cast<int>(result));
+			}
 		}
 	}
 }
@@ -77,17 +98,52 @@ void CE::AudioEmitterComponent::Stop(AssetHandle<Sound> sound)
 		auto it = mPlayingOnChannels.find(hash);
 		if (it != mPlayingOnChannels.end())
 		{
-			it->second->stop();
+			FMOD_RESULT result = it->second->stop();
+			if (result != FMOD_OK)
+			{
+				LOG(LogAudio, Error, "FMOD Channel could not be stopped, FMOD error {}", static_cast<int>(result));
+			}
 		}
 		mPlayingOnChannels.erase(it);
 	}
 }
 
-void CE::AudioEmitterComponent::Set3DAttributes(glm::vec3* position, glm::vec3* velocity)
+void CE::AudioEmitterComponent::Set3DAttributes(glm::vec3 position, glm::vec3 velocity)
 {
 	for (auto& channel : mPlayingOnChannels)
 	{
-		channel.second->set3DAttributes(reinterpret_cast<FMOD_VECTOR*>(position), reinterpret_cast<FMOD_VECTOR*>(velocity));
+		FMOD_MODE mode{};
+		FMOD_RESULT result = channel.second->getMode(&mode);
+		if (result != FMOD_OK)
+		{
+			LOG(LogAudio, Error, "FMOD Channel mode could not be retrieved, FMOD error {}", static_cast<int>(result));
+			return;
+		}
+
+		mode = mode | FMOD_3D;
+
+		result = channel.second->setMode(mode);
+		if (result != FMOD_OK)
+		{
+			LOG(LogAudio, Error, "FMOD Channel mode could not be set, FMOD error {}", static_cast<int>(result));
+			return;
+		}
+
+		result = channel.second->set3DAttributes(reinterpret_cast<FMOD_VECTOR*>(&position), reinterpret_cast<FMOD_VECTOR*>(&velocity));
+		if (result != FMOD_OK)
+		{
+			LOG(LogAudio, Error, "FMOD Channel 3D attributes could not be set, FMOD error {}", static_cast<int>(result));
+			return;
+		}
+
+		result = channel.second->get3DAttributes(reinterpret_cast<FMOD_VECTOR*>(&position), reinterpret_cast<FMOD_VECTOR*>(&velocity));
+		if (result != FMOD_OK)
+		{
+			LOG(LogAudio, Error, "FMOD Channel 3D attributes could not be retrieved, FMOD error {}", static_cast<int>(result));
+			return;
+		}
+
+		LOG(LogAudio, Message, "Position: {},{},{}, Velocity: {},{},{}", position.x, position.y, position.z, velocity.x, velocity.y, velocity.z);
 	}
 }
 
@@ -102,7 +158,11 @@ void CE::AudioEmitterComponent::SetChannelGroup(Audio::Group group)
 
 	for (auto& channel : mPlayingOnChannels)
 	{
-		channel.second->setChannelGroup(&Audio::Get().GetChannelGroup(group));
+		FMOD_RESULT result = channel.second->setChannelGroup(&Audio::Get().GetChannelGroup(group));
+		if (result != FMOD_OK)
+		{
+			LOG(LogAudio, Error, "FMOD Channel was unable to set channel group, FMOD error {}", static_cast<int>(result));
+		}
 	}
 }
 

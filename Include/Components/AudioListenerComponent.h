@@ -15,6 +15,9 @@ namespace CE
 		static void Deselect(World& world);
 
 		float mVolume = 1.0f;
+		float mPitch = 1.0f;
+		
+		bool mUseLowPass = false;
 
 	private:
 		
