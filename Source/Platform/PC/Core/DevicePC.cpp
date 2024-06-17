@@ -98,6 +98,7 @@ void CE::Device::InitializeWindow()
 		LOG(LogCore, Fatal, "GLFW could not be initialized");
 	}
 
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
@@ -315,33 +316,29 @@ void CE::Device::InitializeDevice()
 		LOG(LogCore, Fatal, "Failed to create upload fence event");
 	}
 
-
 	//CREATE SWAPCHAIN
-	DXGI_MODE_DESC backBufferDesc = {};
-	backBufferDesc.Width = static_cast<UINT>(mImpl->mViewport.Width);
-	backBufferDesc.Height = static_cast<UINT>(mImpl->mViewport.Height);
-	backBufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-	DXGI_SAMPLE_DESC sampleDesc = {};
-	sampleDesc.Count = 1;
-	sampleDesc.Quality = 0;
-
-	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-	swapChainDesc.BufferCount = FRAME_BUFFER_COUNT;
-	swapChainDesc.BufferDesc = backBufferDesc;
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+	swapChainDesc.Width = static_cast<UINT>(mImpl->mViewport.Width);
+	swapChainDesc.Height =static_cast<UINT>(mImpl->mViewport.Height);
+	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.Stereo = FALSE;
+	swapChainDesc.SampleDesc = {1, 0};
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDesc.BufferCount = FRAME_BUFFER_COUNT;
+	swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	swapChainDesc.OutputWindow = reinterpret_cast<HWND>(glfwGetWin32Window(mWindow));
-	swapChainDesc.SampleDesc = sampleDesc;
-	swapChainDesc.Windowed = true;
+	swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
 
-	IDXGISwapChain* tempSwapChain;
-	hr = dxgiFactory->CreateSwapChain(mImpl->mCommandQueue.Get(), &swapChainDesc, &tempSwapChain);
+	ComPtr<IDXGISwapChain1> tempSwapChain;
+	hr = dxgiFactory->CreateSwapChainForHwnd(
+		mImpl->mCommandQueue.Get(), reinterpret_cast<HWND>(glfwGetWin32Window(mWindow)), &swapChainDesc, nullptr, nullptr,
+		&tempSwapChain);
+
 	if (FAILED(hr))
 	{
 		LOG(LogCore, Fatal, "Failed to create swap chain");
 	}
-	mImpl->mSwapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
+	tempSwapChain.As(&mImpl->mSwapChain);
 
 	//CREATE DESCRIPTOR HEAPS
 	mImpl->mDescriptorHeaps[RT_HEAP] = DXDescHeap::Construct(mImpl->mDevice, 2000, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
