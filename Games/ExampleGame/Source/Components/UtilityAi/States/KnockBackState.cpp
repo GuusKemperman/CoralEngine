@@ -35,7 +35,9 @@ void Game::KnockBackState::OnTick(CE::World& world, entt::entity owner, float)
 		return;
 	}
 
-	if (CE::MakeTypeId<KnockBackState>() != enemyAiController->mCurrentState->GetTypeId() && mKnockBackSpeed > 0.f)
+	if (CE::MakeTypeId<KnockBackState>() != enemyAiController->mCurrentState->GetTypeId()
+		&& mKnockBackSpeed > 0.f
+		&& !mUltimateKnockBack)
 	{
 		mKnockBackSpeed = 0.f;
 	}
@@ -59,7 +61,12 @@ float Game::KnockBackState::OnAiEvaluate(const CE::World&, entt::entity) const
 {
 	if (mKnockBackSpeed > mMinKnockBackSpeed)
 	{
- 		return 0.825f;
+		if (mUltimateKnockBack)
+		{
+			return 1.0f;
+		}
+
+		return 0.825f;
 	}
 
 	return 0;
@@ -110,12 +117,15 @@ void Game::KnockBackState::OnAiStateEnterEvent(CE::World& world, const entt::ent
 
 void Game::KnockBackState::OnAiStateExitEvent(CE::World& world, const entt::entity owner)
 {
+	mUltimateKnockBack = false;
 	CE::SwarmingAgentTag::StartMovingToTarget(world, owner);
 }
 
-void Game::KnockBackState::AddKnockback(const float knockbackValue)
+void Game::KnockBackState::AddKnockback(const float knockbackValue, const bool ultimateKnockback)
 {
 	mKnockBackSpeed = std::max(mKnockBackSpeed, knockbackValue);
+
+	mUltimateKnockBack = ultimateKnockback;
 }
 
 void Game::KnockBackState::OnAnimationFinish(CE::World& world, entt::entity owner)
