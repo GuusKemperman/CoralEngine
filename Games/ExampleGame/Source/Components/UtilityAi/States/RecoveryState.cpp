@@ -36,7 +36,7 @@ float Game::RecoveryState::OnAiEvaluate(const CE::World&, entt::entity) const
 {
 	if (mRechargeCooldown.mAmountOfTimePassed < mRechargeCooldown.mCooldown)
 	{
-		return 1.0f;
+		return 0.975f;
 	}
 
 	return 0;

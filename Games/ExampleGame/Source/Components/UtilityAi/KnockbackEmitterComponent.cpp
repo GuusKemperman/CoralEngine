@@ -35,7 +35,7 @@ void Game::KnockbackEmitterComponent::OnAbilityHit(CE::World& world, const entt:
 		return;
 	}
 
-	knockBackState->AddKnockback(weapon->mKnockback);
+	knockBackState->AddKnockback(weapon->mKnockback, false);
 }
 
 CE::MetaType Game::KnockbackEmitterComponent::Reflect()

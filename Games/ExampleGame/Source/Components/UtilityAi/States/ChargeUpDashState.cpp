@@ -28,6 +28,8 @@ void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owne
 	physicsBody2DComponent->mLinearVelocity = {};
 
 	mChargeCooldown.mAmountOfTimePassed += dt;
+
+	AIFunctionality::FaceThePlayer(world, owner);
 }
 
 float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const

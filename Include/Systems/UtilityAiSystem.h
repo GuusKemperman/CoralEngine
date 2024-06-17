@@ -10,6 +10,13 @@ namespace CE
 	public:
 		void Update(World& world, float dt) override;
 
+		SystemStaticTraits GetStaticTraits() const override
+		{
+			SystemStaticTraits traits{};
+			traits.mPriority = static_cast<int>(TickPriorities::PreTick) - 1;
+			return traits;
+		}
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
