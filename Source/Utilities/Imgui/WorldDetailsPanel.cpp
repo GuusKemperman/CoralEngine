@@ -104,13 +104,13 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 				if (isHeaderOpen)
 				{
 					ImGui::PushID(name.data(), name.data() + name.size());
-					const MetaFunc* const onInspect = TryGetEvent(componentClass, sInspectEvent);
+					const std::optional<BoundEvent> onInspect = TryGetEvent(componentClass, sInspectEvent);
 
-					if (onInspect != nullptr)
+					if (onInspect.has_value())
 					{
 						// We run the custom OnInspect here, directly after opening the collapsing header.
 						// We unfortunately cannot search through it's contents, so we always show it.
-						onInspect->InvokeCheckedUnpacked(world, selectedEntities);
+						onInspect->mFunc.get().InvokeCheckedUnpacked(world, selectedEntities);
 					}
 				}
 

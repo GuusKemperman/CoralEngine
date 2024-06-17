@@ -2,11 +2,11 @@
 #include "Components/Particles/ParticleEmitterShapes.h"
 
 #include "Components/Particles/ParticleEmitterComponent.h"
+#include "Components/Particles/ParticleUtilities.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Math.h"
 #include "Utilities/Random.h"
-#include "Utilities/Reflect/ReflectComponentType.h"
 
 namespace CE::Internal
 {
@@ -34,9 +34,9 @@ void CE::ParticleEmitterShapeSphere::OnParticleSpawn(ParticleEmitterComponent& e
 	const float cosTheta = glm::cos(theta);
 	const float sinPhi = glm::sin(phi);
 	const float cosPhi = glm::cos(phi);
-	const float x = r * sinPhi * cosTheta;
-	const float y = r * sinPhi * sinTheta;
-	const float z = r * cosPhi;
+	const float x = mRadius * r * sinPhi * cosTheta;
+	const float y = mRadius * r * sinPhi * sinTheta;
+	const float z = mRadius * r * cosPhi;
 
 	emitter.SetParticlePositionFast(i, emitterMatrix * glm::vec4{ x, y, z, 1.0f });
 	Internal::RandomOrientation(emitter, i, mMinOrientation, mMinOrientation, emitterWorldOrientation);
@@ -57,7 +57,7 @@ CE::MetaType CE::ParticleEmitterShapeAABB::Reflect()
 	type.AddField(&ParticleEmitterShapeAABB::mMinOrientation, "mMinOrientation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterShapeAABB::mMaxOrientation, "mMaxOrientation").GetProperties().Add(Props::sIsScriptableTag);
 
-	ReflectComponentType<ParticleEmitterShapeAABB>(type);
+	ReflectParticleComponentType<ParticleEmitterShapeAABB>(type);
 	return type;
 }
 
@@ -70,7 +70,7 @@ CE::MetaType CE::ParticleEmitterShapeSphere::Reflect()
 	type.AddField(&ParticleEmitterShapeSphere::mMinOrientation, "mMinOrientation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleEmitterShapeSphere::mMaxOrientation, "mMaxOrientation").GetProperties().Add(Props::sIsScriptableTag);
 
-	ReflectComponentType<ParticleEmitterShapeSphere>(type);
+	ReflectParticleComponentType<ParticleEmitterShapeSphere>(type);
 	return type;
 }
 

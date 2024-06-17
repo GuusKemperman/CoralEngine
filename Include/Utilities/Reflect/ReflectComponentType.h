@@ -10,6 +10,16 @@ namespace CE
 {
 	namespace Internal
 	{
+		struct DestroyCallBackInstaller
+		{
+			template<typename ComponentType>
+			static void InstallCallback(entt::registry& reg)
+			{
+				reg.on_destroy<ComponentType>().template connect<&Registry::DestroyCallback<ComponentType>>();
+			}
+			static constexpr std::string_view sFuncName = "__InstallOnDestroyCallBack";
+		};
+
 		inline std::string GetAddComponentFuncName(std::string_view componentTypeName)
 		{
 			return Format("Add {}", componentTypeName);
@@ -27,6 +37,8 @@ namespace CE
 	template<typename T>
 	void ReflectComponentType(MetaType& type)
 	{
+		type.AddFunc(&Internal::DestroyCallBackInstaller::InstallCallback<T>, Internal::DestroyCallBackInstaller::sFuncName);
+
 		MetaType& entityType = MetaManager::Get().GetType<entt::entity>();
 
 		static constexpr bool isEmpty = std::is_empty_v<T>;
