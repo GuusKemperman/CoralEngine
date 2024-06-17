@@ -33,8 +33,8 @@ void Game::AttackingState::OnAiTick(CE::World& world, const entt::entity owner, 
 
 float Game::AttackingState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
-	const auto score = AIFunctionality::GetBestScoreBasedOnDetection(world, owner, mRadius);
-	return score;
+	const float score = AIFunctionality::GetBestScoreBasedOnDetection(world, owner, mRadius);
+	return (std::min(score,0.8f));
 }
 
 void Game::AttackingState::OnAiStateEnter(CE::World& world, entt::entity owner)

@@ -26,7 +26,6 @@ namespace CE
 		{
 			SystemStaticTraits traits{};
 			traits.mPriority = static_cast<int>(TickPriorities::PreTick);
-			traits.mFixedTickInterval = 0.2f;
 			return traits;
 		}
 
