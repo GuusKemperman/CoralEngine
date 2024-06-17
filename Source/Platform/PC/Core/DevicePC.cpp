@@ -98,8 +98,6 @@ void CE::Device::InitializeWindow()
 		LOG(LogCore, Fatal, "GLFW could not be initialized");
 	}
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
