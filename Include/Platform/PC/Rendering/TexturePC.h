@@ -31,6 +31,7 @@ namespace CE
 #endif // EDITOR
 
 		Texture(AssetLoadInfo& loadInfo);
+		Texture(std::string_view name, uint32_t width, uint32_t height, const unsigned char* pixels);
 
 		~Texture() override;
 
@@ -48,6 +49,9 @@ namespace CE
 
 		void BindToGraphics(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList, unsigned int rootSlot) const;
 		void BindToCompute(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList, unsigned int rootSlot) const;
+
+		uint32_t GetWidth() const { return 0; } // TODO: Implement for text rendering
+		uint32_t GetHeight() const { return 0; } // TODO: Implement for text rendering
 
 #ifdef EDITOR
 		ImTextureID GetImGuiId() const;
