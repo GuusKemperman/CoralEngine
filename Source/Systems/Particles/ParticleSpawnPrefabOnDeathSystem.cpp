@@ -5,7 +5,7 @@
 #include "World/Registry.h"
 #include "Components/Particles/ParticleSpawnPrefabOnDeathComponent.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
-#include "Components/Particles/ParticleProperty.h"
+#include "Components/Particles/ParticleUtilities.h"
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 

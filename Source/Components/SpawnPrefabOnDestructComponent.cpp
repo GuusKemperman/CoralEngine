@@ -44,7 +44,7 @@ CE::MetaType CE::SpawnPrefabOnDestructComponent::Reflect()
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sDestructEvent, &SpawnPrefabOnDestructComponent::OnDestruct);
+	BindEvent(type, CE::sEndPlayEvent, &SpawnPrefabOnDestructComponent::OnDestruct);
 
 	type.AddField(&SpawnPrefabOnDestructComponent::mPrefab, "mPrefab").GetProperties().Add(CE::Props::sIsScriptableTag);
 

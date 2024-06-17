@@ -12,7 +12,7 @@ namespace Game
 		CE::SystemStaticTraits GetStaticTraits() const override
 		{
 			CE::SystemStaticTraits traits{};
-			traits.mFixedTickInterval = 10.0f;
+			traits.mFixedTickInterval = 1.0f;
 			return traits;
 		}
 
