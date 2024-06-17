@@ -19,27 +19,29 @@
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
 #include "Utilities/AiFunctionality.h"
 
-//void Game::KnockBackState::OnTick(CE::World& world, entt::entity owner, float)
-//{
-//	const auto* enemyAiController = world.GetRegistry().TryGet<CE::EnemyAiControllerComponent>(owner);
-//
-//	if (enemyAiController == nullptr)
-//	{
-//		LOG(LogAI, Warning, "A enemyController component is needed to run the KnockBack State!");
-//		return;
-//	}
-//
-//	if (enemyAiController->mCurrentState == nullptr)
-//	{
-//		LOG(LogAI, Warning, "No current States in the enemyAIController!");
-//		return;
-//	}
-//
-//	if (CE::MakeTypeId<KnockBackState>() != enemyAiController->mCurrentState->GetTypeId())
-//	{
-//		mKnockBackSpeed = 0.f;
-//	}
-//}
+void Game::KnockBackState::OnTick(CE::World& world, entt::entity owner, float)
+{
+	auto* enemyAiController = world.GetRegistry().TryGet<CE::EnemyAiControllerComponent>(owner);
+
+	if (enemyAiController == nullptr)
+	{
+		LOG(LogAI, Warning, "A enemyController component is needed to run the KnockBack State!");
+		return;
+	}
+
+	if (enemyAiController->mCurrentState == nullptr)
+	{
+		LOG(LogAI, Warning, "No current States in the enemyAIController!");
+		return;
+	}
+
+	if (CE::MakeTypeId<KnockBackState>() != enemyAiController->mCurrentState->GetTypeId()
+		&& mKnockBackSpeed > 0.f
+		&& !mUltimateKnockBack)
+	{
+		mKnockBackSpeed = 0.f;
+	}
+}
 
 void Game::KnockBackState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -59,7 +61,12 @@ float Game::KnockBackState::OnAiEvaluate(const CE::World&, entt::entity) const
 {
 	if (mKnockBackSpeed > mMinKnockBackSpeed)
 	{
- 		return 0.825f;
+		if (mUltimateKnockBack)
+		{
+			return 1.0f;
+		}
+
+		return 0.825f;
 	}
 
 	return 0;
@@ -110,12 +117,15 @@ void Game::KnockBackState::OnAiStateEnterEvent(CE::World& world, const entt::ent
 
 void Game::KnockBackState::OnAiStateExitEvent(CE::World& world, const entt::entity owner)
 {
+	mUltimateKnockBack = false;
 	CE::SwarmingAgentTag::StartMovingToTarget(world, owner);
 }
 
-void Game::KnockBackState::AddKnockback(const float knockbackValue)
+void Game::KnockBackState::AddKnockback(const float knockbackValue, const bool ultimateKnockback)
 {
 	mKnockBackSpeed = std::max(mKnockBackSpeed, knockbackValue);
+
+	mUltimateKnockBack = ultimateKnockback;
 }
 
 void Game::KnockBackState::OnAnimationFinish(CE::World& world, entt::entity owner)
@@ -151,7 +161,7 @@ CE::MetaType Game::KnockBackState::Reflect()
 	type.AddField(&KnockBackState::mFriction, "Friction").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sAITickEvent, &KnockBackState::OnAiTick);
-	//BindEvent(type, CE::sTickEvent, &KnockBackState::OnTick);
+	BindEvent(type, CE::sTickEvent, &KnockBackState::OnTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &KnockBackState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &KnockBackState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sAIStateExitEvent, &KnockBackState::OnAiStateExitEvent);
