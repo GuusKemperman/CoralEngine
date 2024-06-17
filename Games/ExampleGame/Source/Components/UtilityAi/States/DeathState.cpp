@@ -10,8 +10,12 @@
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
+#include "Components/AttachToBoneComponent.h"
+#include "Components/MeshColorComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Components/SkinnedMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
@@ -125,6 +129,35 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::PhysicsBody2DComponent>(owner);
 
 	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::DiskColliderComponent>(owner);
+
+	const CE::TransformComponent* transform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+	if (transform == nullptr)
+	{
+		LOG(LogAbilitySystem, Error, "Character with entity id {} does not have a TransformComponent attached.", entt::to_integral(owner));
+	}
+	else
+	{
+		const auto setMeshColor = [&world](const auto& self, const CE::TransformComponent& current) -> void
+			{
+				for (const CE::TransformComponent& child : current.GetChildren())
+				{
+					auto* staticMesh = world.GetRegistry().TryGet<CE::StaticMeshComponent>(child.GetOwner());
+					if (staticMesh != nullptr)
+					{
+						staticMesh->mHighlightedMesh = false;
+					}
+
+					auto* skinnedMesh = world.GetRegistry().TryGet<CE::SkinnedMeshComponent>(child.GetOwner());
+					if (skinnedMesh != nullptr)
+					{
+						skinnedMesh->mHighlightedMesh = false;
+					}
+
+					self(self, child);
+				}
+			};
+		setMeshColor(setMeshColor, *transform);
+	}
 }
 
 void Game::DeathState::OnFinishAnimationEvent(CE::World& world, entt::entity owner)
