@@ -73,6 +73,22 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 			continue;
 		}
 
+		if (!emitter.IsPlaying())
+		{
+			if (emitter.mLoop)
+			{
+				emitter.PlayFromStart();
+			}
+			else
+			{
+				if (emitter.mDestroyOnFinish)
+				{
+					reg.Destroy(entity, true);
+				}
+				continue;
+			}
+		}
+
 		const float totalSpawnRateSurface = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetween(0.0f, 1.0f, .05f);
 
 		emitter.mEmitterWorldMatrix = transform.GetWorldMatrix();
@@ -100,6 +116,10 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 		}
 		else
 		{
+			if (totalSpawnRateSurface == 0.0f)
+			{
+				LOG(LogEditor, Error, "Total spawnrate was 0.0f");
+			}
 			emitter.mNumOfParticlesToSpawnNextFrame += (surfaceAreaBetweenLastStepAndNow / totalSpawnRateSurface) * static_cast<float>(emitter.mNumOfParticlesToSpawn);
 			const float numToSpawnAsFloat = floorf(emitter.mNumOfParticlesToSpawnNextFrame);
 
@@ -108,23 +128,14 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				emitter.mNumOfParticlesToSpawnNextFrame -= numToSpawnAsFloat;
 				numToSpawnThisFrame = static_cast<uint32>(numToSpawnAsFloat);
 			}
+
+			if (std::isnan(emitter.mNumOfParticlesToSpawnNextFrame))
+			{
+				LOG(LogEditor, Error, "IsNan");
+
+			}
 		}
 
-		if (!emitter.IsPlaying())
-		{
-			if (emitter.mLoop)
-			{
-				emitter.PlayFromStart();
-			}
-			else
-			{
-				if (emitter.mDestroyOnFinish)
-				{
-					reg.Destroy(entity, true);
-				}
-				continue;
-			}
-		}
 		emitter.mCurrentTime += dt;
 
 		// Recyle the particles we killed the previous frame
