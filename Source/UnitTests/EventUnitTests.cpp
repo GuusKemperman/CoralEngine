@@ -282,13 +282,18 @@ UNIT_TEST(Events, CollisionEvents)
 	Registry& reg = world.GetRegistry();
 
 	reg.AddComponent<TransformComponent>(owner);
-	reg.AddComponent<PhysicsBody2DComponent>(owner).mIsAffectedByForces = false;
+	
+	PhysicsBody2DComponent& body1 = reg.AddComponent<PhysicsBody2DComponent>(owner);
+	body1.mIsAffectedByForces = false;
+	body1.mRules = CollisionPresets::sCharacter.mRules;
 	reg.AddComponent<DiskColliderComponent>(owner);
 
 	const entt::entity other = reg.Create();
 
 	TransformComponent& otherTransform = reg.AddComponent<TransformComponent>(other);
-	reg.AddComponent<PhysicsBody2DComponent>(other).mIsAffectedByForces = false;
+	PhysicsBody2DComponent& body2 = reg.AddComponent<PhysicsBody2DComponent>(other);
+	body2.mIsAffectedByForces = false;
+	body2.mRules = CollisionPresets::sCharacter.mRules;
 	reg.AddComponent<DiskColliderComponent>(other);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 0));

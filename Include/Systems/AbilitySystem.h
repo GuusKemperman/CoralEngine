@@ -59,7 +59,9 @@ namespace CE
 
 	private:
 		static inline std::vector<CE::BoundEvent> sAbilityActivateEvents;
+		static inline std::vector<CE::BoundEvent> sReloadStartedEvents;
 		static inline std::vector<CE::BoundEvent> sReloadCompletedEvents;
+		static inline std::vector<CE::BoundEvent> sReloadInterruptedEvents;
 		static inline std::vector<CE::BoundEvent> sEnemyKilledEvents;
 		static inline std::vector<CE::BoundEvent> sGettingHitEvents;
 		static inline std::vector<CE::BoundEvent> sAbilityHitEvents;

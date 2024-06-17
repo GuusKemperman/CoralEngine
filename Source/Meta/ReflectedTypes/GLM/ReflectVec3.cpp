@@ -35,6 +35,8 @@ MetaType Reflector<T>::Reflect()
 	type.AddField(&T::z, "Z").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<float(*)(const T&, const T&)>(&dot), "Dot", "DirectionA", "DirectionB").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<T(*)(const T&)>(&normalize), "Normalize").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(static_cast<T(*)(const T&)>(&radians), "ToRadians", "Degrees", "Radians").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(static_cast<T(*)(const T&)>(&degrees), "ToDegrees", "Radians", "Degrees").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<float(*)(const T&, const T&)>(&distance), "Distance", "LocationA", "LocationB").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<float(*)(const T&, const T&)>(&distance2), "Distance2", "LocationA", "LocationB").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<float(*)(const T&)>(&length), "Length").GetProperties().Add(Props::sIsScriptableTag);
@@ -43,6 +45,8 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc([](const T& v, const float& s) { return v * s; }, "Scale", MetaFunc::ExplicitParams<const T&, const float&>{}, "Vector", "Scalar", "Product").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<T(*)(const T&, const float&, const float&)>(&Math::ClampLength), "ClampLength").GetProperties().Add(Props::sIsScriptableTag);
 
+
+	
 
 	type.AddFunc([](T& n) -> T& { ++n; return n; }, OperatorType::increment, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](T& n) -> T& { --n; return n; }, OperatorType::decrement, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
