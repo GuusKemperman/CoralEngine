@@ -127,6 +127,22 @@ namespace CE
 		{
 			return std::fabs(a - b) < epsilon;
 		}
+
+		static uint32_t NextPowerOfTwo(uint32_t value)
+		{
+			// https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+			unsigned int v = value; // compute the next highest power of 2 of 32-bit v
+
+			v--;
+			v |= v >> 1;
+			v |= v >> 2;
+			v |= v >> 4;
+			v |= v >> 8;
+			v |= v >> 16;
+			v++;
+
+			return v;
+		}
 		
 		static std::optional<std::vector<glm::vec3>> CalculateTangents(
         const void* const indices,
