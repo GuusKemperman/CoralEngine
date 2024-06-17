@@ -112,6 +112,12 @@ CE::MeshRenderer::MeshRenderer()
         .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
 
+    mZSelectedPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
+
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZSkinnedVertex.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     mZSkinnedPipeline = DXPipelineBuilder()
@@ -121,6 +127,14 @@ CE::MeshRenderer::MeshRenderer()
         .AddRenderTarget(DXGI_FORMAT_R16G16B16A16_FLOAT)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
         .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
+
+    mZSelectedSkinnedPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1)
+        .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2)
+        .AddRenderTarget(DXGI_FORMAT_R16G16B16A16_FLOAT)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
 
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/Clustering/ClusterGridCS.hlsl");
@@ -374,7 +388,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
     gpuWorld.GetSelectionFramebuffer().Bind();
     gpuWorld.GetSelectionFramebuffer().Clear();
 
-    commandList->SetPipelineState(mZSkinnedPipeline.Get());
+    commandList->SetPipelineState(mZSelectedSkinnedPipeline.Get());
     {
         int skinnedMeshCounter = 0;
         const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
@@ -396,7 +410,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         }
     }
 
-    commandList->SetPipelineState(mZPipeline.Get());
+    commandList->SetPipelineState(mZSelectedPipeline.Get());
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
 

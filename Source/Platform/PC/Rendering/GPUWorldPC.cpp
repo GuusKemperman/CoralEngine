@@ -206,7 +206,8 @@ void CE::PosProcRenderingData::Update(const World& world)
         for (auto [entity, outlineComponent] : view.each())
         {
             outlineInfo.mOutlineColor = outlineComponent.mColor;
-            outlineInfo.mThickness = outlineComponent.mThickness;
+            outlineInfo.mThicknes = outlineComponent.mThickness;
+            outlineInfo.mBias = outlineComponent.mBias;
         }
         mOutlineBuffer->Update(&outlineInfo, sizeof(InfoStruct::DXOutlineInfo), 0, frameIndex);
     }
