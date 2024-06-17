@@ -34,6 +34,7 @@ namespace CE
 		Audio::Group mGroup = Audio::Group::Game;
 
 	private:
+		void OnEndPlay(World& world, entt::entity owner);
 		uint32 GetSoundNameHash(AssetHandle<Sound> sound);
 
 		friend ReflectAccess;

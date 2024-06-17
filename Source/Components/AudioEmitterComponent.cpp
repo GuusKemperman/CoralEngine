@@ -106,6 +106,16 @@ void CE::AudioEmitterComponent::SetChannelGroup(Audio::Group group)
 	}
 }
 
+void CE::AudioEmitterComponent::OnEndPlay(World& world, entt::entity owner)
+{
+	AudioEmitterComponent* emitter = world.GetRegistry().TryGet<AudioEmitterComponent>(owner);
+
+	if (emitter != nullptr)
+	{
+		emitter->StopAll();
+	}
+}
+
 uint32 CE::AudioEmitterComponent::GetSoundNameHash(AssetHandle<Sound> sound)
 {
 	return Name::HashString(sound.GetMetaData().GetName());
@@ -116,8 +126,7 @@ CE::MetaType CE::AudioEmitterComponent::Reflect()
 	auto type = MetaType{ MetaType::T<AudioEmitterComponent>{}, "AudioEmitterComponent" };
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
-
-	//type.AddField(&AudioEmitterComponent::mSound, "mSound").GetProperties().Add(Props::sIsScriptableTag);
+	BindEvent(type, CE::sEndPlayEvent, &AudioEmitterComponent::OnEndPlay);
 	
 	type.AddField(&AudioEmitterComponent::mGroup, "mGroup").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptReadOnlyTag);
 
