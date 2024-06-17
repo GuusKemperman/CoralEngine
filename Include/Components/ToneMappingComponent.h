@@ -3,10 +3,15 @@
 
 namespace CE
 {
-	class IsAwaitingBeginPlayTag
+	class ToneMappingComponent
 	{
+	public:
+		float mExposure;
+
+	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		REFLECT_AT_START_UP(IsAwaitingBeginPlayTag);
+		REFLECT_AT_START_UP(ToneMappingComponent);
 	};
 }
+

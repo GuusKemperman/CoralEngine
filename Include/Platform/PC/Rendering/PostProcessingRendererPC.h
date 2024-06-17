@@ -16,7 +16,9 @@ namespace CE
 
     private:
         void RenderOutline(const World& world);
+        void ToneMap(const World& world);
         ComPtr<ID3D12PipelineState>  mOutlinePipeline;
+        ComPtr<ID3D12PipelineState>  mToneMapPipeline;
 
     };
 };

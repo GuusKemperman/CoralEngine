@@ -546,9 +546,11 @@
     <ClCompile Include="Source\Components\OutlineComponent.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticleEmitterShapes.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticleLightComponent.cpp" />
+    <ClCompile Include="Source\Components\Particles\ParticleUtilities.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\SwarmingAgentTag.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\SwarmingTargetComponent.cpp" />
     <ClCompile Include="Source\Components\SpawnPrefabOnDestructComponent.cpp" />
+    <ClCompile Include="Source\Components\ToneMappingComponent.cpp" />
     <ClCompile Include="Source\Components\UI\UITextComponent.cpp" />
     <ClCompile Include="Source\Platform\PC\Rendering\PostProcessingRendererPC.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
@@ -573,7 +575,6 @@
     <ClCompile Include="Source\Components\FogComponent.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetInternal.cpp" />
     <ClCompile Include="Source\Components\AnimationRootComponent.cpp" />
-    <ClCompile Include="Source\Components\IsAwaitingBeginPlayTag.cpp" />
     <ClCompile Include="Source\Components\MaterialRootComponent.cpp" />
     <ClCompile Include="Source\EditorSystems\ThumbnailEditorSystem.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1641,19 +1642,19 @@
     <ClInclude Include="Include\Assets\Core\AssetInternal.h" />
     <ClInclude Include="Include\Components\AnimationRootComponent.h" />
     <ClInclude Include="Include\Components\GridSpawnerComponent.h" />
-    <ClInclude Include="Include\Components\IsAwaitingBeginPlayTag.h" />
     <ClInclude Include="Include\Components\MaterialRootComponent.h" />
     <ClInclude Include="Include\Components\OutlineComponent.h" />
     <ClInclude Include="Include\Components\Particles\ParticleLightComponent.h" />
     <ClInclude Include="Include\Components\Particles\ParticleEmitterShapes.h" />
-    <ClInclude Include="Include\Components\Particles\ParticleProperty.h" />
-    <ClInclude Include="Include\Components\Particles\ParticleProperty\ParticlePropertyFwd.h" />
-    <ClInclude Include="Include\Components\Particles\ParticleProperty\ParticlePropertyImpl.h" />
+    <ClInclude Include="Include\Components\Particles\ParticleUtilities.h" />
+    <ClInclude Include="Include\Components\Particles\ParticleUtilities\ParticleUtilitiesFwd.h" />
+    <ClInclude Include="Include\Components\Particles\ParticleUtilities\ParticleUtilitiesImpl.h" />
     <ClInclude Include="Include\Components\Pathfinding\SwarmingAgentTag.h" />
     <ClInclude Include="Include\Components\Pathfinding\SwarmingTargetComponent.h" />
     <ClInclude Include="Include\Components\PlayerComponent.h" />
     <ClInclude Include="Include\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Include\Components\SpawnPrefabOnDestructComponent.h" />
+    <ClInclude Include="Include\Components\ToneMappingComponent.h" />
     <ClInclude Include="Include\Components\UI\UITextComponent.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\DX12Classes\DXHeapHandle.h" />

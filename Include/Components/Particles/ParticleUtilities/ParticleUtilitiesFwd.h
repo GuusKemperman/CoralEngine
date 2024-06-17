@@ -76,4 +76,7 @@ namespace CE
 		friend ReflectAccess;
 		static MetaType Reflect();
 	};
+
+	template<typename ComponentType>
+	void ReflectParticleComponentType(MetaType& type);
 }

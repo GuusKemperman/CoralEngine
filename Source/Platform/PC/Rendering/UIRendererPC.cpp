@@ -123,4 +123,5 @@ void CE::UIRenderer::Render(const World& world)
         commandList->IASetIndexBuffer(&renderingData.mIndexBufferView);
         commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
     }
+
 }

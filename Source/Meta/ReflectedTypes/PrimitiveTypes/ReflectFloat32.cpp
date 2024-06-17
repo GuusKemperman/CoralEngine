@@ -34,6 +34,8 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc(static_cast<std::string(*)(T)>(&std::to_string), "ToString").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const T& f) { return static_cast<int32>(f); }, "ToInt32", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const T& f) { return static_cast<uint32>(f); }, "ToUInt32", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(static_cast<T(*)(T)>(&glm::radians), "ToRadians", "Degrees", "Radians").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(static_cast<T(*)(T)>(&glm::degrees), "ToDegrees", "Radians", "Degrees").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&sinf, "Sin").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&asinf, "ASin").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&cosf, "Cos").GetProperties().Add(Props::sIsScriptableTag);

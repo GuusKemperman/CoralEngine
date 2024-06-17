@@ -29,7 +29,7 @@ namespace CE
 			std::optional<glm::vec2> firstResizeBufferTo = {},
 			bool clearBufferFirst = true);
 
-		const FrameBuffer& GetFrameBuffer() const { return *mFrameBuffer; }
+		FrameBuffer& GetFrameBuffer() const { return *mFrameBuffer; }
 #endif // EDITOR
 
 		const DebugRenderer& GetDebugRenderer() const { return *mDebugRenderer; };

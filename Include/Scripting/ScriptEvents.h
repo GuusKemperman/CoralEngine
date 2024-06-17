@@ -136,11 +136,25 @@ namespace CE
 			const AssetHandle<Script>& script) const override;
 	};
 
+	class ScriptReloadStartedEvent final :
+		public ScriptOnlyPassComponentEvent
+	{
+	public:
+		ScriptReloadStartedEvent();
+	};
+
 	class ScriptReloadCompletedEvent final :
 		public ScriptOnlyPassComponentEvent
 	{
 	public:
 		ScriptReloadCompletedEvent();
+	};
+
+	class ScriptReloadInterruptedEvent final :
+		public ScriptOnlyPassComponentEvent
+	{
+	public:
+		ScriptReloadInterruptedEvent();
 	};
 
 	class ScriptEnemyKilledEvent final :
@@ -212,13 +226,16 @@ namespace CE
 	static const ScriptTickEvent sOnTickScriptEvent{};
 	static const ScriptFixedTickEvent sOnFixedTickScriptEvent{};
 	static const ScriptOnlyPassComponentEvent sOnDestructScriptEvent{ sDestructEvent };
+	static const ScriptOnlyPassComponentEvent sOnEndPlayEvent{ sEndPlayEvent };
 	static const ScriptOnlyPassComponentEvent sOnAIStateEnterScriptEvent{ sAIStateEnterEvent };
 	static const ScriptAITickEvent sOnAITickScriptEvent{};
 	static const ScriptOnlyPassComponentEvent sOnAIStateExitScriptEvent{ sAIStateExitEvent };
 	static const ScriptAIEvaluateEvent sAIEvaluateScriptEvent{};
 	static const ScriptAbilityActivateEvent sScriptAbilityActivateEvent{};
 	static const ScriptAbilityHitEvent sScriptAbilityHitEvent{};
+	static const ScriptReloadStartedEvent sScriptReloadStartedEvent{};
 	static const ScriptReloadCompletedEvent sScriptReloadCompletedEvent{};
+	static const ScriptReloadInterruptedEvent sScriptReloadInterruptedEvent{};
 	static const ScriptEnemyKilledEvent sScriptEnemyKilledEvent{};
 	static const ScriptGettingHitEvent sScriptGettingHitEvent{};
 	static const ScriptCritEvent sScriptCritEvent{};
@@ -228,11 +245,12 @@ namespace CE
 	static const CollisionEvent sOnCollisionExitScriptEvent{ sCollisionExitEvent };
 	static const ScriptOnlyPassComponentEvent sOnButtonPressedScriptEvent{ sButtonPressEvent };
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 20> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 23> sAllScriptableEvents
 	{
 		sOnConstructScriptEvent,
 		sOnDestructScriptEvent,
 		sOnBeginPlayScriptEvent,
+		sOnEndPlayEvent,
 		sOnTickScriptEvent,
 		sOnFixedTickScriptEvent,
 		sOnAIStateEnterScriptEvent,
@@ -241,7 +259,9 @@ namespace CE
 		sAIEvaluateScriptEvent,
 		sScriptAbilityActivateEvent,
 		sScriptAbilityHitEvent,
+		sScriptReloadStartedEvent,
 		sScriptReloadCompletedEvent,
+		sScriptReloadInterruptedEvent,
 		sScriptEnemyKilledEvent,
 		sScriptGettingHitEvent,
 		sScriptCritEvent,

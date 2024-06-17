@@ -1,7 +1,7 @@
 #pragma once
 #include "BasicDataTypes/Colors/LinearColor.h"
 #include "Meta/MetaReflect.h"
-#include "Components/Particles/ParticleProperty/ParticlePropertyFwd.h"
+#include "Components/Particles/ParticleUtilities/ParticleUtilitiesFwd.h"
 
 namespace CE
 {
