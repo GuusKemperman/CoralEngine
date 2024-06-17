@@ -27,21 +27,21 @@ void CE::AITickSystem::Update(World& world, float dt)
 			continue;
 		}
 
-		const MetaFunc* const aiTickEvent = TryGetEvent(*currentAIController.mCurrentState, sAITickEvent);
+		const std::optional<BoundEvent> aiTickEvent = TryGetEvent(*currentAIController.mCurrentState, sAITickEvent);
 
-		if (aiTickEvent == nullptr)
+		if (!aiTickEvent.has_value())
 		{
 			continue;
 		}
 
-		if (aiTickEvent->GetProperties().Has(Props::sIsEventStaticTag))
+		if (aiTickEvent->mIsStatic)
 		{
-			aiTickEvent->InvokeUncheckedUnpacked(world, entity, dt);
+			aiTickEvent->mFunc.get().InvokeUncheckedUnpacked(world, entity, dt);
 		}
 		else
 		{
 			MetaAny component{ *currentAIController.mCurrentState, storage->value(entity), false };
-			aiTickEvent->InvokeUncheckedUnpacked(component, world, entity, dt);
+			aiTickEvent->mFunc.get().InvokeUncheckedUnpacked(component, world, entity, dt);
 		}
 	}
 }
@@ -131,9 +131,9 @@ void CE::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const MetaTy
 		return;
 	}
 
-	const MetaFunc* const boundEvent = TryGetEvent(*type, event);
+	const std::optional<BoundEvent> boundEvent = TryGetEvent(*type, event);
 
-	if (boundEvent == nullptr)
+	if (!boundEvent.has_value())
 	{
 		return;
 	}
@@ -146,14 +146,14 @@ void CE::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const MetaTy
 		return;
 	}
 
-	if (boundEvent->GetProperties().Has(Props::sIsEventStaticTag))
+	if (boundEvent->mIsStatic)
 	{
-		boundEvent->InvokeUncheckedUnpacked(world, owner);
+		boundEvent->mFunc.get().InvokeUncheckedUnpacked(world, owner);
 	}
 	else
 	{
 		MetaAny component{ *type, storage->value(owner), false };
-		boundEvent->InvokeUncheckedUnpacked(component, world, owner);
+		boundEvent->mFunc.get().InvokeUncheckedUnpacked(component, world, owner);
 	}
 }
 

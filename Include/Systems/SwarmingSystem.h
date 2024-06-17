@@ -31,7 +31,7 @@ namespace CE
 		void Render(const World& world) override;
 
 	private:
-		Cooldown mStartNewThreadCooldown{ 2.0f };
+		Cooldown mStartNewThreadCooldown{ .5f };
 
 		entt::entity mPendingForEntity{};
 		bool mIsPendingReady{};

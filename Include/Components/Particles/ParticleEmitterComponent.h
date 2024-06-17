@@ -1,7 +1,7 @@
 #pragma once
 #include "BasicDataTypes/Bezier.h"
 #include "Meta/MetaReflect.h"
-#include "Components/Particles/ParticleProperty/ParticlePropertyFwd.h"
+#include "Components/Particles/ParticleUtilities/ParticleUtilitiesFwd.h"
 
 namespace CE
 {
@@ -60,6 +60,9 @@ namespace CE
 		glm::mat4 mInverseEmitterWorldMatrix{};
 		glm::quat mEmitterOrientation{};
 		glm::quat mInverseEmitterOrientation{};
+
+		bool mKeepParticlesAliveWhenEmitterIsDestroyed = true;
+		bool mOnlyStayAliveUntilExistingParticlesAreGone = false;
 
 	private:
 		friend class ParticleLifeTimeSystem;

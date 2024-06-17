@@ -15,7 +15,7 @@
 #include "Components/FogComponent.h"
 #include "Components/OutlineComponent.h"
 
-#include "Components/Particles/ParticleProperty.h"
+#include "Components/Particles/ParticleUtilities.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
 #include "Components/Particles/ParticleColorComponent.h"
 #include "Components/Particles/ParticleLightComponent.h"

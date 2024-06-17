@@ -3,8 +3,7 @@
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
-#include "Utilities/Reflect/ReflectComponentType.h"
-#include "Components/Particles/ParticleProperty.h"
+#include "Components/Particles/ParticleUtilities.h"
 
 CE::MetaType CE::ParticleColorComponent::Reflect()
 {
@@ -12,6 +11,6 @@ CE::MetaType CE::ParticleColorComponent::Reflect()
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleColorComponent::mColor, "mColor").GetProperties().Add(Props::sIsScriptableTag);
-	ReflectComponentType<ParticleColorComponent>(type);
+	ReflectParticleComponentType<ParticleColorComponent>(type);
 	return type;
 }

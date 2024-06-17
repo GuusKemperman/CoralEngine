@@ -3,8 +3,7 @@
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
-#include "Utilities/Reflect/ReflectComponentType.h"
-#include "Components/Particles/ParticleProperty.h"
+#include "Components/Particles/ParticleUtilities.h"
 
 CE::MetaType CE::ParticlePhysicsComponent::Reflect()
 {
@@ -18,6 +17,6 @@ CE::MetaType CE::ParticlePhysicsComponent::Reflect()
 	type.AddField(&ParticlePhysicsComponent::mMass, "mMass").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticlePhysicsComponent::mGravity, "mGravity").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&ParticlePhysicsComponent::mFloorHeight, "mFloorHeight").GetProperties().Add(Props::sIsScriptableTag);
-	ReflectComponentType<ParticlePhysicsComponent>(type);
+	ReflectParticleComponentType<ParticlePhysicsComponent>(type);
 	return type;
 }
