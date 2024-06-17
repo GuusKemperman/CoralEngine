@@ -378,11 +378,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 				const glm::vec2 worldPosition = topLeft + layer.mCellSize *
 					glm::vec2{ static_cast<float>(cellX), static_cast<float>(cellZ) };
 
-				if (layer.mObjectsRadius.has_value()
-					&& glm::distance(worldPosition, generatorPosition) >= *layer.mObjectsRadius + generationCircle.mRadius)
-				{
-					continue;
-				}
 
 				const CE::TransformedAABB cellAABB{ worldPosition, worldPosition + glm::vec2{ layer.mCellSize } };
 
@@ -415,6 +410,12 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 						randomFloat(-layer.mMaxRandomOffset, layer.mMaxRandomOffset),
 						randomFloat(-layer.mMaxRandomOffset, layer.mMaxRandomOffset)
 				};
+
+				if (layer.mObjectsRadius.has_value()
+					&& glm::distance(spawnPosition2D, generatorPosition) >= *layer.mObjectsRadius + generationCircle.mRadius)
+				{
+					continue;
+				}
 
 				const std::optional<float> noise = getNoise(getNoise, spawnPosition2D, i);
 
