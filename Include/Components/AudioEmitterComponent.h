@@ -30,11 +30,9 @@ namespace CE
 		Audio::Group mGroup = Audio::Group::Game;
 
 #ifdef EDITOR
-
 		AssetHandle<Sound> mSound{};
 		float mVolume = 1.0f;
 		float mPitch = 1.0f;
-
 #endif // EDITOR
 
 	private:
