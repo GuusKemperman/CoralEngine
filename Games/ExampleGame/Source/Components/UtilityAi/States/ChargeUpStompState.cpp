@@ -46,8 +46,10 @@ float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, const entt:
 	return score;
 }
 
-void Game::ChargeUpStompState::OnAiStateExitEvent(CE::World&, entt::entity)
+void Game::ChargeUpStompState::OnAiStateExitEvent(CE::World& world, entt::entity)
 {
+	world.GetRegistry().Destroy(mSpawnedVfx, true);
+
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
 }
 
@@ -56,6 +58,16 @@ void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, const entt:
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
 	AIFunctionality::AnimationInAi(world, owner, mChargingAnimation, false);
+
+	auto* transform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+
+	if (transform == nullptr)
+	{
+		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
+		return;
+	}
+
+	mSpawnedVfx = world.GetRegistry().CreateFromPrefab(*mParticles, entt::null,nullptr, nullptr, nullptr, transform);
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
@@ -85,6 +97,7 @@ CE::MetaType Game::ChargeUpStompState::Reflect()
 	BindEvent(type, CE::sAIStateExitEvent, &ChargeUpStompState::OnAiStateExitEvent);
 
 	type.AddField(&ChargeUpStompState::mChargingAnimation, "Charging Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpStompState::mParticles, "Particles").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<ChargeUpStompState>(type);
 	return type;

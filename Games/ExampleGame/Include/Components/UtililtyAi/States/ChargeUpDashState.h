@@ -3,6 +3,8 @@
 #include "Meta/MetaReflect.h"
 #include <Utilities/Time.h>
 
+#include "Assets/Prefabs/Prefab.h"
+
 namespace CE
 {
 	class Animation;
@@ -26,6 +28,10 @@ namespace Game
 		CE::Cooldown mChargeCooldown{};
 
 	private:
+		CE::AssetHandle<CE::Prefab> mParticles{};
+
+		entt::entity mSpawnedVfx;
+
 		float mRadius{};
 
 		float mMaxChargeTime = 10.0f;

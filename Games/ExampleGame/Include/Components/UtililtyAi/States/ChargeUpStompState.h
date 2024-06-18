@@ -1,5 +1,6 @@
 #pragma once
 #include "Assets/Core/AssetHandle.h"
+#include "Assets/Prefabs/Prefab.h"
 #include "Meta/MetaReflect.h"
 #include "Utilities/Time.h"
 
@@ -29,6 +30,10 @@ namespace Game
 		float mRadius{};
 
 		float mMaxChargeTime = 10.0f;
+
+		CE::AssetHandle<CE::Prefab> mParticles{};
+
+		entt::entity mSpawnedVfx;
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
