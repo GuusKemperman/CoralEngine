@@ -51,11 +51,13 @@ void CE::AudioSystem::Update(World& world, float)
 		for (auto& channelGroupControl : listenerComponent.mChannelGroupControls)
 		{
 			FMOD::ChannelGroup& channelGroup = Audio::Get().GetChannelGroup(channelGroupControl.mGroup);
+			
 			result = channelGroup.setVolume(channelGroupControl.mVolume);
 			if (result != FMOD_OK)
 			{
 				LOG(LogAudio, Error, "FMOD could not set channel group volume, FMOD error {}", static_cast<int>(result));
 			}
+
 			result = channelGroup.setPitch(channelGroupControl.mPitch);
 			if (result != FMOD_OK)
 			{
@@ -63,6 +65,28 @@ void CE::AudioSystem::Update(World& world, float)
 			}
 		}
 	}
+
+	{
+		bool isPaused = false;
+
+		FMOD::ChannelGroup& channelGroup = Audio::Get().GetChannelGroup(Audio::Group::Game);
+
+		FMOD_RESULT result = channelGroup.getPaused(&isPaused);
+		if (result != FMOD_OK)
+			{
+				LOG(LogAudio, Error, "FMOD could not set channel group pause, FMOD error {}", static_cast<int>(result));
+			}
+
+		if (world.IsPaused() != isPaused)
+		{
+			result = channelGroup.setPaused(!isPaused);
+			if (result != FMOD_OK)
+			{
+				LOG(LogAudio, Error, "FMOD could not set channel group pause, FMOD error {}", static_cast<int>(result));
+			}
+		}
+	}
+	
 
 	auto view = reg.View<AudioEmitterComponent>();
 	for (auto [entity, emitter] : view.each())
