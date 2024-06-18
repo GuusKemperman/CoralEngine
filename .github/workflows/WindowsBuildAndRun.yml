@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: true # We want to run all configurations to see if the problem is for all of them or not
       matrix:
-        build-configuration: [Debug, Release]
+        build-configuration: [Debug, Release, EditorDebug, EditorRelease]
     steps:
     - uses: actions/checkout@v4
 
