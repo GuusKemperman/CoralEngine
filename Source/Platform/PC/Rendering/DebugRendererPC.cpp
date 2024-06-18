@@ -110,14 +110,14 @@ void CE::DebugRenderer::Impl::Render(GPUWorld& gpuWorld)
 	uint32 vertexCount = data.mLineCount * 2;
 
 	D3D12_SUBRESOURCE_DATA positionData{};
-	positionData.pData = data.mPositions.data();
+	positionData.pData = data.mPositions;
 	positionData.RowPitch = sizeof(glm::vec3);
 	positionData.SlicePitch = sizeof(glm::vec3) * vertexCount;
 
 	data.mVertexPositionBuffer->Update(uploadCmdList, positionData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
 
 	D3D12_SUBRESOURCE_DATA colorData{};
-	colorData.pData = data.mColors.data();
+	colorData.pData = data.mColors;
 	colorData.RowPitch = sizeof(glm::vec4);
 	colorData.SlicePitch = sizeof(glm::vec4) * vertexCount;
 
@@ -135,8 +135,8 @@ void CE::DebugRenderer::Impl::Render(GPUWorld& gpuWorld)
 	commandList->IASetVertexBuffers(1, 1, &data.mVertexColorBufferView);
 	commandList->DrawInstanced(vertexCount, 1, 0, 0);
 
-	memset(data.mPositions.data(), 0, sizeof(glm::vec3) * vertexCount);
-	memset(data.mColors.data(), 0, sizeof(glm::vec4) * vertexCount);
+	memset(data.mPositions, 0, sizeof(glm::vec3) * vertexCount);
+	memset(data.mColors, 0, sizeof(glm::vec4) * vertexCount);
 
 	data.mLineCount = 0;
 	data.mNumOfLinesRequested = 0;

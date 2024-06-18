@@ -11,7 +11,7 @@ class DXPipelineBuilder
 public:
 	DXPipelineBuilder() {};
 
-	DXPipelineBuilder& AddInput(LPCSTR name, DXGI_FORMAT format, const uint32 slot);
+	DXPipelineBuilder& AddInput(LPCSTR name, DXGI_FORMAT format, const uint32 slot, UINT alignedByteOffset = 0);
 	DXPipelineBuilder& SetRasterizer(const CD3DX12_RASTERIZER_DESC& rasterizer);
 	DXPipelineBuilder& SetBlendState(const CD3DX12_BLEND_DESC& blend);
 	DXPipelineBuilder& SetDepthState(const CD3DX12_DEPTH_STENCIL_DESC& depth);

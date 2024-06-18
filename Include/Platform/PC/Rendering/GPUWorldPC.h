@@ -13,7 +13,7 @@ namespace CE
     class Material;
     class CameraComponent;
     class FrameBuffer;
-
+    class World;
     class DebugRenderingData
     {
     public:
@@ -24,8 +24,8 @@ namespace CE
         D3D12_VERTEX_BUFFER_VIEW mVertexColorBufferView;
         std::unique_ptr<DXResource> mVertexPositionBuffer;
         std::unique_ptr<DXResource> mVertexColorBuffer;
-        std::vector<glm::vec3> mPositions{};
-        std::vector<glm::vec4> mColors{};
+        glm::vec3 mPositions[MAX_LINE_VERTICES];
+        glm::vec4 mColors[MAX_LINE_VERTICES];
         uint32 mLineCount = 0;
         uint32 mNumOfLinesRequested = 0;
     };
@@ -34,7 +34,15 @@ namespace CE
     {
     public:
         UIRenderingData();
-
+        void Update(const World& world);
+        struct stbVec
+        {
+            float x;
+            float y;
+            float z;
+            unsigned char color[4];
+        };
+        
         std::unique_ptr<DXResource> mQuadVResource;
         std::unique_ptr<DXResource> mQuadUVResource;
         std::unique_ptr<DXResource> mIndicesResource;
@@ -43,8 +51,14 @@ namespace CE
         std::unique_ptr<DXConstBuffer> mColorBuffer;
 
         D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
+        D3D12_VERTEX_BUFFER_VIEW mColorBufferView;
+        D3D12_VERTEX_BUFFER_VIEW mUVBufferView;
         D3D12_VERTEX_BUFFER_VIEW mTexCoordBufferView;
         D3D12_INDEX_BUFFER_VIEW mIndexBufferView;
+        
+        InfoStruct::DXFontInfo mFontInfos[MAX_TEXTS];
+        InfoStruct::DXFontVert mVertices[MAX_CHAR_PER_TEXT * 4];
+        uint16 mIndices[MAX_CHAR_PER_TEXT * 6];
     };
 
     class PosProcRenderingData
@@ -132,7 +146,7 @@ namespace CE
 
         std::vector<InfoStruct::DXDirLightInfo> mDirectionalLights;
         std::vector<InfoStruct::DXPointLightInfo> mPointLights;
-        std::vector<InfoStruct::DXParticleInfo> mParticles;
+        InfoStruct::DXParticleInfo mParticles[MAX_PARTICLES];
         int mParticleCount = 0;
         int mPointLightCounter = 0;
 
