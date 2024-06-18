@@ -12,6 +12,9 @@ CE::MetaType CE::ParticleSpawnPrefabOnDeathComponent::Reflect()
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleSpawnPrefabOnDeathComponent::mPrefabToSpawn, "mPrefabToSpawn").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&ParticleSpawnPrefabOnDeathComponent::mKeepOrientation, "mKeepOrientation").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&ParticleSpawnPrefabOnDeathComponent::mKeepScale, "mKeepScale").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&ParticleSpawnPrefabOnDeathComponent::mKeepPosition, "mKeepPosition").GetProperties().Add(Props::sIsScriptableTag);
 	ReflectParticleComponentType<ParticleSpawnPrefabOnDeathComponent>(type);
 	return type;
 }
