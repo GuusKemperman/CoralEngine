@@ -110,20 +110,10 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 			}
 		}
 
-		if (!emitter.IsPlaying())
+		if (!emitter.IsPlaying()
+			&& emitter.mLoop)
 		{
-			if (emitter.mLoop)
-			{
-				emitter.PlayFromStart();
-			}
-			else
-			{
-				if (emitter.mDestroyOnFinish)
-				{
-					reg.Destroy(entity, true);
-				}
-				continue;
-			}
+			emitter.PlayFromStart();
 		}
 		emitter.mCurrentTime += dt;
 
@@ -195,6 +185,13 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 		}
 
 		emitter.mScale.SetInitialValuesOfNewParticles(emitter);
+
+		if (!emitter.IsPlaying()
+			&& emitter.mDestroyOnFinish)
+		{
+			emitter.mDestroyOnFinish = false;
+			reg.Destroy(entity, true);
+		}
 
 #ifdef LOG_NUM_OF_PARTICLES
 		for (size_t i = 0; i < emitter.mParticleTimeAsPercentage.size(); i++)
