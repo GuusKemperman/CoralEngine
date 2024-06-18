@@ -41,7 +41,7 @@ jobs:
     # We zip all the assets with the exe and needed dll's
     - name: Zip build
       shell: pwsh
-      run: 7z a -tzip Lichgate.zip Assets/ Games/ExampleGame/Assets/ ExampleGame.exe *.dll
+      run: 7z a -tzip Lichgate.zip Assets/ Games/ExampleGame/Assets/Lichgate.exe *.dll
 
     - name: Upload build
       uses: AButler/upload-release-assets@v3.0

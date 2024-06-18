@@ -8,7 +8,7 @@
   <PropertyGroup>
     <OutDir>$(GameDir)Build/$(Platform)/$(Configuration)/</OutDir>
     <IntDir>$(GameDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
-    <TargetName>$(ProjectName)</TargetName>
+    <TargetName>Lichgate</TargetName>
     <LocalDebuggerWorkingDirectory>$(EngineDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <ItemDefinitionGroup>
