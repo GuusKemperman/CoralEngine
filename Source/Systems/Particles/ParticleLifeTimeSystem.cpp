@@ -48,11 +48,11 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 
 	const auto emitterView = reg.View<ParticleEmitterComponent, const TransformComponent, SpawnShapeType>();
 
-	static constexpr auto onParticleSpawn = [](ParticleEmitterComponent& emitter, 
-			SpawnShapeType& shape,
-			uint32 particleIndex,
-			glm::quat emitterOrientation, 
-			const glm::mat4& emitterMatrix)
+	static constexpr auto onParticleSpawn = [](ParticleEmitterComponent& emitter,
+		SpawnShapeType& shape,
+		uint32 particleIndex,
+		glm::quat emitterOrientation,
+		const glm::mat4& emitterMatrix)
 		{
 			const float lifeTime = Random::Range(emitter.mMinLifeTime, emitter.mMaxLifeTime);
 			emitter.mParticleLifeSpan[particleIndex] = lifeTime;
@@ -73,20 +73,10 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 			continue;
 		}
 
-		if (!emitter.IsPlaying())
+		if (!emitter.IsPlaying()
+			&& emitter.mLoop)
 		{
-			if (emitter.mLoop)
-			{
-				emitter.PlayFromStart();
-			}
-			else
-			{
-				if (emitter.mDestroyOnFinish)
-				{
-					reg.Destroy(entity, true);
-				}
-				continue;
-			}
+			emitter.PlayFromStart();
 		}
 
 		const float totalSpawnRateSurface = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetween(0.0f, 1.0f, .05f);
@@ -116,10 +106,6 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 		}
 		else
 		{
-			if (totalSpawnRateSurface == 0.0f)
-			{
-				LOG(LogEditor, Error, "Total spawnrate was 0.0f");
-			}
 			emitter.mNumOfParticlesToSpawnNextFrame += (surfaceAreaBetweenLastStepAndNow / totalSpawnRateSurface) * static_cast<float>(emitter.mNumOfParticlesToSpawn);
 			const float numToSpawnAsFloat = floorf(emitter.mNumOfParticlesToSpawnNextFrame);
 
@@ -128,13 +114,8 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				emitter.mNumOfParticlesToSpawnNextFrame -= numToSpawnAsFloat;
 				numToSpawnThisFrame = static_cast<uint32>(numToSpawnAsFloat);
 			}
-
-			if (std::isnan(emitter.mNumOfParticlesToSpawnNextFrame))
-			{
-				LOG(LogEditor, Error, "IsNan");
-
-			}
 		}
+
 
 		emitter.mCurrentTime += dt;
 
@@ -198,14 +179,21 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 
 		for (uint32 i = 0; i < numToSpawnThisFrame; i++)
 		{
-			onParticleSpawn(emitter, 
-				spawnShape, 
-				numOfParticlesAliveBeforeLifeTimeUpdate + i, 
-				spawnOrientation, 
+			onParticleSpawn(emitter,
+				spawnShape,
+				numOfParticlesAliveBeforeLifeTimeUpdate + i,
+				spawnOrientation,
 				spawnMatrix);
 		}
 
 		emitter.mScale.SetInitialValuesOfNewParticles(emitter);
+
+		if (!emitter.IsPlaying()
+			&& emitter.mDestroyOnFinish)
+		{
+			emitter.mDestroyOnFinish = false;
+			reg.Destroy(entity, true);
+		}
 
 #ifdef LOG_NUM_OF_PARTICLES
 		for (size_t i = 0; i < emitter.mParticleTimeAsPercentage.size(); i++)
