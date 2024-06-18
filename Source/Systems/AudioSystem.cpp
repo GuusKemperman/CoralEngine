@@ -31,16 +31,13 @@ void CE::AudioSystem::Update(World& world, float)
 	{
 		AudioListenerComponent& listenerComponent = reg.Get<AudioListenerComponent>(listenerOwner);
 		
-		// handle dsp etc
-
-
-		FMOD_RESULT result = mMasterChannelGroup->setVolume(listenerComponent.mVolume);
+		FMOD_RESULT result = mMasterChannelGroup->setVolume(listenerComponent.mMasterVolume);
 		if (result != FMOD_OK)
 		{
 			LOG(LogAudio, Error, "FMOD could not set master channel group volume, FMOD error {}", static_cast<int>(result));
 		}
 		
-		result = mMasterChannelGroup->setPitch(listenerComponent.mPitch);
+		result = mMasterChannelGroup->setPitch(listenerComponent.mMasterPitch);
 		if (result != FMOD_OK)
 		{
 			LOG(LogAudio, Error, "FMOD could not set master channel group pitch, FMOD error {}", static_cast<int>(result));
@@ -51,6 +48,20 @@ void CE::AudioSystem::Update(World& world, float)
 			mMasterChannelGroup->addDSP(0, mLowPassDSP);
 		}
 
+		for (auto& channelGroupControl : listenerComponent.mChannelGroupControls)
+		{
+			FMOD::ChannelGroup& channelGroup = Audio::Get().GetChannelGroup(channelGroupControl.mGroup);
+			result = channelGroup.setVolume(channelGroupControl.mVolume);
+			if (result != FMOD_OK)
+			{
+				LOG(LogAudio, Error, "FMOD could not set channel group volume, FMOD error {}", static_cast<int>(result));
+			}
+			result = channelGroup.setPitch(channelGroupControl.mPitch);
+			if (result != FMOD_OK)
+			{
+				LOG(LogAudio, Error, "FMOD could not set channel group pitch, FMOD error {}", static_cast<int>(result));
+			}
+		}
 	}
 
 	auto view = reg.View<AudioEmitterComponent>();

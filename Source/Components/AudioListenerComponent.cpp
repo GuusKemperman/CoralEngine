@@ -1,19 +1,41 @@
 #include "Precomp.h"
 #include "Components/AudioListenerComponent.h"
+
+#include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-CE::MetaType CE::AudioListenerComponent::Reflect()
+#ifdef EDITOR
+void CE::AudioListenerComponent::ChannelGroupControl::DisplayWidget(const std::string&)
 {
-	auto type = MetaType{ MetaType::T<AudioListenerComponent>{}, "AudioListenerComponent" };
-	MetaProps& props = type.GetProperties();
-	props.Add(Props::sIsScriptableTag);
+	CE::ShowInspectUI("mGroup", mGroup);
+	CE::ShowInspectUI("mVolume", mVolume);
+	CE::ShowInspectUI("mPitch", mPitch);
+}
+#endif // EDITOR
 
-	type.AddField(&AudioListenerComponent::mVolume, "mVolume").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&AudioListenerComponent::mPitch, "mPitch").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&AudioListenerComponent::mUseLowPass, "mUseLowPass").GetProperties().Add(Props::sIsScriptableTag);
+bool CE::AudioListenerComponent::ChannelGroupControl::operator==(const ChannelGroupControl& other) const
+{
+	return mGroup == other.mGroup
+		&& mVolume == other.mVolume
+		&& mPitch == other.mPitch;
+}
 
-	ReflectComponentType<AudioListenerComponent>(type);
+bool CE::AudioListenerComponent::ChannelGroupControl::operator!=(const ChannelGroupControl& other) const
+{
+	return !(*this == other);
+}
 
+CE::MetaType CE::AudioListenerComponent::ChannelGroupControl::Reflect()
+{
+	CE::MetaType type = CE::MetaType{ CE::MetaType::T<ChannelGroupControl>{}, "ChannelGroupControl" };
+	CE::MetaProps& props = type.GetProperties();
+	props.Add(CE::Props::sIsScriptableTag).Add(CE::Props::sIsScriptOwnableTag);
+
+	type.AddField(&ChannelGroupControl::mGroup, "mGroup").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&ChannelGroupControl::mVolume, "mVolume").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&ChannelGroupControl::mPitch, "mPitch").GetProperties().Add(Props::sIsScriptableTag);
+
+	CE::ReflectFieldType<ChannelGroupControl>(type);
 	return type;
 }
 
@@ -67,6 +89,22 @@ void CE::AudioListenerComponent::Deselect(World& world)
 	}
 }
 
+CE::MetaType CE::AudioListenerComponent::Reflect()
+{
+	auto type = MetaType{ MetaType::T<AudioListenerComponent>{}, "AudioListenerComponent" };
+	MetaProps& props = type.GetProperties();
+	props.Add(Props::sIsScriptableTag);
+
+	type.AddField(&AudioListenerComponent::mMasterVolume, "mMasterVolume").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&AudioListenerComponent::mMasterPitch, "mMasterPitch").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&AudioListenerComponent::mUseLowPass, "mUseLowPass").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&AudioListenerComponent::mChannelGroupControls, "mChannelGroupControls").GetProperties().Add(Props::sIsScriptableTag);
+
+	ReflectComponentType<AudioListenerComponent>(type);
+
+	return type;
+}
+
 CE::MetaType CE::AudioListenerSelectedTag::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<AudioListenerSelectedTag>{}, "AudioListenerSelectedTag" };
@@ -76,4 +114,3 @@ CE::MetaType CE::AudioListenerSelectedTag::Reflect()
 
 	return type;
 }
-
