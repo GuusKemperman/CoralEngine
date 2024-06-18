@@ -125,7 +125,7 @@ void Game::KnockBackState::AddKnockback(const float knockbackValue, const bool u
 {
 	mKnockBackSpeed = std::max(mKnockBackSpeed, knockbackValue);
 
-	mUltimateKnockBack = ultimateKnockback;
+	mUltimateKnockBack |= ultimateKnockback;
 }
 
 void Game::KnockBackState::OnAnimationFinish(CE::World& world, entt::entity owner)

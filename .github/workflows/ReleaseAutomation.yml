@@ -48,12 +48,3 @@ jobs:
       with:
         files: "Lichgate.zip"
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload build to itch.io
-      uses: game-ci/itchio-upload@v2.0.0
-      with:
-        # Not great practice, but simpler
-        api_key: mdQS2tLJyM5uPvCGCz6u30xbikWq0VESCqfcRJi0
-        game: "buas/lichgate"
-        channel: "windows"
-        file: "Lichgate.zip"

@@ -91,7 +91,7 @@ namespace CE::Internal
 CE::Registry::Registry(World& world) :
 	mWorld(world)
 {
-	for (const BoundEvent& onDestruct : GetAllBoundEvents(sEndPlayEvent))
+	for (const BoundEvent& onDestruct : GetAllBoundEvents(sDestructEvent))
 	{
 		if (const MetaFunc* func = onDestruct.mType.get().TryGetFunc(Internal::DestroyCallBackInstaller::sFuncName);
 			func != nullptr)
@@ -877,8 +877,7 @@ void CE::Internal::AnyStorage::pop(basic_iterator first, basic_iterator last)
 		const entt::entity entity = *first;
 		MetaAny component = element_at(index(entity));
 
-		if (mOnDestruct != nullptr
-			&& world.HasBegunPlay())
+		if (mOnDestruct != nullptr)
 		{
 			mOnDestruct->InvokeUncheckedUnpacked(component, world, entity);
 		}

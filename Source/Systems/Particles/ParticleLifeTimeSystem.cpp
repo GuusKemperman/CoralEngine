@@ -48,11 +48,11 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 
 	const auto emitterView = reg.View<ParticleEmitterComponent, const TransformComponent, SpawnShapeType>();
 
-	static constexpr auto onParticleSpawn = [](ParticleEmitterComponent& emitter, 
-			SpawnShapeType& shape,
-			uint32 particleIndex,
-			glm::quat emitterOrientation, 
-			const glm::mat4& emitterMatrix)
+	static constexpr auto onParticleSpawn = [](ParticleEmitterComponent& emitter,
+		SpawnShapeType& shape,
+		uint32 particleIndex,
+		glm::quat emitterOrientation,
+		const glm::mat4& emitterMatrix)
 		{
 			const float lifeTime = Random::Range(emitter.mMinLifeTime, emitter.mMaxLifeTime);
 			emitter.mParticleLifeSpan[particleIndex] = lifeTime;
@@ -71,6 +71,12 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 		if (emitter.mIsPaused)
 		{
 			continue;
+		}
+
+		if (!emitter.IsPlaying()
+			&& emitter.mLoop)
+		{
+			emitter.PlayFromStart();
 		}
 
 		const float totalSpawnRateSurface = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetween(0.0f, 1.0f, .05f);
@@ -110,21 +116,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 			}
 		}
 
-		if (!emitter.IsPlaying())
-		{
-			if (emitter.mLoop)
-			{
-				emitter.PlayFromStart();
-			}
-			else
-			{
-				if (emitter.mDestroyOnFinish)
-				{
-					reg.Destroy(entity, true);
-				}
-				continue;
-			}
-		}
+
 		emitter.mCurrentTime += dt;
 
 		// Recyle the particles we killed the previous frame
@@ -187,14 +179,21 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 
 		for (uint32 i = 0; i < numToSpawnThisFrame; i++)
 		{
-			onParticleSpawn(emitter, 
-				spawnShape, 
-				numOfParticlesAliveBeforeLifeTimeUpdate + i, 
-				spawnOrientation, 
+			onParticleSpawn(emitter,
+				spawnShape,
+				numOfParticlesAliveBeforeLifeTimeUpdate + i,
+				spawnOrientation,
 				spawnMatrix);
 		}
 
 		emitter.mScale.SetInitialValuesOfNewParticles(emitter);
+
+		if (!emitter.IsPlaying()
+			&& emitter.mDestroyOnFinish)
+		{
+			emitter.mDestroyOnFinish = false;
+			reg.Destroy(entity, true);
+		}
 
 #ifdef LOG_NUM_OF_PARTICLES
 		for (size_t i = 0; i < emitter.mParticleTimeAsPercentage.size(); i++)
