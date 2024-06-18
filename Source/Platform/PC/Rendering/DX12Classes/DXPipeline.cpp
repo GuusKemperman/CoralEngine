@@ -58,10 +58,10 @@ ComPtr<ID3D12PipelineState> DXPipelineBuilder::Build(ComPtr<ID3D12Device5> devic
 	return pipeline;
 }
 
-DXPipelineBuilder& DXPipelineBuilder::AddInput(LPCSTR name, DXGI_FORMAT format, const uint32 slot)
+DXPipelineBuilder& DXPipelineBuilder::AddInput(LPCSTR name, DXGI_FORMAT format, const uint32 slot, UINT alignedByteOffset)
 {
 	D3D12_INPUT_ELEMENT_DESC input;
-	input = { name, 0, format, slot, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
+	input = { name, 0, format, slot, alignedByteOffset, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 };
 	mInputs.push_back(input);
 	return *this;
 }

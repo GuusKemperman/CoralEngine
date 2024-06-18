@@ -82,6 +82,23 @@ namespace CE::InfoStruct
         Material* mMaterial;
     };
 
+    struct DXFontInfo
+    {
+        std::unique_ptr<DXResource> mVertexResource;
+        std::unique_ptr<DXResource> mIndexResource;
+        D3D12_VERTEX_BUFFER_VIEW mVertexResourceView;
+        D3D12_INDEX_BUFFER_VIEW mIndexResourceView;
+        size_t mIndexCount;
+    };
+
+    struct DXFontVert
+    {
+        glm::vec4 pos;
+        glm::vec4 color;
+        glm::vec2 uv;
+    };
+
+
     enum DXStructuredBuffers
     {
         MODEL_MAT_SB,
