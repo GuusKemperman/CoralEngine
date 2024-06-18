@@ -204,19 +204,12 @@ CE::MetaType CE::AudioEmitterComponent::Reflect()
 	
 	type.AddFunc([](AudioEmitterComponent& audioEmitter)
 		{
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
 			audioEmitter.Play(audioEmitter.mSound, audioEmitter.mVolume, audioEmitter.mPitch);
-
 		}, "Play Sound", MetaFunc::ExplicitParams<AudioEmitterComponent&>{}
 		).GetProperties().Add(Props::sCallFromEditorTag);
 	
 	type.AddFunc([](AudioEmitterComponent& audioEmitter)
 			{
-				World* world = World::TryGetWorldAtTopOfStack();
-				ASSERT(world != nullptr);
-
 				audioEmitter.SetChannelGroup(audioEmitter.mGroup);
 			}, "Set Channel Group", MetaFunc::ExplicitParams<AudioEmitterComponent&>{}
 			).GetProperties().Add(Props::sCallFromEditorTag);
