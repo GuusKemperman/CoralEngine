@@ -167,6 +167,8 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		}, "ReplaceWeaponAtEnd", MetaFunc::ExplicitParams<
 		entt::entity, AssetHandle<Weapon>>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
+		metaType.AddFunc(&AbilityFunctionality::CopyEffectsFromRuntimeWeapon, "CopyEffectsFromRuntimeWeapon", "Target", "Source").GetProperties().Add(Props::sIsScriptableTag);
+
 	metaType.AddFunc([](entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity)
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
@@ -660,6 +662,16 @@ void CE::AbilityFunctionality::CallAllAbilityHitOrCritEvents(World& world, entt:
 			boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, characterEntity, hitEntity, abilityEntity);
 		}
 	}
+}
+
+void CE::AbilityFunctionality::CopyEffectsFromRuntimeWeapon(AbilityEffectsComponent& target, const WeaponInstance& source)
+{
+	if (!source.mRuntimeWeapon.has_value())
+	{
+		LOG(LogAbilitySystem, Error, "CopyEffectsFromRuntimeWeapon - Runtime Weapon not initialized.");
+		return;
+	}
+	target.mEffects = source.mRuntimeWeapon.value().mEffects;
 }
 
 std::pair<float&, float&> CE::AbilityFunctionality::GetStat(Stat stat, CharacterComponent& characterComponent)

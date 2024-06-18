@@ -143,7 +143,7 @@ CE::MetaType Game::AIFunctionality::Reflect()
 	auto metaType = CE::MetaType{ CE::MetaType::T<AIFunctionality>{}, "AIFunctionality" };
 	metaType.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	metaType.AddFunc([](entt::entity enemy, float knockbackValue)
+	metaType.AddFunc([](entt::entity enemy, float knockbackValue, bool ultimate)
 		{
 			CE::World* world = CE::World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
@@ -154,10 +154,10 @@ CE::MetaType Game::AIFunctionality::Reflect()
 				LOG(LogAI, Warning, "AddKnockback - enemy {} does not have a KnockBackState.", entt::to_integral(enemy));
 				return;
 			}
-			knockBackState->AddKnockback(knockbackValue);
+			knockBackState->AddKnockback(knockbackValue, ultimate);
 
 		}, "AddKnockback", CE::MetaFunc::ExplicitParams<
-		entt::entity, float>{}, "Enemy Entity", "Knockback Value").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, false);
+		entt::entity, float, bool>{}, "Enemy Entity", "Knockback Value", "Ultimate Knockback").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, false);
 
 		return metaType;
 }

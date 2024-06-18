@@ -37,7 +37,7 @@ glm::vec2 CE::CalculateAvoidanceVelocity(const World& world, const entt::entity 
 			CollisionLayer::Character,
 			{
 				CollisionResponse::Ignore,		//WorldStatic
-				CollisionResponse::Ignore,		// WorldDynamic
+				CollisionResponse::Ignore,		// Projectiles
 				CollisionResponse::Blocking,	// Character
 				CollisionResponse::Ignore,		// Terrain
 				CollisionResponse::Ignore,		// Query
