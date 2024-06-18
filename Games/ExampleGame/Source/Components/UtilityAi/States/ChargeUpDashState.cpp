@@ -66,7 +66,9 @@ void Game::ChargeUpDashState::OnAiStateExitEvent(CE::World& world, entt::entity 
 		return;
 	}
 
-	mSpawnedVfx = world.GetRegistry().CreateFromPrefab(*mParticles, entt::null, nullptr, nullptr, nullptr, transform);
+	if (mParticles != nullptr) {
+		mSpawnedVfx = world.GetRegistry().CreateFromPrefab(*mParticles, entt::null, nullptr, nullptr, nullptr, transform);
+	}
 
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
 }

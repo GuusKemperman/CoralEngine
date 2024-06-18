@@ -67,7 +67,9 @@ void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, const entt:
 		return;
 	}
 
-	mSpawnedVfx = world.GetRegistry().CreateFromPrefab(*mParticles, entt::null,nullptr, nullptr, nullptr, transform);
+	if (mParticles != nullptr) {
+		mSpawnedVfx = world.GetRegistry().CreateFromPrefab(*mParticles, entt::null, nullptr, nullptr, nullptr, transform);
+	}
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
