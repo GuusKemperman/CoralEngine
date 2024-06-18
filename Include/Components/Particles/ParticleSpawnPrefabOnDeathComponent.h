@@ -11,6 +11,10 @@ namespace CE
 	public:
 		AssetHandle<Prefab> mPrefabToSpawn{};
 
+		bool mKeepOrientation = true;
+		bool mKeepScale = true;
+		bool mKeepPosition = true;
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
