@@ -80,10 +80,13 @@ void Game::EnvironmentGeneratorComponent::Layer::DisplayWidget(const std::string
 	ImGui::SliderFloat("mMinNoiseValueToSpawn", &mMinNoiseValueToSpawn, 0.0f, 1.0f);
 	ImGui::SliderFloat("mMaxNoiseValueToSpawn", &mMaxNoiseValueToSpawn, 0.0f, 1.0f);
 	ImGui::SliderFloat("mObjectSpawnChance", &mObjectSpawnChance, 0.0f, 1.0f);
-
 	CE::ShowInspectUI("mNumberOfRandomRotations", mNumberOfRandomRotations);
+	CE::ShowInspectUI("mMinRandomOrientation", mMinRandomOrientation);
+	CE::ShowInspectUI("mMaxRandomOrientation", mMaxRandomOrientation);
 	CE::ShowInspectUI("mScaleAtNoiseValue", mScaleAtNoiseValue);
 	CE::ShowInspectUI("mMaxRandomOffset", mMaxRandomOffset);
+	CE::ShowInspectUI("mMinRandomHeightOffset", mMinRandomHeightOffset);
+	CE::ShowInspectUI("mMaxRandomHeightOffset", mMaxRandomHeightOffset);
 	CE::ShowInspectUI("mNoiseScale", mNoiseScale);
 	CE::ShowInspectUI("mNoiseNumOfOctaves", mNoiseNumOfOctaves);
 	CE::ShowInspectUI("mNoisePersistence", mNoisePersistence);
@@ -109,7 +112,11 @@ bool Game::EnvironmentGeneratorComponent::Layer::operator==(const Layer& other) 
 		&& mMinNoiseValueToSpawn == other.mMinNoiseValueToSpawn
 		&& mMaxNoiseValueToSpawn == other.mMaxNoiseValueToSpawn
 		&& mObjectSpawnChance == other.mObjectSpawnChance
-		&& mObjectsRadius == other.mObjectsRadius;
+		&& mObjectsRadius == other.mObjectsRadius
+		&& mMinRandomHeightOffset == other.mMinRandomHeightOffset
+		&& mMaxRandomHeightOffset == other.mMaxRandomHeightOffset
+		&& mMinRandomOrientation == other.mMinRandomOrientation
+		&& mMaxRandomOrientation == other.mMaxRandomOrientation;
 }
 
 bool Game::EnvironmentGeneratorComponent::Layer::operator!=(const Layer& other) const
@@ -137,6 +144,10 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Layer::Reflect()
 	type.AddField(&Layer::mInfluences, "mInfluences").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mWeight, "mWeight").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mIsDebugDrawingEnabled, "mIsDebugDrawingEnabled").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Layer::mMinRandomHeightOffset, "mMinRandomHeightOffset").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Layer::mMaxRandomHeightOffset, "mMaxRandomHeightOffset").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Layer::mMinRandomOrientation, "mMinRandomOrientation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Layer::mMaxRandomOrientation, "mMaxRandomOrientation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectFieldType<Layer>(type);
 	return type;
