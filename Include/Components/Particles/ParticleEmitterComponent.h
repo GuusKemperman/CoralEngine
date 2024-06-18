@@ -56,10 +56,10 @@ namespace CE
 
 		ParticleProperty<glm::vec3> mScale{ glm::vec3{ 1.0f }  };
 
-		glm::mat4 mEmitterWorldMatrix{};
-		glm::mat4 mInverseEmitterWorldMatrix{};
-		glm::quat mEmitterOrientation{};
-		glm::quat mInverseEmitterOrientation{};
+		glm::mat4 mEmitterWorldMatrix = glm::mat4{ 1.0f };
+		glm::mat4 mInverseEmitterWorldMatrix = glm::inverse(mEmitterWorldMatrix);
+		glm::quat mEmitterOrientation = { 1.0f, 0.0f, 0.0f, 0.0f };
+		glm::quat mInverseEmitterOrientation = glm::inverse(mEmitterOrientation);
 
 		bool mKeepParticlesAliveWhenEmitterIsDestroyed = true;
 		bool mOnlyStayAliveUntilExistingParticlesAreGone = false;
