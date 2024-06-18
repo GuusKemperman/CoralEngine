@@ -263,7 +263,7 @@ CE::MetaType CE::TransformComponent::Reflect()
 	type.AddFunc(&TransformComponent::SetParent, "SetParent", "", "parent", "keepWorld").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::GetParent, "GetParent", "").GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](TransformComponent& transform)
+	type.AddFunc([](const TransformComponent& transform)
 		{
 			auto references = transform.GetChildren();
 
@@ -275,7 +275,7 @@ CE::MetaType CE::TransformComponent::Reflect()
 			}
 
 			return owners;
-		}, "GetChildren", MetaFunc::ExplicitParams<TransformComponent&>{}, "").GetProperties().Add(Props::sIsScriptableTag);
+		}, "GetChildren", MetaFunc::ExplicitParams<const TransformComponent&>{}, "").GetProperties().Add(Props::sIsScriptableTag);
 
 
 	type.AddFunc(&TransformComponent::IsOrphan, "IsOrphan", "").GetProperties().Add(Props::sIsScriptableTag);

@@ -704,8 +704,11 @@ void CE::Device::DXImplDeleter::operator()(DXImpl* impl) const
 	delete impl;
 }
 
-void CE::Device::StartUploadCommands()
+bool CE::Device::StartUploadCommands()
 {
+	if (mUploadCommandListOpen)
+		return false;
+
 	if (FAILED(mImpl->mUploadCommandAllocator->Reset()))
 	{
 		LOG(LogCore, Fatal, "Failed to reset upload command allocator");
@@ -715,6 +718,9 @@ void CE::Device::StartUploadCommands()
 	{
 		LOG(LogCore, Fatal, "Failed to reset upload command list");
 	}
+
+	mUploadCommandListOpen = true;
+	return true;
 }
 
 void CE::Device::SubmitUploadCommands()
@@ -733,6 +739,8 @@ void CE::Device::SubmitUploadCommands()
 	{
 		LOG(LogCore, Fatal, "Failed to signal upload fence");
 	}
+	else
+		mUploadCommandListOpen = false;
 }
 
 void CE::Device::AddToDeallocation(ComPtr<ID3D12Resource>&& res)

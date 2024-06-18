@@ -53,6 +53,8 @@ namespace Game
 			// Each spawned object can receive
 			// a random offset to its position.
 			float mMaxRandomOffset{};
+			float mMinRandomHeightOffset{};
+			float mMaxRandomHeightOffset{};
 
 			// By default, we spawn objects
 			// if their cell overlaps with our
@@ -64,6 +66,9 @@ namespace Game
 			std::optional<float> mObjectsRadius{};
 
 			uint32 mNumberOfRandomRotations = 4;
+
+			glm::vec2 mMinRandomOrientation{};
+			glm::vec2 mMaxRandomOrientation{};
 
 			// Can be used to, for example, scale down trees near the edges
 			// of forests
@@ -146,7 +151,7 @@ namespace Game
 	};
 }
 
-CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 3);
+CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 4);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::Object, 2);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::NoiseInfluence, 0);
 
@@ -178,6 +183,11 @@ namespace cereal
 		if (version >= 3)
 		{
 			ar(value.mObjectsRadius);
+		}
+
+		if (version >= 4)
+		{
+			ar(value.mMinRandomHeightOffset, value.mMaxRandomHeightOffset, value.mMinRandomOrientation, value.mMaxRandomOrientation);
 		}
 	}
 
