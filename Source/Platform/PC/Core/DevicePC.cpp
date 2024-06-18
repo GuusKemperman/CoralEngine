@@ -19,6 +19,7 @@
 #include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
 #include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
 #include "Utilities/StringFunctions.h"
+#include "Rendering/FrameBuffer.h"
 
 struct CE::Device::DXImpl
 {
@@ -97,8 +98,7 @@ void CE::Device::InitializeWindow()
 		LOG(LogCore, Fatal, "GLFW could not be initialized");
 	}
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
@@ -316,33 +316,29 @@ void CE::Device::InitializeDevice()
 		LOG(LogCore, Fatal, "Failed to create upload fence event");
 	}
 
-
 	//CREATE SWAPCHAIN
-	DXGI_MODE_DESC backBufferDesc = {};
-	backBufferDesc.Width = static_cast<UINT>(mImpl->mViewport.Width);
-	backBufferDesc.Height = static_cast<UINT>(mImpl->mViewport.Height);
-	backBufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-	DXGI_SAMPLE_DESC sampleDesc = {};
-	sampleDesc.Count = 1;
-	sampleDesc.Quality = 0;
-
-	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-	swapChainDesc.BufferCount = FRAME_BUFFER_COUNT;
-	swapChainDesc.BufferDesc = backBufferDesc;
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+	swapChainDesc.Width = static_cast<UINT>(mImpl->mViewport.Width);
+	swapChainDesc.Height =static_cast<UINT>(mImpl->mViewport.Height);
+	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.Stereo = FALSE;
+	swapChainDesc.SampleDesc = {1, 0};
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDesc.BufferCount = FRAME_BUFFER_COUNT;
+	swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	swapChainDesc.OutputWindow = reinterpret_cast<HWND>(glfwGetWin32Window(mWindow));
-	swapChainDesc.SampleDesc = sampleDesc;
-	swapChainDesc.Windowed = true;
+	swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
 
-	IDXGISwapChain* tempSwapChain;
-	hr = dxgiFactory->CreateSwapChain(mImpl->mCommandQueue.Get(), &swapChainDesc, &tempSwapChain);
+	ComPtr<IDXGISwapChain1> tempSwapChain;
+	hr = dxgiFactory->CreateSwapChainForHwnd(
+		mImpl->mCommandQueue.Get(), reinterpret_cast<HWND>(glfwGetWin32Window(mWindow)), &swapChainDesc, nullptr, nullptr,
+		&tempSwapChain);
+
 	if (FAILED(hr))
 	{
 		LOG(LogCore, Fatal, "Failed to create swap chain");
 	}
-	mImpl->mSwapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
+	tempSwapChain.As(&mImpl->mSwapChain);
 
 	//CREATE DESCRIPTOR HEAPS
 	mImpl->mDescriptorHeaps[RT_HEAP] = DXDescHeap::Construct(mImpl->mDevice, 2000, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
@@ -389,12 +385,13 @@ void CE::Device::InitializeDevice()
 
 		.AddCBuffer(8, D3D12_SHADER_VISIBILITY_PIXEL) //18  //Fog info buffer
 		.AddCBuffer(9, D3D12_SHADER_VISIBILITY_PIXEL) //19  //Particle info buffer
-		.AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP) //19  //Sampler
+		.Add32BitConstant(10, D3D12_SHADER_VISIBILITY_PIXEL, 1) //20 //Root constant for general uses
+		.AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP) //21  //Sampler
 		.AddSampler(1, D3D12_SHADER_VISIBILITY_PIXEL,
 			D3D12_TEXTURE_ADDRESS_MODE_WRAP,
 			D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
 			D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE,
-			D3D12_COMPARISON_FUNC_LESS_EQUAL) //20  //Sampler
+			D3D12_COMPARISON_FUNC_LESS_EQUAL) //22  //Sampler
 		.Build(mImpl->mDevice, L"MAIN ROOT SIGNATURE");
 
 	//COMPUTE ROOT SIGNATURE
@@ -751,6 +748,23 @@ void CE::Device::BindSwapchainRT()
 
 	mImpl->mResources[mImpl->mFrameIndex]->ChangeState(mImpl->mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
 	mImpl->mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mImpl->mCommandList, &mImpl->mRenderTargetHandles[mImpl->mFrameIndex], mImpl->mDepthHandle);
+}
+
+void CE::Device::ResolveMsaa(FrameBuffer & msaaFramebuffer)
+{
+	if (msaaFramebuffer.GetSize() != glm::vec2(mImpl->mViewport.Width, mImpl->mViewport.Height))
+		return;
+
+	mImpl->mResources[mImpl->mFrameIndex]->ChangeState(mImpl->mCommandList, D3D12_RESOURCE_STATE_RESOLVE_DEST);
+
+	msaaFramebuffer.PrepareMsaaForResolve();
+
+	mImpl->mCommandList->ResolveSubresource(
+		mImpl->mResources[mImpl->mFrameIndex]->Get(),
+		0,
+		msaaFramebuffer.GetResource().Get(),
+		0,
+		DXGI_FORMAT_R8G8B8A8_UNORM);
 }
 
 glm::vec2 CE::Device::GetDisplaySize()

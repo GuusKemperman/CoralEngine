@@ -2,6 +2,7 @@
 #include "Platform/PC/Rendering/MeshRendererPC.h"
 #include "Core/Device.h"
 #include "Rendering/Renderer.h"
+#include "Rendering/FrameBuffer.h"
 #include "Core/FileIO.h"
 
 #include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
@@ -26,10 +27,7 @@
 #include "Assets/StaticMesh.h"
 #include "Assets/SkinnedMesh.h"
 #include "Platform/PC/Rendering/InfoStruct.h"
-
-#ifdef EDITOR
 #include "Rendering/FrameBuffer.h"
-#endif
 
 CE::MeshRenderer::MeshRenderer()
 {
@@ -49,8 +47,9 @@ CE::MeshRenderer::MeshRenderer()
         .AddInput("NORMAL", DXGI_FORMAT_R32G32B32_FLOAT, 1)
         .AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 2)
         .AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 3)
-        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .AddRenderTarget(DXGI_FORMAT_R16G16B16A16_FLOAT)
         .SetDepthState(depth)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
 
@@ -78,7 +77,8 @@ CE::MeshRenderer::MeshRenderer()
         .AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 2)
         .AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 3)
         .SetBlendState(blendDesc)
-        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .AddRenderTarget(DXGI_FORMAT_R16G16B16A16_FLOAT)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .SetDepthState(depth)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
@@ -97,14 +97,22 @@ CE::MeshRenderer::MeshRenderer()
         .AddInput("TANGENT", DXGI_FORMAT_R32G32B32_FLOAT, 3)
         .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 4)
         .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 5)
-        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .AddRenderTarget(DXGI_FORMAT_R16G16B16A16_FLOAT)
         .SetDepthState(depth)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"PBR SKINNED RENDER PIPELINE");
     
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/ZVertex.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
     mZPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"DEPTH RENDER PIPELINE");
+
+    mZSelectedPipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
@@ -116,7 +124,16 @@ CE::MeshRenderer::MeshRenderer()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1)
         .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2)
-        .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
+        .AddRenderTarget(DXGI_FORMAT_R16G16B16A16_FLOAT)
+        .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
+        .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
+
+    mZSelectedSkinnedPipeline = DXPipelineBuilder()
+        .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
+        .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1)
+        .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2)
+        .AddRenderTarget(DXGI_FORMAT_R16G16B16A16_FLOAT)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), nullptr, 0)
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"SKINNED DEPTH RENDER PIPELINE");
 
@@ -145,6 +162,8 @@ CE::MeshRenderer::MeshRenderer()
     mCullClusterPipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .SetDepthState(depth)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
+        .AddRenderTarget(DXGI_FORMAT_R16G16B16A16_FLOAT)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
     
@@ -155,6 +174,8 @@ CE::MeshRenderer::MeshRenderer()
     mCullClusterParticlePipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
         .SetDepthState(depth)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
+        .AddRenderTarget(DXGI_FORMAT_R16G16B16A16_FLOAT)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
 
@@ -167,6 +188,8 @@ CE::MeshRenderer::MeshRenderer()
         .AddInput("BONEIDS", DXGI_FORMAT_R32G32B32A32_SINT, 1)
         .AddInput("BONEWEIGHTS", DXGI_FORMAT_R32G32B32A32_FLOAT, 2)
         .SetDepthState(depth)
+        .SetMsaaCountAndQuality(MSAA_COUNT, MSAA_QUALITY)
+        .AddRenderTarget(DXGI_FORMAT_R16G16B16A16_FLOAT)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetComputeSignature()), L"CULL CLUSTER PIPELINE");
 
@@ -211,17 +234,16 @@ void CE::MeshRenderer::Render(const World& world)
     commandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
 
+    gpuWorld.GetMsaaFrameBuffer().Bind();
+    gpuWorld.GetMsaaFrameBuffer().Clear();
+
     RenderShadowMaps(world);
 
-#ifdef EDITOR
-    Renderer::Get().GetFrameBuffer().Bind();
-#endif // EDITOR
+    gpuWorld.GetMsaaFrameBuffer().Bind();
 
     DepthPrePass(world, gpuWorld);
 
-#ifdef EDITOR
-    Renderer::Get().GetFrameBuffer().Bind();
-#endif // EDITOR
+    gpuWorld.GetMsaaFrameBuffer().Bind();
 
     ClusteredShading(world);
 
@@ -308,7 +330,6 @@ void CE::MeshRenderer::Render(const World& world)
         }
     }
 
-
     RenderParticles(world);
 
     commandList->SetGraphicsRootSignature(reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()));
@@ -367,7 +388,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
     gpuWorld.GetSelectionFramebuffer().Bind();
     gpuWorld.GetSelectionFramebuffer().Clear();
 
-    commandList->SetPipelineState(mZSkinnedPipeline.Get());
+    commandList->SetPipelineState(mZSelectedSkinnedPipeline.Get());
     {
         int skinnedMeshCounter = 0;
         const auto view = world.GetRegistry().View<const SkinnedMeshComponent, const TransformComponent>();
@@ -389,7 +410,7 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
         }
     }
 
-    commandList->SetPipelineState(mZPipeline.Get());
+    commandList->SetPipelineState(mZSelectedPipeline.Get());
     {
         const auto view = world.GetRegistry().View<const StaticMeshComponent, const TransformComponent>();
 
@@ -406,8 +427,6 @@ void CE::MeshRenderer::DepthPrePass(const World& world, const GPUWorld& gpuWorld
             meshCounter++;
         }
     }
-
-    Device::Get().BindSwapchainRT();
 }
 
 void CE::MeshRenderer::HandleColorComponent(const World& world, const entt::entity& entity, int meshCounter, int frameIndex)
@@ -707,11 +726,9 @@ void CE::MeshRenderer::RenderShadowMaps(const World& world)
         }
         lightCounter++;
 
-        Device::Get().BindSwapchainRT();
         return;
     }
 
-    Device::Get().BindSwapchainRT();
 }
 
 void CE::MeshRenderer::RenderParticles(const World& world)

@@ -9,6 +9,7 @@ namespace CE
 	public:
 		LinearColor mColor{ 1.0f };
 		float mThickness = 1.5f;
+		float mBias = 0.05f;
 
 	private:
 		friend ReflectAccess;

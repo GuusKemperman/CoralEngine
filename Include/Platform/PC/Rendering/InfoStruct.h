@@ -37,7 +37,7 @@ namespace CE::InfoStruct
     {
         uint32 numDirLights = 0;
         uint32 numPointLights = 0;
-        int mActiveShadowingLight = 0;
+        int mActiveShadowingLight = -1;
         uint32 padding;
         glm::vec4 mAmbientAndIntensity = glm::vec4(0.f);
     };
@@ -140,9 +140,10 @@ namespace CE::InfoStruct
 
     struct DXOutlineInfo
     {
-        glm::vec4 mOutlineColor;
-        float mThickness;
-        float padding[3];
+        glm::vec4 mOutlineColor = glm::vec4(1.f);
+        float mThicknes = 2.f;
+        float mBias = 0.05f;
+        float padding[2];
     };
 
     struct DXParticleBufferInfo
