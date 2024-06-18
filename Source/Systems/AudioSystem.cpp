@@ -12,8 +12,6 @@
 
 CE::AudioSystem::AudioSystem()
 {
-	Audio::Get().GetCoreSystem().getMasterChannelGroup(&mMasterChannelGroup);
-	
 	const FMOD_RESULT result = Audio::Get().GetCoreSystem().createDSPByType(FMOD_DSP_TYPE_LOWPASS, &mLowPassDSP);
 	if (result != FMOD_OK)
 	{
@@ -31,13 +29,21 @@ void CE::AudioSystem::Update(World& world, float)
 	{
 		AudioListenerComponent& listenerComponent = reg.Get<AudioListenerComponent>(listenerOwner);
 		
-		FMOD_RESULT result = mMasterChannelGroup->setVolume(listenerComponent.mMasterVolume);
+		FMOD::ChannelGroup* masterChannelGroup; 
+		FMOD_RESULT result = Audio::Get().GetCoreSystem().getMasterChannelGroup(&masterChannelGroup);
+		if (result != FMOD_OK)
+		{
+			LOG(LogAudio, Error, "FMOD could not retrieve master channel group, FMOD error {}", static_cast<int>(result));
+			return;
+		}
+
+		result = masterChannelGroup->setVolume(listenerComponent.mMasterVolume);
 		if (result != FMOD_OK)
 		{
 			LOG(LogAudio, Error, "FMOD could not set master channel group volume, FMOD error {}", static_cast<int>(result));
 		}
 		
-		result = mMasterChannelGroup->setPitch(listenerComponent.mMasterPitch);
+		result = masterChannelGroup->setPitch(listenerComponent.mMasterPitch);
 		if (result != FMOD_OK)
 		{
 			LOG(LogAudio, Error, "FMOD could not set master channel group pitch, FMOD error {}", static_cast<int>(result));
@@ -45,7 +51,7 @@ void CE::AudioSystem::Update(World& world, float)
 
 		if (listenerComponent.mUseLowPass)
 		{
-			mMasterChannelGroup->addDSP(0, mLowPassDSP);
+			masterChannelGroup->addDSP(0, mLowPassDSP);
 		}
 
 		for (auto& channelGroupControl : listenerComponent.mChannelGroupControls)

@@ -28,7 +28,6 @@ namespace CE
 
 	private:
 
-		FMOD::ChannelGroup* mMasterChannelGroup{};
 		FMOD::DSP* mLowPassDSP{};
 
 		friend ReflectAccess;
