@@ -32,9 +32,20 @@ void CE::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unused]]
 				continue;
 			}
 
-			transform->SetWorldPosition(emitter.GetParticlePositionWorld(particle));
-			transform->SetWorldOrientation(emitter.GetParticleOrientationWorld(particle));
-			transform->SetWorldScale(emitter.mScale.GetValue(emitter, particle));
+			if (spawner.mKeepPosition)
+			{
+				transform->SetWorldPosition(emitter.GetParticlePositionWorld(particle));
+			}
+
+			if (spawner.mKeepScale)
+			{
+				transform->SetWorldScale(emitter.mScale.GetValue(emitter, particle));
+			}
+
+			if (spawner.mKeepOrientation)
+			{
+				transform->SetWorldOrientation(emitter.GetParticleOrientationWorld(particle));
+			}
 		}
 	}
 }
