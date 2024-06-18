@@ -45,7 +45,7 @@ jobs:
       timeout-minutes: 10
       run:  |
         $processInfo = New-Object System.Diagnostics.ProcessStartInfo
-        $processInfo.FileName = "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe"
+        $processInfo.FileName = "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\Lichgate.exe"
         $processInfo.Arguments = "run_tests"
         $processInfo.WorkingDirectory = $pwd
         $processInfo.RedirectStandardOutput = $true

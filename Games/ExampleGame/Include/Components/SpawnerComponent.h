@@ -22,6 +22,9 @@ namespace Game
 
 		bool mShouldSpawnInGroups = false;
 
+		float mMinRandomScale = .9f;
+		float mMaxRandomScale = 1.1f;
+
 		struct Wave
 		{
 			struct EnemyType
