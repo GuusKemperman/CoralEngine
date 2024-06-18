@@ -8,18 +8,18 @@ name: WindowsBuildAndRun
 on:
   push:
     branches: [ "dev" ]
-    # paths:
-    #   - '**.cpp'
-    #   - '**.h'
-    #   - '**.vcxproj'
-    #   - '**.sln'
+    paths:
+      - '**.cpp'
+      - '**.h'
+      - '**.vcxproj'
+      - '**.sln'
   pull_request:
     branches: [ "dev" ]
-    # paths:
-    #   - '**.cpp'
-    #   - '**.h'
-    #   - '**.vcxproj'
-    #   - '**.sln'
+    paths:
+      - '**.cpp'
+      - '**.h'
+      - '**.vcxproj'
+      - '**.sln'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
