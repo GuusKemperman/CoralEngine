@@ -442,12 +442,14 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 				}
 
 				const float angle = static_cast<float>(randomUint(1u, layer.mNumberOfRandomRotations)) * (TWOPI / static_cast<float>(layer.mNumberOfRandomRotations));
+				glm::quat quatOrientation = glm::quat{ CE::sUp * angle };
+				quatOrientation *= glm::quat{ CE::sRight * glm::radians(randomFloat(layer.mMinRandomOrientation.x, layer.mMaxRandomOrientation.x)) };
+				quatOrientation *= glm::quat{ CE::sForward * glm::radians(randomFloat(layer.mMinRandomOrientation.y, layer.mMaxRandomOrientation.y)) };
 
-				const glm::quat orientation = glm::quat{ CE::sUp * angle };
 				const glm::vec3 scale = glm::vec3{ layer.mScaleAtNoiseValue.GetValueAt(*noise) };
-				const glm::vec3 spawnPosition3D = CE::To3DRightForward(spawnPosition2D);
+				const glm::vec3 spawnPosition3D = CE::To3DRightForward(spawnPosition2D, randomFloat(layer.mMinRandomHeightOffset, layer.mMaxRandomHeightOffset));
 
-				entt::entity entity = reg.CreateFromPrefab(*prefabToSpawn, entt::null, &spawnPosition3D, &orientation, &scale);
+				entt::entity entity = reg.CreateFromPrefab(*prefabToSpawn, entt::null, &spawnPosition3D, &quatOrientation, &scale);
 
 				if (entity == entt::null)
 				{
