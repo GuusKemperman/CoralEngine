@@ -16,11 +16,13 @@ namespace CE
 	class AudioEmitterComponent
 	{
 	public:
-		void Play(AssetHandle<Sound> sound);
+		void Play(AssetHandle<Sound> sound, float volume = 1.0f, float pitch = 1.0f);
 		void SetLoops(AssetHandle<Sound> sound, int loops);
 		void StopAll();
 		void SetPause(AssetHandle<Sound> sound, bool pause);
 		void Stop(AssetHandle<Sound> sound);
+		void SetVolume(AssetHandle<Sound> sound, float volume);
+		void SetPitch(AssetHandle<Sound> sound, float pitch);
 		void SetChannelGroup(Audio::Group group);
 
 		std::unordered_map<uint32, FMOD::Channel*> mPlayingOnChannels{};
@@ -30,8 +32,8 @@ namespace CE
 #ifdef EDITOR
 
 		AssetHandle<Sound> mSound{};
-		float mVolume;
-		float mPitch;
+		float mVolume = 1.0f;
+		float mPitch = 1.0f;
 
 #endif // EDITOR
 

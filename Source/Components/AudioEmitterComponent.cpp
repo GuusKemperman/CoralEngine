@@ -7,13 +7,25 @@
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void CE::AudioEmitterComponent::Play(AssetHandle<Sound> sound)
+void CE::AudioEmitterComponent::Play(AssetHandle<Sound> sound, float volume, float pitch)
 {
 	if (sound != nullptr)
 	{
 		uint32 hash = GetSoundNameHash(sound);
 
 		FMOD::Channel* channel = sound->Play(mGroup);
+
+		FMOD_RESULT result = channel->setVolume(volume);
+		if (result != FMOD_OK)
+		{
+			LOG(LogAudio, Error, "FMOD could not set channel volume, FMOD error {}", static_cast<int>(result));
+		}
+		
+		result = channel->setPitch(pitch);
+		if (result != FMOD_OK)
+		{
+			LOG(LogAudio, Error, "FMOD could not set channel pitch, FMOD error {}", static_cast<int>(result));
+		}
 
 		if (channel != nullptr)
 		{
@@ -106,6 +118,42 @@ void CE::AudioEmitterComponent::Stop(AssetHandle<Sound> sound)
 	}
 }
 
+void CE::AudioEmitterComponent::SetVolume(AssetHandle<Sound> sound, float volume)
+{
+	if (sound != nullptr)
+	{
+		uint32 hash = GetSoundNameHash(sound);
+
+		auto it = mPlayingOnChannels.find(hash);
+		if (it != mPlayingOnChannels.end())
+		{
+			FMOD_RESULT result = it->second->setVolume(volume);
+			if (result != FMOD_OK)
+			{
+				LOG(LogAudio, Error, "FMOD Channel volume could not be set, FMOD error {}", static_cast<int>(result));
+			}
+		}
+	}
+}
+
+void CE::AudioEmitterComponent::SetPitch(AssetHandle<Sound> sound, float pitch)
+{
+	if (sound != nullptr)
+	{
+		uint32 hash = GetSoundNameHash(sound);
+
+		auto it = mPlayingOnChannels.find(hash);
+		if (it != mPlayingOnChannels.end())
+		{
+			FMOD_RESULT result = it->second->setPitch(pitch);
+			if (result != FMOD_OK)
+			{
+				LOG(LogAudio, Error, "FMOD Channel pitch could not be set, FMOD error {}", static_cast<int>(result));
+			}
+		}
+	}
+}
+
 void CE::AudioEmitterComponent::SetChannelGroup(Audio::Group group)
 {
 	if (group == mGroup)
@@ -147,10 +195,37 @@ CE::MetaType CE::AudioEmitterComponent::Reflect()
 	props.Add(Props::sIsScriptableTag);
 	BindEvent(type, CE::sEndPlayEvent, &AudioEmitterComponent::OnEndPlay);
 	
-	type.AddField(&AudioEmitterComponent::mGroup, "mGroup").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptReadOnlyTag);
+	// Editor only functions and fields for testing
+#ifdef EDITOR
+	type.AddField(&AudioEmitterComponent::mGroup, "mGroup");
+	type.AddField(&AudioEmitterComponent::mSound, "mSound");
+	type.AddField(&AudioEmitterComponent::mVolume, "mVolume");
+	type.AddField(&AudioEmitterComponent::mPitch, "mPitch");
+	
+	type.AddFunc([](AudioEmitterComponent& audioEmitter)
+		{
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			audioEmitter.Play(audioEmitter.mSound, audioEmitter.mVolume, audioEmitter.mPitch);
+
+		}, "Play Sound", MetaFunc::ExplicitParams<AudioEmitterComponent&>{}
+		).GetProperties().Add(Props::sCallFromEditorTag);
+	
+	type.AddFunc([](AudioEmitterComponent& audioEmitter)
+			{
+				World* world = World::TryGetWorldAtTopOfStack();
+				ASSERT(world != nullptr);
+
+				audioEmitter.SetChannelGroup(audioEmitter.mGroup);
+			}, "Set Channel Group", MetaFunc::ExplicitParams<AudioEmitterComponent&>{}
+			).GetProperties().Add(Props::sCallFromEditorTag);
+#endif // EDITOR
 
 	// Script functions
-	type.AddFunc(&AudioEmitterComponent::Play, "Play", "", "Sound").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&AudioEmitterComponent::Play, "Play", "", "Sound", "Volume", "Pitch").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&AudioEmitterComponent::SetVolume, "SetVolume", "", "Volume").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&AudioEmitterComponent::SetPitch, "SetPitch", "", "Pitch").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&AudioEmitterComponent::SetPause, "SetPause", "", "Sound", "Pause").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&AudioEmitterComponent::SetLoops, "SetLoops", "", "Sound", "Loops").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&AudioEmitterComponent::StopAll, "StopAll").GetProperties().Add(Props::sIsScriptableTag);
