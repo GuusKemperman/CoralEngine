@@ -19,20 +19,11 @@ CE::AudioSystem::AudioSystem()
 	{
 		LOG(LogAudio, Error, "FMOD could not create DSP, FMOD error {}", static_cast<int>(result));
 	}
-
-	/*result = mMasterChannelGroup->addDSP(0, mLowPassDSP);
-	if (result != FMOD_OK)
-	{
-		LOG(LogAudio, Error, "FMOD was unable to add DSP");
-	}*/
 }
 
 void CE::AudioSystem::Update(World& world, float)
 {
 	Registry& reg = world.GetRegistry();
-
-	// find listener component
-	// apply any filters or settings from the listenercomponent
 
 	entt::entity listenerOwner = AudioListenerComponent::GetSelected(world);
 
@@ -60,38 +51,6 @@ void CE::AudioSystem::Update(World& world, float)
 			mMasterChannelGroup->addDSP(0, mLowPassDSP);
 		}
 
-		// if 3d sound
-		{
-			const TransformComponent* transform = reg.TryGet<TransformComponent>(listenerOwner);
-
-			if (transform != nullptr)
-			{
-				glm::vec3 position = transform->GetWorldPosition();
-				glm::vec3 forward = ToVector3(Axis::Forward);
-				glm::vec3 up = ToVector3(Axis::Up);
-
-				result = Audio::Get().GetCoreSystem().set3DListenerAttributes(0, 
-					reinterpret_cast<FMOD_VECTOR*>(&position), 
-					nullptr, 
-					reinterpret_cast<FMOD_VECTOR*>(&forward), 
-					reinterpret_cast<FMOD_VECTOR*>(&up));
-				if (result != FMOD_OK)
-				{
-					LOG(LogAudio, Error, "FMOD could not set listener 3D attributes, FMOD error {}", static_cast<int>(result));
-				}
-
-				result = Audio::Get().GetCoreSystem().get3DListenerAttributes(0, reinterpret_cast<FMOD_VECTOR*>(&position), 
-					nullptr, 
-					reinterpret_cast<FMOD_VECTOR*>(&forward), 
-					reinterpret_cast<FMOD_VECTOR*>(&up));
-				if (result != FMOD_OK)
-				{
-					LOG(LogAudio, Error, "FMOD could not Retrieve listener 3D attributes, FMOD error {}", static_cast<int>(result));
-				}
-
-				LOG(LogAudio, Message, "Listener Position: {},{},{}, Forward: {},{},{}, Up: {},{},{}", position.x, position.y, position.z, forward.x, forward.y, forward.z, up.x, up.y, up.z);
-			}
-		}
 	}
 
 	auto view = reg.View<AudioEmitterComponent>();
@@ -107,7 +66,6 @@ void CE::AudioSystem::Update(World& world, float)
 				LOG(LogAudio, Error, "FMOD could not find out if channel is playing, FMOD error {}", static_cast<int>(result));
 			}
 
-
 			if (!isPlaying)
 			{
 				channelsToRemove.push_back(channel.first);
@@ -115,18 +73,6 @@ void CE::AudioSystem::Update(World& world, float)
 		}
 
 		for (auto hash : channelsToRemove) emitter.mPlayingOnChannels.erase(hash);
-
-		// Set 3d position for game audio
-		if (emitter.mGroup == Audio::Group::Game)
-		{
-			const TransformComponent* transform = reg.TryGet<TransformComponent>(entity);
-
-			if (transform != nullptr)
-			{
-				glm::vec3 position = transform->GetWorldPosition();
-				emitter.Set3DAttributes(position, glm::vec3(0.f));
-			}
-		}
 	}
 }
 

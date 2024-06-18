@@ -9,8 +9,6 @@
 
 void CE::AudioEmitterComponent::Play(AssetHandle<Sound> sound)
 {
-	mShouldStartPlay = true;
-
 	if (sound != nullptr)
 	{
 		uint32 hash = GetSoundNameHash(sound);
@@ -108,45 +106,6 @@ void CE::AudioEmitterComponent::Stop(AssetHandle<Sound> sound)
 	}
 }
 
-void CE::AudioEmitterComponent::Set3DAttributes(glm::vec3 position, glm::vec3 velocity)
-{
-	for (auto& channel : mPlayingOnChannels)
-	{
-		FMOD_MODE mode{};
-		FMOD_RESULT result = channel.second->getMode(&mode);
-		if (result != FMOD_OK)
-		{
-			LOG(LogAudio, Error, "FMOD Channel mode could not be retrieved, FMOD error {}", static_cast<int>(result));
-			return;
-		}
-
-		mode = mode | FMOD_3D;
-
-		result = channel.second->setMode(mode);
-		if (result != FMOD_OK)
-		{
-			LOG(LogAudio, Error, "FMOD Channel mode could not be set, FMOD error {}", static_cast<int>(result));
-			return;
-		}
-
-		result = channel.second->set3DAttributes(reinterpret_cast<FMOD_VECTOR*>(&position), reinterpret_cast<FMOD_VECTOR*>(&velocity));
-		if (result != FMOD_OK)
-		{
-			LOG(LogAudio, Error, "FMOD Channel 3D attributes could not be set, FMOD error {}", static_cast<int>(result));
-			return;
-		}
-
-		result = channel.second->get3DAttributes(reinterpret_cast<FMOD_VECTOR*>(&position), reinterpret_cast<FMOD_VECTOR*>(&velocity));
-		if (result != FMOD_OK)
-		{
-			LOG(LogAudio, Error, "FMOD Channel 3D attributes could not be retrieved, FMOD error {}", static_cast<int>(result));
-			return;
-		}
-
-		LOG(LogAudio, Message, "Position: {},{},{}, Velocity: {},{},{}", position.x, position.y, position.z, velocity.x, velocity.y, velocity.z);
-	}
-}
-
 void CE::AudioEmitterComponent::SetChannelGroup(Audio::Group group)
 {
 	if (group == mGroup)
@@ -196,7 +155,6 @@ CE::MetaType CE::AudioEmitterComponent::Reflect()
 	type.AddFunc(&AudioEmitterComponent::SetLoops, "SetLoops", "", "Sound", "Loops").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&AudioEmitterComponent::StopAll, "StopAll").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&AudioEmitterComponent::Stop, "Stop", "", "Sound").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(&AudioEmitterComponent::Set3DAttributes, "Set3DAttributes", "", "Position", "Velocity").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&AudioEmitterComponent::SetChannelGroup, "SetChannnelGroup", "", "Group").GetProperties().Add(Props::sIsScriptableTag);
 
 

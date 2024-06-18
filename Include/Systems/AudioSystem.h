@@ -18,6 +18,14 @@ namespace CE
 
 		void Update(World& world, float dt) override;
 
+		SystemStaticTraits GetStaticTraits() const override
+		{
+			SystemStaticTraits traits{};
+			traits.mShouldTickBeforeBeginPlay = true;
+			traits.mShouldTickWhilstPaused = true;
+			return traits;
+		}
+
 	private:
 
 		FMOD::ChannelGroup* mMasterChannelGroup{};

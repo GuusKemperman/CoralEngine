@@ -21,15 +21,19 @@ namespace CE
 		void StopAll();
 		void SetPause(AssetHandle<Sound> sound, bool pause);
 		void Stop(AssetHandle<Sound> sound);
-		void Set3DAttributes(glm::vec3 position, glm::vec3 velocity);
 		void SetChannelGroup(Audio::Group group);
 
 		std::unordered_map<uint32, FMOD::Channel*> mPlayingOnChannels{};
 
-		bool mShouldStartPlay = false;
-		bool mIsLooping = false;
-
 		Audio::Group mGroup = Audio::Group::Game;
+
+#ifdef EDITOR
+
+		AssetHandle<Sound> mSound{};
+		float mVolume;
+		float mPitch;
+
+#endif // EDITOR
 
 	private:
 		void OnEndPlay(World& world, entt::entity owner);

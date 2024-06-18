@@ -16,7 +16,7 @@ CE::Sound::Sound(std::string_view name) :
 CE::Sound::Sound(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {
-    static constexpr FMOD_MODE mode = FMOD_OPENMEMORY | FMOD_3D;
+    static constexpr FMOD_MODE mode = FMOD_OPENMEMORY;
 
     const std::string soundInMemory = StringFunctions::StreamToString(loadInfo.GetStream());
 
