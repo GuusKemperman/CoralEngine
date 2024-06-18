@@ -127,7 +127,7 @@ entt::entity CE::UISystem::CheckNavigation(World& world,
 
 			const float value = input.GetGamepadAxis(gamePadId, axis);
 
-			return negateAxis ? value <= -sJoyStickMinMovementToNavigate : value >= sJoyStickMinMovementToNavigate;;
+			return negateAxis ? value >= sJoyStickMinMovementToNavigate : value <= -sJoyStickMinMovementToNavigate;;
 		};
 
 	if (input.WasKeyboardKeyPressed(key1)
@@ -154,13 +154,13 @@ entt::entity CE::UISystem::CheckNavigation(World& world,
 				switch (edge)
 				{
 				case UISystem::Edges::Top:
-					return pos2.y > pos.y ? true : false;
+					return pos2.y > pos.y;
 				case UISystem::Edges::Right:
-					return pos2.x > pos.x ? true : false;
+					return pos2.x > pos.x;
 				case UISystem::Edges::Bottom:
-					return pos2.y < pos.y ? true : false;
+					return pos2.y < pos.y;
 				case UISystem::Edges::Left:
-					return pos2.x < pos.x ? true : false;
+					return pos2.x < pos.x;
 				default:
 					return false;
 				}

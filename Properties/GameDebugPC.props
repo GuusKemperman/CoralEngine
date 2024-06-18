@@ -6,13 +6,12 @@
 	<ItemDefinitionGroup>
 		<Link>
 			<AdditionalLibraryDirectories>$(EngineDir)External/fmod/lib/$(Platform)/Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-			<AdditionalDependencies>fmodL_vc.lib;fmodstudioL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+			<AdditionalDependencies>fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
 		</Link>
 		<PostBuildEvent>
 			<Command>
 				%(Command)
 				IF NOT EXIST "$(TargetDir)fmodL.dll" COPY "$(EngineDir)External\fmod\lib\$(Platform)\Debug\fmodL.dll" "$(TargetDir)"
-				IF NOT EXIST "$(TargetDir)fmodstudioL.dll" COPY "$(EngineDir)External\fmod\lib\$(Platform)\Debug\fmodstudioL.dll" "$(TargetDir)"
 			</Command>
 		</PostBuildEvent>
 	</ItemDefinitionGroup>
