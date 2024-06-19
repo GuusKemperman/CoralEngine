@@ -80,7 +80,6 @@ void CE::AudioListenerComponent::Deselect(World& world)
 	for (auto [entity] : view.each())
 	{
 		entitiesWithTag.emplace_back(entity);
-
 	}
 
 	for (const entt::entity entity : entitiesWithTag)
@@ -97,7 +96,6 @@ CE::MetaType CE::AudioListenerComponent::Reflect()
 
 	type.AddField(&AudioListenerComponent::mMasterVolume, "mMasterVolume").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&AudioListenerComponent::mMasterPitch, "mMasterPitch").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&AudioListenerComponent::mUseLowPass, "mUseLowPass").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&AudioListenerComponent::mChannelGroupControls, "mChannelGroupControls").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectComponentType<AudioListenerComponent>(type);

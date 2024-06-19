@@ -13,9 +13,6 @@ namespace CE
 		: public System
 	{
 	public:
-
-		AudioSystem();
-
 		void Update(World& world, float dt) override;
 
 		SystemStaticTraits GetStaticTraits() const override
@@ -27,8 +24,6 @@ namespace CE
 		}
 
 	private:
-
-		FMOD::DSP* mLowPassDSP{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();

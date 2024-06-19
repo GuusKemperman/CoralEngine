@@ -37,9 +37,6 @@ namespace CE
 		float mMasterPitch = 1.0f;
 		
 		std::vector<ChannelGroupControl> mChannelGroupControls{};
-
-		bool mUseLowPass = false;
-
 	private:
 		
 		friend ReflectAccess;

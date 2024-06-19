@@ -10,15 +10,6 @@
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 
-CE::AudioSystem::AudioSystem()
-{
-	const FMOD_RESULT result = Audio::Get().GetCoreSystem().createDSPByType(FMOD_DSP_TYPE_LOWPASS, &mLowPassDSP);
-	if (result != FMOD_OK)
-	{
-		LOG(LogAudio, Error, "FMOD could not create DSP, FMOD error {}", static_cast<int>(result));
-	}
-}
-
 void CE::AudioSystem::Update(World& world, float)
 {
 	Registry& reg = world.GetRegistry();
@@ -47,11 +38,6 @@ void CE::AudioSystem::Update(World& world, float)
 		if (result != FMOD_OK)
 		{
 			LOG(LogAudio, Error, "FMOD could not set master channel group pitch, FMOD error {}", static_cast<int>(result));
-		}
-
-		if (listenerComponent.mUseLowPass)
-		{
-			masterChannelGroup->addDSP(0, mLowPassDSP);
 		}
 
 		for (auto& channelGroupControl : listenerComponent.mChannelGroupControls)
