@@ -8,8 +8,20 @@ name: WindowsBuildAndRun
 on:
   push:
     branches: [ "dev" ]
+    paths:
+      - '**.cpp'
+      - '**.h'
+      - '**.vcxproj'
+      - '**.sln'
+      - '**.yml'
   pull_request:
     branches: [ "dev" ]
+    paths:
+      - '**.cpp'
+      - '**.h'
+      - '**.vcxproj'
+      - '**.sln'
+      - '**.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -20,14 +32,13 @@ env:
   SOLUTION_FILE_PATH: "Coral.sln"
 
 permissions:
-  contents: write
+  contents: read
   
 jobs:
   build-and-run:
     runs-on: windows-latest
     strategy:
-
-      fail-fast: false # We want to run all configurations to see if the problem is for all of them or not
+      fail-fast: true # We want to run all configurations to see if the problem is for all of them or not
       matrix:
         build-configuration: [Debug, Release, EditorDebug, EditorRelease]
     steps:
@@ -45,7 +56,7 @@ jobs:
       timeout-minutes: 10
       run:  |
         $processInfo = New-Object System.Diagnostics.ProcessStartInfo
-        $processInfo.FileName = "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe"
+        $processInfo.FileName = "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\Lichgate.exe"
         $processInfo.Arguments = "run_tests"
         $processInfo.WorkingDirectory = $pwd
         $processInfo.RedirectStandardOutput = $true
@@ -80,11 +91,3 @@ jobs:
         }
 
         exit $process.ExitCode
-
-    - name: Upload Build Artifacts
-      if: failure()
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ matrix.build-configuration }}-build
-        path: Games/ExampleGame/Build/**/*
-        retention-days: 1

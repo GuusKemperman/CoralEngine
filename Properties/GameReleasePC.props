@@ -6,13 +6,12 @@
 	<ItemDefinitionGroup>
 		<Link>
 			<AdditionalLibraryDirectories>$(EngineDir)External/fmod/lib/x64/Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-			<AdditionalDependencies>fmod_vc.lib;fmodstudio_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+			<AdditionalDependencies>fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
 		</Link>
 		<PostBuildEvent>
 			<Command>
 				%(Command)
 				IF NOT EXIST "$(TargetDir)fmod.dll" COPY "$(EngineDir)External\fmod\lib\$(Platform)\Release\fmod.dll" "$(TargetDir)"
-				IF NOT EXIST "$(TargetDir)fmodstudio.dll" COPY "$(EngineDir)External\fmod\lib\$(Platform)\Release\fmodstudio.dll" "$(TargetDir)"
 			</Command>
 		</PostBuildEvent>
 	</ItemDefinitionGroup>

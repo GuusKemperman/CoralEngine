@@ -45,7 +45,7 @@ namespace CE
         void CreateImguiContext();
 #endif // EDITOR
 
-		void StartUploadCommands();
+		bool StartUploadCommands();
         void SubmitUploadCommands();
         void AddToDeallocation(Microsoft::WRL::ComPtr<ID3D12Resource>&& res);
         void BindSwapchainRT();
@@ -99,5 +99,6 @@ namespace CE
 		int mPreviousHeight{};
 
         bool mUpdateWindow = false;
+        bool mUploadCommandListOpen = false;
     };
 }

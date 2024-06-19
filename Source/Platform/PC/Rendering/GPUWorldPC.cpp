@@ -5,6 +5,10 @@
 #include "World/Registry.h"
 
 #include "Assets/Material.h"
+#include "Assets/Texture.h"
+#include "Assets/StaticMesh.h"
+#include "Assets/SkinnedMesh.h"
+#include "Assets/Font.h"
 
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
@@ -12,6 +16,7 @@
 #include "Components/PointLightComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkinnedMeshComponent.h"
+#include "Components/UI/UITextComponent.h"
 #include "Components/FogComponent.h"
 #include "Components/OutlineComponent.h"
 
@@ -27,12 +32,12 @@
 
 CE::DebugRenderingData::DebugRenderingData()
 {
-    Device& engineDevice = Device::Get();
-    ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
+    Device &engineDevice = Device::Get();
+    ID3D12Device5 *device = reinterpret_cast<ID3D12Device5 *>(engineDevice.GetDevice());
 
     uint32 bufferSize = sizeof(glm::vec3) * MAX_LINE_VERTICES;
-    mVertexPositionBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
-        CD3DX12_RESOURCE_DESC::Buffer(bufferSize), nullptr, "Line vertex position buffer");
+    mVertexPositionBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+                                                         CD3DX12_RESOURCE_DESC::Buffer(bufferSize), nullptr, "Line vertex position buffer");
     mVertexPositionBuffer->CreateUploadBuffer(device, bufferSize, 0);
 
     mVertexPositionBufferView.BufferLocation = mVertexPositionBuffer->GetResource()->GetGPUVirtualAddress();
@@ -40,45 +45,42 @@ CE::DebugRenderingData::DebugRenderingData()
     mVertexPositionBufferView.SizeInBytes = bufferSize;
 
     bufferSize = sizeof(glm::vec4) * MAX_LINE_VERTICES;
-    mVertexColorBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), 
-        CD3DX12_RESOURCE_DESC::Buffer(bufferSize), nullptr, "Line vertex color buffer");
+    mVertexColorBuffer = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+                                                      CD3DX12_RESOURCE_DESC::Buffer(bufferSize), nullptr, "Line vertex color buffer");
     mVertexColorBuffer->CreateUploadBuffer(device, bufferSize, 0);
 
     mVertexColorBufferView.BufferLocation = mVertexColorBuffer->GetResource()->GetGPUVirtualAddress();
     mVertexColorBufferView.StrideInBytes = sizeof(glm::vec4);
     mVertexColorBufferView.SizeInBytes = bufferSize;
 
-    mPositions.resize(MAX_LINE_VERTICES);
-    mColors.resize(MAX_LINE_VERTICES);
 }
 
 CE::DebugRenderingData::~DebugRenderingData() = default;
 
 CE::UIRenderingData::UIRenderingData()
 {
-    Device& engineDevice = Device::Get();
-    ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
-    ID3D12GraphicsCommandList4* uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetUploadCommandList());
+    Device &engineDevice = Device::Get();
+    ID3D12Device5 *device = reinterpret_cast<ID3D12Device5 *>(engineDevice.GetDevice());
+    ID3D12GraphicsCommandList4 *uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4 *>(engineDevice.GetUploadCommandList());
     engineDevice.StartUploadCommands();
 
-    std::vector<glm::vec3> positions =
-    {
-        glm::vec3(-0.5f, 0.5f, 0.0f),  // Top Left
-        glm::vec3(0.5f, 0.5f, 0.0f),   // Top Right
-        glm::vec3(-0.5f, -0.5f, 0.0f), // Bottom Left
-        glm::vec3(0.5f, -0.5f, 0.0f),  // Bottom Right
-    };
-    std::vector<glm::vec2> uvs = 
-    {
-        glm::vec2(0.f),
-        glm::vec2(1.f, 0.f),
-        glm::vec2(0.f, 1.f),
-        glm::vec2(1.f, 1.f)
-    };
-    std::vector<uint32> indices = { 0, 1, 2, 3, 2, 1 };
-    int vBufferSize = sizeof(glm::vec3) * static_cast<int>(positions.size());
-    int tBufferSize = sizeof(glm::vec2) * static_cast<int>(uvs.size());
-    int iBufferSize = sizeof(uint32) * static_cast<int>(indices.size());
+    glm::vec3 positions[4] =
+        {
+            glm::vec3(-0.5f, 0.5f, 0.0f),  // Top Left
+            glm::vec3(0.5f, 0.5f, 0.0f),   // Top Right
+            glm::vec3(-0.5f, -0.5f, 0.0f), // Bottom Left
+            glm::vec3(0.5f, -0.5f, 0.0f),  // Bottom Right
+        };
+    glm::vec2 uvs[4] =
+        {
+            glm::vec2(0.f),
+            glm::vec2(1.f, 0.f),
+            glm::vec2(0.f, 1.f),
+            glm::vec2(1.f, 1.f)};
+    uint32 indices[6] = {0, 1, 2, 3, 2, 1};
+    int vBufferSize = sizeof(glm::vec3) * 4;
+    int tBufferSize = sizeof(glm::vec2) * 4;
+    int iBufferSize = sizeof(uint32) * 6;
 
     mQuadVResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(vBufferSize), nullptr, "UI Vertex resource buffer");
     mQuadUVResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(tBufferSize), nullptr, "UI UV resource buffer");
@@ -89,17 +91,17 @@ CE::UIRenderingData::UIRenderingData()
     mIndicesResource->CreateUploadBuffer(device, iBufferSize, 0);
 
     D3D12_SUBRESOURCE_DATA vData = {};
-    vData.pData = positions.data();
+    vData.pData = positions;
     vData.RowPitch = sizeof(float) * 3;
     vData.SlicePitch = vBufferSize;
 
     D3D12_SUBRESOURCE_DATA uData = {};
-    uData.pData = uvs.data();
+    uData.pData = uvs;
     uData.RowPitch = sizeof(float) * 2;
     uData.SlicePitch = tBufferSize;
 
     D3D12_SUBRESOURCE_DATA iData = {};
-    iData.pData = indices.data();
+    iData.pData = indices;
     iData.RowPitch = iBufferSize;
     iData.SlicePitch = iBufferSize;
 
@@ -119,37 +121,57 @@ CE::UIRenderingData::UIRenderingData()
     mIndexBufferView.Format = DXGI_FORMAT_R32_UINT;
     mIndexBufferView.SizeInBytes = iBufferSize;
 
-    mModelMatBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_MESHES, "UI Mesh matrix data", FRAME_BUFFER_COUNT);
-    mColorBuffer = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::ColorInfo), MAX_MESHES, "UI Mesh color data", FRAME_BUFFER_COUNT);
+    mModelMatBuffer = std::make_unique<DXConstBuffer>(device, sizeof(glm::mat4x4) * 2, MAX_QUADS, "UI Mesh matrix data", FRAME_BUFFER_COUNT);
+    mColorBuffer = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::ColorInfo), MAX_QUADS, "UI Mesh color data", FRAME_BUFFER_COUNT);
+
+    for (int i = 0; i < MAX_TEXTS; i++)
+    {
+        mFontInfos[i].mVertexResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+                                                                     CD3DX12_RESOURCE_DESC::Buffer(MAX_CHAR_PER_TEXT * 4 * sizeof(InfoStruct::DXFontVert)),
+                                                                     nullptr, "TEXT Vertex data");
+        mFontInfos[i].mVertexResource->CreateUploadBuffer(device, MAX_CHAR_PER_TEXT * 4 * sizeof(InfoStruct::DXFontVert), 0);
+        mFontInfos[i].mIndexResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+                                                                    CD3DX12_RESOURCE_DESC::Buffer(MAX_CHAR_PER_TEXT * 6 * sizeof(uint16)),
+                                                                    nullptr, "TEXT Index data");
+        mFontInfos[i].mIndexResource->CreateUploadBuffer(device, MAX_CHAR_PER_TEXT * 6 * sizeof(InfoStruct::DXFontVert), 0);
+
+        mFontInfos[i].mVertexResourceView.BufferLocation = mFontInfos[i].mVertexResource->GetResource()->GetGPUVirtualAddress();
+        mFontInfos[i].mVertexResourceView.StrideInBytes = sizeof(InfoStruct::DXFontVert);
+        mFontInfos[i].mVertexResourceView.SizeInBytes = MAX_CHAR_PER_TEXT * 4 * sizeof(InfoStruct::DXFontVert);
+
+        mFontInfos[i].mIndexResourceView.BufferLocation = mFontInfos[i].mIndexResource->GetResource()->GetGPUVirtualAddress();
+        mFontInfos[i].mIndexResourceView.Format = DXGI_FORMAT_R16_UINT;
+        mFontInfos[i].mIndexResourceView.SizeInBytes = MAX_CHAR_PER_TEXT * 6 * sizeof(uint16);
+    }
+
     engineDevice.SubmitUploadCommands();
 }
 
 CE::PosProcRenderingData::PosProcRenderingData()
 {
-    Device& engineDevice = Device::Get();
-    ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
-    ID3D12GraphicsCommandList4* uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetUploadCommandList());
+    Device &engineDevice = Device::Get();
+    ID3D12Device5 *device = reinterpret_cast<ID3D12Device5 *>(engineDevice.GetDevice());
+    ID3D12GraphicsCommandList4 *uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4 *>(engineDevice.GetUploadCommandList());
     engineDevice.StartUploadCommands();
 
-    std::vector<glm::vec3> positions =
-    {
-        glm::vec3(-1.f, 1.f, 0.0f),  // Top Left
-        glm::vec3(1.f, 1.f, 0.0f),   // Top Right
-        glm::vec3(-1.f, -1.f, 0.0f), // Bottom Left
-        glm::vec3(1.f, -1.f, 0.0f),  // Bottom Right
-    };
+    glm::vec3 positions[4] =
+        {
+            glm::vec3(-1.f, 1.f, 0.0f),  // Top Left
+            glm::vec3(1.f, 1.f, 0.0f),   // Top Right
+            glm::vec3(-1.f, -1.f, 0.0f), // Bottom Left
+            glm::vec3(1.f, -1.f, 0.0f),  // Bottom Right
+        };
 
-    std::vector<glm::vec2> uvs = 
-    {
-        glm::vec2(0.f),
-        glm::vec2(1.f, 0.f),
-        glm::vec2(0.f, 1.f),
-        glm::vec2(1.f, 1.f)
-    };
-    std::vector<uint32> indices = { 0, 1, 2, 3, 2, 1 };
-    int vBufferSize = sizeof(glm::vec3) * static_cast<int>(positions.size());
-    int tBufferSize = sizeof(glm::vec2) * static_cast<int>(uvs.size());
-    int iBufferSize = sizeof(uint32) * static_cast<int>(indices.size());
+    glm::vec2 uvs[4] =
+        {
+            glm::vec2(0.f),
+            glm::vec2(1.f, 0.f),
+            glm::vec2(0.f, 1.f),
+            glm::vec2(1.f, 1.f)};
+    uint32 indices[6] = {0, 1, 2, 3, 2, 1};
+    int vBufferSize = sizeof(glm::vec3) * 4;
+    int tBufferSize = sizeof(glm::vec2) * 4;
+    int iBufferSize = sizeof(uint32) * 6;
 
     mQuadVResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(vBufferSize), nullptr, "UI Vertex resource buffer");
     mQuadUVResource = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), CD3DX12_RESOURCE_DESC::Buffer(tBufferSize), nullptr, "UI UV resource buffer");
@@ -160,17 +182,17 @@ CE::PosProcRenderingData::PosProcRenderingData()
     mIndicesResource->CreateUploadBuffer(device, iBufferSize, 0);
 
     D3D12_SUBRESOURCE_DATA vData = {};
-    vData.pData = positions.data();
+    vData.pData = positions;
     vData.RowPitch = sizeof(float) * 3;
     vData.SlicePitch = vBufferSize;
 
     D3D12_SUBRESOURCE_DATA uData = {};
-    uData.pData = uvs.data();
+    uData.pData = uvs;
     uData.RowPitch = sizeof(float) * 2;
     uData.SlicePitch = tBufferSize;
 
     D3D12_SUBRESOURCE_DATA iData = {};
-    iData.pData = indices.data();
+    iData.pData = indices;
     iData.RowPitch = iBufferSize;
     iData.SlicePitch = iBufferSize;
 
@@ -192,12 +214,11 @@ CE::PosProcRenderingData::PosProcRenderingData()
 
     mOutlineBuffer = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXOutlineInfo), 1, "Outline info", FRAME_BUFFER_COUNT);
     engineDevice.SubmitUploadCommands();
-
 }
 
-void CE::PosProcRenderingData::Update(const World& world)
+void CE::PosProcRenderingData::Update(const World &world)
 {
-    Device& engineDevice = Device::Get();
+    Device &engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
 
     {
@@ -213,12 +234,11 @@ void CE::PosProcRenderingData::Update(const World& world)
     }
 }
 
-CE::GPUWorld::GPUWorld(const World& world)
-    :
-    IGPUWorld::IGPUWorld(world)
+CE::GPUWorld::GPUWorld(const World &world)
+    : IGPUWorld::IGPUWorld(world)
 {
-    Device& engineDevice = Device::Get();
-    ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
+    Device &engineDevice = Device::Get();
+    ID3D12Device5 *device = reinterpret_cast<ID3D12Device5 *>(engineDevice.GetDevice());
     mClusterGrid = glm::ivec3(16, 8, 24);
     mNumberOfClusters = mClusterGrid.x * mClusterGrid.y * mClusterGrid.z;
 
@@ -237,7 +257,7 @@ CE::GPUWorld::GPUWorld(const World& world)
     mConstBuffers[InfoStruct::CLUSTERING_CAM_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::Clustering::DXCameraClustering), 1, "Clustering camera data", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::FOG_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXFogInfo), 1, "Fog info", FRAME_BUFFER_COUNT);
     mConstBuffers[InfoStruct::PARTICLE_INFO_CB] = std::make_unique<DXConstBuffer>(device, sizeof(InfoStruct::DXParticleInfo), MAX_PARTICLES, "Particle info", FRAME_BUFFER_COUNT);
-    
+
     // Create structured buffers
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
     auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXDirLightInfo) * 10, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
@@ -257,7 +277,6 @@ CE::GPUWorld::GPUWorld(const World& world)
     mStructuredBuffers[InfoStruct::LIGHT_GRID_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "LIGHT GRID BUFFER");
     mStructuredBuffers[InfoStruct::LIGHT_GRID_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::Clustering::DXLightGridElement) * mNumberOfClusters, 0);
 
-
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(uint32), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "POINT LIGHT COUNTER BUFFER");
     mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER]->CreateUploadBuffer(device, sizeof(uint32), 0);
@@ -273,7 +292,7 @@ CE::GPUWorld::GPUWorld(const World& world)
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(unsigned int) * mNumberOfClusters, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER BUFFER");
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB]->CreateUploadBuffer(device, sizeof(unsigned int) * mNumberOfClusters, 0);
-    
+
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(unsigned int), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "COMPACT CLUSTER COUNTER BUFFER");
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->CreateUploadBuffer(device, sizeof(unsigned int), 0);
@@ -285,7 +304,7 @@ CE::GPUWorld::GPUWorld(const World& world)
     resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::Clustering::DXAABB) * mNumberOfClusters);
     mStructuredBuffers[InfoStruct::GRID_READBACK_RESOURCE] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "READBACK GRID BUFFER", D3D12_RESOURCE_STATE_COPY_DEST);
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC  srvDesc = {};
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     srvDesc.Format = DXGI_FORMAT_UNKNOWN;
     srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
@@ -295,12 +314,12 @@ CE::GPUWorld::GPUWorld(const World& world)
     srvDesc.Buffer.NumElements = 100;
     mPointLightsSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::POINT_LIGHT_SB].get(), &srvDesc);
 
-    //Directional lights
+    // Directional lights
     srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXDirLightInfo);
     srvDesc.Buffer.NumElements = 10;
     mDirectionalLightsSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB].get(), &srvDesc);
 
-    //AABB Clusters
+    // AABB Clusters
     srvDesc = {};
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     srvDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -314,21 +333,21 @@ CE::GPUWorld::GPUWorld(const World& world)
     srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXLightGridElement);
     mLightGridSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::LIGHT_GRID_SB].get(), &srvDesc);
 
-    //Active clusters
+    // Active clusters
     srvDesc.Buffer.StructureByteStride = sizeof(uint32);
-    mActiveClusterSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::ACTIVE_CLUSTER_SB].get(), &srvDesc); 
+    mActiveClusterSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::ACTIVE_CLUSTER_SB].get(), &srvDesc);
     srvDesc.Buffer.StructureByteStride = sizeof(uint32);
     srvDesc.Buffer.NumElements = mNumberOfClusters * MAX_LIGHTS_PER_CLUSTER;
-    mLightIndicesSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::LIGHT_INDICES].get(), &srvDesc); 
+    mLightIndicesSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::LIGHT_INDICES].get(), &srvDesc);
 
-    //Compact cluster
+    // Compact cluster
     srvDesc.Buffer.NumElements = mNumberOfClusters;
     srvDesc.Buffer.StructureByteStride = sizeof(uint32);
-    mCompactClusterSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB].get(), &srvDesc); 
+    mCompactClusterSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB].get(), &srvDesc);
 
-    //CREATE UAVS
-    //AABB Clusters
-    D3D12_UNORDERED_ACCESS_VIEW_DESC  uavDesc = {};
+    // CREATE UAVS
+    // AABB Clusters
+    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
     uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
     uavDesc.Format = DXGI_FORMAT_UNKNOWN;
     uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
@@ -337,29 +356,28 @@ CE::GPUWorld::GPUWorld(const World& world)
     uavDesc.Buffer.NumElements = mNumberOfClusters;
     mClusterUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::CLUSTER_GRID_SB].get(), &uavDesc);
 
-    //Light grid
+    // Light grid
     uavDesc.Buffer.StructureByteStride = sizeof(InfoStruct::Clustering::DXLightGridElement);
     mLightGridUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::LIGHT_GRID_SB].get(), &uavDesc);
 
-    //Active clusters
+    // Active clusters
     uavDesc.Buffer.StructureByteStride = sizeof(uint32);
-    mActiveClusterUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::ACTIVE_CLUSTER_SB].get(), &uavDesc); 
+    mActiveClusterUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::ACTIVE_CLUSTER_SB].get(), &uavDesc);
     uavDesc.Buffer.StructureByteStride = sizeof(uint32);
     uavDesc.Buffer.NumElements = mNumberOfClusters * MAX_LIGHTS_PER_CLUSTER;
-    mLightIndicesUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::LIGHT_INDICES].get(), &uavDesc); 
+    mLightIndicesUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::LIGHT_INDICES].get(), &uavDesc);
 
-    //Compact clusters
+    // Compact clusters
     uavDesc.Buffer.NumElements = mNumberOfClusters;
     uavDesc.Buffer.StructureByteStride = sizeof(uint32);
     uavDesc.Buffer.CounterOffsetInBytes = 0;
-    mCompactClusterUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB].get(), &uavDesc, mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER].get()); 
+    mCompactClusterUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB].get(), &uavDesc, mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER].get());
 
     uavDesc.Buffer.NumElements = 1;
-    mPointLightCounterUAVSlot =  engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER].get(), &uavDesc); 
+    mPointLightCounterUAVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateUAV(mStructuredBuffers[InfoStruct::POINT_LIGHT_COUNTER].get(), &uavDesc);
 
     InitializeShadowMaps();
     mSelectedMeshFrameBuffer = std::make_unique<FrameBuffer>(glm::ivec2(1920, 1080));
-    mParticles.resize(MAX_PARTICLES);
 
     mMsaaFrameBuffer = std::make_unique<FrameBuffer>(glm::ivec2(1428, 929), MSAA_COUNT, MSAA_QUALITY, true);
     mDefaultFrameBuffer = std::make_unique<FrameBuffer>(glm::ivec2(1428, 929), 1, 0, true);
@@ -369,7 +387,7 @@ CE::GPUWorld::~GPUWorld() = default;
 
 void CE::GPUWorld::Update()
 {
-    Device& engineDevice = Device::Get();
+    Device &engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
 
     entt::entity cameraOwner = CameraComponent::GetSelected(mWorld);
@@ -382,8 +400,8 @@ void CE::GPUWorld::Update()
 
     UpdateMSAA();
 
-    const CameraComponent& camera = mWorld.get().GetRegistry().Get<const CameraComponent>(cameraOwner);
-    const TransformComponent& cameraTransform = mWorld.get().GetRegistry().Get<const TransformComponent>(cameraOwner);
+    const CameraComponent &camera = mWorld.get().GetRegistry().Get<const CameraComponent>(cameraOwner);
+    const TransformComponent &cameraTransform = mWorld.get().GetRegistry().Get<const TransformComponent>(cameraOwner);
     // Update camera
     InfoStruct::DXMatrixInfo matrixInfo{};
     matrixInfo.pm = glm::transpose(camera.GetProjection());
@@ -400,25 +418,27 @@ void CE::GPUWorld::Update()
     int dirLightCounter = 0;
     mPointLightCounter = 0;
 
-    for (auto [entity, lightComponent, transform] : pointLightView.each()) {
-        if(mPointLightCounter >= mPointLights.size())
+    for (auto [entity, lightComponent, transform] : pointLightView.each())
+    {
+        if (mPointLightCounter >= mPointLights.size())
         {
             mPointLights.resize(mPointLights.size() + 100);
             mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->mResizeBuffer = true;
         }
 
         InfoStruct::DXPointLightInfo pointLight;
-        pointLight.mPosition = glm::vec4(transform.GetWorldPosition(),1.f);
-        pointLight.mColorAndIntensity = glm::vec4(lightComponent.mColor.r,lightComponent.mColor.g, lightComponent.mColor.b, lightComponent.mIntensity);
+        pointLight.mPosition = glm::vec4(transform.GetWorldPosition(), 1.f);
+        pointLight.mColorAndIntensity = glm::vec4(lightComponent.mColor.r, lightComponent.mColor.g, lightComponent.mColor.b, lightComponent.mIntensity);
         pointLight.mRadius = lightComponent.mRange;
         mPointLights[mPointLightCounter] = pointLight;
         mPointLightCounter++;
     }
 
     mLightInfo.mActiveShadowingLight = -1;
-    for (auto [entity, lightComponent, transform] : dirLightView.each()) {
+    for (auto [entity, lightComponent, transform] : dirLightView.each())
+    {
 
-        if(dirLightCounter >= mDirectionalLights.size())
+        if (dirLightCounter >= mDirectionalLights.size())
         {
             mDirectionalLights.resize(mDirectionalLights.size() + 10);
             mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB]->mResizeBuffer = true;
@@ -431,7 +451,7 @@ void CE::GPUWorld::Update()
 
         glm::mat4x4 projection = glm::orthoLH_ZO(-extent, extent, -extent, extent, -extent, extent);
         glm::mat4x4 view = lightComponent.GetShadowView(mWorld, transform);
-        
+
         InfoStruct::DXMatrixInfo lightCameraMap;
         lightCameraMap.pm = glm::transpose(projection);
         lightCameraMap.vm = glm::transpose(view);
@@ -445,8 +465,8 @@ void CE::GPUWorld::Update()
 
         InfoStruct::DXDirLightInfo dirLight;
         dirLight.mDir = glm::vec4(lightDirection, 1.f);
-        dirLight.mColorAndIntensity = glm::vec4(lightComponent.mColor.r,lightComponent.mColor.g, lightComponent.mColor.b, lightComponent.mIntensity);
-        dirLight.mLightMat = glm::transpose(t*projection*view);
+        dirLight.mColorAndIntensity = glm::vec4(lightComponent.mColor.r, lightComponent.mColor.g, lightComponent.mColor.b, lightComponent.mIntensity);
+        dirLight.mLightMat = glm::transpose(t * projection * view);
         dirLight.mBias = lightComponent.mShadowBias;
         dirLight.mCastsShadows = lightComponent.mCastShadows;
         dirLight.mNumSamples = lightComponent.mShadowSamples;
@@ -468,14 +488,14 @@ void CE::GPUWorld::Update()
         mLightInfo.mAmbientAndIntensity.w = ambientLight.mIntensity;
     }
 
-    if(ambientLightView.size() >1)
+    if (ambientLightView.size() > 1)
         LOG(LogRendering, Warning, "There is more than one AmbientrLifgt component in the ***REMOVED***ne. Only the last one will be used.");
 
     UpdateParticles(cameraTransform.GetLocalPosition());
     UpdateLights(dirLightCounter, mPointLightCounter);
 
     // Update materials
-    // 
+    //
     // I'm not sure why, because I (Guus), know nothing of dx12, but dx12 does not like it
     // if we are sending textures to the GPU in the RENDERING pass. Soo my solution was to
     // do it here instead. The only downside is that we have to iterate over the static meshes
@@ -507,7 +527,7 @@ void CE::GPUWorld::Update()
             // and the first 10'000 FINAL_BONE_MATRIX_CB slots will be unused, with
             // each slot being quite large. This leads to buffer overflows with many
             // static meshes - Guus
-            const auto& boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
+            const auto &boneMatrices = skinnedMeshComponent.mFinalBoneMatrices;
             mConstBuffers[InfoStruct::FINAL_BONE_MATRIX_CB]->Update(boneMatrices.data(), boneMatrices.size() * sizeof(glm::mat4x4), meshCounter, frameIndex);
 
             meshCounter++;
@@ -529,10 +549,10 @@ void CE::GPUWorld::Update()
             InfoStruct::DXMaterialInfo materialInfo = GetMaterial(staticMeshComponent.mMaterial.Get());
             float uvScale = staticMeshComponent.mTiling;
 
-            if(staticMeshComponent.mTilesWithMeshScale)
+            if (staticMeshComponent.mTilesWithMeshScale)
             {
                 float meshScale = transformComponent.GetWorldScaleUniform();
-                float scaleFactor = meshScale < 1 && meshScale >0 ? 1 / meshScale : meshScale;
+                float scaleFactor = meshScale < 1 && meshScale > 0 ? 1 / meshScale : meshScale;
                 uvScale *= scaleFactor;
             }
 
@@ -548,7 +568,6 @@ void CE::GPUWorld::Update()
             meshCounter++;
         }
     }
-
 
     {
         InfoStruct::DXFogInfo fog{};
@@ -568,13 +587,14 @@ void CE::GPUWorld::Update()
     mConstBuffers[InfoStruct::CAM_MATRIX_CB]->Update(&UIcamera, sizeof(InfoStruct::DXMatrixInfo), 2, frameIndex);
 
     mPostProcData.Update(mWorld);
+    mUIRenderingData.Update(mWorld);
     UpdateClusterData(camera);
 }
 
 uint32 CE::GPUWorld::ReadCompactClusterCounter() const
 {
-    Device& engineDevice = Device::Get();
-    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    Device &engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4 *commandList = reinterpret_cast<ID3D12GraphicsCommandList4 *>(engineDevice.GetCommandList());
     D3D12_RESOURCE_STATES prevState = mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->GetState();
 
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->ChangeState(commandList, D3D12_RESOURCE_STATE_COPY_SOURCE);
@@ -582,10 +602,10 @@ uint32 CE::GPUWorld::ReadCompactClusterCounter() const
 
     mStructuredBuffers[InfoStruct::CLUSTER_COUNTER_BUFFER]->ChangeState(commandList, prevState);
 
-    void* mappedData;
+    void *mappedData;
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_READBACK_RESOURCE]->Get()->Map(0, nullptr, &mappedData);
 
-    uint32_t value = *static_cast<uint32_t*>(mappedData);
+    uint32_t value = *static_cast<uint32_t *>(mappedData);
 
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_READBACK_RESOURCE]->Get()->Unmap(0, nullptr);
 
@@ -595,8 +615,8 @@ uint32 CE::GPUWorld::ReadCompactClusterCounter() const
 void CE::GPUWorld::InitializeShadowMaps()
 {
     mShadowMap = std::make_unique<InfoStruct::DXShadowMapInfo>();
-    Device& engineDevice = Device::Get();
-    ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
+    Device &engineDevice = Device::Get();
+    ID3D12Device5 *device = reinterpret_cast<ID3D12Device5 *>(engineDevice.GetDevice());
 
     D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
     depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
@@ -622,10 +642,10 @@ void CE::GPUWorld::InitializeShadowMaps()
 
     D3D12_CLEAR_VALUE clearValue = {};
     clearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // Use the format that matches your RTV format.
-    clearValue.Color[0] = 0.f; // Red component
-    clearValue.Color[1] = 0.f; // Green component
-    clearValue.Color[2] = 0.f; // Blue component
-    clearValue.Color[3] = 0.f; // Alpha component
+    clearValue.Color[0] = 0.f;                      // Red component
+    clearValue.Color[1] = 0.f;                      // Green component
+    clearValue.Color[2] = 0.f;                      // Blue component
+    clearValue.Color[3] = 0.f;                      // Alpha component
     resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, 4096, 4096, 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
     mShadowMap->mRenderTarget = std::make_unique<DXResource>(device, CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), resourceDesc, &clearValue, "DIRECTIONAL LIGHT RENDER TARGET");
 
@@ -633,7 +653,7 @@ void CE::GPUWorld::InitializeShadowMaps()
     rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
     rtvDesc.Texture2D.MipSlice = 0;
-    mShadowMap-> mRTHandle = engineDevice.GetDescriptorHeap(RT_HEAP)->AllocateRenderTarget(mShadowMap->mRenderTarget.get(), &rtvDesc);
+    mShadowMap->mRTHandle = engineDevice.GetDescriptorHeap(RT_HEAP)->AllocateRenderTarget(mShadowMap->mRenderTarget.get(), &rtvDesc);
 
     mShadowMap->mViewport.Width = static_cast<FLOAT>(4096);
     mShadowMap->mViewport.Height = static_cast<FLOAT>(4096);
@@ -650,7 +670,7 @@ void CE::GPUWorld::InitializeShadowMaps()
 
 void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
 {
-    Device& engineDevice = Device::Get();
+    Device &engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
 
     const auto simpleColorParticles = mWorld.get().GetRegistry().View<const ParticleEmitterComponent, const ParticleMeshRendererComponent, const ParticleColorComponent>();
@@ -667,7 +687,7 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
 
             const size_t numOfParticles = emitter.GetNumOfParticles();
 
-            const ParticleLightComponent* lightComponent = mWorld.get().GetRegistry().TryGet<ParticleLightComponent>(entity);
+            const ParticleLightComponent *lightComponent = mWorld.get().GetRegistry().TryGet<ParticleLightComponent>(entity);
 
             for (uint32 i = 0; i < numOfParticles; i++)
             {
@@ -684,9 +704,9 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                 const glm::mat4 mat = TransformComponent::ToMatrix(position, emitter.mScale.GetValue(emitter, i), emitter.GetParticleOrientationWorld(i));
 
                 InfoStruct::DXParticleInfo particleInfo{};
-                particleInfo.mMesh = const_cast<StaticMesh*>(meshRenderer.mParticleMesh.Get());
-                particleInfo.mMaterial = const_cast<Material*>(meshRenderer.mParticleMaterial.Get()); 
-                if(meshRenderer.mParticleMaterial)
+                particleInfo.mMesh = const_cast<StaticMesh *>(meshRenderer.mParticleMesh.Get());
+                particleInfo.mMaterial = const_cast<Material *>(meshRenderer.mParticleMaterial.Get());
+                if (meshRenderer.mParticleMaterial)
                     particleInfo.mMaterialInfo = GetMaterial(meshRenderer.mParticleMaterial.Get());
                 particleInfo.mDistanceToCamera = glm::length(position - cameraPos);
                 particleInfo.mColor = colorComponent.mColor.GetValue(emitter, i);
@@ -699,7 +719,7 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                     particleInfo.mLightRadius = radius;
                     particleInfo.mLightIntensity = lightComponent->mIntensity.GetValue(emitter, i);
 
-                    if(mPointLightCounter >= mPointLights.size())
+                    if (mPointLightCounter >= mPointLights.size())
                     {
                         mPointLights.resize(mPointLights.size() + 100);
                         mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->mResizeBuffer = true;
@@ -716,18 +736,19 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                 mParticles[mParticleCount] = std::move(particleInfo);
 
                 mParticleCount++;
-            }          
+            }
         }
     }
 
-    for (int i = 0; i < mParticleCount; i++) {
+    for (int i = 0; i < mParticleCount; i++)
+    {
         mConstBuffers[InfoStruct::PARTICLE_MATERIAL_INFO_CB]->Update(&mParticles[i].mMaterialInfo, sizeof(InfoStruct::DXMaterialInfo), i, frameIndex);
         glm::mat4x4 modelMatrices[2]{};
         modelMatrices[0] = glm::transpose(mParticles[i].mMatrix);
         modelMatrices[1] = glm::transpose(glm::inverse(mParticles[i].mMatrix));
         mConstBuffers[InfoStruct::PARTICLE_MODEL_MATRIX_CB]->Update(modelMatrices, sizeof(glm::mat4x4) * 2, i, frameIndex);
         mConstBuffers[InfoStruct::PARTICLE_COLOR_CB]->Update(&mParticles[i].mColor, sizeof(InfoStruct::DXColorMultiplierInfo), i, frameIndex);
-        
+
         InfoStruct::DXParticleBufferInfo particleInfo{};
         particleInfo.mIsEmissive = mParticles[i].mIsEmissive;
         particleInfo.mEmissionIntensity = mParticles[i].mLightIntensity;
@@ -735,21 +756,21 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
     }
 }
 
-CE::InfoStruct::DXMaterialInfo CE::GPUWorld::GetMaterial(const CE::Material* material)
+CE::InfoStruct::DXMaterialInfo CE::GPUWorld::GetMaterial(const CE::Material *material)
 {
     InfoStruct::DXMaterialInfo materialInfo{};
 
-    if (material != nullptr) 
+    if (material != nullptr)
     {
-        materialInfo.colorFactor = { material->mBaseColorFactor.r,
-            material->mBaseColorFactor.g,
-            material->mBaseColorFactor.b,
-            material->mBaseColorFactor.a };
+        materialInfo.colorFactor = {material->mBaseColorFactor.r,
+                                    material->mBaseColorFactor.g,
+                                    material->mBaseColorFactor.b,
+                                    material->mBaseColorFactor.a};
 
-        materialInfo.emissiveFactor = { material->mEmissiveFactor.r,
-            material->mEmissiveFactor.g,
-            material->mEmissiveFactor.b,
-            1.f};
+        materialInfo.emissiveFactor = {material->mEmissiveFactor.r,
+                                       material->mEmissiveFactor.g,
+                                       material->mEmissiveFactor.b,
+                                       1.f};
 
         materialInfo.metallicFactor = material->mMetallicFactor;
         materialInfo.roughnessFactor = material->mRoughnessFactor;
@@ -761,10 +782,10 @@ CE::InfoStruct::DXMaterialInfo CE::GPUWorld::GetMaterial(const CE::Material* mat
         materialInfo.useNormalTex = material->mNormalTexture != nullptr;
         materialInfo.useOcclusionTex = material->mOcclusionTexture != nullptr;
     }
-    else 
+    else
     {
-        materialInfo.colorFactor = { 1.f, 1.f, 1.f, 1.f };
-        materialInfo.emissiveFactor = { 1.f, 1.f, 1.f, 1.f };
+        materialInfo.colorFactor = {1.f, 1.f, 1.f, 1.f};
+        materialInfo.emissiveFactor = {1.f, 1.f, 1.f, 1.f};
         materialInfo.metallicFactor = 0.f;
         materialInfo.roughnessFactor = 0.f;
         materialInfo.normalScale = 1.f;
@@ -778,9 +799,9 @@ CE::InfoStruct::DXMaterialInfo CE::GPUWorld::GetMaterial(const CE::Material* mat
     return materialInfo;
 }
 
-void CE::GPUWorld::UpdateClusterData(const CameraComponent& camera)
+void CE::GPUWorld::UpdateClusterData(const CameraComponent &camera)
 {
-    Device& engineDevice = Device::Get();
+    Device &engineDevice = Device::Get();
     int frameIndex = engineDevice.GetFrameIndex();
 
     InfoStruct::Clustering::DXCluster clusterInfo;
@@ -808,14 +829,14 @@ void CE::GPUWorld::UpdateClusterData(const CameraComponent& camera)
 
 void CE::GPUWorld::ClearClusterData()
 {
-    Device& engineDevice = Device::Get();
-    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    Device &engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4 *commandList = reinterpret_cast<ID3D12GraphicsCommandList4 *>(engineDevice.GetCommandList());
 
     // This uses a loot of memory and is quite slow,
     // is there not a DX equivalent for memset? - Guus
     const size_t zeroBufferSize = std::max(mNumberOfClusters * sizeof(uint32), mNumberOfClusters * sizeof(InfoStruct::Clustering::DXLightGridElement));
     static std::vector<uint8> manyZeroes(zeroBufferSize, 0);
-	manyZeroes.resize(zeroBufferSize, 0);
+    manyZeroes.resize(zeroBufferSize, 0);
 
     D3D12_SUBRESOURCE_DATA data;
     data.pData = manyZeroes.data();
@@ -823,7 +844,7 @@ void CE::GPUWorld::ClearClusterData()
     data.SlicePitch = sizeof(uint32) * mNumberOfClusters;
     mStructuredBuffers[InfoStruct::COMPACT_CLUSTER_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 
-    static std::vector<int32> lightIndicesClear(mNumberOfClusters*MAX_LIGHTS_PER_CLUSTER, -1);
+    static std::vector<int32> lightIndicesClear(mNumberOfClusters * MAX_LIGHTS_PER_CLUSTER, -1);
     data.pData = lightIndicesClear.data();
     data.RowPitch = sizeof(int32);
     data.SlicePitch = sizeof(int32) * mNumberOfClusters * MAX_LIGHTS_PER_CLUSTER;
@@ -849,22 +870,21 @@ void CE::GPUWorld::UpdateMSAA()
     mMsaaFrameBuffer->Resize(glm::ivec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
     mDefaultFrameBuffer->Resize(glm::ivec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
 #else
-    Device& engineDevice = Device::Get();
+    Device &engineDevice = Device::Get();
     mMsaaFrameBuffer->Resize(engineDevice.GetDisplaySize());
     mDefaultFrameBuffer->Resize(engineDevice.GetDisplaySize());
 #endif
-
 }
 
 void CE::GPUWorld::UpdateLights(int numDirLights, int numPointLights)
 {
-    Device& engineDevice = Device::Get();
-    ID3D12Device5* device = reinterpret_cast<ID3D12Device5*>(engineDevice.GetDevice());
-    ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+    Device &engineDevice = Device::Get();
+    ID3D12Device5 *device = reinterpret_cast<ID3D12Device5 *>(engineDevice.GetDevice());
+    ID3D12GraphicsCommandList4 *commandList = reinterpret_cast<ID3D12GraphicsCommandList4 *>(engineDevice.GetCommandList());
     int frameIndex = engineDevice.GetFrameIndex();
     auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 
-    D3D12_SHADER_RESOURCE_VIEW_DESC  srvDesc = {};
+    D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     srvDesc.Format = DXGI_FORMAT_UNKNOWN;
     srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
@@ -881,15 +901,16 @@ void CE::GPUWorld::UpdateLights(int numDirLights, int numPointLights)
         mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "DIRECTIONAL LIGHT STRUCTURED BUFFER");
         mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXDirLightInfo) * static_cast<UINT>(mDirectionalLights.size()), 0);
         srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXDirLightInfo);
-        srvDesc.Buffer.NumElements =static_cast<UINT>(mDirectionalLights.size());
+        srvDesc.Buffer.NumElements = static_cast<UINT>(mDirectionalLights.size());
         mDirectionalLightsSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB].get(), &srvDesc);
         mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB]->mResizeBuffer = false;
     }
 
-    if (mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->mResizeBuffer) {
+    if (mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->mResizeBuffer)
+    {
         auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeof(InfoStruct::DXPointLightInfo) * static_cast<UINT>(mPointLights.size()), D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
         mStructuredBuffers[InfoStruct::POINT_LIGHT_SB] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "POINT LIGHT STRUCTURED BUFFER");
-        mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXPointLightInfo) *static_cast<UINT>(mPointLights.size()), 0);
+        mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->CreateUploadBuffer(device, sizeof(InfoStruct::DXPointLightInfo) * static_cast<UINT>(mPointLights.size()), 0);
         srvDesc.Buffer.StructureByteStride = sizeof(InfoStruct::DXPointLightInfo);
         srvDesc.Buffer.NumElements = static_cast<UINT>(mPointLights.size());
         mPointLightsSRVSlot = engineDevice.GetDescriptorHeap(RESOURCE_HEAP)->AllocateResource(mStructuredBuffers[InfoStruct::POINT_LIGHT_SB].get(), &srvDesc);
@@ -908,4 +929,81 @@ void CE::GPUWorld::UpdateLights(int numDirLights, int numPointLights)
     mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->Update(commandList, data, D3D12_RESOURCE_STATE_GENERIC_READ, 0, 1);
 }
 
+void CE::UIRenderingData::Update(const World &world)
+{
+    Device &engineDevice = Device::Get();
+    ID3D12GraphicsCommandList4 *uploadCmdList = reinterpret_cast<ID3D12GraphicsCommandList4 *>(engineDevice.GetUploadCommandList());
 
+    engineDevice.StartUploadCommands();
+    const auto view = world.GetRegistry().View<const TransformComponent, const UITextComponent>();
+    size_t textCounter = 0;
+
+    for (const auto [entity, transform, textComp] : view.each())
+    {
+        auto font = textComp.mFont;
+        auto text = textComp.mText;
+
+        if (!font || text.size() == 0)
+            continue;
+
+        uint16 quadCount = static_cast<uint16>(textComp.mText.size());
+
+        glm::vec3 localPosition = glm::vec3(transform.GetWorldPosition().x, 0.0f, 0.0f);
+        for (uint16 i = 0; i < quadCount; i++)
+        {
+            UITextComponent::QuadInfo quadInfo{};
+            textComp.GetCharacterQuadInfo(i, quadInfo);
+
+            glm::mat4 worldMatrix = transform.GetWorldMatrix();
+            worldMatrix = glm::translate(worldMatrix, localPosition);
+
+            for (int j = 0; j < 4; j++)
+            {
+                mVertices[i * 4 + j].pos = worldMatrix * quadInfo.vertexPositions[j];
+                mVertices[i * 4 + j].uv = quadInfo.textureCoordinates[j];
+                mVertices[i * 4 + j].color = textComp.mColor;
+            }
+
+            uint16 base_index = i * 4;
+            mIndices[i * 6 + 0] = base_index + 0;
+            mIndices[i * 6 + 1] = base_index + 1;
+            mIndices[i * 6 + 2] = base_index + 2;
+            mIndices[i * 6 + 3] = base_index + 3;
+            mIndices[i * 6 + 4] = base_index + 2;
+            mIndices[i * 6 + 5] = base_index + 1;
+
+            if (i > MAX_CHAR_PER_TEXT)
+            {
+                LOG(LogCore, Warning, "Maximum of characters per text reached");
+                break;
+            }
+
+            float kerning = textComp.GetCharacterKerning(i);
+            localPosition.x += kerning;
+        }
+        mFontInfos[textCounter].mIndexCount = quadCount * 6;
+        mFontInfos[textCounter].mVertexResourceView.SizeInBytes = quadCount * 4 * sizeof(InfoStruct::DXFontVert);
+        mFontInfos[textCounter].mIndexResourceView.SizeInBytes = quadCount * 6 * sizeof(uint16);
+
+        D3D12_SUBRESOURCE_DATA vData = {};
+        vData.pData = mVertices;
+        vData.RowPitch = sizeof(InfoStruct::DXFontVert);
+        vData.SlicePitch = quadCount * 4 * sizeof(InfoStruct::DXFontVert);
+        mFontInfos[textCounter].mVertexResource->Update(uploadCmdList, vData, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, 0, 1);
+
+        D3D12_SUBRESOURCE_DATA iData = {};
+        iData.pData = mIndices;
+        iData.RowPitch = sizeof(uint16);
+        iData.SlicePitch = sizeof(uint16) * quadCount * 6;
+        mFontInfos[textCounter].mIndexResource->Update(uploadCmdList, iData, D3D12_RESOURCE_STATE_INDEX_BUFFER, 0, 1);
+        textCounter++;
+
+        if (textCounter > MAX_TEXTS)
+        {
+            LOG(LogCore, Warning, "Maximum of texts reached.");
+            break;
+        }
+    }
+
+    engineDevice.SubmitUploadCommands();
+}
