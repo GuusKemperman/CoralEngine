@@ -100,8 +100,8 @@ void Game::StompState::OnAiStateEnterEvent(CE::World& world, const entt::entity 
 		return;
 	}
 
-	if (mParticles != nullptr) {
-		mSpawnedVfx = world.GetRegistry().CreateFromPrefab(*mParticles, entt::null, nullptr, nullptr, nullptr, transform);
+	if (mVFX != nullptr) {
+		mSpawnedVFX = world.GetRegistry().CreateFromPrefab(*mVFX, entt::null, nullptr, nullptr, nullptr, transform);
 	}
 
 	mStompCooldown.mCooldown = mMaxStompTime;
@@ -125,13 +125,14 @@ CE::MetaType Game::StompState::Reflect()
 
 	type.AddField(&StompState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&StompState::mMaxStompTime, "Max Stomp Time").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&StompState::mStompCooldown, "Stomp Cooldown").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+	type.AddField(&StompState::mStompAnimation, "Stomp Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&StompState::mVFX, "VFX").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&StompState::mSpawnedVFX, "Spawned VFX").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 
 	BindEvent(type, CE::sAITickEvent, &StompState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &StompState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &StompState::OnAiStateEnterEvent);
-
-	type.AddField(&StompState::mStompAnimation, "Stomp Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&StompState::mParticles, "Particles").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<StompState>(type);
 	return type;

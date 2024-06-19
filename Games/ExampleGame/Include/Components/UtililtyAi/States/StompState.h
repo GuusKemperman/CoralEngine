@@ -23,17 +23,13 @@ namespace Game
 		[[nodiscard]] bool IsStompCharged() const;
 
 		CE::AssetHandle<CE::Animation> mStompAnimation{};
-
-		CE::Cooldown mStompCooldown{};
+		float mRadius{};
+		float mMaxStompTime = 10.0f;
+		CE::AssetHandle<CE::Prefab> mVFX{};
 
 	private:
-		float mRadius{};
-
-		float mMaxStompTime = 10.0f;
-
-		CE::AssetHandle<CE::Prefab> mParticles{};
-
-		entt::entity mSpawnedVfx;
+		CE::Cooldown mStompCooldown{};
+		entt::entity mSpawnedVFX{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
