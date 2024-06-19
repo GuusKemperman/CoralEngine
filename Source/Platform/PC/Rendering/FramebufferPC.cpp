@@ -302,6 +302,23 @@ size_t CE::FrameBuffer::GetColorTextureId()
 	return mImpl->mFrameBufferRscHandle[engineDevice.GetFrameIndex()].GetAddressGPU().ptr;
 }
 
+void CE::FrameBuffer::CopyTo(FrameBuffer& source)
+{
+	source.SetAsCopySource();
+	Device& engineDevice = Device::Get();
+	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+	mImpl->mResource[engineDevice.GetFrameIndex()]->ChangeState(commandList, D3D12_RESOURCE_STATE_COPY_DEST);
+	commandList->CopyResource(mImpl->mResource[engineDevice.GetFrameIndex()]->Get(), source.GetResource().Get());
+}
+
+void CE::FrameBuffer::SetAsCopySource()
+{
+	Device& engineDevice = Device::Get();
+	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+
+	mImpl->mResource[engineDevice.GetFrameIndex()]->ChangeState(commandList, D3D12_RESOURCE_STATE_COPY_SOURCE);
+}
+
 DXHeapHandle& CE::FrameBuffer::GetCurrentHeapSlot()
 {
 	return mImpl->mFrameBufferRscHandle[Device::Get().GetFrameIndex()];
