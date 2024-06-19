@@ -2,6 +2,7 @@
 #include "Meta/MetaReflect.h"
 #include "Meta/ReflectedTypes/ReflectPrimitiveTypes.h"
 
+#include "Utilities/Math.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
