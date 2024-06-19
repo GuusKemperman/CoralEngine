@@ -357,6 +357,7 @@ entt::entity CE::AbilityFunctionality::SpawnAbilityPrefab(World& world, const Pr
 		const glm::vec2 projectileDir = Math::RotateVec2ByAngleInRadians(characterDir, radiansLeftOrRight);
 		// Set the velocity.
 		prefabPhysicsBody->mLinearVelocity = glm::normalize(projectileDir) * projectileComponent->mSpeed;
+		prefabTransform->SetWorldForward(To3DRightForward(projectileDir));
 
 		// Translate the spawn position by a certain amount
 		// so that the projectile does not spawn inside the character mesh.
