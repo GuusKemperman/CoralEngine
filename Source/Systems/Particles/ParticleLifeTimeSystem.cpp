@@ -172,7 +172,6 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 		const uint32 minPoolSize = static_cast<uint32>(indexOfLastParticleInUse + 1) + numToSpawnThisFrame;
 
 		emitter.mParticlePositions.resize(minPoolSize);
-		emitter.mParticleScales.resize(minPoolSize);
 		emitter.mParticleOrientations.resize(minPoolSize);
 		emitter.mParticleTimeAsPercentage.resize(minPoolSize);
 		emitter.mParticleLifeSpan.resize(minPoolSize);

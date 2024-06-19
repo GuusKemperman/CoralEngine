@@ -16,11 +16,19 @@ namespace CE
 		bool DidParticleJustSpawn(const uint32 particle) const { return mParticleTimeAsPercentage[particle] == 0.0f; }
 		bool IsParticleAlive(const uint32 particle) const { return mParticleTimeAsPercentage[particle] <= 1.0f; }
 
+		glm::mat4 GetParticleMatrixFast(uint32 particle) const;
+		glm::mat4 GetParticleMatrixWorld(uint32 particle) const;
+
 		glm::vec3 GetParticlePositionFast(uint32 particle) const;
 		void SetParticlePositionFast(uint32 particle, glm::vec3 position);
 
 		glm::vec3 GetParticlePositionWorld(uint32 particle) const;
 		void SetParticlePositionWorld(uint32 particle, glm::vec3 position);
+
+		glm::vec3 GetParticleScaleFast(uint32 particle) const;
+
+		// Reaallyy slow
+		glm::vec3 GetParticleScaleWorld(uint32 particle) const;
 
 		glm::quat GetParticleOrientationFast(uint32 particle) const;
 		void SetParticleOrientationFast(uint32 particle, glm::quat orientation);
@@ -54,10 +62,9 @@ namespace CE
 		float mDuration = 10.0f;
 		float mCurrentTime{};
 
-		ParticleProperty<glm::vec3> mScale{ glm::vec3{ 1.0f }  };
-
 		glm::mat4 mEmitterWorldMatrix = glm::mat4{ 1.0f };
 		glm::mat4 mInverseEmitterWorldMatrix = glm::inverse(mEmitterWorldMatrix);
+
 		glm::quat mEmitterOrientation = { 1.0f, 0.0f, 0.0f, 0.0f };
 		glm::quat mInverseEmitterOrientation = glm::inverse(mEmitterOrientation);
 
@@ -74,7 +81,7 @@ namespace CE
 		// We make these vectors private to prevent users from resizing these directly, 
 		// but their contents can be modified using the mutable span getters.
 		std::vector<glm::vec3> mParticlePositions{};
-		std::vector<glm::vec3> mParticleScales{};
+		ParticleProperty<glm::vec3> mScale{ glm::vec3{ 1.0f } };
 		std::vector<glm::quat> mParticleOrientations{};
 
 		std::vector<float> mParticleTimeAsPercentage{};
