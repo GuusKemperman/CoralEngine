@@ -50,8 +50,8 @@ namespace CE
 		void BindToGraphics(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList, unsigned int rootSlot) const;
 		void BindToCompute(const Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList4>& commandList, unsigned int rootSlot) const;
 
-		uint32_t GetWidth() const { return 0; } // TODO: Implement for text rendering
-		uint32_t GetHeight() const { return 0; } // TODO: Implement for text rendering
+		uint32_t GetWidth() const { return mWidth; };
+		uint32_t GetHeight() const{ return mHeight; };
 
 #ifdef EDITOR
 		ImTextureID GetImGuiId() const;
@@ -95,6 +95,8 @@ namespace CE
 		// this value will be reset to nullptr.
 		std::shared_ptr<STBIPixels> mLoadedPixels{};
 		ASyncThread mLoadingThread{};
+
+		uint32_t mWidth, mHeight;
 
 		friend ReflectAccess;
 		static MetaType Reflect();

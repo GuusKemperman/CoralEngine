@@ -6,19 +6,18 @@ namespace CE
 {
     class World;
 
-    class PostProcessingRenderer final :
-        public ISubRenderer
+    class PostProcessingRenderer final
+        : public ISubRenderer
     {
     public:
         PostProcessingRenderer();
         ~PostProcessingRenderer();
-        void Render(const World& world) override;
+        void Render(const World &world) override;
 
     private:
-        void RenderOutline(const World& world);
-        void ToneMap(const World& world);
-        ComPtr<ID3D12PipelineState>  mOutlinePipeline;
-        ComPtr<ID3D12PipelineState>  mToneMapPipeline;
-
+        void RenderOutline(const World &world);
+        void ToneMap(const World &world);
+        ComPtr<ID3D12PipelineState> mOutlinePipeline;
+        ComPtr<ID3D12PipelineState> mToneMapPipeline;
     };
 };

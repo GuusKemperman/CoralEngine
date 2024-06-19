@@ -19,7 +19,7 @@ void CE::ParticleEmitterShapeAABB::OnParticleSpawn(ParticleEmitterComponent& emi
 	const glm::mat4& emitterMatrix) const
 {
 	emitter.SetParticlePositionFast(i, emitterMatrix * glm::vec4{ Random::Range(mMinPosition, mMaxPosition), 1.0f });
-	Internal::RandomOrientation(emitter, i, mMinOrientation, mMinOrientation, emitterWorldOrientation);
+	Internal::RandomOrientation(emitter, i, mMinOrientation, mMaxOrientation, emitterWorldOrientation);
 }
 
 void CE::ParticleEmitterShapeSphere::OnParticleSpawn(ParticleEmitterComponent& emitter, uint32 i,
@@ -39,7 +39,7 @@ void CE::ParticleEmitterShapeSphere::OnParticleSpawn(ParticleEmitterComponent& e
 	const float z = mRadius * r * cosPhi;
 
 	emitter.SetParticlePositionFast(i, emitterMatrix * glm::vec4{ x, y, z, 1.0f });
-	Internal::RandomOrientation(emitter, i, mMinOrientation, mMinOrientation, emitterWorldOrientation);
+	Internal::RandomOrientation(emitter, i, mMinOrientation, mMaxOrientation, emitterWorldOrientation);
 }
 
 void CE::Internal::RandomOrientation(ParticleEmitterComponent& emitter, uint32 i, glm::vec3 minOrientation, glm::vec3 maxOrientation, glm::quat emitterWorldOrientation)

@@ -189,6 +189,8 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 				}
 
 				transform->SetWorldPosition(worldPos);
+
+				transform->SetWorldScale(CE::Random::Range(spawnerComponent.mMinRandomScale, spawnerComponent.mMaxRandomScale));
 			}
 
 			distFromCentre += spawnerComponent.mSpacing;
