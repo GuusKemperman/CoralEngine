@@ -32,7 +32,7 @@ namespace CE
 		SystemStaticTraits GetStaticTraits() const override
 		{
 			SystemStaticTraits traits{};
-			traits.mPriority = static_cast<int>(TickPriorities::PreTick);
+			traits.mPriority = static_cast<int>(TickPriorities::PreTick) + 1;
 			return traits;
 		}
 

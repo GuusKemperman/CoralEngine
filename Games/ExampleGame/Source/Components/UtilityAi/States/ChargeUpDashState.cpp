@@ -27,14 +27,14 @@ void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owne
 
 	physicsBody2DComponent->mLinearVelocity = {};
 
-	mChargeCooldown.mAmountOfTimePassed += dt;
+	mCurrentTime += dt;
 
 	AIFunctionality::FaceThePlayer(world, owner);
 }
 
 float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
-	if (mChargeCooldown.mAmountOfTimePassed != 0.0f)
+	if (mCurrentTime != 0.0f)
 	{
 		return 0.8f;
 	}
@@ -50,18 +50,30 @@ void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, const entt::
 
 	AIFunctionality::AnimationInAi(world, owner, mChargingAnimation, false);
 
-	mChargeCooldown.mCooldown = mMaxChargeTime;
-	mChargeCooldown.mAmountOfTimePassed = 0.0f;
+	auto* transform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+
+	if (transform == nullptr)
+	{
+		LOG(LogAI, Warning, "Charge Up Dash State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+		return;
+	}
+
+	if (mVFX != nullptr) {
+		mSpawnedVFX = world.GetRegistry().CreateFromPrefab(*mVFX, entt::null, nullptr, nullptr, nullptr, transform);
+	}
+
+	mCurrentTime = 0.0f;
 }
 
-void Game::ChargeUpDashState::OnAiStateExitEvent(CE::World&, entt::entity)
+void Game::ChargeUpDashState::OnAiStateExitEvent(CE::World& world, entt::entity)
 {
-	mChargeCooldown.mAmountOfTimePassed = 0.0f;
+	world.GetRegistry().Destroy(mSpawnedVFX, true);
+	mCurrentTime = 0.0f;
 }
 
 bool Game::ChargeUpDashState::IsCharged() const
 {
-	if (mChargeCooldown.mAmountOfTimePassed >= mChargeCooldown.mCooldown)
+	if (mCurrentTime >= mMaxChargeTime)
 	{
 		return true;
 	}
@@ -76,13 +88,15 @@ CE::MetaType Game::ChargeUpDashState::Reflect()
 
 	type.AddField(&ChargeUpDashState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChargeUpDashState::mMaxChargeTime, "Max Charge Time").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpDashState::mCurrentTime, "Current Time").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+	type.AddField(&ChargeUpDashState::mChargingAnimation, "Charging Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpDashState::mVFX, "VFX").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpDashState::mSpawnedVFX, "Spawned VFX").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 
 	BindEvent(type, CE::sAITickEvent, &ChargeUpDashState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &ChargeUpDashState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &ChargeUpDashState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sAIStateExitEvent, &ChargeUpDashState::OnAiStateExitEvent);
-
-	type.AddField(&ChargeUpDashState::mChargingAnimation, "Charging Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<ChargeUpDashState>(type);
 	return type;
