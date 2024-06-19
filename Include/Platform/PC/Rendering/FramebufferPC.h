@@ -30,7 +30,8 @@ namespace CE
 		DXResource& GetResource() const;
 
 		size_t GetColorTextureId();
-
+		void CopyTo(FrameBuffer& source);
+		void SetAsCopySource();
 	private:
 		// Texture's can be created from
 		// FrameBuffers. This involves
