@@ -30,7 +30,7 @@ namespace Game
 
 	private:
 		entt::entity mSpawnedVFX;
-		CE::Cooldown mChargeCooldown{};
+		float mCurrentTime{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

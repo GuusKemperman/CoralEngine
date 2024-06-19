@@ -28,7 +28,7 @@ void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity own
 
 	physicsBody2DComponent->mLinearVelocity = {};
 
-	mChargeCooldown.mAmountOfTimePassed += dt;
+	mCurrentTime += dt;
 
 	AIFunctionality::FaceThePlayer(world, owner);
 }
@@ -36,7 +36,7 @@ void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity own
 float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
 
-	if (mChargeCooldown.mAmountOfTimePassed != 0.0f)
+	if (mCurrentTime != 0.0f)
 	{
 		return 0.85f;
 	}
@@ -50,7 +50,7 @@ void Game::ChargeUpStompState::OnAiStateExitEvent(CE::World& world, entt::entity
 {
 	world.GetRegistry().Destroy(mSpawnedVFX, true);
 
-	mChargeCooldown.mAmountOfTimePassed = 0.0f;
+	mCurrentTime = 0.0f;
 }
 
 void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, const entt::entity owner)
@@ -71,17 +71,16 @@ void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, const entt:
 		mSpawnedVFX = world.GetRegistry().CreateFromPrefab(*mVFX, entt::null, nullptr, nullptr, nullptr, transform);
 	}
 
-	mChargeCooldown.mCooldown = mMaxChargeTime;
-	mChargeCooldown.mAmountOfTimePassed = 0.0f;
+	mCurrentTime = 0.0f;
 }
 
 bool Game::ChargeUpStompState::IsCharged() const
 {
-	if (mChargeCooldown.mAmountOfTimePassed >= mChargeCooldown.mCooldown)
+	if (mCurrentTime >= mMaxChargeTime)
 	{
 		return true;
 	}
-	
+
 	return false;
 }
 
@@ -92,7 +91,7 @@ CE::MetaType Game::ChargeUpStompState::Reflect()
 
 	type.AddField(&ChargeUpStompState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChargeUpStompState::mMaxChargeTime, "Max Charge Time").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&ChargeUpStompState::mChargeCooldown, "Charge Cooldown").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+	type.AddField(&ChargeUpStompState::mCurrentTime, "Current Time").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 	type.AddField(&ChargeUpStompState::mChargingAnimation, "Charging Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChargeUpStompState::mVFX, "VFX").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChargeUpStompState::mSpawnedVFX, "Spawned VFX").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);

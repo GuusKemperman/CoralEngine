@@ -28,7 +28,7 @@ namespace Game
 		CE::AssetHandle<CE::Prefab> mVFX{};
 
 	private:
-		CE::Cooldown mStompCooldown{};
+		float mCurrentTime{};
 		entt::entity mSpawnedVFX{};
 
 		friend CE::ReflectAccess;

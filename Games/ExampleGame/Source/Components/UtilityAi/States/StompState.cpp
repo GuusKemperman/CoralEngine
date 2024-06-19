@@ -23,9 +23,9 @@
 
 void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	mStompCooldown.mAmountOfTimePassed += dt;
+	mCurrentTime += dt;
 
-	if (mStompCooldown.mAmountOfTimePassed >= mStompCooldown.mCooldown)
+	if (mCurrentTime >= mMaxStompTime)
 	{
 		const auto recoveryState = world.GetRegistry().TryGet<Game::RecoveryState>(owner);
 
@@ -78,7 +78,7 @@ float Game::StompState::OnAiEvaluate(const CE::World& world, const entt::entity 
 	}
 
 	if ((CE::MakeTypeId<ChargeUpStompState>() == enemyAiController->mCurrentState->GetTypeId() && chargingUpState->IsCharged())
-		|| (CE::MakeTypeId<StompState>() == enemyAiController->mCurrentState->GetTypeId() && mStompCooldown.mAmountOfTimePassed < mStompCooldown.mCooldown))
+		|| (CE::MakeTypeId<StompState>() == enemyAiController->mCurrentState->GetTypeId() && mCurrentTime < mMaxStompTime))
 	{
 		return 0.9f;
 	}
@@ -104,13 +104,12 @@ void Game::StompState::OnAiStateEnterEvent(CE::World& world, const entt::entity 
 		mSpawnedVFX = world.GetRegistry().CreateFromPrefab(*mVFX, entt::null, nullptr, nullptr, nullptr, transform);
 	}
 
-	mStompCooldown.mCooldown = mMaxStompTime;
-	mStompCooldown.mAmountOfTimePassed = 0.0f;
+	mCurrentTime = 0.0f;
 }
 
 bool Game::StompState::IsStompCharged() const
 {
-	if (mStompCooldown.mAmountOfTimePassed >= mStompCooldown.mCooldown)
+	if (mCurrentTime >= mMaxStompTime)
 	{
 		return true;
 	}
@@ -125,7 +124,7 @@ CE::MetaType Game::StompState::Reflect()
 
 	type.AddField(&StompState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&StompState::mMaxStompTime, "Max Stomp Time").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&StompState::mStompCooldown, "Stomp Cooldown").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+	type.AddField(&StompState::mCurrentTime, "Current Time").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 	type.AddField(&StompState::mStompAnimation, "Stomp Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&StompState::mVFX, "VFX").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&StompState::mSpawnedVFX, "Spawned VFX").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);

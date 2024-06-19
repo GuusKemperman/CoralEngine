@@ -27,14 +27,14 @@ void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owne
 
 	physicsBody2DComponent->mLinearVelocity = {};
 
-	mChargeCooldown.mAmountOfTimePassed += dt;
+	mCurrentTime += dt;
 
 	AIFunctionality::FaceThePlayer(world, owner);
 }
 
 float Game::ChargeUpDashState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
-	if (mChargeCooldown.mAmountOfTimePassed != 0.0f)
+	if (mCurrentTime != 0.0f)
 	{
 		return 0.8f;
 	}
@@ -52,8 +52,7 @@ void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, const entt::
 
 	mSpawnedVFX = world.GetRegistry().CreateFromPrefab(*mVFX, owner);
 
-	mChargeCooldown.mCooldown = mMaxChargeTime;
-	mChargeCooldown.mAmountOfTimePassed = 0.0f;
+	mCurrentTime = 0.0f;
 }
 
 void Game::ChargeUpDashState::OnAiStateExitEvent(CE::World& world, entt::entity owner)
@@ -70,12 +69,12 @@ void Game::ChargeUpDashState::OnAiStateExitEvent(CE::World& world, entt::entity 
 		mSpawnedVFX = world.GetRegistry().CreateFromPrefab(*mVFX, entt::null, nullptr, nullptr, nullptr, transform);
 	}
 
-	mChargeCooldown.mAmountOfTimePassed = 0.0f;
+	mCurrentTime = 0.0f;
 }
 
 bool Game::ChargeUpDashState::IsCharged() const
 {
-	if (mChargeCooldown.mAmountOfTimePassed >= mChargeCooldown.mCooldown)
+	if (mCurrentTime >= mMaxChargeTime)
 	{
 		return true;
 	}
@@ -90,7 +89,7 @@ CE::MetaType Game::ChargeUpDashState::Reflect()
 
 	type.AddField(&ChargeUpDashState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChargeUpDashState::mMaxChargeTime, "Max Charge Time").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&ChargeUpDashState::mChargeCooldown, "Charge Cooldown").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+	type.AddField(&ChargeUpDashState::mCurrentTime, "Current Time").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 	type.AddField(&ChargeUpDashState::mChargingAnimation, "Charging Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChargeUpDashState::mVFX, "VFX").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChargeUpDashState::mSpawnedVFX, "Spawned VFX").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
