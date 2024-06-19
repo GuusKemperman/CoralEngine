@@ -92,6 +92,18 @@ void Game::StompState::OnAiStateEnterEvent(CE::World& world, const entt::entity 
 
 	AIFunctionality::AnimationInAi(world, owner, mStompAnimation, false);
 
+	auto* transform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+
+	if (transform == nullptr)
+	{
+		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
+		return;
+	}
+
+	if (mParticles != nullptr) {
+		mSpawnedVfx = world.GetRegistry().CreateFromPrefab(*mParticles, entt::null, nullptr, nullptr, nullptr, transform);
+	}
+
 	mStompCooldown.mCooldown = mMaxStompTime;
 	mStompCooldown.mAmountOfTimePassed = 0.0f;
 }
@@ -119,6 +131,7 @@ CE::MetaType Game::StompState::Reflect()
 	BindEvent(type, CE::sAIStateEnterEvent, &StompState::OnAiStateEnterEvent);
 
 	type.AddField(&StompState::mStompAnimation, "Stomp Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&StompState::mParticles, "Particles").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<StompState>(type);
 	return type;

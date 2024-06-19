@@ -5,6 +5,7 @@
 
 namespace CE
 {
+	class Prefab;
 	class Animation;
 	class World;
 }
@@ -29,6 +30,10 @@ namespace Game
 		float mRadius{};
 
 		float mMaxStompTime = 10.0f;
+
+		CE::AssetHandle<CE::Prefab> mParticles{};
+
+		entt::entity mSpawnedVfx;
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
