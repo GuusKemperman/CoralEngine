@@ -1,5 +1,6 @@
 #pragma once
 #include "Assets/Core/AssetHandle.h"
+#include "Assets/Prefabs/Prefab.h"
 #include "Meta/MetaReflect.h"
 #include "Utilities/Time.h"
 
@@ -22,13 +23,13 @@ namespace Game
 		[[nodiscard]] bool IsCharged() const;
 
 		CE::AssetHandle<CE::Animation> mChargingAnimation{};
-
-		CE::Cooldown mChargeCooldown{};
+		float mRadius{};
+		float mMaxChargeTime = 10.0f;
+		CE::AssetHandle<CE::Prefab> mVFX{};
 
 	private:
-		float mRadius{};
-
-		float mMaxChargeTime = 10.0f;
+		entt::entity mSpawnedVFX;
+		float mCurrentTime{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

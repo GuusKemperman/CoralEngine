@@ -23,9 +23,9 @@
 
 void Game::StompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	mStompCooldown.mAmountOfTimePassed += dt;
+	mCurrentTime += dt;
 
-	if (mStompCooldown.mAmountOfTimePassed >= mStompCooldown.mCooldown)
+	if (mCurrentTime >= mMaxStompTime)
 	{
 		const auto recoveryState = world.GetRegistry().TryGet<Game::RecoveryState>(owner);
 
@@ -78,7 +78,7 @@ float Game::StompState::OnAiEvaluate(const CE::World& world, const entt::entity 
 	}
 
 	if ((CE::MakeTypeId<ChargeUpStompState>() == enemyAiController->mCurrentState->GetTypeId() && chargingUpState->IsCharged())
-		|| (CE::MakeTypeId<StompState>() == enemyAiController->mCurrentState->GetTypeId() && mStompCooldown.mAmountOfTimePassed < mStompCooldown.mCooldown))
+		|| (CE::MakeTypeId<StompState>() == enemyAiController->mCurrentState->GetTypeId() && mCurrentTime < mMaxStompTime))
 	{
 		return 0.9f;
 	}
@@ -92,13 +92,20 @@ void Game::StompState::OnAiStateEnterEvent(CE::World& world, const entt::entity 
 
 	AIFunctionality::AnimationInAi(world, owner, mStompAnimation, false);
 
-	mStompCooldown.mCooldown = mMaxStompTime;
-	mStompCooldown.mAmountOfTimePassed = 0.0f;
+	auto* transform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+
+	if (transform == nullptr)
+	{
+		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
+		return;
+	}
+
+	mCurrentTime = 0.0f;
 }
 
 bool Game::StompState::IsStompCharged() const
 {
-	if (mStompCooldown.mAmountOfTimePassed >= mStompCooldown.mCooldown)
+	if (mCurrentTime >= mMaxStompTime)
 	{
 		return true;
 	}
@@ -113,12 +120,12 @@ CE::MetaType Game::StompState::Reflect()
 
 	type.AddField(&StompState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&StompState::mMaxStompTime, "Max Stomp Time").GetProperties().Add(CE::Props::sIsScriptableTag);
-
+	type.AddField(&StompState::mCurrentTime, "Current Time").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+	type.AddField(&StompState::mStompAnimation, "Stomp Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	
 	BindEvent(type, CE::sAITickEvent, &StompState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &StompState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &StompState::OnAiStateEnterEvent);
-
-	type.AddField(&StompState::mStompAnimation, "Stomp Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<StompState>(type);
 	return type;
