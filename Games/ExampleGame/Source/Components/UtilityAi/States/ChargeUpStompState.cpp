@@ -48,7 +48,7 @@ float Game::ChargeUpStompState::OnAiEvaluate(const CE::World& world, const entt:
 
 void Game::ChargeUpStompState::OnAiStateExitEvent(CE::World& world, entt::entity)
 {
-	world.GetRegistry().Destroy(mSpawnedVfx, true);
+	world.GetRegistry().Destroy(mSpawnedVFX, true);
 
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
 }
@@ -67,8 +67,8 @@ void Game::ChargeUpStompState::OnAiStateEnterEvent(CE::World& world, const entt:
 		return;
 	}
 
-	if (mParticles != nullptr) {
-		mSpawnedVfx = world.GetRegistry().CreateFromPrefab(*mParticles, entt::null, nullptr, nullptr, nullptr, transform);
+	if (mVFX != nullptr) {
+		mSpawnedVFX = world.GetRegistry().CreateFromPrefab(*mVFX, entt::null, nullptr, nullptr, nullptr, transform);
 	}
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
@@ -92,14 +92,15 @@ CE::MetaType Game::ChargeUpStompState::Reflect()
 
 	type.AddField(&ChargeUpStompState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChargeUpStompState::mMaxChargeTime, "Max Charge Time").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpStompState::mChargeCooldown, "Charge Cooldown").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+	type.AddField(&ChargeUpStompState::mChargingAnimation, "Charging Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpStompState::mVFX, "VFX").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpStompState::mSpawnedVFX, "Spawned VFX").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 
 	BindEvent(type, CE::sAITickEvent, &ChargeUpStompState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &ChargeUpStompState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &ChargeUpStompState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sAIStateExitEvent, &ChargeUpStompState::OnAiStateExitEvent);
-
-	type.AddField(&ChargeUpStompState::mChargingAnimation, "Charging Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&ChargeUpStompState::mParticles, "Particles").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<ChargeUpStompState>(type);
 	return type;

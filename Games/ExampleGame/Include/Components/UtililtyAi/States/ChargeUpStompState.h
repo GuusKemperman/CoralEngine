@@ -23,17 +23,13 @@ namespace Game
 		[[nodiscard]] bool IsCharged() const;
 
 		CE::AssetHandle<CE::Animation> mChargingAnimation{};
-
-		CE::Cooldown mChargeCooldown{};
+		float mRadius{};
+		float mMaxChargeTime = 10.0f;
+		CE::AssetHandle<CE::Prefab> mVFX{};
 
 	private:
-		float mRadius{};
-
-		float mMaxChargeTime = 10.0f;
-
-		CE::AssetHandle<CE::Prefab> mParticles{};
-
-		entt::entity mSpawnedVfx;
+		entt::entity mSpawnedVFX;
+		CE::Cooldown mChargeCooldown{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

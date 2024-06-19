@@ -50,7 +50,7 @@ void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, const entt::
 
 	AIFunctionality::AnimationInAi(world, owner, mChargingAnimation, false);
 
-	mSpawnedVfx = world.GetRegistry().CreateFromPrefab(*mParticles, owner);
+	mSpawnedVFX = world.GetRegistry().CreateFromPrefab(*mVFX, owner);
 
 	mChargeCooldown.mCooldown = mMaxChargeTime;
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
@@ -66,8 +66,8 @@ void Game::ChargeUpDashState::OnAiStateExitEvent(CE::World& world, entt::entity 
 		return;
 	}
 
-	if (mParticles != nullptr) {
-		mSpawnedVfx = world.GetRegistry().CreateFromPrefab(*mParticles, entt::null, nullptr, nullptr, nullptr, transform);
+	if (mVFX != nullptr) {
+		mSpawnedVFX = world.GetRegistry().CreateFromPrefab(*mVFX, entt::null, nullptr, nullptr, nullptr, transform);
 	}
 
 	mChargeCooldown.mAmountOfTimePassed = 0.0f;
@@ -90,14 +90,15 @@ CE::MetaType Game::ChargeUpDashState::Reflect()
 
 	type.AddField(&ChargeUpDashState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChargeUpDashState::mMaxChargeTime, "Max Charge Time").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpDashState::mChargeCooldown, "Charge Cooldown").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
+	type.AddField(&ChargeUpDashState::mChargingAnimation, "Charging Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpDashState::mVFX, "VFX").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&ChargeUpDashState::mSpawnedVFX, "Spawned VFX").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 
 	BindEvent(type, CE::sAITickEvent, &ChargeUpDashState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &ChargeUpDashState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &ChargeUpDashState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sAIStateExitEvent, &ChargeUpDashState::OnAiStateExitEvent);
-
-	type.AddField(&ChargeUpDashState::mChargingAnimation, "Charging Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&ChargeUpDashState::mParticles, "Particles").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<ChargeUpDashState>(type);
 	return type;
