@@ -65,8 +65,9 @@ void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, const entt::
 	mCurrentTime = 0.0f;
 }
 
-void Game::ChargeUpDashState::OnAiStateExitEvent(CE::World&, entt::entity)
+void Game::ChargeUpDashState::OnAiStateExitEvent(CE::World& world, entt::entity)
 {
+	world.GetRegistry().Destroy(mSpawnedVFX, true);
 	mCurrentTime = 0.0f;
 }
 
