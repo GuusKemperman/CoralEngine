@@ -13,6 +13,7 @@
 #include "Platform/PC/Rendering/DX12Classes/DXConstBuffer.h"
 #include "Rendering/FrameBuffer.h"
 #include "Rendering/Renderer.h"
+#include "Assets/Texture.h"
 
 CE::PostProcessingRenderer::PostProcessingRenderer()
 {
@@ -59,7 +60,6 @@ CE::PostProcessingRenderer::PostProcessingRenderer()
         .AddInput("TEXCOORD", DXGI_FORMAT_R32G32_FLOAT, 1)
         .AddRenderTarget(DXGI_FORMAT_R8G8B8A8_UNORM)
         .SetDepthState(depth)
-        .SetBlendState(blendDesc)
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"TONE MAPPING PIPELINE");
 }
@@ -112,19 +112,35 @@ void CE::PostProcessingRenderer::ToneMap(const World& world)
     PosProcRenderingData& postProcData = gpuWorld.GetPostProcData();
 
     commandList->SetPipelineState(mToneMapPipeline.Get());
-    float exposure = 0.f;
+    struct RootValues
+    {
+        float mEposure = 0.f;
+        float mColorCorrect = 0;
+        float mInvertOnY = 0.f;
+        float mNumeberOfBlocksX = 0.f;
+        float mNumeberOfBlocksY = 0.f;
+    };
+    RootValues values;
+    
     const auto view =  world.GetRegistry().View<const ToneMappingComponent>();
-
 
     for (auto [entity, toneMapping] : view.each())
     {
-        exposure = toneMapping.mExposure;
+        values.mEposure = toneMapping.mExposure;
+        values.mColorCorrect = toneMapping.mLUTtexture;
+        values.mInvertOnY = toneMapping.mInvertLUTOnY ? 1.f : 0.f;
+        values.mNumeberOfBlocksX = toneMapping.mNumberOfBlocks.x;
+        values.mNumeberOfBlocksY = toneMapping.mNumberOfBlocks.y;
+
+        if(toneMapping.mLUTtexture)
+        toneMapping.mLUTtexture->BindToGraphics(commandList, 9);
     }
 
     if(view.size() >1)
         LOG(LogRendering, Warning, "There is more than one ToneMapping component in the ***REMOVED***ne. Only the last one will be used.");
 
-    commandList->SetGraphicsRoot32BitConstants(20, 1, &exposure, 0);
+
+    commandList->SetGraphicsRoot32BitConstants(20, 5, &values, 0);
     gpuWorld.GetDefaultFrameBuffer().BindSRVRTToGraphics(8);
 
     commandList->IASetVertexBuffers(0, 1, &postProcData.mVertexBufferView);
