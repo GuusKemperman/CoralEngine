@@ -22,9 +22,10 @@ namespace CE
 
 		enum class Group
 		{
-			Game = 0,
-			Music = 1,
-			Menu = 2
+			Game,
+			Music,
+			Menu,
+			NUM_OF_GROUPS
 		};
 
 		FMOD::System& GetCoreSystem() const { return *mCoreSystem; }
@@ -34,7 +35,7 @@ namespace CE
 
 		FMOD::System* mCoreSystem = nullptr;
 
-		std::vector<FMOD::ChannelGroup*> mChannelGroups{3, nullptr};
+		std::array<FMOD::ChannelGroup*,static_cast<int>(Group::NUM_OF_GROUPS)> mChannelGroups;
 	};
 }
 
@@ -48,7 +49,7 @@ struct Reflector<CE::Audio::Group>
 template<>
 struct CE::EnumStringPairsImpl<CE::Audio::Group>
 {
-    static constexpr EnumStringPairs<Audio::Group, 3> value = {
+    static constexpr EnumStringPairs<Audio::Group, static_cast<size_t>(Audio::Group::NUM_OF_GROUPS)> value = {
         EnumStringPair<Audio::Group>
 		{ Audio::Group::Music, "Music" },
         { Audio::Group::Game, "Game" },

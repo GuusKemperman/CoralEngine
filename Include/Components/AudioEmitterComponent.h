@@ -25,10 +25,11 @@ namespace CE
 		void SetPitch(AssetHandle<Sound> sound, float pitch);
 		void SetChannelGroup(Audio::Group group);
 
-		std::unordered_map<uint32, FMOD::Channel*> mPlayingOnChannels{};
+		std::unordered_map<Name::HashType, FMOD::Channel*> mPlayingOnChannels{};
 
 		Audio::Group mGroup = Audio::Group::Game;
 
+		// Editor only, for testing
 #ifdef EDITOR
 		AssetHandle<Sound> mSound{};
 		float mVolume = 1.0f;

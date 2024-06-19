@@ -28,9 +28,9 @@ namespace CE
 		};
 
 		static entt::entity GetSelected(const World& world);
-		static bool IsSelected(const World& world, entt::entity cameraOwner);
+		static bool IsSelected(const World& world, entt::entity audioListenerOwner);
 
-		static void Select(World& world, entt::entity cameraOwner);
+		static void Select(World& world, entt::entity audioListenerOwner);
 		static void Deselect(World& world);
 
 		float mMasterVolume = 1.0f;

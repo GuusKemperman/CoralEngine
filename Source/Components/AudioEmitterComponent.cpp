@@ -9,60 +9,64 @@
 
 void CE::AudioEmitterComponent::Play(AssetHandle<Sound> sound, float volume, float pitch)
 {
-	if (sound != nullptr)
+	if (sound == nullptr)
 	{
-		uint32 hash = GetSoundNameHash(sound);
+		return;
+	}
 
-		FMOD::Channel* channel = sound->Play(mGroup);
+	Name::HashType hash = GetSoundNameHash(sound);
 
-		FMOD_RESULT result = channel->setVolume(volume);
-		if (result != FMOD_OK)
-		{
-			LOG(LogAudio, Error, "FMOD could not set channel volume, FMOD error {}", static_cast<int>(result));
-		}
+	FMOD::Channel* channel = sound->Play(mGroup);
+
+	FMOD_RESULT result = channel->setVolume(volume);
+	if (result != FMOD_OK)
+	{
+		LOG(LogAudio, Error, "FMOD could not set channel volume, FMOD error {}", static_cast<int>(result));
+	}
 		
-		result = channel->setPitch(pitch);
-		if (result != FMOD_OK)
-		{
-			LOG(LogAudio, Error, "FMOD could not set channel pitch, FMOD error {}", static_cast<int>(result));
-		}
+	result = channel->setPitch(pitch);
+	if (result != FMOD_OK)
+	{
+		LOG(LogAudio, Error, "FMOD could not set channel pitch, FMOD error {}", static_cast<int>(result));
+	}
 
-		if (channel != nullptr)
-		{
-			mPlayingOnChannels.emplace(hash, channel);
-		}
+	if (channel != nullptr)
+	{
+		mPlayingOnChannels.emplace(hash, channel);
 	}
 }
 
 void CE::AudioEmitterComponent::SetLoops(AssetHandle<Sound> sound, int loops)
 {
-	if (sound != nullptr)
+	if (sound == nullptr)
 	{
-		uint32 hash = GetSoundNameHash(sound);
+		return;
+	}
 
-		auto it = mPlayingOnChannels.find(hash);
-		if (it != mPlayingOnChannels.end())
+	Name::HashType hash = GetSoundNameHash(sound);
+
+	auto it = mPlayingOnChannels.find(hash);
+	if (it != mPlayingOnChannels.end())
+	{
+		FMOD_MODE mode{};
+		FMOD_RESULT result = it->second->getMode(&mode);
+		if (result != FMOD_OK)
 		{
-			FMOD_MODE mode{};
-			FMOD_RESULT result = it->second->getMode(&mode);
-			if (result != FMOD_OK)
-			{
-				LOG(LogAudio, Error, "FMOD Channel mode could not be retrieved, FMOD error {}", static_cast<int>(result));
-			}
+			LOG(LogAudio, Error, "FMOD Channel mode could not be retrieved, FMOD error {}", static_cast<int>(result));
+		}
 
-			mode = mode | FMOD_LOOP_NORMAL;
+		mode = mode | FMOD_LOOP_NORMAL;
 
-			result = it->second->setMode(mode);
-			if (result != FMOD_OK)
-			{
-				LOG(LogAudio, Error, "FMOD Channel mode could not be set, FMOD error {}", static_cast<int>(result));
-			}
+		result = it->second->setMode(mode);
+		if (result != FMOD_OK)
+		{
+			LOG(LogAudio, Error, "FMOD Channel mode could not be set, FMOD error {}", static_cast<int>(result));
+		}
 
-			result = it->second->setLoopCount(loops);
-			if (result != FMOD_OK)
-			{
-				LOG(LogAudio, Error, "FMOD Channel loop count could not be set, FMOD error {}", static_cast<int>(result));
-			}
+		result = it->second->setLoopCount(loops);
+		if (result != FMOD_OK)
+		{
+			LOG(LogAudio, Error, "FMOD Channel loop count could not be set, FMOD error {}", static_cast<int>(result));
 		}
 	}
 }
@@ -83,36 +87,40 @@ void CE::AudioEmitterComponent::StopAll()
 
 void CE::AudioEmitterComponent::SetPause(AssetHandle<Sound> sound, bool pause)
 {
-	if (sound != nullptr)
+	if (sound == nullptr)
 	{
-		uint32 hash = GetSoundNameHash(sound);
+		return;
+	}
 
-		auto it = mPlayingOnChannels.find(hash);
-		if (it != mPlayingOnChannels.end())
+	Name::HashType hash = GetSoundNameHash(sound);
+
+	auto it = mPlayingOnChannels.find(hash);
+	if (it != mPlayingOnChannels.end())
+	{
+		const FMOD_RESULT result = it->second->setPaused(pause);
+		if (result != FMOD_OK)
 		{
-			const FMOD_RESULT result = it->second->setPaused(pause);
-			if (result != FMOD_OK)
-			{
-				LOG(LogAudio, Error, "FMOD Channel could not be paused, FMOD error {}", static_cast<int>(result));
-			}
+			LOG(LogAudio, Error, "FMOD Channel could not be paused, FMOD error {}", static_cast<int>(result));
 		}
 	}
 }
 
 void CE::AudioEmitterComponent::Stop(AssetHandle<Sound> sound)
 {
-	if (sound != nullptr)
+	if (sound == nullptr)
 	{
-		uint32 hash = GetSoundNameHash(sound);
+		return;
+	}
 
-		auto it = mPlayingOnChannels.find(hash);
-		if (it != mPlayingOnChannels.end())
+	Name::HashType hash = GetSoundNameHash(sound);
+
+	auto it = mPlayingOnChannels.find(hash);
+	if (it != mPlayingOnChannels.end())
+	{
+		FMOD_RESULT result = it->second->stop();
+		if (result != FMOD_OK)
 		{
-			FMOD_RESULT result = it->second->stop();
-			if (result != FMOD_OK)
-			{
-				LOG(LogAudio, Error, "FMOD Channel could not be stopped, FMOD error {}", static_cast<int>(result));
-			}
+			LOG(LogAudio, Error, "FMOD Channel could not be stopped, FMOD error {}", static_cast<int>(result));
 		}
 		mPlayingOnChannels.erase(it);
 	}
@@ -120,36 +128,39 @@ void CE::AudioEmitterComponent::Stop(AssetHandle<Sound> sound)
 
 void CE::AudioEmitterComponent::SetVolume(AssetHandle<Sound> sound, float volume)
 {
-	if (sound != nullptr)
+	if (sound == nullptr)
 	{
-		uint32 hash = GetSoundNameHash(sound);
+		return;
+	}
 
-		auto it = mPlayingOnChannels.find(hash);
-		if (it != mPlayingOnChannels.end())
+	Name::HashType hash = GetSoundNameHash(sound);
+
+	auto it = mPlayingOnChannels.find(hash);
+	if (it != mPlayingOnChannels.end())
+	{
+		FMOD_RESULT result = it->second->setVolume(volume);
+		if (result != FMOD_OK)
 		{
-			FMOD_RESULT result = it->second->setVolume(volume);
-			if (result != FMOD_OK)
-			{
-				LOG(LogAudio, Error, "FMOD Channel volume could not be set, FMOD error {}", static_cast<int>(result));
-			}
+			LOG(LogAudio, Error, "FMOD Channel volume could not be set, FMOD error {}", static_cast<int>(result));
 		}
 	}
 }
 
 void CE::AudioEmitterComponent::SetPitch(AssetHandle<Sound> sound, float pitch)
 {
-	if (sound != nullptr)
+	if (sound == nullptr)
 	{
-		uint32 hash = GetSoundNameHash(sound);
+		return;
+	}
+	Name::HashType hash = GetSoundNameHash(sound);
 
-		auto it = mPlayingOnChannels.find(hash);
-		if (it != mPlayingOnChannels.end())
+	auto it = mPlayingOnChannels.find(hash);
+	if (it != mPlayingOnChannels.end())
+	{
+		FMOD_RESULT result = it->second->setPitch(pitch);
+		if (result != FMOD_OK)
 		{
-			FMOD_RESULT result = it->second->setPitch(pitch);
-			if (result != FMOD_OK)
-			{
-				LOG(LogAudio, Error, "FMOD Channel pitch could not be set, FMOD error {}", static_cast<int>(result));
-			}
+			LOG(LogAudio, Error, "FMOD Channel pitch could not be set, FMOD error {}", static_cast<int>(result));
 		}
 	}
 }
@@ -207,6 +218,8 @@ CE::MetaType CE::AudioEmitterComponent::Reflect()
 			audioEmitter.Play(audioEmitter.mSound, audioEmitter.mVolume, audioEmitter.mPitch);
 		}, "Play Sound", MetaFunc::ExplicitParams<AudioEmitterComponent&>{}
 		).GetProperties().Add(Props::sCallFromEditorTag);
+
+	type.AddFunc(&AudioEmitterComponent::StopAll, "StopAll").GetProperties().Add(Props::sCallFromEditorTag);
 	
 	type.AddFunc([](AudioEmitterComponent& audioEmitter)
 			{
