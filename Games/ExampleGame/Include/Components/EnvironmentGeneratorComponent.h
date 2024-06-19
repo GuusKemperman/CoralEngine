@@ -2,6 +2,7 @@
 #include "Assets/Core/AssetHandle.h"
 #include "BasicDataTypes/Bezier.h"
 #include "BasicDataTypes/Colors/ColorGradient.h"
+#include "BasicDataTypes/Colors/LinearColor.h"
 #include "Utilities/WeightedRandomDistribution.h"
 
 namespace CE
@@ -57,7 +58,7 @@ namespace Game
 			float mMinRandomHeightOffset{};
 			float mMaxRandomHeightOffset{};
 
-			CE::ColorGradient mRandomColor{ { { 0.0f, CE::LinearColor{ 1.0f } }, { 1.0f,  CE::LinearColor{1.0f} } } };
+			std::vector<CE::LinearColor> mColors{};
 
 			// By default, we spawn objects
 			// if their cell overlaps with our
@@ -154,7 +155,7 @@ namespace Game
 	};
 }
 
-CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 5);
+CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 6);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::Object, 2);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::NoiseInfluence, 0);
 
@@ -193,9 +194,15 @@ namespace cereal
 			ar(value.mMinRandomHeightOffset, value.mMaxRandomHeightOffset, value.mMinRandomOrientation, value.mMaxRandomOrientation);
 		}
 
-		if (version >= 5)
+		if (version == 5)
 		{
-			ar(value.mRandomColor);
+			CE::ColorGradient dummy{};
+			ar(dummy);
+		}
+
+		if (version >= 6)
+		{
+			ar(value.mColors);
 		}
 	}
 

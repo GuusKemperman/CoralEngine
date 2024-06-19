@@ -87,7 +87,7 @@ void Game::EnvironmentGeneratorComponent::Layer::DisplayWidget(const std::string
 	CE::ShowInspectUI("mMaxRandomOffset", mMaxRandomOffset);
 	CE::ShowInspectUI("mMinRandomHeightOffset", mMinRandomHeightOffset);
 	CE::ShowInspectUI("mMaxRandomHeightOffset", mMaxRandomHeightOffset);
-	CE::ShowInspectUI("mRandomColor", mRandomColor);
+	CE::ShowInspectUI("mColors", mColors);
 	CE::ShowInspectUI("mNoiseScale", mNoiseScale);
 	CE::ShowInspectUI("mNoiseNumOfOctaves", mNoiseNumOfOctaves);
 	CE::ShowInspectUI("mNoisePersistence", mNoisePersistence);
@@ -118,7 +118,7 @@ bool Game::EnvironmentGeneratorComponent::Layer::operator==(const Layer& other) 
 		&& mMaxRandomHeightOffset == other.mMaxRandomHeightOffset
 		&& mMinRandomOrientation == other.mMinRandomOrientation
 		&& mMaxRandomOrientation == other.mMaxRandomOrientation
-		&& mRandomColor == other.mRandomColor;
+		&& mColors == other.mColors;
 }
 
 bool Game::EnvironmentGeneratorComponent::Layer::operator!=(const Layer& other) const
@@ -140,7 +140,7 @@ CE::MetaType Game::EnvironmentGeneratorComponent::Layer::Reflect()
 	type.AddField(&Layer::mNumberOfRandomRotations, "mNumberOfRandomRotations").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mScaleAtNoiseValue, "mScaleAtNoiseValue").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mMaxRandomOffset, "mMaxRandomOffset").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&Layer::mRandomColor, "mRandomColor").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Layer::mColors, "mColors").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mNoiseScale, "mNoiseScale").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mNoiseNumOfOctaves, "mNoiseNumOfOctaves").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Layer::mNoisePersistence, "mNoisePersistence").GetProperties().Add(CE::Props::sIsScriptableTag);

@@ -478,7 +478,13 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					continue;
 				}
 
-				const CE::LinearColor color = layer.mRandomColor.GetColorAt(randomFloat(0.0f, 1.0f));
+				if (layer.mColors.empty())
+				{
+					continue;
+				}
+
+
+				const CE::LinearColor color = layer.mColors[randomUint(0u, static_cast<uint32>(layer.mColors.size()))];
 
 				if (color == glm::vec4{ 1.0f })
 				{
