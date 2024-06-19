@@ -60,15 +60,6 @@ namespace Game
 
 			std::vector<CE::LinearColor> mColors{};
 
-			// By default, we spawn objects
-			// if their cell overlaps with our
-			// generate-range. This becomes a
-			// problem if the cell size is very
-			// large, as objects are then spawned
-			// even when its very far away from
-			// the player.
-			std::optional<float> mObjectsRadius{};
-
 			uint32 mNumberOfRandomRotations = 4;
 
 			glm::vec2 mMinRandomOrientation{};
@@ -155,7 +146,7 @@ namespace Game
 	};
 }
 
-CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 6);
+CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 7);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::Object, 2);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::NoiseInfluence, 0);
 
@@ -184,9 +175,10 @@ namespace cereal
 			ar(value.mScaleAtNoiseValue, value.mMinNoiseValueToSpawn, value.mMaxNoiseValueToSpawn, value.mObjectSpawnChance);
 		}
 
-		if (version >= 3)
+		if (version <= 6)
 		{
-			ar(value.mObjectsRadius);
+			std::optional<float> dummy{};
+			ar(dummy);
 		}
 
 		if (version >= 4)

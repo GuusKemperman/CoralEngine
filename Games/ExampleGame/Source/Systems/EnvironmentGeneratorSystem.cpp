@@ -214,19 +214,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 		}
 
 		const EnvironmentGeneratorComponent::Layer& layer = generator.mLayers[generatedComponent.mLayerIndex];
-
-		if (layer.mObjectsRadius.has_value())
-		{
-			const CE::TransformComponent* transform = reg.TryGet<CE::TransformComponent>(entity);
-
-			if (transform != nullptr
-				&& glm::distance(generatorPosition, transform->GetWorldPosition2D()) > destroyCircle.mRadius + *layer.mObjectsRadius)
-			{
-				reg.Destroy(entity, true);
-				continue;
-			}
-		}
-
 		const CE::TransformedAABB cellAABB{ generatedComponent.mCellTopLeft, generatedComponent.mCellTopLeft + glm::vec2{ layer.mCellSize } };
 
 		if (!CE::AreOverlapping(cellAABB, destroyCircle))
@@ -410,12 +397,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 						randomFloat(-layer.mMaxRandomOffset, layer.mMaxRandomOffset),
 						randomFloat(-layer.mMaxRandomOffset, layer.mMaxRandomOffset)
 				};
-
-				if (layer.mObjectsRadius.has_value()
-					&& glm::distance(spawnPosition2D, generatorPosition) >= *layer.mObjectsRadius + generationCircle.mRadius)
-				{
-					continue;
-				}
 
 				const std::optional<float> noise = getNoise(getNoise, spawnPosition2D, i);
 

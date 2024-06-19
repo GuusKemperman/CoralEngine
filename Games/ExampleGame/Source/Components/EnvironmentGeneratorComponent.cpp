@@ -75,8 +75,6 @@ void Game::EnvironmentGeneratorComponent::Layer::DisplayWidget(const std::string
 {
 	CE::ShowInspectUI("mObjects", mObjects);
 	CE::ShowInspectUI("mCellSize", mCellSize);
-	CE::ShowInspectUI("mObjectsRadius", mObjectsRadius);
-
 	ImGui::SliderFloat("mMinNoiseValueToSpawn", &mMinNoiseValueToSpawn, 0.0f, 1.0f);
 	ImGui::SliderFloat("mMaxNoiseValueToSpawn", &mMaxNoiseValueToSpawn, 0.0f, 1.0f);
 	ImGui::SliderFloat("mObjectSpawnChance", &mObjectSpawnChance, 0.0f, 1.0f);
@@ -113,7 +111,6 @@ bool Game::EnvironmentGeneratorComponent::Layer::operator==(const Layer& other) 
 		&& mMinNoiseValueToSpawn == other.mMinNoiseValueToSpawn
 		&& mMaxNoiseValueToSpawn == other.mMaxNoiseValueToSpawn
 		&& mObjectSpawnChance == other.mObjectSpawnChance
-		&& mObjectsRadius == other.mObjectsRadius
 		&& mMinRandomHeightOffset == other.mMinRandomHeightOffset
 		&& mMaxRandomHeightOffset == other.mMaxRandomHeightOffset
 		&& mMinRandomOrientation == other.mMinRandomOrientation
