@@ -529,7 +529,7 @@ Expected<const CE::ScriptNode*, CE::ScriptError> CE::VirtualMachine::GetNextNode
 					return ScriptError{ ScriptError::StackOverflow, { context.mFunc, indexPin } };
 				}
 
-				*static_cast<int32*>(cachedIndex.mData) = 0;
+				*static_cast<int32*>(cachedIndex.mData) = *static_cast<const int32*>(startValue.GetValue().GetData());
 			}
 
 			int32& index = *static_cast<int32*>(cachedIndex.mData);

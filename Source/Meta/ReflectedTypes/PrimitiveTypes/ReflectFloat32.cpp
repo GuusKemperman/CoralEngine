@@ -45,6 +45,8 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc(&atan2f, "ATan2").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&sqrtf, "Sqrt").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&powf, "Pow").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&Math::lerpInv<T>, "LerpInv", "Min", "Max", "Value", "T").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&Math::lerp<T>, "Lerp", "Min", "Max", "T", "Value").GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddFunc([](T& n) -> T& { ++n; return n; }, OperatorType::increment, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](T& n) -> T& { --n; return n; }, OperatorType::decrement, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
