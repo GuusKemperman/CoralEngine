@@ -50,6 +50,7 @@ namespace CE
         void AddToDeallocation(Microsoft::WRL::ComPtr<ID3D12Resource>&& res);
         void BindSwapchainRT();
         void ResolveMsaa(FrameBuffer & msaaFramebuffer);
+        void CopyToRenderTargets(FrameBuffer& source);
         glm::vec2 GetDisplaySize();
 
         /**
