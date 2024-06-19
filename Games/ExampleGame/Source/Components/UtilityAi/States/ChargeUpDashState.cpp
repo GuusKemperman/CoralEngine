@@ -50,18 +50,11 @@ void Game::ChargeUpDashState::OnAiStateEnterEvent(CE::World& world, const entt::
 
 	AIFunctionality::AnimationInAi(world, owner, mChargingAnimation, false);
 
-	mSpawnedVFX = world.GetRegistry().CreateFromPrefab(*mVFX, owner);
-
-	mCurrentTime = 0.0f;
-}
-
-void Game::ChargeUpDashState::OnAiStateExitEvent(CE::World& world, entt::entity owner)
-{
 	auto* transform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
 	if (transform == nullptr)
 	{
-		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
+		LOG(LogAI, Warning, "Charge Up Dash State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return;
 	}
 
@@ -69,6 +62,11 @@ void Game::ChargeUpDashState::OnAiStateExitEvent(CE::World& world, entt::entity 
 		mSpawnedVFX = world.GetRegistry().CreateFromPrefab(*mVFX, entt::null, nullptr, nullptr, nullptr, transform);
 	}
 
+	mCurrentTime = 0.0f;
+}
+
+void Game::ChargeUpDashState::OnAiStateExitEvent(CE::World&, entt::entity)
+{
 	mCurrentTime = 0.0f;
 }
 
