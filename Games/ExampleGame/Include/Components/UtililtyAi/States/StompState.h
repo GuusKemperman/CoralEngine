@@ -25,11 +25,9 @@ namespace Game
 		CE::AssetHandle<CE::Animation> mStompAnimation{};
 		float mRadius{};
 		float mMaxStompTime = 10.0f;
-		CE::AssetHandle<CE::Prefab> mVFX{};
 
 	private:
 		float mCurrentTime{};
-		entt::entity mSpawnedVFX{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

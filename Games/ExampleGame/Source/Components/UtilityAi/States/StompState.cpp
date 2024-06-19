@@ -100,10 +100,6 @@ void Game::StompState::OnAiStateEnterEvent(CE::World& world, const entt::entity 
 		return;
 	}
 
-	if (mVFX != nullptr) {
-		mSpawnedVFX = world.GetRegistry().CreateFromPrefab(*mVFX, entt::null, nullptr, nullptr, nullptr, transform);
-	}
-
 	mCurrentTime = 0.0f;
 }
 
@@ -126,9 +122,7 @@ CE::MetaType Game::StompState::Reflect()
 	type.AddField(&StompState::mMaxStompTime, "Max Stomp Time").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&StompState::mCurrentTime, "Current Time").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 	type.AddField(&StompState::mStompAnimation, "Stomp Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&StompState::mVFX, "VFX").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&StompState::mSpawnedVFX, "Spawned VFX").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
-
+	
 	BindEvent(type, CE::sAITickEvent, &StompState::OnAiTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &StompState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &StompState::OnAiStateEnterEvent);
