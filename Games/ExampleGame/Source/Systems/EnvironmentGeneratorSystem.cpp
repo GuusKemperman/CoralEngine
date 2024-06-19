@@ -4,6 +4,7 @@
 #include "Utilities/PerlinNoise.h"
 
 #include "Components/EnvironmentGeneratorComponent.h"
+#include "Components/MeshColorComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/TransformComponent.h"
 #include "Core/Input.h"
@@ -365,7 +366,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 		const glm::vec2 topLeft = getLayerTopLeft(layer);
 
-
 		for (uint32 cellX = 0; cellX < numOfCellsEachAxis; cellX++)
 		{
 			for (uint32 cellZ = 0; cellZ < numOfCellsEachAxis; cellZ++)
@@ -455,7 +455,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 				{
 					continue;
 				}
-
+				
 				const CE::TransformComponent* transform = reg.TryGet<CE::TransformComponent>(entity);
 
 				if (transform != nullptr
@@ -467,9 +467,37 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					// Otherwise we would try to spawn this prefab
 					// again the very next time we move.
 					entity = reg.Create();
+					reg.AddComponent<Internal::PartOfGeneratedEnvironmentComponent>(entity, i, cellAABB.mMin);
+					continue;
 				}
 
 				reg.AddComponent<Internal::PartOfGeneratedEnvironmentComponent>(entity, i, cellAABB.mMin);
+
+				if (transform == nullptr)
+				{
+					continue;
+				}
+
+				const CE::LinearColor color = layer.mRandomColor.GetColorAt(randomFloat(0.0f, 1.0f));
+
+				if (color == glm::vec4{ 1.0f })
+				{
+					continue;
+				}
+
+				const auto addColor = [&reg, &color](const auto& self, const CE::TransformComponent& current) -> void
+					{
+						if (!reg.HasComponent<CE::MeshColorComponent>(current.GetOwner()))
+						{
+							reg.AddComponent<CE::MeshColorComponent>(current.GetOwner(), color);
+						}
+
+						for (const CE::TransformComponent& child : current.GetChildren())
+						{
+							self(self, child);
+						}
+					};
+				addColor(addColor, *transform);
 			}
 		}
 	}
