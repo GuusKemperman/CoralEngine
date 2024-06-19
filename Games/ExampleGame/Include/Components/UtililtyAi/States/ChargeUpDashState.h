@@ -3,6 +3,8 @@
 #include "Meta/MetaReflect.h"
 #include <Utilities/Time.h>
 
+#include "Assets/Prefabs/Prefab.h"
+
 namespace CE
 {
 	class Animation;
@@ -22,13 +24,13 @@ namespace Game
 		bool IsCharged() const;
 
 		CE::AssetHandle<CE::Animation> mChargingAnimation{};
-
-		CE::Cooldown mChargeCooldown{};
+		float mMaxChargeTime = 10.0f;
+		float mRadius{};
+		CE::AssetHandle<CE::Prefab> mVFX{};
 
 	private:
-		float mRadius{};
-
-		float mMaxChargeTime = 10.0f;
+		entt::entity mSpawnedVFX;
+		float mCurrentTime{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

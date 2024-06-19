@@ -5,6 +5,7 @@
 
 namespace CE
 {
+	class Prefab;
 	class Animation;
 	class World;
 }
@@ -22,13 +23,11 @@ namespace Game
 		[[nodiscard]] bool IsStompCharged() const;
 
 		CE::AssetHandle<CE::Animation> mStompAnimation{};
-
-		CE::Cooldown mStompCooldown{};
+		float mRadius{};
+		float mMaxStompTime = 10.0f;
 
 	private:
-		float mRadius{};
-
-		float mMaxStompTime = 10.0f;
+		float mCurrentTime{};
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
