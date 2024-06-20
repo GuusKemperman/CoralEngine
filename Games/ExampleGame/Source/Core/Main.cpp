@@ -9,7 +9,16 @@
 
 int main(int argc, char* argv[])
 {
-	CE::Engine engine{ argc, argv, GAME_DIR };
-	engine.Run("L_MainMenu");
+	try
+	{
+		CE::Engine engine{ argc, argv, GAME_DIR };
+		engine.Run("L_MainMenu");
+	}
+	catch (const std::exception& e)
+	{
+		LOG(LogCore, Fatal, "Fatal exception - {}", e.what());
+		return 904;
+	}
+	
 	return 0;
 }
