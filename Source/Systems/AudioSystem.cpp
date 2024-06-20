@@ -65,9 +65,9 @@ void CE::AudioSystem::Update(World& world, float)
 
 		FMOD_RESULT result = channelGroup.getPaused(&isPaused);
 		if (result != FMOD_OK)
-			{
-				LOG(LogAudio, Error, "FMOD could not set channel group pause, FMOD error {}", static_cast<int>(result));
-			}
+		{
+			LOG(LogAudio, Error, "FMOD could not get channel group pause, FMOD error {}", static_cast<int>(result));
+		}
 
 		if (world.IsPaused() != isPaused)
 		{
@@ -79,7 +79,6 @@ void CE::AudioSystem::Update(World& world, float)
 		}
 	}
 	
-
 	auto view = reg.View<AudioEmitterComponent>();
 	for (auto [entity, emitter] : view.each())
 	{
@@ -95,6 +94,11 @@ void CE::AudioSystem::Update(World& world, float)
 
 			if (!isPlaying)
 			{
+				result = channel.second->stop();
+				if (result != FMOD_OK)
+				{
+					LOG(LogAudio, Error, "FMOD could not stop channel, FMOD error {}", static_cast<int>(result));
+				}
 				channelsToRemove.push_back(channel.first);
 			}
 		}

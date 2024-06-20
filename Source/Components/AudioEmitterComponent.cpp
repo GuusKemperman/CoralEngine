@@ -7,6 +7,28 @@
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
+CE::AudioEmitterComponent& CE::AudioEmitterComponent::operator=(AudioEmitterComponent&& other) noexcept
+{
+	if (this != &other)
+	{
+		mPlayingOnChannels = std::move(other.mPlayingOnChannels);
+		mGroup = other.mGroup;
+
+#ifdef EDITOR
+		mSound = other.mSound;
+		mVolume = other.mVolume;
+		mPitch = other.mPitch;
+#endif // EDITOR
+	}
+
+	return *this;
+}
+
+CE::AudioEmitterComponent::~AudioEmitterComponent()
+{
+	StopAll();
+}
+
 void CE::AudioEmitterComponent::Play(AssetHandle<Sound> sound, float volume, float pitch)
 {
 	if (sound == nullptr)
@@ -14,9 +36,14 @@ void CE::AudioEmitterComponent::Play(AssetHandle<Sound> sound, float volume, flo
 		return;
 	}
 
-	Name::HashType hash = GetSoundNameHash(sound);
-
 	FMOD::Channel* channel = sound->Play(mGroup);
+
+	if (channel == nullptr)
+	{
+		return;
+	}
+
+	Name::HashType hash = GetSoundNameHash(sound);
 
 	FMOD_RESULT result = channel->setVolume(volume);
 	if (result != FMOD_OK)
@@ -28,6 +55,12 @@ void CE::AudioEmitterComponent::Play(AssetHandle<Sound> sound, float volume, flo
 	if (result != FMOD_OK)
 	{
 		LOG(LogAudio, Error, "FMOD could not set channel pitch, FMOD error {}", static_cast<int>(result));
+	}
+
+	result = channel->setLoopCount(0);
+	if (result != FMOD_OK)
+	{
+		LOG(LogAudio, Error, "FMOD could not set channel loops, FMOD error {}", static_cast<int>(result));
 	}
 
 	if (channel != nullptr)
@@ -48,22 +81,7 @@ void CE::AudioEmitterComponent::SetLoops(AssetHandle<Sound> sound, int loops)
 	auto it = mPlayingOnChannels.find(hash);
 	if (it != mPlayingOnChannels.end())
 	{
-		FMOD_MODE mode{};
-		FMOD_RESULT result = it->second->getMode(&mode);
-		if (result != FMOD_OK)
-		{
-			LOG(LogAudio, Error, "FMOD Channel mode could not be retrieved, FMOD error {}", static_cast<int>(result));
-		}
-
-		mode = mode | FMOD_LOOP_NORMAL;
-
-		result = it->second->setMode(mode);
-		if (result != FMOD_OK)
-		{
-			LOG(LogAudio, Error, "FMOD Channel mode could not be set, FMOD error {}", static_cast<int>(result));
-		}
-
-		result = it->second->setLoopCount(loops);
+		const FMOD_RESULT result = it->second->setLoopCount(loops);
 		if (result != FMOD_OK)
 		{
 			LOG(LogAudio, Error, "FMOD Channel loop count could not be set, FMOD error {}", static_cast<int>(result));
@@ -184,16 +202,6 @@ void CE::AudioEmitterComponent::SetChannelGroup(Audio::Group group)
 	}
 }
 
-void CE::AudioEmitterComponent::OnEndPlay(World& world, entt::entity owner)
-{
-	AudioEmitterComponent* emitter = world.GetRegistry().TryGet<AudioEmitterComponent>(owner);
-
-	if (emitter != nullptr)
-	{
-		emitter->StopAll();
-	}
-}
-
 uint32 CE::AudioEmitterComponent::GetSoundNameHash(AssetHandle<Sound> sound)
 {
 	return Name::HashString(sound.GetMetaData().GetName());
@@ -204,7 +212,6 @@ CE::MetaType CE::AudioEmitterComponent::Reflect()
 	auto type = MetaType{ MetaType::T<AudioEmitterComponent>{}, "AudioEmitterComponent" };
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
-	BindEvent(type, CE::sEndPlayEvent, &AudioEmitterComponent::OnEndPlay);
 	
 	// Editor only functions and fields for testing
 #ifdef EDITOR

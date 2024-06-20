@@ -16,6 +16,12 @@ namespace CE
 	class AudioEmitterComponent
 	{
 	public:
+
+		// Need this otherwise things don't work :/
+		AudioEmitterComponent& operator=(AudioEmitterComponent&&) noexcept;
+
+		~AudioEmitterComponent();
+
 		void Play(AssetHandle<Sound> sound, float volume = 1.0f, float pitch = 1.0f);
 		void SetLoops(AssetHandle<Sound> sound, int loops);
 		void StopAll();
@@ -25,7 +31,7 @@ namespace CE
 		void SetPitch(AssetHandle<Sound> sound, float pitch);
 		void SetChannelGroup(Audio::Group group);
 
-		std::unordered_map<Name::HashType, FMOD::Channel*> mPlayingOnChannels{};
+		std::unordered_multimap<Name::HashType, FMOD::Channel*> mPlayingOnChannels{};
 
 		Audio::Group mGroup = Audio::Group::Game;
 
@@ -37,7 +43,6 @@ namespace CE
 #endif // EDITOR
 
 	private:
-		void OnEndPlay(World& world, entt::entity owner);
 		uint32 GetSoundNameHash(AssetHandle<Sound> sound);
 
 		friend ReflectAccess;

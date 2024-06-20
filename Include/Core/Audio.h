@@ -35,7 +35,7 @@ namespace CE
 
 		FMOD::System* mCoreSystem = nullptr;
 
-		std::array<FMOD::ChannelGroup*,static_cast<int>(Group::NUM_OF_GROUPS)> mChannelGroups;
+		std::array<FMOD::ChannelGroup*,static_cast<int>(Group::NUM_OF_GROUPS)> mChannelGroups{};
 	};
 }
 
