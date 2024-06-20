@@ -701,7 +701,7 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                 }
 
                 const glm::vec3 position = emitter.GetParticlePositionWorld(i);
-                const glm::mat4 mat = TransformComponent::ToMatrix(position, emitter.mScale.GetValue(emitter, i), emitter.GetParticleOrientationWorld(i));
+                const glm::mat4 mat = emitter.GetParticleMatrixWorld(i);
 
                 InfoStruct::DXParticleInfo particleInfo{};
                 particleInfo.mMesh = const_cast<StaticMesh *>(meshRenderer.mParticleMesh.Get());
@@ -772,13 +772,10 @@ CE::InfoStruct::DXMaterialInfo CE::GPUWorld::GetMaterial(const CE::Material *mat
                                        material->mEmissiveFactor.b,
                                        1.f};
 
-        materialInfo.metallicFactor = material->mMetallicFactor;
-        materialInfo.roughnessFactor = material->mRoughnessFactor;
         materialInfo.normalScale = material->mNormalScale;
 
         materialInfo.useColorTex = material->mBaseColorTexture != nullptr;
         materialInfo.useEmissiveTex = material->mEmissiveTexture != nullptr;
-        materialInfo.useMetallicRoughnessTex = material->mMetallicRoughnessTexture != nullptr;
         materialInfo.useNormalTex = material->mNormalTexture != nullptr;
         materialInfo.useOcclusionTex = material->mOcclusionTexture != nullptr;
     }
@@ -786,12 +783,9 @@ CE::InfoStruct::DXMaterialInfo CE::GPUWorld::GetMaterial(const CE::Material *mat
     {
         materialInfo.colorFactor = {1.f, 1.f, 1.f, 1.f};
         materialInfo.emissiveFactor = {1.f, 1.f, 1.f, 1.f};
-        materialInfo.metallicFactor = 0.f;
-        materialInfo.roughnessFactor = 0.f;
         materialInfo.normalScale = 1.f;
         materialInfo.useColorTex = false;
         materialInfo.useEmissiveTex = false;
-        materialInfo.useMetallicRoughnessTex = false;
         materialInfo.useNormalTex = false;
         materialInfo.useOcclusionTex = false;
     }
