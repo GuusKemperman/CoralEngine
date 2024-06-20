@@ -94,7 +94,7 @@ void CE::GridSpawnerComponent::SpawnGrid()
 		{
 			[&cellGenerator](float min, float max)
 			{
-				std::uniform_real_distribution distribution{ min, max };
+				std::uniform_real_distribution distribution{ min, std::max(min, max) };
 				return distribution(cellGenerator);
 			}
 		}
