@@ -15,46 +15,45 @@
 void CE::UpdateTopDownCamSystem::Update(World& world, float dt)
 {
 	auto& registry = world.GetRegistry();
+	
+	auto view = registry.View<TopDownCamControllerComponent, TransformComponent>();
 
-	const entt::entity activeCameraOwner = CameraComponent::GetSelected(world);
-	TopDownCamControllerComponent* const topDownController = registry.TryGet<TopDownCamControllerComponent>(activeCameraOwner);
-	TransformComponent* const transform = registry.TryGet<TransformComponent>(activeCameraOwner);
-
-	if (topDownController == nullptr
-		|| transform == nullptr
-		|| !registry.Valid(topDownController->mTarget))
+	for (auto [entity, topDownController, transform] : view.each())
 	{
-		return;
-	}
-
-	auto target = registry.TryGet<TransformComponent>(topDownController->mTarget);
-
-	if (target == nullptr)
-	{
-		return;
-	}
-
-	float timeScaledZoomDelta{};
-	if (topDownController->mUseArrowKeysToEdit)
-	{
-		const float zoomDelta = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp)/* + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickLeftY)*/;
-		timeScaledZoomDelta = zoomDelta * dt;
-
-		const float rotationInput = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowRight, Input::KeyboardKey::ArrowLeft)/* + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickRightX)*/;
-		const float timeScaledRotation = rotationInput * dt;
-
-		if (timeScaledRotation != 0)
+		if (!registry.Valid(topDownController.mTarget))
 		{
-			topDownController->RotateCameraAroundTarget(timeScaledRotation);
+			return;
 		}
+
+		auto target = registry.TryGet<TransformComponent>(topDownController.mTarget);
+
+		if (target == nullptr)
+		{
+			return;
+		}
+
+		float timeScaledZoomDelta{};
+		if (topDownController.mUseArrowKeysToEdit)
+		{
+			const float zoomDelta = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowDown, Input::KeyboardKey::ArrowUp)/* + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickLeftY)*/;
+			timeScaledZoomDelta = zoomDelta * dt;
+
+			const float rotationInput = Input::Get().GetKeyboardAxis(Input::KeyboardKey::ArrowRight, Input::KeyboardKey::ArrowLeft)/* + Input::Get().GetGamepadAxis(0, Input::GamepadAxis::StickRightX)*/;
+			const float timeScaledRotation = rotationInput * dt;
+
+			if (timeScaledRotation != 0)
+			{
+				topDownController.RotateCameraAroundTarget(timeScaledRotation);
+			}
+		}
+		topDownController.AdjustZoom(timeScaledZoomDelta);
+
+		glm::vec2 cursorDistanceScreenCenter = (world.GetViewport().GetViewportSize() * 0.5f - Input::Get().GetMousePosition()) / world.GetViewport().GetViewportSize();
+		cursorDistanceScreenCenter.y *= -1.0f;
+
+		topDownController.ApplyTranslation(transform, target->GetWorldPosition(), cursorDistanceScreenCenter, dt);
+		topDownController.UpdateRotation(transform, target->GetWorldPosition(), cursorDistanceScreenCenter, dt);
 	}
-	topDownController->AdjustZoom(timeScaledZoomDelta);
-
-	glm::vec2 cursorDistanceScreenCenter = (world.GetViewport().GetViewportSize() * 0.5f - Input::Get().GetMousePosition()) / world.GetViewport().GetViewportSize();
-	cursorDistanceScreenCenter.y *= -1.0f;
-
-	topDownController->ApplyTranslation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter, dt);
-	topDownController->UpdateRotation(*transform, target->GetWorldPosition(), cursorDistanceScreenCenter, dt);
 }
 
 void CE::UpdateTopDownCamSystem::Render(const World& world)
