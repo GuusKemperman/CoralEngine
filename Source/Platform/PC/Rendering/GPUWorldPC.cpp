@@ -772,13 +772,10 @@ CE::InfoStruct::DXMaterialInfo CE::GPUWorld::GetMaterial(const CE::Material *mat
                                        material->mEmissiveFactor.b,
                                        1.f};
 
-        materialInfo.metallicFactor = material->mMetallicFactor;
-        materialInfo.roughnessFactor = material->mRoughnessFactor;
         materialInfo.normalScale = material->mNormalScale;
 
         materialInfo.useColorTex = material->mBaseColorTexture != nullptr;
         materialInfo.useEmissiveTex = material->mEmissiveTexture != nullptr;
-        materialInfo.useMetallicRoughnessTex = material->mMetallicRoughnessTexture != nullptr;
         materialInfo.useNormalTex = material->mNormalTexture != nullptr;
         materialInfo.useOcclusionTex = material->mOcclusionTexture != nullptr;
     }
@@ -786,12 +783,9 @@ CE::InfoStruct::DXMaterialInfo CE::GPUWorld::GetMaterial(const CE::Material *mat
     {
         materialInfo.colorFactor = {1.f, 1.f, 1.f, 1.f};
         materialInfo.emissiveFactor = {1.f, 1.f, 1.f, 1.f};
-        materialInfo.metallicFactor = 0.f;
-        materialInfo.roughnessFactor = 0.f;
         materialInfo.normalScale = 1.f;
         materialInfo.useColorTex = false;
         materialInfo.useEmissiveTex = false;
-        materialInfo.useMetallicRoughnessTex = false;
         materialInfo.useNormalTex = false;
         materialInfo.useOcclusionTex = false;
     }
