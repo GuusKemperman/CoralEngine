@@ -367,6 +367,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\CameraShakeComponent.cpp" />
     <ClCompile Include="Source\Components\PointTowardsGraveyardTags.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ShootingBowState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\KnockbackEmitterComponent.cpp" />
@@ -422,6 +423,7 @@
     <ClCompile Include="Source\Utilities\UpgradeFunctionality.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\CameraShakeComponent.h" />
     <ClInclude Include="Include\Assets\Upgrade.h" />
     <ClCompile Include="Source\Components\UtilityAi\States\StompState.cpp" />
   </ItemGroup>
