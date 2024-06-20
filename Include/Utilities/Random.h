@@ -30,14 +30,14 @@ namespace CE
 		template<typename T, std::enable_if_t<std::is_integral_v<T>, bool> = true>
 		static T Range(T min, T max)
 		{
-			std::uniform_int_distribution distribution{ min, max == min ? max : max - 1 };
+			std::uniform_int_distribution distribution{ min, std::max(min, max == min ? max : max - 1) };
 			return distribution(sEngine);
 		}
 
 		template<typename T, std::enable_if_t<std::is_floating_point_v<T>, bool> = true>
 		static T Range(T min, T max)
 		{
-			std::uniform_real_distribution distribution{ min, max };
+			std::uniform_real_distribution distribution{ min, std::max(min, max) };
 			return distribution(sEngine);
 		}
 
