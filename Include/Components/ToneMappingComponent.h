@@ -11,7 +11,7 @@ namespace CE
 		AssetHandle<Texture> mLUTtexture{};
 		glm::vec2 mNumberOfBlocks{};
 		bool mInvertLUTOnY{};
-		float mExposure;
+		float mExposure = 0.0f;
 
 	private:
 		friend ReflectAccess;
