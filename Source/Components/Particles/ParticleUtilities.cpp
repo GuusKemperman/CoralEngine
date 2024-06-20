@@ -15,7 +15,15 @@ void CE::Internal::OnParticleComponentDestruct(World& world, entt::entity entity
 	}
 
 	const entt::entity newEntity = reg.Create();
-	reg.AddComponent<TransformComponent>(newEntity).SetWorldMatrix(emitter->mEmitterWorldMatrix);
+	TransformComponent& transform = reg.AddComponent<TransformComponent>(newEntity);
+
+	if (emitter->mParent != entt::null)
+	{
+		TransformComponent* parent = reg.TryGet<TransformComponent>(emitter->mParent);
+		transform.SetParent(parent);
+	}
+
+	transform.SetWorldMatrix(emitter->mEmitterWorldMatrix);
 
 	static std::vector<std::reference_wrapper<const MetaFunc>> particleTypes =
 		[]

@@ -12,7 +12,7 @@
 
 void CE::ParticleLifeTimeSystem::Update(World& world, float dt)
 {
-	// #define LOG_NUM_OF_PARTICLES
+// #define LOG_NUM_OF_PARTICLES
 
 	[[maybe_unused]] size_t totalNumOfAliveParticles{};
 	[[maybe_unused]] size_t numberOfEmittersWithShapes{};
@@ -81,6 +81,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 
 		const float totalSpawnRateSurface = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetween(0.0f, 1.0f, .05f);
 
+		emitter.mParent = transform.GetParent() == nullptr ? entt::null : transform.GetParent()->GetOwner();
 		emitter.mEmitterWorldMatrix = transform.GetWorldMatrix();
 		emitter.mInverseEmitterWorldMatrix = glm::inverse(emitter.mEmitterWorldMatrix);
 		emitter.mEmitterOrientation = transform.GetWorldOrientation();
