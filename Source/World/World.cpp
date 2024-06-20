@@ -402,11 +402,12 @@ CE::MetaType CE::World::Reflect()
 			return world->GetRegistry().CreateFromPrefab(*prefab);
 		}, "Spawn prefab", MetaFunc::ExplicitParams<const AssetHandle<Prefab>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const AssetHandle<Prefab>& prefab, const glm::vec3 position, const glm::quat orientation, const glm::vec3 scale, TransformComponent* parent)
+	type.AddFunc([](const AssetHandle<Prefab>& prefab, const glm::vec3 position, const glm::quat orientation, const glm::vec3 scale, TransformComponent* parent) -> entt::entity
 		{
 			if (prefab == nullptr)
 			{
 				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
+				return entt::null;
 			}
 
 			World* world = TryGetWorldAtTopOfStack();
