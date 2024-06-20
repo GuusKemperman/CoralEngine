@@ -103,13 +103,14 @@ namespace CE
 
 		void Clear();
 
-		void DumpToCrashLog() const;
+		void DumpToCrashLog();
 
 		LogSeverity GetCurrentSeverityLevel() const { return mCurrentLogSeverity; }
 		void SetCurrentSeverityLevel(const LogSeverity severity) { mCurrentLogSeverity = severity; }
 
 		const std::array<uint32, static_cast<size_t>(NUM_OF_SEVERITIES)>& GetNumOfEntriesPerSeverity() { return mNumOfEntriesPerSeverity; }
 
+		struct FatalErrorException {};
 	private:
 		friend class LogWindow;
 
