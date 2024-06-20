@@ -149,7 +149,6 @@ mNameOfScriptAsset);
 		Expected<const FunctionEntryScriptNode*, std::string> possibleEntryNode = GetEntryNode();
 
 		ASSERT(!possibleFirstNode.HasError() && "Should've been part of the compilation errors");
-		ASSERT(!possibleEntryNode.HasError() && "Should've been part of the compilation errors");
 
 		func.RedirectFunction([this, ourScript, firstNode = possibleFirstNode.GetValue(), entry = possibleEntryNode.GetValue()]
 		(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult

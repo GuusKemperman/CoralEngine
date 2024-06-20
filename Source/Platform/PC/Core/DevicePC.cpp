@@ -385,7 +385,7 @@ void CE::Device::InitializeDevice()
 
 		.AddCBuffer(8, D3D12_SHADER_VISIBILITY_PIXEL) //18  //Fog info buffer
 		.AddCBuffer(9, D3D12_SHADER_VISIBILITY_PIXEL) //19  //Particle info buffer
-		.Add32BitConstant(10, D3D12_SHADER_VISIBILITY_PIXEL, 1) //20 //Root constant for general uses
+		.Add32BitConstant(10, D3D12_SHADER_VISIBILITY_PIXEL, 5) //20 //Root constant for general uses
 		.AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP) //21  //Sampler
 		.AddSampler(1, D3D12_SHADER_VISIBILITY_PIXEL,
 			D3D12_TEXTURE_ADDRESS_MODE_WRAP,
@@ -773,6 +773,15 @@ void CE::Device::ResolveMsaa(FrameBuffer & msaaFramebuffer)
 		msaaFramebuffer.GetResource().Get(),
 		0,
 		DXGI_FORMAT_R8G8B8A8_UNORM);
+}
+
+void CE::Device::CopyToRenderTargets(FrameBuffer & source)
+{
+	source.SetAsCopySource();
+	Device& engineDevice = Device::Get();
+	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+	mImpl->mResources[engineDevice.GetFrameIndex()]->ChangeState(commandList, D3D12_RESOURCE_STATE_COPY_DEST);
+	commandList->CopyResource(mImpl->mResources[engineDevice.GetFrameIndex()]->Get(), source.GetResource().Get());
 }
 
 glm::vec2 CE::Device::GetDisplaySize()
