@@ -5,6 +5,24 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 
+glm::mat4 CE::ParticleEmitterComponent::GetParticleMatrixFast(uint32 particle) const
+{
+	return TransformComponent::ToMatrix(
+		GetParticlePositionFast(particle),
+		GetParticleScaleFast(particle),
+		GetParticleOrientationFast(particle));
+}
+
+glm::mat4 CE::ParticleEmitterComponent::GetParticleMatrixWorld(uint32 particle) const
+{
+	if (!mAreTransformsRelativeToEmitter)
+	{
+		return GetParticleMatrixFast(particle);
+	}
+
+	return mEmitterWorldMatrix * GetParticleMatrixFast(particle);
+}
+
 glm::vec3 CE::ParticleEmitterComponent::GetParticlePositionFast(uint32 particle) const
 {
 	return mParticlePositions[particle];
@@ -33,6 +51,23 @@ void CE::ParticleEmitterComponent::SetParticlePositionWorld(uint32 particle, glm
 	}
 
 	SetParticlePositionFast(particle, mInverseEmitterWorldMatrix * glm::vec4{ GetParticlePositionFast(particle), 1.0f });
+}
+
+glm::vec3 CE::ParticleEmitterComponent::GetParticleScaleFast(uint32 particle) const
+{
+	return mScale.GetValue(*this, particle);
+}
+
+glm::vec3 CE::ParticleEmitterComponent::GetParticleScaleWorld(uint32 particle) const
+{
+	if (!mAreTransformsRelativeToEmitter)
+	{
+		return GetParticleScaleFast(particle);
+	}
+
+	const glm::mat4 mat = GetParticleMatrixWorld(particle);
+	const auto [position, scale, orientation] = TransformComponent::FromMatrix(mat);
+	return scale;
 }
 
 glm::quat CE::ParticleEmitterComponent::GetParticleOrientationFast(uint32 particle) const
