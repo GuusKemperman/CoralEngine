@@ -78,10 +78,10 @@ void CE::AudioEmitterComponent::SetLoops(AssetHandle<Sound> sound, int loops)
 
 	Name::HashType hash = GetSoundNameHash(sound);
 
-	auto it = mPlayingOnChannels.find(hash);
-	if (it != mPlayingOnChannels.end())
+	auto it = mPlayingOnChannels.equal_range(hash);
+	for (auto channel =  it.first; channel != it.second; ++channel)
 	{
-		const FMOD_RESULT result = it->second->setLoopCount(loops);
+		const FMOD_RESULT result = channel->second->setLoopCount(loops);
 		if (result != FMOD_OK)
 		{
 			LOG(LogAudio, Error, "FMOD Channel loop count could not be set, FMOD error {}", static_cast<int>(result));
@@ -112,10 +112,10 @@ void CE::AudioEmitterComponent::SetPause(AssetHandle<Sound> sound, bool pause)
 
 	Name::HashType hash = GetSoundNameHash(sound);
 
-	auto it = mPlayingOnChannels.find(hash);
-	if (it != mPlayingOnChannels.end())
+	auto it = mPlayingOnChannels.equal_range(hash);
+	for (auto channel =  it.first; channel != it.second; ++channel)
 	{
-		const FMOD_RESULT result = it->second->setPaused(pause);
+		const FMOD_RESULT result = channel->second->setPaused(pause);
 		if (result != FMOD_OK)
 		{
 			LOG(LogAudio, Error, "FMOD Channel could not be paused, FMOD error {}", static_cast<int>(result));
@@ -132,15 +132,15 @@ void CE::AudioEmitterComponent::Stop(AssetHandle<Sound> sound)
 
 	Name::HashType hash = GetSoundNameHash(sound);
 
-	auto it = mPlayingOnChannels.find(hash);
-	if (it != mPlayingOnChannels.end())
+	auto it = mPlayingOnChannels.equal_range(hash);
+	for (auto channel =  it.first; channel != it.second; ++channel)
 	{
-		FMOD_RESULT result = it->second->stop();
+		FMOD_RESULT result = channel->second->stop();
 		if (result != FMOD_OK)
 		{
 			LOG(LogAudio, Error, "FMOD Channel could not be stopped, FMOD error {}", static_cast<int>(result));
 		}
-		mPlayingOnChannels.erase(it);
+		mPlayingOnChannels.erase(channel);
 	}
 }
 
@@ -153,10 +153,10 @@ void CE::AudioEmitterComponent::SetVolume(AssetHandle<Sound> sound, float volume
 
 	Name::HashType hash = GetSoundNameHash(sound);
 
-	auto it = mPlayingOnChannels.find(hash);
-	if (it != mPlayingOnChannels.end())
+	auto it = mPlayingOnChannels.equal_range(hash);
+	for (auto channel =  it.first; channel != it.second; ++channel)
 	{
-		FMOD_RESULT result = it->second->setVolume(volume);
+		FMOD_RESULT result = channel->second->setVolume(volume);
 		if (result != FMOD_OK)
 		{
 			LOG(LogAudio, Error, "FMOD Channel volume could not be set, FMOD error {}", static_cast<int>(result));
@@ -172,10 +172,10 @@ void CE::AudioEmitterComponent::SetPitch(AssetHandle<Sound> sound, float pitch)
 	}
 	Name::HashType hash = GetSoundNameHash(sound);
 
-	auto it = mPlayingOnChannels.find(hash);
-	if (it != mPlayingOnChannels.end())
+	auto it = mPlayingOnChannels.equal_range(hash);
+	for (auto channel =  it.first; channel != it.second; ++channel)
 	{
-		FMOD_RESULT result = it->second->setPitch(pitch);
+		FMOD_RESULT result = channel->second->setPitch(pitch);
 		if (result != FMOD_OK)
 		{
 			LOG(LogAudio, Error, "FMOD Channel pitch could not be set, FMOD error {}", static_cast<int>(result));
