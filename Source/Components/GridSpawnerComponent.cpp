@@ -76,7 +76,7 @@ void CE::GridSpawnerComponent::SpawnGrid()
 		{
 			[&cellGenerator](uint32 min, uint32 max)
 			{
-				std::uniform_int_distribution distribution{ min, max == min ? max : max - 1 };
+				std::uniform_int_distribution distribution{ min, std::max(min, max == min ? max : max - 1) };
 				return distribution(cellGenerator);
 			}
 		}

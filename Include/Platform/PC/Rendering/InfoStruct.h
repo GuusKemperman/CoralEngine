@@ -46,15 +46,12 @@ namespace CE::InfoStruct
     {
         glm::vec4 colorFactor = glm::vec4(1.f);
         glm::vec4 emissiveFactor =  glm::vec4(1.f);
-        float metallicFactor = 0.f;
-        float roughnessFactor = 0.f;
         float normalScale = 1.f;
         uint32 useColorTex = 0;
         uint32 useEmissiveTex = 0;
-        uint32 useMetallicRoughnessTex = 0;
         uint32 useNormalTex = 0;
         uint32 useOcclusionTex = 0;
-        glm::vec4 uvScale = glm::vec4(1);            
+        glm::vec3 uvScale = glm::vec3(1);            
     };
 
     struct DXColorMultiplierInfo
