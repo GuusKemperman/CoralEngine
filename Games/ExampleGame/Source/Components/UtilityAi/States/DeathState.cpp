@@ -164,7 +164,7 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 
 	if (transform == nullptr)
 	{
-		LOG(LogAI, Warning, "Charge Up Stomp State - enemy {} does not have a PhysicsBody2D Component.", entt::to_integral(owner));
+		LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return;
 	}
 
