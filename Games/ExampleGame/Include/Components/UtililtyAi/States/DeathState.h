@@ -5,6 +5,7 @@
 
 namespace CE
 {
+	class Prefab;
 	class Animation;
 	class World;
 }
@@ -29,6 +30,8 @@ namespace Game
 		float mMaxDeathTime = 0.5f;
 
 		float mAnimationBlendTime = 1.5f;
+
+		CE::AssetHandle<CE::Prefab> mExpOrb{};
 
 	private:
 
