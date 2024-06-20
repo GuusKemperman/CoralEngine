@@ -774,16 +774,12 @@ void CE::MeshRenderer::BindMaterial(const CE::Material& material)
     {
         material.mEmissiveTexture->BindToGraphics(commandList, 9);
     }
-    if (material.mMetallicRoughnessTexture != nullptr)
-    {
-        material.mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
-    }
     if (material.mNormalTexture != nullptr)
     {
-        material.mNormalTexture->BindToGraphics(commandList, 11);
+        material.mNormalTexture->BindToGraphics(commandList, 10);
     }
     if (material.mOcclusionTexture != nullptr)
     {
-        material.mOcclusionTexture->BindToGraphics(commandList, 12);
+        material.mOcclusionTexture->BindToGraphics(commandList, 11);
     }
 }
