@@ -39,7 +39,7 @@ void CE::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unused]]
 
 			if (spawner.mKeepScale)
 			{
-				transform->SetWorldScale(emitter.mScale.GetValue(emitter, particle));
+				transform->SetWorldScale(emitter.GetParticleScaleWorld(particle));
 			}
 
 			if (spawner.mKeepOrientation)

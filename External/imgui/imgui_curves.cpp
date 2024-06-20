@@ -402,8 +402,10 @@ namespace ImGui
         const int size = dim + 1;
 
         // find key
-        int k = 0; while (key[k * size] < t) k++;
-
+        int k = 0;
+        for (int i = 0; i < num && key[k * size] < t; i++, k++)
+        {
+        }
         // interpolant
         const float h = (t - key[(k - 1) * size]) / (key[k * size] - key[(k - 1) * size]);
 

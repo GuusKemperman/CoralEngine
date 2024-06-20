@@ -49,6 +49,7 @@ namespace CE
 	inline float Bezier::spline(const float* key, float t)
 	{
 		int num{};
+		// find key
 
 		for (;num < static_cast<int>(std::tuple_size_v<ValueStorage>); num++)
 		{
@@ -58,6 +59,11 @@ namespace CE
 				break;
 			}
 		}
+		const int size = 1 + 1;
+		int k = 0;
+		for (int i = 0; i < num && key[k * size] < t; i++, k++)
+		{
+		}
 
 		static constexpr signed char coefs[16] = {
 			-1, 2,-1, 0,
@@ -65,12 +71,6 @@ namespace CE
 			-3, 4, 1, 0,
 			1,-1, 0, 0 };
 
-		const int size = 1 + 1;
-
-		// find key
-		int k = 0;
-
-		while (key[k * size] < t) k++;
 
 		// interpolant
 		const float h = (t - key[(k - 1) * size]) / (key[k * size] - key[(k - 1) * size]);
