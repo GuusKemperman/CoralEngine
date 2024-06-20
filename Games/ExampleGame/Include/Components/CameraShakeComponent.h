@@ -15,20 +15,15 @@ namespace Game
 	public:
 		void OnTick(CE::World& world, entt::entity owner, float dt);
 
-		static void AddShake(CE::World& world, float intensity, float duration);
-
-		float mShakeSpeed = 10.f;
-
-		float mRange = .5f;
-
-		float mFallOffSpeed = 3.f;
+		static void AddShake(CE::World& world, float range = 0.5f, float duration = 5.f, float speed = 10.f);
 
 		float mFadeOutAtIntensity = 3.f;
 
 		struct ShakeEffect
 		{
 			float mTimeLeft{};
-			float mIntensity{};
+			float mShakeSpeed = 10.f;
+			float mRange = .5f;
 		};
 		std::vector<ShakeEffect> mActiveEffects{};
 

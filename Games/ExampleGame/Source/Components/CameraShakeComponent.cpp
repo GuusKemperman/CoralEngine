@@ -21,8 +21,8 @@ void Game::CameraShakeComponent::OnTick(CE::World& world, const entt::entity own
 	{
 		siv::BasicPerlinNoise<float> noise{ static_cast<siv::BasicPerlinNoise<float>::seed_type>(world.GetCurrentTimeScaled()) };
 
-		offsetX += std::min(effect->mTimeLeft, mFadeOutAtIntensity) * effect->mIntensity * (mRange * noise.noise1D(mShakeSpeed * world.GetCurrentTimeScaled()));
-		offsetY += std::min(effect->mTimeLeft, mFadeOutAtIntensity) * effect->mIntensity * (mRange * noise.noise1D(mShakeSpeed * world.GetCurrentTimeScaled() + 456188.f));
+		offsetX += std::min(effect->mTimeLeft, mFadeOutAtIntensity) * (effect->mRange * noise.noise1D(effect->mShakeSpeed * world.GetCurrentTimeScaled()));
+		offsetY += std::min(effect->mTimeLeft, mFadeOutAtIntensity) * (effect->mRange * noise.noise1D(effect->mShakeSpeed * world.GetCurrentTimeScaled() + 456188.f));
 
 
 		effect->mTimeLeft -= dt;
@@ -47,7 +47,7 @@ void Game::CameraShakeComponent::OnTick(CE::World& world, const entt::entity own
 	transformComponent->SetLocalPosition({ offsetX, offsetY, 0 });
 }
 
-void Game::CameraShakeComponent::AddShake(CE::World& world, float intensity, float duration)
+void Game::CameraShakeComponent::AddShake(CE::World& world, const float range, const float duration, const float speed)
 {
 	const auto cameraShake = world.GetRegistry().TryGet<CameraShakeComponent>(world.GetRegistry().View<CE::CameraComponent>().front());
 
@@ -57,9 +57,7 @@ void Game::CameraShakeComponent::AddShake(CE::World& world, float intensity, flo
 		return;
 	}
 
-	const float effectIntensity = intensity;
-
-	ShakeEffect shakeEffect = {duration, effectIntensity};
+	ShakeEffect shakeEffect = {duration, speed, range};
 
 	cameraShake->mActiveEffects.emplace_back(shakeEffect);
 }
@@ -71,18 +69,15 @@ CE::MetaType Game::CameraShakeComponent::Reflect()
 
 	BindEvent(type, CE::sTickEvent, &CameraShakeComponent::OnTick);
 
-	type.AddField(&CameraShakeComponent::mRange, "Shake Range").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&CameraShakeComponent::mShakeSpeed, "Shake Speed").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&CameraShakeComponent::mFallOffSpeed, "Fall Off Speed").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&CameraShakeComponent::mFadeOutAtIntensity, "Fade Out At Intensity").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&CameraShakeComponent::mFadeOutAtIntensity, "Fade Out Intensity").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	type.AddFunc([](const float intensity, const float duration)
+	type.AddFunc([](const float range, const float duration, const float speed)
 		{
 			CE::World* world = CE::World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			CameraShakeComponent::AddShake(*world, intensity, duration);
+			CameraShakeComponent::AddShake(*world, range, duration, speed);
 		}, "AddShake", CE::MetaFunc::ExplicitParams< 
-		float, float>{}, "Intensity", "Duration").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, false);
+		float, float, float>{}, "Range", "Duration", "Speed").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, false);
 
 	CE::ReflectComponentType<CameraShakeComponent>(type);
 	return type;
