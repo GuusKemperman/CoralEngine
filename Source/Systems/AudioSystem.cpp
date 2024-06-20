@@ -82,7 +82,7 @@ void CE::AudioSystem::Update(World& world, float)
 	auto view = reg.View<AudioEmitterComponent>();
 	for (auto [entity, emitter] : view.each())
 	{
-		std::vector<int> channelsToRemove{};
+		std::vector<Name::HashType> channelsToRemove{};
 		for (auto& channel : emitter.mPlayingOnChannels)
 		{
 			bool isPlaying{};
