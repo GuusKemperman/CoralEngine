@@ -34,8 +34,6 @@ namespace Game
 
 	private:
 
-		float mCurrentIntensity;
-
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(CameraShakeComponent);

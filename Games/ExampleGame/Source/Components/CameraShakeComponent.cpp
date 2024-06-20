@@ -14,8 +14,8 @@
 
 void Game::CameraShakeComponent::OnTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	float offsetX = 0;
-	float offsetY = 0;
+	float offsetX{};
+	float offsetY{};
 
 	for (auto effect = mActiveEffects.begin(); effect != mActiveEffects.end(); )
 	{
@@ -40,7 +40,7 @@ void Game::CameraShakeComponent::OnTick(CE::World& world, const entt::entity own
 
 	if (transformComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "Chasing State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+		LOG(LogAI, Warning, "AddShake - camera {} does not have a Transform Component.", entt::to_integral(owner));
 		return;
 	}
 
@@ -57,7 +57,7 @@ void Game::CameraShakeComponent::AddShake(CE::World& world, float intensity, flo
 		return;
 	}
 
-	const float effectIntensity = std::max(intensity, cameraShake->mCurrentIntensity);
+	const float effectIntensity = intensity;
 
 	ShakeEffect shakeEffect = {duration, effectIntensity};
 
@@ -75,7 +75,6 @@ CE::MetaType Game::CameraShakeComponent::Reflect()
 	type.AddField(&CameraShakeComponent::mShakeSpeed, "Shake Speed").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&CameraShakeComponent::mFallOffSpeed, "Fall Off Speed").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&CameraShakeComponent::mFadeOutAtIntensity, "Fade Out At Intensity").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&CameraShakeComponent::mCurrentIntensity, "CurrentIntensity").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	type.AddFunc([](const float intensity, const float duration)
 		{
