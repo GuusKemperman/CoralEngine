@@ -16,7 +16,7 @@ CE::Sound::Sound(std::string_view name) :
 CE::Sound::Sound(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {
-    static constexpr FMOD_MODE mode = FMOD_OPENMEMORY;
+    static constexpr FMOD_MODE mode = FMOD_OPENMEMORY | FMOD_LOOP_NORMAL;
 
     const std::string soundInMemory = StringFunctions::StreamToString(loadInfo.GetStream());
 
@@ -48,14 +48,21 @@ CE::Sound::~Sound()
     }
 }
 
-void CE::Sound::Play() const
+FMOD::Channel* CE::Sound::Play(Audio::Group group) const
 {
     if (mSound == nullptr)
     {
-        return;
+        return nullptr;
     }
 
-    Audio::Get().GetCoreSystem().playSound(mSound, nullptr, false, nullptr);
+    FMOD::Channel* channel{};
+
+    const FMOD_RESULT result = Audio::Get().GetCoreSystem().playSound(mSound, &Audio::Get().GetChannelGroup(group), false, &channel);
+    if (result != FMOD_OK)
+    {
+        LOG(LogAudio, Error, "Sound {} could not be played, FMOD error {}", GetName(), static_cast<int>(result));
+    }
+    return channel;
 }
 
 CE::MetaType CE::Sound::Reflect()
