@@ -367,6 +367,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\PointTowardsGraveyardTags.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ShootingBowState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\KnockbackEmitterComponent.cpp" />
     <ClCompile Include="Source\Utilities\AiFunctionality.cpp" />
@@ -425,6 +426,7 @@
     <ClCompile Include="Source\Components\UtilityAi\States\StompState.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\PointTowardsGraveyardTags.h" />
     <ClInclude Include="Include\Utilities\AiFunctionality.h" />
     <ClInclude Include="Include\Components\EnvironmentGeneratorComponent.h" />
     <ClInclude Include="Include\Components\UtililtyAi\States\ChargeUpStompState.h" />

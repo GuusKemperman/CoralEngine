@@ -27,7 +27,7 @@ namespace CE
 		}
 		catch ([[maybe_unused]] const std::exception& e)
 		{
-			LOG(LogCore, Warning, "Invalid value serialized - {}", e.what());
+			LOG(LogCore, Verbose, "Invalid value serialized - {}", e.what());
 		}
 	}
 
