@@ -701,7 +701,7 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                 }
 
                 const glm::vec3 position = emitter.GetParticlePositionWorld(i);
-                const glm::mat4 mat = TransformComponent::ToMatrix(position, emitter.mScale.GetValue(emitter, i), emitter.GetParticleOrientationWorld(i));
+                const glm::mat4 mat = emitter.GetParticleMatrixWorld(i);
 
                 InfoStruct::DXParticleInfo particleInfo{};
                 particleInfo.mMesh = const_cast<StaticMesh *>(meshRenderer.mParticleMesh.Get());

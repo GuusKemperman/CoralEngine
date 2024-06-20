@@ -610,7 +610,6 @@ std::vector<CE::Registry::SingleTick> CE::Registry::GetSortedSystemsToUpdate(con
 {
 	std::vector<SingleTick> returnValue{};
 
-	const float currentTime = mWorld.get().GetCurrentTimeScaled();
 	const bool hasBegunPlay = GetWorld().HasBegunPlay();
 	const bool isPaused = GetWorld().IsPaused();
 
@@ -640,7 +639,9 @@ std::vector<CE::Registry::SingleTick> CE::Registry::GetSortedSystemsToUpdate(con
 
 			float timeOfNextStep = fixedSystem.mTimeOfNextStep;
 
-			while (timeOfNextStep <= currentTime)
+			while (timeOfNextStep <= (fixedSystem.mTraits.mShouldTickWhilstPaused ? 
+				mWorld.get().GetCurrentTimeReal() : 
+				mWorld.get().GetCurrentTimeScaled()))
 			{
 				ticksToSort.emplace_back(fixedSystem, timeOfNextStep);
 				timeOfNextStep += *fixedSystem.mTraits.mFixedTickInterval;

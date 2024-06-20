@@ -37,7 +37,7 @@ void CE::UISystem::Update(World& world, float dt)
 		Input::GamepadButton::DPadUp,
 		Input::GamepadAxis::StickLeftY,
 		Input::GamepadAxis::StickRightY,
-		false);
+		true);
 
 	selectedEntity = CheckNavigation(world,
 		selectedEntity,
@@ -48,7 +48,7 @@ void CE::UISystem::Update(World& world, float dt)
 		Input::GamepadButton::DPadDown,
 		Input::GamepadAxis::StickLeftY,
 		Input::GamepadAxis::StickRightY,
-		true);
+		false);
 
 	selectedEntity = CheckNavigation(world,
 		selectedEntity,
@@ -127,7 +127,7 @@ entt::entity CE::UISystem::CheckNavigation(World& world,
 
 			const float value = input.GetGamepadAxis(gamePadId, axis);
 
-			return negateAxis ? value >= sJoyStickMinMovementToNavigate : value <= -sJoyStickMinMovementToNavigate;;
+			return negateAxis ? value <= -sJoyStickMinMovementToNavigate : value >= sJoyStickMinMovementToNavigate;
 		};
 
 	if (input.WasKeyboardKeyPressed(key1)

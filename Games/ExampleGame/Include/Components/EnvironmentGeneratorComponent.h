@@ -1,6 +1,8 @@
 #pragma once
 #include "Assets/Core/AssetHandle.h"
 #include "BasicDataTypes/Bezier.h"
+#include "BasicDataTypes/Colors/ColorGradient.h"
+#include "BasicDataTypes/Colors/LinearColor.h"
 #include "Utilities/WeightedRandomDistribution.h"
 
 namespace CE
@@ -56,14 +58,7 @@ namespace Game
 			float mMinRandomHeightOffset{};
 			float mMaxRandomHeightOffset{};
 
-			// By default, we spawn objects
-			// if their cell overlaps with our
-			// generate-range. This becomes a
-			// problem if the cell size is very
-			// large, as objects are then spawned
-			// even when its very far away from
-			// the player.
-			std::optional<float> mObjectsRadius{};
+			std::vector<CE::LinearColor> mColors{};
 
 			uint32 mNumberOfRandomRotations = 4;
 
@@ -151,7 +146,7 @@ namespace Game
 	};
 }
 
-CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 4);
+CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer, 7);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::Object, 2);
 CEREAL_CLASS_VERSION(Game::EnvironmentGeneratorComponent::Layer::NoiseInfluence, 0);
 
@@ -180,14 +175,26 @@ namespace cereal
 			ar(value.mScaleAtNoiseValue, value.mMinNoiseValueToSpawn, value.mMaxNoiseValueToSpawn, value.mObjectSpawnChance);
 		}
 
-		if (version >= 3)
+		if (version <= 6)
 		{
-			ar(value.mObjectsRadius);
+			std::optional<float> dummy{};
+			ar(dummy);
 		}
 
 		if (version >= 4)
 		{
 			ar(value.mMinRandomHeightOffset, value.mMaxRandomHeightOffset, value.mMinRandomOrientation, value.mMaxRandomOrientation);
+		}
+
+		if (version == 5)
+		{
+			CE::ColorGradient dummy{};
+			ar(dummy);
+		}
+
+		if (version >= 6)
+		{
+			ar(value.mColors);
 		}
 	}
 

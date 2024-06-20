@@ -4,6 +4,7 @@
 #include "Utilities/PerlinNoise.h"
 
 #include "Components/EnvironmentGeneratorComponent.h"
+#include "Components/MeshColorComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/TransformComponent.h"
 #include "Core/Input.h"
@@ -213,19 +214,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 		}
 
 		const EnvironmentGeneratorComponent::Layer& layer = generator.mLayers[generatedComponent.mLayerIndex];
-
-		if (layer.mObjectsRadius.has_value())
-		{
-			const CE::TransformComponent* transform = reg.TryGet<CE::TransformComponent>(entity);
-
-			if (transform != nullptr
-				&& glm::distance(generatorPosition, transform->GetWorldPosition2D()) > destroyCircle.mRadius + *layer.mObjectsRadius)
-			{
-				reg.Destroy(entity, true);
-				continue;
-			}
-		}
-
 		const CE::TransformedAABB cellAABB{ generatedComponent.mCellTopLeft, generatedComponent.mCellTopLeft + glm::vec2{ layer.mCellSize } };
 
 		if (!CE::AreOverlapping(cellAABB, destroyCircle))
@@ -365,7 +353,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 
 		const glm::vec2 topLeft = getLayerTopLeft(layer);
 
-
 		for (uint32 cellX = 0; cellX < numOfCellsEachAxis; cellX++)
 		{
 			for (uint32 cellZ = 0; cellZ < numOfCellsEachAxis; cellZ++)
@@ -411,12 +398,6 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 						randomFloat(-layer.mMaxRandomOffset, layer.mMaxRandomOffset)
 				};
 
-				if (layer.mObjectsRadius.has_value()
-					&& glm::distance(spawnPosition2D, generatorPosition) >= *layer.mObjectsRadius + generationCircle.mRadius)
-				{
-					continue;
-				}
-
 				const std::optional<float> noise = getNoise(getNoise, spawnPosition2D, i);
 
 				if (!noise.has_value()
@@ -426,7 +407,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					continue;
 				}
 
-				const auto* objectToSpawn = distribution.GetNext(randomFloat(0.0f, 1.0f));
+				const auto* objectToSpawn = distribution.GetNext( randomFloat(0.0f, 1.0f));
 
 				if (objectToSpawn == nullptr)
 				{
@@ -446,7 +427,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 				quatOrientation *= glm::quat{ CE::sRight * glm::radians(randomFloat(layer.mMinRandomOrientation.x, layer.mMaxRandomOrientation.x)) };
 				quatOrientation *= glm::quat{ CE::sForward * glm::radians(randomFloat(layer.mMinRandomOrientation.y, layer.mMaxRandomOrientation.y)) };
 
-				const glm::vec3 scale = glm::vec3{ layer.mScaleAtNoiseValue.GetValueAt(*noise) };
+				const glm::vec3 scale = glm::vec3{ layer.mScaleAtNoiseValue.GetValueAt( CE::Math::lerpInv(layer.mMinNoiseValueToSpawn, layer.mMaxNoiseValueToSpawn, *noise)) };
 				const glm::vec3 spawnPosition3D = CE::To3DRightForward(spawnPosition2D, randomFloat(layer.mMinRandomHeightOffset, layer.mMaxRandomHeightOffset));
 
 				entt::entity entity = reg.CreateFromPrefab(*prefabToSpawn, entt::null, &spawnPosition3D, &quatOrientation, &scale);
@@ -455,7 +436,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 				{
 					continue;
 				}
-
+				
 				const CE::TransformComponent* transform = reg.TryGet<CE::TransformComponent>(entity);
 
 				if (transform != nullptr
@@ -467,9 +448,43 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					// Otherwise we would try to spawn this prefab
 					// again the very next time we move.
 					entity = reg.Create();
+					reg.AddComponent<Internal::PartOfGeneratedEnvironmentComponent>(entity, i, cellAABB.mMin);
+					continue;
 				}
 
 				reg.AddComponent<Internal::PartOfGeneratedEnvironmentComponent>(entity, i, cellAABB.mMin);
+
+				if (transform == nullptr)
+				{
+					continue;
+				}
+
+				if (layer.mColors.empty())
+				{
+					continue;
+				}
+
+
+				const CE::LinearColor color = layer.mColors[randomUint(0u, static_cast<uint32>(layer.mColors.size()))];
+
+				if (color == glm::vec4{ 1.0f })
+				{
+					continue;
+				}
+
+				const auto addColor = [&reg, &color](const auto& self, const CE::TransformComponent& current) -> void
+					{
+						if (!reg.HasComponent<CE::MeshColorComponent>(current.GetOwner()))
+						{
+							reg.AddComponent<CE::MeshColorComponent>(current.GetOwner(), color);
+						}
+
+						for (const CE::TransformComponent& child : current.GetChildren())
+						{
+							self(self, child);
+						}
+					};
+				addColor(addColor, *transform);
 			}
 		}
 	}
