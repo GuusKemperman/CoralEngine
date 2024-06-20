@@ -38,7 +38,7 @@ CE::MeshRenderer::MeshRenderer()
     FileIO& fileIO = FileIO::Get();
     std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRVertex.hlsl");
     ComPtr<ID3DBlob> v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
-    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/SimpleDiffusePixel.hlsl");
     ComPtr<ID3DBlob> p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
     CD3DX12_DEPTH_STENCIL_DESC depth = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
     depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
@@ -53,7 +53,7 @@ CE::MeshRenderer::MeshRenderer()
         .SetVertexAndPixelShaders(v->GetBufferPointer(), v->GetBufferSize(), p->GetBufferPointer(), p->GetBufferSize())
         .Build(device, reinterpret_cast<ID3D12RootSignature*>(engineDevice.GetSignature()), L"PBR RENDER PIPELINE");
 
-    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRParticlePixel.hlsl");
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/SimpleDiffusePixelParticle.hlsl");
     p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
 
     CD3DX12_BLEND_DESC blendDesc = {};
@@ -88,7 +88,7 @@ CE::MeshRenderer::MeshRenderer()
     depth.DepthFunc = D3D12_COMPARISON_FUNC_EQUAL;
     shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRVertexSkinned.hlsl");
     v = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "vs_5_0");
-    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/PBRPixel.hlsl");
+    shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/SimpleDiffusePixel.hlsl");
     p = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "ps_5_0", "main");
     mPBRSkinnedPipeline = DXPipelineBuilder()
         .AddInput("POSITION", DXGI_FORMAT_R32G32B32_FLOAT, 0)
@@ -774,16 +774,12 @@ void CE::MeshRenderer::BindMaterial(const CE::Material& material)
     {
         material.mEmissiveTexture->BindToGraphics(commandList, 9);
     }
-    if (material.mMetallicRoughnessTexture != nullptr)
-    {
-        material.mMetallicRoughnessTexture->BindToGraphics(commandList, 10);
-    }
     if (material.mNormalTexture != nullptr)
     {
-        material.mNormalTexture->BindToGraphics(commandList, 11);
+        material.mNormalTexture->BindToGraphics(commandList, 10);
     }
     if (material.mOcclusionTexture != nullptr)
     {
-        material.mOcclusionTexture->BindToGraphics(commandList, 12);
+        material.mOcclusionTexture->BindToGraphics(commandList, 11);
     }
 }
