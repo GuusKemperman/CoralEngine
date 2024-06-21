@@ -10,7 +10,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 
-std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetAvailableUpgrades(CE::World& world,
+std::vector<CE::AssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetAvailableUpgrades(CE::World& world,
 	int numberOfOptions)
 {
 	auto& registry = world.GetRegistry();
@@ -18,8 +18,8 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 	const entt::entity playerEntity = playerView.front();
 
 	// Iterate over all the upgrades to check what upgrades the player has and update the available upgrades.
-	std::vector<CE::WeakAssetHandle<Upgrade>> availableUpgrades{};
-	std::vector<CE::WeakAssetHandle<Upgrade>> chosenUpgradesToDisplayThisLevel{};
+	std::vector<CE::AssetHandle<Upgrade>> availableUpgrades{};
+	std::vector<CE::AssetHandle<Upgrade>> chosenUpgradesToDisplayThisLevel{};
 	for (CE::WeakAssetHandle<Upgrade> upgrade : CE::AssetManager::Get().GetAllAssets<Upgrade>())
 	{
 		const CE::AssetHandle<Upgrade> loadedUpgrade{ upgrade };
@@ -31,7 +31,7 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 		}
 		if (loadedUpgrade->mRequiredUpgrades.empty())
 		{
-			availableUpgrades.push_back(upgrade);
+			availableUpgrades.push_back(loadedUpgrade);
 			continue;
 		}
 		bool allRequiredUpgradesUnlocked = true;
@@ -45,7 +45,7 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 			{
 				if (loadedUpgrade->mAllRequiredUpgradesNeeded == false)
 				{
-					availableUpgrades.push_back(upgrade);
+					availableUpgrades.push_back(loadedUpgrade);
 					break;
 				}
 			}
@@ -60,7 +60,7 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 		}
 		if (loadedUpgrade->mAllRequiredUpgradesNeeded && allRequiredUpgradesUnlocked)
 		{
-			availableUpgrades.push_back(upgrade);
+			availableUpgrades.push_back(loadedUpgrade);
 		}
 	}
 
@@ -80,9 +80,15 @@ std::vector<CE::WeakAssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetA
 	return chosenUpgradesToDisplayThisLevel;
 }
 
-void Game::UpgradeFunctionality::InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options)
+void Game::UpgradeFunctionality::InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options, std::vector<CE::AssetHandle<Upgrade>>& upgradesToExclude)
 {
-	const auto chosenUpgradesToDisplayThisLevel = GetAvailableUpgrades(world, static_cast<int>(options.size()));
+	auto chosenUpgradesToDisplayThisLevel = GetAvailableUpgrades(world, static_cast<int>(options.size()));
+
+	chosenUpgradesToDisplayThisLevel.erase(std::remove_if(chosenUpgradesToDisplayThisLevel.begin(), chosenUpgradesToDisplayThisLevel.end(),
+		[&upgradesToExclude](int value) {
+			return std::find(upgradesToExclude.begin(), upgradesToExclude.end(), value) != upgradesToExclude.end();
+		}),
+		chosenUpgradesToDisplayThisLevel.end());
 
 	auto& registry = world.GetRegistry();
 	const size_t numberOfOptions = options.size();
@@ -101,9 +107,8 @@ void Game::UpgradeFunctionality::InitializeUpgradeOptions(CE::World& world, std:
 			LOG(LogUpgradeFunctionality, Warning, "Entity {} does not have a UpgradeStoringComponent attached.", entt::to_integral(options[i]));
 			continue;
 		}
-		const CE::AssetHandle<Upgrade> loadedUpgrade{ chosenUpgradesToDisplayThisLevel[i] };
-		sprite->mTexture = loadedUpgrade.Get()->mIconTexture;
-		upgrade->mUpgrade = loadedUpgrade;
+		sprite->mTexture = chosenUpgradesToDisplayThisLevel[i].Get()->mIconTexture;
+		upgrade->mUpgrade = chosenUpgradesToDisplayThisLevel[i];
 	}
 }
 
@@ -112,15 +117,15 @@ CE::MetaType Game::UpgradeFunctionality::Reflect()
 	auto metaType = CE::MetaType{ CE::MetaType::T<UpgradeFunctionality>{}, "UpgradeFunctionality" };
 	metaType.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	metaType.AddFunc([](std::vector<entt::entity> options)
+	metaType.AddFunc([](std::vector<entt::entity> options, std::vector<CE::AssetHandle<Upgrade>> upgradesToExclude)
 		{
 			CE::World* world = CE::World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			InitializeUpgradeOptions(*world, options);
+			InitializeUpgradeOptions(*world, options, upgradesToExclude);
 
 		}, "InitializeUpgradeOptions", CE::MetaFunc::ExplicitParams<
-		std::vector<entt::entity>>{}, "Options").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, false);
+		std::vector<entt::entity>, std::vector<CE::AssetHandle<Upgrade>>>{}, "Options", "Upgrades To Exclude").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, false);
 
-	return metaType;
+		return metaType;
 }
