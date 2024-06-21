@@ -163,7 +163,7 @@ CE::MetaType Game::KnockBackState::Reflect()
 
 	type.AddField(&KnockBackState::mKnockBackSpeed, "Knockback Speed").GetProperties().Add(CE::Props::sIsScriptableTag).Add(CE::Props::sIsEditorReadOnlyTag);
 	type.AddField(&KnockBackState::mKnockbackDirection, "Knockback Direction").GetProperties().Add(CE::Props::sIsScriptableTag).Add(CE::Props::sIsEditorReadOnlyTag);
-	type.AddField(&KnockBackState::mUltimateKnockBack, "UltimateKnockBack").GetProperties().Add(CE::Props::sIsScriptableTag).Add(CE::Props::sIsEditorReadOnlyTag);
+	type.AddField(&KnockBackState::mUltimateKnockBack, "Ultimate KnockBack").GetProperties().Add(CE::Props::sIsScriptableTag).Add(CE::Props::sIsEditorReadOnlyTag);
 
 	BindEvent(type, CE::sAITickEvent, &KnockBackState::OnAiTick);
 	BindEvent(type, CE::sTickEvent, &KnockBackState::OnTick);
