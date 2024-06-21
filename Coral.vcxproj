@@ -541,6 +541,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Components\AudioListenerComponent.cpp" />
     <ClCompile Include="Source\Components\GridSpawnerComponent.cpp" />
     <ClCompile Include="Source\Components\OutlineComponent.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticleEmitterShapes.cpp" />
@@ -585,6 +586,7 @@
     </ClCompile>
     <ClCompile Include="Source\Meta\MetaProps.cpp" />
     <ClCompile Include="Source\Components\PlayerComponent.cpp" />
+    <ClCompile Include="Source\Systems\AudioSystem.cpp" />
     <ClCompile Include="Source\Systems\Particles\ParticleLightSystem.cpp" />
     <ClCompile Include="Source\Platform\***REMOVED***\Rendering\PostProcessingRenderer***REMOVED***.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -1635,6 +1637,7 @@
     <ClInclude Include="Include\Assets\Importers\AudioImporter.h" />
     <ClInclude Include="Include\Assets\Sound.h" />
     <ClInclude Include="Include\Components\AttachToBoneComponent.h" />
+    <ClInclude Include="Include\Components\AudioListenerComponent.h" />
     <ClInclude Include="Include\Components\FogComponent.h" />
     <ClInclude Include="Include\Assets\Core\AssetInternal.h" />
     <ClInclude Include="Include\Components\AnimationRootComponent.h" />
@@ -1656,6 +1659,7 @@
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\DX12Classes\DXHeapHandle.h" />
     <ClInclude Include="Include\Platform\***REMOVED***\Rendering\PostProcessingRenderer***REMOVED***.h" />
+    <ClInclude Include="Include\Systems\AudioSystem.h" />
     <ClInclude Include="Include\Systems\Particles\ParticleLightSystem.h" />
     <ClInclude Include="Include\Systems\SwarmingSystem.h" />
     <ClInclude Include="Include\Utilities\ASync.h" />
@@ -2085,6 +2089,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="external\imgui\.editorconfig" />
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Shading\DiffuseParticleShading_p.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Shading\DiffuseShading_p.pssl">
+      <FileType>Document</FileType>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
   </ItemGroup>
   <ItemGroup>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Clustering\AssignLights_c.pssl">
@@ -2119,15 +2132,11 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
     </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Blur_p.pssl">
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PostProcessing\Blur_p.pssl">
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
     </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBRParticle_p.pssl">
-      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
-    </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Fullscreen_vv.pssl">
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PostProcessing\Fullscreen_vv.pssl">
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
@@ -2140,10 +2149,6 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
     </WavePsslc>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\DepthSkinned_vv.pssl">
-      <Profile Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">VSVS</Profile>
-      <Profile Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">VSVS</Profile>
-      <Profile Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">VSVS</Profile>
-      <Profile Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">VSVS</Profile>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
@@ -2170,31 +2175,22 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
     </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PostProcessBlending_p.pssl">
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PostProcessing\PostProcessBlending_p.pssl">
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
     </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBRSkinned_vv.pssl">
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\SkinnedMesh_vv.pssl">
       <FileType>Document</FileType>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
     </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBR_p.pssl">
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\StaticMesh_vv.pssl">
       <FileType>Document</FileType>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
-    </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PBR_vv.pssl">
-      <FileType>Document</FileType>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
     </WavePsslc>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Sprite_p.pssl">
@@ -2211,7 +2207,7 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
     </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\SSAO_p.pssl">
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PostProcessing\SSAO_p.pssl">
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
     </WavePsslc>
