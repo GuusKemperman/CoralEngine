@@ -47,6 +47,14 @@ namespace CE
 	class TransformComponent
 	{
 	public:
+		TransformComponent() = default;
+
+		TransformComponent(TransformComponent&& other) noexcept;
+		TransformComponent(const TransformComponent& other) noexcept;
+
+		TransformComponent& operator=(const TransformComponent&) = delete;
+		TransformComponent& operator=(TransformComponent&&) = delete;
+
 		~TransformComponent();
 
 		void OnConstruct(World& world, entt::entity owner);
@@ -173,7 +181,7 @@ namespace CE
 
 		glm::vec3 mLocalPosition{};
 
-		entt::entity mOwner{};		
+		entt::entity mOwner = entt::null;		
 		glm::quat mLocalOrientation = { 1.0f, 0.0f, 0.0f, 0.0f };
 		glm::vec3 mLocalScale = { 1.0f, 1.0f, 1.0f };
 

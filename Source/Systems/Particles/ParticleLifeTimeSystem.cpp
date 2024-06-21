@@ -79,24 +79,14 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 			emitter.PlayFromStart();
 		}
 
-		const float totalSpawnRateSurface = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetween(0.0f, 1.0f, .05f);
-
-		emitter.mParent = transform.GetParent() == nullptr ? entt::null : transform.GetParent()->GetOwner();
 		emitter.mEmitterWorldMatrix = transform.GetWorldMatrix();
 		emitter.mInverseEmitterWorldMatrix = glm::inverse(emitter.mEmitterWorldMatrix);
 		emitter.mEmitterOrientation = transform.GetWorldOrientation();
 		emitter.mInverseEmitterOrientation = glm::inverse(emitter.mEmitterOrientation);
 
+		uint32 numToSpawnThisFrame{};
 		const glm::mat4 spawnMatrix = emitter.mAreTransformsRelativeToEmitter ? glm::mat4{ 1.0f } : emitter.mEmitterWorldMatrix;
 		const glm::quat spawnOrientation = emitter.mAreTransformsRelativeToEmitter ? glm::quat{ 1.0f, 0.0f, 0.0f, 0.0f } : emitter.mEmitterOrientation;
-
-		const float t1 = emitter.mCurrentTime / emitter.mDuration;
-		const float dtAsEmitterLifeTimePercentage = dt / emitter.mDuration;
-		const float t2 = std::min(t1 + dtAsEmitterLifeTimePercentage, 1.0f);
-
-		const float surfaceAreaBetweenLastStepAndNow = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetweenFast(t1, t2);
-
-		uint32 numToSpawnThisFrame{};
 
 		if (emitter.mOnlyStayAliveUntilExistingParticlesAreGone)
 		{
@@ -105,8 +95,16 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				reg.Destroy(entity, true);
 			}
 		}
-		else
+		else if (emitter.IsPlaying())
 		{
+			const float totalSpawnRateSurface = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetween(0.0f, 1.0f, .05f);
+
+			const float t1 = emitter.mCurrentTime / emitter.mDuration;
+			const float dtAsEmitterLifeTimePercentage = dt / emitter.mDuration;
+			const float t2 = std::min(t1 + dtAsEmitterLifeTimePercentage, 1.0f);
+
+			const float surfaceAreaBetweenLastStepAndNow = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetweenFast(t1, t2);
+
 			emitter.mNumOfParticlesToSpawnNextFrame += (surfaceAreaBetweenLastStepAndNow / totalSpawnRateSurface) * static_cast<float>(emitter.mNumOfParticlesToSpawn);
 			const float numToSpawnAsFloat = floorf(emitter.mNumOfParticlesToSpawnNextFrame);
 
@@ -116,7 +114,6 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				numToSpawnThisFrame = static_cast<uint32>(numToSpawnAsFloat);
 			}
 		}
-
 
 		emitter.mCurrentTime += dt;
 

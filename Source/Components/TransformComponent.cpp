@@ -14,11 +14,30 @@ namespace
 	void DecomposeMatrixToComponents(const float* matrix, float* translation, float* rotation, float* scale);
 }
 
+CE::TransformComponent::TransformComponent(TransformComponent&& other) noexcept :
+	mLocalPosition(other.mLocalPosition),
+	mOwner(other.mOwner),
+	mLocalOrientation(other.mLocalOrientation),
+	mLocalScale(other.mLocalScale)
+{
+	SetParent(other.mParent);
+	other.SetParent(nullptr);
+}
+
+CE::TransformComponent::TransformComponent(const TransformComponent& other) noexcept :
+	mLocalPosition(other.mLocalPosition),
+	mOwner(other.mOwner),
+	mLocalOrientation(other.mLocalOrientation),
+	mLocalScale(other.mLocalScale)
+{
+	SetParent(other.mParent);
+}
+
 CE::TransformComponent::~TransformComponent()
 {
 	SetParent(nullptr);
 
-	// The children deattach themselves from their parent, to prevent modifying the array while iterating over it, make a copy.
+	// The children detach themselves from their parent, to prevent modifying the array while iterating over it, make a copy.
 	const std::vector<std::reference_wrapper<TransformComponent>> childrenCopy = mChildren;
 
 	for (TransformComponent& child : childrenCopy)

@@ -410,6 +410,11 @@ CE::MetaType CE::World::Reflect()
 				return entt::null;
 			}
 
+			if (scale == glm::vec3{})
+			{
+				LOG(LogWorld, Warning, "Spawning prefab {} with a scale of (0, 0, 0), may not be intended.", prefab.GetMetaData().GetName());
+			}
+
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 			return world->GetRegistry().CreateFromPrefab(*prefab, entt::null, &position, &orientation, &scale, parent);
