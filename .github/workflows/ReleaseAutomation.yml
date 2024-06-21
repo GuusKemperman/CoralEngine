@@ -38,9 +38,36 @@ jobs:
       shell: pwsh
       run: Move-Item -Path Games/ExampleGame/Build/x64/Release/*
 
-    # We zip all the assets with the exe and needed dll's
+    - name: Run Unit Tests
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      timeout-minutes: 10
+      run:  |
+        $processInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $processInfo.FileName = "Lichgate.exe"
+        $processInfo.Arguments = "run_tests"
+        $processInfo.WorkingDirectory = $pwd
+        $processInfo.RedirectStandardOutput = $true
+        $processInfo.RedirectStandardError = $true
+        $processInfo.UseShellExecute = $false
+        
+        $process = New-Object System.Diagnostics.Process
+        $process.StartInfo = $processInfo
+        
+        $process.Start() | Out-Null
+        
+        $output = $process.StandardOutput.ReadToEnd() + $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+        
+        echo "Executable Output:"
+        echo $output
+        
+        echo "Exit Code: "
+        echo $process.ExitCode
+        exit $process.ExitCode
+
     - name: Zip build
       shell: pwsh
+      # We zip all the assets with the exe and needed dll's
       run: 7z a -tzip Lichgate.zip Assets/ Games/ExampleGame/Assets/ Lichgate.exe *.dll
 
     - name: Upload build
