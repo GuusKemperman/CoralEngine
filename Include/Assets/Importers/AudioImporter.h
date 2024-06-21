@@ -13,7 +13,7 @@ namespace CE
 		std::vector<std::filesystem::path> CanImportExtensions() const override
 		{
 			return {
-				".wav", ".mp3", ".mp2"
+				".wav", ".mp3", ".mp2", ".ogg"
 			};
 		}
 
