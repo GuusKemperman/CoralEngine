@@ -1,10 +1,11 @@
 #pragma once
 #include "Assets/Asset.h"
-
+#include "Core/Audio.h"
 
 namespace FMOD
 {
 	class Sound;
+	class Channel;
 }
 
 namespace CE
@@ -24,7 +25,7 @@ namespace CE
 		Sound& operator=(Sound&&) = delete;
 		Sound& operator=(const Sound&) = delete;
 
-		void Play() const;
+		FMOD::Channel* Play(Audio::Group group) const;
 
 	private:
 		friend ReflectAccess;

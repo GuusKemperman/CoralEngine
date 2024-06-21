@@ -20,6 +20,9 @@
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
 #include "Systems/AbilitySystem.h"
+#include "Utilities/DrawDebugHelpers.h"
+#include "Components/Abilities/AbilitiesOnCharacterComponent.h"
+#include "Assets/Prefabs/Prefab.h"
 
 void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -89,7 +92,7 @@ float Game::DeathState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner) const
 {
 	// Call On Enemy Killed events.
-	auto playerView = world.GetRegistry().View<CE::PlayerComponent>();
+	const auto playerView = world.GetRegistry().View<CE::PlayerComponent>();
 	if (!playerView.empty())
 	{
 		const auto player = playerView.front();
@@ -130,7 +133,7 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 
 	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::DiskColliderComponent>(owner);
 
-	const CE::TransformComponent* transform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+	auto* transform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 	if (transform == nullptr)
 	{
 		LOG(LogAbilitySystem, Error, "Character with entity id {} does not have a TransformComponent attached.", entt::to_integral(owner));
@@ -157,6 +160,16 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 				}
 			};
 		setMeshColor(setMeshColor, *transform);
+	}
+
+	if (transform == nullptr)
+	{
+		LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+		return;
+	}
+
+	if (mExpOrb != nullptr) {
+		world.GetRegistry().CreateFromPrefab(*mExpOrb, entt::null, nullptr, nullptr, nullptr, transform);
 	}
 }
 
@@ -197,6 +210,7 @@ CE::MetaType Game::DeathState::Reflect()
 	type.AddField(&DeathState::mAnimationBlendTime, "Animation Blend Time").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mSinkDownSpeed, "Sink Down Speed").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mSinkSizeDown, "Sink Size Down").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DeathState::mExpOrb, "Exp Orb Spawner Prefab").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<DeathState>(type);
 	return type;
