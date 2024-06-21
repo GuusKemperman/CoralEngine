@@ -82,46 +82,48 @@ glm::mat4 CE::TransformComponent::GetLocalMatrix() const
 
 void CE::TransformComponent::SetLocalMatrix(const glm::mat4& matrix)
 {
-	glm::vec3 eulerOrientationDegrees{};
+	const auto [pos, scale, orientation] = FromMatrix(matrix);
 
-	DecomposeMatrixToComponents(&matrix[0][0],
-	                                      value_ptr(mLocalPosition),
-	                                      value_ptr(eulerOrientationDegrees),
-	                                      value_ptr(mLocalScale));
-
-	SetLocalOrientation(glm::radians(eulerOrientationDegrees));
+	// TODO can be optimized to only call world matrix once
+	SetLocalPosition(pos);
+	SetLocalOrientation(orientation);
+	SetLocalScale(scale);
 }
 
-glm::mat4 CE::TransformComponent::GetWorldMatrix() const
+const glm::mat4& CE::TransformComponent::GetWorldMatrix() const
 {
-	if (mParent == nullptr)
-	{
-		return GetLocalMatrix();
-	}
-
-	return mParent->GetWorldMatrix() * GetLocalMatrix();
+	return mCachedWorldMatrix;
 }
 
 void CE::TransformComponent::SetWorldMatrix(const glm::mat4& matrix)
 {
-	glm::vec3 translation{};
-	glm::vec3 eulerOrientation{};
-	glm::vec3 scale{};
+	const auto [pos, scale, orientation] = FromMatrix(matrix);
 
-	DecomposeMatrixToComponents(&matrix[0][0], value_ptr(translation), value_ptr(eulerOrientation), value_ptr(scale));
-
-	SetWorldPosition(translation);
-	SetWorldOrientation(eulerOrientation * (TWOPI / 360.0f));
+	// TODO can be optimized to only call world matrix once
+	SetWorldPosition(pos);
+	SetWorldOrientation(orientation);
 	SetWorldScale(scale);
 }
 
-#ifdef _MSC_VER
-#pragma warning(push)
-// Potentially uninitialized local variable 'worldPositionToRestore' used
-// no it's not.
-#pragma warning(disable : 4701)
-#endif
+std::tuple<glm::vec3, glm::vec3, glm::quat> CE::TransformComponent::GetLocalPositionScaleOrientation() const
+{
+	return { GetLocalPosition(), GetLocalScale(), GetLocalOrientation() };
+}
 
+std::tuple<glm::vec3, glm::vec3, glm::quat> CE::TransformComponent::GetWorldPositionScaleOrientation() const
+{
+	return mParent == nullptr ? GetLocalPositionScaleOrientation() : FromMatrix(mCachedWorldMatrix);
+}
+
+void CE::TransformComponent::SetLocalPositionScaleOrientation(glm::vec3 position, glm::vec3 scale, glm::quat orientation)
+{
+	SetLocalMatrix(ToMatrix(position, scale, orientation));
+}
+
+void CE::TransformComponent::SetWorldPositionScaleOrientation(glm::vec3 position, glm::vec3 scale, glm::quat orientation)
+{
+	SetWorldMatrix(ToMatrix(position, scale, orientation));
+}
 
 void CE::TransformComponent::SetParent(TransformComponent* const parent, const bool preserveWorld)
 {
@@ -138,9 +140,9 @@ void CE::TransformComponent::SetParent(TransformComponent* const parent, const b
 		parent->SetParent(nullptr);
 	}
 
-	glm::vec3 worldPositionToRestore;
-	glm::quat worldOrientationToRestore;
-	glm::vec3 worldScaleToRestore;
+	glm::vec3 worldPositionToRestore{};
+	glm::quat worldOrientationToRestore{};
+	glm::vec3 worldScaleToRestore{};
 
 	if (preserveWorld)
 	{
@@ -163,15 +165,267 @@ void CE::TransformComponent::SetParent(TransformComponent* const parent, const b
 
 	if (preserveWorld)
 	{
+		// TODO only calculate world matrix once
 		SetWorldPosition(worldPositionToRestore);
 		SetWorldOrientation(worldOrientationToRestore);
 		SetWorldScale(worldScaleToRestore);
 	}
+	else
+	{
+		UpdateCachedWorldMatrix();
+	}
 }
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+const CE::TransformComponent* CE::TransformComponent::GetParent() const
+{ 
+	return mParent;
+}
+
+const std::vector<std::reference_wrapper<CE::TransformComponent>>& CE::TransformComponent::GetChildren() const
+{
+	return mChildren;
+}
+
+bool CE::TransformComponent::IsOrphan() const
+{
+	return mParent == nullptr;
+}
+
+entt::entity CE::TransformComponent::GetOwner() const
+{
+	return mOwner;
+}
+
+glm::vec3 CE::TransformComponent::GetLocalPosition() const
+{
+	return mLocalPosition;
+}
+
+glm::vec2 CE::TransformComponent::GetLocalPosition2D() const
+{
+	return To2DRightForward(mLocalPosition);
+}
+
+glm::vec2 CE::TransformComponent::GetWorldPosition2D() const
+{
+	return To2DRightForward(GetWorldPosition());
+}
+
+void CE::TransformComponent::SetLocalPosition(const glm::vec3 position)
+{
+	if (mLocalPosition == position)
+	{
+		return;
+	}
+
+	mLocalPosition = position;
+	UpdateCachedWorldMatrix();
+}
+
+void CE::TransformComponent::SetLocalPosition(const glm::vec2 position)
+{
+	SetLocalPosition(To3DRightForward(position, GetLocalPosition()[Axis::Up]));
+}
+
+void CE::TransformComponent::TranslateLocalPosition(const glm::vec3 translation)
+{
+	SetLocalPosition(GetLocalPosition() + translation);
+}
+
+void CE::TransformComponent::TranslateLocalPosition(const glm::vec2 translation)
+{
+	TranslateLocalPosition(To3DRightForward(translation));
+}
+
+void CE::TransformComponent::SetWorldPosition(const glm::vec2 position)
+{
+	SetWorldPosition(To3DRightForward(position, GetWorldPosition()[Axis::Up]));
+}
+
+void CE::TransformComponent::TranslateWorldPosition(const glm::vec3 translation)
+{
+	SetWorldPosition(GetWorldPosition() + translation);
+}
+
+void CE::TransformComponent::TranslateWorldPosition(const glm::vec2 translation)
+{
+	TranslateWorldPosition(To3DRightForward(translation));
+}
+
+glm::quat CE::TransformComponent::GetLocalOrientation() const
+{
+	return mLocalOrientation;
+}
+
+glm::vec3 CE::TransformComponent::GetLocalOrientationEuler() const
+{
+	return eulerAngles(GetLocalOrientation());
+}
+
+glm::vec3 CE::TransformComponent::GetWorldOrientationEuler() const
+{
+	return eulerAngles(GetWorldOrientation());
+}
+
+void CE::TransformComponent::SetLocalOrientation(const glm::vec3 rotationEuler)
+{
+	SetLocalOrientation(glm::quat{ rotationEuler });
+}
+
+void CE::TransformComponent::SetLocalOrientation(const glm::quat rotation)
+{
+	if (rotation == mLocalOrientation)
+	{
+		return;
+	}
+
+	mLocalOrientation = rotation;
+	UpdateCachedWorldMatrix();
+}
+
+void CE::TransformComponent::SetWorldOrientation(const glm::vec3 rotationEuler)
+{
+	SetWorldOrientation(glm::quat{ rotationEuler });
+}
+
+glm::vec3 CE::TransformComponent::GetLocalForward() const
+{
+	return GetLocalAxis(Axis::Forward);
+}
+
+glm::vec3 CE::TransformComponent::GetLocalUp() const
+{
+	return GetLocalAxis(Axis::Up);
+}
+
+glm::vec3 CE::TransformComponent::GetLocalRight() const
+{
+	return GetLocalAxis(Axis::Right);
+}
+
+glm::vec3 CE::TransformComponent::GetLocalAxis(const Axis::Values axis) const
+{
+	return Math::RotateVector(ToVector3(axis), GetLocalOrientation());
+}
+
+glm::vec3 CE::TransformComponent::GetWorldForward() const
+{
+	return GetWorldAxis(Axis::Forward);
+}
+
+glm::vec3 CE::TransformComponent::GetWorldUp() const
+{
+	return GetWorldAxis(Axis::Up);
+}
+
+glm::vec3 CE::TransformComponent::GetWorldRight() const
+{
+	return GetWorldAxis(Axis::Right);
+}
+
+glm::vec3 CE::TransformComponent::GetWorldAxis(const Axis::Values axis) const
+{
+	return Math::RotateVector(ToVector3(axis), GetWorldOrientation());
+}
+
+void CE::TransformComponent::SetLocalForward(const glm::vec3& forward)
+{
+	SetLocalOrientation(Math::CalculateRotationBetweenOrientations(sForward, forward));
+}
+
+void CE::TransformComponent::SetLocalUp(const glm::vec3& up)
+{
+	SetLocalOrientation(Math::CalculateRotationBetweenOrientations(sUp, up));
+}
+
+void CE::TransformComponent::SetLocalRight(const glm::vec3& right)
+{
+	SetLocalOrientation(Math::CalculateRotationBetweenOrientations(sRight, right));
+}
+
+void CE::TransformComponent::SetWorldForward(const glm::vec3& forward)
+{
+	SetWorldOrientation(Math::CalculateRotationBetweenOrientations(sForward, forward));
+}
+
+void CE::TransformComponent::SetWorldUp(const glm::vec3& up)
+{
+	SetWorldOrientation(Math::CalculateRotationBetweenOrientations(sUp, up));
+}
+
+void CE::TransformComponent::SetWorldRight(const glm::vec3& right)
+{
+	SetWorldOrientation(Math::CalculateRotationBetweenOrientations(sRight, right));
+}
+
+glm::vec3 CE::TransformComponent::GetLocalScale() const
+{
+	return mLocalScale;
+}
+
+glm::vec2 CE::TransformComponent::GetLocalScale2D() const
+{
+	return To2DRightForward(GetLocalScale());
+}
+
+float CE::TransformComponent::GetLocalScaleUniform() const
+{
+	const glm::vec3 scale = GetLocalScale();
+	return (scale.x + scale.y + scale.z) * (1.0f / 3.0f);
+}
+
+glm::vec2 CE::TransformComponent::GetWorldScale2D() const
+{
+	return To2DRightForward(GetWorldScale());
+}
+
+float CE::TransformComponent::GetWorldScaleUniform() const
+{
+	const glm::vec3 scale = GetWorldScale();
+	return (scale.x + scale.y + scale.z) * (1.0f / 3.0f);
+}
+
+float CE::TransformComponent::GetWorldScaleUniform2D() const
+{
+	const glm::vec2 scale = GetWorldScale2D();
+	return (scale.x + scale.y) * (1.0f / 2.0f);
+}
+
+void CE::TransformComponent::SetLocalScale(const float xyz)
+{
+	SetLocalScale(glm::vec3{ xyz });
+}
+
+void CE::TransformComponent::SetLocalScaleRightForward(const float scale)
+{
+	SetLocalScale(glm::vec3{ scale, GetLocalScale().y, scale });
+}
+
+void CE::TransformComponent::SetLocalScale(const glm::vec3 scale)
+{
+	if (mLocalScale == scale)
+	{
+		return;
+	}
+
+	mLocalScale = scale;
+	UpdateCachedWorldMatrix();
+}
+
+void CE::TransformComponent::SetLocalScale(const glm::vec2 scale)
+{
+	SetLocalScale(To3DRightForward(scale, GetLocalScale()[Axis::Up]));
+}
+
+void CE::TransformComponent::SetWorldScale(const float xyz)
+{
+	SetWorldScale(glm::vec3{ xyz });
+}
+
+void CE::TransformComponent::SetWorldScale(const glm::vec2 scale)
+{
+	SetWorldScale(To3DRightForward(scale, GetWorldScale()[Axis::Up]));
+}
 
 bool CE::TransformComponent::IsAForeFather(const TransformComponent& potentialForeFather) const
 {
@@ -188,7 +442,7 @@ bool CE::TransformComponent::IsAForeFather(const TransformComponent& potentialFo
 
 glm::vec3 CE::TransformComponent::GetWorldPosition() const
 {
-	return mParent == nullptr ? mLocalPosition : GetWorldMatrix() * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f };
+	return mParent == nullptr ? GetLocalPosition() : GetWorldMatrix() * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f };
 }
 
 void CE::TransformComponent::SetWorldPosition(const glm::vec3 position)
@@ -206,12 +460,7 @@ void CE::TransformComponent::SetWorldPosition(const glm::vec3 position)
 
 glm::quat CE::TransformComponent::GetWorldOrientation() const
 {
-	if (mParent == nullptr)
-	{
-		return GetLocalOrientation();
-	}
-
-	return mParent->GetWorldOrientation() * GetLocalOrientation();
+	return std::get<2>(GetWorldPositionScaleOrientation());
 }
 
 void CE::TransformComponent::SetWorldOrientation(const glm::quat orientation)
@@ -229,11 +478,7 @@ void CE::TransformComponent::SetWorldOrientation(const glm::quat orientation)
 
 glm::vec3 CE::TransformComponent::GetWorldScale() const
 {
-	if (mParent == nullptr)
-	{
-		return GetLocalScale();
-	}
-	return mParent->GetWorldScale() * GetLocalScale();
+	return std::get<1>(GetWorldPositionScaleOrientation());
 }
 
 void CE::TransformComponent::SetWorldScale(const glm::vec3 scale)
@@ -265,6 +510,23 @@ void CE::TransformComponent::DetachChild(TransformComponent& child)
 	ASSERT(it != mChildren.end() && "Cannot detach child, it was never attached");
 
 	mChildren.erase(it);
+}
+
+void CE::TransformComponent::UpdateCachedWorldMatrix()
+{
+	if (mParent == nullptr)
+	{
+		mCachedWorldMatrix = GetLocalMatrix();
+	}
+	else
+	{
+		mCachedWorldMatrix = mParent->GetWorldMatrix() * GetLocalMatrix();
+	}
+
+	for (TransformComponent& child : mChildren)
+	{
+		child.UpdateCachedWorldMatrix();
+	}
 }
 
 CE::MetaType CE::TransformComponent::Reflect()
