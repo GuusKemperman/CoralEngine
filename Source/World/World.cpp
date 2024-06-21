@@ -526,7 +526,14 @@ CE::MetaType CE::World::Reflect()
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 			return world->GetViewport().ScreenToWorld(screenPosition, distanceFromCamera);
-		}, "ScreenToWorld", MetaFunc::ExplicitParams<glm::vec2, float>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "ScreenToWorld", MetaFunc::ExplicitParams<glm::vec2, float>{}, "Screen position", "Distance from camera").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+
+	type.AddFunc([](glm::vec2 screenPosition, float planeHeight)
+		{
+			World* world = TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+			return world->GetViewport().ScreenToWorldPlane(screenPosition, planeHeight);
+		}, "ScreenToWorldPlane", MetaFunc::ExplicitParams<glm::vec2, float>{}, "Screen position", "Plane height").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([]()
 		{

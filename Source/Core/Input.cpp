@@ -14,6 +14,7 @@ CE::MetaType CE::Input::Reflect()
 	type.AddFunc([](int gamepadID, GamepadButton button) { return Input::Get().IsGamepadButtonHeld(gamepadID, button);}, "IsGamepadButtonHeld", MetaFunc::ExplicitParams<int, GamepadButton>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](int gamepadID, GamepadButton button) { return Input::Get().WasGamepadButtonPressed(gamepadID, button); }, "WasGamepadButtonPressed", MetaFunc::ExplicitParams<int, GamepadButton>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](int gamepadID, GamepadButton button) { return Input::Get().WasGamepadButtonReleased(gamepadID, button); }, "WasGamepadButtonReleased", MetaFunc::ExplicitParams<int, GamepadButton>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](int gamepadID) { return Input::Get().IsGamepadAvailable(gamepadID); }, "IsGamepadAvailable", MetaFunc::ExplicitParams<int>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([] { return Input::Get().IsMouseAvailable(); }, "IsMouseAvailable").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](MouseButton button) { return Input::Get().IsMouseButtonHeld(button); }, "IsMouseButtonHeld", MetaFunc::ExplicitParams<MouseButton>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](MouseButton button) { return Input::Get().WasMouseButtonPressed(button); }, "WasMouseButtonPressed", MetaFunc::ExplicitParams<MouseButton>{}).GetProperties().Add(Props::sIsScriptableTag);
