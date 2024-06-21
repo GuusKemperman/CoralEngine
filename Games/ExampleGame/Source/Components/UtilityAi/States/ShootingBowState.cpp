@@ -88,17 +88,6 @@ void Game::ShootingBowState::OnFinishAnimationEvent(CE::World& world, entt::enti
 		}
 		else
 		{
-			auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-			if (animationRootComponent != nullptr)
-			{
-				animationRootComponent->SwitchAnimation(world.GetRegistry(), recoveryState->mRecoveryAnimation, 0.0f, 1, 0.0f);
-			}
-			else
-			{
-				LOG(LogAI, Warning, "Enemy {} does not have a AnimationRoot Component.", entt::to_integral(owner));
-			}
-
 			recoveryState->mRechargeCooldown.mAmountOfTimePassed = 0.1f;
 		}
 	}
