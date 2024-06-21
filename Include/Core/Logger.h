@@ -25,8 +25,8 @@
 // If logging is not enabled, use the classic assert().
 #ifdef ASSERTS_ENABLED
 
-#define ABORT CE::Logger::Get().Log("Aborted", #channel, severity, __FILE__, __LINE__); CE::Logger::Get().DumpToCrashLogAndExit()
-#define ASSERT_LOG(condition, ...) if (!(condition)) { CE::Logger::Get().Log(CE::Format("Assert failed: {} - ", #condition), #channel, severity, __FILE__, __LINE__); CE::Logger::Get().DumpToCrashLogAndExit(); } static_assert(true, "")
+#define ABORT CE::Logger::Get().Log("Aborted", "LogTemp", Fatal, __FILE__, __LINE__)
+#define ASSERT_LOG(condition, ...) if (!(condition)) { CE::Logger::Get().Log(CE::Format("Assert failed: {} - ", #condition), "LogTemp", Fatal, __FILE__, __LINE__); } static_assert(true, "")
 
 #endif // ASSERTS_ENABLED
 
