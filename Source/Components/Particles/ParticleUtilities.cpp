@@ -1,10 +1,12 @@
 #include "Precomp.h"
 #include "Components/Particles/ParticleUtilities.h"
 
-void CE::Internal::OnParticleComponentDestruct(World& world, entt::entity entity)
+#include "Components/NameComponent.h"
+
+void CE::Internal::OnParticleComponentDestruct(World& world, entt::entity oldEntity)
 {
 	Registry& reg = world.GetRegistry();
-	ParticleEmitterComponent* const emitter = reg.TryGet<ParticleEmitterComponent>(entity);
+	ParticleEmitterComponent* const emitter = reg.TryGet<ParticleEmitterComponent>(oldEntity);
 
 	if (emitter == nullptr
 		|| !emitter->mKeepParticlesAliveWhenEmitterIsDestroyed
@@ -15,15 +17,16 @@ void CE::Internal::OnParticleComponentDestruct(World& world, entt::entity entity
 	}
 
 	const entt::entity newEntity = reg.Create();
-	TransformComponent& transform = reg.AddComponent<TransformComponent>(newEntity);
 
-	if (emitter->mParent != entt::null)
+	if (NameComponent* name = reg.TryGet<NameComponent>(oldEntity))
 	{
-		TransformComponent* parent = reg.TryGet<TransformComponent>(emitter->mParent);
-		transform.SetParent(parent);
+		reg.AddComponent<NameComponent>(newEntity, std::move(*name));
 	}
 
-	transform.SetWorldMatrix(emitter->mEmitterWorldMatrix);
+	if (TransformComponent* oldTransform = reg.TryGet<TransformComponent>(oldEntity))
+	{
+		reg.AddComponent<TransformComponent>(newEntity, std::move(*oldTransform));
+	}
 
 	static std::vector<std::reference_wrapper<const MetaFunc>> particleTypes =
 		[]
@@ -41,7 +44,7 @@ void CE::Internal::OnParticleComponentDestruct(World& world, entt::entity entity
 
 	for (const MetaFunc& func : particleTypes)
 	{
-		func.InvokeUncheckedUnpacked(reg, entity, newEntity);
+		func.InvokeUncheckedUnpacked(reg, oldEntity, newEntity);
 	}
 
 	// Prevent the destruct events called for
