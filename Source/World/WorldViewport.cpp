@@ -112,5 +112,7 @@ void CE::WorldViewport::UpdateSize(glm::vec2 size)
 	// render starting from the topleft corner.
 #ifdef EDITOR
 	mLastRenderedAtPos = ImGui::GetCursorScreenPos();
+#else
+	mLastRenderedAtPos = Device::Get().GetWindowPosition();
 #endif // EDITOR
 }
