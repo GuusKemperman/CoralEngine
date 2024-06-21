@@ -40,6 +40,8 @@ void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, cons
 		LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
 		return;
 	}
+
+
 	const auto removeLights = [&registry, dt](const auto& self, const CE::TransformComponent& current, float timeLeft) -> void
 		{
 			for (const CE::TransformComponent& child : current.GetChildren())
@@ -53,23 +55,23 @@ void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, cons
 				self(self, child, timeLeft);
 			}
 		};
-	removeLights(removeLights, *transform, (mMaxDeathTime - mCurrentDeathTimer) * 0.5f);
+	removeLights(removeLights, *transform, std::max((mLightFadeOutDuration - mCurrentDeathTimer) * 0.5f, 0.0f));
+	mCurrentDeathTimer += dt;
 
-	if (mSink) 
+	if (mSink
+		&& mCurrentDeathTimer > mStartSinkingDelay) 
 	{
 		glm::vec3 positionChange = transform->GetWorldPosition();
 		positionChange.y -= mSinkDownSpeed;
-		transform->SetWorldPosition(positionChange);
-
-		const glm::vec3 scaleVec3 = transform->GetWorldScale() * mSinkSizeDown;
-		transform->SetWorldScale(scaleVec3);
 
 		// Update death timer.
-		mCurrentDeathTimer += dt;
-		if (mCurrentDeathTimer >= mMaxDeathTime)
+		if (positionChange.y < mDestroyWhenBelowHeight)
 		{
 			registry.Destroy(owner, true);
+			return;
 		}
+
+		transform->SetWorldPosition(positionChange);
 	}
 }
 
@@ -119,7 +121,17 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 		}
 	}
 
-	AIFunctionality::AnimationInAi(world, owner, mDeathAnimation, false);
+	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+
+	if (animationRootComponent != nullptr)
+	{
+		const float time = mDeathAnimation == nullptr ? 0.0f : mDeathAnimation->mDuration * mAnimationStartTimePercentage;
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDeathAnimation, time, mAnimationSpeed);
+	}
+	else
+	{
+		LOG(LogAI, Warning, "Enemy {} does not have a AnimationRoot Component.", entt::to_integral(owner));
+	}
 
 	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
 	if (physicsBody2DComponent != nullptr)
@@ -206,10 +218,12 @@ CE::MetaType Game::DeathState::Reflect()
 
 	type.AddField(&DeathState::mDeathAnimation, "Death Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mDestroyEntityWhenDead, "Destroy The Entity When Dead").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DeathState::mMaxDeathTime, "Max Sink Time").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DeathState::mAnimationBlendTime, "Animation Blend Time").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DeathState::mStartSinkingDelay, "Start Sinking Delay").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DeathState::mLightFadeOutDuration, "Light Fade Out Duration").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DeathState::mAnimationStartTimePercentage, "Animation Start Time Percentage").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DeathState::mAnimationSpeed, "Animation Speed").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mSinkDownSpeed, "Sink Down Speed").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DeathState::mSinkSizeDown, "Sink Size Down").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&DeathState::mDestroyWhenBelowHeight, "Destroy When Below Height").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mExpOrb, "Exp Orb Spawner Prefab").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<DeathState>(type);
