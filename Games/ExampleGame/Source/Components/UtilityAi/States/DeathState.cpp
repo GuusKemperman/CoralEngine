@@ -50,7 +50,12 @@ void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, cons
 				if (light != nullptr)
 				{
 					const float decreaseAmount = light->mIntensity * (dt / timeLeft);
-					light->mIntensity = std::max(light->mIntensity - decreaseAmount, 0.f);
+					light->mIntensity = light->mIntensity - decreaseAmount;
+
+					if (light->mIntensity <= 0.0f)
+					{
+						registry.RemoveComponent<CE::PointLightComponent>(child.GetOwner());
+					}
 				}
 				self(self, child, timeLeft);
 			}
