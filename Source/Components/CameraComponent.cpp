@@ -31,7 +31,6 @@ void CE::CameraComponent::UpdateProjection(const float aspectRatio, bool recalcu
 {
 	mProjection = glm::perspective(mFOV, aspectRatio, mNear, mFar);
 
-	
 	// On the ***REMOVED*** we give it an offset to have more padding on the edges of the screen, otherwise the UI clips outsise of the screen
 #if PLATFORM_***REMOVED***
 	float orthogaphicOffset = 0.1f;
