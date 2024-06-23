@@ -35,37 +35,44 @@ void Game::DeathState::OnTick(CE::World& world, const entt::entity owner, const 
 	auto& registry = world.GetRegistry();
 
 	// Dim eye lights.
-	auto* transform = registry.TryGet<CE::TransformComponent>(owner);
-	if (transform == nullptr)
+
+	if (mCurrentDeathTimer < mLightFadeOutDuration)
 	{
-		LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
-		return;
+		auto* transform = registry.TryGet<CE::TransformComponent>(owner);
+		if (transform == nullptr)
+		{
+			LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+			return;
+		}
+
+		const auto removeLights = [&registry, dt](const auto& self, const CE::TransformComponent& current, float timeLeft) -> void
+			{
+				for (const CE::TransformComponent& child : current.GetChildren())
+				{
+					auto light = registry.TryGet<CE::PointLightComponent>(child.GetOwner());
+					if (light != nullptr)
+					{
+						const float decreaseAmount = light->mIntensity * (dt / timeLeft);
+						light->mIntensity = light->mIntensity - decreaseAmount;
+
+						if (light->mIntensity <= 0.0f)
+						{
+							registry.RemoveComponent<CE::PointLightComponent>(child.GetOwner());
+						}
+					}
+					self(self, child, timeLeft);
+				}
+			};
+		removeLights(removeLights, *transform, std::max((mLightFadeOutDuration - mCurrentDeathTimer + dt) * 0.5f, 0.0f));
 	}
 
-	const auto removeLights = [&registry, dt](const auto& self, const CE::TransformComponent& current, float timeLeft) -> void
-		{
-			for (const CE::TransformComponent& child : current.GetChildren())
-			{
-				auto light = registry.TryGet<CE::PointLightComponent>(child.GetOwner());
-				if (light != nullptr)
-				{
-					const float decreaseAmount = light->mIntensity * (dt / timeLeft);
-					light->mIntensity = light->mIntensity - decreaseAmount;
-
-					if (light->mIntensity <= 0.0f)
-					{
-						registry.RemoveComponent<CE::PointLightComponent>(child.GetOwner());
-					}
-				}
-				self(self, child, timeLeft);
-			}
-		};
-	removeLights(removeLights, *transform, std::max((mLightFadeOutDuration - mCurrentDeathTimer) * 0.5f, 0.0f));
 	mCurrentDeathTimer += dt;
 
 	if (mSink
 		&& mCurrentDeathTimer > mStartSinkingDelay) 
 	{
+		auto* transform = registry.TryGet<CE::TransformComponent>(owner);
+
 		glm::vec3 positionChange = transform->GetWorldPosition();
 		positionChange.y -= mSinkDownSpeed;
 
