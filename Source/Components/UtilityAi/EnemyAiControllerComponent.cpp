@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
+#include "Components/ComponentFilter.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
 #ifdef EDITOR
@@ -54,6 +55,12 @@ CE::MetaType CE::EnemyAiControllerComponent::Reflect()
 #ifdef EDITOR
 	BindEvent(type, sInspectEvent, &EnemyAiControllerComponent::OnInspect);
 #endif // EDITOR
+
+	type.AddFunc([](const EnemyAiControllerComponent& enemyAiController, const ComponentFilter& component) -> bool
+		{
+			return enemyAiController.mCurrentState == component;
+
+		}, "IsInState", MetaFunc::ExplicitParams<const EnemyAiControllerComponent&, const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	ReflectComponentType<EnemyAiControllerComponent>(type);
 	return type;
