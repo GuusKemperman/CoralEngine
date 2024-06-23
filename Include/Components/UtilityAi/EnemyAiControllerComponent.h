@@ -6,7 +6,9 @@ namespace CE
 	class EnemyAiControllerComponent
 	{
 	public:
+		const MetaType* mPreviousState{};
 		const MetaType* mCurrentState{};
+		float mCurrentScore{};
 
 #ifdef EDITOR
 		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
