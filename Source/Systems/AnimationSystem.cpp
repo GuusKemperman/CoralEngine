@@ -148,9 +148,11 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		}
 
 		animationRootComponent.mCurrentTimeStamp += animationRootComponent.mCurrentAnimation->mTickPerSecond * animationRootComponent.mCurrentAnimationSpeed * dt;
-		
+
 		if ((animationRootComponent.mCurrentTimeStamp / animationRootComponent.mCurrentAnimation->mDuration) > 1.0f)
 		{
+			animationRootComponent.mCurrentTimeStamp = fmod(animationRootComponent.mCurrentTimeStamp, animationRootComponent.mCurrentAnimation->mDuration);
+
 			for (const BoundEvent& boundEvent : mOnAnimationFinishEvents)
 			{
 				entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
@@ -172,20 +174,14 @@ void CE::AnimationSystem::Update(World& world, float dt)
 				}
 			}
 		}
-		
-		animationRootComponent.mCurrentTimeStamp = fmod(animationRootComponent.mCurrentTimeStamp, animationRootComponent.mCurrentAnimation->mDuration);
 	}
 
 	static BakedAnimation::BakedFrame buffers[2]{};
 
 	for (auto [entity, skinnedMesh] : reg.View<SkinnedMeshComponent>().each())
 	{
-		if (skinnedMesh.mSkinnedMesh == nullptr)
-		{
-			continue;
-		}
-
-		if (skinnedMesh.mAnimation == nullptr)
+		if (skinnedMesh.mSkinnedMesh == nullptr
+			|| skinnedMesh.mAnimation == nullptr)
 		{
 			continue;
 		}
@@ -244,7 +240,9 @@ void CE::AnimationSystem::Update(World& world, float dt)
 
 		const SkinnedMeshComponent* skinnedMesh = AttachToBoneComponent::FindSkinnedMeshParentRecursive(reg, *parent);
 
-		if (skinnedMesh == nullptr)
+		if (skinnedMesh == nullptr
+			|| skinnedMesh->mSkinnedMesh == nullptr
+			|| skinnedMesh->mAnimation == nullptr)
 		{
 			continue;
 		}
@@ -252,8 +250,7 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		auto& boneMap = skinnedMesh->mSkinnedMesh->GetBoneMap();
 		auto it = boneMap.find(attachToBone.mBoneName);
 
-		if (it == boneMap.end() 
-			|| skinnedMesh->mAnimation == nullptr)
+		if (it == boneMap.end())
 		{
 			transform.SetLocalMatrix(parent->GetWorldMatrix() * 
 				TransformComponent::ToMatrix(attachToBone.mLocalTranslation, attachToBone.mLocalScale, attachToBone.mLocalRotation));
