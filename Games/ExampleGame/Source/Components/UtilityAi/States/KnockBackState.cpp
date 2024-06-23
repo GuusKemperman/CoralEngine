@@ -25,7 +25,6 @@ void Game::KnockBackState::OnTick(CE::World& world, entt::entity owner, float)
 
 	if (enemyAiController == nullptr)
 	{
-		LOG(LogAI, Warning, "A enemyController component is needed to run the KnockBack State!");
 		return;
 	}
 
@@ -134,7 +133,6 @@ void Game::KnockBackState::OnAnimationFinish(CE::World& world, entt::entity owne
 
 	if (enemy == nullptr)
 	{
-		LOG(LogAI, Warning, "A enemyController component is needed to run the KnockingBack State!");
 		return;
 	}
 
