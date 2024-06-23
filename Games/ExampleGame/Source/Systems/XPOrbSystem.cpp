@@ -105,7 +105,7 @@ void Game::XPOrbSystem::Update(CE::World& world, float dt)
 		}
 
 		orb.mHoverTime += orb.mHoverSpeed * dt;
-		worldPos[CE::Axis::Up] = glm::sin(orb.mHoverTime) * orb.mHoverHeight;
+		worldPos[CE::Axis::Up] = glm::sin(orb.mHoverTime) * orb.mHoverHeight + 1.0f;
 
 		transform.SetWorldPosition(worldPos);
 	}
