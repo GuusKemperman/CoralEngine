@@ -14,13 +14,13 @@ namespace CE
 		friend class World;
 
 	public:
-		IGPUWorld(const World& world)
+		IGPUWorld(World& world)
 			:
 			mWorld(world)
 		{}
 		virtual void Update() = 0;
 
 	protected:
-		std::reference_wrapper<const World> mWorld;
+		std::reference_wrapper<World> mWorld;
 	};
 }

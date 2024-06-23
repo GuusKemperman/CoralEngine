@@ -141,7 +141,7 @@ CE::GPUWorld& CE::World::GetGPUWorld() const
 		// freed at the end of the frame, and if we create a lot of worlds
 		// in one frame (such as with unit tests), then we run out of memory.
 		// hence, the const_cast
-		const_cast<World&>(*this).mGPUWorld = std::make_unique<GPUWorld>(*this);
+		const_cast<World&>(*this).mGPUWorld = std::make_unique<GPUWorld>(const_cast<World&>(*this));
 	}
 
 	return *mGPUWorld;
