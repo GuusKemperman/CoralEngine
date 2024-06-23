@@ -11,7 +11,7 @@
 #include "World/World.h"
 
 std::vector<CE::AssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetAvailableUpgrades(CE::World& world,
-	int numberOfOptions)
+	int numberOfOptions, const std::vector<CE::AssetHandle<Upgrade>>& additionalUpgradesToExclude)
 {
 	auto& registry = world.GetRegistry();
 	const auto playerView = registry.View<CE::PlayerComponent>();
@@ -25,7 +25,8 @@ std::vector<CE::AssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetAvail
 		const CE::AssetHandle<Upgrade> loadedUpgrade{ upgrade };
 
 		if (loadedUpgrade->mUpgradeComponent == nullptr ||
-			registry.HasComponent(loadedUpgrade->mUpgradeComponent.Get()->GetTypeId(), playerEntity))
+			registry.HasComponent(loadedUpgrade->mUpgradeComponent.Get()->GetTypeId(), playerEntity)
+			|| std::find(additionalUpgradesToExclude.begin(), additionalUpgradesToExclude.end(), loadedUpgrade) != additionalUpgradesToExclude.end())
 		{
 			continue;
 		}
@@ -80,15 +81,9 @@ std::vector<CE::AssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetAvail
 	return chosenUpgradesToDisplayThisLevel;
 }
 
-void Game::UpgradeFunctionality::InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options, std::vector<CE::AssetHandle<Upgrade>>& upgradesToExclude)
+void Game::UpgradeFunctionality::InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options, const std::vector<CE::AssetHandle<Upgrade>>& upgradesToExclude)
 {
-	auto chosenUpgradesToDisplayThisLevel = GetAvailableUpgrades(world, static_cast<int>(options.size()));
-
-	chosenUpgradesToDisplayThisLevel.erase(std::remove_if(chosenUpgradesToDisplayThisLevel.begin(), chosenUpgradesToDisplayThisLevel.end(),
-		[&upgradesToExclude](int value) {
-			return std::find(upgradesToExclude.begin(), upgradesToExclude.end(), value) != upgradesToExclude.end();
-		}),
-		chosenUpgradesToDisplayThisLevel.end());
+	const auto chosenUpgradesToDisplayThisLevel = GetAvailableUpgrades(world, static_cast<int>(options.size()), upgradesToExclude);
 
 	auto& registry = world.GetRegistry();
 	const size_t numberOfOptions = options.size();

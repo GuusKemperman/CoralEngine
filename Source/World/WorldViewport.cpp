@@ -65,6 +65,45 @@ glm::vec3 CE::WorldViewport::ScreenToWorld(glm::vec2 screenPosition, float dista
 	return camPosition + dir * distanceFromCamera;
 }
 
+glm::vec3 CE::WorldViewport::ScreenToWorldPlane(glm::vec2 screenPosition, float planeHeight) const
+{
+	const entt::entity cameraOwner = CameraComponent::GetSelected(mWorld);
+
+	if (cameraOwner == entt::null)
+	{
+		return {};
+	}
+
+	const glm::vec3 dir = GetScreenToWorldDirection(screenPosition);
+
+	if (glm::isnan(dir.x)
+		|| glm::isnan(dir.y)
+		|| glm::isnan(dir.z))
+	{
+		return {};
+	}
+
+	const TransformComponent* cameraTransform = mWorld.get().GetRegistry().TryGet<TransformComponent>(cameraOwner);
+
+	if (cameraTransform == nullptr)
+	{
+		return {};
+	}
+
+	const glm::vec3 rayStart = cameraTransform->GetWorldPosition();
+	const glm::vec3 planePoint{ 0.0f, planeHeight, 0.0f };
+
+	static constexpr glm::vec3 planeNormal{ 0.0f, 1.0f, 0.0f };
+
+	const glm::vec3 difference = planePoint - rayStart;
+	const float product_1 = glm::dot(difference, planeNormal);
+	const float product_2 = glm::dot(dir, planeNormal);
+	const float distance_from_origin_to_plane = product_1 / product_2;
+	const glm::vec3 intersection = rayStart + dir * distance_from_origin_to_plane;
+
+	return intersection;
+}
+
 void CE::WorldViewport::UpdateSize(glm::vec2 size)
 {
 	mLastRenderedAtSize = size;
@@ -73,5 +112,7 @@ void CE::WorldViewport::UpdateSize(glm::vec2 size)
 	// render starting from the topleft corner.
 #ifdef EDITOR
 	mLastRenderedAtPos = ImGui::GetCursorScreenPos();
+#else
+	mLastRenderedAtPos = Device::Get().GetWindowPosition();
 #endif // EDITOR
 }
