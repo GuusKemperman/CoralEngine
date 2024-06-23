@@ -150,13 +150,6 @@ namespace CE
 		ScriptReloadCompletedEvent();
 	};
 
-	class ScriptReloadInterruptedEvent final :
-		public ScriptOnlyPassComponentEvent
-	{
-	public:
-		ScriptReloadInterruptedEvent();
-	};
-
 	class ScriptEnemyKilledEvent final :
 		public ScriptEvent
 	{
@@ -235,7 +228,6 @@ namespace CE
 	static const ScriptAbilityHitEvent sScriptAbilityHitEvent{};
 	static const ScriptReloadStartedEvent sScriptReloadStartedEvent{};
 	static const ScriptReloadCompletedEvent sScriptReloadCompletedEvent{};
-	static const ScriptReloadInterruptedEvent sScriptReloadInterruptedEvent{};
 	static const ScriptEnemyKilledEvent sScriptEnemyKilledEvent{};
 	static const ScriptGettingHitEvent sScriptGettingHitEvent{};
 	static const ScriptCritEvent sScriptCritEvent{};
@@ -245,7 +237,7 @@ namespace CE
 	static const CollisionEvent sOnCollisionExitScriptEvent{ sCollisionExitEvent };
 	static const ScriptOnlyPassComponentEvent sOnButtonPressedScriptEvent{ sButtonPressEvent };
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 23> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 22> sAllScriptableEvents
 	{
 		sOnConstructScriptEvent,
 		sOnDestructScriptEvent,
@@ -261,7 +253,6 @@ namespace CE
 		sScriptAbilityHitEvent,
 		sScriptReloadStartedEvent,
 		sScriptReloadCompletedEvent,
-		sScriptReloadInterruptedEvent,
 		sScriptEnemyKilledEvent,
 		sScriptGettingHitEvent,
 		sScriptCritEvent,
