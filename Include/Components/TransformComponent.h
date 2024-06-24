@@ -4,6 +4,7 @@
 
 namespace CE
 {
+	class WorldDetails;
 	class Archiver;
 	class World;
 	class BinaryGSONObject;
@@ -63,10 +64,10 @@ namespace CE
 		static glm::mat4 ToMatrix(glm::vec3 position, glm::vec3 scale, glm::quat orientation);
 		static std::tuple<glm::vec3, glm::vec3, glm::quat> FromMatrix(const glm::mat4& matrix);
 
-		glm::mat4 GetLocalMatrix() const;		
+		glm::mat4 GetLocalMatrix() const;
 		void SetLocalMatrix(const glm::mat4& matrix);
 
-		const glm::mat4& GetWorldMatrix() const;		
+		const glm::mat4& GetWorldMatrix() const;
 		void SetWorldMatrix(const glm::mat4& matrix);
 
 		std::tuple<glm::vec3, glm::vec3, glm::quat> GetLocalPositionScaleOrientation() const;
@@ -78,9 +79,9 @@ namespace CE
 		// -----------------------------------------------------------------------------------------------------------------//
 		// Parental relation ships																							//
 		// -----------------------------------------------------------------------------------------------------------------//
-		
+
 		void SetParent(TransformComponent* parent, bool keepWorld = false);
-		
+
 		const TransformComponent* GetParent() const;
 
 		const std::vector<std::reference_wrapper<TransformComponent>>& GetChildren() const;
@@ -100,7 +101,7 @@ namespace CE
 		// -----------------------------------------------------------------------------------------------------------------//
 		// Getting/setting the position																						//
 		// -----------------------------------------------------------------------------------------------------------------//
-		
+
 		glm::vec3 GetLocalPosition() const;
 		glm::vec2 GetLocalPosition2D() const;
 
@@ -122,7 +123,7 @@ namespace CE
 		// -----------------------------------------------------------------------------------------------------------------//
 		// Getting/setting the orientation																					//
 		// -----------------------------------------------------------------------------------------------------------------//
-		
+
 		glm::quat GetLocalOrientation() const;
 		glm::vec3 GetLocalOrientationEuler() const;
 
@@ -189,13 +190,20 @@ namespace CE
 		// the archiver to call UpdateCachedWorldMatrix..
 		friend Archiver;
 
+
+		// We don't have custom setter/getter support yet.
+		// WorldDetails may inspect mLocalPosition and
+		// adjust its value without ever updating the world
+		// matrix. 
+		friend WorldDetails;
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(TransformComponent);
 
 		glm::vec3 mLocalPosition{};
 
-		entt::entity mOwner = entt::null;		
+		entt::entity mOwner = entt::null;
 		glm::quat mLocalOrientation = { 1.0f, 0.0f, 0.0f, 0.0f };
 		glm::vec3 mLocalScale = { 1.0f, 1.0f, 1.0f };
 
@@ -205,7 +213,7 @@ namespace CE
 		TransformComponent* mParent{};
 
 		// Storing pointers is safe, as pointer stability has been enabled for this component.
-		std::vector<std::reference_wrapper<TransformComponent>> mChildren{}; 
+		std::vector<std::reference_wrapper<TransformComponent>> mChildren{};
 	};
 }
 

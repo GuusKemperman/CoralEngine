@@ -25,8 +25,8 @@
 // If logging is not enabled, use the classic assert().
 #ifdef ASSERTS_ENABLED
 
-#define ASSERT_LOG(condition, ...) assert(condition)
-#define ABORT assert(false)
+#define ABORT CE::Logger::Get().Log("Aborted", "LogTemp", Fatal, __FILE__, __LINE__)
+#define ASSERT_LOG(condition, ...) if (!(condition)) { CE::Logger::Get().Log(CE::Format("Assert failed: {} - ", #condition), "LogTemp", Fatal, __FILE__, __LINE__); } static_assert(true, "")
 
 #endif // ASSERTS_ENABLED
 
@@ -103,7 +103,7 @@ namespace CE
 
 		void Clear();
 
-		void DumpToCrashLog();
+		void DumpToCrashLogAndExit();
 
 		LogSeverity GetCurrentSeverityLevel() const { return mCurrentLogSeverity; }
 		void SetCurrentSeverityLevel(const LogSeverity severity) { mCurrentLogSeverity = severity; }
