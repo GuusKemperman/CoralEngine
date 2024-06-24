@@ -4,6 +4,7 @@
 
 namespace CE
 {
+	class WorldDetails;
 	class Archiver;
 	class World;
 	class BinaryGSONObject;
@@ -188,6 +189,13 @@ namespace CE
 		// matrix, so we require
 		// the archiver to call UpdateCachedWorldMatrix..
 		friend Archiver;
+
+
+		// We don't have custom setter/getter support yet.
+		// WorldDetails may inspect mLocalPosition and
+		// adjust its value without ever updating the world
+		// matrix. 
+		friend WorldDetails;
 
 		friend ReflectAccess;
 		static MetaType Reflect();

@@ -19,6 +19,4 @@ namespace Game
 		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(XPOrbComponent);
 	};
-
 }
-
