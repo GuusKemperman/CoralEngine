@@ -57,27 +57,6 @@ void CE::AudioSystem::Update(World& world, float)
 			}
 		}
 	}
-
-	{
-		bool isPaused = false;
-
-		FMOD::ChannelGroup& channelGroup = Audio::Get().GetChannelGroup(Audio::Group::Game);
-
-		FMOD_RESULT result = channelGroup.getPaused(&isPaused);
-		if (result != FMOD_OK)
-		{
-			LOG(LogAudio, Error, "FMOD could not get channel group pause, FMOD error {}", static_cast<int>(result));
-		}
-
-		if (world.IsPaused() != isPaused)
-		{
-			result = channelGroup.setPaused(!isPaused);
-			if (result != FMOD_OK)
-			{
-				LOG(LogAudio, Error, "FMOD could not set channel group pause, FMOD error {}", static_cast<int>(result));
-			}
-		}
-	}
 	
 	auto view = reg.View<AudioEmitterComponent>();
 	for (auto [entity, emitter] : view.each())
