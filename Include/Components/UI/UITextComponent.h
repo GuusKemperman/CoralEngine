@@ -27,7 +27,7 @@ namespace CE
 		float GetCharacterKerning(uint32_t characterIndex) const;
 
 		std::string mText = "Sample Text";
-		LinearColor mColor{ 1.0f };
+		glm::vec4 mColor{ 1.0f };
 		float mSpacing = 0.0f;
 		AssetHandle<Font> mFont{};
 
