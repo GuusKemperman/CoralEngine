@@ -354,12 +354,14 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 	// We don't have custom setter/getter support yet.
 	// WorldDetails may inspect mLocalPosition and
 	// adjust its value without ever updating the world
-	// matrix. 
-	for (const auto [entity, transform] : reg.View<TransformComponent>().each())
+	// matrix.
+	for (entt::entity entity : selectedEntities)
 	{
-		if (transform.IsOrphan())
+		TransformComponent* transform = reg.TryGet<TransformComponent>(entity);
+
+		if (transform != nullptr)
 		{
-			transform.UpdateCachedWorldMatrix();
+			transform->UpdateCachedWorldMatrix();
 		}
 	}
 }
