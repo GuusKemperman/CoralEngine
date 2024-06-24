@@ -113,7 +113,6 @@ void CE::Device::InitializeWindow()
 	mPreviousWidth = 1920;
 	mPreviousHeight = 1080;
 
-	mFullscreen = false;
 	std::string applicationName{};
 
 #ifdef EDITOR
