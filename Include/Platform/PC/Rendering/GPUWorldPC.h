@@ -83,7 +83,7 @@ namespace CE
 		public IGPUWorld
 	{
 	public:
-        GPUWorld(const World& world);
+        GPUWorld(World& world);
 		~GPUWorld();
 		void Update() override;
 
