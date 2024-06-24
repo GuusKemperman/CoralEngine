@@ -31,22 +31,9 @@ void CE::CameraComponent::UpdateProjection(const float aspectRatio, bool recalcu
 {
 	mProjection = glm::perspective(mFOV, aspectRatio, mNear, mFar);
 
-	// On the ***REMOVED*** we give it an offset to have more padding on the edges of the screen, otherwise the UI clips outsise of the screen
-#if PLATFORM_***REMOVED***
-	float orthogaphicOffset = 0.075f;
-#else
-	float orthogaphicOffset = 0.0f;
-#endif
-
 	// Calculating the orthographic projection is a matter to discuss and look into further, 
 	// since it may not work as well on different resolution
-	mOrthographicProjection = glm::ortho(
-		-aspectRatio - orthogaphicOffset, 
-		aspectRatio + orthogaphicOffset, 
-		-1.f - orthogaphicOffset, 
-		1.f + orthogaphicOffset, 
-		-1.0f, 
-		1.0f);
+	mOrthographicProjection = glm::ortho(-aspectRatio, aspectRatio, -1.f, 1.f, -1.0f, 1.0f);
 	
 	if (recalculateViewProjection)
 	{
