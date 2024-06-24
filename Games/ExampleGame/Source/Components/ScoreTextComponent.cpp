@@ -26,17 +26,7 @@ void Game::ScoreTextComponent::OnTick(CE::World& world, const entt::entity owner
 		return;
 	}
 
-	uiTextComponent->mText = "Score: " + std::to_string(scoreComponent->mTotalScore);
-
-	auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "A Transform component is needed to run the Score Text Component!");
-		return;
-	}
-
-	transformComponent->SetLocalPosition({ transformComponent->GetLocalPosition().x, transformComponent->GetLocalPosition().y, 0 });
+	uiTextComponent->mText = std::to_string(scoreComponent->mTotalScore);
 }
 
 CE::MetaType Game::ScoreTextComponent::Reflect()

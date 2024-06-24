@@ -26,17 +26,7 @@ void Game::HighScoreTextComponent::OnTick(CE::World& world, const entt::entity o
 		return;
 	}
 
-	uiTextComponent->mText = "HighScore: " + std::to_string(scoreComponent->CheckHighScore());
-
-	auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "A Transform component is needed to run the High Score Text Component!");
-		return;
-	}
-
-	transformComponent->SetLocalPosition({transformComponent->GetLocalPosition().x, transformComponent->GetLocalPosition().y, 0});
+	uiTextComponent->mText = std::to_string(scoreComponent->CheckHighScore());
 }
 
 CE::MetaType Game::HighScoreTextComponent::Reflect()
