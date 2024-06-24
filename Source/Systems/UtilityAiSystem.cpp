@@ -1,6 +1,8 @@
 #include "Precomp.h"
 #include "Systems/UtilityAiSystem.h"
 
+#include <entt/entity/runtime_view.hpp>
+
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
 #include "World/Registry.h"
 #include "World/World.h"
@@ -59,52 +61,58 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 
 	for (auto [entity, currentAIController] : enemyAIControllerView.each())
 	{
-		float bestScore = std::numeric_limits<float>::lowest();
-		const MetaType* bestType = nullptr;
+		currentAIController.mCurrentScore = std::numeric_limits<float>::lowest();
+		currentAIController.mPreviousState = currentAIController.mCurrentState;
+		currentAIController.mCurrentState = nullptr;
 
 #ifdef EDITOR
 		currentAIController.mDebugPreviouslyEvaluatedScores.clear();
 #endif 
+	}
 
-		for (const BoundEvent& boundEvent : mBoundEvaluateEvents)
+	for (const BoundEvent& boundEvent : mBoundEvaluateEvents)
+	{
+		entt::sparse_set* const storage = reg.Storage(boundEvent.mType.get().GetTypeId());
+
+		if (storage == nullptr)
 		{
-			entt::sparse_set* const storage = reg.Storage(boundEvent.mType.get().GetTypeId());
+			continue;
+		}
 
-			if (storage == nullptr
-				|| !storage->contains(entity))
-			{
-				continue;
-			}
+		entt::runtime_view view{};
+		view.iterate(*storage);
+		view.iterate(reg.Storage<EnemyAiControllerComponent>());
 
+		for (entt::entity entity : view)
+		{
 			float score{};
-			FuncResult evalResult;
 
 			if (boundEvent.mIsStatic)
 			{
-				evalResult = boundEvent.mFunc.get().InvokeUncheckedUnpackedWithRVO(&score, world, entity);
+				boundEvent.mFunc.get().InvokeUncheckedUnpackedWithRVO(&score, world, entity);
 			}
 			else
 			{
 				MetaAny component{ boundEvent.mType, storage->value(entity), false };
-				evalResult = boundEvent.mFunc.get().InvokeUncheckedUnpackedWithRVO(&score, component, world, entity);
+				boundEvent.mFunc.get().InvokeUncheckedUnpackedWithRVO(&score, component, world, entity);
 			}
 
-			if (evalResult.HasError())
+			EnemyAiControllerComponent& aiController = reg.Get<EnemyAiControllerComponent>(entity);
+
+			if (score > aiController.mCurrentScore)
 			{
-				continue;
+				aiController.mCurrentScore = score;
+				aiController.mCurrentState = &boundEvent.mType.get();
 			}
 
 #ifdef EDITOR
-			currentAIController.mDebugPreviouslyEvaluatedScores.emplace_back(boundEvent.mType.get().GetName(), score);
-#endif 
-
-			if (score > bestScore)
-			{
-				bestScore = score;
-				bestType = &boundEvent.mType.get();
-			}
+			aiController.mDebugPreviouslyEvaluatedScores.emplace_back(boundEvent.mType.get().GetName(), score);
+#endif
 		}
+	}
 
+	for (auto [entity, currentAIController] : enemyAIControllerView.each())
+	{
 #ifdef EDITOR
 		std::sort(currentAIController.mDebugPreviouslyEvaluatedScores.begin(), currentAIController.mDebugPreviouslyEvaluatedScores.end(),
 			[](const std::pair<std::string_view, float>& lhs, const std::pair<std::string_view, float>& rhs)
@@ -113,10 +121,9 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 			});
 #endif
 
-		if (currentAIController.mCurrentState != bestType)
+		if (currentAIController.mCurrentState != currentAIController.mPreviousState)
 		{
-			CallTransitionEvent(sAIStateExitEvent, currentAIController.mCurrentState, world, entity);
-			currentAIController.mCurrentState = bestType;
+			CallTransitionEvent(sAIStateExitEvent, currentAIController.mPreviousState, world, entity);
 			CallTransitionEvent(sAIStateEnterEvent, currentAIController.mCurrentState, world, entity);
 		}
 	}

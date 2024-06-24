@@ -39,7 +39,6 @@ void CE::SwarmingAgentSystem::Update(World& world, float)
 
 		const glm::vec2 avoidanceDir = CalculateAvoidanceVelocity(world, entity, collider.mRadius * 2.0f, transform, collider);
 
-		Line line{ agentPosition, targetPos };
 		const glm::vec2 toTarget = targetPos - agentPosition;
 		glm::vec2 desiredDirectionTowardsTarget{};
 
@@ -47,8 +46,24 @@ void CE::SwarmingAgentSystem::Update(World& world, float)
 
 		if (dist2ToTarget != 0.0f)
 		{
+			float distToTarget = glm::sqrt(dist2ToTarget);
+			glm::vec2 toTargetDir = toTarget / distToTarget;
+
+			const glm::vec2 offset1 = glm::vec2{ -toTargetDir.y, toTargetDir.x } * collider.mRadius;
+			const glm::vec2 offset2 = -offset1;
+
+			const Line line1{ agentPosition, targetPos };
+			const Line line2{ agentPosition + offset1, targetPos + offset1 };
+			const Line line3{ agentPosition + offset2, targetPos + offset2 };
+
+			DrawDebugLine(world, DebugCategory::AINavigation, line1.mStart, line1.mEnd, glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
+			DrawDebugLine(world, DebugCategory::AINavigation, line2.mStart, line2.mEnd, glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
+			DrawDebugLine(world, DebugCategory::AINavigation, line3.mStart, line3.mEnd, glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
+
 			// Check if we can see the target
-			if (bvh.Query(line))
+			if (bvh.Query(line1)
+				|| bvh.Query(line2)
+				|| bvh.Query(line3))
 			{
 				const auto getDirectionSample = [&](const glm::vec2 samplePosition) -> glm::vec2
 					{
@@ -99,7 +114,7 @@ void CE::SwarmingAgentSystem::Update(World& world, float)
 			}
 			else
 			{
-				desiredDirectionTowardsTarget = toTarget / glm::sqrt(dist2ToTarget);
+				desiredDirectionTowardsTarget = toTargetDir;
 			}
 		}
 
@@ -170,7 +185,7 @@ void CE::SwarmingTargetSystem::Update(World& world, float dt)
 
 	const TransformedDiskColliderComponent& targetDisk = targetView.get<TransformedDiskColliderComponent>(targetEntity);
 	const glm::vec2 targetPosition = targetDisk.mCentre;
-	mPendingFlowField.mSpacing = std::min(targetDisk.mRadius, minRadius);
+	mPendingFlowField.mSpacing = minRadius;
 	mPendingFlowField.mFlowFieldWidth = std::max(static_cast<int>((target.mDesiredRadius * 2.0f) / mPendingFlowField.mSpacing), 3);
 
 	if ((mPendingFlowField.mFlowFieldWidth & 1) == 0)
