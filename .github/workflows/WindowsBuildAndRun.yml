@@ -89,5 +89,5 @@ jobs:
             echo "This bug is of unknown origin and will be resolved in time"
             exit 0
         }
-
+        
         exit $process.ExitCode
