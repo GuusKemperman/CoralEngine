@@ -15,6 +15,10 @@ namespace Game
 	public:
 		void OnTick(CE::World& world, entt::entity owner, float dt) const;
 
+		void OnBeginPlay(CE::World& world, entt::entity owner) const;
+
+		void DisplayScoreText(CE::World& world, entt::entity owner) const;
+
 		bool mDisplayHighScore = false;
 
 	private:
@@ -23,5 +27,4 @@ namespace Game
 		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(ScoreTextComponent);
 	};
-
 }

@@ -10,6 +10,16 @@
 
 void Game::ScoreTextComponent::OnTick(CE::World& world, const entt::entity owner, float) const
 {
+	DisplayScoreText(world, owner);
+}
+
+void Game::ScoreTextComponent::OnBeginPlay(CE::World& world, const entt::entity owner) const
+{
+	DisplayScoreText(world, owner);
+}
+
+void Game::ScoreTextComponent::DisplayScoreText(CE::World& world, const entt::entity owner) const
+{
 	auto* uiTextComponent = world.GetRegistry().TryGet<CE::UITextComponent>(owner);
 
 	if (uiTextComponent == nullptr)
@@ -35,12 +45,14 @@ void Game::ScoreTextComponent::OnTick(CE::World& world, const entt::entity owner
 	}
 }
 
+
 CE::MetaType Game::ScoreTextComponent::Reflect()
 {
 	auto type = CE::MetaType{ CE::MetaType::T<ScoreTextComponent>{}, "ScoreTextComponent" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	BindEvent(type, CE::sTickEvent, &ScoreTextComponent::OnTick);
+	BindEvent(type, CE::sBeginPlayEvent, &ScoreTextComponent::OnBeginPlay);
 
 	type.AddField(&ScoreTextComponent::mDisplayHighScore, "Display High Score").GetProperties().Add(CE::Props::sIsScriptableTag);
 
