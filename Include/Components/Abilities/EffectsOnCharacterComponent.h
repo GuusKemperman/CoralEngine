@@ -80,7 +80,7 @@ namespace CE
 		glm::vec3 mColor{};
 
 		// How long the effect should be displayed for.
-		float mDuration = 0.3f; // default value for instant effects
+		float mDuration = 0.175f; // default value for instant effects
 
 		// How long the effect has been active for.
 		float mDurationTimer{};

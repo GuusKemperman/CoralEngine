@@ -121,8 +121,7 @@ void CE::Logger::Log(std::string_view message,
 	
 	if (severity == Fatal)
 	{
-		DumpToCrashLog();
-		throw FatalErrorException{};
+		DumpToCrashLogAndExit();
 	}
 }
 
@@ -135,7 +134,7 @@ void CE::Logger::Clear()
 	mMutex.unlock();
 }
 
-void CE::Logger::DumpToCrashLog()
+void CE::Logger::DumpToCrashLogAndExit()
 {
 	const auto now = std::chrono::system_clock::now();
 	const std::filesystem::path logPath = (GetCrashLogDir() / std::to_string(now.time_since_epoch().count())).replace_extension(".txt");
@@ -152,4 +151,7 @@ void CE::Logger::DumpToCrashLog()
 	file.write(mEntryContents->Data(), mEntryContents->SizeInBytes());
 	file.close();
 	mMutex.unlock();
+
+	// See the console for more details
+	throw FatalErrorException{};
 }

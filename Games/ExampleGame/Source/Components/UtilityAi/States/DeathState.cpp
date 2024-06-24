@@ -24,9 +24,10 @@
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Assets/Prefabs/Prefab.h"
 
-void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
+void Game::DeathState::OnTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	if (!mDestroyEntityWhenDead)
+	if (!mDestroyEntityWhenDead
+		|| !mHasStateBeenEntered)
 	{
 		return;
 	}
@@ -34,38 +35,44 @@ void Game::DeathState::OnAiTick(CE::World& world, const entt::entity owner, cons
 	auto& registry = world.GetRegistry();
 
 	// Dim eye lights.
-	auto* transform = registry.TryGet<CE::TransformComponent>(owner);
-	if (transform == nullptr)
+
+	if (mCurrentDeathTimer < mLightFadeOutDuration)
 	{
-		LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
-		return;
+		auto* transform = registry.TryGet<CE::TransformComponent>(owner);
+		if (transform == nullptr)
+		{
+			LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+			return;
+		}
+
+		const auto removeLights = [&registry, dt](const auto& self, const CE::TransformComponent& current, float timeLeft) -> void
+			{
+				for (const CE::TransformComponent& child : current.GetChildren())
+				{
+					auto light = registry.TryGet<CE::PointLightComponent>(child.GetOwner());
+					if (light != nullptr)
+					{
+						const float decreaseAmount = light->mIntensity * (dt / timeLeft);
+						light->mIntensity = light->mIntensity - decreaseAmount;
+
+						if (light->mIntensity <= 0.0f)
+						{
+							registry.RemoveComponent<CE::PointLightComponent>(child.GetOwner());
+						}
+					}
+					self(self, child, timeLeft);
+				}
+			};
+		removeLights(removeLights, *transform, std::max((mLightFadeOutDuration - mCurrentDeathTimer + dt) * 0.5f, 0.0f));
 	}
 
-
-	const auto removeLights = [&registry, dt](const auto& self, const CE::TransformComponent& current, float timeLeft) -> void
-		{
-			for (const CE::TransformComponent& child : current.GetChildren())
-			{
-				auto light = registry.TryGet<CE::PointLightComponent>(child.GetOwner());
-				if (light != nullptr)
-				{
-					const float decreaseAmount = light->mIntensity * (dt / timeLeft);
-					light->mIntensity = light->mIntensity - decreaseAmount;
-
-					if (light->mIntensity <= 0.0f)
-					{
-						registry.RemoveComponent<CE::PointLightComponent>(child.GetOwner());
-					}
-				}
-				self(self, child, timeLeft);
-			}
-		};
-	removeLights(removeLights, *transform, std::max((mLightFadeOutDuration - mCurrentDeathTimer) * 0.5f, 0.0f));
 	mCurrentDeathTimer += dt;
 
 	if (mSink
 		&& mCurrentDeathTimer > mStartSinkingDelay) 
 	{
+		auto* transform = registry.TryGet<CE::TransformComponent>(owner);
+
 		glm::vec3 positionChange = transform->GetWorldPosition();
 		positionChange.y -= mSinkDownSpeed;
 
@@ -96,8 +103,12 @@ float Game::DeathState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 	return 0.f;
 }
 
-void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner) const
+void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 {
+	// Corpses shouldnt think
+	world.GetRegistry().RemoveComponent<CE::EnemyAiControllerComponent>(owner);
+	mHasStateBeenEntered = true;
+
 	// Call On Enemy Killed events.
 	const auto playerView = world.GetRegistry().View<CE::PlayerComponent>();
 	if (!playerView.empty())
@@ -192,23 +203,23 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 
 void Game::DeathState::OnFinishAnimationEvent(CE::World& world, entt::entity owner)
 {
-	const auto* enemyAiController = world.GetRegistry().TryGet<CE::EnemyAiControllerComponent>(owner);
-
-	if(CE::MakeTypeId<DeathState>() == enemyAiController->mCurrentState->GetTypeId())
+	if (!mHasStateBeenEntered)
 	{
-		auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-		if (animationRootComponent != nullptr)
-		{
-			animationRootComponent->SwitchAnimation(world.GetRegistry(), mDeathAnimation, animationRootComponent->mCurrentAnimation->mDuration -1.0f, 0, 0.0f);
-		}
-		else
-		{
-			LOG(LogAI, Warning, "Enemy {} does not have a AnimationRoot Component.", entt::to_integral(owner));
-		}
-
-		mSink = true;
+		return;
 	}
+
+	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+
+	if (animationRootComponent != nullptr)
+	{
+		animationRootComponent->SwitchAnimation(world.GetRegistry(), nullptr);
+	}
+	else
+	{
+		LOG(LogAI, Warning, "Enemy {} does not have a AnimationRoot Component.", entt::to_integral(owner));
+	}
+
+	mSink = true;
 }
 
 CE::MetaType Game::DeathState::Reflect()
@@ -216,7 +227,7 @@ CE::MetaType Game::DeathState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<DeathState>{}, "DeathState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &DeathState::OnAiTick);
+	BindEvent(type, CE::sTickEvent, &DeathState::OnTick);
 	BindEvent(type, CE::sAIEvaluateEvent, &DeathState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &DeathState::OnAiStateEnterEvent);
 	BindEvent(type, CE::sAnimationFinishEvent, &DeathState::OnFinishAnimationEvent);

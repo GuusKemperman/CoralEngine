@@ -97,14 +97,6 @@ namespace CE
 
 	/**
 	 * \brief
-	 * 	World& The world player is in.
-	 * \entt::entity The player whose reloading got interrupted.
-	 */
-	static constexpr Event<void(World&, entt::entity)> sReloadInterruptedEvent{ "OnReloadInterrupted" };
-
-
-	/**
-	 * \brief
 	 * 	World& The world the player and enemy are in.
 	 * \entt::entity The player.
 	 * \entt::entity The enemy that is about to die.

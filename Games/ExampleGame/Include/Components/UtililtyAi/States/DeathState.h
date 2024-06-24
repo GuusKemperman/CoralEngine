@@ -16,9 +16,9 @@ namespace Game
 	class DeathState
 	{
 	public:
-		void OnAiTick(CE::World& world, entt::entity owner, float dt);
+		void OnTick(CE::World& world, entt::entity owner, float dt);
 		static float OnAiEvaluate(const CE::World& world, entt::entity owner);
-		void OnAiStateEnterEvent(CE::World& world, entt::entity owner) const;
+		void OnAiStateEnterEvent(CE::World& world, entt::entity owner);
 		void OnFinishAnimationEvent(CE::World& world, entt::entity owner);
 
 		CE::AssetHandle<CE::Animation> mDeathAnimation{};
@@ -43,6 +43,8 @@ namespace Game
 
 	private:
 		bool mSink = false;
+
+		bool mHasStateBeenEntered = false;
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

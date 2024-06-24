@@ -69,7 +69,6 @@ void Game::ShootingBowState::OnFinishAnimationEvent(CE::World& world, entt::enti
 
 	if (enemyAiController == nullptr)
 	{
-		LOG(LogAI, Warning, "Dash State - enemy {} does not have a EnemyAiController Component.", entt::to_integral(owner));
 		return;
 	}
 
