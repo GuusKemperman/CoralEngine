@@ -4,6 +4,7 @@
 
 namespace CE
 {
+	class Registry;
 	class WorldDetails;
 	class Archiver;
 	class World;
@@ -196,6 +197,7 @@ namespace CE
 		// adjust its value without ever updating the world
 		// matrix. 
 		friend WorldDetails;
+		friend Registry;
 
 		friend ReflectAccess;
 		static MetaType Reflect();
