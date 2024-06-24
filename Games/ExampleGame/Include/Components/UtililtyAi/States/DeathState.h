@@ -27,7 +27,7 @@ namespace Game
 
 		bool mDestroyEntityWhenDead = true;
 
-		float mStartSinkingDelay = 120.0f;
+		float mStartSinkingDelay = 60.0f;
 
 		float mDestroyWhenBelowHeight = -2.5f;
 
