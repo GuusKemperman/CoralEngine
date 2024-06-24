@@ -52,6 +52,7 @@ namespace CE
         void ResolveMsaa(FrameBuffer & msaaFramebuffer);
         void CopyToRenderTargets(FrameBuffer& source);
         glm::vec2 GetDisplaySize();
+        glm::vec2 GetWindowPosition();
 
         /**
          * \brief Some build/testing servers do not support graphics. This function can be used to check that.
@@ -98,6 +99,9 @@ namespace CE
 
         int mPreviousWidth{};
 		int mPreviousHeight{};
+
+        int mPreviousPosX{};
+        int mPreviousPosY{};
 
         bool mUpdateWindow = false;
         bool mUploadCommandListOpen = false;

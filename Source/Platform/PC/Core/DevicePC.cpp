@@ -509,6 +509,8 @@ void CE::Device::NewFrame() {
 		mUpdateWindow = true;
 	}
 
+	glfwGetWindowPos(mWindow, &mPreviousPosX, &mPreviousPosY);
+
 	Device& engineDevice = Device::Get();
 	if (engineDevice.GetDisplaySize().x <= 0 || engineDevice.GetDisplaySize().y <= 0)
 		return;
@@ -787,6 +789,11 @@ void CE::Device::CopyToRenderTargets(FrameBuffer & source)
 glm::vec2 CE::Device::GetDisplaySize()
 {
 	return glm::vec2(mImpl->mViewport.Width, mImpl->mViewport.Height);
+}
+
+glm::vec2 CE::Device::GetWindowPosition()
+{
+	return glm::vec2{ static_cast<float>(mPreviousPosX), static_cast<float>(mPreviousPosY) };
 }
 
 std::shared_ptr<DXDescHeap> CE::Device::GetDescriptorHeap(int heap)

@@ -10,6 +10,24 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Random.h"
 
+namespace CE::Internal
+{
+	static void UpdateTransform(const TransformComponent& transform, ParticleEmitterComponent& emitter);
+}
+
+void CE::ParticleUpdateEmitterTransformsSystem::Update(World& world, float)
+{
+	for (const auto& [entity, transform, emitter] : world.GetRegistry().View<TransformComponent, ParticleEmitterComponent>().each())
+	{
+		Internal::UpdateTransform(transform, emitter);
+	}
+}
+
+CE::MetaType CE::ParticleUpdateEmitterTransformsSystem::Reflect()
+{
+	return MetaType{ MetaType::T<ParticleUpdateEmitterTransformsSystem>{}, "ParticleUpdateEmitterTransformsSystem", MetaType::Base<System>{} };
+}
+
 void CE::ParticleLifeTimeSystem::Update(World& world, float dt)
 {
 // #define LOG_NUM_OF_PARTICLES
@@ -67,6 +85,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 		numOfEmittersFound++;
 
 		emitter.mParticlesSpawnedDuringLastStep.clear();
+		Internal::UpdateTransform(transform, emitter);
 
 		if (emitter.mIsPaused)
 		{
@@ -79,10 +98,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 			emitter.PlayFromStart();
 		}
 
-		emitter.mEmitterWorldMatrix = transform.GetWorldMatrix();
-		emitter.mInverseEmitterWorldMatrix = glm::inverse(emitter.mEmitterWorldMatrix);
-		emitter.mEmitterOrientation = transform.GetWorldOrientation();
-		emitter.mInverseEmitterOrientation = glm::inverse(emitter.mEmitterOrientation);
+
 
 		uint32 numToSpawnThisFrame{};
 		const glm::mat4 spawnMatrix = emitter.mAreTransformsRelativeToEmitter ? glm::mat4{ 1.0f } : emitter.mEmitterWorldMatrix;
@@ -210,4 +226,12 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 CE::MetaType CE::ParticleLifeTimeSystem::Reflect()
 {
 	return MetaType{ MetaType::T<ParticleLifeTimeSystem>{}, "ParticleLifeTimeSystem", MetaType::Base<System>{} };
+}
+
+ void CE::Internal::UpdateTransform(const TransformComponent& transform, ParticleEmitterComponent& emitter)
+{
+	emitter.mEmitterWorldMatrix = transform.GetWorldMatrix();
+	emitter.mInverseEmitterWorldMatrix = glm::inverse(emitter.mEmitterWorldMatrix);
+	emitter.mEmitterOrientation = transform.GetWorldOrientation();
+	emitter.mInverseEmitterOrientation = glm::inverse(emitter.mEmitterOrientation);
 }

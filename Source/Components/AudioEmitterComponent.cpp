@@ -131,16 +131,17 @@ void CE::AudioEmitterComponent::Stop(AssetHandle<Sound> sound)
 	}
 
 	Name::HashType hash = GetSoundNameHash(sound);
+	auto it = mPlayingOnChannels.find(hash);
 
-	auto it = mPlayingOnChannels.equal_range(hash);
-	for (auto channel =  it.first; channel != it.second; ++channel)
+	while (it != mPlayingOnChannels.end())
 	{
-		FMOD_RESULT result = channel->second->stop();
+		FMOD_RESULT result = it->second->stop();
 		if (result != FMOD_OK)
 		{
 			LOG(LogAudio, Error, "FMOD Channel could not be stopped, FMOD error {}", static_cast<int>(result));
 		}
-		mPlayingOnChannels.erase(channel);
+		mPlayingOnChannels.erase(it);
+		it = mPlayingOnChannels.end();
 	}
 }
 
