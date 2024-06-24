@@ -3,6 +3,7 @@
 
 #include "Components/ComponentFilter.h"
 #include "Components/NameComponent.h"
+#include "Components/TransformComponent.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
 #include "World/Registry.h"
 
@@ -319,7 +320,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 				});
 		}
 
-		Search::EndCategory([]{ ImGui::PopID(); });
+		Search::EndCategory([] { ImGui::PopID(); });
 	}
 
 	Search::End();
@@ -348,5 +349,17 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 		}
 
 		Search::EndPopup();
+	}
+
+	// We don't have custom setter/getter support yet.
+	// WorldDetails may inspect mLocalPosition and
+	// adjust its value without ever updating the world
+	// matrix. 
+	for (const auto [entity, transform] : reg.View<TransformComponent>().each())
+	{
+		if (transform.IsOrphan())
+		{
+			transform.UpdateCachedWorldMatrix();
+		}
 	}
 }
