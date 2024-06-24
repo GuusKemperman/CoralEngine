@@ -332,7 +332,7 @@ bool CE::AbilitySystem::CanWeaponBeActivated(const CharacterComponent& character
         return false;
     }
     return weapon.mReloadCounter == 0.f &&
-        (weapon.mAmmoCounter > 0 && weapon.mRuntimeWeapon->mShootOnRelease == false || 
+        ((weapon.mAmmoCounter > 0 && weapon.mRuntimeWeapon->mShootOnRelease == false) || 
         ((weapon.mShotsAccumulated > 0 || weapon.mAmmoCounter > 0) && weapon.mRuntimeWeapon->mShootOnRelease == true)) &&
         weapon.mShotDelayCounter >= weapon.mRuntimeWeapon->mShotDelay &&
         (weapon.mRuntimeWeapon->mGlobalCooldown == false || characterData.mGlobalCooldownTimer <= 0.f);
