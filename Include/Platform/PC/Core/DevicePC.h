@@ -95,7 +95,12 @@ namespace CE
 
         GLFWwindow* mWindow{};
         GLFWmonitor* mMonitor{};
+
+#ifdef EDITOR
         bool mFullscreen = false;
+#else
+        bool mFullscreen = true;
+#endif
 
         int mPreviousWidth{};
 		int mPreviousHeight{};
