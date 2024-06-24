@@ -193,11 +193,6 @@ CE::ScriptReloadCompletedEvent::ScriptReloadCompletedEvent() :
 {
 }
 
-CE::ScriptReloadInterruptedEvent::ScriptReloadInterruptedEvent() :
-	ScriptOnlyPassComponentEvent(sReloadInterruptedEvent)
-{
-}
-
 CE::ScriptEnemyKilledEvent::ScriptEnemyKilledEvent() :
 	ScriptEvent(sEnemyKilledEvent, { { MakeTypeTraits<entt::entity>(), "Enemy about to die" }}, {})
 {
