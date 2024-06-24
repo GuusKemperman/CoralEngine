@@ -62,8 +62,6 @@ namespace CE
 		float mDuration = 10.0f;
 		float mCurrentTime{};
 
-		entt::entity mParent = entt::null;
-
 		glm::mat4 mEmitterWorldMatrix = glm::mat4{ 1.0f };
 		glm::mat4 mInverseEmitterWorldMatrix = glm::inverse(mEmitterWorldMatrix);
 

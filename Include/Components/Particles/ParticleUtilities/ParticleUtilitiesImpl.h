@@ -324,7 +324,7 @@ CE::MetaType CE::ParticleProperty<T>::Reflect()
 
 namespace CE::Internal
 {
-	void OnParticleComponentDestruct(World& world, entt::entity entity);
+	void OnParticleComponentDestruct(World& world, entt::entity oldEntity);
 	static constexpr std::string_view sTransferOwnershipName = "__TransferOwnership";
 }
 

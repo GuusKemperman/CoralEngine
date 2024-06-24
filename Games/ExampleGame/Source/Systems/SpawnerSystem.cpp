@@ -78,6 +78,13 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 					continue;
 				}
 
+				const CE::CharacterComponent& character = enemyView.get<CE::CharacterComponent>(entity);
+
+				if (character.mCurrentHealth <= 0.0f)
+				{
+					continue;
+				}
+
 				enemyCount[prefab]++;
 				numOfEnemies++;
 

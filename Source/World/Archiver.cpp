@@ -80,6 +80,17 @@ std::vector<entt::entity> CE::Archiver::Deserialize(World& world, const BinaryGS
 		DeserializeStorage(reg, serializedStorage, idRemappings);
 	}
 
+	// Due to legacy reasons,
+	// we never serialized the world matrix.
+	// So we have to update them here
+	for (const auto [entity, transform] : reg.View<TransformComponent>().each())
+	{
+		if (transform.IsOrphan())
+		{
+			transform.UpdateCachedWorldMatrix();
+		}
+	}
+
 	return entities;
 }
 

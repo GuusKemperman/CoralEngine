@@ -10,6 +10,24 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Random.h"
 
+namespace CE::Internal
+{
+	static void UpdateTransform(const TransformComponent& transform, ParticleEmitterComponent& emitter);
+}
+
+void CE::ParticleUpdateEmitterTransformsSystem::Update(World& world, float)
+{
+	for (const auto& [entity, transform, emitter] : world.GetRegistry().View<TransformComponent, ParticleEmitterComponent>().each())
+	{
+		Internal::UpdateTransform(transform, emitter);
+	}
+}
+
+CE::MetaType CE::ParticleUpdateEmitterTransformsSystem::Reflect()
+{
+	return MetaType{ MetaType::T<ParticleUpdateEmitterTransformsSystem>{}, "ParticleUpdateEmitterTransformsSystem", MetaType::Base<System>{} };
+}
+
 void CE::ParticleLifeTimeSystem::Update(World& world, float dt)
 {
 // #define LOG_NUM_OF_PARTICLES
@@ -67,6 +85,7 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 		numOfEmittersFound++;
 
 		emitter.mParticlesSpawnedDuringLastStep.clear();
+		Internal::UpdateTransform(transform, emitter);
 
 		if (emitter.mIsPaused)
 		{
@@ -79,24 +98,11 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 			emitter.PlayFromStart();
 		}
 
-		const float totalSpawnRateSurface = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetween(0.0f, 1.0f, .05f);
 
-		emitter.mParent = transform.GetParent() == nullptr ? entt::null : transform.GetParent()->GetOwner();
-		emitter.mEmitterWorldMatrix = transform.GetWorldMatrix();
-		emitter.mInverseEmitterWorldMatrix = glm::inverse(emitter.mEmitterWorldMatrix);
-		emitter.mEmitterOrientation = transform.GetWorldOrientation();
-		emitter.mInverseEmitterOrientation = glm::inverse(emitter.mEmitterOrientation);
-
-		const glm::mat4 spawnMatrix = emitter.mAreTransformsRelativeToEmitter ? glm::mat4{ 1.0f } : emitter.mEmitterWorldMatrix;
-		const glm::quat spawnOrientation = emitter.mAreTransformsRelativeToEmitter ? glm::quat{ 1.0f, 0.0f, 0.0f, 0.0f } : emitter.mEmitterOrientation;
-
-		const float t1 = emitter.mCurrentTime / emitter.mDuration;
-		const float dtAsEmitterLifeTimePercentage = dt / emitter.mDuration;
-		const float t2 = std::min(t1 + dtAsEmitterLifeTimePercentage, 1.0f);
-
-		const float surfaceAreaBetweenLastStepAndNow = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetweenFast(t1, t2);
 
 		uint32 numToSpawnThisFrame{};
+		const glm::mat4 spawnMatrix = emitter.mAreTransformsRelativeToEmitter ? glm::mat4{ 1.0f } : emitter.mEmitterWorldMatrix;
+		const glm::quat spawnOrientation = emitter.mAreTransformsRelativeToEmitter ? glm::quat{ 1.0f, 0.0f, 0.0f, 0.0f } : emitter.mEmitterOrientation;
 
 		if (emitter.mOnlyStayAliveUntilExistingParticlesAreGone)
 		{
@@ -105,8 +111,16 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				reg.Destroy(entity, true);
 			}
 		}
-		else
+		else if (emitter.IsPlaying())
 		{
+			const float totalSpawnRateSurface = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetween(0.0f, 1.0f, .05f);
+
+			const float t1 = emitter.mCurrentTime / emitter.mDuration;
+			const float dtAsEmitterLifeTimePercentage = dt / emitter.mDuration;
+			const float t2 = std::min(t1 + dtAsEmitterLifeTimePercentage, 1.0f);
+
+			const float surfaceAreaBetweenLastStepAndNow = emitter.mParticleSpawnRateOverTime.GetSurfaceAreaBetweenFast(t1, t2);
+
 			emitter.mNumOfParticlesToSpawnNextFrame += (surfaceAreaBetweenLastStepAndNow / totalSpawnRateSurface) * static_cast<float>(emitter.mNumOfParticlesToSpawn);
 			const float numToSpawnAsFloat = floorf(emitter.mNumOfParticlesToSpawnNextFrame);
 
@@ -116,7 +130,6 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 				numToSpawnThisFrame = static_cast<uint32>(numToSpawnAsFloat);
 			}
 		}
-
 
 		emitter.mCurrentTime += dt;
 
@@ -213,4 +226,12 @@ size_t CE::ParticleLifeTimeSystem::UpdateEmitters(World& world, float dt, size_t
 CE::MetaType CE::ParticleLifeTimeSystem::Reflect()
 {
 	return MetaType{ MetaType::T<ParticleLifeTimeSystem>{}, "ParticleLifeTimeSystem", MetaType::Base<System>{} };
+}
+
+ void CE::Internal::UpdateTransform(const TransformComponent& transform, ParticleEmitterComponent& emitter)
+{
+	emitter.mEmitterWorldMatrix = transform.GetWorldMatrix();
+	emitter.mInverseEmitterWorldMatrix = glm::inverse(emitter.mEmitterWorldMatrix);
+	emitter.mEmitterOrientation = transform.GetWorldOrientation();
+	emitter.mInverseEmitterOrientation = glm::inverse(emitter.mEmitterOrientation);
 }
