@@ -13,7 +13,9 @@ namespace Game
 	class ScoreTextComponent
 	{
 	public:
-		static void OnTick(CE::World& world, entt::entity owner, float dt);
+		void OnTick(CE::World& world, entt::entity owner, float dt) const;
+
+		bool mDisplayHighScore = false;
 
 	private:
 

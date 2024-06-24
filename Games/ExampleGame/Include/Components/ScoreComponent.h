@@ -16,9 +16,10 @@ namespace Game
 		int CheckHighScore() const;
 
 		int mTotalScore = 0;
-		static inline int mHighScore = 0;
 
 	private:
+
+		static inline int mHighScore = 0;
 
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();

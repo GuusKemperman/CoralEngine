@@ -371,7 +371,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Components\HighScoreTextComponent.cpp" />
     <ClCompile Include="Source\Components\ScoreComponent.cpp" />
     <ClCompile Include="Source\Components\ScoreTextComponent.cpp" />
     <ClCompile Include="Source\Components\CameraShakeComponent.cpp" />
@@ -432,7 +431,6 @@
     <ClCompile Include="Source\Utilities\UpgradeFunctionality.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\Components\HighScoreTextComponent.h" />
     <ClInclude Include="Include\Components\CameraShakeComponent.h" />
     <ClInclude Include="Include\Assets\Upgrade.h" />
     <ClCompile Include="Source\Components\UtilityAi\States\StompState.cpp" />
