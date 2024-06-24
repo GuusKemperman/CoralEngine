@@ -30,7 +30,8 @@ void Game::ChasingState::OnAiStateExit(CE::World& world, const entt::entity owne
 float Game::ChasingState::OnAiEvaluate(const CE::World& world, const entt::entity owner) const
 {
 	const auto score = AIFunctionality::GetBestScoreBasedOnDetection(world, owner, mRadius);
-	return score;
+
+	return std::min(score, 0.5f);
 }
 
 void Game::ChasingState::OnBeginPlay(CE::World& world, const entt::entity owner) const
