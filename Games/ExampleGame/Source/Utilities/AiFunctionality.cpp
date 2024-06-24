@@ -17,11 +17,10 @@ float Game::AIFunctionality::GetBestScoreBasedOnDetection(const CE::World& world
 {
 	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
 
-	const entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent>().front();
+	const entt::entity entityId = world.GetRegistry().View<CE::PlayerComponent, CE::TransformComponent>().front();
 
 	if (entityId == entt::null)
 	{
-		LOG(LogAI, Warning, "An entity with a Player is needed to run the Charging Up State!");
 		return 0.0f;
 	}
 
@@ -33,7 +32,7 @@ float Game::AIFunctionality::GetBestScoreBasedOnDetection(const CE::World& world
 
 	float highestScore = 0.0f;
 
-	auto* targetComponent = world.GetRegistry().TryGet<CE::TransformComponent>(entityId);
+	auto& targetComponent = world.GetRegistry().Get<CE::TransformComponent>(entityId);
 
 	if (transformComponent == nullptr)
 	{
@@ -41,7 +40,7 @@ float Game::AIFunctionality::GetBestScoreBasedOnDetection(const CE::World& world
 		return 0.0f;
 	}
 
-	const float distance = glm::distance(transformComponent->GetWorldPosition(), targetComponent->GetWorldPosition());
+	const float distance = glm::distance(transformComponent->GetWorldPosition(), targetComponent.GetWorldPosition());
 
 	float score = 0.0f;
 
