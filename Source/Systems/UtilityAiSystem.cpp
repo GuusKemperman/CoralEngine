@@ -63,7 +63,7 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 	{
 		currentAIController.mCurrentScore = std::numeric_limits<float>::lowest();
 		currentAIController.mPreviousState = currentAIController.mCurrentState;
-		currentAIController.mCurrentState = nullptr;
+		currentAIController.mNextState = nullptr;
 
 #ifdef EDITOR
 		currentAIController.mDebugPreviouslyEvaluatedScores.clear();
@@ -102,7 +102,7 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 			if (score > aiController.mCurrentScore)
 			{
 				aiController.mCurrentScore = score;
-				aiController.mCurrentState = &boundEvent.mType.get();
+				aiController.mNextState = &boundEvent.mType.get();
 			}
 
 #ifdef EDITOR
@@ -120,6 +120,7 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 				return lhs.second > rhs.second;
 			});
 #endif
+		currentAIController.mCurrentState = currentAIController.mNextState;
 
 		if (currentAIController.mCurrentState != currentAIController.mPreviousState)
 		{

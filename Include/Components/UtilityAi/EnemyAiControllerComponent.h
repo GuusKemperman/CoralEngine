@@ -8,6 +8,7 @@ namespace CE
 	public:
 		const MetaType* mPreviousState{};
 		const MetaType* mCurrentState{};
+		const MetaType* mNextState{};
 		float mCurrentScore{};
 
 #ifdef EDITOR
