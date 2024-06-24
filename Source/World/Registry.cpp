@@ -194,33 +194,38 @@ entt::entity CE::Registry::CreateFromPrefab(const Prefab& prefab,
 	}
 
 	const entt::entity entity = CreateFromFactory(factories[0], true, hint);
+	TransformComponent* transform = TryGet<TransformComponent>(entity);
 
-	if (localPosition != nullptr
-		|| localOrientation != nullptr
-		|| localScale != nullptr
-		|| parent != nullptr)
+	if (transform != nullptr)
 	{
-		TransformComponent* transform = TryGet<TransformComponent>(entity);
-
-		if (localPosition != nullptr)
+		if (localPosition != nullptr
+			|| localOrientation != nullptr
+			|| localScale != nullptr
+			|| parent != nullptr)
 		{
-			transform->SetLocalPosition(*localPosition);
+
+			if (localPosition != nullptr)
+			{
+				transform->SetLocalPosition(*localPosition);
+			}
+
+			if (localOrientation != nullptr)
+			{
+				transform->SetLocalOrientation(*localOrientation);
+			}
+
+			if (localScale != nullptr)
+			{
+				transform->SetLocalScale(*localScale);
+			}
+
+			if (parent != nullptr)
+			{
+				transform->SetParent(parent, false);
+			}
 		}
 
-		if (localOrientation != nullptr)
-		{
-			transform->SetLocalOrientation(*localOrientation);
-		}
-
-		if (localScale != nullptr)
-		{
-			transform->SetLocalScale(*localScale);
-		}
-
-		if (parent != nullptr)
-		{
-			transform->SetParent(parent, false);
-		}
+		transform->UpdateCachedWorldMatrix();
 	}
 
 	// We wait with calling BeginPlay until all the
