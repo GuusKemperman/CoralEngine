@@ -15,11 +15,11 @@ namespace
 }
 
 CE::TransformComponent::TransformComponent(TransformComponent&& other) noexcept :
-	mLocalPosition(other.mLocalPosition),
-	mOwner(other.mOwner),
-	mLocalOrientation(other.mLocalOrientation),
-	mLocalScale(other.mLocalScale)
+	mOwner(other.mOwner)
 {
+	SetLocalPosition(other.mLocalPosition);
+	SetLocalOrientation(other.mLocalOrientation);
+	SetLocalScale(other.mLocalScale);
 	SetParent(other.mParent);
 	other.SetParent(nullptr);
 }
@@ -35,15 +35,14 @@ CE::TransformComponent::TransformComponent(const TransformComponent& other) noex
 
 CE::TransformComponent::~TransformComponent()
 {
-	SetParent(nullptr);
-
 	// The children detach themselves from their parent, to prevent modifying the array while iterating over it, make a copy.
 	const std::vector<std::reference_wrapper<TransformComponent>> childrenCopy = mChildren;
 
 	for (TransformComponent& child : childrenCopy)
 	{
-		child.SetParent(nullptr);
+		child.SetParent(nullptr, true);
 	}
+	SetParent(nullptr);
 }
 
 void CE::TransformComponent::OnConstruct(World&, entt::entity owner)

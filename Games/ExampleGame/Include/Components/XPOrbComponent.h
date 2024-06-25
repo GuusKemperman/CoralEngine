@@ -12,7 +12,7 @@ namespace Game
 		float mHoverTime = 0.0f;
 		float mHoverSpeed = 2.0f;
 		float mHoverHeight = .1f;
-		float mSecondsRemainingUntilDespawn = 120.0f;
+		float mSecondsRemainingUntilDespawn = 30.0f;
 
 	private:
 		friend CE::ReflectAccess;
