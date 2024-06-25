@@ -23,6 +23,7 @@
 #include "Utilities/DrawDebugHelpers.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Assets/Prefabs/Prefab.h"
+#include "Components/ScoreComponent.h"
 
 void Game::DeathState::OnTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -198,6 +199,19 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 
 	if (mExpOrb != nullptr) {
 		world.GetRegistry().CreateFromPrefab(*mExpOrb, entt::null, nullptr, nullptr, nullptr, transform);
+	}
+
+	//auto* scoreTextComponent = world.GetRegistry().View<Game::ScoreTextComponent>();
+
+	const auto scoreComponent = world.GetRegistry().TryGet<Game::ScoreComponent>(world.GetRegistry().View<Game::ScoreComponent>().front());
+
+	if (scoreComponent != nullptr)
+	{
+		scoreComponent->mTotalScore += 1;
+	}
+	else
+	{
+		LOG(LogAI, Warning, "There is no score component in this ***REMOVED***ne!");
 	}
 }
 
