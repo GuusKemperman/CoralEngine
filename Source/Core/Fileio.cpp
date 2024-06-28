@@ -52,7 +52,7 @@ std::vector<char> FileIO::ReadBinaryFile(Directory type, const std::string& path
     file.seekg(0, std::ios::beg);
     std::vector<char> buffers(size);
     if (file.read(buffers.data(), size)) return buffers;
-    assert(false);
+    ABORT;
     return vector<char>();
 }
 

@@ -26,23 +26,33 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
 
+	LOG(LogCore, Verbose, "Created logger");
+
 	std::thread deviceAgnosticSystems
 	{
 		[&]
 		{
+			LOG(LogCore, Verbose, "Creating MetaManager");
 			MetaManager::StartUp();
+			LOG(LogCore, Verbose, "Creating AssetManager");
 			AssetManager::StartUp();
+			LOG(LogCore, Verbose, "Booting up virtual machine");
 			VirtualMachine::StartUp();
 		}
 	};
 
 	if (!Device::IsHeadless())
 	{
+		LOG(LogCore, Verbose, "Creating window & device");
 		Device::StartUp();
+		LOG(LogCore, Verbose, "Creating renderer");
 		Renderer::StartUp();
 	}
 
+	LOG(LogCore, Verbose, "Creating Audio");
 	Audio::StartUp();
+
+	LOG(LogCore, Verbose, "Creating Input");
 	Input::StartUp();
 
 #ifdef EDITOR
@@ -58,6 +68,7 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 	Editor::StartUp();
 #endif // EDITOR
 
+	LOG(LogCore, Verbose, "Creating UnitTestManager");
 	UnitTestManager::StartUp();
 
 	if (Device::sIsHeadless)
@@ -91,28 +102,40 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 			exit(numFailed + 1);
 		}
 	}
+
+	LOG(LogCore, Verbose, "Completed engine startup");
 }
 
 CE::Engine::~Engine()
 {
+	LOG(LogCore, Verbose, "Shutting down UnitTestManager");
 	UnitTestManager::ShutDown();
 
 #ifdef EDITOR
+	LOG(LogCore, Verbose, "Shutting down Editor");
 	Editor::ShutDown();
 #endif  // EDITOR
 
+	LOG(LogCore, Verbose, "Shutting down VirtualMachine");
 	VirtualMachine::ShutDown();
+	LOG(LogCore, Verbose, "Shutting down AssetManager");
 	AssetManager::ShutDown();
+	LOG(LogCore, Verbose, "Shutting down MetaManager");
 	MetaManager::ShutDown();
+	LOG(LogCore, Verbose, "Shutting down Audio");
 	Audio::ShutDown();
+	LOG(LogCore, Verbose, "Shutting down Input");
 	Input::ShutDown();
 
 	if (!Device::IsHeadless())
 	{
+		LOG(LogCore, Verbose, "Shutting down Renderer");
 		Renderer::ShutDown();
+		LOG(LogCore, Verbose, "Shutting down Device");
 		Device::ShutDown();
 	}
 
+	LOG(LogCore, Verbose, "Shutting down Logger");
 	Logger::ShutDown();
 	FileIO::ShutDown();
 }
@@ -133,6 +156,7 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 		return;
 	}
 
+	LOG(LogCore, Verbose, "Loading initial level - {}", starterLevel.StringView());
 	World world = level->CreateWorld(true);
 #endif // EDITOR
 

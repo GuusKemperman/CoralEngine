@@ -21,7 +21,6 @@ DXDescHeap::DXDescHeap(const ComPtr<ID3D12Device5>& device, int numDescriptors, 
 	if (FAILED(hr))
 	{
 		LOG(LogCore, Fatal, "Failed to create descriptor heap");
-		assert(false && "Failed to create descriptor heap");
 	}
 	mDescriptorSize = device->GetDescriptorHandleIncrementSize(type);
 	mDescriptorHeap->SetName(name);
@@ -77,8 +76,7 @@ DXHeapHandle DXDescHeap::AllocateResource(DXResource* resource, D3D12_SHADER_RES
 
 	if (mType != D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
 	{
-		LOG(LogCore, Warning, "Trying to allocate an SRV in the wrong heap");
-		assert(false && "Trying to allocate an SRV in the wrong heap");
+		LOG(LogCore, Fatal, "Trying to allocate an SRV in the wrong heap");
 		return DXHeapHandle();
 	}
 	if (mClearList.size() > 0)
@@ -94,7 +92,6 @@ DXHeapHandle DXDescHeap::AllocateResource(DXResource* resource, D3D12_SHADER_RES
 	else
 	{
 		LOG(LogCore, Fatal, "Descriptor heap maximum reached");
-		assert(false && "Descriptor heap maximum reached");
 		return DXHeapHandle();
 	}
 
@@ -113,8 +110,7 @@ DXHeapHandle DXDescHeap::AllocateUAV(DXResource* resource, D3D12_UNORDERED_ACCES
 
 	if (mType != D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
 	{
-		LOG(LogCore, Warning, "Trying to allocate an SRV in the wrong heap");
-		assert(false && "Trying to allocate an SRV in the wrong heap");
+		LOG(LogCore, Fatal, "Trying to allocate an SRV in the wrong heap");
 		return DXHeapHandle();
 	}
 	if (mClearList.size() > 0)
@@ -130,7 +126,6 @@ DXHeapHandle DXDescHeap::AllocateUAV(DXResource* resource, D3D12_UNORDERED_ACCES
 	else
 	{
 		LOG(LogCore, Fatal, "Descriptor heap maximum reached");
-		assert(false && "Descriptor heap maximum reached");
 		return DXHeapHandle();
 	}
 
@@ -153,8 +148,7 @@ DXHeapHandle DXDescHeap::AllocateRenderTarget(DXResource* resource, D3D12_RENDER
 
 	if (mType != D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
 	{
-		LOG(LogCore, Warning, "Trying to allocate an RTV in the wrong heap");
-		assert(false && "Trying to allocate an RTV in the wrong heap");
+		LOG(LogCore, Fatal, "Trying to allocate an RTV in the wrong heap");
 		return DXHeapHandle();
 	}
 
@@ -171,7 +165,6 @@ DXHeapHandle DXDescHeap::AllocateRenderTarget(DXResource* resource, D3D12_RENDER
 	else
 	{
 		LOG(LogCore, Fatal, "Descriptor heap maximum reached");
-		assert(false && "Descriptor heap maximum reached");
 		return DXHeapHandle();
 	}
 
@@ -190,8 +183,7 @@ DXHeapHandle DXDescHeap::AllocateRenderTarget(DXResource* resource, ID3D12Device
 
 	if (mType != D3D12_DESCRIPTOR_HEAP_TYPE_RTV)
 	{
-		LOG(LogCore, Warning, "Trying to allocate an RTV in the wrong heap");
-		assert(false && "Trying to allocate an RTV in the wrong heap");
+		LOG(LogCore, Fatal, "Trying to allocate an RTV in the wrong heap");
 		return DXHeapHandle();
 	}
 
@@ -208,7 +200,6 @@ DXHeapHandle DXDescHeap::AllocateRenderTarget(DXResource* resource, ID3D12Device
 	else
 	{
 		LOG(LogCore, Fatal, "Descriptor heap maximum reached");
-		assert(false && "Descriptor heap maximum reached");
 		return DXHeapHandle();
 	}
 
@@ -224,8 +215,7 @@ DXHeapHandle DXDescHeap::AllocateDepthStencil(DXResource* resource, D3D12_DEPTH_
 
 	if (mType != D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
 	{
-		LOG(LogCore, Warning, "Trying to allocate a DSV in the wrong heap");
-		assert(false && "Trying to allocate an DSV in the wrong heap");
+		LOG(LogCore, Fatal, "Trying to allocate a DSV in the wrong heap");
 		return DXHeapHandle();
 	}
 
@@ -242,7 +232,6 @@ DXHeapHandle DXDescHeap::AllocateDepthStencil(DXResource* resource, D3D12_DEPTH_
 	else
 	{
 		LOG(LogCore, Fatal, "Descriptor heap maximum reached");
-		assert(false && "Descriptor heap maximum reached");
 		return DXHeapHandle();
 	}
 
@@ -260,8 +249,7 @@ DXHeapHandle DXDescHeap::AllocateDepthStencil(DXResource* resource, ID3D12Device
 	int slot = -1;
 
 	if (mType != D3D12_DESCRIPTOR_HEAP_TYPE_DSV) {
-		LOG(LogCore, Warning, "Trying to allocate a DSV in the wrong heap");
-		assert(false && "Trying to allocate an DSV in the wrong heap");
+		LOG(LogCore, Fatal, "Trying to allocate a DSV in the wrong heap");
 		return DXHeapHandle();
 	}
 
@@ -278,7 +266,6 @@ DXHeapHandle DXDescHeap::AllocateDepthStencil(DXResource* resource, ID3D12Device
 	else
 	{
 		LOG(LogCore, Fatal, "Descriptor heap maximum reached");
-		assert(false && "Descriptor heap maximum reached");
 		return DXHeapHandle();
 	}
 

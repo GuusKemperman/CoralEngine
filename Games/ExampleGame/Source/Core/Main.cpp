@@ -9,6 +9,8 @@
 
 int main(int argc, char* argv[])
 {
+	std::cout << "Entered main - GameDir: " << GAME_DIR << std::endl;
+
 	try
 	{
 		CE::Engine engine{ argc, argv, GAME_DIR };

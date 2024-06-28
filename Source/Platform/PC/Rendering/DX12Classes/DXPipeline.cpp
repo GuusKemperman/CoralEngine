@@ -11,7 +11,8 @@ ComPtr<ID3D12PipelineState> DXPipelineBuilder::Build(ComPtr<ID3D12Device5> devic
 	HRESULT hr;
 	ComPtr<ID3D12PipelineState> pipeline;
 
-	if (mComputeShaderBuffer == nullptr) {
+	if (mComputeShaderBuffer == nullptr) 
+	{
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.InputLayout.NumElements = static_cast<UINT>(mInputs.size());
 		psoDesc.InputLayout.pInputElementDescs = mInputs.data();
@@ -41,18 +42,16 @@ ComPtr<ID3D12PipelineState> DXPipelineBuilder::Build(ComPtr<ID3D12Device5> devic
 		psoDesc.DepthStencilState = mDepth;
 		hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipeline));
 	}
-	else {
+	else 
+	{
 		D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.pRootSignature = root.Get();
 		psoDesc.CS = { reinterpret_cast<UINT8*>(mComputeShaderBuffer), mComputeShaderSize };
 		hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(&pipeline));
 	}
 
-	if (FAILED(hr))
-	{
-		MessageBox(NULL, L"Failed to create pipeline", L"FATAL ERROR!", MB_ICONERROR | MB_OK);
-		assert(false && "Failed to create pipeline");
-	}
+	ASSERT_LOG(SUCCEEDED(hr), "Failed to create pipeline");
+
 	pipeline->SetName(name);
 
 	return pipeline;

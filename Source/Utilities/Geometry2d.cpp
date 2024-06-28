@@ -166,7 +166,12 @@ bool CE::IsPointRightOfLine(glm::vec2 point, glm::vec2 line1, glm::vec2 line2)
 bool CE::IsClockwise(const PolygonPoints& polygon)
 {
 	size_t n = polygon.size();
-	assert(n > 2);
+
+	if (polygon.size() < 2)
+	{
+		return true;
+	}
+
 	float signedArea = 0.f;
 
 	for (size_t i = 0; i < n; ++i)
