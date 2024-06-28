@@ -16,9 +16,8 @@ DXConstBuffer::DXConstBuffer(const ComPtr<ID3D12Device5>& device, size_t dataSiz
 		mBuffers[i] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, bufferDebugName, D3D12_RESOURCE_STATE_GENERIC_READ);
 
 		CD3DX12_RANGE readRange(0, 0);
-		HRESULT hr = mBuffers[i]->GetResource()->Map(0, &readRange, reinterpret_cast<void**>(&mBufferGPUAddress[i]));
-		if (FAILED(hr))
-			assert(false && "Buffer mapping failed");
+		[[maybe_unused]] const HRESULT hr = mBuffers[i]->GetResource()->Map(0, &readRange, reinterpret_cast<void**>(&mBufferGPUAddress[i]));
+		ASSERT_LOG(!(FAILED(hr)), "Buffer mapping failed");
 	}
 }
 

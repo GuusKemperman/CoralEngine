@@ -17,17 +17,13 @@ ComPtr<ID3D12RootSignature> DXSignatureBuilder::Build(ComPtr<ID3D12Device5> devi
 	ComPtr<ID3DBlob> errBlob;
 	HRESULT hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &serializedSignature, &errBlob);
 
-	if (FAILED(hr)) {
-		printf((const char*)errBlob->GetBufferPointer());
-		assert(false && "Failed to serialize root signature");
-	}
+	ASSERT_LOG(!(FAILED(hr)), "Failed to serialize root signature - {}", (const char*)errBlob->GetBufferPointer());
 
 	ComPtr<ID3D12RootSignature> signature;
 	hr = device->CreateRootSignature(0, serializedSignature->GetBufferPointer(), serializedSignature->GetBufferSize(), IID_PPV_ARGS(&signature));
-	if (FAILED(hr)) {
-		MessageBox(NULL, L"Failed to initialize root signature", L"FATAL ERROR!", MB_ICONERROR | MB_OK);
-		assert(false && "Failed to initialize root signature");
-	}
+
+	ASSERT_LOG(!(FAILED(hr)), "Failed to serialize root signature");
+
 	signature->SetName(name);
 	return signature;
 }

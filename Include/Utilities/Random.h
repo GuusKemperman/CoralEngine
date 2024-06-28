@@ -78,6 +78,6 @@ namespace CE
 		REFLECT_AT_START_UP(Random);
 
 		static inline std::random_device sDevice{};
-		static inline DefaultRandomEngine sEngine{0};
+		static inline DefaultRandomEngine sEngine{ sDevice() };
 	};
 }
