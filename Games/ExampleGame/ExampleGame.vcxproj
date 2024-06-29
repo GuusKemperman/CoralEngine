@@ -378,6 +378,7 @@
     <ClCompile Include="Source\Components\UtilityAi\States\ShootingBowState.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\KnockbackEmitterComponent.cpp" />
     <ClCompile Include="Source\Components\XPOrbComponent.cpp" />
+    <ClCompile Include="Source\Components\XPOrbManagerComponent.cpp" />
     <ClCompile Include="Source\Systems\XPOrbSystem.cpp" />
     <ClCompile Include="Source\Utilities\AiFunctionality.cpp" />
     <ClCompile Include="Source\Components\EnvironmentGeneratorComponent.cpp" />
@@ -438,6 +439,7 @@
   <ItemGroup>
     <ClInclude Include="Include\Components\PointTowardsGraveyardTags.h" />
     <ClInclude Include="Include\Components\XPOrbComponent.h" />
+    <ClInclude Include="Include\Components\XPOrbManagerComponent.h" />
     <ClInclude Include="Include\Systems\XPOrbSystem.h" />
     <ClInclude Include="Include\Utilities\AiFunctionality.h" />
     <ClInclude Include="Include\Components\EnvironmentGeneratorComponent.h" />

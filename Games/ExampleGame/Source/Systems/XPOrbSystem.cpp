@@ -5,11 +5,37 @@
 
 #include "Components/TransformComponent.h"
 #include "Components/XPOrbComponent.h"
+#include "Components/XPOrbManagerComponent.h"
 #include "World/Registry.h"
 
 void Game::XPOrbSystem::Update(CE::World& world, float dt)
 {
 	CE::Registry& reg = world.GetRegistry();
+
+	auto& xpOrbStorage = reg.Storage<XPOrbComponent>();
+
+	const entt::entity managerEntity = reg.View<XPOrbManagerComponent>().front();
+
+	if (managerEntity == entt::null
+		&& !xpOrbStorage.empty())
+	{
+		LOG(LogGame, Error, "XPOrbs requires an entity with the XPOrbManagerComponent to be somewhere in the world");
+		return;
+	}
+	const XPOrbManagerComponent& manager = reg.Get<XPOrbManagerComponent>(managerEntity);
+
+	const size_t maxSize = manager.mMaxAlive;
+	if (xpOrbStorage.size() > maxSize)
+	{
+		const size_t amountToErase = xpOrbStorage.size() - maxSize;
+		xpOrbStorage.sort_n(amountToErase, [&xpOrbStorage](const entt::entity lhs, const entt::entity rhs)
+			{
+				return xpOrbStorage.get(lhs).mTimeAlive < xpOrbStorage.get(rhs).mTimeAlive;
+			});
+		const auto begin = static_cast<entt::sparse_set&>(xpOrbStorage).begin();
+		reg.Destroy(begin, begin + amountToErase, true);
+		reg.RemovedDestroyed();
+	}
 
 	const CE::MetaType* levellingScript = CE::MetaManager::Get().TryGetType("S_LevellingScript");
 
@@ -69,10 +95,13 @@ void Game::XPOrbSystem::Update(CE::World& world, float dt)
 
 	const glm::vec2 levellingPos2D = levellingTransform.GetWorldPosition2D();
 
+	const float speedThisFrame = manager.mChaseSpeed * dt;
+	const float chaseRangeSqrd = manager.mChaseRange * manager.mChaseRange;
+
 	for (auto [entity, transform, orb] : reg.View<CE::TransformComponent, XPOrbComponent>().each())
 	{
-		orb.mSecondsRemainingUntilDespawn -= dt;
-		if (orb.mSecondsRemainingUntilDespawn <= 0.0f)
+		orb.mTimeAlive += dt;
+		if (orb.mTimeAlive > manager.mMaxTimeAlive)
 		{
 			reg.Destroy(entity, true);
 			continue;
@@ -89,24 +118,22 @@ void Game::XPOrbSystem::Update(CE::World& world, float dt)
 			if (!*isLevelling
 				&& distance2 <= pickUpRange2)
 			{
-				addXPFunc->InvokeUncheckedUnpacked(levellingComponent, orb.mXPValue);
+				addXPFunc->InvokeUncheckedUnpacked(levellingComponent, manager.mXPValue);
 				reg.Destroy(entity, true);
 				continue;
 			}
 
-			if (distance2 < orb.mChaseRange * orb.mChaseRange
+			if (distance2 < chaseRangeSqrd
 				&& distance2 > 0.0f)
 			{
 				const float distance = glm::sqrt(distance2);
-				const float speed = glm::min(orb.mChaseSpeed * dt, distance);
+				const float speed = glm::min(speedThisFrame, distance);
 
 				worldPos = CE::To3DRightForward(worldPos2D + (toLevelling / distance) * speed, worldPos[CE::Axis::Up]);
 			}
 		}
 
-		orb.mHoverTime += orb.mHoverSpeed * dt;
-		worldPos[CE::Axis::Up] = glm::sin(orb.mHoverTime) * orb.mHoverHeight + 1.0f;
-
+		worldPos[CE::Axis::Up] = glm::sin(orb.mTimeAlive * manager.mHoverSpeed) * manager.mHoverHeight + 1.0f;
 		transform.SetWorldPosition(worldPos);
 	}
 }
