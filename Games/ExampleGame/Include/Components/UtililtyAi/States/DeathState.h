@@ -25,25 +25,15 @@ namespace Game
 
 		float mCurrentDeathTimer = 0.0f;
 
-		bool mDestroyEntityWhenDead = true;
-
-		float mStartSinkingDelay = 60.0f;
-
-		float mDestroyWhenBelowHeight = -2.5f;
-
 		float mLightFadeOutDuration = 1.0f;
 
 		CE::AssetHandle<CE::Prefab> mExpOrb{};
-
-		float mSinkDownSpeed = 0.02f;
 
 		float mAnimationSpeed = 1.0f;
 
 		float mAnimationStartTimePercentage = .3f;
 
 	private:
-		bool mSink = false;
-
 		bool mHasStateBeenEntered = false;
 
 		friend CE::ReflectAccess;

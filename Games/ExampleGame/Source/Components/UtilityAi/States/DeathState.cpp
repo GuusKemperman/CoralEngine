@@ -6,12 +6,9 @@
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Components/AnimationRootComponent.h"
-#include "Utilities/AiFunctionality.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
-#include "Components/AttachToBoneComponent.h"
-#include "Components/MeshColorComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SkinnedMeshComponent.h"
@@ -27,8 +24,7 @@
 
 void Game::DeathState::OnTick(CE::World& world, const entt::entity owner, const float dt)
 {
-	if (!mDestroyEntityWhenDead
-		|| !mHasStateBeenEntered)
+	if (!mHasStateBeenEntered)
 	{
 		return;
 	}
@@ -68,24 +64,6 @@ void Game::DeathState::OnTick(CE::World& world, const entt::entity owner, const 
 	}
 
 	mCurrentDeathTimer += dt;
-
-	if (mSink
-		&& mCurrentDeathTimer > mStartSinkingDelay) 
-	{
-		auto* transform = registry.TryGet<CE::TransformComponent>(owner);
-
-		glm::vec3 positionChange = transform->GetWorldPosition();
-		positionChange.y -= mSinkDownSpeed;
-
-		// Update death timer.
-		if (positionChange.y < mDestroyWhenBelowHeight)
-		{
-			registry.Destroy(owner, true);
-			return;
-		}
-
-		transform->SetWorldPosition(positionChange);
-	}
 }
 
 float Game::DeathState::OnAiEvaluate(const CE::World& world, entt::entity owner)
@@ -159,7 +137,6 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
 	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::PhysicsBody2DComponent>(owner);
-
 	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::DiskColliderComponent>(owner);
 
 	auto* transform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
@@ -201,8 +178,6 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 		world.GetRegistry().CreateFromPrefab(*mExpOrb, entt::null, nullptr, nullptr, nullptr, transform);
 	}
 
-	//auto* scoreTextComponent = world.GetRegistry().View<Game::ScoreTextComponent>();
-
 	const auto scoreComponent = world.GetRegistry().TryGet<Game::ScoreComponent>(world.GetRegistry().View<Game::ScoreComponent>().front());
 
 	if (scoreComponent != nullptr)
@@ -222,18 +197,7 @@ void Game::DeathState::OnFinishAnimationEvent(CE::World& world, entt::entity own
 		return;
 	}
 
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
-
-	if (animationRootComponent != nullptr)
-	{
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), nullptr);
-	}
-	else
-	{
-		LOG(LogAI, Warning, "Enemy {} does not have a AnimationRoot Component.", entt::to_integral(owner));
-	}
-
-	mSink = true;
+	world.GetRegistry().Destroy(owner, true);
 }
 
 CE::MetaType Game::DeathState::Reflect()
@@ -247,13 +211,9 @@ CE::MetaType Game::DeathState::Reflect()
 	BindEvent(type, CE::sAnimationFinishEvent, &DeathState::OnFinishAnimationEvent);
 
 	type.AddField(&DeathState::mDeathAnimation, "Death Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DeathState::mDestroyEntityWhenDead, "Destroy The Entity When Dead").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DeathState::mStartSinkingDelay, "Start Sinking Delay").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mLightFadeOutDuration, "Light Fade Out Duration").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mAnimationStartTimePercentage, "Animation Start Time Percentage").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mAnimationSpeed, "Animation Speed").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DeathState::mSinkDownSpeed, "Sink Down Speed").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&DeathState::mDestroyWhenBelowHeight, "Destroy When Below Height").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mExpOrb, "Exp Orb Spawner Prefab").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<DeathState>(type);
