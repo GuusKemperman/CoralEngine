@@ -4,6 +4,7 @@
 #include "Components/TransformComponent.h"
 #include "Components/CorpseComponent.h"
 #include "Components/CorpseManagerComponent.h"
+#include "Components/PlayerComponent.h"
 #include "World/Registry.h"
 
 void Game::CorpseSystem::Update(CE::World& world, float dt)
@@ -37,6 +38,17 @@ void Game::CorpseSystem::Update(CE::World& world, float dt)
 	auto current = corpseView.begin();
 	uint32 amountSinking{};
 
+	std::optional<glm::vec2> playerPos{};
+
+	const entt::entity playerEntity = reg.View<CE::TransformComponent, CE::PlayerComponent>().front();
+
+	if (playerEntity != entt::null)
+	{
+		playerPos = reg.Get<CE::TransformComponent>(playerEntity).GetWorldPosition2D();
+	}
+
+	const float destroyAtDist2 = CE::Math::sqr(manager.mDestroyAllInstantlyIfOutsideOfRange);
+
 	for (; current != corpseView.end(); ++current, ++amountSinking)
 	{
 		entt::entity entity = *current;
@@ -52,8 +64,14 @@ void Game::CorpseSystem::Update(CE::World& world, float dt)
 		}
 
 		CE::TransformComponent& transform = corpseView.get<CE::TransformComponent>(entity);
-		
 		glm::vec3 worldPos = transform.GetWorldPosition();
+
+		if (playerPos.has_value()
+			&& glm::distance2(CE::To2DRightForward(worldPos), *playerPos) >= destroyAtDist2)
+		{
+			reg.Destroy(entity, true);
+			continue;
+		}
 
 		worldPos[CE::Axis::Up] -= sinkAmount;
 

@@ -8,7 +8,9 @@ namespace Game
 		float mSinkSpeed = 0.2f;
 		float mDestroyAtHeight = -2.5f;
 		float mMaxTimeAlive = 60.0f;
-		uint32 mMaxAlive = 500;
+		float mDestroyAllInstantlyIfOutsideOfRange = 50.0f;
+
+		uint32 mMaxAlive = 250;
 
 	private:
 		friend CE::ReflectAccess;

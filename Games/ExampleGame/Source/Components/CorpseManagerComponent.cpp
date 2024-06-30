@@ -13,6 +13,7 @@ CE::MetaType Game::CorpseManagerComponent::Reflect()
 
 	type.AddField(&CorpseManagerComponent::mSinkSpeed, "mSinkSpeed").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&CorpseManagerComponent::mDestroyAtHeight, "mDestroyAtHeight").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&CorpseManagerComponent::mDestroyAllInstantlyIfOutsideOfRange, "mDestroyAllInstantlyIfOutsideOfRange").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&CorpseManagerComponent::mMaxTimeAlive, "mMaxTimeAlive").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&CorpseManagerComponent::mMaxAlive, "mMaxAlive").GetProperties().Add(CE::Props::sIsScriptableTag);
 

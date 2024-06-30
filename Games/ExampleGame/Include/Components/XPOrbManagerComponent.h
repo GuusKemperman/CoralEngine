@@ -13,7 +13,7 @@ namespace Game
 		float mHoverHeight = .1f;
 		float mMaxTimeAlive = 30.0f;
 
-		uint32 mMaxAlive = 300;
+		uint32 mMaxAlive = 250;
 
 	private:
 		friend CE::ReflectAccess;
