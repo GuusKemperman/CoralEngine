@@ -371,6 +371,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\CorpseComponent.cpp" />
+    <ClCompile Include="Source\Components\CorpseManagerComponent.cpp" />
     <ClCompile Include="Source\Components\ScoreComponent.cpp" />
     <ClCompile Include="Source\Components\ScoreTextComponent.cpp" />
     <ClCompile Include="Source\Components\CameraShakeComponent.cpp" />
@@ -379,6 +381,7 @@
     <ClCompile Include="Source\Components\UtilityAi\KnockbackEmitterComponent.cpp" />
     <ClCompile Include="Source\Components\XPOrbComponent.cpp" />
     <ClCompile Include="Source\Components\XPOrbManagerComponent.cpp" />
+    <ClCompile Include="Source\Systems\CorpseSystem.cpp" />
     <ClCompile Include="Source\Systems\XPOrbSystem.cpp" />
     <ClCompile Include="Source\Utilities\AiFunctionality.cpp" />
     <ClCompile Include="Source\Components\EnvironmentGeneratorComponent.cpp" />
@@ -437,9 +440,12 @@
     <ClCompile Include="Source\Components\UtilityAi\States\StompState.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\CorpseComponent.h" />
     <ClInclude Include="Include\Components\PointTowardsGraveyardTags.h" />
     <ClInclude Include="Include\Components\XPOrbComponent.h" />
     <ClInclude Include="Include\Components\XPOrbManagerComponent.h" />
+    <ClInclude Include="Include\Components\CorpseManagerComponent.h" />
+    <ClInclude Include="Include\Systems\CorpseSystem.h" />
     <ClInclude Include="Include\Systems\XPOrbSystem.h" />
     <ClInclude Include="Include\Utilities\AiFunctionality.h" />
     <ClInclude Include="Include\Components\EnvironmentGeneratorComponent.h" />
