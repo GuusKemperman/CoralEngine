@@ -16,10 +16,12 @@ void Game::XPOrbSystem::Update(CE::World& world, float dt)
 
 	const entt::entity managerEntity = reg.View<XPOrbManagerComponent>().front();
 
-	if (managerEntity == entt::null
-		&& !xpOrbStorage.empty())
+	if (managerEntity == entt::null)
 	{
-		LOG(LogGame, Error, "XPOrbs requires an entity with the XPOrbManagerComponent to be somewhere in the world");
+		if (!xpOrbStorage.empty())
+		{
+			LOG(LogGame, Error, "XPOrbs requires an entity with the XPOrbManagerComponent to be somewhere in the world");
+		}
 		return;
 	}
 	const XPOrbManagerComponent& manager = reg.Get<XPOrbManagerComponent>(managerEntity);
