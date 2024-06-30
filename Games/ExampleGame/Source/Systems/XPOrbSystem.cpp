@@ -30,11 +30,12 @@ void Game::XPOrbSystem::Update(CE::World& world, float dt)
 	if (xpOrbStorage.size() > maxSize)
 	{
 		const size_t amountToErase = xpOrbStorage.size() - maxSize;
-		xpOrbStorage.sort_n(amountToErase, [&xpOrbStorage](const entt::entity lhs, const entt::entity rhs)
+		xpOrbStorage.sort_n(amountToErase + 1, [&xpOrbStorage](const entt::entity lhs, const entt::entity rhs)
 			{
-				return xpOrbStorage.get(lhs).mTimeAlive < xpOrbStorage.get(rhs).mTimeAlive;
+				return xpOrbStorage.get(lhs).mTimeAlive > xpOrbStorage.get(rhs).mTimeAlive;
 			});
-		const auto begin = static_cast<entt::sparse_set&>(xpOrbStorage).begin();
+		const auto xpOrbView = reg.View<XPOrbComponent>();
+		const auto begin = xpOrbView.begin();
 		reg.Destroy(begin, begin + amountToErase, true);
 		reg.RemovedDestroyed();
 	}
