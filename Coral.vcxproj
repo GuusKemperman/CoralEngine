@@ -2091,14 +2091,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="external\imgui\.editorconfig" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Shading\DiffuseParticleShading_p.pssl">
-      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Shading\InstancedDiffuseShading_p.pssl">
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
     </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Shading\DiffuseShading_p.pssl">
-      <FileType>Document</FileType>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Shading\InstancedDiffuseParticleShading_p.pssl">
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
     </WavePsslc>
   </ItemGroup>
   <ItemGroup>
@@ -2150,19 +2149,6 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
     </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\DepthSkinned_vv.pssl">
-      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
-    </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Depth_vv.pssl">
-      <FileType>Document</FileType>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
-    </WavePsslc>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Line_p.pssl">
       <FileType>Document</FileType>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
@@ -2183,17 +2169,17 @@
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
     </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\SkinnedMesh_vv.pssl">
-      <FileType>Document</FileType>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">true</Embed>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\InstancedSkinnedDepth_vv.pssl">
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
-      <Embed Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
     </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\StaticMesh_vv.pssl">
-      <FileType>Document</FileType>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\InstancedStaticMesh_vv.pssl">
       <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
       <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+    </WavePsslc>
+    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\InstancedSkinnedMesh_vv.pssl">
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</Embed>
+      <Embed Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</Embed>
     </WavePsslc>
     <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Sprite_p.pssl">
       <FileType>Document</FileType>

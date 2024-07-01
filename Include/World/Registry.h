@@ -101,6 +101,9 @@ namespace CE
 		template<typename Type, typename... Other, typename... Exclude>
 		auto View(entt::exclude_t<Exclude...> exclude = entt::exclude_t{}) { return mRegistry.view<Type, Other...>(exclude); }
 
+		template<typename Type, typename Compare, typename Sort = entt::std_sort, typename... Args>
+		void Sort(Compare&& lambda, Sort algorithm = entt::std_sort{}, Args&&... args) { mRegistry.sort<Type>(lambda, algorithm, std::forward<Args>(args)...); }
+
 		template<typename Type>
 		entt::registry::storage_for_type<Type>& Storage() { return mRegistry.storage<Type>(); }
 

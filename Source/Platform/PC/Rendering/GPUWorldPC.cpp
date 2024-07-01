@@ -234,7 +234,7 @@ void CE::PosProcRenderingData::Update(const World &world)
     }
 }
 
-CE::GPUWorld::GPUWorld(const World &world)
+CE::GPUWorld::GPUWorld(World &world)
     : IGPUWorld::IGPUWorld(world)
 {
     Device &engineDevice = Device::Get();
