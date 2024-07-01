@@ -22,7 +22,7 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 		return;
 	}
 
-	for (auto [_, spawnerComponent] : reg.View<SpawnerComponent>().each())
+	for (auto [spawnerEntity, spawnerComponent] : reg.View<SpawnerComponent>().each())
 	{
 		SpawnerComponent::Wave* previousWave{};
 		SpawnerComponent::Wave* currentWave{};
@@ -43,10 +43,6 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 					&& currentTime <= nextWaveTimeAccumulated)
 				{
 					currentWave = &wave;
-					if (currentIndex != spawnerComponent.mCurrentWaveIndex)
-					{
-						LOG(LogGame, Message, "New wave :D");
-					}
 					spawnerComponent.mCurrentWaveIndex = currentIndex;
 				}
 
@@ -108,6 +104,14 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 		// Spawn the initial amount of enemies
 		if (previousWave != currentWave)
 		{
+			if (spawnerComponent.mCurrentWaveIndex != 0 && previousWave->mOnWaveFinishedAddComponent)
+			{
+				const CE::MetaType* component = CE::MetaManager::Get().TryGetType(previousWave->mOnWaveFinishedAddComponent.Get()->GetTypeId());
+				if (component != nullptr && !world.GetRegistry().HasComponent(component->GetTypeId(), spawnerEntity))
+				{
+					world.GetRegistry().AddComponent(*component, spawnerEntity);
+				}
+			}
 			for (const SpawnerComponent::Wave::EnemyType& enemyType : currentWave->mEnemies)
 			{
 				if (enemyType.mPrefab == nullptr)
