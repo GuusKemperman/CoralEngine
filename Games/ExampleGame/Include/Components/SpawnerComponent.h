@@ -1,5 +1,6 @@
 #pragma once
 #include "Assets/Core/AssetHandle.h"
+#include "Components/ComponentFilter.h"
 #include "Meta/MetaReflect.h"
 #include "Utilities/WeightedRandomDistribution.h"
 
@@ -61,11 +62,15 @@ namespace Game
 			float mAmountToSpawnPerSecondWhenBelowMinimum{};
 			uint32 mDesiredMinimumNumberOfEnemies{};
 
+			// On switching waves this component is added for custom functionality.
+			CE::ComponentFilter mOnWaveFinishedAddComponent{};
+
 		private:
 			friend CE::ReflectAccess;
 			static CE::MetaType Reflect();
 		};
 		std::vector<Wave> mWaves{};
+		int mCurrentWaveIndex{};
 
 	private:
 		friend CE::ReflectAccess;
@@ -74,7 +79,7 @@ namespace Game
 	};
 }
 
-CEREAL_CLASS_VERSION(Game::SpawnerComponent::Wave, 0);
+CEREAL_CLASS_VERSION(Game::SpawnerComponent::Wave, 1);
 CEREAL_CLASS_VERSION(Game::SpawnerComponent::Wave::EnemyType, 0);
 
 namespace cereal
@@ -86,9 +91,14 @@ namespace cereal
 	}
 
 	template<class Archive>
-	void serialize(Archive& ar, Game::SpawnerComponent::Wave& value, uint32)
+	void serialize(Archive& ar, Game::SpawnerComponent::Wave& value, uint32 version)
 	{
 		ar(value.mAmountToSpawnPerSecond, value.mAmountToSpawnPerSecondWhenBelowMinimum, value.mDuration, value.mEnemies);
+
+		if (version >= 1)
+		{
+			ar(value.mOnWaveFinishedAddComponent);
+		}
 	}
 }
 

@@ -32,15 +32,22 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 			const float previousTime = currentTime - dt;
 
 			float waveTimeAccumulated{};
+			int currentIndex = -1;
 
 			for (SpawnerComponent::Wave& wave : spawnerComponent.mWaves)
 			{
 				const float nextWaveTimeAccumulated = waveTimeAccumulated + wave.mDuration;
+				currentIndex++;
 
 				if (currentTime >= waveTimeAccumulated
 					&& currentTime <= nextWaveTimeAccumulated)
 				{
 					currentWave = &wave;
+					if (currentIndex != spawnerComponent.mCurrentWaveIndex)
+					{
+						LOG(LogGame, Message, "New wave :D");
+					}
+					spawnerComponent.mCurrentWaveIndex = currentIndex;
 				}
 
 				if (previousTime >= waveTimeAccumulated
