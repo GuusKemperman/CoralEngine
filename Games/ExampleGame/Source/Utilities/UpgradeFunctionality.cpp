@@ -82,7 +82,7 @@ std::vector<CE::AssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetAvail
 	return chosenUpgradesToDisplayThisLevel;
 }
 
-void Game::UpgradeFunctionality::InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options, const std::vector<CE::AssetHandle<Upgrade>>& upgradesToExclude)
+void Game::UpgradeFunctionality::InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options, const std::vector<CE::AssetHandle<Upgrade>>& upgradesToExclude, float offsetBetweenUISlots)
 {
 	const auto chosenUpgradesToDisplayThisLevel = GetAvailableUpgrades(world, static_cast<int>(options.size()), upgradesToExclude);
 
@@ -112,7 +112,6 @@ void Game::UpgradeFunctionality::InitializeUpgradeOptions(CE::World& world, std:
 		{
 			registry.Destroy(options[i], true);
 		}
-		constexpr float offsetBetweenUISlots = 0.45f;
 		for (size_t i = 0; i < numberOfOptions; i++)
 		{
 			auto transform = registry.TryGet<CE::TransformComponent>(options[i]);
@@ -133,15 +132,15 @@ CE::MetaType Game::UpgradeFunctionality::Reflect()
 	auto metaType = CE::MetaType{ CE::MetaType::T<UpgradeFunctionality>{}, "UpgradeFunctionality" };
 	metaType.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	metaType.AddFunc([](std::vector<entt::entity> options, std::vector<CE::AssetHandle<Upgrade>> upgradesToExclude)
+	metaType.AddFunc([](std::vector<entt::entity> options, std::vector<CE::AssetHandle<Upgrade>> upgradesToExclude, const float offsetBetweenUISlots)
 		{
 			CE::World* world = CE::World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
 
-			InitializeUpgradeOptions(*world, options, upgradesToExclude);
+			InitializeUpgradeOptions(*world, options, upgradesToExclude, offsetBetweenUISlots);
 
 		}, "InitializeUpgradeOptions", CE::MetaFunc::ExplicitParams<
-		std::vector<entt::entity>, std::vector<CE::AssetHandle<Upgrade>>>{}, "Options", "Upgrades To Exclude").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, false);
+		std::vector<entt::entity>, std::vector<CE::AssetHandle<Upgrade>>, const float>{}, "Options", "Upgrades To Exclude", "Offset Between UI Slots").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, false);
 
 		return metaType;
 }

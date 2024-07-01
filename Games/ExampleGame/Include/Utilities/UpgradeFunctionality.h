@@ -15,7 +15,7 @@ namespace Game
 	{
 	public:
 		static std::vector<CE::AssetHandle<Upgrade>> GetAvailableUpgrades(CE::World& world, int numberOfOptions, const std::vector<CE::AssetHandle<Upgrade>>& additionalUpgradesToExclude);
-		static void InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options, const std::vector<CE::AssetHandle<Upgrade>>& upgradesToExclude);
+		static void InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options, const std::vector<CE::AssetHandle<Upgrade>>& upgradesToExclude, const float offsetBetweenUISlots);
 
 	private:
 		friend CE::ReflectAccess;
