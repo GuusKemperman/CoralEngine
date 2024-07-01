@@ -14,7 +14,8 @@ namespace Game
 	class UpgradeFunctionality
 	{
 	public:
-		static std::vector<CE::AssetHandle<Upgrade>> GetAvailableUpgrades(CE::World& world, int numberOfOptions, const std::vector<CE::AssetHandle<Upgrade>>& additionalUpgradesToExclude);
+		static std::vector<CE::AssetHandle<Upgrade>> GetAllAvailableUpgrades(CE::World& world, const std::vector<CE::AssetHandle<Upgrade>>& additionalUpgradesToExclude);
+		static std::vector<CE::AssetHandle<Upgrade>> GetChosenUpgrades(CE::World& world, int numberOfOptions, const std::vector<CE::AssetHandle<Upgrade>>& additionalUpgradesToExclude);
 		static void InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options, const std::vector<CE::AssetHandle<Upgrade>>& upgradesToExclude, const float offsetBetweenUISlots);
 
 	private:

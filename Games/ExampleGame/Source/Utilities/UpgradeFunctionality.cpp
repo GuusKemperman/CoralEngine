@@ -11,8 +11,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 
-std::vector<CE::AssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetAvailableUpgrades(CE::World& world,
-	int numberOfOptions, const std::vector<CE::AssetHandle<Upgrade>>& additionalUpgradesToExclude)
+std::vector<CE::AssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetAllAvailableUpgrades(CE::World& world, const std::vector<CE::AssetHandle<Upgrade>>& additionalUpgradesToExclude)
 {
 	auto& registry = world.GetRegistry();
 	const auto playerView = registry.View<CE::PlayerComponent>();
@@ -20,7 +19,6 @@ std::vector<CE::AssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetAvail
 
 	// Iterate over all the upgrades to check what upgrades the player has and update the available upgrades.
 	std::vector<CE::AssetHandle<Upgrade>> availableUpgrades{};
-	std::vector<CE::AssetHandle<Upgrade>> chosenUpgradesToDisplayThisLevel{};
 	for (CE::WeakAssetHandle<Upgrade> upgrade : CE::AssetManager::Get().GetAllAssets<Upgrade>())
 	{
 		const CE::AssetHandle<Upgrade> loadedUpgrade{ upgrade };
@@ -66,10 +64,20 @@ std::vector<CE::AssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetAvail
 		}
 	}
 
+	return availableUpgrades;
+}
+
+std::vector<CE::AssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetChosenUpgrades(CE::World& world,
+	int numberOfOptions, const std::vector<CE::AssetHandle<Upgrade>>& additionalUpgradesToExclude)
+{
+	std::vector<CE::AssetHandle<Upgrade>> availableUpgrades = GetAllAvailableUpgrades(world, additionalUpgradesToExclude);
+
 	if (availableUpgrades.empty())
 	{
 		return {};
 	}
+
+	std::vector<CE::AssetHandle<Upgrade>> chosenUpgradesToDisplayThisLevel{};
 
 	// Randomly choose upgrades to display.
 	for (int i = 0; i < numberOfOptions && !availableUpgrades.empty(); i++)
@@ -84,7 +92,7 @@ std::vector<CE::AssetHandle<Game::Upgrade>> Game::UpgradeFunctionality::GetAvail
 
 void Game::UpgradeFunctionality::InitializeUpgradeOptions(CE::World& world, std::vector<entt::entity>& options, const std::vector<CE::AssetHandle<Upgrade>>& upgradesToExclude, float offsetBetweenUISlots)
 {
-	const auto chosenUpgradesToDisplayThisLevel = GetAvailableUpgrades(world, static_cast<int>(options.size()), upgradesToExclude);
+	const auto chosenUpgradesToDisplayThisLevel = GetChosenUpgrades(world, static_cast<int>(options.size()), upgradesToExclude);
 
 	auto& registry = world.GetRegistry();
 	const size_t numberOfOptions = options.size();
@@ -141,6 +149,16 @@ CE::MetaType Game::UpgradeFunctionality::Reflect()
 
 		}, "InitializeUpgradeOptions", CE::MetaFunc::ExplicitParams<
 		std::vector<entt::entity>, std::vector<CE::AssetHandle<Upgrade>>, const float>{}, "Options", "Upgrades To Exclude", "Offset Between UI Slots").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, false);
+
+	metaType.AddFunc([](std::vector<CE::AssetHandle<Upgrade>> upgradesToExclude) -> int
+		{
+			CE::World* world = CE::World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+
+			return static_cast<int>(GetAllAvailableUpgrades(*world, upgradesToExclude).size());
+
+		}, "Number Of Available Upgrades", CE::MetaFunc::ExplicitParams<
+		std::vector<CE::AssetHandle<Upgrade>>>{}, "Upgrades To Exclude").GetProperties().Add(CE::Props::sIsScriptableTag).Set(CE::Props::sIsScriptPure, true);
 
 		return metaType;
 }
