@@ -3,6 +3,7 @@
 
 #include "Assets/Upgrade.h"
 #include "Components/PlayerComponent.h"
+#include "Components/TransformComponent.h"
 #include "Components/UpgradeStoringComponent.h"
 #include "Components/UI/UISpriteComponent.h"
 #include "Core/AssetManager.h"
@@ -93,17 +94,37 @@ void Game::UpgradeFunctionality::InitializeUpgradeOptions(CE::World& world, std:
 		auto sprite = registry.TryGet<CE::UISpriteComponent>(options[i]);
 		if (sprite == nullptr)
 		{
-			LOG(LogUpgradeFunctionality, Warning, "Entity {} does not have a UISpriteComponent attached.", entt::to_integral(options[i]));
+			LOG(LogUpgradeFunctionality, Warning, "InitializeUpgradeOptions - Entity {} does not have a UISpriteComponent attached.", entt::to_integral(options[i]));
 			continue;
 		}
 		auto upgrade = registry.TryGet<UpgradeStoringComponent>(options[i]);
 		if (upgrade == nullptr)
 		{
-			LOG(LogUpgradeFunctionality, Warning, "Entity {} does not have a UpgradeStoringComponent attached.", entt::to_integral(options[i]));
+			LOG(LogUpgradeFunctionality, Warning, "InitializeUpgradeOptions - Entity {} does not have a UpgradeStoringComponent attached.", entt::to_integral(options[i]));
 			continue;
 		}
 		sprite->mTexture = chosenUpgradesToDisplayThisLevel[i].Get()->mIconTexture;
 		upgrade->mUpgrade = chosenUpgradesToDisplayThisLevel[i];
+	}
+	if (numberOfAvailableChosenUpgrades < numberOfOptions && numberOfAvailableChosenUpgrades != 0)
+	{
+		for (size_t i = numberOfAvailableChosenUpgrades; i < numberOfOptions; i++)
+		{
+			registry.Destroy(options[i], true);
+		}
+		constexpr float offsetBetweenUISlots = 0.45f;
+		for (size_t i = 0; i < numberOfOptions; i++)
+		{
+			auto transform = registry.TryGet<CE::TransformComponent>(options[i]);
+			if (transform == nullptr)
+			{
+				LOG(LogUpgradeFunctionality, Warning, "InitializeUpgradeOptions - Entity {} does not have a TransformComponent attached.", entt::to_integral(options[i]));
+				continue;
+			}
+			glm::vec3 oldPos = transform->GetLocalPosition();
+			float newX = oldPos.x + offsetBetweenUISlots * static_cast<float>(numberOfOptions - numberOfAvailableChosenUpgrades);
+			transform->SetLocalPosition({ newX, oldPos.y, oldPos.z });
+		}
 	}
 }
 
