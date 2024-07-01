@@ -942,7 +942,7 @@ void CE::UIRenderingData::Update(const World &world)
 
         uint16 quadCount = static_cast<uint16>(textComp.mText.size());
 
-        glm::vec3 localPosition = glm::vec3(transform.GetWorldPosition().x, 0.0f, 0.0f);
+        glm::vec3 localPosition = glm::vec3(0.0f);
         for (uint16 i = 0; i < quadCount; i++)
         {
             UITextComponent::QuadInfo quadInfo{};
