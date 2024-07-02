@@ -57,6 +57,7 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 
 			if (currentWave == nullptr)
 			{
+				spawnerComponent.mCurrentWaveIndex = -1;
 				LOG(LogGame, Message, "There is no active wave for the current time");
 				continue;
 			}
@@ -104,13 +105,9 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 		// Spawn the initial amount of enemies
 		if (previousWave != currentWave)
 		{
-			if (spawnerComponent.mCurrentWaveIndex != 0 && previousWave->mOnWaveFinishedAddComponent)
+			if (spawnerComponent.mCurrentWaveIndex != 0)
 			{
-				const CE::MetaType* component = CE::MetaManager::Get().TryGetType(previousWave->mOnWaveFinishedAddComponent.Get()->GetTypeId());
-				if (component != nullptr && !world.GetRegistry().HasComponent(component->GetTypeId(), spawnerEntity))
-				{
-					world.GetRegistry().AddComponent(*component, spawnerEntity);
-				}
+				AddComponentOnWaveFinished(world, *previousWave, spawnerEntity);
 			}
 			for (const SpawnerComponent::Wave::EnemyType& enemyType : currentWave->mEnemies)
 			{
@@ -213,6 +210,18 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 
 			distFromCentre += spawnerComponent.mSpacing;
 		} while (!waveOutputs.empty());
+	}
+}
+
+void Game::SpawnerSystem::AddComponentOnWaveFinished(CE::World& world, SpawnerComponent::Wave& wave, entt::entity spawnerEntity)
+{
+	if (wave.mOnWaveFinishedAddComponent)
+	{
+		const CE::MetaType* component = CE::MetaManager::Get().TryGetType(wave.mOnWaveFinishedAddComponent.Get()->GetTypeId());
+		if (component != nullptr && !world.GetRegistry().HasComponent(component->GetTypeId(), spawnerEntity))
+		{
+			world.GetRegistry().AddComponent(*component, spawnerEntity);
+		}
 	}
 }
 
