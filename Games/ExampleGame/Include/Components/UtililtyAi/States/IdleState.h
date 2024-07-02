@@ -15,8 +15,11 @@ namespace Game
 	public:
 		static float OnAiEvaluate(const CE::World& world, entt::entity owner);
 		void OnAiStateEnterEvent(CE::World& world, entt::entity owner) const;
+		static void OnAiStateExitEvent(CE::World& world, entt::entity owner);
 
 		CE::AssetHandle<CE::Animation> mIdleAnimation{};
+
+		float mStartYAxis = 0.f;
 
 	private:
 		friend CE::ReflectAccess;
