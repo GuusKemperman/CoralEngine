@@ -1,6 +1,8 @@
 #include "Precomp.h"
 #include "Components/UtililtyAi/States/DeathState.h"
 
+#include <entt/entity/runtime_view.hpp>
+
 #include "Components/Abilities/CharacterComponent.h"
 #include "Meta/MetaType.h"
 #include "Utilities/Events.h"
@@ -84,19 +86,20 @@ float Game::DeathState::OnAiEvaluate(const CE::World& world, entt::entity owner)
 
 void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 {
-	// Corpses shouldnt think
-	world.GetRegistry().RemoveComponent<CE::EnemyAiControllerComponent>(owner);
+	auto& registry = world.GetRegistry();
+	// Corpses shouldn't think
+	registry.RemoveComponent<CE::EnemyAiControllerComponent>(owner);
 	mHasStateBeenEntered = true;
 
 	// Call On Enemy Killed events.
-	const auto playerView = world.GetRegistry().View<CE::PlayerComponent>();
+	const auto playerView = registry.View<CE::PlayerComponent>();
 	if (!playerView.empty())
 	{
 		const auto player = playerView.front();
 		auto& boundEvents = CE::AbilitySystem::GetEnemyKilledEvents();
 		for (const CE::BoundEvent& boundEvent : boundEvents)
 		{
-			entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
+			entt::sparse_set* const storage = registry.Storage(boundEvent.mType.get().GetTypeId());
 
 			if (storage == nullptr
 				|| !storage->contains(player))
@@ -116,19 +119,19 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 		}
 	}
 
-	auto* animationRootComponent = world.GetRegistry().TryGet<CE::AnimationRootComponent>(owner);
+	auto* animationRootComponent = registry.TryGet<CE::AnimationRootComponent>(owner);
 
 	if (animationRootComponent != nullptr)
 	{
 		const float time = mDeathAnimation == nullptr ? 0.0f : mDeathAnimation->mDuration * mAnimationStartTimePercentage;
-		animationRootComponent->SwitchAnimation(world.GetRegistry(), mDeathAnimation, time, mAnimationSpeed);
+		animationRootComponent->SwitchAnimation(registry, mDeathAnimation, time, mAnimationSpeed);
 	}
 	else
 	{
 		LOG(LogAI, Warning, "Enemy {} does not have a AnimationRoot Component.", entt::to_integral(owner));
 	}
 
-	auto* physicsBody2DComponent = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
+	auto* physicsBody2DComponent = registry.TryGet<CE::PhysicsBody2DComponent>(owner);
 	if (physicsBody2DComponent != nullptr)
 	{
 		physicsBody2DComponent->mLinearVelocity = { 0,0 };
@@ -136,27 +139,27 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 
-	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::PhysicsBody2DComponent>(owner);
-	world.GetRegistry().RemoveComponentIfEntityHasIt<CE::DiskColliderComponent>(owner);
+	registry.RemoveComponentIfEntityHasIt<CE::PhysicsBody2DComponent>(owner);
+	registry.RemoveComponentIfEntityHasIt<CE::DiskColliderComponent>(owner);
 
-	auto* transform = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+	auto* transform = registry.TryGet<CE::TransformComponent>(owner);
 	if (transform == nullptr)
 	{
 		LOG(LogAbilitySystem, Error, "Character with entity id {} does not have a TransformComponent attached.", entt::to_integral(owner));
 	}
 	else
 	{
-		const auto setMeshColor = [&world](const auto& self, const CE::TransformComponent& current) -> void
+		const auto setMeshColor = [&registry](const auto& self, const CE::TransformComponent& current) -> void
 			{
 				for (const CE::TransformComponent& child : current.GetChildren())
 				{
-					auto* staticMesh = world.GetRegistry().TryGet<CE::StaticMeshComponent>(child.GetOwner());
+					auto* staticMesh = registry.TryGet<CE::StaticMeshComponent>(child.GetOwner());
 					if (staticMesh != nullptr)
 					{
 						staticMesh->mHighlightedMesh = false;
 					}
 
-					auto* skinnedMesh = world.GetRegistry().TryGet<CE::SkinnedMeshComponent>(child.GetOwner());
+					auto* skinnedMesh = registry.TryGet<CE::SkinnedMeshComponent>(child.GetOwner());
 					if (skinnedMesh != nullptr)
 					{
 						skinnedMesh->mHighlightedMesh = false;
@@ -166,19 +169,29 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 				}
 			};
 		setMeshColor(setMeshColor, *transform);
+
+		// Checking for leveling script because if the player is not leveling anymore, XP shouldn't be spawned.
+		const CE::MetaType* levellingScript = CE::MetaManager::Get().TryGetType("S_LevellingScript");
+		if (levellingScript == nullptr)
+		{
+			LOG(LogGame, Error, "Could not find S_LevellingScript.");
+		}
+		else
+		{
+			entt::sparse_set* levellingStorage = registry.Storage(levellingScript->GetTypeId());
+			if (levellingStorage != nullptr)
+			{
+				entt::runtime_view levellingView{};
+				levellingView.iterate(*levellingStorage);
+				if (mExpOrb != nullptr && levellingView.begin() != levellingView.end())
+				{
+					registry.CreateFromPrefab(*mExpOrb, entt::null, nullptr, nullptr, nullptr, transform);
+				}
+			}
+		}
 	}
 
-	if (transform == nullptr)
-	{
-		LOG(LogAI, Warning, "Death State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
-		return;
-	}
-
-	if (mExpOrb != nullptr) {
-		world.GetRegistry().CreateFromPrefab(*mExpOrb, entt::null, nullptr, nullptr, nullptr, transform);
-	}
-
-	const auto scoreComponent = world.GetRegistry().TryGet<Game::ScoreComponent>(world.GetRegistry().View<Game::ScoreComponent>().front());
+	const auto scoreComponent = registry.TryGet<Game::ScoreComponent>(world.GetRegistry().View<Game::ScoreComponent>().front());
 
 	if (scoreComponent != nullptr)
 	{

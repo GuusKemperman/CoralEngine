@@ -59,7 +59,8 @@ bool Game::SpawnerComponent::Wave::operator!=(const Wave& wave) const
 		|| wave.mAmountToSpawnPerSecondWhenBelowMinimum != mAmountToSpawnPerSecondWhenBelowMinimum
 		|| wave.mEnemies != mEnemies
 		|| wave.mDuration != mDuration
-		|| wave.mDesiredMinimumNumberOfEnemies != mDesiredMinimumNumberOfEnemies;
+		|| wave.mDesiredMinimumNumberOfEnemies != mDesiredMinimumNumberOfEnemies
+		|| wave.mOnWaveFinishedAddComponent != mOnWaveFinishedAddComponent;
 }
 
 bool Game::SpawnerComponent::Wave::operator==(const Wave& wave) const
@@ -79,6 +80,7 @@ void Game::SpawnerComponent::Wave::DisplayWidget(const std::string& name)
 	CE::ShowInspectUI("mAmountToSpawnPerSecondWhenBelowMinimum", mAmountToSpawnPerSecondWhenBelowMinimum);
 	CE::ShowInspectUI("mDesiredMinimumNumberOfEnemies", mDesiredMinimumNumberOfEnemies);
 	CE::ShowInspectUI("mEnemies", mEnemies);
+	CE::ShowInspectUI("mOnWaveFinishedAddComponent", mOnWaveFinishedAddComponent);
 
 	ImGui::Unindent();
 	ImGui::PopID();
@@ -95,6 +97,7 @@ CE::MetaType Game::SpawnerComponent::Wave::Reflect()
 	type.AddField(&Wave::mAmountToSpawnPerSecond, "mAmountToSpawnPerSecond").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Wave::mAmountToSpawnPerSecondWhenBelowMinimum, "mAmountToSpawnPerSecondWhenBelowMinimum").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&Wave::mEnemies, "mEnemies").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&Wave::mOnWaveFinishedAddComponent, "mOnWaveFinishedAddComponent").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectFieldType<Wave>(type);
 	return type;
@@ -111,6 +114,7 @@ CE::MetaType Game::SpawnerComponent::Reflect()
 	type.AddField(&SpawnerComponent::mShouldSpawnInGroups, "mShouldSpawnInGroups").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&SpawnerComponent::mMinRandomScale, "mMinRandomScale").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&SpawnerComponent::mMaxRandomScale, "mMaxRandomScale").GetProperties().Add(CE::Props::sIsScriptableTag);
+	type.AddField(&SpawnerComponent::mCurrentWaveIndex, "mCurrentWaveIndex").GetProperties().Add(CE::Props::sIsScriptableTag).Add(CE::Props::sIsEditorReadOnlyTag);
 	type.AddField(&SpawnerComponent::mWaves, "mWaves").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<SpawnerComponent>(type);
