@@ -1,4 +1,5 @@
 #pragma once
+#include "Components/SpawnerComponent.h"
 #include "Systems/System.h"
 
 namespace Game
@@ -17,6 +18,9 @@ namespace Game
 		}
 
 	private:
+		// Gets called on finishing a wave (does not get called for the last wave).
+		void AddComponentOnWaveFinished(CE::World& world, SpawnerComponent::Wave& wave, entt::entity spawnerEntity);
+
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
 		REFLECT_AT_START_UP(SpawnerSystem);

@@ -375,6 +375,7 @@
     <ClCompile Include="Source\Components\CorpseManagerComponent.cpp" />
     <ClCompile Include="Source\Components\ScoreComponent.cpp" />
     <ClCompile Include="Source\Components\ScoreTextComponent.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\RunningAwayState.cpp" />
     <ClCompile Include="Source\Components\CameraShakeComponent.cpp" />
     <ClCompile Include="Source\Components\PointTowardsGraveyardTags.cpp" />
     <ClCompile Include="Source\Components\UtilityAi\States\ShootingBowState.cpp" />
@@ -470,6 +471,7 @@
     <ClInclude Include="Include\Components\UtililtyAi\KnockbackEmitterComponent.h" />
     <ClInclude Include="Include\Components\ScoreTextComponent.h" />
     <ClInclude Include="Include\Components\ScoreComponent.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\RunningAwayState.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\UserMem\address_sanitizer_utils.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
