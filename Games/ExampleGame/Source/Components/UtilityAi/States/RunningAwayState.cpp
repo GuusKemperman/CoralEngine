@@ -13,6 +13,7 @@
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/Abilities/CharacterComponent.h"
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/Random.h"
 
 void Game::RunningAwayState::OnAiStateEnter(CE::World& world, const entt::entity owner)
@@ -22,6 +23,23 @@ void Game::RunningAwayState::OnAiStateEnter(CE::World& world, const entt::entity
 	AIFunctionality::AnimationInAi(world, owner, mChasingAnimation, true);
 
 	CE::SwarmingAgentTag::StartMovingToTarget(world, owner);
+
+	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+
+	if (transformComponent == nullptr)
+	{
+		LOG(LogAI, Warning, "Running Away State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+		return;
+	}
+
+	for (CE::TransformComponent& child : transformComponent->GetChildren())
+	{
+		child.SetLocalPosition({ child.GetLocalPosition().x, 0, child.GetLocalPosition().z });
+	}
+
+	CE::PhysicsBody2DComponent& physicsBody2D = world.GetRegistry().AddComponent<CE::PhysicsBody2DComponent>(owner);
+
+	physicsBody2D.mRules = CE::CollisionPresets::sCharacter.mRules;
 }
 
 void Game::RunningAwayState::OnAiStateExit(CE::World& world, const entt::entity owner)
@@ -61,6 +79,19 @@ void Game::RunningAwayState::OnBeginPlay(CE::World& world, const entt::entity ow
 	}
 
 	characterComponent->mCurrentMovementSpeed = -(characterComponent->mCurrentMovementSpeed) + CE::Random::Range(mLowerSpeedRange, mUpperSpeedRange);
+
+	const auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
+
+	if (transformComponent == nullptr)
+	{
+		LOG(LogAI, Warning, "Running Away State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
+		return;
+	}
+
+	for (CE::TransformComponent& child : transformComponent->GetChildren())
+	{
+		child.SetLocalPosition({child.GetLocalPosition().x, mStartYAxis, child.GetLocalPosition().z});
+	}
 }
 
 void Game::RunningAwayState::DebugRender(CE::World& world, const entt::entity owner) const
@@ -95,6 +126,7 @@ CE::MetaType Game::RunningAwayState::Reflect()
 	BindEvent(type, CE::sBeginPlayEvent, &RunningAwayState::OnBeginPlay);
 	BindEvent(type, CE::sAITickEvent, &RunningAwayState::OnAiTick);
 
+	type.AddField(&RunningAwayState::mStartYAxis, "Start Y Position").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&RunningAwayState::mChasingAnimation, "Running Away Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&RunningAwayState::mRunAnimationSpeed, "Run Animation Speed").GetProperties().Add(CE::Props::sIsScriptableTag);
 

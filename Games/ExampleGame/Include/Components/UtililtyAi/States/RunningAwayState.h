@@ -25,6 +25,8 @@ namespace Game
 
 		CE::AssetHandle<CE::Animation> mChasingAnimation{};
 
+		float mStartYAxis = 0.f;
+
 	private:
 		float mRunAnimationSpeed = 2.f;
 

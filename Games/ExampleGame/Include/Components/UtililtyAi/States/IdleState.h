@@ -19,8 +19,6 @@ namespace Game
 
 		CE::AssetHandle<CE::Animation> mIdleAnimation{};
 
-		float mStartYAxis = 0.f;
-
 	private:
 		friend CE::ReflectAccess;
 		static CE::MetaType Reflect();
