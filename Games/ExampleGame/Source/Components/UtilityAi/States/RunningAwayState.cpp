@@ -37,6 +37,14 @@ void Game::RunningAwayState::OnAiStateEnter(CE::World& world, const entt::entity
 		child.SetLocalPosition({ child.GetLocalPosition().x, 0, child.GetLocalPosition().z });
 	}
 
+	const auto* physicsBody = world.GetRegistry().TryGet<CE::PhysicsBody2DComponent>(owner);
+
+	if (physicsBody != nullptr)
+	{
+		LOG(LogAI, Warning, "Running Away State - enemy {} already has a Physics Component.", entt::to_integral(owner));
+		return;
+	}
+
 	CE::PhysicsBody2DComponent& physicsBody2D = world.GetRegistry().AddComponent<CE::PhysicsBody2DComponent>(owner);
 
 	physicsBody2D.mRules = CE::CollisionPresets::sCharacter.mRules;

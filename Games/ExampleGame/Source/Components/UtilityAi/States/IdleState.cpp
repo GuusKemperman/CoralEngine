@@ -22,20 +22,6 @@ void Game::IdleState::OnAiStateEnterEvent(CE::World& world, entt::entity owner) 
 	AIFunctionality::AnimationInAi(world, owner, mIdleAnimation, true);
 }
 
-void Game::IdleState::OnAiStateExitEvent(CE::World& world, const entt::entity owner)
-{
-	auto* transformComponent = world.GetRegistry().TryGet<CE::TransformComponent>(owner);
-
-	if (transformComponent == nullptr)
-	{
-		LOG(LogAI, Warning, "Running Away State - enemy {} does not have a Transform Component.", entt::to_integral(owner));
-		return;
-	}
-
-	const glm::vec3 newPosition = { transformComponent->GetWorldPosition().x, 0, transformComponent->GetWorldPosition().z };
-
-	transformComponent->SetWorldPosition(newPosition);
-}
 
 CE::MetaType Game::IdleState::Reflect()
 {
@@ -44,7 +30,6 @@ CE::MetaType Game::IdleState::Reflect()
 	
 	BindEvent(type, CE::sAIEvaluateEvent, &IdleState::OnAiEvaluate);
 	BindEvent(type, CE::sAIStateEnterEvent, &IdleState::OnAiStateEnterEvent);
-	BindEvent(type, CE::sAIStateExitEvent, &IdleState::OnAiStateExitEvent);
 
 	type.AddField(&IdleState::mIdleAnimation, "Idle Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 
