@@ -187,8 +187,8 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 
 		t1 = t2;
 
-		input.NewFrame();
 		device.NewFrame();
+		input.NewFrame();
 
 		if (device.GetDisplaySize().x <= 0
 			|| device.GetDisplaySize().y <= 0)
