@@ -22,7 +22,7 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 		return;
 	}
 
-	for (auto [_, spawnerComponent] : reg.View<SpawnerComponent>().each())
+	for (auto [spawnerEntity, spawnerComponent] : reg.View<SpawnerComponent>().each())
 	{
 		SpawnerComponent::Wave* previousWave{};
 		SpawnerComponent::Wave* currentWave{};
@@ -32,15 +32,18 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 			const float previousTime = currentTime - dt;
 
 			float waveTimeAccumulated{};
+			int currentIndex = -1;
 
 			for (SpawnerComponent::Wave& wave : spawnerComponent.mWaves)
 			{
 				const float nextWaveTimeAccumulated = waveTimeAccumulated + wave.mDuration;
+				currentIndex++;
 
 				if (currentTime >= waveTimeAccumulated
 					&& currentTime <= nextWaveTimeAccumulated)
 				{
 					currentWave = &wave;
+					spawnerComponent.mCurrentWaveIndex = currentIndex;
 				}
 
 				if (previousTime >= waveTimeAccumulated
@@ -54,6 +57,7 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 
 			if (currentWave == nullptr)
 			{
+				spawnerComponent.mCurrentWaveIndex = -1;
 				LOG(LogGame, Message, "There is no active wave for the current time");
 				continue;
 			}
@@ -101,6 +105,10 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 		// Spawn the initial amount of enemies
 		if (previousWave != currentWave)
 		{
+			if (spawnerComponent.mCurrentWaveIndex != 0)
+			{
+				AddComponentOnWaveFinished(world, *previousWave, spawnerEntity);
+			}
 			for (const SpawnerComponent::Wave::EnemyType& enemyType : currentWave->mEnemies)
 			{
 				if (enemyType.mPrefab == nullptr)
@@ -202,6 +210,18 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 
 			distFromCentre += spawnerComponent.mSpacing;
 		} while (!waveOutputs.empty());
+	}
+}
+
+void Game::SpawnerSystem::AddComponentOnWaveFinished(CE::World& world, SpawnerComponent::Wave& wave, entt::entity spawnerEntity)
+{
+	if (wave.mOnWaveFinishedAddComponent)
+	{
+		const CE::MetaType* component = CE::MetaManager::Get().TryGetType(wave.mOnWaveFinishedAddComponent.Get()->GetTypeId());
+		if (component != nullptr && !world.GetRegistry().HasComponent(component->GetTypeId(), spawnerEntity))
+		{
+			world.GetRegistry().AddComponent(*component, spawnerEntity);
+		}
 	}
 }
 

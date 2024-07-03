@@ -7,6 +7,8 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/AnimationRootComponent.h"
+#include "Components/TransformComponent.h"
+#include "Components/Abilities/CharacterComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 
 float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
@@ -19,6 +21,7 @@ void Game::IdleState::OnAiStateEnterEvent(CE::World& world, entt::entity owner) 
 	CE::SwarmingAgentTag::StopMovingToTarget(world, owner);
 	AIFunctionality::AnimationInAi(world, owner, mIdleAnimation, true);
 }
+
 
 CE::MetaType Game::IdleState::Reflect()
 {
