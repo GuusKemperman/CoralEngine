@@ -13,7 +13,6 @@ namespace CE
 		SystemStaticTraits GetStaticTraits() const override
 		{
 			SystemStaticTraits traits {};
-			traits.mShouldTickBeforeBeginPlay = true;
 			traits.mShouldTickWhilstPaused = true;
 			return traits;
 		}

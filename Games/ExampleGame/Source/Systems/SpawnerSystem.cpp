@@ -32,18 +32,15 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 			const float previousTime = currentTime - dt;
 
 			float waveTimeAccumulated{};
-			int currentIndex = -1;
 
 			for (SpawnerComponent::Wave& wave : spawnerComponent.mWaves)
 			{
 				const float nextWaveTimeAccumulated = waveTimeAccumulated + wave.mDuration;
-				currentIndex++;
 
 				if (currentTime >= waveTimeAccumulated
 					&& currentTime <= nextWaveTimeAccumulated)
 				{
 					currentWave = &wave;
-					spawnerComponent.mCurrentWaveIndex = currentIndex;
 				}
 
 				if (previousTime >= waveTimeAccumulated
@@ -54,20 +51,46 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 
 				waveTimeAccumulated = nextWaveTimeAccumulated;
 			}
-
-			if (currentWave == nullptr)
-			{
-				spawnerComponent.mCurrentWaveIndex = -1;
-				LOG(LogGame, Message, "There is no active wave for the current time");
-				continue;
-			}
-
 		}
 
 		std::unordered_map<CE::AssetHandle<CE::Prefab>, uint32> enemyCount{};
-		const glm::vec2 spawnerPos = playerTransform->GetWorldPosition2D();
 		std::vector<entt::entity> waveOutputs{};
 
+		// Spawn the initial amount of enemies
+		if (previousWave != currentWave)
+		{
+			if (previousWave != nullptr)
+			{
+				AddComponentOnWaveFinished(world, *previousWave, spawnerEntity);
+			}
+
+			if (currentWave != nullptr)
+			{
+				for (const SpawnerComponent::Wave::EnemyType& enemyType : currentWave->mEnemies)
+				{
+					if (enemyType.mPrefab == nullptr)
+					{
+						continue;
+					}
+
+					const uint32 amountToSpawn = enemyType.mAmountToSpawnAtStartOfWave.value_or(0u);
+					enemyCount[enemyType.mPrefab] += amountToSpawn;
+
+					for (uint32 i = 0; i < amountToSpawn; i++)
+					{
+						waveOutputs.emplace_back(reg.CreateFromPrefab(*enemyType.mPrefab));
+					}
+				}
+			}
+		}
+
+		if (currentWave == nullptr)
+		{
+			LOG(LogGame, Message, "There is no active wave for the current time");
+			continue;
+		}
+
+		const glm::vec2 spawnerPos = playerTransform->GetWorldPosition2D();
 		uint32 numOfEnemies{};
 
 		{ // Count the number of enemies, and teleport far away enemies back
@@ -98,30 +121,6 @@ void Game::SpawnerSystem::Update(CE::World& world, float dt)
 				if (glm::distance2(transform.GetWorldPosition2D(), spawnerPos) >= CE::Math::sqr(spawnerComponent.mMaxEnemyDistance))
 				{
 					waveOutputs.emplace_back(entity);
-				}
-			}
-		}
-
-		// Spawn the initial amount of enemies
-		if (previousWave != currentWave)
-		{
-			if (spawnerComponent.mCurrentWaveIndex != 0)
-			{
-				AddComponentOnWaveFinished(world, *previousWave, spawnerEntity);
-			}
-			for (const SpawnerComponent::Wave::EnemyType& enemyType : currentWave->mEnemies)
-			{
-				if (enemyType.mPrefab == nullptr)
-				{
-					continue;
-				}
-
-				const uint32 amountToSpawn = enemyType.mAmountToSpawnAtStartOfWave.value_or(0u);
-				enemyCount[enemyType.mPrefab] += amountToSpawn;
-
-				for (uint32 i = 0; i < amountToSpawn; i++)
-				{
-					waveOutputs.emplace_back(reg.CreateFromPrefab(*enemyType.mPrefab));
 				}
 			}
 		}

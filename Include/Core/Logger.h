@@ -152,6 +152,10 @@ namespace CE
 		// came from a thread that was not the main thread
 		std::thread::id mMainThreadId = std::this_thread::get_id();
 
+		// We clear the buffer if the max amount of messages
+		// has been reached to prevent excessive memory usage
+		static constexpr size_t sMaxNumOfBytesStored = 1'000'000;
+
 		struct Entry
 		{
 			Entry(const Channel& channel, LogSeverity severity, std::string_view file, uint32 line, std::function<void()>&& onClick) :

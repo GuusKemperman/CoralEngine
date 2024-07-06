@@ -70,7 +70,6 @@ namespace Game
 			static CE::MetaType Reflect();
 		};
 		std::vector<Wave> mWaves{};
-		int mCurrentWaveIndex{};
 
 	private:
 		friend CE::ReflectAccess;

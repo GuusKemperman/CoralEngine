@@ -115,10 +115,17 @@ void CE::Logger::Log(std::string_view message,
 
 	mEntries.emplace_back(existingChannel->second, severity, file, line, std::move(onClick));
 	mEntryContents->Emplace(formattedMessage);
+
 	mMutex.unlock();
 
+	if (mEntryContents->SizeInBytes() > sMaxNumOfBytesStored)
+	{
+		Clear();
+		LOG(LogCore, Message, "Log buffer exceeded {} bytes, buffer has been cleared", sMaxNumOfBytesStored);
+	}
+
 	std::cout << formattedMessage << std::endl;
-	
+
 	if (severity == Fatal)
 	{
 		DumpToCrashLogAndExit();

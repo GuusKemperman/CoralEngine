@@ -35,9 +35,9 @@ float Game::DanceState::OnAiEvaluate(const CE::World& world, [[maybe_unused]] co
 
 	const auto characterComponent = world.GetRegistry().TryGet<CE::CharacterComponent>(playerId);
 
-	if (characterComponent->mCurrentHealth <= 0.f)
+	if (characterComponent == nullptr
+		|| characterComponent->mCurrentHealth <= 0.f)
 	{
-		LOG(LogAI, Warning, "Dance State - player {} does not have a Character Component.", entt::to_integral(playerId));
 		return 1.0f;
 	}
 

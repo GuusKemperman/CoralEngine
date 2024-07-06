@@ -114,7 +114,6 @@ CE::MetaType Game::SpawnerComponent::Reflect()
 	type.AddField(&SpawnerComponent::mShouldSpawnInGroups, "mShouldSpawnInGroups").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&SpawnerComponent::mMinRandomScale, "mMinRandomScale").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&SpawnerComponent::mMaxRandomScale, "mMaxRandomScale").GetProperties().Add(CE::Props::sIsScriptableTag);
-	type.AddField(&SpawnerComponent::mCurrentWaveIndex, "mCurrentWaveIndex").GetProperties().Add(CE::Props::sIsScriptableTag).Add(CE::Props::sIsEditorReadOnlyTag);
 	type.AddField(&SpawnerComponent::mWaves, "mWaves").GetProperties().Add(CE::Props::sIsScriptableTag);
 
 	CE::ReflectComponentType<SpawnerComponent>(type);
