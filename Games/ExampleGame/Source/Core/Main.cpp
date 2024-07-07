@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 	}
 	catch ([[maybe_unused]] const std::exception& e)
 	{
-		LOG(LogCore, Fatal, "Fatal exception - {}", e.what());
+		std::cerr << "Fatal exception - " << e.what() << std::endl;
 		return 904;
 	}
 	
