@@ -34,6 +34,11 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 		return;
 	}
 
+	std::vector<entt::entity> dummySelectedEntities{};
+	if (selectedEntities == nullptr)
+	{
+		selectedEntities = &dummySelectedEntities;
+	}// From here on out, we can assume selectedEntities != nullptr
 
 	Internal::CheckShortcuts(world, *selectedEntities,
 		static_cast<Internal::ShortCutType>(
@@ -41,12 +46,6 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 			| Internal::ShortCutType::CopyPaste
 			| Internal::ShortCutType::Delete
 			| Internal::ShortCutType::GuizmoModes));
-
-	std::vector<entt::entity> dummySelectedEntities{};
-	if (selectedEntities == nullptr)
-	{
-		selectedEntities = &dummySelectedEntities;
-	}// From here on out, we can assume selectedEntities != nullptr
 
 	Internal::RemoveInvalidEntities(world, *selectedEntities);
 
