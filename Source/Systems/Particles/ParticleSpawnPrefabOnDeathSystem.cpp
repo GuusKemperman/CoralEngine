@@ -5,11 +5,11 @@
 #include "World/Registry.h"
 #include "Components/Particles/ParticleSpawnPrefabOnDeathComponent.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
+#include "Components/Particles/ParticleUtilities.h"
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
-#include "Meta/MetaManager.h"
 
-void Engine::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unused]] float dt)
+void CE::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unused]] float dt)
 {
 	Registry& reg = world.GetRegistry();
 
@@ -22,13 +22,7 @@ void Engine::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unus
 			continue;
 		}
 
-		const Span<const size_t> particlesThatJustDied = emitter.GetParticlesThatDiedDuringLastStep();
-		const Span<const glm::vec3> positions = emitter.GetParticlePositions();
-		const Span<const glm::vec3> scales = emitter.GetParticleSizes();
-		const Span<const glm::quat> orientations = emitter.GetParticleOrientations();
-
-
-		for (size_t i = 0; i < particlesThatJustDied.size(); i++)
+		for (const uint32 particle : emitter.GetParticlesThatDiedDuringLastStep())
 		{
 			const entt::entity spawnedEntity = reg.CreateFromPrefab(*spawner.mPrefabToSpawn);
 			TransformComponent* const transform = reg.TryGet<TransformComponent>(spawnedEntity);
@@ -38,16 +32,25 @@ void Engine::ParticleSpawnPrefabOnDeathSystem::Update(World& world, [[maybe_unus
 				continue;
 			}
 
-			const size_t particle = particlesThatJustDied[i];
+			if (spawner.mKeepPosition)
+			{
+				transform->SetWorldPosition(emitter.GetParticlePositionWorld(particle));
+			}
 
-			transform->SetWorldPosition(positions[particle]);
-			transform->SetWorldOrientation(orientations[particle]);
-			transform->SetWorldScale(scales[particle]);
+			if (spawner.mKeepScale)
+			{
+				transform->SetWorldScale(emitter.GetParticleScaleWorld(particle));
+			}
+
+			if (spawner.mKeepOrientation)
+			{
+				transform->SetWorldOrientation(emitter.GetParticleOrientationWorld(particle));
+			}
 		}
 	}
 }
 
-Engine::MetaType Engine::ParticleSpawnPrefabOnDeathSystem::Reflect()
+CE::MetaType CE::ParticleSpawnPrefabOnDeathSystem::Reflect()
 {
 	return MetaType{ MetaType::T<ParticleSpawnPrefabOnDeathSystem>{}, "ParticleSpawnPrefabOnDeathSystem", MetaType::Base<System>{} };
 }

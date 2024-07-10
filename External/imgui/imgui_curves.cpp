@@ -402,8 +402,10 @@ namespace ImGui
         const int size = dim + 1;
 
         // find key
-        int k = 0; while (key[k * size] < t) k++;
-
+        int k = 0;
+        for (int i = 0; i < num && key[k * size] < t; i++, k++)
+        {
+        }
         // interpolant
         const float h = (t - key[(k - 1) * size]) / (key[k * size] - key[(k - 1) * size]);
 
@@ -484,9 +486,6 @@ namespace ImGui
             }
         }
 
-
-
-
         ImGuiWindow* window = GetCurrentWindow();
         ImGuiContext& g = *GImGui;
         const ImGuiStyle& style = g.Style;
@@ -500,7 +499,7 @@ namespace ImGui
         if (!ItemAdd(bb, NULL))
             return 0;
 
-        const bool hovered = IsItemHovered(); //IsHovered(bb, id);
+        const bool hovered = IsItemHovered();
 
         int max = 0;
         float graphLowerBound = INFINITY;
@@ -512,12 +511,9 @@ namespace ImGui
             max++;
         }
 
-        {
-            //const float extraSpace = (graphUpperBound - graphLowerBound) * .1f;
-            //graphLowerBound -= extraSpace;
-            //graphUpperBound += extraSpace;
-        }
-        
+        graphLowerBound = floorf(graphLowerBound);
+        graphUpperBound = ceilf(graphUpperBound);
+
         int kill = 0;
         do
         {

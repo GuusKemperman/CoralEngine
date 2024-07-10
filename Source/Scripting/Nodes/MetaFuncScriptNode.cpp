@@ -7,7 +7,7 @@
 #include "Scripting/ScriptTools.h"
 #include "GSON/GSONBinary.h"
 
-Engine::MetaFuncScriptNode::MetaFuncScriptNode(ScriptFunc& scriptFunc, 
+CE::MetaFuncScriptNode::MetaFuncScriptNode(ScriptFunc& scriptFunc, 
 	const MetaType& typeWhichThisFuncIsFrom, 
 	const MetaFunc& func) :
 	FunctionLikeNode(ScriptNodeType::FunctionCall, scriptFunc),
@@ -26,7 +26,7 @@ Engine::MetaFuncScriptNode::MetaFuncScriptNode(ScriptFunc& scriptFunc,
 	ConstructExpectedPins(scriptFunc);
 }
 
-std::string Engine::MetaFuncScriptNode::GetTitle() const
+std::string CE::MetaFuncScriptNode::GetTitle() const
 {
 	const MetaType* const type = MetaManager::Get().TryGetType(mTypeName);
 	const MetaFunc* originalFunc = TryGetOriginalFunc();
@@ -42,7 +42,7 @@ std::string Engine::MetaFuncScriptNode::GetTitle() const
 	return funcName;
 }
 
-void Engine::MetaFuncScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
+void CE::MetaFuncScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
 {
 	ScriptNode::SerializeTo(to, scriptFunc);
 
@@ -60,9 +60,8 @@ void Engine::MetaFuncScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptF
 	}
 }
 
-void Engine::MetaFuncScriptNode::PostDeclarationRefresh(ScriptFunc& scriptFunc)
+void CE::MetaFuncScriptNode::PostDeclarationRefresh(ScriptFunc& scriptFunc)
 {
-
 	const MetaType* const type = MetaManager::Get().TryGetType(mTypeName);
 
 	if (type == nullptr)
@@ -70,6 +69,9 @@ void Engine::MetaFuncScriptNode::PostDeclarationRefresh(ScriptFunc& scriptFunc)
 		FunctionLikeNode::PostDeclarationRefresh(scriptFunc);
 		return;
 	}
+
+	// In case our type got renamed
+	mTypeName = type->GetName();
 
 	const std::variant<Name, OperatorType> key = std::holds_alternative<std::string>(mNameOrType) ?
 		std::variant<Name, OperatorType>{Name{ std::get<std::string>(mNameOrType) }} :
@@ -79,7 +81,7 @@ void Engine::MetaFuncScriptNode::PostDeclarationRefresh(ScriptFunc& scriptFunc)
 	FunctionLikeNode::PostDeclarationRefresh(scriptFunc);
 }
 
-glm::vec4 Engine::MetaFuncScriptNode::GetHeaderColor(const ScriptFunc& scriptFunc) const
+glm::vec4 CE::MetaFuncScriptNode::GetHeaderColor(const ScriptFunc& scriptFunc) const
 {
 	if (std::holds_alternative<OperatorType>(mNameOrType))
 	{
@@ -89,7 +91,7 @@ glm::vec4 Engine::MetaFuncScriptNode::GetHeaderColor(const ScriptFunc& scriptFun
 	return IsPure(scriptFunc) ? glm::vec4{ 0.404, 0.537, 0.384, 1.0f } : glm::vec4{ 0.318, 0.475, 0.576, 1.0f };
 }
 
-bool Engine::MetaFuncScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
+bool CE::MetaFuncScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 {
 	if (!ScriptNode::DeserializeVirtual(from))
 	{
@@ -128,7 +130,7 @@ bool Engine::MetaFuncScriptNode::DeserializeVirtual(const BinaryGSONObject& from
 	return true;
 }
 
-std::optional<Engine::FunctionLikeNode::InputsOutputs> Engine::MetaFuncScriptNode::GetExpectedInputsOutputs(const ScriptFunc&) const
+std::optional<CE::FunctionLikeNode::InputsOutputs> CE::MetaFuncScriptNode::GetExpectedInputsOutputs(const ScriptFunc&) const
 {
 	const MetaFunc* const originalFunc = TryGetOriginalFunc();
 

@@ -3,7 +3,7 @@
 #include "cereal/types/array.hpp"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class Bezier
 	{
@@ -17,17 +17,16 @@ namespace Engine
 
 		float GetSurfaceAreaBetween(float t1, float t2, float stepSize) const;
 
-		__forceinline float GetValueAt(float time) const;
+		FORCE_INLINE float GetValueAt(float time) const;
 
 #ifdef EDITOR
 		void DisplayWidget(const char* label);
-		void DisplayWidget(const char* label) const;
 #endif // EDITOR
 
 		ValueStorage mControlPoints{ glm::vec2{0.0f}, glm::vec2{1.0f}, glm::vec2{-1.0f} };
 
 	private:
-		static __forceinline float spline(const float* key, float t);
+		static FORCE_INLINE float spline(const float* key, float t);
 
 		friend ReflectAccess;
 		static MetaType Reflect();
@@ -49,7 +48,22 @@ namespace Engine
 
 	inline float Bezier::spline(const float* key, float t)
 	{
-		constexpr int num = std::tuple_size_v<ValueStorage>;
+		int num{};
+		// find key
+
+		for (;num < static_cast<int>(std::tuple_size_v<ValueStorage>); num++)
+		{
+			if (key[num * 2] < 0.0f
+				|| key[num * 2] > 1.0f)
+			{
+				break;
+			}
+		}
+		const int size = 1 + 1;
+		int k = 0;
+		for (int i = 0; i < num && key[k * size] < t; i++, k++)
+		{
+		}
 
 		static constexpr signed char coefs[16] = {
 			-1, 2,-1, 0,
@@ -57,12 +71,6 @@ namespace Engine
 			-3, 4, 1, 0,
 			1,-1, 0, 0 };
 
-		const int size = 1 + 1;
-
-		// find key
-		int k = 0;
-
-		while (key[k * size] < t) k++;
 
 		// interpolant
 		const float h = (t - key[(k - 1) * size]) / (key[k * size] - key[(k - 1) * size]);
@@ -98,7 +106,6 @@ namespace Engine
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::Bezier, var.DisplayWidget(name.c_str());)
-IMGUI_AUTO_DEFINE_INLINE(template<>, const Engine::Bezier, var.DisplayWidget(name.c_str());)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::Bezier, var.DisplayWidget(name.c_str());)
 #endif // EDITOR
 

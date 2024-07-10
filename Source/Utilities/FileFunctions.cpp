@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Utilities/FileFunctions.h"
 
-bool Engine::FileFunctions::MakeEmpty(const std::string& filePath)
+bool CE::FileFunctions::MakeEmpty(const std::string& filePath)
 {
 	std::ofstream outFile(filePath);
 
@@ -17,7 +17,7 @@ bool Engine::FileFunctions::MakeEmpty(const std::string& filePath)
 	return false;
 }
 
-bool Engine::FileFunctions::Delete(const std::string& filePath)
+bool CE::FileFunctions::Delete(const std::string& filePath)
 {
 	if (std::remove(filePath.c_str()))
 	{
@@ -28,13 +28,13 @@ bool Engine::FileFunctions::Delete(const std::string& filePath)
 	return false;
 }
 
-bool Engine::FileFunctions::DoesFileExist(const std::string& filePath)
+bool CE::FileFunctions::DoesFileExist(const std::string& filePath)
 {
 	std::ifstream infile(filePath);
 	return infile.good();
 }
 
-bool Engine::FileFunctions::IsFileNewer(const std::filesystem::path& file, const std::filesystem::path& reference)
+bool CE::FileFunctions::IsFileNewer(const std::filesystem::path& file, const std::filesystem::path& reference)
 {
 	if (!exists(reference)
 		|| !exists(file))

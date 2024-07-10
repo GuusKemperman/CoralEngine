@@ -1,23 +1,44 @@
 #pragma once
-#include "Components/Component.h"
 #include "Meta/MetaReflect.h"
+#include "Utilities/Math.h"
 
-namespace Engine
-{	
+namespace CE
+{
+	class Registry;
+	class WorldDetails;
+	class Archiver;
 	class World;
 	class BinaryGSONObject;
 
-	enum class Axis
+	class Axis
 	{
-		X,
-		Y,
-		Z,
-		Forward = X,
-		Right = Y,
-		Up = Z
+	public:
+		enum Values
+		{
+			X,
+			Y,
+			Z,
+			Right = X,
+			Up = Y,
+			Forward = Z,
+		};
 	};
 
-	static constexpr glm::vec3 ToVector3(Axis axis) { glm::vec3 v{}; v[static_cast<int>(axis)] = 1.0f; return v; }
+	constexpr glm::vec3 ToVector3(Axis::Values axis) { glm::vec3 v{}; v[static_cast<int>(axis)] = 1.0f; return v; }
+
+	constexpr glm::vec2 To2DRightForward(glm::vec3 v3)
+	{
+		return { v3[Axis::Right], v3[Axis::Forward] };
+	}
+
+	constexpr glm::vec3 To3DRightForward(glm::vec2 v2, float up = 0.0f)
+	{
+		glm::vec3 v3{};
+		v3[Axis::Right] = v2.x;
+		v3[Axis::Forward] = v2.y;
+		v3[Axis::Up] = up;
+		return v3;
+	}
 
 	constexpr glm::vec3 sForward = ToVector3(Axis::Forward);
 	constexpr glm::vec3 sRight = ToVector3(Axis::Right);
@@ -30,32 +51,43 @@ namespace Engine
 	{
 	public:
 		TransformComponent() = default;
-		TransformComponent(const entt::entity owner) : mOwner(owner) {}
+
+		TransformComponent(TransformComponent&& other) noexcept;
+		TransformComponent(const TransformComponent& other) noexcept;
+
+		TransformComponent& operator=(const TransformComponent&) = delete;
+		TransformComponent& operator=(TransformComponent&&) = delete;
+
 		~TransformComponent();
 
-		void OnDeserialize(const BinaryGSONObject& deserializeFrom, entt::entity owner, World& world);
-		void OnSerialize(BinaryGSONObject& serializeTo, entt::entity owner, const World& world) const;
+		void OnConstruct(World& world, entt::entity owner);
 
 		static glm::mat4 ToMatrix(glm::vec3 position, glm::vec3 scale, glm::quat orientation);
+		static std::tuple<glm::vec3, glm::vec3, glm::quat> FromMatrix(const glm::mat4& matrix);
 
-		glm::mat4 GetLocalMatrix() const;		
+		glm::mat4 GetLocalMatrix() const;
 		void SetLocalMatrix(const glm::mat4& matrix);
 
-		glm::mat4 GetWorldMatrix() const;		
+		const glm::mat4& GetWorldMatrix() const;
 		void SetWorldMatrix(const glm::mat4& matrix);
+
+		std::tuple<glm::vec3, glm::vec3, glm::quat> GetLocalPositionScaleOrientation() const;
+		std::tuple<glm::vec3, glm::vec3, glm::quat> GetWorldPositionScaleOrientation() const;
+
+		void SetLocalPositionScaleOrientation(glm::vec3 position, glm::vec3 scale, glm::quat orientation);
+		void SetWorldPositionScaleOrientation(glm::vec3 position, glm::vec3 scale, glm::quat orientation);
 
 		// -----------------------------------------------------------------------------------------------------------------//
 		// Parental relation ships																							//
 		// -----------------------------------------------------------------------------------------------------------------//
-		
+
 		void SetParent(TransformComponent* parent, bool keepWorld = false);
-		
-		const TransformComponent* GetParent() const { return mParent; }
-		
-		const std::vector<std::reference_wrapper<TransformComponent>>& GetChildren() const { return mChildren; }
 
-		bool IsOrphan() const { return mParent == nullptr; }
+		const TransformComponent* GetParent() const;
 
+		const std::vector<std::reference_wrapper<TransformComponent>>& GetChildren() const;
+
+		bool IsOrphan() const;
 
 		/**
 		 * \brief Recursively checks if this transformcomponent is a child of the provided transform.
@@ -65,90 +97,107 @@ namespace Engine
 		 */
 		bool IsAForeFather(const TransformComponent& potentialForeFather) const;
 
-		entt::entity GetOwner() const { return mOwner; }
+		entt::entity GetOwner() const;
 
 		// -----------------------------------------------------------------------------------------------------------------//
 		// Getting/setting the position																						//
 		// -----------------------------------------------------------------------------------------------------------------//
-		
-		glm::vec3 GetLocalPosition() const { return mLocalPosition; }
-		glm::vec2 GetLocalPosition2D() const { return { mLocalPosition.x, mLocalPosition.y }; }
+
+		glm::vec3 GetLocalPosition() const;
+		glm::vec2 GetLocalPosition2D() const;
 
 		glm::vec3 GetWorldPosition() const;
-		glm::vec2 GetWorldPosition2D() const { const glm::vec3 in3D = GetWorldPosition(); return { in3D.x, in3D.y }; }
+		glm::vec2 GetWorldPosition2D() const;
 
-		void SetLocalPosition(const glm::vec3 position) { mLocalPosition = position; }
-		void SetLocalPosition(const glm::vec2 position) { mLocalPosition.x = position.x, mLocalPosition.y = position.y; }
+		void SetLocalPosition(const glm::vec3 position);
+		void SetLocalPosition(const glm::vec2 position);
 
-		void TranslateLocalPosition(const glm::vec3 translation) { mLocalPosition += translation; }
-		void TranslateLocalPosition(const glm::vec2 translation) { mLocalPosition.x += translation.x, mLocalPosition.y += translation.y; }
+		void TranslateLocalPosition(const glm::vec3 translation);
+		void TranslateLocalPosition(const glm::vec2 translation);
 
 		void SetWorldPosition(glm::vec3 position);
-		void SetWorldPosition(const glm::vec2 position) { SetWorldPosition(glm::vec3{ position, mLocalPosition.z }); }
+		void SetWorldPosition(const glm::vec2 position);
 
-		void TranslateWorldPosition(const glm::vec3 translation) { SetWorldPosition(GetWorldPosition() + translation); }
-		void TranslateWorldPosition(const glm::vec2 translation) { TranslateWorldPosition(glm::vec3{ translation.x, translation.y, 0.0f }); }
+		void TranslateWorldPosition(const glm::vec3 translation);
+		void TranslateWorldPosition(const glm::vec2 translation);
 
 		// -----------------------------------------------------------------------------------------------------------------//
 		// Getting/setting the orientation																					//
 		// -----------------------------------------------------------------------------------------------------------------//
-		
-		glm::quat GetLocalOrientation() const { return mLocalOrientation; }
-		glm::vec3 GetLocalOrientationEuler() const { return eulerAngles(mLocalOrientation); }
+
+		glm::quat GetLocalOrientation() const;
+		glm::vec3 GetLocalOrientationEuler() const;
 
 		glm::quat GetWorldOrientation() const;
-		glm::vec3 GetWorldOrientationEuler() const { return eulerAngles(GetWorldOrientation()); }
+		glm::vec3 GetWorldOrientationEuler() const;
 
 		// In radians
-		void SetLocalOrientation(const glm::vec3 rotationEuler) { mLocalOrientation = glm::quat{ rotationEuler }; }		
-		void SetLocalOrientation(const glm::quat rotation) { mLocalOrientation = rotation; }
+		void SetLocalOrientation(const glm::vec3 rotationEuler);
+		void SetLocalOrientation(const glm::quat rotation);
 
 		// In radians
-		void SetWorldOrientation(const glm::vec3 rotationEuler) { SetWorldOrientation(glm::quat{ rotationEuler }); }
+		void SetWorldOrientation(const glm::vec3 rotationEuler);
 		void SetWorldOrientation(glm::quat orientation);
 
-		glm::vec3 GetLocalForward() const { return GetLocalAxis(Axis::Forward); }
-		glm::vec3 GetLocalUp() const { return GetLocalAxis(Axis::Up);}
-		glm::vec3 GetLocalRight() const { return GetLocalAxis(Axis::Right); }
-		
-		glm::vec3 GetLocalAxis(const Axis axis) const { return Math::RotateVector(ToVector3(axis), mLocalOrientation); }
+		glm::vec3 GetLocalForward() const;
+		glm::vec3 GetLocalUp() const;
+		glm::vec3 GetLocalRight() const;
 
-		glm::vec3 GetWorldForward() const { return GetWorldAxis(Axis::Forward); }
-		glm::vec3 GetWorldUp() const { return GetWorldAxis(Axis::Up); }
-		glm::vec3 GetWorldRight() const { return GetWorldAxis(Axis::Right); }
-		glm::vec3 GetWorldAxis(const Axis axis) const { return Math::RotateVector(ToVector3(axis), GetWorldOrientation()); }
+		glm::vec3 GetLocalAxis(const Axis::Values axis) const;
 
-		void SetLocalForward(const glm::vec3& forward) { SetLocalOrientation(Math::CalculateRotationBetweenOrientations(sForward, forward)); }
-		void SetLocalUp(const glm::vec3& up) { SetLocalOrientation(Math::CalculateRotationBetweenOrientations(sUp, up)); }
-		void SetLocalRight(const glm::vec3& right) { SetLocalOrientation(Math::CalculateRotationBetweenOrientations(sRight, right)); }
+		glm::vec3 GetWorldForward() const;
+		glm::vec3 GetWorldUp() const;
+		glm::vec3 GetWorldRight() const;
+		glm::vec3 GetWorldAxis(const Axis::Values axis) const;
 
-		void SetWorldForward(const glm::vec3& forward) { SetWorldOrientation(Math::CalculateRotationBetweenOrientations(sForward, forward)); }		
-		void SetWorldUp(const glm::vec3& up) { SetWorldOrientation(Math::CalculateRotationBetweenOrientations(sUp, up)); }
-		void SetWorldRight(const glm::vec3& right) { SetWorldOrientation(Math::CalculateRotationBetweenOrientations(sRight, right)); }
+		void SetLocalForward(const glm::vec3& forward);
+		void SetLocalUp(const glm::vec3& up);
+		void SetLocalRight(const glm::vec3& right);
+
+		void SetWorldForward(const glm::vec3& forward);
+		void SetWorldUp(const glm::vec3& up);
+		void SetWorldRight(const glm::vec3& right);
 
 		// -----------------------------------------------------------------------------------------------------------------//
 		// Getting/setting the Scale																						//
 		// -----------------------------------------------------------------------------------------------------------------//
 
-		glm::vec3 GetLocalScale() const { return mLocalScale; }
-		glm::vec2 GetLocalScale2D() const { return glm::vec2{ mLocalScale.x, mLocalScale.y }; }
-		float GetLocalScaleUniform() const { const glm::vec3 scale = GetLocalScale(); return (scale.x + scale.y + scale.z) * (1.0f / 3.0f); }
+		glm::vec3 GetLocalScale() const;
+		glm::vec2 GetLocalScale2D() const;
+		float GetLocalScaleUniform() const;
 
 		glm::vec3 GetWorldScale() const;
-		glm::vec2 GetWorldScale2D() const { const glm::vec3 scale = GetWorldScale(); return glm::vec2{ scale.x, scale.y }; }
-		float GetWorldScaleUniform() const { const glm::vec3 scale = GetWorldScale(); return (scale.x + scale.y + scale.z) * (1.0f / 3.0f); }
-	
-		void SetLocalScale(const float xyz) { mLocalScale = glm::vec3{ xyz }; }
-		void SetLocalScale(const glm::vec3 scale) { mLocalScale = scale; }
-		void SetLocalScale(const glm::vec2 scale) { mLocalScale.x = scale.x, mLocalScale.y = scale.y; }
-		
-		void SetWorldSclae(const float xyz) { SetWorldScale(glm::vec3{ xyz }); }
+		glm::vec2 GetWorldScale2D() const;
+		float GetWorldScaleUniform() const;
+		float GetWorldScaleUniform2D() const;
+
+		void SetLocalScale(const float xyz);
+		void SetLocalScaleRightForward(const float scale);
+		void SetLocalScale(const glm::vec3 scale);
+		void SetLocalScale(const glm::vec2 scale);
+
+		void SetWorldScale(const float xyz);
 		void SetWorldScale(glm::vec3 scale);
-		void SetWorldScale(const glm::vec2 scale) { SetWorldScale(glm::vec3{ scale, mLocalScale.z }); }
-		
+		void SetWorldScale(const glm::vec2 scale);
+
 	private:
 		void AttachChild(TransformComponent& child);
 		void DetachChild(TransformComponent& child);
+
+		void UpdateCachedWorldMatrix();
+
+		// We do not serialize the world
+		// matrix, so we require
+		// the archiver to call UpdateCachedWorldMatrix..
+		friend Archiver;
+
+
+		// We don't have custom setter/getter support yet.
+		// WorldDetails may inspect mLocalPosition and
+		// adjust its value without ever updating the world
+		// matrix. 
+		friend WorldDetails;
+		friend Registry;
 
 		friend ReflectAccess;
 		static MetaType Reflect();
@@ -156,34 +205,29 @@ namespace Engine
 
 		glm::vec3 mLocalPosition{};
 
-		entt::entity mOwner{};		
+		entt::entity mOwner = entt::null;
 		glm::quat mLocalOrientation = { 1.0f, 0.0f, 0.0f, 0.0f };
 		glm::vec3 mLocalScale = { 1.0f, 1.0f, 1.0f };
+
+		glm::mat4 mCachedWorldMatrix{ 1.0f };
 
 		// Storing a pointer is safe, as pointer stability has been enabled.
 		TransformComponent* mParent{};
 
 		// Storing pointers is safe, as pointer stability has been enabled for this component.
-		std::vector<std::reference_wrapper<TransformComponent>> mChildren{}; 
-	};
-
-	template<>
-	struct AlwaysPassComponentOwnerAsFirstArgumentOfConstructor<TransformComponent>
-	{
-		static constexpr bool sValue = true;
+		std::vector<std::reference_wrapper<TransformComponent>> mChildren{};
 	};
 }
 
 template<>
-struct entt::component_traits<Engine::TransformComponent, void> {
-	static_assert(std::is_same_v<std::decay_t<Engine::TransformComponent>, Engine::TransformComponent>, "Unsupported type");
-
-	using type = Engine::TransformComponent;
+struct entt::component_traits<CE::TransformComponent, void>
+{
+	using type = CE::TransformComponent;
 
 	// TransformComponent is often accessed in random order so we get little 
 	// benefit from compact arrangements. But we do VERY often access our parent,
 	// so not having to look up the adress each time is very useful.
 	static constexpr bool in_place_delete = true;
 
-	static constexpr std::size_t page_size = internal::page_size<Engine::TransformComponent>::value;
+	static constexpr std::size_t page_size = internal::page_size<CE::TransformComponent>::value;
 };

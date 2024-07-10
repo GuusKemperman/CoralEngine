@@ -1,18 +1,20 @@
+#include "Utilities/Time.h"
 #ifdef EDITOR
 #pragma once
 #include "EditorSystems/EditorSystem.h"
 
 #include "Assets/Asset.h"
+#include "Assets/Core/AssetSaveInfo.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Core/AssetManager.h"
 #include "Core/Editor.h"
-#include "Core/InputManager.h"
+#include "Core/Input.h"
 #include "Meta/MetaType.h"
-#include "Containers/view_istream.h"
+#include "Utilities/view_istream.h"
 #include "Utilities/DoUndo.h"
 #include "Utilities/StringFunctions.h"
 
-namespace Engine
+namespace CE
 {
 	/*
 	Do not derive from this, derive from the templated class below.
@@ -23,7 +25,7 @@ namespace Engine
 
 		/*
 		For documentation on any of these functions, see the overriden functions in
-		AssetEditorSystem<T>		
+		AssetEditorSystem<T>
 		*/
 
 		virtual AssetSaveInfo SaveToMemory() = 0;
@@ -34,14 +36,19 @@ namespace Engine
 		friend class Editor;
 		struct MementoAction
 		{
-			MementoAction(std::string&& str, std::string_view nameOfAssetEditor) : mState(std::move(str)), mNameOfAssetEditor(nameOfAssetEditor) {}
-
 			void Do();
 			void Undo();
 			void RefreshTheAssetEditor();
 
 			std::string mState{};
 			bool mDoIsNeeded{};
+
+			// If the engine was refreshed,
+			// we should re-serialize this
+			// state in order to take into
+			// account any changes made to
+			// any assets.
+			bool mRequiresReserialization{};
 
 			std::string mNameOfAssetEditor{};
 
@@ -83,10 +90,10 @@ namespace Engine
 		in order to prevent your changes leading to unexpected behaviour
 		elsewhere. This function return the orginal asset, if it exists.
 		*/
-		std::optional<WeakAsset<T>> TryGetOriginalAsset() const;
+		WeakAssetHandle<T> TryGetOriginalAsset() const;
 
 		/*
-		Saves the asset to file at the end of the frame. Will do a 
+		Saves the asset to file at the end of the frame. Will do a
 		'restart' of the engine that is completely hidden from the
 		users, but this restart makes sure your changes are correctly
 		applied throughout the engine.
@@ -98,10 +105,10 @@ namespace Engine
 
 		/*
 		Saves the asset to memory. The resulting AssetSaveInfo can
-		be used to construct a copy of the asset. 
-		
-		Note that calling AssetSaveInfo::SaveToFile will not trigger 
-		the engine to restart, which means your changes may not be 
+		be used to construct a copy of the asset.
+
+		Note that calling AssetSaveInfo::SaveToFile will not trigger
+		the engine to restart, which means your changes may not be
 		applied correctly, if at all. Prefer AssetEditorSystem::SaveToFile
 		if you intend to save this asset to a file.
 		*/
@@ -120,12 +127,12 @@ namespace Engine
 
 	private:
 		/*
-		Often the changes aren't directly made to the asset; for example you will be 
-		editing a world, moving some entities, deleting some others, but you are not 
+		Often the changes aren't directly made to the asset; for example you will be
+		editing a world, moving some entities, deleting some others, but you are not
 		directly modifing the asset, instead storing the changes inside of the system.
-		
+
 		This function alerts you that any changes you may have made must be applied to
-		the asset now. 
+		the asset now.
 		*/
 		virtual void ApplyChangesToAsset() {};
 
@@ -155,6 +162,8 @@ namespace Engine
 		 */
 		void CheckForDifferences();
 
+		void CompleteDifferenceCheckCycle();
+
 		MementoStack&& ExtractMementoStack() override;
 
 		/*
@@ -163,8 +172,40 @@ namespace Engine
 		 */
 		static std::string Reserialize(std::string_view serialized);
 
-		static constexpr float sDifferenceCheckCoolDown = 2.0f;
-		float mTimeLeftUntilCheckForDifference{};
+		
+		/**
+		 * \brief Checking for differences involves saving/loading the asset a few times. We spread this out
+		 * over several frames to reduce the impact of the frame drops.
+		 */
+		struct DifferenceCheckState
+		{
+			enum class Stage
+			{
+				SaveToMemory,
+				ReloadFromMemory,
+				ResaveToMemory,
+				Compare,
+				CheckIfSavedToFile,
+				NUM_OF_STAGES,
+				FirstStage = SaveToMemory
+			};
+			MementoAction mAction{};
+			Stage mStage{};
+			std::optional<T> mTemporarilyDeserializedAsset{};
+		};
+		DifferenceCheckState mDifferenceCheckState{};
+		Cooldown mUpdateStateCooldown{ .2f };
+
+		// Used for checking if our asset has unsaved changes. Kept in memory for performance reasons.
+		// May not always be up to date, it's updated when needed.
+		struct AssetOnFile
+		{
+			std::string mReserializedAsset{};
+
+			// If changes are made to the asset file, this mAssetAsSeenOnFile is updated.
+			std::filesystem::file_time_type mWriteTimeAtTimeOfReserializing{};
+		};
+		mutable AssetOnFile mAssetOnFile{};
 	};
 
 	namespace Internal
@@ -202,11 +243,11 @@ namespace Engine
 		mAsset(std::move(asset)),
 		mPathToSaveAssetTo([this]() -> std::filesystem::path
 			{
-				std::optional<WeakAsset<T>> originalAsset = TryGetOriginalAsset();
+				WeakAssetHandle<T> originalAsset = TryGetOriginalAsset();
 
-				if (originalAsset.has_value())
+				if (originalAsset != nullptr)
 				{
-					return originalAsset->GetFileOfOrigin().value_or(std::filesystem::path{});
+					return originalAsset.GetFileOfOrigin().value_or(std::filesystem::path{});
 				}
 				return {};
 			}
@@ -215,7 +256,7 @@ namespace Engine
 	}
 
 	template<typename T>
-	std::optional<WeakAsset<T>> AssetEditorSystem<T>::TryGetOriginalAsset() const
+	WeakAssetHandle<T> AssetEditorSystem<T>::TryGetOriginalAsset() const
 	{
 		return AssetManager::Get().TryGetWeakAsset<T>(mAsset.GetName());
 	}
@@ -246,7 +287,20 @@ namespace Engine
 	AssetSaveInfo AssetEditorSystem<T>::SaveToMemory()
 	{
 		ApplyChangesToAsset();
-		AssetSaveInfo saveInfo = mAsset.Save();
+
+		std::optional<AssetFileMetaData::ImporterInfo> importerInfo{};
+
+		if (const WeakAssetHandle<T> originalAsset = TryGetOriginalAsset(); originalAsset != nullptr)
+		{
+			importerInfo = originalAsset.GetMetaData().GetImporterInfo();
+
+			if (importerInfo.has_value())
+			{
+				importerInfo->mWereEditsMadeAfterImporting |= !IsSavedToFile();
+			}
+		}
+
+		AssetSaveInfo saveInfo = mAsset.Save(std::move(importerInfo));
 		return saveInfo;
 	}
 
@@ -254,58 +308,7 @@ namespace Engine
 	bool AssetEditorSystem<T>::IsSavedToFile() const
 	{
 		const MementoAction* const topAction = mMementoStack.PeekTop();
-
-		if (topAction == nullptr)
-		{
-			return true;
-		}
-
-		if (!std::filesystem::exists(mPathToSaveAssetTo))
-		{
-			return false;
-		}
-
-		const std::filesystem::file_time_type lastWriteTime = std::filesystem::last_write_time(mPathToSaveAssetTo);
-
-		if (topAction->mTimeWeCheckedIfIsSameAsFile >= lastWriteTime)
-		{
-			return topAction->mIsSameAsFile;
-		}
-		topAction->mTimeWeCheckedIfIsSameAsFile = lastWriteTime;
-
-		{ // Early out if the file is directly equal to the top state.
-			std::ifstream fileStream{ mPathToSaveAssetTo, std::ifstream::binary };
-
-			if (!fileStream.is_open())
-			{
-				LOG(LogEditor, Warning, "Could not open file {}", mPathToSaveAssetTo.string());
-				return false;
-			}
-
-			view_istream memoryStream{ topAction->mState };
-			topAction->mIsSameAsFile = StringFunctions::AreStreamsEqual(fileStream, memoryStream);
-
-			if (topAction->mIsSameAsFile)
-			{
-				return true;
-			}
-		}
-
-		// Otherwise we load and save the file. 
-		std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromFile(mPathToSaveAssetTo);
-
-		if (!loadInfo.has_value())
-		{
-			LOG(LogEditor, Error, "Could not load asset from file {}", mPathToSaveAssetTo.string());
-			return false;
-		}
-
-		T assetAsSeenOnFile{ *loadInfo };
-		std::string reserializedFile = Reserialize(assetAsSeenOnFile.Save().ToString());
-
-		topAction->mIsSameAsFile = reserializedFile == topAction->mState;
-
-		return topAction->mIsSameAsFile;
+		return topAction == nullptr ? true : topAction->mIsSameAsFile;
 	}
 
 	template <typename T>
@@ -313,33 +316,42 @@ namespace Engine
 	{
 		EditorSystem::Tick(deltaTime);
 
-		if (InputManager::IsKeyDown(ImGuiKey_LeftCtrl) || InputManager::IsKeyDown(ImGuiKey_RightCtrl))
+		const bool checkForDifferences = mUpdateStateCooldown.IsReady(deltaTime);
+
+		if (!Input::Get().HasFocus())
 		{
-			if (mMementoStack.GetNumOfActionsDone() > 1 
+			return;
+		}
+
+		if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl)
+			|| Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
+		{
+			if (mMementoStack.GetNumOfActionsDone() > 1
 				&& mMementoStack.CanUndo()
-				&& InputManager::IsKeyPressed(ImGuiKey_Z))
+				&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Z))
 			{
 				mMementoStack.Undo();
-				mTimeLeftUntilCheckForDifference = sDifferenceCheckCoolDown;
+				mUpdateStateCooldown.mAmountOfTimePassed = 0.0f;
+				mDifferenceCheckState.mStage = DifferenceCheckState::Stage::FirstStage;
 				return;
 			}
 
 			if (mMementoStack.CanRedo()
-				&& InputManager::IsKeyPressed(ImGuiKey_Y))
+				&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Y))
 			{
 				mMementoStack.Redo();
-				mTimeLeftUntilCheckForDifference = sDifferenceCheckCoolDown;
+				mUpdateStateCooldown.mAmountOfTimePassed = 0.0f;
+				mDifferenceCheckState.mStage = DifferenceCheckState::Stage::FirstStage;
 				return;
 			}
 
-			if (InputManager::IsKeyPressed(ImGuiKey_S))
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::S))
 			{
 				SaveToFile();
 			}
 		}
 
-		mTimeLeftUntilCheckForDifference -= deltaTime;
-		if (mTimeLeftUntilCheckForDifference <= 0.0f)
+		if (checkForDifferences)
 		{
 			CheckForDifferences();
 		}
@@ -354,7 +366,7 @@ namespace Engine
 	template<typename T>
 	void AssetEditorSystem<T>::ShowSaveButton()
 	{
-		if (ImGui::Button("Save"))
+		if (ImGui::Button(ICON_FA_FLOPPY_O))
 		{
 			// If you're looking at this because
 			// you want to run logic before saving, look at ApplyChangesToAsset
@@ -365,29 +377,140 @@ namespace Engine
 	template <typename T>
 	void AssetEditorSystem<T>::CheckForDifferences()
 	{
-		mTimeLeftUntilCheckForDifference = sDifferenceCheckCoolDown;
+		mUpdateStateCooldown.mAmountOfTimePassed = 0.0f;
 
-		std::string currentStateAsString = Reserialize(SaveToMemory().ToString());
-		MementoAction* const top = mMementoStack.PeekTop();
-
-		if (top == nullptr)
+		switch (mDifferenceCheckState.mStage)
 		{
-			LOG(LogEditor, Verbose, "No top action for {}, saving current state to memory", GetName());
-			mMementoStack.Do(std::move(currentStateAsString), GetName());
-			return;
+		case DifferenceCheckState::Stage::SaveToMemory:
+		{
+			mDifferenceCheckState.mAction.mNameOfAssetEditor = GetName();
+			mDifferenceCheckState.mAction.mState = SaveToMemory().ToString();
+
+			if (mMementoStack.PeekTop() != nullptr
+				&& mDifferenceCheckState.mAction.mState == mMementoStack.PeekTop()->mState)
+			{
+				mUpdateStateCooldown.mAmountOfTimePassed = -mUpdateStateCooldown.mCooldown * (static_cast<float>(DifferenceCheckState::Stage::NUM_OF_STAGES) - 1.0f);
+				mDifferenceCheckState.mStage = DifferenceCheckState::Stage::CheckIfSavedToFile;
+				return;
+			}
+
+			break;
+		}
+		case DifferenceCheckState::Stage::ReloadFromMemory:
+		{
+			std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromStream(std::make_unique<view_istream>(mDifferenceCheckState.mAction.mState));
+
+			if (!loadInfo.has_value())
+			{
+				LOG(LogEditor, Error, "Failed to load metadata, metadata was invalid somehow?");
+				mDifferenceCheckState.mStage = DifferenceCheckState::Stage::CheckIfSavedToFile;
+				return;
+			}
+
+			mDifferenceCheckState.mTemporarilyDeserializedAsset.emplace(*loadInfo);
+			break;
+		}
+		case DifferenceCheckState::Stage::ResaveToMemory:
+		{
+			mDifferenceCheckState.mAction.mState = mDifferenceCheckState.mTemporarilyDeserializedAsset->Save().ToString();
+			break;
+		}
+		case DifferenceCheckState::Stage::Compare:
+		{
+			MementoAction* const topAction = mMementoStack.PeekTop();
+
+			if (topAction == nullptr)
+			{
+				// If this is the first action, it is likely
+				// going to match the file exactly.
+				// We check in more detail in the next stage.
+				mDifferenceCheckState.mAction.mIsSameAsFile = true;
+
+				mMementoStack.Do(std::move(mDifferenceCheckState.mAction));
+				break;
+			}
+
+			if (topAction->mRequiresReserialization)
+			{
+				topAction->mState = Reserialize(topAction->mState);
+				topAction->mRequiresReserialization = false;
+			}
+
+			if (topAction->mState != mDifferenceCheckState.mAction.mState)
+			{
+				LOG(LogEditor, Verbose, "Change detected for {}", GetName());
+
+				// A change was made, it's unlikely going to match
+				// the file. We check in more detail in the next stage.
+				mDifferenceCheckState.mAction.mIsSameAsFile = false;
+
+				mMementoStack.Do(std::move(mDifferenceCheckState.mAction));
+			}
+
+			break;
+		}
+		case DifferenceCheckState::Stage::CheckIfSavedToFile:
+		{
+			MementoAction* const topAction = mMementoStack.PeekTop();
+
+			if (topAction == nullptr)
+			{
+				break;
+			}
+
+			if (!std::filesystem::exists(mPathToSaveAssetTo))
+			{
+				topAction->mIsSameAsFile = false;
+				break;
+			}
+
+			const std::filesystem::file_time_type lastWriteTime = std::filesystem::last_write_time(mPathToSaveAssetTo);
+
+			if (topAction->mTimeWeCheckedIfIsSameAsFile == lastWriteTime)
+			{
+				break;
+			}
+
+			topAction->mTimeWeCheckedIfIsSameAsFile = lastWriteTime;
+
+			if (mAssetOnFile.mWriteTimeAtTimeOfReserializing != lastWriteTime)
+			{
+				// Otherwise we load and save the file.
+				LOG(LogEditor, Verbose, "Loading asset {} from file to check if it's unsaved...", mAsset.GetName());
+
+				std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromFile(mPathToSaveAssetTo);
+
+				if (!loadInfo.has_value())
+				{
+					LOG(LogEditor, Error, "Could not load asset from file {}", mPathToSaveAssetTo.string());
+					break;
+				}
+
+				T assetAsSeenOnFile{ *loadInfo };
+				mAssetOnFile.mReserializedAsset = Reserialize(assetAsSeenOnFile.Save().ToString());
+				mAssetOnFile.mWriteTimeAtTimeOfReserializing = lastWriteTime;
+			}
+
+			topAction->mIsSameAsFile = mAssetOnFile.mReserializedAsset == topAction->mState;
+
+			break;
+		}
 		}
 
-		if (top->mState == currentStateAsString)
+		mDifferenceCheckState.mStage = static_cast<typename DifferenceCheckState::Stage>(static_cast<int>(mDifferenceCheckState.mStage) + 1);
+
+		if (mDifferenceCheckState.mStage == DifferenceCheckState::Stage::NUM_OF_STAGES)
 		{
-			return;
+			mDifferenceCheckState.mStage = DifferenceCheckState::Stage::FirstStage;
 		}
+	}
 
-		top->mState = Reserialize(top->mState);
-
-		if (top->mState != currentStateAsString)
+	template <typename T>
+	void AssetEditorSystem<T>::CompleteDifferenceCheckCycle()
+	{
+		for (int i = 0; i < static_cast<int>(DifferenceCheckState::Stage::NUM_OF_STAGES) * 2; i++)
 		{
-			LOG(LogEditor, Verbose, "Change detected for {}", GetName());
-			mMementoStack.Do(std::move(currentStateAsString), GetName());
+			CheckForDifferences();
 		}
 	}
 
@@ -396,9 +519,15 @@ namespace Engine
 	{
 		// It's possible an action was commited in the last .5f seconds, the change
 		// has not been registered by the do-undo stack and would be ignored.
-		if (mTimeLeftUntilCheckForDifference != sDifferenceCheckCoolDown)
+		if (mMementoStack.PeekTop() == nullptr
+			|| (mUpdateStateCooldown.mAmountOfTimePassed != 0.0f || mDifferenceCheckState.mStage != DifferenceCheckState::Stage::FirstStage))
 		{
-			CheckForDifferences();
+			CompleteDifferenceCheckCycle();
+		}
+
+		for (std::unique_ptr<MementoAction>& action : mMementoStack.GetAllStoredActions())
+		{
+			action->mRequiresReserialization = true;
 		}
 
 		return std::move(mMementoStack);

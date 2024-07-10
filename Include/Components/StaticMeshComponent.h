@@ -1,7 +1,8 @@
 #pragma once
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
     class StaticMesh;
     class Material;
@@ -9,9 +10,15 @@ namespace Engine
     class StaticMeshComponent
     {
     public:   
-        std::shared_ptr<const StaticMesh> mStaticMesh{};
+        AssetHandle<StaticMesh> mStaticMesh{};
 
-        std::shared_ptr<const Material> mMaterial{};
+        AssetHandle<Material> mMaterial{};
+
+        bool mTilesWithMeshScale = false;
+
+        float mTiling = 1;
+
+        bool mHighlightedMesh = false;
 
     private:
         friend ReflectAccess;

@@ -9,18 +9,21 @@
 #include "GSON/GSONBinary.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
+#include "Core/AssetManager.h"
+#include "Core/VirtualMachine.h"
 #include "Meta/MetaTools.h"
+#include "Scripting/ScriptEvents.h"
 #include "Utilities/ClassVersion.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::Script::Script(std::string_view name) :
+CE::Script::Script(std::string_view name) :
 	Asset(name, MakeTypeId<Script>())
 {
-
+	AddEvent(sOnTickScriptEvent);
 }
 
-Engine::Script::Script(AssetLoadInfo& loadInfo) :
+CE::Script::Script(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo)
 {
 	BinaryGSONObject obj{};
@@ -28,8 +31,7 @@ Engine::Script::Script(AssetLoadInfo& loadInfo) :
 
 	if (!success)
 	{
-		LOG(LogAssets, Message, "Loading of script {} failed, possible because this is a new script. Adding an OnTick function...", GetName());
-		AddFunc("OnTick").SetParameters({ {  MakeTypeTraits<float>(), "DeltaTime" } });
+		LOG(LogAssets, Message, "Loading of script {} failed", GetName());
 		return;
 	}
 
@@ -39,7 +41,7 @@ Engine::Script::Script(AssetLoadInfo& loadInfo) :
 	{
 		for (const BinaryGSONObject& serializedFunc : functions->GetChildren())
 		{
-			std::optional<ScriptFunc> func = ScriptFunc::DeserializeFrom(serializedFunc, *this, loadInfo.GetVersion());
+			std::optional<ScriptFunc> func = ScriptFunc::DeserializeFrom(serializedFunc, *this, loadInfo.GetMetaData().GetAssetVersion());
 
 			if (func.has_value())
 			{
@@ -59,7 +61,7 @@ Engine::Script::Script(AssetLoadInfo& loadInfo) :
 	{
 		for (const BinaryGSONObject& serializedMember : members->GetChildren())
 		{
-			std::optional<ScriptField> field = ScriptField::DeserializeFrom(serializedMember, *this, loadInfo.GetVersion());
+			std::optional<ScriptField> field = ScriptField::DeserializeFrom(serializedMember, *this, loadInfo.GetMetaData().GetAssetVersion());
 
 			if (field.has_value())
 			{
@@ -72,9 +74,14 @@ Engine::Script::Script(AssetLoadInfo& loadInfo) :
 		UNLIKELY;
 		LOG(LogScripting, Warning, "No members object serialized");
 	}
+
+	if (VirtualMachine::Get().IsCompiled())
+	{
+		PostDeclarationRefresh();
+	}
 }
 
-Engine::ScriptFunc& Engine::Script::AddFunc(const std::string_view name)
+CE::ScriptFunc& CE::Script::AddFunc(const std::string_view name)
 {
 	ScriptFunc* existingFunc = TryGetFunc(name);
 
@@ -92,7 +99,37 @@ Engine::ScriptFunc& Engine::Script::AddFunc(const std::string_view name)
 	return result;
 }
 
-void Engine::Script::RemoveFunc(Name name)
+CE::ScriptFunc& CE::Script::AddEvent(const ScriptEvent& event)
+{
+	const std::string_view name = event.mBasedOnEvent.get().mName;
+
+	ScriptFunc* existingFunc = TryGetFunc(name);
+
+	if (existingFunc != nullptr)
+	{
+		LOG(LogScripting, Error, "There is already a function with the name {} in {}. Returning existing function",
+			name,
+			GetName());
+		return *existingFunc;
+	}
+
+	auto& result = mFunctions.emplace_back(*this, event);
+
+	if (!result.IsPure()
+		|| !result.GetParameters(true).empty())
+	{
+		result.AddNode<FunctionEntryScriptNode>(result, *this);
+	}
+
+	if (result.GetReturnType().has_value())
+	{
+		result.AddNode<FunctionReturnScriptNode>(result, *this);
+	}
+
+	return result;
+}
+
+void CE::Script::RemoveFunc(Name name)
 {
 	const auto it = GetByName(mFunctions, name);
 
@@ -108,18 +145,18 @@ void Engine::Script::RemoveFunc(Name name)
 	}
 }
 
-Engine::ScriptFunc* Engine::Script::TryGetFunc(Name name)
+CE::ScriptFunc* CE::Script::TryGetFunc(Name name)
 {
 	const auto it = GetByName(mFunctions, name);
 	return it == mFunctions.end() ? nullptr : &*it;
 }
 
-const Engine::ScriptFunc* Engine::Script::TryGetFunc(Name name) const
+const CE::ScriptFunc* CE::Script::TryGetFunc(Name name) const
 {
 	return const_cast<Script*>(this)->TryGetFunc(name);
 }
 
-Engine::ScriptField& Engine::Script::AddField(const std::string_view name)
+CE::ScriptField& CE::Script::AddField(const std::string_view name)
 {
 	ScriptField* existingMember = TryGetField(name);
 
@@ -134,7 +171,7 @@ Engine::ScriptField& Engine::Script::AddField(const std::string_view name)
 	return mFields.emplace_back(*this, name);
 }
 
-void Engine::Script::RemoveField(const Name name)
+void CE::Script::RemoveField(const Name name)
 {
 	const auto it = GetByName(mFields, name);
 
@@ -150,18 +187,18 @@ void Engine::Script::RemoveField(const Name name)
 	}
 }
 
-Engine::ScriptField* Engine::Script::TryGetField(const Name name)
+CE::ScriptField* CE::Script::TryGetField(const Name name)
 {
 	const auto it = GetByName(mFields, name);
 	return it == mFields.end() ? nullptr : &*it;
 }
 
-const Engine::ScriptField* Engine::Script::TryGetField(const Name name) const
+const CE::ScriptField* CE::Script::TryGetField(const Name name) const
 {
 	return const_cast<Script*>(this)->TryGetField(name);
 }
 
-Engine::MetaType* Engine::Script::DeclareMetaType()
+CE::MetaType* CE::Script::DeclareMetaType()
 {
 	TypeInfo ourTypeInfo{
 		/*.mTypeId = */ Name::HashString(GetName()),
@@ -210,8 +247,6 @@ Engine::MetaType* Engine::Script::DeclareMetaType()
 		LOG(LogScripting, Warning, "Making a metatype from {} failed - Type entt::entity was not reflected", GetName());
 		return nullptr;
 	}
-
-	LOG(LogScripting, Verbose, "Making type from script {}", GetName());
 
 	struct MemberToAdd
 	{
@@ -268,7 +303,7 @@ Engine::MetaType* Engine::Script::DeclareMetaType()
 	const uint32 alignment = std::max(std::max_element(membersToAdd.begin(), membersToAdd.end(),
 		[](const MemberToAdd& lhs, const MemberToAdd& rhs)
 		{
-			return lhs.mType.get().GetAlignment() > rhs.mType.get().GetAlignment();
+			return lhs.mType.get().GetAlignment() < rhs.mType.get().GetAlignment();
 		})->mType.get().GetAlignment(), 1u);
 
 	ASSERT(alignment < TypeInfo::sMaxAlign);
@@ -298,30 +333,64 @@ Engine::MetaType* Engine::Script::DeclareMetaType()
 	}
 
 	// Insert padding bytes to make sure the alignment is correct in arrays
-	size += !membersToAdd.empty() ? size % membersToAdd[0].mType.get().GetAlignment() : 0;
+	const uint32 paddingToAddToSize = size % alignment == 0 ? 0 : alignment;
+	size = (size / alignment) * alignment + paddingToAddToSize;
 	size = std::max(size, 1u);
+
+#ifdef ASSERTS_ENABLED
+	for (int i = 0; i < 64; i++)
+	{
+		ASSERT((size * i) % alignment == 0);
+	}
+#endif // ASSERTS_ENABLED
 
 	ourTypeInfo.mFlags |= size;
 	ASSERT(size < TypeInfo::sMaxSize);
 
-	MetaType& metaType = MetaManager::Get().AddType({ ourTypeInfo, GetName() });
+	// Because of some dumb planning,
+	// the renaming of metatypes only works
+	// if the metatype has the rename property
+	// before being added to the metamanager.
+	// Which is why we create a temporary object.
+	MetaType& metaType = [&]() -> MetaType&
+		{
+			MetaType tmp{ ourTypeInfo, GetName() };
 
-	metaType.GetProperties().Set(sWasTypeCreatedFromScriptProperty, true);
-	metaType.GetProperties().Add(Props::sIsScriptableTag);
-	metaType.GetProperties().Set(Props::sComponentTag, true);
+			MetaProps& props = tmp.GetProperties();
+			props.Add(Props::sIsFromScriptsTag).Add(Props::sIsScriptableTag).Add(Props::sComponentTag);
+
+			if (AssetHandle<Script> handleToSelf = AssetManager::Get().TryGetAsset<Script>(GetName());
+				handleToSelf != nullptr)
+			{
+				std::string oldNamesCommaSeperated{};
+
+				for (const std::string& oldName : handleToSelf.GetOldNames())
+				{
+					oldNamesCommaSeperated.append(oldName).push_back(',');
+				}
+
+				if (!oldNamesCommaSeperated.empty())
+				{
+					// Remove last ','
+					oldNamesCommaSeperated.pop_back();
+					props.Set(Props::sOldNames, oldNamesCommaSeperated);
+				}
+			}
+
+			return MetaManager::Get().AddType(std::move(tmp));
+		}(); 
 
 	for (MemberToAdd& memberToAdd : membersToAdd)
 	{
 		MetaField& newMember = metaType.AddField(memberToAdd.mType, memberToAdd.mOffset, memberToAdd.mName);
 		MetaProps& memberProperties = newMember.GetProperties();
 
-		memberProperties.Add(Props::sIsScriptableTag);
+		memberProperties.Add(Props::sIsScriptableTag).Add(Props::sIsFromScriptsTag);
 
 		if (newMember.GetName() == sNameOfOwnerField.StringView())
 		{
 			// Don't allow the user to inspect it
-			memberProperties.Set(Props::sNoInspectTag, true);
-			memberProperties.Set(Props::sNoSerializeTag, true);
+			memberProperties.Add(Props::sNoInspectTag).Add(Props::sNoSerializeTag).Add(Props::sIsScriptReadOnlyTag);
 		}
 	}
 
@@ -332,14 +401,12 @@ Engine::MetaType* Engine::Script::DeclareMetaType()
 	AddCopyAssign(metaType, false);
 	AddDestructor(metaType, false);
 
-	ReflectComponentType(metaType);
-
-	LOG(LogScripting, Verbose, "Finished making type from script {}", GetName());
+	Internal::ReflectRuntimeComponentType(metaType, false);
 
 	return &metaType;
 }
 
-void Engine::Script::PostDeclarationRefresh()
+void CE::Script::PostDeclarationRefresh()
 {
 	for (ScriptFunc& func : mFunctions)
 	{
@@ -347,7 +414,7 @@ void Engine::Script::PostDeclarationRefresh()
 	}
 }
 
-void Engine::Script::DeclareMetaFunctions(MetaType& type)
+void CE::Script::DeclareMetaFunctions(MetaType& type)
 {
 	// Add all the other functions
 	for (ScriptFunc& func : mFunctions)
@@ -356,7 +423,7 @@ void Engine::Script::DeclareMetaFunctions(MetaType& type)
 	}
 }
 
-void Engine::Script::DefineMetaType(MetaType& type, bool OnlyDefineBigFiveAndDestructor)
+void CE::Script::DefineMetaType(MetaType& type, bool OnlyDefineBigFiveAndDestructor)
 {
 	AddDefaultConstructor(type, true);
 	AddMoveConstructor(type, true);
@@ -386,7 +453,7 @@ void Engine::Script::DefineMetaType(MetaType& type, bool OnlyDefineBigFiveAndDes
 	}
 }
 
-void Engine::Script::CollectErrors(ScriptErrorInserter inserter) const
+void CE::Script::CollectErrors(ScriptErrorInserter inserter) const
 {
 	for (const ScriptField& field : mFields)
 	{
@@ -399,17 +466,21 @@ void Engine::Script::CollectErrors(ScriptErrorInserter inserter) const
 	}
 }
 
-void Engine::Script::OnSave(AssetSaveInfo& saveInfo) const
+void CE::Script::OnSave(AssetSaveInfo& saveInfo) const
 {
 	BinaryGSONObject obj{};
 
 	BinaryGSONObject& functions = obj.AddGSONObject("functions");
+	functions.ReserveChildren(mFunctions.size());
+
 	for (const ScriptFunc& func : mFunctions)
 	{
 		func.SerializeTo(functions.AddGSONObject(""));
 	}
 
 	BinaryGSONObject& members = obj.AddGSONObject("members");
+	members.ReserveChildren(mFields.size());
+
 	for (const ScriptField& field : mFields)
 	{
 		field.SerializeTo(members.AddGSONObject(""));
@@ -419,7 +490,7 @@ void Engine::Script::OnSave(AssetSaveInfo& saveInfo) const
 }
 
 template<typename T>
-typename std::vector<T>::iterator Engine::Script::GetByName(std::vector<T>& vector, const Name name)
+typename std::vector<T>::iterator CE::Script::GetByName(std::vector<T>& vector, const Name name)
 {
 	return std::find_if(vector.begin(), vector.end(),
 		[name](const T& item)
@@ -428,7 +499,7 @@ typename std::vector<T>::iterator Engine::Script::GetByName(std::vector<T>& vect
 		});
 }
 
-void Engine::Script::AddDefaultConstructor(MetaType& toType, bool define) const
+void CE::Script::AddDefaultConstructor(MetaType& toType, bool define) const
 {
 	static constexpr OperatorType op = OperatorType::constructor;
 	static constexpr TypeTraits ret = { MakeTypeTraits<void>() };
@@ -511,7 +582,7 @@ void Engine::Script::AddDefaultConstructor(MetaType& toType, bool define) const
 	);
 }
 
-void Engine::Script::AddMoveConstructor(MetaType& toType, bool define) const
+void CE::Script::AddMoveConstructor(MetaType& toType, bool define) const
 {
 	static constexpr OperatorType op = OperatorType::constructor;
 	static constexpr TypeTraits ret = MakeTypeTraits<void>();
@@ -560,7 +631,7 @@ void Engine::Script::AddMoveConstructor(MetaType& toType, bool define) const
 	);
 }
 
-void Engine::Script::AddCopyConstructor(MetaType& toType, bool define) const
+void CE::Script::AddCopyConstructor(MetaType& toType, bool define) const
 {
 	static constexpr OperatorType op = OperatorType::constructor;
 	static constexpr TypeTraits ret = MakeTypeTraits<void>();
@@ -608,7 +679,7 @@ void Engine::Script::AddCopyConstructor(MetaType& toType, bool define) const
 	);
 }
 
-void Engine::Script::AddMoveAssign(MetaType& toType, bool define) const
+void CE::Script::AddMoveAssign(MetaType& toType, bool define) const
 {
 	static constexpr OperatorType op = OperatorType::assign;
 	const TypeTraits ret = { toType.GetTypeId(), TypeForm::Ref };
@@ -656,7 +727,7 @@ void Engine::Script::AddMoveAssign(MetaType& toType, bool define) const
 	);
 }
 
-void Engine::Script::AddCopyAssign(MetaType& toType, bool define) const
+void CE::Script::AddCopyAssign(MetaType& toType, bool define) const
 {
 	static constexpr OperatorType op = OperatorType::assign;
 	const TypeTraits ret = { toType.GetTypeId(), TypeForm::Ref };
@@ -704,7 +775,7 @@ void Engine::Script::AddCopyAssign(MetaType& toType, bool define) const
 	);
 }
 
-void Engine::Script::AddDestructor(MetaType& toType, bool define) const
+void CE::Script::AddDestructor(MetaType& toType, bool define) const
 {
 	static constexpr OperatorType op = OperatorType::destructor;
 	static constexpr TypeTraits ret = MakeTypeTraits<void>();
@@ -749,9 +820,9 @@ void Engine::Script::AddDestructor(MetaType& toType, bool define) const
 	);
 }
 
-Engine::MetaType Engine::Script::Reflect()
+CE::MetaType CE::Script::Reflect()
 {
-	MetaType type = MetaType{ MetaType::T<Script>{}, "Script", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{} };
+	MetaType type = MetaType{ MetaType::T<Script>{}, "Script", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
 
 	SetClassVersion(type, 1);
 

@@ -3,15 +3,18 @@
 // But the functionality has been divided into seperate .cpp files,
 // since the amount of code made it hard to find what you needed when
 // it was all in one file.
+#include "BasicDataTypes/Colors/LinearColor.h"
 #include "EditorSystems/AssetEditorSystems/ScriptEditorSystem.h"
 
 #include "Core/VirtualMachine.h"
+#include "Meta/MetaTypeFilter.h"
+#include "Scripting/ScriptEvents.h"
 #include "Scripting/ScriptTools.h"
 #include "Utilities/Search.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Scripting/Nodes/CommentScriptNode.h"
 
-namespace Engine
+namespace CE
 {
 	struct ParamWrapper
 	{
@@ -27,14 +30,18 @@ namespace Engine
 	};
 }
 
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::ParamWrapper, var.DisplayInspectUI(name);)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::ParamWrapper, var.DisplayInspectUI(name);)
 
-void Engine::ScriptEditorSystem::DisplayDetailsPanel()
+void CE::ScriptEditorSystem::DisplayDetailsPanel()
 {
 	ScriptFunc* func = TryGetSelectedFunc();
 	ScriptField* field = TryGetSelectedField();
 
-	if (func != nullptr)
+	if (field != nullptr)
+	{
+		DisplayMemberDetails(*field);
+	}
+	else if (func != nullptr)
 	{
 		std::vector<NodeId> selectedNodes = GetSelectedNodes();
 
@@ -52,19 +59,19 @@ void Engine::ScriptEditorSystem::DisplayDetailsPanel()
 				LOG(LogEditor, Warning, "Selecting a node that no longer exists, should not be possible");
 			}
 		}
+		else if (func->IsEvent())
+		{
+			DisplayEventDetails(*func);
+		}
 		else
 		{
 			DisplayFunctionDetails(*func);
 		}
 	}
-	else if (field != nullptr)
-	{
-		DisplayMemberDetails(*field);
-	}
 }
 
 
-void Engine::ScriptEditorSystem::DisplayFunctionDetails(ScriptFunc& func)
+void CE::ScriptEditorSystem::DisplayFunctionDetails(ScriptFunc& func)
 {
 	std::string funcName = func.GetName();
 
@@ -139,7 +146,13 @@ void Engine::ScriptEditorSystem::DisplayFunctionDetails(ScriptFunc& func)
 	}
 }
 
-void Engine::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
+void CE::ScriptEditorSystem::DisplayEventDetails(ScriptFunc& func)
+{
+	ImGui::TextUnformatted(func.GetName().c_str());
+	func.TryGetEvent()->OnDetailsInspect(func);
+}
+
+void CE::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
 {
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
 
@@ -151,10 +164,19 @@ void Engine::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
 
 		std::string comment = asComment.GetComment();
 
-		if (ShowInspectUI("Comment: ", comment))
+		if (ShowInspectUI("Comment", comment))
 		{
 			asComment.SetComment(comment);
 		}
+
+		LinearColor col = asComment.GetColour();
+
+		if (ShowInspectUI("Colour", col))
+		{
+			asComment.SetColour(col);
+		}
+
+		return;
 	}
 
 	for (ScriptPin& inputPin : node.GetInputs(currentFunc))
@@ -179,7 +201,9 @@ void Engine::ScriptEditorSystem::DisplayNodeDetails(ScriptNode& node)
 	ImGui::PopStyleColor();
 }
 
-void Engine::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
+
+
+void CE::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
 {
 	// Reduce code reptition
 	std::string memberName = field.GetName();
@@ -188,21 +212,33 @@ void Engine::ScriptEditorSystem::DisplayMemberDetails(ScriptField& field)
 	{
 		field.SetName(memberName);
 	}
-	std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>("Type: ", field.GetTypeName().c_str(),
-		[](const MetaType& type)
-		{
-			return CanTypeBeOwnedByScripts(type);
-		});
 
-	if (selectedType.has_value())
+	struct FieldTypeFilter
 	{
-		field.SetType(*selectedType);
+		bool operator()(const MetaType& type) const
+		{
+			return ScriptField::CanTypeBeUsedForFields(type);
+		}
+	};
+
+	const MetaType* currentFieldType = field.TryGetType();
+
+	if (currentFieldType == nullptr)
+	{
+		ImGui::TextUnformatted(Format("{} is no longer a valid type", field.GetTypeName()).c_str());
+	}
+
+	MetaTypeFilter<FieldTypeFilter> filter{ currentFieldType };
+
+	if (ShowInspectUI("Type", filter))
+	{
+		field.SetType(filter == nullptr ? MetaManager::Get().GetType<int32>() : *filter.Get());
 	}
 
 	ShowInspectUI("Default value", field.GetDefaultValue());
 }
 
-void Engine::ParamWrapper::DisplayInspectUI(const std::string&)
+void CE::ParamWrapper::DisplayInspectUI(const std::string&)
 {
 	std::string paramName = mParam.GetName();
 	if (ShowInspectUI("Name", paramName))
@@ -210,16 +246,27 @@ void Engine::ParamWrapper::DisplayInspectUI(const std::string&)
 		mParam.SetName(paramName);
 	}
 
-	std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>("Type: ", 
-		mParam.GetTypeName(),
-		[](const MetaType& type)
-		{
-			return CanTypeBeReferencedInScripts(type);
-		});
-
-	if (selectedType.has_value())
+	struct ReferencedByScriptFilter
 	{
-		mParam = ScriptVariableTypeData{ *selectedType, CanTypeBeOwnedByScripts(*selectedType) ? TypeForm::Value : TypeForm::Ptr, std::string{ mParam.GetName() }, };
+		bool operator()(const MetaType& type) const
+		{
+			return ScriptField::CanTypeBeUsedForFields(type);
+		}
+	};
+
+	const MetaType* currentParamType = mParam.TryGetType();
+
+	if (currentParamType == nullptr)
+	{
+		ImGui::TextUnformatted(Format("{} is no longer a valid type", mParam.GetTypeName()).c_str());
+	}
+
+	MetaTypeFilter<ReferencedByScriptFilter> filter{ currentParamType };
+
+	if (ShowInspectUI("Type", filter))
+	{
+		const MetaType& selectedType = filter == nullptr ? MetaManager::Get().GetType<int32>() : *filter.Get();
+		mParam = ScriptVariableTypeData{ selectedType, CanTypeBeOwnedByScripts(selectedType) ? TypeForm::Value : TypeForm::Ptr, std::string{ mParam.GetName() }, };
 	}
 
 	const MetaType* const type = mParam.TryGetType();

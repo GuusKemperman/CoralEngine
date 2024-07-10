@@ -7,37 +7,56 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::PrefabOriginComponent::PrefabOriginComponent(Name::HashType hashedPrefabName, uint32 factoryId) :
+CE::PrefabOriginComponent::PrefabOriginComponent(Name::HashType hashedPrefabName, uint32 factoryId) :
 	mHashedPrefabName(hashedPrefabName),
 	mFactoryId(factoryId)
 {
 }
 
-Engine::PrefabOriginComponent::PrefabOriginComponent(const PrefabEntityFactory& factory)
+CE::PrefabOriginComponent::PrefabOriginComponent(const PrefabEntityFactory& factory)
 {
 	SetFactoryOfOrigin(factory);
 }
 
-void Engine::PrefabOriginComponent::SetFactoryOfOrigin(const PrefabEntityFactory& factory)
+void CE::PrefabOriginComponent::SetFactoryOfOrigin(const PrefabEntityFactory& factory)
 {
 	mHashedPrefabName = Name::HashString(factory.GetPrefab().GetName());
 	mFactoryId = factory.GetId();
 }
 
-const Engine::Prefab* Engine::PrefabOriginComponent::TryGetPrefab() const
+CE::AssetHandle<CE::Prefab> CE::PrefabOriginComponent::TryGetPrefab() const
 {
-	return AssetManager::Get().TryGetAsset<Prefab>(mHashedPrefabName).get();
+	return AssetManager::Get().TryGetAsset<Prefab>(mHashedPrefabName);
 }
 
-const Engine::PrefabEntityFactory* Engine::PrefabOriginComponent::TryGetFactory() const
+const CE::PrefabEntityFactory* CE::PrefabOriginComponent::TryGetFactory() const
 {
-	const Prefab* prefab = TryGetPrefab();
-	return prefab == nullptr ? nullptr : prefab->TryFindFactory(mFactoryId);
+	const Prefab* prefab = TryGetPrefab().Get();
+
+	if (prefab == nullptr
+		|| prefab->GetFactories().empty())
+	{
+		return nullptr;
+	}
+
+	// This is the root factory. The id
+	// of the root factory is based on the
+	// prefab name. This branch makes sure
+	// references are not broken when the
+	// prefab is renamed.
+	if (mFactoryId == mHashedPrefabName)
+	{
+		return &prefab->GetFactories().front();
+	}
+
+	return prefab->TryFindFactory(mFactoryId);
 }
 
-Engine::MetaType Engine::PrefabOriginComponent::Reflect()
+CE::MetaType CE::PrefabOriginComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<PrefabOriginComponent>{}, "PrefabOriginComponent" };
+
+	metaType.GetProperties().Add(Props::sNoInspectTag);
 
 	metaType.AddField(&PrefabOriginComponent::mHashedPrefabName, "mHashedPrefabName").GetProperties().Add(Props::sNoInspectTag);
 	metaType.AddField(&PrefabOriginComponent::mFactoryId, "mFactoryId").GetProperties().Add(Props::sNoInspectTag);

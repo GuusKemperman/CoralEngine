@@ -6,7 +6,7 @@
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
 
-Engine::MetaFunc::MetaFunc(const InvokeT& funcToInvoke,
+CE::MetaFunc::MetaFunc(const InvokeT& funcToInvoke,
 	const NameOrTypeInit nameOrType,
 	const Return& returnType,
 	const Params& parameters) :
@@ -15,12 +15,24 @@ Engine::MetaFunc::MetaFunc(const InvokeT& funcToInvoke,
 	mNameOrType(std::holds_alternative<std::string_view>(nameOrType) ?
 		NameOrType{ std::string{ std::get<std::string_view>(nameOrType) } } : NameOrType{ std::get<OperatorType>(nameOrType) }),
 	mProperties(std::make_unique<MetaProps>()),
-	mFuncId(MakeFuncId(mReturn.mTypeTraits, std::vector<TypeTraits>{ mParams.data(), mParams.data() + mParams.size() })),
+	mFuncId(MakeFuncId(mReturn.mTypeTraits,
+		[&]
+		{
+			std::vector<TypeTraits> params{};
+			params.reserve(mParams.size());
+
+			for (const MetaFuncNamedParam& namedParam : mParams)
+			{
+				params.emplace_back(namedParam.mTypeTraits);
+			}
+
+			return params;
+		}())),
 	mFuncToInvoke(funcToInvoke)
 {
 }
 
-Engine::MetaFunc::MetaFunc(InvokeT&& func,
+CE::MetaFunc::MetaFunc(InvokeT&& func,
 	const NameOrTypeInit nameOrType, Params&& paramsAndReturnAtBack, uint32 funcId) :
 	mReturn(std::move(paramsAndReturnAtBack.back())),
 	mParams(std::move(paramsAndReturnAtBack)),
@@ -33,25 +45,25 @@ Engine::MetaFunc::MetaFunc(InvokeT&& func,
 	mParams.pop_back();
 }
 
-Engine::MetaFunc::MetaFunc(MetaFunc&&) noexcept = default;
+CE::MetaFunc::MetaFunc(MetaFunc&&) noexcept = default;
 
-Engine::MetaFunc::~MetaFunc() = default;
+CE::MetaFunc::~MetaFunc() = default;
 
-Engine::MetaFunc& Engine::MetaFunc::operator=(MetaFunc&& other) noexcept = default;
+CE::MetaFunc& CE::MetaFunc::operator=(MetaFunc&& other) noexcept = default;
 
-std::string_view Engine::MetaFunc::GetDesignerFriendlyName() const
+std::string_view CE::MetaFunc::GetDesignerFriendlyName() const
 {
 	return GetDesignerFriendlyName(mNameOrType);
 }
 
-std::string_view Engine::MetaFunc::GetDesignerFriendlyName(const NameOrType& nameOrType)
+std::string_view CE::MetaFunc::GetDesignerFriendlyName(const NameOrType& nameOrType)
 {
 	return std::holds_alternative<OperatorType>(nameOrType) ?
 		GetNameOfOperator(std::get<OperatorType>(nameOrType)) :
 		std::get<std::string>(nameOrType);
 }
 
-Engine::FuncResult Engine::MetaFunc::InvokeChecked(Span<MetaAny> args, Span<const TypeForm> formOfArgs, RVOBuffer rvoBuffer) const
+CE::FuncResult CE::MetaFunc::InvokeChecked(Span<MetaAny> args, Span<const TypeForm> formOfArgs, RVOBuffer rvoBuffer) const
 {
 	std::optional<std::string> reasonWeCantInvoke = CanArgBePassedIntoParam(args, formOfArgs, mParams);
 
@@ -63,7 +75,7 @@ Engine::FuncResult Engine::MetaFunc::InvokeChecked(Span<MetaAny> args, Span<cons
 	return InvokeUnchecked(args, formOfArgs, rvoBuffer);
 }
 
-Engine::FuncResult Engine::MetaFunc::InvokeUnchecked(Span<MetaAny> args,
+CE::FuncResult CE::MetaFunc::InvokeUnchecked(Span<MetaAny> args,
 	[[maybe_unused]] Span<const TypeForm> formOfArgs, RVOBuffer rvoBuffer) const
 {
 	ASSERT_LOG(!CanArgBePassedIntoParam(args, formOfArgs, mParams).has_value(), "Invalid arguments passed to function - {} - Use invoke checked if you are not sure your arguments are valid",
@@ -78,7 +90,7 @@ Engine::FuncResult Engine::MetaFunc::InvokeUnchecked(Span<MetaAny> args,
 	return mFuncToInvoke(args, rvoBuffer);
 }
 
-std::optional<std::string> Engine::MetaFunc::CanArgBePassedIntoParam(Span<const MetaAny> args,
+std::optional<std::string> CE::MetaFunc::CanArgBePassedIntoParam(Span<const MetaAny> args,
 	Span<const TypeForm> formOfArgs,
 	const std::vector<MetaFuncNamedParam>& params)
 {
@@ -106,7 +118,7 @@ std::optional<std::string> Engine::MetaFunc::CanArgBePassedIntoParam(Span<const 
 	return std::nullopt;
 }
 
-std::optional<std::string> Engine::MetaFunc::CanArgBePassedIntoParam(const MetaAny& arg, TypeForm formOfArg, const TypeTraits param)
+std::optional<std::string> CE::MetaFunc::CanArgBePassedIntoParam(const MetaAny& arg, TypeForm formOfArg, const TypeTraits param)
 {
 	std::optional<std::string> reasonWhyWeCannotPassItIn = CanArgBePassedIntoParam({ arg.GetTypeId(), formOfArg }, param);
 
@@ -124,7 +136,7 @@ std::optional<std::string> Engine::MetaFunc::CanArgBePassedIntoParam(const MetaA
 	return std::nullopt;
 }
 
-std::optional<std::string> Engine::MetaFunc::CanArgBePassedIntoParam(TypeTraits arg, TypeTraits param)
+std::optional<std::string> CE::MetaFunc::CanArgBePassedIntoParam(TypeTraits arg, TypeTraits param)
 {
 	static constexpr std::string_view constPassedToMutable = "Cannot pass const value to mutable parameter";
 	static constexpr std::string_view argNotMovedIn = "Expected an RValue, but the argument was not moved in";
@@ -277,35 +289,35 @@ std::optional<std::string> Engine::MetaFunc::CanArgBePassedIntoParam(TypeTraits 
 }
 
 template <>
-Engine::MetaAny Engine::MetaFunc::PackSingle<const Engine::MetaAny&>(const MetaAny& other)
+CE::MetaAny CE::MetaFunc::PackSingle<const CE::MetaAny&>(const MetaAny& other)
 {
 	return { other.GetTypeInfo(), const_cast<void*>(other.GetData())};
 }
 
 template <>
-Engine::MetaAny Engine::MetaFunc::PackSingle<Engine::MetaAny&>(MetaAny& other)
+CE::MetaAny CE::MetaFunc::PackSingle<CE::MetaAny&>(MetaAny& other)
 {
 	return { other.GetTypeInfo(), other.GetData() };
 }
 
-Engine::MetaAny& Engine::FuncResult::GetReturnValue()
+CE::MetaAny& CE::FuncResult::GetReturnValue()
 {
 	ASSERT(HasReturnValue());
 	return *std::get<std::optional<MetaAny>>(mResult);
 }
 
-bool Engine::FuncResult::HasReturnValue() const
+bool CE::FuncResult::HasReturnValue() const
 {
 	return std::holds_alternative<std::optional<MetaAny>>(mResult)
 		&& std::get<std::optional<MetaAny>>(mResult).has_value();
 }
 
-bool Engine::FuncResult::HasError() const
+bool CE::FuncResult::HasError() const
 {
 	return std::holds_alternative<std::string>(mResult);
 }
 
-std::string Engine::FuncResult::Error() const
+std::string CE::FuncResult::Error() const
 {
 	if (HasError())
 	{
@@ -315,7 +327,7 @@ std::string Engine::FuncResult::Error() const
 	return std::string();
 }
 
-std::string_view Engine::GetNameOfOperator(const OperatorType type)
+std::string_view CE::GetNameOfOperator(const OperatorType type)
 {
 	switch (type)
 	{
@@ -360,6 +372,8 @@ std::string_view Engine::GetNameOfOperator(const OperatorType type)
 	case OperatorType::arrow: return "->";
 	case OperatorType::dot: return ".";
 	case OperatorType::dot_indirect: return ".*";
+	case OperatorType::increment: return "++";
+	case OperatorType::decrement: return "--";
 	default: return "Invalid operator";
 	}
 }

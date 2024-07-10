@@ -3,7 +3,7 @@
 
 #include "Components/Particles/ParticleComponentTraits.h"
 
-namespace Engine
+namespace CE
 {
 	class ParticleSpawnPrefabOnDeathSystem final :
 		public System

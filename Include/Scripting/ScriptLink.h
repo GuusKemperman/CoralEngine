@@ -2,7 +2,7 @@
 #include "Scripting/ScriptIds.h"
 #include "ScriptErrors.h"
 
-namespace Engine
+namespace CE
 {
 	class ScriptPin;
 	class BinaryGSONObject;

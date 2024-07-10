@@ -5,25 +5,26 @@
 #include "Scripting/ScriptIds.h"
 #include "Scripting/ScriptFunc.h"
 #include "GSON/GSONBinary.h"
+#include "Meta/MetaManager.h"
 #include "Scripting/Nodes/ControlScriptNodes.h"
 #include "Scripting/Nodes/CommentScriptNode.h"
 #include "Scripting/Nodes/MetaFuncScriptNode.h"
-#include "Scripting/Nodes/MetaMemberScriptNode.h"
+#include "Scripting/Nodes/MetaFieldScriptNode.h"
 #include "Scripting/Nodes/EntryAndReturnScriptNode.h"
 #include "Scripting/Nodes/ReroutScriptNode.h"
 
-Engine::ScriptNode::ScriptNode(const ScriptNodeType type) :
+CE::ScriptNode::ScriptNode(const ScriptNodeType type) :
 	mType(type)
 {
 }
 
-Engine::ScriptNode::ScriptNode(const ScriptNodeType type, ScriptFunc& scriptFunc) :
+CE::ScriptNode::ScriptNode(const ScriptNodeType type, ScriptFunc& scriptFunc) :
 	mId(static_cast<uint32>(scriptFunc.GetNumOfNodesIncludingRemoved() + 1)),
 	mType(type)
 {
 }
 
-void Engine::ScriptNode::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
+void CE::ScriptNode::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
 {
 	for (const ScriptPin& pin : GetPins(scriptFunc))
 	{
@@ -31,12 +32,12 @@ void Engine::ScriptNode::CollectErrors(ScriptErrorInserter inserter, const Scrip
 	}
 }
 
-void Engine::ScriptNode::SetPins(ScriptFunc& scriptFunc, InputsOutputs&& inputsOutputs)
+void CE::ScriptNode::SetPins(ScriptFunc& scriptFunc, InputsOutputs&& inputsOutputs)
 {
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
 	ClearPins(scriptFunc);
 #else 
-	ASSERT(!mFirstPinId.IsValid() && mNumOfOutputs == 0 && mNumOfInputs)
+	ASSERT(!mFirstPinId.IsValid() && mNumOfOutputs == 0 && mNumOfInputs);
 #endif // REMOVE_FROM_SCRIPTS_ENABLED
 
 	mNumOfInputs = static_cast<uint32>(inputsOutputs.mInputs.size());
@@ -54,7 +55,7 @@ void Engine::ScriptNode::SetPins(ScriptFunc& scriptFunc, InputsOutputs&& inputsO
 }
 
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
-void Engine::ScriptNode::ClearPins(ScriptFunc& scriptFunc)
+void CE::ScriptNode::ClearPins(ScriptFunc& scriptFunc)
 {
 	if (mFirstPinId != PinId::Invalid)
 	{
@@ -66,7 +67,7 @@ void Engine::ScriptNode::ClearPins(ScriptFunc& scriptFunc)
 }
 
 
-void Engine::ScriptNode::RefreshByComparingPins(ScriptFunc& scriptFunc,
+void CE::ScriptNode::RefreshByComparingPins(ScriptFunc& scriptFunc,
 	const std::vector<ScriptVariableTypeData>& expectedInputs,
 	const std::vector<ScriptVariableTypeData>& expectedOutputs)
 {
@@ -82,53 +83,55 @@ void Engine::ScriptNode::RefreshByComparingPins(ScriptFunc& scriptFunc,
 		outOfDataResult.mAreOutputsOutOfDate = false;
 	}
 
-	// Update the names of the pins
+	auto updateNames = [](Span<ScriptPin> pins, const std::vector<ScriptVariableTypeData>& expectedPins)
+		{
+			for (uint32 i = 0; i < pins.size() && i < expectedPins.size(); i++)
+			{
+				pins[i].SetName(expectedPins[i].GetName());
+			}
+		};
+
 	if (!outOfDataResult.mAreInputsOutOfDate)
 	{
-		auto inputs = GetInputs(scriptFunc);
-		for (uint32 i = 0; i < inputs.size() && i < expectedInputs.size(); i++)
-		{
-			inputs[i].SetName(expectedInputs[i].GetName());
-		}
+		updateNames(GetInputs(scriptFunc), expectedInputs);
 	}
 
-	// Update the names of the pins
-	if (!outOfDataResult.mAreInputsOutOfDate)
+	if (!outOfDataResult.mAreOutputsOutOfDate)
 	{
-		auto outputs = GetOutputs(scriptFunc);
-		for (uint32 i = 0; i < outputs.size() && i < expectedOutputs.size(); i++)
-		{
-			outputs[i].SetName(expectedOutputs[i].GetName());
-		}
+		updateNames(GetOutputs(scriptFunc), expectedOutputs);
 	}
 }
 #endif // REMOVE_FROM_SCRIPTS_ENABLED
 
-bool Engine::ScriptNode::IsPure(const ScriptFunc& scriptFunc) const
+bool CE::ScriptNode::IsPure(const ScriptFunc& scriptFunc) const
 {
 	return mNumOfOutputs == 0 || !GetOutputs(scriptFunc)[0].IsFlow();
 }
 
-void Engine::ScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
+void CE::ScriptNode::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
 {
 	to.AddGSONMember("type") << mType;
 	to.AddGSONMember("id") << mId.Get();
 	to.AddGSONMember("pos") << mPosition;
 
 	BinaryGSONObject& inputs = to.AddGSONObject("inputs");
+	inputs.ReserveChildren(mNumOfInputs);
+
 	for (const ScriptPin& input : GetInputs(scriptFunc))
 	{
 		input.SerializeTo(inputs.AddGSONObject(""));
 	}
 
 	BinaryGSONObject& outputs = to.AddGSONObject("outputs");
+	outputs.ReserveChildren(mNumOfOutputs);
+
 	for (const ScriptPin& output : GetOutputs(scriptFunc))
 	{
 		output.SerializeTo(outputs.AddGSONObject(""));
 	}
 }
 
-std::unique_ptr<Engine::ScriptNode> Engine::ScriptNode::DeserializeFrom(const BinaryGSONObject& from,
+std::unique_ptr<CE::ScriptNode> CE::ScriptNode::DeserializeFrom(const BinaryGSONObject& from,
 	std::back_insert_iterator<std::vector<ScriptPin>> pinInserter, const uint32 version)
 {
 	const BinaryGSONMember* serializedType = from.TryGetGSONMember("type");
@@ -218,13 +221,13 @@ std::unique_ptr<Engine::ScriptNode> Engine::ScriptNode::DeserializeFrom(const Bi
 	return node;
 }
 
-void Engine::ScriptNode::GetReferencesToIds(ScriptIdInserter inserter)
+void CE::ScriptNode::GetReferencesToIds(ScriptIdInserter inserter)
 {
 	inserter = mId;
 	inserter = mFirstPinId;
 }
 
-bool Engine::ScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
+bool CE::ScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 {
 	const BinaryGSONMember* id = from.TryGetGSONMember("id");
 	const BinaryGSONMember* pos = from.TryGetGSONMember("pos");
@@ -247,7 +250,7 @@ bool Engine::ScriptNode::DeserializeVirtual(const BinaryGSONObject& from)
 	return true;
 }
 
-void Engine::ScriptNode::GetErrorsByComparingPins(ScriptErrorInserter inserter,
+void CE::ScriptNode::GetErrorsByComparingPins(ScriptErrorInserter inserter,
 	const ScriptFunc& scriptFunc,
 	const std::vector<ScriptVariableTypeData>& expectedInputs,
 	const std::vector<ScriptVariableTypeData>& expectedOutputs) const
@@ -267,13 +270,14 @@ void Engine::ScriptNode::GetErrorsByComparingPins(ScriptErrorInserter inserter,
 	}
 }
 
-Engine::ScriptNode::CompareOutOfDataResult Engine::ScriptNode::CheckIfOutOfDateByComparingPinType(const ScriptFunc& scriptFunc,
+CE::ScriptNode::CompareOutOfDataResult CE::ScriptNode::CheckIfOutOfDateByComparingPinType(const ScriptFunc& scriptFunc,
 	const std::vector<ScriptVariableTypeData>& expectedInputs,
 	const std::vector<ScriptVariableTypeData>& expectedOutputs) const
 {
 	static constexpr auto compareToPins = [](const ScriptVariableTypeData& currentParams, const ScriptPin& oldPins) -> bool
 		{
-			return oldPins.GetTypeName() == currentParams.GetTypeName() && oldPins.GetTypeForm() == currentParams.GetTypeForm();
+			return oldPins.GetTypeName() == currentParams.GetTypeName()
+					&& oldPins.GetTypeForm() == currentParams.GetTypeForm();
 		};
 
 	CompareOutOfDataResult result{};

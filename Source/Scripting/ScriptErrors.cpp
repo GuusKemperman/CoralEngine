@@ -9,27 +9,27 @@
 #include "Scripting/ScriptNode.h"
 #include "EditorSystems/AssetEditorSystems/ScriptEditorSystem.h"
 
-Engine::ScriptLocation::ScriptLocation(const Script& script) :
+CE::ScriptLocation::ScriptLocation(const Script& script) :
 	mType(Type::Script),
 	mNameOfScript(script.GetName())
 {
 }
 
-Engine::ScriptLocation::ScriptLocation(const ScriptFunc& func) :
+CE::ScriptLocation::ScriptLocation(const ScriptFunc& func) :
 	mType(Type::Func),
 	mNameOfScript(func.GetNameOfScriptAsset()),
 	mFieldOrFuncName(func.GetName())
 {
 }
 
-Engine::ScriptLocation::ScriptLocation(const ScriptField& field) :
+CE::ScriptLocation::ScriptLocation(const ScriptField& field) :
 	mType(Type::Field),
 	mNameOfScript(field.GetNameOfScriptAsset()),
 	mFieldOrFuncName(field.GetName())
 {
 }
 
-Engine::ScriptLocation::ScriptLocation(const ScriptFunc& func, const ScriptNode& node) :
+CE::ScriptLocation::ScriptLocation(const ScriptFunc& func, const ScriptNode& node) :
 	mType(Type::Node),
 	mNameOfScript(func.GetNameOfScriptAsset()),
 	mFieldOrFuncName(func.GetName()),
@@ -37,7 +37,7 @@ Engine::ScriptLocation::ScriptLocation(const ScriptFunc& func, const ScriptNode&
 {
 }
 
-Engine::ScriptLocation::ScriptLocation(const ScriptFunc& func, const ScriptLink& link) :
+CE::ScriptLocation::ScriptLocation(const ScriptFunc& func, const ScriptLink& link) :
 	mType(Type::Link),
 	mNameOfScript(func.GetNameOfScriptAsset()),
 	mFieldOrFuncName(func.GetName()),
@@ -45,7 +45,7 @@ Engine::ScriptLocation::ScriptLocation(const ScriptFunc& func, const ScriptLink&
 {
 }
 
-Engine::ScriptLocation::ScriptLocation(const ScriptFunc& func, const ScriptPin& pin) :
+CE::ScriptLocation::ScriptLocation(const ScriptFunc& func, const ScriptPin& pin) :
 	mType(Type::Pin),
 	mNameOfScript(func.GetNameOfScriptAsset()),
 	mFieldOrFuncName(func.GetName()),
@@ -54,22 +54,22 @@ Engine::ScriptLocation::ScriptLocation(const ScriptFunc& func, const ScriptPin& 
 }
 
 #ifdef EDITOR
-void Engine::ScriptLocation::NavigateToLocation() const
+void CE::ScriptLocation::NavigateToLocation() const
 {
 	const std::string systemName = Internal::GetSystemNameBasedOnAssetName(mNameOfScript);
 	ScriptEditorSystem* scriptEditor = Editor::Get().TryGetSystem<ScriptEditorSystem>(systemName);
 
 	if (scriptEditor == nullptr)
 	{
-		std::optional<WeakAsset<Script>> script = AssetManager::Get().TryGetWeakAsset<Script>(mNameOfScript);
+		WeakAssetHandle<Script> script = AssetManager::Get().TryGetWeakAsset<Script>(mNameOfScript);
 
-		if (!script.has_value())
+		if (script == nullptr)
 		{
 			LOG(LogEditor, Message, "Could not navigate to script {}, it no longer exists", mNameOfScript);
 			return;
 		}
 
-		scriptEditor = dynamic_cast<ScriptEditorSystem*>(Editor::Get().TryOpenAssetForEdit(WeakAssetStaticCast<Asset>(*script)));
+		scriptEditor = dynamic_cast<ScriptEditorSystem*>(Editor::Get().TryOpenAssetForEdit(script));
 
 		if (scriptEditor == nullptr)
 		{
@@ -83,12 +83,12 @@ void Engine::ScriptLocation::NavigateToLocation() const
 }
 #endif // EDITOR
 
-std::string Engine::ScriptLocation::ToString() const
+std::string CE::ScriptLocation::ToString() const
 {
 	return mFieldOrFuncName.empty() ? mNameOfScript : Format("{} ({})", mFieldOrFuncName, mNameOfScript);
 }
 
-bool Engine::ScriptLocation::IsLocationEqualToOrInsideOf(const ScriptLocation& other) const
+bool CE::ScriptLocation::IsLocationEqualToOrInsideOf(const ScriptLocation& other) const
 {
 	if (mNameOfScript != other.mNameOfScript)
 	{
@@ -151,7 +151,7 @@ bool Engine::ScriptLocation::IsLocationEqualToOrInsideOf(const ScriptLocation& o
 	return false;
 }
 
-std::string Engine::ScriptError::ToString(bool includeLocationInString) const
+std::string CE::ScriptError::ToString(bool includeLocationInString) const
 {
 	std::string str = includeLocationInString ? Format("{} - {}", mOrigin.ToString(), EnumToString(mType)) : std::string{ EnumToString(mType) };;
 

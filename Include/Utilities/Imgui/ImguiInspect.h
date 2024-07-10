@@ -1,21 +1,15 @@
-#ifdef EDITOR
 #pragma once
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4201)
-#pragma warning(disable : 4201)
-#endif
-#include "imgui/auto.h"
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+#ifdef EDITOR
 
+#include "Utilities/Math.h"
 #include "Utilities/Search.h"
 
-namespace Engine
+namespace CE
 {
+	class MetaType;
+
 	/*
-	Used ImGui::Auto to inspect the element, possibly changing it's value.
+	Used ImGui::Auto to inspect the element, possibly changing its value.
 		
 	This function is meant for each individual data-member; not the entire component itself:
 
@@ -34,6 +28,15 @@ namespace Engine
 		T valueBefore = value;
 		ImGui::Auto(value, label);
 		return valueBefore != value;
+	}
+
+	// Same as ShowInspectUI() but does not allow the user to change the value
+	template<typename T>
+	void ShowInspectUIReadOnly(const std::string& label, T& value)
+	{
+		ImGui::BeginDisabled();
+		ImGui::Auto(value, label);
+		ImGui::EndDisabled();
 	}
 
 	static inline constexpr Name sShowInspectUIFuncName = "Inspect"_Name;
@@ -70,14 +73,62 @@ IMGUI_AUTO_DEFINE_INLINE(template<>, entt::entity, ImGui::Auto(reinterpret_cast<
 namespace ImGui
 {
 	template<typename EnumType>
-	struct Auto_t<EnumType, std::enable_if_t<Engine::sIsEnumReflected<EnumType>>>
+	struct Auto_t<EnumType, std::enable_if_t<CE::sIsEnumReflected<EnumType>>>
 	{
 		static void Auto(EnumType& var, const std::string& name)
 		{
-			var = Engine::Search::DisplayDropDownWithSearchBar<EnumType>(name.c_str(), Engine::EnumToString(var).data()).value_or(var);
+			using namespace CE;
+
+			if (!Search::BeginCombo(name, EnumToString(var)))
+			{
+				return;
+			}
+
+			for (const auto& [value, valName] : sEnumStringPairs<EnumType>)
+			{
+				if (Search::Button(valName))
+				{
+					var = value;
+				}
+			}
+
+			Search::EndCombo();
 		}
 		static constexpr bool sIsSpecialized = true;
 	};
+
+	template<typename T>
+	struct Auto_t<std::optional<T>>
+	{
+		static void Auto(std::optional<T>& var, const std::string& name)
+		{
+			bool hasValue = var.has_value();
+
+			if (ImGui::TreeNode(name.c_str()))
+			{
+				if (ImGui::Checkbox("HasValue", &hasValue))
+				{
+					if (var.has_value())
+					{
+						var.reset();
+					}
+					else
+					{
+						var.emplace();
+					}
+				}
+
+				if (var.has_value())
+				{
+					ImGui::Auto(*var, name);
+				}
+
+				ImGui::TreePop();
+			}
+		}
+		static constexpr bool sIsSpecialized = true;
+	};
+	
 }
 
 #endif // EDITOR

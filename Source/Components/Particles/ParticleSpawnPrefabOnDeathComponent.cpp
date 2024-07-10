@@ -3,16 +3,18 @@
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
-#include "Utilities/Reflect/ReflectComponentType.h"
 #include "Assets/Prefabs/Prefab.h"
-#include "Meta/ReflectedTypes/STD/ReflectSmartPtr.h"
+#include "Components/Particles/ParticleUtilities.h"
 
-Engine::MetaType Engine::ParticleSpawnPrefabOnDeathComponent::Reflect()
+CE::MetaType CE::ParticleSpawnPrefabOnDeathComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<ParticleSpawnPrefabOnDeathComponent>{}, "ParticleSpawnPrefabOnDeathComponent" };
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
 	type.AddField(&ParticleSpawnPrefabOnDeathComponent::mPrefabToSpawn, "mPrefabToSpawn").GetProperties().Add(Props::sIsScriptableTag);
-	ReflectComponentType<ParticleSpawnPrefabOnDeathComponent>(type);
+	type.AddField(&ParticleSpawnPrefabOnDeathComponent::mKeepOrientation, "mKeepOrientation").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&ParticleSpawnPrefabOnDeathComponent::mKeepScale, "mKeepScale").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&ParticleSpawnPrefabOnDeathComponent::mKeepPosition, "mKeepPosition").GetProperties().Add(Props::sIsScriptableTag);
+	ReflectParticleComponentType<ParticleSpawnPrefabOnDeathComponent>(type);
 	return type;
 }

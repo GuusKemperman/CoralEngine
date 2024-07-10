@@ -407,6 +407,11 @@ ImVec2 ax::NodeEditor::GetNodeSize(NodeId nodeId)
     return s_Editor->GetNodeSize(nodeId);
 }
 
+ImVec2 ax::NodeEditor::GetGroupSize(NodeId nodeId)
+{
+    return s_Editor->GetGroupSize(nodeId);
+}
+
 void ax::NodeEditor::CenterNodeOnScreen(NodeId nodeId)
 {
     if (auto node = s_Editor->FindNode(nodeId))
@@ -574,6 +579,11 @@ void ax::NodeEditor::NavigateToContent(float duration)
 void ax::NodeEditor::NavigateToSelection(bool zoomIn, float duration)
 {
     s_Editor->NavigateTo(s_Editor->GetSelectionBounds(), zoomIn, duration);
+}
+
+void ax::NodeEditor::NavigateToRect(const ImRect& rect)
+{
+    s_Editor->NavigateTo(rect, true);
 }
 
 const ImRect& ax::NodeEditor::GetSettingsVisibleRect()

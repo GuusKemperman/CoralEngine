@@ -4,7 +4,7 @@
 
 #include "Assets/Prefabs/Prefab.h"
 
-namespace Engine
+namespace CE
 {
 	class WorldInspectHelper;
 	
@@ -16,6 +16,10 @@ namespace Engine
 		~PrefabEditorSystem() override;
 
 		void Tick(float deltaTime) override;
+
+		void SaveState(std::ostream& toStream) const override;
+
+		void LoadState(std::istream& fromStream) override;
 
 	private:
 		void ApplyChangesToAsset() override;

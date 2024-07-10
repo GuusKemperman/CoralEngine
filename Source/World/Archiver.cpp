@@ -13,15 +13,14 @@
 #include "Meta/MetaProps.h"
 #include "World/World.h"
 
-namespace Engine
+namespace CE
 {
-	static void DeserializeStorage(Registry& registry, const BinaryGSONObject& serializedStorage);
+	static void DeserializeStorage(Registry& registry, const BinaryGSONObject& serializedStorage, const std::unordered_map<entt::entity, entt::entity>& idRemappings);
 
 	struct ComponentClassSerializeArg
 	{
 		const entt::sparse_set& mStorage;
 		const MetaType& mComponentClass;
-		const MetaFunc* mCustomStep;
 		MetaAny mComponentDefaultConstructed;
 		std::vector<const MetaFunc*> mEqualityFunctions{};
 		std::vector<const MetaFunc*> mSerializeMemberFunction{};
@@ -35,7 +34,7 @@ namespace Engine
 		const ComponentClassSerializeArg& arg);
 }
 
-void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& serializedWorld)
+std::vector<entt::entity> CE::Archiver::Deserialize(World& world, const BinaryGSONObject& serializedWorld)
 {
 	Registry& reg = world.GetRegistry();
 
@@ -44,20 +43,22 @@ void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& seriali
 	if (serializedEntities == nullptr)
 	{
 		LOG(LogAssets, Error, "Invalid serialized world provided, this object was not created using Archiver::Serialize");
-		return;
+		return {};
 	}
 
 	std::vector<entt::entity> entities{};
 	*serializedEntities >> entities;
 
+	// In case an entity id is taken
+	std::unordered_map<entt::entity, entt::entity> idRemappings{};
+	idRemappings.reserve(entities.size());
+	reg.Storage<entt::entity>().reserve(entities.size());
+
 	for (entt::entity& entity : entities)
 	{
-		entt::entity createdEntity = reg.Create(entity);
-
-		if (createdEntity != entity)
-		{
-			LOG(LogAssets, Error, "Attempted to deserialize entity with id {}, but this entity could not be added to the registry. May lead to unexpected results.", static_cast<EntityType>(entity));
-		}
+		const entt::entity createdEntity = reg.Create(entity);
+		idRemappings.emplace(entity, createdEntity);
+		entity = createdEntity;
 	}
 
 	// We need to be able to retrieve each entity's prefab of origin while
@@ -66,7 +67,7 @@ void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& seriali
 	const BinaryGSONObject* serializedPrefabFactoryOfOrigin = serializedWorld.TryGetGSONObject(MetaManager::Get().GetType<PrefabOriginComponent>().GetName());
 	if (serializedPrefabFactoryOfOrigin != nullptr)
 	{
-		DeserializeStorage(reg, *serializedPrefabFactoryOfOrigin);
+		DeserializeStorage(reg, *serializedPrefabFactoryOfOrigin, idRemappings);
 	}
 
 	for (const BinaryGSONObject& serializedStorage : serializedWorld.GetChildren())
@@ -76,32 +77,72 @@ void Engine::Archiver::Deserialize(World& world, const BinaryGSONObject& seriali
 			continue;
 		}
 
-		DeserializeStorage(reg, serializedStorage);
+		DeserializeStorage(reg, serializedStorage, idRemappings);
 	}
+
+	// Due to legacy reasons,
+	// we never serialized the world matrix.
+	// So we have to update them here
+	for (const auto [entity, transform] : reg.View<TransformComponent>().each())
+	{
+		if (transform.IsOrphan())
+		{
+			transform.UpdateCachedWorldMatrix();
+		}
+	}
+
+	return entities;
 }
 
-void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializedStorage)
+void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializedStorage, const std::unordered_map<entt::entity, entt::entity>& idRemappings)
 {
 	const MetaType* const componentClass = MetaManager::Get().TryGetType(serializedStorage.GetName());
 
 	if (componentClass == nullptr)
 	{
-		LOG(LogAssets, Warning, "The class {} no longer exists and won't be deserialized.", serializedStorage.GetName());
+		LOG(LogAssets, Verbose, "The class {} no longer exists and won't be deserialized.", serializedStorage.GetName());
+		return;
+	}
+
+	if (componentClass->GetProperties().Has(Props::sNoSerializeTag))
+	{
 		return;
 	}
 
 	const bool checkForFactoryOfOrigin = componentClass->GetTypeId() != MakeTypeId<PrefabOriginComponent>();
 
+	auto remapId = [&idRemappings](entt::entity entity) -> entt::entity
+		{
+			// Check if this is one of the many entities we are deserializing
+			const auto it = idRemappings.find(entity);
+
+			if (it != idRemappings.end())
+			{
+				// This entity is part of our deserializing process
+				return it->second;
+			}
+
+			// Otherwise, leave it as it is.
+			return entity;
+		};
+
+	const size_t storageInitialSize = registry.Storage(componentClass->GetTypeId()) == nullptr ? 0u : registry.Storage(componentClass->GetTypeId())->size();
+
 	for (const BinaryGSONObject& serializedComponent : serializedStorage.GetChildren())
 	{
 		const std::vector<BinaryGSONMember>& serializedProperties = serializedComponent.GetGSONMembers();
-
-		const entt::entity owner = FromBinary<entt::entity>(serializedComponent.GetName());
+		const entt::entity owner = remapId(*reinterpret_cast<const entt::entity*>(serializedComponent.GetName().data()));
 
 		if (!registry.Valid(owner))
 		{
-			LOG(LogAssets, Error, "Component has owner {}, but this entity does not exist", static_cast<EntityType>(owner));
+			LOG(LogAssets, Error, "{} has owner {}, but this entity does not exist", componentClass->GetName(), entt::to_integral(owner));
 			continue;
+		}
+
+		entt::sparse_set* storage = registry.Storage(componentClass->GetTypeId());
+		if (storage != nullptr)
+		{
+			storage->reserve(storageInitialSize + serializedStorage.GetChildren().size());
 		}
 
 		MetaAny component{ *componentClass, nullptr };
@@ -134,11 +175,11 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 
 		for (const BinaryGSONMember& serializedProperty : serializedProperties)
 		{
-			const MetaField* const field = componentClass->TryGetField(FromBinary<Name::HashType>(serializedProperty.GetName()));
+			const MetaField* const field = componentClass->TryGetField(*reinterpret_cast<const Name::HashType*>(serializedProperty.GetName().data()));
 
 			if (field == nullptr)
 			{
-				LOG(LogAssets, Warning, "Could not find property whose name generated the hash {} while deserializing a component of class {}",
+				LOG(LogAssets, Verbose, "Could not find property whose name generated the hash {} while deserializing a component of class {}",
 					serializedProperty.GetName(), componentClass->GetName());
 				continue;
 			}
@@ -151,38 +192,35 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 			const MetaType& memberType = field->GetType();
 
 			MetaAny fieldValue = field->MakeRef(component);
-			FuncResult deserializeMemberResult = memberType.CallFunction(sDeserializeMemberFuncName, serializedProperty, fieldValue);
 
-			if (deserializeMemberResult.HasError())
+			const MetaFunc* func = memberType.TryGetFunc(sDeserializeMemberFuncName);
+
+			if (func == nullptr)
 			{
-				LOG(LogAssets, Warning, "Could not deserialize {}::{} - {}",
+				LOG(LogAssets, Warning, "Could not deserialize {}::{} - No deserialize function",
 					componentClass->GetName(),
-					memberType.GetName(),
-					deserializeMemberResult.Error());
+					memberType.GetName());
+				continue;
+			}
+
+			func->InvokeUncheckedUnpacked(serializedProperty, fieldValue);
+
+			if (memberType.GetTypeId() == MakeTypeId<entt::entity>())
+			{
+				entt::entity& asEntity = *fieldValue.As<entt::entity>();
+				asEntity = remapId(asEntity);
 			}
 		}
 	}
 
-	// Call the custom deserialisation step only after all components have been created.
-	// The custom deserialization is sometimes used when we want to serialize pointers to
-	// components, the transformcomponent for example serialized it's parent as an entity 
-	// id instead. This can't be deserialized properly into a pointer if that transform 
-	// does not exist yet.
-	auto* storage = registry.Storage(componentClass->GetTypeId());
-
-	if (storage == nullptr)
+	// TransformComponents are kinda dumb, back when i made them I added
+	// pointer stability, and the parent/child relations are stored by
+	// pointer and by entity id.
+	// Sooo we have a beautiful hardcoded solution!
+	if (componentClass->GetTypeId() != MakeTypeId<TransformComponent>())
 	{
 		return;
 	}
-
-	const MetaFunc* const onComponentDeserialize = componentClass->TryGetFunc(sComponentCustomDeserializeFuncName);
-
-	if (onComponentDeserialize == nullptr)
-	{
-		return;
-	}
-
-	MetaAny worldRef{ registry.GetWorld() };
 
 	for (const BinaryGSONObject& serializedComponent : serializedStorage.GetChildren())
 	{
@@ -192,21 +230,33 @@ void Engine::DeserializeStorage(Registry& registry, const BinaryGSONObject& seri
 		}
 
 		const BinaryGSONObject& additionalSerializedData = serializedComponent.GetChildren()[0];
-		const entt::entity owner = FromBinary<entt::entity>(serializedComponent.GetName());
+		const entt::entity owner = remapId(FromBinary<entt::entity>(serializedComponent.GetName()));
 
-		ASSERT_LOG(storage->contains(owner), "Should've been created already");
-		MetaAny componentRef{ *componentClass, storage->value(owner), false };
+		TransformComponent* transform = registry.TryGet<TransformComponent>(owner);
 
-		FuncResult result = (*onComponentDeserialize)(componentRef, additionalSerializedData, owner, registry.GetWorld());
-
-		if (result.HasError())
+		if (transform == nullptr
+			|| additionalSerializedData.GetGSONMembers().size() != 1)
 		{
-			LOG(LogWorld, Error, "Error occured while calling custom deserialization step of {} - {}", componentClass->GetName(), result.Error());
+			LOG(LogAssets, Warning, "Could not deserialize transform parent-child relation, invalid saved data");
+			continue;
 		}
+
+		entt::entity parentEntity;
+		additionalSerializedData.GetGSONMembers()[0] >> parentEntity;
+		parentEntity = remapId(parentEntity);
+
+		TransformComponent* parent = registry.TryGet<TransformComponent>(parentEntity);
+
+		if (parent == nullptr)
+		{
+			LOG(LogAssets, Warning, "Could not deserialize transform parent-child relation, parent does not exist anymore");
+		}
+
+		transform->SetParent(parent);
 	}
 }
 
-Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world)
+CE::BinaryGSONObject CE::Archiver::Serialize(const World& world)
 {
 	std::vector<entt::entity> entitiesToSerialize{};
 	const auto* entityStorage = world.GetRegistry().Storage<entt::entity>();
@@ -222,35 +272,44 @@ Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world)
 		}
 	}
 
-	return Serialize(world, std::move(entitiesToSerialize), true);
+	return SerializeInternal(world, std::move(entitiesToSerialize), true);
 }
 
-Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world, entt::entity entity, bool serializeChildren)
+CE::BinaryGSONObject CE::Archiver::Serialize(const World& world, Span<const entt::entity> entities, bool serializeChildren)
 {
-	std::vector<entt::entity> entitiesToSerialize{ entity };
+	std::vector<entt::entity> entitiesToSerialize{ entities.begin(), entities.end() };
 
 	if (serializeChildren)
 	{
-		const TransformComponent* transform = world.GetRegistry().TryGet<TransformComponent>(entity);
+		const Registry& reg = world.GetRegistry();
 
-		if (transform != nullptr)
+		for (const entt::entity entity : entities)
 		{
-			std::function<void(const TransformComponent&)> addChildren = [&entitiesToSerialize, &addChildren](const TransformComponent& parent)
-				{
-					for (const TransformComponent& child : parent.GetChildren())
+			const TransformComponent* transform = reg.TryGet<TransformComponent>(entity);
+
+			if (transform != nullptr)
+			{
+				std::function<void(const TransformComponent&)> addChildren = [&entitiesToSerialize, &addChildren](const TransformComponent& parent)
 					{
-						entitiesToSerialize.emplace_back(child.GetOwner());
-						addChildren(child);
-					}
-				};
-			addChildren(*transform);
+						for (const TransformComponent& child : parent.GetChildren())
+						{
+							entitiesToSerialize.emplace_back(child.GetOwner());
+							addChildren(child);
+						}
+					};
+				addChildren(*transform);
+			}
 		}
 	}
 
-	return Serialize(world, std::move(entitiesToSerialize), false);
+	// Remove any potential duplicates
+	std::sort(entitiesToSerialize.begin(), entitiesToSerialize.end());
+	entitiesToSerialize.erase(std::unique(entitiesToSerialize.begin(), entitiesToSerialize.end()), entitiesToSerialize.end());
+
+	return SerializeInternal(world, std::move(entitiesToSerialize), false);
 }
 
-Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world, std::vector<entt::entity> entitiesToSerialize,
+CE::BinaryGSONObject CE::Archiver::SerializeInternal(const World& world, std::vector<entt::entity>&& entitiesToSerialize,
                                                      bool allEntitiesInWorldAreBeingSerialized)
 {
 	const Registry& reg = world.GetRegistry();
@@ -261,8 +320,20 @@ Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world, std::ve
 
 	save.AddGSONMember("entities") << entitiesToSerialize;
 
+	size_t numOfStorages{};
+	for ([[maybe_unused]] auto _ : reg.Storage())
+	{
+		++numOfStorages;
+	}
+	save.ReserveChildren(numOfStorages);
+
 	for (auto&& [typeId, storage] : reg.Storage())
 	{
+		if (storage.empty())
+		{
+			continue;
+		}
+
 		const std::optional<ComponentClassSerializeArg> serializeArg = GetComponentClassSerializeArg(storage);
 
 		if (!serializeArg.has_value())
@@ -271,6 +342,7 @@ Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world, std::ve
 		}
 
 		BinaryGSONObject& serializedComponentClass = save.AddGSONObject(serializeArg->mComponentClass.GetName());
+		serializedComponentClass.ReserveChildren(storage.size());
 
 		for (const entt::entity entity : storage)
 		{
@@ -292,30 +364,34 @@ Engine::BinaryGSONObject Engine::Archiver::Serialize(const World& world, std::ve
 		std::sort(serializedComponentClass.GetChildren().begin(), serializedComponentClass.GetChildren().end(),
 			[](const BinaryGSONObject& lhs, const BinaryGSONObject& rhs)
 			{
-				ASSERT(lhs.GetName().size() == sizeof(EntityType));
-				ASSERT(rhs.GetName().size() == sizeof(EntityType));
-
 				// Faster than string comparisons
-				return *reinterpret_cast<const EntityType*>(lhs.GetName().c_str()) < *reinterpret_cast<const EntityType*>(rhs.GetName().c_str());
+				return *reinterpret_cast<const entt::entity*>(lhs.GetName().c_str()) < *reinterpret_cast<const entt::entity*>(rhs.GetName().c_str());
 			});
 	}
 
 	return save;
 }
 
-std::optional<Engine::ComponentClassSerializeArg> Engine::GetComponentClassSerializeArg(const entt::sparse_set& storage)
+std::optional<CE::ComponentClassSerializeArg> CE::GetComponentClassSerializeArg(const entt::sparse_set& storage)
 {
 	const MetaType* const componentClass = MetaManager::Get().TryGetType(storage.type().hash());
 
 	if (componentClass == nullptr)
 	{
-		LOG(LogAssets, Warning, "Cannot serialize component of type {}, as it was not reflected", storage.type().name())
-			return std::nullopt;
+		LOG(LogAssets, Warning, "Cannot serialize component of type {}, as it was not reflected", storage.type().name());
+		return std::nullopt;
 	}
 
-	const MetaFunc* onSerialize = componentClass->TryGetFunc(sComponentCustomSerializeFuncName);
+	if (componentClass->GetProperties().Has(Props::sNoSerializeTag))
+	{
+		return std::nullopt;
+	}
+
 	std::vector<const MetaFunc*> equalityFunctions{};
 	std::vector<const MetaFunc*> serializeMemberFunctions{};
+
+	equalityFunctions.reserve(componentClass->GetDirectFields().size());
+	serializeMemberFunctions.reserve(componentClass->GetDirectFields().size());
 
 	for (const MetaField& memberData : componentClass->EachField())
 	{
@@ -365,23 +441,29 @@ std::optional<Engine::ComponentClassSerializeArg> Engine::GetComponentClassSeria
 	return ComponentClassSerializeArg{
 		storage,
 		*componentClass,
-		onSerialize,
 		std::move(defaultComponent),
 		std::move(equalityFunctions),
 		std::move(serializeMemberFunctions)
 	};
 }
 
-void Engine::SerializeSingleComponent(const Registry& registry,
+void CE::SerializeSingleComponent(const Registry& registry,
 	BinaryGSONObject& parentObject,
 	const entt::entity entity,
 	const ComponentClassSerializeArg& arg)
 {
-	ASSERT(arg.mStorage.contains(entity));
+	if (!arg.mStorage.contains(entity)
+		|| !registry.Valid(entity)) // This check is needed, .contains does not check if the entity is alive
+	{
+		return;
+	}
+
 	ASSERT(parentObject.GetName() == arg.mComponentClass.GetName());
 
+	// Note that this might be nullptr if it's an empty component
 	MetaAny component = MetaAny{ arg.mComponentClass, const_cast<void*>(arg.mStorage.value(entity)), false };
-	BinaryGSONObject& serializedComponent = parentObject.AddGSONObject(ToBinary(entity));
+	BinaryGSONObject& serializedComponent = parentObject.AddGSONObject(std::string_view{ reinterpret_cast<const char*>(&entity), sizeof(entity) });
+	serializedComponent.ReserveMembers(arg.mComponentClass.GetDirectFields().size());
 
 	const PrefabOriginComponent* prefabOriginComponent = registry.TryGet<PrefabOriginComponent>(entity);
 	const PrefabEntityFactory* const entityFactoryOfOrigin = prefabOriginComponent == nullptr ? nullptr : prefabOriginComponent->TryGetFactory();
@@ -397,13 +479,11 @@ void Engine::SerializeSingleComponent(const Registry& registry,
 			}
 
 			// We only save the hash, which makes the save significantly smaller
-			const std::string hashedPropertyNameAsBinaryString = ToBinary(Name::HashString(data.GetName()));
-
-			BinaryGSONMember& nonDefaultProperty = serializedComponent.AddGSONMember(hashedPropertyNameAsBinaryString);
+			Name::HashType hashedPropertyName = Name::HashString(data.GetName());
+			BinaryGSONMember& nonDefaultProperty = serializedComponent.AddGSONMember(std::string_view{ reinterpret_cast<const char*>(&hashedPropertyName), sizeof(hashedPropertyName) });
 			MetaAny memberRef = data.MakeRef(component);
 
-			[[maybe_unused]] FuncResult result = (*serializeMemberFunc)(nonDefaultProperty, memberRef);
-			ASSERT_LOG(!result.HasError(), "{}", result.Error());
+			serializeMemberFunc->InvokeUncheckedUnpacked(nonDefaultProperty, memberRef);
 		};
 
 	// We only serialize the differences. Makes the save file smaller and any changes 
@@ -433,21 +513,21 @@ void Engine::SerializeSingleComponent(const Registry& registry,
 
 		MetaAny valueInComponent = field.MakeRef(component);
 
-		FuncResult result;
-
 		// Check to see if this object was created by a prefab who has set a different default value for this field
 		const MetaAny* const valueAsOverridenByPrefabOfOrigin = factoryOfOrigin == nullptr ?
 			nullptr :
 			factoryOfOrigin->GetOverridenDefaultValue(field);
 
+		bool areEqual{};
+
 		if (valueAsOverridenByPrefabOfOrigin != nullptr)
 		{
-			result = (*equalityOperator)(valueInComponent, *valueAsOverridenByPrefabOfOrigin);
+			equalityOperator->InvokeUncheckedUnpackedWithRVO(&areEqual, valueInComponent, *valueAsOverridenByPrefabOfOrigin);
 		}
 		else if (arg.mComponentDefaultConstructed != nullptr)
 		{
-			MetaAny defaultvalue = field.MakeRef(const_cast<MetaAny&>(arg.mComponentDefaultConstructed));
-			result = (*equalityOperator)(valueInComponent, defaultvalue);
+			const MetaAny defaultvalue = field.MakeRef(const_cast<MetaAny&>(arg.mComponentDefaultConstructed));
+			equalityOperator->InvokeUncheckedUnpackedWithRVO(&areEqual, valueInComponent, defaultvalue);
 		}
 		else
 		{
@@ -456,35 +536,25 @@ void Engine::SerializeSingleComponent(const Registry& registry,
 			continue;
 		}
 
-		ASSERT(!result.HasError());
-		ASSERT(result.HasReturnValue());
-
-		const bool* areEqual = result.GetReturnValue().As<bool>();
-		ASSERT(areEqual != nullptr);
-
-		if (!*areEqual)
+		if (!areEqual)
 		{
 			writeValue(field, i);
 		}
 	}
 
-	if (arg.mCustomStep != nullptr)
+	if (arg.mComponentClass.GetTypeId() != MakeTypeId<TransformComponent>())
 	{
-		BinaryGSONObject& customStepObject = serializedComponent.AddGSONObject("");
+		return;
+	}
 
-		FuncResult result = (*arg.mCustomStep)(component, customStepObject, entity, registry.GetWorld());
+	const TransformComponent& transform = registry.Get<TransformComponent>(entity);
 
-		if (customStepObject.IsEmpty()
-			|| result.HasError())
-		{
-			serializedComponent.GetChildren().pop_back();
-		}
-
-		if (result.HasError())
-		{
-			LOG(LogAssets, Error, "Could not invoke custom serialization step of {} - {}",
-				arg.mComponentClass.GetName(),
-				result.Error());
-		}
+	if (transform.GetParent() != nullptr)
+	{
+		// Since the parent/children are stored through a raw ptr they
+		// are trickier to serialize. Since this is the only place where
+		// storing a raw pointer to a component makes sense, we're not going
+		// to bother with making a system that allows serializing component pointers
+		serializedComponent.AddGSONObject("").AddGSONMember("") << transform.GetParent()->GetOwner();
 	}
 }

@@ -1,10 +1,12 @@
 #pragma once
+#include "World/World.h"
 #include "Systems/System.h"
-#include "Utilities/SmartPointerFunctions.h"
-#include "Components/Component.h"
-#include "Components/IsDestroyedTag.h"
+#include "Utilities/MemFunctions.h"
+#include "Meta/MetaFunc.h"
+#include "Meta/MetaManager.h"
+#include "Utilities/Events.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 	class MetaAny;
@@ -14,17 +16,24 @@ namespace Engine
 	class TransformComponent;
 	class System;
 
+	namespace Internal
+	{
+		struct DestroyCallBackInstaller;
+	}
+
 	// Wrapper around the entt registry.
 	class Registry
 	{
 	public:
-		Registry(World& world);
+		explicit Registry(World& world);
 
 		Registry(Registry&&) = delete;
 		Registry(const Registry&) = delete;
 
 		Registry& operator=(Registry&&) = delete;
 		Registry& operator=(const Registry&) = delete;
+
+		void BeginPlay();
 
 		void UpdateSystems(float dt);
 
@@ -36,17 +45,23 @@ namespace Engine
 
 		template<typename It>
 		void Create(It first, It last);
-		
-		entt::entity CreateFromPrefab(const Prefab& prefab, entt::entity hint = entt::null);
+
+		// Positional data can be provided so that the entity can be
+		// placed at the correct position before OnBeginPlay is called.
+		// Otherwise, OnBeginPlay would also be called at 0,0,0.
+		entt::entity CreateFromPrefab(const Prefab& prefab, 
+			entt::entity hint = entt::null, 
+			const glm::vec3* localPosition = nullptr, 
+			const glm::quat* localOrientation = nullptr, 
+			const glm::vec3* localScale = nullptr, 
+			TransformComponent* parent = nullptr);
 
 		entt::entity CreateFromFactory(const PrefabEntityFactory& factory, bool createChildren, entt::entity hint = entt::null);
 
-		void Destroy(entt::entity entity);
+		void Destroy(entt::entity entity, bool destroyChildren);
 		
 		template<typename It>
-		void Destroy(It first, It last);
-
-		void DestroyAlongWithChildren(entt::entity entity);
+		void Destroy(It first, It last, bool destroyChildren);
 
 		void RemovedDestroyed();
 
@@ -66,6 +81,9 @@ namespace Engine
 		template<typename ComponentType>
 		void RemoveComponent(entt::entity fromEntity);
 
+		template<typename ComponentType, typename It>
+		void RemoveComponents(It first, It last);
+
 		void RemoveComponentIfEntityHasIt(TypeId componentClassTypeId, entt::entity fromEntity);
 
 		template<typename ComponentType>
@@ -82,6 +100,9 @@ namespace Engine
 
 		template<typename Type, typename... Other, typename... Exclude>
 		auto View(entt::exclude_t<Exclude...> exclude = entt::exclude_t{}) { return mRegistry.view<Type, Other...>(exclude); }
+
+		template<typename Type, typename Compare, typename Sort = entt::std_sort, typename... Args>
+		void Sort(Compare&& lambda, Sort algorithm = entt::std_sort{}, Args&&... args) { mRegistry.sort<Type>(lambda, algorithm, std::forward<Args>(args)...); }
 
 		template<typename Type>
 		entt::registry::storage_for_type<Type>& Storage() { return mRegistry.storage<Type>(); }
@@ -125,36 +146,7 @@ namespace Engine
 
 		void Clear();
 
-		std::vector<entt::entity> GetAllEntities() const;
-
-		/**
-		 * \brief Find an entity by it's name. If there are multiple by this name, this function will return only one of them.
-		 * \param name The display name of the entity, as shown in the world hierarchy.
-		 * \return entt::null if the entity does not exists, otherwise returns the entity.
-		 */
-		entt::entity FindEntityWithName(const std::string& name) const;
-
-		/**
-		 * \brief Find all the entities with this name
-		 * \param name The display name of the entity, as shown in the world hierarchy.
-		 */
-		std::vector<entt::entity> FindAllEntitiesWithName(const std::string& name) const;
-
-		/**
-		 * \brief Find an entity that has this component. If there are multiple with this component, this function will return only one of them.
-		 * \return entt::null if the entity does not exists, otherwise returns the entity.
-		 */
-		entt::entity FindEntityWithComponent(ComponentFilter componentType) const;
-
-		entt::entity FindEntityWithComponents(const std::vector<ComponentFilter>& components) const;
-
-		std::vector<entt::entity> FindAllEntitiesWithComponent(ComponentFilter componentType) const;
-
-		std::vector<entt::entity> FindAllEntitiesWithComponents(const std::vector<ComponentFilter>& components) const;
-
 	private:
-		std::vector<entt::entity> FindAllEntitiesWithComponents(const std::vector<ComponentFilter>& components, bool returnAfterFirstFound) const;
-
 		struct SingleTick
 		{
 			SingleTick(System& system, float deltaTime = 0.0f) : mSystem(system), mDeltaTime(deltaTime) {};
@@ -165,11 +157,22 @@ namespace Engine
 		
 		void AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system);
 
+		void CallBeginPlayForEntitiesAwaitingBeginPlay();
+
+		bool ShouldWeCallBeginPlayImmediatelyAfterConstruct(entt::entity ownerOfNewlyConstructedComponent) const;
+
+		void CallEndPlayEventsForEntity(entt::sparse_set& storage, entt::entity entity, const BoundEvent& endPlayEvent);
+
+		template <typename Component>
+		static void DestroyCallback(entt::registry&, entt::entity entity);
+
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
-		friend class World;
+		friend World;
+		friend Internal::DestroyCallBackInstaller;
+
 		std::reference_wrapper<World> mWorld; 
 		
-		entt::registry mRegistry;
+		entt::registry mRegistry{};
 
 		struct InternalSystem
 		{
@@ -194,25 +197,104 @@ namespace Engine
 		};
 		std::vector<FixedTickSystem> mFixedTickSystems{};
 		std::vector<InternalSystem> mNonFixedSystems{};
+
+		std::vector<BoundEvent> mBoundBeginPlayEvents = GetAllBoundEvents(sBeginPlayEvent);
+		std::vector<BoundEvent> mBoundEndPlayEvents = GetAllBoundEvents(sEndPlayEvent);
 	};
 
 	template<typename ComponentType, typename ...AdditonalArgs>
 	decltype(auto) Registry::AddComponent(const entt::entity toEntity, AdditonalArgs && ...additionalArgs)
 	{
-		if constexpr (AlwaysPassComponentOwnerAsFirstArgumentOfConstructor<ComponentType>::sValue)
+		struct ComponentEvents
 		{
-			return mRegistry.emplace<ComponentType>(toEntity, toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
+			std::optional<BoundEvent> mOnConstruct{};
+			std::optional<BoundEvent> mOnBeginPlay{};
+		};
+
+		static constexpr bool isEmpty = entt::component_traits<ComponentType>::page_size == 0;
+
+		static const ComponentEvents events =
+			[]
+			{
+				if constexpr (sIsReflectable<ComponentType>)
+				{
+					ComponentEvents tmpEvents{};
+					const MetaType& type = MetaManager::Get().GetType<ComponentType>();
+					tmpEvents.mOnConstruct = TryGetEvent(type, sConstructEvent);
+					tmpEvents.mOnBeginPlay = TryGetEvent(type, sBeginPlayEvent);
+					return tmpEvents;
+				}
+				else
+				{
+					return ComponentEvents{};
+				}
+			}();
+
+		World::PushWorld(mWorld);
+
+		if constexpr (isEmpty)
+		{
+			mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
+
+			if constexpr (sIsReflectable<ComponentType>)
+			{
+				if (events.mOnConstruct.has_value())
+				{
+					events.mOnConstruct->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
+				}
+
+				if (events.mOnBeginPlay.has_value()
+					&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
+				{
+					events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
+				}
+			}
 		}
 		else
 		{
-			return mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
+			ComponentType& component = mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);;
+
+			if constexpr (sIsReflectable<ComponentType>)
+			{
+				if (events.mOnConstruct.has_value())
+				{
+					if (events.mOnConstruct->mIsStatic)
+					{
+						events.mOnConstruct->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
+					}
+					else
+					{
+						events.mOnConstruct->mFunc.get().InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
+					}
+				}
+
+				if (events.mOnBeginPlay.has_value()
+					&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
+				{
+					if (events.mOnBeginPlay->mIsStatic)
+					{
+						events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
+					}
+					else
+					{
+						events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
+					}
+				}
+			}
+
+			World::PopWorld();
+
+			return component;
 		}
 	}
 
 	template<typename Type, typename It>
 	void Registry::AddComponents(It first, It last, const Type& value)
 	{
-		mRegistry.insert(std::move(first), std::move(last), value);
+		for (auto curr = first; curr != last; ++curr)
+		{
+			AddComponent<Type>(*curr, value);
+		}
 	}
 
 	template<typename Type>
@@ -233,16 +315,131 @@ namespace Engine
 		return storage != nullptr && storage->contains(entity);
 	}
 
+	template <typename Component>
+	void Registry::DestroyCallback(entt::registry&, entt::entity entity)
+	{
+		static const MetaType& metaType = MetaManager::Get().GetType<Component>();
+		static const BoundEvent destroyEvent = *TryGetEvent(metaType, sEndPlayEvent);
+
+		if (World::TryGetWorldAtTopOfStack() == nullptr)
+		{
+			UNLIKELY;
+			LOG(LogWorld, Error, "A component was destroyed from a function that did not push/pop a world. The destruct event cannot be invoked. Trace callstack and figure out where to place Push/PopWorld");
+			return;
+		}
+
+		World& world = *World::TryGetWorldAtTopOfStack();
+
+		if constexpr (entt::component_traits<Component>::page_size == 0)
+		{
+			destroyEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity);
+		}
+		else
+		{
+			// OnDestruct may still be static
+			if (destroyEvent.mIsStatic)
+			{
+				destroyEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity);
+			}
+			else
+			{
+				Component& component = world.GetRegistry().Get<Component>(entity);
+				destroyEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, entity);
+			}
+		}
+	}
+
 	template<typename ComponentType>
 	void Registry::RemoveComponent(entt::entity fromEntity)
 	{
-		mRegistry.erase<ComponentType>(fromEntity);
+		World::PushWorld(mWorld);
+		static constexpr TypeId componentClassTypeId = MakeStrippedTypeId<ComponentType>();
+		entt::sparse_set* storage = Storage(componentClassTypeId);
+		ASSERT(storage != nullptr);
+		ASSERT(storage->contains(fromEntity));
+
+		World::PushWorld(mWorld);
+
+		if constexpr (sIsReflectable<ComponentType>)
+		{
+			static std::optional<BoundEvent> endPlayEvent =
+				[]() -> std::optional<BoundEvent>
+				{
+					const MetaType* type = MetaManager::Get().TryGetType(componentClassTypeId);
+
+					if (type == nullptr)
+					{
+						return std::nullopt;
+					}
+
+					return TryGetEvent(*type, sEndPlayEvent);
+				}();
+
+			if (endPlayEvent.has_value())
+			{
+				CallEndPlayEventsForEntity(*storage, fromEntity, *endPlayEvent);
+			}
+		}
+
+		storage->erase(fromEntity);
+		World::PopWorld();
+	}
+
+	template <typename ComponentType, typename It>
+	void Registry::RemoveComponents(It first, It last)
+	{
+		World::PushWorld(mWorld);
+
+		for (auto curr = first; curr != last; ++curr)
+		{
+			RemoveComponent<ComponentType>(*curr);
+		}
+
+		World::PopWorld();
 	}
 
 	template<typename ComponentType>
 	void Registry::RemoveComponentIfEntityHasIt(entt::entity fromEntity)
 	{
-		mRegistry.remove<ComponentType>(fromEntity);
+		static constexpr TypeId componentClassTypeId = MakeStrippedTypeId<ComponentType>();
+		entt::sparse_set* storage = Storage(componentClassTypeId);
+
+		if (storage == nullptr)
+		{
+			return;
+		}
+
+		World::PushWorld(mWorld);
+
+		if constexpr (sIsReflectable<ComponentType>)
+		{
+			static std::optional<BoundEvent> endPlayEvent =
+				[]() -> std::optional<BoundEvent>
+				{
+					const MetaType* type = MetaManager::Get().TryGetType(componentClassTypeId);
+
+					if (type == nullptr)
+					{
+						return std::nullopt;
+					}
+
+					return TryGetEvent(*type, sEndPlayEvent);
+				}();
+
+			if (endPlayEvent.has_value())
+			{
+				if (!storage->contains(fromEntity))
+				{
+					World::PopWorld();
+					return;
+				}
+
+				CallEndPlayEventsForEntity(*storage, fromEntity, *endPlayEvent);
+			}
+		}
+
+		storage->remove(fromEntity);
+		World::PopWorld();
 	}
 
 	template<typename It>
@@ -252,9 +449,12 @@ namespace Engine
 	}
 
 	template<typename It>
-	void Registry::Destroy(It first, It last)
+	void Registry::Destroy(It first, It last, bool destroyChildren)
 	{
-		AddComponents(first, last, IsDestroyedTag{});
+		for (auto it = first; it != last; ++it)
+		{
+			Destroy(*it, destroyChildren);
+		}
 	}
 
 	template <typename T, typename... Args>
@@ -264,7 +464,7 @@ namespace Engine
 		// systems from a metatype. Metatypes construct using placement
 		// new and can thus not construct a normal, default deleter unique
 		// ptr, which is why we cannot do that here either.
-		void* buffer = _aligned_malloc(sizeof(T), alignof(T));
+		void* buffer = FastAlloc(sizeof(T), alignof(T));
 		ASSERT(buffer != nullptr);
 
 		T* obj = new (buffer) T(std::forward<Args>(args)...);

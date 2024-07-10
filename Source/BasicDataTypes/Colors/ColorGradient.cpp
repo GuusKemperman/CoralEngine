@@ -2,9 +2,10 @@
 #include "BasicDataTypes/Colors/ColorGradient.h"
 
 #include "Meta/MetaType.h"
+#include "Utilities/Math.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-Engine::LinearColor Engine::ColorGradient::GetColorAt(float t) const
+CE::LinearColor CE::ColorGradient::GetColorAt(float t) const
 {
     if (mPoints.empty())
     {
@@ -31,7 +32,7 @@ Engine::LinearColor Engine::ColorGradient::GetColorAt(float t) const
     return mPoints.back().second;
 }
 
-Engine::MetaType Engine::ColorGradient::Reflect()
+CE::MetaType CE::ColorGradient::Reflect()
 {
     MetaType type = MetaType{ MetaType::T<ColorGradient>{}, "ColorGradient" };
     ReflectFieldType<ColorGradient>(type);

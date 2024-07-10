@@ -4,9 +4,15 @@
 
 #include "Meta/MetaAny.h"
 #include "Meta/MetaTypeTraits.h"
+#include "Meta/Fwd/MetaFuncFwd.h"
 #include "Scripting/ScriptErrors.h"
 
-namespace Engine
+namespace CE
+{
+	struct MetaFuncNamedParam;
+}
+
+namespace CE
 {
 	enum class ScriptPinKind : bool
 	{
@@ -25,6 +31,7 @@ namespace Engine
 	public:
 		ScriptVariableTypeData() = default;
 		ScriptVariableTypeData(TypeTraits typeTraits, std::string_view name = {});
+		ScriptVariableTypeData(const MetaFuncNamedParam& metaParam) : ScriptVariableTypeData(metaParam.mTypeTraits, metaParam.mName) {}
 		ScriptVariableTypeData(std::string_view typeName, TypeForm typeForm, std::string_view name = {});
 		ScriptVariableTypeData(const MetaType& type, TypeForm typeForm, std::string_view name = {});
 
@@ -114,8 +121,8 @@ namespace Engine
 
 		void PostDeclarationRefresh();
 
-		glm::vec2 GetInspectWindowSize() const { ASSERT(IsInput()) return std::get<1>(mData).mInspectWindowSize; }
-		void SetInspectWindowSize(glm::vec2 size) { ASSERT(IsInput()) std::get<1>(mData).mInspectWindowSize = size; }
+		glm::vec2 GetInspectWindowSize() const { ASSERT(IsInput()); return std::get<1>(mData).mInspectWindowSize; }
+		void SetInspectWindowSize(glm::vec2 size) { ASSERT(IsInput()); std::get<1>(mData).mInspectWindowSize = size; }
 
 	private:
 		PinId mId{};
@@ -154,19 +161,19 @@ namespace cereal
 	class BinaryOutputArchive;
 	class BinaryInputArchive;
 
-	inline void save(BinaryOutputArchive& ar, const Engine::ScriptVariableTypeData& param)
+	inline void save(BinaryOutputArchive& ar, const CE::ScriptVariableTypeData& param)
 	{
 		ar(param.GetName());
 		ar(param.GetTypeName());
-		ar(static_cast<std::underlying_type_t<Engine::TypeForm>>(param.GetTypeForm()));
+		ar(static_cast<std::underlying_type_t<CE::TypeForm>>(param.GetTypeForm()));
 	}
 
-	inline void load(BinaryInputArchive& ar, Engine::ScriptVariableTypeData& param)
+	inline void load(BinaryInputArchive& ar, CE::ScriptVariableTypeData& param)
 	{
 		std::string paramName{};
 		std::string typeName{};
-		std::underlying_type_t<Engine::TypeForm> typeForm{};
+		std::underlying_type_t<CE::TypeForm> typeForm{};
 		ar(paramName, typeName, typeForm);
-		param = Engine::ScriptVariableTypeData{ typeName, static_cast<Engine::TypeForm>(typeForm), paramName };
+		param = CE::ScriptVariableTypeData{ typeName, static_cast<CE::TypeForm>(typeForm), paramName };
 	}
 }

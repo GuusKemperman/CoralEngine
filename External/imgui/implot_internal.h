@@ -1335,7 +1335,7 @@ IMPLOT_API bool ShowLegendContextMenu(ImPlotLegend& legend, bool visible);
 //-----------------------------------------------------------------------------
 
 // Label a tick with time formatting.
-IMPLOT_API void LabelTickTime(ImPlotTick& tick, ImGuiTextBuffer& buffer, const ImPlotTime& t, ImPlotDateTimeFmt fmt);
+IMPLOT_API void LabelTickTime(ImPlotTick& tick, ImGuiTextBuffer& mBuffers, const ImPlotTime& t, ImPlotDateTimeFmt fmt);
 
 // Populates a list of ImPlotTicks with normal spaced and formatted ticks
 IMPLOT_API void AddTicksDefault(const ImPlotRange& range, float pix, bool vertical, ImPlotTickCollection& ticks, ImPlotFormatter formatter, void* data);
@@ -1425,11 +1425,11 @@ static inline ImVec2 Intersection(const ImVec2& a1, const ImVec2& a2, const ImVe
 
 // Fills a buffer with n samples linear interpolated from vmin to vmax
 template <typename T>
-void FillRange(ImVector<T>& buffer, int n, T vmin, T vmax) {
-    buffer.resize(n);
+void FillRange(ImVector<T>& mBuffers, int n, T vmin, T vmax) {
+    mBuffers.resize(n);
     T step = (vmax - vmin) / (n - 1);
     for (int i = 0; i < n; ++i) {
-        buffer[i] = vmin + i * step;
+        mBuffers[i] = vmin + i * step;
     }
 }
 
@@ -1499,11 +1499,11 @@ IMPLOT_API ImPlotTime RoundTime(const ImPlotTime& t, ImPlotTimeUnit unit);
 IMPLOT_API ImPlotTime CombineDateTime(const ImPlotTime& date_part, const ImPlotTime& time_part);
 
 // Formats the time part of timestamp t into a buffer according to #fmt
-IMPLOT_API int FormatTime(const ImPlotTime& t, char* buffer, int size, ImPlotTimeFmt fmt, bool use_24_hr_clk);
+IMPLOT_API int FormatTime(const ImPlotTime& t, char* mBuffers, int size, ImPlotTimeFmt fmt, bool use_24_hr_clk);
 // Formats the date part of timestamp t into a buffer according to #fmt
-IMPLOT_API int FormatDate(const ImPlotTime& t, char* buffer, int size, ImPlotDateFmt fmt, bool use_iso_8601);
+IMPLOT_API int FormatDate(const ImPlotTime& t, char* mBuffers, int size, ImPlotDateFmt fmt, bool use_iso_8601);
 // Formats the time and/or date parts of a timestamp t into a buffer according to #fmt
-IMPLOT_API int FormatDateTime(const ImPlotTime& t, char* buffer, int size, ImPlotDateTimeFmt fmt);
+IMPLOT_API int FormatDateTime(const ImPlotTime& t, char* mBuffers, int size, ImPlotDateTimeFmt fmt);
 
 // Shows a date picker widget block (year/month/day).
 // #level = 0 for day, 1 for month, 2 for year. Modified by user interaction.

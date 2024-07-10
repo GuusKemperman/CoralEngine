@@ -3,7 +3,7 @@
 #include <fstream>
 #include <sstream>
 
-namespace Engine
+namespace CE
 {
 	class FileFunctions
 	{
@@ -20,9 +20,9 @@ namespace Engine
 
 		static std::string ReadFile(std::ifstream& fileStream)
 		{
-			std::stringstream buffer;
-			buffer << fileStream.rdbuf();
-			return buffer.str();
+			std::stringstream buffers;
+			buffers << fileStream.rdbuf();
+			return buffers.str();
 		}
 
 		static std::string ReadFile(const char* filePath)

@@ -3,12 +3,9 @@
 #include <filesystem>
 #include <fstream>
 
-#if defined(BEE_PLATFORM_PC)
-#endif
-
 #include "Core/FileIO.h"
 
-using namespace Engine;
+using namespace CE;
 using namespace std;
 
 std::string FileIO::ReadTextFile(Directory type, const std::string& path)
@@ -22,10 +19,10 @@ std::string FileIO::ReadTextFile(Directory type, const std::string& path)
     }
     file.seekg(0, std::ios::end);
     const size_t size = file.tellg();
-    string buffer(size, '\0');
+    string buffers(size, '\0');
     file.seekg(0);
-    file.read(&buffer[0], size);
-    return buffer;
+    file.read(&buffers[0], size);
+    return buffers;
 }
 
 bool FileIO::WriteTextFile(Directory type, const std::string& path, const std::string& content)
@@ -53,9 +50,9 @@ std::vector<char> FileIO::ReadBinaryFile(Directory type, const std::string& path
     }
     const streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
-    std::vector<char> buffer(size);
-    if (file.read(buffer.data(), size)) return buffer;
-    assert(false);
+    std::vector<char> buffers(size);
+    if (file.read(buffers.data(), size)) return buffers;
+    ABORT;
     return vector<char>();
 }
 

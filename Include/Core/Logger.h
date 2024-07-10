@@ -1,12 +1,61 @@
 #pragma once
+#include <mutex>
+
 #include "Core/EngineSubsystem.h"
 
-#if 1
+#if LOGGING_ENABLED
 
-#define LOG(channel, severity, formatString, ...) Engine::Logger::Get().Log(Engine::Format(formatString, __VA_ARGS__), #channel, severity, Engine::SourceLocation::current( __LINE__, __FILE__ ));
+#define LOG(channel, severity, formatString, ...) CE::Logger::Get().Log(CE::Format(formatString, ##__VA_ARGS__), #channel, severity, __FILE__, __LINE__)
+
+// If logging is enabled, we replace assert with a fatal log entry.
+// This will instruct the logger to dump the current log contents to
+// a file.
+#ifdef ASSERTS_ENABLED
+
+#define ASSERT_LOG(condition, format, ...) if (!(condition)) { LOG(LogTemp, Fatal, "Assert failed: {} - " format, #condition, ##__VA_ARGS__); } static_assert(true, "")
+
+#define ABORT LOG(LogTemp, Fatal, "Aborted")
+
+#endif // ASSERTS_ENABLED
+
 #else
-#define LOG(...)
+
+#define LOG(channel, severity, ...) if constexpr (severity == Fatal) { ABORT; } static_assert(true, "")
+
+// If logging is not enabled, use the classic assert().
+#ifdef ASSERTS_ENABLED
+
+#define ABORT CE::Logger::Get().Log("Aborted", "LogTemp", Fatal, __FILE__, __LINE__)
+#define ASSERT_LOG(condition, ...) if (!(condition)) { CE::Logger::Get().Log(CE::Format("Assert failed: {} - ", #condition), "LogTemp", Fatal, __FILE__, __LINE__); } static_assert(true, "")
+
+#endif // ASSERTS_ENABLED
+
+#endif // LOGGING_ENABLED
+
+#ifndef ASSERTS_ENABLED
+#define ASSERT_LOG(...) static_assert(true, "")
+#define ABORT static_assert(true, "")
 #endif
+
+#define ASSERT(condition) ASSERT_LOG(condition, "")
+
+#define TRY_CATCH_LOG(statement)								\
+	[&]															\
+	{															\
+		try														\
+		{														\
+			statement;											\
+		}														\
+		catch ([[maybe_unused]] const std::exception& e)		\
+		{														\
+			LOG(LogException, Warning,							\
+				"Exception occured while evaluating {} - {}",	\
+				#statement,										\
+				e.what());										\
+			return false;										\
+		}														\
+		return true;											\
+		}()
 
 enum LogSeverity
 {
@@ -31,7 +80,7 @@ enum LogSeverity
 	NUM_OF_SEVERITIES
 };
 
-namespace Engine
+namespace CE
 {
 	class ManyStrings;
 
@@ -47,19 +96,21 @@ namespace Engine
 	public:
 		void Log(std::string_view message,
 			std::string_view channel, 
-			LogSeverity severity, 
-			SourceLocation&& origin,
+			LogSeverity severity,
+			std::string_view file,
+			uint32 line,
 			std::function<void()>&& onMessageClick = {});
 
 		void Clear();
 
-		void DumpToCrashLog() const;
+		void DumpToCrashLogAndExit();
 
 		LogSeverity GetCurrentSeverityLevel() const { return mCurrentLogSeverity; }
 		void SetCurrentSeverityLevel(const LogSeverity severity) { mCurrentLogSeverity = severity; }
 
 		const std::array<uint32, static_cast<size_t>(NUM_OF_SEVERITIES)>& GetNumOfEntriesPerSeverity() { return mNumOfEntriesPerSeverity; }
 
+		struct FatalErrorException {};
 	private:
 		friend class LogWindow;
 
@@ -94,16 +145,31 @@ namespace Engine
 		std::unordered_map<uint32, Channel> mChannels{};
 		std::unique_ptr<ManyStrings> mEntryContents{};
 
+		// We support logging from multiple threads.
+		std::mutex mMutex{};
+
+		// We only log the thread Id if the message
+		// came from a thread that was not the main thread
+		std::thread::id mMainThreadId = std::this_thread::get_id();
+
+		// We clear the buffer if the max amount of messages
+		// has been reached to prevent excessive memory usage
+		static constexpr size_t sMaxNumOfBytesStored = 1'000'000;
+
 		struct Entry
 		{
-			Entry(const Channel& channel, LogSeverity severity, SourceLocation&& origin, std::function<void()>&& onClick) :
+			Entry(const Channel& channel, LogSeverity severity, std::string_view file, uint32 line, std::function<void()>&& onClick) :
 				mChannel(channel),
 				mSeverity(severity),
-				mOrigin(std::move(origin)),
+				mFromFile(file),
+				mFromLine(line),
 				mOnClick(std::move(onClick)){}
 			std::reference_wrapper<const Channel> mChannel;
 			LogSeverity mSeverity;
-			SourceLocation mOrigin;
+
+			std::string_view mFromFile{};
+			uint32 mFromLine{};
+
 			std::function<void()> mOnClick;
 		};
 		std::vector<Entry> mEntries{};

@@ -1,4 +1,6 @@
 #include "Precomp.h"
+
+#include "Components/ComponentFilter.h"
 #include "Meta/MetaReflect.h"
 #include "Meta/ReflectedTypes/ReflectENTT.h"
 
@@ -9,11 +11,11 @@
 #include "World/World.h"
 #include "World/Registry.h"
 
-using namespace Engine;
+using namespace CE;
 using namespace entt;
 using T = entity;
 
-bool sDummy = Engine::Internal::ReflectAtStartup<std::vector<T>>::sDummy;
+bool sDummy = CE::Internal::ReflectAtStartup<std::vector<T>>::sDummy;
 
 MetaType Reflector<T>::Reflect()
 {
@@ -23,15 +25,15 @@ MetaType Reflector<T>::Reflect()
 	ASSERT(defaultConstructor != nullptr);
 
 	*defaultConstructor = {
-		[](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer buffer) -> FuncResult
+		[](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer buffers) -> FuncResult
 		{
-			ASSERT(buffer != nullptr && "The address provided to a constructor may never be nullptr");
+			ASSERT(buffers != nullptr && "The address provided to a constructor may never be nullptr");
 
 			// Unpack needs to know the argument that it
 			// needs to forward.
 			[[maybe_unused]] size_t argIndex = args.size();
 
-			new (buffer) entt::entity(entt::null);
+			new (buffers) entt::entity(entt::null);
 			return std::nullopt;
 		},
 		OperatorType::constructor,
@@ -51,7 +53,7 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const entt::entity& entity)
 		{
-			return std::to_string(static_cast<EntityType>(entity));
+			return std::to_string(entt::to_integral(entity));
 		}, "ToString", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 
@@ -61,6 +63,21 @@ MetaType Reflector<T>::Reflect()
 			ASSERT(world != nullptr);
 			return world->GetRegistry().Valid(entity);
 		}, "IsAlive", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
+
+	type.AddFunc([](const entt::entity& entity, const ComponentFilter& component)
+		{
+			if (component == nullptr)
+			{
+				return;
+			}
+
+			World* world = World::TryGetWorldAtTopOfStack();
+			ASSERT(world != nullptr);
+			world->GetRegistry().AddComponent(*component.Get(), entity);
+
+		}, "AddComponent", MetaFunc::ExplicitParams<const T&, const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+
 	ReflectFieldType<T>(type);
 
 	return type;

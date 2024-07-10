@@ -321,7 +321,7 @@ CODE
      // At this point you've got the texture data and you need to upload that to your graphic system:
      // After we have created the texture, store its pointer/identifier (_in whichever format your engine uses_) in 'io.Fonts->TexID'.
      // This will be passed back to your via the renderer. Basically ImTextureID == void*. Read FAQ for details about ImTextureID.
-     MyTexture* texture = MyEngine::CreateTextureFromMemoryPixels(pixels, width, height, TEXTURE_TYPE_RGBA32)
+     MyTexture* texture = MyCE::CreateTextureFromMemoryPixels(pixels, width, height, TEXTURE_TYPE_RGBA32)
      io.Fonts->SetTexID((void*)texture);
 
      // Application main loop
@@ -962,7 +962,13 @@ CODE
 #define NOMINMAX
 #endif
 #ifndef __MINGW32__
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#pragma warning(push)
+#pragma warning(disable: 4005)
 #include <Windows.h>        // _wfopen, OpenClipboard
+#pragma warning(pop) 
 #else
 #include <windows.h>
 #endif
@@ -7145,7 +7151,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
 
         // Default item width. Make it proportional to window size if window manually resizes
         if (window->Size.x > 0.0f && !(flags & ImGuiWindowFlags_Tooltip) && !(flags & ImGuiWindowFlags_AlwaysAutoResize))
-            window->ItemWidthDefault = ImFloor(window->Size.x * 0.65f);
+            window->ItemWidthDefault = ImFloor(window->Size.x * 0.45f);
         else
             window->ItemWidthDefault = ImFloor(g.FontSize * 16.0f);
 

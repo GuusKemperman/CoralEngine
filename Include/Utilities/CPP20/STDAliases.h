@@ -12,12 +12,10 @@
 
 #define STATIC_SPECIALIZATION 
 
-namespace Engine
+namespace CE
 {
 	template<typename T, size_t Size = std::dynamic_extent>
 	using Span = std::span<T, Size>;
-
-	using SourceLocation = std::source_location;
 
 	template <class... T>
 	std::string Format(const std::format_string<T...> fmt, T&&... args)
@@ -29,15 +27,22 @@ namespace Engine
 #else // If we don't have C++20
 
 #include "Span.h"
-#include "SourceLocation.h"
+
+#ifdef _MSC_VER 
 
 #pragma warning(push)
 #pragma warning(disable : 4702) // Unreachable code
 
+#endif // _MSC_VER
+
 #define FMT_HEADER_ONLY
 #include "fmt/format.h"
 
+#ifdef _MSC_VER
+
 #pragma warning(pop)
+
+#endif // _MSC_VER
 
 #define CONSTEVAL constexpr
 #define UNLIKELY
@@ -49,13 +54,10 @@ namespace Engine
 // MSVC has a bug and does not conform to the standard.
 #define STATIC_SPECIALIZATION static
 #endif
-namespace Engine
+namespace CE
 {
 	template<typename T, size_t Size = tcb::dynamic_extent>
 	using Span = tcb::span<T, Size>;
-
-	using SourceLocation = EarlySTD::source_location;
-
 
 	template <class... T>
 	std::string Format(const fmt::format_string<T...> fmt, T&&... args)
@@ -65,3 +67,19 @@ namespace Engine
 }
 #endif
 
+namespace CE
+{
+#ifdef PLATFORM_***REMOVED***
+
+#define ENGINE_ALLOCA alloca
+#define FORCE_INLINE inline
+
+#elif PLATFORM_WINDOWS
+
+#define ENGINE_ALLOCA _alloca
+#define FORCE_INLINE __forceinline
+
+#else 
+	static_assert(false, "No platform")
+#endif
+}

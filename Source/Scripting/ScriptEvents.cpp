@@ -1,0 +1,249 @@
+#include "Precomp.h"
+#include "Scripting/ScriptEvents.h"
+
+#include "Core/VirtualMachine.h"
+#include "Scripting/ScriptFunc.h"
+#include "World/World.h"
+
+CE::MetaFunc& CE::ScriptEvent::Declare(TypeId selfTypeId, MetaType& toType) const
+{
+	std::vector<MetaFuncNamedParam> metaParams{};
+
+	if (!mIsStatic)
+	{
+		metaParams.emplace_back(TypeTraits{ selfTypeId, TypeForm::Ref });
+	}
+	metaParams.insert(metaParams.end(), mEventParams.begin(), mEventParams.end());
+
+	MetaFuncNamedParam metaReturn{ mEventReturnType };
+
+	MetaFunc& func = toType.AddFunc([](MetaFunc::DynamicArgs, MetaFunc::RVOBuffer) -> FuncResult
+		{
+			return { "There were unresolved compilation errors" };
+		},
+		mBasedOnEvent.get().mName,
+		std::move(metaReturn),
+		std::move(metaParams)
+	);
+
+	func.GetProperties().Add(Internal::sIsEventProp);
+
+	return func;
+}
+
+void CE::ScriptEvent::Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, const AssetHandle<Script>& script) const
+{
+	return metaFunc.RedirectFunction(GetScriptInvoker(scriptFunc, script));
+}
+
+CE::MetaFunc::InvokeT CE::ScriptOnlyPassComponentEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			World& world = *args[1].As<World>();
+			World::PushWorld(world);
+
+			// The component already has the world
+			// and it's owner
+			Span<MetaAny, 1> scriptArgs{ &args[0], 1 };
+			FuncResult result = VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+
+			World::PopWorld();
+			return result;
+		};
+}
+
+#ifdef EDITOR
+void CE::ScriptTickEventBase::OnDetailsInspect(ScriptFunc& scriptFunc) const
+{
+	MetaProps& props = scriptFunc.GetProps();
+
+	bool tickWhilstPaused = props.Has(Props::sShouldTickWhilstPausedTag);
+
+	if (ImGui::Checkbox("Tick while paused", &tickWhilstPaused))
+	{
+		if (tickWhilstPaused)
+		{
+			props.Add(Props::sShouldTickWhilstPausedTag);
+		}
+		else
+		{
+			props.Remove(Props::sShouldTickWhilstPausedTag);
+		}
+	}
+
+	bool tickBeforeBeginPlay = props.Has(Props::sShouldTickBeforeBeginPlayTag);
+
+	if (ImGui::Checkbox("Tick before begin play", &tickBeforeBeginPlay))
+	{
+		if (tickBeforeBeginPlay)
+		{
+			props.Add(Props::sShouldTickBeforeBeginPlayTag);
+		}
+		else
+		{
+			props.Remove(Props::sShouldTickBeforeBeginPlayTag);
+		}
+	}
+}
+#endif // EDITOR
+
+CE::MetaFunc::InvokeT CE::ScriptTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			// The reference to the component and the deltatime
+			std::array<MetaAny, 2> scriptArgs{ std::move(args[0]), std::move(args[3]) };
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
+CE::MetaFunc::InvokeT CE::ScriptFixedTickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			// The reference to the component and the deltatime
+			std::array<MetaAny, 2> scriptArgs{ std::move(args[0]), MetaAny{ sFixedTickEventStepSize } };
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
+CE::ScriptAITickEvent::ScriptAITickEvent() :
+	ScriptEvent(sAITickEvent, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt)
+{
+}
+
+CE::MetaFunc::InvokeT  CE::ScriptAITickEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			// The reference to the component and the deltatime
+			std::array<MetaAny, 2> scriptArgs{ std::move(args[0]), std::move(args[3]) };
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
+CE::ScriptAIEvaluateEvent::ScriptAIEvaluateEvent() :
+	ScriptEvent(sAIEvaluateEvent, {}, MetaFuncNamedParam{ MakeTypeTraits<float>(), "Score" })
+{
+}
+
+CE::MetaFunc::InvokeT  CE::ScriptAIEvaluateEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			// The component already has the world
+			// and it's owner
+			Span<MetaAny, 1> scriptArgs{ &args[0], 1 };
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
+CE::ScriptAbilityActivateEvent::ScriptAbilityActivateEvent() :
+	ScriptEvent(sAbilityActivateEvent, {  }, std::nullopt)
+{
+}
+
+CE::MetaFunc::InvokeT  CE::ScriptAbilityActivateEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			// The script knows about world, but we do have to provide entt::entity
+			Span<MetaAny, 1> scriptArgs{ &args[0], 1 };
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
+CE::ScriptAbilityHitEvent::ScriptAbilityHitEvent() :
+	ScriptEvent(sAbilityHitEvent, { { MakeTypeTraits<entt::entity>(), "Hit Entity" },
+	{ MakeTypeTraits<entt::entity>(), "Ability Entity" } }, {})
+{
+}
+
+CE::MetaFunc::InvokeT CE::ScriptAbilityHitEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+		(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			std::array<MetaAny, 3> scriptArgs{ std::move(args[0]), std::move(args[3]), std::move(args[4])};
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
+CE::ScriptReloadStartedEvent::ScriptReloadStartedEvent() :
+	ScriptOnlyPassComponentEvent(sReloadStartedEvent)
+{
+}
+
+CE::ScriptReloadCompletedEvent::ScriptReloadCompletedEvent() :
+	ScriptOnlyPassComponentEvent(sReloadCompletedEvent)
+{
+}
+
+CE::ScriptEnemyKilledEvent::ScriptEnemyKilledEvent() :
+	ScriptEvent(sEnemyKilledEvent, { { MakeTypeTraits<entt::entity>(), "Enemy about to die" }}, {})
+{
+}
+
+CE::MetaFunc::InvokeT CE::ScriptEnemyKilledEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+		(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			std::array<MetaAny, 2> scriptArgs{ std::move(args[0]), std::move(args[3]),};
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
+CE::ScriptGettingHitEvent::ScriptGettingHitEvent() :
+	ScriptOnlyPassComponentEvent(sGettingHitEvent)
+{
+}
+
+CE::ScriptCritEvent::ScriptCritEvent() :
+	ScriptEvent(sCritEvent, { { MakeTypeTraits<entt::entity>(), "Hit Entity" },
+	{ MakeTypeTraits<entt::entity>(), "Ability Entity" } }, {})
+{
+}
+
+CE::MetaFunc::InvokeT CE::ScriptCritEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+	const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			std::array<MetaAny, 3> scriptArgs{ std::move(args[0]), std::move(args[3]), std::move(args[4]) };
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}
+
+CE::MetaFunc::InvokeT CE::CollisionEvent::GetScriptInvoker(const ScriptFunc& scriptFunc,
+                                                           const AssetHandle<Script>& script) const
+{
+	return [&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue()]
+	(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			std::array<MetaAny, 5> scriptArgs{
+				std::move(args[0]), // The instance of our component
+				std::move(args[3]), // The other entity
+				std::move(args[4]), // Depth
+				std::move(args[5]), // Hit normal
+				std::move(args[6]), // Contact point
+			};
+			return VirtualMachine::Get().ExecuteScriptFunction(scriptArgs, rvoBuffer, scriptFunc, firstNode, entry);
+		};
+}

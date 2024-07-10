@@ -1,7 +1,7 @@
 #pragma once
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class IsDestroyedTag
 	{
@@ -9,6 +9,4 @@ namespace Engine
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(IsDestroyedTag);
 	};
-
-
 }

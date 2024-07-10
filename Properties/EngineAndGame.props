@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <EngineOutputDir>Build\$(Platform)\$(Configuration)\</EngineOutputDir>
+    <EngineProjectName>CoralEngine</EngineProjectName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(EngineDir)Include;$(EngineDir)External;$(EngineDir)External\clipper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExtraWarnings>true</ExtraWarnings>
+      <WarningsAsErrors>true</WarningsAsErrors>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FastMath>true</FastMath>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="EngineOutputDir">
+      <Value>$(EngineOutputDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="EngineProjectName">
+      <Value>$(EngineProjectName)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

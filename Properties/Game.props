@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <EngineDir>$(ProjectDir)../../</EngineDir>
+    <GameDir>$(ProjectDir)</GameDir>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OutDir>$(GameDir)Build/$(Platform)/$(Configuration)/</OutDir>
+    <IntDir>$(GameDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
+    <TargetName>Lichgate</TargetName>
+    <LocalDebuggerWorkingDirectory>$(EngineDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(GameDir)Include/$(ProjectName);$(GameDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>GAME_DIR=R"(Games/$(ProjectName)/)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="EngineDir">
+      <Value>$(EngineDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="GameDir">
+      <Value>$(GameDir)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

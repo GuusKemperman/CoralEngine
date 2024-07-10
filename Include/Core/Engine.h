@@ -1,15 +1,13 @@
 #pragma once
 
-namespace Engine
+namespace CE
 {
-	struct GeneratedEntryPoints;
-
-	class EngineClass
+	class Engine
 	{
 	public:
-		EngineClass(int argc, char* argv[]);
-		~EngineClass();
+		Engine(int argc, char* argv[], std::string_view gameDir);
+		~Engine();
 
-		void Run();
+		void Run(Name starterLevel);
 	};
 }

@@ -8,10 +8,7 @@ constexpr float TWOPI = 6.28318530717958647692528f;
 constexpr float SQRT_PI_INV = 0.56418958355f;
 constexpr float LARGE_FLOAT = 1e34f;
 
-#define DEG2RAD(x) (x*PI)/180
-#define RAD2DEG(x) x*(180/PI)
-
-namespace Engine
+namespace CE
 {
 	class Math
 	{
@@ -39,7 +36,7 @@ namespace Engine
 		}
 
 		// In radians
-		static float Vec2ToAngle(const glm::vec2& vec)
+		static float Vec2ToAngle(glm::vec2 vec)
 		{
 			return std::atan2(vec.y, vec.x);
 		}
@@ -67,47 +64,6 @@ namespace Engine
 
 		// Stolen from https://stackoverflow.com/questions/44705398/about-glm-quaternion-rotation
 		static glm::vec3 RotateVector(const glm::vec3& v, const glm::quat& q);
-
-		struct Line
-		{
-			glm::vec2 mStart{};
-			glm::vec2 mEnd{};
-		};
-
-		// https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-		static bool LineIntersection(const Line& line1, const Line& line2)
-		{
-			// Find the four orientations needed for general and
-			// special cases
-			const int o1 = orientation(line1.mStart, line1.mEnd, line2.mStart);
-			const int o2 = orientation(line1.mStart, line1.mEnd, line2.mEnd);
-			const int o3 = orientation(line2.mStart, line2.mEnd, line1.mStart);
-			const int o4 = orientation(line2.mStart, line2.mEnd, line1.mEnd);
-
-			// General case
-			return (o1 != o2 && o3 != o4)
-				|| (o1 == 0 && onSegment(line1.mStart, line2.mStart, line1.mEnd))
-				|| (o2 == 0 && onSegment(line1.mStart, line2.mEnd, line1.mEnd))
-				|| (o3 == 0 && onSegment(line2.mStart, line1.mStart, line2.mEnd))
-				|| (o4 == 0 && onSegment(line2.mStart, line1.mEnd, line2.mEnd));
-		}
-
-		static float TimeOfLineIntersection(const Line& line1, const Line& line2)
-		{
-			float s1_x, s1_y, s2_x, s2_y;
-			s1_x = line1.mEnd.x - line1.mStart.x;     s1_y = line1.mEnd.y - line1.mStart.y;
-			s2_x = line2.mEnd.x - line2.mStart.x;     s2_y = line2.mEnd.y - line2.mStart.y;
-
-			float s, t;
-			s = (-s1_y * (line1.mStart.x - line2.mStart.x) + s1_x * (line1.mStart.y - line2.mStart.y)) / (-s2_x * s1_y + s1_x * s2_y);
-			t = (s2_x * (line1.mStart.y - line2.mStart.y) - s2_y * (line1.mStart.x - line2.mStart.x)) / (-s2_x * s1_y + s1_x * s2_y);
-
-			if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
-			{
-				return t;
-			}
-			return INFINITY;
-		}
 
 		static constexpr uint32 floorlog2(uint32 x)
 		{
@@ -140,18 +96,63 @@ namespace Engine
 			return vec;
 		}
 
-	private:
-		// Function needed for line-line intersection
-		static bool onSegment(const glm::vec2& p, const glm::vec2& q, const glm::vec2& r)
+		static glm::vec2 QuatToDirectionXZ(const glm::quat& quat)
 		{
-			return q.x <= glm::max(p.x, r.x) && q.x >= glm::min(p.x, r.x) &&
-				q.y <= glm::max(p.y, r.y) && q.y >= glm::min(p.y, r.y);
+			const glm::vec3 direction3D = glm::vec3(0.f, 0.f, 1.f) * quat;
+			return normalize(glm::vec2(-direction3D.x, direction3D.z));
 		}
-		// Function needed for line-line intersection
-		static int orientation(const glm::vec2& p, const glm::vec2& q, const glm::vec2& r)
+
+		static glm::vec3 QuatToDirection(const glm::quat& quat)
 		{
-			const float val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
-			return val == 0 ? 0 : ((val > 0) ? 1 : 2);
+			const glm::vec3 direction3D = glm::vec3(0.f, 0.f, 1.f) * quat;
+			return normalize(glm::vec3(-direction3D.x, direction3D.y, direction3D.z));
 		}
+
+		static glm::quat Direction2DToXZQuatOrientation(glm::vec2 v)
+		{
+			const glm::vec2 direction2D = glm::normalize(v);
+			const glm::vec3 direction3D(direction2D.x, 0.0f, direction2D.y);
+			// Calculate angle based on direction
+			float angle = acos(glm::dot(glm::normalize(direction3D), { 0.0f, 0.0f, 1.0f }));
+			// Determine the rotation direction (clockwise or counterclockwise)
+			if (direction3D.x < 0)
+				angle = -angle;
+			// Create quaternion for rotation around Y-axis
+			const glm::quat rotation = glm::angleAxis(angle, glm::vec3(0.0f, 1.0f, 0.0f));
+
+			return rotation;
+		}
+
+		static bool AreFloatsEqual(float a, float b, float epsilon = 1e-5f)
+		{
+			return std::fabs(a - b) < epsilon;
+		}
+
+		static uint32_t NextPowerOfTwo(uint32_t value)
+		{
+			// https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+			unsigned int v = value; // compute the next highest power of 2 of 32-bit v
+
+			v--;
+			v |= v >> 1;
+			v |= v >> 2;
+			v |= v >> 4;
+			v |= v >> 8;
+			v |= v >> 16;
+			v++;
+
+			return v;
+		}
+		
+		static std::optional<std::vector<glm::vec3>> CalculateTangents(
+        const void* const indices,
+        const size_t numOfIndices,
+        const bool areIndices16Bit,
+        const glm::vec3* const positions,
+        const glm::vec3* const normals,
+        const glm::vec2* const texCoords,
+        const size_t numOfVertices);
+
+		static glm::vec2 RotateVec2ByAngleInRadians(glm::vec2 vector, float angle);
 	};
 }

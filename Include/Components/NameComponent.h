@@ -1,7 +1,7 @@
 #pragma once
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class Registry;
 
@@ -10,7 +10,7 @@ namespace Engine
 	public:
 		std::string mName{};
 
-		static std::string GetDisplayName(const Registry& registry, entt::entity entity);
+		static std::string_view GetDisplayName(const Registry& registry, entt::entity entity);
 
 	private:
 		friend ReflectAccess;

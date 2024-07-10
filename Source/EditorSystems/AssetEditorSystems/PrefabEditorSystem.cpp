@@ -1,19 +1,42 @@
 #include "Precomp.h"
 #include "EditorSystems/AssetEditorSystems/PrefabEditorSystem.h"
 
+#include "Assets/Level.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/TransformComponent.h"
-#include "Components/CameraComponent.h"
-#include "Components/FlyCamControllerComponent.h"
 #include "Components/NameComponent.h"
 #include "Utilities/Imgui/WorldInspect.h"
+#include "Utilities/Reflect/ReflectComponentType.h"
 
-Engine::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
+namespace
+{
+	struct PartOfDefaultLevelTag
+	{
+		friend CE::ReflectAccess;
+		static CE::MetaType Reflect()
+		{
+			using namespace CE;
+			MetaType metaType = MetaType{ MetaType::T<PartOfDefaultLevelTag>{}, "PartOfDefaultLevelTag" };
+			ReflectComponentType<PartOfDefaultLevelTag>(metaType);
+			return metaType;
+		}
+		REFLECT_AT_START_UP(PartOfDefaultLevelTag);
+	};
+}
+
+CE::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
 	AssetEditorSystem(std::move(asset)),
-	mWorldHelper(std::make_unique<WorldInspectHelper>(World{false}))
+	mWorldHelper(std::make_unique<WorldInspectHelper>(Level::CreateDefaultWorld()))
 {
 	Registry& reg = mWorldHelper->GetWorld().GetRegistry();
+
+	auto entityView = reg.View<entt::entity>();
+	reg.AddComponents<PartOfDefaultLevelTag>(entityView.begin(), entityView.end());
+
+	// By default, we will use the flycam
+	mWorldHelper->SwitchToFlyCam();
+
 	mPrefabInstance = reg.CreateFromPrefab(mAsset);
 
 	// In case our prefab was invalid
@@ -22,21 +45,11 @@ Engine::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
 		mPrefabInstance = reg.Create();
 		reg.AddComponent<NameComponent>(mPrefabInstance, mAsset.GetName());
 	}
-
-	// Make a camera to see the prefab nicely
-	const entt::entity camera = reg.Create();
-	reg.AddComponent<CameraComponent>(camera);
-	reg.AddComponent<FlyCamControllerComponent>(camera);
-	reg.AddComponent<NameComponent>(camera, "Camera");
-	TransformComponent& cameraTransform = reg.AddComponent<TransformComponent>(camera);
-
-	cameraTransform.SetLocalPosition({ -25.0f, -13.0f, 20.0f });
-	cameraTransform.SetLocalOrientation({ 0.0f, 25.0f * (TWOPI / 360.0f), 20.0f * (TWOPI / 360.0f) });
 }
 
-Engine::PrefabEditorSystem::~PrefabEditorSystem() = default;
+CE::PrefabEditorSystem::~PrefabEditorSystem() = default;
 
-void Engine::PrefabEditorSystem::Tick(const float deltaTime)
+void CE::PrefabEditorSystem::Tick(const float deltaTime)
 {
 	if (!Begin(ImGuiWindowFlags_MenuBar))
 	{
@@ -57,12 +70,65 @@ void Engine::PrefabEditorSystem::Tick(const float deltaTime)
 	End();
 }
 
-void Engine::PrefabEditorSystem::ApplyChangesToAsset()
+void CE::PrefabEditorSystem::SaveState(std::ostream& toStream) const
 {
+	AssetEditorSystem::SaveState(toStream);
+
+	BinaryGSONObject savedState{};
+	mWorldHelper->SaveState(savedState);
+
+	savedState.SaveToBinary(toStream);
+}
+
+void CE::PrefabEditorSystem::LoadState(std::istream& fromStream)
+{
+	AssetEditorSystem::LoadState(fromStream);
+
+	BinaryGSONObject savedState{};
+
+	if (!savedState.LoadFromBinary(fromStream))
+	{
+		LOG(LogEditor, Warning, "Failed to load prefab editor saved state, which may be fine if this prefab was an older format (pre 18/03/2024)");
+		return;
+	}
+
+	mWorldHelper->LoadState(savedState);
+}
+
+void CE::PrefabEditorSystem::ApplyChangesToAsset()
+{
+	const Registry& reg = mWorldHelper->GetWorldBeforeBeginPlay().GetRegistry();
+
+	const TransformComponent* prefabInstanceTransform = reg.TryGet<TransformComponent>(mPrefabInstance);
+
+	if (!reg.Valid(mPrefabInstance)
+		|| (prefabInstanceTransform != nullptr && prefabInstanceTransform->GetParent()))
+	{
+		// See if there's a new instance
+		const auto* entityStorage = reg.Storage<entt::entity>();
+		
+		for (const auto [entity] : entityStorage->each())
+		{
+			if (reg.HasComponent<PartOfDefaultLevelTag>(entity))
+			{
+				continue;
+			}
+
+			const TransformComponent* const transform = reg.TryGet<TransformComponent>(entity);
+
+			if (transform == nullptr
+				|| transform->GetParent() == nullptr)
+			{
+				mPrefabInstance = entity;
+				break;
+			}
+		}
+	}
+
 	mAsset.CreateFromEntity(mWorldHelper->GetWorldBeforeBeginPlay(), mPrefabInstance);
 }
 
-Engine::MetaType Engine::PrefabEditorSystem::Reflect()
+CE::MetaType CE::PrefabEditorSystem::Reflect()
 {
 	return { MetaType::T<PrefabEditorSystem>{}, "PrefabEditorSystem",
 		MetaType::Base<AssetEditorSystem<Prefab>>{},

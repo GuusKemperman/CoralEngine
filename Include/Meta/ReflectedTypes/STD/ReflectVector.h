@@ -4,7 +4,7 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-//namespace Engine::Internal
+//namespace CE::Internal
 //{
 //	template<typename T, typename Arg> std::false_type operator<(const T&, const Arg&);
 //	template<typename T, typename Arg> std::false_type operator==(const T&, const Arg&);
@@ -32,11 +32,11 @@
 template<typename T>
 struct Reflector<std::vector<T>>
 {
-	static_assert(Engine::sIsReflectable<T>, "Cannot reflect a vector of a type that is not reflected");
+	static_assert(CE::sIsReflectable<T>, "Cannot reflect a vector of a type that is not reflected");
 
-	static Engine::MetaType Reflect()
+	static CE::MetaType Reflect()
 	{
-		using namespace Engine;
+		using namespace CE;
 
 		const MetaType& basedOnType = MetaManager::Get().GetType<T>();
 
@@ -80,9 +80,9 @@ struct Reflector<std::vector<T>>
 
 					return MetaAny{ v[i] };
 				},
-				"Get (a reference)",
+				"Get",
 				MetaFunc::Return{ MakeTypeTraits<T&>() }, // Return value
-				MetaFunc::Params{ { MakeTypeTraits<std::vector<T>&>(), "Array" }, { MakeTypeTraits<const int32&>(), "Index" } }).GetProperties().Add(Props::sIsScriptableTag);
+				MetaFunc::Params{ { MakeTypeTraits<std::vector<T>&>(), "Array" }, { MakeTypeTraits<const int32&>(), "Index" } }).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 		}
 
@@ -152,4 +152,6 @@ struct Reflector<std::vector<T>>
 		ReflectFieldType<std::vector<T>>(arrayType);
 		return arrayType;
 	}
+
+	static constexpr bool sIsSpecialized = true;
 };

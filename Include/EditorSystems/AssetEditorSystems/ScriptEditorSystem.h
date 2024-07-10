@@ -1,27 +1,25 @@
+#include "Utilities/ASync.h"
 #ifdef EDITOR
 #pragma once
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
 
+#include <thread>
+
 #include "imnodes/imgui_node_editor.h"
 #include "Assets/Script.h"
 
-namespace ax
+namespace ax::NodeEditor::Utilities
 {
-	namespace NodeEditor
-	{
-		namespace Utilities
-		{
-			struct BlueprintNodeBuilder;
-		}
-	}
+	struct BlueprintNodeBuilder;
 }
 
-namespace Engine
+namespace CE
 {
 	class RerouteScriptNode;
 	class CommentScriptNode;
 	class ScriptFunc;
 	class ScriptField;
+	class ScriptNode;
 
 	class ScriptEditorSystem final :
 		public AssetEditorSystem<Script>
@@ -47,8 +45,6 @@ namespace Engine
 		const ScriptField* TryGetSelectedField() const;
 		ScriptField* TryGetSelectedField();
 
-		void DeselectCurrentFieldOrFunc();
-
 		void SelectFunction(ScriptFunc* func);
 		void SelectField(ScriptField* field);
 
@@ -71,6 +67,16 @@ namespace Engine
 
 		void SaveFunctionState() const;
 		void LoadFunctionState();
+
+		static constexpr std::array<float, 6> sZoomLevels
+		{
+			.03f,
+			.06f,
+			.125f,
+			.25f,
+			.5f,
+			1.0f,
+		};
 
 		float mOverviewPanelWidth = .17f;
 		float mCanvasWidth = .8f;
@@ -95,6 +101,7 @@ namespace Engine
 		void DisplayDetailsPanel();
 
 		void DisplayFunctionDetails(ScriptFunc& func);
+		void DisplayEventDetails(ScriptFunc& func);
 		void DisplayNodeDetails(ScriptNode& node);
 		void DisplayMemberDetails(ScriptField& field);
 
@@ -106,28 +113,53 @@ namespace Engine
 
 		struct NodeTheUserCanAdd
 		{
-			NodeTheUserCanAdd(std::string&& category, 
-				std::string&& name, 
+			NodeTheUserCanAdd(std::string&& name, 
 				std::function<ScriptNode&(ScriptFunc&)>&& addNode,
-				std::function<bool(const ScriptPin&)>&& matchesContext) :
-			mCategory(std::move(category)),
+				std::function<bool(const ScriptPin&)>&& matchesContext,
+				std::function<bool(const ScriptNode&)>&& wasCreatedFromThis,
+				std::optional<Input::KeyboardKey> shortcut = std::nullopt) :
 			mName(std::move(name)),
 			mAddNode(std::move(addNode)),
-			mMatchesContext(std::move(matchesContext)) {}
+			mMatchesContext(std::move(matchesContext)),
+			mWasCreatedFromThis(wasCreatedFromThis),
+			mShortCut(shortcut)
+			{}
 
-			std::string mCategory{};
 			std::string mName{};
+
 			std::function<ScriptNode& (ScriptFunc&)> mAddNode{};
 			std::function<bool(const ScriptPin&)> mMatchesContext{};
+			std::function<bool(const ScriptNode&)> mWasCreatedFromThis{};
 
-			// How similar the name of this item is to the string the user is searching for
-			double mSimilarityToQuery = 100.0;
+			// If CTRL is held, and this key is pressed,
+			// a node of this type is created.
+			std::optional<Input::KeyboardKey> mShortCut;
+			float mSearchBonus{};
+
+			// May not have been finished calculating
+			// Once all popularities have been calculated,
+			// the popularity will be applied to
+			// mSearchBonus
+			uint32 mNumOfTimesUsed{};
 		};
+
+		struct NodeCategory
+		{
+			std::string mName{};
+			float mSearchBonus{};
+			std::vector<NodeTheUserCanAdd> mNodes{};
+		};
+
+		// When writing for example GetOwner, we want the first result to be
+		// the GetOwner of the script you are editing.
+		static constexpr float sSearchBonusIncreaseForThisScript = 0.2f;
+		static constexpr float sPopularityInfluenceOnSearchBonus = 5.0f;
 
 		void DisplayCanvas();
 		void DrawCanvasObjects();
 		void TryLetUserCreateLink();
-		 
+		void AddNewNode(const NodeTheUserCanAdd& nodeToAdd);
+
 		void DeleteRequestedItems();
 
 		void DisplayCanvasPopUps();
@@ -153,37 +185,30 @@ namespace Engine
 			std::vector<PinToInspect>& pinsToInspect);
 
 		bool ShouldWeOnlyShowContextMatchingNodes() const;
+
 		static bool DoesNodeMatchContext(const ScriptPin& toPin,
 			TypeTraits returnTypeTraits, 
 			const std::vector<TypeTraits>& parameters, 
 			bool isPure);
+
 		bool DoesNodeMatchContext(const NodeTheUserCanAdd& node) const;
 		static inline bool sContextSensitive = true;
 
 		bool ShouldShowUserNode(const NodeTheUserCanAdd& node) const;
 
-		void UpdateSimilarityToQuery();
-		void ClearQuery();
-
 		ImColor GetIconColor(const ScriptVariableTypeData& typeData) const;
 		void DrawPinIcon(const ScriptPin& pin, bool connected, int alpha, bool mirrored = false) const;
 
-		std::vector<NodeTheUserCanAdd> GetALlNodesTheUserCanAdd() const;
+		void InitialiseAllNodesTheUserCanAdd();
 
-		std::vector<NodeTheUserCanAdd> mNodesThatCanBeCreated;
-
-		std::vector<std::reference_wrapper<NodeTheUserCanAdd>> mRecommendedNodesBasedOnQuery{};
-		std::string mCurrentQuery{};
-
-		// This makes it more likely to show functions and fields from
-		// this script when searching.
-		static constexpr double sBiasTowardsNodesFromThisScript = 1.5f;
-		static constexpr double sSimilarityCuttOff = 50.0f;
-		static constexpr uint32 sMaxNumOfRecommendedNodesDuringQuery = 5;
+		std::vector<NodeCategory> mAllNodesTheUserCanAdd{};
+		ASyncThread mNodePopularityCalculateThread{};
+		bool mShouldWeStopCountingNodePopularity{};
 
 		ax::NodeEditor::PinId mPinTheUserRightClicked{};
 		ax::NodeEditor::PinId mPinTheUserIsTryingToLink{};
 		std::optional<ImVec2> mCreateNodePopUpPosition{};
+		ImVec2 mMousePosInCanvasSpace{};
 
 		// After switching to a different function,
 		// we cannot immediately centre the camera on
@@ -208,6 +233,7 @@ namespace Engine
 		//************************************************//
 		void DisplayClassPanel();
 
+		void DisplayEventsOverview();
 		void DisplayFunctionsOverview();
 		void DisplayMembersOverview();
 

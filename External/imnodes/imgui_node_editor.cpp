@@ -143,15 +143,15 @@ extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(const char* s
 static void LogV(const char* fmt, va_list args)
 {
     const int buffer_size = 1024;
-    static char buffer[1024];
+    static char buffers[1024];
 
-    vsnprintf(buffer, buffer_size - 1, fmt, args);
-    buffer[buffer_size - 1] = 0;
+    vsnprintf(buffers, buffer_size - 1, fmt, args);
+    buffers[buffer_size - 1] = 0;
 
-    ImGui::LogText("\nNode Editor: %s", buffer);
+    ImGui::LogText("\nNode Editor: %s", buffers);
 
     OutputDebugStringA("NodeEditor: ");
-    OutputDebugStringA(buffer);
+    OutputDebugStringA(buffers);
     OutputDebugStringA("\n");
 }
 # endif
@@ -1705,8 +1705,17 @@ ImVec2 ed::EditorContext::GetNodeSize(NodeId nodeId)
     auto node = FindNode(nodeId);
     if (!node)
         return ImVec2(0, 0);
-
+    
     return node->m_Bounds.GetSize();
+}
+
+ImVec2 ed::EditorContext::GetGroupSize(NodeId nodeId)
+{
+    auto node = FindNode(nodeId);
+    if (!node)
+        return ImVec2(0, 0);
+
+    return node->m_GroupBounds.GetSize();
 }
 
 void ed::EditorContext::SetNodeZPosition(NodeId nodeId, float z)

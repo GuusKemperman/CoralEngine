@@ -55,7 +55,7 @@ static inline std::optional<size_t> LoadSmallSize(std::istream& istream)
 	return size;
 }
 
-void Engine::BinaryGSONObject::SaveToBinary(std::ostream& ostream) const
+void CE::BinaryGSONObject::SaveToBinary(std::ostream& ostream) const
 {
 	SaveSmallSize(ostream, mName.size());
 	ostream.write(mName.c_str(), mName.size());
@@ -79,43 +79,7 @@ void Engine::BinaryGSONObject::SaveToBinary(std::ostream& ostream) const
 	}
 }
 
-void Engine::BinaryGSONObject::SaveToHex(std::ostream& ostream) const
-{
-	std::function<void(const ObjectType&, uint32)> save = [&](const ObjectType& current, uint32 numOfIndentations)
-		{
-			const ObjectType* const parent = current.GetParent();
-			std::string indentation = "";
-
-			if (parent != nullptr)
-			{
-				for (uint8_t i = 0; i < numOfIndentations; i++)
-				{
-					indentation += '\t';
-				}
-
-				ostream << indentation << current.GetName() << " {\n";
-				++numOfIndentations;
-			}
-
-			for (const ObjectType& child : current.GetChildren())
-			{
-				save(child, numOfIndentations);
-			}
-
-			for (const MemberType& member : current.GetGSONMembers())
-			{
-				ostream << indentation << '\t' << member.GetName() << " = " << StringFunctions::BinaryToHex(member.GetData()) << '\n';
-			}
-
-			if (parent != nullptr)
-			{
-				ostream << indentation << "}\n";
-			}
-		};
-	save(*this, 0);
-}
-
-bool Engine::BinaryGSONObject::LoadFromBinary(std::istream& istream)
+bool CE::BinaryGSONObject::LoadFromBinary(std::istream& istream)
 {
 	const std::optional<size_t> myNameSize = LoadSmallSize(istream);
 
@@ -195,65 +159,4 @@ bool Engine::BinaryGSONObject::LoadFromBinary(std::istream& istream)
 	}
 
 	return true;
-}
-
-void Engine::BinaryGSONObject::LoadFromHex(std::istream& istream)
-{
-	std::string line;
-
-	const auto removeWhiteSpaceAndLineEndings = [](std::string& in)
-		{
-			in.erase(std::remove_if(in.begin(), in.end(),
-				[](unsigned char x)
-				{
-					return x == '\t'
-						|| x == '\n'
-						|| x == '\r';
-				}), in.end());
-		};
-
-	while (std::getline(istream, line))
-	{
-		const size_t lineSize = line.size();
-		char ch;
-		for (size_t i = 0; i < lineSize; i++)
-		{
-			ch = line[i];
-
-			// If line contains {, consider it the start of a new GSONObject.
-			if (ch == '{')
-			{
-				removeWhiteSpaceAndLineEndings(line);
-
-				line.pop_back(); // Remove '{'
-				line.pop_back(); // Remove ' '
-
-				ObjectType& newChild = AddGSONObject(line);
-				newChild.LoadFromHex(istream);
-				break;
-			}
-
-			if (ch == '=')
-			{
-				std::string memberName = line.substr(0, i - 1);
-
-				removeWhiteSpaceAndLineEndings(memberName);
-
-				std::string memberVal = line.substr(i + 2);
-				removeWhiteSpaceAndLineEndings(memberVal);
-
-				MemberType& newMember = AddGSONMember(memberName);
-
-				newMember.mData.resize(memberVal.size() / 2);
-				StringFunctions::HexToBinary(memberVal, { newMember.mData.data(), newMember.mData.size() });
-				break;
-			}
-
-			// If a line contains }, consider it the end of this location.
-			if (ch == '}')
-			{
-				return;
-			}
-		}
-	}
 }
