@@ -51,14 +51,27 @@ namespace cereal
   } // namespace util
 } // namespace cereal
 #else // clang or gcc
+#include <cxxabi.h>
+#include <cstdlib>
 namespace cereal
 {
   namespace util
   {
     //! Demangles the type encoded in a string
     /*! @internal */
-    inline std::string demangle(std::string const & name)
-    { return name; }
+    inline std::string demangle(std::string mangledName)
+    {
+      int status = 0;
+      char *demangledName = nullptr;
+      std::size_t len;
+
+      demangledName = abi::__cxa_demangle(mangledName.c_str(), 0, &len, &status);
+
+      std::string retName(demangledName);
+      free(demangledName);
+
+      return retName;
+    }
 
     //! Gets the demangled name of a type
     /*! @internal */

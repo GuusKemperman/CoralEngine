@@ -2437,15 +2437,15 @@ void ShowBenchmarkTool() {
         }
         ImPlot::EndPlot();
     }
-    static char buffers[64];
+    static char buffer[64];
     if (ImPlot::BeginPlot("##Stats", ImVec2(-1,0), ImPlotFlags_NoChild)) {
         ImPlot::SetupAxes("Items (1,000 pts each)", "Framerate (Hz)");
         ImPlot::SetupAxesLimits(0,500,0,500,ImGuiCond_Always);
         for (int run = 0; run < records.size(); ++run) {
             if (records[run].Data.Size > 1) {
-                sprintf(buffers, "B%d-%s%s", run + 1, names[records[run].Mode], records[run].AA ? "-AA" : "");
+                sprintf(buffer, "B%d-%s%s", run + 1, names[records[run].Mode], records[run].AA ? "-AA" : "");
                 ImVector<ImPlotPoint>& d = records[run].Data;
-                ImPlot::PlotLine(buffers, &d[0].x, &d[0].y, d.Size, 0, 2*sizeof(double));
+                ImPlot::PlotLine(buffer, &d[0].x, &d[0].y, d.Size, 0, 2*sizeof(double));
             }
         }
         ImPlot::EndPlot();

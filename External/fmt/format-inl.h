@@ -68,6 +68,13 @@ FMT_FUNC void report_error(format_func func, int error_code,
     std::fputc('\n', stderr);
 }
 
+// A wrapper around fwrite that throws on error.
+inline void fwrite_fully(const void* ptr, size_t count, FILE* stream) {
+  size_t written = std::fwrite(ptr, 1, count, stream);
+  if (written < count)
+    FMT_THROW(system_error(errno, FMT_STRING("cannot write to file")));
+}
+
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 template <typename Locale>
 locale_ref::locale_ref(const Locale& loc) : locale_(&loc) {
@@ -1549,6 +1556,35 @@ auto get_file(F* f, int) -> apple_file<F> {
 }
 inline auto get_file(FILE* f, ...) -> fallback_file<FILE> { return f; }
 
+using file_ref = decltype(get_file(static_cast<FILE*>(nullptr), 0));
+
+class file_print_buffer : public buffer<char> {
+ private:
+  file_ref file_;
+
+  void set_buffer() {
+    file_.advance_write_buffer(size());
+    auto buf = file_.get_write_buffer();
+    this->set(buf.data, buf.size);
+  }
+
+  static void grow(buffer<char>& buf, size_t) {
+    auto& self = static_cast<file_print_buffer&>(buf);
+    self.set_buffer();
+    self.clear();
+  }
+
+ public:
+  explicit file_print_buffer(FILE* f) : buffer(grow, size_t()), file_(f) {
+    flockfile(f);
+    set_buffer();
+  }
+  ~file_print_buffer() {
+    file_.advance_write_buffer(size());
+    funlockfile(file_);
+  }
+};
+
 #if !defined(_WIN32) || defined(FMT_WINDOWS_NO_WCHAR)
 FMT_FUNC auto write_console(int, string_view) -> bool { return false; }
 #else
@@ -1563,7 +1599,49 @@ FMT_FUNC bool write_console(int fd, string_view text) {
 }
 #endif
 
+#ifdef _WIN32
+// Print assuming legacy (non-Unicode) encoding.
+FMT_FUNC void vprint_mojibake(std::FILE* f, string_view fmt, format_args args,
+                              bool newline) {
+  auto buffer = memory_buffer();
+  detail::vformat_to(buffer, fmt, args);
+  if (newline) buffer.push_back('\n');
+  fwrite_fully(buffer.data(), buffer.size(), f);
+}
+#endif
+
+FMT_FUNC void print(std::FILE* f, string_view text) {
+#ifdef _WIN32
+  int fd = _fileno(f);
+  if (_isatty(fd)) {
+    std::fflush(f);
+    if (write_console(fd, text)) return;
+  }
+#endif
+  fwrite_fully(text.data(), text.size(), f);
+}
 }  // namespace detail
+
+FMT_FUNC void vprint(std::FILE* f, string_view fmt, format_args args) {
+  if (detail::file_ref(f).is_buffered()) {
+    auto&& buffer = detail::file_print_buffer(f);
+    return detail::vformat_to(buffer, fmt, args);
+  }
+  auto buffer = memory_buffer();
+  detail::vformat_to(buffer, fmt, args);
+  detail::print(f, {buffer.data(), buffer.size()});
+}
+
+FMT_FUNC void vprintln(std::FILE* f, string_view fmt, format_args args) {
+  auto buffer = memory_buffer();
+  detail::vformat_to(buffer, fmt, args);
+  buffer.push_back('\n');
+  detail::print(f, {buffer.data(), buffer.size()});
+}
+
+FMT_FUNC void vprint(string_view fmt, format_args args) {
+  vprint(stdout, fmt, args);
+}
 
 namespace detail {
 

@@ -14,7 +14,6 @@
 #include "Meta/MetaTools.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Scripting/ScriptConfig.h"
-#include "Scripting/ScriptEvents.h"
 
 void Engine::VirtualMachine::PostConstruct()
 {
@@ -156,12 +155,11 @@ Engine::FuncResult Engine::VirtualMachine::ExecuteScriptFunction(MetaFunc::Dynam
 				// TODO can be checked at compile time?
 				if (copyResult.HasError())
 				{
-					PrintError({ ScriptError::TypeCannotBeOwnedByScripts, { context.mFunc }, Format("Failed to copy construct type {} from pin {} on node {} - {} try passing by reference instead",
+					return { Format("Failed to copy construct type {} from pin {} on node {} - {} try passing by reference instead",
 						type->GetName(),
 						pin.GetName(),
 						entryNode->GetDisplayName(),
-						copyResult.Error()) });
-					return { "Cannot copy construct type" };
+						copyResult.Error()) };
 				}
 			}
 			else
@@ -626,8 +624,8 @@ Expected<Engine::VirtualMachine::VMContext::CachedValue*, Engine::ScriptError> E
 	};
 
 	// Stack allocation
-	MetaAny* inputValues = static_cast<MetaAny*>(ENGINE_ALLOCA(numOfInputPins * sizeof(MetaAny)));
-	TypeForm* inputForms = static_cast<TypeForm*>(ENGINE_ALLOCA(numOfInputPins * sizeof(TypeForm)));
+	MetaAny* inputValues = static_cast<MetaAny*>(_alloca(numOfInputPins * sizeof(MetaAny)));
+	TypeForm* inputForms = static_cast<TypeForm*>(_alloca(numOfInputPins * sizeof(TypeForm)));
 
 	InputDeleter inputDeleter{ inputValues };
 	ASSERT(inputValues != nullptr && inputForms != nullptr);

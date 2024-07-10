@@ -230,7 +230,7 @@ std::optional<Engine::ScriptPin> Engine::ScriptPin::DeserializeFrom(const Binary
 	if (serializedParamInfo == nullptr)
 	{
 		UNLIKELY;
-		LOG(LogScripting, Warning, "Failed to deserialize pin: missing values");
+			LOG(LogScripting, Warning, "Failed to deserialize pin: missing values");
 		return std::nullopt;
 	}
 

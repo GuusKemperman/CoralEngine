@@ -8,7 +8,7 @@
 
 void Engine::CameraComponent::UpdateView(const glm::vec3 position, const glm::vec3 forward, const glm::vec3 up, bool recalulateViewProjection)
 {
-	mView = glm::lookAt(position, position + forward, up);
+	mView = lookAt(position, position + forward, up);
 
 	if (recalulateViewProjection)
 	{

@@ -6,7 +6,7 @@
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Core/AssetManager.h"
 #include "Core/Editor.h"
-#include "Core/Input.h"
+#include "Core/InputManager.h"
 #include "Meta/MetaType.h"
 #include "Containers/view_istream.h"
 #include "Utilities/DoUndo.h"
@@ -163,19 +163,8 @@ namespace Engine
 		 */
 		static std::string Reserialize(std::string_view serialized);
 
-		static constexpr float sDifferenceCheckCoolDown = 4.0f;
+		static constexpr float sDifferenceCheckCoolDown = 2.0f;
 		float mTimeLeftUntilCheckForDifference{};
-
-		// Used for checking if our asset has unsaved changes. Kept in memory for performance reasons.
-		// May not always be up to date, it's updated when needed.
-		struct AssetOnFile
-		{
-			std::string mReserializedAsset{};
-
-			// If changes are made to the asset file, this mAssetAsSeenOnFile is updated.
-			std::filesystem::file_time_type mWriteTimeAtTimeOfReserializing{};
-		};
-		mutable AssetOnFile mAssetOnFile{};
 	};
 
 	namespace Internal
@@ -278,32 +267,43 @@ namespace Engine
 
 		const std::filesystem::file_time_type lastWriteTime = std::filesystem::last_write_time(mPathToSaveAssetTo);
 
-		if (topAction->mTimeWeCheckedIfIsSameAsFile == lastWriteTime)
+		if (topAction->mTimeWeCheckedIfIsSameAsFile >= lastWriteTime)
 		{
 			return topAction->mIsSameAsFile;
 		}
-
 		topAction->mTimeWeCheckedIfIsSameAsFile = lastWriteTime;
 
-		if (mAssetOnFile.mWriteTimeAtTimeOfReserializing != lastWriteTime)
-		{
-			// Otherwise we load and save the file.
-			LOG(LogEditor, Verbose, "Loading asset {} from file to check if it's unsaved...", mAsset.GetName());
+		{ // Early out if the file is directly equal to the top state.
+			std::ifstream fileStream{ mPathToSaveAssetTo, std::ifstream::binary };
 
-			std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromFile(mPathToSaveAssetTo);
-
-			if (!loadInfo.has_value())
+			if (!fileStream.is_open())
 			{
-				LOG(LogEditor, Error, "Could not load asset from file {}", mPathToSaveAssetTo.string());
+				LOG(LogEditor, Warning, "Could not open file {}", mPathToSaveAssetTo.string());
 				return false;
 			}
 
-			T assetAsSeenOnFile{ *loadInfo };
-			mAssetOnFile.mReserializedAsset = Reserialize(assetAsSeenOnFile.Save().ToString());
-			mAssetOnFile.mWriteTimeAtTimeOfReserializing = lastWriteTime;
+			view_istream memoryStream{ topAction->mState };
+			topAction->mIsSameAsFile = StringFunctions::AreStreamsEqual(fileStream, memoryStream);
+
+			if (topAction->mIsSameAsFile)
+			{
+				return true;
+			}
 		}
 
-		topAction->mIsSameAsFile = mAssetOnFile.mReserializedAsset == topAction->mState;
+		// Otherwise we load and save the file. 
+		std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromFile(mPathToSaveAssetTo);
+
+		if (!loadInfo.has_value())
+		{
+			LOG(LogEditor, Error, "Could not load asset from file {}", mPathToSaveAssetTo.string());
+			return false;
+		}
+
+		T assetAsSeenOnFile{ *loadInfo };
+		std::string reserializedFile = Reserialize(assetAsSeenOnFile.Save().ToString());
+
+		topAction->mIsSameAsFile = reserializedFile == topAction->mState;
 
 		return topAction->mIsSameAsFile;
 	}
@@ -313,12 +313,11 @@ namespace Engine
 	{
 		EditorSystem::Tick(deltaTime);
 
-		if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl)
-			|| Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
+		if (InputManager::IsKeyDown(ImGuiKey_LeftCtrl) || InputManager::IsKeyDown(ImGuiKey_RightCtrl))
 		{
 			if (mMementoStack.GetNumOfActionsDone() > 1 
 				&& mMementoStack.CanUndo()
-				&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Z))
+				&& InputManager::IsKeyPressed(ImGuiKey_Z))
 			{
 				mMementoStack.Undo();
 				mTimeLeftUntilCheckForDifference = sDifferenceCheckCoolDown;
@@ -326,14 +325,14 @@ namespace Engine
 			}
 
 			if (mMementoStack.CanRedo()
-				&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Y))
+				&& InputManager::IsKeyPressed(ImGuiKey_Y))
 			{
 				mMementoStack.Redo();
 				mTimeLeftUntilCheckForDifference = sDifferenceCheckCoolDown;
 				return;
 			}
 
-			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::S))
+			if (InputManager::IsKeyPressed(ImGuiKey_S))
 			{
 				SaveToFile();
 			}

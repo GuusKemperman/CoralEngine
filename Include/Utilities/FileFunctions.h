@@ -20,9 +20,9 @@ namespace Engine
 
 		static std::string ReadFile(std::ifstream& fileStream)
 		{
-			std::stringstream buffers;
-			buffers << fileStream.rdbuf();
-			return buffers.str();
+			std::stringstream buffer;
+			buffer << fileStream.rdbuf();
+			return buffer.str();
 		}
 
 		static std::string ReadFile(const char* filePath)

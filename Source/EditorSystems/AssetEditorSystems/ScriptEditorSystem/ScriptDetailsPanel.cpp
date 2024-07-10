@@ -52,7 +52,7 @@ void Engine::ScriptEditorSystem::DisplayDetailsPanel()
 				LOG(LogEditor, Warning, "Selecting a node that no longer exists, should not be possible");
 			}
 		}
-		else if (!func->IsEvent())
+		else
 		{
 			DisplayFunctionDetails(*func);
 		}

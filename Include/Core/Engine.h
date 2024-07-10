@@ -2,10 +2,12 @@
 
 namespace Engine
 {
+	struct GeneratedEntryPoints;
+
 	class EngineClass
 	{
 	public:
-		EngineClass(int argc, char* argv[], std::string_view gameDir);
+		EngineClass(int argc, char* argv[]);
 		~EngineClass();
 
 		void Run();

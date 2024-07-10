@@ -1,0 +1,37 @@
+#pragma once
+#include "Assets/Importers/Importer.h"
+
+namespace Engine
+{
+	class StaticMeshImporter :
+		public Importer
+	{
+	public:
+
+#ifdef EDITOR
+		std::optional<std::vector<ImportedAsset>> Import(const std::filesystem::path& path) const override;
+
+		static std::optional<ImportedAsset> ImportFromMemory(const std::filesystem::path& importedFromFile,
+			const std::string& name,
+			uint32 importerVersion,
+			Span<const glm::vec3> positions,
+			std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices,
+			std::optional<Span<const glm::vec3>> normals,
+			std::optional<Span<const glm::vec2>> textureCoordinates,
+			std::optional<Span<const glm::vec3>> colors);
+
+		std::vector<std::filesystem::path> CanImportExtensions() const override
+		{
+			// We can import anything assimp can, so this list can be significantly expanded
+			return {
+			".obj"
+			};
+		}
+#endif // EDITOR
+
+	private:
+		friend ReflectAccess;
+		static MetaType Reflect();
+		REFLECT_AT_START_UP(StaticMeshImporter);
+	};
+}

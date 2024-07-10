@@ -4,7 +4,6 @@
 // since the amount of code made it hard to find what you needed when
 // it was all in one file.
 #include "EditorSystems/AssetEditorSystems/ScriptEditorSystem.h"
-#include "Scripting/ScriptEvents.h"
 
 #include "Utilities/Imgui/ImguiHelpers.h"
 
@@ -40,62 +39,8 @@ void Engine::ScriptEditorSystem::DisplayClassPanel()
 
 	ImGui::EndDisabled();
 
-	DisplayEventsOverview();
 	DisplayFunctionsOverview();
 	DisplayMembersOverview();
-}
-
-void Engine::ScriptEditorSystem::DisplayEventsOverview()
-{
-	std::vector<Name> functionNames{};
-
-	for (const ScriptFunc& func : mAsset.GetFunctions())
-	{
-		if (func.IsEvent())
-		{
-			functionNames.emplace_back(func.GetName());
-		}
-	}
-
-	const OverviewResult result = DisplayOverview("Events", std::move(functionNames),
-		TryGetSelectedFunc() == nullptr ? std::optional<Name>{} : TryGetSelectedFunc()->GetName());
-
-	if (result.mAddButtonPressed)
-	{
-		ImGui::OpenPopup("AddEventPopUp");
-	}
-
-	if (ImGui::BeginPopup("AddEventPopUp"))
-	{
-		for (const ScriptEvent& event : sAllScriptableEvents)
-		{
-			if (mAsset.TryGetFunc(event.mBasedOnEvent.get().mName) != nullptr)
-			{
-				continue;
-			}
-
-			if (ImGui::Button(event.mBasedOnEvent.get().mName.data()))
-			{
-				SelectFunction(&mAsset.AddEvent(event));
-			}
-		}
-
-		ImGui::EndPopup();
-	}
-
-	if (result.mDeleteItemWithThisName.has_value())
-	{
-		const Name nameOfCurrentFunc = TryGetSelectedFunc() != nullptr ? TryGetSelectedFunc()->GetName() : Name{ 0u };
-
-		SelectFunction(nullptr);
-		mAsset.RemoveFunc(*result.mDeleteItemWithThisName);
-		SelectFunction(mAsset.TryGetFunc(nameOfCurrentFunc));
-	}
-
-	if (result.mSwitchedToName.has_value())
-	{
-		SelectFunction(mAsset.TryGetFunc(*result.mSwitchedToName));
-	}
 }
 
 void Engine::ScriptEditorSystem::DisplayFunctionsOverview()
@@ -104,10 +49,7 @@ void Engine::ScriptEditorSystem::DisplayFunctionsOverview()
 
 	for (const ScriptFunc& func : mAsset.GetFunctions())
 	{
-		if (!func.IsEvent())
-		{
-			functionNames.emplace_back(func.GetName());
-		}
+		functionNames.emplace_back(func.GetName());
 	}
 
 	const OverviewResult result = DisplayOverview("Functions", std::move(functionNames),

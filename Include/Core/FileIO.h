@@ -19,7 +19,7 @@ namespace Engine
 		/// Initializes the File IO system, filling in all the paths and
 		/// mounting the virtual file system on platforms that need it.
 		/// </summary>
-		FileIO(int argc, char* argv[], std::string_view gameDir);
+		FileIO(std::string_view pathToThisExecutable);
 
 		/// <summary>
 		/// Unmount the virtual file system and shut down the File IO system.
@@ -32,8 +32,7 @@ namespace Engine
 		/// </summary>
 		enum class Directory
 		{
-			EngineAssets,
-			GameAssets,
+			Asset,
 			Intermediate,
 			ThisExecutable,
 		};

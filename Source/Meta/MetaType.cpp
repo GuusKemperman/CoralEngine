@@ -4,7 +4,6 @@
 #include <forward_list>
 
 #include "Meta/MetaProps.h"
-#include "Utilities/MemFunctions.h"
 
 Engine::MetaType::MetaType(const TypeInfo typeInfo,
 	const std::string_view name) :
@@ -125,12 +124,12 @@ size_t Engine::MetaType::RemoveFunc(const std::variant<Name, OperatorType>& name
 
 void* Engine::MetaType::Malloc(uint32 amount) const
 {
-	return FastAlloc(GetSize() * amount, GetAlignment());
+	return _aligned_malloc(GetSize() * amount, GetAlignment());
 }
 
 void Engine::MetaType::Free(void* buffer)
 {
-	FastFree(buffer);
+	_aligned_free(buffer);
 }
 
 const Engine::MetaFunc* Engine::MetaType::TryGetConstructor(const std::vector<TypeTraits>& parameters) const

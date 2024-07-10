@@ -46,11 +46,16 @@ namespace Engine
 
 		static void PrintError(const ScriptError& error, bool compileError = false);
 
+	private:
+		void PrintCompileErrors() const;
+
+		friend class CallAccess;
+
 		/*
-		Should not be called directly, but scripts compile into MetaTypes,
+		Cannot be called directly, but scripts compile into MetaTypes,
 		a ScriptFunc compiles into a function on this metaType. These can be called.
 		This function can only be called if the script function compiled succesfully.
-
+		
 		FirstNode:
 			will be the entryNode on impure functions and the return node on pure functions.
 
@@ -67,11 +72,6 @@ namespace Engine
 			FuncResult result = printerFunc->Invoke({});
 		*/
 		FuncResult ExecuteScriptFunction(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer, const ScriptFunc& func, const ScriptNode& firstNode, const FunctionEntryScriptNode* entryNode);
-
-
-	private:
-		void PrintCompileErrors() const;
-
 
 		// When we recompile, we first have to clean up the result of the previous compilation
 		static void DestroyAllTypesCreatedThroughScripts();
@@ -147,5 +147,14 @@ namespace Engine
 		VMContext::WhileLoopInfo& BeginLoop(VMContext& context, VMContext::WhileLoopInfo&& loopInfo);
 		VMContext::ForLoopInfo& BeginLoop(VMContext& context, VMContext::ForLoopInfo&& loopInfo);
 		void EndLoop(VMContext& context, const ScriptNode& node);
+	};
+
+	class CallAccess
+	{
+		friend class ScriptFunc;
+		static FuncResult ExecuteScriptFunction(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer, const ScriptFunc& func, const ScriptNode& firstNode, const FunctionEntryScriptNode* entryNode)
+		{ 
+			return VirtualMachine::Get().ExecuteScriptFunction(args, rvoBuffer, func, firstNode, entryNode);
+		}
 	};
 }

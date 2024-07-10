@@ -27,8 +27,6 @@ struct Reflector<std::shared_ptr<const T>>
 
 		return refType;
 	}
-	static constexpr bool sIsSpecialized = true;
-
 };
 
 	// TODO You should be able to call functions of the original type using the smart pointer

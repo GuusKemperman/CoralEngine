@@ -31,18 +31,18 @@ namespace Engine
 		static float Float() { return RandWithSeed<float>(sSeed); }		
 		static float FloatRange(const float& min, const float& max) { return RangeWithSeed(min, max, sSeed); }
 
+		template<glm::length_t L, typename T>
+		static glm::vec<L, T> Vec()
+		{
+			return Vec(sSeed);
+		}
+
 		static float Float(uint32& seed) { return RandWithSeed<float>(seed); }
 
 		template<glm::length_t L, typename T>
 		static glm::vec<L, T> Vec(uint32& seed)
 		{
 			return Vec<L, T>(seed);
-		}
-
-		template<glm::length_t L, typename T>
-		static glm::vec<L, T> Vec()
-		{
-			return Vec<L, T>(sSeed);
 		}
 
 		template<typename T>
@@ -125,13 +125,13 @@ namespace Engine
 	{
 		const uint32 unsig = RandWithSeed<uint32>(seed);
 
-		if (unsig <= static_cast<uint32>((std::numeric_limits<int32>::max)()))
+		if (unsig <= static_cast<uint32>(std::numeric_limits<int32>::max()))
 		{
 			return static_cast<int>(unsig);
 		}
 		else
 		{
-			return static_cast<int>(unsig - (std::numeric_limits<int32>::min)()) + (std::numeric_limits<int32>::min)();
+			return static_cast<int>(unsig - std::numeric_limits<int32>::min()) + std::numeric_limits<int32>::min();
 		}
 	}
 

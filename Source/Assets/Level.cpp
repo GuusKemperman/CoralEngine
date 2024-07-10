@@ -40,8 +40,6 @@ Engine::Level::Level(std::string_view name) :
 	Asset(name, MakeTypeId<Level>()),
 	mSerializedComponents(std::make_unique<BinaryGSONObject>())
 {
-	World world{ false };
-	CreateFromWorld(world);
 }
 
 Engine::Level::Level(AssetLoadInfo& loadInfo) :
@@ -64,9 +62,6 @@ Engine::Level::Level(AssetLoadInfo& loadInfo) :
 	serializedComponents.erase(std::remove_if(serializedComponents.begin(), serializedComponents.end(),
 		[this](const BinaryGSONObject& serializedComponentClass)
 		{
-			// 'this' is not used if logging is not enabled.
-			(void)(this);
-
 			const std::string& className = serializedComponentClass.GetName();
 			const bool doesClassStillExist = MetaManager::Get().TryGetType(className) != nullptr;
 
@@ -740,7 +735,7 @@ Engine::BinaryGSONObject& Engine::GetOrAddSerializedPrefabObject(BinaryGSONObjec
 
 Engine::MetaType Engine::Level::Reflect()
 {
-	MetaType type = MetaType{ MetaType::T<Level>{}, "Level", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
+	MetaType type = MetaType{ MetaType::T<Level>{}, "Level", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{} };
 	ReflectAssetType<Level>(type);
 	return type;
 }

@@ -3,13 +3,12 @@
 
 #include "Assets/Material.h"
 #include "imgui/ImGuizmo.h"
-#include "imgui/imgui_internal.h"
 
 #include "World/World.h"
 #include "World/WorldRenderer.h"
 #include "World/Registry.h"
 #include "Utilities/FrameBuffer.h"
-#include "Core/Input.h"
+#include "Core/InputManager.h"
 #include "Components/TransformComponent.h"
 #include "Components/CameraComponent.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
@@ -46,7 +45,7 @@ namespace Engine
 	{
 		RemoveInvalidEntities(selectedEntities, world);
 
-		if (Input::Get().WasKeyboardKeyReleased(Input::KeyboardKey::Delete))
+		if (InputManager::IsKeyReleased(ImGuiKey_Delete))
 		{
 			for (const auto entity : selectedEntities)
 			{
@@ -142,18 +141,13 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 	if (ImGui::BeginChild("WorldViewport", { mViewportWidth, 0.0f }))
 	{
 		const ImVec2 beginPlayPos = ImGui::GetWindowContentRegionMin() + ImVec2{ ImGui::GetContentRegionAvail().x / 2.0f, 10.0f };
-		const ImVec2 viewportPos = ImGui::GetCursorPos();
 
-		ImDrawList* drawList = ImGui::GetCurrentWindow()->DrawList;
+		WorldViewport::Display(GetWorld(), *mViewportFrameBuffer, &mSelectedEntities);
+		GetWorld().Tick(deltaTime);
 
-		drawList->ChannelsSplit(2);
-
-		drawList->ChannelsSetCurrent(1);
 		ImGui::SetCursorPos(beginPlayPos);
-
 		if (!GetWorld().HasBegunPlay())
 		{
-			ImGui::SetNextItemAllowOverlap();
 			ImGui::SetItemTooltip("Begin play");
 			if (ImGui::Button("|>"))
 			{
@@ -164,7 +158,6 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		{
 			if (GetWorld().IsPaused())
 			{
-				ImGui::SetNextItemAllowOverlap();
 				if (ImGui::Button("|>"))
 				{
 					GetWorld().Unpause();
@@ -173,7 +166,6 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			}
 			else
 			{
-				ImGui::SetNextItemAllowOverlap();
 				if (ImGui::Button("||"))
 				{
 					GetWorld().Pause();
@@ -184,7 +176,6 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			ImGui::SameLine();
 			ImGui::SetCursorPosY(beginPlayPos.y);
 
-			ImGui::SetNextItemAllowOverlap();
 			if (ImGui::Button("[]"))
 			{
 				(void)EndPlay();
@@ -192,13 +183,6 @@ void Engine::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 			ImGui::SetItemTooltip("Stop");
 		}
 
-		drawList->ChannelsSetCurrent(0);
-		ImGui::SetCursorPos(viewportPos);
-
-		GetWorld().Tick(deltaTime);
-		WorldViewport::Display(GetWorld(), *mViewportFrameBuffer, &mSelectedEntities);
-
-		drawList->ChannelsMerge();
 	}
 	ImGui::EndChild();
 
@@ -259,7 +243,7 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 
 	ImGui::SetCursorPos(contentMin);
 
-	ImGui::Image((ImTextureID)frameBuffer.GetColorTextureId(),
+	ImGui::Image(reinterpret_cast<void*>(static_cast<intptr>(frameBuffer.GetColorTextureId())),
 		ImVec2(contentSize),
 		ImVec2(0, 1),
 		ImVec2(1, 0));
@@ -274,15 +258,15 @@ void Engine::WorldViewport::Display(World& world, FrameBuffer& frameBuffer,
 
 void Engine::WorldViewport::ShowGuizmoOptions()
 {
-	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::R))
+	if (InputManager::IsKeyPressed(ImGuiKey_R))
 	{
 		sGuizmoOperation = ImGuizmo::SCALE;
 	}
-	else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::E))
+	else if (InputManager::IsKeyPressed(ImGuiKey_E))
 	{
 		sGuizmoOperation = ImGuizmo::ROTATE;
 	}
-	else if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::T))
+	else if (InputManager::IsKeyPressed(ImGuiKey_T))
 	{
 		sGuizmoOperation = ImGuizmo::TRANSLATE;
 	}
@@ -305,7 +289,7 @@ void Engine::WorldViewport::ShowGuizmoOptions()
 		if (ImGui::RadioButton("World", sGuizmoMode == ImGuizmo::WORLD))
 			sGuizmoMode = ImGuizmo::WORLD;
 	}
-	if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::V))
+	if (InputManager::IsKeyPressed(ImGuiKey_V))
 		sShouldGuizmoSnap = !sShouldGuizmoSnap;
 
 	ImGui::Checkbox("Snap", &sShouldGuizmoSnap);
@@ -469,9 +453,9 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 
 		const MetaType* componentType = MetaManager::Get().TryGetType(typeHash);
 
-		if (componentType == nullptr
-			|| componentType->GetProperties().Has(Props::sNoInspectTag))
+		if (componentType == nullptr)
 		{
+			LOG(LogEditor, Error, "Component {} could not be displayed, as it's type was not reflected", storage.type().name());
 			continue;
 		}
 
@@ -556,11 +540,11 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 			}
 		}
 
-		const MetaFunc* const onInspect = TryGetEvent(componentClass, sInspectEvent);
+		const MetaFunc* const onInspect = componentClass.TryGetFunc(sComponentCustomOnInspectFuncName);
 
 		if (onInspect != nullptr)
 		{
-			FuncResult result = (*onInspect)(world, selectedEntities);
+			FuncResult result = (*onInspect)(reg, selectedEntities);
 
 			if (result.HasError())
 			{
@@ -666,7 +650,6 @@ void Engine::WorldDetails::Display(World& world, std::vector<entt::entity>& sele
 		Search::Choices<MetaType> choices = Search::CollectChoices<MetaType>([&classesThatCannotBeAdded](const MetaType& type)
 			{
 				return type.GetProperties().Has(Props::sComponentTag)
-					&& !type.GetProperties().Has(Props::sNoInspectTag)
 					&& std::find_if(classesThatCannotBeAdded.begin(), classesThatCannotBeAdded.end(),
 						[&type](const TypeId other)
 						{
@@ -775,7 +758,7 @@ void Engine::WorldHierarchy::Display(World& world, std::vector<entt::entity>* se
 
 	}
 
-	ImGui::InvisibleButton("DragToUnparent", glm::max(static_cast<glm::vec2>(ImGui::GetContentRegionAvail()), glm::vec2{1.0f, 1.0f}));
+	ImGui::InvisibleButton("DragToUnparent", ImGui::GetContentRegionAvail());
 	ReceiveDragDropOntoParent(reg, std::nullopt);
 	ReceiveDragDrops(world);
 }
@@ -824,7 +807,7 @@ void Engine::WorldHierarchy::DisplaySingle(Registry& registry,
 
 	if (ImGui::Selectable(displayName.c_str(), &isSelected, 0, selectableAreaSize))
 	{
-		if (!Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl))
+		if (!InputManager::IsKeyDown(ImGuiKey_LeftCtrl))
 		{
 			selectedEntities.clear();
 		}

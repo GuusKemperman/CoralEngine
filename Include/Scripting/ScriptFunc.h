@@ -12,11 +12,6 @@
 
 namespace Engine
 {
-	class ScriptEvent;
-}
-
-namespace Engine
-{
 	class MetaType;
 	class MetaFunc;
 	class MetaField;
@@ -101,7 +96,6 @@ namespace Engine
 	{
 	public:
 		ScriptFunc(const Script& script, std::string_view name);
-		ScriptFunc(const Script& script, const ScriptEvent& event);
 
 		ScriptFunc(const ScriptFunc&) = delete;
 		ScriptFunc(ScriptFunc&&) noexcept = default;
@@ -232,9 +226,6 @@ namespace Engine
 		// each node only does this lookup once, when this function is called.
 		void PostDeclarationRefresh();
 
-		bool IsEvent() const { return mBasedOnEvent != nullptr; }
-		const ScriptEvent* TryGetEvent() const { return mBasedOnEvent; }
-
 	private:
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
 		template<typename ItType, typename VectorType>
@@ -261,8 +252,6 @@ namespace Engine
 
 		std::vector<ScriptVariableTypeData> mParams{};
 		std::optional<ScriptVariableTypeData> mReturns{};
-
-		const ScriptEvent* mBasedOnEvent{};
 
 		bool mIsPure{};
 		bool mIsStatic{};

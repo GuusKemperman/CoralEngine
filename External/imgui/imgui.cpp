@@ -962,13 +962,7 @@ CODE
 #define NOMINMAX
 #endif
 #ifndef __MINGW32__
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#pragma warning(push)
-#pragma warning(disable: 4005)
 #include <Windows.h>        // _wfopen, OpenClipboard
-#pragma warning(pop) 
 #else
 #include <windows.h>
 #endif

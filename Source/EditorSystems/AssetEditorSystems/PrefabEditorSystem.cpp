@@ -30,7 +30,8 @@ Engine::PrefabEditorSystem::PrefabEditorSystem(Prefab&& asset) :
 	reg.AddComponent<NameComponent>(camera, "Camera");
 	TransformComponent& cameraTransform = reg.AddComponent<TransformComponent>(camera);
 
-	cameraTransform.SetLocalPosition({ 0.0f, 0.0f, -30.0f });
+	cameraTransform.SetLocalPosition({ -25.0f, -13.0f, 20.0f });
+	cameraTransform.SetLocalOrientation({ 0.0f, 25.0f * (TWOPI / 360.0f), 20.0f * (TWOPI / 360.0f) });
 }
 
 Engine::PrefabEditorSystem::~PrefabEditorSystem() = default;

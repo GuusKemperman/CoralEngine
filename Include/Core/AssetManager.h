@@ -6,7 +6,7 @@
 #include "Meta/MetaTypeId.h"
 #include "Meta/MetaManager.h"
 #include "Assets/Importers/Importer.h"
-#include "Utilities/MemFunctions.h"
+#include "Utilities/SmartPointerFunctions.h"
 
 namespace Engine
 {
@@ -184,20 +184,19 @@ namespace Engine
 		void Unload(AssetInternal& asset);
 
 #ifdef EDITOR
-		static bool WasImportedFrom(const AssetInternal& asset, const std::filesystem::path& file);
-
 		void ImportInternal(const std::filesystem::path& path, bool refreshEngine);
 
 		std::pair<TypeId, const Importer*> TryGetImporterForExtension(const std::filesystem::path& extension) const;
+#endif // EDITOR
+
+		AssetInternal* TryConstruct(const std::filesystem::path& path);
+		AssetInternal* TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData);
+
 
 		// Importers are created using the runtime reflection system,
 		// which uses placement new for the constructing of objects.
 		// Hence, the custom deleter
 		std::vector<std::pair<TypeId, std::unique_ptr<Importer, InPlaceDeleter<Importer, true>>>> mImporters{};
-#endif // EDITOR
-
-		AssetInternal* TryConstruct(const std::filesystem::path& path);
-		AssetInternal* TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData);
 	};
 
 	/*

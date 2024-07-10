@@ -50,7 +50,7 @@ void Engine::ParticlePhysicsSystem::Update(World& world, float dt)
 			// Note that we are also moving the dead particles, but that doesn't matter as they won't get rendered
 			physics.mLinearVelocities[i] += timeScaledGrav * physics.mParticleMasses[i];
 			positions[i] += physics.mLinearVelocities[i] * dt;
-			positions[i][Axis::Up] = (glm::max)(positions[i][Axis::Up], physics.mFloorHeight);
+			positions[i].z = glm::max(positions[i].z, physics.mFloorHeight);
 
 			orientations[i] *= physics.mRotationalVelocitiesPerStep[i];
 		}

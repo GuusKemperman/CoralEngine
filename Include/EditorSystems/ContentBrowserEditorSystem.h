@@ -16,8 +16,6 @@ namespace Engine
 
 		void Tick(float deltaTime) override;
 
-
-	private:
 		struct ContentFolder
 		{
 			ContentFolder() = default;
@@ -28,6 +26,7 @@ namespace Engine
 		};
 		static std::vector<ContentFolder> MakeFolderGraph(std::vector<WeakAsset<Asset>>&& assets);
 
+	private:
 		// Moved in because the assets may be deleted, don't hold onto them.
 		void DisplayDirectory(ContentFolder&& folder);
 
@@ -40,16 +39,10 @@ namespace Engine
 		{
 			const MetaType* mClass{};
 			std::string mAssetName{};
-			std::string mFolderRelativeToRoot{};
-
-			// Determines whether the asset is saved in the
-			// EngineAssets folder or GameAssets folder
-			bool mIsEngineAsset{};
+			std::string mFileLocation{};
 		};
 		std::optional<AssetCreator> mAssetCreator{};
-		void DisplayAssetCreator();
-
-		static void CreateNewAsset(const AssetCreator& assetCreator, const std::filesystem::path& toFile);
+		void DisplayAssetCreator(const std::vector<ContentFolder>& contentFolders);
 
 		friend ReflectAccess;
 		static MetaType Reflect();

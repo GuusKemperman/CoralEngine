@@ -40,8 +40,7 @@ Engine::BenchmarkResult Engine::BenchMark(World& world, const BenchmarkParams pa
 
         result.mDeltaTimes.emplace_back(dt);
 
-        // std::max does not work for ***REMOVED*** with these types
-    	result.mHighestDeltaTime = result.mHighestDeltaTime > dt ? result.mHighestDeltaTime : dt;
+        result.mHighestDeltaTime = std::max(result.mHighestDeltaTime, dt);
 
         now = newNow;
     }

@@ -68,7 +68,7 @@ Engine::AssetManager::AssetManager()
 
 					if (const auto [existingImporterTypeId, existingImporter] = TryGetImporterForExtension(extension); existingImporter != nullptr)
 					{
-						[[maybe_unused]] const MetaType* existingImporterType = MetaManager::Get().TryGetType(existingImporterTypeId);
+						const MetaType* existingImporterType = MetaManager::Get().TryGetType(existingImporterTypeId);
 
 						LOG(LogAssets, Warning, "Importer {} has invalid extension {}: importer {} is already responsible for this extension",
 							derived.GetName(),
@@ -92,8 +92,7 @@ Engine::AssetManager::~AssetManager() = default;
 
 void Engine::AssetManager::PostConstruct()
 {
-	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""));
-	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""));
+	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::Asset, ""));
 }
 
 void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
@@ -145,7 +144,8 @@ void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
 
 		for (const auto& [key, assetInternal] : mAssets)
 		{
-			if (!WasImportedFrom(assetInternal, importableAsset))
+			if (!assetInternal.mMetaData.mImporterInfo.has_value()
+				|| assetInternal.mMetaData.mImporterInfo->mImportedFile != importableAsset)
 			{
 				continue;
 			}
@@ -312,21 +312,6 @@ void Engine::AssetManager::Load(AssetInternal& internalAsset)
 }
 
 #ifdef EDITOR
-bool Engine::AssetManager::WasImportedFrom(const AssetInternal& asset, const std::filesystem::path& file)
-{
-	return asset.mMetaData.mImporterInfo.has_value()
-		// We only look at the filename, as the full path may be different.
-		// For example the EngineAssets folder may be moved relative to the
-		// working environment, or may always be different for several projects.
-		//
-		// So the relative path can change, but so can the absolute path;
-		// one person might save their engine on the D: drive, while someone
-		// else might save it in C:/Projects/Repos.
-		//
-		// Since neither option is ideal, we only look at the filename.
-		&& asset.mMetaData.mImporterInfo->mImportedFile.filename() == file.filename();
-}
-
 void Engine::AssetManager::Import(const std::filesystem::path& path)
 {
 	ImportInternal(path, true);
@@ -397,7 +382,8 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 					continue;
 				}
 
-				if (!WasImportedFrom(*existingAssetWithSameName, path))
+				if (!existingAssetWithSameName->mMetaData.GetImporterInfo().has_value()
+					|| existingAssetWithSameName->mMetaData.GetImporterInfo()->mImportedFile != path)
 				{
 					LOG(LogAssets, Error, "Importing failed: there is already an asset with the name {} (see {})",
 						loadInfo.GetName(),
@@ -425,7 +411,8 @@ void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, boo
 
 			for (auto& [key, assetInternal] : mAssets)
 			{
-				if (!WasImportedFrom(assetInternal, path))
+				if (!assetInternal.mMetaData.mImporterInfo.has_value()
+					|| assetInternal.mMetaData.mImporterInfo->mImportedFile != path)
 				{
 					continue;
 				}

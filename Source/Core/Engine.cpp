@@ -4,9 +4,9 @@
 #include <chrono>
 
 #include "Core/FileIO.h"
-#include "Core/Device.h"
+#include "Core/Renderer.h"
 #include "Core/AssetManager.h"
-#include "Core/Input.h"
+#include "Core/InputManager.h"
 #include "Core/Editor.h"
 #include "Core/VirtualMachine.h"
 #include "Meta/MetaManager.h"
@@ -17,15 +17,11 @@
 #include "Utilities/Benchmark.h"
 #include "World/Registry.h"
 
-Engine::EngineClass::EngineClass(int argc, char* argv[], std::string_view gameDir)
+Engine::EngineClass::EngineClass(int argc, char* argv[])
 {
-	FileIO::StartUp(argc, argv, gameDir);
+	FileIO::StartUp(argc == 0 ? std::string_view{} : argv[0]);
 	Logger::StartUp();
-	Device::StartUp();
-	Input::StartUp();
-#ifdef PLATFORM_WINDOWS
-	Device::Get().CreateImguiContext();
-#endif
+	Renderer::StartUp();
 	MetaManager::StartUp();
 	AssetManager::StartUp();
 	VirtualMachine::StartUp();
@@ -46,8 +42,7 @@ Engine::EngineClass::~EngineClass()
 	VirtualMachine::ShutDown();
 	AssetManager::ShutDown();
 	MetaManager::ShutDown();
-	Input::ShutDown();
-	Device::ShutDown();
+	Renderer::ShutDown();
 	Logger::ShutDown();
 	FileIO::ShutDown();
 }
@@ -65,10 +60,20 @@ void Engine::EngineClass::Run()
 	}
 
 	World world = level->CreateWorld(true);
+
+	const MetaType* spawnerType = MetaManager::Get().TryGetType("DemoEnemySpawnerComponent");
+	ASSERT(spawnerType != nullptr);
+
+	const MetaField* desiredNumToSpawnField = spawnerType->TryGetField("DesiredNumOfEnemies");
+	ASSERT(desiredNumToSpawnField != nullptr);
+
+	entt::entity spawnerEntity = world.GetRegistry().FindEntityWithComponent(spawnerType);
+	ASSERT(spawnerEntity != entt::null);
+	MetaAny spawner = world.GetRegistry().Get(spawnerType->GetTypeId(), spawnerEntity);
+	*desiredNumToSpawnField->MakeRef(spawner).As<int32>() = 1'000;
 #endif // EDITOR
 
-	Input& input = Input::Get();
-	Device& device = Device::Get();
+	Renderer& renderer = Renderer::Get();
 
 	float timeElapsedSinceLastGarbageCollect{};
 	static constexpr float garbageCollectInterval = 5.0f;
@@ -77,22 +82,23 @@ void Engine::EngineClass::Run()
 	std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
 	std::chrono::high_resolution_clock::time_point t2{};
 
-	while (!device.ShouldClose())
+	while (!renderer.ShouldClose())
 	{
 		t2 = std::chrono::high_resolution_clock::now();
 		deltaTime = (std::chrono::duration_cast<std::chrono::duration<float>>(t2 - t1)).count();
 		t1 = t2;
 
-		input.NewFrame();
+		InputManager::NewFrame();
+		renderer.NewFrame();
 
 #ifdef EDITOR
 		Editor::Get().Tick(deltaTime);
 #else
-		device.NewFrame();
 		world.Tick(deltaTime);
 		world.GetRenderer().Render();
-		device.EndFrame();
 #endif  // EDITOR
+
+		renderer.Render();
 
 		timeElapsedSinceLastGarbageCollect += deltaTime;
 
@@ -104,3 +110,9 @@ void Engine::EngineClass::Run()
 	}
 }
 
+int main(int argc, char* args[])
+{
+	Engine::EngineClass engine{ argc, args };
+	engine.Run();
+	return 0;
+}

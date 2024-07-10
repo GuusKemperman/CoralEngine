@@ -21,10 +21,6 @@ namespace Engine
 		// if the internal vector resizes
 		ScriptFunc& AddFunc(std::string_view name);
 
-		// May invalidate pointers holding onto any function from this script,
-		// if the internal vector resizes
-		ScriptFunc& AddEvent(const ScriptEvent& event);
-
 		// May invalidate pointers holding onto any function from this script
 		void RemoveFunc(Name name);
 

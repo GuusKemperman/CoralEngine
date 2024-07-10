@@ -3,18 +3,18 @@
 
 #include "World/World.h"
 #include "World/Registry.h"
+#include "World/WorldRenderer.h"
 #include "Components/Particles/ParticleEmitterComponent.h"
 #include "Components/Particles/ParticlePhysicsComponent.h"
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
-#include "Utilities/DebugRenderer.h"
 
 void Engine::ParticleDebugVisualizationSystem::Render(const World& world)
 {
-	const DebugRenderer& debugRenderer = world.GetDebugRenderer();
+	const WorldRenderer& worldRenderer = world.GetRenderer();
 
-	if ((debugRenderer.GetDebugCategoryFlags() & DebugCategory::Particles) == 0)
+	if ((worldRenderer.GetDebugCategoryFlags() & DebugCategory::Particles) == 0)
 	{
 		return;
 	}
@@ -42,30 +42,30 @@ void Engine::ParticleDebugVisualizationSystem::Render(const World& world)
 			}
 
 			const glm::vec3 particlePos = positions[i];
-			boundingBoxMax = (glm::max)(boundingBoxMax, particlePos);
-			boundingBoxMin = (glm::min)(boundingBoxMin, particlePos);
+			boundingBoxMax = max(boundingBoxMax, particlePos);
+			boundingBoxMin = min(boundingBoxMin, particlePos);
 
 			{ // Draw velocity
 				const glm::vec3 lineEnd = particlePos + velocities[i];
 				constexpr glm::vec4 color = glm::vec4{ 1.0f };
 
-				debugRenderer.AddLine(DebugCategory::Particles, particlePos, lineEnd, color);
+				worldRenderer.AddLine(DebugCategory::Particles, particlePos, lineEnd, color);
 			}
 
 			const glm::vec3 forward = Math::RotateVector(sForward, orientations[i]);
 			const glm::vec3 right = Math::RotateVector(sRight, orientations[i]);
 			const glm::vec3 up = cross(forward, -right);
 
-			debugRenderer.AddLine(DebugCategory::Particles, particlePos, particlePos + forward, glm::vec4{0.0f, 0.0f, 1.0f, 1.0f});
-			debugRenderer.AddLine(DebugCategory::Particles, particlePos, particlePos + right, glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
-			debugRenderer.AddLine(DebugCategory::Particles, particlePos, particlePos + up, glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
+			worldRenderer.AddLine(DebugCategory::Particles, particlePos, particlePos + forward, glm::vec4{0.0f, 0.0f, 1.0f, 1.0f});
+			worldRenderer.AddLine(DebugCategory::Particles, particlePos, particlePos + right, glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
+			worldRenderer.AddLine(DebugCategory::Particles, particlePos, particlePos + up, glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
 		}
 
 		if (boundingBoxMin.x != INFINITY)
 		{
 			const glm::vec3 halfExtends = (boundingBoxMax - boundingBoxMin) * .5f;
 			const glm::vec3 centre = boundingBoxMin + halfExtends;
-			debugRenderer.AddBox(DebugCategory::Particles, centre, halfExtends, glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
+			worldRenderer.AddBox(DebugCategory::Particles, centre, halfExtends, glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
 		}
 	}
 }

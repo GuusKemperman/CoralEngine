@@ -3,12 +3,10 @@
 
 #include <stack>
 
-#include "Components/ComponentFiler.h"
-#include "Components/NameComponent.h"
 #include "Meta/MetaProps.h"
 #include "World/Registry.h"
+#include "World/Archiver.h"
 #include "World/WorldRenderer.h"
-#include "Utilities/DebugRenderer.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 Engine::World::World(const bool beginPlayImmediately)
@@ -36,13 +34,8 @@ Engine::World::World(World&& other) noexcept :
 
 Engine::World::~World()
 {
-	// Mightve been moved out
-	if (mRegistry != nullptr)
-	{
-		mRegistry->Clear();
-		mRegistry.reset();
-		mRenderer.reset();
-	}
+	mRegistry.reset();
+	mRenderer.reset();
 }
 
 Engine::World& Engine::World::operator=(World&& other) noexcept
@@ -79,46 +72,7 @@ void Engine::World::BeginPlay()
 
 	// Reset the total time elapsed, deltaTime, etc
 	mTime = {};
-	LOG(LogCore, Verbose, "World will begin play");
-
-	for (auto&& [typeHash, storage] : mRegistry->Storage())
-	{
-		const MetaType* const metaType = MetaManager::Get().TryGetType(typeHash);
-
-		if (metaType == nullptr)
-		{
-			continue;
-		}
-
-		const MetaFunc* const beginPlayEvent = TryGetEvent(*metaType, sBeginPlayEvent);
-
-		if (beginPlayEvent == nullptr)
-		{
-			continue;
-		}
-
-		const bool isStatic = beginPlayEvent->GetProperties().Has(Props::sIsEventStaticTag);
-
-		for (const entt::entity entity : storage)
-		{
-			// Tombstone check
-			if (!storage.contains(entity))
-			{
-				continue;
-			}
-
-			if (isStatic)
-			{
-				beginPlayEvent->InvokeCheckedUnpacked(*this, entity);
-			}
-			else
-			{
-				MetaAny component{ *metaType, storage.value(entity), false };
-				beginPlayEvent->InvokeCheckedUnpacked(component, *this, entity);
-			}
-		}
-	}
-
+	LOG(LogCore, Verbose, "World has just begun play");
 }
 
 void Engine::World::EndPlay()
@@ -131,11 +85,6 @@ void Engine::World::EndPlay()
 	LOG(LogCore, Verbose, "World has just ended play");
 
 	mHasBegunPlay = false;
-}
-
-const Engine::DebugRenderer& Engine::World::GetDebugRenderer() const
-{
-	return *mRenderer->mDebugRenderer;
 }
 
 static inline std::stack<std::reference_wrapper<Engine::World>> sWorldStack{};
@@ -160,66 +109,6 @@ Engine::World* Engine::World::TryGetWorldAtTopOfStack()
 		return nullptr;
 	}
 	return &sWorldStack.top().get();
-}
-
-namespace
-{
-	std::vector<entt::entity> FindAllEntitiesWithComponents(const Engine::World& world, const std::vector<Engine::ComponentFilter>& components, bool returnAfterFirstFound)
-	{
-		using namespace Engine;
-
-		std::vector<std::reference_wrapper<const entt::sparse_set>> storages{};
-
-		for (const ComponentFilter& component : components)
-		{
-			if (component == nullptr)
-			{
-				continue;
-			}
-
-			const entt::sparse_set* storage = world.GetRegistry().Storage(component.Get()->GetTypeId());
-
-			if (storage == nullptr)
-			{
-				return {};
-			}
-
-			storages.push_back(*storage);
-		}
-
-		if (storages.empty())
-		{
-			return {};
-		}
-
-		std::sort(storages.begin(), storages.end(),
-			[](const entt::sparse_set& lhs, const entt::sparse_set& rhs)
-			{
-				return lhs.size() < rhs.size();
-			});
-
-		std::vector<entt::entity> returnValue{};
-
-		for (entt::entity entity : storages[0].get())
-		{
-			if (std::find_if(storages.begin(), storages.end(),
-				[entity](const entt::sparse_set& storage)
-				{
-					return !storage.contains(entity);
-				}) == storages.end())
-			{
-				returnValue.push_back(entity);
-
-				if (returnAfterFirstFound)
-				{
-					return returnValue;
-				}
-			}
-		}
-
-		return returnValue;
-	}
-
 }
 
 Engine::MetaType Engine::World::Reflect()
@@ -299,26 +188,9 @@ Engine::MetaType Engine::World::Reflect()
 	// We hide the distinction between the registry and the world from the designers
 	type.AddFunc([]
 		{
-			const World* world = TryGetWorldAtTopOfStack();
+			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-
-			std::vector<entt::entity> returnValue{};
-
-			const auto entityStorage = world->GetRegistry().Storage<entt::entity>();
-
-			if (entityStorage == nullptr)
-			{
-				return returnValue;
-			}
-
-			returnValue.reserve(entityStorage->size());
-
-			for (const auto [entity] : entityStorage->each())
-			{
-				returnValue.push_back(entity);
-			}
-
-			return returnValue;
+			return world->GetRegistry().GetAllEntities();
 		}, "Get all entities").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([]
@@ -354,73 +226,46 @@ Engine::MetaType Engine::World::Reflect()
 			world->GetRegistry().DestroyAlongWithChildren(entity);
 		}, "Destroy entity", MetaFunc::ExplicitParams<const entt::entity&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const std::string& name) -> entt::entity
+	type.AddFunc([](const std::string& name)
 		{
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-
-			const auto view = world->GetRegistry().View<const NameComponent>();
-
-			for (auto [entity, nameComponent] : view.each())
-			{
-				if (nameComponent.mName == name)
-				{
-					return entity;
-				}
-			}
-
-			return entt::null;
+			return world->GetRegistry().FindEntityWithName(name);
 		}, "Find entity with name", MetaFunc::ExplicitParams<const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const std::string& name)
 		{
 			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-
-			std::vector<entt::entity> returnValue{};
-			const auto view = world->GetRegistry().View<const NameComponent>();
-
-			for (auto [entity, nameComponent] : view.each())
-			{
-				if (nameComponent.mName == name)
-				{
-					returnValue.push_back(entity);
-				}
-			}
-
-			return returnValue;
+			return world->GetRegistry().FindAllEntitiesWithName(name);
 		}, "Find all entities with name", MetaFunc::ExplicitParams<const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const ComponentFilter& component)
 		{
-			const World* world = TryGetWorldAtTopOfStack();
+			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-
-			const std::vector<entt::entity> entities = FindAllEntitiesWithComponents(*world, { component }, true);
-			return entities.empty() ? entt::null : entities[0];
+			return world->GetRegistry().FindEntityWithComponent(component);
 		}, "Find entity with component", MetaFunc::ExplicitParams<const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const ComponentFilter& component)
 		{
-			const World* world = TryGetWorldAtTopOfStack();
+			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return FindAllEntitiesWithComponents(*world, { component }, false);
+			return world->GetRegistry().FindAllEntitiesWithComponent(component);
 		}, "Find all entities with component", MetaFunc::ExplicitParams<const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const std::vector<ComponentFilter>& components)
 		{
-			const World* world = TryGetWorldAtTopOfStack();
+			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-
-			const std::vector<entt::entity> entities = FindAllEntitiesWithComponents(*world, components, true);
-			return entities.empty() ? entt::null : entities[0];
+			return world->GetRegistry().FindEntityWithComponents(components);
 		}, "Find entity with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const std::vector<ComponentFilter>& components)
 		{
-			const World* world = TryGetWorldAtTopOfStack();
+			World* world = TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-			return FindAllEntitiesWithComponents(*world, components, false);
+			return world->GetRegistry().FindAllEntitiesWithComponents(components);
 		}, "Find all entities with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const glm::vec2& screenPosition, float distanceFromCamera)

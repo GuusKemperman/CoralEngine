@@ -152,6 +152,4 @@ struct Reflector<std::vector<T>>
 		ReflectFieldType<std::vector<T>>(arrayType);
 		return arrayType;
 	}
-
-	static constexpr bool sIsSpecialized = true;
 };

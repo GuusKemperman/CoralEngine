@@ -1,9 +1,31 @@
 #pragma once
+#include "Assets/Asset.h"
+#include "xsr.hpp"
 
-#ifdef PLATFORM_WINDOWS
-#include "Platform/PC/Rendering/TexturePC.h"
-#elif PLATFORM_***REMOVED***
-#include "Platform/***REMOVED***/Rendering/Texture***REMOVED***.h"
-#endif
+namespace Engine
+{
+	class Texture final :
+		public Asset
+	{
+	public:
+		Texture(std::string_view name);
+		Texture(AssetLoadInfo& loadInfo);
+		~Texture() override;
 
-REFLECT_AT_START_UP(Texture, Engine::Texture);
+		Texture(Texture&& other) noexcept;
+		Texture(const Texture&) = delete;
+
+		Texture& operator=(Texture&&) = delete;
+		Texture& operator=(const Texture&) = delete;
+
+		const xsr::texture_handle& GetHandle() const { return mTextureHandle; }
+		void SetHandle(xsr::texture_handle&& handle) { mTextureHandle = handle; }
+
+	private:
+		xsr::texture_handle mTextureHandle{};
+
+		friend ReflectAccess;
+		static MetaType Reflect();
+		REFLECT_AT_START_UP(Texture);
+	};
+}  // namespace Engine

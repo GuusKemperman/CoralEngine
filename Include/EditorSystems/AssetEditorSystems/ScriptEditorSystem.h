@@ -5,9 +5,15 @@
 #include "imnodes/imgui_node_editor.h"
 #include "Assets/Script.h"
 
-namespace ax::NodeEditor::Utilities
+namespace ax
 {
-	struct BlueprintNodeBuilder;
+	namespace NodeEditor
+	{
+		namespace Utilities
+		{
+			struct BlueprintNodeBuilder;
+		}
+	}
 }
 
 namespace Engine
@@ -202,7 +208,6 @@ namespace Engine
 		//************************************************//
 		void DisplayClassPanel();
 
-		void DisplayEventsOverview();
 		void DisplayFunctionsOverview();
 		void DisplayMembersOverview();
 
