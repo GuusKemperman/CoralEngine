@@ -207,27 +207,8 @@ CE::MetaAny CE::MetaFunc::PackSingle(Arg&& arg)
 template <typename ... Args>
 std::pair<std::array<CE::MetaAny, sizeof...(Args)>, std::array<CE::TypeForm, sizeof...(Args)>> CE::MetaFunc::Pack(Args&&... args)
 {
-#ifdef PLATFORM_***REMOVED***
-	// ***REMOVED*** has a bug where their std::array implementation
-	// does not work with non-default-constructible types if the
-	// array size is 0.
-	if constexpr (sizeof...(Args) == 0)
-	{
-		return {
-			std::array<MetaAny, 0>{ MetaAny{ TypeInfo{}, nullptr, false } },
-			std::array<TypeForm, 0>{}
-		};
-	}
-	else
-	{
-#endif // PLATFORM_***REMOVED***
-
-		return {
-			std::array<MetaAny, sizeof...(Args)>{ PackSingle<Args>(std::forward<Args>(args))... },
-			std::array<TypeForm, sizeof...(Args)>{ MakeTypeForm<Args>()... }
-		};
-
-#ifdef PLATFORM_***REMOVED***
-	}
-#endif // PLATFORM_***REMOVED***
+	return {
+		std::array<MetaAny, sizeof...(Args)>{ PackSingle<Args>(std::forward<Args>(args))... },
+		std::array<TypeForm, sizeof...(Args)>{ MakeTypeForm<Args>()... }
+	};
 }

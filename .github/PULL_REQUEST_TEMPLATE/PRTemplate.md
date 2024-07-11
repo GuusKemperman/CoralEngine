@@ -10,4 +10,3 @@
 - [ ] I have double-checked the quality of my code
 - [ ] New and existing unit tests pass locally with my changes
 - [ ] Should be tested on another device on PC 
-- [ ] Should be tested on another device on ***REMOVED***
