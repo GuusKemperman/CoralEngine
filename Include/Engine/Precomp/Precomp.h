@@ -1,9 +1,5 @@
 #pragma once
 
-#if defined(PLATFORM_***REMOVED***) && defined(EDITOR)
-static_assert(false, "EngineDebug or EngineRelease configuration is not supported for ***REMOVED***");
-#endif
-
 #include <sstream>
 #include <vector>
 #include <assert.h>

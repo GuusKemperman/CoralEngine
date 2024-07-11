@@ -39,29 +39,11 @@ namespace CE
 
 	namespace Internal
 	{
-#ifdef PLATFORM_***REMOVED***
-		// ***REMOVED*** does not understand SFINAE well enough.
-		// Since these are mostly for more understandable
-		// error messages, we assume that if there is no
-		// external reflect, there will be an internal reflect.
-		// Any conflicts, such as there both being an internal
-		// reflect and an external reflect, will only be caught
-		// with PC builds.
-
-		template<typename T>
-		static constexpr bool sHasInternalReflect = !Reflector<T>::sIsSpecialized;
-
-		template<typename T>
-		static constexpr bool sHasExternalReflect = Reflector<T>::sIsSpecialized;
-#elif PLATFORM_WINDOWS
 		template<typename T>
 		static constexpr bool sHasInternalReflect = ReflectAccess::HasReflectFunc<T>();
 
 		template<typename T>
 		static constexpr bool sHasExternalReflect = Reflector<T>::sIsSpecialized;
-#else
-		static_assert(false, "No platform");
-#endif
 
 		void RegisterReflectFunc(TypeId typeId, MetaType(*reflectFunc)());
 

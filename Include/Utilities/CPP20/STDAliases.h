@@ -69,17 +69,6 @@ namespace CE
 
 namespace CE
 {
-#ifdef PLATFORM_***REMOVED***
-
-#define ENGINE_ALLOCA alloca
-#define FORCE_INLINE inline
-
-#elif PLATFORM_WINDOWS
-
 #define ENGINE_ALLOCA _alloca
 #define FORCE_INLINE __forceinline
-
-#else 
-	static_assert(false, "No platform")
-#endif
 }
