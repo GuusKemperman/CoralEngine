@@ -1,12 +1,12 @@
 #pragma once
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class CharacterComponent
 	{
 	public:
-		int mTeamId = -1; // for targeting
+		int mTeamId = -1; // For targeting
 
 		float mGlobalCooldown = 0.25f;
 		float mGlobalCooldownTimer = mGlobalCooldown;
@@ -16,6 +16,12 @@ namespace Engine
 
 		float mBaseMovementSpeed = 10.f;
 		float mCurrentMovementSpeed = mBaseMovementSpeed;
+
+		float mBaseDealtDamageModifier = 0.f;
+		float mCurrentDealtDamageModifier = mBaseDealtDamageModifier;
+
+		float mBaseReceivedDamageModifier = 0.f;
+		float mCurrentReceivedDamageModifier = mBaseReceivedDamageModifier;
 
 	private:
 		friend ReflectAccess;

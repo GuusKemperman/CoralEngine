@@ -2,12 +2,13 @@
 #include "Meta/MetaReflect.h"
 #include "Meta/ReflectedTypes/ReflectPrimitiveTypes.h"
 
+#include "Utilities/Math.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
-using namespace Engine;
+using namespace CE;
 using T = float32;
 REFLECT_AT_START_UP(ArrayOfT, std::vector<T>);
 
@@ -34,6 +35,8 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc(static_cast<std::string(*)(T)>(&std::to_string), "ToString").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const T& f) { return static_cast<int32>(f); }, "ToInt32", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const T& f) { return static_cast<uint32>(f); }, "ToUInt32", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(static_cast<T(*)(T)>(&glm::radians), "ToRadians", "Degrees", "Radians").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(static_cast<T(*)(T)>(&glm::degrees), "ToDegrees", "Radians", "Degrees").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&sinf, "Sin").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&asinf, "ASin").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&cosf, "Cos").GetProperties().Add(Props::sIsScriptableTag);
@@ -43,6 +46,17 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc(&atan2f, "ATan2").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&sqrtf, "Sqrt").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&powf, "Pow").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&CE::Math::lerpInv<T>, "LerpInv", "Min", "Max", "Value", "T").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(&CE::Math::lerp<T>, "Lerp", "Min", "Max", "T", "Value").GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](T& n) -> T& { ++n; return n; }, OperatorType::increment, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n) -> T& { --n; return n; }, OperatorType::decrement, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n += l; return n; }, OperatorType::add_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n -= l; return n; }, OperatorType::subtract_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n *= l; return n; }, OperatorType::multiplies_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n /= l; return n; }, OperatorType::divides_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n = fmodf(n, l); return n; }, OperatorType::modulus_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+
 	ReflectFieldType<T>(type);
 
 	return type;

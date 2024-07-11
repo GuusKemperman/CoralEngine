@@ -8,7 +8,7 @@
 #include "EditorSystems/EditorSystem.h"
 #include "Meta/MetaTypeId.h"
 
-namespace Engine
+namespace CE
 {
 	class AssetLoadInfo;
 
@@ -31,6 +31,15 @@ namespace Engine
 		*/
 		template<typename CastTo = EditorSystem>
 		CastTo* TryGetSystem(std::string_view systemName);
+
+		/*
+		Get a system by type.
+
+		Note:
+			If there is no system of this type, this function will return nullptr.
+		*/
+		template<typename SystemType>
+		SystemType* TryGetSystem();
 
 		/*
 		Add a system. The arguments provided will be passed to the constructor of T.
@@ -74,6 +83,15 @@ namespace Engine
 		*/
 		void Refresh(RefreshRequest&& refreshMethod);
 
+		/**
+		 * \brief A dangerous function, do not call unless you know what you're doing.
+		 *
+		 * Will destroy and recreate pretty much everything that you have open on screen.
+		 * Calling this from a system that is owned by the editor will lead to undefined behaviour.
+		 *
+		 */
+		void FullFillRefreshRequests();
+
 		/*
 		Saves all the editors currently being edited to file.
 		*/
@@ -91,7 +109,7 @@ namespace Engine
 			Will return nullptr if there is already a window with the asset name.
 			Will return nullptr if there is no editor for this type of asset.
 		*/
-		EditorSystem* TryOpenAssetForEdit(const WeakAsset<Asset>& originalAsset);
+		EditorSystem* TryOpenAssetForEdit(const WeakAssetHandle<>& originalAsset);
 
 		// Checks if there is any editor system that could open an asset of this type
 		// for edit.
@@ -139,8 +157,6 @@ namespace Engine
 		*/
 		EditorSystem* TryGetSystemInternal(TypeId typeId);
 
-		void FullFillRefreshRequests();
-
 		void DisplayMainMenuBar();
 
 		template<typename T>
@@ -164,13 +180,20 @@ namespace Engine
 		std::vector<std::pair<TypeId, SystemPtr<EditorSystem>>> mSystems{};
 		std::forward_list<std::string> mSystemsToDestroy{};
 
-		std::forward_list<RefreshRequest> mRefreshRequests{};
+		std::vector<RefreshRequest> mRefreshRequests{};
+		std::chrono::system_clock::time_point mTimeOfLastRefresh = std::chrono::system_clock::now();
 	};
 
 	template<typename CastTo>
 	CastTo* Editor::TryGetSystem(const std::string_view systemName)
 	{
 		return dynamic_cast<CastTo*>(TryGetSystemInternal(systemName));
+	}
+
+	template <typename SystemType>
+	SystemType* Editor::TryGetSystem()
+	{
+		return dynamic_cast<SystemType*>(TryGetSystemInternal(MakeTypeId<SystemType>()));
 	}
 
 	template<typename T, typename ...Args>

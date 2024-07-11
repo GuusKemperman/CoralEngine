@@ -1,15 +1,19 @@
 #pragma once
-
 #include "Meta/MetaReflect.h"
+#include "BasicDataTypes/Colors/LinearColor.h"
 
-namespace Engine
+namespace CE
 {
+	class World;
+
 	class PointLightComponent
 	{
 	public:
-		glm::vec3 mColor = { 1.0f, 1.0f, 1.0f };
+		LinearColor mColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 		float mIntensity = 1.0f;
 		float mRange = 5.0f;
+
+		void OnDrawGizmos(World& world, entt::entity owner) const;
 
 	private:
 		friend ReflectAccess;

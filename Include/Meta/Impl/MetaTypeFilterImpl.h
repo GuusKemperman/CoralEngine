@@ -6,14 +6,14 @@
 #include "Meta/MetaType.h"
 
 template <typename Filter>
-Engine::MetaTypeFilter<Filter>::MetaTypeFilter(const MetaType* type) :
+CE::MetaTypeFilter<Filter>::MetaTypeFilter(const MetaType* type) :
 	mValue(type)
 {
 	ASSERT(type == nullptr || IsTypeValid(*type));
 }
 
 template <typename Filter>
-Engine::MetaTypeFilter<Filter>& Engine::MetaTypeFilter<Filter>::operator=(const MetaType* type)
+CE::MetaTypeFilter<Filter>& CE::MetaTypeFilter<Filter>::operator=(const MetaType* type)
 {
 	mValue = type;
 	ASSERT(type == nullptr || IsTypeValid(*type));
@@ -21,59 +21,95 @@ Engine::MetaTypeFilter<Filter>& Engine::MetaTypeFilter<Filter>::operator=(const 
 }
 
 template <typename Filter>
-bool Engine::MetaTypeFilter<Filter>::IsTypeValid(const MetaType& type)
+bool CE::MetaTypeFilter<Filter>::IsTypeValid(const MetaType& type)
 {
 	Filter f{};
 	return f(type);
 }
 
 template<class Archive, typename Filter>
-void Engine::save(Archive& ar, const MetaTypeFilter<Filter>& value)
+void CE::save(Archive& ar, const MetaTypeFilter<Filter>& value)
 {
-	save(ar, value.Get() == nullptr ? 0 : value.Get()->GetTypeId());
+	// We serialize a dummy, in the past we serialized
+	// the typeId. (What a fool I was).
+	// Since that's obviously not a very platform-agnostic way to serialize types,
+	// we instead serialize the typename now, and the dummy for some ABI
+	// compatibility reasons. We wouldnt want to accidentally interpret a
+	// number as a string.
+	static constexpr TypeId dummy = std::numeric_limits<TypeId>::max();
+	ar(dummy, value.Get() == nullptr ? std::string{} : value.Get()->GetName());
 }
 
 template<class Archive, typename Filter>
-void Engine::load(Archive& ar, MetaTypeFilter<Filter>& value)
+void CE::load(Archive& ar, MetaTypeFilter<Filter>& value)
 {
 	TypeId typeId{};
 	load(ar, typeId);
 
-	if (typeId == 0)
+	const bool isNewFormat = typeId == std::numeric_limits<TypeId>::max();
+	const MetaType* type{};
+
+	if (isNewFormat)
 	{
-		return;
+		std::string typeName{};
+		load(ar, typeName);
+
+		if (typeName.empty())
+		{
+			return;
+		}
+
+		type = MetaManager::Get().TryGetType(typeName);
+
+		if (type == nullptr)
+		{
+			LOG(LogMeta, Error, "Could not deserialize type, {} no longer exists", typeName);
+			return;
+		}
 	}
-
-	const MetaType* type = MetaManager::Get().TryGetType(typeId);
-
-	if (type == nullptr)
+	else
 	{
-		LOG(LogMeta, Error, "Could not deserialize type, no type exists anymore with type id {}", typeId);
-		return;
+		if (typeId == 0)
+		{
+			return;
+		}
+
+		type = MetaManager::Get().TryGetType(typeId);
+
+		if (type == nullptr)
+		{
+			LOG(LogMeta, Error, "Could not deserialize type, type with typeId {} no longer exists", typeId);
+			return;
+		}
 	}
 
 	if (!MetaTypeFilter<Filter>::IsTypeValid(*type))
 	{
-		LOG(LogMeta, Error, "Could not deserialize type, type {} no longer matches filter {}", type->GetName(), MakeTypeName<Filter>())
-			return;
+		LOG(LogMeta, Error, "Could not deserialize type, type {} no longer matches filter {}", type->GetName(), MakeTypeName<Filter>());
+		return;
 	}
 
 	value = type;
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_BEGIN(template<typename Filter>, Engine::MetaTypeFilter<Filter>)
-using namespace Engine;
+IMGUI_AUTO_DEFINE_BEGIN(template<typename Filter>, CE::MetaTypeFilter<Filter>)
+using namespace CE;
 
-std::optional<std::reference_wrapper<const MetaType>> selectedType = Search::DisplayDropDownWithSearchBar<MetaType>(name, var.Get() == nullptr ? "None" : var.Get()->GetName(),
-	[](const MetaType& type)
-	{
-		return MetaTypeFilter<Filter>::IsTypeValid(type);
-	});
-
-if (selectedType.has_value())
+if (!Search::BeginCombo(name, var.Get() == nullptr ? "None" : var.Get()->GetName()))
 {
-	var = &(selectedType->get());
+	return;
 }
+
+for (const MetaType& type : MetaManager::Get().EachType())
+{
+	if (MetaTypeFilter<Filter>::IsTypeValid(type)
+		&& Search::Button(type.GetName()))
+	{
+		var = &type;
+	}
+}
+
+Search::EndCombo();
 IMGUI_AUTO_DEFINE_END
 #endif // EDITOR

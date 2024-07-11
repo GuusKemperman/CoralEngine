@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "GSON/GSONReadable.h"
 
-void Engine::ReadableGSONObject::SaveTo(std::ostream& ostream) const
+void CE::ReadableGSONObject::SaveTo(std::ostream& ostream) const
 {
 	std::function<void(const ObjectType&, uint32)> save = [&](const ObjectType& current, uint32 numOfIndentations)
 		{
@@ -38,7 +38,7 @@ void Engine::ReadableGSONObject::SaveTo(std::ostream& ostream) const
 	save(*this, 0);
 }
 
-void Engine::ReadableGSONObject::LoadFrom(std::istream& istream)
+void CE::ReadableGSONObject::LoadFrom(std::istream& istream)
 {
 	std::string line;
 

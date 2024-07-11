@@ -6,30 +6,39 @@
 #include "Meta/MetaProps.h"
 #include "Meta/MetaAny.h"
 
-namespace Engine
+namespace CE
 {
 	namespace Internal
 	{
+		struct DestroyCallBackInstaller
+		{
+			template<typename ComponentType>
+			static void InstallCallback(entt::registry& reg)
+			{
+				reg.on_destroy<ComponentType>().template connect<&Registry::DestroyCallback<ComponentType>>();
+			}
+			static constexpr std::string_view sFuncName = "__InstallOnDestroyCallBack";
+		};
+
 		inline std::string GetAddComponentFuncName(std::string_view componentTypeName)
 		{
 			return Format("Add {}", componentTypeName);
 		}
+
+		void ReflectRuntimeComponentType(MetaType& type, bool isEmpty);
+
+		// Removes the functions added during ReflectComponentType
+		void UnreflectComponentType(MetaType& type);
 	}
 
 	/*
 	Adds the functions needed to Add, Get or Remove a component through scripts.
 	*/
 	template<typename T>
-	void ReflectComponentType(MetaType& type);
-
-	void ReflectComponentType(MetaType& type, bool isEmpty = false);
-
-	// Removes the functions added during ReflectComponentType
-	void UnreflectComponentType(MetaType& type);
-
-	template<typename T>
 	void ReflectComponentType(MetaType& type)
 	{
+		type.AddFunc(&Internal::DestroyCallBackInstaller::InstallCallback<T>, Internal::DestroyCallBackInstaller::sFuncName);
+
 		MetaType& entityType = MetaManager::Get().GetType<entt::entity>();
 
 		static constexpr bool isEmpty = std::is_empty_v<T>;
@@ -47,7 +56,7 @@ namespace Engine
 				if (reg.HasComponent<T>(entity))
 				{
 					return Format("Could not add {} to entity {} - this entity already has a component of this type",
-						MakeTypeName<T>(), static_cast<EntityType>(entity));
+						MakeTypeName<T>(), entt::to_integral(entity));
 				}
 
 				if constexpr (!isEmpty)
@@ -66,9 +75,9 @@ namespace Engine
 
 		if (type.GetProperties().Has(Props::sIsScriptableTag))
 		{
-			addComponentFunc.GetProperties().Add(Props::sIsScriptableTag);
+			addComponentFunc.GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 		}
 
-		ReflectComponentType(type, isEmpty);
+		Internal::ReflectRuntimeComponentType(type, isEmpty);
 	}
 }

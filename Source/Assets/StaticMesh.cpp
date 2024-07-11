@@ -17,11 +17,7 @@ enum StaticMeshFlags : uint8
     hasTangents = 1 << 5
 };
 
-Engine::StaticMesh::StaticMesh(std::string_view name) :
-    Asset(name, MakeTypeId<StaticMesh>())
-{}
-
-bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
+bool CE::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
     Span<const glm::vec3> positions,
     std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices,
     std::optional<Span<const glm::vec3>> normals,
@@ -80,6 +76,7 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
     if (uvs.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasUVs);
     if (tangents.has_value()) flags = static_cast<StaticMeshFlags>(flags | hasTangents);
 
+
     str.write(reinterpret_cast<const char*>(&flags), sizeof(StaticMeshFlags));
 
     str.write(reinterpret_cast<const char*>(&numOfPositions), sizeof(numOfPositions));
@@ -119,9 +116,10 @@ bool Engine::StaticMesh::OnSave(AssetSaveInfo& saveInfo,
     return true;
 }
 
-Engine::MetaType Engine::StaticMesh::Reflect()
+CE::MetaType CE::StaticMesh::Reflect()
 {
     MetaType type = MetaType{ MetaType::T<StaticMesh>{}, "StaticMesh", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
+    type.GetProperties().Add(Props::sCannotReferenceOtherAssetsTag);
 
     SetClassVersion(type, 1);
 

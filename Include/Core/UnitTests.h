@@ -1,11 +1,10 @@
 #pragma once
-#ifdef EDITOR
 #include "Core/EngineSubsystem.h"
 
 // To borrow the CONCAT macro
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	struct UnitTest
 	{
@@ -61,16 +60,11 @@ namespace Engine
 }
 
 #define UNIT_TEST(Category, TestName)																																			\
-Engine::UnitTest::Result TestName()
+CE::UnitTest::Result TestName()
 
 #define UNIT_TEST_DECLARATION(Category, TestName)																																			\
-Engine::UnitTest::Result TestName();																																		\
-[[maybe_unused]] static inline const bool CONCAT(__sTestDummyVariable, CONCAT(Category, TestName)) = Engine::Internal::RegisterUnitTest(#Category, #TestName, &(TestName));		\
+CE::UnitTest::Result TestName();																																		\
+[[maybe_unused]] static inline const bool CONCAT(__sTestDummyVariable, CONCAT(Category, TestName)) = CE::Internal::RegisterUnitTest(#Category, #TestName, &(TestName));		\
 
-#define TEST_ASSERT(Condition) if (!(Condition)) { LOG(UnitTests, Error, "{} evaluated to false", #Condition); return UnitTest::Failure; }; 
+#define TEST_ASSERT(Condition) if (!(Condition)) { LOG(UnitTests, Error, "{} evaluated to false", #Condition); return CE::UnitTest::Failure; }; 
 
-#else
-
-#define UNIT_TEST_DECLARATION(...)
-
-#endif // EDITOR

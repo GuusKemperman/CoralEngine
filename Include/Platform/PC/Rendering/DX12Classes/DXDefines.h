@@ -8,57 +8,46 @@
 
 // D3D12 extension library.
 #pragma warning(push)
-#pragma warning(disable: 4324)
+#pragma warning(disable : 4324)
 #include "dx12/d3dx12.h"
-#pragma warning(pop) 
+#pragma warning(pop)
 
-//WINDOWS STUFF
+// WINDOWS STUFF
 #pragma warning(push)
-#pragma warning(disable: 4005)
-#ifndef  NOMINMAX
+#pragma warning(disable : 4005)
+#ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include <wrl.h>
 #undef APIENTRY
 #include <Windows.h>
-#pragma warning(pop) 
+#pragma warning(pop)
 using namespace Microsoft::WRL;
 
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
 
 #define FRAME_BUFFER_COUNT 2
-#define MAX_LIGHTS 20
 #define MAX_MESHES 65000
+#define MAX_TEXTS 100
+#define MAX_QUADS 100
+#define MAX_CHAR_PER_TEXT 300
+#define MAX_PARTICLES 65000
+#define MAX_SKINNED_MESHES 5012
+#define MAX_LIGHTS_PER_CLUSTER 1024
+#define MAX_TEXT_QUADS 65000
 
-//DESCRIPTOR HEAPS
-#define RT_HEAP						0
-#define DEPTH_HEAP					1
-#define RESOURCE_HEAP				2
-#define SAMPLER_HEAP				3
-#define NUM_DESC_HEAPS SAMPLER_HEAP+1
+// DESCRIPTOR HEAPS
+#define RT_HEAP 0
+#define DEPTH_HEAP 1
+#define RESOURCE_HEAP 2
+#define SAMPLER_HEAP 3
+#define NUM_DESC_HEAPS SAMPLER_HEAP + 1
 
-//RESOURCES
-#define RENDER_TARGETS_RSC				0
-#define MSAA_RENDER_TARGETS_RSC			2
-#define DEPTH_STENCIL_RSC				4
-#define NUM_RESOURCES DEPTH_STENCIL_RSC+1
-#define RT_COUNT 4
-
-//HEAP SLOTS
-#define IMGUI_SLOT 0
-#define TEX_START 4
-
-//CONSTANT BUFFERS
-#define CAM_MATRIX_CB			0
-#define MATERIAL_CB				1
-#define LIGHT_CB				2
-#define MODEL_MATRIX_CB			3
-#define NUM_CBS MODEL_MATRIX_CB+1
-
-//RESOURCE HEAP SLOTS
-#define  MODEL_MAT_SB_SLOT			0
-#define  TEXTURE_START				1
-
-//DEBUG RENDERER
+// DEBUG RENDERER
 #define MAX_LINES 32760
+#define MAX_LINE_VERTICES MAX_LINES * 2
+
+// MSAA
+#define MSAA_COUNT 4
+#define MSAA_QUALITY 0

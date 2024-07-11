@@ -1,7 +1,7 @@
 #pragma once
 #include "Systems/System.h"
 
-namespace Engine
+namespace CE
 {
 	class UpdateTopDownCamSystem final : 
 		public System
@@ -13,7 +13,6 @@ namespace Engine
 		SystemStaticTraits GetStaticTraits() const override
 		{
 			SystemStaticTraits traits {};
-			traits.mShouldTickBeforeBeginPlay = true;
 			traits.mShouldTickWhilstPaused = true;
 			return traits;
 		}

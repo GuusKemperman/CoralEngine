@@ -4,7 +4,7 @@
 #include "Scripting/ScriptIds.h"
 #include "Scripting/ScriptFunc.h"
 
-void Engine::FunctionLikeNode::ConstructExpectedPins(ScriptFunc& scriptFunc)
+void CE::FunctionLikeNode::ConstructExpectedPins(ScriptFunc& scriptFunc)
 {
 	PostDeclarationRefresh(scriptFunc);
 
@@ -21,7 +21,7 @@ void Engine::FunctionLikeNode::ConstructExpectedPins(ScriptFunc& scriptFunc)
 
 
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
-void Engine::FunctionLikeNode::PostDeclarationRefresh(ScriptFunc& scriptFunc)
+void CE::FunctionLikeNode::PostDeclarationRefresh(ScriptFunc& scriptFunc)
 {
 	const std::optional<InputsOutputs> insOuts = GetExpectedInputsOutputs(scriptFunc);
 	
@@ -36,7 +36,7 @@ void Engine::FunctionLikeNode::PostDeclarationRefresh(ScriptFunc& scriptFunc)
 }
 #endif // REMOVE_FROM_SCRIPTS_ENABLED
 
-void Engine::FunctionLikeNode::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
+void CE::FunctionLikeNode::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
 {
 	ScriptNode::CollectErrors(inserter, scriptFunc);
 

@@ -3,7 +3,7 @@
 
 #include "GSON/GSONReadable.h"
 
-namespace Engine
+namespace CE
 {
 	template <typename Readable>
 	MetaProps& MetaProps::Set(const Name name, const Readable& value)
@@ -29,16 +29,5 @@ namespace Engine
 		Readable tmp{};
 		helper >> tmp;
 		return tmp;
-	}
-
-	inline MetaProps& MetaProps::Add(const Name name)
-	{
-		mProperties[name.GetHash()] = std::make_pair(name.String(), "");
-		return *this;
-	}
-
-	inline bool MetaProps::Has(const Name name) const
-	{
-		return mProperties.find(name.GetHash()) != mProperties.end();
 	}
 }

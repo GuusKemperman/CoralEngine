@@ -1,16 +1,19 @@
 #pragma once
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	class StaticMesh;
 	class Material;
+	class ParticleEmitterComponent;
 
 	class ParticleMeshRendererComponent
 	{
 	public:
-		std::shared_ptr<const StaticMesh> mParticleMesh{};
-		std::shared_ptr<const Material> mParticleMaterial{};
+		AssetHandle<StaticMesh> mParticleMesh{};
+		AssetHandle<Material> mParticleMaterial{};
+		bool AreAnyVisible(const CE::ParticleEmitterComponent& emitter) const;
 
 	private:
 		friend ReflectAccess;

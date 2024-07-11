@@ -5,7 +5,7 @@
 #include "Meta/Fwd/MetaReflectFwd.h"
 #include "Utilities/IterableRange.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 
@@ -15,7 +15,7 @@ namespace Engine
 		friend EngineSubsystem;
 
 		// We only expose the value to the user; not the TypeId key.
-		using EachTypeT = IterableRange<EncapsulingForwardIterator<AlwaysSecondEncapsulator, std::unordered_map<Name::HashType, std::reference_wrapper<MetaType>>::iterator>>;
+		using EachTypeT = IterableRange<EncapsulingForwardIterator<AlwaysSecondEncapsulator, std::unordered_map<TypeId, MetaType>::iterator>>;
 
 		void PostConstruct() override;
 
@@ -23,7 +23,7 @@ namespace Engine
 		MetaType& AddType(MetaType&& type);
 
 		/*
-		Get a metatype by name. Name must include namespaces, e.g., "Engine::TransformComponent".
+		Get a metatype by name. Name must include namespaces, e.g., "CE::TransformComponent".
 
 		Note:
 			If no class exists with this name, this will return nullptr.
@@ -32,7 +32,7 @@ namespace Engine
 		MetaType* TryGetType(Name typeName);
 
 		/*
-		Get a metatype by typeId. The hash function used Engine::MakeTypeId<>.
+		Get a metatype by typeId. The hash function used CE::MakeTypeId<>.
 
 		Returns:
 			If no class exists with this typehash, this will return nullptr.
@@ -65,12 +65,5 @@ namespace Engine
 		Will return true on success. This function will return false if there is no type with this typeid.
 		*/
 		bool RemoveType(TypeId typeId);
-
-		/*
-		Removes a type based on its name. The type will be immediately destroyed, any references will become dangling.
-
-		Will return true on success. This function will return false if there is no type with this name.
-		*/
-		bool RemoveType(Name typeName);
 	};
 }

@@ -6,13 +6,13 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Registry.h"
 
-std::string Engine::NameComponent::GetDisplayName(const Registry& registry, entt::entity entity)
+std::string_view CE::NameComponent::GetDisplayName(const Registry& registry, entt::entity entity)
 {
 	const NameComponent* nameComponent = registry.TryGet<const NameComponent>(entity);
-	return nameComponent == nullptr ? Format("Unnamed entity {}", static_cast<EntityType>(entity)) : nameComponent->mName;
+	return nameComponent == nullptr ? std::string_view{ "Unnamed entity" } : std::string_view{ nameComponent->mName };
 }
 
-Engine::MetaType Engine::NameComponent::Reflect()
+CE::MetaType CE::NameComponent::Reflect()
 {
 	MetaType metaType = MetaType{ MetaType::T<NameComponent>{}, "NameComponent" };
 	metaType.GetProperties().Add(Props::sIsScriptableTag);

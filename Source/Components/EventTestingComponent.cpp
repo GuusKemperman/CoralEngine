@@ -5,58 +5,58 @@
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void Engine::EmptyEventTestingComponent::OnConstruct(World&, entt::entity)
+void CE::EmptyEventTestingComponent::OnConstruct(World&, entt::entity)
 {
 	++sNumOfConstructs;
 }
 
-void Engine::EmptyEventTestingComponent::OnDestruct(World&, entt::entity)
+void CE::EmptyEventTestingComponent::OnDestruct(World&, entt::entity)
 {
 	++sNumOfDestructs;
 }
 
-void Engine::EmptyEventTestingComponent::OnBeginPlay(World&, entt::entity)
+void CE::EmptyEventTestingComponent::OnBeginPlay(World&, entt::entity)
 {
 	++sNumOfBeginPlays;
 }
 
-void Engine::EmptyEventTestingComponent::OnTick(World&, entt::entity, float)
+void CE::EmptyEventTestingComponent::OnTick(World&, entt::entity, float)
 {
 	++sNumOfTicks;
 }
 
-void Engine::EmptyEventTestingComponent::OnFixedTick(World&, entt::entity)
+void CE::EmptyEventTestingComponent::OnFixedTick(World&, entt::entity)
 {
 	++sNumOfFixedTicks;
 }
 
-void Engine::EmptyEventTestingComponent::OnAiTick(World&, entt::entity, float)
+void CE::EmptyEventTestingComponent::OnAiTick(World&, entt::entity, float)
 {
 	++sNumOfAiTicks;
 }
 
-float Engine::EmptyEventTestingComponent::OnAiEvaluate(const World&, entt::entity)
+float CE::EmptyEventTestingComponent::OnAiEvaluate(const World&, entt::entity)
 {
 	++sNumOfAiEvaluates;
 	return 1000.0f;
 }
 
-void Engine::EmptyEventTestingComponent::OnCollisionEntry(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
+void CE::EmptyEventTestingComponent::OnCollisionEntry(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
 {
 	++sNumOfCollisionEntry;
 }
 
-void Engine::EmptyEventTestingComponent::OnCollisionStay(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
+void CE::EmptyEventTestingComponent::OnCollisionStay(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
 {
 	++sNumOfCollisionStay;
 }
 
-void Engine::EmptyEventTestingComponent::OnCollisionExit(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
+void CE::EmptyEventTestingComponent::OnCollisionExit(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
 {
 	++sNumOfCollisionExit;
 }
 
-uint32 Engine::EmptyEventTestingComponent::GetValue(Name valueName)
+uint32 CE::EmptyEventTestingComponent::GetValue(Name valueName)
 {
 	switch (valueName.GetHash())
 	{
@@ -74,7 +74,7 @@ uint32 Engine::EmptyEventTestingComponent::GetValue(Name valueName)
 	}
 }
 
-void Engine::EmptyEventTestingComponent::Reset()
+void CE::EmptyEventTestingComponent::Reset()
 {
 	sNumOfTicks = 0;
 	sNumOfFixedTicks = 0;
@@ -88,13 +88,13 @@ void Engine::EmptyEventTestingComponent::Reset()
 	sNumOfCollisionExit = 0;
 }
 
-Engine::MetaType Engine::EmptyEventTestingComponent::Reflect()
+CE::MetaType CE::EmptyEventTestingComponent::Reflect()
 {
 	auto type = MetaType{MetaType::T<EmptyEventTestingComponent>{}, "EmptyEventTestingComponent"};
 	type.GetProperties().Add(Props::sNoInspectTag);
 
 	BindEvent(type, sConstructEvent, &EmptyEventTestingComponent::OnConstruct);
-	BindEvent(type, sDestructEvent, &EmptyEventTestingComponent::OnDestruct);
+	BindEvent(type, sEndPlayEvent, &EmptyEventTestingComponent::OnDestruct);
 	BindEvent(type, sBeginPlayEvent, &EmptyEventTestingComponent::OnBeginPlay);
 	BindEvent(type, sTickEvent, &EmptyEventTestingComponent::OnTick);
 	BindEvent(type, sFixedTickEvent, &EmptyEventTestingComponent::OnFixedTick);
@@ -108,58 +108,58 @@ Engine::MetaType Engine::EmptyEventTestingComponent::Reflect()
 	return type;
 }
 
-void Engine::EventTestingComponent::OnConstruct(World&, entt::entity)
+void CE::EventTestingComponent::OnConstruct(World&, entt::entity)
 {
 	++mNumOfConstructs;
 }
 
-void Engine::EventTestingComponent::OnDestruct(World&, entt::entity)
+void CE::EventTestingComponent::OnDestruct(World&, entt::entity)
 {
 	++mNumOfDestructs;
 }
 
-void Engine::EventTestingComponent::OnBeginPlay(World&, entt::entity)
+void CE::EventTestingComponent::OnBeginPlay(World&, entt::entity)
 {
 	++mNumOfBeginPlays;
 }
 
-void Engine::EventTestingComponent::OnTick(World&, entt::entity, float)
+void CE::EventTestingComponent::OnTick(World&, entt::entity, float)
 {
 	++mNumOfTicks;
 }
 
-void Engine::EventTestingComponent::OnFixedTick(World&, entt::entity)
+void CE::EventTestingComponent::OnFixedTick(World&, entt::entity)
 {
 	++mNumOfFixedTicks;
 }
 
-void Engine::EventTestingComponent::OnAiTick(World&, entt::entity, float)
+void CE::EventTestingComponent::OnAiTick(World&, entt::entity, float)
 {
 	++mNumOfAiTicks;
 }
 
-float Engine::EventTestingComponent::OnAiEvaluate(const World&, entt::entity) const
+float CE::EventTestingComponent::OnAiEvaluate(const World&, entt::entity)
 {
 	++mNumOfAiEvaluates;
 	return 0.0f;
 }
 
-void Engine::EventTestingComponent::OnCollisionEntry(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
+void CE::EventTestingComponent::OnCollisionEntry(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
 {
 	++mNumOfCollisionEntry;
 }
 
-void Engine::EventTestingComponent::OnCollisionStay(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
+void CE::EventTestingComponent::OnCollisionStay(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
 {
 	++mNumOfCollisionStay;
 }
 
-void Engine::EventTestingComponent::OnCollisionExit(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
+void CE::EventTestingComponent::OnCollisionExit(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)
 {
 	++mNumOfCollisionExit;
 }
 
-Engine::MetaType Engine::EventTestingComponent::Reflect()
+CE::MetaType CE::EventTestingComponent::Reflect()
 {
 	auto type = MetaType{MetaType::T<EventTestingComponent>{}, "EventTestingComponent"};
 	type.GetProperties().Add(Props::sNoInspectTag);
@@ -179,7 +179,7 @@ Engine::MetaType Engine::EventTestingComponent::Reflect()
 	BindEvent(type, sBeginPlayEvent, &EventTestingComponent::OnBeginPlay);
 	BindEvent(type, sTickEvent, &EventTestingComponent::OnTick);
 	BindEvent(type, sFixedTickEvent, &EventTestingComponent::OnFixedTick);
-	BindEvent(type, sDestructEvent, &EventTestingComponent::OnDestruct);
+	BindEvent(type, sEndPlayEvent, &EventTestingComponent::OnDestruct);
 	BindEvent(type, sAITickEvent, &EventTestingComponent::OnAiTick);
 	BindEvent(type, sAIEvaluateEvent, &EventTestingComponent::OnAiEvaluate);
 	BindEvent(type, sCollisionEntryEvent, &EventTestingComponent::OnCollisionEntry);

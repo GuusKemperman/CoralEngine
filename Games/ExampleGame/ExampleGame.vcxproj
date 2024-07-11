@@ -9,20 +9,20 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="EngineDebug|***REMOVED***">
-      <Configuration>EngineDebug</Configuration>
+    <ProjectConfiguration Include="EditorDebug|***REMOVED***">
+      <Configuration>EditorDebug</Configuration>
       <Platform>***REMOVED***</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="EngineDebug|x64">
-      <Configuration>EngineDebug</Configuration>
+    <ProjectConfiguration Include="EditorDebug|x64">
+      <Configuration>EditorDebug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="EngineRelease|***REMOVED***">
-      <Configuration>EngineRelease</Configuration>
+    <ProjectConfiguration Include="EditorRelease|***REMOVED***">
+      <Configuration>EditorRelease</Configuration>
       <Platform>***REMOVED***</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="EngineRelease|x64">
-      <Configuration>EngineRelease</Configuration>
+    <ProjectConfiguration Include="EditorRelease|x64">
+      <Configuration>EditorRelease</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|***REMOVED***">
@@ -55,13 +55,13 @@
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -81,14 +81,14 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -104,57 +104,72 @@
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\GamePC.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\GameDebugPC.props" />
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">
     <Import Project="..\..\Properties\EngineAndGameDebug.props" />
     <Import Project="..\..\Properties\EngineAndGame***REMOVED***.props" />
     <Import Project="..\..\Properties\Game***REMOVED***.props" />
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\Game***REMOVED***Debug.props" />
+    <Import Project="..\..\Properties\EngineAndGameDebug***REMOVED***.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">
+    <Import Project="..\..\Properties\Game***REMOVED***Release.props" />
     <Import Project="..\..\Properties\Game***REMOVED***.props" />
     <Import Project="..\..\Properties\EngineAndGame***REMOVED***.props" />
     <Import Project="..\..\Properties\EngineAndGameRelease.props" />
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\Game.props" />
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">
+    <Import Project="..\..\Properties\GameEditorRelease.props" />
+    <Import Project="..\..\Properties\GameEditor.props" />
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\EngineAndGameEditor.props" />
     <Import Project="..\..\Properties\EngineAndGamePC.props" />
     <Import Project="..\..\Properties\EngineAndGameRelease.props" />
     <Import Project="..\..\Properties\GamePC.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\GameReleasePC.props" />
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\EngineAndGamePC.props" />
     <Import Project="..\..\Properties\EngineAndGameRelease.props" />
     <Import Project="..\..\Properties\GamePC.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\GameReleasePC.props" />
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">
+    <Import Project="..\..\Properties\GameEditorDebug.props" />
+    <Import Project="..\..\Properties\GameEditor.props" />
     <Import Project="..\..\Properties\EngineAndGame.props" />
     <Import Project="..\..\Properties\EngineAndGameDebug.props" />
     <Import Project="..\..\Properties\EngineAndGameEditor.props" />
     <Import Project="..\..\Properties\EngineAndGamePC.props" />
     <Import Project="..\..\Properties\GamePC.props" />
     <Import Project="..\..\Properties\Game.props" />
+    <Import Project="..\..\Properties\GameDebugPC.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">
+    <TargetName>Lichgate</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">
+    <TargetName>Lichgate</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <SDLCheck>true</SDLCheck>
@@ -171,6 +186,8 @@
       <ExternalWarningLevel>Level2</ExternalWarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BuildStlModules>true</BuildStlModules>
+      <SupportJustMyCode>false</SupportJustMyCode>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -208,7 +225,7 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">
     <ClCompile>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -224,6 +241,8 @@
       <ExternalWarningLevel>Level2</ExternalWarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BuildStlModules>true</BuildStlModules>
+      <SupportJustMyCode>false</SupportJustMyCode>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -231,13 +250,12 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>IF NOT EXIST "$(TargetDir)assimp-vc143-mtd.dll" COPY /Y "$(EngineDir)external\assimp\$(Platform)\Debug\assimp-vc143-mtd.dll" "$(TargetDir)"</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">
     <ClCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FastMath>true</FastMath>
     </ClCompile>
     <Link>
     </Link>
@@ -264,6 +282,8 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <SupportJustMyCode>false</SupportJustMyCode>
       <BuildStlModules>true</BuildStlModules>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -297,6 +317,9 @@
       <CppLanguageStd>Cpp17</CppLanguageStd>
       <CLanguageStd>C17</CLanguageStd>
       <ExtraWarnings />
+      <OptimizationLevel>Level3</OptimizationLevel>
+      <UnrollLoops>true</UnrollLoops>
+      <LinkTimeOptimization>true</LinkTimeOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -307,7 +330,7 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">
     <ClCompile>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -325,6 +348,8 @@
       <ExternalWarningLevel>Level2</ExternalWarningLevel>
       <SupportJustMyCode>false</SupportJustMyCode>
       <BuildStlModules>true</BuildStlModules>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -333,13 +358,12 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>IF NOT EXIST "$(TargetDir)assimp-vc143-mt.dll" COPY /Y "$(EngineDir)external\assimp\$(Platform)\Release\assimp-vc143-mt.dll" "$(TargetDir)"</Command>
-    </PostBuildEvent>
+    <PostBuildEvent />
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">
     <ClCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FastMath>true</FastMath>
     </ClCompile>
     <Link>
     </Link>
@@ -347,38 +371,117 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Components\CorpseComponent.cpp" />
+    <ClCompile Include="Source\Components\CorpseManagerComponent.cpp" />
+    <ClCompile Include="Source\Components\ScoreComponent.cpp" />
+    <ClCompile Include="Source\Components\ScoreTextComponent.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\RunningAwayState.cpp" />
+    <ClCompile Include="Source\Components\CameraShakeComponent.cpp" />
+    <ClCompile Include="Source\Components\PointTowardsGraveyardTags.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\ShootingBowState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\KnockbackEmitterComponent.cpp" />
+    <ClCompile Include="Source\Components\XPOrbComponent.cpp" />
+    <ClCompile Include="Source\Components\XPOrbManagerComponent.cpp" />
+    <ClCompile Include="Source\Systems\CorpseSystem.cpp" />
+    <ClCompile Include="Source\Systems\XPOrbSystem.cpp" />
+    <ClCompile Include="Source\Utilities\AiFunctionality.cpp" />
+    <ClCompile Include="Source\Components\EnvironmentGeneratorComponent.cpp" />
+    <ClCompile Include="Source\Assets\Upgrade.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpStompState.cpp" />
+    <ClCompile Include="Source\Components\DifficultyScalingComponent.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\KnockBackState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\DanceState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\DeathState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\RecoveryState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\DashingState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpDashState.cpp" />
+    <ClCompile Include="Source\Components\SpawnerComponent.cpp" />
+    <ClCompile Include="Source\EditorSystems\UpgradeEditorSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DifficultyScalingSystem.cpp" />
+    <ClCompile Include="Source\Systems\EnvironmentGeneratorSystem.cpp" />
+    <ClCompile Include="Source\Systems\SpawnerSystem.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\AttackingState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\ChasingState.cpp" />
+    <ClCompile Include="Source\Components\UtilityAi\States\IdleState.cpp" />
     <ClCompile Include="Source\Core\Main.cpp" />
     <ClCompile Include="Source\Core\Precomp.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineRelease|***REMOVED***'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorRelease|***REMOVED***'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|***REMOVED***'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EngineDebug|***REMOVED***'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|***REMOVED***'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|***REMOVED***'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Source\Platform\***REMOVED***\UserMem\user_malloc.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Source\Platform\***REMOVED***\UserMem\user_new.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Components\WavesComponent.cpp" />
+    <ClCompile Include="Source\Components\UpgradeStoringComponent.cpp" />
+    <ClCompile Include="Source\Utilities\UpgradeFunctionality.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Components\CameraShakeComponent.h" />
+    <ClInclude Include="Include\Assets\Upgrade.h" />
+    <ClCompile Include="Source\Components\UtilityAi\States\StompState.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\Components\CorpseComponent.h" />
+    <ClInclude Include="Include\Components\PointTowardsGraveyardTags.h" />
+    <ClInclude Include="Include\Components\XPOrbComponent.h" />
+    <ClInclude Include="Include\Components\XPOrbManagerComponent.h" />
+    <ClInclude Include="Include\Components\CorpseManagerComponent.h" />
+    <ClInclude Include="Include\Systems\CorpseSystem.h" />
+    <ClInclude Include="Include\Systems\XPOrbSystem.h" />
+    <ClInclude Include="Include\Utilities\AiFunctionality.h" />
+    <ClInclude Include="Include\Components\EnvironmentGeneratorComponent.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\ChargeUpStompState.h" />
+    <ClInclude Include="Include\Components\DifficultyScalingComponent.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\DanceState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\DeathState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\RecoveryState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\DashingState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\ChargeUpDashState.h" />
+    <ClInclude Include="Include\Components\SpawnerComponent.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\AttackingState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\ChasingState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\IdleState.h" />
+    <ClInclude Include="Include\EditorSystems\UpgradeEditorSystem.h" />
     <ClInclude Include="Include\ExampleGame\Precomp.h" />
+    <ClInclude Include="Include\Systems\DifficultyScalingSystem.h" />
+    <ClInclude Include="Include\Systems\EnvironmentGeneratorSystem.h" />
+    <ClInclude Include="Include\Systems\SpawnerSystem.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\ShootingBowState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\KnockBackState.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\KnockbackEmitterComponent.h" />
+    <ClInclude Include="Include\Components\ScoreTextComponent.h" />
+    <ClInclude Include="Include\Components\ScoreComponent.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\RunningAwayState.h" />
     <ClInclude Include="Source\Platform\***REMOVED***\UserMem\address_sanitizer_utils.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineRelease|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EngineDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Include\Components\WavesComponent.h" />
+    <ClInclude Include="Include\Components\UpgradeStoringComponent.h" />
+    <ClInclude Include="Include\Utilities\UpgradeFunctionality.h" />
+    <ClInclude Include="Include\Components\UtililtyAi\States\StompState.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

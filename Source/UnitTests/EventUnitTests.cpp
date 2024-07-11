@@ -9,10 +9,12 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/Events.h"
 #include "Meta/MetaType.h"
-#include "Components/UtililtyAi/EnemyAiControllerComponent.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
-namespace Engine
+namespace CE
 {
+	class EnemyAiControllerComponent;
+
 	static const MetaType* GetUnitTestScript()
 	{
 		return MetaManager::Get().TryGetType("UnitTestScript");
@@ -96,7 +98,7 @@ namespace Engine
 
 UNIT_TEST(Events, OnTick)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 
@@ -113,7 +115,7 @@ UNIT_TEST(Events, OnTick)
 
 UNIT_TEST(Events, OnFixedTick)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	entt::entity owner = InitTest(world);
@@ -137,7 +139,7 @@ UNIT_TEST(Events, OnFixedTick)
 
 UNIT_TEST(Events, OnConstruct)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{false};
 	entt::entity owner = InitTest(world);
@@ -149,7 +151,7 @@ UNIT_TEST(Events, OnConstruct)
 
 UNIT_TEST(Events, OnBeginPlay)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{false};
 	entt::entity owner = InitTest(world);
@@ -165,7 +167,7 @@ UNIT_TEST(Events, OnBeginPlay)
 
 UNIT_TEST(Events, OnBeginPlayWhenAddedAfterWorldBeginsPlay)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	entt::entity owner = InitTest(world);
@@ -177,7 +179,7 @@ UNIT_TEST(Events, OnBeginPlayWhenAddedAfterWorldBeginsPlay)
 
 UNIT_TEST(Events, OnDestructEntireWorld)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	{
 		World world{true};
@@ -195,7 +197,7 @@ UNIT_TEST(Events, OnDestructEntireWorld)
 
 UNIT_TEST(Events, OnDestructRemoveComponent)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	entt::entity owner = InitTest(world);
@@ -213,14 +215,14 @@ UNIT_TEST(Events, OnDestructRemoveComponent)
 
 UNIT_TEST(Events, OnDestructDestroyEntity)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	entt::entity owner = InitTest(world);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfDestructs", 0));
 
-	world.GetRegistry().Destroy(owner);
+	world.GetRegistry().Destroy(owner, false);
 	world.GetRegistry().RemovedDestroyed();
 
 	// I guess we can't really test the num of destructs if the instance were destroyed..
@@ -232,7 +234,7 @@ UNIT_TEST(Events, OnDestructDestroyEntity)
 
 UNIT_TEST(Events, OnAiTick)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	entt::entity owner = InitTest(world);
@@ -252,7 +254,7 @@ UNIT_TEST(Events, OnAiTick)
 
 UNIT_TEST(Events, OnAiEvaluate)
 {
-	using namespace Engine;
+	using namespace CE;
 
 	World world{true};
 	entt::entity owner = InitTest(world);
@@ -272,48 +274,53 @@ UNIT_TEST(Events, OnAiEvaluate)
 
 UNIT_TEST(Events, CollisionEvents)
 {
-	using namespace Engine;
+	using namespace CE;
 
-	World world{ true };
+	World world{true};
 	const entt::entity owner = InitTest(world);
 
 	Registry& reg = world.GetRegistry();
 
 	reg.AddComponent<TransformComponent>(owner);
-	reg.AddComponent<PhysicsBody2DComponent>(owner).mMotionType = MotionType::Static;
+	
+	PhysicsBody2DComponent& body1 = reg.AddComponent<PhysicsBody2DComponent>(owner);
+	body1.mIsAffectedByForces = false;
+	body1.mRules = CollisionPresets::sCharacter.mRules;
 	reg.AddComponent<DiskColliderComponent>(owner);
 
 	const entt::entity other = reg.Create();
 
 	TransformComponent& otherTransform = reg.AddComponent<TransformComponent>(other);
-	reg.AddComponent<PhysicsBody2DComponent>(other).mMotionType = MotionType::Static;
+	PhysicsBody2DComponent& body2 = reg.AddComponent<PhysicsBody2DComponent>(other);
+	body2.mIsAffectedByForces = false;
+	body2.mRules = CollisionPresets::sCharacter.mRules;
 	reg.AddComponent<DiskColliderComponent>(other);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 0));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 0));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
-	world.Tick(1 / 60.0f);
+	world.Tick(1 / 60.0f - 0.001f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 1));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
-	world.Tick(1 / 60.0f);
+	world.Tick(1 / 60.0f - 0.001f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 2));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
-	world.Tick(1 / 60.0f);
+	world.Tick(1 / 60.0f - 0.001f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 3));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 0));
 
-	otherTransform.SetWorldPosition(glm::vec2{ 100000.0f });
+	otherTransform.SetWorldPosition(glm::vec2{100000.0f});
 
-	world.Tick(1 / 60.0f);
+	world.Tick(1 / 60.0f - 0.001f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 3));
@@ -321,4 +328,3 @@ UNIT_TEST(Events, CollisionEvents)
 
 	return UnitTest::Success;
 }
-

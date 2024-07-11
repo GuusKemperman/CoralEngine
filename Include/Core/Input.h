@@ -2,7 +2,7 @@
 #include "Meta/MetaReflect.h"
 #include "Core/EngineSubsystem.h"
 
-namespace Engine
+namespace CE
 {
     /// <summary>
 	/// The Input class provides a cross-platform way to handle input from keyboard, mouse, and gamepads.
@@ -213,7 +213,14 @@ namespace Engine
             /// Represents the down arrow of the D-pad on a gamepad.
             DPadDown = 13,
             /// Represents the left arrow of the D-pad on a gamepad.
-            DPadLeft = 14
+            DPadLeft = 14,
+
+            /// Represents the left trigger of a gamepad, with an analog input value between 0 (not pressed) and 1 (fully pressed).
+            /// To turn it into a button we just take the middle value as a threshold.
+            TriggerLeft = 15,
+            /// Represents the right trigger of a gamepad, with an analog input value between 0 (not pressed) and 1 (fully pressed).
+            /// To turn it into a button we just take the middle value as a threshold.
+        	TriggerRight = 16
         };
 
         /// <summary>
@@ -262,6 +269,9 @@ namespace Engine
         /// Gets the screen position of the mouse, relative to the top-left corner of the screen.
         glm::vec2 GetMousePosition() const;
 
+        /// Gets the delta between the current and previous mouse position, relative to the top-left corner of the screen.
+        glm::vec2 GetDeltaMousePosition() const;
+
         /// Gets the mouse wheel, relative to the value it was the previous frame
         float GetMouseWheel(bool checkFocus = true) const;
 
@@ -288,6 +298,8 @@ namespace Engine
     private:
         bool HasFocus(bool checkFocus) const;
 
+        inline static constexpr float sTriggerThreshold = 0.15f;
+
         friend ReflectAccess;
         static MetaType Reflect();
         REFLECT_AT_START_UP(Input);
@@ -295,36 +307,36 @@ namespace Engine
 }
 
 template<>
-struct Reflector<Engine::Input::KeyboardKey>
+struct Reflector<CE::Input::KeyboardKey>
 {
-    static Engine::MetaType Reflect();
+    static CE::MetaType Reflect();
     static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(KeyBoardKey, Engine::Input::KeyboardKey);
+}; REFLECT_AT_START_UP(KeyBoardKey, CE::Input::KeyboardKey);
 
 template<>
-struct Reflector<Engine::Input::GamepadAxis>
+struct Reflector<CE::Input::GamepadAxis>
 {
-    static Engine::MetaType Reflect();
+    static CE::MetaType Reflect();
     static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(GamepadAxis, Engine::Input::GamepadAxis);
+}; REFLECT_AT_START_UP(GamepadAxis, CE::Input::GamepadAxis);
 
 template<>
-struct Reflector<Engine::Input::GamepadButton>
+struct Reflector<CE::Input::GamepadButton>
 {
-    static Engine::MetaType Reflect();
+    static CE::MetaType Reflect();
     static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(GamepadButton, Engine::Input::GamepadButton);
+}; REFLECT_AT_START_UP(GamepadButton, CE::Input::GamepadButton);
 
 template<>
-struct Reflector<Engine::Input::MouseButton>
+struct Reflector<CE::Input::MouseButton>
 {
-    static Engine::MetaType Reflect();
+    static CE::MetaType Reflect();
     static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(MouseButton, Engine::Input::MouseButton);
+}; REFLECT_AT_START_UP(MouseButton, CE::Input::MouseButton);
 
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::Input::KeyboardKey>
+struct CE::EnumStringPairsImpl<CE::Input::KeyboardKey>
 {
     static constexpr EnumStringPairs<Input::KeyboardKey, 120> value = {
         EnumStringPair<Input::KeyboardKey>{ Input::KeyboardKey::Space, "Space" },
@@ -451,7 +463,7 @@ struct Engine::EnumStringPairsImpl<Engine::Input::KeyboardKey>
 };
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::Input::GamepadAxis>
+struct CE::EnumStringPairsImpl<CE::Input::GamepadAxis>
 {
     static constexpr EnumStringPairs<Input::GamepadAxis, 6> value = {
         EnumStringPair<Input::GamepadAxis>{ Input::GamepadAxis::StickLeftX, "StickLeftX" },
@@ -464,9 +476,9 @@ struct Engine::EnumStringPairsImpl<Engine::Input::GamepadAxis>
 };
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::Input::GamepadButton>
+struct CE::EnumStringPairsImpl<CE::Input::GamepadButton>
 {
-    static constexpr EnumStringPairs<Input::GamepadButton, 14> value = {
+    static constexpr EnumStringPairs<Input::GamepadButton, 16> value = {
         EnumStringPair<Input::GamepadButton>{ Input::GamepadButton::South, "South" },
         { Input::GamepadButton::East, "East" },
         { Input::GamepadButton::West, "West" },
@@ -480,14 +492,16 @@ struct Engine::EnumStringPairsImpl<Engine::Input::GamepadButton>
         { Input::GamepadButton::DPadUp, "DPadUp" },
         { Input::GamepadButton::DPadRight, "DPadRight" },
         { Input::GamepadButton::DPadDown, "DPadDown" },
-        { Input::GamepadButton::DPadLeft, "DPadLeft" }
+        { Input::GamepadButton::DPadLeft, "DPadLeft" },
+        { Input::GamepadButton::TriggerLeft, "TriggerLeft" },
+        { Input::GamepadButton::TriggerRight, "TriggerRight" }
     };
 };
 
 template<>
-struct Engine::EnumStringPairsImpl<Engine::Input::MouseButton>
+struct CE::EnumStringPairsImpl<CE::Input::MouseButton>
 {
-    static constexpr EnumStringPairs<Input::MouseButton, 14> value = {
+    static constexpr EnumStringPairs<Input::MouseButton, 3> value = {
         EnumStringPair<Input::MouseButton>{ Input::MouseButton::Left, "Left" },
         { Input::MouseButton::Right, "Right" },
         { Input::MouseButton::Middle, "Middle" },

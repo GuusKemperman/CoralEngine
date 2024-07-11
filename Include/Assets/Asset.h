@@ -1,19 +1,12 @@
 #pragma once
 #include "Meta/MetaReflect.h"
+#include "Assets/Core/AssetFileMetaData.h"
 
-namespace cereal
-{
-	class BinaryOutputArchive;
-	class BinaryInputArchive;
-}
-
-namespace Engine
+namespace CE
 {
 	class AssetLoadInfo;
 	class AssetSaveInfo;
 
-	class MetaType;
-	
 	class Asset
 	{
 	public:
@@ -33,12 +26,16 @@ namespace Engine
 		virtual ~Asset() = default;
 
 		Asset(Asset&&) noexcept = default;
-		Asset(const Asset&) = delete;
+		Asset(const Asset&) = default;
 
 		Asset& operator=(Asset&&) = delete;
-		Asset& operator=(const Asset&) = delete;
+		Asset& operator=(const Asset&) = default;
 
 		const std::string& GetName() const { return mName; }
+
+		// Note that this does not rename the asset in the asset manager, nor the asset on file.
+		void SetName(std::string_view name) { mName = std::string{ name }; }
+
 		TypeId GetTypeId() const { return mTypeId; }
 
 		/*
@@ -49,7 +46,7 @@ namespace Engine
 		In order to implement your own implementation
 		for saving an asset, override OnSave.
 		*/
-		[[nodiscard]] AssetSaveInfo Save() const;
+		[[nodiscard]] AssetSaveInfo Save(const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = std::nullopt) const;
 
 	private:
 		//********************************//
@@ -66,55 +63,4 @@ namespace Engine
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(Asset);
 	};
-
-	template<typename T>
-	static constexpr bool sIsAssetType = std::is_base_of_v<Asset, T>
-		&& std::is_constructible_v<Asset, AssetLoadInfo&>;
-
-#ifdef EDITOR
-	void InspectAsset(const std::string& name, std::shared_ptr<const Asset>& asset, TypeId assetClass);
-#endif // EDITOR
-
-	void SaveAssetReference(cereal::BinaryOutputArchive& ar, const std::shared_ptr<const Asset>& asset);
-	void LoadAssetReference(cereal::BinaryInputArchive& ar, std::shared_ptr<const Asset>& asset);
-}
-
-#ifdef EDITOR
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4201)
-#pragma warning(disable : 4201)
-#endif
-#include "imgui/auto.h"
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
-namespace ImGui
-{
-	template<typename AssetT>
-	struct Auto_t<std::shared_ptr<const AssetT>, std::enable_if_t<Engine::sIsAssetType<AssetT>>>
-	{
-		static void Auto(std::shared_ptr<const AssetT>& var, const std::string& name)
-		{
-			Engine::InspectAsset(name, reinterpret_cast<std::shared_ptr<const Engine::Asset>&>(var), Engine::MakeTypeId<AssetT>());
-		}
-		static constexpr bool sIsSpecialized = true;
-	};
-}
-#endif // EDITOR
-
-namespace cereal
-{
-	template<typename AssetT, std::enable_if_t<Engine::sIsAssetType<AssetT>, bool> = true>
-	void save(BinaryOutputArchive& ar, const std::shared_ptr<const AssetT>& value)
-	{
-		Engine::SaveAssetReference(ar, value);
-	}
-
-	template<typename AssetT, std::enable_if_t<Engine::sIsAssetType<AssetT>, bool> = true>
-	void load(BinaryInputArchive& ar, std::shared_ptr<const AssetT>& out)
-	{
-		LoadAssetReference(ar, reinterpret_cast<std::shared_ptr<const Engine::Asset>&>(out));
-	}
 }

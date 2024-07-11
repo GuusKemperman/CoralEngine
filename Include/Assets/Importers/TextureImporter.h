@@ -2,13 +2,13 @@
 #ifdef EDITOR
 #include "Assets/Importers/Importer.h"
 
-namespace Engine
+namespace CE
 {
 	class TextureImporter :
 		public Importer
 	{
 	public:
-		std::optional<std::vector<ImportedAsset>> Import(const std::filesystem::path& path) const override;
+		Importer::ImportResult Import(const std::filesystem::path& path) const override;
 
 		// Will assume one channel -> one byte
 		// Expected RGBA

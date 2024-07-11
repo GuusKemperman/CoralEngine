@@ -6,7 +6,7 @@
 #include "GSON/GSONBinary.h"
 #include "Core/AssetManager.h"
 
-Engine::Internal::NodeInvolvingScriptFunc::NodeInvolvingScriptFunc(const ScriptNodeType type, 
+CE::Internal::NodeInvolvingScriptFunc::NodeInvolvingScriptFunc(const ScriptNodeType type, 
 	ScriptFunc& scriptFunc, 
 	const Script& scriptThisFuncIsFrom) :
 	FunctionLikeNode(type, scriptFunc),
@@ -15,7 +15,7 @@ Engine::Internal::NodeInvolvingScriptFunc::NodeInvolvingScriptFunc(const ScriptN
 {
 }
 
-void Engine::Internal::NodeInvolvingScriptFunc::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
+void CE::Internal::NodeInvolvingScriptFunc::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
 {
 	ScriptNode::SerializeTo(to, scriptFunc);
 
@@ -24,7 +24,7 @@ void Engine::Internal::NodeInvolvingScriptFunc::SerializeTo(BinaryGSONObject& to
 }
 
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
-void Engine::Internal::NodeInvolvingScriptFunc::PostDeclarationRefresh(ScriptFunc& scriptFunc)
+void CE::Internal::NodeInvolvingScriptFunc::PostDeclarationRefresh(ScriptFunc& scriptFunc)
 {
 	mNameOfFunction = scriptFunc.GetName();
 
@@ -32,14 +32,14 @@ void Engine::Internal::NodeInvolvingScriptFunc::PostDeclarationRefresh(ScriptFun
 }
 #endif // REMOVE_FROM_SCRIPTS_ENABLED
 
-const Engine::ScriptFunc* Engine::Internal::NodeInvolvingScriptFunc::TryGetOriginalFunc() const
+const CE::ScriptFunc* CE::Internal::NodeInvolvingScriptFunc::TryGetOriginalFunc() const
 {
-	const std::shared_ptr<const Script> script = AssetManager::Get().TryGetAsset<Script>(mNameOfScriptAsset);
+	const AssetHandle<Script> script = AssetManager::Get().TryGetAsset<Script>(mNameOfScriptAsset);
 	
 	return script == nullptr ? nullptr : script->TryGetFunc(mNameOfFunction);
 }
 
-bool Engine::Internal::NodeInvolvingScriptFunc::DeserializeVirtual(const BinaryGSONObject& from)
+bool CE::Internal::NodeInvolvingScriptFunc::DeserializeVirtual(const BinaryGSONObject& from)
 {
 	if (!ScriptNode::DeserializeVirtual(from))
 	{
@@ -64,7 +64,7 @@ bool Engine::Internal::NodeInvolvingScriptFunc::DeserializeVirtual(const BinaryG
 	return true;
 }
 
-std::optional<Engine::FunctionLikeNode::InputsOutputs> Engine::FunctionEntryScriptNode::GetExpectedInputsOutputs(const ScriptFunc& scriptFunc) const
+std::optional<CE::FunctionLikeNode::InputsOutputs> CE::FunctionEntryScriptNode::GetExpectedInputsOutputs(const ScriptFunc& scriptFunc) const
 {
 	InputsOutputs insOuts{};
 
@@ -79,7 +79,7 @@ std::optional<Engine::FunctionLikeNode::InputsOutputs> Engine::FunctionEntryScri
 	return insOuts;
 }
 
-std::optional<Engine::FunctionLikeNode::InputsOutputs> Engine::FunctionReturnScriptNode::GetExpectedInputsOutputs(const ScriptFunc& scriptFunc) const
+std::optional<CE::FunctionLikeNode::InputsOutputs> CE::FunctionReturnScriptNode::GetExpectedInputsOutputs(const ScriptFunc& scriptFunc) const
 {
 	InputsOutputs insOuts{};
 

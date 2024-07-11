@@ -1,8 +1,11 @@
 #include "Precomp.h"
+
+#include <GLFW/glfw3.h>
+
 #include "Core/Input.h"
 #include "Core/Device.h"
 
-using namespace Engine;
+using namespace CE;
 
 enum KeyAction
 {
@@ -28,15 +31,15 @@ namespace
     bool gamepad_connected[max_nr_gamepads];
     GLFWgamepadstate gamepad_state[max_nr_gamepads];
     GLFWgamepadstate prev_gamepad_state[max_nr_gamepads];
+    // Triggers as buttons.
+    // TriggerRight - index 0
+    // TriggerLeft  - index 1
+    std::array<std::array<bool, 2>, max_nr_gamepads> triggers_state = {};
+    std::array<std::array<bool, 2>, max_nr_gamepads> prev_triggers_state = {};
 
     glm::vec2 mousepos;
+    glm::vec2 previousmousepos;
     float mousewheelDelta = 0;
-
-    void cursor_position_callback(GLFWwindow*, double xpos, double ypos)
-    {
-        mousepos.x = (float)xpos;
-        mousepos.y = (float)ypos;
-    }
 
     void scroll_callback(GLFWwindow*, double, double yoffset) { mousewheelDelta = (float)yoffset; }
 
@@ -53,10 +56,14 @@ namespace
 
 Input::Input()
 {
+    if (Device::IsHeadless())
+    {
+        return;
+    }
+
     GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
 
     // glfwSetJoystickCallback(joystick_callback);
-    glfwSetCursorPosCallback(window, cursor_position_callback);
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mousebutton_callback);
     glfwSetScrollCallback(window, scroll_callback);
@@ -64,6 +71,11 @@ Input::Input()
 
 Input::~Input()
 {
+    if (Device::IsHeadless())
+    {
+        return;
+    }
+
     GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
     
     // glfwSetJoystickCallback(NULL);
@@ -72,6 +84,7 @@ Input::~Input()
 
 void Input::NewFrame()
 {
+    previousmousepos = mousepos;
     glfwPollEvents();
 
     // update keyboard key states
@@ -101,13 +114,32 @@ void Input::NewFrame()
     }
 
     // update gamepad states
+    prev_triggers_state = triggers_state;
     for (int i = 0; i < max_nr_gamepads; ++i)
     {
         prev_gamepad_state[i] = gamepad_state[i];
 
         if (glfwJoystickPresent(i) && glfwJoystickIsGamepad(i))
             gamepad_connected[i] = static_cast<bool>(glfwGetGamepadState(i, &gamepad_state[i]));
+
+        // Triggers as buttons
+        triggers_state[i][0] = IsGamepadButtonHeld(i, GamepadButton::TriggerRight, false);
+        triggers_state[i][1] = IsGamepadButtonHeld(i, GamepadButton::TriggerLeft, false);
     }
+
+    GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
+
+    double mouse_x, mouse_y;
+    glfwGetCursorPos(window, &mouse_x, &mouse_y);
+
+    // Multi-viewport mode: mouse position in OS absolute coordinates (io.MousePos is (0,0) when the mouse is on the upper-left of the primary monitor)
+    int window_x, window_y;
+    glfwGetWindowPos(window, &window_x, &window_y);
+    mouse_x += window_x;
+    mouse_y += window_y;
+    
+    mousepos.x = static_cast<float>(mouse_x);
+    mousepos.y = static_cast<float>(mouse_y);
 }
 
 bool Input::IsGamepadAvailable(int gamepadID) const
@@ -125,7 +157,14 @@ float Input::GetGamepadAxis(int gamepadID, GamepadAxis axis, bool checkFocus) co
 
     int a = static_cast<int>(axis);
     ASSERT(a >= 0 && a <= GLFW_GAMEPAD_AXIS_LAST);
-    return gamepad_state[gamepadID].axes[a];
+
+    float result = gamepad_state[gamepadID].axes[a];
+    if (axis == GamepadAxis::TriggerLeft || axis == GamepadAxis::TriggerRight)
+    {
+        result = result * 0.5f + 0.5f;
+    }
+
+    return result;
 }
 
 bool Input::IsGamepadButtonHeld(int gamepadID, GamepadButton button, bool checkFocus) const
@@ -135,6 +174,16 @@ bool Input::IsGamepadButtonHeld(int gamepadID, GamepadButton button, bool checkF
     {
         return false;
     }
+
+    if (button == GamepadButton::TriggerRight)
+    {
+        return GetGamepadAxis(gamepadID, GamepadAxis::TriggerRight, checkFocus) > sTriggerThreshold;
+    }
+    if (button == GamepadButton::TriggerLeft)
+    {
+        return GetGamepadAxis(gamepadID, GamepadAxis::TriggerLeft, checkFocus) > sTriggerThreshold;
+    }
+
     int b = static_cast<int>(button);
     ASSERT(b >= 0 && b <= GLFW_GAMEPAD_BUTTON_LAST);
     return static_cast<bool>(gamepad_state[gamepadID].buttons[b]);
@@ -146,6 +195,13 @@ bool Input::WasGamepadButtonPressed(int gamepadID, GamepadButton button, bool ch
         || !HasFocus(checkFocus))
     {
         return false;
+    }
+
+    if (button == GamepadButton::TriggerRight || button == GamepadButton::TriggerLeft)
+    {
+        const int index = static_cast<int>(GamepadButton::TriggerRight) - static_cast<int>(button);
+        return triggers_state[gamepadID][index] == true &&
+            triggers_state[gamepadID][index] != prev_triggers_state[gamepadID][index];
     }
 
     int b = static_cast<int>(button);
@@ -161,6 +217,13 @@ bool Input::WasGamepadButtonReleased(int gamepadID, GamepadButton button, bool c
         || !HasFocus(checkFocus))
     {
         return false;
+    }
+
+    if (button == GamepadButton::TriggerRight || button == GamepadButton::TriggerLeft)
+    {
+        const int index = static_cast<int>(GamepadButton::TriggerRight) - static_cast<int>(button);
+        return triggers_state[gamepadID][index] == false &&
+            triggers_state[gamepadID][index] != prev_triggers_state[gamepadID][index];
     }
 
     int b = static_cast<int>(button);
@@ -206,6 +269,8 @@ bool Input::WasMouseButtonReleased(MouseButton button, bool checkFocus) const
 }
 
 glm::vec2 Input::GetMousePosition() const { return mousepos; }
+
+glm::vec2 Input::GetDeltaMousePosition() const { return mousepos - previousmousepos; }
 
 float Input::GetMouseWheel(bool checkFocus) const
 {
@@ -275,7 +340,8 @@ float Input::GetKeyboardAxis(KeyboardKey positive, KeyboardKey negative, bool ch
 bool Input::HasFocus() const
 {
 #ifdef EDITOR
-    return ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+    return !Device::IsHeadless()  // ImGui may not have been initialised
+		&& ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 #else
     // No editor windows, so assume we always have focus.
     return true;

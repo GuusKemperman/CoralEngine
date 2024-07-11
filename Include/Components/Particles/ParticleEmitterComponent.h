@@ -1,13 +1,13 @@
 #pragma once
 #include "BasicDataTypes/Bezier.h"
 #include "Meta/MetaReflect.h"
+#include "Components/Particles/ParticleUtilities/ParticleUtilitiesFwd.h"
 
-namespace Engine
+namespace CE
 {
 	class ParticleEmitterComponent
 	{
 	public:
-
 		bool IsPaused() const { return mIsPaused; }
 		bool IsPlaying() const { return mCurrentTime <= mDuration; }
 
@@ -16,14 +16,25 @@ namespace Engine
 		bool DidParticleJustSpawn(const uint32 particle) const { return mParticleTimeAsPercentage[particle] == 0.0f; }
 		bool IsParticleAlive(const uint32 particle) const { return mParticleTimeAsPercentage[particle] <= 1.0f; }
 
-		Span<glm::vec3> GetParticlePositions() { return mParticlePositions; }
-		Span<const glm::vec3> GetParticlePositions() const { return mParticlePositions; }
+		glm::mat4 GetParticleMatrixFast(uint32 particle) const;
+		glm::mat4 GetParticleMatrixWorld(uint32 particle) const;
 
-		Span<glm::vec3> GetParticleSizes() { return mParticleScales; }
-		Span<const glm::vec3> GetParticleSizes() const { return mParticleScales; }
+		glm::vec3 GetParticlePositionFast(uint32 particle) const;
+		void SetParticlePositionFast(uint32 particle, glm::vec3 position);
 
-		Span<glm::quat> GetParticleOrientations() { return mParticleOrientations; }
-		Span<const glm::quat> GetParticleOrientations() const { return mParticleOrientations; }
+		glm::vec3 GetParticlePositionWorld(uint32 particle) const;
+		void SetParticlePositionWorld(uint32 particle, glm::vec3 position);
+
+		glm::vec3 GetParticleScaleFast(uint32 particle) const;
+
+		// Reaallyy slow
+		glm::vec3 GetParticleScaleWorld(uint32 particle) const;
+
+		glm::quat GetParticleOrientationFast(uint32 particle) const;
+		void SetParticleOrientationFast(uint32 particle, glm::quat orientation);
+
+		glm::quat GetParticleOrientationWorld(uint32 particle) const;
+		void SetParticleOrientationWorld(uint32 particle, glm::quat orientation);
 
 		Span<float> GetParticleLifeTimesAsPercentage() { return mParticleTimeAsPercentage; }
 		Span<const float> GetParticleLifeTimesAsPercentage() const { return mParticleTimeAsPercentage; }
@@ -31,25 +42,18 @@ namespace Engine
 		Span<float> GetParticleLifeSpans() { return mParticleLifeSpan; }
 		Span<const float> GetParticleLifeSpans() const { return mParticleLifeSpan; }
 
-		Span<const size_t> GetParticlesThatSpawnedDuringLastStep() const { return mParticlesSpawnedDuringLastStep; }
-		Span<const size_t> GetParticlesThatDiedDuringLastStep() const { return mParticlesThatDiedDuringLastStep; }
+		Span<const uint32> GetParticlesThatSpawnedDuringLastStep() const { return mParticlesSpawnedDuringLastStep; }
+		Span<const uint32> GetParticlesThatDiedDuringLastStep() const { return mParticlesThatDiedDuringLastStep; }
 
 		void PlayFromStart();
 
 		uint32 mNumOfParticlesToSpawn{ 1000 };
 		Bezier mParticleSpawnRateOverTime{};
 
-		glm::vec3 mMinInitialLocalPosition{};
-		glm::vec3 mMaxInitialLocalPosition{};
-
-		glm::vec3 mMinInitialScale{ 1.0f };
-		glm::vec3 mMaxInitialScale{ 1.0f };
-
-		glm::vec3 mMinInitialOrientation{};
-		glm::vec3 mMaxInitialOrientation{};
-
 		float mMinLifeTime = 1.0f;
 		float mMaxLifeTime = 10.0f;
+
+		bool mAreTransformsRelativeToEmitter{};
 
 		bool mLoop = true;
 		bool mKeepExistingParticlesAliveWhenRestartingLoop = true;
@@ -58,9 +62,16 @@ namespace Engine
 		float mDuration = 10.0f;
 		float mCurrentTime{};
 
-	private:
-		void OnParticleSpawn(size_t particle, glm::quat emitterWorldOrientaton, glm::vec3 emitterWorldScale, const glm::mat4& emitterMatrix);
+		glm::mat4 mEmitterWorldMatrix = glm::mat4{ 1.0f };
+		glm::mat4 mInverseEmitterWorldMatrix = glm::inverse(mEmitterWorldMatrix);
 
+		glm::quat mEmitterOrientation = { 1.0f, 0.0f, 0.0f, 0.0f };
+		glm::quat mInverseEmitterOrientation = glm::inverse(mEmitterOrientation);
+
+		bool mKeepParticlesAliveWhenEmitterIsDestroyed = true;
+		bool mOnlyStayAliveUntilExistingParticlesAreGone = false;
+
+	private:
 		friend class ParticleLifeTimeSystem;
 
 		friend ReflectAccess;
@@ -70,14 +81,14 @@ namespace Engine
 		// We make these vectors private to prevent users from resizing these directly, 
 		// but their contents can be modified using the mutable span getters.
 		std::vector<glm::vec3> mParticlePositions{};
-		std::vector<glm::vec3> mParticleScales{};
+		ParticleProperty<glm::vec3> mScale{ glm::vec3{ 1.0f } };
 		std::vector<glm::quat> mParticleOrientations{};
 
 		std::vector<float> mParticleTimeAsPercentage{};
 		std::vector<float> mParticleLifeSpan{};
 
-		std::vector<size_t> mParticlesSpawnedDuringLastStep{};
-		std::vector<size_t> mParticlesThatDiedDuringLastStep{};
+		std::vector<uint32> mParticlesSpawnedDuringLastStep{};
+		std::vector<uint32> mParticlesThatDiedDuringLastStep{};
 
 		// Why is this a float you might ask?
 		// If you want to, for example, spawn .5f particles per frame, you can't do anything the first frame, as you can't spawn half a particle.

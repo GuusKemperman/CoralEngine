@@ -1,7 +1,7 @@
 #pragma once
 #include "AssetFileMetaData.h"
 
-namespace Engine
+namespace CE
 {
 	class AssetSaveInfo;
 
@@ -23,9 +23,8 @@ namespace Engine
 		static std::optional<AssetLoadInfo> LoadFromStream(std::unique_ptr<std::istream> stream);
 
 		std::istream& GetStream() { return *mStream; }
-		uint32 GetVersion() const { return mMetaData->mAssetVersion; }
-		const MetaType& GetAssetClass() const { return mMetaData->GetClass(); }
-		const std::string& GetName() const { return mMetaData->GetName(); }
+
+		const AssetFileMetaData& GetMetaData() const { return *mMetaData; }
 
 	private:
 		// Returns true on succes

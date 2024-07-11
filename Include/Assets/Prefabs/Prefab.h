@@ -3,7 +3,7 @@
 
 #include "Assets/Prefabs/PrefabEntityFactory.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 
@@ -21,6 +21,11 @@ namespace Engine
 		Prefab(std::string_view name);
 		Prefab(AssetLoadInfo& loadInfo);
 		Prefab(Prefab&& other) noexcept;
+
+		Prefab(const Prefab&) = delete;
+
+		Prefab& operator=(Prefab&&) = delete;
+		Prefab& operator=(const Prefab&) = delete;
 
 		~Prefab() override;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Engine
+namespace CE
 {
     // Specialize this struct to have enum-string conversions for your custom enum.
     template<typename EnumType>
@@ -37,9 +37,6 @@ namespace Engine
 
     template<typename EnumType>
     static constexpr std::string_view EnumToString(const EnumType& value);
-
-    template<typename EnumType, typename... EnumStringPairs>
-    static CONSTEVAL std::array<std::pair<EnumType, std::string_view>, sizeof...(EnumStringPairs)> MakeEnumStringPairs(EnumStringPairs&&... pairs);
 
     //**************************//
 	//		Implementation		//

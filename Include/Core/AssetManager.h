@@ -1,26 +1,26 @@
 #pragma once
 #include "Core/EngineSubsystem.h"
 
+#include <forward_list>
+
 #include "Assets/Asset.h"
 #include "Assets/Core/AssetFileMetaData.h"
-#include "Meta/MetaTypeId.h"
+#include "Assets/Core/AssetHandle.h"
+#include "Assets/Core/AssetInternal.h"
 #include "Meta/MetaManager.h"
-#include "Assets/Importers/Importer.h"
-#include "Utilities/MemFunctions.h"
 
-namespace Engine
+namespace CE
 {
 	template<typename T>
-	class WeakAsset;
+	class WeakAssetHandle;
 
 	class AssetManager final :
 		public EngineSubsystem<AssetManager>
 	{
 		friend class EngineSubsystem<AssetManager>;
-		AssetManager();
-		~AssetManager();
-
 		void PostConstruct() override;
+
+		~AssetManager();
 
 	public:
 
@@ -33,16 +33,16 @@ namespace Engine
 			Otherwise returns the shared_ptr to the asset.
 
 		Example:
-			std::shared_ptr<const Prefab> player = AssetManager::Get().TryGetAsset<Prefab>("Player"_Name);
-			std::shared_ptr<const StaticMesh> mesh = AssetManager::Get().TryGetAsset<StaticMesh>(Name{ meshNameAsString });
+			AssetHandle<Prefab> player = AssetManager::Get().TryGetAsset<Prefab>("Player"_Name);
+			AssetHandle<StaticMesh> mesh = AssetManager::Get().TryGetAsset<StaticMesh>(Name{ meshNameAsString });
 
 			if (player != nullptr && mesh != nullptr) DoThing(player, mesh)
 		*/
 		template<typename T = Asset>
-		std::shared_ptr<const T> TryGetAsset(Name key);
+		AssetHandle<T> TryGetAsset(Name key);
 
 		/*
-		Get an asset which doesn't necessarily need to be loaded in. (See WeakAsset).
+		Get an asset which doesn't necessarily need to be loaded in. (See WeakAssetHandle).
 		
 		If you are unsure wether to call TryGetAsset or TryGetWeakAsset, 
 		nine times out of ten you would use TryGetAsset. In some rare cases 
@@ -53,13 +53,13 @@ namespace Engine
 		Returns:
 			If the asset does not exist, this will return nullopt.
 			If the asset is of a different class, this will return nullopt.
-			Otherwise returns the WeakAsset.
+			Otherwise returns the WeakAssetHandle.
 
 		Example:
-			std::optional<WeakAsset<Level>> autoSave = AssetManager::Get().TryGetWeakAsset<Level>("AutoSave"_Name);
+			WeakAssetHandle<Level> autoSave = AssetManager::Get().TryGetWeakAsset<Level>("AutoSave"_Name);
 
-			if (!autoSave.has_value() // We can test to see if an asset exists without having to load it in.
-				|| autoSave->GetVersion() < ClassVersion_v<Level>) // We have access to some metadata without having to load it in.
+			if (autoSave != nullptr // We can test to see if an asset exists without having to load it in.
+				|| autoSave.GetMetaData().GetAssetVersion() < 42) // We have access to some metadata without having to load it in.
 			{
 				LOG(LogGame, Warning, "Autosave does not exist or is out of date");
 				return;
@@ -68,12 +68,12 @@ namespace Engine
 			if (ImGui::Button("Revert to autosave?")
 			{
 				// Only if the user presses the button do we decide to load the level in.
-				std::shared_ptr<const Level> loadedLevel = autoSave->MakeShared();
+				AssetHandle<Level> loadedLevel{ autoSave };
 				DoThing(loadedLevel);
 			}
 		*/
 		template<typename T = Asset>
-		std::optional<WeakAsset<T>> TryGetWeakAsset(Name key);
+		WeakAssetHandle<T> TryGetWeakAsset(Name key);
 
 		/*
 		If you want to save on memory, it is recommended to call this every frame
@@ -85,25 +85,53 @@ namespace Engine
 		*/
 		void UnloadAllUnusedAssets();
 
-		/*
-		Returns all the assets
-		*/
-		std::vector<WeakAsset<Asset>> GetAllAssets();
+		template<typename AssetType>
+		class EachAssetIt
+		{
+		public:
+			using value_type = WeakAssetHandle<AssetType>;
+			using ContainerType = std::forward_list<Internal::AssetInternal>;
+			using UnderlyingIt = ContainerType::iterator;
 
-#ifdef EDITOR
-		/*
-		Imports the specified path, for example ruins.gltf.
-		The GLTFImporter then returns all the assets inside
-		ruins.gltf, each of which is then stored in their own
-		.asset file.
+			EachAssetIt(UnderlyingIt&& it, ContainerType& container);
 
-		Note that the assets may not immediately be available;
-		importing could mean swapping out existing assets, and
-		since it's saver to do this when all assets are unreferenced.
-		this is done at the end of the frame.
+			decltype(auto) operator*() const;
+
+			decltype(auto) operator->() const;
+
+			EachAssetIt& operator++();
+			EachAssetIt operator++(int);
+
+			constexpr bool operator==(const EachAssetIt& b) const;
+			constexpr bool operator!=(const EachAssetIt& b) const;
+
+		private:
+			void IncrementUntilTypeMatches();
+
+			UnderlyingIt mIt;
+			std::reference_wrapper<ContainerType> mContainer;
+		};
+
+		/*
+		Returns all the assets of the given type
 		*/
-		void Import(const std::filesystem::path& path);
-#endif
+		template<typename T = Asset>
+		IterableRange<EachAssetIt<T>> GetAllAssets();
+
+		/*
+		Rename the asset
+
+		Will fail if there is already an asset with this name.
+
+		Returns true on success.
+		*/
+		void RenameAsset(WeakAssetHandle<> asset, std::string_view newName);
+
+		/*
+		Will delete the file the asset originated from.
+		The asset can then no longer be found through the asset manager.
+		*/
+		void DeleteAsset(WeakAssetHandle<>&& asset);
 
 		/*
 		Move the asset file.
@@ -113,12 +141,19 @@ namespace Engine
 
 		Returns true on success.
 		*/
-		bool MoveAsset(WeakAsset<Asset> asset, const std::filesystem::path& toFile);
+		bool MoveAsset(WeakAssetHandle<> asset, const std::filesystem::path& toFile);
+
+		/*
+		Duplicates the asset.
+
+		Returns the duplicated asset on success.
+		*/
+		WeakAssetHandle<> Duplicate(WeakAssetHandle<> asset, const std::filesystem::path& copyPath);
 
 		/*
 		Will load the asset from the specified path.
 		*/
-		std::optional<WeakAsset<Asset>> AddAsset(const std::filesystem::path& path);
+		WeakAssetHandle<> NewAsset(const MetaType& assetClass, const std::filesystem::path& path);
 
 		/*
 		Add an asset generated at runtime to the asset manager.
@@ -130,174 +165,136 @@ namespace Engine
 		if you want to remove the asset.
 		*/
 		template<typename T>
-		std::shared_ptr<const T> AddAsset(T&& generatedAsset);
+		AssetHandle<T> AddAsset(T&& generatedAsset);
 
 		/*
-		Will delete the file the asset originated from.
-		The asset can then no longer be found through the asset manager.
-
-		WARNING: All WeakAssets referencing this asset, including the one passed
-		in as an argument, will be invalidated and become dangling.
-
-		Existing Shared pointers will not be invalided.
+		Will load the asset from the specified path.
 		*/
-		void DeleteAsset(WeakAsset<Asset>&& asset);
+		WeakAssetHandle<> OpenAsset(const std::filesystem::path& path);
 
 		static inline constexpr std::string_view sAssetExtension = ".asset";
+		static inline constexpr std::string_view sRenameExtension = ".rename";
 
 	private:
+		// Will attempt to bring all assets up to
+		// date to their latest version
+		void UpdateAssetsToLatestVersions();
+
+		static bool ReplaceMetaData(const std::filesystem::path& path, const AssetFileMetaData& metaData);
+
+		// Made a friend, as the AssetManager is the only one
+		// allowed to create weak assets. We have a ToWeakAsset function
+		// that EachAssetT is allowed to use, without exposing the constructor
+		// of WeakAssetHandle to our users.
 		template<typename T>
-		friend class WeakAsset;
+		friend class EachAssetT;
 
-		// A potentially unloaded asset.
-		class AssetInternal
-		{
-		public:
-			AssetInternal(AssetFileMetaData&& metaData, const std::optional<std::filesystem::path>& path);
+		std::forward_list<Internal::AssetInternal> mAssets{};
+		std::unordered_map<Name::HashType, std::reference_wrapper<Internal::AssetInternal>> mLookUp{};
 
-			AssetFileMetaData mMetaData;
+		Internal::AssetInternal* TryGetAssetInternal(Name key, TypeId typeId);
+		Internal::AssetInternal* TryGetLoadedAssetInternal(Name key, TypeId typeId);
 
-			// The .asset file. Is only nullopt if this
-			// asset was generated at runtime, and no path
-			// was provided by the user.
-			std::optional<std::filesystem::path> mFileOfOrigin{};
-
-			/*
-			We're not using a weak_ptr; it'd be wasteful
-			if we unloaded it, then have to load it back
-			in later in the frame.
-
-			If ref count == 1, the asset will be
-			unloaded when UnloadAllUnusedAssets is
-			called.
-			*/
-			std::shared_ptr<Asset> mAsset{};
-		};
-		std::unordered_map<Name::HashType, AssetInternal> mAssets{};
-
-		void OpenDirectory(const std::filesystem::path& directory);
-
-		AssetInternal* TryGetAssetInternal(Name key, TypeId typeId);
-		AssetInternal* TryGetLoadedAssetInternal(Name key, TypeId typeId);
-
-		void Load(AssetInternal& asset);
-		void Unload(AssetInternal& asset);
-
-#ifdef EDITOR
-		static bool WasImportedFrom(const AssetInternal& asset, const std::filesystem::path& file);
-
-		void ImportInternal(const std::filesystem::path& path, bool refreshEngine);
-
-		std::pair<TypeId, const Importer*> TryGetImporterForExtension(const std::filesystem::path& extension) const;
-
-		// Importers are created using the runtime reflection system,
-		// which uses placement new for the constructing of objects.
-		// Hence, the custom deleter
-		std::vector<std::pair<TypeId, std::unique_ptr<Importer, InPlaceDeleter<Importer, true>>>> mImporters{};
-#endif // EDITOR
-
-		AssetInternal* TryConstruct(const std::filesystem::path& path);
-		AssetInternal* TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData);
+		Internal::AssetInternal* TryConstruct(const std::filesystem::path& path);
+		Internal::AssetInternal* TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData);
 	};
 
-	/*
-	An asset that may or may not be loaded in, but does offer 
-	access to some metadata that is always available.
-	
-	WeakAsset is based on std::weak_ptr; WeakAssets do not 
-	influence the reference count.
-	*/
-	template<typename T = Asset>
-	class WeakAsset
+	template <typename AssetType>
+	constexpr bool AssetManager::EachAssetIt<AssetType>::operator==(const EachAssetIt& b) const
 	{
-		friend class AssetManager;
-		WeakAsset(AssetManager::AssetInternal& assetInternal) : mAssetInternal(assetInternal) {};
+		return mIt == b.mIt;
+	}
 
-	public:
-		WeakAsset(const WeakAsset& other) = default;
-		WeakAsset(WeakAsset&& other) noexcept = default;
-
-		~WeakAsset() = default;
-
-		WeakAsset& operator=(const WeakAsset&) = default;
-		WeakAsset& operator=(WeakAsset&&) = default;
-
-		const std::string& GetName() const { return mAssetInternal.get().mMetaData.GetName(); }
-
-		const MetaType& GetAssetClass() const { return mAssetInternal.get().mMetaData.GetClass(); }
-
-		bool IsLoaded() const { return mAssetInternal.get().mAsset != nullptr; }
-
-		size_t NumOfReferences() const { return mAssetInternal.get().mAsset.use_count(); }
-
-		uint32 GetVersion() const { return mAssetInternal.get().mMetaData.GetVersion(); }
-
-		std::shared_ptr<const T> MakeShared() const
-		{
-			if (!IsLoaded())
-			{
-				AssetManager::Get().Load(mAssetInternal);
-				ASSERT(IsLoaded());
-			}
-
-			return std::static_pointer_cast<const T>(mAssetInternal.get().mAsset);
-		}
-
-		// May return either a .asset file. Will be nullopt if this was a generated asset.
-		std::optional<std::filesystem::path> GetFileOfOrigin() const { return mAssetInternal.get().mFileOfOrigin; }
-
-		std::optional<std::filesystem::path> GetImportedFromFile() const
-		{
-			const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = mAssetInternal.get().mMetaData.GetImporterInfo();
-			return importerInfo.has_value() ? importerInfo->mImportedFile : std::optional<std::filesystem::path>{};
-		}
-
-	private:
-		std::reference_wrapper<AssetManager::AssetInternal> mAssetInternal;
-
-		template<typename To, typename From>
-		friend WeakAsset<To> WeakAssetStaticCast(WeakAsset<From>);
-	};
-
-	// TODO write dynamic cast as well
-	template<typename To, typename From>
-	WeakAsset<To> WeakAssetStaticCast(WeakAsset<From> other)
+	template <typename AssetType>
+	constexpr bool AssetManager::EachAssetIt<AssetType>::operator!=(const EachAssetIt& b) const
 	{
-		return WeakAsset<To>{ other.mAssetInternal };
+		return mIt != b.mIt;
 	}
 
 	template<typename T>
-	std::shared_ptr<const T> AssetManager::TryGetAsset(const Name key)
+	AssetHandle<T> AssetManager::TryGetAsset(const Name key)
 	{
-		const auto* assetInternal = TryGetLoadedAssetInternal(key, MakeTypeId<T>());
-		return assetInternal == nullptr ? nullptr : std::static_pointer_cast<const T>(assetInternal->mAsset);
-	}
-
-	template<typename T>
-	std::optional<WeakAsset<T>> AssetManager::TryGetWeakAsset(const Name key)
-	{
-		AssetInternal* assetInternal = TryGetAssetInternal(key, MakeTypeId<T>());
-
-		if (assetInternal == nullptr)
-		{
-			return std::nullopt;
-		}
-
-		return WeakAsset<T>{ *assetInternal };
+		return { TryGetAssetInternal(key, MakeTypeId<T>()) };
 	}
 
 	template <typename T>
-	std::shared_ptr<const T> AssetManager::AddAsset(T&& generatedAsset)
+	WeakAssetHandle<T> AssetManager::TryGetWeakAsset(Name key)
 	{
-		AssetInternal* const assetInternal = TryConstruct(std::nullopt, AssetFileMetaData{ generatedAsset.GetName(), MetaManager::Get().GetType<T>() });
+		return { TryGetAssetInternal(key, MakeTypeId<T>()) };
+	}
 
-		if (assetInternal == nullptr)
+	template <typename AssetType>
+	AssetManager::EachAssetIt<AssetType>::EachAssetIt(UnderlyingIt&& it, ContainerType& container) :
+		mIt(std::move(it)),
+		mContainer(container)
+	{
+		// Not really a traditional iterator i suppose,
+		// but good enough for our purposes.
+		if (mIt == mContainer.get().begin()
+			&& !mIt->mMetaData.GetClass().IsDerivedFrom<AssetType>())
 		{
-			return nullptr;
+			IncrementUntilTypeMatches();
+		}
+	}
+
+	template <typename AssetType>
+	decltype(auto) AssetManager::EachAssetIt<AssetType>::operator*() const
+	{
+		return WeakAssetHandle<AssetType>{ &*mIt };
+	}
+
+	template <typename AssetType>
+	decltype(auto) AssetManager::EachAssetIt<AssetType>::operator->() const
+	{
+		return **this;
+	}
+
+	template <typename AssetType>
+	AssetManager::EachAssetIt<AssetType>& AssetManager::EachAssetIt<AssetType>::operator++()
+	{
+		IncrementUntilTypeMatches();
+		return *this;
+	}
+
+	template <typename AssetType>
+	AssetManager::EachAssetIt<AssetType> AssetManager::EachAssetIt<AssetType>::operator++(int)
+	{
+		EachAssetIt tmp = *this; ++(*this); return tmp;
+	}
+
+	template <typename AssetType>
+	void AssetManager::EachAssetIt<AssetType>::IncrementUntilTypeMatches()
+	{
+		if constexpr (std::is_same_v<Asset, AssetType>)
+		{
+			++mIt;
+		}
+		else
+		{
+			do
+			{
+				++mIt;
+			} while (mIt != mContainer.get().end()
+				&& !mIt->mMetaData.GetClass().IsDerivedFrom<AssetType>());
+		}
+	}
+
+	template <typename T>
+	IterableRange<AssetManager::EachAssetIt<T>> AssetManager::GetAllAssets()
+	{
+		return { { mAssets.begin(), mAssets }, { mAssets.end(), mAssets } };
+	}
+
+	template <typename T>
+	AssetHandle<T> AssetManager::AddAsset(T&& generatedAsset)
+	{
+		Internal::AssetInternal* internalAsset = TryConstruct(std::nullopt, AssetFileMetaData{ generatedAsset.GetName(), MetaManager::Get().GetType<T>() });
+
+		if (internalAsset != nullptr)
+		{
+			internalAsset->mAsset = MakeUniqueInPlace<T, Asset>(std::move(generatedAsset));
 		}
 
-		std::shared_ptr<T> ptr = std::make_shared<T>(std::forward<T>(generatedAsset));
-		assetInternal->mAsset = ptr;
-		return ptr;
+		return { internalAsset };
 	}
 }

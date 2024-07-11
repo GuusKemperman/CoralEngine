@@ -8,14 +8,16 @@
   <PropertyGroup>
     <OutDir>$(GameDir)Build/$(Platform)/$(Configuration)/</OutDir>
     <IntDir>$(GameDir)Intermediate/$(Platform)/$(Configuration)/</IntDir>
-    <TargetName>$(ProjectName)</TargetName>
+    <TargetName>Lichgate</TargetName>
     <LocalDebuggerWorkingDirectory>$(EngineDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(GameDir)Include/$(ProjectName);$(GameDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>GAME_DIR=R"($(GameDir))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GAME_DIR=R"(Games/$(ProjectName)/)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <BuildMacro Include="EngineDir">

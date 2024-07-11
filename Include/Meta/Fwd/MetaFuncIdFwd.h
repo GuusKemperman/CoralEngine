@@ -1,7 +1,7 @@
 #pragma once
 #include "MetaTypeTraitsFwd.h"
 
-namespace Engine
+namespace CE
 {
 	using FuncId = uint32;
 

@@ -5,7 +5,7 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 
-Engine::ImportedAsset Engine::PrefabImporter::MakePrefabFromEntity(const std::filesystem::path& importedFromFile, 
+CE::ImportedAsset CE::PrefabImporter::MakePrefabFromEntity(const std::filesystem::path& importedFromFile, 
     const std::string& name, 
     const uint32 importerVersion, 
     World& world, 

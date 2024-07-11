@@ -8,7 +8,7 @@
 #include "Meta/MetaManager.h"
 
 template <typename TypeT, typename ... Args>
-Engine::MetaType::MetaType(T<TypeT>, const std::string_view name, Args&&... args) :
+CE::MetaType::MetaType(T<TypeT>, const std::string_view name, Args&&... args) :
 	MetaType(MakeTypeInfo<TypeT>(), name)
 {
 	(
@@ -66,17 +66,14 @@ Engine::MetaType::MetaType(T<TypeT>, const std::string_view name, Args&&... args
 }
 
 template<typename FuncPtr, typename... Args>
-Engine::MetaFunc& Engine::MetaType::AddFunc(FuncPtr&& funcPtr, const MetaFunc::NameOrTypeInit nameOrType, Args&& ...args)
+CE::MetaFunc& CE::MetaType::AddFunc(FuncPtr&& funcPtr, const MetaFunc::NameOrTypeInit nameOrType, Args&& ...args)
 {
-	auto result = mFunctions.emplace(std::piecewise_construct,
-		std::forward_as_tuple(nameOrType),
-		std::forward_as_tuple(std::forward<FuncPtr>(funcPtr), nameOrType, std::forward<Args>(args)...));
-
+	const auto result = mFunctions.emplace(nameOrType, MetaFunc{ std::forward<FuncPtr>(funcPtr), nameOrType, std::forward<Args>(args)... });
 	return result->second;
 }
 
 template<typename ...Args>
-Engine::MetaField& Engine::MetaType::AddField([[maybe_unused]] Args&& ... args)
+CE::MetaField& CE::MetaType::AddField([[maybe_unused]] Args&& ... args)
 {
 	MetaField& returnValue = mFields.emplace_back(*this, std::forward<Args>(args)...);
 
@@ -92,17 +89,26 @@ Engine::MetaField& Engine::MetaType::AddField([[maybe_unused]] Args&& ... args)
 	return returnValue;
 }
 
+namespace CE::Internal
+{
+	template <typename TypeT, typename... ParamsT, size_t... Indices>
+	void ConstructObjectImpl(MetaFunc::DynamicArgs& runtimeArgs,
+		MetaFunc::RVOBuffer rvoBuffer,
+		std::index_sequence<Indices...>)
+	{
+		new (rvoBuffer) TypeT(UnpackSingle<ParamsT, Indices>(runtimeArgs)...);
+	}
+}
+
 template<typename TypeT, typename... Args>
-void Engine::MetaType::AddFromArg(Ctor<Args...>)
+void CE::MetaType::AddFromArg(Ctor<Args...>)
 {
 	AddFunc(
-		// Maybe_unused is there in case sizeo...(Args) == 0
-		[]([[maybe_unused]] MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer buffer) -> FuncResult
+		[](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer buffer) -> FuncResult
 		{
 			ASSERT(buffer != nullptr && "The address provided to a constructor may never be nullptr");
-
-			[[maybe_unused]] size_t argIndex = Internal::GetUnpackStart(sizeof...(Args));
-			new (buffer) TypeT(Internal::Unpack<Args>(args, argIndex)...);
+			std::make_index_sequence<sizeof...(Args)> sequence{};
+			Internal::ConstructObjectImpl<TypeT, Args...>(args, buffer, sequence);
 			return std::nullopt;
 		},
 		OperatorType::constructor,
@@ -112,13 +118,13 @@ void Engine::MetaType::AddFromArg(Ctor<Args...>)
 }
 
 template <typename ... Args>
-Engine::FuncResult Engine::MetaType::CallFunction(const std::variant<Name, OperatorType>& funcNameOrType, Args&&... args) const
+CE::FuncResult CE::MetaType::CallFunction(const std::variant<Name, OperatorType>& funcNameOrType, Args&&... args) const
 {
 	return CallFunctionWithRVO(funcNameOrType, nullptr, std::forward<Args>(args)...);
 }
 
 template <typename ... Args>
-Engine::FuncResult Engine::MetaType::CallFunctionWithRVO(const std::variant<Name, OperatorType>& funcNameOrType,
+CE::FuncResult CE::MetaType::CallFunctionWithRVO(const std::variant<Name, OperatorType>& funcNameOrType,
 	MetaFunc::RVOBuffer rvoBuffer, Args&&... args) const
 {
 	static constexpr uint32 numOfArgs = sizeof...(Args);
@@ -127,13 +133,13 @@ Engine::FuncResult Engine::MetaType::CallFunctionWithRVO(const std::variant<Name
 }
 
 template <typename ... Args>
-bool Engine::MetaType::IsConstructible() const
+bool CE::MetaType::IsConstructible() const
 {
 	return IsConstructible({ MakeTypeTraits<Args>()... });
 }
 
 template <typename ... Args>
-Engine::FuncResult Engine::MetaType::Construct(Args&&... args) const
+CE::FuncResult CE::MetaType::Construct(Args&&... args) const
 {
 	void* buffer = Malloc();
 
@@ -147,7 +153,7 @@ Engine::FuncResult Engine::MetaType::Construct(Args&&... args) const
 }
 
 template <typename ... Args>
-Engine::FuncResult Engine::MetaType::ConstructAt(void* atAddress, Args&&... args) const
+CE::FuncResult CE::MetaType::ConstructAt(void* atAddress, Args&&... args) const
 {
 	ASSERT(atAddress != nullptr);
 	ASSERT(reinterpret_cast<uintptr>(atAddress) % GetAlignment() == 0 && "Address was not aligned");
@@ -156,7 +162,7 @@ Engine::FuncResult Engine::MetaType::ConstructAt(void* atAddress, Args&&... args
 }
 
 template <typename ... Args>
-Engine::FuncResult Engine::MetaType::ConstructInternalGeneric(bool isOwner, void* address, Args&&... args) const
+CE::FuncResult CE::MetaType::ConstructInternalGeneric(bool isOwner, void* address, Args&&... args) const
 {
 	FuncResult result = CallFunctionWithRVO(OperatorType::constructor, address, std::forward<Args>(args)...);
 
@@ -169,7 +175,7 @@ Engine::FuncResult Engine::MetaType::ConstructInternalGeneric(bool isOwner, void
 }
 
 template <typename TypeT>
-Engine::FuncResult Engine::MetaType::ConstructInternal(bool isOwner, void* address, const TypeT& args) const
+CE::FuncResult CE::MetaType::ConstructInternal(bool isOwner, void* address, const TypeT& args) const
 {
 	if (MakeTypeId<TypeT>() != GetTypeId())
 	{
@@ -187,7 +193,7 @@ Engine::FuncResult Engine::MetaType::ConstructInternal(bool isOwner, void* addre
 }
 
 template <typename TypeT>
-Engine::FuncResult Engine::MetaType::ConstructInternal(bool isOwner, void* address, TypeT& args) const
+CE::FuncResult CE::MetaType::ConstructInternal(bool isOwner, void* address, TypeT& args) const
 {
 	if (MakeTypeId<TypeT>() != GetTypeId())
 	{
@@ -198,11 +204,14 @@ Engine::FuncResult Engine::MetaType::ConstructInternal(bool isOwner, void* addre
 	{
 		return MetaAny{ *this, new (address) TypeT(args), isOwner };
 	}
-	return { "Type is not copy-constructible" };
+	else
+	{
+		return { "Type is not copy-constructible" };
+	}
 }
 
 template <typename TypeT, std::enable_if_t<std::is_rvalue_reference_v<TypeT>, bool>>
-Engine::FuncResult Engine::MetaType::ConstructInternal(bool isOwner, void* address, TypeT&& args) const
+CE::FuncResult CE::MetaType::ConstructInternal(bool isOwner, void* address, TypeT&& args) const
 {
 	if (MakeTypeId<TypeT>() != GetTypeId())
 	{
@@ -213,11 +222,14 @@ Engine::FuncResult Engine::MetaType::ConstructInternal(bool isOwner, void* addre
 	{
 		return MetaAny{ *this, new (address) TypeT(std::move(args)), isOwner };
 	}
-	return { "Type is not copy-constructible" };
+	else
+	{
+		return { "Type is not copy-constructible" };
+	}
 }
 
 template<typename TypeT>
-void Engine::MetaType::AddBaseClass()
+void CE::MetaType::AddBaseClass()
 {
 	const MetaType& base = MetaManager::Get().GetType<TypeT>();
 	AddBaseClass(base);

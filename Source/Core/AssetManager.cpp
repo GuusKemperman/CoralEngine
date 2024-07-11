@@ -3,221 +3,169 @@
 
 #include "Core/FileIO.h"
 #include "Assets/Core/AssetLoadInfo.h"
-#include "Assets/Importers/Importer.h"
-#include "Meta/MetaManager.h"
+#include "Assets/Core/AssetSaveInfo.h"
 #include "Meta/MetaTools.h"
 #include "Meta/MetaType.h"
-#include "Utilities/ClassVersion.h"
 #include "Core/Editor.h"
+#include "Utilities/ClassVersion.h"
+#include "Utilities/NameLookUp.h"
+#include "Utilities/StringFunctions.h"
 
-Engine::AssetManager::AssetManager()
+void CE::AssetManager::PostConstruct()
 {
-#ifdef EDITOR
-	const MetaType& importerType = MetaManager::Get().GetType<Importer>();
+	struct RenameLink
+	{
+		std::string mOldName{};
+		std::string mNewName{};
+		std::filesystem::path mRenameFile{};
+	};
+	std::list<RenameLink> renameLinks{};
+	std::vector<std::filesystem::path> assetFiles{};
 
-	const std::function addImporter =
-		[&](const MetaType& type)
+	assetFiles.reserve(2048);
+
+	auto openDirectory = [&](const std::filesystem::path& directory)
 		{
-			for (const MetaType& derived : type.GetDirectDerivedClasses())
+			if (!std::filesystem::is_directory(directory))
 			{
-				FuncResult constructResult = derived.Construct();
-
-				if (constructResult.HasError())
-				{
-					LOG(LogAssets, Error, "Importer {} has no default constructor and cannot be used. Did you override all the pure functions?",
-						derived.GetName());
-					continue;
-				}
-
-				auto importer = MakeUnique<Importer>(std::move(constructResult.GetReturnValue()));
-
-				std::vector<std::filesystem::path> canImportExtensions = importer->CanImportExtensions();
-
-				if (canImportExtensions.empty())
-				{
-					LOG(LogAssets, Warning, "Importer {} cannot import any extensions, return value of CanImportExtensions was empty",
-						derived.GetName());
-					continue;
-				}
-
-				for (const std::filesystem::path& extension : canImportExtensions)
-				{
-					if (extension.empty())
-					{
-						LOG(LogAssets, Warning, "Importer {} has invalid extension: Extension was empty",
-							derived.GetName());
-						goto nextImporter;
-					}
-
-					if (extension.string()[0] != '.')
-					{
-						LOG(LogAssets, Warning, "Importer {} has invalid extension {}: extensions must start with a period",
-							derived.GetName(),
-							extension.string());
-						goto nextImporter;
-					}
-
-					if (extension == sAssetExtension)
-					{
-						LOG(LogAssets, Warning, "Importer {} has invalid extension {}: extensions cannot be the same as the asset extension \"{}\"",
-							derived.GetName(),
-							extension.string(),
-							sAssetExtension);
-						goto nextImporter;
-					}
-
-					if (const auto [existingImporterTypeId, existingImporter] = TryGetImporterForExtension(extension); existingImporter != nullptr)
-					{
-						[[maybe_unused]] const MetaType* existingImporterType = MetaManager::Get().TryGetType(existingImporterTypeId);
-
-						LOG(LogAssets, Warning, "Importer {} has invalid extension {}: importer {} is already responsible for this extension",
-							derived.GetName(),
-							extension.string(),
-							existingImporterType == nullptr ? "Unnamed importer" : existingImporterType->GetName());
-
-						goto nextImporter;
-					}
-				}
-
-				mImporters.emplace_back(derived.GetTypeId(), std::move(importer));
-
-			nextImporter: {}
+				LOG(LogAssets, Warning, "{} is not a directory", directory.string());
+				return;
 			}
-		};
-	addImporter(importerType);
-#endif // EDITOR
-}
 
-Engine::AssetManager::~AssetManager() = default;
+			[[maybe_unused]] uint32 numOfAssetsFound{};
 
-void Engine::AssetManager::PostConstruct()
-{
-	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""));
-	OpenDirectory(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""));
-}
-
-void Engine::AssetManager::OpenDirectory(const std::filesystem::path& directory)
-{
-	if (!is_directory(directory))
-	{
-		LOG(LogAssets, Warning, "{} is not a directory", directory.string());
-		return;
-	}
-
-#ifdef EDITOR
-	std::vector<std::filesystem::path> importableAssets{};
-#endif // EDITOR
-
-	for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(directory))
-	{
-		if (!is_regular_file(dirEntry))
-		{
-			continue;
-		}
-
-		const std::filesystem::path& path = dirEntry.path();
-		const std::string extension = path.extension().string();
-
-		if (extension == sAssetExtension)
-		{
-			AddAsset(path);
-			continue;
-		}
-
-#ifdef EDITOR
-		importableAssets.push_back(path);
-#endif // EDITOR
-	}
-
-#ifdef EDITOR
-	for (const std::filesystem::path& importableAsset : importableAssets)
-	{
-		const auto [importerTypeId, importer] = TryGetImporterForExtension(importableAsset.extension());
-
-		if (importer == nullptr)
-		{
-			continue;
-		}
-
-		const std::filesystem::file_time_type importableAssetLastWriteTime = last_write_time(importableAsset);
-
-		bool wasPreviouslyImported = false;
-
-		for (const auto& [key, assetInternal] : mAssets)
-		{
-			if (!WasImportedFrom(assetInternal, importableAsset))
+			for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(directory))
 			{
+				if (!std::filesystem::is_regular_file(dirEntry))
+				{
+					continue;
+				}
+
+				const std::filesystem::path& path = dirEntry.path();
+				std::filesystem::path extension = path.extension();
+
+				if (extension == sAssetExtension)
+				{
+					assetFiles.emplace_back(path);
+					++numOfAssetsFound;
+				}
+				else if (extension == sRenameExtension)
+				{
+					std::ifstream file{ path };
+
+					if (!file.is_open())
+					{
+						LOG(LogAssets, Warning, "Could not process rename file {}, as the file could not be opened", path.string());
+						continue;
+					}
+
+					std::string newName{};
+					std::getline(file, newName);
+
+					std::string oldName{};
+					if (!std::getline(file, oldName))
+					{
+						oldName = path.filename().replace_extension().string();
+					}
+
+					renameLinks.emplace_back(RenameLink{ oldName, newName, path });
+				}
+			}
+
+			LOG(LogAssets, Verbose, "Finished indexing {}, found {} assets", directory.string(), numOfAssetsFound);
+		};
+
+	openDirectory(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""));
+	openDirectory(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""));
+
+	mLookUp.reserve(assetFiles.size() + renameLinks.size());
+
+	for (const std::filesystem::path& assetPath : assetFiles)
+	{
+		OpenAsset(assetPath);
+	}
+
+	sNameLookUpMutex.lock();
+
+	for (const RenameLink& link : renameLinks)
+	{
+		sNameLookUp.emplace(Name::HashString(link.mOldName), link.mOldName);
+		sNameLookUp.emplace(Name::HashString(link.mNewName), link.mNewName);
+	}
+
+	for (const WeakAssetHandle<>& asset : GetAllAssets<>())
+	{
+		sNameLookUp.emplace(Name::HashString(asset.GetMetaData().GetName()), asset.GetMetaData().GetName());
+	}
+
+	sNameLookUpMutex.unlock();
+
+	bool anyResolved;
+
+	do
+	{
+		anyResolved = false;
+
+		for (auto it = renameLinks.begin(); it != renameLinks.end();)
+		{
+			Internal::AssetInternal* const assetWithNewName = TryGetAssetInternal(it->mNewName, MakeTypeId<Asset>());
+
+			if (assetWithNewName == nullptr)
+			{
+				++it;
 				continue;
 			}
 
-			wasPreviouslyImported = true;
+			const auto insertResult = mLookUp.emplace(Name::HashString(it->mOldName), *assetWithNewName);
 
-			const uint32 assetImporterVersion = assetInternal.mMetaData.mImporterInfo->mImporterVersion;
-
-			const MetaType* const importerType = MetaManager::Get().TryGetType(importerTypeId);
-			ASSERT(importerType != nullptr);
-
-			if (assetImporterVersion != GetClassVersion(*importerType))
+			if (insertResult.second)
 			{
-				LOG(LogAssets, Message, "Asset {} was imported with an older version of the importer ({}). Reimporting...",
-					importableAsset.string(),
-					assetImporterVersion);
-				ImportInternal(importableAsset, false);
-				break;
+				assetWithNewName->mOldNames.emplace_back(it->mRenameFile);
+				anyResolved = true;
+			}
+			else
+			{
+				LOG(LogAssets, Error, "Could not create link from old asset {} to new asset {}", it->mOldName, it->mNewName);
 			}
 
-			const uint32 currentAssetVersion = GetClassVersion(assetInternal.mMetaData.GetClass());
-
-			if (assetInternal.mMetaData.mAssetVersion != currentAssetVersion)
-			{
-				LOG(LogAssets, Message, "Asset {} is out-of-date, version is {} (current is {}). The asset will be re-imported from {}",
-					assetInternal.mMetaData.GetName(),
-					assetInternal.mMetaData.mAssetVersion,
-					currentAssetVersion,
-					importableAsset.string());
-				ImportInternal(importableAsset, false);
-				break;
-			}
-
-			if (std::filesystem::last_write_time(*assetInternal.mFileOfOrigin) < importableAssetLastWriteTime)
-			{
-				LOG(LogAssets, Message, "Changes to {} detected. Reimporting...",
-					importableAsset.string());
-				ImportInternal(importableAsset, false);
-				break;
-			}
+			it = renameLinks.erase(it);
 		}
+	} while (anyResolved);
 
-		if (!wasPreviouslyImported)
+	for (const RenameLink& link : renameLinks)
+	{
+		LOG(LogAssets, Message, "An asset was once renamed from {} to {}, but it has now been deleted. The rename file {} will now also be removed.",
+			link.mOldName, link.mNewName, link.mRenameFile.string());
+		TRY_CATCH_LOG(std::filesystem::remove(link.mRenameFile));
+	}
+
+	UpdateAssetsToLatestVersions();
+}
+
+CE::AssetManager::~AssetManager()
+{
+	for (Internal::AssetInternal& assetInternal : mAssets)
+	{
+		if (assetInternal.mAsset != nullptr)
 		{
-			LOG(LogAssets, Message, "New content detected at {}. Importing...", importableAsset.string());
-			ImportInternal(importableAsset, false);
+			assetInternal.UnLoad();
 		}
 	}
-#endif // EDITOR
-
-	LOG(LogAssets, Verbose, "Finished constructing assets");
 }
 
-Engine::AssetManager::AssetInternal::AssetInternal(AssetFileMetaData&& metaData, const std::optional<std::filesystem::path>& path) :
-	mMetaData(std::move(metaData)),
-	mFileOfOrigin(path)
+CE::Internal::AssetInternal* CE::AssetManager::TryGetAssetInternal(const Name key, const TypeId typeId)
 {
-}
+	const auto it = mLookUp.find(key.GetHash());
 
-Engine::AssetManager::AssetInternal* Engine::AssetManager::TryGetAssetInternal(const Name key, const TypeId typeId)
-{
-	const auto it = mAssets.find(key.GetHash());
-
-	if (it == mAssets.end()
-		|| !it->second.mMetaData.GetClass().IsDerivedFrom(typeId))
+	if (it == mLookUp.end()
+		|| !it->second.get().mMetaData.GetClass().IsDerivedFrom(typeId))
 	{
 		return nullptr;
 	}
-	return &it->second;
+	return &it->second.get();
 }
 
-Engine::AssetManager::AssetInternal* Engine::AssetManager::TryGetLoadedAssetInternal(const Name key, const TypeId typeId)
+CE::Internal::AssetInternal* CE::AssetManager::TryGetLoadedAssetInternal(const Name key, const TypeId typeId)
 {
 	auto* internalAsset = TryGetAssetInternal(key, typeId);
 
@@ -228,488 +176,454 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryGetLoadedAssetInte
 
 	if (internalAsset->mAsset == nullptr)
 	{
-		Load(*internalAsset);
+		internalAsset->Load();
 		ASSERT(internalAsset->mAsset != nullptr);
 	}
 	return internalAsset;
 }
 
-void Engine::AssetManager::Unload(AssetInternal& asset)
-{
-	if (asset.mAsset != nullptr)
-	{
-		LOG(LogAssets, Verbose, "Unloading {}", asset.mMetaData.mAssetName);
-		asset.mAsset.reset();
-	}
-	else
-	{
-		LOG(LogAssets, Verbose, "Asset {} is already unloaded", asset.mMetaData.mAssetName);
-	}
-}
-
-void Engine::AssetManager::UnloadAllUnusedAssets()
+void CE::AssetManager::UnloadAllUnusedAssets()
 {
 	bool wereAnyUnloaded;
 
 	do
 	{
 		wereAnyUnloaded = false;
-		for (auto& [name, asset] : mAssets)
+		for (Internal::AssetInternal& asset : mAssets)
 		{
 			if (asset.mAsset == nullptr // Asset is already unloaded
-				|| asset.mAsset.use_count() > 1 // We hold a reference, and atleast in one other place someone is holding a reference as well.
-				|| !asset.mFileOfOrigin.has_value()) // This asset was generated at runtime; if we unload it, we won't be able to load if back in again. 
+				|| asset.mRefCounters[static_cast<int>(Internal::AssetInternal::RefCountType::Strong)] > 0 // Someone is holding a reference
+				|| !asset.mFileOfOrigin.has_value() // This asset was generated at runtime; if we unload it, we won't be able to load if back in again. 
+				|| asset.mHasBeenDereferencedSinceGarbageCollect) // While this asset is unloaded, it was recently loaded. Maybe something 
+				// is only briefly loading it every ~30 seconds, so lets not unload this.
 			{
 				continue;
 			}
 
-			Unload(asset);
+			asset.UnLoad();
 			wereAnyUnloaded = true;
 		}
 	} while (wereAnyUnloaded); // We might've unloaded an asset that held onto the last reference of another asset
-}
 
-std::vector<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::GetAllAssets()
-{
-	std::vector<WeakAsset<Asset>> returnValue{};
-	returnValue.reserve(mAssets.size());
-
-	for (auto& [name, assetInternal] : mAssets)
+	for (Internal::AssetInternal& asset : mAssets)
 	{
-		returnValue.push_back(WeakAsset<Asset>{assetInternal});
+		asset.mHasBeenDereferencedSinceGarbageCollect = false;
 	}
-
-	return returnValue;
 }
 
-void Engine::AssetManager::Load(AssetInternal& internalAsset)
+void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view newName)
 {
-	LOG(LogAssets, Verbose, "Asset manager is loading {}", internalAsset.mMetaData.mAssetName);
-
-	auto& asset = internalAsset.mAsset;
-
-	if (asset != nullptr)
+	if (asset.GetMetaData().GetName() == newName)
 	{
-		LOG(LogAssets, Warning, "Attempting to load {} twice", internalAsset.mMetaData.mAssetName);
 		return;
 	}
 
-	ASSERT_LOG(internalAsset.mFileOfOrigin.has_value(), "Attempted to load {}, but this asset was generated at runtime and should not have been unloaded to begin with", internalAsset.mAsset->GetName());
-
-	AssetLoadInfo loadInfo{ *internalAsset.mFileOfOrigin };
-
-	FuncResult constructResult = internalAsset.mMetaData.mClass.get().Construct(loadInfo);
-
-	if (constructResult.HasError())
-	{
-		LOG(LogAssets, Error, "Asset {} could not be constructed. Does it have a constructor that takes a LoadInfo&, and was this constructor reflected in your reflect function? {}",
-			internalAsset.mMetaData.mClass.get().GetName(),
-			constructResult.Error());
-		return;
-	}
-
-	asset = MakeShared<Asset>(std::move(constructResult.GetReturnValue()));
-}
-
-#ifdef EDITOR
-bool Engine::AssetManager::WasImportedFrom(const AssetInternal& asset, const std::filesystem::path& file)
-{
-	return asset.mMetaData.mImporterInfo.has_value()
-		// We only look at the filename, as the full path may be different.
-		// For example the EngineAssets folder may be moved relative to the
-		// working environment, or may always be different for several projects.
-		//
-		// So the relative path can change, but so can the absolute path;
-		// one person might save their engine on the D: drive, while someone
-		// else might save it in C:/Projects/Repos.
-		//
-		// Since neither option is ideal, we only look at the filename.
-		&& asset.mMetaData.mImporterInfo->mImportedFile.filename() == file.filename();
-}
-
-void Engine::AssetManager::Import(const std::filesystem::path& path)
-{
-	ImportInternal(path, true);
-}
-
-void Engine::AssetManager::ImportInternal(const std::filesystem::path& path, bool refreshEngine)
-{
-	auto importLambda = [this, path]
+	auto renameLambda = [this, oldName = asset.GetMetaData().GetName(), newName = std::string{ newName }]()
 		{
-			const auto [importerTypeId, importer] = TryGetImporterForExtension(path.extension());
+			WeakAssetHandle asset = TryGetWeakAsset(oldName);
 
-			LOG(LogAssets, Message, "Importing {}", path.string());
-
-			if (importer == nullptr)
+			if (asset == nullptr)
 			{
-				LOG(LogAssets, Error, "No importer that can import {}.", path.string());
-				return false;
+				return;
 			}
 
-			// Collect new files
-			std::optional<std::vector<ImportedAsset>> importedAssets = importer->Import(path);
-
-			if (!importedAssets.has_value())
+			if (TryGetWeakAsset(newName) != nullptr)
 			{
-				LOG(LogAssets, Error, "Importing failed: Null value returned");
-				return false;
+				LOG(LogAssets, Error, "Cannot rename asset {} to {}, there is already an asset with this name", oldName, newName);
+				return;
 			}
 
-			const std::vector<AssetLoadInfo> assetsToLoad(importedAssets->begin(), importedAssets->end());
+			AssetFileMetaData newMetaData = asset.GetMetaData();
+			newMetaData.mAssetName = newName;
 
-			bool errorsEncountered = false;
+			Internal::AssetInternal* assetInternal = TryGetAssetInternal(asset.GetMetaData().GetName(), asset.GetMetaData().GetClass().GetTypeId());
 
-			{ // Check to see if our user submitted multiple assets with the same name
-				std::vector<std::string_view> duplicateNames{};
-				for (size_t i = 0; i < assetsToLoad.size(); i++)
-				{
-					const std::string_view name = assetsToLoad[i].GetName();
-
-					if (std::find(duplicateNames.begin(), duplicateNames.end(), name) != duplicateNames.end())
-					{
-						continue;
-					}
-
-					size_t numWithSameName{};
-					for (size_t j = i + 1; j < assetsToLoad.size(); j++)
-					{
-						numWithSameName += assetsToLoad[i].GetName() == assetsToLoad[j].GetName();
-					}
-
-					if (numWithSameName != 0)
-					{
-						LOG(LogAssets, Error, "Importing failed: {} assets were imported with the name {}", numWithSameName, name);
-						duplicateNames.push_back(name);
-					}
-				}
-
-				errorsEncountered |= !duplicateNames.empty();
-			}
-
-			// Check if there are already assets with the submitted names,
-			// and if we would be reimporting assets that are still referenced in memory
-			for (const AssetLoadInfo& loadInfo : assetsToLoad)
+			if (assetInternal == nullptr)
 			{
-				const AssetInternal* const existingAssetWithSameName = TryGetAssetInternal(loadInfo.GetName(), loadInfo.GetAssetClass().GetTypeId());
-
-				if (existingAssetWithSameName == nullptr)
-				{
-					continue;
-				}
-
-				if (!WasImportedFrom(*existingAssetWithSameName, path))
-				{
-					LOG(LogAssets, Error, "Importing failed: there is already an asset with the name {} (see {})",
-						loadInfo.GetName(),
-						existingAssetWithSameName->mFileOfOrigin.value_or("assets generated at runtime").string());
-
-					errorsEncountered = true;
-				}
-				else if (existingAssetWithSameName->mAsset.use_count() > 1)
-				{
-					LOG(LogAssets, Error, "Importing failed: Importing {} means replacing existing asset {}, but this asset is still referenced in memory {} time(s).",
-						path.string(), existingAssetWithSameName->mMetaData.GetName(), existingAssetWithSameName->mAsset.use_count() - 1);
-					errorsEncountered = true;
-				}
+				LOG(LogAssets, Error, "Cannot rename asset {} to {}, could not find internal asset", oldName, newName);
+				return;
 			}
 
-			if (errorsEncountered)
+			if (asset.GetFileOfOrigin().has_value())
 			{
-				return false;
+				const std::filesystem::path oldPath = *asset.GetFileOfOrigin();
+				const std::filesystem::path newPath = std::filesystem::path{ oldPath }.replace_filename(newName).replace_extension(sAssetExtension);
+
+				std::error_code err{};
+				std::filesystem::rename(oldPath, newPath, err);
+
+				if (err)
+				{
+					LOG(LogAssets, Error, "Cannot rename asset {}, could not rename file {} to {} - {}",
+						asset.GetMetaData().GetName(),
+						oldPath.string(),
+						newPath.string(),
+						err.message());
+					return;
+				}
+
+				if (!ReplaceMetaData(newPath, newMetaData))
+				{
+					LOG(LogAssets, Error, "Cannot rename asset {}, could not replace metadata in file {}", asset.GetMetaData().GetName(), newPath.string());
+
+					return;
+				}
+
+				{
+					std::filesystem::path renamePath = oldPath;
+					renamePath.replace_extension(sRenameExtension);
+					std::ofstream file{ renamePath };
+
+					if (!file.is_open())
+					{
+						LOG(LogAssets, Error, "Failed to preserve referenced to asset {}, as we could not open newly created file {} for writing", oldName, renamePath.string());
+						return;
+					}
+
+					file << newName;
+
+					// Due to a legacy bug,
+					// there are some assets
+					// whose names contain invalid
+					// characters for a filepath.
+					if (renamePath.filename().replace_extension() != oldName)
+					{
+						file << '\n' << oldName;
+					}
+
+					assetInternal->mOldNames.emplace_back(renamePath);
+				}
+
+				assetInternal->mFileOfOrigin = newPath;
 			}
 
-			// Delete old files
-			std::vector<std::pair<std::filesystem::path, std::string>> filesToRestoreInCaseOfErrors{};
+			assetInternal->mMetaData = newMetaData;
+			auto emplaceResult = mLookUp.emplace(Name::HashString(newName), *assetInternal);
 
-			std::vector<WeakAsset<>> assetsToEraseEntirely{};
-
-			for (auto& [key, assetInternal] : mAssets)
+			if (!emplaceResult.second)
 			{
-				if (!WasImportedFrom(assetInternal, path))
-				{
-					continue;
-				}
-
-				// We can safely dereference the mFileOfOrigin,
-				// because assets generated at runtime do not have an mImporterInfo.
-				const std::filesystem::path& existingImportedAssetFile = *assetInternal.mFileOfOrigin;
-
-				// Delete existing files that were generated the last time we imported this asset
-				if (std::filesystem::exists(existingImportedAssetFile))
-				{
-					LOG(LogAssets, Message, "Deleting file {} created during previous importation", existingImportedAssetFile.string());
-
-					std::ifstream fstream{ existingImportedAssetFile, std::ifstream::binary };
-
-					if (fstream.is_open())
-					{
-						std::stringstream sstr{};
-						sstr << fstream.rdbuf();
-						fstream.close();
-
-						filesToRestoreInCaseOfErrors.emplace_back(existingImportedAssetFile, sstr.str());
-					}
-					else
-					{
-						LOG(LogAssets, Warning, "Importing warning: Could not create a temporary backup of {}. If further errors are encountered, this file will not be restored.",
-							existingImportedAssetFile.string());
-					}
-
-					std::error_code err{};
-					if (!std::filesystem::remove(*assetInternal.mFileOfOrigin, err))
-					{
-						LOG(LogAssets, Error, "Importing failed: Could not delete file {} - {}", existingImportedAssetFile.string(), err.message());
-						errorsEncountered = true;
-					}
-				}
-
-				// During out previous importing, we created this asset. But now that we are importing again,
-				// this asset was not produced. We need to remove this asset from our lookup
-				if (std::find_if(assetsToLoad.begin(), assetsToLoad.end(),
-					[keyCpy = key](const AssetLoadInfo& loadInfo)
-					{
-						return Name::HashString(loadInfo.GetName()) == keyCpy;
-					}) == assetsToLoad.end())
-				{
-					if (assetInternal.mAsset.use_count() == 0)
-					{
-						assetsToEraseEntirely.push_back(assetInternal);
-					}
-					else
-					{
-						LOG(LogAssets, Error, "Importing failed: Importing {} means removing existing asset {}, but this asset is still referenced in memory {} time(s).",
-							path.string(), assetInternal.mMetaData.GetName(), assetInternal.mAsset.use_count() - 1);
-						errorsEncountered = true;
-					}
-				}
+				LOG(LogAssets, Error, "Failed to rename asset {}", oldName);
 			}
-
-			if (errorsEncountered)
-			{
-				for (const auto& [fileToRestore, content] : filesToRestoreInCaseOfErrors)
-				{
-					std::ofstream fstream{ fileToRestore, std::ofstream::binary };
-
-					if (fstream.is_open())
-					{
-						fstream << content;
-						LOG(LogAssets, Message, "Restored {}", fileToRestore.string());
-					}
-					else
-					{
-						LOG(LogAssets, Error, "Failed to restore {}", fileToRestore.string());
-					}
-				}
-				return false;
-			}
-
-			for (WeakAsset<Asset>& assetToErase : assetsToEraseEntirely)
-			{
-				DeleteAsset(std::move(assetToErase));
-			}
-
-			// Finally, we can safely import
-			std::filesystem::path outputDirectory = path.parent_path();
-
-			if (assetsToLoad.size() > 1)
-			{
-				const std::filesystem::path folder = std::filesystem::path{ path }.replace_extension();
-
-				if ((exists(folder)
-					&& is_directory(folder))
-					|| create_directory(folder))
-				{
-					outputDirectory = folder;
-				}
-			}
-
-			for (size_t i = 0; i < importedAssets->size(); i++)
-			{
-				const AssetLoadInfo& loadInfo = assetsToLoad[i];
-				const AssetSaveInfo& saveInfo = (*importedAssets)[i];
-
-				AssetInternal* const existingAsset = TryGetAssetInternal(loadInfo.GetName(), loadInfo.GetAssetClass().GetTypeId());
-
-				std::filesystem::path fileWeWantToSaveTo{};
-
-				if (existingAsset != nullptr
-					&& existingAsset->mFileOfOrigin.has_value())
-				{
-					fileWeWantToSaveTo = *existingAsset->mFileOfOrigin;
-
-					if (&existingAsset->mMetaData.GetClass() != &loadInfo.GetAssetClass())
-					{
-						LOG(LogAssets, Warning, "Asset {} is reimported and changed from class {} to {}, existing WeakAssets could now be invalid",
-							loadInfo.GetName(),
-							existingAsset->mMetaData.GetClass().GetName(),
-							loadInfo.GetAssetClass().GetName());
-					}
-				}
-				else
-				{
-					std::string filename = loadInfo.GetName();
-
-					for (char& ch : filename)
-					{
-						if (ch == '<'
-							|| ch == '>'
-							|| ch == ':'
-							|| ch == '\"'
-							|| ch == '/'
-							|| ch == '\\'
-							|| ch == '|'
-							|| ch == '?'
-							|| ch == '*'
-							|| ch == ' '
-							|| ch == '.'
-							|| ch == ','
-							)
-						{
-							ch = '_';
-						}
-					}
-
-					fileWeWantToSaveTo = outputDirectory / filename.append(sAssetExtension);
-
-					while (exists(fileWeWantToSaveTo))
-					{
-						fileWeWantToSaveTo.replace_filename(fileWeWantToSaveTo.filename().replace_extension().string().append("_Copy")).replace_extension(sAssetExtension);
-					}
-				}
-
-				const bool success = saveInfo.SaveToFile(fileWeWantToSaveTo);
-
-				if (!success)
-				{
-					LOG(LogAssets, Error, "Importing partially failed: Could not save {} to {}", loadInfo.GetName(), fileWeWantToSaveTo.string());
-					continue;
-				}
-
-				LOG(LogAssets, Message, "Saved imported asset {} to {}", loadInfo.GetName(), fileWeWantToSaveTo.string());
-
-				if (existingAsset != nullptr)
-				{
-					existingAsset->mMetaData = std::move(*loadInfo.mMetaData);
-				}
-				else
-				{
-					if (TryConstruct(fileWeWantToSaveTo, std::move(*loadInfo.mMetaData)) == nullptr)
-					{
-						LOG(LogAssets, Error, "Importing partially failed: Could not contruct asset from {}", fileWeWantToSaveTo.string());
-					}
-				}
-			}
-
-			LOG(LogAssets, Message, "Finished importing {}", path.string());
-
-			return true;
 		};
 
-	if (refreshEngine)
-	{
-		Editor::Get().Refresh({ Editor::RefreshRequest::Volatile, importLambda });
-	}
-	else
-	{
-		importLambda();
-	}
+#ifdef EDITOR
+	Editor::Get().Refresh({ Editor::RefreshRequest::Volatile, renameLambda });
+#else
+	LOG(LogAssets, Warning, "Renaming asset {} without the editor.", asset.GetMetaData().GetName());
+	renameLambda();
+#endif
 }
 
-std::pair<Engine::TypeId, const Engine::Importer*> Engine::AssetManager::TryGetImporterForExtension(const std::filesystem::path& extension) const
+void CE::AssetManager::DeleteAsset(WeakAssetHandle<>&& asset)
 {
-	for (const auto& [typeId, importer] : mImporters)
-	{
-		std::vector<std::filesystem::path> canImport = importer->CanImportExtensions();
-		auto it = std::find(canImport.begin(), canImport.end(), extension);
-
-		if (it != canImport.end())
+	auto deleteLambda = [this, assetName = asset.GetMetaData().GetName()]()
 		{
-			return { typeId, importer.get() };
-		}
+			const Internal::AssetInternal* const asset = TryGetAssetInternal(assetName, MakeTypeId<Asset>());
+
+			if (asset == nullptr)
+			{
+				LOG(LogAssets, Warning, "Could not delete asset {}, it seems to not be present anymore. Maybe asset was already deleted?",
+					assetName);
+				return;
+			}
+
+			const uint32 numOfReferences = asset->mRefCounters[0] + asset->mRefCounters[1];
+			if (numOfReferences != 0)
+			{
+				LOG(LogAssets, Error, "Could not safely delete asset {}, as it was still referenced {} time(s).",
+					assetName,
+					numOfReferences);
+				return;
+			}
+
+			if (asset->mFileOfOrigin.has_value())
+			{
+				TRY_CATCH_LOG(std::filesystem::remove(*asset->mFileOfOrigin));
+			}
+
+			for (const std::filesystem::path& renameFile : asset->mOldNames)
+			{
+				TRY_CATCH_LOG(std::filesystem::remove(renameFile));
+			}
+
+			for (auto it = mLookUp.begin(); it != mLookUp.end();)
+			{
+				if (it->second.get().mMetaData.GetName() == assetName)
+				{
+					it = mLookUp.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
+
+			mAssets.remove_if([assetName](const Internal::AssetInternal& asset)
+				{
+					return asset.mMetaData.GetName() == assetName;
+				});
+		};
+
+#ifdef EDITOR
+	if (asset.GetNumberOfStrongReferences() != 0
+		|| asset.GetNumberOfSoftReferences() != 1)
+	{
+		Editor::Get().Refresh({ Editor::RefreshRequest::Volatile, deleteLambda });
+		return;
+	}
+#else
+	LOG(LogAssets, Warning, "Deleting asset {} without the editor. Existing weak assets to this asset will become dangling.", asset.GetMetaData().GetName());
+#endif
+
+	{
+		// Remove the last reference
+		[[maybe_unused]] WeakAssetHandle<> tmp = std::move(asset);
 	}
 
-	return { 0, nullptr };
+	deleteLambda();
 }
-#endif // EDITOR
 
-bool Engine::AssetManager::MoveAsset(WeakAsset<Asset> asset, const std::filesystem::path& toLocation)
+bool CE::AssetManager::MoveAsset(WeakAssetHandle<> asset, const std::filesystem::path& toLocation)
 {
-	if (!asset.mAssetInternal.get().mFileOfOrigin.has_value())
+	if (!asset.GetFileOfOrigin().has_value())
 	{
 		LOG(LogAssets, Error, "Failed to move asset {} to {}: This asset was generated at runtime, there is no original file to copy from.",
-			asset.GetVersion(),
+			asset.GetMetaData().GetAssetVersion(),
 			toLocation.string());
 		return false;
 	}
 
-	std::filesystem::path& assetFile = *asset.mAssetInternal.get().mFileOfOrigin;
+	if (toLocation.extension() != sAssetExtension)
+	{
+		LOG(LogAssets, Error, "Failed to move asset {} to {}: The destination extension was not {}.",
+			asset.GetMetaData().GetAssetVersion(),
+			toLocation.string(),
+			sAssetExtension);
+		return false;
+	}
+
+	Internal::AssetInternal* assetInternal = TryGetAssetInternal(asset.GetMetaData().GetName(), asset.GetMetaData().GetClass().GetTypeId());
+
+	if (assetInternal == nullptr)
+	{
+		LOG(LogAssets, Error, "Failed to move asset {} to {}: Could not find internal asset",
+			asset.GetMetaData().GetAssetVersion(),
+			toLocation.string());
+		return false;
+	}
+
+	std::filesystem::path& assetFile = *assetInternal->mFileOfOrigin;
 
 	LOG(LogAssets, Message, "Moving file from {} to {}", assetFile.string(), toLocation.string());
 
 	std::filesystem::create_directories(toLocation.parent_path());
 
-	std::error_code err{};
-	std::filesystem::copy(assetFile, toLocation, err);
-
-	if (err)
+	if (!TRY_CATCH_LOG(std::filesystem::copy(assetFile, toLocation)))
 	{
-		LOG(LogAssets, Error, "Failed to move asset from {} to {}: Copying failed - {}",
-			assetFile.string(),
-			toLocation.string(),
-			err.message());
 		return false;
 	}
 
-	std::filesystem::remove(assetFile, err);
-	if (err)
-	{
-		LOG(LogAssets, Warning, "After moving asset from {} to {}: Could not delete original file - {}",
-			assetFile.string(),
-			toLocation.string(),
-			err.message());
-	}
+	TRY_CATCH_LOG(std::filesystem::remove(assetFile));
 
 	assetFile = toLocation;
 
 	return true;
 }
 
-void Engine::AssetManager::DeleteAsset(WeakAsset<Asset>&& asset)
+CE::WeakAssetHandle<> CE::AssetManager::Duplicate(WeakAssetHandle<> asset, const std::filesystem::path& copyPath)
 {
-	LOG(LogAssets, Verbose, "Asset {} will be erased. Any WeakAssets referencing it will now be dangling", asset.GetName());
-
-	if (asset.GetFileOfOrigin().has_value())
+	if (!asset.GetFileOfOrigin().has_value())
 	{
-		std::error_code err{};
-		std::filesystem::remove(*asset.GetFileOfOrigin(), err);
+		LOG(LogAssets, Error, "Cannot duplicate asset {}, as it did not come from a file", asset.GetMetaData().GetName());
+		return nullptr;
+	}
 
-		if (err)
+	if (std::filesystem::exists(copyPath))
+	{
+		LOG(LogAssets, Error, "Cannot duplicate asset {}, as there is already a file {}", asset.GetMetaData().GetName(), copyPath.string());
+		return nullptr;
+	}
+
+	if (copyPath.extension() != sAssetExtension)
+	{
+		LOG(LogAssets, Error, "Cannot duplicate asset {} to {}, the extension was not {}", asset.GetMetaData().GetName(), copyPath.string(), sAssetExtension);
+		return nullptr;
+	}
+
+	const std::string copyName = copyPath.filename().replace_extension().string();
+
+	if (TryGetWeakAsset(copyName) != nullptr)
+	{
+		LOG(LogAssets, Error, "Cannot duplicate asset {}, as there is already an asset with this name", asset.GetMetaData().GetName());
+		return nullptr;
+	}
+
+	std::string fileContents{};
+
+	{
+		std::ifstream file{ *asset.GetFileOfOrigin(), std::ifstream::binary };
+
+		if (!file.is_open())
 		{
-			LOG(LogAssets, Error, "Asset {} was removed from the asset manager, but deleting {} failed ({}). Asset will be present again on next startup",
-				asset.GetName(),
-				asset.GetFileOfOrigin()->string(),
-				err.message());
+			LOG(LogAssets, Error, "Cannot duplicate asset {}, could not open file {}", asset.GetMetaData().GetName(), asset.GetFileOfOrigin()->string());
+			return nullptr;
+		}
+
+		(void)AssetFileMetaData::ReadMetaData(file);
+
+		fileContents = StringFunctions::StreamToString(file);
+	}
+
+
+	AssetFileMetaData newMetaData{ copyName, asset.GetMetaData().GetClass(), asset.GetMetaData().GetAssetVersion() };
+
+	{
+		std::filesystem::create_directories(copyPath.parent_path());
+		std::ofstream file{ copyPath, std::ofstream::binary };
+
+		if (!file.is_open())
+		{
+			LOG(LogAssets, Error, "Cannot duplicate asset {}, could not open file {}", asset.GetMetaData().GetName(), copyPath.string());
+			return nullptr;
+		}
+
+		newMetaData.WriteMetaData(file);
+		file.write(fileContents.c_str(), fileContents.size());
+	}
+
+	const Internal::AssetInternal* const constructedAsset = TryConstruct(copyPath.string());
+
+	if (constructedAsset == nullptr)
+	{
+		LOG(LogAssets, Error, "Cannot duplicate asset {}, could not construct asset. File was duplicated however, see {}", asset.GetMetaData().GetName(), copyPath.string());
+		return nullptr;
+	}
+
+	return TryGetWeakAsset(copyName);
+}
+
+CE::WeakAssetHandle<> CE::AssetManager::NewAsset(const MetaType& assetClass, const std::filesystem::path& path)
+{
+	const std::string assetName = path.filename().replace_extension().string();
+
+	if (AssetManager::Get().TryGetWeakAsset(Name{ assetName }) != nullptr)
+	{
+		LOG(LogAssets, Error, "Cannot create new asset {}, there is already an asset with this name", assetName);
+		return nullptr;
+	}
+
+	if (std::filesystem::exists(path))
+	{
+		LOG(LogAssets, Error, "Cannot create new asset {} at {}, there is already a file at this location", assetName, path.string());
+		return nullptr;
+	}
+
+	if (path.extension() != sAssetExtension)
+	{
+		LOG(LogAssets, Error, "Cannot duplicate asset {} to {}, the extension was not {}", assetName, path.string(), sAssetExtension);
+		return nullptr;
+	}
+
+	const std::string_view strView{ assetName };
+	FuncResult constructResult = assetClass.Construct(strView);
+
+	if (constructResult.HasError())
+	{
+		LOG(LogAssets, Error, "Failed to create new asset of type {} - {}", assetClass.GetName(), constructResult.Error());
+		return nullptr;
+	}
+
+	const Asset* const asset = constructResult.GetReturnValue().As<Asset>();
+
+	if (asset == nullptr)
+	{
+		LOG(LogAssets, Error, "Failed to create new asset of type {} - Construct result was not an asset", assetClass.GetName());
+		return nullptr;
+	}
+
+	const AssetSaveInfo saveInfo = asset->Save();
+	const bool success = saveInfo.SaveToFile(path);
+
+	if (!success)
+	{
+		LOG(LogAssets, Error, "Failed to create new asset, the file {} could not be saved to", path.string());
+		return nullptr;
+	}
+
+	const Internal::AssetInternal* const constructedAsset = TryConstruct(path);
+
+	if (constructedAsset == nullptr)
+	{
+		LOG(LogAssets, Error, "Cannot duplicate asset {}, could not construct asset. File was duplicated however, see {}", assetName, path.string());
+		return nullptr;
+	}
+
+	return TryGetWeakAsset(assetName);
+}
+
+CE::WeakAssetHandle<> CE::AssetManager::OpenAsset(const std::filesystem::path& path)
+{
+	return { TryConstruct(path) };
+}
+
+void CE::AssetManager::UpdateAssetsToLatestVersions()
+{
+	for (Internal::AssetInternal& asset : mAssets)
+	{
+		if (!asset.mFileOfOrigin.has_value()
+			|| asset.mMetaData.GetMetaDataVersion() == AssetFileMetaData::GetCurrentMetaDataVersion())
+		{
+			continue;
+		}
+
+		LOG(LogAssets, Error, "Metadata of {} is of an older version. It will automatically be updated, make sure to submit the changes to {} to source control.", asset.mMetaData.GetName(), asset.mFileOfOrigin->string());
+
+		const uint32 oldVersion = asset.mMetaData.mMetaDataVersion;
+		asset.mMetaData.mMetaDataVersion = AssetFileMetaData::GetCurrentMetaDataVersion();
+		if (!ReplaceMetaData(*asset.mFileOfOrigin, asset.mMetaData))
+		{
+			// It failed, make sure the metadata version is reset
+			asset.mMetaData.mMetaDataVersion = oldVersion;
 		}
 	}
-
-	mAssets.erase(Name::HashString(asset.GetName()));
 }
 
-std::optional<Engine::WeakAsset<Engine::Asset>> Engine::AssetManager::AddAsset(const std::filesystem::path& path)
+bool CE::AssetManager::ReplaceMetaData(const std::filesystem::path& path, const AssetFileMetaData& metaData)
 {
-	AssetInternal* const internalAsset = TryConstruct(path);
+	std::string fileContents{};
 
-	if (internalAsset == nullptr)
 	{
-		return std::nullopt;
+		std::ifstream file{ path, std::ifstream::binary };
+
+		if (!file.is_open())
+		{
+			LOG(LogAssets, Error, "Cannot replace metadata, could not open file {} for read", path.string());
+			return false;
+		}
+
+		(void)AssetFileMetaData::ReadMetaData(file);
+
+		fileContents = StringFunctions::StreamToString(file);
 	}
-	return WeakAsset<Asset>{ *internalAsset };
+
+	{
+		std::ofstream file{ path, std::ofstream::binary };
+
+		if (!file.is_open())
+		{
+			LOG(LogAssets, Error, "Cannot replace metadata, could not open file {} for write", path.string());
+			return false;
+		}
+
+		metaData.WriteMetaData(file);
+		file.write(fileContents.c_str(), fileContents.size());
+	}
+
+	return true;
 }
 
-Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const std::filesystem::path& path)
+CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::filesystem::path& path)
 {
-	LOG(LogAssets, Verbose, "Constructing asset from {}", path.string());
-
 	if (path.extension() != sAssetExtension)
 	{
 		LOG(LogAssets, Error, "Failed to construct asset {}: Expected extension {}, but extension was {}.",
@@ -719,15 +633,9 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const st
 		return nullptr;
 	}
 
-	std::ifstream istream{ path, std::ifstream::binary };
+	std::ifstream file{ path, std::ifstream::binary };
 
-	if (!istream.is_open())
-	{
-		LOG(LogAssets, Warning, "Failed to construct asset {}: Could not open file", path.string());
-		return nullptr;
-	}
-
-	const std::optional<AssetFileMetaData> metaData = AssetFileMetaData::ReadMetaData(istream);
+	std::optional<AssetFileMetaData> metaData = AssetFileMetaData::ReadMetaData(file);
 
 	if (!metaData.has_value())
 	{
@@ -738,7 +646,7 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const st
 	return TryConstruct(path, std::move(*metaData));
 }
 
-Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData)
+CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData)
 {
 	if (path.has_value()
 		&& path->extension() != sAssetExtension)
@@ -746,26 +654,28 @@ Engine::AssetManager::AssetInternal* Engine::AssetManager::TryConstruct(const st
 		LOG(LogAssets, Warning, "Expected {}, but extension was {}.", sAssetExtension, path->extension().string());
 	}
 
-	const auto emplaceResult = mAssets.try_emplace(Name::HashString(metaData.mAssetName),
-		std::move(metaData),
-		path);
+	Internal::AssetInternal& assetInternal = mAssets.emplace_front(std::move(metaData), path);
+
+	const auto emplaceResult = mLookUp.emplace(Name::HashString(assetInternal.mMetaData.GetName()), assetInternal);
 
 	if (!emplaceResult.second)
 	{
-		LOG(LogAssets, Warning, "Failed to construct asset {}: there is already an asset with the name {}, from {}. Returning existing asset.",
-			path.value_or("Generated at runtime").string(), emplaceResult.first->second.mMetaData.GetName(), emplaceResult.first->second.mFileOfOrigin.value_or("Generated at runtime").string());
+		LOG(LogAssets, Error, "Failed to construct asset {}: there is already an asset with the name {}, from {}",
+			path.value_or("Generated at runtime").string(), assetInternal.mMetaData.GetName(), assetInternal.mFileOfOrigin.value_or("Generated at runtime").string());
+		mAssets.pop_front();
+		return nullptr;
 	}
 
-	AssetInternal& constructedAssetInternal = emplaceResult.first->second;
-
-	const uint32 currentVersion = GetClassVersion(constructedAssetInternal.mMetaData.GetClass());
-	if (constructedAssetInternal.mMetaData.mAssetVersion != currentVersion)
+#ifdef LOGGING_ENABLED
+	const uint32 currentVersion = GetClassVersion(assetInternal.mMetaData.GetClass());
+	if (assetInternal.mMetaData.mAssetVersion != currentVersion)
 	{
-		LOG(LogAssets, Message, "Asset {} is out of date: version is {} (current is {}). If the loader still supports this version, you have nothing to worry about.",
-			constructedAssetInternal.mMetaData.mAssetName,
-			constructedAssetInternal.mMetaData.mAssetVersion,
+		LOG(LogAssets, Verbose, "Asset {} is out of date: version is {} (current is {}). If the loader still supports this version, you have nothing to worry about.",
+			assetInternal.mMetaData.mAssetName,
+			assetInternal.mMetaData.mAssetVersion,
 			currentVersion);
 	}
+#endif // LOGGING_ENABLED
 
-	return &constructedAssetInternal;
+	return &assetInternal;
 }

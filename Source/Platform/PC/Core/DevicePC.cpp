@@ -1,5 +1,6 @@
 #include "Precomp.h"
 #include "Platform/PC/Core/DevicePC.h"
+#include "Core/FileIO.h"
 
 #pragma warning(push)
 #pragma warning(disable: 4189)
@@ -9,576 +10,896 @@
 #include "imgui/ImGuizmo.h"
 #pragma warning(pop)
 
+#include <stb_image/stb_image.h>
+
+#include "Core/AssetManager.h"
+#include "Platform/PC/Rendering/TexturePC.h"
 #include "Platform/PC/Rendering/DX12Classes/DXDescHeap.h"
+#include "Platform/PC/Rendering/DX12Classes/DXHeapHandle.h"
+#include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
+#include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
+#include "Utilities/StringFunctions.h"
+#include "Rendering/FrameBuffer.h"
 
-Engine::Device::Device() {
+struct CE::Device::DXImpl
+{
+	enum DXResources {
+		RT,
+		DEPTH_STENCIL_RSC = FRAME_BUFFER_COUNT,
+		NUM_RESOURCES = FRAME_BUFFER_COUNT + 1
+	};
+	D3D12_VIEWPORT mViewport;
+	D3D12_RECT mScissorRect;
 
-    InitializeWindow();
-    InitializeDevice();
+	ComPtr<ID3D12CommandQueue> mCommandQueue;
+	ComPtr<ID3D12CommandQueue> mUploadCommandQueue;
+	ComPtr<ID3D12CommandAllocator> mCommandAllocator[FRAME_BUFFER_COUNT];
+	ComPtr<ID3D12CommandAllocator> mUploadCommandAllocator;
+	ComPtr<ID3D12GraphicsCommandList4> mCommandList;
+	ComPtr<ID3D12GraphicsCommandList4> mUploadCommandList;
+
+	ComPtr<ID3D12Fence> mFence[FRAME_BUFFER_COUNT];
+	ComPtr<ID3D12Fence> mUploadFence;
+
+	std::shared_ptr<DXDescHeap> mDescriptorHeaps[NUM_DESC_HEAPS];
+	std::unique_ptr<DXResource> mResources[NUM_RESOURCES];
+	const DXGI_FORMAT mDepthFormat = DXGI_FORMAT_D32_FLOAT;
+
+	HANDLE mFenceEvent;
+	HANDLE mUploadFenceEvent;
+	UINT64 mFenceValue[FRAME_BUFFER_COUNT];
+	UINT64 mUploadFenceValue;
+	int mHeapResourceCount = 4;
+	int frameBufferCount = FRAME_BUFFER_COUNT;
+	int depthStencilCount = 1;
+	std::vector<ComPtr<ID3D12Resource>> mResourcesToDeallocate;
+
+	ComPtr<IDXGISwapChain3> mSwapChain;
+	ComPtr<ID3D12Device5> mDevice;
+	ComPtr<ID3D12RootSignature> mSignature;
+	ComPtr<ID3D12RootSignature> mComputeSignature;
+	ComPtr<ID3D12PipelineState> mGenMipmapsPipeline;
+
+	DXHeapHandle mRenderTargetHandles[FRAME_BUFFER_COUNT];
+	DXHeapHandle mDepthHandle;
+	unsigned int mFrameIndex = 0;
+};
+
+static void WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent)
+{
+	UINT64 completedValue = fence->GetCompletedValue();
+	if (completedValue < fenceValue)
+	{
+		if (FAILED(fence->SetEventOnCompletion(fenceValue, fenceEvent)))
+		{
+			LOG(LogCore, Fatal, "Failed to set fence event on completion.");
+		}
+		WaitForSingleObject(fenceEvent, INFINITE);
+	}
+	fenceValue++;
 }
 
-void Engine::Device::InitializeWindow()
+CE::Device::Device() :
+	mImpl(new DXImpl)
 {
-    LOG(LogCore, Message, "Initializing GLFW");
-    if (!glfwInit())
-    {
-        LOG(LogCore, Fatal, "GLFW could not be initialized");
-        assert(false);
-        exit(EXIT_FAILURE);
-    }
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-    mMonitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode* mode = glfwGetVideoMode(mMonitor);
-
-    auto maxScreenWidth = mode->width;
-    auto maxScreenHeight = mode->height;
-
-    mViewport.Width = 1920;
-    mViewport.Height = 1080;
-    mPreviousWidth = 1920;
-    mPreviousHeight = 1080;
-
-    mFullscreen = false;
-
-    if (mFullscreen){
-        mViewport.Width = static_cast<FLOAT>(maxScreenWidth);
-        mViewport.Height = static_cast<FLOAT>(maxScreenHeight);
-        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "General engine", mMonitor, nullptr);
-    }
-    else{
-        glfwWindowHint(GLFW_RESIZABLE, 1);
-        mWindow = glfwCreateWindow(static_cast<int>(mViewport.Width), static_cast<int>(mViewport.Height), "General engine", nullptr, nullptr);
-    }
-
-    if (!mWindow)
-    {
-        LOG(LogCore, Fatal, "GLFW window could not be created");
-        glfwTerminate();
-        assert(false);
-        exit(EXIT_FAILURE);
-    }
-
-    glfwMakeContextCurrent(mWindow);
-
+	InitializeWindow();
+	InitializeDevice();
 }
 
-void Engine::Device::InitializeDevice()
+static constexpr size_t sNumOfIcons = 3;
+static constexpr std::array<std::string_view, sNumOfIcons> GetEmbeddedIcons();
+
+void CE::Device::InitializeWindow()
 {
-    //DEBUG LAYERS
-#if defined(_DEBUG)
-    Microsoft::WRL::ComPtr<ID3D12Debug> debugInterface;
-    if (FAILED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)))) {
-        LOG(LogCore, Fatal, "Failed to get debug interface");
-        assert(false && "Failed to get debug interface");
-    }
-    debugInterface->EnableDebugLayer();
+	LOG(LogCore, Verbose, "Initializing GLFW");
+
+	if (!glfwInit())
+	{
+		LOG(LogCore, Fatal, "GLFW could not be initialized");
+	}
+
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+
+	mMonitor = glfwGetPrimaryMonitor();
+	const GLFWvidmode* mode = glfwGetVideoMode(mMonitor);
+
+	auto maxScreenWidth = mode->width;
+	auto maxScreenHeight = mode->height;
+
+	mImpl->mViewport.Width = 1920;
+	mImpl->mViewport.Height = 1080;
+	mPreviousWidth = 1920;
+	mPreviousHeight = 1080;
+
+	std::string applicationName{};
+
+#ifdef EDITOR
+	applicationName = "Coral Engine - ";
 #endif
 
-    mViewport.TopLeftX = 0;
-    mViewport.TopLeftY = 0;
-    mViewport.MinDepth = 0.0f;
-    mViewport.MaxDepth = 1.0f;
+	const std::filesystem::path thisExe = FileIO::Get().GetPath(FileIO::Directory::ThisExecutable, "");
+	applicationName += thisExe.filename().replace_extension().string();
+	if (applicationName.empty())
+	{
+		applicationName += "Unnamed application";
+	}
+	if (mFullscreen)
+	{
+		mImpl->mViewport.Width = static_cast<FLOAT>(maxScreenWidth);
+		mImpl->mViewport.Height = static_cast<FLOAT>(maxScreenHeight);
+		mWindow = glfwCreateWindow(static_cast<int>(mImpl->mViewport.Width), static_cast<int>(mImpl->mViewport.Height), applicationName.c_str(), mMonitor, nullptr);
+	}
+	else
+	{
+		glfwWindowHint(GLFW_RESIZABLE, 1);
+		mWindow = glfwCreateWindow(static_cast<int>(mImpl->mViewport.Width), static_cast<int>(mImpl->mViewport.Height), applicationName.c_str(), nullptr, nullptr);
+	}
 
-    mScissorRect.left = 0;
-    mScissorRect.top = 0;
-    mScissorRect.right = static_cast<LONG>(mViewport.Width);
-    mScissorRect.bottom = static_cast<LONG>(mViewport.Height);
+	if (mWindow == nullptr)
+	{
+		LOG(LogCore, Fatal, "GLFW window could not be created");
+	}
 
-    ComPtr<IDXGIFactory4> dxgiFactory;
-    HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory));
-    if (FAILED(hr)) {
-        LOG(LogCore, Fatal, "Failed to create dxgi factory");
-        assert(false && "Failed to create dxgi factory");
-    }
+	const std::array<std::string_view, sNumOfIcons> iconsHex = GetEmbeddedIcons();
+	std::array<GLFWimage, sNumOfIcons> glfwImages{};
 
-    ComPtr<IDXGIAdapter1> adapter;
-    int adapterIndex = 0;
-    bool adapterFound = false;
-    while (dxgiFactory->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND) {
-        DXGI_ADAPTER_DESC1 desc;
-        adapter->GetDesc1(&desc);
+	for (size_t i = 0; i < sNumOfIcons; i++)
+	{
+		GLFWimage& image = glfwImages[i];
+		const std::string data = StringFunctions::HexToBinary(iconsHex[i]);
+		int channels;
+		image.pixels = stbi_load_from_memory(reinterpret_cast<const uint8*>(data.data()), static_cast<int>(data.size()), &image.width, &image.height, &channels, 4);
 
-        if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
-            adapterIndex++;
-            continue;
-        }
+		if (image.pixels == nullptr)
+		{
+			LOG(LogCore, Error, "Failed to load embedded icon {} for the application", i);
+		}
+	}
 
-        hr = D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr);
-        if (SUCCEEDED(hr)) {
+	glfwSetWindowIcon(mWindow, sNumOfIcons, glfwImages.data());
 
-            hr = D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&mDevice));
-            if (FAILED(hr)) {
-                LOG(LogCore, Fatal, "Failed to create render device");
-                assert(false && "Failed to create device");
-            }
+	for (size_t i = 0; i < sNumOfIcons; i++)
+	{
+		stbi_image_free(glfwImages[i].pixels);
+	}
 
-            D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
-            hr = mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5,
-                &options5, sizeof(options5));
-
-            if (FAILED(hr)) {
-                LOG(LogCore, Fatal, "Failed to pick adaptor");
-                assert(false && "Failed to check raytracing support");
-            }
-            if (options5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED) {
-                adapterFound = false;
-                break;
-            }
-        }
-
-        adapterIndex++;
-    }
-
-    //CREATE COMMAND QUEUE
-    D3D12_COMMAND_QUEUE_DESC cqDesc = {};
-    hr = mDevice->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&mCommandQueue));
-    if (FAILED(hr)) {
-        LOG(LogCore, Fatal, "Failed to create command queue");
-        assert(false && "Failed to create command queue");
-    }
-
-    hr = mDevice->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&mUploadCommandQueue));
-    if (FAILED(hr)) {
-        LOG(LogCore, Fatal, "Failed to create upload command queue");
-        assert(false && "Failed to create upload command queue");
-    }
-
-    //CREATE COMMAND ALLOCATOR
-    for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
-    {
-        hr = mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator[i]));
-        if (FAILED(hr)) {
-            LOG(LogCore, Fatal, "Failed to create command allocator");
-            assert(false && "Failed to create command allocator");
-        }
-    }
-
-    hr = mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mUploadCommandAllocator));
-    if (FAILED(hr)) {
-        LOG(LogCore, Fatal, "Failed to create upload command allocator");
-        assert(false && "Failed to create upload command allocator");
-    }
-
-    //CREATE COMMAND LIST
-    hr = mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator[0].Get(), NULL, IID_PPV_ARGS(&mCommandList));
-    if (FAILED(hr)) {
-        LOG(LogCore, Fatal, "Failed to create command list");
-        assert(false && "Failed to create command list");
-    }
-    mCommandList->SetName(L"Main command list");
-
-    hr = mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mUploadCommandAllocator.Get(), NULL, IID_PPV_ARGS(&mUploadCommandList));
-    if (FAILED(hr)) {
-        LOG(LogCore, Fatal, "Failed to create upload command list");
-        assert(false && "Failed to create upload command list");
-    }
-    mUploadCommandList->SetName(L"Upload command list");
-    mUploadCommandList->Close();
-
-    //CREATE FENCES
-    for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
-    {
-        hr = mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence[i]));
-        if (FAILED(hr)) {
-            LOG(LogCore, Fatal, "Failed to create fence");
-            assert(false && "Failed to create fence");
-        }
-
-        mFenceValue[i] = 0; // set the initial fence value to 0
-    }
-
-    hr = mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mUploadFence));
-    if (FAILED(hr)) {
-        LOG(LogCore, Fatal, "Failed to upload create fence");
-        assert(false && "Failed to upload create fence");
-    }
-
-    mUploadFenceValue = 0; // set the initial fence value to 0
-
-
-    //CREATE FENCE EVENT
-    mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (mFenceEvent == nullptr) {
-        LOG(LogCore, Fatal, "Failed to create fence event");
-        assert(false && "Failed to create fence event");
-    }
-
-    mUploadFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (mUploadFenceEvent == nullptr) {
-        LOG(LogCore, Fatal, "Failed to create upload fence event");
-        assert(false && "Failed to create upload fence event");
-    }
-
-
-    //CREATE SWAPCHAIN
-    DXGI_MODE_DESC backBufferDesc = {};
-    backBufferDesc.Width = static_cast<UINT>(mViewport.Width);
-    backBufferDesc.Height = static_cast<UINT>(mViewport.Height);
-    backBufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-    DXGI_SAMPLE_DESC sampleDesc = {};
-    sampleDesc.Count = 1;
-    sampleDesc.Quality = 0;
-
-    DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-    swapChainDesc.BufferCount = FRAME_BUFFER_COUNT;
-    swapChainDesc.BufferDesc = backBufferDesc;
-    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    swapChainDesc.OutputWindow = reinterpret_cast<HWND>(glfwGetWin32Window(mWindow));
-    swapChainDesc.SampleDesc = sampleDesc;
-    swapChainDesc.Windowed = true;
-
-    IDXGISwapChain* tempSwapChain;
-    hr = dxgiFactory->CreateSwapChain(mCommandQueue.Get(), &swapChainDesc, &tempSwapChain);
-    if (FAILED(hr)) {
-        LOG(LogCore, Fatal, "Failed to create swap chain");
-        assert(false && "Failed to create swap chain");
-    }
-    mSwapChain = static_cast<IDXGISwapChain3*>(tempSwapChain);
-
-    //CREATE DESCRIPTOR HEAPS
-    mDescriptorHeaps[RT_HEAP] = std::make_unique<DXDescHeap>(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
-    mDescriptorHeaps[DEPTH_HEAP] = std::make_unique<DXDescHeap>(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
-    mDescriptorHeaps[RESOURCE_HEAP] = std::make_unique<DXDescHeap>(mDevice, 5000, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"RESOURCE HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-    mDescriptorHeaps[SAMPLER_HEAP] = std::make_unique<DXDescHeap>(mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, L"SAMPLER HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
-    //CREATE RENDER TARGETS
-    for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
-    {
-        mResources[i] = std::make_unique<DXResource>();
-        ComPtr<ID3D12Resource> res;
-        hr = mSwapChain->GetBuffer(i, IID_PPV_ARGS(&res));
-        if (FAILED(hr)) {
-            LOG(LogCore, Fatal, "Failed to get swapchain buffer");
-            assert(false && "Failed to get swapchain buffer");
-        }
-        mResources[i]->SetResource(res);
-        mDevice->CreateRenderTargetView(mResources[i]->Get(), nullptr, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(i));
-        mResources[i]->GetResource()->SetName(L"RENDER TARGET");
-    }
-
-    //CREATE ROOT SIGNATURE
-    mSignature = std::make_unique<DXSignature>(12);
-    mSignature->AddCBuffer(0, D3D12_SHADER_VISIBILITY_VERTEX);//0
-    mSignature->AddCBuffer(1, D3D12_SHADER_VISIBILITY_PIXEL);//1
-    mSignature->AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX);//2
-    mSignature->AddCBuffer(3, D3D12_SHADER_VISIBILITY_PIXEL);//3
-    mSignature->AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL);//4
-
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);//5
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1);//6
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2);//7
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);//8
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4);//9
-
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 1);//10
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 2);//11
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 3);//12
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 4);//13
-
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_VERTEX, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5);//14
-    mSignature->AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6);//15
-    mSignature->AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP);//16
-    mSignature->CreateSignature(mDevice, L"MAIN ROOT SIGNATURE");
-
-
-    //CREATE DEPTH STENCIL
-    D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
-    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
-    depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
-
-    D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-    depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
-    depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
-    depthOptimizedClearValue.DepthStencil.Stencil = 0;
-
-    auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(mDepthFormat, static_cast<UINT>(mViewport.Width), static_cast<UINT>(mViewport.Height), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
-
-    mResources[DEPTH_STENCIL_RSC] = std::make_unique<DXResource>(mDevice, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
-    mResources[DEPTH_STENCIL_RSC]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    mDevice->CreateDepthStencilView(mResources[DEPTH_STENCIL_RSC]->Get(), &depthStencilDesc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0));
-    SubmitCommands();
+	glfwMakeContextCurrent(mWindow);
+	glfwShowWindow(mWindow);
+	mIsWindowOpen = true;
 }
 
-void Engine::Device::WaitForFence(ComPtr<ID3D12Fence> fence, UINT64& fenceValue, HANDLE& fenceEvent)
+void CE::Device::InitializeDevice()
 {
-    UINT64 completedValue = fence->GetCompletedValue();
-    if (completedValue < fenceValue)
-    {
-        if (FAILED(fence->SetEventOnCompletion(fenceValue, fenceEvent))) {
-            LOG(LogCore, Fatal, "Failed to set fence event on completion.");
-            assert(false && "Failed to set fence event on completion.");
-        }
-        WaitForSingleObject(fenceEvent, INFINITE);
-    }
-    fenceValue++;
+	//DEBUG LAYERS
+#if defined(_DEBUG)
+	Microsoft::WRL::ComPtr<ID3D12Debug> debugInterface;
+	if (FAILED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface)))) {
+		LOG(LogCore, Fatal, "Failed to get debug interface");
+		ABORT;
+	}
+	debugInterface->EnableDebugLayer();
+#endif
+
+	mImpl->mViewport.TopLeftX = 0;
+	mImpl->mViewport.TopLeftY = 0;
+	mImpl->mViewport.MinDepth = 0.0f;
+	mImpl->mViewport.MaxDepth = 1.0f;
+
+	mImpl->mScissorRect.left = 0;
+	mImpl->mScissorRect.top = 0;
+	mImpl->mScissorRect.right = static_cast<LONG>(mImpl->mViewport.Width);
+	mImpl->mScissorRect.bottom = static_cast<LONG>(mImpl->mViewport.Height);
+
+	ComPtr<IDXGIFactory4> dxgiFactory;
+	HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory));
+	if (FAILED(hr))
+	{
+		LOG(LogCore, Fatal, "Failed to create dxgi factory");
+	}
+
+	ComPtr<IDXGIAdapter1> adapter;
+	int adapterIndex = 0;
+	bool adapterFound = false;
+	while (dxgiFactory->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND) {
+		DXGI_ADAPTER_DESC1 desc;
+		adapter->GetDesc1(&desc);
+
+		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
+			adapterIndex++;
+			continue;
+		}
+
+		hr = D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr);
+		if (SUCCEEDED(hr)) {
+
+			hr = D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&mImpl->mDevice));
+			if (FAILED(hr)) {
+				LOG(LogCore, Fatal, "Failed to create render device");
+			}
+
+			D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
+			hr = mImpl->mDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5,
+				&options5, sizeof(options5));
+
+			if (FAILED(hr))
+			{
+				LOG(LogCore, Fatal, "Failed to pick adaptor");
+			}
+			if (options5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED) {
+				adapterFound = false;
+				break;
+			}
+		}
+
+		adapterIndex++;
+	}
+
+	//CREATE COMMAND QUEUE
+	D3D12_COMMAND_QUEUE_DESC cqDesc = {};
+	hr = mImpl->mDevice->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&mImpl->mCommandQueue));
+	if (FAILED(hr)) {
+		LOG(LogCore, Fatal, "Failed to create command queue");
+	}
+
+	hr = mImpl->mDevice->CreateCommandQueue(&cqDesc, IID_PPV_ARGS(&mImpl->mUploadCommandQueue));
+	if (FAILED(hr))
+	{
+		LOG(LogCore, Fatal, "Failed to create upload command queue");
+	}
+
+	//CREATE COMMAND ALLOCATOR
+	for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		hr = mImpl->mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mImpl->mCommandAllocator[i]));
+		if (FAILED(hr))
+		{
+			LOG(LogCore, Fatal, "Failed to create command allocator");
+		}
+	}
+
+	hr = mImpl->mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mImpl->mUploadCommandAllocator));
+	if (FAILED(hr))
+	{
+		LOG(LogCore, Fatal, "Failed to create upload command allocator");
+	}
+
+	//CREATE COMMAND LIST
+	hr = mImpl->mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mImpl->mCommandAllocator[0].Get(), NULL, IID_PPV_ARGS(&mImpl->mCommandList));
+	if (FAILED(hr))
+	{
+		LOG(LogCore, Fatal, "Failed to create command list");
+	}
+	mImpl->mCommandList->SetName(L"Main command list");
+
+	hr = mImpl->mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mImpl->mUploadCommandAllocator.Get(), NULL, IID_PPV_ARGS(&mImpl->mUploadCommandList));
+	if (FAILED(hr))
+	{
+		LOG(LogCore, Fatal, "Failed to create upload command list");
+	}
+	mImpl->mUploadCommandList->SetName(L"Upload command list");
+	mImpl->mUploadCommandList->Close();
+
+	//CREATE FENCES
+	for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		hr = mImpl->mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mImpl->mFence[i]));
+		if (FAILED(hr))
+		{
+			LOG(LogCore, Fatal, "Failed to create fence");
+		}
+
+		mImpl->mFenceValue[i] = 0; // set the initial fence value to 0
+	}
+
+	hr = mImpl->mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mImpl->mUploadFence));
+	if (FAILED(hr))
+	{
+		LOG(LogCore, Fatal, "Failed to upload create fence");
+	}
+
+	mImpl->mUploadFenceValue = 0; // set the initial fence value to 0
+
+
+	//CREATE FENCE EVENT
+	mImpl->mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (mImpl->mFenceEvent == nullptr)
+	{
+		LOG(LogCore, Fatal, "Failed to create fence event");
+	}
+
+	mImpl->mUploadFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (mImpl->mUploadFenceEvent == nullptr)
+	{
+		LOG(LogCore, Fatal, "Failed to create upload fence event");
+	}
+
+	//CREATE SWAPCHAIN
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+	swapChainDesc.Width = static_cast<UINT>(mImpl->mViewport.Width);
+	swapChainDesc.Height =static_cast<UINT>(mImpl->mViewport.Height);
+	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.Stereo = FALSE;
+	swapChainDesc.SampleDesc = {1, 0};
+	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDesc.BufferCount = FRAME_BUFFER_COUNT;
+	swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+
+	ComPtr<IDXGISwapChain1> tempSwapChain;
+	hr = dxgiFactory->CreateSwapChainForHwnd(
+		mImpl->mCommandQueue.Get(), reinterpret_cast<HWND>(glfwGetWin32Window(mWindow)), &swapChainDesc, nullptr, nullptr,
+		&tempSwapChain);
+
+	if (FAILED(hr))
+	{
+		LOG(LogCore, Fatal, "Failed to create swap chain");
+	}
+	tempSwapChain.As(&mImpl->mSwapChain);
+
+	//CREATE DESCRIPTOR HEAPS
+	mImpl->mDescriptorHeaps[RT_HEAP] = DXDescHeap::Construct(mImpl->mDevice, 2000, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, L"MAIN RENDER TARGETS HEAP");
+	mImpl->mDescriptorHeaps[DEPTH_HEAP] = DXDescHeap::Construct(mImpl->mDevice, 2000, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, L"DEPTH DESCRIPTOR HEAP");
+	mImpl->mDescriptorHeaps[RESOURCE_HEAP] = DXDescHeap::Construct(mImpl->mDevice, 50000, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, L"RESOURCE HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	mImpl->mDescriptorHeaps[SAMPLER_HEAP] = DXDescHeap::Construct(mImpl->mDevice, 200, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, L"SAMPLER HEAP", D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+
+	//CREATE RENDER TARGETS
+	for (int i = 0; i < FRAME_BUFFER_COUNT; i++)
+	{
+		mImpl->mResources[i] = std::make_unique<DXResource>();
+		ComPtr<ID3D12Resource> res;
+		hr = mImpl->mSwapChain->GetBuffer(i, IID_PPV_ARGS(&res));
+		if (FAILED(hr))
+		{
+			LOG(LogCore, Fatal, "Failed to get swapchain buffer");
+		}
+		mImpl->mResources[i]->SetResource(res);
+		mImpl->mRenderTargetHandles[i] = mImpl->mDescriptorHeaps[RT_HEAP]->AllocateRenderTarget(mImpl->mResources[i].get(), mImpl->mDevice.Get(), nullptr);
+		mImpl->mResources[i]->GetResource()->SetName(L"RENDER TARGET");
+	}
+
+	//CREATE ROOT SIGNATURE
+	mImpl->mSignature = DXSignatureBuilder(10)
+		.AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL)   //0  //Camera matrices
+		.AddCBuffer(1, D3D12_SHADER_VISIBILITY_VERTEX)//1  //Model matrices
+		.AddCBuffer(2, D3D12_SHADER_VISIBILITY_VERTEX)//2  //Bone matrices
+		.AddCBuffer(3, D3D12_SHADER_VISIBILITY_ALL)   //3  //Light info 
+		.AddCBuffer(4, D3D12_SHADER_VISIBILITY_PIXEL) //4  //Material info
+		.AddCBuffer(5, D3D12_SHADER_VISIBILITY_PIXEL) //5  //Color multiplier
+		.AddCBuffer(6, D3D12_SHADER_VISIBILITY_PIXEL) //6  //Camera clustering buffer
+		.AddCBuffer(7, D3D12_SHADER_VISIBILITY_PIXEL) //7  // Cluster info buffer
+
+		.AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0)//8   //Base color tex
+		.AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1)//9   //Emissive tex
+		.AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2)//10  //NormalTex
+		.AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3)//11  //Occlusion texture
+		.AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4)//12  
+		.AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5)//13  //Directonal lights buffer
+		.AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 6)//14  //Point lights buffer
+		.AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 7)//15  //Light grid buffer
+		.AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8)//16  //Light indices buffer
+		.AddTable(D3D12_SHADER_VISIBILITY_PIXEL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 9)//17  //Shadow maps
+
+		.AddCBuffer(8, D3D12_SHADER_VISIBILITY_PIXEL) //18  //Fog info buffer
+		.AddCBuffer(9, D3D12_SHADER_VISIBILITY_PIXEL) //19  //Particle info buffer
+		.Add32BitConstant(10, D3D12_SHADER_VISIBILITY_PIXEL, 5) //20 //Root constant for general uses
+		.AddSampler(0, D3D12_SHADER_VISIBILITY_PIXEL, D3D12_TEXTURE_ADDRESS_MODE_WRAP) //21  //Sampler
+		.AddSampler(1, D3D12_SHADER_VISIBILITY_PIXEL,
+			D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+			D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT,
+			D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE,
+			D3D12_COMPARISON_FUNC_LESS_EQUAL) //22  //Sampler
+		.Build(mImpl->mDevice, L"MAIN ROOT SIGNATURE");
+
+	//COMPUTE ROOT SIGNATURE
+	//CREATE COMPUTE ROOT SIGNATURE
+	mImpl->mComputeSignature = DXSignatureBuilder(8)
+		.AddCBuffer(0, D3D12_SHADER_VISIBILITY_ALL) // Cluster info 0
+		.AddCBuffer(1, D3D12_SHADER_VISIBILITY_ALL) // Camera info 1
+		.AddCBuffer(2, D3D12_SHADER_VISIBILITY_ALL) // Cluster camera info 2
+		.AddCBuffer(3, D3D12_SHADER_VISIBILITY_ALL) // Light info 3
+		.AddCBuffer(4, D3D12_SHADER_VISIBILITY_ALL) // Model matrices 4
+		.AddCBuffer(5, D3D12_SHADER_VISIBILITY_ALL) // Pixel color for cluster culling 5
+
+		.AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0) //6
+		.AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1) //7
+		.AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2) //8
+		.AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 3) //9
+
+		.AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0) //10
+		.AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 1) //11
+		.AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 2) //12
+		.AddTable(D3D12_SHADER_VISIBILITY_ALL, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3) //13
+		.AddSampler(0, D3D12_SHADER_VISIBILITY_ALL, D3D12_TEXTURE_ADDRESS_MODE_CLAMP, D3D12_FILTER_MIN_MAG_MIP_LINEAR)//14
+		.Build(mImpl->mDevice, L"COMPUTE ROOT SIGNATURE");
+
+	//CREATE DEPTH STENCIL
+	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
+	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+	depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+	depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(mImpl->mDepthFormat, static_cast<UINT>(mImpl->mViewport.Width), static_cast<UINT>(mImpl->mViewport.Height), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+
+	mImpl->mResources[DXImpl::DEPTH_STENCIL_RSC] = std::make_unique<DXResource>(mImpl->mDevice, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
+	mImpl->mResources[DXImpl::DEPTH_STENCIL_RSC]->ChangeState(mImpl->mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+	mImpl->mDepthHandle = mImpl->mDescriptorHeaps[DEPTH_HEAP]->AllocateDepthStencil(mImpl->mResources[DXImpl::DEPTH_STENCIL_RSC].get(), mImpl->mDevice.Get(), &depthStencilDesc);
+
+	FileIO& fileIO = FileIO::Get();
+	std::string shaderPath = fileIO.GetPath(FileIO::Directory::EngineAssets, "shaders/HLSL/MipmapGen.hlsl");
+	ComPtr<ID3DBlob> cs = DXPipelineBuilder::ShaderToBlob(shaderPath.c_str(), "cs_5_0");
+	mImpl->mGenMipmapsPipeline = DXPipelineBuilder()
+		.SetComputeShader(cs->GetBufferPointer(), cs->GetBufferSize())
+		.Build(mImpl->mDevice, mImpl->mComputeSignature, L"GENERATE MIPMAPS COMPUTE SHADER");
+
+
+	SubmitCommands();
 }
 
-void Engine::Device::UpdateRenderTarget()
+void CE::Device::UpdateRenderTarget()
 {
-    if (mViewport.Width <= 0 || mViewport.Height <= 0)
-        return;
+	if (mImpl->mViewport.Width <= 0 || mImpl->mViewport.Height <= 0)
+		return;
 
-    mResources[0] = nullptr;
-    mResources[1] = nullptr;
-    mResources[DEPTH_STENCIL_RSC] = nullptr;
+	mImpl->mResources[0] = nullptr;
+	mImpl->mResources[1] = nullptr;
+	mImpl->mResources[DXImpl::DEPTH_STENCIL_RSC] = nullptr;
 
-    HRESULT hr = mSwapChain->ResizeBuffers(FRAME_BUFFER_COUNT, static_cast<UINT>(mViewport.Width),  static_cast<UINT>(mViewport.Height), DXGI_FORMAT_R8G8B8A8_UNORM, 0);
-    if (FAILED(hr)) {
-        LOG(LogCore, Fatal, "Failed to resize framebuffer");
-        assert(false && "Failed to resize framebuffer");
-    }
+	HRESULT hr = mImpl->mSwapChain->ResizeBuffers(FRAME_BUFFER_COUNT, static_cast<UINT>(mImpl->mViewport.Width), static_cast<UINT>(mImpl->mViewport.Height), DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+	if (FAILED(hr))
+	{
+		LOG(LogCore, Fatal, "Failed to resize framebuffer");
+	}
 
-    for (int i = 0; i < FRAME_BUFFER_COUNT; i++) {
-        mResources[i] = std::make_unique<DXResource>();
-        ComPtr<ID3D12Resource> res;
-        hr = mSwapChain->GetBuffer(i, IID_PPV_ARGS(&res));
-        if (FAILED(hr)) {
-            LOG(LogCore, Fatal, "Failed to get swapchain buffer");
-            assert(false && "Failed to get swapchain buffer");
-        }
-        mResources[i]->SetResource(res);
-        mDevice->CreateRenderTargetView(mResources[i]->Get(), nullptr, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(i));
-        mResources[i]->GetResource()->SetName(L"RENDER TARGET");
-    }
+	for (int i = 0; i < FRAME_BUFFER_COUNT; i++) {
+		mImpl->mResources[i] = std::make_unique<DXResource>();
+		ComPtr<ID3D12Resource> res;
+		hr = mImpl->mSwapChain->GetBuffer(i, IID_PPV_ARGS(&res));
+		if (FAILED(hr))
+		{
+			LOG(LogCore, Fatal, "Failed to get swapchain buffer");
+		}
+		mImpl->mResources[i]->SetResource(res);
+		mImpl->mRenderTargetHandles[i] = mImpl->mDescriptorHeaps[RT_HEAP]->AllocateRenderTarget(mImpl->mResources[i].get(), mImpl->mDevice.Get(), nullptr);
+		mImpl->mResources[i]->GetResource()->SetName(L"RENDER TARGET");
+	}
 
-    D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
-    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-    depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
 
-    D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-    depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
-    depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
-    depthOptimizedClearValue.DepthStencil.Stencil = 0;
+	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+	depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+	depthOptimizedClearValue.DepthStencil.Stencil = 0;
 
-    auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(mDepthFormat, static_cast<UINT>(mViewport.Width), static_cast<UINT>(mViewport.Height), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	auto resourceDesc = CD3DX12_RESOURCE_DESC::Tex2D(mImpl->mDepthFormat, static_cast<UINT>(mImpl->mViewport.Width), static_cast<UINT>(mImpl->mViewport.Height), 1, 1, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
-    mResources[DEPTH_STENCIL_RSC] = std::make_unique<DXResource>(mDevice, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
-    mResources[DEPTH_STENCIL_RSC]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    mDevice->CreateDepthStencilView(mResources[DEPTH_STENCIL_RSC]->Get(), &depthStencilDesc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0));
+	mImpl->mResources[DXImpl::DEPTH_STENCIL_RSC] = std::make_unique<DXResource>(mImpl->mDevice, heapProperties, resourceDesc, &depthOptimizedClearValue, "Depth/Stencil Resource");
+	mImpl->mResources[DXImpl::DEPTH_STENCIL_RSC]->ChangeState(mImpl->mCommandList, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+	mImpl->mDepthHandle = mImpl->mDescriptorHeaps[DEPTH_HEAP]->AllocateDepthStencil(mImpl->mResources[DXImpl::DEPTH_STENCIL_RSC].get(), mImpl->mDevice.Get(), &depthStencilDesc);
 
-    mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
+	mImpl->mFrameIndex = mImpl->mSwapChain->GetCurrentBackBufferIndex();
 }
 
-void Engine::Device::NewFrame() {
+void CE::Device::NewFrame() {
 
-    int width, height;
-    mIsWindowOpen = !glfwWindowShouldClose(mWindow);
+	int width, height;
+	mIsWindowOpen = !glfwWindowShouldClose(mWindow);
 
-    glfwGetWindowSize(mWindow, &width, &height);
-    if (width != mPreviousWidth || height != mPreviousHeight) {
-        mViewport.Width = static_cast<float>(width);
-        mViewport.Height = static_cast<float>(height);
-        mPreviousWidth = width;
-        mPreviousHeight = height;
-        mScissorRect.right = static_cast<LONG>(mViewport.Width);
-        mScissorRect.bottom = static_cast<LONG>(mViewport.Height);
-        mUpdateWindow = true;
-    }
+	glfwGetWindowSize(mWindow, &width, &height);
+	if (width != mPreviousWidth || height != mPreviousHeight) {
+		mImpl->mViewport.Width = static_cast<float>(width);
+		mImpl->mViewport.Height = static_cast<float>(height);
+		mPreviousWidth = width;
+		mPreviousHeight = height;
+		mImpl->mScissorRect.right = static_cast<LONG>(mImpl->mViewport.Width);
+		mImpl->mScissorRect.bottom = static_cast<LONG>(mImpl->mViewport.Height);
+		mUpdateWindow = true;
+	}
 
-    ImGui::GetIO().DisplaySize.x = mViewport.Width;
-    ImGui::GetIO().DisplaySize.y = mViewport.Height;
+	glfwGetWindowPos(mWindow, &mPreviousPosX, &mPreviousPosY);
 
-    StartRecordingCommands();
+	Device& engineDevice = Device::Get();
+	if (engineDevice.GetDisplaySize().x <= 0 || engineDevice.GetDisplaySize().y <= 0)
+		return;
 
-    if (mUpdateWindow) {
-        int otherFrameIndex = mFrameIndex == 0 ? 1 : 0;
-        mFenceValue[otherFrameIndex]++;
-        mCommandQueue->Signal(mFence[otherFrameIndex].Get(), mFenceValue[otherFrameIndex]);
-        WaitForFence(mFence[otherFrameIndex], mFenceValue[otherFrameIndex], mFenceEvent);
-        UpdateRenderTarget();
-        mUpdateWindow = false;
-    }
+#ifdef EDITOR
+	ImGui::GetIO().DisplaySize.x = mImpl->mViewport.Width;
+	ImGui::GetIO().DisplaySize.y = mImpl->mViewport.Height;
+#endif // EDITOR
 
-    ImGui_ImplDX12_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-    ImGuizmo::BeginFrame();
+	StartRecordingCommands();
 
-    mCommandList->RSSetViewports(1, &mViewport); 
-    mCommandList->RSSetScissorRects(1, &mScissorRect); 
-    mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST); 
-    mCommandList->SetGraphicsRootSignature(mSignature->GetSignature().Get());
+#ifdef EDITOR
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+	ImGuizmo::BeginFrame();
+#endif // EDITOR
 
-    glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
-    mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0);
-    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
-    mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mCommandList, mFrameIndex, &clearColor[0]);
-    mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mCommandList, 0);
-
+	SendTexturesToGPU();
+	BindSwapchainRT();
+	glm::vec4 clearColor(0.329f, 0.329f, 0.329f, 1.f);
+	mImpl->mDescriptorHeaps[RT_HEAP]->ClearRenderTarget(mImpl->mCommandList, mImpl->mRenderTargetHandles[mImpl->mFrameIndex], &clearColor[0]);
+	mImpl->mDescriptorHeaps[DEPTH_HEAP]->ClearDepthStencil(mImpl->mCommandList, mImpl->mDepthHandle);
 }
 
-void Engine::Device::EndFrame()
-{   
-    CD3DX12_CPU_DESCRIPTOR_HANDLE depthHandle = mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(0);
-    mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mCommandList, &mFrameIndex, depthHandle);
-
-    auto* desc_ptr = mDescriptorHeaps[RESOURCE_HEAP]->Get();
-    mCommandList->SetDescriptorHeaps(1, &desc_ptr);
-    ImGui::Render();
-    ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.Get());
-
-    // Update and Render additional Platform Windows 
-    // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere. 
-    //  For this specific demo app we could also call glfwMakeContextCurrent(window) directly) 
-    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        GLFWwindow* backup_current_context = glfwGetCurrentContext();
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-        glfwMakeContextCurrent(backup_current_context);
-    }
-
-    glfwSwapBuffers(mWindow);
-    mResources[mFrameIndex]->ChangeState(mCommandList, D3D12_RESOURCE_STATE_PRESENT);
-
-    SubmitCommands();
-
-    if (FAILED(mSwapChain->Present(0, 0))) {
-        assert(false && "Failded to present");
-    }
-
-    ImGui::EndFrame();
-
-    WaitForFence(mFence[mFrameIndex], mFenceValue[mFrameIndex], mFenceEvent);
-
-   // StartUploadCommands();
-}
-
-void Engine::Device::SubmitCommands()
+void CE::Device::EndFrame()
 {
-    //CLOSE COMMAND LIST
-    mCommandList->Close();
-    ID3D12CommandList* ppCommandLists[] = { mCommandList.Get()};
-    mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	mImpl->mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mImpl->mCommandList, &mImpl->mRenderTargetHandles[mImpl->mFrameIndex], mImpl->mDepthHandle);
 
-    mFenceValue[mFrameIndex]++;
-    HRESULT hr = mCommandQueue->Signal(mFence[mFrameIndex].Get(), mFenceValue[mFrameIndex]);
+	auto* desc_ptr = mImpl->mDescriptorHeaps[RESOURCE_HEAP]->Get();
+	mImpl->mCommandList->SetDescriptorHeaps(1, &desc_ptr);
 
-    if (FAILED(hr)) {
-        LOG(LogCore, Fatal, "Failed to signal fence");
-        assert(false && "Failed to signal fence");
-    }
+#ifdef EDITOR
+	ImGui::Render();
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mImpl->mCommandList.Get());
+
+	// Update and Render additional Platform Windows 
+	// (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere. 
+	//  For this specific demo app we could also call glfwMakeContextCurrent(window) directly) 
+	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		GLFWwindow* backup_current_context = glfwGetCurrentContext();
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
+		glfwMakeContextCurrent(backup_current_context);
+	}
+#endif // EDITOR
+
+	glfwSwapBuffers(mWindow);
+	mImpl->mResources[mImpl->mFrameIndex]->ChangeState(mImpl->mCommandList, D3D12_RESOURCE_STATE_PRESENT);
+
+	SubmitCommands();
+
+	if (FAILED(mImpl->mSwapChain->Present(0, 0)))
+	{
+		LOG(LogCore, Fatal, "Failed to present");
+	}
+
+#ifdef EDITOR
+	ImGui::EndFrame();
+#endif // EDITOR
+
+	WaitForFence(mImpl->mFence[mImpl->mFrameIndex], mImpl->mFenceValue[mImpl->mFrameIndex], mImpl->mFenceEvent);
+
+	if (mUpdateWindow)
+	{
+		mImpl->mResources[0] = nullptr;
+		mImpl->mResources[1] = nullptr;
+		mImpl->mResources[DXImpl::DEPTH_STENCIL_RSC] = nullptr;
+	}
+
+	mImpl->mResourcesToDeallocate.clear();
+
+	if (mUpdateWindow)
+	{
+		int otherFrameIndex = mImpl->mFrameIndex == 0 ? 1 : 0;
+		mImpl->mFenceValue[otherFrameIndex]++;
+		mImpl->mCommandQueue->Signal(mImpl->mFence[otherFrameIndex].Get(), mImpl->mFenceValue[otherFrameIndex]);
+		WaitForFence(mImpl->mFence[otherFrameIndex], mImpl->mFenceValue[otherFrameIndex], mImpl->mFenceEvent);
+		StartRecordingCommands();
+		UpdateRenderTarget();
+		SubmitCommands();
+		WaitForFence(mImpl->mFence[mImpl->mFrameIndex], mImpl->mFenceValue[mImpl->mFrameIndex], mImpl->mFenceEvent);
+		mUpdateWindow = false;
+	}
+}
+
+void* CE::Device::GetWindow()
+{
+	return mWindow;
+}
+
+void* CE::Device::GetSwapchain()
+{
+	return mImpl->mSwapChain.Get();
+}
+
+void* CE::Device::GetDevice()
+{
+	return mImpl->mDevice.Get();
+}
+
+void* CE::Device::GetCommandList()
+{
+	return mImpl->mCommandList.Get();
+}
+
+void* CE::Device::GetUploadCommandList()
+{
+	return mImpl->mUploadCommandList.Get();
+}
+
+void* CE::Device::GetCommandQueue()
+{
+	return mImpl->mCommandQueue.Get();
+}
+
+void* CE::Device::GetSignature()
+{
+	return mImpl->mSignature.Get();
+}
+
+void* CE::Device::GetComputeSignature()
+{
+	return mImpl->mComputeSignature.Get();
+}
+
+void* CE::Device::GetMipmapPipeline()
+{
+	return mImpl->mGenMipmapsPipeline.Get();
+}
+
+void CE::Device::SubmitCommands()
+{
+	//CLOSE COMMAND LIST
+	mImpl->mCommandList->Close();
+	ID3D12CommandList* ppCommandLists[] = { mImpl->mCommandList.Get() };
+	mImpl->mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+	mImpl->mFenceValue[mImpl->mFrameIndex]++;
+	HRESULT hr = mImpl->mCommandQueue->Signal(mImpl->mFence[mImpl->mFrameIndex].Get(), mImpl->mFenceValue[mImpl->mFrameIndex]);
+
+	if (FAILED(hr))
+	{
+		LOG(LogCore, Fatal, "Failed to signal fence");
+	}
 
 }
 
-void Engine::Device::StartRecordingCommands()
+void CE::Device::StartRecordingCommands()
 {
-    mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
+	mImpl->mFrameIndex = mImpl->mSwapChain->GetCurrentBackBufferIndex();
 
-    if (FAILED(mCommandAllocator[mFrameIndex]->Reset())) {
-        LOG(LogCore, Fatal, "Failed to reset command allocator");
-        assert(false && "Failed to reset command allocator");
-    }
+	if (FAILED(mImpl->mCommandAllocator[mImpl->mFrameIndex]->Reset()))
+	{
+		LOG(LogCore, Fatal, "Failed to reset command allocator");
+	}
 
-    if (FAILED(mCommandList->Reset(mCommandAllocator[mFrameIndex].Get(), nullptr))) {
-        LOG(LogCore, Fatal, "Failed to reset command list");
-        assert(false && "Failed to reset command list");
-    }
+	if (FAILED(mImpl->mCommandList->Reset(mImpl->mCommandAllocator[mImpl->mFrameIndex].Get(), nullptr)))
+	{
+		LOG(LogCore, Fatal, "Failed to reset command list");
+	}
 }
 
-void Engine::Device::StartUploadCommands()
+void CE::Device::SendTexturesToGPU()
 {
-    if (FAILED(mUploadCommandAllocator->Reset())) {
-        LOG(LogCore, Fatal, "Failed to reset upload command allocator");
-        assert(false && "Failed to reset upload command allocator");
-    }
+	AssetHandle defaultTexture = Texture::TryGetDefaultTexture();
 
-    if (FAILED(mUploadCommandList->Reset(mUploadCommandAllocator.Get(), nullptr))) {
-        LOG(LogCore, Fatal, "Failed to reset upload command list");
-        assert(false && "Failed to reset upload command list");
-    }
+	if (defaultTexture != nullptr
+		&& !defaultTexture->WasSendToGPU())
+	{
+		defaultTexture->SendToGPU();
+	}
 
+	for (WeakAssetHandle<Texture> weakHandle : AssetManager::Get().GetAllAssets<Texture>())
+	{
+		if (!weakHandle.IsLoaded())
+		{
+			continue;
+		}
+
+		AssetHandle<Texture> texture{ weakHandle };
+
+		if (texture->IsReadyToBeSentToGpu())
+		{
+			texture->SendToGPU();
+		}
+	}
 }
 
-void Engine::Device::SubmitUploadCommands()
+void CE::Device::DXImplDeleter::operator()(DXImpl* impl) const
 {
-    //CLOSE COMMAND LIST
-    mUploadCommandList->Close();
-    ID3D12CommandList* ppCommandLists[] = { mUploadCommandList.Get()};
-    mUploadCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-    mUploadFenceValue++;
-    HRESULT hr = mUploadCommandQueue->Signal(mUploadFence.Get(), mUploadFenceValue);
-
-    if (FAILED(hr)) {
-        LOG(LogCore, Fatal, "Failed to signal upload fence");
-        assert(false && "Failed to signal upload fence");
-    }
+	delete impl;
 }
 
-
-void Engine::Device::CreateImguiContext()
+bool CE::Device::StartUploadCommands()
 {
-    LOG(LogCore, Message, "Creating imgui context");
+	if (mUploadCommandListOpen)
+		return false;
 
-    glfwShowWindow(mWindow);
-    mIsWindowOpen = true;
+	if (FAILED(mImpl->mUploadCommandAllocator->Reset()))
+	{
+		LOG(LogCore, Fatal, "Failed to reset upload command allocator");
+	}
 
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable;
-    ImGui::GetIO().ConfigViewportsNoDecoration = false;
-    ImGui::GetIO().DisplaySize.x = mViewport.Width;
-    ImGui::GetIO().DisplaySize.y = mViewport.Height;
+	if (FAILED(mImpl->mUploadCommandList->Reset(mImpl->mUploadCommandAllocator.Get(), nullptr)))
+	{
+		LOG(LogCore, Fatal, "Failed to reset upload command list");
+	}
 
-    ImGui_ImplDX12_Init(mDevice.Get(), FRAME_BUFFER_COUNT,
-        DXGI_FORMAT_R8G8B8A8_UNORM, mDescriptorHeaps[RESOURCE_HEAP]->Get(),
-        mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(0),
-        mDescriptorHeaps[RESOURCE_HEAP]->GetGPUHandle(0));
-    ImGui_ImplGlfw_InitForOther(mWindow, true);
-
-    ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
-
-    std::filesystem::create_directories("Intermediate/Layout");
-    ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
+	mUploadCommandListOpen = true;
+	return true;
 }
 
-int Engine::Device::AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc)
+void CE::Device::SubmitUploadCommands()
 {
-    mDevice->CreateShaderResourceView(rsc->Get(), &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(mHeapResourceCount));
-    mHeapResourceCount++;
+	//CLOSE COMMAND LIST
+	mImpl->mUploadCommandList->Close();
+	ID3D12CommandList* ppCommandLists[] = { mImpl->mUploadCommandList.Get() };
+	mImpl->mUploadCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
-    return mHeapResourceCount - 1;
+	mImpl->mUploadFenceValue++;
+	HRESULT hr = mImpl->mUploadCommandQueue->Signal(mImpl->mUploadFence.Get(), mImpl->mUploadFenceValue);
+
+	WaitForFence(mImpl->mUploadFence, mImpl->mUploadFenceValue, mImpl->mUploadFenceEvent);
+
+	if (FAILED(hr))
+	{
+		LOG(LogCore, Fatal, "Failed to signal upload fence");
+	}
+	else
+		mUploadCommandListOpen = false;
 }
 
-void Engine::Device::AllocateTexture(DXResource* rsc, const D3D12_SHADER_RESOURCE_VIEW_DESC& desc, unsigned int slot)
+void CE::Device::AddToDeallocation(ComPtr<ID3D12Resource>&& res)
 {
-    mDevice->CreateShaderResourceView(rsc->Get(), &desc, mDescriptorHeaps[RESOURCE_HEAP]->GetCPUHandle(slot));
+	mImpl->mResourcesToDeallocate.emplace_back(std::move(res));
 }
 
-int Engine::Device::AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc)
+void CE::Device::BindSwapchainRT()
 {
-    mDevice->CreateRenderTargetView(rsc->Get(), &desc, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(frameBufferCount));
-    frameBufferCount++;
+	mImpl->mCommandList->RSSetViewports(1, &mImpl->mViewport);
+	mImpl->mCommandList->RSSetScissorRects(1, &mImpl->mScissorRect);
+	mImpl->mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    return frameBufferCount-1;
+	mImpl->mResources[mImpl->mFrameIndex]->ChangeState(mImpl->mCommandList, D3D12_RESOURCE_STATE_RENDER_TARGET);
+	mImpl->mDescriptorHeaps[RT_HEAP]->BindRenderTargets(mImpl->mCommandList, &mImpl->mRenderTargetHandles[mImpl->mFrameIndex], mImpl->mDepthHandle);
 }
 
-int Engine::Device::AllocateDepthStencil(DXResource* rsc, const D3D12_DEPTH_STENCIL_VIEW_DESC& desc)
+void CE::Device::ResolveMsaa(FrameBuffer & msaaFramebuffer)
 {
-    mDevice->CreateDepthStencilView(rsc->Get(), &desc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(depthStencilCount));
-    depthStencilCount++;
+	if (msaaFramebuffer.GetSize() != glm::vec2(mImpl->mViewport.Width, mImpl->mViewport.Height))
+		return;
 
-    return depthStencilCount-1;
+	mImpl->mResources[mImpl->mFrameIndex]->ChangeState(mImpl->mCommandList, D3D12_RESOURCE_STATE_RESOLVE_DEST);
+
+	msaaFramebuffer.PrepareMsaaForResolve();
+
+	mImpl->mCommandList->ResolveSubresource(
+		mImpl->mResources[mImpl->mFrameIndex]->Get(),
+		0,
+		msaaFramebuffer.GetResource().Get(),
+		0,
+		DXGI_FORMAT_R8G8B8A8_UNORM);
 }
 
-void Engine::Device::AllocateDepthStencil(DXResource* rsc, const D3D12_DEPTH_STENCIL_VIEW_DESC& desc, unsigned int slot)
+void CE::Device::CopyToRenderTargets(FrameBuffer & source)
 {
-    mDevice->CreateDepthStencilView(rsc->Get(), &desc, mDescriptorHeaps[DEPTH_HEAP]->GetCPUHandle(slot));
+	source.SetAsCopySource();
+	Device& engineDevice = Device::Get();
+	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());
+	mImpl->mResources[engineDevice.GetFrameIndex()]->ChangeState(commandList, D3D12_RESOURCE_STATE_COPY_DEST);
+	commandList->CopyResource(mImpl->mResources[engineDevice.GetFrameIndex()]->Get(), source.GetResource().Get());
 }
 
-void Engine::Device::AllocateFramebuffer(DXResource* rsc, const D3D12_RENDER_TARGET_VIEW_DESC& desc, unsigned int slot)
+glm::vec2 CE::Device::GetDisplaySize()
 {
-    mDevice->CreateRenderTargetView(rsc->Get(), &desc, mDescriptorHeaps[RT_HEAP]->GetCPUHandle(slot));
+	return glm::vec2(mImpl->mViewport.Width, mImpl->mViewport.Height);
+}
+
+glm::vec2 CE::Device::GetWindowPosition()
+{
+	return glm::vec2{ static_cast<float>(mPreviousPosX), static_cast<float>(mPreviousPosY) };
+}
+
+std::shared_ptr<DXDescHeap> CE::Device::GetDescriptorHeap(int heap)
+{
+	return mImpl->mDescriptorHeaps[heap];
+}
+
+int CE::Device::GetFrameIndex()
+{
+	return mImpl->mFrameIndex;
+}
+
+#ifdef EDITOR
+void CE::Device::CreateImguiContext()
+{
+	LOG(LogCore, Verbose, "Creating imgui context");
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui::GetIO().ConfigFlags |=
+		ImGuiConfigFlags_DockingEnable
+		| ImGuiConfigFlags_ViewportsEnable
+		| ImGuiConfigFlags_NavEnableGamepad
+		| ImGuiConfigFlags_NavEnableKeyboard;
+	ImGui::GetIO().ConfigViewportsNoDecoration = false;
+	ImGui::GetIO().DisplaySize.x = mImpl->mViewport.Width;
+	ImGui::GetIO().DisplaySize.y = mImpl->mViewport.Height;
+
+	ImGui_ImplDX12_Init(mImpl->mDevice.Get(), FRAME_BUFFER_COUNT,
+		DXGI_FORMAT_R8G8B8A8_UNORM, mImpl->mDescriptorHeaps[RESOURCE_HEAP]->Get(),
+		mImpl->mDescriptorHeaps[RESOURCE_HEAP]->Get()->GetCPUDescriptorHandleForHeapStart(),
+		mImpl->mDescriptorHeaps[RESOURCE_HEAP]->Get()->GetGPUDescriptorHandleForHeapStart());
+	ImGui_ImplGlfw_InitForOther(mWindow, true);
+	ImGui_ImplGlfw_SetCallbacksChainForAllWindows(true);
+
+	ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
+
+	std::filesystem::create_directories("Intermediate/Layout");
+	ImGui::GetIO().IniFilename = "Intermediate/Layout/imgui.ini";
+}
+#endif
+
+constexpr std::array<std::string_view, sNumOfIcons> GetEmbeddedIcons()
+{
+	return
+	{
+		std::string_view
+		{
+			// 48x48
+			"89504E470D0A1A0A0000000D49484452"
+			"000000300000003001030000006DCC6B"
+			"C4000000017352474200AECE1CE90000"
+			"000467414D410000B18F0BFC61050000"
+			"0006504C54453EDED9FFFFFFF630CE2B"
+			"000000097048597300000EC200000EC2"
+			"0115284A80000000E84944415428CF75"
+			"D0B18AC2401006E07F19D86D02692DA2"
+			"D75D9DED52C8F92A81F49AE38A6B2C56"
+			"52D8C8D56773BE8290C6721FC087D860"
+			"61A7011B0FCED399A0A5D37CB00C3BF3"
+			"0F9ED44BDB71FD1728C48E8DA1029300"
+			"259329973125ADF9019ED61A50BEA80C"
+			"F7BBA2220742515B07AD8B3AF51DF088"
+			"F4A44E7244AF937AC87CEE4ED31CBD8F"
+			"6697A7E8954D1584F7D98179B3DFC2C0"
+			"6E04D8F398C96DE85AAC174676B54D11"
+			"8D96AB057FA62ED51F83ABA061E66719"
+			"4B5F3C96CCEF8FE29566970D6FA67CBF"
+			"255EDEC7AD960C264492C80449949820"
+			"F962D3485ADA1F25FBFD128FBB3C29E0"
+			"0633F14FAA8F44058B0000000049454E"
+			"44AE426082"
+		},
+		{
+			// 32x32
+			"89504E470D0A1A0A0000000D49484452"
+			"0000002000000020010300000049B4E8"
+			"B7000000017352474200AECE1CE90000"
+			"000467414D410000B18F0BFC61050000"
+			"0006504C54453EDED9FFFFFFF630CE2B"
+			"000000097048597300000EC200000EC2"
+			"0115284A80000000874944415418D363"
+			"60606C60606060DE0023929BE1C46603"
+			"063628C1C0C096BF5986412D7FB30D43"
+			"F9E3CF350CC50F1F2730143C6C7EC050"
+			"50D8F88EC1CE70C63B0639C31DEF1818"
+			"0C7FE43124183E004A181E78C0606F38"
+			"FF0C83FDCCF93D0C8C7F9BFF3030FC07"
+			"11ECED3F18D898FB808C9FF3800EF8BB"
+			"03689BEC0720C10F22D81FC089070C00"
+			"150931AC364E68230000000049454E44"
+			"AE426082"
+		},
+		{
+			// 16x16
+			"89504E470D0A1A0A0000000D49484452"
+			"00000010000000100103000000253D6D"
+			"22000000017352474200AECE1CE90000"
+			"000467414D410000B18F0BFC61050000"
+			"0006504C54453EDED9FFFFFFF630CE2B"
+			"000000097048597300000EC200000EC2"
+			"0115284A80000000374944415418D363"
+			"00024E0106CE1006CD0006ED3006C929"
+			"0CBE520CA95E0CAC33184AB318E49731"
+			"38CB30D81630B01F60606E60606E0000"
+			"A71F084E8E1D12830000000049454E44"
+			"AE426082"
+		}
+	};
 }

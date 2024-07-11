@@ -2,9 +2,9 @@
 #pragma once
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
 
-#include "Assets/Ability.h"
+#include "Assets/Ability/Ability.h"
 
-namespace Engine
+namespace CE
 {
 	class World;
 

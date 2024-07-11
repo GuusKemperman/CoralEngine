@@ -1,25 +1,22 @@
 #include "Precomp.h"
-#include "Components/ComponentFiler.h"
+#include "Components/ComponentFilter.h"
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
-bool Engine::Internal::ComponentTypeFilterFunctor::operator()(const MetaType& type) const
+bool CE::Internal::ComponentTypeFilterFunctor::operator()(const MetaType& type) const
 {
 	return type.GetProperties().Has(Props::sComponentTag);
 }
 
-REFLECT_AT_START_UP(ArrayOfComponentFilter, std::vector<Engine::ComponentFilter>)
+REFLECT_AT_START_UP(ArrayOfComponentFilter, std::vector<CE::ComponentFilter>)
 
-Engine::MetaType Reflector<Engine::ComponentFilter>::Reflect()
+CE::MetaType Reflector<CE::ComponentFilter>::Reflect()
 {
-	using namespace Engine;
+	using namespace CE;
 	using T = ComponentFilter;
-
-	std::vector<ComponentFilter> vec1{};
-	std::vector<ComponentFilter> vec2{};
 
 	MetaType type{ MetaType::T<T>{}, "ComponentType" };
 

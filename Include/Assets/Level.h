@@ -1,15 +1,14 @@
 #pragma once
 #include "Assets/Asset.h"
 
+#include "World/World.h"
 #include "GSON/GSONBinary.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/Prefabs/PrefabEntityFactory.h"
+#include "Core/AssetHandle.h"
 
-namespace Engine
+namespace CE
 {
-	class World;
-	class Prefab;
-
 	/*
 	A level is a way for you to serialize and deserialize world.
 
@@ -36,6 +35,8 @@ namespace Engine
 		void CreateFromWorld(const World& world);
 		World CreateWorld(bool callBeginPlayImmediately) const;
 
+		static World CreateDefaultWorld();
+
 	protected:
 		void OnSave(AssetSaveInfo& saveInfo) const override;
 
@@ -53,7 +54,7 @@ namespace Engine
 		{
 			std::string mPrefabName{};
 
-			std::optional<std::shared_ptr<const Prefab>> mPrefab{};
+			std::optional<AssetHandle<Prefab>> mPrefab{};
 
 			// The factories that have been added to the prefab while our level was stored in a file offline.
 			// This vector is sorted so that when iterating over them, you are guaranteed to encounter each
@@ -66,7 +67,12 @@ namespace Engine
 
 		static BinaryGSONObject GenerateCurrentStateOfPrefabs(const BinaryGSONObject& serializedWorld);
 
-		std::unique_ptr<BinaryGSONObject> mSerializedComponents{};
+		// A world is created as a byproduct
+		// when loading the level. Instead of
+		// discarding the world, we return this
+		// one on the first call to CreateWorld
+		mutable std::optional<World> mWorld{};
+		mutable std::optional<BinaryGSONObject> mSerializedWorld{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();

@@ -5,7 +5,7 @@
 
 #include "Core/FileIO.h"
 
-using namespace Engine;
+using namespace CE;
 using namespace std;
 
 std::string FileIO::ReadTextFile(Directory type, const std::string& path)
@@ -52,7 +52,7 @@ std::vector<char> FileIO::ReadBinaryFile(Directory type, const std::string& path
     file.seekg(0, std::ios::beg);
     std::vector<char> buffers(size);
     if (file.read(buffers.data(), size)) return buffers;
-    assert(false);
+    ABORT;
     return vector<char>();
 }
 

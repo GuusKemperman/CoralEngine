@@ -3,16 +3,17 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <EngineOutputDir>Build\$(Platform)\$(Configuration)\</EngineOutputDir>
-    <EngineProjectName>Engine</EngineProjectName>
+    <EngineProjectName>CoralEngine</EngineProjectName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(EngineDir)Include;$(EngineDir)External;$(EngineDir)External\xsr\include;$(EngineDir)External\clipper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(EngineDir)Include;$(EngineDir)External;$(EngineDir)External\clipper\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExtraWarnings>true</ExtraWarnings>
       <WarningsAsErrors>true</WarningsAsErrors>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <PreprocessorDefinitions>XSR_USE_HARD_CODED_SHADERS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FastMath>true</FastMath>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

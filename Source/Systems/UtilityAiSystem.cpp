@@ -1,12 +1,14 @@
 #include "Precomp.h"
 #include "Systems/UtilityAiSystem.h"
 
-#include "Components/UtililtyAi/EnemyAiControllerComponent.h"
+#include <entt/entity/runtime_view.hpp>
+
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
 
-void Engine::AITickSystem::Update(World& world, float dt)
+void CE::AITickSystem::Update(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
 	const auto& enemyAIControllerView = reg.View<EnemyAiControllerComponent>();
@@ -27,113 +29,143 @@ void Engine::AITickSystem::Update(World& world, float dt)
 			continue;
 		}
 
-		const MetaFunc* const aiTickEvent = TryGetEvent(*currentAIController.mCurrentState, sAITickEvent);
+		const std::optional<BoundEvent> aiTickEvent = TryGetEvent(*currentAIController.mCurrentState, sAITickEvent);
 
-		if (aiTickEvent == nullptr)
+		if (!aiTickEvent.has_value())
 		{
-			LOG(LogAI, Warning, "Component {} has an {} event, but not a {} event",
-				currentAIController.mCurrentState->GetName(),
-				sAIEvaluateEvent.mName,
-				sAITickEvent.mName);
 			continue;
 		}
 
-		if (aiTickEvent->GetProperties().Has(Props::sIsEventStaticTag))
+		if (aiTickEvent->mIsStatic)
 		{
-			aiTickEvent->InvokeUncheckedUnpacked(world, entity, dt);
+			aiTickEvent->mFunc.get().InvokeUncheckedUnpacked(world, entity, dt);
 		}
 		else
 		{
 			MetaAny component{ *currentAIController.mCurrentState, storage->value(entity), false };
-			aiTickEvent->InvokeUncheckedUnpacked(component, world, entity, dt);
+			aiTickEvent->mFunc.get().InvokeUncheckedUnpacked(component, world, entity, dt);
 		}
 	}
 }
 
-Engine::MetaType Engine::AITickSystem::Reflect()
+CE::MetaType CE::AITickSystem::Reflect()
 {
-	return MetaType{MetaType::T<AITickSystem>{}, "AITickSystem", MetaType::Base<System>{}};
+	return MetaType{ MetaType::T<AITickSystem>{}, "AITickSystem", MetaType::Base<System>{} };
 }
 
-void Engine::AIEvaluateSystem::Update(World& world, float)
+void CE::AIEvaluateSystem::Update(World& world, float)
 {
-	const Registry& reg = world.GetRegistry();
-
-	struct StateToEvaluate
-	{
-		std::reference_wrapper<const entt::sparse_set> mStorage;
-		std::reference_wrapper<const MetaType> mType;
-		std::reference_wrapper<const MetaFunc> mEvaluate;
-		bool mAreEventsStatic{};
-	};
-	std::vector<StateToEvaluate> statesToEvaluate{};
-
-	for (const auto&& [typeId, storage] : reg.Storage())
-	{
-		const MetaType* const state = MetaManager::Get().TryGetType(typeId);
-
-		if (state == nullptr)
-		{
-			continue;
-		}
-
-		const MetaFunc* const evaluateEvent = TryGetEvent(*state, sAIEvaluateEvent);
-
-		if (evaluateEvent == nullptr)
-		{
-			continue;
-		}
-
-		statesToEvaluate.emplace_back(StateToEvaluate{ storage, *state, *evaluateEvent, evaluateEvent->GetProperties().Has(Props::sIsEventStaticTag) });
-	}
+	Registry& reg = world.GetRegistry();
 
 	const auto& enemyAIControllerView = world.GetRegistry().View<EnemyAiControllerComponent>();
 
 	for (auto [entity, currentAIController] : enemyAIControllerView.each())
 	{
-		float bestScore = std::numeric_limits<float>::lowest();
-		const MetaType* bestType = nullptr;
+		currentAIController.mCurrentScore = std::numeric_limits<float>::lowest();
+		currentAIController.mPreviousState = currentAIController.mCurrentState;
+		currentAIController.mNextState = nullptr;
 
-		for (const StateToEvaluate& state : statesToEvaluate)
+#ifdef EDITOR
+		currentAIController.mDebugPreviouslyEvaluatedScores.clear();
+#endif 
+	}
+
+	for (const BoundEvent& boundEvent : mBoundEvaluateEvents)
+	{
+		entt::sparse_set* const storage = reg.Storage(boundEvent.mType.get().GetTypeId());
+
+		if (storage == nullptr)
 		{
-			if (!state.mStorage.get().contains(entity))
-			{
-				continue;
-			}
+			continue;
+		}
 
+		entt::runtime_view view{};
+		view.iterate(*storage);
+		view.iterate(reg.Storage<EnemyAiControllerComponent>());
+
+		for (entt::entity entity : view)
+		{
 			float score{};
-			FuncResult evalResult;
 
-			if (state.mAreEventsStatic)
+			if (boundEvent.mIsStatic)
 			{
-				evalResult = state.mEvaluate.get().InvokeUncheckedUnpackedWithRVO(&score, world, entity);
+				boundEvent.mFunc.get().InvokeUncheckedUnpackedWithRVO(&score, world, entity);
 			}
 			else
 			{
-				// const_cast is fine since we are assigning it to a const MetaAny
-				const MetaAny component{ state.mType, const_cast<void*>(state.mStorage.get().value(entity)), false };
-				evalResult = state.mEvaluate.get().InvokeUncheckedUnpackedWithRVO(&score, component, world, entity);
+				MetaAny component{ boundEvent.mType, storage->value(entity), false };
+				boundEvent.mFunc.get().InvokeUncheckedUnpackedWithRVO(&score, component, world, entity);
 			}
 
-			if (evalResult.HasError())
+			EnemyAiControllerComponent& aiController = reg.Get<EnemyAiControllerComponent>(entity);
+
+			if (score > aiController.mCurrentScore)
 			{
-				LOG(LogAI, Error, "Error occured while evaluating state {} - {}", state.mType.get().GetName(), evalResult.Error());
-				continue;
+				aiController.mCurrentScore = score;
+				aiController.mNextState = &boundEvent.mType.get();
 			}
 
-			if (score > bestScore)
-			{
-				bestScore = score;
-				bestType = &state.mType.get();
-			}
+#ifdef EDITOR
+			aiController.mDebugPreviouslyEvaluatedScores.emplace_back(boundEvent.mType.get().GetName(), score);
+#endif
 		}
+	}
 
-		currentAIController.mCurrentState = bestType;
+	for (auto [entity, currentAIController] : enemyAIControllerView.each())
+	{
+#ifdef EDITOR
+		std::sort(currentAIController.mDebugPreviouslyEvaluatedScores.begin(), currentAIController.mDebugPreviouslyEvaluatedScores.end(),
+			[](const std::pair<std::string_view, float>& lhs, const std::pair<std::string_view, float>& rhs)
+			{
+				return lhs.second > rhs.second;
+			});
+#endif
+		currentAIController.mCurrentState = currentAIController.mNextState;
+
+		if (currentAIController.mCurrentState != currentAIController.mPreviousState)
+		{
+			CallTransitionEvent(sAIStateExitEvent, currentAIController.mPreviousState, world, entity);
+			CallTransitionEvent(sAIStateEnterEvent, currentAIController.mCurrentState, world, entity);
+		}
 	}
 }
 
+template <typename EventT>
+void CE::AIEvaluateSystem::CallTransitionEvent(const EventT& event, const MetaType* type, World& world,
+	entt::entity owner)
+{
+	if (type == nullptr)
+	{
+		return;
+	}
 
-Engine::MetaType Engine::AIEvaluateSystem::Reflect()
+	const std::optional<BoundEvent> boundEvent = TryGetEvent(*type, event);
+
+	if (!boundEvent.has_value())
+	{
+		return;
+	}
+
+	entt::sparse_set* storage = world.GetRegistry().Storage(type->GetTypeId());
+
+	if (storage == nullptr
+		|| !storage->contains(owner))
+	{
+		return;
+	}
+
+	if (boundEvent->mIsStatic)
+	{
+		boundEvent->mFunc.get().InvokeUncheckedUnpacked(world, owner);
+	}
+	else
+	{
+		MetaAny component{ *type, storage->value(owner), false };
+		boundEvent->mFunc.get().InvokeUncheckedUnpacked(component, world, owner);
+	}
+}
+
+CE::MetaType CE::AIEvaluateSystem::Reflect()
 {
 	return MetaType{ MetaType::T<AIEvaluateSystem>{}, "AIEvaluateSystem", MetaType::Base<System>{} };
 }

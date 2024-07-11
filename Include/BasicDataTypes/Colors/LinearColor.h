@@ -2,7 +2,7 @@
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Meta/MetaReflect.h"
 
-namespace Engine
+namespace CE
 {
 	struct LinearColor : public glm::vec<4, float>
 	{
@@ -21,7 +21,5 @@ namespace Engine
 }
 
 #ifdef EDITOR
-IMGUI_AUTO_DEFINE_INLINE(template<>, Engine::LinearColor, ImGui::ColorEdit4(name.c_str(), static_cast<float*>(&var.r));)
+IMGUI_AUTO_DEFINE_INLINE(template<>, CE::LinearColor, ImGui::ColorEdit4(name.c_str(), static_cast<float*>(&var.r));)
 #endif // EDITOR
-
-

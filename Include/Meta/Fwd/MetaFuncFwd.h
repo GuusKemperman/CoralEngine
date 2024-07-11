@@ -3,7 +3,7 @@
 #include "MetaTypeTraitsFwd.h"
 #include "MetaFuncIdFwd.h"
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 	class MetaProps;
@@ -51,7 +51,9 @@ namespace Engine
 		arrow,						// ->  class field
 		dot,						// .   class field
 		dot_indirect,				// .*  pointer to field
-		none,
+		increment = 45,				// ++
+		decrement,					// --
+		none = 44,
 	};
 
 	std::string_view GetNameOfOperator(OperatorType type);
@@ -61,8 +63,6 @@ namespace Engine
 		MetaFuncNamedParam(TypeTraits typeTraits = {}, std::string_view name = {}) :
 			mTypeTraits(typeTraits),
 			mName(name) {}
-
-		constexpr operator TypeTraits() const { return mTypeTraits; }
 
 		bool operator==(const MetaFuncNamedParam& other) const { return mTypeTraits == other.mTypeTraits && mName == other.mName; };
 		bool operator!=(const MetaFuncNamedParam& other) const { return mTypeTraits != other.mTypeTraits || mName != other.mName; };
@@ -134,7 +134,7 @@ namespace Engine
 
 		// In order to distinquish between overloads, you may have to cast it to the correct signature first.
 		// This is not specifically related to the MetaFunc class, but a restraint enforced by C++ itself.
-		MetaFunc func5{static_cast<float(*)(const glm::vec2&, const glm::vec2&)>(&glm::dot), "Dot" };
+		MetaFunc func5{static_cast<float(*)(glm::vec2, glm::vec2)>(&glm::dot), "Dot" };
 	*/
 	class MetaFunc
 	{

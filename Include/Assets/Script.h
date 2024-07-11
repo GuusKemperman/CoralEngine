@@ -5,7 +5,7 @@
 #include "Scripting/ScriptField.h"
 #include "Scripting/ScriptErrors.h"
 
-namespace Engine
+namespace CE
 {
 	class BinaryGSONObject;
 	class MetaType;
@@ -16,6 +16,12 @@ namespace Engine
 	public:
 		Script(std::string_view name);
 		Script(AssetLoadInfo& loadInfo);
+
+		Script(Script&&) noexcept = default;
+		Script(const Script&) = delete;
+
+		Script& operator=(Script&&) = delete;
+		Script& operator=(const Script&) = delete;
 
 		// May invalidate pointers holding onto any function from this script,
 		// if the internal vector resizes
@@ -89,9 +95,6 @@ namespace Engine
 		// This assumption has been made in a few places, indicated by static_assert(sIsTypeIdTheSameAsNameHash),
 		// so if this ever changes, you'll know exactly where you need to start fixing things.
 		static constexpr bool sIsTypeIdTheSameAsNameHash = true;
-		
-		// If a type has a property with this name, it was created from a script
-		static constexpr Name sWasTypeCreatedFromScriptProperty = "CreatedFromScript"_Name;
 
 		// Each component script secretly gets assigned a field of type entt::entity with this name.
 		// Upon constructing the component, the correct entity id is assigned.

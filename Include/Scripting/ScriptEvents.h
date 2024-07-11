@@ -1,9 +1,9 @@
 #pragma once
-
 #include "Assets/Script.h"
+#include "Assets/Core/AssetHandle.h"
 #include "Utilities/Events.h"
 
-namespace Engine
+namespace CE
 {
 	class Script;
 	class ScriptFunc;
@@ -13,11 +13,20 @@ namespace Engine
 	class ScriptEvent
 	{
 	public:
-		template<typename Ret, typename... Args, bool IsPure, bool IsAlwaysStatic>
-		ScriptEvent(const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event, std::vector<MetaFuncNamedParam>&& params, std::optional<MetaFuncNamedParam>&& ret);
+		template <typename Ret, typename... Args, bool IsAlwaysStatic>
+		ScriptEvent(const Event<Ret(Args...), IsAlwaysStatic>& event, std::vector<MetaFuncNamedParam>&& params,
+		            std::optional<MetaFuncNamedParam>&& ret);
 
 		MetaFunc& Declare(TypeId selfTypeId, MetaType& toType) const;
-		void Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const;
+		void Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc,
+		            const AssetHandle<Script>& script) const;
+
+#ifdef EDITOR
+		/**
+		 * \brief Can be used to make calls to ImGui so the user can add/remove event specific properties.
+		 */
+		virtual void OnDetailsInspect([[maybe_unused]] ScriptFunc& scriptFunc) const {}
+#endif // EDITOR
 
 		std::reference_wrapper<const EventBase> mBasedOnEvent;
 
@@ -25,63 +34,62 @@ namespace Engine
 		std::optional<MetaFuncNamedParam> mReturnValueToShowToUser{};
 
 	private:
-		virtual MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const = 0;
+		virtual MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+		                                           const AssetHandle<Script>& script) const = 0;
 
 		std::vector<TypeTraits> mEventParams{};
 		TypeTraits mEventReturnType{};
 
 		bool mIsStatic{};
-		bool mIsPure{};
 	};
 
-	class ScriptOnConstructEvent final :
+	class ScriptOnlyPassComponentEvent :
 		public ScriptEvent
 	{
 	public:
-		ScriptOnConstructEvent();
+		template<typename EventT>
+		ScriptOnlyPassComponentEvent(const EventT& event) :
+			ScriptEvent(event, {}, std::nullopt) {}
 
 	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+			const AssetHandle<Script>& script) const override;
 	};
 
-	class ScriptOnBeginPlayEvent final :
+	// For both Tick and FixedTick
+	class ScriptTickEventBase :
 		public ScriptEvent
 	{
 	public:
-		ScriptOnBeginPlayEvent();
+		template<typename EventT>
+		ScriptTickEventBase(const EventT& event) :
+			ScriptEvent(event, { { MakeTypeTraits<float>(), "DeltaTime" } }, std::nullopt) {}
 
-	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
+#ifdef EDITOR
+		void OnDetailsInspect(ScriptFunc& scriptFunc) const override;
+#endif // EDITOR
 	};
 
 	class ScriptTickEvent final :
-		public ScriptEvent
+		public ScriptTickEventBase
 	{
 	public:
-		ScriptTickEvent();
+		ScriptTickEvent() : ScriptTickEventBase(sTickEvent) {};
 
 	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+			const AssetHandle<Script>& script) const override;
 	};
 
 	class ScriptFixedTickEvent final :
-		public ScriptEvent
+		public ScriptTickEventBase
 	{
 	public:
-		ScriptFixedTickEvent();
+		ScriptFixedTickEvent() : ScriptTickEventBase(sFixedTickEvent) {};
 
 	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
-	};
-
-	class ScriptDestructEvent final :
-		public ScriptEvent
-	{
-	public:
-		ScriptDestructEvent();
-
-	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+			const AssetHandle<Script>& script) const override;
 	};
 
 	class ScriptAITickEvent final :
@@ -91,7 +99,8 @@ namespace Engine
 		ScriptAITickEvent();
 
 	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+		                                   const AssetHandle<Script>& script) const override;
 	};
 
 	class ScriptAIEvaluateEvent final :
@@ -101,7 +110,8 @@ namespace Engine
 		ScriptAIEvaluateEvent();
 
 	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+		                                   const AssetHandle<Script>& script) const override;
 	};
 
 	class ScriptAbilityActivateEvent final :
@@ -111,89 +121,145 @@ namespace Engine
 		ScriptAbilityActivateEvent();
 
 	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+		                                   const AssetHandle<Script>& script) const override;
+	};
+
+	class ScriptAbilityHitEvent final :
+		public ScriptEvent
+	{
+	public:
+		ScriptAbilityHitEvent();
+
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+			const AssetHandle<Script>& script) const override;
+	};
+
+	class ScriptReloadStartedEvent final :
+		public ScriptOnlyPassComponentEvent
+	{
+	public:
+		ScriptReloadStartedEvent();
+	};
+
+	class ScriptReloadCompletedEvent final :
+		public ScriptOnlyPassComponentEvent
+	{
+	public:
+		ScriptReloadCompletedEvent();
+	};
+
+	class ScriptEnemyKilledEvent final :
+		public ScriptEvent
+	{
+	public:
+		ScriptEnemyKilledEvent();
+
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+			const AssetHandle<Script>& script) const override;
+	};
+
+	class ScriptGettingHitEvent final :
+		public ScriptOnlyPassComponentEvent
+	{
+	public:
+		ScriptGettingHitEvent();
+	};
+
+	class ScriptCritEvent final :
+		public ScriptEvent
+	{
+	public:
+		ScriptCritEvent();
+
+	private:
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+			const AssetHandle<Script>& script) const override;
 	};
 
 	class CollisionEvent :
 		public ScriptEvent
 	{
 	public:
-		template<typename EventT>
+		template <typename EventT>
 		CollisionEvent(const EventT& event);
 
 	private:
-		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc, const std::shared_ptr<const Script>& script) const override;
-
-	};
-	class ScriptCollisionEntryEvent final :
-		public CollisionEvent
-	{
-	public:
-		ScriptCollisionEntryEvent() : CollisionEvent(sCollisionEntryEvent) {}
+		MetaFunc::InvokeT GetScriptInvoker(const ScriptFunc& scriptFunc,
+		                                   const AssetHandle<Script>& script) const override;
 	};
 
-	class ScriptCollisionStayEvent final :
-		public CollisionEvent
-	{
-	public:
-		ScriptCollisionStayEvent() : CollisionEvent(sCollisionStayEvent) {}
-	};
-
-	class ScriptCollisionExitEvent final :
-		public CollisionEvent
-	{
-	public:
-		ScriptCollisionExitEvent() : CollisionEvent(sCollisionExitEvent) {}
-	};
-
-	template <typename Ret, typename ... Args, bool IsPure, bool IsAlwaysStatic>
-	ScriptEvent::ScriptEvent(const Event<Ret(Args...), IsPure, IsAlwaysStatic>& event,
-		std::vector<MetaFuncNamedParam>&& params, std::optional<MetaFuncNamedParam>&& ret) :
+	template <typename Ret, typename... Args, bool IsAlwaysStatic>
+	ScriptEvent::ScriptEvent(const Event<Ret(Args...), IsAlwaysStatic>& event,
+	                         std::vector<MetaFuncNamedParam>&& params, std::optional<MetaFuncNamedParam>&& ret) :
 		mBasedOnEvent(event),
 		mParamsToShowToUser(std::move(params)),
 		mReturnValueToShowToUser(std::move(ret)),
-		mEventParams({ MakeTypeTraits<Args>()... }),
+		mEventParams({MakeTypeTraits<Args>()...}),
 		mEventReturnType(MakeTypeTraits<Ret>()),
-		mIsStatic(IsAlwaysStatic),
-		mIsPure(IsPure)
+		mIsStatic(IsAlwaysStatic)
 	{
 	}
 
 	template <typename EventT>
 	CollisionEvent::CollisionEvent(const EventT& event) :
 		ScriptEvent(event, {
-			{ MakeTypeTraits<entt::entity>(), "Other" },
-			{ MakeTypeTraits<float>(), "Depth" },
-			{ MakeTypeTraits<glm::vec2>(), "Hit Normal" },
-			{ MakeTypeTraits<glm::vec2>(), "Contact point" },
-			}, std::nullopt)
+			            {MakeTypeTraits<entt::entity>(), "Other"},
+			            {MakeTypeTraits<float>(), "Depth"},
+			            {MakeTypeTraits<glm::vec2>(), "Hit Normal"},
+			            {MakeTypeTraits<glm::vec2>(), "Contact point"},
+		            }, std::nullopt)
 	{
 	}
 
-	static const ScriptOnConstructEvent sOnConstructScriptEvent{};
-	static const ScriptOnBeginPlayEvent sOnBeginPlayScriptEvent{};
+	static const ScriptOnlyPassComponentEvent sOnConstructScriptEvent{ sConstructEvent };
+	static const ScriptOnlyPassComponentEvent sOnBeginPlayScriptEvent{ sBeginPlayEvent };
 	static const ScriptTickEvent sOnTickScriptEvent{};
 	static const ScriptFixedTickEvent sOnFixedTickScriptEvent{};
-	static const ScriptDestructEvent sOnDestructScriptEvent{};
-	static const ScriptAITickEvent sAITickScriptEvent{};
+	static const ScriptOnlyPassComponentEvent sOnDestructScriptEvent{ sDestructEvent };
+	static const ScriptOnlyPassComponentEvent sOnEndPlayEvent{ sEndPlayEvent };
+	static const ScriptOnlyPassComponentEvent sOnAIStateEnterScriptEvent{ sAIStateEnterEvent };
+	static const ScriptAITickEvent sOnAITickScriptEvent{};
+	static const ScriptOnlyPassComponentEvent sOnAIStateExitScriptEvent{ sAIStateExitEvent };
 	static const ScriptAIEvaluateEvent sAIEvaluateScriptEvent{};
 	static const ScriptAbilityActivateEvent sScriptAbilityActivateEvent{};
-	static const ScriptCollisionEntryEvent sOnCollisionEntryScriptEvent{};
-	static const ScriptCollisionStayEvent sOnCollisionStayScriptEvent{};
-	static const ScriptCollisionExitEvent sOnCollisionExitScriptEvent{};
+	static const ScriptAbilityHitEvent sScriptAbilityHitEvent{};
+	static const ScriptReloadStartedEvent sScriptReloadStartedEvent{};
+	static const ScriptReloadCompletedEvent sScriptReloadCompletedEvent{};
+	static const ScriptEnemyKilledEvent sScriptEnemyKilledEvent{};
+	static const ScriptGettingHitEvent sScriptGettingHitEvent{};
+	static const ScriptCritEvent sScriptCritEvent{};
+	static const ScriptOnlyPassComponentEvent sAnimationFinishScriptEvent{ sAnimationFinishEvent };
+	static const CollisionEvent sOnCollisionEntryScriptEvent{ sCollisionEntryEvent };
+	static const CollisionEvent sOnCollisionStayScriptEvent{ sCollisionStayEvent };
+	static const CollisionEvent sOnCollisionExitScriptEvent{ sCollisionExitEvent };
+	static const ScriptOnlyPassComponentEvent sOnButtonPressedScriptEvent{ sButtonPressEvent };
 
-	static const std::array<std::reference_wrapper<const ScriptEvent>, 11> sAllScriptableEvents
+	static const std::array<std::reference_wrapper<const ScriptEvent>, 22> sAllScriptableEvents
 	{
 		sOnConstructScriptEvent,
 		sOnDestructScriptEvent,
 		sOnBeginPlayScriptEvent,
+		sOnEndPlayEvent,
 		sOnTickScriptEvent,
 		sOnFixedTickScriptEvent,
-		sAITickScriptEvent,
+		sOnAIStateEnterScriptEvent,
+		sOnAITickScriptEvent,
+		sOnAIStateExitScriptEvent,
 		sAIEvaluateScriptEvent,
 		sScriptAbilityActivateEvent,
+		sScriptAbilityHitEvent,
+		sScriptReloadStartedEvent,
+		sScriptReloadCompletedEvent,
+		sScriptEnemyKilledEvent,
+		sScriptGettingHitEvent,
+		sScriptCritEvent,
+		sAnimationFinishScriptEvent,
 		sOnCollisionEntryScriptEvent,
 		sOnCollisionStayScriptEvent,
 		sOnCollisionExitScriptEvent,
+		sOnButtonPressedScriptEvent
 	};
 }

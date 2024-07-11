@@ -1,45 +1,62 @@
-#ifdef EDITOR
 #pragma once
-#include "DX12Classes/DXDefines.h"
-#include "glm/glm.hpp"
-#include "DX12Classes/DXResource.h"
 
-namespace Engine
+class DXResource;
+class DXHeapHandle;
+
+namespace CE
 {
-	class MyShader;
-
 	class FrameBuffer
 	{
 	public:
-		FrameBuffer(glm::ivec2 initialSize = {1, 1});
+		FrameBuffer(glm::ivec2 initialSize = {1, 1}, uint32 msaaCount = 1, uint32 msaaQuality = 0, bool floatingPoint = false);
 		~FrameBuffer();
 
-		void Bind();
-		void Unbind();
+		void Bind() const;
+		void Unbind() const;
+		void ResolveMsaa(FrameBuffer& msaaFramebuffer);
+		void PrepareMsaaForResolve();
+
+		void BindSRVDepthToGraphics(int rootSlot) const;
+		void BindSRVRTToGraphics(int rootSlot) const;
 
 		void Resize(glm::ivec2 newSize);
-		glm::ivec2 GetSize() const { return mSize; }
+
+		glm::vec2 GetSize() const { return mSize; }
 
 		void Clear();
 
 		void SetClearColor(glm::vec4 color) { mClearColor = color; }
 		const glm::vec4 GetClearColor() { return mClearColor; }
+		DXResource& GetResource() const;
 
 		size_t GetColorTextureId();
-
+		void CopyTo(FrameBuffer& source);
+		void SetAsCopySource();
 	private:
-		std::unique_ptr<DXResource> resource[FRAME_BUFFER_COUNT];
-		std::unique_ptr<DXResource> depthResource;
-		unsigned int frameBufferIndex[FRAME_BUFFER_COUNT];
-		unsigned int frameBufferRscIndex[FRAME_BUFFER_COUNT];
-		unsigned int depthStencilIndex;
-		CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandles[FRAME_BUFFER_COUNT];
+		// Texture's can be created from
+		// FrameBuffers. This involves
+		// 'stealing' the DXHeapHandle.
+		// We prefer using a friend
+		// declaration over exposing the
+		// stealing API to the user.
+		friend class Texture;
+		DXHeapHandle& GetCurrentHeapSlot();
+		std::unique_ptr<DXResource>& GetCurrentResource();
 
-		glm::vec4 mClearColor{};
-		glm::ivec2 mSize{};
-		D3D12_VIEWPORT mViewport;
-		D3D12_RECT mScissorRect;
+		// Prevents having to include the very
+		// large DX12 headers
+		struct DXImpl;
 
+		struct DXImplDeleter
+		{
+			void operator()(DXImpl* impl) const;
+		};
+
+		std::unique_ptr<DXImpl, DXImplDeleter> mImpl{};
+
+		glm::vec4 mClearColor{ .39f, .45f, .5f, 1.0f };
+		glm::vec2 mSize{};
+		uint32 mMsaaCount = 0;
+		uint32 mMsaaQuality = 0;
 	};
 }
-#endif // EDITOR

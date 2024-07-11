@@ -7,7 +7,7 @@ struct Reflector
 	static constexpr bool sIsSpecialized = false;
 };
 
-namespace Engine
+namespace CE
 {
 	class MetaType;
 
@@ -73,7 +73,7 @@ namespace Engine
 					static_assert(!sHasExternalReflect<T> || !sHasInternalReflect<T>, "Both an internal and external reflect function.");
 					static_assert(sHasExternalReflect<T> || sHasInternalReflect<T>,
 						R"(No external or internal reflect function. You need to make sure the Reflect function is included from wherever you are trying to reflect it.
-If you are trying to reflect an std::vector<std::shared_ptr<const Material>>, you need to include Material.h, ReflectVector.h and ReflectSmartPtr.h.)");
+If you are trying to reflect an std::vector<AssetHandle<Material>>, you need to include AssetHandle.h, Material.h and ReflectVector.h.)");
 
 					if constexpr (sHasInternalReflect<T>)
 					{
@@ -96,7 +96,7 @@ If you are trying to reflect an std::vector<std::shared_ptr<const Material>>, yo
 #define CONCAT(a, b) CONCAT_INNER(a, b)
 #define CONCAT_INNER(a, b) a ## b
 #define GET_MACRO(_1, _2, NAME,...) NAME
-#define REFLECT_AT_START_UP_2(dummyVariableName, type) [[maybe_unused]] static inline const bool CONCAT(__sDummyVariableToReflect, dummyVariableName) = Engine::Internal::ReflectAtStartup<type>::sDummy;
+#define REFLECT_AT_START_UP_2(dummyVariableName, type) [[maybe_unused]] static inline const bool CONCAT(__sDummyVariableToReflect, dummyVariableName) = CE::Internal::ReflectAtStartup<type>::sDummy;
 #define REFLECT_AT_START_UP_1(type) REFLECT_AT_START_UP_2(type, type)
 
 #define EXPAND( x ) x
@@ -107,7 +107,7 @@ If you are trying to reflect an std::vector<std::shared_ptr<const Material>>, yo
 
 Example:
 	// Good
-	REFLECT_AT_START_UP(glm::, vec2)
+	REFLECT_AT_START_UP(glmVec2, vec2)
 
 	// The namespace does not have to be specified now:
 	using namespace glm;

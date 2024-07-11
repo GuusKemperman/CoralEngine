@@ -1,7 +1,7 @@
 #pragma once
 #include "imnodes/imgui_node_editor.h"
 
-namespace Engine
+namespace CE
 {
 	namespace Internal
 	{
@@ -71,29 +71,29 @@ namespace Engine
 }
 
 template<>
-struct std::hash<Engine::NodeId>
+struct std::hash<CE::NodeId>
 {
-	std::size_t operator()(const Engine::NodeId& k) const
+	std::size_t operator()(const CE::NodeId& k) const
 	{
-		return static_cast<size_t>(k.Get()) << Engine::NodeId::sShift;;
+		return static_cast<size_t>(k.Get()) << CE::NodeId::sShift;;
 	}
 };
 
 template<>
-struct std::hash<Engine::LinkId>
+struct std::hash<CE::LinkId>
 {
-	std::size_t operator()(const Engine::LinkId& k) const
+	std::size_t operator()(const CE::LinkId& k) const
 	{
-		return static_cast<size_t>(k.Get()) << Engine::LinkId::sShift;;
+		return static_cast<size_t>(k.Get()) << CE::LinkId::sShift;;
 	}
 };
 
 template<>
-struct std::hash<Engine::PinId>
+struct std::hash<CE::PinId>
 {
-	std::size_t operator()(const Engine::PinId& k) const
+	std::size_t operator()(const CE::PinId& k) const
 	{
-		return static_cast<size_t>(k.Get()) << Engine::PinId::sShift;;
+		return static_cast<size_t>(k.Get()) << CE::PinId::sShift;;
 	}
 };
 

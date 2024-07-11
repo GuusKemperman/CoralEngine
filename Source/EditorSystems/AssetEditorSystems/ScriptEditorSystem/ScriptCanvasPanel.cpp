@@ -16,7 +16,7 @@
 #include "Scripting/Nodes/CommentScriptNode.h"
 #include "Scripting/Nodes/ControlScriptNodes.h"
 #include "Scripting/Nodes/EntryAndReturnScriptNode.h"
-#include "Scripting/Nodes/MetaMemberScriptNode.h"
+#include "Scripting/Nodes/MetaFieldScriptNode.h"
 #include "Scripting/Nodes/MetaFuncScriptNode.h"
 #include "Scripting/Nodes/ReroutScriptNode.h"
 #include "Utilities/Imgui/ImguiInspect.h"
@@ -36,7 +36,7 @@ static ImRect ImRect_Expanded(const ImRect& rect, float x, float y)
 	return result;
 }
 
-void Engine::ScriptEditorSystem::DisplayCanvas()
+void CE::ScriptEditorSystem::DisplayCanvas()
 {
 	if (mContext == nullptr)
 	{
@@ -48,6 +48,15 @@ void Engine::ScriptEditorSystem::DisplayCanvas()
 	{
 		return;
 	}
+
+	// ax::NodeEditor has a bug where sometimes it zooms out to
+	// near infinite size. This is a safe-guard against that.
+	if (ax::NodeEditor::GetCurrentZoom() > sZoomLevels.back() * 100.0f)
+	{
+		ax::NodeEditor::NavigateToRect(ImRect{ 0.0f, 0.0f, 100.0f, 100.0f });
+	}
+
+	mMousePosInCanvasSpace = ImGui::GetMousePos();
 
 	TryGetSelectedFunc()->PostDeclarationRefresh();
 
@@ -94,12 +103,12 @@ void Engine::ScriptEditorSystem::DisplayCanvas()
 
 		if (node.GetType() == ScriptNodeType::Comment)
 		{
-			static_cast<CommentScriptNode&>(node).SetSize(ax::NodeEditor::GetNodeSize(node.GetId()));
+			static_cast<CommentScriptNode&>(node).SetSize(ax::NodeEditor::GetGroupSize(node.GetId()));
 		}
 	}
 }
 
-void Engine::ScriptEditorSystem::DrawCanvasObjects()
+void CE::ScriptEditorSystem::DrawCanvasObjects()
 {
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
 
@@ -150,6 +159,8 @@ void Engine::ScriptEditorSystem::DrawCanvasObjects()
 
 	const ImRect& canvasRect = ax::NodeEditor::GetCanvasRect();
 
+	const bool bringPinsToFront = Input::Get().HasFocus();
+
 	for (const auto& [pinId, inspectPos] : pinsToInspect)
 	{
 		ScriptPin& pin = currentFunc.GetPin(pinId);
@@ -167,8 +178,15 @@ void Engine::ScriptEditorSystem::DrawCanvasObjects()
 			| ImGuiWindowFlags_NoCollapse
 			| ImGuiWindowFlags_NoMove
 			| ImGuiWindowFlags_NoBackground
-			| ImGuiWindowFlags_AlwaysAutoResize))
+			| ImGuiWindowFlags_AlwaysAutoResize
+			| ImGuiWindowFlags_NoFocusOnAppearing))
 		{
+			if (bringPinsToFront)
+			{
+				ImGuiWindow* window = ImGui::GetCurrentWindow();
+				ImGui::BringWindowToDisplayFront(window);
+			}
+
 			InspectPin(currentFunc, pin);
 		}
 
@@ -181,7 +199,7 @@ void Engine::ScriptEditorSystem::DrawCanvasObjects()
 	ax::NodeEditor::Resume();
 }
 
-void Engine::ScriptEditorSystem::TryLetUserCreateLink()
+void CE::ScriptEditorSystem::TryLetUserCreateLink()
 {
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
 
@@ -263,7 +281,38 @@ void Engine::ScriptEditorSystem::TryLetUserCreateLink()
 	ax::NodeEditor::EndCreate();
 }
 
-void Engine::ScriptEditorSystem::DeleteRequestedItems()
+void CE::ScriptEditorSystem::AddNewNode(const NodeTheUserCanAdd& nodeToAdd)
+{
+	ScriptFunc* currentFunc = TryGetSelectedFunc();
+
+	if (currentFunc == nullptr)
+	{
+		return;
+	}
+
+	ScriptNode& node = nodeToAdd.mAddNode(*currentFunc);
+	node.SetPosition(mCreateNodePopUpPosition.value_or(mMousePosInCanvasSpace));
+	ax::NodeEditor::SetNodePosition(node.GetId(), node.GetPosition());
+
+	if (const ScriptPin* startPin = currentFunc->TryGetPin(mPinTheUserIsTryingToLink);
+		startPin != nullptr)
+	{
+		const Span<const ScriptPin> pins = startPin->IsOutput() ? node.GetInputs(*currentFunc) : node.GetOutputs(*currentFunc);
+
+		for (const ScriptPin& pin : pins)
+		{
+			if (currentFunc->TryAddLink(*startPin, pin) != nullptr)
+			{
+				break;
+			}
+		}
+	}
+
+	mCreateNodePopUpPosition.reset();
+	mPinTheUserIsTryingToLink = ax::NodeEditor::PinId::Invalid;
+}
+
+void CE::ScriptEditorSystem::DeleteRequestedItems()
 {
 	if (ax::NodeEditor::BeginDelete())
 	{
@@ -288,10 +337,8 @@ void Engine::ScriptEditorSystem::DeleteRequestedItems()
 	ax::NodeEditor::EndDelete();
 }
 
-void Engine::ScriptEditorSystem::DisplayCanvasPopUps()
+void CE::ScriptEditorSystem::DisplayCanvasPopUps()
 {
-	const ImVec2 openPopupPosition = ImGui::GetMousePos();
-
 	ax::NodeEditor::Suspend();
 
 	if (ax::NodeEditor::ShowPinContextMenu(&mPinTheUserRightClicked))
@@ -302,138 +349,69 @@ void Engine::ScriptEditorSystem::DisplayCanvasPopUps()
 	{
 		ImGui::OpenPopup("Create New Node");
 	}
-	ax::NodeEditor::Resume();
 
-	ax::NodeEditor::Suspend();
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
+	DisplayPinContextPopUp();
+	DisplayCreateNewNowPopUp(mMousePosInCanvasSpace);
 
-	if (ImGui::BeginPopup("Pin Context Menu"))
-	{
-		DisplayPinContextPopUp();
-		ImGui::EndPopup();
-	}
-
-	if (ImGui::BeginPopup("Create New Node"))
-	{
-		DisplayCreateNewNowPopUp(openPopupPosition);
-		ImGui::EndPopup();
-	}
-	else
-	{
-		mCreateNodePopUpPosition.reset();
-	}
-
-	ImGui::PopStyleVar();
 	ax::NodeEditor::Resume();
 }
 
-void Engine::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
+void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 {
+	if (!Search::BeginPopup("Create New Node"))
+	{
+		mCreateNodePopUpPosition.reset();
+		return;
+	}
+
+	ImGui::SameLine();
+	ImGui::Checkbox("Context sensitive", &sContextSensitive);
+
 	if (!mCreateNodePopUpPosition.has_value())
 	{
 		mCreateNodePopUpPosition = placeNodeAtPos;
-
-		// Focus the search bar
-		ImGui::SetKeyboardFocusHere(0);
 	}
 
-	std::string prevQuery = mCurrentQuery;
-	ImGui::InputTextWithHint("##SearchBar", "Search", &mCurrentQuery);
-	const bool searchTermChanged = prevQuery != mCurrentQuery;
-
-	ImGui::SameLine();
-
-	if (ImGui::Checkbox("Context sensitive", &sContextSensitive))
+	for (const NodeCategory& category : mAllNodesTheUserCanAdd)
 	{
-		UpdateSimilarityToQuery();
-	}
-
-	if (searchTermChanged)
-	{
-		UpdateSimilarityToQuery();
-	}
-
-	ScriptFunc& currentFunc = *TryGetSelectedFunc();
-	const ScriptNode* createdNode = nullptr;
-
-	if (!mRecommendedNodesBasedOnQuery.empty()
-		&& Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Enter))
-	{
-		createdNode = &mRecommendedNodesBasedOnQuery[0].get().mAddNode(currentFunc);
-	}
-
-	// Show the nodes with the highest similarity to the search string
-	for (const NodeTheUserCanAdd& recommendedNode : mRecommendedNodesBasedOnQuery)
-	{
-		if (ImGui::SmallButton(Format("{} ({})", recommendedNode.mName, recommendedNode.mCategory).data()))
-		{
-			createdNode = &recommendedNode.mAddNode(currentFunc);
-		}
-	}
-
-	size_t indexOfCategoryScore{};
-	for (auto first = mNodesThatCanBeCreated.begin(), last = first; first != mNodesThatCanBeCreated.end(); first = last, indexOfCategoryScore++)
-	{
-		last = std::find_if(first, mNodesThatCanBeCreated.end(),
-			[&first](const NodeTheUserCanAdd& node)
-			{
-				return node.mCategory != first->mCategory;
-			});
-
-		if (std::find_if(first, last,
-			[this](const NodeTheUserCanAdd& node)
-			{
-				return ShouldShowUserNode(node);
-			}) == last)
+		// Only submit the tree node if there are actually items inside of it that we want to show
+		if (!std::any_of(category.mNodes.begin(), category.mNodes.end(), [this](const NodeTheUserCanAdd& node) { return ShouldShowUserNode(node); }))
 		{
 			continue;
 		}
 
-		if (!ImGui::TreeNode(first->mCategory.data()))
-		{
-			continue;
-		}
+		Search::TreeNode(category.mName);
+		Search::SetBonus(category.mSearchBonus);
 
-		for (auto it = first; it != last; ++it)
+		for (const NodeTheUserCanAdd& node : category.mNodes)
 		{
-			if (ShouldShowUserNode(*it)
-				&& ImGui::Button(it->mName.data()))
+			if (!ShouldShowUserNode(node))
 			{
-				createdNode = &it->mAddNode(currentFunc);
+				continue;
 			}
+
+			if (Search::Button(node.mName))
+			{
+				ImGui::CloseCurrentPopup();
+				AddNewNode(node);
+			}
+
+			Search::SetBonus(category.mSearchBonus);
 		}
 
-		ImGui::TreePop();
+		Search::TreePop();
 	}
 
-	if (createdNode != nullptr)
-	{
-		ImGui::CloseCurrentPopup();
-
-		ClearQuery();
-
-		ax::NodeEditor::SetNodePosition(createdNode->GetId(), *mCreateNodePopUpPosition);
-		mCreateNodePopUpPosition.reset();
-		if (const ScriptPin* startPin = currentFunc.TryGetPin(mPinTheUserIsTryingToLink);
-			startPin != nullptr)
-		{
-			const Span<const ScriptPin> pins = startPin->IsOutput() ? createdNode->GetInputs(currentFunc) : createdNode->GetOutputs(currentFunc);
-
-			for (const ScriptPin& pin : pins)
-			{
-				if (currentFunc.TryAddLink(*startPin, pin) != nullptr)
-				{
-					break;
-				}
-			}
-		}
-
-		mPinTheUserIsTryingToLink = ax::NodeEditor::PinId::Invalid;
-	}
+	Search::EndPopup();
 }
 
-void Engine::ScriptEditorSystem::DisplayPinContextPopUp()
+void CE::ScriptEditorSystem::DisplayPinContextPopUp()
 {
+	if (!ImGui::BeginPopup("Pin Context Menu"))
+	{
+		return;
+	}
+
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
 	const ScriptPin* pin = currentFunc.TryGetPin(mPinTheUserRightClicked);
 
@@ -441,10 +419,12 @@ void Engine::ScriptEditorSystem::DisplayPinContextPopUp()
 	{
 		mPinTheUserRightClicked = ax::NodeEditor::PinId::Invalid;
 		ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
 		return;
 	}
 
 	ImGui::Text("Type: %s", pin->GetTypeName().c_str());
+	ImGui::Text("Form: %s", EnumToString(pin->GetTypeForm()).data());
 
 	const std::vector<std::reference_wrapper<ScriptLink>> linksConnectedToPin = currentFunc.GetAllLinksConnectedToPin(mPinTheUserRightClicked);
 
@@ -486,9 +466,11 @@ void Engine::ScriptEditorSystem::DisplayPinContextPopUp()
 			}
 		}
 	}
+
+	ImGui::EndPopup();
 }
 
-void Engine::ScriptEditorSystem::DisplayFunctionNode(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
+void CE::ScriptEditorSystem::DisplayFunctionNode(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
 	ScriptNode& node, std::vector<PinToInspect>& pinsToInspect)
 {
 	ScriptFunc& currentFunc = *TryGetSelectedFunc();
@@ -519,7 +501,7 @@ void Engine::ScriptEditorSystem::DisplayFunctionNode(ax::NodeEditor::Utilities::
 	builder.End();
 }
 
-bool Engine::ScriptEditorSystem::IsRerouteNodeFlipped(const RerouteScriptNode& node) const
+bool CE::ScriptEditorSystem::IsRerouteNodeFlipped(const RerouteScriptNode& node) const
 {
 	const ScriptFunc& currentFunc = *TryGetSelectedFunc();
 
@@ -547,7 +529,7 @@ bool Engine::ScriptEditorSystem::IsRerouteNodeFlipped(const RerouteScriptNode& n
 	return false;
 }
 
-void Engine::ScriptEditorSystem::DisplayRerouteNode(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
+void CE::ScriptEditorSystem::DisplayRerouteNode(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
 	RerouteScriptNode& node)
 {
 	const ScriptFunc& currentFunc = *TryGetSelectedFunc();
@@ -602,23 +584,25 @@ void Engine::ScriptEditorSystem::DisplayRerouteNode(ax::NodeEditor::Utilities::B
 	ax::NodeEditor::PopStyleColor();
 }
 
-bool Engine::ScriptEditorSystem::CanAnyPinsBeInspected() const
+bool CE::ScriptEditorSystem::CanAnyPinsBeInspected() const
 {
 	return std::abs(ax::NodeEditor::GetCurrentZoom() - 1.0f) < .2f;
 }
 
-void Engine::ScriptEditorSystem::DisplayCommentNode(CommentScriptNode& node)
+void CE::ScriptEditorSystem::DisplayCommentNode(CommentScriptNode& node)
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.75f);
-	PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, ImColor(255, 255, 255, 64));
-	PushStyleColor(ax::NodeEditor::StyleColor_NodeBorder, ImColor(255, 255, 255, 64));
+	PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, node.GetColour());
+	PushStyleColor(ax::NodeEditor::StyleColor_NodeBorder, node.GetColour() * .7f);
 
 	ax::NodeEditor::BeginNode(node.GetId());
 	ImGui::PushID(static_cast<int32>(node.GetId().Get()));
 
 	ImGui::TextUnformatted(node.GetComment().c_str());
 
-	ax::NodeEditor::Group(ImMax({ 300.0f, 200.0f }, ImVec2{ node.GetSize() }));
+	const ImVec2 nodeDesiredSize = ImMax({ 50.0f, 50.0f }, ImVec2{ node.GetSize() });
+	ax::NodeEditor::Group(nodeDesiredSize);
+
 	ImGui::PopID();
 	ax::NodeEditor::EndNode();
 	ax::NodeEditor::PopStyleColor(2);
@@ -644,18 +628,18 @@ void Engine::ScriptEditorSystem::DisplayCommentNode(CommentScriptNode& node)
 		drawList->AddRectFilled(
 			hintFrameBounds.GetTL(),
 			hintFrameBounds.GetBR(),
-			IM_COL32(255, 255, 255, 64 * bgAlpha / 255), 4.0f);
+			IM_COL32(255, 255, 255, 32 * bgAlpha / 255), 4.0f);
 
 		drawList->AddRect(
 			hintFrameBounds.GetTL(),
 			hintFrameBounds.GetBR(),
-			IM_COL32(255, 255, 255, 128 * bgAlpha / 255), 4.0f);
+			IM_COL32(255, 255, 255, 64 * bgAlpha / 255), 4.0f);
 	}
 	ax::NodeEditor::EndGroupHint();
 }
 
 
-void Engine::ScriptEditorSystem::DisplayPin(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
+void CE::ScriptEditorSystem::DisplayPin(ax::NodeEditor::Utilities::BlueprintNodeBuilder& builder,
 	ScriptPin& pin, std::vector<PinToInspect>& pinsToInspect)
 {
 	const ScriptFunc& currentFunc = *TryGetSelectedFunc();
@@ -702,7 +686,7 @@ void Engine::ScriptEditorSystem::DisplayPin(ax::NodeEditor::Utilities::Blueprint
 
 		const glm::vec2 tempCursorPos = ImGui::GetCursorPos();
 
-		const glm::vec2 iconPosition = { topLeft.x, topLeft.y + (inspectWindowSize.y * .5f) - (static_cast<float>(sPinIconSize) * .5f)};
+		const glm::vec2 iconPosition = { topLeft.x, topLeft.y + (inspectWindowSize.y * .5f) - (static_cast<float>(sPinIconSize) * .5f) };
 
 		ImGui::SetCursorPos(iconPosition);
 		DrawPinIcon(pin, pin.IsLinked(), (int)(alpha * 255));
@@ -730,62 +714,56 @@ void Engine::ScriptEditorSystem::DisplayPin(ax::NodeEditor::Utilities::Blueprint
 	ImGui::PopStyleVar();
 }
 
-bool Engine::ScriptEditorSystem::ShouldWeOnlyShowContextMatchingNodes() const
+bool CE::ScriptEditorSystem::ShouldWeOnlyShowContextMatchingNodes() const
 {
 	return sContextSensitive && TryGetSelectedFunc()->TryGetPin(mPinTheUserIsTryingToLink) != nullptr;
 }
 
-bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const ScriptPin& contextPin,
+bool CE::ScriptEditorSystem::DoesNodeMatchContext(const ScriptPin& contextPin,
 	TypeTraits returnTypeTraits,
 	const std::vector<TypeTraits>& parameters,
 	bool isPure)
 {
-	if (!isPure
-		&& contextPin.IsFlow())
+	if (contextPin.IsFlow())
 	{
-		return true;
+		return !isPure;
 	}
 
 	const MetaType* const contextType = contextPin.TryGetType();
 
-	if (contextPin.IsOutput())
+	if (contextType == nullptr)
 	{
-		for (const TypeTraits& paramTraits : parameters)
-		{
-			if (contextType != nullptr
-				&& (contextType->IsDerivedFrom(paramTraits.mStrippedTypeId) || contextType->GetTypeId() == paramTraits.mStrippedTypeId)
-				)
-			{
-				return true;
-			}
-		}
 		return false;
 	}
 
-	if (returnTypeTraits.mStrippedTypeId == contextType->GetTypeId()
-		|| contextType->GetTypeId() == MakeTypeId<MetaAny>())
-	{
-		return true;
-	}
+	const TypeTraits contextTraits{ contextType->GetTypeId(), contextPin.GetTypeForm() };
 
-	return contextType->IsBaseClassOf(returnTypeTraits.mStrippedTypeId);
+	if (contextPin.IsOutput())
+	{
+		return std::any_of(parameters.begin(), parameters.end(),
+			[contextTraits](TypeTraits param)
+			{
+				return !MetaFunc::CanArgBePassedIntoParam(contextTraits, param).has_value();
+			});
+	}
+	return !MetaFunc::CanArgBePassedIntoParam({ returnTypeTraits.mStrippedTypeId, returnTypeTraits.mForm }, contextTraits).has_value();
 }
 
-bool Engine::ScriptEditorSystem::DoesNodeMatchContext(const NodeTheUserCanAdd& node) const
+bool CE::ScriptEditorSystem::DoesNodeMatchContext(const NodeTheUserCanAdd& node) const
 {
 	return !ShouldWeOnlyShowContextMatchingNodes() || node.mMatchesContext(TryGetSelectedFunc()->GetPin(mPinTheUserIsTryingToLink));
 }
 
-bool Engine::ScriptEditorSystem::ShouldShowUserNode(const NodeTheUserCanAdd& node) const
+bool CE::ScriptEditorSystem::ShouldShowUserNode(const NodeTheUserCanAdd& node) const
 {
-	return DoesNodeMatchContext(node) && (mCurrentQuery.empty() || node.mSimilarityToQuery > sSimilarityCuttOff);
+	return DoesNodeMatchContext(node);
 }
 
-std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorSystem::GetALlNodesTheUserCanAdd() const
+void CE::ScriptEditorSystem::InitialiseAllNodesTheUserCanAdd()
 {
-	std::vector<NodeTheUserCanAdd> returnValue{};
+	NodeCategory& common = mAllNodesTheUserCanAdd.emplace_back(NodeCategory{ "Common" });
 
-	returnValue.emplace_back("", std::string{ BranchScriptNode::sBranchNodeName },
+	common.mNodes.emplace_back(std::string{ BranchScriptNode::sBranchNodeName },
 		[](ScriptFunc& func) -> decltype(auto)
 		{
 			return func.AddNode<BranchScriptNode>(func);
@@ -794,10 +772,15 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 		{
 			return contextPin.IsFlow()
 				|| (contextPin.TryGetType() != nullptr && contextPin.TryGetType()->GetTypeId() == MakeTypeId<bool>() && contextPin.IsOutput());
-		});
+		},
+		[](const ScriptNode& node) -> bool
+		{
+			return node.GetType() == ScriptNodeType::Branch;
+		},
+		Input::KeyboardKey::B);
 
 
-	returnValue.emplace_back("", std::string{ ForLoopScriptNode::sForLoopNodeName },
+	common.mNodes.emplace_back(std::string{ ForLoopScriptNode::sForLoopNodeName },
 		[](ScriptFunc& func) -> decltype(auto)
 		{
 			return func.AddNode<ForLoopScriptNode>(func);
@@ -806,9 +789,14 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 		{
 			return contextPin.IsFlow()
 				|| (contextPin.TryGetType() != nullptr && contextPin.TryGetType()->GetTypeId() == MakeTypeId<int32>());
-		});
+		},
+		[](const ScriptNode& node) -> bool
+		{
+			return node.GetType() == ScriptNodeType::ForLoop;
+		}
+		);
 
-	returnValue.emplace_back("", std::string{ WhileLoopScriptNode::sWhileLoopNodeName },
+	common.mNodes.emplace_back(std::string{ WhileLoopScriptNode::sWhileLoopNodeName },
 		[](ScriptFunc& func) -> decltype(auto)
 		{
 			return func.AddNode<WhileLoopScriptNode>(func);
@@ -817,45 +805,63 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 		{
 			return contextPin.IsFlow()
 				|| (contextPin.TryGetType() != nullptr && contextPin.TryGetType()->GetTypeId() == MakeTypeId<bool>() && contextPin.IsOutput());
+		},
+		[](const ScriptNode& node) -> bool
+		{
+			return node.GetType() == ScriptNodeType::WhileLoop;
 		});
 
-	returnValue.emplace_back("", std::string{ FunctionEntryScriptNode::sEntryNodeName },
+	common.mNodes.emplace_back(std::string{ FunctionEntryScriptNode::sEntryNodeName },
 		[this](ScriptFunc& func) -> decltype(auto)
 		{
 			return func.AddNode<FunctionEntryScriptNode>(func, mAsset);
 		},
 		[this](const ScriptPin& contextPin) -> bool
 		{
-			const ScriptFunc& currentFunc = *TryGetSelectedFunc();
+			const ScriptFunc* const currentFunc = TryGetSelectedFunc();
+
+			if (currentFunc == nullptr)
+			{
+				return false;
+			}
 
 			// The entry node is the only node that has multiple output pins,
 			// so we iterate over all of them
-			for (const ScriptVariableTypeData& param : currentFunc.GetParameters(true))
+			for (const ScriptVariableTypeData& param : currentFunc->GetParameters(true))
 			{
 				if (param.TryGetType() == nullptr)
 				{
 					continue;
 				}
 
-				if (DoesNodeMatchContext(contextPin, { param.TryGetType()->GetTypeId(), param.GetTypeForm() }, {}, currentFunc.IsPure()))
+				if (DoesNodeMatchContext(contextPin, { param.TryGetType()->GetTypeId(), param.GetTypeForm() }, {}, currentFunc->IsPure()))
 				{
 					return true;
 				}
 			}
 			return false;
+		},
+		[](const ScriptNode& node) -> bool
+		{
+			return node.GetType() == ScriptNodeType::FunctionEntry;
 		});
 
 
-	returnValue.emplace_back("", std::string{ FunctionReturnScriptNode::sReturnNodeName },
+	common.mNodes.emplace_back(std::string{ FunctionReturnScriptNode::sReturnNodeName },
 		[this](ScriptFunc& func) -> decltype(auto)
 		{
 			return func.AddNode<FunctionReturnScriptNode>(func, mAsset);
 		},
 		[this](const ScriptPin& contextPin) -> bool
 		{
-			const ScriptFunc& currentFunc = *TryGetSelectedFunc();
+			const ScriptFunc* const currentFunc = TryGetSelectedFunc();
 
-			const std::optional<ScriptVariableTypeData>& returnType = currentFunc.GetReturnType();
+			if (currentFunc == nullptr)
+			{
+				return false;
+			}
+
+			const std::optional<ScriptVariableTypeData>& returnType = currentFunc->GetReturnType();
 
 			if (!returnType.has_value()
 				|| returnType->TryGetType() == nullptr)
@@ -863,10 +869,14 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 				return false;
 			}
 
-			return DoesNodeMatchContext(contextPin, {}, { { returnType->TryGetType()->GetTypeId(), returnType->GetTypeForm() } }, currentFunc.IsPure());
+			return DoesNodeMatchContext(contextPin, {}, { { returnType->TryGetType()->GetTypeId(), returnType->GetTypeForm() } }, currentFunc->IsPure());
+		},
+		[](const ScriptNode& node) -> bool
+		{
+			return node.GetType() == ScriptNodeType::FunctionReturn;
 		});
 
-	returnValue.emplace_back("", "Comment",
+	common.mNodes.emplace_back("Comment",
 		[](ScriptFunc& func) -> decltype(auto)
 		{
 			return func.AddNode<CommentScriptNode>(func, "New comment");
@@ -874,194 +884,232 @@ std::vector<Engine::ScriptEditorSystem::NodeTheUserCanAdd> Engine::ScriptEditorS
 		[](const ScriptPin&) -> bool
 		{
 			return true;
-		});
+		},
+		[](const ScriptNode& node) -> bool
+		{
+			return node.GetType() == ScriptNodeType::Comment;
+		},
+		Input::KeyboardKey::K);
+
+	auto addType = [&](const MetaType& type, float categoryBonus)
+		{
+			NodeCategory typeCategory{ type.GetName(), categoryBonus };
+
+			for (const MetaFunc& metaFunc : type.GetDirectFuncs())
+			{
+				if (!CanFunctionBeTurnedIntoNode(metaFunc))
+				{
+					continue;
+				}
+
+				typeCategory.mNodes.emplace_back(std::string{ metaFunc.GetDesignerFriendlyName() },
+					[&type, &metaFunc](ScriptFunc& func) -> decltype(auto)
+					{
+						return func.AddNode<MetaFuncScriptNode>(func, type, metaFunc);
+					},
+					[&metaFunc](const ScriptPin& contextPin) -> bool
+					{
+						return DoesNodeMatchContext(contextPin,
+						metaFunc.GetReturnType().mTypeTraits,
+						[&]
+							{
+								std::vector<TypeTraits> params{};
+								params.reserve(metaFunc.GetParameters().size());
+
+								for (const MetaFuncNamedParam& namedParam : metaFunc.GetParameters())
+								{
+									params.emplace_back(namedParam.mTypeTraits);
+								}
+
+								return params;
+							}(),
+								IsFunctionPure(metaFunc));
+					},
+					[&metaFunc](const ScriptNode& node) -> bool
+					{
+						return node.GetType() == ScriptNodeType::FunctionCall
+							&& static_cast<const MetaFuncScriptNode&>(node).TryGetOriginalFunc() == &metaFunc;
+					});
+			}
+
+			for (const MetaField& field : type.GetDirectFields())
+			{
+				if (CanBeGetThroughScripts(field, false))
+				{
+					typeCategory.mNodes.emplace_back(GetterScriptNode::GetTitle(field.GetName(), true),
+						[&field](ScriptFunc& func) -> decltype(auto)
+						{
+							return func.AddNode<GetterScriptNode>(func, field, true);
+						},
+						[&field](const ScriptPin& contextPin) -> bool
+						{
+							return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId(), TypeForm::Value }, { { field.GetOuterType().GetTypeId(), TypeForm::ConstRef } }, true);
+						},
+						[&field](const ScriptNode& node) -> bool
+						{
+							return node.GetType() == ScriptNodeType::Getter
+								&& static_cast<const GetterScriptNode&>(node).TryGetOriginalField() == &field
+								&& static_cast<const GetterScriptNode&>(node).DoesNodeReturnCopy();
+						});
+				}
+
+				if (CanBeGetThroughScripts(field, true))
+				{
+					typeCategory.mNodes.emplace_back(GetterScriptNode::GetTitle(field.GetName(), false),
+						[&field](ScriptFunc& func) -> decltype(auto)
+						{
+							return func.AddNode<GetterScriptNode>(func, field, false);
+						},
+						[&field](const ScriptPin& contextPin) -> bool
+						{
+							return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId(), TypeForm::Ref }, { { field.GetOuterType().GetTypeId(), TypeForm::Ref } }, true);
+						},
+						[&field](const ScriptNode& node) -> bool
+						{
+							return node.GetType() == ScriptNodeType::Getter
+								&& static_cast<const GetterScriptNode&>(node).TryGetOriginalField() == &field
+								&& !static_cast<const GetterScriptNode&>(node).DoesNodeReturnCopy();
+						});
+				}
+
+				if (CanBeSetThroughScripts(field))
+				{
+					typeCategory.mNodes.emplace_back(Format("Set {}", field.GetName()),
+						[&field](ScriptFunc& func) -> decltype(auto)
+						{
+							return func.AddNode<SetterScriptNode>(func, field);
+						},
+						[&field](const ScriptPin& contextPin) -> bool
+						{
+							return DoesNodeMatchContext(contextPin,
+								{ field.GetType().GetTypeId() },
+								{ { field.GetOuterType().GetTypeId()},{ field.GetType().GetTypeId() } }, false);
+						},
+						[&field](const ScriptNode& node) -> bool
+						{
+							return node.GetType() == ScriptNodeType::Setter
+								&& static_cast<const SetterScriptNode&>(node).TryGetOriginalField() == &field;
+						});
+				}
+			}
+
+			if (!typeCategory.mNodes.empty())
+			{
+				std::sort(typeCategory.mNodes.begin(), typeCategory.mNodes.end(),
+					[](const NodeTheUserCanAdd& lhs, const NodeTheUserCanAdd& rhs)
+					{
+						return lhs.mName < rhs.mName;
+					});
+
+				mAllNodesTheUserCanAdd.emplace_back(std::move(typeCategory));
+			}
+		};
+
+	const MetaType* myType = MetaManager::Get().TryGetType(mAsset.GetName());
+
+	if (myType != nullptr)
+	{
+		addType(*myType, sSearchBonusIncreaseForThisScript);
+	}
 
 	for (const MetaType& type : MetaManager::Get().EachType())
 	{
-		for (const MetaFunc& metaFunc : type.GetDirectFuncs())
+		if (&type != myType)
 		{
-			if (!CanFunctionBeTurnedIntoNode(metaFunc))
-			{
-				continue;
-			}
-
-			returnValue.emplace_back(std::string{ type.GetName() }, std::string{ metaFunc.GetDesignerFriendlyName() },
-				[&type, &metaFunc](ScriptFunc& func) -> decltype(auto)
-				{
-					return func.AddNode<MetaFuncScriptNode>(func, type, metaFunc);
-				},
-				[&metaFunc](const ScriptPin& contextPin) -> bool
-				{
-					return DoesNodeMatchContext(contextPin,
-					metaFunc.GetReturnType(),
-					std::vector<TypeTraits>(metaFunc.GetParameters().data(),
-					metaFunc.GetParameters().data() + metaFunc.GetParameters().size()),
-					IsFunctionPure(metaFunc));
-				});
-		}
-
-		for (const MetaField& field : type.GetDirectFields())
-		{
-			if (CanBeGetThroughScripts(field))
-			{
-				returnValue.emplace_back(std::string{ type.GetName() }, Format("Get {}", field.GetName()),
-					[&field](ScriptFunc& func) -> decltype(auto)
-					{
-						return func.AddNode<GetterScriptNode>(func, field);
-					},
-					[&field](const ScriptPin& contextPin) -> bool
-					{
-						return DoesNodeMatchContext(contextPin, { field.GetType().GetTypeId() }, { { field.GetOuterType().GetTypeId() } }, true);
-					});
-			}
-
-			if (CanBeSetThroughScripts(field))
-			{
-				returnValue.emplace_back(std::string{ type.GetName() }, Format("Set {}", field.GetName()),
-					[&field](ScriptFunc& func) -> decltype(auto)
-					{
-						return func.AddNode<SetterScriptNode>(func, field);
-					},
-					[&field](const ScriptPin& contextPin) -> bool
-					{
-						return DoesNodeMatchContext(contextPin,
-							{ field.GetType().GetTypeId() },
-							{ { field.GetOuterType().GetTypeId()},{ field.GetType().GetTypeId() } }, false);
-					});
-			}
+			addType(type, 0.0f);
 		}
 	}
 
-	std::sort(returnValue.begin(), returnValue.end(),
-		[](const NodeTheUserCanAdd& lhs, const NodeTheUserCanAdd& rhs)
+	// In the VERY rare case in which there were no types reflected
+	if (mAllNodesTheUserCanAdd.size() == 1)
+	{
+		return;
+	}
+
+	// + 1, Because we want to leave the Common category at the top, always
+	// And if our type was not nullptr, we want to leave that in place as well
+	std::sort(mAllNodesTheUserCanAdd.begin() + 1 + (myType != nullptr), mAllNodesTheUserCanAdd.end(),
+		[](const NodeCategory& lhs, const NodeCategory& rhs)
 		{
-			const int compareResult = std::strcmp(lhs.mCategory.c_str(), rhs.mCategory.c_str());
-			if (compareResult == 0)
-			{
-				return lhs.mName < rhs.mName;
-			}
-			return compareResult == -1;
+			return lhs.mName < rhs.mName;
 		});
 
-	for (NodeTheUserCanAdd& nodeWithoutCategory : returnValue)
+	mNodePopularityCalculateThread =
 	{
-		if (!nodeWithoutCategory.mCategory.empty())
+		[this]()
 		{
-			break;
-		}
-		nodeWithoutCategory.mCategory = "Common";
-	}
+			uint32 totalNumOfNodesUsed{};
 
-	return returnValue;
-}
-
-void Engine::ScriptEditorSystem::UpdateSimilarityToQuery()
-{
-	std::string tmp = std::move(mCurrentQuery);
-	ClearQuery();
-	mCurrentQuery = std::move(tmp);
-
-	Search::CachedScorer scorer(mCurrentQuery);
-
-	for (NodeTheUserCanAdd& node : mNodesThatCanBeCreated)
-	{
-		// Checking the context is generally cheaper than
-		// doing the similarity comparison
-		if (DoesNodeMatchContext(node))
-		{
-			// I dont know how to spell synonym
-			std::string nameWithSynonyms = std::string{ node.mName }.append(" ").append(node.mCategory);
-			node.mSimilarityToQuery = scorer.similarity(nameWithSynonyms);
-		}
-		else
-		{
-			node.mSimilarityToQuery = 0.0;
-		}
-	}
-
-	ImGuiWindow* window = ImGui::GetCurrentWindow();
-
-	for (auto first = mNodesThatCanBeCreated.begin(), last = first; first != mNodesThatCanBeCreated.end(); first = last)
-	{
-		last = std::find_if(first, mNodesThatCanBeCreated.end(),
-			[&first](const NodeTheUserCanAdd& node)
+			for (const WeakAssetHandle<Script> asset : AssetManager::Get().GetAllAssets<Script>())
 			{
-				return node.mCategory != first->mCategory;
-			});
+				if (mShouldWeStopCountingNodePopularity)
+				{
+					break;
+				}
 
-		const bool isFromThisScript = first->mCategory == mAsset.GetName();
+				AssetHandle<Script> script{ asset };
 
-		if (isFromThisScript)
-		{
-			for (auto it = first; it != last; ++it)
+				for (const ScriptFunc& func : script->GetFunctions())
+				{
+					if (mShouldWeStopCountingNodePopularity)
+					{
+						break;
+					}
+
+					for (const ScriptNode& node : func.GetNodes())
+					{
+						if (mShouldWeStopCountingNodePopularity)
+						{
+							break;
+						}
+
+						for (NodeCategory& nodeCategory : mAllNodesTheUserCanAdd)
+						{
+							if (mShouldWeStopCountingNodePopularity)
+							{
+								break;
+							}
+
+							for (NodeTheUserCanAdd& nodeThatCanBeAdded : nodeCategory.mNodes)
+							{
+								if (mShouldWeStopCountingNodePopularity)
+								{
+									break;
+								}
+
+								if (nodeThatCanBeAdded.mWasCreatedFromThis(node))
+								{
+									nodeThatCanBeAdded.mNumOfTimesUsed++;
+									totalNumOfNodesUsed++;
+								}
+							}
+						}
+					}
+				}
+			}
+
+			for (NodeCategory& nodeCategory : mAllNodesTheUserCanAdd)
 			{
-				it->mSimilarityToQuery *= sBiasTowardsNodesFromThisScript;
+				if (mShouldWeStopCountingNodePopularity)
+				{
+					break;
+				}
+
+				for (NodeTheUserCanAdd& nodeThatCanBeAdded : nodeCategory.mNodes)
+				{
+					if (mShouldWeStopCountingNodePopularity)
+					{
+						break;
+					}
+
+					nodeThatCanBeAdded.mSearchBonus += sPopularityInfluenceOnSearchBonus * static_cast<float>(nodeThatCanBeAdded.mNumOfTimesUsed) / static_cast<float>(totalNumOfNodesUsed);
+				}
 			}
 		}
-
-		ImGui::TreeNodeSetOpen(window->GetID(first->mCategory.data()),
-
-			// Close all the tabs after clearing the query
-			mCurrentQuery.empty() ? false :
-
-			// If any of the nodes inside the category match the search term,
-			// we open the category
-			std::find_if(first, last,
-				[this](const NodeTheUserCanAdd& node)
-				{
-					return ShouldShowUserNode(node);
-				}) != last);
-	}
-
-	std::vector<uint32> sortedIndices{};
-	sortedIndices.resize(mNodesThatCanBeCreated.size());
-	std::iota(sortedIndices.begin(), sortedIndices.end(), 0);
-
-	std::sort(sortedIndices.begin(), sortedIndices.end(),
-		[this](uint32 lhs, uint32 rhs)
-		{
-			return mNodesThatCanBeCreated[lhs].mSimilarityToQuery > mNodesThatCanBeCreated[rhs].mSimilarityToQuery;
-		});
-
-	for (uint32 i = 0; i < sMaxNumOfRecommendedNodesDuringQuery; i++)
-	{
-		mRecommendedNodesBasedOnQuery.emplace_back(mNodesThatCanBeCreated[sortedIndices[i]]);
-	}
-
-	if (mCurrentQuery.empty())
-	{
-		ClearQuery();
-	}
+	};
 }
 
-void Engine::ScriptEditorSystem::ClearQuery()
-{
-	if (!mCurrentQuery.empty())
-	{
-		ImGuiWindow* window = ImGui::GetCurrentWindow();
-
-		for (auto first = mNodesThatCanBeCreated.begin(), last = first; first != mNodesThatCanBeCreated.end(); first = last)
-		{
-			last = std::find_if(first, mNodesThatCanBeCreated.end(),
-				[&first](const NodeTheUserCanAdd& node)
-				{
-					return node.mCategory != first->mCategory;
-				});
-
-			// Close all the nodes after we finish searching
-			ImGui::TreeNodeSetOpen(window->GetID(first->mCategory.data()), false);
-		}
-	}
-	mCurrentQuery.clear();
-	mRecommendedNodesBasedOnQuery.clear();
-
-	for (NodeTheUserCanAdd& node : mNodesThatCanBeCreated)
-	{
-		node.mSimilarityToQuery = 100.0;
-	}
-}
-
-ImColor Engine::ScriptEditorSystem::GetIconColor(const ScriptVariableTypeData& typeData) const
+ImColor CE::ScriptEditorSystem::GetIconColor(const ScriptVariableTypeData& typeData) const
 {
 	if (typeData.IsFlow())
 	{
@@ -1100,7 +1148,7 @@ ImColor Engine::ScriptEditorSystem::GetIconColor(const ScriptVariableTypeData& t
 	}
 }
 
-void Engine::ScriptEditorSystem::DrawPinIcon(const ScriptPin& pin, bool connected, int alpha, bool mirrored) const
+void CE::ScriptEditorSystem::DrawPinIcon(const ScriptPin& pin, bool connected, int alpha, bool mirrored) const
 {
 	const ax::Widgets::IconType iconType = pin.IsFlow() ? ax::Widgets::IconType::Flow : ax::Widgets::IconType::Circle;
 
