@@ -782,7 +782,7 @@ Expected<CE::VirtualMachine::VMContext::CachedValue*, CE::ScriptError> CE::Virtu
 			// We can't use this setResult, because the assignment operator returns a reference,
 			// and we want to cache this value. If the object gets destroyed, the reference
 			// will be dangling. We make a copy further along the line, and cache that instead.
-			FuncResult setResult = typeOfArg->CallFunction(OperatorType::assign, refToMemberInsideTarget, valueToSetItTo);
+			FuncResult setResult = typeOfArg->Assign(refToMemberInsideTarget, valueToSetItTo);
 
 			if (setResult.HasError())
 			{

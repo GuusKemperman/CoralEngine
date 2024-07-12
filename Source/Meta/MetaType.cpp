@@ -333,7 +333,7 @@ const CE::MetaFunc* CE::MetaType::TryGetFunc(const std::variant<Name, OperatorTy
 }
 
 // TODO does not work if the function is in a baseclass
-CE::FuncResult CE::MetaType::CallFunction(const std::variant<Name, OperatorType>& funcNameOrType, Span<MetaAny> args,
+CE::FuncResult CE::MetaType::CallFunction(const std::variant<Name, OperatorType>& funcNameOrType, Span<MetaAny> args, 
 	Span<const TypeForm> formOfArgs, MetaFunc::RVOBuffer rvoBuffer) const
 {
 	const auto candidates = mFunctions.equal_range(FuncKey{ funcNameOrType });
@@ -465,8 +465,7 @@ CE::FuncResult CE::MetaType::ConstructInternal(bool isOwner, void* address, Meta
 	if (mTypeInfo.mFlags & TypeInfo::IsTriviallyMoveConstructible)
 	{
 		LIKELY;
-		// Assumes the data doesnt overlap
-		memcpy(address, args.GetData(), GetSize());
+		memmove(address, args.GetData(), GetSize());
 		return MetaAny{ *this, address, isOwner };
 	}
 
@@ -484,19 +483,68 @@ CE::FuncResult CE::MetaType::ConstructInternal(bool isOwner, void* address, Meta
 	return { "Type is not move constructible" };
 }
 
+CE::FuncResult CE::MetaType::AssignInternal(MetaAny& destination, const MetaAny& args) const
+{
+	if (args.GetTypeId() != GetTypeId())
+	{
+		UNLIKELY;
+		return AssignInternalGeneric(destination, args);
+	}
+
+	if (mTypeInfo.mFlags & TypeInfo::IsTriviallyCopyAssignable)
+	{
+		LIKELY;
+		memcpy(destination.GetData(), args.GetData(), GetSize());
+		return MetaAny{ *this, destination.GetData(), false };
+	}
+
+	if (mTypeInfo.mFlags & TypeInfo::IsCopyAssignable)
+	{
+		return TryGetCopyAssign()->InvokeUncheckedUnpacked(destination, args);
+	}
+	UNLIKELY;
+	return { "Type is not copy assignable" };
+}
+
+CE::FuncResult CE::MetaType::AssignInternal(MetaAny& destination, MetaAny& args) const
+{
+	return AssignInternal(destination, const_cast<const MetaAny&>(args));
+}
+
+CE::FuncResult CE::MetaType::AssignInternal(MetaAny& destination, MetaAny&& args) const
+{
+	if (args.GetTypeId() != GetTypeId())
+	{
+		UNLIKELY;
+		return AssignInternalGeneric(destination, std::move(args));
+	}
+
+	if (mTypeInfo.mFlags & TypeInfo::IsTriviallyMoveAssignable)
+	{
+		LIKELY;
+		// Assumes the data doesnt overlap
+		memmove(destination.GetData(), args.GetData(), GetSize());
+		return MetaAny{ *this, destination.GetData(), false };
+	}
+
+	if (mTypeInfo.mFlags & TypeInfo::IsMoveAssignable)
+	{
+		return TryGetMoveAssign()->InvokeUncheckedUnpacked(destination, args);
+	}
+	UNLIKELY;
+	return { "Type is not move assignable" };
+}
 
 CE::MetaType::FuncKey::FuncKey(const Name::HashType name) :
 	mOperatorType(OperatorType::none),
 	mNameHash(name)
 {
-
 }
 
 CE::MetaType::FuncKey::FuncKey(const OperatorType type) :
 	mOperatorType(type),
 	mNameHash(0)
 {
-
 }
 
 CE::MetaType::FuncKey::FuncKey(const MetaFunc::NameOrType& nameOrType) :

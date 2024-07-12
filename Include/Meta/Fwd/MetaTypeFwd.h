@@ -153,6 +153,9 @@ namespace CE
 		template<typename... Args>
 		FuncResult ConstructAt(void* atAdress, Args&&... args) const;
 
+		template<typename... Args>
+		FuncResult Assign(MetaAny& destination, Args&&... args) const;
+
 		// Calls the destructor.
 		// Note that an owning MetaAny will call the destructor automatically;
 		// This function is used by containers of MetaAny's, such as MetaArray,
@@ -354,6 +357,27 @@ namespace CE
 		FuncResult ConstructInternal(bool isOwner, void* address, MetaAny& args) const;
 
 		FuncResult ConstructInternal(bool isOwner, void* address, MetaAny&& args) const;
+
+		template<typename... Args>
+		FuncResult AssignInternalGeneric(MetaAny& destination, Args&&... args) const;
+
+		template<typename... Args>
+		FuncResult AssignInternal(MetaAny& destination, Args&&... args) const { return AssignInternalGeneric(destination, std::forward<Args>(args)...); }
+
+		template<typename TypeT>
+		FuncResult AssignInternal(MetaAny& destination, const TypeT& args) const;
+
+		template<typename TypeT>
+		FuncResult AssignInternal(MetaAny& destination, TypeT& args) const;
+
+		template<typename TypeT, std::enable_if_t<std::is_rvalue_reference_v<TypeT>, bool> = true>
+		FuncResult AssignInternal(MetaAny& destination, TypeT&& args) const;
+
+		FuncResult AssignInternal(MetaAny& destination, const MetaAny& args) const;
+
+		FuncResult AssignInternal(MetaAny& destination, MetaAny& args) const;
+
+		FuncResult AssignInternal(MetaAny& destination, MetaAny&& args) const;
 
 		struct FuncKey
 		{

@@ -73,7 +73,7 @@ CE::MetaAny CE::ComponentFactory::Construct(Registry& reg, const entt::entity en
 	{
 		MetaAny propInComponent = propValue.mField.get().MakeRef(component);
 
-		FuncResult result = propValue.mField.get().GetType().CallFunction(OperatorType::assign, propInComponent, propValue.mValue);
+		FuncResult result = propValue.mField.get().GetType().Assign(propInComponent, propValue.mValue);
 
 		if (result.HasError())
 		{

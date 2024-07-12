@@ -862,12 +862,12 @@ void CE::Internal::AnyStorage::swap_or_move(const std::size_t from, const std::s
 
 		// Destination is now 'empty', move assign into it
 		MetaAny destRef = { type, dest, false };
-		[[maybe_unused]] bool success = !type.CallFunction(OperatorType::assign, destRef, MetaAny{ type, src, false }).HasError();
+		[[maybe_unused]] bool success = !type.Assign(destRef, MetaAny{ type, src, false }).HasError();
 		ASSERT(success);
 
 		// Source is now empty, move assign into it
 		MetaAny srcRef = { type, src, false };
-		success |= !type.CallFunction(OperatorType::assign, srcRef, std::move(tmp)).HasError();
+		success |= !type.Assign(srcRef, std::move(tmp)).HasError();
 		ASSERT(success);
 	}
 }
