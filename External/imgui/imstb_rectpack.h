@@ -154,7 +154,7 @@ STBRP_DEF void stbrp_init_target (stbrp_context *context, int width, int height,
 
 STBRP_DEF void stbrp_setup_allow_out_of_mem (stbrp_context *context, int allow_out_of_mem);
 // Optionally call this function after init but before doing any packing to
-// change the handling of the out-of-temp-memory ***REMOVED***nario, described above.
+// change the handling of the out-of-temp-memory scenario, described above.
 // If you call init again, this will be reset to the default (false).
 
 

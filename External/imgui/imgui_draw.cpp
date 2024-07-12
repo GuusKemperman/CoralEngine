@@ -628,7 +628,7 @@ void ImDrawList::PrimReserve(int idx_count, int vtx_count)
     if (sizeof(ImDrawIdx) == 2 && (_VtxCurrentIdx + vtx_count >= (1 << 16)) && (Flags & ImDrawListFlags_AllowVtxOffset))
     {
         // FIXME: In theory we should be testing that vtx_count <64k here.
-        // In practice, RenderText() relies on reserving ahead for a worst case ***REMOVED***nario so it is currently useful for us
+        // In practice, RenderText() relies on reserving ahead for a worst case scenario so it is currently useful for us
         // to not make that check until we rework the text functions to handle clipping and large horizontal lines better.
         _CmdHeader.VtxOffset = VtxBuffer.Size;
         _OnChangedVtxOffset();
@@ -2624,14 +2624,14 @@ static bool ImFontAtlasBuildWithStbTruetype(ImFontAtlas* atlas)
         ImFont* dst_font = cfg.DstFont;
 
         const float font_scale = stbtt_ScaleForPixelHeight(&src_tmp.FontInfo, cfg.SizePixels);
-        int unscaled_a***REMOVED***nt, unscaled_de***REMOVED***nt, unscaled_line_gap;
-        stbtt_GetFontVMetrics(&src_tmp.FontInfo, &unscaled_a***REMOVED***nt, &unscaled_de***REMOVED***nt, &unscaled_line_gap);
+        int unscaled_ascent, unscaled_descent, unscaled_line_gap;
+        stbtt_GetFontVMetrics(&src_tmp.FontInfo, &unscaled_ascent, &unscaled_descent, &unscaled_line_gap);
 
-        const float a***REMOVED***nt = ImFloor(unscaled_a***REMOVED***nt * font_scale + ((unscaled_a***REMOVED***nt > 0.0f) ? +1 : -1));
-        const float de***REMOVED***nt = ImFloor(unscaled_de***REMOVED***nt * font_scale + ((unscaled_de***REMOVED***nt > 0.0f) ? +1 : -1));
-        ImFontAtlasBuildSetupFont(atlas, dst_font, &cfg, a***REMOVED***nt, de***REMOVED***nt);
+        const float ascent = ImFloor(unscaled_ascent * font_scale + ((unscaled_ascent > 0.0f) ? +1 : -1));
+        const float descent = ImFloor(unscaled_descent * font_scale + ((unscaled_descent > 0.0f) ? +1 : -1));
+        ImFontAtlasBuildSetupFont(atlas, dst_font, &cfg, ascent, descent);
         const float font_off_x = cfg.GlyphOffset.x;
-        const float font_off_y = cfg.GlyphOffset.y + IM_ROUND(dst_font->A***REMOVED***nt);
+        const float font_off_y = cfg.GlyphOffset.y + IM_ROUND(dst_font->Ascent);
 
         for (int glyph_i = 0; glyph_i < src_tmp.GlyphsCount; glyph_i++)
         {
@@ -2661,7 +2661,7 @@ const ImFontBuilderIO* ImFontAtlasGetBuilderForStbTruetype()
 
 #endif // IMGUI_ENABLE_STB_TRUETYPE
 
-void ImFontAtlasBuildSetupFont(ImFontAtlas* atlas, ImFont* font, ImFontConfig* font_config, float a***REMOVED***nt, float de***REMOVED***nt)
+void ImFontAtlasBuildSetupFont(ImFontAtlas* atlas, ImFont* font, ImFontConfig* font_config, float ascent, float descent)
 {
     if (!font_config->MergeMode)
     {
@@ -2670,8 +2670,8 @@ void ImFontAtlasBuildSetupFont(ImFontAtlas* atlas, ImFont* font, ImFontConfig* f
         font->ConfigData = font_config;
         font->ConfigDataCount = 0;
         font->ContainerAtlas = atlas;
-        font->A***REMOVED***nt = a***REMOVED***nt;
-        font->De***REMOVED***nt = de***REMOVED***nt;
+        font->Ascent = ascent;
+        font->Descent = descent;
     }
     font->ConfigDataCount++;
 }
@@ -3189,7 +3189,7 @@ ImFont::ImFont()
     ConfigDataCount = 0;
     DirtyLookupTables = false;
     Scale = 1.0f;
-    A***REMOVED***nt = De***REMOVED***nt = 0.0f;
+    Ascent = Descent = 0.0f;
     MetricsTotalSurface = 0;
     memset(Used4kPagesMap, 0, sizeof(Used4kPagesMap));
 }
@@ -3209,7 +3209,7 @@ void    ImFont::ClearOutputData()
     FallbackGlyph = NULL;
     ContainerAtlas = NULL;
     DirtyLookupTables = true;
-    A***REMOVED***nt = De***REMOVED***nt = 0.0f;
+    Ascent = Descent = 0.0f;
     MetricsTotalSurface = 0;
 }
 

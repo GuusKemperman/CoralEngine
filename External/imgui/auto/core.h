@@ -70,7 +70,7 @@ template<typename T, std::size_t N> using c_array_t = T[N];  //so arrays are reg
 
 	//		PRIMARY TEMPLATE
 	//		================
-	// This implements the struct to tuple ***REMOVED***nario
+	// This implements the struct to tuple scenario
 	template<typename AnyType, typename T2 = void> struct Auto_t
 	{ 
 		static void Auto(AnyType& anything, const std::string &name)

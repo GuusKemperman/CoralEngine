@@ -703,7 +703,7 @@ FMT_CONSTEXPR inline auto compute_width(string_view s) -> size_t {
             (cp >= 0xffe0 && cp <= 0xffe6) ||    // Fullwidth Forms
             (cp >= 0x20000 && cp <= 0x2fffd) ||  // CJK
             (cp >= 0x30000 && cp <= 0x3fffd) ||
-            // Mi***REMOVED***llaneous Symbols and Pictographs + Emoticons:
+            // Miscellaneous Symbols and Pictographs + Emoticons:
             (cp >= 0x1f300 && cp <= 0x1f64f) ||
             // Supplemental Symbols and Pictographs:
             (cp >= 0x1f900 && cp <= 0x1f9ff))));

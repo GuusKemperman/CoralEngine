@@ -40,7 +40,7 @@ CE::BenchmarkResult CE::BenchMark(World& world, const BenchmarkParams params)
 
         result.mDeltaTimes.emplace_back(dt);
 
-        // std::max does not work for ***REMOVED*** with these types
+        // std::max does not work for prospero with these types
     	result.mHighestDeltaTime = result.mHighestDeltaTime > dt ? result.mHighestDeltaTime : dt;
 
         now = newNow;

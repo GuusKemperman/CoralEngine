@@ -32,7 +32,7 @@ void Game::ScoreTextComponent::DisplayScoreText(CE::World& world, const entt::en
 
 	if (scoreComponent == nullptr)
 	{
-		LOG(LogAI, Warning, "There is no score component in this ***REMOVED***ne!");
+		LOG(LogAI, Warning, "There is no score component in this scene!");
 		return;
 	}
 

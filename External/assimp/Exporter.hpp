@@ -85,7 +85,7 @@ class ASSIMP_API ExportProperties;
 class ASSIMP_API Exporter {
 public:
     /** Function pointer type of a Export worker function */
-    typedef void (*fpExportFunc)(const char *, IOSystem *, const ai***REMOVED***ne *, const ExportProperties *);
+    typedef void (*fpExportFunc)(const char *, IOSystem *, const aiScene *, const ExportProperties *);
 
     /** Internal description of an Assimp export format option */
     struct ExportFormatEntry {
@@ -173,11 +173,11 @@ public:
     void SetProgressHandler(ProgressHandler *pHandler);
 
     // -------------------------------------------------------------------
-    /** Exports the given ***REMOVED***ne to a chosen file format. Returns the exported
+    /** Exports the given scene to a chosen file format. Returns the exported
     * data as a binary blob which you can write into a file or something.
     * When you're done with the data, simply let the #Exporter instance go
     * out of scope to have it released automatically.
-    * @param p***REMOVED***ne The ***REMOVED***ne to export. Stays in possession of the caller,
+    * @param pScene The scene to export. Stays in possession of the caller,
     *   is not changed by the function.
     * @param pFormatId ID string to specify to which format you want to
     *   export to. Use
@@ -188,22 +188,22 @@ public:
     * @note If the Exporter instance did already hold a blob from
     *   a previous call to #ExportToBlob, it will be disposed.
     *   Any IO handlers set via #SetIOHandler are ignored here.
-    * @note Use aiCopy***REMOVED***ne() to get a modifiable copy of a previously
-    *   imported ***REMOVED***ne. */
-    const aiExportDataBlob *ExportToBlob(const ai***REMOVED***ne *p***REMOVED***ne, const char *pFormatId,
+    * @note Use aiCopyScene() to get a modifiable copy of a previously
+    *   imported scene. */
+    const aiExportDataBlob *ExportToBlob(const aiScene *pScene, const char *pFormatId,
             unsigned int pPreprocessing = 0u, const ExportProperties *pProperties = nullptr);
-    const aiExportDataBlob *ExportToBlob(const ai***REMOVED***ne *p***REMOVED***ne, const std::string &pFormatId,
+    const aiExportDataBlob *ExportToBlob(const aiScene *pScene, const std::string &pFormatId,
             unsigned int pPreprocessing = 0u, const ExportProperties *pProperties = nullptr);
 
     // -------------------------------------------------------------------
     /** Convenience function to export directly to a file. Use
      *  #SetIOSystem to supply a custom IOSystem to gain fine-grained control
      *  about the output data flow of the export process.
-     * @param pBlob A data blob obtained from a previous call to #aiExport***REMOVED***ne. Must not be nullptr.
+     * @param pBlob A data blob obtained from a previous call to #aiExportScene. Must not be nullptr.
      * @param pPath Full target file name. Target must be accessible.
      * @param pPreprocessing Accepts any choice of the #aiPostProcessSteps enumerated
      *   flags, but in reality only a subset of them makes sense here. Specifying
-     *   'preprocessing' flags is useful if the input ***REMOVED***ne does not conform to
+     *   'preprocessing' flags is useful if the input scene does not conform to
      *   Assimp's default conventions as specified in the @link data Data Structures Page @endlink.
      *   In short, this means the geometry data should use a right-handed coordinate systems, face
      *   winding should be counter-clockwise and the UV coordinate origin is assumed to be in
@@ -220,17 +220,17 @@ public:
      *   the #aiProcess_Triangulate flag, most export formats support only
      *   triangulate data so they would run the step even if it wasn't requested.
      *
-     *   If assimp detects that the input ***REMOVED***ne was directly taken from the importer side of
-     *   the library (i.e. not copied using aiCopy***REMOVED***ne and potentially modified afterwards),
-     *   any post-processing steps already applied to the ***REMOVED***ne will not be applied again, unless
+     *   If assimp detects that the input scene was directly taken from the importer side of
+     *   the library (i.e. not copied using aiCopyScene and potentially modified afterwards),
+     *   any post-processing steps already applied to the scene will not be applied again, unless
      *   they show non-idempotent behavior (#aiProcess_MakeLeftHanded, #aiProcess_FlipUVs and
      *   #aiProcess_FlipWindingOrder).
      * @return AI_SUCCESS if everything was fine.
-     * @note Use aiCopy***REMOVED***ne() to get a modifiable copy of a previously
-     *   imported ***REMOVED***ne.*/
-    aiReturn Export(const ai***REMOVED***ne *p***REMOVED***ne, const char *pFormatId, const char *pPath,
+     * @note Use aiCopyScene() to get a modifiable copy of a previously
+     *   imported scene.*/
+    aiReturn Export(const aiScene *pScene, const char *pFormatId, const char *pPath,
             unsigned int pPreprocessing = 0u, const ExportProperties *pProperties = nullptr);
-    aiReturn Export(const ai***REMOVED***ne *p***REMOVED***ne, const std::string &pFormatId, const std::string &pPath,
+    aiReturn Export(const aiScene *pScene, const std::string &pFormatId, const std::string &pPath,
             unsigned int pPreprocessing = 0u, const ExportProperties *pProperties = nullptr);
 
     // -------------------------------------------------------------------
@@ -491,16 +491,16 @@ public:
 };
 
 // ----------------------------------------------------------------------------------
-inline const aiExportDataBlob *Exporter::ExportToBlob(const ai***REMOVED***ne *p***REMOVED***ne, const std::string &pFormatId,
+inline const aiExportDataBlob *Exporter::ExportToBlob(const aiScene *pScene, const std::string &pFormatId,
         unsigned int pPreprocessing, const ExportProperties *pProperties) {
-    return ExportToBlob(p***REMOVED***ne, pFormatId.c_str(), pPreprocessing, pProperties);
+    return ExportToBlob(pScene, pFormatId.c_str(), pPreprocessing, pProperties);
 }
 
 // ----------------------------------------------------------------------------------
-inline aiReturn Exporter ::Export(const ai***REMOVED***ne *p***REMOVED***ne, const std::string &pFormatId,
+inline aiReturn Exporter ::Export(const aiScene *pScene, const std::string &pFormatId,
         const std::string &pPath, unsigned int pPreprocessing,
         const ExportProperties *pProperties) {
-    return Export(p***REMOVED***ne, pFormatId.c_str(), pPath.c_str(), pPreprocessing, pProperties);
+    return Export(pScene, pFormatId.c_str(), pPath.c_str(), pPreprocessing, pProperties);
 }
 
 } // namespace Assimp

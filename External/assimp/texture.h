@@ -74,7 +74,7 @@ extern "C" {
  *  Used to build the reserved path name used by the material system to
  *  reference textures that are embedded into their corresponding
  *  model files. The parameter specifies the index of the texture
- *  (zero-based, in the ai***REMOVED***ne::mTextures array)
+ *  (zero-based, in the aiScene::mTextures array)
  */
 #if (!defined AI_MAKE_EMBEDDED_TEXNAME)
 #   define AI_MAKE_EMBEDDED_TEXNAME(_n_) AI_EMBEDDED_TEXNAME_PREFIX # _n_
@@ -127,7 +127,7 @@ struct aiTexel {
  *
  * Embedded textures are referenced from materials using strings like "*0", "*1", etc.
  * as the texture paths (a single asterisk character followed by the
- * zero-based index of the texture in the ai***REMOVED***ne::mTextures array).
+ * zero-based index of the texture in the aiScene::mTextures array).
  */
 struct aiTexture {
     /** Width of the texture, in pixels

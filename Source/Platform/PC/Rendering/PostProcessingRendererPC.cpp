@@ -137,7 +137,7 @@ void CE::PostProcessingRenderer::ToneMap(const World& world)
     }
 
     if(view.size() >1)
-        LOG(LogRendering, Warning, "There is more than one ToneMapping component in the ***REMOVED***ne. Only the last one will be used.");
+        LOG(LogRendering, Warning, "There is more than one ToneMapping component in the scene. Only the last one will be used.");
 
 
     commandList->SetGraphicsRoot32BitConstants(20, 5, &values, 0);

@@ -4296,8 +4296,8 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
         ImFont* password_font = &g.InputTextPasswordFont;
         password_font->FontSize = g.Font->FontSize;
         password_font->Scale = g.Font->Scale;
-        password_font->A***REMOVED***nt = g.Font->A***REMOVED***nt;
-        password_font->De***REMOVED***nt = g.Font->De***REMOVED***nt;
+        password_font->Ascent = g.Font->Ascent;
+        password_font->Descent = g.Font->Descent;
         password_font->ContainerAtlas = g.Font->ContainerAtlas;
         password_font->FallbackGlyph = glyph;
         password_font->FallbackAdvanceX = glyph->AdvanceX;
@@ -4700,7 +4700,7 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
                         IM_ASSERT(callback_data.BufTextLen == (int)strlen(callback_data.Buf)); // You need to maintain BufTextLen if you change the text!
                         InputTextReconcileUndoStateAfterUserCallback(state, callback_data.Buf, callback_data.BufTextLen); // FIXME: Move the rest of this block inside function and rename to InputTextReconcileStateAfterUserCallback() ?
                         if (callback_data.BufTextLen > backup_current_text_length && is_resizable)
-                            state->TextW.resize(state->TextW.Size + (callback_data.BufTextLen - backup_current_text_length)); // Worse case ***REMOVED***nario resize
+                            state->TextW.resize(state->TextW.Size + (callback_data.BufTextLen - backup_current_text_length)); // Worse case scenario resize
                         state->CurLenW = ImTextStrFromUtf8(state->TextW.Data, state->TextW.Size, callback_data.Buf, NULL);
                         state->CurLenA = callback_data.BufTextLen;  // Assume correct length and valid UTF-8 from user, saves us an extra strlen()
                         state->CursorAnimReset();

@@ -39,8 +39,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ---------------------------------------------------------------------------
 */
 
-/** @file ***REMOVED***ne.h
- *  @brief Defines the data structures in which the imported ***REMOVED***ne is returned.
+/** @file scene.h
+ *  @brief Defines the data structures in which the imported scene is returned.
  */
 #pragma once
 #ifndef AI_SCENE_H_INC
@@ -76,7 +76,7 @@ extern "C" {
  * Each node has name, a parent node (except for the root node),
  * a transformation relative to its parent and possibly several child nodes.
  * Simple file formats don't support hierarchical structures - for these formats
- * the imported ***REMOVED***ne does consist of only a single root node without children.
+ * the imported scene does consist of only a single root node without children.
  */
 // -------------------------------------------------------------------------------
 struct ASSIMP_API aiNode {
@@ -120,7 +120,7 @@ struct ASSIMP_API aiNode {
     unsigned int mNumMeshes;
 
     /** The meshes of this node. Each entry is an index into the
-      * mesh list of the #ai***REMOVED***ne.
+      * mesh list of the #aiScene.
       */
     unsigned int* mMeshes;
 
@@ -143,7 +143,7 @@ struct ASSIMP_API aiNode {
 
     /** Searches for a node with a specific name, beginning at this
      *  nodes. Normally you will call this method on the root node
-     *  of the ***REMOVED***ne.
+     *  of the scene.
      *
      *  @param name Name to search for
      *  @return nullptr or a valid Node if the search was successful.
@@ -177,7 +177,7 @@ struct ASSIMP_API aiNode {
 
 // -------------------------------------------------------------------------------
 /**
- * Specifies that the ***REMOVED***ne data structure that was imported is not complete.
+ * Specifies that the scene data structure that was imported is not complete.
  * This flag bypasses some internal validations and allows the import
  * of animation skeletons, material libraries or camera animation paths
  * using Assimp. Most applications won't support such data.
@@ -186,7 +186,7 @@ struct ASSIMP_API aiNode {
 
 /**
  * This flag is set by the validation postprocess-step (aiPostProcess_ValidateDS)
- * if the validation is successful. In a validated ***REMOVED***ne you can be sure that
+ * if the validation is successful. In a validated scene you can be sure that
  * any cross references in the data structure (e.g. vertex indices) are valid.
  */
 #define AI_SCENE_FLAGS_VALIDATED    0x2
@@ -224,7 +224,7 @@ struct ASSIMP_API aiNode {
 #define AI_SCENE_FLAGS_TERRAIN 0x10
 
  /**
- * Specifies that the ***REMOVED***ne data can be shared between structures. For example:
+ * Specifies that the scene data can be shared between structures. For example:
  * one vertex in few faces. \ref AI_SCENE_FLAGS_NON_VERBOSE_FORMAT can not be
  * used for this because \ref AI_SCENE_FLAGS_NON_VERBOSE_FORMAT has internal
  * meaning about postprocessing steps.
@@ -237,14 +237,14 @@ struct ASSIMP_API aiNode {
  *  Everything that was imported from the given file can be accessed from here.
  *  Objects of this class are generally maintained and owned by Assimp, not
  *  by the caller. You shouldn't want to instance it, nor should you ever try to
- *  delete a given ***REMOVED***ne on your own.
+ *  delete a given scene on your own.
  */
 // -------------------------------------------------------------------------------
-struct ai***REMOVED***ne
+struct aiScene
 {
     /** Any combination of the AI_SCENE_FLAGS_XXX flags. By default
     * this value is 0, no flags are set. Most applications will
-    * want to reject all ***REMOVED***nes with the AI_SCENE_FLAGS_INCOMPLETE
+    * want to reject all scenes with the AI_SCENE_FLAGS_INCOMPLETE
     * bit set.
     */
     unsigned int mFlags;
@@ -258,7 +258,7 @@ struct ai***REMOVED***ne
     */
     C_STRUCT aiNode* mRootNode;
 
-    /** The number of meshes in the ***REMOVED***ne. */
+    /** The number of meshes in the scene. */
     unsigned int mNumMeshes;
 
     /** The array of meshes.
@@ -270,7 +270,7 @@ struct ai***REMOVED***ne
     */
     C_STRUCT aiMesh** mMeshes;
 
-    /** The number of materials in the ***REMOVED***ne. */
+    /** The number of materials in the scene. */
     unsigned int mNumMaterials;
 
     /** The array of materials.
@@ -282,7 +282,7 @@ struct ai***REMOVED***ne
     */
     C_STRUCT aiMaterial** mMaterials;
 
-    /** The number of animations in the ***REMOVED***ne. */
+    /** The number of animations in the scene. */
     unsigned int mNumAnimations;
 
     /** The array of animations.
@@ -303,7 +303,7 @@ struct ai***REMOVED***ne
     */
     C_STRUCT aiTexture** mTextures;
 
-    /** The number of light sources in the ***REMOVED***ne. Light sources
+    /** The number of light sources in the scene. Light sources
     * are fully optional, in most cases this attribute will be 0
         */
     unsigned int mNumLights;
@@ -315,7 +315,7 @@ struct ai***REMOVED***ne
     */
     C_STRUCT aiLight** mLights;
 
-    /** The number of cameras in the ***REMOVED***ne. Cameras
+    /** The number of cameras in the scene. Cameras
     * are fully optional, in most cases this attribute will be 0
         */
     unsigned int mNumCameras;
@@ -325,20 +325,20 @@ struct ai***REMOVED***ne
     * All cameras imported from the given file are listed here.
     * The array is mNumCameras in size. The first camera in the
     * array (if existing) is the default camera view into
-    * the ***REMOVED***ne.
+    * the scene.
     */
     C_STRUCT aiCamera** mCameras;
 
     /**
-     *  @brief  The global metadata assigned to the ***REMOVED***ne itself.
+     *  @brief  The global metadata assigned to the scene itself.
      *
-     *  This data contains global metadata which belongs to the ***REMOVED***ne like
+     *  This data contains global metadata which belongs to the scene like
      *  unit-conversions, versions, vendors or other model-specific data. This
      *  can be used to store format-specific metadata as well.
      */
     C_STRUCT aiMetadata* mMetaData;
 
-    /** The name of the ***REMOVED***ne itself.
+    /** The name of the scene itself.
      */
     C_STRUCT aiString mName;
 
@@ -355,39 +355,39 @@ struct ai***REMOVED***ne
 #ifdef __cplusplus
 
     //! Default constructor - set everything to 0/nullptr
-    ASSIMP_API ai***REMOVED***ne();
+    ASSIMP_API aiScene();
 
     //! Destructor
-    ASSIMP_API ~ai***REMOVED***ne();
+    ASSIMP_API ~aiScene();
 
-    //! Check whether the ***REMOVED***ne contains meshes
-    //! Unless no special ***REMOVED***ne flags are set this will always be true.
+    //! Check whether the scene contains meshes
+    //! Unless no special scene flags are set this will always be true.
     inline bool HasMeshes() const {
         return mMeshes != nullptr && mNumMeshes > 0;
     }
 
-    //! Check whether the ***REMOVED***ne contains materials
-    //! Unless no special ***REMOVED***ne flags are set this will always be true.
+    //! Check whether the scene contains materials
+    //! Unless no special scene flags are set this will always be true.
     inline bool HasMaterials() const {
         return mMaterials != nullptr && mNumMaterials > 0;
     }
 
-    //! Check whether the ***REMOVED***ne contains lights
+    //! Check whether the scene contains lights
     inline bool HasLights() const {
         return mLights != nullptr && mNumLights > 0;
     }
 
-    //! Check whether the ***REMOVED***ne contains textures
+    //! Check whether the scene contains textures
     inline bool HasTextures() const {
         return mTextures != nullptr && mNumTextures > 0;
     }
 
-    //! Check whether the ***REMOVED***ne contains cameras
+    //! Check whether the scene contains cameras
     inline bool HasCameras() const {
         return mCameras != nullptr && mNumCameras > 0;
     }
 
-    //! Check whether the ***REMOVED***ne contains animations
+    //! Check whether the scene contains animations
     inline bool HasAnimations() const {
         return mAnimations != nullptr && mNumAnimations > 0;
     }

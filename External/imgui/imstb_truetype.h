@@ -380,7 +380,7 @@ unsigned char screen[20][79];
 int main(int arg, char **argv)
 {
    stbtt_fontinfo font;
-   int i,j,a***REMOVED***nt,baseline,ch=0;
+   int i,j,ascent,baseline,ch=0;
    float scale, xpos=2; // leave a little padding in case the character extends left
    char *text = "Heljo World!"; // intentionally misspelled to show 'lj' brokenness
 
@@ -388,8 +388,8 @@ int main(int arg, char **argv)
    stbtt_InitFont(&font, buffer, 0);
 
    scale = stbtt_ScaleForPixelHeight(&font, 15);
-   stbtt_GetFontVMetrics(&font, &a***REMOVED***nt,0,0);
-   baseline = (int) (a***REMOVED***nt*scale);
+   stbtt_GetFontVMetrics(&font, &ascent,0,0);
+   baseline = (int) (ascent*scale);
 
    while (text[ch]) {
       int advance,lsb,x0,y0,x1,y1;
@@ -566,7 +566,7 @@ STBTT_DEF void stbtt_GetBakedQuad(const stbtt_bakedchar *chardata, int pw, int p
 //
 // It's inefficient; you might want to c&p it and optimize it.
 
-STBTT_DEF void stbtt_GetScaledFontVMetrics(const unsigned char *fontdata, int index, float size, float *a***REMOVED***nt, float *de***REMOVED***nt, float *lineGap);
+STBTT_DEF void stbtt_GetScaledFontVMetrics(const unsigned char *fontdata, int index, float size, float *ascent, float *descent, float *lineGap);
 // Query the font vertical metrics without having to create a font first.
 
 
@@ -614,7 +614,7 @@ STBTT_DEF int  stbtt_PackFontRange(stbtt_pack_context *spc, const unsigned char 
 // and increasing. Data for how to render them is stored in chardata_for_range;
 // pass these to stbtt_GetPackedQuad to get back renderable quads.
 //
-// font_size is the full height of the character from a***REMOVED***nder to de***REMOVED***nder,
+// font_size is the full height of the character from ascender to descender,
 // as computed by stbtt_ScaleForPixelHeight. To use a point size as computed
 // by stbtt_ScaleForMappingEmToPixels, wrap the point size in STBTT_POINT_SIZE()
 // and pass that result as 'font_size':
@@ -762,26 +762,26 @@ STBTT_DEF int stbtt_FindGlyphIndex(const stbtt_fontinfo *info, int unicode_codep
 
 STBTT_DEF float stbtt_ScaleForPixelHeight(const stbtt_fontinfo *info, float pixels);
 // computes a scale factor to produce a font whose "height" is 'pixels' tall.
-// Height is measured as the distance from the highest a***REMOVED***nder to the lowest
-// de***REMOVED***nder; in other words, it's equivalent to calling stbtt_GetFontVMetrics
+// Height is measured as the distance from the highest ascender to the lowest
+// descender; in other words, it's equivalent to calling stbtt_GetFontVMetrics
 // and computing:
-//       scale = pixels / (a***REMOVED***nt - de***REMOVED***nt)
-// so if you prefer to measure height by the a***REMOVED***nt only, use a similar calculation.
+//       scale = pixels / (ascent - descent)
+// so if you prefer to measure height by the ascent only, use a similar calculation.
 
 STBTT_DEF float stbtt_ScaleForMappingEmToPixels(const stbtt_fontinfo *info, float pixels);
 // computes a scale factor to produce a font whose EM size is mapped to
 // 'pixels' tall. This is probably what traditional APIs compute, but
 // I'm not positive.
 
-STBTT_DEF void stbtt_GetFontVMetrics(const stbtt_fontinfo *info, int *a***REMOVED***nt, int *de***REMOVED***nt, int *lineGap);
-// a***REMOVED***nt is the coordinate above the baseline the font extends; de***REMOVED***nt
+STBTT_DEF void stbtt_GetFontVMetrics(const stbtt_fontinfo *info, int *ascent, int *descent, int *lineGap);
+// ascent is the coordinate above the baseline the font extends; descent
 // is the coordinate below the baseline the font extends (i.e. it is typically negative)
-// lineGap is the spacing between one row's de***REMOVED***nt and the next row's a***REMOVED***nt...
-// so you should advance the vertical position by "*a***REMOVED***nt - *de***REMOVED***nt + *lineGap"
+// lineGap is the spacing between one row's descent and the next row's ascent...
+// so you should advance the vertical position by "*ascent - *descent + *lineGap"
 //   these are expressed in unscaled coordinates, so you must multiply by
 //   the scale factor for a given size
 
-STBTT_DEF int  stbtt_GetFontVMetricsOS2(const stbtt_fontinfo *info, int *typoA***REMOVED***nt, int *typoDe***REMOVED***nt, int *typoLineGap);
+STBTT_DEF int  stbtt_GetFontVMetricsOS2(const stbtt_fontinfo *info, int *typoAscent, int *typoDescent, int *typoLineGap);
 // analogous to GetFontVMetrics, but returns the "typographic" values from the OS/2
 // table (specific to MS/Windows TTF files).
 //
@@ -1692,7 +1692,7 @@ static int stbtt__GetGlyphShapeTT(const stbtt_fontinfo *info, int glyph_index, s
    numberOfContours = ttSHORT(data + g);
 
    if (numberOfContours > 0) {
-      stbtt_uint8 flags=0,fl***REMOVED***ount;
+      stbtt_uint8 flags=0,flagcount;
       stbtt_int32 ins, i,j=0,m,n, next_move, was_off=0, off, start_off=0;
       stbtt_int32 x,y,cx,cy,sx,sy, scx,scy;
       stbtt_uint8 *points;
@@ -1708,7 +1708,7 @@ static int stbtt__GetGlyphShapeTT(const stbtt_fontinfo *info, int glyph_index, s
          return 0;
 
       next_move = 0;
-      fl***REMOVED***ount=0;
+      flagcount=0;
 
       // in first pass, we load uninterpreted data into the allocated array
       // above, shifted to the end of the array so we won't overwrite it when
@@ -1719,12 +1719,12 @@ static int stbtt__GetGlyphShapeTT(const stbtt_fontinfo *info, int glyph_index, s
       // first load flags
 
       for (i=0; i < n; ++i) {
-         if (fl***REMOVED***ount == 0) {
+         if (flagcount == 0) {
             flags = *points++;
             if (flags & 8)
-               fl***REMOVED***ount = *points++;
+               flagcount = *points++;
          } else
-            --fl***REMOVED***ount;
+            --flagcount;
          vertices[off+i].type = flags;
       }
 
@@ -2636,20 +2636,20 @@ STBTT_DEF void stbtt_GetCodepointHMetrics(const stbtt_fontinfo *info, int codepo
    stbtt_GetGlyphHMetrics(info, stbtt_FindGlyphIndex(info,codepoint), advanceWidth, leftSideBearing);
 }
 
-STBTT_DEF void stbtt_GetFontVMetrics(const stbtt_fontinfo *info, int *a***REMOVED***nt, int *de***REMOVED***nt, int *lineGap)
+STBTT_DEF void stbtt_GetFontVMetrics(const stbtt_fontinfo *info, int *ascent, int *descent, int *lineGap)
 {
-   if (a***REMOVED***nt ) *a***REMOVED***nt  = ttSHORT(info->data+info->hhea + 4);
-   if (de***REMOVED***nt) *de***REMOVED***nt = ttSHORT(info->data+info->hhea + 6);
+   if (ascent ) *ascent  = ttSHORT(info->data+info->hhea + 4);
+   if (descent) *descent = ttSHORT(info->data+info->hhea + 6);
    if (lineGap) *lineGap = ttSHORT(info->data+info->hhea + 8);
 }
 
-STBTT_DEF int  stbtt_GetFontVMetricsOS2(const stbtt_fontinfo *info, int *typoA***REMOVED***nt, int *typoDe***REMOVED***nt, int *typoLineGap)
+STBTT_DEF int  stbtt_GetFontVMetricsOS2(const stbtt_fontinfo *info, int *typoAscent, int *typoDescent, int *typoLineGap)
 {
    int tab = stbtt__find_table(info->data, info->fontstart, "OS/2");
    if (!tab)
       return 0;
-   if (typoA***REMOVED***nt ) *typoA***REMOVED***nt  = ttSHORT(info->data+tab + 68);
-   if (typoDe***REMOVED***nt) *typoDe***REMOVED***nt = ttSHORT(info->data+tab + 70);
+   if (typoAscent ) *typoAscent  = ttSHORT(info->data+tab + 68);
+   if (typoDescent) *typoDescent = ttSHORT(info->data+tab + 70);
    if (typoLineGap) *typoLineGap = ttSHORT(info->data+tab + 72);
    return 1;
 }
@@ -3271,11 +3271,11 @@ static void stbtt__fill_active_edges_new(float *scanline, float *scanline_fill, 
                float y1 = (x - x0) / dx + y_top;
                float y2 = (x+1 - x0) / dx + y_top;
 
-               if (x0 < x1 && x3 > x2) {         // three segments de***REMOVED***nding down-right
+               if (x0 < x1 && x3 > x2) {         // three segments descending down-right
                   stbtt__handle_clipped_edge(scanline,x,e, x0,y0, x1,y1);
                   stbtt__handle_clipped_edge(scanline,x,e, x1,y1, x2,y2);
                   stbtt__handle_clipped_edge(scanline,x,e, x2,y2, x3,y3);
-               } else if (x3 < x1 && x0 > x2) {  // three segments de***REMOVED***nding down-left
+               } else if (x3 < x1 && x0 > x2) {  // three segments descending down-left
                   stbtt__handle_clipped_edge(scanline,x,e, x0,y0, x2,y2);
                   stbtt__handle_clipped_edge(scanline,x,e, x2,y2, x1,y1);
                   stbtt__handle_clipped_edge(scanline,x,e, x1,y1, x3,y3);
@@ -4355,16 +4355,16 @@ STBTT_DEF int stbtt_PackFontRange(stbtt_pack_context *spc, const unsigned char *
    return stbtt_PackFontRanges(spc, fontdata, font_index, &range, 1);
 }
 
-STBTT_DEF void stbtt_GetScaledFontVMetrics(const unsigned char *fontdata, int index, float size, float *a***REMOVED***nt, float *de***REMOVED***nt, float *lineGap)
+STBTT_DEF void stbtt_GetScaledFontVMetrics(const unsigned char *fontdata, int index, float size, float *ascent, float *descent, float *lineGap)
 {
-   int i_a***REMOVED***nt, i_de***REMOVED***nt, i_lineGap;
+   int i_ascent, i_descent, i_lineGap;
    float scale;
    stbtt_fontinfo info;
    stbtt_InitFont(&info, fontdata, stbtt_GetFontOffsetForIndex(fontdata, index));
    scale = size > 0 ? stbtt_ScaleForPixelHeight(&info, size) : stbtt_ScaleForMappingEmToPixels(&info, -size);
-   stbtt_GetFontVMetrics(&info, &i_a***REMOVED***nt, &i_de***REMOVED***nt, &i_lineGap);
-   *a***REMOVED***nt  = (float) i_a***REMOVED***nt  * scale;
-   *de***REMOVED***nt = (float) i_de***REMOVED***nt * scale;
+   stbtt_GetFontVMetrics(&info, &i_ascent, &i_descent, &i_lineGap);
+   *ascent  = (float) i_ascent  * scale;
+   *descent = (float) i_descent * scale;
    *lineGap = (float) i_lineGap * scale;
 }
 

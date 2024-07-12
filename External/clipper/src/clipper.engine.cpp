@@ -34,7 +34,7 @@ namespace Clipper2Lib {
   // edges that alternate between going up (relative to the Y-axis) and going
   // down. Edges consecutively going up or consecutively going down are called
   // 'bounds' (ie sides if they're simple polygons). 'Local Minima' refer to
-  // vertices where de***REMOVED***nding bounds become a***REMOVED***nding ones.
+  // vertices where descending bounds become ascending ones.
 
   struct Scanline {
     int64_t y = 0;
@@ -450,7 +450,7 @@ namespace Clipper2Lib {
       !IsVerySmallTriangle(*op);
   }
 
-  inline bool OutrecIsA***REMOVED***nding(const Active* hotEdge)
+  inline bool OutrecIsAscending(const Active* hotEdge)
   {
     return (hotEdge == hotEdge->outrec->front_edge);
   }
@@ -1041,7 +1041,7 @@ namespace Clipper2Lib {
         left_bound->bot = local_minima->vertex->pt;
         left_bound->curr_x = left_bound->bot.x;
         left_bound->wind_dx = -1;
-        left_bound->vertex_top = local_minima->vertex->prev;  // ie de***REMOVED***nding
+        left_bound->vertex_top = local_minima->vertex->prev;  // ie descending
         left_bound->top = left_bound->vertex_top->pt;
         left_bound->local_min = local_minima;
         SetDx(*left_bound);
@@ -1057,13 +1057,13 @@ namespace Clipper2Lib {
         right_bound->bot = local_minima->vertex->pt;
         right_bound->curr_x = right_bound->bot.x;
         right_bound->wind_dx = 1;
-        right_bound->vertex_top = local_minima->vertex->next;  // ie a***REMOVED***nding
+        right_bound->vertex_top = local_minima->vertex->next;  // ie ascending
         right_bound->top = right_bound->vertex_top->pt;
         right_bound->local_min = local_minima;
         SetDx(*right_bound);
       }
 
-      //Currently LeftB is just the de***REMOVED***nding bound and RightB is the a***REMOVED***nding.
+      //Currently LeftB is just the descending bound and RightB is the ascending.
       //Now if the LeftB isn't on the left of RightB then we need swap them.
       if (left_bound && right_bound)
       {
@@ -1178,12 +1178,12 @@ namespace Clipper2Lib {
       //e.windDx is the winding direction of the **input** paths
       //and unrelated to the winding direction of output polygons.
       //Output orientation is determined by e.outrec.frontE which is
-      //the a***REMOVED***nding edge (see AddLocalMinPoly).
+      //the ascending edge (see AddLocalMinPoly).
       if (prevHotEdge)
       {
         if (using_polytree_)
           SetOwner(outrec, prevHotEdge->outrec);
-        if (OutrecIsA***REMOVED***nding(prevHotEdge) == is_new)
+        if (OutrecIsAscending(prevHotEdge) == is_new)
           SetSides(*outrec, e2, e1);
         else
           SetSides(*outrec, e1, e2);

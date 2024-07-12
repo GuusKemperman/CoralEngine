@@ -183,13 +183,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // ---------------------------------------------------------------------------
 /** @brief Configures the #aiProcess_PreTransformVertices step to
- *  keep the ***REMOVED***ne hierarchy. Meshes are moved to worldspace, but
+ *  keep the scene hierarchy. Meshes are moved to worldspace, but
  *  no optimization is performed (read: meshes with equal materials are not
  *  joined. The total number of meshes won't change).
  *
- * This option could be of use for you if the ***REMOVED***ne hierarchy contains
+ * This option could be of use for you if the scene hierarchy contains
  * important additional information which you intend to parse.
- * For rendering, you can still render all meshes in the ***REMOVED***ne without
+ * For rendering, you can still render all meshes in the scene without
  * any transformations.
  * Property type: bool. Default value: false.
  */
@@ -199,7 +199,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // ---------------------------------------------------------------------------
 /** @brief Configures the #aiProcess_PreTransformVertices step to normalize
  *  all vertex components into the [-1,1] range. That is, a bounding box
- *  for the whole ***REMOVED***ne is computed, the maximum component is taken and all
+ *  for the whole scene is computed, the maximum component is taken and all
  *  meshes are scaled appropriately (uniformly of course!).
  *  This might be useful if you don't know the spatial dimension of the input
  *  data*/
@@ -208,7 +208,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // ---------------------------------------------------------------------------
 /** @brief Configures the #aiProcess_PreTransformVertices step to use
- *  a users defined matrix as the ***REMOVED***ne root node transformation before
+ *  a users defined matrix as the scene root node transformation before
  *  transforming vertices.
  *  Property type: bool. Default value: false.
  */
@@ -217,7 +217,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // ---------------------------------------------------------------------------
 /** @brief Configures the #aiProcess_PreTransformVertices step to use
- *  a users defined matrix as the ***REMOVED***ne root node transformation before
+ *  a users defined matrix as the scene root node transformation before
  *  transforming vertices. This property correspond to the 'a1' component
  *  of the transformation matrix.
  *  Property type: aiMatrix4x4.
@@ -357,7 +357,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define AI_CONFIG_PP_ICL_PTCACHE_SIZE   "PP_ICL_PTCACHE_SIZE"
 
 // ---------------------------------------------------------------------------
-/** @brief Enumerates components of the ai***REMOVED***ne and aiMesh data structures
+/** @brief Enumerates components of the aiScene and aiMesh data structures
  *  that can be excluded from the import using the #aiProcess_RemoveComponent step.
  *
  *  See the documentation to #aiProcess_RemoveComponent for more details.
@@ -387,33 +387,33 @@ enum aiComponent
     aiComponent_TEXCOORDS = 0x10,
 
     /** Removes all bone weights from all meshes.
-     * The ***REMOVED***negraph nodes corresponding to the bones are NOT removed.
+     * The scenegraph nodes corresponding to the bones are NOT removed.
      * use the #aiProcess_OptimizeGraph step to do this */
     aiComponent_BONEWEIGHTS = 0x20,
 
-    /** Removes all node animations (ai***REMOVED***ne::mAnimations).
-     * The corresponding ***REMOVED***negraph nodes are NOT removed.
+    /** Removes all node animations (aiScene::mAnimations).
+     * The corresponding scenegraph nodes are NOT removed.
      * use the #aiProcess_OptimizeGraph step to do this */
     aiComponent_ANIMATIONS = 0x40,
 
-    /** Removes all embedded textures (ai***REMOVED***ne::mTextures) */
+    /** Removes all embedded textures (aiScene::mTextures) */
     aiComponent_TEXTURES = 0x80,
 
-    /** Removes all light sources (ai***REMOVED***ne::mLights).
-     * The corresponding ***REMOVED***negraph nodes are NOT removed.
+    /** Removes all light sources (aiScene::mLights).
+     * The corresponding scenegraph nodes are NOT removed.
      * use the #aiProcess_OptimizeGraph step to do this */
     aiComponent_LIGHTS = 0x100,
 
-    /** Removes all cameras (ai***REMOVED***ne::mCameras).
-     * The corresponding ***REMOVED***negraph nodes are NOT removed.
+    /** Removes all cameras (aiScene::mCameras).
+     * The corresponding scenegraph nodes are NOT removed.
      * use the #aiProcess_OptimizeGraph step to do this */
     aiComponent_CAMERAS = 0x200,
 
-    /** Removes all meshes (ai***REMOVED***ne::mMeshes). */
+    /** Removes all meshes (aiScene::mMeshes). */
     aiComponent_MESHES = 0x400,
 
     /** Removes all materials. One default material will
-     * be generated, so ai***REMOVED***ne::mNumMaterials will be 1. */
+     * be generated, so aiScene::mNumMaterials will be 1. */
     aiComponent_MATERIALS = 0x800,
 
 
@@ -752,7 +752,7 @@ enum aiComponent
 #define AI_CONFIG_IMPORT_MDL_HL1_READ_HITBOXES "IMPORT_MDL_HL1_READ_HITBOXES"
 
 // ---------------------------------------------------------------------------
-/** @brief Set whether the MDL (HL1) importer will read mi***REMOVED***llaneous global model info.
+/** @brief Set whether the MDL (HL1) importer will read miscellaneous global model info.
  *
  * The default value is true (1)
  * Property type: bool
@@ -937,7 +937,7 @@ enum aiComponent
  * order: <material-name>.material, <mesh-filename-base>.material and
  * lastly the material name defined by this config property.
  * <br>
- * Property type: String. Default value: ***REMOVED***ne.material.
+ * Property type: String. Default value: Scene.material.
  */
 #define AI_CONFIG_IMPORT_OGRE_MATERIAL_FILE \
     "IMPORT_OGRE_MATERIAL_FILE"

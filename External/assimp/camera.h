@@ -62,7 +62,7 @@ extern "C" {
  *
  * Cameras have a representation in the node graph and can be animated.
  * An important aspect is that the camera itself is also part of the
- * ***REMOVED***ne-graph. This means, any values such as the look-at vector are not
+ * scene-graph. This means, any values such as the look-at vector are not
  * *absolute*, they're <b>relative</b> to the coordinate system defined
  * by the node which corresponds to the camera. This allows for camera
  * animations. For static cameras parameters like the 'look-at' or 'up' vectors
@@ -73,13 +73,13 @@ extern "C" {
  * // Get the camera matrix for a camera at a specific time
  * // if the node hierarchy for the camera does not contain
  * // at least one animated node this is a static computation
- * get-camera-matrix (node ***REMOVED***neRoot, camera cam) : matrix
+ * get-camera-matrix (node sceneRoot, camera cam) : matrix
  * {
  *    node   cnd = find-node-for-camera(cam)
  *    matrix cmt = identity()
  *
  *    // as usual - get the absolute camera transformation for this frame
- *    for each node nd in hierarchy from ***REMOVED***neRoot to cnd
+ *    for each node nd in hierarchy from sceneRoot to cnd
  *      matrix cur
  *      if (is-animated(nd))
  *         cur = eval-animation(nd)
@@ -103,8 +103,8 @@ extern "C" {
 struct aiCamera {
     /** The name of the camera.
      *
-     *  There must be a node in the ***REMOVED***negraph with the same name.
-     *  This node specifies the position of the camera in the ***REMOVED***ne
+     *  There must be a node in the scenegraph with the same name.
+     *  This node specifies the position of the camera in the scene
      *  hierarchy and can be animated.
      */
     C_STRUCT aiString mName;
@@ -169,7 +169,7 @@ struct aiCamera {
      */
     float mAspect;
 
-    /** Half horizontal orthographic width, in ***REMOVED***ne units.
+    /** Half horizontal orthographic width, in scene units.
      *
      *  The orthographic width specifies the half width of the
      *  orthographic view box. If non-zero the camera is

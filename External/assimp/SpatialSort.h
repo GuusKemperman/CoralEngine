@@ -83,7 +83,7 @@ public:
 
     // ------------------------------------------------------------------------------------
     /** Sets the input data for the SpatialSort. This replaces existing data, if any.
-     *  The new data receives new indices in a***REMOVED***nding order.
+     *  The new data receives new indices in ascending order.
      *
      * @param pPositions Pointer to the first position vector of the array.
      * @param pNumPositions Number of vectors to expect in that array.
@@ -133,7 +133,7 @@ public:
 
     // ------------------------------------------------------------------------------------
     /** Compute a table that maps each vertex ID referring to a spatially close
-     *  enough position to the same output ID. Output IDs are assigned in a***REMOVED***nding order
+     *  enough position to the same output ID. Output IDs are assigned in ascending order
      *  from 0...n.
      * @param fill Will be filled with numPositions entries.
      * @param pRadius Maximal distance from the position a vertex may have to

@@ -199,7 +199,7 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 	}
 	else
 	{
-		LOG(LogAI, Warning, "There is no score component in this ***REMOVED***ne!");
+		LOG(LogAI, Warning, "There is no score component in this scene!");
 	}
 }
 

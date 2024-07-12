@@ -31,7 +31,7 @@ namespace CE
 		[[nodiscard]] const std::vector<TransformedPolygon>& GetPolygonDataNavMesh() const { return mPolygonDataNavMesh; }
 
 		/// \brief DebugDrawNavMesh, draws the NavMesh in order to be able to debug it
-		/// \param world the current World in the ***REMOVED***ne
+		/// \param world the current World in the scene
 		void DebugDrawNavMesh(const World& world) const;
 
 		bool mNavMeshNeedsUpdate = true;

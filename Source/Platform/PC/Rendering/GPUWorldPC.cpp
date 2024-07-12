@@ -489,7 +489,7 @@ void CE::GPUWorld::Update()
     }
 
     if (ambientLightView.size() > 1)
-        LOG(LogRendering, Warning, "There is more than one AmbientrLifgt component in the ***REMOVED***ne. Only the last one will be used.");
+        LOG(LogRendering, Warning, "There is more than one AmbientrLifgt component in the scene. Only the last one will be used.");
 
     UpdateParticles(cameraTransform.GetLocalPosition());
     UpdateLights(dirLightCounter, mPointLightCounter);

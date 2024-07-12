@@ -25,11 +25,11 @@ CE::Font::Font(AssetLoadInfo& loadInfo) :
     }
 
     // Calculate by what factor to scale the font at render time
-    int a***REMOVED***nt;
-    int de***REMOVED***nt;
+    int ascent;
+    int descent;
     int lineGap;
-    stbtt_GetFontVMetrics(&mInfo, &a***REMOVED***nt, &de***REMOVED***nt, &lineGap);
-    mScale = sFontSize / (a***REMOVED***nt - de***REMOVED***nt);
+    stbtt_GetFontVMetrics(&mInfo, &ascent, &descent, &lineGap);
+    mScale = sFontSize / (ascent - descent);
     
     // Calculate how big the font atlas image should be
     int requiredPixels = (int)sFontSize * (int)sFontSize * sFontAtlasNumCharacters;

@@ -2,7 +2,7 @@
 #include "Assets/Importers/ModelImporter.h"
 
 #include <assimp/Importer.hpp>
-#include <assimp/***REMOVED***ne.h>
+#include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/GltfMaterial.h>
 
@@ -43,7 +43,7 @@ static std::string GetMeshName(const std::filesystem::path& modelPath, const cha
 	return modelPath.filename().replace_extension().string().append("_").append(name);
 }
 
-static std::string Get***REMOVED***neName(const std::filesystem::path& modelPath)
+static std::string GetSceneName(const std::filesystem::path& modelPath)
 {
 	return modelPath.filename().replace_extension().string().append("_").append("Prefab");
 }
@@ -104,10 +104,10 @@ namespace
 std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const std::filesystem::path& file) const
 {
     Assimp::Importer importer{};
-    const ai***REMOVED***ne* ***REMOVED***ne = importer.ReadFile(file.string(), aiProcess_LimitBoneWeights | aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
-	if (***REMOVED***ne == nullptr)
+    const aiScene* scene = importer.ReadFile(file.string(), aiProcess_LimitBoneWeights | aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_RemoveRedundantMaterials | aiProcess_JoinIdenticalVertices | aiProcess_ConvertToLeftHanded);
+	if (scene == nullptr)
 	{
-		LOG(LogAssets, Error, "Loading of file {} failed: assimp returned null ***REMOVED***ne - {}", file.string(), importer.GetErrorString());
+		LOG(LogAssets, Error, "Loading of file {} failed: assimp returned null scene - {}", file.string(), importer.GetErrorString());
 		return Importer::ImportResult{};
 	}
 
@@ -125,9 +125,9 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 	// just so we can log more errors and inform the user of any other issues.
 	bool anyErrors = false;
 
-	for (uint32 i = 0; i < ***REMOVED***ne->mNumTextures; i++)
+	for (uint32 i = 0; i < scene->mNumTextures; i++)
 	{
-		const aiTexture& aiTex = ****REMOVED***ne->mTextures[i];
+		const aiTexture& aiTex = *scene->mTextures[i];
 
 		const std::string textureName = GetEmbedTexName(file, i);
 
@@ -161,9 +161,9 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 		textures.emplace_back(textureName);
 	}
 
-	for (uint32 i = 0; i < ***REMOVED***ne->mNumMaterials; i++)
+	for (uint32 i = 0; i < scene->mNumMaterials; i++)
 	{
-		const aiMaterial& aiMat = ****REMOVED***ne->mMaterials[i];
+		const aiMaterial& aiMat = *scene->mMaterials[i];
 
 		Material engineMat{ GetMaterialName(file, aiMat.GetName().C_Str(), i) };
 
@@ -209,9 +209,9 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 		returnValue.emplace_back(MaterialImporter::Import(file, myVersion, engineMat));
 	}
 
-	for (uint32 i = 0; i < ***REMOVED***ne->mNumMeshes; i++)
+	for (uint32 i = 0; i < scene->mNumMeshes; i++)
 	{
-		const aiMesh& mesh = ****REMOVED***ne->mMeshes[i];
+		const aiMesh& mesh = *scene->mMeshes[i];
 
 		const std::string meshName = GetMeshName(file, mesh.mName.C_Str());
 
@@ -346,9 +346,9 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 		}
 	}
 
-	for (uint32 animIndex = 0; animIndex < ***REMOVED***ne->mNumAnimations; animIndex++)
+	for (uint32 animIndex = 0; animIndex < scene->mNumAnimations; animIndex++)
 	{
-		const aiAnimation& aiAnim = ****REMOVED***ne->mAnimations[animIndex];
+		const aiAnimation& aiAnim = *scene->mAnimations[animIndex];
 		
 		if (aiAnim.mNumChannels <= 0 )
 		{
@@ -361,7 +361,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 		
 		engineAnim.mBones = std::vector<Bone>();
 		
-		ReadHierarchyForAnimRecursive(****REMOVED***ne->mRootNode, engineAnim.mRootNode);
+		ReadHierarchyForAnimRecursive(*scene->mRootNode, engineAnim.mRootNode);
 
 		int size = aiAnim.mNumChannels;
 		for (int channelIndex = 0; channelIndex < size; channelIndex++)
@@ -450,15 +450,15 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 
 
 				AssetHandle<Material> mat = dummyMaterials.emplace_back(GetMaterialName(file, 
-					***REMOVED***ne->mMaterials[***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), 
-					***REMOVED***ne->mMeshes[node.mMeshes[i]]->mMaterialIndex)).mHandle;
+					scene->mMaterials[scene->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), 
+					scene->mMeshes[node.mMeshes[i]]->mMaterialIndex)).mHandle;
 
-				if (***REMOVED***ne->mMeshes[node.mMeshes[i]]->HasBones())
+				if (scene->mMeshes[node.mMeshes[i]]->HasBones())
 				{
 					SkinnedMeshComponent& meshComponent = reg.AddComponent<SkinnedMeshComponent>(meshHolder);
 
 					meshComponent.mSkinnedMesh = dummySkinnedMeshes.emplace_back(GetMeshName(file, 
-						***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str())).mHandle;
+						scene->mMeshes[node.mMeshes[i]]->mName.C_Str())).mHandle;
 					meshComponent.mMaterial =  std::move(mat);
 				}
 				else
@@ -466,7 +466,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 					StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(meshHolder);
 
 					meshComponent.mStaticMesh = dummyStaticMeshes.emplace_back(GetMeshName(file,
-						***REMOVED***ne->mMeshes[node.mMeshes[i]]->mName.C_Str())).mHandle;
+						scene->mMeshes[node.mMeshes[i]]->mName.C_Str())).mHandle;
 					meshComponent.mMaterial = std::move(mat);
 				}
 
@@ -481,10 +481,10 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 			return entity;
 		};
 
-	***REMOVED***ne->mRootNode->mName = file.filename().replace_extension().string();
-	const entt::entity prefabEntity = makePrefab(****REMOVED***ne->mRootNode, {});
+	scene->mRootNode->mName = file.filename().replace_extension().string();
+	const entt::entity prefabEntity = makePrefab(*scene->mRootNode, {});
 
-	std::optional<ImportedAsset> importedPrefab = PrefabImporter::MakePrefabFromEntity(file, Get***REMOVED***neName(file), myVersion, world, prefabEntity);
+	std::optional<ImportedAsset> importedPrefab = PrefabImporter::MakePrefabFromEntity(file, GetSceneName(file), myVersion, world, prefabEntity);
 
 	if (importedPrefab.has_value())
 	{
@@ -492,7 +492,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 		return returnValue;
 	}
 	
-	LOG(LogError, Error, "Importing {} failed; failed to make a valid prefab out of the ai ***REMOVED***ne", file.string());
+	LOG(LogError, Error, "Importing {} failed; failed to make a valid prefab out of the ai scene", file.string());
 	return Importer::ImportResult{};
 }
 

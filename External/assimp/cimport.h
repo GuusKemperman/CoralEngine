@@ -57,7 +57,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-struct ai***REMOVED***ne;
+struct aiScene;
 struct aiFileIO;
 
 typedef void (*aiLogStreamCallback)(const char * /* message */, char * /* user */);
@@ -101,7 +101,7 @@ typedef int aiBool;
 // --------------------------------------------------------------------------------
 /** Reads the given file and returns its content.
  *
- * If the call succeeds, the imported data is returned in an ai***REMOVED***ne structure.
+ * If the call succeeds, the imported data is returned in an aiScene structure.
  * The data is intended to be read-only, it stays property of the ASSIMP
  * library and will be stable until aiReleaseImport() is called. After you're
  * done with it, call aiReleaseImport() to free the resources associated with
@@ -114,7 +114,7 @@ typedef int aiBool;
  *   #aiPostProcessSteps flags.
  * @return Pointer to the imported data or NULL if the import failed.
  */
-ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFile(
+ASSIMP_API const C_STRUCT aiScene *aiImportFile(
         const char *pFile,
         unsigned int pFlags);
 
@@ -122,7 +122,7 @@ ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFile(
 /** Reads the given file using user-defined I/O functions and returns
  *   its content.
  *
- * If the call succeeds, the imported data is returned in an ai***REMOVED***ne structure.
+ * If the call succeeds, the imported data is returned in an aiScene structure.
  * The data is intended to be read-only, it stays property of the ASSIMP
  * library and will be stable until aiReleaseImport() is called. After you're
  * done with it, call aiReleaseImport() to free the resources associated with
@@ -139,7 +139,7 @@ ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFile(
  * @return Pointer to the imported data or NULL if the import failed.
  * @note Include <aiFileIO.h> for the definition of #aiFileIO.
  */
-ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFileEx(
+ASSIMP_API const C_STRUCT aiScene *aiImportFileEx(
         const char *pFile,
         unsigned int pFlags,
         C_STRUCT aiFileIO *pFS);
@@ -160,7 +160,7 @@ ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFileEx(
  * @note Include <aiFileIO.h> for the definition of #aiFileIO.
  * @see aiImportFileEx
  */
-ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFileExWithProperties(
+ASSIMP_API const C_STRUCT aiScene *aiImportFileExWithProperties(
         const char *pFile,
         unsigned int pFlags,
         C_STRUCT aiFileIO *pFS,
@@ -170,7 +170,7 @@ ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFileExWithProperties(
 /** Reads the given file from a given memory buffer,
  *
  * If the call succeeds, the contents of the file are returned as a pointer to an
- * ai***REMOVED***ne object. The returned data is intended to be read-only, the importer keeps
+ * aiScene object. The returned data is intended to be read-only, the importer keeps
  * ownership of the data and will destroy it upon destruction. If the import fails,
  * NULL is returned.
  * A human-readable error description can be retrieved by calling aiGetErrorString().
@@ -179,7 +179,7 @@ ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFileExWithProperties(
  * @param pFlags Optional post processing steps to be executed after
  *   a successful import. Provide a bitwise combination of the
  *   #aiPostProcessSteps flags. If you wish to inspect the imported
- *   ***REMOVED***ne first in order to fine-tune your post-processing setup,
+ *   scene first in order to fine-tune your post-processing setup,
  *   consider to use #aiApplyPostProcessing().
  * @param pHint An additional hint to the library. If this is a non empty string,
  *   the library looks for a loader to support the file extension specified by pHint
@@ -197,7 +197,7 @@ ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFileExWithProperties(
  * a custom IOSystem to make Assimp find these files and use
  * the regular aiImportFileEx()/aiImportFileExWithProperties() API.
  */
-ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFileFromMemory(
+ASSIMP_API const C_STRUCT aiScene *aiImportFileFromMemory(
         const char *pBuffer,
         unsigned int pLength,
         unsigned int pFlags,
@@ -211,7 +211,7 @@ ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFileFromMemory(
  * @param pFlags Optional post processing steps to be executed after
  *   a successful import. Provide a bitwise combination of the
  *   #aiPostProcessSteps flags. If you wish to inspect the imported
- *   ***REMOVED***ne first in order to fine-tune your post-processing setup,
+ *   scene first in order to fine-tune your post-processing setup,
  *   consider to use #aiApplyPostProcessing().
  * @param pHint An additional hint to the library. If this is a non empty string,
  *   the library looks for a loader to support the file extension specified by pHint
@@ -231,7 +231,7 @@ ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFileFromMemory(
  * the regular aiImportFileEx()/aiImportFileExWithProperties() API.
  * @see aiImportFileFromMemory
  */
-ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFileFromMemoryWithProperties(
+ASSIMP_API const C_STRUCT aiScene *aiImportFileFromMemoryWithProperties(
         const char *pBuffer,
         unsigned int pLength,
         unsigned int pFlags,
@@ -239,22 +239,22 @@ ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiImportFileFromMemoryWithPropertie
         const C_STRUCT aiPropertyStore *pProps);
 
 // --------------------------------------------------------------------------------
-/** Apply post-processing to an already-imported ***REMOVED***ne.
+/** Apply post-processing to an already-imported scene.
  *
  * This is strictly equivalent to calling #aiImportFile()/#aiImportFileEx with the
  * same flags. However, you can use this separate function to inspect the imported
- * ***REMOVED***ne first to fine-tune your post-processing setup.
- * @param p***REMOVED***ne ***REMOVED***ne to work on.
+ * scene first to fine-tune your post-processing setup.
+ * @param pScene Scene to work on.
  * @param pFlags Provide a bitwise combination of the #aiPostProcessSteps flags.
  * @return A pointer to the post-processed data. Post processing is done in-place,
- *   meaning this is still the same #ai***REMOVED***ne which you passed for p***REMOVED***ne. However,
- *   _if_ post-processing failed, the ***REMOVED***ne could now be NULL. That's quite a rare
+ *   meaning this is still the same #aiScene which you passed for pScene. However,
+ *   _if_ post-processing failed, the scene could now be NULL. That's quite a rare
  *   case, post processing steps are not really designed to 'fail'. To be exact,
  *   the #aiProcess_ValidateDataStructure flag is currently the only post processing step
- *   which can actually cause the ***REMOVED***ne to be reset to NULL.
+ *   which can actually cause the scene to be reset to NULL.
  */
-ASSIMP_API const C_STRUCT ai***REMOVED***ne *aiApplyPostProcessing(
-        const C_STRUCT ai***REMOVED***ne *p***REMOVED***ne,
+ASSIMP_API const C_STRUCT aiScene *aiApplyPostProcessing(
+        const C_STRUCT aiScene *pScene,
         unsigned int pFlags);
 
 // --------------------------------------------------------------------------------
@@ -329,17 +329,17 @@ ASSIMP_API void aiDetachAllLogStreams(void);
 /** Releases all resources associated with the given import process.
  *
  * Call this function after you're done with the imported data.
- * @param p***REMOVED***ne The imported data to release. NULL is a valid value.
+ * @param pScene The imported data to release. NULL is a valid value.
  */
 ASSIMP_API void aiReleaseImport(
-        const C_STRUCT ai***REMOVED***ne *p***REMOVED***ne);
+        const C_STRUCT aiScene *pScene);
 
 // --------------------------------------------------------------------------------
 /** Returns the error text of the last failed import process.
  *
  * @return A textual description of the error that occurred at the last
  * import process. NULL if there was no error. There can't be an error if you
- * got a non-NULL #ai***REMOVED***ne from #aiImportFile/#aiImportFileEx/#aiApplyPostProcessing.
+ * got a non-NULL #aiScene from #aiImportFile/#aiImportFileEx/#aiApplyPostProcessing.
  */
 ASSIMP_API const char *aiGetErrorString(void);
 
@@ -370,7 +370,7 @@ ASSIMP_API void aiGetExtensionList(
  * @param in Data structure to be filled.
  */
 ASSIMP_API void aiGetMemoryRequirements(
-        const C_STRUCT ai***REMOVED***ne *pIn,
+        const C_STRUCT aiScene *pIn,
         C_STRUCT aiMemoryInfo *in);
 
 // --------------------------------------------------------------------------------

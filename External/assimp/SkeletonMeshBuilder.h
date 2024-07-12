@@ -58,29 +58,29 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 struct aiMaterial;
-struct ai***REMOVED***ne;
+struct aiScene;
 struct aiNode;
 
 namespace Assimp {
 
 // ---------------------------------------------------------------------------
 /**
- * This little helper class constructs a dummy mesh for a given ***REMOVED***ne
+ * This little helper class constructs a dummy mesh for a given scene
  * the resembles the node hierarchy. This is useful for file formats
  * that don't carry any mesh data but only animation data.
  */
 class ASSIMP_API SkeletonMeshBuilder {
 public:
     // -------------------------------------------------------------------
-    /** The constructor processes the given ***REMOVED***ne and adds a mesh there.
+    /** The constructor processes the given scene and adds a mesh there.
      *
-     * Does nothing if the ***REMOVED***ne already has mesh data.
-     * @param p***REMOVED***ne The ***REMOVED***ne for which a skeleton mesh should be constructed.
-     * @param root The node to start with. nullptr is the ***REMOVED***ne root
+     * Does nothing if the scene already has mesh data.
+     * @param pScene The scene for which a skeleton mesh should be constructed.
+     * @param root The node to start with. nullptr is the scene root
      * @param bKnobsOnly Set this to true if you don't want the connectors
      *   between the knobs representing the nodes.
      */
-    SkeletonMeshBuilder(ai***REMOVED***ne *p***REMOVED***ne, aiNode *root = nullptr,
+    SkeletonMeshBuilder(aiScene *pScene, aiNode *root = nullptr,
             bool bKnobsOnly = false);
 
 protected:

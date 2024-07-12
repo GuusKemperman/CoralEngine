@@ -14,7 +14,7 @@
 namespace Clipper2Lib {
 
   //------------------------------------------------------------------------------
-  // Mi***REMOVED***llaneous methods
+  // Miscellaneous methods
   //------------------------------------------------------------------------------
 
   inline bool Path1ContainsPath2(const Path64& path1, const Path64& path2)

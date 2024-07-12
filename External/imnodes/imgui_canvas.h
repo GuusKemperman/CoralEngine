@@ -29,7 +29,7 @@
 // is a way to transform position between current and parent canvas with
 // CanvasFromParent()/CanvasToParent().
 //
-// Sometimes in more elaborate ***REMOVED***narios you want to move out canvas virtual space,
+// Sometimes in more elaborate scenarios you want to move out canvas virtual space,
 // do something and came back. You can do that with SuspendCanvas() and ResumeCanvas().
 //
 // Note:

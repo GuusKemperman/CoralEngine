@@ -462,7 +462,7 @@ namespace cereal
     //! A structure holding a map from type_indices to output serializer functions
     /*! A static object of this map should be created for each registered archive
         type, containing entries for every registered type that describe how to
-        properly cast the type to its real type in polymorphic ***REMOVED***narios for
+        properly cast the type to its real type in polymorphic scenarios for
         shared_ptr, weak_ptr, and unique_ptr. */
     template <class Archive>
     struct OutputBindingMap
@@ -492,7 +492,7 @@ namespace cereal
     //! A structure holding a map from type name strings to input serializer functions
     /*! A static object of this map should be created for each registered archive
         type, containing entries for every registered type that describe how to
-        properly cast the type to its real type in polymorphic ***REMOVED***narios for
+        properly cast the type to its real type in polymorphic scenarios for
         shared_ptr, weak_ptr, and unique_ptr. */
     template <class Archive>
     struct InputBindingMap

@@ -58,7 +58,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-struct ai***REMOVED***ne;
+struct aiScene;
 struct aiFileIO;
 
 // --------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ struct aiFileIO;
  */
 struct aiExportFormatDesc {
     /// a short string ID to uniquely identify the export format. Use this ID string to
-    /// specify which file format you want to export to when calling #aiExport***REMOVED***ne().
+    /// specify which file format you want to export to when calling #aiExportScene().
     /// Example: "dae" or "obj"
     const char *id;
 
@@ -107,25 +107,25 @@ ASSIMP_API const C_STRUCT aiExportFormatDesc *aiGetExportFormatDescription(size_
 ASSIMP_API void aiReleaseExportFormatDescription(const C_STRUCT aiExportFormatDesc *desc);
 
 // --------------------------------------------------------------------------------
-/** Create a modifiable copy of a ***REMOVED***ne.
+/** Create a modifiable copy of a scene.
  *  This is useful to import files via Assimp, change their topology and
- *  export them again. Since the ***REMOVED***ne returned by the various importer functions
+ *  export them again. Since the scene returned by the various importer functions
  *  is const, a modifiable copy is needed.
- *  @param pIn Valid ***REMOVED***ne to be copied
- *  @param pOut Receives a modifiable copy of the ***REMOVED***ne. Use aiFree***REMOVED***ne() to
+ *  @param pIn Valid scene to be copied
+ *  @param pOut Receives a modifiable copy of the scene. Use aiFreeScene() to
  *    delete it again.
  */
-ASSIMP_API void aiCopy***REMOVED***ne(const C_STRUCT ai***REMOVED***ne *pIn,
-        C_STRUCT ai***REMOVED***ne **pOut);
+ASSIMP_API void aiCopyScene(const C_STRUCT aiScene *pIn,
+        C_STRUCT aiScene **pOut);
 
 // --------------------------------------------------------------------------------
-/** Frees a ***REMOVED***ne copy created using aiCopy***REMOVED***ne() */
-ASSIMP_API void aiFree***REMOVED***ne(const C_STRUCT ai***REMOVED***ne *pIn);
+/** Frees a scene copy created using aiCopyScene() */
+ASSIMP_API void aiFreeScene(const C_STRUCT aiScene *pIn);
 
 // --------------------------------------------------------------------------------
-/** Exports the given ***REMOVED***ne to a chosen file format and writes the result file(s) to disk.
-* @param p***REMOVED***ne The ***REMOVED***ne to export. Stays in possession of the caller, is not changed by the function.
-*   The ***REMOVED***ne is expected to conform to Assimp's Importer output format as specified
+/** Exports the given scene to a chosen file format and writes the result file(s) to disk.
+* @param pScene The scene to export. Stays in possession of the caller, is not changed by the function.
+*   The scene is expected to conform to Assimp's Importer output format as specified
 *   in the @link data Data Structures Page @endlink. In short, this means the model data
 *   should use a right-handed coordinate systems, face winding should be counter-clockwise
 *   and the UV coordinate origin is assumed to be in the upper left. If your input data
@@ -135,7 +135,7 @@ ASSIMP_API void aiFree***REMOVED***ne(const C_STRUCT ai***REMOVED***ne *pIn);
 * @param pFileName Output file to write
 * @param pPreprocessing Accepts any choice of the #aiPostProcessSteps enumerated
 *   flags, but in reality only a subset of them makes sense here. Specifying
-*   'preprocessing' flags is useful if the input ***REMOVED***ne does not conform to
+*   'preprocessing' flags is useful if the input scene does not conform to
 *   Assimp's default conventions as specified in the @link data Data Structures Page @endlink.
 *   In short, this means the geometry data should use a right-handed coordinate systems, face
 *   winding should be counter-clockwise and the UV coordinate origin is assumed to be in
@@ -152,49 +152,49 @@ ASSIMP_API void aiFree***REMOVED***ne(const C_STRUCT ai***REMOVED***ne *pIn);
 *   the #aiProcess_Triangulate flag, most export formats support only
 *   triangulate data so they would run the step anyway.
 *
-*   If assimp detects that the input ***REMOVED***ne was directly taken from the importer side of
-*   the library (i.e. not copied using aiCopy***REMOVED***ne and potentially modified afterwards),
-*   any post-processing steps already applied to the ***REMOVED***ne will not be applied again, unless
+*   If assimp detects that the input scene was directly taken from the importer side of
+*   the library (i.e. not copied using aiCopyScene and potentially modified afterwards),
+*   any post-processing steps already applied to the scene will not be applied again, unless
 *   they show non-idempotent behavior (#aiProcess_MakeLeftHanded, #aiProcess_FlipUVs and
 *   #aiProcess_FlipWindingOrder).
 * @return a status code indicating the result of the export
-* @note Use aiCopy***REMOVED***ne() to get a modifiable copy of a previously
-*   imported ***REMOVED***ne.
+* @note Use aiCopyScene() to get a modifiable copy of a previously
+*   imported scene.
 */
-ASSIMP_API aiReturn aiExport***REMOVED***ne(const C_STRUCT ai***REMOVED***ne *p***REMOVED***ne,
+ASSIMP_API aiReturn aiExportScene(const C_STRUCT aiScene *pScene,
         const char *pFormatId,
         const char *pFileName,
         unsigned int pPreprocessing);
 
 // --------------------------------------------------------------------------------
-/** Exports the given ***REMOVED***ne to a chosen file format using custom IO logic supplied by you.
-* @param p***REMOVED***ne The ***REMOVED***ne to export. Stays in possession of the caller, is not changed by the function.
+/** Exports the given scene to a chosen file format using custom IO logic supplied by you.
+* @param pScene The scene to export. Stays in possession of the caller, is not changed by the function.
 * @param pFormatId ID string to specify to which format you want to export to. Use
 * aiGetExportFormatCount() / aiGetExportFormatDescription() to learn which export formats are available.
 * @param pFileName Output file to write
 * @param pIO custom IO implementation to be used. Use this if you use your own storage methods.
 *   If none is supplied, a default implementation using standard file IO is used. Note that
-*   #aiExport***REMOVED***neToBlob is provided as convenience function to export to memory buffers.
-* @param pPreprocessing Please see the documentation for #aiExport***REMOVED***ne
+*   #aiExportSceneToBlob is provided as convenience function to export to memory buffers.
+* @param pPreprocessing Please see the documentation for #aiExportScene
 * @return a status code indicating the result of the export
 * @note Include <aiFileIO.h> for the definition of #aiFileIO.
-* @note Use aiCopy***REMOVED***ne() to get a modifiable copy of a previously
-*   imported ***REMOVED***ne.
+* @note Use aiCopyScene() to get a modifiable copy of a previously
+*   imported scene.
 */
-ASSIMP_API aiReturn aiExport***REMOVED***neEx(const C_STRUCT ai***REMOVED***ne *p***REMOVED***ne,
+ASSIMP_API aiReturn aiExportSceneEx(const C_STRUCT aiScene *pScene,
         const char *pFormatId,
         const char *pFileName,
         C_STRUCT aiFileIO *pIO,
         unsigned int pPreprocessing);
 
 // --------------------------------------------------------------------------------
-/** Describes a blob of exported ***REMOVED***ne data. Use #aiExport***REMOVED***neToBlob() to create a blob containing an
-* exported ***REMOVED***ne. The memory referred by this structure is owned by Assimp.
+/** Describes a blob of exported scene data. Use #aiExportSceneToBlob() to create a blob containing an
+* exported scene. The memory referred by this structure is owned by Assimp.
 * to free its resources. Don't try to free the memory on your side - it will crash for most build configurations
 * due to conflicting heaps.
 *
 * Blobs can be nested - each blob may reference another blob, which may in turn reference another blob and so on.
-* This is used when exporters write more than one output file for a given #ai***REMOVED***ne. See the remarks for
+* This is used when exporters write more than one output file for a given #aiScene. See the remarks for
 * #aiExportDataBlob::name for more information.
 */
 struct aiExportDataBlob {
@@ -246,22 +246,22 @@ struct aiExportDataBlob {
 };
 
 // --------------------------------------------------------------------------------
-/** Exports the given ***REMOVED***ne to a chosen file format. Returns the exported data as a binary blob which
+/** Exports the given scene to a chosen file format. Returns the exported data as a binary blob which
 * you can write into a file or something. When you're done with the data, use #aiReleaseExportBlob()
 * to free the resources associated with the export.
-* @param p***REMOVED***ne The ***REMOVED***ne to export. Stays in possession of the caller, is not changed by the function.
+* @param pScene The scene to export. Stays in possession of the caller, is not changed by the function.
 * @param pFormatId ID string to specify to which format you want to export to. Use
 * #aiGetExportFormatCount() / #aiGetExportFormatDescription() to learn which export formats are available.
-* @param pPreprocessing Please see the documentation for #aiExport***REMOVED***ne
+* @param pPreprocessing Please see the documentation for #aiExportScene
 * @return the exported data or NULL in case of error
 */
-ASSIMP_API const C_STRUCT aiExportDataBlob *aiExport***REMOVED***neToBlob(const C_STRUCT ai***REMOVED***ne *p***REMOVED***ne, const char *pFormatId,
+ASSIMP_API const C_STRUCT aiExportDataBlob *aiExportSceneToBlob(const C_STRUCT aiScene *pScene, const char *pFormatId,
         unsigned int pPreprocessing);
 
 // --------------------------------------------------------------------------------
 /** Releases the memory associated with the given exported data. Use this function to free a data blob
-* returned by aiExport***REMOVED***ne().
-* @param pData the data blob returned by #aiExport***REMOVED***neToBlob
+* returned by aiExportScene().
+* @param pData the data blob returned by #aiExportSceneToBlob
 */
 ASSIMP_API void aiReleaseExportBlob(const C_STRUCT aiExportDataBlob *pData);
 

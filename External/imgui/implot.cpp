@@ -818,9 +818,9 @@ inline int GetTimeStep(int max_divs, ImPlotTimeUnit unit) {
     return 0;
 }
 
-#if defined(__***REMOVED***__)
+#if defined(__PROSPERO__)
 
-// timegm is not available on ***REMOVED***, so we use this instead
+// timegm is not available on PROSPERO, so we use this instead
 // Open-source version of timegm from Apple's libukem
 // https://opensource.apple.com/source/lukemftp/lukemftp-3/lukemftp/libukem/timegm.c.auto.html
 
@@ -929,7 +929,7 @@ ImPlotTime MkGmtTime(struct tm *ptm) {
     ImPlotTime t;
 #ifdef _WIN32
     t.S = _mkgmtime(ptm);
-#elif defined(__***REMOVED***__)
+#elif defined(__PROSPERO__)
     t.S = timegm(ptm);
 #else
     t.S = timegm(ptm);
@@ -946,7 +946,7 @@ tm* GetGmtTime(const ImPlotTime& t, tm* ptm)
     return ptm;
   else
     return NULL;
-#elif defined(__***REMOVED***__)
+#elif defined(__PROSPERO__)
     return gmtime(&t.S);
 #else
     return gmtime_r(&t.S, ptm);
@@ -967,7 +967,7 @@ tm* GetLocTime(const ImPlotTime& t, tm* ptm) {
     return ptm;
   else
     return NULL;
-#elif defined(__***REMOVED***__) 
+#elif defined(__PROSPERO__) 
     return localtime(&t.S);
 #else
     return localtime_r(&t.S, ptm);
@@ -4595,7 +4595,7 @@ bool ColormapButton(const char* label, const ImVec2& size_arg, ImPlotColormap cm
 }
 
 //-----------------------------------------------------------------------------
-// [Section] Mi***REMOVED***llaneous
+// [Section] Miscellaneous
 //-----------------------------------------------------------------------------
 
 ImPlotInputMap& GetInputMap() {
@@ -4637,7 +4637,7 @@ void MapInputReverse(ImPlotInputMap* dst) {
 }
 
 //-----------------------------------------------------------------------------
-// [Section] Mi***REMOVED***llaneous
+// [Section] Miscellaneous
 //-----------------------------------------------------------------------------
 
 void ItemIcon(const ImVec4& col) {

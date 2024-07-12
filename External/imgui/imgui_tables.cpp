@@ -701,7 +701,7 @@ static void TableSetupColumnFlags(ImGuiTable* table, ImGuiTableColumn* column, I
         flags |= ImGuiTableColumnFlags_NoResize;
 
     // Sorting
-    if ((flags & ImGuiTableColumnFlags_NoSortA***REMOVED***nding) && (flags & ImGuiTableColumnFlags_NoSortDe***REMOVED***nding))
+    if ((flags & ImGuiTableColumnFlags_NoSortAscending) && (flags & ImGuiTableColumnFlags_NoSortDescending))
         flags |= ImGuiTableColumnFlags_NoSort;
 
     // Indentation
@@ -721,10 +721,10 @@ static void TableSetupColumnFlags(ImGuiTable* table, ImGuiTableColumn* column, I
     if (table->Flags & ImGuiTableFlags_Sortable)
     {
         int count = 0, mask = 0, list = 0;
-        if ((flags & ImGuiTableColumnFlags_PreferSortA***REMOVED***nding)  != 0 && (flags & ImGuiTableColumnFlags_NoSortA***REMOVED***nding)  == 0) { mask |= 1 << ImGuiSortDirection_A***REMOVED***nding;  list |= ImGuiSortDirection_A***REMOVED***nding  << (count << 1); count++; }
-        if ((flags & ImGuiTableColumnFlags_PreferSortDe***REMOVED***nding) != 0 && (flags & ImGuiTableColumnFlags_NoSortDe***REMOVED***nding) == 0) { mask |= 1 << ImGuiSortDirection_De***REMOVED***nding; list |= ImGuiSortDirection_De***REMOVED***nding << (count << 1); count++; }
-        if ((flags & ImGuiTableColumnFlags_PreferSortA***REMOVED***nding)  == 0 && (flags & ImGuiTableColumnFlags_NoSortA***REMOVED***nding)  == 0) { mask |= 1 << ImGuiSortDirection_A***REMOVED***nding;  list |= ImGuiSortDirection_A***REMOVED***nding  << (count << 1); count++; }
-        if ((flags & ImGuiTableColumnFlags_PreferSortDe***REMOVED***nding) == 0 && (flags & ImGuiTableColumnFlags_NoSortDe***REMOVED***nding) == 0) { mask |= 1 << ImGuiSortDirection_De***REMOVED***nding; list |= ImGuiSortDirection_De***REMOVED***nding << (count << 1); count++; }
+        if ((flags & ImGuiTableColumnFlags_PreferSortAscending)  != 0 && (flags & ImGuiTableColumnFlags_NoSortAscending)  == 0) { mask |= 1 << ImGuiSortDirection_Ascending;  list |= ImGuiSortDirection_Ascending  << (count << 1); count++; }
+        if ((flags & ImGuiTableColumnFlags_PreferSortDescending) != 0 && (flags & ImGuiTableColumnFlags_NoSortDescending) == 0) { mask |= 1 << ImGuiSortDirection_Descending; list |= ImGuiSortDirection_Descending << (count << 1); count++; }
+        if ((flags & ImGuiTableColumnFlags_PreferSortAscending)  == 0 && (flags & ImGuiTableColumnFlags_NoSortAscending)  == 0) { mask |= 1 << ImGuiSortDirection_Ascending;  list |= ImGuiSortDirection_Ascending  << (count << 1); count++; }
+        if ((flags & ImGuiTableColumnFlags_PreferSortDescending) == 0 && (flags & ImGuiTableColumnFlags_NoSortDescending) == 0) { mask |= 1 << ImGuiSortDirection_Descending; list |= ImGuiSortDirection_Descending << (count << 1); count++; }
         if ((table->Flags & ImGuiTableFlags_SortTristate) || count == 0) { mask |= 1 << ImGuiSortDirection_None; count++; }
         column->SortDirectionsAvailList = (ImU8)list;
         column->SortDirectionsAvailMask = (ImU8)mask;
@@ -1500,7 +1500,7 @@ void ImGui::TableSetupColumn(const char* label, ImGuiTableColumnFlags flags, flo
         if (flags & ImGuiTableColumnFlags_DefaultSort && (table->SettingsLoadedFlags & ImGuiTableFlags_Sortable) == 0)
         {
             column->SortOrder = 0; // Multiple columns using _DefaultSort will be reassigned unique SortOrder values when building the sort specs.
-            column->SortDirection = (column->Flags & ImGuiTableColumnFlags_PreferSortDe***REMOVED***nding) ? (ImS8)ImGuiSortDirection_De***REMOVED***nding : (ImU8)(ImGuiSortDirection_A***REMOVED***nding);
+            column->SortDirection = (column->Flags & ImGuiTableColumnFlags_PreferSortDescending) ? (ImS8)ImGuiSortDirection_Descending : (ImU8)(ImGuiSortDirection_Ascending);
         }
     }
 
@@ -2169,7 +2169,7 @@ void ImGui::TableSetColumnWidth(int column_n, float width)
 
     // When forwarding resize from Wn| to Fn+1| we need to be considerate of the _NoResize flag on Fn+1.
     // FIXME-TABLE: Find a way to rewrite all of this so interactions feel more consistent for the user.
-    // ***REMOVED***narios:
+    // Scenarios:
     // - F1 F2 F3  resize from F1| or F2|   --> ok: alter ->WidthRequested of Fixed column. Subsequent columns will be offset.
     // - F1 F2 F3  resize from F3|          --> ok: alter ->WidthRequested of Fixed column. If active, ScrollX extent can be altered.
     // - F1 F2 W3  resize from F1| or F2|   --> ok: alter ->WidthRequested of Fixed column. If active, ScrollX extent can be altered, but it doesn't make much sense as the Stretch column will always be minimal size.
@@ -2698,7 +2698,7 @@ static inline ImGuiSortDirection TableGetColumnAvailSortDirection(ImGuiTableColu
     return (column->SortDirectionsAvailList >> (n << 1)) & 0x03;
 }
 
-// Fix sort direction if currently set on a value which is unavailable (e.g. activating NoSortA***REMOVED***nding/NoSortDe***REMOVED***nding)
+// Fix sort direction if currently set on a value which is unavailable (e.g. activating NoSortAscending/NoSortDescending)
 void ImGui::TableFixColumnSortDirection(ImGuiTable* table, ImGuiTableColumn* column)
 {
     if (column->SortOrder == -1 || (column->SortDirectionsAvailMask & (1 << column->SortDirection)) != 0)
@@ -2708,9 +2708,9 @@ void ImGui::TableFixColumnSortDirection(ImGuiTable* table, ImGuiTableColumn* col
 }
 
 // Calculate next sort direction that would be set after clicking the column
-// - If the PreferSortDe***REMOVED***nding flag is set, we will default to a De***REMOVED***nding direction on the first click.
-// - Note that the PreferSortA***REMOVED***nding flag is never checked, it is essentially the default and therefore a no-op.
-IM_STATIC_ASSERT(ImGuiSortDirection_None == 0 && ImGuiSortDirection_A***REMOVED***nding == 1 && ImGuiSortDirection_De***REMOVED***nding == 2);
+// - If the PreferSortDescending flag is set, we will default to a Descending direction on the first click.
+// - Note that the PreferSortAscending flag is never checked, it is essentially the default and therefore a no-op.
+IM_STATIC_ASSERT(ImGuiSortDirection_None == 0 && ImGuiSortDirection_Ascending == 1 && ImGuiSortDirection_Descending == 2);
 ImGuiSortDirection ImGui::TableGetColumnNextSortDirection(ImGuiTableColumn* column)
 {
     IM_ASSERT(column->SortDirectionsAvailCount > 0);
@@ -2723,7 +2723,7 @@ ImGuiSortDirection ImGui::TableGetColumnNextSortDirection(ImGuiTableColumn* colu
     return ImGuiSortDirection_None;
 }
 
-// Note that the NoSortA***REMOVED***nding/NoSortDe***REMOVED***nding flags are processed in TableSortSpecsSanitize(), and they may change/revert
+// Note that the NoSortAscending/NoSortDescending flags are processed in TableSortSpecsSanitize(), and they may change/revert
 // the value of SortDirection. We could technically also do it here but it would be unnecessary and duplicate code.
 void ImGui::TableSetColumnSortDirection(int column_n, ImGuiSortDirection sort_direction, bool append_to_sort_specs)
 {
@@ -3040,7 +3040,7 @@ void ImGui::TableHeader(const char* label)
                 PopStyleColor();
                 x += w_sort_text;
             }
-            RenderArrow(window->DrawList, ImVec2(x, y), GetColorU32(ImGuiCol_Text), column->SortDirection == ImGuiSortDirection_A***REMOVED***nding ? ImGuiDir_Up : ImGuiDir_Down, ARROW_SCALE);
+            RenderArrow(window->DrawList, ImVec2(x, y), GetColorU32(ImGuiCol_Text), column->SortDirection == ImGuiSortDirection_Ascending ? ImGuiDir_Up : ImGuiDir_Down, ARROW_SCALE);
         }
 
         // Handle clicking on column header to adjust Sort Order
@@ -3158,10 +3158,10 @@ void ImGui::TableDrawContextMenu(ImGuiTable* table)
         want_separator = true;
 
         bool append_to_sort_specs = g.IO.KeyShift;
-        if (MenuItem("Sort in A***REMOVED***nding Order", NULL, column->SortOrder != -1 && column->SortDirection == ImGuiSortDirection_A***REMOVED***nding, (column->Flags & ImGuiTableColumnFlags_NoSortA***REMOVED***nding) == 0))
-            TableSetColumnSortDirection(table, column_n, ImGuiSortDirection_A***REMOVED***nding, append_to_sort_specs);
-        if (MenuItem("Sort in De***REMOVED***nding Order", NULL, column->SortOrder != -1 && column->SortDirection == ImGuiSortDirection_De***REMOVED***nding, (column->Flags & ImGuiTableColumnFlags_NoSortDe***REMOVED***nding) == 0))
-            TableSetColumnSortDirection(table, column_n, ImGuiSortDirection_De***REMOVED***nding, append_to_sort_specs);
+        if (MenuItem("Sort in Ascending Order", NULL, column->SortOrder != -1 && column->SortDirection == ImGuiSortDirection_Ascending, (column->Flags & ImGuiTableColumnFlags_NoSortAscending) == 0))
+            TableSetColumnSortDirection(table, column_n, ImGuiSortDirection_Ascending, append_to_sort_specs);
+        if (MenuItem("Sort in Descending Order", NULL, column->SortOrder != -1 && column->SortDirection == ImGuiSortDirection_Descending, (column->Flags & ImGuiTableColumnFlags_NoSortDescending) == 0))
+            TableSetColumnSortDirection(table, column_n, ImGuiSortDirection_Descending, append_to_sort_specs);
     }
 #endif
 
@@ -3463,7 +3463,7 @@ static void TableSettingsHandler_ReadLine(ImGuiContext*, ImGuiSettingsHandler*, 
         if (sscanf(line, "Weight=%f%n", &f, &r) == 1)           { line = ImStrSkipBlank(line + r); column->WidthOrWeight = f; column->IsStretch = 1; settings->SaveFlags |= ImGuiTableFlags_Resizable; }
         if (sscanf(line, "Visible=%d%n", &n, &r) == 1)          { line = ImStrSkipBlank(line + r); column->IsEnabled = (ImU8)n; settings->SaveFlags |= ImGuiTableFlags_Hideable; }
         if (sscanf(line, "Order=%d%n", &n, &r) == 1)            { line = ImStrSkipBlank(line + r); column->DisplayOrder = (ImGuiTableColumnIdx)n; settings->SaveFlags |= ImGuiTableFlags_Reorderable; }
-        if (sscanf(line, "Sort=%d%c%n", &n, &c, &r) == 2)       { line = ImStrSkipBlank(line + r); column->SortOrder = (ImGuiTableColumnIdx)n; column->SortDirection = (c == '^') ? ImGuiSortDirection_De***REMOVED***nding : ImGuiSortDirection_A***REMOVED***nding; settings->SaveFlags |= ImGuiTableFlags_Sortable; }
+        if (sscanf(line, "Sort=%d%c%n", &n, &c, &r) == 2)       { line = ImStrSkipBlank(line + r); column->SortOrder = (ImGuiTableColumnIdx)n; column->SortDirection = (c == '^') ? ImGuiSortDirection_Descending : ImGuiSortDirection_Ascending; settings->SaveFlags |= ImGuiTableFlags_Sortable; }
     }
 }
 
@@ -3501,7 +3501,7 @@ static void TableSettingsHandler_WriteAll(ImGuiContext* ctx, ImGuiSettingsHandle
             if (save_size && !column->IsStretch)        { buf->appendf(" Width=%d", (int)column->WidthOrWeight); }
             if (save_visible)                           { buf->appendf(" Visible=%d", column->IsEnabled); }
             if (save_order)                             { buf->appendf(" Order=%d", column->DisplayOrder); }
-            if (save_sort && column->SortOrder != -1)   { buf->appendf(" Sort=%d%c", column->SortOrder, (column->SortDirection == ImGuiSortDirection_A***REMOVED***nding) ? 'v' : '^'); }
+            if (save_sort && column->SortOrder != -1)   { buf->appendf(" Sort=%d%c", column->SortOrder, (column->SortDirection == ImGuiSortDirection_Ascending) ? 'v' : '^'); }
             buf->append("\n");
         }
         buf->append("\n");
@@ -3647,7 +3647,7 @@ void ImGui::DebugNodeTable(ImGuiTable* table)
             column->WidthGiven, column->WidthRequest, column->WidthAuto, column->StretchWeight, column->StretchWeight > 0.0f ? (column->StretchWeight / sum_weights) * 100.0f : 0.0f,
             column->MinX, column->MaxX, column->MaxX - column->MinX, column->ClipRect.Min.x, column->ClipRect.Max.x, column->ClipRect.Max.x - column->ClipRect.Min.x,
             column->ContentMaxXFrozen - column->WorkMinX, column->ContentMaxXUnfrozen - column->WorkMinX, column->ContentMaxXHeadersUsed - column->WorkMinX, column->ContentMaxXHeadersIdeal - column->WorkMinX,
-            column->SortOrder, (column->SortDirection == ImGuiSortDirection_A***REMOVED***nding) ? " (Asc)" : (column->SortDirection == ImGuiSortDirection_De***REMOVED***nding) ? " (Des)" : "", column->UserID, column->Flags,
+            column->SortOrder, (column->SortDirection == ImGuiSortDirection_Ascending) ? " (Asc)" : (column->SortDirection == ImGuiSortDirection_Descending) ? " (Des)" : "", column->UserID, column->Flags,
             (column->Flags & ImGuiTableColumnFlags_WidthStretch) ? "WidthStretch " : "",
             (column->Flags & ImGuiTableColumnFlags_WidthFixed) ? "WidthFixed " : "",
             (column->Flags & ImGuiTableColumnFlags_NoResize) ? "NoResize " : "");
@@ -3678,7 +3678,7 @@ void ImGui::DebugNodeTableSettings(ImGuiTableSettings* settings)
         ImGuiSortDirection sort_dir = (column_settings->SortOrder != -1) ? (ImGuiSortDirection)column_settings->SortDirection : ImGuiSortDirection_None;
         BulletText("Column %d Order %d SortOrder %d %s Vis %d %s %7.3f UserID 0x%08X",
             n, column_settings->DisplayOrder, column_settings->SortOrder,
-            (sort_dir == ImGuiSortDirection_A***REMOVED***nding) ? "Asc" : (sort_dir == ImGuiSortDirection_De***REMOVED***nding) ? "Des" : "---",
+            (sort_dir == ImGuiSortDirection_Ascending) ? "Asc" : (sort_dir == ImGuiSortDirection_Descending) ? "Des" : "---",
             column_settings->IsEnabled, column_settings->IsStretch ? "Weight" : "Width ", column_settings->WidthOrWeight, column_settings->UserID);
     }
     TreePop();

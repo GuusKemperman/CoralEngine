@@ -402,8 +402,8 @@ unordered_map<Edge, std::vector<VertInd> > EdgeToSplitVertices(
         const T dX = vertices[e.v2()].x - vertices[e.v1()].x;
         const T dY = vertices[e.v2()].y - vertices[e.v1()].y;
         const bool isX = std::abs(dX) >= std::abs(dY); // X-coord longer
-        const bool isA***REMOVED***nding =
-            isX ? dX >= 0 : dY >= 0; // Longer coordinate a***REMOVED***nds
+        const bool isAscending =
+            isX ? dX >= 0 : dY >= 0; // Longer coordinate ascends
         const EdgeVec& pieces = e2pIt->second;
         std::vector<VertCoordPair> splitVerts;
         // size is:  2[ends] + (pieces - 1)[split vertices] = pieces + 1
@@ -416,7 +416,7 @@ unordered_map<Edge, std::vector<VertInd> > EdgeToSplitVertices(
             for(VIt v = vv.begin(); v != vv.end(); ++v)
             {
                 const T c = isX ? vertices[*v].x : vertices[*v].y;
-                splitVerts.push_back(std::make_pair(*v, isA***REMOVED***nding ? c : -c));
+                splitVerts.push_back(std::make_pair(*v, isAscending ? c : -c));
             }
         }
         // sort by longest coordinate

@@ -40,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /** @file commonMetaData.h
- *  @brief Defines a set of common ***REMOVED***ne metadata keys.
+ *  @brief Defines a set of common scene metadata keys.
  */
 #pragma once
 #ifndef AI_COMMONMETADATA_H_INC
@@ -50,19 +50,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma GCC system_header
 #endif
 
-/// ***REMOVED***ne metadata holding the name of the importer which loaded the source asset.
-/// This is always present if the ***REMOVED***ne was created from an imported asset.
+/// Scene metadata holding the name of the importer which loaded the source asset.
+/// This is always present if the scene was created from an imported asset.
 #define AI_METADATA_SOURCE_FORMAT "SourceAsset_Format"
 
-/// ***REMOVED***ne metadata holding the version of the source asset as a string, if available.
+/// Scene metadata holding the version of the source asset as a string, if available.
 /// Not all formats add this metadata.
 #define AI_METADATA_SOURCE_FORMAT_VERSION "SourceAsset_FormatVersion"
 
-/// ***REMOVED***ne metadata holding the name of the software which generated the source asset, if available.
+/// Scene metadata holding the name of the software which generated the source asset, if available.
 /// Not all formats add this metadata.
 #define AI_METADATA_SOURCE_GENERATOR "SourceAsset_Generator"
 
-/// ***REMOVED***ne metadata holding the source asset copyright statement, if available.
+/// Scene metadata holding the source asset copyright statement, if available.
 /// Not all formats add this metadata.
 #define AI_METADATA_SOURCE_COPYRIGHT "SourceAsset_Copyright"
 

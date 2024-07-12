@@ -122,7 +122,7 @@ extern "C" {
  * *different* primitive types mixed up (e.g. lines and triangles) in several
  * 'clean' sub-meshes. Furthermore there is a configuration option (
  * #AI_CONFIG_PP_SBP_REMOVE) to force #aiProcess_SortByPType to remove
- * specific kinds of primitives from the imported ***REMOVED***ne, completely and forever.
+ * specific kinds of primitives from the imported scene, completely and forever.
  * In many cases you'll probably want to set this setting to
  * @code
  * aiPrimitiveType_LINE|aiPrimitiveType_POINT
@@ -273,7 +273,7 @@ struct aiBone {
     /// you must enable aiProcess_PopulateArmatureData to populate this
     C_STRUCT aiNode *mArmature;
 
-    /// The bone node in the ***REMOVED***ne - used for skeleton conversion
+    /// The bone node in the scene - used for skeleton conversion
     /// you must enable aiProcess_PopulateArmatureData to populate this
     C_STRUCT aiNode *mNode;
 
@@ -599,7 +599,7 @@ enum aiMorphingMethod {
 * @note The mPositions member is usually not optional. However, vertex positions
 * *could* be missing if the #AI_SCENE_FLAGS_INCOMPLETE flag is set in
 * @code
-* ai***REMOVED***ne::mFlags
+* aiScene::mFlags
 * @endcode
 */
 struct aiMesh {
@@ -717,7 +717,7 @@ struct aiMesh {
     /** The material used by this mesh.
      * A mesh uses only a single material. If an imported model uses
      * multiple materials, the import splits up the mesh. Use this value
-     * as index into the ***REMOVED***ne's material list.
+     * as index into the scene's material list.
      */
     unsigned int mMaterialIndex;
 
@@ -833,10 +833,10 @@ struct aiMesh {
     }
 
     //! Check whether the mesh contains positions. Provided no special
-    //! ***REMOVED***ne flags are set, this will always be true
+    //! scene flags are set, this will always be true
     bool HasPositions() const { return mVertices != nullptr && mNumVertices > 0; }
 
-    //! Check whether the mesh contains faces. If no special ***REMOVED***ne flags
+    //! Check whether the mesh contains faces. If no special scene flags
     //! are set this should always return true
     bool HasFaces() const { return mFaces != nullptr && mNumFaces > 0; }
 
@@ -952,7 +952,7 @@ struct aiSkeletonBone {
     /// you must enable aiProcess_PopulateArmatureData to populate this
     C_STRUCT aiNode *mArmature;
 
-    /// The bone node in the ***REMOVED***ne - used for skeleton conversion
+    /// The bone node in the scene - used for skeleton conversion
     /// you must enable aiProcess_PopulateArmatureData to populate this
     C_STRUCT aiNode *mNode;
 

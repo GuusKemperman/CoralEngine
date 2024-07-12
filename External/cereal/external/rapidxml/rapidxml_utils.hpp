@@ -4,7 +4,7 @@
 // Copyright (C) 2006, 2009 Marcin Kalicinski
 // Version 1.13
 // Revision $DateTime: 2009/05/13 01:46:17 $
-//! in certain simple ***REMOVED***narios. They should probably not be used if maximizing performance is the main objective.
+//! in certain simple scenarios. They should probably not be used if maximizing performance is the main objective.
 
 #include "rapidxml.hpp"
 #include <vector>

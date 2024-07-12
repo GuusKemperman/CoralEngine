@@ -783,8 +783,8 @@ public:
      *    #GetTextureCount() can be used to determine the number of textures
      *    per texture type.
      *  @param path Receives the path to the texture.
-     *    Use ai***REMOVED***ne::GetEmbeddedTexture() method to determine if returned path
-     *    is an image file to be opened or a string key of embedded texture stored in the corresponding ***REMOVED***ne
+     *    Use aiScene::GetEmbeddedTexture() method to determine if returned path
+     *    is an image file to be opened or a string key of embedded texture stored in the corresponding scene
      *    (could be a '*' followed by the id of the texture in case of no name)
      *    NULL is a valid value.
      *  @param mapping The texture mapping.
@@ -1627,7 +1627,7 @@ ASSIMP_API unsigned int aiGetMaterialTextureCount(const C_STRUCT aiMaterial *pMa
  *     textures in a particular texture stack.
  *  @param[out] path Receives the output path
  *     If the texture is embedded, receives a '*' followed by the id of
- *     the texture (for the textures stored in the corresponding ***REMOVED***ne) which
+ *     the texture (for the textures stored in the corresponding scene) which
  *     can be converted to an int using a function like atoi.
  *     This parameter must be non-null.
  *  @param mapping The texture mapping mode to be used.

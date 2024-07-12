@@ -57,7 +57,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <memory>
 
-struct ai***REMOVED***ne;
+struct aiScene;
 struct aiImporterDesc;
 
 namespace Assimp {
@@ -129,7 +129,7 @@ public:
      * in InternReadFile(), this function will catch it and transform it into
      *  a suitable response to the caller.
      */
-    ai***REMOVED***ne *ReadFile(
+    aiScene *ReadFile(
             Importer *pImp,
             const std::string &pFile,
             IOSystem *pIOHandler);
@@ -188,13 +188,13 @@ protected:
     double fileScale = 1.0;
 
     // -------------------------------------------------------------------
-    /** Imports the given file into the given ***REMOVED***ne structure. The
+    /** Imports the given file into the given scene structure. The
      * function is expected to throw an ImportErrorException if there is
-     * an error. If it terminates normally, the data in ai***REMOVED***ne is
+     * an error. If it terminates normally, the data in aiScene is
      * expected to be correct. Override this function to implement the
      * actual importing.
      * <br>
-     *  The output ***REMOVED***ne must meet the following requirements:<br>
+     *  The output scene must meet the following requirements:<br>
      * <ul>
      * <li>At least a root node must be there, even if its only purpose
      *     is to reference one mesh.</li>
@@ -227,13 +227,13 @@ protected:
      * crash if one of the conditions is not met!
      *
      * @param pFile Path of the file to be imported.
-     * @param p***REMOVED***ne The ***REMOVED***ne object to hold the imported data.
+     * @param pScene The scene object to hold the imported data.
      * nullptr is not a valid parameter.
      * @param pIOHandler The IO handler to use for any file access.
      * nullptr is not a valid parameter. */
     virtual void InternReadFile(
             const std::string &pFile,
-            ai***REMOVED***ne *p***REMOVED***ne,
+            aiScene *pScene,
             IOSystem *pIOHandler) = 0;
 
 public: // static utilities
@@ -344,7 +344,7 @@ public: // static utilities
             TextFileMode mode = FORBID_EMPTY);
 
     // -------------------------------------------------------------------
-    /** Utility function to move a std::vector into a ai***REMOVED***ne array
+    /** Utility function to move a std::vector into a aiScene array
     *  @param vec The vector to be moved
     *  @param out The output pointer to the allocated array.
     *  @param numOut The output count of elements copied. */
@@ -361,7 +361,7 @@ public: // static utilities
     }
 
     // -------------------------------------------------------------------
-    /** Utility function to move a std::vector of unique_ptrs into a ai***REMOVED***ne array
+    /** Utility function to move a std::vector of unique_ptrs into a aiScene array
     *  @param vec The vector of unique_ptrs to be moved
     *  @param out The output pointer to the allocated array.
     *  @param numOut The output count of elements copied. */

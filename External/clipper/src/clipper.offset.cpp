@@ -17,7 +17,7 @@ const double default_arc_tolerance = 0.25;
 const double floating_point_tolerance = 1e-12;
 
 //------------------------------------------------------------------------------
-// Mi***REMOVED***llaneous methods
+// Miscellaneous methods
 //------------------------------------------------------------------------------
 
 void GetBoundsAndLowestPolyIdx(const Paths64& paths, Rect64& r, int & idx)

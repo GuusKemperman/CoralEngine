@@ -25,7 +25,7 @@
     \brief Configuration macros for library features
 
     Some RapidJSON features are configurable to adapt the library to a wide
-    variety of platforms, environments and usage ***REMOVED***narios.  Most of the
+    variety of platforms, environments and usage scenarios.  Most of the
     features can be configured in terms of overridden or predefined
     preprocessor macros at compile-time.
 

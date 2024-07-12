@@ -80,7 +80,7 @@ protected:
 // ---------------------------------------------------------------------------
 /** FOR IMPORTER PLUGINS ONLY: Simple exception class to be thrown if an
  *  unrecoverable error occurs while importing. Loading APIs return
- *  nullptr instead of a valid ai***REMOVED***ne then.  */
+ *  nullptr instead of a valid aiScene then.  */
 class ASSIMP_API DeadlyImportError : public DeadlyErrorBase {
 public:
     /// @brief The class constructor with the message.
@@ -103,7 +103,7 @@ public:
 // ---------------------------------------------------------------------------
 /** FOR EXPORTER PLUGINS ONLY: Simple exception class to be thrown if an
  *  unrecoverable error occurs while exporting. Exporting APIs return
- *  nullptr instead of a valid ai***REMOVED***ne then.  */
+ *  nullptr instead of a valid aiScene then.  */
 class ASSIMP_API DeadlyExportError : public DeadlyErrorBase {
 public:
     /** Constructor with arguments */

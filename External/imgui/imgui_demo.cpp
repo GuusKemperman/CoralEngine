@@ -1639,8 +1639,8 @@ static void ShowDemoWindowWidgets()
             ImGui::TreePop();
         }
 
-        IMGUI_DEMO_MARKER("Widgets/Text Input/Mi***REMOVED***llaneous");
-        if (ImGui::TreeNode("Mi***REMOVED***llaneous"))
+        IMGUI_DEMO_MARKER("Widgets/Text Input/Miscellaneous");
+        if (ImGui::TreeNode("Miscellaneous"))
         {
             static char buf1[16];
             static ImGuiInputTextFlags flags = ImGuiInputTextFlags_EscapeClearsAll;
@@ -3255,7 +3255,7 @@ static void ShowDemoWindowLayout()
         }
         ImGui::PopID();
 
-        // Mi***REMOVED***llaneous Horizontal Scrolling Demo
+        // Miscellaneous Horizontal Scrolling Demo
         IMGUI_DEMO_MARKER("Layout/Scrolling/Horizontal (more)");
         HelpMarker(
             "Horizontal scrolling for a window is enabled via the ImGuiWindowFlags_HorizontalScrollbar flag.\n\n"
@@ -3863,9 +3863,9 @@ struct MyItem
             default: IM_ASSERT(0); break;
             }
             if (delta > 0)
-                return (sort_spec->SortDirection == ImGuiSortDirection_A***REMOVED***nding) ? +1 : -1;
+                return (sort_spec->SortDirection == ImGuiSortDirection_Ascending) ? +1 : -1;
             if (delta < 0)
-                return (sort_spec->SortDirection == ImGuiSortDirection_A***REMOVED***nding) ? -1 : +1;
+                return (sort_spec->SortDirection == ImGuiSortDirection_Ascending) ? -1 : +1;
         }
 
         // qsort() is instable so always return a way to differenciate items.
@@ -3945,12 +3945,12 @@ static void EditTableColumnsFlags(ImGuiTableColumnFlags* p_flags)
     ImGui::CheckboxFlags("_NoHide", p_flags, ImGuiTableColumnFlags_NoHide);
     ImGui::CheckboxFlags("_NoClip", p_flags, ImGuiTableColumnFlags_NoClip);
     ImGui::CheckboxFlags("_NoSort", p_flags, ImGuiTableColumnFlags_NoSort);
-    ImGui::CheckboxFlags("_NoSortA***REMOVED***nding", p_flags, ImGuiTableColumnFlags_NoSortA***REMOVED***nding);
-    ImGui::CheckboxFlags("_NoSortDe***REMOVED***nding", p_flags, ImGuiTableColumnFlags_NoSortDe***REMOVED***nding);
+    ImGui::CheckboxFlags("_NoSortAscending", p_flags, ImGuiTableColumnFlags_NoSortAscending);
+    ImGui::CheckboxFlags("_NoSortDescending", p_flags, ImGuiTableColumnFlags_NoSortDescending);
     ImGui::CheckboxFlags("_NoHeaderLabel", p_flags, ImGuiTableColumnFlags_NoHeaderLabel);
     ImGui::CheckboxFlags("_NoHeaderWidth", p_flags, ImGuiTableColumnFlags_NoHeaderWidth);
-    ImGui::CheckboxFlags("_PreferSortA***REMOVED***nding", p_flags, ImGuiTableColumnFlags_PreferSortA***REMOVED***nding);
-    ImGui::CheckboxFlags("_PreferSortDe***REMOVED***nding", p_flags, ImGuiTableColumnFlags_PreferSortDe***REMOVED***nding);
+    ImGui::CheckboxFlags("_PreferSortAscending", p_flags, ImGuiTableColumnFlags_PreferSortAscending);
+    ImGui::CheckboxFlags("_PreferSortDescending", p_flags, ImGuiTableColumnFlags_PreferSortDescending);
     ImGui::CheckboxFlags("_IndentEnable", p_flags, ImGuiTableColumnFlags_IndentEnable); ImGui::SameLine(); HelpMarker("Default for column 0");
     ImGui::CheckboxFlags("_IndentDisable", p_flags, ImGuiTableColumnFlags_IndentDisable); ImGui::SameLine(); HelpMarker("Default for column >0");
 }
@@ -5330,12 +5330,12 @@ static void ShowDemoWindowTables()
             // This is so our sort function can identify a column given our own identifier. We could also identify them based on their index!
             // Demonstrate using a mixture of flags among available sort-related flags:
             // - ImGuiTableColumnFlags_DefaultSort
-            // - ImGuiTableColumnFlags_NoSort / ImGuiTableColumnFlags_NoSortA***REMOVED***nding / ImGuiTableColumnFlags_NoSortDe***REMOVED***nding
-            // - ImGuiTableColumnFlags_PreferSortA***REMOVED***nding / ImGuiTableColumnFlags_PreferSortDe***REMOVED***nding
+            // - ImGuiTableColumnFlags_NoSort / ImGuiTableColumnFlags_NoSortAscending / ImGuiTableColumnFlags_NoSortDescending
+            // - ImGuiTableColumnFlags_PreferSortAscending / ImGuiTableColumnFlags_PreferSortDescending
             ImGui::TableSetupColumn("ID",       ImGuiTableColumnFlags_DefaultSort          | ImGuiTableColumnFlags_WidthFixed,   0.0f, MyItemColumnID_ID);
             ImGui::TableSetupColumn("Name",                                                  ImGuiTableColumnFlags_WidthFixed,   0.0f, MyItemColumnID_Name);
             ImGui::TableSetupColumn("Action",   ImGuiTableColumnFlags_NoSort               | ImGuiTableColumnFlags_WidthFixed,   0.0f, MyItemColumnID_Action);
-            ImGui::TableSetupColumn("Quantity", ImGuiTableColumnFlags_PreferSortDe***REMOVED***nding | ImGuiTableColumnFlags_WidthStretch, 0.0f, MyItemColumnID_Quantity);
+            ImGui::TableSetupColumn("Quantity", ImGuiTableColumnFlags_PreferSortDescending | ImGuiTableColumnFlags_WidthStretch, 0.0f, MyItemColumnID_Quantity);
             ImGui::TableSetupScrollFreeze(0, 1); // Make row always visible
             ImGui::TableHeadersRow();
 
@@ -5549,7 +5549,7 @@ static void ShowDemoWindowTables()
             ImGui::TableSetupColumn("ID",           ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHide, 0.0f, MyItemColumnID_ID);
             ImGui::TableSetupColumn("Name",         ImGuiTableColumnFlags_WidthFixed, 0.0f, MyItemColumnID_Name);
             ImGui::TableSetupColumn("Action",       ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed, 0.0f, MyItemColumnID_Action);
-            ImGui::TableSetupColumn("Quantity",     ImGuiTableColumnFlags_PreferSortDe***REMOVED***nding, 0.0f, MyItemColumnID_Quantity);
+            ImGui::TableSetupColumn("Quantity",     ImGuiTableColumnFlags_PreferSortDescending, 0.0f, MyItemColumnID_Quantity);
             ImGui::TableSetupColumn("Description",  (flags & ImGuiTableFlags_NoHostExtendX) ? 0 : ImGuiTableColumnFlags_WidthStretch, 0.0f, MyItemColumnID_Description);
             ImGui::TableSetupColumn("Hidden",       ImGuiTableColumnFlags_DefaultHide | ImGuiTableColumnFlags_NoSort);
             ImGui::TableSetupScrollFreeze(freeze_cols, freeze_rows);

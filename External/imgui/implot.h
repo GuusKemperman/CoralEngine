@@ -40,7 +40,7 @@
 // [SECTION] Styling
 // [SECTION] Colormaps
 // [SECTION] Input Mapping
-// [SECTION] Mi***REMOVED***llaneous
+// [SECTION] Miscellaneous
 // [SECTION] Demo
 // [SECTION] Obsolete API
 
@@ -54,7 +54,7 @@
 // Define attributes of all API symbols declarations (e.g. for DLL under Windows)
 // Using ImPlot via a shared library is not recommended, because we don't guarantee
 // backward nor forward ABI compatibility and also function call overhead. If you
-// do use ImPlot as a DLL, be sure to call SetImGuiContext (see Mi***REMOVED***llanous section).
+// do use ImPlot as a DLL, be sure to call SetImGuiContext (see Miscellanous section).
 #ifndef IMPLOT_API
 #define IMPLOT_API
 #endif
@@ -616,7 +616,7 @@ IMPLOT_API void SetupFinish();
 // [SECTION] SetNext
 //-----------------------------------------------------------------------------
 
-// Though you should default to the `Setup` API above, there are some ***REMOVED***narios
+// Though you should default to the `Setup` API above, there are some scenarios
 // where (re)configuring a plot or axis before `BeginPlot` is needed (e.g. if
 // using a preceding button or slider widget to change the plot limits). In
 // this case, you can use the `SetNext` API below. While this is not as feature
@@ -1069,7 +1069,7 @@ IMPLOT_API void MapInputDefault(ImPlotInputMap* dst = NULL);
 IMPLOT_API void MapInputReverse(ImPlotInputMap* dst = NULL);
 
 //-----------------------------------------------------------------------------
-// [SECTION] Mi***REMOVED***llaneous
+// [SECTION] Miscellaneous
 //-----------------------------------------------------------------------------
 
 // Render icons similar to those that appear in legends (nifty for data lists).

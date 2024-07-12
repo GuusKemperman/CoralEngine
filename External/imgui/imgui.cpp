@@ -175,7 +175,7 @@ CODE
      with a buttons combo to toggle the target. Please reach out if you think the game vs navigation input sharing could be improved.
 
  - REMOTE INPUTS SHARING & MOUSE EMULATION
-   - PS4/***REMOVED*** users: Consider emulating a mouse cursor with DualShock touch pad or a spare analog stick as a mouse-emulation fallback.
+   - PS4/PS5 users: Consider emulating a mouse cursor with DualShock touch pad or a spare analog stick as a mouse-emulation fallback.
    - Consoles/Tablet/Phone users: Consider using a Synergy 1.x server (on your PC) + run examples/libs/synergy/uSynergy.c (on your console/tablet/phone app)
      in order to share your PC mouse/keyboard.
    - See https://github.com/ocornut/imgui/wiki/Useful-Extensions#remoting for other remoting solutions.
@@ -468,7 +468,7 @@ CODE
                            - ImGuiKey_ModSuper and ImGuiModFlags_Super -> ImGuiMod_Super
                          the ImGuiKey_ModXXX were introduced in 1.87 and mostly used by backends.
                          the ImGuiModFlags_XXX have been exposed in imgui.h but not really used by any public api only by third-party extensions.
-                         exceptionally commenting out the older ImGuiKeyModFlags_XXX names ahead of obsole***REMOVED***nce schedule to reduce confusion and because they were not meant to be used anyway.
+                         exceptionally commenting out the older ImGuiKeyModFlags_XXX names ahead of obsolescence schedule to reduce confusion and because they were not meant to be used anyway.
  - 2022/09/20 (1.89)   - ImGuiKey is now a typed enum, allowing ImGuiKey_XXX symbols to be named in debuggers.
                          this will require uses of legacy backend-dependent indices to be casted, e.g.
                             - with imgui_impl_glfw:  IsKeyPressed(GLFW_KEY_A) -> IsKeyPressed((ImGuiKey)GLFW_KEY_A);
@@ -682,7 +682,7 @@ CODE
  - 2018/04/09 (1.61) - IM_DELETE() helper function added in 1.60 doesn't clear the input _pointer_ reference, more consistent with expectation and allows passing r-value.
  - 2018/03/20 (1.60) - renamed io.WantMoveMouse to io.WantSetMousePos for consistency and ease of understanding (was added in 1.52, _not_ used by core and only honored by some backend ahead of merging the Nav branch).
  - 2018/03/12 (1.60) - removed ImGuiCol_CloseButton, ImGuiCol_CloseButtonActive, ImGuiCol_CloseButtonHovered as the closing cross uses regular button colors now.
- - 2018/03/08 (1.60) - changed ImFont::DisplayOffset.y to default to 0 instead of +1. Fixed rounding of A***REMOVED***nt/De***REMOVED***nt to match TrueType renderer. If you were adding or subtracting to ImFont::DisplayOffset check if your fonts are correctly aligned vertically.
+ - 2018/03/08 (1.60) - changed ImFont::DisplayOffset.y to default to 0 instead of +1. Fixed rounding of Ascent/Descent to match TrueType renderer. If you were adding or subtracting to ImFont::DisplayOffset check if your fonts are correctly aligned vertically.
  - 2018/03/03 (1.60) - renamed ImGuiStyleVar_Count_ to ImGuiStyleVar_COUNT and ImGuiMouseCursor_Count_ to ImGuiMouseCursor_COUNT for consistency with other public enums.
  - 2018/02/18 (1.60) - BeginDragDropSource(): temporarily removed the optional mouse_button=0 parameter because it is not really usable in many situations at the moment.
  - 2018/02/16 (1.60) - obsoleted the io.RenderDrawListsFn callback, you can call your graphics engine render function after ImGui::Render(). Use ImGui::GetDrawData() to retrieve the ImDrawData* to display.
@@ -1303,7 +1303,7 @@ ImGuiIO::ImGuiIO()
     ConfigViewportsNoDecoration = true;
     ConfigViewportsNoDefaultParent = false;
 
-    // Mi***REMOVED***llaneous options
+    // Miscellaneous options
     MouseDrawCursor = false;
 #ifdef __APPLE__
     ConfigMacOSXBehaviors = true;  // Set Mac OS X style defaults based on __APPLE__ compile time flag
@@ -3956,7 +3956,7 @@ void ImGui::SetActiveID(ImGuiID id, ImGuiWindow* window)
 
         // This could be written in a more general way (e.g associate a hook to ActiveId),
         // but since this is currently quite an exception we'll leave it as is.
-        // One common ***REMOVED***nario leading to this is: pressing Key ->NavMoveRequestApplyResult() -> ClearActiveId()
+        // One common scenario leading to this is: pressing Key ->NavMoveRequestApplyResult() -> ClearActiveId()
         if (g.InputTextState.ID == g.ActiveId)
             InputTextDeactivateHook(g.ActiveId);
     }
@@ -4939,7 +4939,7 @@ void ImGui::NewFrame()
         GcCompactTransientMiscBuffers();
     g.GcCompactAll = false;
 
-    // Closing the focused window restore focus to the first active root window in de***REMOVED***nding z-order
+    // Closing the focused window restore focus to the first active root window in descending z-order
     if (g.NavWindow && !g.NavWindow->WasActive)
         FocusTopMostWindowUnderOne(NULL, NULL, NULL, ImGuiFocusRequestFlags_RestoreFocusedChild);
 
@@ -9690,7 +9690,7 @@ void ImGui::SetKeyOwnersForKeyChord(ImGuiKeyChord key_chord, ImGuiID owner_id, I
 //   if (IsItemHovered() || IsItemActive())
 //       SetKeyOwner(key, GetItemID());
 // Extensive uses of that (e.g. many calls for a single item) may want to manually perform the tests once and then call SetKeyOwner() multiple times.
-// More advanced usage ***REMOVED***narios may want to call SetKeyOwner() manually based on different condition.
+// More advanced usage scenarios may want to call SetKeyOwner() manually based on different condition.
 // Worth noting is that only one item can be hovered and only one item can be active, therefore this usage pattern doesn't need to bother with routing and priority.
 void ImGui::SetItemKeyOwner(ImGuiKey key, ImGuiInputFlags flags)
 {
@@ -9764,14 +9764,14 @@ bool ImGui::DebugCheckVersionAndDataLayout(const char* version, size_t sz_io, si
 // Until 1.89 (IMGUI_VERSION_NUM < 18814) it was legal to use SetCursorPos() to extend the boundary of a parent (e.g. window or table cell)
 // This is causing issues and ambiguity and we need to retire that.
 // See https://github.com/ocornut/imgui/issues/5548 for more details.
-// [***REMOVED***nario 1]
+// [Scenario 1]
 //  Previously this would make the window content size ~200x200:
 //    Begin(...) + SetCursorScreenPos(GetCursorScreenPos() + ImVec2(200,200)) + End();  // NOT OK
 //  Instead, please submit an item:
 //    Begin(...) + SetCursorScreenPos(GetCursorScreenPos() + ImVec2(200,200)) + Dummy(ImVec2(0,0)) + End(); // OK
 //  Alternative:
 //    Begin(...) + Dummy(ImVec2(200,200)) + End(); // OK
-// [***REMOVED***nario 2]
+// [Scenario 2]
 //  For reference this is one of the issue what we aim to fix with this change:
 //    BeginGroup() + SomeItem("foobar") + SetCursorScreenPos(GetCursorScreenPos()) + EndGroup()
 //  The previous logic made SetCursorScreenPos(GetCursorScreenPos()) have a side-effect! It would erroneously incorporate ItemSpacing.y after the item into content size, making the group taller!
@@ -11077,7 +11077,7 @@ void ImGui::ClosePopupsOverWindow(ImGuiWindow* ref_window, bool restore_focus_to
     int popup_count_to_keep = 0;
     if (ref_window)
     {
-        // Find the highest popup which is a de***REMOVED***ndant of the reference window (generally reference window = NavWindow)
+        // Find the highest popup which is a descendant of the reference window (generally reference window = NavWindow)
         for (; popup_count_to_keep < g.OpenPopupStack.Size; popup_count_to_keep++)
         {
             ImGuiPopupData& popup = g.OpenPopupStack[popup_count_to_keep];
@@ -11092,16 +11092,16 @@ void ImGui::ClosePopupsOverWindow(ImGuiWindow* ref_window, bool restore_focus_to
             //     Window -> Popup1 -> Popup2 -> Popup3
             // - Each popups may contain child windows, which is why we compare ->RootWindowDockTree!
             //     Window -> Popup1 -> Popup1_Child -> Popup2 -> Popup2_Child
-            bool ref_window_is_de***REMOVED***ndent_of_popup = false;
+            bool ref_window_is_descendent_of_popup = false;
             for (int n = popup_count_to_keep; n < g.OpenPopupStack.Size; n++)
                 if (ImGuiWindow* popup_window = g.OpenPopupStack[n].Window)
                     //if (popup_window->RootWindowDockTree == ref_window->RootWindowDockTree) // FIXME-MERGE
                     if (IsWindowWithinBeginStackOf(ref_window, popup_window))
                     {
-                        ref_window_is_de***REMOVED***ndent_of_popup = true;
+                        ref_window_is_descendent_of_popup = true;
                         break;
                     }
-            if (!ref_window_is_de***REMOVED***ndent_of_popup)
+            if (!ref_window_is_descendent_of_popup)
                 break;
         }
     }
@@ -20140,7 +20140,7 @@ void ImGui::DebugNodeFont(ImFont* font)
         "You may oversample them to get some flexibility with scaling. "
         "You can also render at multiple sizes and select which one to use at runtime.\n\n"
         "(Glimmer of hope: the atlas system will be rewritten in the future to make scaling more flexible.)");
-    Text("A***REMOVED***nt: %f, De***REMOVED***nt: %f, Height: %f", font->A***REMOVED***nt, font->De***REMOVED***nt, font->A***REMOVED***nt - font->De***REMOVED***nt);
+    Text("Ascent: %f, Descent: %f, Height: %f", font->Ascent, font->Descent, font->Ascent - font->Descent);
     char c_str[5];
     Text("Fallback character: '%s' (U+%04X)", ImTextCharToUtf8(c_str, font->FallbackChar), font->FallbackChar);
     Text("Ellipsis character: '%s' (U+%04X)", ImTextCharToUtf8(c_str, font->EllipsisChar), font->EllipsisChar);
@@ -20232,7 +20232,7 @@ void ImGui::DebugNodeStorage(ImGuiStorage* storage, const char* label)
 // [DEBUG] Display contents of ImGuiTabBar
 void ImGui::DebugNodeTabBar(ImGuiTabBar* tab_bar, const char* label)
 {
-    // Standalone tab bars (not associated to docking/windows functionality) currently hold no di***REMOVED***rnible strings.
+    // Standalone tab bars (not associated to docking/windows functionality) currently hold no discernible strings.
     char buf[256];
     char* p = buf;
     const char* buf_end = buf + IM_ARRAYSIZE(buf);

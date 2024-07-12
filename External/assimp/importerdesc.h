@@ -74,7 +74,7 @@ enum aiImporterFlags {
     /** Indicates that the importer reads only a very particular
       * subset of the file format. This happens commonly for
       * declarative or procedural formats which cannot easily
-      * be mapped to #ai***REMOVED***ne */
+      * be mapped to #aiScene */
     aiImporterFlags_LimitedSupport = 0x8,
 
     /** Indicates that the importer is highly experimental and

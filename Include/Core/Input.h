@@ -192,11 +192,11 @@ namespace CE
             ShoulderRight = 5,
 
             /// Represents the left of the two menu-related buttons on a gamepad.
-            /// This button has different names on different platforms, such as Share (Xbox) or - (Switch). The ***REMOVED*** does not have
+            /// This button has different names on different platforms, such as Share (Xbox) or - (Switch). The PS5 does not have
             /// such a button.
             MenuLeft = 6,
             /// Represents the right of the two menu-related buttons on a gamepad.
-            /// This button has different names on different platforms, such as Menu (Xbox), Start (***REMOVED***), or + (Switch).
+            /// This button has different names on different platforms, such as Menu (Xbox), Start (PS5), or + (Switch).
             MenuRight = 7,
 
             // Button 8 is not used, so that we have a 1-on-1 mapping with the GLFW enum.

@@ -24,7 +24,6 @@
     <ProjectGuid>{a5d06fec-7fcb-4af8-b043-6d92d6b99695}</ProjectGuid>
     <RootNamespace>CE</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <***REMOVED***SdkVersion>7.000</***REMOVED***SdkVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -993,11 +992,6 @@
     <ClInclude Include="external\imgui\imgui_curves.h" />
     <ClInclude Include="External\predicates\constants.h" />
     <ClInclude Include="External\predicates\predicates.h" />
-    <ClInclude Include="External\xsr\backends\common\stbi_image_write.h" />
-    <ClInclude Include="External\xsr\backends\common\stb_image.h" />
-    <ClInclude Include="external\xsr\backends\***REMOVED***\shader_shared_types.h" />
-    <ClInclude Include="external\xsr\backends\***REMOVED***\standard_shader_shared.h" />
-    <ClInclude Include="external\xsr\backends\***REMOVED***\standard_srt.h" />
     <ClInclude Include="Include\Assets\Asset.h" />
     <ClInclude Include="Include\Assets\Core\AssetFileMetaData.h" />
     <ClInclude Include="Include\Assets\Core\AssetLoadInfo.h" />
@@ -1089,32 +1083,6 @@
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectString.h" />
     <ClInclude Include="Include\Meta\ReflectedTypes\STD\ReflectVector.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\SkinnedMeshPC.h" />
-    <ClInclude Include="Include\Platform\***REMOVED***\Core\address_sanitizer_utils.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Shaders\Clustering\ClusteringHelperFunctions.h" />
-    <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Shaders\Clustering\ClusteringShaderResourceTable.h" />
-    <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Shaders\ShaderResourceTable.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Include\Platform\***REMOVED***\Rendering\Shaders\VertexFormat.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="Include\Platform\***REMOVED***\Utilities\DirectMemAlloc.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="Include\Rendering\GPUWorld.h" />
     <ClInclude Include="Include\Rendering\IGPUWorld.h" />
     <ClInclude Include="Include\Rendering\ISubRenderer.h" />
@@ -1232,7 +1200,6 @@
     <ClInclude Include="Include\Utilities\PathfindingInfo.h" />
     <ClInclude Include="Include\Rendering\PostProcessingRenderer.h" />
     <ClInclude Include="Include\Platform\PC\Rendering\PostProcessingRendererPC.h" />
-    <ClInclude Include="Source\Platform\***REMOVED***\Core\address_sanitizer_utils.h" />
     <ClInclude Include="source\simple_model_viewer.hpp" />
     <ClInclude Include="include\BasicDataTypes\ScalableTimer.h" />
     <ClInclude Include="Include\Systems\UtilityAiSystem.h" />
@@ -1255,36 +1222,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="external\imgui\.editorconfig" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Shading\InstancedDiffuseShading_p.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Shading\InstancedDiffuseParticleShading_p.pssl" />
-  </ItemGroup>
-  <ItemGroup>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Clustering\AssignLights_c.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Clustering\CompactCusters_c.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Clustering\CreateClusters_c.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Clustering\CullClusters_c.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Clustering\CullClusters_vv.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Clustering\CullClusters_p.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PostProcessing\Blur_p.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PostProcessing\Fullscreen_vv.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\InstancedDepth_vv.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Line_p.pssl">
-      <FileType>Document</FileType>
-    </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Line_vv.pssl">
-      <FileType>Document</FileType>
-    </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PostProcessing\PostProcessBlending_p.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\InstancedSkinnedDepth_vv.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\InstancedStaticMesh_vv.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\InstancedSkinnedMesh_vv.pssl" />
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Sprite_p.pssl">
-      <FileType>Document</FileType>
-    </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\Sprite_vv.pssl">
-      <FileType>Document</FileType>
-    </WavePsslc>
-    <WavePsslc Include="Source\Platform\***REMOVED***\Rendering\Shaders\PostProcessing\SSAO_p.pssl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

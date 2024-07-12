@@ -578,7 +578,7 @@ namespace Clipper2Lib
     }
   }
 
-  // Mi***REMOVED***llaneous ------------------------------------------------------------
+  // Miscellaneous ------------------------------------------------------------
 
   inline void CheckPrecision(int& precision, int& error_code)
   {

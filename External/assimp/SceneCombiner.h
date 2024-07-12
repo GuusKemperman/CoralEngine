@@ -40,8 +40,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ----------------------------------------------------------------------
 */
 
-/** @file Declares a helper class, "***REMOVED***neCombiner" providing various
- *  utilities to merge ***REMOVED***nes.
+/** @file Declares a helper class, "SceneCombiner" providing various
+ *  utilities to merge scenes.
  */
 #pragma once
 #ifndef AI_SCENE_COMBINER_H_INC
@@ -60,7 +60,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <set>
 #include <vector>
 
-struct ai***REMOVED***ne;
+struct aiScene;
 struct aiNode;
 struct aiMaterial;
 struct aiTexture;
@@ -77,19 +77,19 @@ struct aiMeshMorphAnim;
 namespace Assimp {
 
 // ---------------------------------------------------------------------------
-/** \brief Helper data structure for ***REMOVED***neCombiner.
+/** \brief Helper data structure for SceneCombiner.
  *
- *  Describes to which node a ***REMOVED***ne must be attached to.
+ *  Describes to which node a scene must be attached to.
  */
 struct AttachmentInfo {
     AttachmentInfo() :
-            ***REMOVED***ne(nullptr),
+            scene(nullptr),
             attachToNode(nullptr) {}
 
-    AttachmentInfo(ai***REMOVED***ne *_***REMOVED***ne, aiNode *_attachToNode) :
-            ***REMOVED***ne(_***REMOVED***ne), attachToNode(_attachToNode) {}
+    AttachmentInfo(aiScene *_scene, aiNode *_attachToNode) :
+            scene(_scene), attachToNode(_attachToNode) {}
 
-    ai***REMOVED***ne ****REMOVED***ne;
+    aiScene *scene;
     aiNode *attachToNode;
 };
 
@@ -101,8 +101,8 @@ struct NodeAttachmentInfo {
             resolved(false),
             src_idx(SIZE_MAX) {}
 
-    NodeAttachmentInfo(aiNode *_***REMOVED***ne, aiNode *_attachToNode, size_t idx) :
-            node(_***REMOVED***ne), attachToNode(_attachToNode), resolved(false), src_idx(idx) {}
+    NodeAttachmentInfo(aiNode *_scene, aiNode *_attachToNode, size_t idx) :
+            node(_scene), attachToNode(_attachToNode), resolved(false), src_idx(idx) {}
 
     aiNode *node;
     aiNode *attachToNode;
@@ -112,7 +112,7 @@ struct NodeAttachmentInfo {
 
 // ---------------------------------------------------------------------------
 /** @def AI_INT_MERGE_SCENE_GEN_UNIQUE_NAMES
- *  Generate unique names for all named ***REMOVED***ne items
+ *  Generate unique names for all named scene items
  */
 #define AI_INT_MERGE_SCENE_GEN_UNIQUE_NAMES 0x1
 
@@ -123,13 +123,13 @@ struct NodeAttachmentInfo {
 #define AI_INT_MERGE_SCENE_GEN_UNIQUE_MATNAMES 0x2
 
 /** @def AI_INT_MERGE_SCENE_DUPLICATES_DEEP_CPY
- * Use deep copies of duplicate ***REMOVED***nes
+ * Use deep copies of duplicate scenes
  */
 #define AI_INT_MERGE_SCENE_DUPLICATES_DEEP_CPY 0x4
 
 /** @def AI_INT_MERGE_SCENE_RESOLVE_CROSS_ATTACHMENTS
- * If attachment nodes are not found in the given master ***REMOVED***ne,
- * search the other imported ***REMOVED***nes for them in an any order.
+ * If attachment nodes are not found in the given master scene,
+ * search the other imported scenes for them in an any order.
  */
 #define AI_INT_MERGE_SCENE_RESOLVE_CROSS_ATTACHMENTS 0x8
 
@@ -143,91 +143,91 @@ struct NodeAttachmentInfo {
 typedef std::pair<aiBone *, unsigned int> BoneSrcIndex;
 
 // ---------------------------------------------------------------------------
-/** @brief Helper data structure for ***REMOVED***neCombiner::MergeBones.
+/** @brief Helper data structure for SceneCombiner::MergeBones.
  */
 struct BoneWithHash : public std::pair<uint32_t, aiString *> {
     std::vector<BoneSrcIndex> pSrcBones;
 };
 
 // ---------------------------------------------------------------------------
-/** @brief Utility for ***REMOVED***neCombiner
+/** @brief Utility for SceneCombiner
  */
-struct ***REMOVED***neHelper {
-    ***REMOVED***neHelper() :
-            ***REMOVED***ne(nullptr),
+struct SceneHelper {
+    SceneHelper() :
+            scene(nullptr),
             idlen(0) {
         id[0] = 0;
     }
 
-    explicit ***REMOVED***neHelper(ai***REMOVED***ne *_***REMOVED***ne) :
-            ***REMOVED***ne(_***REMOVED***ne), idlen(0) {
+    explicit SceneHelper(aiScene *_scene) :
+            scene(_scene), idlen(0) {
         id[0] = 0;
     }
 
-    AI_FORCE_INLINE ai***REMOVED***ne *operator->() const {
-        return ***REMOVED***ne;
+    AI_FORCE_INLINE aiScene *operator->() const {
+        return scene;
     }
 
-    // ***REMOVED***ne we're working on
-    ai***REMOVED***ne ****REMOVED***ne;
+    // scene we're working on
+    aiScene *scene;
 
-    // prefix to be added to all identifiers in the ***REMOVED***ne ...
+    // prefix to be added to all identifiers in the scene ...
     char id[32];
 
     // and its strlen()
     unsigned int idlen;
 
-    // hash table to quickly check whether a name is contained in the ***REMOVED***ne
+    // hash table to quickly check whether a name is contained in the scene
     std::set<unsigned int> hashes;
 };
 
 // ---------------------------------------------------------------------------
 /** \brief Static helper class providing various utilities to merge two
- *    ***REMOVED***nes. It is intended as internal utility and NOT for use by
+ *    scenes. It is intended as internal utility and NOT for use by
  *    applications.
  *
  * The class is currently being used by various postprocessing steps
  * and loaders (ie. LWS).
  */
-class ASSIMP_API ***REMOVED***neCombiner {
+class ASSIMP_API SceneCombiner {
     // class cannot be instanced
-    ***REMOVED***neCombiner() {
+    SceneCombiner() {
         // empty
     }
 
-    ~***REMOVED***neCombiner() {
+    ~SceneCombiner() {
         // empty
     }
 
 public:
     // -------------------------------------------------------------------
-    /** Merges two or more ***REMOVED***nes.
+    /** Merges two or more scenes.
      *
-     *  @param dest  Receives a pointer to the destination ***REMOVED***ne. If the
+     *  @param dest  Receives a pointer to the destination scene. If the
      *    pointer doesn't point to nullptr when the function is called, the
-     *    existing ***REMOVED***ne is cleared and refilled.
-     *  @param src Non-empty list of ***REMOVED***nes to be merged. The function
-     *    deletes the input ***REMOVED***nes afterwards. There may be duplicate ***REMOVED***nes.
+     *    existing scene is cleared and refilled.
+     *  @param src Non-empty list of scenes to be merged. The function
+     *    deletes the input scenes afterwards. There may be duplicate scenes.
      *  @param flags Combination of the AI_INT_MERGE_SCENE flags defined above
      */
-    static void Merge***REMOVED***nes(ai***REMOVED***ne **dest, std::vector<ai***REMOVED***ne *> &src,
+    static void MergeScenes(aiScene **dest, std::vector<aiScene *> &src,
             unsigned int flags = 0);
 
     // -------------------------------------------------------------------
-    /** Merges two or more ***REMOVED***nes and attaches all ***REMOVED***nes to a specific
-     *  position in the node graph of the master ***REMOVED***ne.
+    /** Merges two or more scenes and attaches all scenes to a specific
+     *  position in the node graph of the master scene.
      *
-     *  @param dest Receives a pointer to the destination ***REMOVED***ne. If the
+     *  @param dest Receives a pointer to the destination scene. If the
      *    pointer doesn't point to nullptr when the function is called, the
-     *    existing ***REMOVED***ne is cleared and refilled.
-     *  @param master Master ***REMOVED***ne. It will be deleted afterwards. All
-     *    other ***REMOVED***nes will be inserted in its node graph.
-     *  @param src Non-empty list of ***REMOVED***nes to be merged along with their
-     *    corresponding attachment points in the master ***REMOVED***ne. The function
-     *    deletes the input ***REMOVED***nes afterwards. There may be duplicate ***REMOVED***nes.
+     *    existing scene is cleared and refilled.
+     *  @param master Master scene. It will be deleted afterwards. All
+     *    other scenes will be inserted in its node graph.
+     *  @param src Non-empty list of scenes to be merged along with their
+     *    corresponding attachment points in the master scene. The function
+     *    deletes the input scenes afterwards. There may be duplicate scenes.
      *  @param flags Combination of the AI_INT_MERGE_SCENE flags defined above
      */
-    static void Merge***REMOVED***nes(ai***REMOVED***ne **dest, ai***REMOVED***ne *master,
+    static void MergeScenes(aiScene **dest, aiScene *master,
             std::vector<AttachmentInfo> &src,
             unsigned int flags = 0);
 
@@ -287,7 +287,7 @@ public:
             std::vector<aiMesh *>::const_iterator end);
 
     // -------------------------------------------------------------------
-    /** Add a name prefix to all nodes in a ***REMOVED***ne.
+    /** Add a name prefix to all nodes in a scene.
      *
      *  @param Current node. This function is called recursively.
      *  @param prefix Prefix to be added to all nodes
@@ -306,41 +306,41 @@ public:
 
     // -------------------------------------------------------------------
     /** Attach a list of node graphs to well-defined nodes in a master
-     *  graph. This is a helper for Merge***REMOVED***nes()
+     *  graph. This is a helper for MergeScenes()
      *
-     *  @param master Master ***REMOVED***ne
-     *  @param srcList List of source ***REMOVED***nes along with their attachment
+     *  @param master Master scene
+     *  @param srcList List of source scenes along with their attachment
      *    points. If an attachment point is nullptr (or does not exist in
-     *    the master graph), a ***REMOVED***ne is attached to the root of the master
+     *    the master graph), a scene is attached to the root of the master
      *    graph (as an additional child node)
-     *  @duplicates List of duplicates. If elem[n] == n the ***REMOVED***ne is not
-     *    a duplicate. Otherwise elem[n] links ***REMOVED***ne n to its first occurrence.
+     *  @duplicates List of duplicates. If elem[n] == n the scene is not
+     *    a duplicate. Otherwise elem[n] links scene n to its first occurrence.
      */
-    static void AttachToGraph(ai***REMOVED***ne *master,
+    static void AttachToGraph(aiScene *master,
             std::vector<NodeAttachmentInfo> &srcList);
 
     static void AttachToGraph(aiNode *attach,
             std::vector<NodeAttachmentInfo> &srcList);
 
     // -------------------------------------------------------------------
-    /** Get a deep copy of a ***REMOVED***ne
+    /** Get a deep copy of a scene
      *
-     *  @param dest Receives a pointer to the destination ***REMOVED***ne
-     *  @param src Source ***REMOVED***ne - remains unmodified.
+     *  @param dest Receives a pointer to the destination scene
+     *  @param src Source scene - remains unmodified.
      */
-    static void Copy***REMOVED***ne(ai***REMOVED***ne **dest, const ai***REMOVED***ne *source, bool allocate = true);
+    static void CopyScene(aiScene **dest, const aiScene *source, bool allocate = true);
 
     // -------------------------------------------------------------------
-    /** Get a flat copy of a ***REMOVED***ne
+    /** Get a flat copy of a scene
      *
      *  Only the first hierarchy layer is copied. All pointer members of
-     *  ai***REMOVED***ne are shared by source and destination ***REMOVED***ne.  If the
+     *  aiScene are shared by source and destination scene.  If the
      *    pointer doesn't point to nullptr when the function is called, the
-     *    existing ***REMOVED***ne is cleared and refilled.
-     *  @param dest Receives a pointer to the destination ***REMOVED***ne
-     *  @param src Source ***REMOVED***ne - remains unmodified.
+     *    existing scene is cleared and refilled.
+     *  @param dest Receives a pointer to the destination scene
+     *  @param src Source scene - remains unmodified.
      */
-    static void Copy***REMOVED***neFlat(ai***REMOVED***ne **dest, const ai***REMOVED***ne *source);
+    static void CopySceneFlat(aiScene **dest, const aiScene *source);
 
     // -------------------------------------------------------------------
     /** Get a deep copy of a mesh
@@ -371,7 +371,7 @@ private:
     // Same as AddNodePrefixes, but with an additional check
     static void AddNodePrefixesChecked(aiNode *node, const char *prefix,
             unsigned int len,
-            std::vector<***REMOVED***neHelper> &input,
+            std::vector<SceneHelper> &input,
             unsigned int cur);
 
     // -------------------------------------------------------------------
@@ -381,7 +381,7 @@ private:
     // -------------------------------------------------------------------
     // Search for duplicate names
     static bool FindNameMatch(const aiString &name,
-            std::vector<***REMOVED***neHelper> &input, unsigned int cur);
+            std::vector<SceneHelper> &input, unsigned int cur);
 };
 
 } // namespace Assimp
