@@ -7,8 +7,8 @@ namespace CE
 
 	struct BenchmarkParams
 	{
-		size_t mMinTotalDurationSeconds{};
-		float mTickStepSize{};
+		size_t mMinTotalDurationSeconds = 30;
+		float mTickStepSize = 1.0f / 60.0f;
 	};
 
 	struct BenchmarkResult
@@ -25,5 +25,5 @@ namespace CE
 	};
 
 	BenchmarkResult BenchMark(World& world, BenchmarkParams params);
-	BenchmarkResult BenchMark(const Level& level, BenchmarkParams params);
+	BenchmarkResult BenchMark(std::string_view levelName, BenchmarkParams params);
 }

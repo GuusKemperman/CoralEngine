@@ -64,7 +64,7 @@ void CE::VirtualMachine::Recompile()
 	for (WeakAssetHandle<Script> asset : AssetManager::Get().GetAllAssets<Script>())
 	{
 		Script& script = const_cast<Script&>(*AssetHandle<Script>{ asset });
-		
+
 		MetaType* type = script.DeclareMetaType();
 
 		if (type != nullptr)
@@ -135,7 +135,7 @@ CE::FuncResult CE::VirtualMachine::ExecuteScriptFunction(MetaFunc::DynamicArgs a
 		Profiler(float& numOfSecondsSpent) :
 			mNumOfSecondsSpent(numOfSecondsSpent)
 		{
-			
+
 		}
 		~Profiler()
 		{
@@ -150,187 +150,177 @@ CE::FuncResult CE::VirtualMachine::ExecuteScriptFunction(MetaFunc::DynamicArgs a
 
 	VMContext context{ func };
 
-	if (context.mCachedValues == nullptr)
+	try
 	{
-		PrintError({ ScriptError::StackOverflow, { context.mFunc } });
-		return "Stack overflow";
-	}
-
-	if (!func.IsStatic())
-	{
-		context.mThis = &args[0];
-	}
-
-	if (entryNode != nullptr)
-	{
-		const Span<const ScriptPin> entryPins = entryNode->GetOutputs(func);
-
-		// Push the arguments we received to the cache. If this is a field function,
-		// skip the first argument; there is no pin for it in the entry node
-		for (uint32 argNum = !func.IsStatic(), pinIndex = 0; argNum < args.size();)
+		if (context.mCachedValues == nullptr)
 		{
-			ASSERT(pinIndex < entryPins.size());
-			const ScriptPin& pin = entryPins[pinIndex];
-
-			if (pin.IsFlow())
-			{
-				++pinIndex;
-				continue;
-			}
-
-			MetaAny& arg = args[argNum];
-
-			VMContext::CachedValue& cachedValue = FindCachedValue(context, pin.GetId());
-
-			const MetaType* const type = arg.TryGetType();
-			ASSERT(type != nullptr && "Should've been caught at compile time");
-
-			const bool allocationSuccess = AllocateForCache(context, cachedValue, pin, type->GetTypeInfo());
-
-			if (pin.GetTypeForm() == TypeForm::Value)
-			{
-				if (!allocationSuccess)
-				{
-					PrintError({ ScriptError::StackOverflow, { context.mFunc } });
-					return "Stack overflow";
-				}
-
-				// Copy construct
-				FuncResult copyResult = type->ConstructAt(cachedValue.mData, arg);
-
-				// TODO can be checked at compile time?
-				if (copyResult.HasError())
-				{
-					PrintError({ ScriptError::TypeCannotBeOwnedByScripts, { context.mFunc }, Format("Failed to copy construct type {} from pin {} on node {} - {} try passing by reference instead",
-						type->GetName(),
-						pin.GetName(),
-						entryNode->GetDisplayName(),
-						copyResult.Error()) });
-					return { "Cannot copy construct type" };
-				}
-			}
-			else
-			{
-				cachedValue.mData = arg.GetData();
-			}
-
-			++argNum;
-			++pinIndex;
+			throw ScriptError{ ScriptError::StackOverflow, { context.mFunc } };
 		}
-	}
 
-	Expected<const ScriptNode*, ScriptError> current = { &firstNode };
-	uint32 stepNum = 0;
-
-	// We can't execute the entry node, so just skip it and move on to the next one
-	if (firstNode.GetType() == ScriptNodeType::FunctionEntry)
-	{
-		goto nextNode;
-	}
-
-	for (; stepNum < sMaxNumOfNodesToExecutePerFunctionBeforeGivingUp; stepNum++)
-	{
-		// We have reached the end of the function and must return the value
-		if (current.GetValue()->GetType() == ScriptNodeType::FunctionReturn)
+		if (!func.IsStatic())
 		{
-			for (const ScriptPin& pinToOutputTo : current.GetValue()->GetInputs(func))
+			context.mThis = &args[0];
+		}
+
+		if (entryNode != nullptr)
+		{
+			const Span<const ScriptPin> entryPins = entryNode->GetOutputs(func);
+
+			// Push the arguments we received to the cache. If this is a field function,
+			// skip the first argument; there is no pin for it in the entry node
+			for (uint32 argNum = !func.IsStatic(), pinIndex = 0; argNum < args.size();)
 			{
-				if (pinToOutputTo.IsFlow())
+				ASSERT(pinIndex < entryPins.size());
+				const ScriptPin& pin = entryPins[pinIndex];
+
+				if (pin.IsFlow())
 				{
+					++pinIndex;
 					continue;
 				}
 
-				Expected<MetaAny, ScriptError> ret = GetValueToPassAsInput(context, pinToOutputTo);
+				MetaAny& arg = args[argNum];
 
-				if (ret.HasError())
+				VMContext::CachedValue& cachedValue = FindCachedValue(context, pin.GetId());
+
+				const MetaType* const type = arg.TryGetType();
+				ASSERT(type != nullptr && "Should've been caught at compile time");
+
+				AllocateForCache(context, cachedValue, pin, type->GetTypeInfo());
+
+				if (pin.GetTypeForm() == TypeForm::Value)
 				{
-					PrintError(ret.GetError());
-					return ret.GetError().ToString(true);
-				}
+					// Copy construct
+					FuncResult copyResult = type->ConstructAt(cachedValue.mData, arg);
 
-				if (pinToOutputTo.GetTypeForm() == TypeForm::Value
-					&& !ret.GetValue().IsOwner())
-				{
-					const MetaType* const returnType = ret.GetValue().TryGetType();
-					ASSERT(returnType != nullptr && "Shouldve been checked during script compilation");
-
-					FuncResult copyConstructResult = rvoBuffer == nullptr ? returnType->Construct(ret.GetValue()) : returnType->ConstructAt(rvoBuffer, ret.GetValue());
-
-					if (copyConstructResult.HasError()) // TODO can be checked during script compilation
+					// TODO can be checked at compile time?
+					if (copyResult.HasError())
 					{
-						std::string error = Format("Could not copy return value of type {} - {}", returnType->GetName(), copyConstructResult.Error());
-						PrintError({ ScriptError::FunctionCallFailed, { context.mFunc, pinToOutputTo }, error });
-						return error;
+						throw ScriptError{ ScriptError::TypeCannotBeOwnedByScripts, { context.mFunc }, Format("Failed to copy construct type {} from pin {} on node {} - {} try passing by reference instead",
+							type->GetName(),
+							pin.GetName(),
+							entryNode->GetDisplayName(),
+							copyResult.Error())
+						};
 					}
-					return std::move(copyConstructResult.GetReturnValue());
+				}
+				else
+				{
+					cachedValue.mData = arg.GetData();
 				}
 
-				return std::move(ret.GetValue());
-
+				++argNum;
+				++pinIndex;
 			}
-
-			break;
 		}
 
-		{
-			const Expected<VMContext::CachedValue*, ScriptError> result = ExecuteNode(context, *current.GetValue());
+		const ScriptNode* current = &firstNode;
+		uint32 stepNum = 0;
 
-			if (result.HasError())
+		// We can't execute the entry node, so just skip it and move on to the next one
+		if (firstNode.GetType() == ScriptNodeType::FunctionEntry)
+		{
+			goto nextNode;
+		}
+
+		for (; stepNum < sMaxNumOfNodesToExecutePerFunctionBeforeGivingUp; stepNum++)
+		{
+			// We have reached the end of the function and must return the value
+			if (current->GetType() == ScriptNodeType::FunctionReturn)
 			{
-				PrintError(result.GetError());
-				return result.GetError().ToString(true);
+				for (const ScriptPin& pinToOutputTo : current->GetInputs(func))
+				{
+					if (pinToOutputTo.IsFlow())
+					{
+						continue;
+					}
+
+					MetaAny ret = GetValueToPassAsInput(context, pinToOutputTo);
+
+					if (pinToOutputTo.GetTypeForm() == TypeForm::Value
+						&& !ret.IsOwner())
+					{
+						const MetaType* const returnType = ret.TryGetType();
+						ASSERT(returnType != nullptr && "Shouldve been checked during script compilation");
+
+						FuncResult copyConstructResult = rvoBuffer == nullptr ? returnType->Construct(ret) : returnType->ConstructAt(rvoBuffer, ret);
+
+						if (copyConstructResult.HasError()) // TODO can be checked during script compilation
+						{
+							std::string error = Format("Could not copy return value of type {} - {}", returnType->GetName(), copyConstructResult.Error());
+							PrintError({ ScriptError::FunctionCallFailed, { context.mFunc, pinToOutputTo }, error });
+							return error;
+						}
+						return std::move(copyConstructResult.GetReturnValue());
+					}
+
+					return std::move(ret);
+
+				}
+
+				break;
+			}
+
+			ExecuteNode(context, *current);
+
+		nextNode:
+			current = GetNextNodeToExecute(context, *current);
+
+			// We have reached the end of the function
+			if (current == nullptr)
+			{
+				break;
 			}
 		}
 
-
-	nextNode:
-		current = GetNextNodeToExecute(context, *current.GetValue());
-
-		if (current.HasError())
+		if (stepNum == sMaxNumOfNodesToExecutePerFunctionBeforeGivingUp)
 		{
-			PrintError(current.GetError());
-			return current.GetError().ToString(true);
+			throw ScriptError{ ScriptError::ExecutionTimeOut, { context.mFunc, *current } };
 		}
 
-		// We have reached the end of the function
-		if (current.GetValue() == nullptr)
+		if (!func.GetReturnType().has_value())
 		{
-			break;
+			return { std::nullopt };
 		}
+
+		// No return node encountered, returning default constructed value
+		const MetaType* const returnType = func.GetReturnType()->TryGetType();
+
+		ASSERT(returnType != nullptr && "Should've been caught during script compilation");
+
+		FuncResult defaultConstructResult = rvoBuffer == nullptr ? returnType->Construct() : returnType->ConstructAt(rvoBuffer);
+
+		// TODO can be compile-time error
+		if (defaultConstructResult.HasError())
+		{
+			throw ScriptError{ ScriptError::Type::ValueWasNull, { context.mFunc, *current },
+				Format("No return node encountered, and the return type {} cannot be default constructed - {}",
+				returnType->GetName(),
+				defaultConstructResult.Error())
+			};
+		}
+
+		return { std::move(defaultConstructResult.GetReturnValue()) };
 	}
-
-	if (stepNum == sMaxNumOfNodesToExecutePerFunctionBeforeGivingUp)
+	catch (const ScriptError& error)
 	{
-		ScriptError error = { ScriptError::ExecutionTimeOut, { context.mFunc, *current.GetValue() } };
 		PrintError(error);
 		return error.ToString(true);
 	}
-
-	if (!func.GetReturnType().has_value())
+	catch (const std::exception& exception)
 	{
-		return { std::nullopt };
+		std::string msg = Format("Exception occured - {}", exception.what());
+		// TODO: Use a callstack to log the exact node that caused the error
+		PrintError({ ScriptError::FunctionCallFailed, ScriptLocation{ func }, msg });
+		return std::move(msg);
 	}
-
-	// No return node encountered, returning default constructed value
-	const MetaType* const returnType = func.GetReturnType()->TryGetType();
-
-	ASSERT(returnType != nullptr && "Should've been caught during script compilation");
-
-	FuncResult defaultConstructResult = rvoBuffer == nullptr ? returnType->Construct() : returnType->ConstructAt(rvoBuffer);
-
-	// TODO can be compile-time error
-	if (defaultConstructResult.HasError())
+	catch (...)
 	{
-		ScriptError error{ ScriptError::Type::ValueWasNull, { context.mFunc, *current.GetValue() },
-			Format("No return node encountered, and the return type {} cannot be default constructed - {}",
-			returnType->GetName(),
-			defaultConstructResult.Error())
-		};
-		PrintError(error);
-		return error.ToString(true);
+		std::string msg = "Unknown exception occured";
+		// TODO: Use a callstack to log the exact node that caused the error
+		PrintError({ ScriptError::FunctionCallFailed, ScriptLocation{ func }, msg });
+		return std::move(msg);
 	}
-
-	return { std::move(defaultConstructResult.GetReturnValue()) };
 }
 
 void CE::VirtualMachine::PrintCompileErrors() const
@@ -430,8 +420,7 @@ void* CE::VirtualMachine::StackAllocate(uint32 numOfBytes, uint32 alignment)
 	return allocatedAt;
 }
 
-Expected<const CE::ScriptNode*, CE::ScriptError> CE::VirtualMachine::GetNextNodeToExecute(VMContext& context,
-	const ScriptNode& start)
+const CE::ScriptNode* CE::VirtualMachine::GetNextNodeToExecute(VMContext& context, const ScriptNode& start)
 {
 	ASSERT(!start.IsPure(context.mFunc)
 		&& !start.GetOutputs(context.mFunc).empty()
@@ -510,26 +499,11 @@ Expected<const CE::ScriptNode*, CE::ScriptError> CE::VirtualMachine::GetNextNode
 
 			if (indexOfInputFlowPin == ForLoopScriptNode::sIndexOfEntryPin) // for (int i = startValue;
 			{
-				const ScriptPin& startPin = inputs[ForLoopScriptNode::sIndexOfStartPin];
-				Expected<MetaAny, ScriptError> startValue = GetValueToPassAsInput(context, startPin);
-
-				if (startValue.HasError())
-				{
-					UNLIKELY;
-					return std::move(startValue.GetError());
-				}
-
 				BeginLoop(context, VMContext::ForLoopInfo{ static_cast<const ForLoopScriptNode&>(*current) });
+				AllocateForCache(context, cachedIndex, indexPin, MakeTypeInfo<int32>());
 
-				const bool success = AllocateForCache(context, cachedIndex, indexPin, MakeTypeInfo<int32>());
-
-				if (!success)
-				{
-					UNLIKELY;
-					return ScriptError{ ScriptError::StackOverflow, { context.mFunc, indexPin } };
-				}
-
-				*static_cast<int32*>(cachedIndex.mData) = *static_cast<const int32*>(startValue.GetValue().GetData());
+				const ScriptPin& startPin = inputs[ForLoopScriptNode::sIndexOfStartPin];
+				*static_cast<int32*>(cachedIndex.mData) = GetValueToPassAsInput<int32>(context, startPin);
 			}
 
 			int32& index = *static_cast<int32*>(cachedIndex.mData);
@@ -544,14 +518,9 @@ Expected<const CE::ScriptNode*, CE::ScriptError> CE::VirtualMachine::GetNextNode
 			}
 
 			const ScriptPin& endPin = inputs[ForLoopScriptNode::sIndexOfEndPin];
-			Expected<int32, ScriptError> end = GetValueToPassAsInput<int32>(context, endPin);
+			int32 end = GetValueToPassAsInput<int32>(context, endPin);
 
-			if (end.HasError())
-			{
-				return std::move(end.GetError());
-			}
-
-			if (index >= end.GetValue()// If we've finished iterating
+			if (index >= end // If we've finished iterating
 				|| indexOfInputFlowPin == ForLoopScriptNode::sIndexOfBreakPin) // If break pin hit 
 			{
 				EndLoop(context, *current);
@@ -578,12 +547,7 @@ Expected<const CE::ScriptNode*, CE::ScriptError> CE::VirtualMachine::GetNextNode
 
 			const ScriptPin& conditionPin = inputs[WhileLoopScriptNode::sIndexOfConditionPin];
 
-			Expected<bool, ScriptError> condition = GetValueToPassAsInput<bool>(context, conditionPin);
-
-			if (condition.HasError())
-			{
-				return std::move(condition.GetError());
-			}
+			bool condition = GetValueToPassAsInput<bool>(context, conditionPin);
 
 			if (indexOfInputFlowPin == WhileLoopScriptNode::sIndexOfEntryPin)
 			{
@@ -591,7 +555,7 @@ Expected<const CE::ScriptNode*, CE::ScriptError> CE::VirtualMachine::GetNextNode
 			}
 
 			if (indexOfInputFlowPin == WhileLoopScriptNode::sIndexOfBreakPin // If break pin hit
-				|| !condition.GetValue()) // Or if the condition is false
+				|| !condition) // Or if the condition is false
 			{
 				EndLoop(context, *current);
 				indexOfOutputFlowPin = WhileLoopScriptNode::sIndexOfExitPin; // Exit loop
@@ -616,14 +580,7 @@ Expected<const CE::ScriptNode*, CE::ScriptError> CE::VirtualMachine::GetNextNode
 
 			const ScriptPin& conditionPin = inputs[BranchScriptNode::sIndexOfConditionPin];
 
-			Expected<bool, ScriptError> condition = GetValueToPassAsInput<bool>(context, conditionPin);
-
-			if (condition.HasError())
-			{
-				return std::move(condition.GetError());
-			}
-
-			if (condition.GetValue())
+			if (GetValueToPassAsInput<bool>(context, conditionPin))
 			{
 				indexOfOutputFlowPin = BranchScriptNode::sIndexOfIfPin;
 			}
@@ -646,10 +603,10 @@ Expected<const CE::ScriptNode*, CE::ScriptError> CE::VirtualMachine::GetNextNode
 		}
 	}
 
-	return ScriptError{ ScriptError::ExecutionTimeOut, { context.mFunc, start } };
+	throw ScriptError{ ScriptError::ExecutionTimeOut, { context.mFunc, start } };
 }
 
-Expected<CE::VirtualMachine::VMContext::CachedValue*, CE::ScriptError> CE::VirtualMachine::ExecuteNode(VMContext& context, const ScriptNode& node)
+CE::VirtualMachine::VMContext::CachedValue* CE::VirtualMachine::ExecuteNode(VMContext& context, const ScriptNode& node)
 {
 	Span<const ScriptPin> inputs = node.GetInputs(context.mFunc);
 	const size_t numOfInputPins = inputs.size();
@@ -686,14 +643,8 @@ Expected<CE::VirtualMachine::VMContext::CachedValue*, CE::ScriptError> CE::Virtu
 			continue;
 		}
 
-		Expected<MetaAny, ScriptError> valueToPassToPureNode = GetValueToPassAsInput(context, param);
-
-		if (valueToPassToPureNode.HasError())
-		{
-			return std::move(valueToPassToPureNode.GetError());
-		}
-
-		new (&inputValues[inputDeleter.mSize])MetaAny(std::move(valueToPassToPureNode.GetValue()));
+		MetaAny valueToPassToPureNode = GetValueToPassAsInput(context, param);
+		new (&inputValues[inputDeleter.mSize])MetaAny(std::move(valueToPassToPureNode));
 		inputForms[inputDeleter.mSize] = param.GetTypeForm();
 		inputDeleter.mSize++;
 	}
@@ -731,13 +682,7 @@ Expected<CE::VirtualMachine::VMContext::CachedValue*, CE::ScriptError> CE::Virtu
 		returnAddress = &FindCachedValue(context, outputPin->GetId());
 		returnType = outputPin->TryGetType();
 		ASSERT(returnType != nullptr);
-
-		const bool allocationSuccess = AllocateForCache(context, *returnAddress, *outputPin, returnType->GetTypeInfo());
-
-		if (!allocationSuccess)
-		{
-			return ScriptError{ ScriptError::StackOverflow, { context.mFunc, *outputPin } };
-		}
+		AllocateForCache(context, *returnAddress, *outputPin, returnType->GetTypeInfo());
 	}
 
 	FuncResult result{};
@@ -750,8 +695,7 @@ Expected<CE::VirtualMachine::VMContext::CachedValue*, CE::ScriptError> CE::Virtu
 	case ScriptNodeType::FunctionEntry: // This node can never be executed
 	case ScriptNodeType::Branch: // This node can never be executed
 	{
-		ASSERT(false);
-		break;
+		throw ScriptError{ ScriptError::CompilerBug, { context.mFunc, *outputPin } };
 	}
 	case ScriptNodeType::Setter:
 	case ScriptNodeType::Getter:
@@ -786,7 +730,7 @@ Expected<CE::VirtualMachine::VMContext::CachedValue*, CE::ScriptError> CE::Virtu
 
 			if (setResult.HasError())
 			{
-				return ScriptError{ ScriptError::FunctionCallFailed, { context.mFunc, node }, setResult.Error() };
+				throw ScriptError{ ScriptError::FunctionCallFailed, { context.mFunc, node }, setResult.Error() };
 			}
 		}
 		else if (static_cast<const GetterScriptNode&>(node).DoesNodeReturnCopy())
@@ -817,8 +761,7 @@ Expected<CE::VirtualMachine::VMContext::CachedValue*, CE::ScriptError> CE::Virtu
 			if (inputValues[i] == nullptr
 				&& !CanFormBeNullable(params[i].mTypeTraits.mForm))
 			{
-				UNLIKELY;
-				return ScriptError{ ScriptError::ValueWasNull, { context.mFunc, node } };
+				throw ScriptError{ ScriptError::ValueWasNull, { context.mFunc, node } };
 			}
 		}
 
@@ -829,7 +772,7 @@ Expected<CE::VirtualMachine::VMContext::CachedValue*, CE::ScriptError> CE::Virtu
 
 	if (result.HasError())
 	{
-		return ScriptError{ ScriptError::FunctionCallFailed, { context.mFunc, node }, result.Error() };
+		throw ScriptError{ ScriptError::FunctionCallFailed, { context.mFunc, node }, result.Error() };
 	}
 
 	ASSERT(returnAddress == nullptr == !result.HasReturnValue() && "No memory was allocated, but the result holds a return value, or Memory was allocated, but the result holds no return value");
@@ -841,7 +784,7 @@ Expected<CE::VirtualMachine::VMContext::CachedValue*, CE::ScriptError> CE::Virtu
 		return returnAddress;
 	}
 
-	return { nullptr };
+	return nullptr;
 }
 
 CE::VirtualMachine::VMContext::WhileLoopInfo& CE::VirtualMachine::BeginLoop(VMContext& context, VMContext::WhileLoopInfo&& loopInfo)
@@ -884,7 +827,7 @@ CE::VirtualMachine::VMContext::CachedValue& CE::VirtualMachine::FindCachedValue(
 }
 
 template<>
-Expected<CE::MetaAny, CE::ScriptError> CE::VirtualMachine::GetValueToPassAsInput(VMContext& context, const ScriptPin& pinToPassInputInto)
+CE::MetaAny CE::VirtualMachine::GetValueToPassAsInput(VMContext& context, const ScriptPin& pinToPassInputInto)
 {
 	ASSERT(pinToPassInputInto.IsInput());
 
@@ -902,8 +845,7 @@ Expected<CE::MetaAny, CE::ScriptError> CE::VirtualMachine::GetValueToPassAsInput
 		{
 			if (context.mFunc.IsStatic())
 			{
-				UNLIKELY;
-				return ScriptError{ ScriptError::ValueWasNull, { context.mFunc, pinToPassInputInto },
+				throw ScriptError{ ScriptError::ValueWasNull, { context.mFunc, pinToPassInputInto },
 					Format("Cannot call non-static functions ({}) from static functions ({})",
 						context.mFunc.GetNode(pinToPassInputInto.GetNodeId()).GetDisplayName(),
 						context.mFunc.GetName())
@@ -913,8 +855,7 @@ Expected<CE::MetaAny, CE::ScriptError> CE::VirtualMachine::GetValueToPassAsInput
 			// An instance of the script should have been provided as an argument to this function
 			if (context.mThis == nullptr)
 			{
-				UNLIKELY;
-				return ScriptError{ ScriptError::CompilerBug, { context.mFunc, pinToPassInputInto },
+				throw ScriptError{ ScriptError::CompilerBug, { context.mFunc, pinToPassInputInto },
 					"Compiler error: 'This' was unexpectedly nullptr for a non-static function. This should have been checked earlier." };
 			}
 
@@ -940,8 +881,7 @@ Expected<CE::MetaAny, CE::ScriptError> CE::VirtualMachine::GetValueToPassAsInput
 				// TODO can be checked during script-compilation
 				if (defaultConstructedValue.HasError())
 				{
-					UNLIKELY;
-					return ScriptError{ ScriptError::FunctionCallFailed, { context.mFunc, pinToPassInputInto },
+					throw ScriptError{ ScriptError::FunctionCallFailed, { context.mFunc, pinToPassInputInto },
 						Format("Type {} of input pin {} has no link connected to it, and creating a default value failed - {}",
 						pinType->GetName(),
 						pinToPassInputInto.GetName(),
@@ -954,9 +894,8 @@ Expected<CE::MetaAny, CE::ScriptError> CE::VirtualMachine::GetValueToPassAsInput
 		}
 		else
 		{
-			UNLIKELY;
 			// TODO can be checked during script-compilation
-			return ScriptError{ ScriptError::ValueWasNull, { context.mFunc, pinToPassInputInto }, "No link was connected to pin" };
+			throw ScriptError{ ScriptError::ValueWasNull, { context.mFunc, pinToPassInputInto }, "No link was connected to pin" };
 		}
 	}
 	else
@@ -980,7 +919,7 @@ Expected<CE::MetaAny, CE::ScriptError> CE::VirtualMachine::GetValueToPassAsInput
 			// TODO can be checked during script compilation
 			if (pinToPassInputInto.GetTypeForm() == TypeForm::Value)
 			{
-				return ScriptError{ ScriptError::TypeCannotBeOwnedByScripts, { context.mFunc, pinToPassInputInto }, "Pins accepting 'MetaAny' by value is not allowed; use a reference or a const reference instead" };
+				throw ScriptError{ ScriptError::TypeCannotBeOwnedByScripts, { context.mFunc, pinToPassInputInto }, "Pins accepting 'MetaAny' by value is not allowed; use a reference or a const reference instead" };
 			}
 			returnImmediately = true;
 		}
@@ -1004,8 +943,7 @@ Expected<CE::MetaAny, CE::ScriptError> CE::VirtualMachine::GetValueToPassAsInput
 			// We can't suddenly execute a non-pure node
 			if (!otherNode.IsPure(context.mFunc))
 			{
-				UNLIKELY;
-				return ScriptError{ ScriptError::LinkNotAllowed, { context.mFunc, context.mFunc.GetAllLinksConnectedToPin(pinToPassInputInto.GetId())[0] },
+				throw ScriptError{ ScriptError::LinkNotAllowed, { context.mFunc, context.mFunc.GetAllLinksConnectedToPin(pinToPassInputInto.GetId())[0] },
 					Format("The input pin {} in node {} is connected to the output pin {} in node {}, but node {} runs before node {}!",
 					pinToPassInputInto.GetName(),
 					context.mFunc.GetNode(pinToPassInputInto.GetNodeId()).GetDisplayName(),
@@ -1017,22 +955,14 @@ Expected<CE::MetaAny, CE::ScriptError> CE::VirtualMachine::GetValueToPassAsInput
 			}
 
 			// Run the node
-			Expected<VMContext::CachedValue*, ScriptError> nodeResult = ExecuteNode(context, otherNode);
-
-			if (nodeResult.HasError())
-			{
-				return std::move(nodeResult.GetError());
-			}
-
-			VMContext::CachedValue* nodeReturnValue = nodeResult.GetValue();
+			const VMContext::CachedValue* const nodeReturnValue = ExecuteNode(context, otherNode);
 
 			if (nodeReturnValue == nullptr)
 			{
-				return ScriptError{ ScriptError::CompilerBug, { context.mFunc, pinToPassInputInto },
+				throw ScriptError{ ScriptError::CompilerBug, { context.mFunc, pinToPassInputInto },
 					Format("The node {} unexpectedly returned void", otherNode.GetDisplayName()) };
 			}
 
-			
 			const TypeInfo returnTypeInfo = otherPin.TryGetType()->GetTypeInfo();
 
 			if (returnImmediately)
@@ -1046,18 +976,17 @@ Expected<CE::MetaAny, CE::ScriptError> CE::VirtualMachine::GetValueToPassAsInput
 
 	ASSERT(returnValue.has_value());
 
-
 	// Check if it's nullptr
 	if (*returnValue == nullptr
 		&& !CanFormBeNullable(form))
 	{
-		return ScriptError{ ScriptError::ValueWasNull, { context.mFunc, pinToPassInputInto } };
+		throw ScriptError{ ScriptError::ValueWasNull, { context.mFunc, pinToPassInputInto } };
 	}
 
 	return std::move(*returnValue);
 }
 
-bool CE::VirtualMachine::AllocateForCache(VMContext& context, VMContext::CachedValue& cachedValue, const ScriptPin& pin, TypeInfo typeInfo)
+void CE::VirtualMachine::AllocateForCache(VMContext& context, VMContext::CachedValue& cachedValue, const ScriptPin& pin, TypeInfo typeInfo)
 {
 	cachedValue.mNumOfImpureNodesExecutedAtTimeOfCaching = context.mNumOfImpureNodesExecutedAtTimeOfCaching;
 
@@ -1067,7 +996,7 @@ bool CE::VirtualMachine::AllocateForCache(VMContext& context, VMContext::CachedV
 		&& pin.GetTypeForm() != TypeForm::Value)
 	{
 		cachedValue.mTypeInfoFlags &= ~TypeInfo::UserBit;
-		return true;
+		return;
 	}
 
 	// Reuse the existing space if we can
@@ -1078,7 +1007,7 @@ bool CE::VirtualMachine::AllocateForCache(VMContext& context, VMContext::CachedV
 			FreeCachedValue(cachedValue, *pin.TryGetType());
 		}
 
-		return true;
+		return;
 	}
 
 	cachedValue.mData = StackAllocate(typeInfo.GetSize(), typeInfo.GetAlign());
@@ -1086,11 +1015,8 @@ bool CE::VirtualMachine::AllocateForCache(VMContext& context, VMContext::CachedV
 
 	if (cachedValue.mData == nullptr)
 	{
-		UNLIKELY;
-		return false;
+		throw ScriptError{ ScriptError::StackOverflow, { context.mFunc } };
 	}
-
-	return true;
 }
 
 bool CE::VirtualMachine::DoesCacheValueNeedToBeFreed(VMContext::CachedValue& cachedValue)
@@ -1105,24 +1031,18 @@ void CE::VirtualMachine::FreeCachedValue(VMContext::CachedValue& cachedValue, co
 }
 
 template<typename T>
-Expected<T, CE::ScriptError> CE::VirtualMachine::GetValueToPassAsInput(VMContext& context, const ScriptPin& pinToPassInputInto)
+T CE::VirtualMachine::GetValueToPassAsInput(VMContext& context, const ScriptPin& pinToPassInputInto)
 {
 	ASSERT(pinToPassInputInto.IsInput() && pinToPassInputInto.TryGetType()->GetTypeId() == MakeTypeId<T>());
 
-	Expected<MetaAny, ScriptError> valueToPassAsInput = GetValueToPassAsInput(context, pinToPassInputInto);
+	MetaAny valueToPassAsInput = GetValueToPassAsInput(context, pinToPassInputInto);
+	ASSERT(valueToPassAsInput.IsExactly<T>() && "Shoulve been caught at script-compilation");
 
-	if (valueToPassAsInput.HasError())
-	{
-		return std::move(valueToPassAsInput.GetError());
-	}
-
-	ASSERT(valueToPassAsInput.GetValue().IsExactly<T>() && "Shoulve been caught at script-compilation");
-
-	const T* const conditionValue = static_cast<T*>(valueToPassAsInput.GetValue().GetData());
+	const T* const conditionValue = static_cast<T*>(valueToPassAsInput.GetData());
 
 	if (conditionValue == nullptr)
 	{
-		return ScriptError{ ScriptError::ValueWasNull, { context.mFunc, pinToPassInputInto } };
+		throw ScriptError{ ScriptError::ValueWasNull, { context.mFunc, pinToPassInputInto } };
 	}
 
 	return *conditionValue;
