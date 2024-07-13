@@ -159,6 +159,5 @@ void CE::Logger::DumpToCrashLogAndExit()
 	file.close();
 	mMutex.unlock();
 
-	// See the console for more details
-	throw FatalErrorException{};
+	std::terminate();
 }

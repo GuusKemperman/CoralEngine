@@ -718,7 +718,7 @@ void CE::Script::AddMoveAssign(MetaType& toType, bool define) const
 
 				const MetaType& memberType = field.GetType();
 
-				[[maybe_unused]] FuncResult result = memberType.CallFunction(OperatorType::assign, valueToAssignTo, std::move(valueToMove));
+				[[maybe_unused]] FuncResult result = memberType.Assign(valueToAssignTo, std::move(valueToMove));
 				ASSERT_LOG(!result.HasError(), "{}", result.Error());
 			}
 
@@ -766,7 +766,7 @@ void CE::Script::AddCopyAssign(MetaType& toType, bool define) const
 
 				const MetaType& memberType = field.GetType();
 
-				[[maybe_unused]] FuncResult result = memberType.CallFunction(OperatorType::assign, valueToAssignTo, valueToCopy);
+				[[maybe_unused]] FuncResult result = memberType.Assign(valueToAssignTo, valueToCopy);
 				ASSERT_LOG(!result.HasError(), "{}", result.Error());
 			}
 

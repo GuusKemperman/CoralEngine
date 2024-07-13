@@ -1,4 +1,6 @@
 #pragma once
+#include <stack>
+
 #include "Core/EngineSubsystem.h"
 
 #include "Scripting/ScriptErrors.h"
@@ -88,6 +90,7 @@ namespace CE
 
 		static constexpr uint32 sMaxNumOfNodesToExecutePerFunctionBeforeGivingUp = 10'000;
 		static constexpr uint32 sMaxStackSize = 1 << 16;
+
 		std::array<char, sMaxStackSize> mStack{};
 		char* mStackPtr = &mStack[0];
 
@@ -134,17 +137,15 @@ namespace CE
 
 		void* StackAllocate(uint32 numOfBytes, uint32 alignment);
 
-		Expected<const ScriptNode*, ScriptError> GetNextNodeToExecute(VMContext& context, const ScriptNode& current);
+		const ScriptNode* GetNextNodeToExecute(VMContext& context, const ScriptNode& current);
 
 		template<typename T = MetaAny>
-		Expected<T, ScriptError> GetValueToPassAsInput(VMContext& context, const ScriptPin& pinToPassInputInto);
+		T GetValueToPassAsInput(VMContext& context, const ScriptPin& pinToPassInputInto);
 
 		template<>
-		Expected<MetaAny, ScriptError> GetValueToPassAsInput(VMContext& context,
-			const ScriptPin& pinToPassInputInto);
+		MetaAny GetValueToPassAsInput(VMContext& context, const ScriptPin& pinToPassInputInto);
 
-		// Will return true on success. May fail if stack overflow
-		bool AllocateForCache(VMContext& context, VMContext::CachedValue& cachedValue, const ScriptPin& pin, TypeInfo typeInfo);
+		void AllocateForCache(VMContext& context, VMContext::CachedValue& cachedValue, const ScriptPin& pin, TypeInfo typeInfo);
 
 		static bool DoesCacheValueNeedToBeFreed(VMContext::CachedValue& cachedValue);
 
@@ -153,7 +154,7 @@ namespace CE
 		VMContext::CachedValue& FindCachedValue(VMContext& context, PinId pinId);
 
 		// Will execute the node. If it has a return value, the value will be cached. A pointer to the cached value is then returned.
-		Expected<VMContext::CachedValue*, ScriptError> ExecuteNode(VMContext& context, const ScriptNode& node);
+		VMContext::CachedValue* ExecuteNode(VMContext& context, const ScriptNode& node);
 
 		VMContext::WhileLoopInfo& BeginLoop(VMContext& context, VMContext::WhileLoopInfo&& loopInfo);
 		VMContext::ForLoopInfo& BeginLoop(VMContext& context, VMContext::ForLoopInfo&& loopInfo);

@@ -3,12 +3,12 @@
 
 #include "World/World.h"
 #include "Assets/Level.h"
+#include "Core/AssetManager.h"
 
 using namespace std::chrono;
 
 CE::BenchmarkResult CE::BenchMark(World& world, const BenchmarkParams params)
 {
-
     BenchmarkResult result{};
     result.mBenchmarkParams = params;
 
@@ -67,9 +67,17 @@ CE::BenchmarkResult CE::BenchMark(World& world, const BenchmarkParams params)
     return result;
 }
 
-CE::BenchmarkResult CE::BenchMark(const Level& level, const BenchmarkParams params)
+CE::BenchmarkResult CE::BenchMark(std::string_view levelName, BenchmarkParams params)
 {
-    World world = level.CreateWorld(true);
+    AssetHandle<Level> level = AssetManager::Get().TryGetAsset<Level>(levelName);
+
+    if (level == nullptr)
+    {
+        LOG(LogCore, Error, "Cannot benchmark {}, as it does not exist", levelName);
+        return {};
+    }
+
+	World world = level->CreateWorld(true);
     return BenchMark(world, params);
 }
 

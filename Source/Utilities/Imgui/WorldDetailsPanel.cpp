@@ -304,7 +304,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 						MetaAny component = reg.Get(componentClass.GetTypeId(), entity);
 						MetaAny refToValue = field.MakeRef(component);
 
-						const FuncResult result = memberType.CallFunction(OperatorType::assign, refToValue, newValue.GetReturnValue());
+						const FuncResult result = memberType.Assign(refToValue, newValue.GetReturnValue());
 
 						if (result.HasError())
 						{

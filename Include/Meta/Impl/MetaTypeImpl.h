@@ -124,12 +124,11 @@ CE::FuncResult CE::MetaType::CallFunction(const std::variant<Name, OperatorType>
 }
 
 template <typename ... Args>
-CE::FuncResult CE::MetaType::CallFunctionWithRVO(const std::variant<Name, OperatorType>& funcNameOrType,
-	MetaFunc::RVOBuffer rvoBuffer, Args&&... args) const
+CE::FuncResult CE::MetaType::CallFunctionWithRVO(const std::variant<Name, OperatorType>& funcNameOrType, MetaFunc::RVOBuffer rvoBuffer, Args&&... args) const
 {
 	static constexpr uint32 numOfArgs = sizeof...(Args);
 	std::pair<std::array<MetaAny, numOfArgs>, std::array<TypeForm, numOfArgs>> packedArgs = MetaFunc::Pack(std::forward<Args>(args)...);
-	return CallFunction(funcNameOrType, Span<MetaAny>{packedArgs.first}, Span<const TypeForm>{packedArgs.second}, rvoBuffer);
+	return CallFunction(funcNameOrType, Span<MetaAny>{ packedArgs.first }, Span<const TypeForm>{ packedArgs.second }, rvoBuffer);
 }
 
 template <typename ... Args>
@@ -159,6 +158,13 @@ CE::FuncResult CE::MetaType::ConstructAt(void* atAddress, Args&&... args) const
 	ASSERT(reinterpret_cast<uintptr>(atAddress) % GetAlignment() == 0 && "Address was not aligned");
 
 	return ConstructInternal(false, atAddress, std::forward<Args>(args)...);
+}
+
+template <typename ... Args>
+CE::FuncResult CE::MetaType::Assign(MetaAny& destination, Args&&... args) const
+{
+	ASSERT(destination != nullptr);
+	return AssignInternal(destination, std::forward<Args>(args)...);
 }
 
 template <typename ... Args>
@@ -224,7 +230,67 @@ CE::FuncResult CE::MetaType::ConstructInternal(bool isOwner, void* address, Type
 	}
 	else
 	{
-		return { "Type is not copy-constructible" };
+		return { "Type is not move-constructible" };
+	}
+}
+
+template <typename ... Args>
+CE::FuncResult CE::MetaType::AssignInternalGeneric(MetaAny& destination, Args&&... args) const
+{
+	return CallFunction(OperatorType::assign, destination, std::forward<Args>(args)...);
+}
+
+template <typename TypeT>
+CE::FuncResult CE::MetaType::AssignInternal(MetaAny& destination, const TypeT& args) const
+{
+	if (MakeTypeId<TypeT>() != GetTypeId())
+	{
+		return AssignInternalGeneric(destination, args);
+	}
+
+	if constexpr (std::is_copy_assignable_v<TypeT>)
+	{
+		return MetaAny{ *static_cast<TypeT*>(destination.GetData()) = args };
+	}
+	else
+	{
+		return { "Type is not copy-assignable" };
+	}
+}
+
+template <typename TypeT>
+CE::FuncResult CE::MetaType::AssignInternal(MetaAny& destination, TypeT& args) const
+{
+	if (MakeTypeId<TypeT>() != GetTypeId())
+	{
+		return AssignInternalGeneric(destination, args);
+	}
+
+	if constexpr (std::is_copy_assignable_v<TypeT>)
+	{
+		return MetaAny{ *static_cast<TypeT*>(destination.GetData()) = args };
+	}
+	else
+	{
+		return { "Type is not copy-assignable" };
+	}
+}
+
+template <typename TypeT, std::enable_if_t<std::is_rvalue_reference_v<TypeT>, bool>>
+CE::FuncResult CE::MetaType::AssignInternal(MetaAny& destination, TypeT&& args) const
+{
+	if (MakeTypeId<TypeT>() != GetTypeId())
+	{
+		return AssignInternalGeneric(destination, std::move(args));
+	}
+
+	if constexpr (std::is_move_assignable_v<TypeT>)
+	{
+		return MetaAny{ *static_cast<TypeT*>(destination.GetData()) = std::move(args) };
+	}
+	else
+	{
+		return { "Type is not move-assignable" };
 	}
 }
 
