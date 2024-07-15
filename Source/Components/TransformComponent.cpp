@@ -596,7 +596,7 @@ CE::MetaType CE::TransformComponent::Reflect()
 	type.AddFunc(static_cast<void (TransformComponent::*)(glm::vec3)>(&TransformComponent::SetLocalScale), "SetLocalScale", "", "scale").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<void (TransformComponent::*)(glm::vec3)>(&TransformComponent::SetWorldScale), "SetWorldScale", "", "scale").GetProperties().Add(Props::sIsScriptableTag);
 
-	BindEvent(type, sConstructEvent, &TransformComponent::OnConstruct);
+	BindEvent(type, sOnConstruct, &TransformComponent::OnConstruct);
 
 	ReflectComponentType<TransformComponent>(type);
 	return type;

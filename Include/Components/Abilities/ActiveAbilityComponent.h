@@ -9,15 +9,15 @@ namespace CE
 	class ActiveAbilityComponent
 	{
 	public:
+#ifdef EDITOR
+		void OnInspect(World& world, entt::entity owner);
+#endif // EDITOR
+
 		entt::entity mCastByEntity{};
 
 		// We need to store a copy of the character component of the character that cast the ability
 		// to use if the character dies.
 		CharacterComponent mCastByCharacterData{};
-
-#ifdef EDITOR
-		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
-#endif // EDITOR
 
 	private:
 		friend ReflectAccess;

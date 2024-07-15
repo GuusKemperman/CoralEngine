@@ -1,263 +1,91 @@
 #pragma once
-#include "GSON/GSONBinary.h"
+#include "Assets/Core/AssetHandle.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 
 namespace CE
 {
+	class Script;
+	class ScriptFunc;
 	class World;
 
-	class EventBase
+	enum class EventFlags
 	{
-	public:
-		constexpr EventBase(std::string_view name, bool isAlwaysStatic);
-
-		std::string_view mName{};
-		bool mIsAlwaysStatic{};
+		Default = 0,
+		NotScriptable = 1 << 1
 	};
 
-	template<typename T, bool IsAlwaysStatic = false>
-	class Event
+	template<typename Derived, typename T = void(), EventFlags = EventFlags::Default>
+	class EventType
 	{
 		static_assert(AlwaysFalse<T>, "Not a signature");
 	};
 
-	template<typename Ret, typename... Args, bool IsAlwaysStatic>
-	class Event<Ret(Args...), IsAlwaysStatic> :
+	class EventBase
+	{
+	public:
+		EventBase(std::string_view name, 
+			EventFlags flags,
+			TypeTraits eventReturnType,
+			std::vector<TypeTraits>&& eventParams,
+			std::vector<std::string_view>&& pinNames);
+
+		EventBase(const EventBase&) = delete;
+		EventBase(EventBase&&) = delete;
+
+		EventBase& operator=(const EventBase&) = delete;
+		EventBase& operator=(EventBase&&) = delete;
+
+		MetaFunc& Declare(TypeId selfTypeId, MetaType& toType) const;
+		void Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, const AssetHandle<Script>& script) const;
+
+#ifdef EDITOR
+		/**
+		 * \brief Can be used to make calls to ImGui so the user can add/remove event specific properties.
+		 */
+		virtual void OnDetailsInspect([[maybe_unused]] ScriptFunc& scriptFunc) const {}
+#endif // EDITOR
+
+		std::string_view mName{};
+		EventFlags mFlags{};
+
+		// Equal to MakeTypeTraits<void>() if this function
+		// has no return value.
+		TypeTraits mEventReturnType{};
+
+		// EventParams, INCLUDES the implicit World& and entt::entity parameters.
+		// Note that if this event is bound to a non-static function, another
+		// parameter, the reference to the component, precedes the mEventParams here.
+		std::vector<TypeTraits> mEventParams{};
+
+		// mOutputPin.mTypeTraits is equal to MakeTypeTraits<void>() if this function
+		// has no return value.
+		MetaFuncNamedParam mOutputPin{};
+
+		// EventParams, EXCLUDES the implicit World& and entt::entity parameters.
+		// These are the parameters shown to a user using visual scripting.
+		std::vector<MetaFuncNamedParam> mInputPins{};
+	};
+
+	template<typename Derived, typename Ret, typename... Args, EventFlags Flags>
+	class EventType<Derived, Ret(Args...), Flags> :
 		public EventBase
 	{
 	public:
-		constexpr Event(std::string_view name);
+		template<typename... Pins>
+		EventType(std::string_view name, Pins&&... pins);
 	};
-
-	constexpr EventBase::EventBase(std::string_view name, bool isAlwaysStatic) :
-		mName(name),
-		mIsAlwaysStatic(isAlwaysStatic)
-	{
-	}
-
-	template <typename Ret, typename ... Args, bool IsAlwaysStatic>
-	constexpr Event<Ret(Args...), IsAlwaysStatic>::Event(std::string_view name) :
-		EventBase(name, IsAlwaysStatic)
-	{
-	}
 
 	//********************************//
 	//				API				  //
 	//********************************//
 
-	namespace Props
-	{
-		/**
-		 * \brief Can be added to the OnTick or OnFixedTick event to indicate that the event should be called even when the game is paused
-		 */
-		static constexpr std::string_view sShouldTickWhilstPausedTag = "sShouldTickWhilstPausedTag";
-
-		/**
-		 * \brief Can be added to the OnTick or OnFixedTick event to indicate that the event should be called in the editor before begin play has been called.
-		 */
-		static constexpr std::string_view sShouldTickBeforeBeginPlayTag = "sShouldTickBeforeBeginPlayTag";
-	}
-
-	static constexpr Event<float(const World&, entt::entity)> sAIEvaluateEvent{ "OnAIEvaluate" };
-
-	static constexpr Event<void(World&, entt::entity)> sAIStateEnterEvent{ "OnAIStateEnter" };
-	static constexpr Event<void(World&, entt::entity, float)> sAITickEvent{ "OnAITick" };
-	static constexpr Event<void(World&, entt::entity)> sAIStateExitEvent{ "OnAIStateExit" };
-
 	/**
-	 * \brief 
-	 * 	World& The world the ability controller component is in. 
-	 * \entt::entity The owner of the ability controller component.  
-	 */
-	static constexpr Event<void(World&, entt::entity)> sAbilityActivateEvent{ "OnAbilityActivate" };
-
-	/**
-	 * \brief
-	 * 	World& The world the ability controller component is in.
-	 * \entt::entity The entity that has cast the ability (projectile).
-	 * \entt::entity The entity that was hit.
-	 * \entt::entity The ability (projectile) entity.
-	 */
-	static constexpr Event<void(World&, entt::entity, entt::entity, entt::entity)> sAbilityHitEvent{ "OnAbilityHit" };
-
-	/**
-	 * \brief
-	 * 	World& The world player is in.
-	 * \entt::entity The player whose reloading got interrupted.
-	 */
-	static constexpr Event<void(World&, entt::entity)> sReloadStartedEvent{ "OnReloadStarted" };
-
-	/**
-	 * \brief
-	 * 	World& The world player is in.
-	 * \entt::entity The player that finished reloading.
-	 */
-	static constexpr Event<void(World&, entt::entity)> sReloadCompletedEvent{ "OnReloadCompleted" };
-
-	/**
-	 * \brief
-	 * 	World& The world the player and enemy are in.
-	 * \entt::entity The player.
-	 * \entt::entity The enemy that is about to die.
-	 */
-	static constexpr Event<void(World&, entt::entity, entt::entity)> sEnemyKilledEvent{ "OnEnemyKilled" };
-
-	/**
-	 * \brief
-	 * 	World& The world the player and enemy are in.
-	 * \entt::entity The player that was hit (only called for the player).
-	 */
-	static constexpr Event<void(World&, entt::entity)> sGettingHitEvent{ "OnGettingHit" };
-
-	/**
-	 * \brief
-	 * 	World& The world the ability controller component is in.
-	 * \entt::entity The entity that has cast the ability (projectile).
-	 * \entt::entity The entity that was hit.
-	 * \entt::entity The ability (projectile) entity.
-	 */
-	static constexpr Event<void(World&, entt::entity, entt::entity, entt::entity)> sCritEvent{ "OnCrit" };
-
-	/*
-	* \brief Called when an animation finishes.
-	* World& the world the animationRootComponent is in
-	* entt::entity The entity with the animationRootComponent which has finished its animation.
-	*/
-	static constexpr Event<void(World&, entt::entity)> sAnimationFinishEvent{ "OnAnimationFinish" };
-
-	/**
-	 * \brief Called immediately when the component is constructed.
-	 * \World& The world this component is in.
-	 * \entt::entity The owner of this component.
-	 */
-	static constexpr Event<void(World&, entt::entity)> sConstructEvent{ "OnConstruct" };
-
-	/**
-	 * \brief Called when the world begins play, or if the component is created after the world has begun play. Called after OnConstruct.
-	 *
-	 * Note that the order of BeginPlay is undefined; if you add a prefab to a world that has already begun play, you have no guarantee
-	 * during OnBeginPlay that each component of the prefab has been added to the entity.
-	 *
-	 * \World& The world this component is in.
-	 * \entt::entity The owner of this component.
-	 */
-	static constexpr Event<void(World&, entt::entity)> sBeginPlayEvent{ "OnBeginPlay" };
-
-	/**
-	 * \brief Called every frame.
-	 * \World& The world this component is in. 
-	 * \entt::entity The owner of this component. 
-	 * \float The deltatime. 
-	 */
-	static constexpr Event<void(World&, entt::entity, float)> sTickEvent{ "OnTick" };
-
-	/**
-	 * \brief Called every sFixedTickEventStepSize seconds.
-	 * \World& The world this component is in.
-	 * \entt::entity The owner of this component.
-	 */
-	static constexpr Event<void(World&, entt::entity)> sFixedTickEvent{ "OnFixedTick" };
-
-	/**
-	 * \brief The number of seconds between fixed ticks.
-	 */
-	static constexpr float sFixedTickEventStepSize = 0.2f;
-
-	/**
-	 * \brief Called for each component when an entity is destroyed,
-	 * or when an individual component was removed. Called even if the
-	 * world has not begun play.
-	 *
-	 * The order in which this event is called is random, you should
-	 * not try to retrieve any other components on the entity as you
-	 * may not assume that the other components have not already been
-	 * destroyed before you.
-	 *
-	 * \World& The world this component is in.
-	 * \entt::entity The owner of this component.
-	 */
-	static constexpr Event<void(World&, entt::entity)> sDestructEvent{ "OnDestruct" };
-
-	/**
-	 * \brief Called for each component when an entity is destroyed,
-	 * or when an individual component was removed. Only called if
-	 * the world has begun player.
-	 *
-	 * All EndPlay events are called before any of the component's C++ destructor is called.
-	 * This means if you destroy an entity with a TransformComponent, you can assume you can
-	 * still get that component in your EndPlay function, as the TransformComponent has
-	 * not been destroyed yet.
-	 *
-	 * \World& The world this component is in.
-	 * \entt::entity The owner of this component.
-	 */
-	static constexpr Event<void(World&, entt::entity)> sEndPlayEvent{ "OnEndPlay" };
-
-	/**
-	 * \brief Called the first frame two entities are colliding
-	 * \World& The world this component is in.
-	 * \entt::entity The owner of this component.
-	 * \entt::entity The entity this entity collided with.
-	 * \float The depth of the collision, how far it penetrated
-	 * \glm::vec2 The collision normal
-	 * \glm::vec2 The point of contact
-	 */
-	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionEntryEvent{ "OnCollisionEntry" };
-
-	/**
-	 * \brief Called every frame in which two entities are colliding. ALWAYS called after at one OnCollisionEntry
-	 * \World& The world this component is in.
-	 * \entt::entity The owner of this component.
-	 * \entt::entity The entity this entity collided with.
-	 * \float The depth of the collision, how far it penetrated
-	 * \glm::vec2 The collision normal
-	 * \glm::vec2 The point of contact
-	 */
-	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionStayEvent{ "OnCollisionStay" };
-
-	/**
-	 * \brief Called the first frame that two entities who were colliding in the previous frame, but no longer are.
-	 * \World& The world this component is in.
-	 * \entt::entity The owner of this component.
-	 * \entt::entity The entity this entity collided with.
-	 * \float The depth of the collision, how far it penetrated
-	 * \glm::vec2 The collision normal
-	 * \glm::vec2 The point of contact
-	 */
-	static constexpr Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)> sCollisionExitEvent{ "OnCollisionExit" };
-
-	/**
-	 * \brief Called when the button is pressed. Must be attached to the entity with the UIButtonTag.
-	 * \World& The world this component is in.
-	 * \entt::entity The owner of this component.
-	 */
-	static constexpr Event<void(World&, entt::entity)> sButtonPressEvent{ "OnButtonPressed" };
-
-#ifdef EDITOR
-	/**
-	 * \brief For custom inspect logic. You can make calls to ImGui from this event.
-	 * \World& The world you are inspecting
-	 * \const std::vector<entt::entity>& All the selected entities that have this component AND require inspecting
-	 */
-	static constexpr Event<void(World&, const std::vector<entt::entity>&), true> sInspectEvent{ "OnInspect" };
-
-	/**
-	 * \brief Implement this event to draw a gizmo if the entity is selected.
-	 * Gizmos are drawn only when the entity is selected.
-	 * For example an explosion script could draw a sphere showing the explosion radius.
-	 * \World& The world this component is in.
-	 * \entt::entity The owner of this component.
-	 */
-	static constexpr Event<void(World&, entt::entity)> sDrawGizmoEvent{ "OnDrawGizmo" };
-#endif // EDITOR
-
-	/**
-	 * \brief Binds an event to a type.
+	* \brief Binds an event to a type.
 	 * \tparam Class The class that is being reflected.
 	 * \tparam Args The arguments of the events. Note that each event also requires the first argument to be Class& (see Class template argument).
 	 * \param type A type that is currently being reflected.
-	 * \param event The event you would like to bind the function to, such as sTickEvent.
+	 * \param event The event you would like to bind the function to, such as sOnTick.
 	 * \param func The function you want to bind to the event. Everytime the event is dispatched, the function is called.
 	 *
 	 *	Events can be bound from C++ in the Reflect function.
@@ -267,19 +95,19 @@ namespace CE
 	 *	public:
 	 *		void OnTick(World& world, entt::entity owner, float dt);
 	 *	};
-	 *  
+	 *
 	 *	CE::MetaType CE::EventTestingComponent::Reflect()
 	 *	{
 	 *		MetaType type = MetaType{ MetaType::T<EventTestingComponent>{}, "EventTestingComponent" };
 	 *
-	 *		BindEvent(type, sTickEvent, &EventTestingComponent::OnTick);
+	 *		BindEvent(type, sOnTick, &EventTestingComponent::OnTick);
 	 *
 	 *		ReflectComponentType<EventTestingComponent>(type);
 	 *		return type;
 	 *	}
 	 */
-	template<typename Class, typename Func, typename Ret, typename... Args, bool IsAlwaysStatic>
-	void BindEvent(MetaType& type, const Event<Ret(Args...), IsAlwaysStatic>& event, Func&& func);
+	template<typename Class, typename Func, typename Derived, typename Ret, typename... Args, EventFlags Flags>
+	void BindEvent(MetaType& type, const EventType<Derived, Ret(Args...), Flags>& event, Func&& func);
 
 	/**
 	 * \brief An overload that prevents having to specify Class for mutable member functions
@@ -306,13 +134,165 @@ namespace CE
 	/**
 	 * \brief Returns the event bound during BindEvent, if any.
 	 *
-	 *  Example: TryGetEvent(componentType, sFixedTickEvent);
+	 *  Example: TryGetEvent(componentType, sOnFixedTick);
 	 */
 	template<typename EventT>
 	std::optional<BoundEvent> TryGetEvent(const MetaType& fromType, const EventT& event);
 
 	template <typename EventT>
 	std::vector<BoundEvent> GetAllBoundEvents(const EventT& event);
+
+	Span<std::reference_wrapper<const EventBase>> GetAllEvents();
+
+	struct OnConstruct :
+		EventType<OnConstruct>
+	{
+		OnConstruct() :
+			EventType("OnConstruct")
+		{
+		}
+	};
+	/**
+	 * \brief Called immediately when the component is constructed.
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	inline const OnConstruct sOnConstruct{};
+
+	struct OnBeginPlay :
+		EventType<OnBeginPlay>
+	{
+		OnBeginPlay() :
+			EventType("OnBeginPlay")
+		{
+		}
+	};
+	/**
+	 * \brief Called when the world begins play, or if the component is created after the world has begun play. Called after OnConstruct.
+	 *
+	 * Note that the order of BeginPlay is undefined; if you add a prefab to a world that has already begun play, you have no guarantee
+	 * during OnBeginPlay that each component of the prefab has been added to the entity.
+	 *
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	inline const OnBeginPlay sOnBeginPlay{};
+
+	struct OnTick :
+		EventType<OnTick, void(float)>
+	{
+		OnTick() :
+			EventType("OnTick", "DeltaTime")
+		{
+		}
+
+#ifdef EDITOR
+		void OnDetailsInspect(ScriptFunc& scriptFunc) const override;
+#endif
+	};
+	/**
+	 * \brief Called every frame.
+	 * \World& The world this component is in. 
+	 * \entt::entity The owner of this component. 
+	 * \float The deltatime. 
+	 */
+	inline const OnTick sOnTick{};
+
+	struct OnFixedTick :
+		EventType<OnFixedTick, void(float)>
+	{
+		OnFixedTick() :
+			EventType("OnFixedTick", "DeltaTime")
+		{
+		}
+
+#ifdef EDITOR
+		void OnDetailsInspect(ScriptFunc& scriptFunc) const override;
+#endif
+	};
+	/**
+	 * \brief Called every sOnFixedTickStepSize seconds.
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 * \float The deltatime, always equal to sOnFixedTickStepSize.
+	 */
+	inline const OnFixedTick sOnFixedTick{};
+
+	/**
+	 * \brief The number of seconds between fixed ticks.
+	 */
+	static constexpr float sOnFixedTickStepSize = 0.2f;
+
+	namespace Props
+	{
+		/**
+		 * \brief Can be added to the OnTick or OnFixedTick event to indicate that the event should be called even when the game is paused
+		 */
+		static constexpr std::string_view sShouldTickWhilstPausedTag = "sShouldTickWhilstPausedTag";
+
+		/**
+		 * \brief Can be added to the OnTick or OnFixedTick event to indicate that the event should be called in the editor before begin play has been called.
+		 */
+		static constexpr std::string_view sShouldTickBeforeBeginPlayTag = "sShouldTickBeforeBeginPlayTag";
+	}
+
+	struct OnEndPlay :
+		EventType<OnEndPlay>
+	{
+		OnEndPlay() :
+			EventType("OnEndPlay")
+		{
+		}
+	};
+	/**
+	 * \brief Called for each component when an entity is destroyed,
+	 * or when an individual component was removed. Only called if
+	 * the world has begun player.
+	 *
+	 * All EndPlay events are called before any of the component's C++ destructor is called.
+	 * This means if you destroy an entity with a TransformComponent, you can assume you can
+	 * still get that component in your EndPlay function, as the TransformComponent has
+	 * not been destroyed yet.
+	 *
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	inline const OnEndPlay sOnEndPlay{};
+
+#ifdef EDITOR
+
+	struct OnInspect :
+		EventType<OnInspect, void(), EventFlags::NotScriptable>
+	{
+		OnInspect() :
+			EventType("OnInspect")
+		{
+		}
+	};
+	/**
+	 * \brief For custom inspect logic. You can make calls to ImGui from this event.
+	 * \World& The world you are inspecting
+	 * \entt::entity The selected entity that has this component AND requires inspecting
+	 */
+	inline const OnInspect sOnInspect{};
+
+	struct OnDrawGizmo :
+		EventType<OnDrawGizmo>
+	{
+		OnDrawGizmo() :
+			EventType("OnDrawGizmo")
+		{
+		}
+	};
+	/**
+	 * \brief Implement this event to draw a gizmo if the entity is selected.
+	 * Gizmos are drawn only when the entity is selected.
+	 * For example an explosion script could draw a sphere showing the explosion radius.
+	 * \World& The world this component is in.
+	 * \entt::entity The owner of this component.
+	 */
+	inline const OnDrawGizmo sOnDrawGizmo{};
+#endif // EDITOR
 
 	//********************************//
 	//			Implementation		  //
@@ -328,27 +308,43 @@ namespace CE
 		static constexpr std::string_view sIsEventStaticTag = "sIsEventStaticTag";
 	}
 
-	template<typename Class, typename Func, typename Ret, typename... Args, bool IsAlwaysStatic>
-	void BindEvent(MetaType& type, const Event<Ret(Args...), IsAlwaysStatic>& event, Func&& func)
+	template <typename Derived, typename Ret, typename ... Args, EventFlags Flags>
+	template <typename ... Pins>
+	EventType<Derived, Ret(Args...), Flags>::EventType(std::string_view name, Pins&&... pins) :
+		EventBase(name, 
+			Flags, 
+			MakeTypeTraits<Ret>(), 
+			std::vector<TypeTraits>{ MakeTypeTraits<World&>(), MakeTypeTraits<entt::entity>(), MakeTypeTraits<Args>()... }, 
+			std::vector<std::string_view>{ std::forward<Pins>(pins)... })
 	{
-		static constexpr bool isStatic = entt::component_traits<std::remove_const_t<Class>>::page_size == 0 ||
-			IsAlwaysStatic;
+		static constexpr size_t numOfNamesRequires = sizeof...(Args) + !std::is_same_v<void, Ret>;
+		static_assert(sizeof...(Pins) >= numOfNamesRequires, "Too little names were provided. Keep in mind that return values must also be named.");
+		static_assert(sizeof...(Pins) <= numOfNamesRequires, "Too many names were provided.");
+	}
+
+	template<typename Class, typename Func, typename Derived, typename Ret, typename... Args, EventFlags Flags>
+	void BindEvent(MetaType& type, const EventType<Derived, Ret(Args...), Flags>& event, Func&& func)
+	{
+		static constexpr bool isProvidedFuncStatic = std::is_invocable_v<decltype(func), World&, entt::entity, Args...>;
+		static constexpr bool isProvidedFuncMember = std::is_invocable_v<decltype(func), Class&, World&, entt::entity, Args...>;
+		static constexpr bool isComponentCompletelyEmpty = entt::component_traits<std::remove_const_t<Class>>::page_size == 0;
+
+		static constexpr bool isStaticOrMember = isProvidedFuncStatic || isProvidedFuncMember;
+
+		static_assert(isStaticOrMember, "The parameters of the provided function do not match that of the event.");
+		static_assert(!isComponentCompletelyEmpty || isProvidedFuncStatic, "EnTT does not construct components that are completely empty. All functions of this component that you want to bind to an event must be static.");
 
 		MetaFunc* eventFunc{};
 
-		if constexpr (!isStatic)
+		if constexpr (isProvidedFuncStatic)
 		{
-			ASSERT(type.GetTypeId() == MakeStrippedTypeId<Class>());
-			static_assert(std::is_invocable_v<decltype(func), Class&, Args...>, "The parameters of the event do not match the parameters of the function");
-
-			eventFunc = &type.AddFunc(std::function<Ret(Class&, Args...)>{ std::forward<Func>(func) }, event.mName);
+			eventFunc = &type.AddFunc(std::function<Ret(World&, entt::entity, Args...)>{ std::forward<Func>(func) }, event.mName);
+			eventFunc->GetProperties().Add(Internal::sIsEventStaticTag);
 		}
 		else
 		{
-			static_assert(std::is_invocable_v<decltype(func), Args...>, "The parameters of the event do not match the parameters of the function");
-
-			eventFunc = &type.AddFunc(std::function<Ret(Args...)>{ std::forward<Func>(func) }, event.mName);
-			eventFunc->GetProperties().Add(Internal::sIsEventStaticTag);
+			ASSERT(type.GetTypeId() == MakeStrippedTypeId<Class>());
+			eventFunc = &type.AddFunc(std::function<Ret(Class&, World&, entt::entity, Args...)>{ std::forward<Func>(func) }, event.mName);
 		}
 		eventFunc->GetProperties().Add(Internal::sIsEventProp);
 	}

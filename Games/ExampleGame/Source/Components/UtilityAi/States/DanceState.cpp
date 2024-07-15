@@ -10,6 +10,7 @@
 #include "Components/AnimationRootComponent.h"
 #include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 void Game::DanceState::OnAiTick(CE::World& world, const entt::entity owner, const float)
 {
@@ -54,9 +55,9 @@ CE::MetaType Game::DanceState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<DanceState>{}, "DanceState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &DanceState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &DanceState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &DanceState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sOnAITick, &DanceState::OnAiTick);
+	BindEvent(type, CE::sOnAIEvaluate, &DanceState::OnAiEvaluate);
+	BindEvent(type, CE::sOnAIStateEnter, &DanceState::OnAiStateEnterEvent);
 
 	type.AddField(&DanceState::mDanceAnimation, "Dance Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

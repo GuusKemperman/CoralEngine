@@ -75,16 +75,19 @@ namespace CE
 	class AbilitiesOnCharacterComponent
 	{
 	public:
+		void OnBeginPlay(World&, entt::entity);
+
+#ifdef EDITOR
+		void OnInspect(World& world, entt::entity owner);
+#endif // EDITOR
+
 		std::vector<AbilityInstance> mAbilitiesToInput{};
 		std::vector<WeaponInstance> mWeaponsToInput{};
 
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-		void OnBeginPlay(World&, entt::entity);
-#ifdef EDITOR
-		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
-#endif // EDITOR
+
 		REFLECT_AT_START_UP(AbilitiesOnCharacterComponent);
 	};
 

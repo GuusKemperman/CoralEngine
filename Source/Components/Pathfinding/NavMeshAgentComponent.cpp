@@ -188,7 +188,7 @@ CE::MetaType CE::NavMeshAgentComponent::Reflect()
 	metaType.AddField(&NavMeshAgentComponent::mTarget, "mTarget");
 	metaType.AddField(&NavMeshAgentComponent::mAvoidanceDistance, "mAvoidanceDistance").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&NavMeshAgentComponent::mAdditionalDistanceAlongPathToTarget, "mAdditionalDistanceAlongPathToTarget").GetProperties().Add(Props::sIsScriptableTag);
-	BindEvent(metaType, sConstructEvent, &NavMeshAgentComponent::OnConstruct);
+	BindEvent(metaType, sOnConstruct, &NavMeshAgentComponent::OnConstruct);
 	ReflectComponentType<NavMeshAgentComponent>(metaType);
 
 	return metaType;

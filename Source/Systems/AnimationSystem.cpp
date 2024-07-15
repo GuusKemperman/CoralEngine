@@ -132,7 +132,7 @@ std::optional<CE::AnimationSystem::FramesToBlend> CE::AnimationSystem::GetFrames
 }
 
 CE::AnimationSystem::AnimationSystem() :
-	mOnAnimationFinishEvents(GetAllBoundEvents(sAnimationFinishEvent))
+	mOnAnimationFinishEvents(GetAllBoundEvents(sOnAnimationFinish))
 {
 }
 

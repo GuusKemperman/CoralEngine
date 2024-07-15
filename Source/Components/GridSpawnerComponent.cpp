@@ -185,8 +185,8 @@ CE::MetaType CE::GridSpawnerComponent::Reflect()
 	type.AddFunc(&GridSpawnerComponent::SpawnGrid, "Spawn Grid").GetProperties().Add(Props::sCallFromEditorTag).Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 	type.AddFunc(&GridSpawnerComponent::ClearGrid, "Clear Grid").GetProperties().Add(Props::sCallFromEditorTag).Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	BindEvent(type, sConstructEvent, &GridSpawnerComponent::OnConstruct);
-	BindEvent(type, sBeginPlayEvent, &GridSpawnerComponent::OnBeginPlay);
+	BindEvent(type, sOnConstruct, &GridSpawnerComponent::OnConstruct);
+	BindEvent(type, sOnBeginPlay, &GridSpawnerComponent::OnBeginPlay);
 
 	ReflectComponentType<GridSpawnerComponent>(type);
 	return type;

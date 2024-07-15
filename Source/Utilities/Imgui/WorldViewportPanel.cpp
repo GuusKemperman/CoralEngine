@@ -115,7 +115,7 @@ void CE::Internal::CallDrawGizmoEvents(World& world, const std::vector<entt::ent
 			continue;
 		}
 
-		const std::optional<BoundEvent> event = TryGetEvent(*type, sDrawGizmoEvent);
+		const std::optional<BoundEvent> event = TryGetEvent(*type, sOnDrawGizmo);
 
 		if (!event.has_value())
 		{

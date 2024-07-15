@@ -12,7 +12,7 @@
 #include "Assets/Script.h"
 #include "Core/AssetManager.h"
 #include "Core/VirtualMachine.h"
-#include "Scripting/ScriptEvents.h"
+#include "Utilities/Events.h"
 
 namespace CE::Internal
 {
@@ -45,18 +45,17 @@ CE::ScriptFunc::ScriptFunc(const Script& script, const std::string_view name) :
 	mProps(std::make_unique<MetaProps>())
 {}
 
-CE::ScriptFunc::ScriptFunc(const Script& script, const ScriptEvent& event) :
-	mName(event.mBasedOnEvent.get().mName),
+CE::ScriptFunc::ScriptFunc(const Script& script, const EventBase& event) :
+	mName(event.mName),
 	mNameOfScriptAsset(script.GetName()),
 	mTypeIdOfScript(Name::HashString(script.GetName())),
-	mReturns(event.mReturnValueToShowToUser.has_value() ? 
-		std::optional<ScriptVariableTypeData> { ScriptVariableTypeData{ event.mReturnValueToShowToUser->mTypeTraits, event.mReturnValueToShowToUser->mName } } :
+	mReturns(event.mOutputPin.mTypeTraits != MakeTypeTraits<void>() ? 
+		std::optional<ScriptVariableTypeData>{ ScriptVariableTypeData{ event.mOutputPin.mTypeTraits, event.mOutputPin.mName } } :
 		std::nullopt),
 	mBasedOnEvent(&event),
-	mProps(std::make_unique<MetaProps>()),
-	mIsStatic(event.mBasedOnEvent.get().mIsAlwaysStatic)
+	mProps(std::make_unique<MetaProps>())
 {
-	for (const MetaFuncNamedParam& param : event.mParamsToShowToUser)
+	for (const MetaFuncNamedParam& param : event.mInputPins)
 	{
 		mParams.emplace_back(param.mTypeTraits, param.mName);
 	}
@@ -227,12 +226,14 @@ void CE::ScriptFunc::CollectErrors(ScriptErrorInserter inserter, const Script& o
 		}
 	}
 
+	const auto allEvents = GetAllEvents();
+
 	// Check if our name is not an event
 	if (!IsEvent()
-		&& std::any_of(sAllScriptableEvents.begin(), sAllScriptableEvents.end(),
-			[ourName = mName](const ScriptEvent& event)
+		&& std::any_of(allEvents.begin(), allEvents.end(),
+			[ourName = mName](const EventBase& event)
 			{
-				return event.mBasedOnEvent.get().mName == ourName;
+				return event.mName == ourName;
 			}))
 	{
 		inserter = { ScriptError::Type::NameNotUnique, *this, Format("Name {} is reserved for the event of the same name", mName) };
@@ -667,7 +668,7 @@ void CE::ScriptFunc::SerializeTo(BinaryGSONObject& object) const
 {
 	if (IsEvent())
 	{
-		object.AddGSONMember("event") << std::string{ mBasedOnEvent->mBasedOnEvent.get().mName };
+		object.AddGSONMember("event") << std::string{ mBasedOnEvent->mName };
 	}
 	else
 	{
@@ -754,9 +755,10 @@ std::optional<CE::ScriptFunc> CE::ScriptFunc::DeserializeFrom(const BinaryGSONOb
 		std::string eventName{};
 		*serializedEventName >> eventName;
 
-		for (const ScriptEvent& event : sAllScriptableEvents)
+		for (const EventBase& event : GetAllEvents())
 		{
-			if (event.mBasedOnEvent.get().mName != eventName)
+			if ((static_cast<int>(event.mFlags) & static_cast<int>(EventFlags::NotScriptable))
+				|| event.mName != eventName)
 			{
 				continue;
 			}

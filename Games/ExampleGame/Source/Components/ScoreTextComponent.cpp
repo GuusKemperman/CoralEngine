@@ -51,8 +51,8 @@ CE::MetaType Game::ScoreTextComponent::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<ScoreTextComponent>{}, "ScoreTextComponent" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sTickEvent, &ScoreTextComponent::OnTick);
-	BindEvent(type, CE::sBeginPlayEvent, &ScoreTextComponent::OnBeginPlay);
+	BindEvent(type, CE::sOnTick, &ScoreTextComponent::OnTick);
+	BindEvent(type, CE::sOnBeginPlay, &ScoreTextComponent::OnBeginPlay);
 
 	type.AddField(&ScoreTextComponent::mDisplayHighScore, "Display High Score").GetProperties().Add(CE::Props::sIsScriptableTag);
 

@@ -22,13 +22,13 @@
 
 CE::AbilitySystem::AbilitySystem()
 {
-    sAbilityActivateEvents = CE::GetAllBoundEvents(CE::sAbilityActivateEvent);
-    sReloadStartedEvents = CE::GetAllBoundEvents(CE::sReloadStartedEvent);
-    sReloadCompletedEvents = CE::GetAllBoundEvents(CE::sReloadCompletedEvent);
-    sEnemyKilledEvents = CE::GetAllBoundEvents(CE::sEnemyKilledEvent);
-    sGettingHitEvents = CE::GetAllBoundEvents(CE::sGettingHitEvent);
-    sAbilityHitEvents = CE::GetAllBoundEvents(CE::sAbilityHitEvent);
-    sCritEvents = CE::GetAllBoundEvents(CE::sCritEvent);
+    sAbilityActivateEvents = CE::GetAllBoundEvents(CE::sOnAbilityActivate);
+    sReloadStartedEvents = CE::GetAllBoundEvents(CE::sOnReloadStarted);
+    sReloadCompletedEvents = CE::GetAllBoundEvents(CE::sOnReloadCompleted);
+    sEnemyKilledEvents = CE::GetAllBoundEvents(CE::sOnEnemyKilled);
+    sGettingHitEvents = CE::GetAllBoundEvents(CE::sOnGettingHit);
+    sAbilityHitEvents = CE::GetAllBoundEvents(CE::sOnAbilityHit);
+    sCritEvents = CE::GetAllBoundEvents(CE::sOnCrit);
 }
 
 void CE::AbilitySystem::Update(World& world, float dt)

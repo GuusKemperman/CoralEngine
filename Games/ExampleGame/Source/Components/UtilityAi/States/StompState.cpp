@@ -123,9 +123,9 @@ CE::MetaType Game::StompState::Reflect()
 	type.AddField(&StompState::mCurrentTime, "Current Time").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 	type.AddField(&StompState::mStompAnimation, "Stomp Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 	
-	BindEvent(type, CE::sAITickEvent, &StompState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &StompState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &StompState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sOnAITick, &StompState::OnAiTick);
+	BindEvent(type, CE::sOnAIEvaluate, &StompState::OnAiEvaluate);
+	BindEvent(type, CE::sOnAIStateEnter, &StompState::OnAiStateEnterEvent);
 
 	CE::ReflectComponentType<StompState>(type);
 	return type;

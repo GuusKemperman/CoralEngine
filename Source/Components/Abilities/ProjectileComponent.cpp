@@ -18,7 +18,7 @@ CE::MetaType CE::ProjectileComponent::Reflect()
 	metaType.AddField(&ProjectileComponent::mDirectionOffsetAngle, "mDirectionOffsetAngle").GetProperties().Add(Props::sIsScriptableTag);
 
 #ifdef EDITOR
-	BindEvent(metaType, sInspectEvent, &ProjectileComponent::OnInspect);
+	BindEvent(metaType, sOnInspect, &ProjectileComponent::OnInspect);
 #endif // EDITOR
 
 	ReflectComponentType<ProjectileComponent>(metaType);
@@ -27,7 +27,7 @@ CE::MetaType CE::ProjectileComponent::Reflect()
 }
 
 #ifdef EDITOR
-void CE::ProjectileComponent::OnInspect(World&, const std::vector<entt::entity>&)
+void CE::ProjectileComponent::OnInspect(World&, entt::entity)
 {
 	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.1f, 1.0f));
 	ImGui::Text("Destroy On Range Reached (?)");

@@ -1,12 +1,6 @@
 #include "Precomp.h"
 #include "Core/Engine.h"
 
-// For the UNIT_TEST_DECLARATION macro used in the Generated file
-#include "Core/UnitTests.h"
-
-// Forces initialization of otherwise unused static variables
-#include "../Intermediate/Generated/Generated.h"
-
 int main(int argc, char* argv[])
 {
 	std::cout << "Entered main - GameDir: " << GAME_DIR << std::endl;

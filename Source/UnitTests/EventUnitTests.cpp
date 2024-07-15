@@ -106,7 +106,7 @@ UNIT_TEST(Events, OnTick)
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfTicks", 0));
 
-	world.Tick(sFixedTickEventStepSize * .5f);
+	world.Tick(sOnFixedTickStepSize * .5f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfTicks", 1));
 
@@ -122,15 +122,15 @@ UNIT_TEST(Events, OnFixedTick)
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfFixedTicks", 0));
 
-	world.Tick(sFixedTickEventStepSize * .5f);
+	world.Tick(sOnFixedTickStepSize * .5f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfFixedTicks", 1));
 
-	world.Tick(sFixedTickEventStepSize * .6f);
+	world.Tick(sOnFixedTickStepSize * .6f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfFixedTicks", 2));
 
-	world.Tick(sFixedTickEventStepSize * .5f);
+	world.Tick(sOnFixedTickStepSize * .5f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfFixedTicks", 2));
 
@@ -241,11 +241,11 @@ UNIT_TEST(Events, OnAiTick)
 
 	world.GetRegistry().AddComponent<EnemyAiControllerComponent>(owner);
 
-	world.Tick(sFixedTickEventStepSize * .5f);
+	world.Tick(sOnFixedTickStepSize * .5f);
 
 	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiTicks == 1);
 
-	world.Tick(sFixedTickEventStepSize * .5f);
+	world.Tick(sOnFixedTickStepSize * .5f);
 
 	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiTicks == 2);
 
@@ -261,11 +261,11 @@ UNIT_TEST(Events, OnAiEvaluate)
 
 	world.GetRegistry().AddComponent<EnemyAiControllerComponent>(owner);
 
-	world.Tick(sFixedTickEventStepSize * .5f);
+	world.Tick(sOnFixedTickStepSize * .5f);
 
 	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiEvaluates == 1);
 
-	world.Tick(sFixedTickEventStepSize * .5f);
+	world.Tick(sOnFixedTickStepSize * .5f);
 
 	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiEvaluates == 2);
 

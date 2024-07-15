@@ -13,6 +13,7 @@
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/Abilities/CharacterComponent.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 #include "Utilities/Random.h"
 
 void Game::ChasingState::OnAiStateEnter(CE::World& world, const entt::entity owner) const
@@ -72,10 +73,10 @@ CE::MetaType Game::ChasingState::Reflect()
 	type.AddField(&ChasingState::mLowerSpeedRange, "The Lowest Random Speed Range").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChasingState::mUpperSpeedRange, "The Highest Random Speed Range").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAIStateEnterEvent, &ChasingState::OnAiStateEnter);
-	BindEvent(type, CE::sAIStateExitEvent, &ChasingState::OnAiStateExit);
-	BindEvent(type, CE::sAIEvaluateEvent, &ChasingState::OnAiEvaluate);
-	BindEvent(type, CE::sBeginPlayEvent, &ChasingState::OnBeginPlay);
+	BindEvent(type, CE::sOnAIStateEnter, &ChasingState::OnAiStateEnter);
+	BindEvent(type, CE::sOnAIStateExit, &ChasingState::OnAiStateExit);
+	BindEvent(type, CE::sOnAIEvaluate, &ChasingState::OnAiEvaluate);
+	BindEvent(type, CE::sOnBeginPlay, &ChasingState::OnBeginPlay);
 
 	type.AddField(&ChasingState::mChasingAnimation, "Chasing Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

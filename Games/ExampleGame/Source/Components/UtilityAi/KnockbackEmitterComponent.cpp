@@ -3,6 +3,7 @@
 
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
 #include "Components/UtililtyAi/States/KnockBackState.h"
+#include "Utilities/AbilityFunctionality.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Registry.h"
 #include "World/World.h"
@@ -43,7 +44,7 @@ CE::MetaType Game::KnockbackEmitterComponent::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<KnockbackEmitterComponent>{}, "KnockbackEmitterComponent" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAbilityHitEvent, &KnockbackEmitterComponent::OnAbilityHit);
+	BindEvent(type, CE::sOnAbilityHit, &KnockbackEmitterComponent::OnAbilityHit);
 
 	CE::ReflectComponentType<KnockbackEmitterComponent>(type);
 	return type;

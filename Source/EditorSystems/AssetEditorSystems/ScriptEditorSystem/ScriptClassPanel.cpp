@@ -4,7 +4,7 @@
 // since the amount of code made it hard to find what you needed when
 // it was all in one file.
 #include "EditorSystems/AssetEditorSystems/ScriptEditorSystem.h"
-#include "Scripting/ScriptEvents.h"
+#include "Utilities/Events.h"
 
 #include "Utilities/Imgui/ImguiHelpers.h"
 
@@ -37,14 +37,15 @@ void CE::ScriptEditorSystem::DisplayEventsOverview()
 
 	if (ImGui::BeginPopup("AddEventPopUp"))
 	{
-		for (const ScriptEvent& event : sAllScriptableEvents)
+		for (const EventBase& event : GetAllEvents())
 		{
-			if (mAsset.TryGetFunc(event.mBasedOnEvent.get().mName) != nullptr)
+			if ((static_cast<int>(event.mFlags) & static_cast<int>(EventFlags::NotScriptable))
+				|| mAsset.TryGetFunc(event.mName) != nullptr)
 			{
 				continue;
 			}
 
-			if (ImGui::Button(event.mBasedOnEvent.get().mName.data()))
+			if (ImGui::Button(event.mName.data()))
 			{
 				SelectFunction(&mAsset.AddEvent(event));
 			}

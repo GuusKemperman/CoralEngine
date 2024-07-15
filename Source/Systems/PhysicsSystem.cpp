@@ -17,9 +17,9 @@
 #include "World/Physics.h"
 
 CE::PhysicsSystem::PhysicsSystem() :
-	mOnCollisionEntryEvents(GetAllBoundEvents(sCollisionEntryEvent)),
-	mOnCollisionStayEvents(GetAllBoundEvents(sCollisionStayEvent)),
-	mOnCollisionExitEvents(GetAllBoundEvents(sCollisionExitEvent))
+	mOnCollisionEntryEvents(GetAllBoundEvents(sOnCollisionEntry)),
+	mOnCollisionStayEvents(GetAllBoundEvents(sOnCollisionStay)),
+	mOnCollisionExitEvents(GetAllBoundEvents(sOnCollisionExit))
 {
 }
 
@@ -366,10 +366,6 @@ void CE::PhysicsSystem::DebugDrawing(const World& world)
 void CE::PhysicsSystem::CallEvent(const BoundEvent& event, World& world, entt::sparse_set& storage,
         entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint)
 {
-	static_assert(std::is_same_v<decltype(sCollisionEntryEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
-	static_assert(std::is_same_v<decltype(sCollisionStayEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
-	static_assert(std::is_same_v<decltype(sCollisionExitEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
-
 	// Tombstone check, is needed
 	if (!storage.contains(owner))
 	{

@@ -29,7 +29,7 @@ void CE::AITickSystem::Update(World& world, float dt)
 			continue;
 		}
 
-		const std::optional<BoundEvent> aiTickEvent = TryGetEvent(*currentAIController.mCurrentState, sAITickEvent);
+		const std::optional<BoundEvent> aiTickEvent = TryGetEvent(*currentAIController.mCurrentState, sOnAITick);
 
 		if (!aiTickEvent.has_value())
 		{
@@ -124,8 +124,8 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 
 		if (currentAIController.mCurrentState != currentAIController.mPreviousState)
 		{
-			CallTransitionEvent(sAIStateExitEvent, currentAIController.mPreviousState, world, entity);
-			CallTransitionEvent(sAIStateEnterEvent, currentAIController.mCurrentState, world, entity);
+			CallTransitionEvent(sOnAIStateExit, currentAIController.mPreviousState, world, entity);
+			CallTransitionEvent(sOnAIStateEnter, currentAIController.mCurrentState, world, entity);
 		}
 	}
 }

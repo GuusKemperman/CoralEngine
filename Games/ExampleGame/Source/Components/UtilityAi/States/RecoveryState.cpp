@@ -12,6 +12,7 @@
 #include "Assets/Animation/Animation.h"
 #include "Components/PlayerComponent.h"
 #include "Components/TransformComponent.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 void Game::RecoveryState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -63,10 +64,10 @@ CE::MetaType Game::RecoveryState::Reflect()
 	type.AddField(&RecoveryState::mMaxRechargeTime, "Max Recovery Time").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&RecoveryState::mRechargeCooldown, "Recovery Cooldown").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &RecoveryState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &RecoveryState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &RecoveryState::OnAiStateEnterEvent);
-	BindEvent(type, CE::sBeginPlayEvent, &RecoveryState::OnBeginPlayEvent);
+	BindEvent(type, CE::sOnAITick, &RecoveryState::OnAiTick);
+	BindEvent(type, CE::sOnAIEvaluate, &RecoveryState::OnAiEvaluate);
+	BindEvent(type, CE::sOnAIStateEnter, &RecoveryState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sOnBeginPlay, &RecoveryState::OnBeginPlayEvent);
 
 	type.AddField(&RecoveryState::mRecoveryAnimation, "Recovery Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

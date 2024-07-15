@@ -16,7 +16,7 @@ CE::MetaType Game::CorpseComponent::Reflect()
 	CE::MetaProps& props = type.GetProperties();
 	props.Add(CE::Props::sIsScriptableTag);
 
-	CE::BindEvent(type, CE::sBeginPlayEvent, &CorpseComponent::OnBeginPlay);
+	CE::BindEvent(type, CE::sOnBeginPlay, &CorpseComponent::OnBeginPlay);
 
 	type.AddField(&CorpseComponent::mTimeOfDeath, "mTimeOfDeath").GetProperties().Add(CE::Props::sIsScriptableTag);
 

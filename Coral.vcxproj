@@ -632,7 +632,6 @@
     </ClCompile>
     <ClCompile Include="Source\Platform\PC\Rendering\SkinnedMeshPC.cpp" />
     <ClCompile Include="Source\Components\Abilities\CharacterComponent.cpp" />
-    <ClCompile Include="Source\Scripting\ScriptEvents.cpp" />
     <ClCompile Include="Source\Components\PointLightComponent.cpp" />
     <ClCompile Include="Source\Utilities\Geometry2d.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshAgentComponent.cpp" />
@@ -1089,7 +1088,6 @@
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
     <ClInclude Include="Include\Systems\AbilitySystem.h" />
-    <ClInclude Include="Include\Scripting\ScriptEvents.h" />
     <ClInclude Include="Include\Assets\Animation\Bone.h" />
     <ClInclude Include="Include\Systems\AnimationSystem.h" />
     <ClInclude Include="Include\Systems\TickEventSystems.h" />

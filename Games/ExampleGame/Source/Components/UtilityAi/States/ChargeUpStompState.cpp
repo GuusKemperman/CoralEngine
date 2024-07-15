@@ -15,6 +15,7 @@
 #include "Systems/AbilitySystem.h"
 #include "Utilities/AiFunctionality.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 void Game::ChargeUpStompState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -96,10 +97,10 @@ CE::MetaType Game::ChargeUpStompState::Reflect()
 	type.AddField(&ChargeUpStompState::mVFX, "VFX").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChargeUpStompState::mSpawnedVFX, "Spawned VFX").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 
-	BindEvent(type, CE::sAITickEvent, &ChargeUpStompState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &ChargeUpStompState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &ChargeUpStompState::OnAiStateEnterEvent);
-	BindEvent(type, CE::sAIStateExitEvent, &ChargeUpStompState::OnAiStateExitEvent);
+	BindEvent(type, CE::sOnAITick, &ChargeUpStompState::OnAiTick);
+	BindEvent(type, CE::sOnAIEvaluate, &ChargeUpStompState::OnAiEvaluate);
+	BindEvent(type, CE::sOnAIStateEnter, &ChargeUpStompState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sOnAIStateExit, &ChargeUpStompState::OnAiStateExitEvent);
 
 	CE::ReflectComponentType<ChargeUpStompState>(type);
 	return type;

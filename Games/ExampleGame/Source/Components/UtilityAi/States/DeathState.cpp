@@ -218,10 +218,10 @@ CE::MetaType Game::DeathState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<DeathState>{}, "DeathState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sTickEvent, &DeathState::OnTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &DeathState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &DeathState::OnAiStateEnterEvent);
-	BindEvent(type, CE::sAnimationFinishEvent, &DeathState::OnFinishAnimationEvent);
+	BindEvent(type, CE::sOnTick, &DeathState::OnTick);
+	BindEvent(type, CE::sOnAIEvaluate, &DeathState::OnAiEvaluate);
+	BindEvent(type, CE::sOnAIStateEnter, &DeathState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sOnAnimationFinish, &DeathState::OnFinishAnimationEvent);
 
 	type.AddField(&DeathState::mDeathAnimation, "Death Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mLightFadeOutDuration, "Light Fade Out Duration").GetProperties().Add(CE::Props::sIsScriptableTag);

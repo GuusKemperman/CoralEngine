@@ -18,6 +18,12 @@
 #include "World/Registry.h"
 #include "Rendering/Renderer.h"
 
+// For the UNIT_TEST_DECLARATION macro used in the Generated file
+#include "Core/UnitTests.h"
+
+// Forces initialization of otherwise unused static variables
+#include "../Intermediate/Generated/Generated.h"
+
 CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 {
 	Device::sIsHeadless = argc >= 2
@@ -146,6 +152,7 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 	{
 		return;
 	}
+
 
 #ifndef EDITOR
 	AssetHandle<Level> level = AssetManager::Get().TryGetAsset<Level>(starterLevel);

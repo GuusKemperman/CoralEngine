@@ -39,7 +39,7 @@ CE::MetaType CE::PointLightComponent::Reflect()
 	metaType.AddField(&PointLightComponent::mRange, "mRange").GetProperties().Add(Props::sIsScriptableTag);
 
 #ifdef EDITOR
-	BindEvent(metaType, sDrawGizmoEvent, &PointLightComponent::OnDrawGizmos);
+	BindEvent(metaType, sOnDrawGizmo, &PointLightComponent::OnDrawGizmos);
 #endif // EDITOR
 
 	ReflectComponentType<PointLightComponent>(metaType);

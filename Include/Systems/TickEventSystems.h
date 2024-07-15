@@ -29,12 +29,12 @@ namespace CE
 		friend ReflectAccess;
 		static MetaType Reflect();
 
-		std::vector<BoundEvent> mBoundEvents = GetAllBoundEvents(sTickEvent);
+		std::vector<BoundEvent> mBoundEvents = GetAllBoundEvents(sOnTick);
 	};
 
 	template <bool IsFixed, TickResponsibility Responsibility>
 	TickEventSystem<IsFixed, Responsibility>::TickEventSystem() :
-		mBoundEvents(IsFixed ? GetAllBoundEvents(sFixedTickEvent) : GetAllBoundEvents(sTickEvent))
+		mBoundEvents(IsFixed ? GetAllBoundEvents(sOnFixedTick) : GetAllBoundEvents(sOnTick))
 	{
 		if constexpr (Responsibility == TickResponsibility::BeforeBeginPlay)
 		{
@@ -77,27 +77,12 @@ namespace CE
 			{
 				if (boundEvent.mIsStatic)
 				{
-					if constexpr (IsFixed)
-					{
-						boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity);
-					}
-					else
-					{
-						boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity, dt);
-					}
+					boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity, dt);
 				}
 				else
 				{
 					MetaAny component{ boundEvent.mType.get(), storage->value(entity), false };
-
-					if constexpr (IsFixed)
-					{
-						boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, entity);
-					}
-					else
-					{
-						boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, entity, dt);
-					}
+					boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, entity, dt);
 				}
 			}
 		}
@@ -110,7 +95,7 @@ namespace CE
 
 		if constexpr (IsFixed)
 		{
-			traits.mFixedTickInterval = sFixedTickEventStepSize;
+			traits.mFixedTickInterval = sOnFixedTickStepSize;
 		}
 
 		traits.mShouldTickBeforeBeginPlay = Responsibility == TickResponsibility::BeforeBeginPlay;

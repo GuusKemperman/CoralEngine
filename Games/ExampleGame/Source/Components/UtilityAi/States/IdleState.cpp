@@ -10,6 +10,7 @@
 #include "Components/TransformComponent.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 float Game::IdleState::OnAiEvaluate(const CE::World&, entt::entity)
 {
@@ -28,8 +29,8 @@ CE::MetaType Game::IdleState::Reflect()
 	auto type = CE::MetaType{CE::MetaType::T<IdleState>{}, "IdleState"};
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 	
-	BindEvent(type, CE::sAIEvaluateEvent, &IdleState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &IdleState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sOnAIEvaluate, &IdleState::OnAiEvaluate);
+	BindEvent(type, CE::sOnAIStateEnter, &IdleState::OnAiStateEnterEvent);
 
 	type.AddField(&IdleState::mIdleAnimation, "Idle Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

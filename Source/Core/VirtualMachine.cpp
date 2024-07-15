@@ -14,7 +14,6 @@
 #include "Meta/MetaTools.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Scripting/ScriptConfig.h"
-#include "Scripting/ScriptEvents.h"
 #include "Utilities/Time.h"
 
 void CE::VirtualMachine::PostConstruct()
@@ -166,7 +165,7 @@ CE::FuncResult CE::VirtualMachine::ExecuteScriptFunction(MetaFunc::DynamicArgs a
 		{
 			const Span<const ScriptPin> entryPins = entryNode->GetOutputs(func);
 
-			// Push the arguments we received to the cache. If this is a field function,
+			// Push the arguments we received to the cache. If this is a member function,
 			// skip the first argument; there is no pin for it in the entry node
 			for (uint32 argNum = !func.IsStatic(), pinIndex = 0; argNum < args.size();)
 			{
