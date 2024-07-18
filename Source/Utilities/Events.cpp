@@ -155,6 +155,7 @@ void CE::EventBase::Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, con
 		});
 }
 
+#ifdef EDITOR
 namespace CE::Internal
 {
 	static void InspectOnTickEvent(ScriptFunc& scriptFunc)
@@ -200,3 +201,4 @@ void CE::OnFixedTick::OnDetailsInspect(ScriptFunc& scriptFunc) const
 {
 	Internal::InspectOnTickEvent(scriptFunc);
 }
+#endif // EDITOR
