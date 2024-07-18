@@ -7,16 +7,9 @@
 #include "Utilities/Reflect/ReflectComponentType.h"
 
 #ifdef EDITOR
-void CE::ActiveAbilityComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
+void CE::ActiveAbilityComponent::OnInspect(World&, entt::entity)
 {
-	auto& reg = world.GetRegistry();
-	if (entities.size() > 1)
-	{
-		ImGui::TextWrapped("Cannot inspect more than one Active Ability Component at a time.");
-		return;
-	}
-	auto& component = reg.Get<ActiveAbilityComponent>(entities[0]);
-	ShowInspectUIReadOnly("CastByCharacterTeamID", component.mCastByCharacterData.mTeamId);
+	ShowInspectUIReadOnly("CastByCharacterTeamID", mCastByCharacterData.mTeamId);
 }
 #endif // EDITOR
 
@@ -28,7 +21,7 @@ CE::MetaType CE::ActiveAbilityComponent::Reflect()
 	metaType.AddField(&ActiveAbilityComponent::mCastByEntity, "mCastByEntity").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoSerializeTag);
 	metaType.AddField(&ActiveAbilityComponent::mCastByCharacterData, "mCastByCharacterData").GetProperties().Add(Props::sIsScriptableTag).Add(Props::sNoInspectTag).Add(Props::sNoSerializeTag);
 #ifdef EDITOR
-	BindEvent(metaType, sInspectEvent, &ActiveAbilityComponent::OnInspect);
+	BindEvent(metaType, sOnInspect, &ActiveAbilityComponent::OnInspect);
 #endif // EDITOR
 
 	ReflectComponentType<ActiveAbilityComponent>(metaType);

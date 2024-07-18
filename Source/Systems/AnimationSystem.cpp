@@ -11,9 +11,10 @@
 #include "Assets/Animation/Animation.h"
 #include "Assets/Animation/Bone.h"
 #include "Meta/MetaType.h"
+#include "World/EventManager.h"
 
 CE::AnimationSystem::BakedAnimation::BakedAnimation(const AssetHandle<Animation>& animation,
-	const AssetHandle<SkinnedMesh>& skinnedMesh)
+                                                    const AssetHandle<SkinnedMesh>& skinnedMesh)
 {
 	const auto& addBone = [&](const auto& self, const AnimNode& node, BakedFrame& frame, float time, const glm::mat4& parent = glm::mat4{1.0f})
 		{
@@ -131,11 +132,6 @@ std::optional<CE::AnimationSystem::FramesToBlend> CE::AnimationSystem::GetFrames
 	return FramesToBlend{ bakedAnimation.mFrames[startIndex], bakedAnimation.mFrames[endIndex], blendWeight };
 }
 
-CE::AnimationSystem::AnimationSystem() :
-	mOnAnimationFinishEvents(GetAllBoundEvents(sAnimationFinishEvent))
-{
-}
-
 void CE::AnimationSystem::Update(World& world, float dt)
 {
 	Registry& reg = world.GetRegistry();
@@ -152,6 +148,8 @@ void CE::AnimationSystem::Update(World& world, float dt)
 		if ((animationRootComponent.mCurrentTimeStamp / animationRootComponent.mCurrentAnimation->mDuration) > 1.0f)
 		{
 			animationRootComponent.mCurrentTimeStamp = fmod(animationRootComponent.mCurrentTimeStamp, animationRootComponent.mCurrentAnimation->mDuration);
+
+			world.GetEventManager().InvokeEventForAllComponentsOnEntity(sOnAnimationFinish, entity);
 
 			for (const BoundEvent& boundEvent : mOnAnimationFinishEvents)
 			{

@@ -4,13 +4,12 @@
 #include <entt/entity/runtime_view.hpp>
 
 #include "Components/Abilities/CharacterComponent.h"
-#include "Meta/MetaType.h"
-#include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Components/AnimationRootComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
+#include "Assets/Prefabs/Prefab.h"
 #include "Components/PlayerComponent.h"
 #include "Components/PointLightComponent.h"
 #include "Components/SkinnedMeshComponent.h"
@@ -18,11 +17,9 @@
 #include "Components/TransformComponent.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
 #include "Components/UtilityAi/EnemyAiControllerComponent.h"
-#include "Systems/AbilitySystem.h"
-#include "Utilities/DrawDebugHelpers.h"
-#include "Components/Abilities/AbilitiesOnCharacterComponent.h"
-#include "Assets/Prefabs/Prefab.h"
 #include "Components/ScoreComponent.h"
+#include "Utilities/AbilityFunctionality.h"
+#include "World/EventManager.h"
 
 void Game::DeathState::OnTick(CE::World& world, const entt::entity owner, const float dt)
 {
@@ -96,27 +93,7 @@ void Game::DeathState::OnAiStateEnterEvent(CE::World& world, entt::entity owner)
 	if (!playerView.empty())
 	{
 		const auto player = playerView.front();
-		auto& boundEvents = CE::AbilitySystem::GetEnemyKilledEvents();
-		for (const CE::BoundEvent& boundEvent : boundEvents)
-		{
-			entt::sparse_set* const storage = registry.Storage(boundEvent.mType.get().GetTypeId());
-
-			if (storage == nullptr
-				|| !storage->contains(player))
-			{
-				continue;
-			}
-
-			if (boundEvent.mIsStatic)
-			{
-				boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, player);
-			}
-			else
-			{
-				CE::MetaAny component{ boundEvent.mType, storage->value(player), false };
-				boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, player, owner);
-			}
-		}
+		world.GetEventManager().InvokeEventForAllComponentsOnEntity(CE::sOnEnemyKilled, player, owner);
 	}
 
 	auto* animationRootComponent = registry.TryGet<CE::AnimationRootComponent>(owner);
@@ -218,10 +195,10 @@ CE::MetaType Game::DeathState::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<DeathState>{}, "DeathState" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sTickEvent, &DeathState::OnTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &DeathState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &DeathState::OnAiStateEnterEvent);
-	BindEvent(type, CE::sAnimationFinishEvent, &DeathState::OnFinishAnimationEvent);
+	BindEvent(type, CE::sOnTick, &DeathState::OnTick);
+	BindEvent(type, CE::sOnAIEvaluate, &DeathState::OnAiEvaluate);
+	BindEvent(type, CE::sOnAIStateEnter, &DeathState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sOnAnimationFinish, &DeathState::OnFinishAnimationEvent);
 
 	type.AddField(&DeathState::mDeathAnimation, "Death Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&DeathState::mLightFadeOutDuration, "Light Fade Out Duration").GetProperties().Add(CE::Props::sIsScriptableTag);

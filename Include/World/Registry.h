@@ -10,16 +10,10 @@ namespace CE
 {
 	class MetaType;
 	class MetaAny;
-
 	class Prefab;
 	class PrefabEntityFactory;
 	class TransformComponent;
 	class System;
-
-	namespace Internal
-	{
-		struct DestroyCallBackInstaller;
-	}
 
 	// Wrapper around the entt registry.
 	class Registry
@@ -163,12 +157,8 @@ namespace CE
 
 		void CallEndPlayEventsForEntity(entt::sparse_set& storage, entt::entity entity, const BoundEvent& endPlayEvent);
 
-		template <typename Component>
-		static void DestroyCallback(entt::registry&, entt::entity entity);
-
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
 		friend World;
-		friend Internal::DestroyCallBackInstaller;
 
 		std::reference_wrapper<World> mWorld; 
 		
@@ -197,9 +187,6 @@ namespace CE
 		};
 		std::vector<FixedTickSystem> mFixedTickSystems{};
 		std::vector<InternalSystem> mNonFixedSystems{};
-
-		std::vector<BoundEvent> mBoundBeginPlayEvents = GetAllBoundEvents(sBeginPlayEvent);
-		std::vector<BoundEvent> mBoundEndPlayEvents = GetAllBoundEvents(sEndPlayEvent);
 	};
 
 	template<typename ComponentType, typename ...AdditonalArgs>
@@ -220,8 +207,8 @@ namespace CE
 				{
 					ComponentEvents tmpEvents{};
 					const MetaType& type = MetaManager::Get().GetType<ComponentType>();
-					tmpEvents.mOnConstruct = TryGetEvent(type, sConstructEvent);
-					tmpEvents.mOnBeginPlay = TryGetEvent(type, sBeginPlayEvent);
+					tmpEvents.mOnConstruct = TryGetEvent(type, sOnConstruct);
+					tmpEvents.mOnBeginPlay = TryGetEvent(type, sOnBeginPlay);
 					return tmpEvents;
 				}
 				else
@@ -315,40 +302,6 @@ namespace CE
 		return storage != nullptr && storage->contains(entity);
 	}
 
-	template <typename Component>
-	void Registry::DestroyCallback(entt::registry&, entt::entity entity)
-	{
-		static const MetaType& metaType = MetaManager::Get().GetType<Component>();
-		static const BoundEvent destroyEvent = *TryGetEvent(metaType, sEndPlayEvent);
-
-		if (World::TryGetWorldAtTopOfStack() == nullptr)
-		{
-			UNLIKELY;
-			LOG(LogWorld, Error, "A component was destroyed from a function that did not push/pop a world. The destruct event cannot be invoked. Trace callstack and figure out where to place Push/PopWorld");
-			return;
-		}
-
-		World& world = *World::TryGetWorldAtTopOfStack();
-
-		if constexpr (entt::component_traits<Component>::page_size == 0)
-		{
-			destroyEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity);
-		}
-		else
-		{
-			// OnDestruct may still be static
-			if (destroyEvent.mIsStatic)
-			{
-				destroyEvent.mFunc.get().InvokeUncheckedUnpacked(world, entity);
-			}
-			else
-			{
-				Component& component = world.GetRegistry().Get<Component>(entity);
-				destroyEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, entity);
-			}
-		}
-	}
-
 	template<typename ComponentType>
 	void Registry::RemoveComponent(entt::entity fromEntity)
 	{
@@ -372,7 +325,7 @@ namespace CE
 						return std::nullopt;
 					}
 
-					return TryGetEvent(*type, sEndPlayEvent);
+					return TryGetEvent(*type, sOnEndPlay);
 				}();
 
 			if (endPlayEvent.has_value())
@@ -423,7 +376,7 @@ namespace CE
 						return std::nullopt;
 					}
 
-					return TryGetEvent(*type, sEndPlayEvent);
+					return TryGetEvent(*type, sOnEndPlay);
 				}();
 
 			if (endPlayEvent.has_value())

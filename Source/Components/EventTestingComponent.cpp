@@ -1,6 +1,8 @@
 #include "Precomp.h"
 #include "Components/EventTestingComponent.h"
 
+#include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 #include "Meta/Fwd/MetaPropsFwd.h"
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
@@ -25,7 +27,7 @@ void CE::EmptyEventTestingComponent::OnTick(World&, entt::entity, float)
 	++sNumOfTicks;
 }
 
-void CE::EmptyEventTestingComponent::OnFixedTick(World&, entt::entity)
+void CE::EmptyEventTestingComponent::OnFixedTick(World&, entt::entity, float)
 {
 	++sNumOfFixedTicks;
 }
@@ -93,16 +95,16 @@ CE::MetaType CE::EmptyEventTestingComponent::Reflect()
 	auto type = MetaType{MetaType::T<EmptyEventTestingComponent>{}, "EmptyEventTestingComponent"};
 	type.GetProperties().Add(Props::sNoInspectTag);
 
-	BindEvent(type, sConstructEvent, &EmptyEventTestingComponent::OnConstruct);
-	BindEvent(type, sEndPlayEvent, &EmptyEventTestingComponent::OnDestruct);
-	BindEvent(type, sBeginPlayEvent, &EmptyEventTestingComponent::OnBeginPlay);
-	BindEvent(type, sTickEvent, &EmptyEventTestingComponent::OnTick);
-	BindEvent(type, sFixedTickEvent, &EmptyEventTestingComponent::OnFixedTick);
-	BindEvent(type, sAITickEvent, &EmptyEventTestingComponent::OnAiTick);
-	BindEvent(type, sAIEvaluateEvent, &EmptyEventTestingComponent::OnAiEvaluate);
-	BindEvent(type, sCollisionEntryEvent, &EmptyEventTestingComponent::OnCollisionEntry);
-	BindEvent(type, sCollisionStayEvent, &EmptyEventTestingComponent::OnCollisionStay);
-	BindEvent(type, sCollisionExitEvent, &EmptyEventTestingComponent::OnCollisionExit);
+	BindEvent(type, sOnConstruct, &EmptyEventTestingComponent::OnConstruct);
+	BindEvent(type, sOnEndPlay, &EmptyEventTestingComponent::OnDestruct);
+	BindEvent(type, sOnBeginPlay, &EmptyEventTestingComponent::OnBeginPlay);
+	BindEvent(type, sOnTick, &EmptyEventTestingComponent::OnTick);
+	BindEvent(type, sOnFixedTick, &EmptyEventTestingComponent::OnFixedTick);
+	BindEvent(type, sOnAITick, &EmptyEventTestingComponent::OnAiTick);
+	BindEvent(type, sOnAIEvaluate, &EmptyEventTestingComponent::OnAiEvaluate);
+	BindEvent(type, sOnCollisionEntry, &EmptyEventTestingComponent::OnCollisionEntry);
+	BindEvent(type, sOnCollisionStay, &EmptyEventTestingComponent::OnCollisionStay);
+	BindEvent(type, sOnCollisionExit, &EmptyEventTestingComponent::OnCollisionExit);
 
 	ReflectComponentType<EventTestingComponent>(type);
 	return type;
@@ -128,7 +130,7 @@ void CE::EventTestingComponent::OnTick(World&, entt::entity, float)
 	++mNumOfTicks;
 }
 
-void CE::EventTestingComponent::OnFixedTick(World&, entt::entity)
+void CE::EventTestingComponent::OnFixedTick(World&, entt::entity, float)
 {
 	++mNumOfFixedTicks;
 }
@@ -175,16 +177,16 @@ CE::MetaType CE::EventTestingComponent::Reflect()
 	type.AddField(&EventTestingComponent::mNumOfCollisionStay, "mNumOfCollisionStay");
 	type.AddField(&EventTestingComponent::mNumOfCollisionExit, "mNumOfCollisionExit");
 
-	BindEvent(type, sConstructEvent, &EventTestingComponent::OnConstruct);
-	BindEvent(type, sBeginPlayEvent, &EventTestingComponent::OnBeginPlay);
-	BindEvent(type, sTickEvent, &EventTestingComponent::OnTick);
-	BindEvent(type, sFixedTickEvent, &EventTestingComponent::OnFixedTick);
-	BindEvent(type, sEndPlayEvent, &EventTestingComponent::OnDestruct);
-	BindEvent(type, sAITickEvent, &EventTestingComponent::OnAiTick);
-	BindEvent(type, sAIEvaluateEvent, &EventTestingComponent::OnAiEvaluate);
-	BindEvent(type, sCollisionEntryEvent, &EventTestingComponent::OnCollisionEntry);
-	BindEvent(type, sCollisionStayEvent, &EventTestingComponent::OnCollisionStay);
-	BindEvent(type, sCollisionExitEvent, &EventTestingComponent::OnCollisionExit);
+	BindEvent(type, sOnConstruct, &EventTestingComponent::OnConstruct);
+	BindEvent(type, sOnBeginPlay, &EventTestingComponent::OnBeginPlay);
+	BindEvent(type, sOnTick, &EventTestingComponent::OnTick);
+	BindEvent(type, sOnFixedTick, &EventTestingComponent::OnFixedTick);
+	BindEvent(type, sOnEndPlay, &EventTestingComponent::OnDestruct);
+	BindEvent(type, sOnAITick, &EventTestingComponent::OnAiTick);
+	BindEvent(type, sOnAIEvaluate, &EventTestingComponent::OnAiEvaluate);
+	BindEvent(type, sOnCollisionEntry, &EventTestingComponent::OnCollisionEntry);
+	BindEvent(type, sOnCollisionStay, &EventTestingComponent::OnCollisionStay);
+	BindEvent(type, sOnCollisionExit, &EventTestingComponent::OnCollisionExit);
 
 	ReflectComponentType<EventTestingComponent>(type);
 	return type;

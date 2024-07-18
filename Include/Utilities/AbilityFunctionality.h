@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Events.h"
 #include "Assets/Core/AssetHandle.h"
 #include "Components/Abilities/AbilitiesOnCharacterComponent.h"
@@ -16,6 +15,107 @@ namespace CE
 	class CharacterComponent;
 	class World;
 	class Weapon;
+
+	struct OnAbilityActivate :
+		EventType<OnAbilityActivate>
+	{
+		OnAbilityActivate() :
+			EventType("OnAbilityActivate")
+		{
+		}
+	};
+	/**
+	 * \brief
+	 * 	World& The world the ability controller component is in.
+	 * \entt::entity The owner of the ability controller component.
+	 */
+	inline const OnAbilityActivate sOnAbilityActivate{};
+
+	struct OnAbilityHit :
+		EventType<OnAbilityHit, void(entt::entity, entt::entity)>
+	{
+		OnAbilityHit() :
+			EventType("OnAbilityHit", "Hit Entity", "Ability Entity (Projectile)")
+		{
+		}
+	};
+	/**
+	 * \brief
+	 * 	World& The world the ability controller component is in.
+	 * \entt::entity The entity that has cast the ability (projectile).
+	 * \entt::entity The entity that was hit.
+	 * \entt::entity The ability (projectile) entity.
+	 */
+	inline const OnAbilityHit sOnAbilityHit{};
+
+	struct OnReloadStarted :
+		EventType<OnReloadStarted>
+	{
+		OnReloadStarted() :
+			EventType("OnReloadStarted")
+		{
+		}
+	};
+	inline const OnReloadStarted sOnReloadStarted{};
+
+	struct OnReloadCompleted :
+		EventType<OnReloadCompleted>
+	{
+		OnReloadCompleted() :
+			EventType("OnReloadCompleted")
+		{
+		}
+	};
+	inline const OnReloadCompleted sOnReloadCompleted{};
+
+	struct OnEnemyKilled :
+		EventType<OnEnemyKilled, void(entt::entity)>
+	{
+		OnEnemyKilled() :
+			EventType("OnEnemyKilled", "KilledEnemy")
+		{
+		}
+	};
+	/**
+	 * \brief
+	 * 	World& The world the player and enemy are in.
+	 * \entt::entity The player.
+	 * \entt::entity The enemy that is about to die.
+	 */
+	inline const OnEnemyKilled sOnEnemyKilled{};
+
+	struct OnGettingHit :
+		EventType<OnReloadCompleted>
+	{
+		OnGettingHit() :
+			EventType("OnGettingHit")
+		{
+		}
+	};
+	/**
+	 * \brief
+	 * 	World& The world the player and enemy are in.
+	 * \entt::entity The player that was hit (only called for the player).
+	 */
+	inline const OnGettingHit sOnGettingHit{};
+
+	struct OnCrit :
+		EventType<OnCrit, void(entt::entity, entt::entity)>
+	{
+		OnCrit() :
+			EventType("OnCrit", "Hit Entity", "Ability (Projectile) Entity")
+		{
+		}
+	};
+
+	/**
+	 * \brief
+	 * 	World& The world the ability controller component is in.
+	 * \entt::entity The entity that has cast the ability (projectile).
+	 * \entt::entity The entity that was hit.
+	 * \entt::entity The ability (projectile) entity.
+	 */
+	inline const OnCrit sOnCrit{};
 
 	class AbilityFunctionality
 	{
@@ -37,7 +137,6 @@ namespace CE
 		static void AddWeaponToEnd(World& world, entt::entity entity, WeaponInstance& weapon);
 		static void ReplaceWeaponAtEnd(World& world, entt::entity entity, AssetHandle<Weapon>& weaponAsset);
 		static void CopyEffectsFromRuntimeWeapon(AbilityEffectsComponent& target, const WeaponInstance& source);
-		static void CallAllAbilityHitOrCritEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity, const std::vector<BoundEvent>& boundEvents);
 
 	private:
 		static std::pair<float&, float&> GetStat(Stat stat, CharacterComponent& characterComponent);

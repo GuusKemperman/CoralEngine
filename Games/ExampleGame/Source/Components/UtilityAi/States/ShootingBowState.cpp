@@ -110,11 +110,11 @@ CE::MetaType Game::ShootingBowState::Reflect()
 	type.AddField(&ShootingBowState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ShootingBowState::mMaxShootTime, "Max Shoot Time").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &ShootingBowState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &ShootingBowState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &ShootingBowState::OnAiStateEnterEvent);
-	BindEvent(type, CE::sAIStateExitEvent, &ShootingBowState::OnAiStateExitEvent);
-	BindEvent(type, CE::sAnimationFinishEvent, &ShootingBowState::OnFinishAnimationEvent);
+	BindEvent(type, CE::sOnAITick, &ShootingBowState::OnAiTick);
+	BindEvent(type, CE::sOnAIEvaluate, &ShootingBowState::OnAiEvaluate);
+	BindEvent(type, CE::sOnAIStateEnter, &ShootingBowState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sOnAIStateExit, &ShootingBowState::OnAiStateExitEvent);
+	BindEvent(type, CE::sOnAnimationFinish, &ShootingBowState::OnFinishAnimationEvent);
 
 	type.AddField(&ShootingBowState::mShootingAnimation, "Shooting Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

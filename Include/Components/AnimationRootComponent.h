@@ -1,12 +1,28 @@
 #pragma once
 #include "Meta/MetaReflect.h"
 #include "Assets/Core/AssetHandle.h"
+#include "Utilities/Events.h"
 
 namespace CE
 {
 	class Animation;
 	class World;
 	class Registry;
+
+	struct OnAnimationFinish :
+		EventType<OnTick>
+	{
+		OnAnimationFinish() :
+			EventType("OnAnimationFinish")
+		{
+		}
+	};
+	/*
+	* \brief Called when an animation finishes.
+	* World& the world the animationRootComponent is in
+	* entt::entity The entity with the animationRootComponent which has finished its animation.
+	*/
+	inline const OnAnimationFinish sOnAnimationFinish{};
 
 	class AnimationRootComponent
 	{

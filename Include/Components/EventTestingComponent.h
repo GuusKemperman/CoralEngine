@@ -16,7 +16,7 @@ namespace CE
 
 		static void OnTick(World& world, entt::entity owner, float dt);
 
-		static void OnFixedTick(World& world, entt::entity owner);
+		static void OnFixedTick(World& world, entt::entity owner, float dt);
 
 		static void OnAiTick(World& world, entt::entity owner, float dt);
 
@@ -58,7 +58,7 @@ namespace CE
 
 		void OnTick(World& world, entt::entity owner, float dt);
 
-		void OnFixedTick(World& world, entt::entity owner);
+		void OnFixedTick(World& world, entt::entity owner, float dt);
 
 		void OnAiTick(World& world, entt::entity owner, float dt);
 

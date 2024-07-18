@@ -336,10 +336,6 @@ namespace CE
 		template<typename... Args>
 		static std::pair<std::array<DynamicArg, sizeof...(Args)>, std::array<TypeForm, sizeof...(Args)>> Pack(Args&&... args);
 
-	private:
-		template<typename Ret, typename... ParamsT>
-		static FuncResult DefaultInvoke(const std::function<Ret(ParamsT...)>& functionToInvoke, DynamicArgs runtimeArgs, RVOBuffer rvoBuffer);
-
 		template<typename Arg>
 		static DynamicArg PackSingle(Arg&& arg);
 
@@ -348,6 +344,10 @@ namespace CE
 
 		template<>
 		STATIC_SPECIALIZATION DynamicArg PackSingle(MetaAny& other);
+
+	private:
+		template<typename Ret, typename... ParamsT>
+		static FuncResult DefaultInvoke(const std::function<Ret(ParamsT...)>& functionToInvoke, DynamicArgs runtimeArgs, RVOBuffer rvoBuffer);
 
 		MetaFuncNamedParam mReturn;
 		std::vector<MetaFuncNamedParam> mParams;

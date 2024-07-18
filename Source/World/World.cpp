@@ -14,11 +14,13 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Assets/Level.h"
 #include "Rendering/GPUWorld.h"
+#include "World/EventManager.h"
 
 CE::World::World(const bool beginPlayImmediately) :
 	mRegistry(std::make_unique<Registry>(*this)),
 	mViewport(std::make_unique<WorldViewport>(*this)),
-	mPhysics(std::make_unique<Physics>(*this))
+	mPhysics(std::make_unique<Physics>(*this)),
+	mEventManager(std::make_unique<EventManager>(*this))
 {
 	if (beginPlayImmediately)
 	{
@@ -33,11 +35,13 @@ CE::World::World(World&& other) noexcept :
 	mViewport(std::move(other.mViewport)),
 	mGPUWorld(std::move(other.mGPUWorld)),
 	mPhysics(std::move(other.mPhysics)),
+	mEventManager(std::move(other.mEventManager)),
 	mLevelToTransitionTo(std::move(other.mLevelToTransitionTo))
 {
 	mRegistry->mWorld = *this;
 	mViewport->mWorld = *this;
 	mPhysics->mWorld = *this;
+	mEventManager->mWorld = *this;
 
 	if (mGPUWorld != nullptr)
 	{

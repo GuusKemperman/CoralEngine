@@ -163,12 +163,12 @@ CE::MetaType Game::KnockBackState::Reflect()
 	type.AddField(&KnockBackState::mKnockbackDirection, "Knockback Direction").GetProperties().Add(CE::Props::sIsScriptableTag).Add(CE::Props::sIsEditorReadOnlyTag);
 	type.AddField(&KnockBackState::mUltimateKnockBack, "Ultimate KnockBack").GetProperties().Add(CE::Props::sIsScriptableTag).Add(CE::Props::sIsEditorReadOnlyTag);
 
-	BindEvent(type, CE::sAITickEvent, &KnockBackState::OnAiTick);
-	BindEvent(type, CE::sTickEvent, &KnockBackState::OnTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &KnockBackState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &KnockBackState::OnAiStateEnterEvent);
-	BindEvent(type, CE::sAIStateExitEvent, &KnockBackState::OnAiStateExitEvent);
-	BindEvent(type, CE::sAnimationFinishEvent, &KnockBackState::OnAnimationFinish);
+	BindEvent(type, CE::sOnAITick, &KnockBackState::OnAiTick);
+	BindEvent(type, CE::sOnTick, &KnockBackState::OnTick);
+	BindEvent(type, CE::sOnAIEvaluate, &KnockBackState::OnAiEvaluate);
+	BindEvent(type, CE::sOnAIStateEnter, &KnockBackState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sOnAIStateExit, &KnockBackState::OnAiStateExitEvent);
+	BindEvent(type, CE::sOnAnimationFinish, &KnockBackState::OnAnimationFinish);
 
 
 	CE::ReflectComponentType<KnockBackState>(type);

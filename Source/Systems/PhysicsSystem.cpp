@@ -13,15 +13,8 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Utilities/DrawDebugHelpers.h"
-#include "Utilities/Time.h"
+#include "World/EventManager.h"
 #include "World/Physics.h"
-
-CE::PhysicsSystem::PhysicsSystem() :
-	mOnCollisionEntryEvents(GetAllBoundEvents(sCollisionEntryEvent)),
-	mOnCollisionStayEvents(GetAllBoundEvents(sCollisionStayEvent)),
-	mOnCollisionExitEvents(GetAllBoundEvents(sCollisionExitEvent))
-{
-}
 
 void CE::PhysicsSystem::Update(World& world, float dt)
 {
@@ -293,9 +286,9 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 	}
 
 	// Call events
-	CallEvents(world, enters, mOnCollisionEntryEvents);
-	CallEvents(world, currentCollisions, mOnCollisionStayEvents);
-	CallEvents(world, exits, mOnCollisionExitEvents);
+	CallEvents(world, enters, sOnCollisionEntry);
+	CallEvents(world, currentCollisions, sOnCollisionStay);
+	CallEvents(world, exits, sOnCollisionExit);
 
 	std::swap(mPreviousCollisions, currentCollisions);
 }
@@ -304,7 +297,7 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 
 template <typename CollisionDataContainer>
 void CE::PhysicsSystem::CallEvents(World& world, const CollisionDataContainer& collisions,
-                                         const std::vector<BoundEvent>& events)
+                                         const EventBase& eventBase)
 {
 	if (collisions.empty())
 	{
@@ -313,7 +306,7 @@ void CE::PhysicsSystem::CallEvents(World& world, const CollisionDataContainer& c
 
 	Registry& reg = world.GetRegistry();
 
-	for (const BoundEvent& event : events)
+	for (const BoundEvent& event : world.GetEventManager().GetBoundEvents(eventBase))
 	{
 		entt::sparse_set* const storage = reg.Storage(event.mType.get().GetTypeId());
 
@@ -366,10 +359,6 @@ void CE::PhysicsSystem::DebugDrawing(const World& world)
 void CE::PhysicsSystem::CallEvent(const BoundEvent& event, World& world, entt::sparse_set& storage,
         entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint)
 {
-	static_assert(std::is_same_v<decltype(sCollisionEntryEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
-	static_assert(std::is_same_v<decltype(sCollisionStayEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
-	static_assert(std::is_same_v<decltype(sCollisionExitEvent), const Event<void(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2)>>);
-
 	// Tombstone check, is needed
 	if (!storage.contains(owner))
 	{

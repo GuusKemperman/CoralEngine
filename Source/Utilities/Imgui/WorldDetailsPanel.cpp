@@ -105,13 +105,24 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 				if (isHeaderOpen)
 				{
 					ImGui::PushID(name.data(), name.data() + name.size());
-					const std::optional<BoundEvent> onInspect = TryGetEvent(componentClass, sInspectEvent);
+					const std::optional<BoundEvent> onInspect = TryGetEvent(componentClass, sOnInspect);
 
 					if (onInspect.has_value())
 					{
-						// We run the custom OnInspect here, directly after opening the collapsing header.
-						// We unfortunately cannot search through it's contents, so we always show it.
-						onInspect->mFunc.get().InvokeCheckedUnpacked(world, selectedEntities);
+						if (selectedEntities.size() > 1)
+						{
+							ImGui::Text("* Only the widget of the first entity is displayed");
+						}
+
+						if (onInspect->mIsStatic)
+						{
+							onInspect->mFunc.get().InvokeCheckedUnpacked(world, selectedEntities[0]);
+						}
+						else
+						{
+							MetaAny component = reg.Get(componentClass.GetTypeId(), selectedEntities[0]);
+							onInspect->mFunc.get().InvokeCheckedUnpacked(component, world, selectedEntities[0]);
+						}
 					}
 				}
 

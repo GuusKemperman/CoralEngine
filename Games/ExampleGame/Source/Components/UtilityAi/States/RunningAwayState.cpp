@@ -14,6 +14,7 @@
 #include "Assets/Animation/Animation.h"
 #include "Components/Abilities/CharacterComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 #include "Utilities/Random.h"
 
 void Game::RunningAwayState::OnAiStateEnter(CE::World& world, const entt::entity owner)
@@ -128,11 +129,11 @@ CE::MetaType Game::RunningAwayState::Reflect()
 	type.AddField(&RunningAwayState::mLowerSpeedRange, "The Lowest Random Speed Range").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&RunningAwayState::mUpperSpeedRange, "The Highest Random Speed Range").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAIStateEnterEvent, &RunningAwayState::OnAiStateEnter);
-	BindEvent(type, CE::sAIStateExitEvent, &RunningAwayState::OnAiStateExit);
-	BindEvent(type, CE::sAIEvaluateEvent, &RunningAwayState::OnAiEvaluate);
-	BindEvent(type, CE::sBeginPlayEvent, &RunningAwayState::OnBeginPlay);
-	BindEvent(type, CE::sAITickEvent, &RunningAwayState::OnAiTick);
+	BindEvent(type, CE::sOnAIStateEnter, &RunningAwayState::OnAiStateEnter);
+	BindEvent(type, CE::sOnAIStateExit, &RunningAwayState::OnAiStateExit);
+	BindEvent(type, CE::sOnAIEvaluate, &RunningAwayState::OnAiEvaluate);
+	BindEvent(type, CE::sOnBeginPlay, &RunningAwayState::OnBeginPlay);
+	BindEvent(type, CE::sOnAITick, &RunningAwayState::OnAiTick);
 
 	type.AddField(&RunningAwayState::mStartYAxis, "Start Y Position").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&RunningAwayState::mChasingAnimation, "Running Away Animation").GetProperties().Add(CE::Props::sIsScriptableTag);

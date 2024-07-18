@@ -121,7 +121,7 @@ CE::MetaType CE::AnimationRootComponent::Reflect()
 	type.AddField(&AnimationRootComponent::mCurrentTimeStamp, "mCurrentTimeStamp").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptableTag).Add(Props::sIsScriptReadOnlyTag);
 	type.AddField(&AnimationRootComponent::mCurrentAnimationSpeed, "mCurrentAnimationSpeed").GetProperties().Add(Props::sIsEditorReadOnlyTag).Add(Props::sIsScriptableTag).Add(Props::sIsScriptReadOnlyTag);
 
-	BindEvent(type, sConstructEvent, &AnimationRootComponent::OnConstruct);
+	BindEvent(type, sOnConstruct, &AnimationRootComponent::OnConstruct);
 
 	ReflectComponentType<AnimationRootComponent>(type);
 	return type;

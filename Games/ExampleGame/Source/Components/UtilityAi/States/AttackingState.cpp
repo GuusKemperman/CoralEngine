@@ -13,6 +13,7 @@
 #include "Components/PlayerComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 void Game::AttackingState::OnAiTick(CE::World& world, const entt::entity owner, float) const
 {
@@ -49,9 +50,9 @@ CE::MetaType Game::AttackingState::Reflect()
 
 	type.AddField(&AttackingState::mRadius, "Detection Radius").GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sAITickEvent, &AttackingState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &AttackingState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &AttackingState::OnAiStateEnter);
+	BindEvent(type, CE::sOnAITick, &AttackingState::OnAiTick);
+	BindEvent(type, CE::sOnAIEvaluate, &AttackingState::OnAiEvaluate);
+	BindEvent(type, CE::sOnAIStateEnter, &AttackingState::OnAiStateEnter);
 
 	type.AddField(&AttackingState::mAttackingAnimation, "Attacking Animation").GetProperties().Add(CE::Props::sIsScriptableTag);
 

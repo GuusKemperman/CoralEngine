@@ -12,7 +12,6 @@
 #include "Core/AssetManager.h"
 #include "Core/VirtualMachine.h"
 #include "Meta/MetaTools.h"
-#include "Scripting/ScriptEvents.h"
 #include "Utilities/ClassVersion.h"
 #include "Utilities/Reflect/ReflectAssetType.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
@@ -20,7 +19,7 @@
 CE::Script::Script(std::string_view name) :
 	Asset(name, MakeTypeId<Script>())
 {
-	AddEvent(sOnTickScriptEvent);
+	AddEvent(sOnTick);
 }
 
 CE::Script::Script(AssetLoadInfo& loadInfo) :
@@ -99,9 +98,9 @@ CE::ScriptFunc& CE::Script::AddFunc(const std::string_view name)
 	return result;
 }
 
-CE::ScriptFunc& CE::Script::AddEvent(const ScriptEvent& event)
+CE::ScriptFunc& CE::Script::AddEvent(const EventBase& event)
 {
-	const std::string_view name = event.mBasedOnEvent.get().mName;
+	const std::string_view name = event.mName;
 
 	ScriptFunc* existingFunc = TryGetFunc(name);
 

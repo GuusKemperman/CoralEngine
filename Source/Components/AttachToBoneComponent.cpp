@@ -15,54 +15,42 @@ void CE::AttachToBoneComponent::OnConstruct(World&, entt::entity owner)
 }
 
 #ifdef EDITOR
-void CE::AttachToBoneComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
+void CE::AttachToBoneComponent::OnInspect(World& world, const entt::entity owner)
 {
 	AssetHandle<SkinnedMesh> skinnedMesh{};
 	std::string bone{};
-	bool areAllBonesTheSame = true;
 
 	Registry& reg = world.GetRegistry();
 
-	for (entt::entity entity : entities)
+	const TransformComponent* transform = reg.TryGet<TransformComponent>(owner);
+
+	if (transform == nullptr
+		|| transform->GetParent() == nullptr)
 	{
-		const TransformComponent* transform = reg.TryGet<TransformComponent>(entity);
-
-		if (transform == nullptr
-			|| transform->GetParent() == nullptr)
-		{
-			continue;
-		}
-
-		const SkinnedMeshComponent* skinnedMeshComponent = FindSkinnedMeshParentRecursive(reg, *transform->GetParent());
-
-		if (skinnedMeshComponent == nullptr)
-		{
-			continue;
-		}
-
-		if (skinnedMesh != nullptr && skinnedMesh != skinnedMeshComponent->mSkinnedMesh)
-		{
-			ImGui::TextWrapped("Selected entities have different skinned meshes");
-			return;
-		}
-
-		const AttachToBoneComponent& boneComponent = reg.Get<AttachToBoneComponent>(entity);
-
-		skinnedMesh = skinnedMeshComponent->mSkinnedMesh;
-
-		if (entities[0] != entity
-			&& bone != boneComponent.mBoneName)
-		{
-			areAllBonesTheSame = false;
-		}
-		bone = boneComponent.mBoneName;
+		return;
 	}
 
-	std::string_view bonePreviewName = areAllBonesTheSame ? std::string_view{ bone } : std::string_view{ "* Different bones" };
+	const SkinnedMeshComponent* skinnedMeshComponent = FindSkinnedMeshParentRecursive(reg, *transform->GetParent());
 
-	if (bonePreviewName.empty())
+	if (skinnedMeshComponent == nullptr)
 	{
-		bonePreviewName = "None";
+		return;
+	}
+
+	if (skinnedMesh != nullptr && skinnedMesh != skinnedMeshComponent->mSkinnedMesh)
+	{
+		ImGui::TextWrapped("Selected entities have different skinned meshes");
+		return;
+	}
+
+	AttachToBoneComponent& boneComponent = reg.Get<AttachToBoneComponent>(owner);
+
+	skinnedMesh = skinnedMeshComponent->mSkinnedMesh;
+	bone = boneComponent.mBoneName;
+
+	if (bone.empty())
+	{
+		bone = "None";
 	}
 
 	if (skinnedMesh == nullptr)
@@ -71,7 +59,7 @@ void CE::AttachToBoneComponent::OnInspect(World& world, const std::vector<entt::
 		return;
 	}
 
-	if (Search::BeginCombo("mBone", bonePreviewName))
+	if (Search::BeginCombo("mBone", bone))
 	{
 		if (Search::Button("None"))
 		{
@@ -86,12 +74,7 @@ void CE::AttachToBoneComponent::OnInspect(World& world, const std::vector<entt::
 			}
 		}
 
-		for (entt::entity entity : entities)
-		{
-			AttachToBoneComponent& boneComponent = reg.Get<AttachToBoneComponent>(entity);
-			boneComponent.mBoneName = bone;
-		}
-
+		boneComponent.mBoneName = bone;
 		Search::EndCombo();
 	}
 }
@@ -141,9 +124,9 @@ CE::MetaType CE::AttachToBoneComponent::Reflect()
 		}, "CopyTransformValues", MetaFunc::ExplicitParams<AttachToBoneComponent&>{}
 		).GetProperties().Add(Props::sCallFromEditorTag);
 #ifdef EDITOR
-	BindEvent(type, sInspectEvent, &AttachToBoneComponent::OnInspect);
+	BindEvent(type, sOnInspect, &AttachToBoneComponent::OnInspect);
 #endif // EDITOR
-	BindEvent(type, sConstructEvent, &AttachToBoneComponent::OnConstruct);
+	BindEvent(type, sOnConstruct, &AttachToBoneComponent::OnConstruct);
 
 	ReflectComponentType<AttachToBoneComponent>(type);
 	return type;

@@ -7,6 +7,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
+#include "World/EventManager.h"
 
 void CE::AITickSystem::Update(World& world, float dt)
 {
@@ -29,7 +30,7 @@ void CE::AITickSystem::Update(World& world, float dt)
 			continue;
 		}
 
-		const std::optional<BoundEvent> aiTickEvent = TryGetEvent(*currentAIController.mCurrentState, sAITickEvent);
+		const std::optional<BoundEvent> aiTickEvent = TryGetEvent(*currentAIController.mCurrentState, sOnAITick);
 
 		if (!aiTickEvent.has_value())
 		{
@@ -70,7 +71,7 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 #endif 
 	}
 
-	for (const BoundEvent& boundEvent : mBoundEvaluateEvents)
+	for (const BoundEvent& boundEvent : world.GetEventManager().GetBoundEvents(sOnAIEvaluate))
 	{
 		entt::sparse_set* const storage = reg.Storage(boundEvent.mType.get().GetTypeId());
 
@@ -124,8 +125,8 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 
 		if (currentAIController.mCurrentState != currentAIController.mPreviousState)
 		{
-			CallTransitionEvent(sAIStateExitEvent, currentAIController.mPreviousState, world, entity);
-			CallTransitionEvent(sAIStateEnterEvent, currentAIController.mCurrentState, world, entity);
+			CallTransitionEvent(sOnAIStateExit, currentAIController.mPreviousState, world, entity);
+			CallTransitionEvent(sOnAIStateEnter, currentAIController.mCurrentState, world, entity);
 		}
 	}
 }

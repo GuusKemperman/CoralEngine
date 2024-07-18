@@ -8,11 +8,10 @@
 
 #include "Core/VirtualMachine.h"
 #include "Meta/MetaTypeFilter.h"
-#include "Scripting/ScriptEvents.h"
 #include "Scripting/ScriptTools.h"
-#include "Utilities/Search.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 #include "Scripting/Nodes/CommentScriptNode.h"
+#include "Utilities/Events.h"
 
 namespace CE
 {

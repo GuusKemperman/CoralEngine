@@ -67,7 +67,7 @@ CE::MetaType Game::CameraShakeComponent::Reflect()
 	auto type = CE::MetaType{ CE::MetaType::T<CameraShakeComponent>{}, "CameraShakeComponent" };
 	type.GetProperties().Add(CE::Props::sIsScriptableTag);
 
-	BindEvent(type, CE::sTickEvent, &CameraShakeComponent::OnTick);
+	BindEvent(type, CE::sOnTick, &CameraShakeComponent::OnTick);
 
 	type.AddField(&CameraShakeComponent::mFadeOutAtIntensity, "Fade Out Intensity").GetProperties().Add(CE::Props::sIsScriptableTag);
 

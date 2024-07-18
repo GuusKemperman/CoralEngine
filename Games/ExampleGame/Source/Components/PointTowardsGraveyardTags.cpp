@@ -50,7 +50,7 @@ CE::MetaType Game::IsSignPostTag::Reflect()
 {
 	CE::MetaType metaType = CE::MetaType{ CE::MetaType::T<IsSignPostTag>{}, "IsSignPostTag" };
 
-	CE::BindEvent(metaType, CE::sBeginPlayEvent, &IsSignPostTag::OnBeginPlay);
+	CE::BindEvent(metaType, CE::sOnBeginPlay, &IsSignPostTag::OnBeginPlay);
 	CE::ReflectComponentType<IsSignPostTag>(metaType);
 
 	return metaType;

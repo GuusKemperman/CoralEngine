@@ -79,7 +79,7 @@ CE::MetaType CE::DirectionalLightComponent::Reflect()
 	metaType.AddField(&DirectionalLightComponent::mShadowSamples, "mShadowSamples").GetProperties().Add(Props::sIsScriptableTag);
 
 #ifdef EDITOR
-	BindEvent(metaType, sDrawGizmoEvent, &DirectionalLightComponent::OnDrawGizmos);
+	BindEvent(metaType, sOnDrawGizmo, &DirectionalLightComponent::OnDrawGizmos);
 #endif // EDITOR
 
 	ReflectComponentType<DirectionalLightComponent>(metaType);

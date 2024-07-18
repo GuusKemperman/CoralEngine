@@ -13,6 +13,7 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Assets/Animation/Animation.h"
 #include "Components/Pathfinding/SwarmingAgentTag.h"
+#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 #include "Utilities/AiFunctionality.h"
 
 void Game::ChargeUpDashState::OnAiTick(CE::World& world, const entt::entity owner, const float dt)
@@ -93,10 +94,10 @@ CE::MetaType Game::ChargeUpDashState::Reflect()
 	type.AddField(&ChargeUpDashState::mVFX, "VFX").GetProperties().Add(CE::Props::sIsScriptableTag);
 	type.AddField(&ChargeUpDashState::mSpawnedVFX, "Spawned VFX").GetProperties().Add(CE::Props::sIsEditorReadOnlyTag);
 
-	BindEvent(type, CE::sAITickEvent, &ChargeUpDashState::OnAiTick);
-	BindEvent(type, CE::sAIEvaluateEvent, &ChargeUpDashState::OnAiEvaluate);
-	BindEvent(type, CE::sAIStateEnterEvent, &ChargeUpDashState::OnAiStateEnterEvent);
-	BindEvent(type, CE::sAIStateExitEvent, &ChargeUpDashState::OnAiStateExitEvent);
+	BindEvent(type, CE::sOnAITick, &ChargeUpDashState::OnAiTick);
+	BindEvent(type, CE::sOnAIEvaluate, &ChargeUpDashState::OnAiEvaluate);
+	BindEvent(type, CE::sOnAIStateEnter, &ChargeUpDashState::OnAiStateEnterEvent);
+	BindEvent(type, CE::sOnAIStateExit, &ChargeUpDashState::OnAiStateExitEvent);
 
 	CE::ReflectComponentType<ChargeUpDashState>(type);
 	return type;

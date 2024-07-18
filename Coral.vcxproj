@@ -632,7 +632,6 @@
     </ClCompile>
     <ClCompile Include="Source\Platform\PC\Rendering\SkinnedMeshPC.cpp" />
     <ClCompile Include="Source\Components\Abilities\CharacterComponent.cpp" />
-    <ClCompile Include="Source\Scripting\ScriptEvents.cpp" />
     <ClCompile Include="Source\Components\PointLightComponent.cpp" />
     <ClCompile Include="Source\Utilities\Geometry2d.cpp" />
     <ClCompile Include="Source\Components\Pathfinding\NavMeshAgentComponent.cpp" />
@@ -890,6 +889,7 @@
     <ClCompile Include="Source\Utilities\StringFunctions.cpp" />
     <ClCompile Include="Source\Utilities\Time.cpp" />
     <ClCompile Include="Source\World\Archiver.cpp" />
+    <ClCompile Include="Source\World\EventManager.cpp" />
     <ClCompile Include="Source\World\Physics.cpp" />
     <ClCompile Include="source\World\World.cpp" />
     <ClCompile Include="Source\World\Registry.cpp" />
@@ -1089,7 +1089,6 @@
     <ClInclude Include="Include\Scripting\Nodes\ReroutScriptNode.h" />
     <ClInclude Include="Include\Scripting\ScriptConfig.h" />
     <ClInclude Include="Include\Systems\AbilitySystem.h" />
-    <ClInclude Include="Include\Scripting\ScriptEvents.h" />
     <ClInclude Include="Include\Assets\Animation\Bone.h" />
     <ClInclude Include="Include\Systems\AnimationSystem.h" />
     <ClInclude Include="Include\Systems\TickEventSystems.h" />
@@ -1190,6 +1189,7 @@
     <ClInclude Include="Include\Core\UnitTests.h" />
     <ClInclude Include="Include\Utilities\WeightedRandomDistribution.h" />
     <ClInclude Include="Include\World\Archiver.h" />
+    <ClInclude Include="Include\World\EventManager.h" />
     <ClInclude Include="Include\World\Physics.h" />
     <ClInclude Include="include\World\World.h" />
     <ClInclude Include="Include\World\Registry.h" />

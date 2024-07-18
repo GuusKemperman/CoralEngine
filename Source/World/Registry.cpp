@@ -5,7 +5,6 @@
 
 #include "Assets/Script.h"
 #include "World/World.h"
-#include "World/WorldViewport.h"
 #include "Assets/Prefabs/ComponentFactory.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/Prefabs/PrefabEntityFactory.h"
@@ -19,6 +18,7 @@
 #include "Meta/MetaTools.h"
 #include "Scripting/ScriptTools.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "World/EventManager.h"
 
 namespace CE::Internal
 {
@@ -68,7 +68,6 @@ namespace CE::Internal
 		std::reference_wrapper<const MetaType> mType;
 		const MetaFunc* mOnConstruct{};
 		const MetaFunc* mOnBeginPlay{};
-		const MetaFunc* mOnDestruct{};
 
 		char* mData{};
 		size_t mCapacity{};
@@ -91,15 +90,6 @@ namespace CE::Internal
 CE::Registry::Registry(World& world) :
 	mWorld(world)
 {
-	for (const BoundEvent& onDestruct : GetAllBoundEvents(sDestructEvent))
-	{
-		if (const MetaFunc* func = onDestruct.mType.get().TryGetFunc(Internal::DestroyCallBackInstaller::sFuncName);
-			func != nullptr)
-		{
-			func->InvokeUncheckedUnpacked(mRegistry);
-		}
-	}
-
 	const MetaType* const systemType = MetaManager::Get().TryGetType<System>();
 	ASSERT(systemType != nullptr);
 	std::function<void(const MetaType&)> registerChildren =
@@ -353,7 +343,7 @@ void CE::Registry::RemovedDestroyed()
 		// This was done consciously as the chances of it
 		// occuring are tremendously low, and because using this
 		// approach is significantly faster.
-		for (const BoundEvent& endPlay : mBoundEndPlayEvents)
+		for (const BoundEvent& endPlay : GetWorld().GetEventManager().GetBoundEvents(sOnEndPlay))
 		{
 			entt::sparse_set* componentStorage = Storage(endPlay.mType.get().GetTypeId());
 
@@ -505,7 +495,7 @@ void CE::Registry::RemoveComponent(const TypeId componentClassTypeId, const entt
 
 		if (type != nullptr)
 		{
-			const std::optional<BoundEvent> endPlayEvent = TryGetEvent(*type, sEndPlayEvent);
+			const std::optional<BoundEvent> endPlayEvent = TryGetEvent(*type, sOnEndPlay);
 
 			if (endPlayEvent.has_value())
 			{
@@ -541,7 +531,7 @@ void CE::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassTypeI
 
 		if (type != nullptr)
 		{
-			const std::optional<BoundEvent> endPlayEvent = TryGetEvent(*type, sEndPlayEvent);
+			const std::optional<BoundEvent> endPlayEvent = TryGetEvent(*type, sOnEndPlay);
 
 			if (endPlayEvent.has_value())
 			{
@@ -736,7 +726,7 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 
 	World::PushWorld(mWorld);
 
-	for (const BoundEvent& boundEvent : mBoundBeginPlayEvents)
+	for (const BoundEvent& boundEvent : mWorld.get().GetEventManager().GetBoundEvents(sOnBeginPlay))
 	{
 		entt::sparse_set* storage = Storage(boundEvent.mType.get().GetTypeId());
 
@@ -794,19 +784,14 @@ CE::Internal::AnyStorage::AnyStorage(const MetaType& type) :
 	mType(type),
 	mTypeInfo(type.GetTypeId(), type.GetTypeInfo(), type.GetName())
 {
-	if (const std::optional<BoundEvent> boundEvent = TryGetEvent(type, sConstructEvent))
+	if (const std::optional<BoundEvent> boundEvent = TryGetEvent(type, sOnConstruct))
 	{
 		mOnConstruct = &boundEvent->mFunc.get();
 	}
 
-	if (const std::optional<BoundEvent> boundEvent = TryGetEvent(type, sBeginPlayEvent))
+	if (const std::optional<BoundEvent> boundEvent = TryGetEvent(type, sOnBeginPlay))
 	{
 		mOnBeginPlay = &boundEvent->mFunc.get();
-	}
-
-	if (const std::optional<BoundEvent> boundEvent = TryGetEvent(type, sDestructEvent))
-	{
-		mOnDestruct = &boundEvent->mFunc.get();
 	}
 
 	ASSERT(CanTypeBeUsed(type));
@@ -874,20 +859,11 @@ void CE::Internal::AnyStorage::swap_or_move(const std::size_t from, const std::s
 
 void CE::Internal::AnyStorage::pop(basic_iterator first, basic_iterator last)
 {
-	ASSERT(World::TryGetWorldAtTopOfStack() != nullptr);
-	World& world = *World::TryGetWorldAtTopOfStack();
-
 	const MetaType& type = GetType();
 	for (; first != last; ++first)
 	{
 		const entt::entity entity = *first;
 		MetaAny component = element_at(index(entity));
-
-		if (mOnDestruct != nullptr)
-		{
-			mOnDestruct->InvokeUncheckedUnpacked(component, world, entity);
-		}
-
 		type.Destruct(component.GetData(), false);
 		in_place_pop(first);
 	}

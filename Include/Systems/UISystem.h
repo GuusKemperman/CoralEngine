@@ -1,4 +1,5 @@
 #pragma once
+#include "Components/UI/UIButtonComponent.h"
 #include "Systems/System.h"
 #include "Core/Input.h"
 #include "Utilities/Events.h"
@@ -47,7 +48,5 @@ namespace CE
 		static constexpr float sJoyStickNavigationCooldown = 0.25f;
 		static constexpr float sJoyStickMinMovementToNavigate = 0.3f;
 		float mSecondsSinceLastNavigationChange{};
-
-		std::vector<BoundEvent> mOnClickEvents = GetAllBoundEvents(sButtonPressEvent);
 	};
 }

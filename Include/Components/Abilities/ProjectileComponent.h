@@ -8,6 +8,9 @@ namespace CE
 	class ProjectileComponent
 	{
 	public:
+#ifdef EDITOR
+		static void OnInspect(World& world, entt::entity owner);
+#endif // EDITOR
 
 		// You may want an ability that gets destroyed based on its lifetime instead.
 		bool mDestroyOnRangeReached = true;
@@ -33,9 +36,6 @@ namespace CE
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
-#ifdef EDITOR
-		static void OnInspect(World& world, const std::vector<entt::entity>& entities);
-#endif // EDITOR
 		REFLECT_AT_START_UP(ProjectileComponent);
 	};
 }

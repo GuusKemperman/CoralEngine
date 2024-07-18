@@ -91,7 +91,7 @@ CE::MetaType CE::MaterialRootComponent::Reflect()
 		}, "SwitchMaterial", MetaFunc::ExplicitParams<MaterialRootComponent&,
 		const AssetHandle<Material>&>{}, "MaterialRootComponent", "Material").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-		BindEvent(type, sConstructEvent, &MaterialRootComponent::OnConstruct);
+		BindEvent(type, sOnConstruct, &MaterialRootComponent::OnConstruct);
 
 		ReflectComponentType<MaterialRootComponent>(type);
 		return type;

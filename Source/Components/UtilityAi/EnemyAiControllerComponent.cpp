@@ -7,24 +7,9 @@
 #ifdef EDITOR
 #include "Utilities/Imgui/ImguiInspect.h"
 
-void CE::EnemyAiControllerComponent::OnInspect(World& world, const std::vector<entt::entity>& entities)
+void CE::EnemyAiControllerComponent::OnInspect(World&, entt::entity)
 {
-	if (entities.size() > 1)
-	{
-		ImGui::TextUnformatted("Cannot inspect more than one AI controller at a time");
-		return;
-	}
-
-	const entt::entity entity = entities.front();
-	const EnemyAiControllerComponent* const aiController = world.GetRegistry().TryGet<EnemyAiControllerComponent>(entity);
-
-	if (aiController == nullptr)
-	{
-		LOG(LogEditor, Error, "AIController was unexpectedly nullptr");
-		return;
-	}
-
-	ImGui::Text("Current state: %s", aiController->mCurrentState == nullptr ? "None" : aiController->mCurrentState->GetName().c_str());
+	ImGui::Text("Current state: %s", mCurrentState == nullptr ? "None" : mCurrentState->GetName().c_str());
 
 	if (ImGui::BeginTable("table1", 2))
 	{
@@ -32,7 +17,7 @@ void CE::EnemyAiControllerComponent::OnInspect(World& world, const std::vector<e
 		ImGui::TableSetupColumn("Score");
 		ImGui::TableHeadersRow();
 
-		for (const auto& [name, score] : aiController->mDebugPreviouslyEvaluatedScores)
+		for (const auto& [name, score] : mDebugPreviouslyEvaluatedScores)
 		{
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
@@ -53,7 +38,7 @@ CE::MetaType CE::EnemyAiControllerComponent::Reflect()
 	props.Add(Props::sIsScriptableTag);
 
 #ifdef EDITOR
-	BindEvent(type, sInspectEvent, &EnemyAiControllerComponent::OnInspect);
+	BindEvent(type, sOnInspect, &EnemyAiControllerComponent::OnInspect);
 #endif // EDITOR
 
 	type.AddFunc([](const EnemyAiControllerComponent& enemyAiController, const ComponentFilter& component) -> bool

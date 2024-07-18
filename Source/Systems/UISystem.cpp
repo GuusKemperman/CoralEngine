@@ -5,6 +5,7 @@
 #include "Components/UI/UIButtonComponent.h"
 #include "Components/TransformComponent.h"
 #include "Core/Input.h"
+#include "World/EventManager.h"
 
 void CE::UISystem::Update(World& world, float dt)
 {
@@ -83,26 +84,7 @@ void CE::UISystem::Update(World& world, float dt)
 		return;
 	}
 
-	for (const BoundEvent& boundEvent : mOnClickEvents)
-	{
-		entt::sparse_set* storage = reg.Storage(boundEvent.mType.get().GetTypeId());
-
-		if (storage == nullptr
-			|| !storage->contains(selectedEntity))
-		{
-			continue;
-		}
-
-		if (boundEvent.mIsStatic)
-		{
-			boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, selectedEntity);
-		}
-		else
-		{
-			MetaAny component{ boundEvent.mType.get(), storage->value(selectedEntity), false };
-			boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, selectedEntity);
-		}
-	}
+	world.GetEventManager().InvokeEventForAllComponentsOnEntity(sOnButtonPressed, selectedEntity);
 }
 
 entt::entity CE::UISystem::CheckNavigation(World& world, 

@@ -18,8 +18,6 @@ namespace CE
 		public System
 	{
 	public:
-		PhysicsSystem();
-
 		void Update(World& world, float dt) override;
 
 		void Render(const World& world) override;
@@ -64,7 +62,7 @@ namespace CE
 		void DebugDrawing(const World& world);
 
 		template<typename CollisionDataContainer>
-		static void CallEvents(World& world, const CollisionDataContainer& collisions, const std::vector<BoundEvent>& events);
+		static void CallEvents(World& world, const CollisionDataContainer& collisions, const EventBase& eventBase);
 
 		static void CallEvent(const BoundEvent& event, World& world, entt::sparse_set& storage, entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint);
 
@@ -92,10 +90,6 @@ namespace CE
 		static constexpr float sMaxBVHRebuildDesire = 10'000.f;
 
 		std::vector<CollisionData> mPreviousCollisions{};
-
-		std::vector<BoundEvent> mOnCollisionEntryEvents{};
-		std::vector<BoundEvent> mOnCollisionStayEvents{};
-		std::vector<BoundEvent> mOnCollisionExitEvents{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();

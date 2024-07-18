@@ -12,7 +12,7 @@
 
 namespace CE
 {
-	class ScriptEvent;
+	class EventBase;
 }
 
 namespace CE
@@ -100,7 +100,7 @@ namespace CE
 	{
 	public:
 		ScriptFunc(const Script& script, std::string_view name);
-		ScriptFunc(const Script& script, const ScriptEvent& event);
+		ScriptFunc(const Script& script, const EventBase& event);
 
 		ScriptFunc(const ScriptFunc&) = delete;
 		ScriptFunc(ScriptFunc&&) noexcept = default;
@@ -235,7 +235,7 @@ namespace CE
 		void PostDeclarationRefresh();
 
 		bool IsEvent() const { return mBasedOnEvent != nullptr; }
-		const ScriptEvent* TryGetEvent() const { return mBasedOnEvent; }
+		const EventBase* TryGetEvent() const { return mBasedOnEvent; }
 
 	private:
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
@@ -264,7 +264,7 @@ namespace CE
 		std::vector<ScriptVariableTypeData> mParams{};
 		std::optional<ScriptVariableTypeData> mReturns{};
 
-		const ScriptEvent* mBasedOnEvent{};
+		const EventBase* mBasedOnEvent{};
 
 		std::unique_ptr<MetaProps> mProps{};
 

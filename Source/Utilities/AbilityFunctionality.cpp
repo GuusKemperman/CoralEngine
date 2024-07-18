@@ -21,6 +21,7 @@
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Systems/AbilitySystem.h"
 #include "Utilities/Random.h"
+#include "World/EventManager.h"
 
 CE::MetaType CE::AbilityFunctionality::Reflect()
 {
@@ -172,9 +173,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-
-			CallAllAbilityHitOrCritEvents(*world, characterEntity, hitEntity, abilityEntity, AbilitySystem::GetAbilityHitEvents());
-
+			world->GetEventManager().InvokeEventForAllComponentsOnEntity(sOnAbilityHit, characterEntity, hitEntity, abilityEntity);
 		}, "CallAllAbilityHitEvents", MetaFunc::ExplicitParams<
 		entt::entity, entt::entity, entt::entity>{}, "CharacterEntity", "HitEntity", "AbilityEntity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
@@ -182,9 +181,7 @@ CE::MetaType CE::AbilityFunctionality::Reflect()
 		{
 			World* world = World::TryGetWorldAtTopOfStack();
 			ASSERT(world != nullptr);
-
-			CallAllAbilityHitOrCritEvents(*world, characterEntity, hitEntity, abilityEntity, AbilitySystem::GetCritEvents());
-
+			world->GetEventManager().InvokeEventForAllComponentsOnEntity(sOnCrit, characterEntity, hitEntity, abilityEntity);
 		}, "CallAllCritEvents", MetaFunc::ExplicitParams<
 		entt::entity, entt::entity, entt::entity>{}, "CharacterEntity", "HitEntity", "AbilityEntity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
@@ -227,7 +224,7 @@ std::pair<std::optional<float>, bool> CE::AbilityFunctionality::ApplyInstantEffe
 			if (const auto isPlayer = reg.TryGet<PlayerComponent>(affectedEntity); isPlayer)
 			{
 				// On Getting Hit event
-				AbilitySystem::CallBoundEventsWithNoExtraParams(world, affectedEntity, AbilitySystem::GetGettingHitEvents());
+				world.GetEventManager().InvokeEventForAllComponentsOnEntity(sOnGettingHit, affectedEntity);
 			}
 			if (Math::AreFloatsEqual(characterComponent->mCurrentReceivedDamageModifier, -100.f))
 			{
@@ -599,30 +596,6 @@ void CE::AbilityFunctionality::ReplaceWeaponAtEnd(World& world, entt::entity ent
 	}
 
 	weaponInstance.ResetCooldownAndAmmo();
-}
-
-void CE::AbilityFunctionality::CallAllAbilityHitOrCritEvents(World& world, entt::entity characterEntity, entt::entity hitEntity, entt::entity abilityEntity, const std::vector<BoundEvent>& boundEvents)
-{
-	for (const BoundEvent& boundEvent : boundEvents)
-	{
-		entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
-
-		if (storage == nullptr
-			|| !storage->contains(characterEntity))
-		{
-			continue;
-		}
-
-		if (boundEvent.mIsStatic)
-		{
-			boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, characterEntity, hitEntity, abilityEntity);
-		}
-		else
-		{
-			MetaAny component{ boundEvent.mType, storage->value(characterEntity), false };
-			boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, characterEntity, hitEntity, abilityEntity);
-		}
-	}
 }
 
 void CE::AbilityFunctionality::CopyEffectsFromRuntimeWeapon(AbilityEffectsComponent& target, const WeaponInstance& source)
