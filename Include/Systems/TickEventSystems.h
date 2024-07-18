@@ -29,12 +29,12 @@ namespace CE
 		friend ReflectAccess;
 		static MetaType Reflect();
 
-		std::vector<BoundEvent> mBoundEvents = GetAllBoundEvents(sOnTick);
+		std::vector<BoundEvent> mBoundEvents;
 	};
 
 	template <bool IsFixed, TickResponsibility Responsibility>
 	TickEventSystem<IsFixed, Responsibility>::TickEventSystem() :
-		mBoundEvents(IsFixed ? GetAllBoundEvents(sOnFixedTick) : GetAllBoundEvents(sOnTick))
+		mBoundEvents(IsFixed ? GetAllBoundEventsSlow(sOnFixedTick) : GetAllBoundEventsSlow(sOnTick))
 	{
 		if constexpr (Responsibility == TickResponsibility::BeforeBeginPlay)
 		{

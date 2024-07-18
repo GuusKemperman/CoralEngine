@@ -889,6 +889,7 @@
     <ClCompile Include="Source\Utilities\StringFunctions.cpp" />
     <ClCompile Include="Source\Utilities\Time.cpp" />
     <ClCompile Include="Source\World\Archiver.cpp" />
+    <ClCompile Include="Source\World\EventManager.cpp" />
     <ClCompile Include="Source\World\Physics.cpp" />
     <ClCompile Include="source\World\World.cpp" />
     <ClCompile Include="Source\World\Registry.cpp" />
@@ -1188,6 +1189,7 @@
     <ClInclude Include="Include\Core\UnitTests.h" />
     <ClInclude Include="Include\Utilities\WeightedRandomDistribution.h" />
     <ClInclude Include="Include\World\Archiver.h" />
+    <ClInclude Include="Include\World\EventManager.h" />
     <ClInclude Include="Include\World\Physics.h" />
     <ClInclude Include="include\World\World.h" />
     <ClInclude Include="Include\World\Registry.h" />

@@ -48,7 +48,5 @@ namespace CE
 		static constexpr float sJoyStickNavigationCooldown = 0.25f;
 		static constexpr float sJoyStickMinMovementToNavigate = 0.3f;
 		float mSecondsSinceLastNavigationChange{};
-
-		std::vector<BoundEvent> mOnClickEvents = GetAllBoundEvents(sOnButtonPressed);
 	};
 }

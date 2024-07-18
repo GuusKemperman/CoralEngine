@@ -7,6 +7,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Meta/MetaType.h"
+#include "World/EventManager.h"
 
 void CE::AITickSystem::Update(World& world, float dt)
 {
@@ -70,7 +71,7 @@ void CE::AIEvaluateSystem::Update(World& world, float)
 #endif 
 	}
 
-	for (const BoundEvent& boundEvent : mBoundEvaluateEvents)
+	for (const BoundEvent& boundEvent : world.GetEventManager().GetBoundEvents(sOnAIEvaluate))
 	{
 		entt::sparse_set* const storage = reg.Storage(boundEvent.mType.get().GetTypeId());
 

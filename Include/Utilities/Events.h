@@ -136,11 +136,9 @@ namespace CE
 	 *
 	 *  Example: TryGetEvent(componentType, sOnFixedTick);
 	 */
-	template<typename EventT>
-	std::optional<BoundEvent> TryGetEvent(const MetaType& fromType, const EventT& event);
+	std::optional<BoundEvent> TryGetEvent(const MetaType& fromType, const EventBase& event);
 
-	template <typename EventT>
-	std::vector<BoundEvent> GetAllBoundEvents(const EventT& event);
+	std::vector<BoundEvent> GetAllBoundEventsSlow(const EventBase& event);
 
 	Span<std::reference_wrapper<const EventBase>> GetAllEvents();
 
@@ -260,7 +258,6 @@ namespace CE
 	inline const OnEndPlay sOnEndPlay{};
 
 #ifdef EDITOR
-
 	struct OnInspect :
 		EventType<OnInspect, void(), EventFlags::NotScriptable>
 	{
@@ -365,27 +362,5 @@ namespace CE
 	void BindEvent(MetaType& type, const EventT& event, FuncRet (*func)(FuncParams...))
 	{
 		BindEvent<std::monostate>(type, event, func);
-	}
-
-	namespace Internal
-	{
-		std::optional<BoundEvent> TryGetEvent(const MetaType& fromType, std::string_view eventName);
-	}
-
-	template <typename EventT>
-	std::optional<BoundEvent> TryGetEvent(const MetaType& fromType, const EventT& event)
-	{
-		return Internal::TryGetEvent(fromType, event.mName);
-	}
-
-	namespace Internal
-	{
-		std::vector<BoundEvent> GetAllBoundEvents(std::string_view eventName);
-	}
-
-	template <typename EventT>
-	std::vector<BoundEvent> GetAllBoundEvents(const EventT& event)
-	{
-		return Internal::GetAllBoundEvents(event.mName);
 	}
 }

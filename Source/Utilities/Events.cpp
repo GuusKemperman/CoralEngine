@@ -2,28 +2,29 @@
 #include "Utilities/Events.h"
 
 #include "Core/VirtualMachine.h"
+#include "Meta/MetaTools.h"
 #include "Scripting/ScriptFunc.h"
 #include "World/World.h"
 
-std::optional<CE::BoundEvent> CE::Internal::TryGetEvent(const MetaType& fromType, std::string_view eventName)
+std::optional<CE::BoundEvent> CE::TryGetEvent(const MetaType& fromType, const EventBase& base)
 {
-	const MetaFunc* func = fromType.TryGetFunc(eventName);
+	const MetaFunc* func = fromType.TryGetFunc(base.mName);
 
 	if (func != nullptr
 		&& func->GetProperties().Has(Internal::sIsEventProp))
 	{
-		return BoundEvent{ fromType, *func, func->GetProperties().Has(sIsEventStaticTag) };
+		return BoundEvent{ fromType, *func, func->GetProperties().Has(Internal::sIsEventStaticTag) };
 	}
 	return std::nullopt;
 }
 
-std::vector<CE::BoundEvent> CE::Internal::GetAllBoundEvents(std::string_view eventName)
+std::vector<CE::BoundEvent> CE::GetAllBoundEventsSlow(const EventBase& base)
 {
 	std::vector<BoundEvent> bound{};
 
 	for (const MetaType& type : MetaManager::Get().EachType())
 	{
-		std::optional<BoundEvent> boundEvent = Internal::TryGetEvent(type, eventName);
+		std::optional<BoundEvent> boundEvent = TryGetEvent(type, base);
 
 		if (!boundEvent.has_value())
 		{
@@ -44,7 +45,6 @@ namespace CE::Internal
 		return { events };
 	}
 }
-
 
 CE::Span<std::reference_wrapper<const CE::EventBase>> CE::GetAllEvents()
 {
@@ -141,11 +141,11 @@ void CE::EventBase::Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, con
 			MetaAny* scriptArgs = static_cast<MetaAny*>(ENGINE_ALLOCA(numOfArgsToPass * sizeof(MetaAny)));
 			ParamDeleter deleter{ scriptArgs, numOfArgsToPass };
 
-			new (scriptArgs)MetaAny(std::move(args[0]));
+			new (scriptArgs)MetaAny(MakeRef(args[0]));
 
 			for (size_t i = 0; i < numOfArgsToPass - 1; i++)
 			{
-				new (&scriptArgs[i + 1])MetaAny(std::move(args[i + 3]));
+				new (&scriptArgs[i + 1])MetaAny(MakeRef(args[i + 3]));
 			}
 
 			FuncResult result = VirtualMachine::Get().ExecuteScriptFunction(Span<MetaAny>{ scriptArgs, numOfArgsToPass}, rvoBuffer, scriptFunc, firstNode, entry);

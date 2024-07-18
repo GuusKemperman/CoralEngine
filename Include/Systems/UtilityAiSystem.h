@@ -41,8 +41,6 @@ namespace CE
 		template<typename EventT>
 		static void CallTransitionEvent(const EventT& event, const MetaType* type, World& world, entt::entity owner);
 
-		std::vector<BoundEvent> mBoundEvaluateEvents = GetAllBoundEvents(sOnAIEvaluate);
-
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AIEvaluateSystem);

@@ -10,16 +10,10 @@ namespace CE
 {
 	class MetaType;
 	class MetaAny;
-
 	class Prefab;
 	class PrefabEntityFactory;
 	class TransformComponent;
 	class System;
-
-	namespace Internal
-	{
-		struct DestroyCallBackInstaller;
-	}
 
 	// Wrapper around the entt registry.
 	class Registry
@@ -165,7 +159,6 @@ namespace CE
 
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
 		friend World;
-		friend Internal::DestroyCallBackInstaller;
 
 		std::reference_wrapper<World> mWorld; 
 		
@@ -194,9 +187,6 @@ namespace CE
 		};
 		std::vector<FixedTickSystem> mFixedTickSystems{};
 		std::vector<InternalSystem> mNonFixedSystems{};
-
-		std::vector<BoundEvent> mBoundBeginPlayEvents = GetAllBoundEvents(sOnBeginPlay);
-		std::vector<BoundEvent> mBoundEndPlayEvents = GetAllBoundEvents(sOnEndPlay);
 	};
 
 	template<typename ComponentType, typename ...AdditonalArgs>

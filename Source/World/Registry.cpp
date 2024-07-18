@@ -18,6 +18,7 @@
 #include "Meta/MetaTools.h"
 #include "Scripting/ScriptTools.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "World/EventManager.h"
 
 namespace CE::Internal
 {
@@ -342,7 +343,7 @@ void CE::Registry::RemovedDestroyed()
 		// This was done consciously as the chances of it
 		// occuring are tremendously low, and because using this
 		// approach is significantly faster.
-		for (const BoundEvent& endPlay : mBoundEndPlayEvents)
+		for (const BoundEvent& endPlay : GetWorld().GetEventManager().GetBoundEvents(sOnEndPlay))
 		{
 			entt::sparse_set* componentStorage = Storage(endPlay.mType.get().GetTypeId());
 
@@ -725,7 +726,7 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 
 	World::PushWorld(mWorld);
 
-	for (const BoundEvent& boundEvent : mBoundBeginPlayEvents)
+	for (const BoundEvent& boundEvent : mWorld.get().GetEventManager().GetBoundEvents(sOnBeginPlay))
 	{
 		entt::sparse_set* storage = Storage(boundEvent.mType.get().GetTypeId());
 

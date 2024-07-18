@@ -9,9 +9,8 @@ namespace CE
 	class Registry;
 	class WorldViewport;
 	class GPUWorld;
-	class DebugRenderer;
-	class BinaryGSONObject;
 	class Physics;
+	class EventManager;
 
 	class World
 	{
@@ -35,6 +34,9 @@ namespace CE
 
 		Physics& GetPhysics() { return *mPhysics; }
 		const Physics& GetPhysics() const { return *mPhysics; }
+
+		EventManager& GetEventManager() { return *mEventManager; }
+		const EventManager& GetEventManager() const { return *mEventManager; }
 
 		WorldViewport& GetViewport() { ASSERT(mViewport != nullptr); return *mViewport; };
 		const WorldViewport& GetViewport() const { ASSERT(mViewport != nullptr); return *mViewport; };
@@ -98,6 +100,7 @@ namespace CE
 		std::unique_ptr<WorldViewport> mViewport{};
 		std::unique_ptr<GPUWorld> mGPUWorld{};
 		std::unique_ptr<Physics> mPhysics{};
+		std::unique_ptr<EventManager> mEventManager{};
 
 		AssetHandle<Level> mLevelToTransitionTo{};
 		bool mHasEndPlayBeenRequested = false;

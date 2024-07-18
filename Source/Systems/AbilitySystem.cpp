@@ -19,17 +19,7 @@
 #include "Components/Abilities/ProjectileComponent.h"
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/AbilityFunctionality.h"
-
-CE::AbilitySystem::AbilitySystem()
-{
-    sAbilityActivateEvents = CE::GetAllBoundEvents(CE::sOnAbilityActivate);
-    sReloadStartedEvents = CE::GetAllBoundEvents(CE::sOnReloadStarted);
-    sReloadCompletedEvents = CE::GetAllBoundEvents(CE::sOnReloadCompleted);
-    sEnemyKilledEvents = CE::GetAllBoundEvents(CE::sOnEnemyKilled);
-    sGettingHitEvents = CE::GetAllBoundEvents(CE::sOnGettingHit);
-    sAbilityHitEvents = CE::GetAllBoundEvents(CE::sOnAbilityHit);
-    sCritEvents = CE::GetAllBoundEvents(CE::sOnCrit);
-}
+#include "World/EventManager.h"
 
 void CE::AbilitySystem::Update(World& world, float dt)
 {
@@ -243,7 +233,7 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
             // Reload
             if (reloadCompleted)
             {
-                CallBoundEventsWithNoExtraParams(world, entity, sReloadCompletedEvents);
+                world.GetEventManager().InvokeEventForAllComponentsOnEntity(sOnReloadCompleted, entity);
             }
             if ((CheckKeyboardInput<&Input::WasKeyboardKeyPressed>(weapon.mReloadKeyboardKeys) ||
                 CheckGamepadInput<&Input::WasGamepadButtonPressed>(weapon.mReloadGamepadButtons, playerComponent->mID)) &&
@@ -251,7 +241,7 @@ void CE::AbilitySystem::UpdateWeaponsVector(AbilitiesOnCharacterComponent& abili
             {
                 // Trigger reload
                 weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
-                CallBoundEventsWithNoExtraParams(world, entity, sReloadStartedEvents);
+                world.GetEventManager().InvokeEventForAllComponentsOnEntity(sOnReloadStarted, entity);
             }
 
             // Activate abilities for the player based on input
@@ -315,7 +305,7 @@ bool CE::AbilitySystem::ActivateAbility(World& world, entt::entity castBy, Chara
                 ability.mAbilityAsset->mOnAbilityActivateScript.GetMetaData().GetName(),
                 ability.mAbilityAsset.GetMetaData().GetName());
         }
-        CallBoundEventsWithNoExtraParams(world, castBy, sAbilityActivateEvents);
+        world.GetEventManager().InvokeEventForAllComponentsOnEntity(sOnAbilityActivate, castBy);
     }
     else
     {
@@ -364,7 +354,7 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
                 weapon.mWeaponAsset->mOnAbilityActivateScript.GetMetaData().GetName(),
                 weapon.mWeaponAsset.GetMetaData().GetName());
         }
-        CallBoundEventsWithNoExtraParams(world, castBy, sAbilityActivateEvents);
+        world.GetEventManager().InvokeEventForAllComponentsOnEntity(sOnAbilityActivate, castBy);
     }
     else
     {
@@ -375,35 +365,10 @@ bool CE::AbilitySystem::ActivateWeapon(World& world, entt::entity castBy, Charac
     {
         // Trigger reload
         weapon.mReloadCounter = weapon.mRuntimeWeapon->mRequirementToUse;
-        CallBoundEventsWithNoExtraParams(world, castBy, sReloadStartedEvents);
+        world.GetEventManager().InvokeEventForAllComponentsOnEntity(sOnReloadStarted, castBy);
     }
 
     return true;
-}
-
-void CE::AbilitySystem::CallBoundEventsWithNoExtraParams(World& world, entt::entity castBy,
-	const std::vector<CE::BoundEvent>& boundEvents)
-{
-    for (const BoundEvent& boundEvent : boundEvents)
-    {
-        entt::sparse_set* const storage = world.GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
-
-        if (storage == nullptr
-            || !storage->contains(castBy))
-        {
-            continue;
-        }
-
-        if (boundEvent.mIsStatic)
-        {
-            boundEvent.mFunc.get().InvokeUncheckedUnpacked(world, castBy);
-        }
-        else
-        {
-            MetaAny component{ boundEvent.mType, storage->value(castBy), false };
-            boundEvent.mFunc.get().InvokeUncheckedUnpacked(component, world, castBy);
-        }
-    }
 }
 
 CE::MetaType CE::AbilitySystem::Reflect()

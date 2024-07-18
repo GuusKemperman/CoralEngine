@@ -18,8 +18,6 @@ namespace CE
 		public System
 	{
 	public:
-		AnimationSystem();
-
 		void Update(World& world, float dt) override;
 
 	private:
