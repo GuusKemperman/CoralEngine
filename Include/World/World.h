@@ -72,7 +72,7 @@ namespace CE
 		void RequestEndplay() { mHasEndPlayBeenRequested = true; }
 
 		static void PushWorld(World& world);
-		static void PopWorld(uint32 amountToPop = 1);
+		static void PopWorld();
 
 		static World* TryGetWorldAtTopOfStack();
 

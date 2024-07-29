@@ -151,84 +151,24 @@ CE::GPUWorld& CE::World::GetGPUWorld() const
 	return *mGPUWorld;
 }
 
-static std::mutex sStackMutex{};
-static std::vector<std::pair<std::thread::id, std::stack<std::reference_wrapper<CE::World>>>> sWorldStacks{};
+// Each thread has their own worldstack. This allows multiple worlds to run in parallel.
+// While helpful for multi-threaded importing, this makes it difficult to do multi-threading
+// of a workload in the same world. This decision may have to be revised..
+static thread_local std::stack<std::reference_wrapper<CE::World>> sWorldStacks{};
 
 void CE::World::PushWorld(World& world)
 {
-	const std::thread::id curr = std::this_thread::get_id();
-
-	sStackMutex.lock();
-
-	if (sWorldStacks.size() >= 31)
-	{
-		// We always keep the main thread's stack in there
-		sWorldStacks.erase(std::remove_if(sWorldStacks.begin() + 1, sWorldStacks.end(),
-			[](const std::pair<std::thread::id, std::stack<std::reference_wrapper<World>>>& stack)
-			{
-				return stack.second.empty();
-			}), sWorldStacks.end());
-	}
-
-	const auto it = std::find_if(sWorldStacks.begin(), sWorldStacks.end(),
-		[curr](const std::pair<std::thread::id, std::stack<std::reference_wrapper<World>>>& stack)
-		{
-			return stack.first == curr;
-		});
-
-	if (it == sWorldStacks.end())
-	{
-		sWorldStacks.emplace_back(curr, std::stack<std::reference_wrapper<World>>{}).second.push(world);
-	}
-	else
-	{
-		it->second.push(world);
-	}
-
-	sStackMutex.unlock();
+	sWorldStacks.push(world);
 }
 
-void CE::World::PopWorld(uint32 amountToPop)
+void CE::World::PopWorld()
 {
-	const std::thread::id curr = std::this_thread::get_id();
-
-	sStackMutex.lock();
-
-	const auto it = std::find_if(sWorldStacks.begin(), sWorldStacks.end(),
-		[curr](const std::pair<std::thread::id, std::stack<std::reference_wrapper<World>>>& stack)
-		{
-			return stack.first == curr;
-		});
-
-	for (uint32 i = 0; i < amountToPop; i++)
-	{
-		it->second.pop();
-	}
-	sStackMutex.unlock();
+	sWorldStacks.pop();
 }
 
 CE::World* CE::World::TryGetWorldAtTopOfStack()
 {
-	const std::thread::id curr = std::this_thread::get_id();
-
-	sStackMutex.lock();
-
-	const auto it = std::find_if(sWorldStacks.begin(), sWorldStacks.end(),
-		[curr](const std::pair<std::thread::id, std::stack<std::reference_wrapper<World>>>& stack)
-		{
-			return stack.first == curr;
-		});
-
-	if (it == sWorldStacks.end()
-		|| it->second.empty())
-	{
-		sStackMutex.unlock();
-		return nullptr;
-	}
-
-	World* world = &it->second.top().get();
-	sStackMutex.unlock();
-	return world;
+	return sWorldStacks.empty() ? nullptr : &sWorldStacks.top().get();
 }
 
 void CE::World::TransitionToLevel(const AssetHandle<Level>& level)
