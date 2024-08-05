@@ -201,18 +201,21 @@ void CE::Device::InitializeDevice()
 
 	ComPtr<IDXGIAdapter1> adapter;
 	int adapterIndex = 0;
-	bool adapterFound = false;
-	while (dxgiFactory->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND) {
+
+	while (dxgiFactory->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND)
+	{
 		DXGI_ADAPTER_DESC1 desc;
 		adapter->GetDesc1(&desc);
 
-		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
+		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+		{
 			adapterIndex++;
 			continue;
 		}
 
 		hr = D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr);
-		if (SUCCEEDED(hr)) {
+		if (SUCCEEDED(hr)) 
+		{
 
 			hr = D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&mImpl->mDevice));
 			if (FAILED(hr)) {
@@ -227,8 +230,8 @@ void CE::Device::InitializeDevice()
 			{
 				LOG(LogCore, Fatal, "Failed to pick adaptor");
 			}
-			if (options5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED) {
-				adapterFound = false;
+			if (options5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED) 
+			{
 				break;
 			}
 		}

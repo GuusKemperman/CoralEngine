@@ -164,7 +164,9 @@ CE::StaticMesh::StaticMesh(StaticMesh&& other) noexcept = default;
 void CE::StaticMesh::DrawMesh() const
 {
     if (mImpl->mVertexBuffer == nullptr)
+    {
         return;
+    }
 
 	Device& engineDevice = Device::Get();
 	ID3D12GraphicsCommandList4* commandList = reinterpret_cast<ID3D12GraphicsCommandList4*>(engineDevice.GetCommandList());

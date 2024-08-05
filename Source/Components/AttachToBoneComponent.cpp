@@ -66,7 +66,7 @@ void CE::AttachToBoneComponent::OnInspect(World& world, const entt::entity owner
 			bone.clear();
 		}
 
-		for (const auto [boneName, _] : skinnedMesh->GetBoneMap())
+		for (const auto& [boneName, _] : skinnedMesh->GetBoneMap())
 		{
 			if (Search::Button(boneName))
 			{

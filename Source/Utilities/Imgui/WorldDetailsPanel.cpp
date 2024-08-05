@@ -147,7 +147,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 			}
 
 			if (Search::AddItem(func.GetDesignerFriendlyName(),
-				[&reg, &selectedEntities, &componentClass, &func](std::string_view name)
+				[&componentClass](std::string_view name)
 				{
 					// We only do this additional PushId for functions,
 					// prevents some weird behaviour

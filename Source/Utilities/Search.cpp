@@ -105,7 +105,6 @@ namespace
 	constexpr float sFilterStrength = .5f;
 
 	bool operator==(const Entry& lhs, const Entry& rhs);
-	bool operator!=(const Entry& lhs, const Entry& rhs);
 
 	void BeginChild();
 	bool IsResultSafeToUse(const Result& oldResult, const Input& currentInput);
@@ -443,11 +442,6 @@ namespace
 	bool operator==(const Entry& lhs, const Entry& rhs)
 	{
 		return lhs.mNumOfTotalChildren == rhs.mNumOfTotalChildren && lhs.mIsCategory == rhs.mIsCategory;
-	}
-
-	bool operator!=(const Entry& lhs, const Entry& rhs)
-	{
-		return lhs.mNumOfTotalChildren != rhs.mNumOfTotalChildren || lhs.mIsCategory != rhs.mIsCategory;
 	}
 
 	void BeginChild()

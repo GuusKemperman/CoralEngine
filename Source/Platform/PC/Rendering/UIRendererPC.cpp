@@ -74,7 +74,7 @@ void CE::UIRenderer::Render(const World& world)
     mDrawRequests.clear();
     ProcessDrawRequests(world);
 
-    for (int i = 0; i < mDrawRequests.size(); i++)
+    for (int i = 0; i < static_cast<int>(mDrawRequests.size()); i++)
     {
         if (!mDrawRequests[i].mIsText)
             RenderUI(world, mDrawRequests[i]);

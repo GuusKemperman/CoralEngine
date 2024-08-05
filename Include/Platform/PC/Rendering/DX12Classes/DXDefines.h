@@ -6,11 +6,28 @@
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 
-// D3D12 extension library.
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4324)
+#endif
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wclass-conversion"
+#pragma clang diagnostic ignored "-Wmissing-field-initializers"
+#pragma clang diagnostic ignored "-Wuninitialized"
+#endif
+
+// D3D12 extension library.
 #include "dx12/d3dx12.h"
+
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 // WINDOWS STUFF
 #pragma warning(push)

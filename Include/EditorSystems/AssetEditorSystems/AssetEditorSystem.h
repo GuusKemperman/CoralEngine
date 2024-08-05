@@ -495,6 +495,7 @@ namespace CE
 
 			break;
 		}
+		case DifferenceCheckState::Stage::NUM_OF_STAGES:;
 		}
 
 		mDifferenceCheckState.mStage = static_cast<typename DifferenceCheckState::Stage>(static_cast<int>(mDifferenceCheckState.mStage) + 1);

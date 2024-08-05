@@ -334,7 +334,6 @@ void CE::Texture::GenerateMipmaps() const
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;  // Only 2D textures are supported (this was checked in the calling function).
 	srvDesc.Texture2D.MipLevels = resourceDesc.MipLevels;
 
-	CD3DX12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
 	self.mImpl->mMipmapCB = std::make_unique<DXConstBuffer>(device, sizeof(DXGenerateMips), 1, "MIPMAP CREATION INFO BUFFER", FRAME_BUFFER_COUNT);
 
 

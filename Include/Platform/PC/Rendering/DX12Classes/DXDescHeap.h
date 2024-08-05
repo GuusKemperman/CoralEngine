@@ -39,7 +39,7 @@ public:
 	DXHeapHandle AllocateDepthStencil(DXResource* resource, ID3D12Device5* device, D3D12_DEPTH_STENCIL_VIEW_DESC* desc);
 
 	ID3D12DescriptorHeap* Get() const { return mDescriptorHeap.Get(); }
-	const int GetDescriptorSize() const { return mDescriptorSize; }
+	int GetDescriptorSize() const { return mDescriptorSize; }
 
 private:
 	

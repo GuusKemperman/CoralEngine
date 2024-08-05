@@ -120,7 +120,7 @@ namespace CE
 
         const InfoStruct::DXShadowMapInfo* GetShadowMap() const { return mShadowMap.get(); }
         const InfoStruct::DXParticleInfo& GetParticle(int i) const { return mParticles[i]; }
-        const int GetNumParticles() const { return mParticleCount; }
+        int GetNumParticles() const { return mParticleCount; }
 
         DebugRenderingData& GetDebugRenderingData() { return mDebugRenderingData; };
         UIRenderingData& GetUIRenderingData() { return mUIRenderingData; };
