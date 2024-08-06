@@ -4,7 +4,7 @@
 
 ## What is Coral Engine?
 
-Coral Engine is a game engine developed by students of [Breda University of Applied Sciences](https://www.buas.nl/en/programmes/creative-media-and-game-technologies). 
+Coral Engine is a game engine developed by students of [Breda University of Applied Sciences](https://www.buas.nl/en/programmes/creative-media-and-game-technologies). It was designed to be accesible to designers, so that entire games can be created without having to modify a line of C++.
 
 ### Key Features
 
