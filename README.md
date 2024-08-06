@@ -1,4 +1,4 @@
-![Coral Engine](https://github.com/BredaUniversityGames/2324-Y2C-PR-Top-Down/assets/98277839/80b868c5-b16f-4afb-b8f4-0cee822c2120)
+![Coral Engine](https://github.com/user-attachments/assets/aade2fbe-e69b-42ac-8b51-98d9ab0cd3c1)
 
 [*Watch the trailer*](https://youtu.be/Z4UFHaJ_ulQ?si=YbU7SAVAXNSH-myE)
 
