@@ -52,8 +52,10 @@ void DXResource::CreateUploadBuffer(const ComPtr<ID3D12Device5>& device, int dat
 {
 	auto heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 	auto resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(dataSize);
-	if (mUploadBuffers.size() <= currentSubresource)
+	if (static_cast<int>(mUploadBuffers.size()) <= currentSubresource)
+	{
 		mUploadBuffers.resize(currentSubresource + 1);
+	}
 
 	mUploadBuffers[currentSubresource] = std::make_unique<DXResource>(device, heapProperties, resourceDesc, nullptr, "Upload buffer", D3D12_RESOURCE_STATE_GENERIC_READ);
 }

@@ -420,7 +420,7 @@ void CE::GPUWorld::Update()
 
     for (auto [entity, lightComponent, transform] : pointLightView.each())
     {
-        if (mPointLightCounter >= mPointLights.size())
+        if (mPointLightCounter >= static_cast<int>(mPointLights.size()))
         {
             mPointLights.resize(mPointLights.size() + 100);
             mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->mResizeBuffer = true;
@@ -438,7 +438,7 @@ void CE::GPUWorld::Update()
     for (auto [entity, lightComponent, transform] : dirLightView.each())
     {
 
-        if (dirLightCounter >= mDirectionalLights.size())
+        if (dirLightCounter >= static_cast<int>(mDirectionalLights.size()))
         {
             mDirectionalLights.resize(mDirectionalLights.size() + 10);
             mStructuredBuffers[InfoStruct::DIRECTIONAL_LIGHT_SB]->mResizeBuffer = true;
@@ -719,7 +719,7 @@ void CE::GPUWorld::UpdateParticles(glm::vec3 cameraPos)
                     particleInfo.mLightRadius = radius;
                     particleInfo.mLightIntensity = lightComponent->mIntensity.GetValue(emitter, i);
 
-                    if (mPointLightCounter >= mPointLights.size())
+                    if (mPointLightCounter >= static_cast<int>(mPointLights.size()))
                     {
                         mPointLights.resize(mPointLights.size() + 100);
                         mStructuredBuffers[InfoStruct::POINT_LIGHT_SB]->mResizeBuffer = true;

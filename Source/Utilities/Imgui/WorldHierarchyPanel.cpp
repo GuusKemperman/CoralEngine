@@ -131,7 +131,7 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 					if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
 					{
-						ImGui::SetTooltip(Format("Entity {}", entt::to_integral(entity)).c_str());
+						ImGui::SetTooltip("%s", Format("Entity {}", entt::to_integral(entity)).c_str());
 					}
 
 					// Only objects with transforms can accept children

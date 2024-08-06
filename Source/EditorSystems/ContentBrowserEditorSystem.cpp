@@ -270,7 +270,7 @@ void CE::ContentBrowserEditorSystem::DisplayFolder(const ContentFolder& folder)
 
 	bool isSelected = &mSelectedFolder.get() == &folder;
 
-	auto recursiveCheckIfChildIsSelected = [this, &folder](const auto& self, const ContentFolder& folderToCheck) -> bool
+	auto recursiveCheckIfChildIsSelected = [&folder](const auto& self, const ContentFolder& folderToCheck) -> bool
 		{
 			if (&folder == &folderToCheck)
 			{
@@ -392,7 +392,7 @@ void CE::ContentBrowserEditorSystem::DisplayItemInFolder(T& item, ThumbnailEdito
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (ThumbnailEditorSystem::sGeneratedThumbnailResolution.x - textWidth) * 0.55f);
 	}
 
-	ImGui::TextWrapped(name.data());
+	ImGui::TextWrapped("%s", name.data());
 	ImGui::SetWindowFontScale(1.0f);
 
 	DisplayRightClickMenu(item);

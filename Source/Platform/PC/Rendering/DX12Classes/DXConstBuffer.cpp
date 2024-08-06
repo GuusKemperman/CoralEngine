@@ -37,7 +37,7 @@ void DXConstBuffer::BindToCompute(const ComPtr<ID3D12GraphicsCommandList4>& comm
 	command->SetComputeRootConstantBufferView(rootParameterIndex, mBuffers[frameIndex]->GetResource()->GetGPUVirtualAddress() + (mBufferPerObjectAlignedSize * offsetIndex));
 }
 
-const size_t DXConstBuffer::GetGPUPointer(int slot, int bufferIndex)
+size_t DXConstBuffer::GetGPUPointer(int slot, int bufferIndex) const
 {
 	return mBuffers[bufferIndex]->GetResource()->GetGPUVirtualAddress() + (mBufferPerObjectAlignedSize * slot);
 }

@@ -11,14 +11,13 @@ public:
 	void Bind(const ComPtr<ID3D12GraphicsCommandList4>& command, int rootParameterIndex, int offsetIndex, int frameIndexs) const;
 	void BindToCompute(const ComPtr<ID3D12GraphicsCommandList4>& command, int rootParameterIndex, int offsetIndex, int frameIndexs) const;
 
-	const size_t GetBufferPerObjectAlignedSize() { return mBufferPerObjectAlignedSize; }
-	const size_t GetGPUPointer(int slot, int bufferIndex);  /*{return buffer[bufferIndex]->GetResource()->GetGPUVirtualAddress() + (bufferPerObjectAlignedSize * slot); }*/
+	size_t GetBufferPerObjectAlignedSize() const { return mBufferPerObjectAlignedSize; }
+	size_t GetGPUPointer(int slot, int bufferIndex) const;
 
 private:
-		std::vector<std::unique_ptr<DXResource>> mBuffers;
-		UINT8* mBufferGPUAddress[2] = { 0,0 };
-		size_t mBufferPerObjectAlignedSize = 0;
-		size_t mBufferSize = 0;
-		bool inScope = false;
+	std::vector<std::unique_ptr<DXResource>> mBuffers;
+	UINT8* mBufferGPUAddress[2] = { 0,0 };
+	size_t mBufferPerObjectAlignedSize = 0;
+	size_t mBufferSize = 0;
 };
 

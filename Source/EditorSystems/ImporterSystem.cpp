@@ -185,9 +185,9 @@ void CE::ImporterSystem::Tick(const float dt)
 
 	if (numOfConflicts != 0)
 	{
-		ImGui::TextWrapped(Format("{} conflicts found", numOfConflicts).c_str());
+		ImGui::TextWrapped("%s", Format("{} conflicts found", numOfConflicts).c_str());
 	}
-
+	
 	ImGui::BeginDisabled(numOfConflicts != 0 || !mImportFutures.empty());
 
 	if(ImGui::Button("Import"))
@@ -233,7 +233,7 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::
 		return;
 	}
 
-	const auto [importerTypeId, importer] = TryGetImporterForExtension(fileToImport.extension());
+	const std::shared_ptr<const Importer> importer = TryGetImporterForExtension(fileToImport.extension()).second;
 
 	LOG(LogAssets, Message, "Importing {}", fileToImport.string());
 
@@ -250,6 +250,7 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::
 	}
 
 	ImportRequest request{ fileToImport, std::string{ reasonForImporting } };
+	
 
 	mImportFutures.emplace_back(
 		ImportFuture
@@ -596,7 +597,7 @@ void CE::ImporterSystem::Preview()
 	if (!mImportFutures.empty())
 	{
 		const std::string::size_type numOfDots = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() % 3 + 1;
-		ImGui::TextWrapped(Format("{} files remaining{}", mImportFutures.size(), std::string(numOfDots, '.')).c_str());
+		ImGui::TextWrapped("%s", Format("{} files remaining{}", mImportFutures.size(), std::string(numOfDots, '.')).c_str());
 	}
 
 	ImVec2 childSize = ImGui::GetContentRegionAvail();
@@ -614,7 +615,7 @@ void CE::ImporterSystem::Preview()
 		{
 			if (OpenErrorTab(isOpenAlready, shouldDisplay, "Some files failed to import - see Log"))
 			{
-				ImGui::TextWrapped(file.mFile.string().c_str());
+				ImGui::TextWrapped("%s", file.mFile.string().c_str());
 			}
 		}
 		CloseErrorTab(shouldDisplay);
@@ -721,7 +722,7 @@ uint32 CE::ImporterSystem::ShowErrorsToWarnAboutDiscardChanges()
 
 		if (OpenErrorTab(isOpenAlready, shouldDisplay, "Changes would be lost"))
 		{
-			ImGui::TextWrapped(Format("{} from {} has been modified after it was imported. Reimporting it would lead to these changes being lost. Delete the asset to confirm you want these changes to be lost.",
+			ImGui::TextWrapped("%s", Format("{} from {} has been modified after it was imported. Reimporting it would lead to these changes being lost. Delete the asset to confirm you want these changes to be lost.",
 				name,
 				preview.mImportRequest.mFile.string()).c_str());
 		}
@@ -750,7 +751,7 @@ uint32 CE::ImporterSystem::ShowReadOnlyErrors()
 		{
 			if (OpenErrorTab(isOpenAlready, shouldDisplay, "Files are read-only"))
 			{
-				ImGui::TextWrapped(Format("{} is read-only",
+				ImGui::TextWrapped("%s", Format("{} is read-only",
 				asset.GetFileOfOrigin()->string()).c_str());
 			}
 

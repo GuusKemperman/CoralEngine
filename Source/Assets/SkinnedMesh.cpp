@@ -1,5 +1,5 @@
 #include "Precomp.h"
-#include "assets/SkinnedMesh.h"
+#include "Assets/SkinnedMesh.h"
 
 #include "Meta/MetaType.h"
 #include "Utilities/StringFunctions.h"

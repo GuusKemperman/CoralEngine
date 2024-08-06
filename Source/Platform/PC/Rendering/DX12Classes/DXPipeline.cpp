@@ -1,6 +1,6 @@
 #include "Precomp.h"
-#include "../Include/Platform/PC/Rendering/DX12Classes/DxPipeline.h"
-#include "../Include/Platform/PC/Rendering/DX12Classes/DXSignature.h"
+#include "Platform/PC/Rendering/DX12Classes/DXPipeline.h"
+#include "Platform/PC/Rendering/DX12Classes/DXSignature.h"
 
 #ifdef _MSC_VER
 #pragma comment(lib, "d3dcompiler") // Automatically link with d3dcompiler.lib as we are using D3DCompile() below.
