@@ -7,7 +7,6 @@ namespace CE
 	class ParticleLightComponent
 	{
 	public:
-		ParticleProperty<float> mIntensity{ 1.0f };
 		ParticleProperty<float> mRadius{ 1.0f };
 
 	private:

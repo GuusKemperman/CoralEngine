@@ -6,13 +6,13 @@
 #include "Components/Particles/ParticleEmitterComponent.h"
 #include "Components/Particles/ParticlePhysicsComponent.h"
 #include "Components/TransformComponent.h"
-#include "Meta/MetaType.h"
-#include "Meta/MetaManager.h"
 #include "Utilities/DrawDebugHelpers.h"
+#include "Meta/MetaType.h"
+#include "Utilities/Math.h"
 
-void CE::ParticleDebugVisualizationSystem::Render(const World& world)
+void CE::ParticleDebugVisualizationSystem::Render(const World& world, RenderCommandQueue& commandQueue) const
 {
-	if ((DebugRenderer::GetDebugCategoryFlags() & DebugCategory::Particles) == 0)
+	if (!IsDebugDrawCategoryVisible(DebugDraw::Particles))
 	{
 		return;
 	}
@@ -43,7 +43,7 @@ void CE::ParticleDebugVisualizationSystem::Render(const World& world)
 				const glm::vec3 lineEnd = particlePos + physics.GetLinearVelocities()[i];
 				constexpr glm::vec4 color = glm::vec4{ 1.0f };
 
-				DrawDebugLine(world, DebugCategory::Particles, particlePos, lineEnd, color);
+				AddDebugLine(commandQueue, DebugDraw::Particles, particlePos, lineEnd, color);
 			}
 
 			const glm::quat particleOrientation = emitter.GetParticleOrientationWorld(i);
@@ -51,16 +51,16 @@ void CE::ParticleDebugVisualizationSystem::Render(const World& world)
 			const glm::vec3 right = Math::RotateVector(sRight, particleOrientation);
 			const glm::vec3 up = cross(forward, -right);
 
-			DrawDebugLine(world, DebugCategory::Particles, particlePos, particlePos + forward, glm::vec4{0.0f, 0.0f, 1.0f, 1.0f});
-			DrawDebugLine(world, DebugCategory::Particles, particlePos, particlePos + right, glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
-			DrawDebugLine(world, DebugCategory::Particles, particlePos, particlePos + up, glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
+			AddDebugLine(commandQueue, DebugDraw::Particles, particlePos, particlePos + forward, glm::vec4{0.0f, 0.0f, 1.0f, 1.0f});
+			AddDebugLine(commandQueue, DebugDraw::Particles, particlePos, particlePos + right, glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
+			AddDebugLine(commandQueue, DebugDraw::Particles, particlePos, particlePos + up, glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
 		}
 
 		if (boundingBoxMin.x != INFINITY)
 		{
 			const glm::vec3 halfExtends = (boundingBoxMax - boundingBoxMin) * .5f;
 			const glm::vec3 centre = boundingBoxMin + halfExtends;
-			DrawDebugBox(world, DebugCategory::Particles, centre, halfExtends, glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
+			AddDebugBox(commandQueue, DebugDraw::Particles, centre, halfExtends, glm::vec4{ 1.0f, 1.0f, 0.0f, 1.0f });
 		}
 	}
 }

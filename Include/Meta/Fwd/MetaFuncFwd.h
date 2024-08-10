@@ -140,7 +140,7 @@ namespace CE
 	{
 	public:
 		using DynamicArg = MetaAny;
-		using DynamicArgs = Span<DynamicArg>;
+		using DynamicArgs = std::span<DynamicArg>;
 
 		// The address at which the return value will be allocated.
 		// Can reduce the amount of mallocs/frees. Is completely optional.
@@ -277,7 +277,7 @@ namespace CE
 		If an RVOBuffer is provided, the return value will be allocated at that
 		address. You are then responsible for calling the destructor and free.
 		*/
-		FuncResult InvokeChecked(DynamicArgs args, Span<const TypeForm> formOfArgs, RVOBuffer rvoBuffer = nullptr) const;
+		FuncResult InvokeChecked(DynamicArgs args, std::span<const TypeForm> formOfArgs, RVOBuffer rvoBuffer = nullptr) const;
 
 		/*
 		Will call the function without checking if the arguments match the parameters.
@@ -300,7 +300,7 @@ namespace CE
 		If an RVOBuffer is provided, the return value will be allocated at that
 		address. You are then responsible for calling the destructor and free.
 		*/
-		FuncResult InvokeUnchecked(DynamicArgs args, Span<const TypeForm> formOfArgs, RVOBuffer rvoBuffer = nullptr) const;
+		FuncResult InvokeUnchecked(DynamicArgs args, std::span<const TypeForm> formOfArgs, RVOBuffer rvoBuffer = nullptr) const;
 
 		/*
 		Checks if the arguments can be passed to the parameters.
@@ -311,8 +311,8 @@ namespace CE
 
 		Returns the reason why we cannot pass these arguments to the parameters.
 		*/
-		static std::optional<std::string> CanArgBePassedIntoParam(Span<const DynamicArg> args,
-			Span<const TypeForm> formOfArgs,
+		static std::optional<std::string> CanArgBePassedIntoParam(std::span<const DynamicArg> args,
+			std::span<const TypeForm> formOfArgs,
 			const std::vector<MetaFuncNamedParam>& params);
 
 		/*

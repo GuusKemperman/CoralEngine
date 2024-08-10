@@ -44,7 +44,6 @@ void CE::CameraComponent::UpdateProjection(const float aspectRatio, bool recalcu
 void CE::CameraComponent::RecalculateViewProjection()
 {
 	mViewProjection = mProjection * mView;
-	mInvViewProjection = inverse(mViewProjection);
 }
 
 entt::entity CE::CameraComponent::GetSelected(const World& world)

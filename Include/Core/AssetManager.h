@@ -17,7 +17,7 @@ namespace CE
 	class AssetManager final :
 		public EngineSubsystem<AssetManager>
 	{
-		friend class EngineSubsystem<AssetManager>;
+		friend EngineSubsystem;
 		void PostConstruct() override;
 
 		~AssetManager();

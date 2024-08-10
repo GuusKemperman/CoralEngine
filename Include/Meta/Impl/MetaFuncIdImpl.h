@@ -20,7 +20,7 @@ namespace CE::Internal
 	template<typename Ret, typename... Types>
 	struct FunctionHasher<Ret(Types...)>
 	{
-		static CONSTEVAL uint32 value()
+		static constexpr uint32 value()
 		{
 			uint32 current = MakeTypeTraits<Ret>().Hash();
 			(
@@ -38,7 +38,7 @@ namespace CE::Internal
 namespace CE
 {
 	template<typename T>
-	CONSTEVAL FuncId MakeFuncId()
+	constexpr FuncId MakeFuncId()
 	{
 		return Internal::FunctionHasher<T>::value();
 	}

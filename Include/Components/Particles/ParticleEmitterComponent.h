@@ -36,14 +36,14 @@ namespace CE
 		glm::quat GetParticleOrientationWorld(uint32 particle) const;
 		void SetParticleOrientationWorld(uint32 particle, glm::quat orientation);
 
-		Span<float> GetParticleLifeTimesAsPercentage() { return mParticleTimeAsPercentage; }
-		Span<const float> GetParticleLifeTimesAsPercentage() const { return mParticleTimeAsPercentage; }
+		std::span<float> GetParticleLifeTimesAsPercentage() { return mParticleTimeAsPercentage; }
+		std::span<const float> GetParticleLifeTimesAsPercentage() const { return mParticleTimeAsPercentage; }
 
-		Span<float> GetParticleLifeSpans() { return mParticleLifeSpan; }
-		Span<const float> GetParticleLifeSpans() const { return mParticleLifeSpan; }
+		std::span<float> GetParticleLifeSpans() { return mParticleLifeSpan; }
+		std::span<const float> GetParticleLifeSpans() const { return mParticleLifeSpan; }
 
-		Span<const uint32> GetParticlesThatSpawnedDuringLastStep() const { return mParticlesSpawnedDuringLastStep; }
-		Span<const uint32> GetParticlesThatDiedDuringLastStep() const { return mParticlesThatDiedDuringLastStep; }
+		std::span<const uint32> GetParticlesThatSpawnedDuringLastStep() const { return mParticlesSpawnedDuringLastStep; }
+		std::span<const uint32> GetParticlesThatDiedDuringLastStep() const { return mParticlesThatDiedDuringLastStep; }
 
 		void PlayFromStart();
 

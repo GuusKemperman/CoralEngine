@@ -333,8 +333,8 @@ const CE::MetaFunc* CE::MetaType::TryGetFunc(const std::variant<Name, OperatorTy
 }
 
 // TODO does not work if the function is in a baseclass
-CE::FuncResult CE::MetaType::CallFunction(const std::variant<Name, OperatorType>& funcNameOrType, Span<MetaAny> args, 
-	Span<const TypeForm> formOfArgs, MetaFunc::RVOBuffer rvoBuffer) const
+CE::FuncResult CE::MetaType::CallFunction(const std::variant<Name, OperatorType>& funcNameOrType, std::span<MetaAny> args, 
+	std::span<const TypeForm> formOfArgs, MetaFunc::RVOBuffer rvoBuffer) const
 {
 	const auto candidates = mFunctions.equal_range(FuncKey{ funcNameOrType });
 

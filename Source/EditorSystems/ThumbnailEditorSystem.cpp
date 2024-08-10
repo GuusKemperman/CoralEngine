@@ -9,12 +9,10 @@
 #include "Assets/StaticMesh.h"
 #include "Assets/Texture.h"
 #include "Assets/Ability/Weapon.h"
-#include "Components/SkinnedMeshComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Core/AssetManager.h"
+#include "Core/Renderer.h"
 #include "Rendering/FrameBuffer.h"
-#include "Rendering/Renderer.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
@@ -40,7 +38,8 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 			Timer timeToRenderFrame{};
 
 			LOG(LogEditor, Verbose, "Rendering {} to thumbnail", current.mForAsset.GetMetaData().GetName());
-			Renderer::Get().RenderToFrameBuffer(current.mWorld, current.mFrameBuffer, current.mFrameBuffer.GetSize());
+			
+			current.mWorld.Render(&current.mFrameBuffer);
 
 			const auto result = mGeneratedThumbnails.emplace(std::piecewise_construct,
 				std::forward_as_tuple(Name::HashString(current.mForAsset.GetMetaData().GetName())),
@@ -146,11 +145,11 @@ ImTextureID CE::ThumbnailEditorSystem::GetThumbnail(const WeakAssetHandle<>& for
 
 		if (texture.index() == 1)
 		{
-			return std::get<1>(texture).GetImGuiId();
+			return Renderer::Get().GetPlatformId(std::get<1>(texture).GetPlatformImpl());
 		}
 
 		const AssetHandle<Texture> handle = std::get<0>(texture);
-		return handle == nullptr ? nullptr : handle->GetImGuiId();
+		return handle == nullptr ? nullptr : Renderer::Get().GetPlatformId(handle->GetPlatformImpl());
 	}
 
 	const auto inQueue = std::find_if(mGenerateQueue.begin(), mGenerateQueue.end(), 
@@ -200,15 +199,13 @@ void CE::ThumbnailEditorSystem::DisplayImGuiImage(const WeakAssetHandle<>& forAs
 ImTextureID CE::ThumbnailEditorSystem::GetDefaultThumbnail()
 {
 	AssetHandle<Texture> icon = AssetManager::Get().TryGetAsset<Texture>("T_DefaultIcon");
-	return icon == nullptr ? nullptr : icon->GetImGuiId();
+	return icon == nullptr ? nullptr : Renderer::Get().GetPlatformId(icon->GetPlatformImpl());
 }
 
 bool CE::ThumbnailEditorSystem::AreAllAssetsLoaded(const Timer& timeOut)
 {
 	bool allLoaded = LoadAssets<Material>(timeOut)
-		&& LoadAssets<StaticMesh>(timeOut)
-		&& LoadAssets<SkinnedMesh>(timeOut)
-		&& LoadAssets<Animation>(timeOut);
+		&& LoadAssets<StaticMesh>(timeOut);
 
 	for (WeakAssetHandle<Texture> weakAsset : AssetManager::Get().GetAllAssets<Texture>())
 	{
@@ -226,11 +223,6 @@ bool CE::ThumbnailEditorSystem::AreAllAssetsLoaded(const Timer& timeOut)
 
 		// Kickstarts the loading process
 		(void)*texture;
-
-		if (!texture->WasSendToGPU())
-		{
-			allLoaded = false;
-		}
 	}
 
 	return allLoaded;
@@ -328,12 +320,6 @@ CE::GetThumbnailRet GetThumbNailImpl<CE::Script>(const CE::WeakAssetHandle<CE::S
 }
 
 template <>
-CE::GetThumbnailRet GetThumbNailImpl<CE::Animation>(const CE::WeakAssetHandle<CE::Animation>&)
-{
-	return CE::AssetManager::Get().TryGetAsset<CE::Texture>("T_AnimationsIcon");
-}
-
-template <>
 CE::GetThumbnailRet GetThumbNailImpl<CE::Ability>(const CE::WeakAssetHandle<CE::Ability>& forAsset)
 {
 	CE::AssetHandle icon = CE::AssetHandle<CE::Ability>{ forAsset }->GetIconTexture();
@@ -387,25 +373,6 @@ CE::GetThumbnailRet GetThumbNailImpl<CE::StaticMesh>(const CE::WeakAssetHandle<C
 
 		staticMeshComponent.mStaticMesh = CE::AssetHandle<CE::StaticMesh>{ forAsset };
 		staticMeshComponent.mMaterial = CE::Material::TryGetDefaultMaterial();
-	}
-
-	return world;
-}
-
-template <>
-CE::GetThumbnailRet GetThumbNailImpl<CE::SkinnedMesh>(const CE::WeakAssetHandle<CE::SkinnedMesh>& forAsset)
-{
-	CE::World world = CE::Level::CreateDefaultWorld();
-
-	{
-		CE::Registry& reg = world.GetRegistry();
-		const entt::entity entity = reg.Create();
-
-		reg.AddComponent<CE::TransformComponent>(entity);
-		CE::SkinnedMeshComponent& skinnedMeshComponent = reg.AddComponent<CE::SkinnedMeshComponent>(entity);
-
-		skinnedMeshComponent.mSkinnedMesh = CE::AssetHandle<CE::SkinnedMesh>{ forAsset };
-		skinnedMeshComponent.mMaterial = CE::Material::TryGetDefaultMaterial();
 	}
 
 	return world;

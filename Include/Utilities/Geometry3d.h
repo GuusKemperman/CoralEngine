@@ -19,13 +19,13 @@ namespace CE
 	struct AABB3D
 	{
 		AABB3D() = default;
-		AABB3D(Span<const glm::vec3> points);
+		AABB3D(std::span<const glm::vec3> points);
 
 		glm::vec3 mMin{ std::numeric_limits<float>::infinity() };
 		glm::vec3 mMax{ -std::numeric_limits<float>::infinity() };
 	};
 
-	inline AABB3D::AABB3D(Span<const glm::vec3> points)
+	inline AABB3D::AABB3D(std::span<const glm::vec3> points)
 	{
 		for (const glm::vec3& point : points)
 		{

@@ -1,63 +1,167 @@
 #include "Precomp.h"
 #include "Utilities/DrawDebugHelpers.h"
-#include "Rendering/Renderer.h"
 
-#ifdef EDITOR
-void CE::DrawDebugLine(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, const glm::vec4& color)
+#include "glm/gtx/rotate_vector.hpp"
+
+#include "Core/Renderer.h"
+
+CE::DebugDraw::Enum CE::sDebugDrawFlags{};
+
+#ifdef DEBUG_DRAWING_ENABLED
+
+bool CE::IsDebugDrawCategoryVisible(DebugDraw::Enum category)
 {
-	const DebugRenderer& renderer = Renderer::Get().GetDebugRenderer();
-	renderer.AddLine(world, category, from, to, color);
+	return category & sDebugDrawFlags;
 }
 
-void CE::DrawDebugLine(const World& world, DebugCategory::Enum category, glm::vec2 from, glm::vec2 to, const glm::vec4& color, Plane::Enum plane)
+void CE::AddDebugLine(RenderCommandQueue& commandQueue, DebugDraw::Enum category, glm::vec3 from, glm::vec3 to, glm::vec4 color)
 {
-	const DebugRenderer& renderer = Renderer::Get().GetDebugRenderer();
-	renderer.AddLine(world, category, from, to, color, plane);
+	if (!(sDebugDrawFlags & category))
+	{
+		return;
+	}
+
+	Renderer::Get().AddLine(commandQueue, from, to, color, color);
 }
 
-void CE::DrawDebugCircle(const World& world, DebugCategory::Enum category, const glm::vec3& center, float radius, const glm::vec4& color, Plane::Enum plane)
+void CE::AddDebugCircle(RenderCommandQueue& commandQueue, DebugDraw::Enum category, glm::vec3 center, float radius, glm::vec4 color)
 {
-	const DebugRenderer& renderer = Renderer::Get().GetDebugRenderer();
-	renderer.AddCircle(world, category, center, radius, color, plane);
+	if (!(sDebugDrawFlags & category))
+	{
+		return;
+	}
+
+	constexpr float dt = glm::two_pi<float>() / 64.0f;
+	float t = 0.0f;
+
+	glm::vec3 v0(center.x + radius * cos(t), center.y + radius * sin(t), center.z);
+	for (; t < glm::two_pi<float>() - dt; t += dt)
+	{
+		const glm::vec3 v1(center.x + radius * cos(t + dt), center.y + radius * sin(t + dt), center.z);
+		AddDebugLine(commandQueue, category, v0, v1, color);
+		v0 = v1;
+	}
 }
 
-void CE::DrawDebugSphere(const World& world, DebugCategory::Enum category, const glm::vec3& center, float radius, const glm::vec4& color)
+void CE::AddDebugSphere(RenderCommandQueue& commandQueue, DebugDraw::Enum category, glm::vec3 center, float radius, glm::vec4 color)
 {
-	const DebugRenderer& renderer = Renderer::Get().GetDebugRenderer();
-	renderer.AddSphere(world, category, center, radius, color);
+	if (!(sDebugDrawFlags & category))
+	{
+		return;
+	}
+
+	constexpr float dt = glm::two_pi<float>() / 64.0f;
+	float t = 0.0f;
+
+	glm::vec3 v0(center.x + radius * cos(t), center.y + radius * sin(t), center.z);
+	for (; t < glm::two_pi<float>() - dt; t += dt)
+	{
+		const glm::vec3 v1(center.x + radius * cos(t + dt), center.y + radius * sin(t + dt), center.z);
+		AddDebugLine(commandQueue, category, v0, v1, color);
+		v0 = v1;
+	}
 }
 
-void CE::DrawDebugRectangle(const World& world, DebugCategory::Enum category,
-	const glm::vec3& center,
-	glm::vec2 halfExtends,
-	const glm::vec4& color,
-	Plane::Enum plane)
+void CE::AddDebugSquare(RenderCommandQueue& commandQueue, DebugDraw::Enum category, glm::vec3 center, float size, glm::vec4 color)
 {
-	const DebugRenderer& renderer = Renderer::Get().GetDebugRenderer();
-	renderer.AddRectangle(world, category, center, halfExtends, color, plane);
+	if (!(sDebugDrawFlags & category))
+	{
+		return;
+	}
+
+	const float s = size * 0.5f;
+	const glm::vec3 a = center + glm::vec3{ -s, -s, 0.0f };
+	const glm::vec3 b = center + glm::vec3{ -s, s, 0.0f };
+	const glm::vec3 c = center + glm::vec3{ s, s, 0.0f };
+	const glm::vec3 d = center + glm::vec3{ s, -s, 0.0f };
+
+	AddDebugLine(commandQueue, category, a, b, color);
+	AddDebugLine(commandQueue, category, b, c, color);
+	AddDebugLine(commandQueue, category, c, d, color);
+	AddDebugLine(commandQueue, category, d, a, color);
 }
 
-void CE::DrawDebugBox(const World& world, DebugCategory::Enum category, const glm::vec3& center, const glm::vec3& halfExtends, const glm::vec4& color)
+void CE::AddDebugBox(RenderCommandQueue& commandQueue, DebugDraw::Enum category, glm::vec3 center, glm::vec3 halfExtents, glm::vec4 color)
 {
-	const DebugRenderer& renderer = Renderer::Get().GetDebugRenderer();
-	renderer.AddBox(world, category, center, halfExtends, color);
+	if (!(sDebugDrawFlags & category))
+	{
+		return;
+	}
+
+	// Calculate the minimum and maximum corner points of the box
+	const glm::vec3 minCorner = center - halfExtents;
+	const glm::vec3 maxCorner = center + halfExtents;
+
+	// Generate the lines for the box
+	// Front face
+	AddDebugLine(commandQueue, category, glm::vec3(minCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, minCorner.y, minCorner.z), color);
+	AddDebugLine(commandQueue, category, glm::vec3(maxCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), color);
+	AddDebugLine(commandQueue, category, glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, maxCorner.y, minCorner.z), color);
+	AddDebugLine(commandQueue, category, glm::vec3(minCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, minCorner.y, minCorner.z), color);
+
+	// Back face
+	AddDebugLine(commandQueue, category, glm::vec3(minCorner.x, minCorner.y, maxCorner.z), glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), color);
+	AddDebugLine(commandQueue, category, glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), color);
+	AddDebugLine(commandQueue, category, glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), color);
+	AddDebugLine(commandQueue, category, glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), glm::vec3(minCorner.x, minCorner.y, maxCorner.z), color);
+
+	// Connecting lines between the front and back faces
+	AddDebugLine(commandQueue, category, glm::vec3(minCorner.x, minCorner.y, minCorner.z), glm::vec3(minCorner.x, minCorner.y, maxCorner.z), color);
+	AddDebugLine(commandQueue, category, glm::vec3(maxCorner.x, minCorner.y, minCorner.z), glm::vec3(maxCorner.x, minCorner.y, maxCorner.z), color);
+	AddDebugLine(commandQueue, category, glm::vec3(maxCorner.x, maxCorner.y, minCorner.z), glm::vec3(maxCorner.x, maxCorner.y, maxCorner.z), color);
+	AddDebugLine(commandQueue, category, glm::vec3(minCorner.x, maxCorner.y, minCorner.z), glm::vec3(minCorner.x, maxCorner.y, maxCorner.z), color);
 }
 
-void CE::DrawDebugCylinder(const World& world, DebugCategory::Enum category, const glm::vec3& from, const glm::vec3& to, float radius, uint32 segments, const glm::vec4& color)
+void CE::AddDebugCylinder(RenderCommandQueue& commandQueue, DebugDraw::Enum category, glm::vec3 from, glm::vec3 to, float radius, glm::vec4 color)
 {
-	const DebugRenderer& renderer = Renderer::Get().GetDebugRenderer();
-	renderer.AddCylinder(world, category, from, to, radius, segments, color);
+	if (!(sDebugDrawFlags & category))
+	{
+		return;
+	}
+
+	// Should be atleast 4
+	static constexpr uint32 segments = 8;
+
+	// Rotate a point around axis to form cylinder segments
+	const float angleIncrease = glm::radians(360.0f / segments);
+	float angle = angleIncrease;
+	glm::vec3 axis = glm::normalize(to - from);
+
+	glm::vec3 perpendicular{};
+	glm::vec3 axisAbs = glm::abs(axis);
+
+	// Find best basis vectors
+	if (axisAbs.z > axisAbs.x
+		&& axisAbs.z > axisAbs.y)
+	{
+		perpendicular = glm::vec3(1.0f, 0.0f, 0.0f);
+	}
+	else
+	{
+		perpendicular = glm::vec3(0.0f, 0.0f, 1.0f);
+	}
+
+	perpendicular = glm::normalize(perpendicular - axis * glm::vec3(perpendicular.x * axis.x + perpendicular.y * axis.y + perpendicular.z * axis.z));
+	glm::vec3 segment = glm::rotate(perpendicular, 0.0f, axis) * radius;
+
+	glm::vec3 p1 = segment + from;
+	glm::vec3 p3 = segment + to;
+
+	for (uint32 i = 0; i < segments; ++i)
+	{
+		segment = glm::rotate(perpendicular, angle, axis) * radius;
+		glm::vec3 p2 = segment + from;
+		glm::vec3 p4 = segment + to;
+
+		AddDebugLine(commandQueue, category, p2, p4, color);
+		AddDebugLine(commandQueue, category, p1, p2, color);
+		AddDebugLine(commandQueue, category, p3, p4, color);
+
+		p1 = p2;
+		p3 = p4;
+		angle += angleIncrease;
+	}
 }
 
-void CE::DrawDebugPolygon(const World& world, DebugCategory::Enum category, const std::vector<glm::vec3>& points, const glm::vec4& color)
-{
-	const DebugRenderer& renderer = Renderer::Get().GetDebugRenderer();
-	renderer.AddPolygon(world, category, points, color);
-}
+#endif // DEBUG_DRAWING_ENABLED
 
-void CE::DrawDebugPolygon(const World& world, DebugCategory::Enum category, const std::vector<glm::vec2>& points, const glm::vec4& color, Plane::Enum plane)
-{
-	const DebugRenderer& renderer = Renderer::Get().GetDebugRenderer();
-	renderer.AddPolygon(world, category, points, color, plane);
-}
-#endif // EDITOR

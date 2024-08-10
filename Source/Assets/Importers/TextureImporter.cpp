@@ -46,7 +46,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::TextureImporter::Import(const 
 std::optional<CE::ImportedAsset> CE::TextureImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
 	const std::string& name,
 	const uint32 importerVersion,
-	const Span<const char> buffers,
+	const std::span<const char> buffers,
 	const uint32 width,
 	const uint32 height)
 {

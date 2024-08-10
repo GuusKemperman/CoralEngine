@@ -297,7 +297,7 @@ void CE::ScriptEditorSystem::AddNewNode(const NodeTheUserCanAdd& nodeToAdd)
 	if (const ScriptPin* startPin = currentFunc->TryGetPin(mPinTheUserIsTryingToLink);
 		startPin != nullptr)
 	{
-		const Span<const ScriptPin> pins = startPin->IsOutput() ? node.GetInputs(*currentFunc) : node.GetOutputs(*currentFunc);
+		const std::span<const ScriptPin> pins = startPin->IsOutput() ? node.GetInputs(*currentFunc) : node.GetOutputs(*currentFunc);
 
 		for (const ScriptPin& pin : pins)
 		{

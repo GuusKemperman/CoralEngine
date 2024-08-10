@@ -13,7 +13,6 @@ void CE::ParticleLightSystem::Update(World& world, [[maybe_unused]] float dt)
 
 	for (auto [entity, emitter, lightComponent] : emitterView.each())
 	{
-		lightComponent.mIntensity.SetInitialValuesOfNewParticles(emitter);
 		lightComponent.mRadius.SetInitialValuesOfNewParticles(emitter);
 	}
 }

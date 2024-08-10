@@ -32,16 +32,16 @@ CE::Font::Font(AssetLoadInfo& loadInfo) :
     mScale = sFontSize / (ascent - descent);
     
     // Calculate how big the font atlas image should be
-    int requiredPixels = (int)sFontSize * (int)sFontSize * sFontAtlasNumCharacters;
-    uint32_t dimension = Math::NextPowerOfTwo(glm::sqrt(requiredPixels));
-    uint32_t numPixels = dimension * dimension;
+    constexpr int requiredPixels = Math::sqr(static_cast<int>(sFontSize)) * sFontAtlasNumCharacters;
+    const int dimension = static_cast<int>(Math::NextPowerOfTwo(glm::sqrt(requiredPixels)));
+    const int numPixels = dimension * dimension;
 
-    unsigned char* bitmap = static_cast<unsigned char*>(malloc(numPixels));
+    std::vector<std::byte> bitmap(numPixels);
     mPackedCharacters.resize(sFontAtlasNumCharacters);
 
     // Pack font
     stbtt_pack_context packContext{};
-    stbtt_PackBegin(&packContext, bitmap, dimension, dimension, 0, 2, nullptr);
+    stbtt_PackBegin(&packContext, reinterpret_cast<unsigned char*>(bitmap.data()), dimension, dimension, 0, 2, nullptr);
     stbtt_PackFontRange(
         &packContext,
         bufferPtr,
@@ -52,8 +52,8 @@ CE::Font::Font(AssetLoadInfo& loadInfo) :
     stbtt_PackEnd(&packContext);
 
     // Expand bitmap to all color channels
-    unsigned char* rgba = new unsigned char[numPixels * 4];
-    for (uint32_t i = 0; i < numPixels; ++i)
+    std::vector<std::byte> rgba(numPixels * 4);
+    for (int i = 0; i < numPixels; ++i)
     {
         rgba[i * 4 + 0] = bitmap[i];
         rgba[i * 4 + 1] = bitmap[i];
@@ -61,10 +61,7 @@ CE::Font::Font(AssetLoadInfo& loadInfo) :
         rgba[i * 4 + 3] = bitmap[i];
     }
 
-    mTexture = std::make_unique<Texture>(std::string("FontAtlas-") + GetName(), dimension, dimension, rgba);
-
-    delete[] rgba;
-    free(bitmap);
+    mTexture = std::make_unique<Texture>(std::string("FontAtlas-") + GetName(), rgba, glm::ivec2{ dimension });
 }
 
 CE::MetaType CE::Font::Reflect()

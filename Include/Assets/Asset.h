@@ -28,7 +28,7 @@ namespace CE
 		Asset(Asset&&) noexcept = default;
 		Asset(const Asset&) = default;
 
-		Asset& operator=(Asset&&) = delete;
+		Asset& operator=(Asset&&) = default;
 		Asset& operator=(const Asset&) = default;
 
 		const std::string& GetName() const { return mName; }

@@ -1,6 +1,8 @@
 #include "Precomp.h"
 #include "Components/TransformComponent.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include "GSON/GSONBinary.h"
 #include "World/World.h"
 #include "World/Registry.h"
@@ -8,6 +10,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
+#include "Utilities/Math.h"
 
 namespace
 {

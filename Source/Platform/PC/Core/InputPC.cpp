@@ -61,7 +61,7 @@ Input::Input()
         return;
     }
 
-    GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
+    GLFWwindow* window = static_cast<GLFWwindow*>(Device::Get().GetWindow());
 
     // glfwSetJoystickCallback(joystick_callback);
     glfwSetKeyCallback(window, key_callback);
@@ -76,7 +76,7 @@ Input::~Input()
         return;
     }
 
-    GLFWwindow* window = reinterpret_cast<GLFWwindow*>(Device::Get().GetWindow());
+    GLFWwindow* window = static_cast<GLFWwindow*>(Device::Get().GetWindow());
     
     // glfwSetJoystickCallback(NULL);
     glfwSetCursorPosCallback(window, NULL);

@@ -7,84 +7,20 @@
 #include <assimp/GltfMaterial.h>
 
 #include "Assets/StaticMesh.h"
-#include "Assets/SkinnedMesh.h"
 #include "Assets/Material.h"
 #include "Assets/Texture.h"
-#include "Assets/Animation/Animation.h"
-#include "Assets/Animation/BoneInfo.h"
-#include "Assets/Animation/Bone.h"
 #include "stb_image/stb_image.h"
 #include "Assets/Importers/MaterialImporter.h"
 #include "Assets/Importers/TextureImporter.h"
-#include "Assets/Importers/AnimationImporter.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Assets/Importers/PrefabImporter.h"
 #include "Components/NameComponent.h"
 #include "Components/TransformComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/SkinnedMeshComponent.h"
 #include "Core/AssetManager.h"
 #include "Utilities/ClassVersion.h"
 #include "Meta/MetaManager.h"
-
-static std::string GetEmbedTexName(const std::filesystem::path& modelPath, const int index)
-{
-	return modelPath.filename().replace_extension().string().append("_tex").append(std::to_string(index));
-}
-
-static std::string GetTexName(const char* name)
-{
-	return std::filesystem::path(name).filename().replace_extension().string();
-}
-
-static std::string GetMeshName(const std::filesystem::path& modelPath, const char* name)
-{
-	return modelPath.filename().replace_extension().string().append("_").append(name);
-}
-
-static std::string GetSceneName(const std::filesystem::path& modelPath)
-{
-	return modelPath.filename().replace_extension().string().append("_").append("Prefab");
-}
-
-static std::string GetMaterialName(const std::filesystem::path& modelPath, const char* name, const int index)
-{
-	return (*name == *"") ? "M_" + modelPath.filename().string() + *"_Unnamed_Material_" + std::to_string(index) : name;
-}
-
-static std::string GetAnimName(const std::filesystem::path& modelPath, const char* name)
-{
-	return modelPath.filename().replace_extension().string().append("_").append(name).append("_").append("Animation");
-}
-
-static int GetIndexFromAssimpTextureName(const char* name)
-{
-	return atoi(std::string(name).erase(0, 1).c_str());
-}
-
-static inline glm::vec3 GetGLMVec(const aiVector3D& vec) 
-{ 
-	return glm::vec3(vec.x, vec.y, vec.z); 
-}
-
-static inline glm::quat GetGLMQuat(const aiQuaternion& pOrientation)
-{
-	return glm::quat(pOrientation.w, pOrientation.x, pOrientation.y, pOrientation.z);
-}
-
-void ReadHierarchyForAnimRecursive(const aiNode& node, CE::AnimNode& dest)
-{
-	dest.mName = node.mName.C_Str();
-	dest.mTransform = glm::transpose(reinterpret_cast<const glm::mat4x4&>(node.mTransformation));
-
-	for (size_t j = 0; j < node.mNumChildren; j++)
-	{
-		CE::AnimNode newNode;
-		ReadHierarchyForAnimRecursive(*node.mChildren[j], newNode);
-		dest.mChildren.push_back(newNode);
-	}
-}
 
 namespace
 {
@@ -98,8 +34,37 @@ namespace
 		std::unique_ptr<CE::Internal::AssetInternal> mDummyAsset{};
 		CE::AssetHandle<T> mHandle{};
 	};
-}
 
+	std::string GetEmbedTexName(const std::filesystem::path& modelPath, const int index)
+	{
+		return modelPath.filename().replace_extension().string().append("_tex").append(std::to_string(index));
+	}
+
+	std::string GetTexName(const char* name)
+	{
+		return std::filesystem::path(name).filename().replace_extension().string();
+	}
+
+	std::string GetMeshName(const std::filesystem::path& modelPath, const char* name)
+	{
+		return modelPath.filename().replace_extension().string().append("_").append(name);
+	}
+
+	std::string GetSceneName(const std::filesystem::path& modelPath)
+	{
+		return modelPath.filename().replace_extension().string().append("_").append("Prefab");
+	}
+
+	std::string GetMaterialName(const std::filesystem::path& modelPath, const char* name, const int index)
+	{
+		return (*name == *"") ? "M_" + modelPath.filename().string() + *"_Unnamed_Material_" + std::to_string(index) : name;
+	}
+
+	int GetIndexFromAssimpTextureName(const char* name)
+	{
+		return atoi(std::string(name).erase(0, 1).c_str());
+	}
+}
 
 std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const std::filesystem::path& file) const
 {
@@ -137,7 +102,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 
 		int width{}, height{}, channels{};
 
-		const CE::Span<char> pixels = { 
+		const std::span<char> pixels = { 
 			reinterpret_cast<char*>(stbi_load_from_memory(reinterpret_cast<const unsigned char*>(aiTex.pcData), size, &width, &height, &channels, 4)),
 			static_cast<unsigned int>(width * height * 4)};
 
@@ -215,29 +180,22 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 
 		const std::string meshName = GetMeshName(file, mesh.mName.C_Str());
 
-		const Span<const glm::vec3> positions = { reinterpret_cast<const glm::vec3*>(mesh.mVertices), mesh.mNumVertices };
-		std::optional<std::vector<uint32>> indices{};
-		std::optional<Span<const glm::vec3>> normals{};
-		std::optional<std::vector<glm::vec2>> textureCoordinates{};
-		std::optional<std::vector<glm::vec3>> tangents{};
-		
-		std::optional<std::vector<glm::ivec4>> boneIds{};
-		std::optional<std::vector<glm::vec4>> boneWeights{};
-		std::optional<std::unordered_map<std::string, BoneInfo>> boneMap{};
-		int boneCounter = 0;
-
-		bool isSkinnedMesh = false;
+		const std::span<const glm::vec3> positions = { reinterpret_cast<const glm::vec3*>(mesh.mVertices), mesh.mNumVertices };
+		std::vector<uint32> indices{};
+		std::span<const glm::vec3> normals{};
+		std::vector<glm::vec2> textureCoordinates{};
+		std::span<const glm::vec3> tangents{};
 
 		if (mesh.HasFaces())
 		{
-			indices = std::vector<uint32>(mesh.mNumFaces * 3);
+			indices.resize(mesh.mNumFaces * 3);
 			size_t insertAt = 0;
 			for (uint32 faceI = 0; faceI < mesh.mNumFaces; faceI++)
 			{
 				const aiFace& face = mesh.mFaces[faceI];
 				for (uint32 faceJ = 0; faceJ < face.mNumIndices; faceJ++, insertAt++)
 				{
-					(*indices)[insertAt] = face.mIndices[faceJ];
+					indices[insertAt] = face.mIndices[faceJ];
 				}
 			}
 		}
@@ -249,91 +207,20 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 
 		if (mesh.HasTextureCoords(0))
 		{
-			textureCoordinates = std::vector<glm::vec2>(mesh.mNumVertices);
+			textureCoordinates.resize(mesh.mNumVertices);
 			for (uint32 v = 0; v < mesh.mNumVertices; v++)
 			{
-				(*textureCoordinates)[v] = { mesh.mTextureCoords[0][v].x,  mesh.mTextureCoords[0][v].y };
+				textureCoordinates[v] = { mesh.mTextureCoords[0][v].x,  mesh.mTextureCoords[0][v].y };
 			}
 		}
 
 		if (mesh.HasTangentsAndBitangents())
 		{
-			tangents = std::vector<glm::vec3>( reinterpret_cast<const glm::vec3*>(mesh.mTangents), reinterpret_cast<const glm::vec3*>(mesh.mTangents) + mesh.mNumVertices );
-		}
-
-		// Load bone data
-		if (mesh.HasBones())
-		{
-			boneIds = std::vector<glm::ivec4>(mesh.mNumVertices, glm::ivec4(-1));
-			boneWeights = std::vector<glm::vec4>(mesh.mNumVertices, glm::vec4(0.0f));
-			boneMap = std::unordered_map<std::string, BoneInfo>{};
-
-			for (unsigned int boneIndex = 0; boneIndex < mesh.mNumBones; boneIndex++)
-			{
-				int boneId = -1;
-				std::string boneName = mesh.mBones[boneIndex]->mName.C_Str();
-				
-				if (boneMap->find(boneName) == boneMap->end())
-				{
-					BoneInfo newBoneInfo{};
-					newBoneInfo.mId = boneCounter;
-					newBoneInfo.mOffset = glm::transpose(reinterpret_cast<const glm::mat4&>(mesh.mBones[boneIndex]->mOffsetMatrix));
-					(*boneMap)[boneName] = newBoneInfo;
-					boneId = boneCounter;
-					boneCounter++;
-				}
-				else 
-				{
-					boneId = (*boneMap)[boneName].mId;				
-				}
-				
-				if (boneId == -1)
-				{
-					LOG(LogAssets, Error, "Loading of animated mesh {} in file {} failed", mesh.mName.C_Str(), file.string());
-					anyErrors = true;
-					break;
-				}
-
-				aiVertexWeight* weights = mesh.mBones[boneIndex]->mWeights;
-				int numWeights = mesh.mBones[boneIndex]->mNumWeights;
-				
-				for (int weightIndex = 0; weightIndex < numWeights; weightIndex++)
-				{
-					unsigned int vertexId = weights[weightIndex].mVertexId;
-					float weight = weights[weightIndex].mWeight;
-					if (vertexId > mesh.mNumVertices)
-					{
-						LOG(LogAssets, Error, "Loading of animated mesh {} in file {} failed", mesh.mName.C_Str(), file.string());
-						anyErrors = true;
-						break;
-					}
-
-					glm::vec4* vertexBoneWeights = &(*boneWeights)[vertexId];
-					glm::ivec4* vertexBoneIds = &(*boneIds)[vertexId];
-					for (int j = 0; j < MAX_BONE_INFLUENCE; j++)
-					{
-						if ((*vertexBoneIds)[j] < 0)
-						{
-							(*vertexBoneWeights)[j] = weight;
-							(*vertexBoneIds)[j] = boneId;
-							break;
-						}
-					}
-				}
-			}
-			isSkinnedMesh = true;
+			tangents = std::span<const glm::vec3>{ reinterpret_cast<const glm::vec3*>(mesh.mTangents), mesh.mNumVertices };
 		}
 
 		std::optional<ImportedAsset> importedMesh{}; 
-
-		if (isSkinnedMesh)
-		{
-			importedMesh = ImportFromMemory(file, meshName, myVersion, positions, indices, normals, tangents, textureCoordinates, boneIds, boneWeights, boneMap);
-		} 
-		else
-		{
-			importedMesh = ImportFromMemory(file, meshName, myVersion, positions, indices, normals, tangents, textureCoordinates);
-		}
+		importedMesh = ImportFromMemory(file, meshName, myVersion, positions, indices, normals, tangents, textureCoordinates);
 
 		if (importedMesh.has_value())
 		{
@@ -346,76 +233,12 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 		}
 	}
 
-	for (uint32 animIndex = 0; animIndex < scene->mNumAnimations; animIndex++)
-	{
-		const aiAnimation& aiAnim = *scene->mAnimations[animIndex];
-		
-		if (aiAnim.mNumChannels <= 0 )
-		{
-			continue;
-		}
-		
-		Animation engineAnim{ GetAnimName(file, aiAnim.mName.C_Str()) };
-		engineAnim.mDuration = static_cast<float>(aiAnim.mDuration);
-		engineAnim.mTickPerSecond = static_cast<float>(aiAnim.mTicksPerSecond);
-		
-		engineAnim.mBones = std::vector<Bone>();
-		
-		ReadHierarchyForAnimRecursive(*scene->mRootNode, engineAnim.mRootNode);
-
-		int size = aiAnim.mNumChannels;
-		for (int channelIndex = 0; channelIndex < size; channelIndex++)
-		{
-			auto channel = aiAnim.mChannels[channelIndex];
-
-			// Create bone
-			AnimData animData{};
-			animData.mPositions.resize(channel->mNumPositionKeys);
-			animData.mRotations.resize(channel->mNumRotationKeys);
-			animData.mScales.resize(channel->mNumScalingKeys);
-
-			unsigned int numPositions = channel->mNumPositionKeys;
-			unsigned int numRotations = channel->mNumRotationKeys;
-			unsigned int numScalings = channel->mNumScalingKeys;
-
-			for (unsigned int positionIndex = 0; positionIndex < numPositions; positionIndex++)
-			{
-				KeyPosition data{};
-				data.position = GetGLMVec(channel->mPositionKeys[positionIndex].mValue);
-				data.timeStamp = static_cast<float>(channel->mPositionKeys[positionIndex].mTime);
-				animData.mPositions[positionIndex] = data;
-			}
-
-			for (unsigned int rotationIndex = 0; rotationIndex < numRotations; rotationIndex++)
-			{
-				KeyRotation data{};
-				data.orientation = GetGLMQuat(channel->mRotationKeys[rotationIndex].mValue);
-				data.timeStamp = static_cast<float>(channel->mRotationKeys[rotationIndex].mTime);
-				animData.mRotations[rotationIndex] = data;
-			}
-
-			for (unsigned int scaleIndex = 0; scaleIndex < numScalings; scaleIndex++)
-			{
-				KeyScale data{};
-				data.scale = GetGLMVec(channel->mScalingKeys[scaleIndex].mValue);
-				data.timeStamp = static_cast<float>(channel->mScalingKeys[scaleIndex].mTime);
-				animData.mScales[scaleIndex] = data;
-			}
-
-			engineAnim.mBones.push_back(Bone(channel->mNodeName.data, animData));
-		}
-
-		returnValue.emplace_back(AnimationImporter::Import(file, myVersion, engineAnim));
-
-	}
-
 	if (anyErrors)
 	{
 		return Importer::ImportResult{};
 	}
 
 	std::vector<DummyAsset<StaticMesh>> dummyStaticMeshes{};
-	std::vector<DummyAsset<SkinnedMesh>> dummySkinnedMeshes{};
 	std::vector<DummyAsset<Material>> dummyMaterials{};
 
 	World world{ false };
@@ -453,23 +276,12 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 					scene->mMaterials[scene->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), 
 					scene->mMeshes[node.mMeshes[i]]->mMaterialIndex)).mHandle;
 
-				if (scene->mMeshes[node.mMeshes[i]]->HasBones())
-				{
-					SkinnedMeshComponent& meshComponent = reg.AddComponent<SkinnedMeshComponent>(meshHolder);
 
-					meshComponent.mSkinnedMesh = dummySkinnedMeshes.emplace_back(GetMeshName(file, 
-						scene->mMeshes[node.mMeshes[i]]->mName.C_Str())).mHandle;
-					meshComponent.mMaterial =  std::move(mat);
-				}
-				else
-				{
-					StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(meshHolder);
+				StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(meshHolder);
 
-					meshComponent.mStaticMesh = dummyStaticMeshes.emplace_back(GetMeshName(file,
-						scene->mMeshes[node.mMeshes[i]]->mName.C_Str())).mHandle;
-					meshComponent.mMaterial = std::move(mat);
-				}
-
+				meshComponent.mStaticMesh = dummyStaticMeshes.emplace_back(GetMeshName(file,
+					scene->mMeshes[node.mMeshes[i]]->mName.C_Str())).mHandle;
+				meshComponent.mMaterial = std::move(mat);
 			}
 
 			for (size_t i = 0; i < node.mNumChildren; i++)
@@ -484,7 +296,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 	scene->mRootNode->mName = file.filename().replace_extension().string();
 	const entt::entity prefabEntity = makePrefab(*scene->mRootNode, {});
 
-	std::optional<ImportedAsset> importedPrefab = PrefabImporter::MakePrefabFromEntity(file, GetSceneName(file), myVersion, world, prefabEntity);
+	std::optional importedPrefab = PrefabImporter::MakePrefabFromEntity(file, GetSceneName(file), myVersion, world, prefabEntity);
 
 	if (importedPrefab.has_value())
 	{
@@ -497,46 +309,17 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 }
 
 std::optional<CE::ImportedAsset> CE::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
-    const std::string& name, 
-    const uint32 importerVersion, 
-    Span<const glm::vec3> positions, 
-	std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices,
-    std::optional<Span<const glm::vec3>> normals,
-	std::optional<Span<const glm::vec3>> tangents,
-    std::optional<Span<const glm::vec2>> textureCoordinates)
+	const std::string& name, uint32 importerVersion, std::span<const glm::vec3> positions, std::span<const uint32> indices,
+	std::span<const glm::vec3> normals, std::span<const glm::vec3> tangents, std::span<const glm::vec2> textureCoordinates)
 {
-	const MetaType* const staticMeshType = MetaManager::Get().TryGetType<StaticMesh>();
-	ASSERT(staticMeshType != nullptr);
+	const MetaType& staticMeshType = MetaManager::Get().GetType<StaticMesh>();
 
-    ImportedAsset importedMesh{ name, *staticMeshType, importedFromFile, importerVersion};
-    if (StaticMesh::OnSave(importedMesh, positions, indices, normals, tangents, textureCoordinates))
-    {
-        return importedMesh;
-    }
-    return std::optional<ImportedAsset>();
-}
-
-std::optional<CE::ImportedAsset> CE::ModelImporter::ImportFromMemory(const std::filesystem::path& importedFromFile,
-    const std::string& name, 
-    const uint32 importerVersion, 
-    Span<const glm::vec3> positions, 
-	std::optional<std::variant<Span<const uint16>, Span<const uint32>>> indices,
-    std::optional<Span<const glm::vec3>> normals,
-	std::optional<Span<const glm::vec3>> tangents,
-    std::optional<Span<const glm::vec2>> textureCoordinates,
-	std::optional<Span<const glm::ivec4>> boneIds,
-	std::optional<Span<const glm::vec4>> boneWeights,
-	std::optional<std::unordered_map<std::string, BoneInfo>> boneMap)
-{
-	const MetaType* const skinnedMeshType = MetaManager::Get().TryGetType<SkinnedMesh>();
-	ASSERT(skinnedMeshType != nullptr);
-
-    ImportedAsset importedMesh{ name, *skinnedMeshType, importedFromFile, importerVersion};
-    if (SkinnedMesh::OnSave(importedMesh, positions, indices, normals, tangents, textureCoordinates, boneIds, boneWeights, boneMap))
-    {
-        return importedMesh;
-    }
-    return std::optional<ImportedAsset>();
+	ImportedAsset importedMesh{ name, staticMeshType, importedFromFile, importerVersion };
+	if (Internal::SaveStaticMesh(importedMesh, positions, indices, normals, tangents, textureCoordinates))
+	{
+		return importedMesh;
+	}
+	return std::nullopt;
 }
 
 CE::MetaType CE::ModelImporter::Reflect()

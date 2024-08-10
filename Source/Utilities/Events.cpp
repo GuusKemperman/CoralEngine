@@ -46,7 +46,7 @@ namespace CE::Internal
 	}
 }
 
-CE::Span<std::reference_wrapper<const CE::EventBase>> CE::GetAllEvents()
+std::span<std::reference_wrapper<const CE::EventBase>> CE::GetAllEvents()
 {
 	return { Internal::GetEventsMutable() };
 }
@@ -148,7 +148,7 @@ void CE::EventBase::Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, con
 				new (&scriptArgs[i + 1])MetaAny(MakeRef(args[i + 3]));
 			}
 
-			FuncResult result = VirtualMachine::Get().ExecuteScriptFunction(Span<MetaAny>{ scriptArgs, numOfArgsToPass}, rvoBuffer, scriptFunc, firstNode, entry);
+			FuncResult result = VirtualMachine::Get().ExecuteScriptFunction(std::span<MetaAny>{ scriptArgs, numOfArgsToPass}, rvoBuffer, scriptFunc, firstNode, entry);
 
 			World::PopWorld();
 			return result;

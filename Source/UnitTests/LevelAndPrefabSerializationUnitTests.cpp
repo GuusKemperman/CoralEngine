@@ -5,17 +5,14 @@
 #include "Core/AssetManager.h"
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
-#include "Components/CameraComponent.h"
-#include "Components/IsDestroyedTag.h"
-#include "Utilities/view_istream.h"
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Components/NameComponent.h"
 #include "Components/PrefabOriginComponent.h"
-#include "Components/TopDownCamControllerComponent.h"
 #include "Components/TransformComponent.h"
-#include "Components/Pathfinding/NavMeshTargetTag.h"
 #include "World/Archiver.h"
+#include "Components/EventTestingComponent.h"
+#include "Utilities/Reflect/ReflectComponentType.h"
 
 using namespace CE;
 
@@ -32,6 +29,12 @@ namespace
 	{
 		std::function<UnitTest::Result(World&, entt::entity)> mMakeChanges{};
 		std::function<UnitTest::Result(const World&, entt::entity)> mCheckChanges{};
+	};
+
+	struct EntityRefTestComponent
+	{
+		entt::entity mReferenceEntity{};
+		static MetaType Reflect();
 	};
 
 	UnitTest::Result TestPrefabChanges(World&& initialWorld,
@@ -165,16 +168,16 @@ UNIT_TEST(Serialization, EmptyComponentLevelSerialization)
 	World world{ false };
 	Registry& reg = world.GetRegistry();
 
-	const entt::entity entity = reg.Create();
-	reg.AddComponent<NavMeshTargetTag>(entity);
-	TEST_ASSERT(reg.HasComponent<NavMeshTargetTag>(entity));
+	const entt::entity entity = reg.Create(); 
+	reg.AddComponent<EmptyEventTestingComponent>(entity);
+	TEST_ASSERT(reg.HasComponent<EmptyEventTestingComponent>(entity));
 
 	World reloadedWorld = ReloadUsingLevel(std::move(world));
 	Registry& reloadedReg = reloadedWorld.GetRegistry();
 
 	TEST_ASSERT(reloadedReg.Valid(entity));
 	TEST_ASSERT(reloadedReg.Storage<entt::entity>().in_use() == 1);
-	TEST_ASSERT(reloadedReg.HasComponent<NavMeshTargetTag>(entity));
+	TEST_ASSERT(reloadedReg.HasComponent<EmptyEventTestingComponent>(entity));
 
 	return UnitTest::Success;
 }
@@ -451,7 +454,7 @@ UNIT_TEST(Serialization, CopyPaste)
 	{
 		reg.AddComponent<NameComponent>(parent, parentName);
 		reg.AddComponent<TransformComponent>(parent).SetLocalPosition(parentPosition);
-		reg.AddComponent<TopDownCamControllerComponent>(parent).mTarget = child;
+		reg.AddComponent<EntityRefTestComponent>(parent).mReferenceEntity = child;
 
 		reg.AddComponent<NameComponent>(child, childName);
 
@@ -481,12 +484,12 @@ UNIT_TEST(Serialization, CopyPaste)
 					TEST_ASSERT(parentTransform->GetLocalPosition() == parentPosition);
 					TEST_ASSERT(parentTransform->GetParent() == nullptr);
 
-					const TopDownCamControllerComponent* const topDownController = reg.TryGet<TopDownCamControllerComponent>(entity);
+					const EntityRefTestComponent* const entityRefComponent = reg.TryGet<EntityRefTestComponent>(entity);
 
-					TEST_ASSERT(topDownController != nullptr);
+					TEST_ASSERT(entityRefComponent != nullptr);
 
 					TEST_ASSERT(parentTransform->GetChildren().size() == 1);
-					TEST_ASSERT(parentTransform->GetChildren()[0].get().GetOwner() == topDownController->mTarget);
+					TEST_ASSERT(parentTransform->GetChildren()[0].get().GetOwner() == entityRefComponent->mReferenceEntity);
 				}
 				else if (name == childName)
 				{
@@ -540,10 +543,19 @@ namespace
 		return reloadedWorld;
 	}
 
+	MetaType EntityRefTestComponent::Reflect()
+	{
+		MetaType type = MetaType{ MetaType::T<EntityRefTestComponent>{}, "EntityRefTestComponent" };
+		type.GetProperties().Add(Props::sNoInspectTag);
+
+		ReflectComponentType<EventTestingComponent>(type);
+		return type;
+	}
+
 	UnitTest::Result TestPrefabChanges(World&& initialWorld,
-		entt::entity initialEntity,
-		std::vector<PrefabChange> changes,
-		std::function<void(World&, entt::entity)>&& changePrefabInstanceInWorld)
+	                                   entt::entity initialEntity,
+	                                   std::vector<PrefabChange> changes,
+	                                   std::function<void(World&, entt::entity)>&& changePrefabInstanceInWorld)
 	{
 		// Prevent the prefab from sticking around after the test is done.
 		struct PrefabDeleter

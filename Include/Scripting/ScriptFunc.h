@@ -161,7 +161,7 @@ namespace CE
 		T& AddNode(std::unique_ptr<T>&& node);
 
 		// Should only be called from ScriptNode.cpp
-		Span<ScriptPin> AllocPins(NodeId calledFrom,
+		std::span<ScriptPin> AllocPins(NodeId calledFrom,
 			std::vector<ScriptVariableTypeData>&& inputs,
 			std::vector<ScriptVariableTypeData>&& outputs);
 
@@ -222,7 +222,7 @@ namespace CE
 		Expected<const FunctionEntryScriptNode*, std::string> GetEntryNode() const;
 
 		// Returns the elements you just added
-		std::tuple<Span<std::reference_wrapper<ScriptNode>>, Span<ScriptLink>, Span<ScriptPin>> AddCondensed(std::vector<std::unique_ptr<ScriptNode>>&& nodes,
+		std::tuple<std::span<std::reference_wrapper<ScriptNode>>, std::span<ScriptLink>, std::span<ScriptPin>> AddCondensed(std::vector<std::unique_ptr<ScriptNode>>&& nodes,
 			std::vector<ScriptLink>&& links,
 			std::vector<ScriptPin>&& pins);
 

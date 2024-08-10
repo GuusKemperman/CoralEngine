@@ -13,8 +13,8 @@ void CE::UITextComponent::GetCharacterQuadInfo(uint32_t characterIndex, QuadInfo
 	glm::vec2 dummyPosition{};
 	stbtt_GetPackedQuad(
 		mFont->GetPackedCharacters().data(),
-		mFont->GetTexture().GetWidth(),
-		mFont->GetTexture().GetHeight(),
+		mFont->GetTexture().GetSize().x,
+		mFont->GetTexture().GetSize().y,
 		fontCharacterIndex,
 		&dummyPosition.x,
 		&dummyPosition.y,

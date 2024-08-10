@@ -352,7 +352,7 @@ Expected<const CE::FunctionEntryScriptNode*, std::string> CE::ScriptFunc::GetEnt
 	return { static_cast<const FunctionEntryScriptNode*>(funcEntry) };
 }
 
-std::tuple<CE::Span<std::reference_wrapper<CE::ScriptNode>>, CE::Span<CE::ScriptLink>, CE::Span<CE::ScriptPin>> CE::ScriptFunc::AddCondensed(std::vector<std::unique_ptr<ScriptNode>>&& nodes,
+std::tuple<std::span<std::reference_wrapper<CE::ScriptNode>>, std::span<CE::ScriptLink>, std::span<CE::ScriptPin>> CE::ScriptFunc::AddCondensed(std::vector<std::unique_ptr<ScriptNode>>&& nodes,
 	std::vector<ScriptLink>&& links, std::vector<ScriptPin>&& pins)
 {
 	std::sort(pins.begin(), pins.end(), [](const ScriptPin& lhs, const ScriptPin& rhs)
@@ -616,7 +616,7 @@ void CE::ScriptFunc::FreePins(PinId firstPin, uint32 amount)
 	auto it = Internal::FindElement(mPins, firstPin);
 	ASSERT(it != mPins.end());
 
-	Span<ScriptPin> pins = { &*it, amount };
+	std::span<ScriptPin> pins = { &*it, amount };
 
 	for (const ScriptPin& pin : pins)
 	{
@@ -816,7 +816,7 @@ std::optional<CE::ScriptFunc> CE::ScriptFunc::DeserializeFrom(const BinaryGSONOb
 	return returnValue;
 }
 
-CE::Span<CE::ScriptPin> CE::ScriptFunc::AllocPins(NodeId calledFrom,
+std::span<CE::ScriptPin> CE::ScriptFunc::AllocPins(NodeId calledFrom,
 	std::vector<ScriptVariableTypeData>&& inputs, std::vector<ScriptVariableTypeData>&& outputs)
 {
 	const size_t currentSize = mPins.size();

@@ -41,7 +41,6 @@ namespace CE
 		glm::mat4 mProjection{};
 		glm::mat4 mOrthographicProjection{};
 		glm::mat4 mViewProjection{};
-		glm::mat4 mInvViewProjection{};
 
 	private:
 		friend ReflectAccess;

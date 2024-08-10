@@ -14,15 +14,12 @@
 #include "Components/StaticMeshComponent.h"
 #include "Assets/Prefabs/Prefab.h"
 #include "Assets/StaticMesh.h"
-#include "Assets/SkinnedMesh.h"
 #include "Assets/Material.h"
 #include "Components/FlyCamControllerComponent.h"
-#include "Components/SkinnedMeshComponent.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaProps.h"
-#include "Core/AssetManager.h"
 #include "Utilities/StringFunctions.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Archiver.h"
@@ -48,8 +45,6 @@ namespace CE::Internal
 	static bool IsStringFromCopyToClipBoard(std::string_view string);
 
 	static const AssetHandle<StaticMesh>& GetMesh(const StaticMeshComponent& component);
-
-	static const AssetHandle<SkinnedMesh>& GetMesh(const SkinnedMeshComponent& component);
 
 	template<typename MeshComponentType>
 	static void DoRaycastAgainstMeshComponents(const World& world, Ray3D ray, float& nearestT, entt::entity& nearestEntity);
@@ -527,7 +522,6 @@ entt::entity CE::Internal::GetEntityThatMouseIsHoveringOver(const World& world)
 	entt::entity nearestEntity = entt::null;
 
 	DoRaycastAgainstMeshComponents<StaticMeshComponent>(world, ray, nearestT, nearestEntity);
-	DoRaycastAgainstMeshComponents<SkinnedMeshComponent>(world, ray, nearestT, nearestEntity);
 
 	return nearestEntity;
 }
@@ -712,11 +706,6 @@ bool CE::Internal::IsStringFromCopyToClipBoard(std::string_view string)
 const CE::AssetHandle<CE::StaticMesh>& CE::Internal::GetMesh(const StaticMeshComponent& component)
 {
 	return component.mStaticMesh;
-}
-
-const CE::AssetHandle<CE::SkinnedMesh>& CE::Internal::GetMesh(const SkinnedMeshComponent& component)
-{
-	return component.mSkinnedMesh;
 }
 
 template <typename MeshComponentType>

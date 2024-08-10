@@ -8,12 +8,12 @@ namespace CE
 	{
 	public:
 		// BinaryDest should be atleast hex.size/2.
-		static void HexToBinary(std::string_view hex, Span<char> binaryDest);
+		static void HexToBinary(std::string_view hex, std::span<char> binaryDest);
 
 		static std::string HexToBinary(std::string_view hex);
 
 		// Make sure hexDest.size is atleast binary.size * 2
-		static void BinaryToHex(std::string_view binary, Span<char> hexDest);
+		static void BinaryToHex(std::string_view binary, std::span<char> hexDest);
 
 		static std::string BinaryToHex(std::string_view binary);
 

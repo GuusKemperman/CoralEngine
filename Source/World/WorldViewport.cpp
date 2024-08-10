@@ -29,7 +29,7 @@ glm::vec3 CE::WorldViewport::GetScreenToWorldDirection(glm::vec2 screenPosition)
 	const auto camera = mWorld.get().GetRegistry().Get<CameraComponent>(cameraOwner);
 
 	screenPosition -= mLastRenderedAtPos;
-	const glm::mat4& invMat = camera.mInvViewProjection;
+	const glm::mat4& invMat = glm::inverse(camera.mViewProjection);
 	const glm::vec4 nearVec = glm::vec4((screenPosition.x - (mLastRenderedAtSize.x * .5f)) / (mLastRenderedAtSize.x * .5f), -1 * (screenPosition.y - (mLastRenderedAtSize.y * .5f)) / (mLastRenderedAtSize.y * .5f), -1, 1.0);
 	const glm::vec4 farVec = glm::vec4((screenPosition.x - (mLastRenderedAtSize.x * .5f)) / (mLastRenderedAtSize.x * .5f), -1 * (screenPosition.y - (mLastRenderedAtSize.y * .5f)) / (mLastRenderedAtSize.y * .5f), 1, 1.0);
 	glm::vec4 nearResult = invMat * nearVec;

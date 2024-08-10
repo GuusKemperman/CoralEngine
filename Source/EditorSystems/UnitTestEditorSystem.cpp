@@ -18,7 +18,7 @@ void CE::UnitTestEditorSystem::Tick(const float)
 		return;
 	}
 
-	Span<UnitTest> allTests = UnitTestManager::Get().GetAllTests();
+	std::span<UnitTest> allTests = UnitTestManager::Get().GetAllTests();
 
 	if (ImGui::BeginMenuBar())
 	{

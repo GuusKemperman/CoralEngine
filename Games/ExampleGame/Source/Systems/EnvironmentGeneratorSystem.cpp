@@ -11,7 +11,6 @@
 #include "World/World.h"
 #include "World/Registry.h"
 #include "Meta/MetaType.h"
-#include "Rendering/DebugRenderer.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Geometry2d.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
@@ -106,7 +105,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 		};
 	const glm::vec2 generatorPosition = generatorTransform->GetWorldPosition2D();
 
-	static constexpr CE::DebugCategory::Enum debugCategory = CE::DebugCategory::Editor;
+	static constexpr CE::DebugDraw::Enum debugCategory = CE::DebugDraw::Editor;
 
 	const auto getNumOfCellsEachAxis = [&](const EnvironmentGeneratorComponent::Layer& layer)
 		{
@@ -119,7 +118,7 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 			return generatorCellPos - glm::vec2{ static_cast<float>(getNumOfCellsEachAxis(layer)) * .5f * layer.mCellSize };
 		};
 
-	if (CE::DebugRenderer::IsCategoryVisible(debugCategory))
+	if (CE::IsDebugDrawCategoryVisible(debugCategory))
 	{
 		for (uint32 i = 0; i < static_cast<uint32>(generator.mLayers.size()); i++)
 		{
@@ -167,8 +166,8 @@ void Game::EnvironmentGeneratorSystem::Update(CE::World& world, float)
 					const glm::vec3 x1z0 = CE::To3DRightForward(x1z0Pos2D, *x1z0Noise * generator.mDebugDrawNoiseHeight + layerHeight);
 					const glm::vec3 x0z1 = CE::To3DRightForward(x0z1Pos2D, *x0z1Noise * generator.mDebugDrawNoiseHeight + layerHeight);
 
-					CE::DrawDebugLine(world, debugCategory, x0z0, x1z0, colour);
-					CE::DrawDebugLine(world, debugCategory, x0z0, x0z1, colour);
+					CE::AddDebugLine(world.GetRenderCommandQueue(), debugCategory, x0z0, x1z0, colour);
+					CE::AddDebugLine(world.GetRenderCommandQueue(), debugCategory, x0z0, x0z1, colour);
 				}
 			}
 		}

@@ -1,14 +1,15 @@
 #include "Precomp.h"
 #include "Utilities/Imgui/WorldViewportPanel.h"
 
+#include <glm/gtc/type_ptr.hpp>
 #include <imgui/ImGuizmo.h>
 #include <imgui/imgui_internal.h>
 
 #include "Components/CameraComponent.h"
 #include "Components/TransformComponent.h"
 #include "Core/Input.h"
+#include "Core/Renderer.h"
 #include "Rendering/FrameBuffer.h"
-#include "Rendering/Renderer.h"
 #include "Utilities/Imgui/WorldInspect.h"
 #include "World/Registry.h"
 
@@ -60,14 +61,15 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 	ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
 	ImGuizmo::SetRect(windowPos.x + contentMin.x, windowPos.y + contentMin.y, contentSize.x, contentSize.y);
 
-	Renderer::Get().RenderToFrameBuffer(world, frameBuffer, contentSize);
+	frameBuffer.mSize = contentSize;
+	world.Render(&frameBuffer);
 
 	ImGui::SetCursorPos(contentMin);
 
-	ImGui::Image((ImTextureID)frameBuffer.GetColorTextureId(),
+	ImGui::Image(Renderer::Get().GetPlatformId(frameBuffer.mImpl.get()),
 		ImVec2(contentSize),
-		ImVec2(0, 0),
-		ImVec2(1, 1));
+		ImVec2(0, 1),
+		ImVec2(1, 0));
 
 	bool shouldSelectEntityUnderneathMouse = ImGui::IsItemClicked() && ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 

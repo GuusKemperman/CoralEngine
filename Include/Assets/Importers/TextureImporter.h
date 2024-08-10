@@ -15,7 +15,7 @@ namespace CE
 		static std::optional<ImportedAsset> ImportFromMemory(const std::filesystem::path& importedFromFile,
 			const std::string& name,
 			uint32 importerVersion,
-			Span<const char> buffers,
+			std::span<const char> buffers,
 			uint32 width,
 			uint32 height);
 

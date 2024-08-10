@@ -13,10 +13,10 @@
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Meta/MetaTools.h"
 #include "Meta/MetaProps.h"
-#include "Rendering/DebugRenderer.h"
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
 #include "Utilities/view_istream.h"
 #include "GSON/GSONBinary.h"
+#include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/NameLookUp.h"
 
 namespace
@@ -134,7 +134,7 @@ void CE::Editor::PostConstruct()
 	{
 		uint32 debugFlags{};
 		editorSavedState >> debugFlags;
-		DebugRenderer::SetDebugCategoryFlags(static_cast<DebugCategory::Enum>(debugFlags));
+		sDebugDrawFlags = static_cast<DebugDraw::Enum>(debugFlags);
 
 		while (editorSavedState)
 		{
@@ -157,7 +157,7 @@ void CE::Editor::PostConstruct()
 
 			uint32 debugFlags{};
 			ar(debugFlags);
-			DebugRenderer::SetDebugCategoryFlags(static_cast<DebugCategory::Enum>(debugFlags));
+			sDebugDrawFlags = static_cast<DebugDraw::Enum>(debugFlags);
 
 			std::unordered_map<Name::HashType, std::string> serializedLookUp{};
 			ar(serializedLookUp);
@@ -215,7 +215,7 @@ CE::Editor::~Editor()
 			static constexpr uint32 savedDataVersion = 2;
 			ar(savedDataVersion);
 
-			const uint32 flags = DebugRenderer::GetDebugCategoryFlags();
+			const uint32 flags = sDebugDrawFlags;
 			ar(flags);
 
 			sNameLookUpMutex.lock();
@@ -877,57 +877,57 @@ void CE::Editor::DisplayMainMenuBar()
 
 		if (ImGui::BeginMenu(ICON_FA_EYE))
 		{
-			unsigned int flags = DebugRenderer::GetDebugCategoryFlags();
+			unsigned int flags = sDebugDrawFlags;
 
 			// If we had static reflection in c++ we could just 
 			// loop over the debug categories and performa enum_to_string operation..
 
-			if (ImGui::MenuItem("General", nullptr, flags & DebugCategory::General))
+			if (ImGui::MenuItem("General", nullptr, flags & DebugDraw::General))
 			{
-				flags ^= DebugCategory::General;
+				flags ^= DebugDraw::General;
 			}
-			if (ImGui::MenuItem("Gameplay", nullptr, flags & DebugCategory::Gameplay))
+			if (ImGui::MenuItem("Gameplay", nullptr, flags & DebugDraw::Gameplay))
 			{
-				flags ^= DebugCategory::Gameplay;
+				flags ^= DebugDraw::Gameplay;
 			}
-			if (ImGui::MenuItem("Physics", nullptr, flags & DebugCategory::Physics))
+			if (ImGui::MenuItem("Physics", nullptr, flags & DebugDraw::Physics))
 			{
-				flags ^= DebugCategory::Physics;
+				flags ^= DebugDraw::Physics;
 			}
-			if (ImGui::MenuItem("Sound", nullptr, flags & DebugCategory::Sound))
+			if (ImGui::MenuItem("Sound", nullptr, flags & DebugDraw::Sound))
 			{
-				flags ^= DebugCategory::Sound;
+				flags ^= DebugDraw::Sound;
 			}
-			if (ImGui::MenuItem("Rendering", nullptr, flags & DebugCategory::Rendering))
+			if (ImGui::MenuItem("Rendering", nullptr, flags & DebugDraw::Rendering))
 			{
-				flags ^= DebugCategory::Rendering;
+				flags ^= DebugDraw::Rendering;
 			}
-			if (ImGui::MenuItem("AINavigation", nullptr, flags & DebugCategory::AINavigation))
+			if (ImGui::MenuItem("AINavigation", nullptr, flags & DebugDraw::AINavigation))
 			{
-				flags ^= DebugCategory::AINavigation;
+				flags ^= DebugDraw::AINavigation;
 			}
-			if (ImGui::MenuItem("AIDecision", nullptr, flags & DebugCategory::AIDecision))
+			if (ImGui::MenuItem("AIDecision", nullptr, flags & DebugDraw::AIDecision))
 			{
-				flags ^= DebugCategory::AIDecision;
+				flags ^= DebugDraw::AIDecision;
 			}
-			if (ImGui::MenuItem("Editor", nullptr, flags & DebugCategory::Editor))
+			if (ImGui::MenuItem("Editor", nullptr, flags & DebugDraw::Editor))
 			{
-				flags ^= DebugCategory::Editor;
+				flags ^= DebugDraw::Editor;
 			}
-			if (ImGui::MenuItem("AccelStructs", nullptr, flags & DebugCategory::AccelStructs))
+			if (ImGui::MenuItem("AccelStructs", nullptr, flags & DebugDraw::AccelStructs))
 			{
-				flags ^= DebugCategory::AccelStructs;
+				flags ^= DebugDraw::AccelStructs;
 			}
-			if (ImGui::MenuItem("Particles", nullptr, flags & DebugCategory::Particles))
+			if (ImGui::MenuItem("Particles", nullptr, flags & DebugDraw::Particles))
 			{
-				flags ^= DebugCategory::Particles;
+				flags ^= DebugDraw::Particles;
 			}
-			if (ImGui::MenuItem("All", nullptr, flags & DebugCategory::All))
+			if (ImGui::MenuItem("All", nullptr, flags & DebugDraw::All))
 			{
-				flags ^= DebugCategory::All;
+				flags ^= DebugDraw::All;
 			}
 
-			DebugRenderer::SetDebugCategoryFlags(static_cast<DebugCategory::Enum>(flags));
+			sDebugDrawFlags = static_cast<DebugDraw::Enum>(flags);
 
 			ImGui::EndMenu();
 		}

@@ -37,8 +37,8 @@ namespace CE
 		ScriptFunc* TryGetFunc(Name name);
 		const ScriptFunc* TryGetFunc(Name name) const;
 
-		Span<ScriptFunc> GetFunctions() { return mFunctions; }
-		Span<const ScriptFunc> GetFunctions() const { return mFunctions; }
+		std::span<ScriptFunc> GetFunctions() { return mFunctions; }
+		std::span<const ScriptFunc> GetFunctions() const { return mFunctions; }
 
 		// May invalidate pointers holding onto any datamembers from this script,
 		// if the internal vector resizes
@@ -50,8 +50,8 @@ namespace CE
 		ScriptField* TryGetField(Name name);
 		const ScriptField* TryGetField(Name name) const;
 
-		Span<ScriptField> GetFields() { return mFields; }
-		Span<const ScriptField> GetFields() const { return mFields; }
+		std::span<ScriptField> GetFields() { return mFields; }
+		std::span<const ScriptField> GetFields() const { return mFields; }
 
 		/*
 		Will make a type containing fields defined in this script and add it to the MetaManager.
