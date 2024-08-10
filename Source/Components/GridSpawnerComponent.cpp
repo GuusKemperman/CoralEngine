@@ -5,7 +5,9 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Assets/Prefabs/Prefab.h"
+#include "Utilities/Random.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
+#include "Meta/ReflectedTypes/STD/ReflectVector.h"
 
 void CE::GridSpawnerComponent::OnConstruct(World&, entt::entity owner)
 {
@@ -46,7 +48,7 @@ void CE::GridSpawnerComponent::ClearGrid()
 
 void CE::GridSpawnerComponent::SpawnGrid()
 {
-	if (mDistribution.mWeights.empty())
+	if (mTiles.empty())
 	{
 		return;
 	}
@@ -123,15 +125,14 @@ void CE::GridSpawnerComponent::SpawnGrid()
 				position.y -= static_cast<float>(mHeight - 1) * mSpacing.y * .5f;
 			}
 
-			const AssetHandle<Prefab>* tile = mDistribution.GetNext(randomFloat(0.0f, 1.0f));
+			const AssetHandle<Prefab>& tile = mTiles[randomUint(0, static_cast<uint32>(mTiles.size()))];
 
-			if (tile == nullptr
-				|| *tile == nullptr)
+			if (tile == nullptr)
 			{
 				continue;
 			}
 
-			const entt::entity entity = reg.CreateFromPrefab(**tile);
+			const entt::entity entity = reg.CreateFromPrefab(*tile);
 
 			TransformComponent* child = reg.TryGet<TransformComponent>(entity);
 
@@ -177,7 +178,7 @@ CE::MetaType CE::GridSpawnerComponent::Reflect()
 	type.AddField(&GridSpawnerComponent::mMaxRandomScale, "mMaxRandomScale").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mMinRandomOrientation, "mMinRandomOrientation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mMaxRandomOrientation, "mMaxRandomOrientation").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&GridSpawnerComponent::mDistribution, "mDistribution").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&GridSpawnerComponent::mTiles, "mTiles").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mIsCentered, "mIsCentered").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mShouldSpawnOnBeginPlay, "mShouldSpawnOnBeginPlay").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&GridSpawnerComponent::mUseWorldPositionAsSeed, "mUseWorldPositionAsSeed").GetProperties().Add(Props::sIsScriptableTag);

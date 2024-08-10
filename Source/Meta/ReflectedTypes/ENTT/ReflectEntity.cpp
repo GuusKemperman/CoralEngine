@@ -1,6 +1,6 @@
 #include "Precomp.h"
 
-#include "Components/ComponentFilter.h"
+#include "Utilities/ComponentFilter.h"
 #include "Meta/MetaReflect.h"
 #include "Meta/ReflectedTypes/ReflectENTT.h"
 

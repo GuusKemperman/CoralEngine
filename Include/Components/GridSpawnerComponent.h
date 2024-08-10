@@ -1,6 +1,5 @@
 #pragma once
 #include "Assets/Core/AssetHandle.h"
-#include "Utilities/WeightedRandomDistribution.h"
 
 namespace CE
 {
@@ -16,7 +15,7 @@ namespace CE
 		void ClearGrid();
 		void SpawnGrid();
 
-		WeightedRandomDistribution<AssetHandle<Prefab>> mDistribution{};
+		std::vector<AssetHandle<Prefab>> mTiles{};
 
 		glm::vec2 mSpacing{ 1.0f };
 		uint32 mWidth = 1;

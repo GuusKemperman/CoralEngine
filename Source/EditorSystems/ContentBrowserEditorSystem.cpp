@@ -114,6 +114,11 @@ void CE::ContentBrowserEditorSystem::RequestUpdateToFolderGraph()
 
 			std::function<void(ContentFolder&)> parse = [&parse, &assetLookUp](ContentFolder& folder)
 				{
+					if (!std::filesystem::is_directory(folder.mActualPath))
+					{
+						return;
+					}
+
 					for (std::filesystem::directory_entry entry : std::filesystem::directory_iterator{ folder.mActualPath })
 					{
 						std::filesystem::path path = entry.path();;
