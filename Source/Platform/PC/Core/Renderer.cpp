@@ -513,8 +513,8 @@ void CE::Renderer::RunCommandQueues()
 				glUniformMatrix4fv(glGetUniformLocation(program, "u_model"), 1, GL_FALSE, &entry.mTransform[0][0]);
 
 				// Send the multiply and add colors to the standard program
-				glUniform4fv(glGetUniformLocation(program, "u_mul_color"), 1, &entry.mMultiplicativeColor[0]);
-				glUniform4fv(glGetUniformLocation(program, "u_add_color"), 1, &entry.mAdditiveColor[0]);
+				glUniform3fv(glGetUniformLocation(program, "u_mul_color"), 1, &entry.mMultiplicativeColor[0]);
+				glUniform3fv(glGetUniformLocation(program, "u_add_color"), 1, &entry.mAdditiveColor[0]);
 
 				// Draw the mesh
 				glDrawElements(GL_TRIANGLES, staticMesh->mNumOfIndices, GL_UNSIGNED_INT, 0);
@@ -696,79 +696,116 @@ GLuint CE::Internal::CompileStandardProgram()
 {
 	return CompileProgram(
 		R"(
-		#version 460 core
-		layout(location = 0) in vec3 a_position;
-		layout(location = 1) in vec3 a_normal;
-		layout(location = 2) in vec2 a_texture_coordinate;
-		layout(location = 3) in vec3 a_color;
-		out vec3 v_normal;
-		out vec2 v_texture_coordinate;
-		out vec4 v_color;
-		uniform mat4 u_model;
-		uniform mat4 u_view;
-		uniform mat4 u_projection;
+#version 460 core
+layout(location = 0) in vec3 a_position;
+layout(location = 1) in vec3 a_normal;
+layout(location = 2) in vec2 a_texture_coordinate;
+layout(location = 3) in vec3 a_tangents;
 
-		void main()
-		{
-			v_normal = a_normal;
-			v_texture_coordinate = a_texture_coordinate;
-			v_color = vec4(a_color, 1.0);
-			gl_Position = u_projection * u_view * u_model * vec4(a_position, 1.0);
-		}
+out vec3 v_normal;
+out vec2 v_texture_coordinate;
+out vec3 v_frag_position;
+
+uniform mat4 u_model;
+uniform mat4 u_view;
+uniform mat4 u_projection;
+
+void main()
+{
+    // Transform position to world space and then to clip space
+    vec4 world_position = u_model * vec4(a_position, 1.0);
+    gl_Position = u_projection * u_view * world_position;
+
+    // Pass the transformed normal to the fragment shader
+    v_normal = mat3(transpose(inverse(u_model))) * a_normal;
+
+    // Pass the world position to the fragment shader for lighting calculations
+    v_frag_position = vec3(world_position);
+
+    // Pass the texture coordinates to the fragment shader
+    v_texture_coordinate = a_texture_coordinate;
+
+}
 	)",
 		R"(
-		#version 460 core
-		in vec3 v_tangent;				
-		in vec2 v_texture_coordinate;
-		in vec3 v_normal;
-		out vec4 frag_color;
-		uniform sampler2D u_texture;
-		uniform int u_num_directional_lights;
-		uniform int u_num_point_lights;
+#version 460 core
 
-		const int MAX_DIR_LIGHTS = 4;
-		const int MAX_POINT_LIGHTS = 4;
+in vec3 v_normal;
+in vec2 v_texture_coordinate;
+in vec3 v_frag_position;
+in vec3 v_color;
 
-		struct directional_light
-		{
-			vec3 direction;
-			vec3 color;
-		};
+out vec4 frag_color;
 
-		struct point_light
-		{
-			vec3 position;
-			vec3 color;
-			float radius;
-		};
+uniform sampler2D u_texture;
+uniform int u_num_directional_lights;
+uniform int u_num_point_lights;
+uniform vec3 u_mul_color;
+uniform vec3 u_add_color;
 
-		uniform directional_light u_directional_lights[MAX_DIR_LIGHTS];
-		uniform point_light u_point_lights[MAX_POINT_LIGHTS];
+const int MAX_DIR_LIGHTS = 4;
+const int MAX_POINT_LIGHTS = 4;
 
-		void main()
-		{
-			// Get diffuse color from texture
-			vec4 texture_color = texture(u_texture, v_texture_coordinate);
-	
-			// Initialize diffuse color
-			vec4 diffuse_color = vec4(0.0, 0.0, 0.0, 1.0);
+struct directional_light {
+    vec3 direction;
+    vec3 color;
+};
 
-			// calculate diffuse light intensity for directional lights		 
-			for (int i = 0; i < u_num_directional_lights; i++)
-			{
-				directional_light light = u_directional_lights[i];
-				diffuse_color += max(dot(normalize(v_normal), normalize(-light.direction)), 0.0);
-			}
+struct point_light {
+    vec3 position;
+    vec3 color;
+    float radius;
+};
 
-			// Get diffuse color from texture
-			diffuse_color *= texture_color;
+uniform directional_light u_directional_lights[MAX_DIR_LIGHTS];
+uniform point_light u_point_lights[MAX_POINT_LIGHTS];
 
-			// Calculate diffuse light intensity
-			//float diffuse = max(dot(normalize(v_normal), normalize(u_directional_light_direction)), 0.0);
+void main()
+{
+    // Normalize the interpolated normal
+    vec3 normal = normalize(v_normal);
 
-			// Set output color
-			frag_color = diffuse_color;
-		}
+    // Start with the ambient color
+    vec3 ambient = vec3(0.1);
+
+    // Initialize diffuse and specular components
+    vec3 diffuse = vec3(0.0);
+    vec3 specular = vec3(0.0);
+
+    // Calculate directional lights contribution
+    for (int i = 0; i < u_num_directional_lights; ++i) 
+	{
+        vec3 light_dir = normalize(-u_directional_lights[i].direction);
+        // Diffuse component
+        float diff = max(dot(normal, light_dir), 0.0);
+        diffuse += diff * u_directional_lights[i].color;
+
+        // Specular component
+        //vec3 view_dir = normalize(-v_frag_position);
+        //vec3 reflect_dir = reflect(-light_dir, normal);
+        //float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0);
+        //specular += spec * u_directional_lights[i].color;
+    }
+
+    // Calculate point lights contribution
+    //for (int i = 0; i < u_num_point_lights; ++i) {
+    //    vec3 light_dir = normalize(u_point_lights[i].position - v_frag_position);
+    //    // Diffuse component
+    //    float diff = max(dot(normal, light_dir), 0.0);
+    //    diffuse += diff * u_point_lights[i].color;
+
+    //    // Specular component
+    //    vec3 view_dir = normalize(-v_frag_position);
+    //    vec3 reflect_dir = reflect(-light_dir, normal);
+    //    float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0);
+    //    specular += spec * u_point_lights[i].color;
+    //}
+
+    // Combine all components
+	vec3 base = u_add_color + u_mul_color * texture(u_texture, v_texture_coordinate).rgb;
+    vec3 result = base * (ambient + diffuse + specular);
+    frag_color = vec4(result, 1.0);
+}
 	)");
 }
 
