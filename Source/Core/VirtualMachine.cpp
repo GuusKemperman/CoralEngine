@@ -163,7 +163,7 @@ CE::FuncResult CE::VirtualMachine::ExecuteScriptFunction(MetaFunc::DynamicArgs a
 
 		if (entryNode != nullptr)
 		{
-			const Span<const ScriptPin> entryPins = entryNode->GetOutputs(func);
+			const std::span<const ScriptPin> entryPins = entryNode->GetOutputs(func);
 
 			// Push the arguments we received to the cache. If this is a member function,
 			// skip the first argument; there is no pin for it in the entry node
@@ -480,8 +480,8 @@ const CE::ScriptNode* CE::VirtualMachine::GetNextNodeToExecute(VMContext& contex
 		{
 		case ScriptNodeType::ForLoop:
 		{
-			Span<const ScriptPin> inputs = current->GetInputs(context.mFunc);
-			Span<const ScriptPin> outputs = current->GetOutputs(context.mFunc);
+			std::span<const ScriptPin> inputs = current->GetInputs(context.mFunc);
+			std::span<const ScriptPin> outputs = current->GetOutputs(context.mFunc);
 
 			//ASSERT(inputs.size() == 4
 			//	&& inputs[ForLoopScriptNode::sIndexOfEntryPin].IsFlow() // Entry
@@ -534,7 +534,7 @@ const CE::ScriptNode* CE::VirtualMachine::GetNextNodeToExecute(VMContext& contex
 		}
 		case ScriptNodeType::WhileLoop:
 		{
-			Span<const ScriptPin> inputs = current->GetInputs(context.mFunc);
+			std::span<const ScriptPin> inputs = current->GetInputs(context.mFunc);
 
 			//ASSERT(inputs.size() == 3
 			//	&& inputs[WhileLoopScriptNode::sIndexOfEntryPin].IsFlow() // Entry
@@ -568,7 +568,7 @@ const CE::ScriptNode* CE::VirtualMachine::GetNextNodeToExecute(VMContext& contex
 		}
 		case ScriptNodeType::Branch:
 		{
-			Span<const ScriptPin> inputs = current->GetInputs(context.mFunc);
+			std::span<const ScriptPin> inputs = current->GetInputs(context.mFunc);
 
 			//ASSERT(inputs.size() == 2
 			//	&& inputs[BranchScriptNode::sIndexOfEntryPin].IsFlow()
@@ -607,7 +607,7 @@ const CE::ScriptNode* CE::VirtualMachine::GetNextNodeToExecute(VMContext& contex
 
 CE::VirtualMachine::VMContext::CachedValue* CE::VirtualMachine::ExecuteNode(VMContext& context, const ScriptNode& node)
 {
-	Span<const ScriptPin> inputs = node.GetInputs(context.mFunc);
+	std::span<const ScriptPin> inputs = node.GetInputs(context.mFunc);
 	const size_t numOfInputPins = inputs.size();
 
 	// Raii object that manages the lifetime
@@ -648,7 +648,7 @@ CE::VirtualMachine::VMContext::CachedValue* CE::VirtualMachine::ExecuteNode(VMCo
 		inputDeleter.mSize++;
 	}
 
-	const Span<const ScriptPin> nodeOutputs = node.GetOutputs(context.mFunc);
+	const std::span<const ScriptPin> nodeOutputs = node.GetOutputs(context.mFunc);
 	ASSERT(nodeOutputs.size() >= 1);
 
 	// If the node returns void, all of these are nullptr.

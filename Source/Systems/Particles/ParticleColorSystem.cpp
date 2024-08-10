@@ -14,7 +14,8 @@ void CE::ParticleColorSystem::Update(World& world, [[maybe_unused]] float dt)
 
 	for (auto [entity, emitter, colorComponent] : emitterView.each())
 	{
-		colorComponent.mColor.SetInitialValuesOfNewParticles(emitter);
+		colorComponent.mMultiplicativeColor.SetInitialValuesOfNewParticles(emitter);
+		colorComponent.mAdditiveColor.SetInitialValuesOfNewParticles(emitter);
 	}
 }
 

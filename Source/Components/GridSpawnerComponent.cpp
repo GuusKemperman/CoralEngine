@@ -67,7 +67,7 @@ void CE::GridSpawnerComponent::SpawnGrid()
 	{
 		return;
 	}
-	const float angleStep = TWOPI / static_cast<float>(mNumOfPossibleRotations);
+	const float angleStep = glm::two_pi<float>() / static_cast<float>(mNumOfPossibleRotations);
 
 	CE::DefaultRandomEngine cellGenerator{ Random::CreateSeed(transform->GetWorldPosition2D()) };
 

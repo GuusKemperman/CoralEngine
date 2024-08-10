@@ -17,7 +17,7 @@ namespace CE::Internal
 	struct ValidNumOfParams<Ret(Params...)>
 	{
 		template<typename... ParamAndRetNames>
-		static CONSTEVAL bool Value()
+		static constexpr bool Value()
 		{
 			// The return value may also have a name
 			return sizeof...(Params) + (std::is_same_v<Ret, void> ? 0 : 1) >= sizeof...(ParamAndRetNames);
@@ -97,7 +97,7 @@ CE::MetaFunc::MetaFunc(const T& functor, const NameOrTypeInit typeOrName, const 
 namespace CE::Internal
 {
 	template<typename T, size_t I>
-	T UnpackSingle(Span<MetaAny>& anies)
+	T UnpackSingle(std::span<MetaAny>& anies)
 	{
 		MetaAny& any = anies[I];
 		static constexpr TypeTraits traits = MakeTypeTraits<T>();

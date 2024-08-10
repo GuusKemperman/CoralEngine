@@ -7,7 +7,7 @@
 CE::EventManager::EventManager(World& world) :
 	mWorld(world)
 {
-	const Span<std::reference_wrapper<const EventBase>> allEvents = GetAllEvents();
+	const std::span<std::reference_wrapper<const EventBase>> allEvents = GetAllEvents();
 
 	mBoundEvents.reserve(allEvents.size());
 
@@ -17,7 +17,7 @@ CE::EventManager::EventManager(World& world) :
 	}
 }
 
-CE::Span<const CE::BoundEvent> CE::EventManager::GetBoundEvents(const EventBase& eventBase) const
+std::span<const CE::BoundEvent> CE::EventManager::GetBoundEvents(const EventBase& eventBase) const
 {
 	const auto boundEvents = mBoundEvents.find(eventBase.mName);
 	ASSERT_LOG(boundEvents != mBoundEvents.end(), "Could not find bound events for {}", eventBase.mName);
@@ -25,7 +25,7 @@ CE::Span<const CE::BoundEvent> CE::EventManager::GetBoundEvents(const EventBase&
 }
 
 void CE::EventManager::InvokeEventForAllComponentsOnEntityImpl(const EventBase& eventBase, entt::entity entity,
-                                                               MetaFunc::DynamicArgs args, Span<TypeForm> argForms)
+                                                               MetaFunc::DynamicArgs args, std::span<TypeForm> argForms)
 {
 	for (const BoundEvent& boundEvent : GetBoundEvents(eventBase))
 	{

@@ -4,7 +4,6 @@
 #include <stack>
 #include "entt/entity/runtime_view.hpp"
 
-#include "Core/Device.h"
 #include "Components/ComponentFilter.h"
 #include "Components/NameComponent.h"
 #include "Meta/MetaProps.h"
@@ -13,14 +12,18 @@
 #include "World/Physics.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Assets/Level.h"
-#include "Rendering/GPUWorld.h"
+#include "Components/CameraComponent.h"
+#include "Core/Device.h"
+#include "Core/Renderer.h"
+#include "Rendering/FrameBuffer.h"
 #include "World/EventManager.h"
 
 CE::World::World(const bool beginPlayImmediately) :
 	mRegistry(std::make_unique<Registry>(*this)),
 	mViewport(std::make_unique<WorldViewport>(*this)),
 	mPhysics(std::make_unique<Physics>(*this)),
-	mEventManager(std::make_unique<EventManager>(*this))
+	mEventManager(std::make_unique<EventManager>(*this)),
+	mRenderCommandQueue(Device::IsHeadless() ? nullptr : Renderer::Get().CreateCommandQueue())
 {
 	if (beginPlayImmediately)
 	{
@@ -33,20 +36,15 @@ CE::World::World(World&& other) noexcept :
 	mHasBegunPlay(other.mHasBegunPlay),
 	mRegistry(std::move(other.mRegistry)),
 	mViewport(std::move(other.mViewport)),
-	mGPUWorld(std::move(other.mGPUWorld)),
 	mPhysics(std::move(other.mPhysics)),
 	mEventManager(std::move(other.mEventManager)),
+	mRenderCommandQueue(std::move(other.mRenderCommandQueue)),
 	mLevelToTransitionTo(std::move(other.mLevelToTransitionTo))
 {
 	mRegistry->mWorld = *this;
 	mViewport->mWorld = *this;
 	mPhysics->mWorld = *this;
 	mEventManager->mWorld = *this;
-
-	if (mGPUWorld != nullptr)
-	{
-		mGPUWorld->mWorld = *this;
-	}
 }
 
 CE::World::~World()
@@ -69,19 +67,13 @@ CE::World& CE::World::operator=(World&& other) noexcept
 
 	mRegistry = std::move(other.mRegistry);
 	mViewport = std::move(other.mViewport);
-	mGPUWorld = std::move(other.mGPUWorld);
+	mRenderCommandQueue = std::move(other.mRenderCommandQueue);
 	mPhysics = std::move(other.mPhysics);
 	mLevelToTransitionTo = std::move(other.mLevelToTransitionTo);
 
 	mRegistry->mWorld = *this;
 	mViewport->mWorld = *this;
 	mPhysics->mWorld = *this;
-
-	if (mGPUWorld != nullptr)
-	{
-		mGPUWorld->mWorld = *this;
-	}
-
 	mTime = other.mTime;
 	mHasBegunPlay = other.mHasBegunPlay;
 
@@ -103,6 +95,23 @@ void CE::World::Tick(const float unscaledDeltaTime)
 	}
 
 	PopWorld();
+}
+
+void CE::World::Render(FrameBuffer* renderTarget)
+{
+	const entt::entity cameraEntity = CameraComponent::GetSelected(*this);
+
+	if (cameraEntity == entt::null)
+	{
+		LOG(LogTemp, Message, "No camera to render to");
+		return;
+	}
+
+	const CameraComponent& camera = mRegistry->Get<const CameraComponent>(cameraEntity);
+	Renderer::Get().SetRenderTarget(*mRenderCommandQueue, camera.mView, camera.mProjection, renderTarget);
+	mViewport->UpdateSize(renderTarget == nullptr ? Device::Get().GetDisplaySize() : renderTarget->mSize);
+
+	mRegistry->RenderSystems(*mRenderCommandQueue);
 }
 
 void CE::World::BeginPlay()
@@ -134,21 +143,124 @@ void CE::World::EndPlay()
 	mHasBegunPlay = false;
 }
 
-CE::GPUWorld& CE::World::GetGPUWorld() const
+CE::Registry& CE::World::GetRegistry()
 {
-	ASSERT_LOG(!Device::IsHeadless(), "Cannot access GPUWorld when device is running in headless mode. Check using Device::IsHeadless.");
+	return *mRegistry;
+}
 
-	if (mGPUWorld == nullptr)
-	{
-		// The GPU buffers are only allocated when GetGPUWorld is called.
-		// Otherwise, we allocate a looot of resources that are only
-		// freed at the end of the frame, and if we create a lot of worlds
-		// in one frame (such as with unit tests), then we run out of memory.
-		// hence, the const_cast
-		const_cast<World&>(*this).mGPUWorld = std::make_unique<GPUWorld>(const_cast<World&>(*this));
-	}
+const CE::Registry& CE::World::GetRegistry() const
+{
+	return *mRegistry;
+}
 
-	return *mGPUWorld;
+CE::Physics& CE::World::GetPhysics()
+{
+	return *mPhysics;
+}
+
+const CE::Physics& CE::World::GetPhysics() const
+{
+	return *mPhysics;
+}
+
+CE::EventManager& CE::World::GetEventManager()
+{
+	return *mEventManager;
+}
+
+const CE::EventManager& CE::World::GetEventManager() const
+{
+	return *mEventManager;
+}
+
+CE::WorldViewport& CE::World::GetViewport()
+{
+	return *mViewport;
+}
+
+const CE::WorldViewport& CE::World::GetViewport() const
+{
+	return *mViewport;
+}
+
+CE::RenderCommandQueue& CE::World::GetRenderCommandQueue()
+{
+	return *mRenderCommandQueue;
+}
+
+const CE::RenderCommandQueue& CE::World::GetRenderCommandQueue() const
+{
+	return *mRenderCommandQueue;
+}
+
+bool CE::World::HasBegunPlay() const
+{
+	return mHasBegunPlay;
+}
+
+bool CE::World::HasRequestedEndPlay() const
+{
+	return mHasEndPlayBeenRequested;
+}
+
+float CE::World::GetCurrentTimeScaled() const
+{
+	return mTime.mScaledTotalTimeElapsed;
+}
+
+float CE::World::GetCurrentTimeReal() const
+{
+	return mTime.mRealTotalTimeElapsed;
+}
+
+float CE::World::GetTimeScale() const
+{
+	return mTime.GetTimeScale();
+}
+
+void CE::World::SetTimeScale(float timeScale)
+{
+	mTime.mTimescale = timeScale;
+}
+
+float CE::World::GetRealDeltaTime() const
+{
+	return mTime.mRealDeltaTime;
+}
+
+float CE::World::GetScaledDeltaTime() const
+{
+	return mTime.mScaledDeltaTime;
+}
+
+bool CE::World::IsPaused() const
+{
+	return mTime.mIsPaused;
+}
+
+void CE::World::Pause()
+{
+	mTime.mIsPaused = true;
+}
+
+void CE::World::Unpause()
+{
+	mTime.mIsPaused = false;
+}
+
+void CE::World::SetIsPaused(bool isPaused)
+{
+	mTime.mIsPaused = isPaused;
+}
+
+void CE::World::RequestEndplay()
+{
+	mHasEndPlayBeenRequested = true;
+}
+
+const CE::AssetHandle<CE::Level>& CE::World::GetNextLevel() const
+{
+	return mLevelToTransitionTo;
 }
 
 // Each thread has their own worldstack. This allows multiple worlds to run in parallel.
@@ -158,7 +270,7 @@ static thread_local std::stack<std::reference_wrapper<CE::World>> sWorldStacks{}
 
 void CE::World::PushWorld(World& world)
 {
-	sWorldStacks.push(world);
+	sWorldStacks.emplace(world);
 }
 
 void CE::World::PopWorld()
@@ -181,7 +293,7 @@ void CE::World::TransitionToLevel(const AssetHandle<Level>& level)
 
 namespace
 {
-	entt::runtime_view FindAllEntitiesWithComponents(const CE::World& world, const CE::Span<const CE::ComponentFilter>& components)
+	entt::runtime_view FindAllEntitiesWithComponents(const CE::World& world, const std::span<const CE::ComponentFilter>& components)
 	{
 		entt::runtime_view view{};
 

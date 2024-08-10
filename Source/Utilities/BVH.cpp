@@ -149,7 +149,10 @@ void CE::BVH::DebugDraw() const
         const Node& node = mNodes[i];
         if (node.mTotalNumOfObjects == 0)
         {
-            DrawDebugRectangle(mPhysics->GetWorld(), DebugCategory::AccelStructs, To3DRightForward(node.mBoundingBox.GetCentre()), node.mBoundingBox.GetSize() * .5f, glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
+            AddDebugBox(mPhysics->GetWorld().GetRenderCommandQueue(), 
+                DebugDraw::AccelStructs, 
+                To3DRightForward(node.mBoundingBox.GetCentre()), 
+                To3DRightForward(node.mBoundingBox.GetSize() * .5f), glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
         }
     }
 }

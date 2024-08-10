@@ -16,8 +16,8 @@ namespace CE
 		public EngineSubsystem<Editor>
 	{
 		friend EngineSubsystem;
-		void PostConstruct() final override;
-		~Editor() final override;
+		void PostConstruct() override;
+		~Editor() override;
 
 	public:
 		void Tick(float deltaTime);

@@ -87,7 +87,7 @@ namespace CE
 	class Logger final :
 		public EngineSubsystem<Logger>
 	{
-		friend class EngineSubsystem;
+		friend EngineSubsystem;
 		Logger();
 		~Logger();
 

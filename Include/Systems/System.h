@@ -3,6 +3,7 @@
 
 namespace CE
 {
+	struct RenderCommandQueue;
 	static inline constexpr int TickPriorityStepSize = 100;
 
 	enum class TickPriorities
@@ -42,8 +43,8 @@ namespace CE
 	public:
 		virtual ~System() = default;
 
-		virtual void Update([[maybe_unused]] World& world, [[maybe_unused]] float dt) {};
-		virtual void Render([[maybe_unused]] const World& world) {};
+		virtual void Update([[maybe_unused]] World& world, [[maybe_unused]] float dt) {}
+		virtual void Render([[maybe_unused]] const World& world, [[maybe_unused]] RenderCommandQueue& renderQueue) const {}
 
 		virtual SystemStaticTraits GetStaticTraits() const { return {}; };
 

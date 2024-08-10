@@ -8,7 +8,8 @@ namespace CE
 	class ParticleColorComponent
 	{
 	public:
-		ParticleProperty<LinearColor> mColor{ LinearColor{ 1.0f } };
+		ParticleProperty<LinearColor> mMultiplicativeColor{ LinearColor{ 1.0f } };
+		ParticleProperty<LinearColor> mAdditiveColor{ LinearColor{ 0.0f } };
 
 	private:
 		friend class ParticleColorSystem;

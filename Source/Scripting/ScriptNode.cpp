@@ -50,7 +50,7 @@ void CE::ScriptNode::SetPins(ScriptFunc& scriptFunc, InputsOutputs&& inputsOutpu
 		return;
 	}
 
-	Span<ScriptPin> pins = scriptFunc.AllocPins(mId, std::move(inputsOutputs.mInputs), std::move(inputsOutputs.mOutputs));
+	std::span<ScriptPin> pins = scriptFunc.AllocPins(mId, std::move(inputsOutputs.mInputs), std::move(inputsOutputs.mOutputs));
 	mFirstPinId = pins[0].GetId();
 }
 
@@ -83,7 +83,7 @@ void CE::ScriptNode::RefreshByComparingPins(ScriptFunc& scriptFunc,
 		outOfDataResult.mAreOutputsOutOfDate = false;
 	}
 
-	auto updateNames = [](Span<ScriptPin> pins, const std::vector<ScriptVariableTypeData>& expectedPins)
+	auto updateNames = [](std::span<ScriptPin> pins, const std::vector<ScriptVariableTypeData>& expectedPins)
 		{
 			for (uint32 i = 0; i < pins.size() && i < expectedPins.size(); i++)
 			{

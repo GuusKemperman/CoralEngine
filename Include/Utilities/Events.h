@@ -140,7 +140,7 @@ namespace CE
 
 	std::vector<BoundEvent> GetAllBoundEventsSlow(const EventBase& event);
 
-	Span<std::reference_wrapper<const EventBase>> GetAllEvents();
+	std::span<std::reference_wrapper<const EventBase>> GetAllEvents();
 
 	struct OnConstruct :
 		EventType<OnConstruct>

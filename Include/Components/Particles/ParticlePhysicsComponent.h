@@ -8,11 +8,11 @@ namespace CE
 	class ParticlePhysicsComponent
 	{
 	public:
-		Span<glm::vec3> GetLinearVelocities() { return mLinearVelocities; }
-		Span<const glm::vec3> GetLinearVelocities() const { return mLinearVelocities; }
+		std::span<glm::vec3> GetLinearVelocities() { return mLinearVelocities; }
+		std::span<const glm::vec3> GetLinearVelocities() const { return mLinearVelocities; }
 
-		Span<glm::quat> GetRotationalVelocitiesPerStep() { return mRotationalVelocitiesPerStep; }
-		Span<const glm::quat> GetRotationalVelocitiesPerStep() const { return mRotationalVelocitiesPerStep; }
+		std::span<glm::quat> GetRotationalVelocitiesPerStep() { return mRotationalVelocitiesPerStep; }
+		std::span<const glm::quat> GetRotationalVelocitiesPerStep() const { return mRotationalVelocitiesPerStep; }
 
 		glm::vec3 mMinInitialVelocity{};
 		glm::vec3 mMaxInitialVelocity{};

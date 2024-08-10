@@ -13,7 +13,7 @@ namespace CE
 	class Audio :
 		public EngineSubsystem<Audio>
 	{
-		friend class EngineSubsystem<Audio>;
+		friend EngineSubsystem;
 		Audio();
 		~Audio();
 

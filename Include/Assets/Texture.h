@@ -1,7 +1,40 @@
 #pragma once
+#include "Asset.h"
+#include "Core/AssetHandle.h"
 
-#ifdef PLATFORM_WINDOWS
-#include "Platform/PC/Rendering/TexturePC.h"
-#endif
+namespace CE
+{
+	struct TexturePlatformImpl;
+	class FrameBuffer;
 
-REFLECT_AT_START_UP(Texture, CE::Texture);
+	class Texture :
+		public Asset
+	{
+	public:
+		Texture(std::string_view name);
+		Texture(std::string_view name, FrameBuffer&& frameBuffer);
+
+		Texture(std::string_view name, std::span<const std::byte> pixelsRGBA, glm::ivec2 size);
+		Texture(AssetLoadInfo& loadInfo);
+
+		Texture(Texture&&) noexcept = default;
+		Texture(const Texture&) = delete;
+
+		Texture& operator=(Texture&&) = default;
+		Texture& operator=(const Texture&) = delete;
+
+		glm::ivec2 GetSize() const { return mSize; }
+
+		TexturePlatformImpl* GetPlatformImpl() const { return mImpl.get(); }
+
+		static AssetHandle<Texture> TryGetDefaultTexture();
+
+	private:
+		friend ReflectAccess;
+		static MetaType Reflect();
+		REFLECT_AT_START_UP(Texture);
+
+		glm::ivec2 mSize{};
+		std::shared_ptr<TexturePlatformImpl> mImpl{};
+	};
+}

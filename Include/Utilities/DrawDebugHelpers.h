@@ -1,143 +1,91 @@
 #pragma once
 
-#include "Rendering/DebugRenderer.h"
-
 namespace CE
 {
-// Optimizing away debug lines on non editor builds
-#ifdef EDITOR
-    void DrawDebugLine(
-        const World& world,
-        DebugCategory::Enum category,
-        const glm::vec3& from,
-        const glm::vec3& to,
-        const glm::vec4& color);
+	struct RenderCommandQueue;
 
-    void DrawDebugLine(
-        const World& world,
-        DebugCategory::Enum category,
-        glm::vec2 from,
-        glm::vec2 to,
-        const glm::vec4& color,
-        Plane::Enum plane = Plane::XZ);
+	struct DebugDraw
+	{
+		enum Enum
+		{
+			General = 1 << 0,
+			Gameplay = 1 << 1,
+			Physics = 1 << 2,
+			Sound = 1 << 3,
+			Rendering = 1 << 4,
+			AINavigation = 1 << 5,
+			AIDecision = 1 << 6,
+			Editor = 1 << 7,
+			AccelStructs = 1 << 8,
+			Particles = 1 << 9,
+			All = 0xFFFFFFFF
+		};
+	};
 
-    void DrawDebugCircle(
-        const World& world,
-        DebugCategory::Enum category,
-        const glm::vec3& center,
-        float radius,
-        const glm::vec4& color,
-        Plane::Enum plane = Plane::XZ);
+	struct Plane
+	{
+		enum Enum
+		{
+			XY,
+			XZ,
+			YZ
+		};
+	};
 
-    void DrawDebugSphere(
-        const World& world,
-        DebugCategory::Enum category,
-        const glm::vec3& center,
-        float radius,
-        const glm::vec4& color);
+	extern DebugDraw::Enum sDebugDrawFlags;
 
-    void DrawDebugRectangle(
-        const World& world,
-        DebugCategory::Enum category,
-        const glm::vec3& center,
-        glm::vec2 halfExtends,
-        const glm::vec4& color,
-        Plane::Enum plane = Plane::XZ);
+#ifdef EDITOR // Optimizing away debug lines on non editor builds
+#define DEBUG_DRAWING_ENABLED
+#endif
 
-    void DrawDebugBox(
-        const World& world,
-        DebugCategory::Enum category,
-        const glm::vec3& center,
-        const glm::vec3& halfExtends,
-        const glm::vec4& color);
-
-    void DrawDebugCylinder(
-        const World& world,
-        DebugCategory::Enum category,
-        const glm::vec3& from,
-        const glm::vec3& to,
-        float radius,
-        uint32 segments,
-        const glm::vec4& color);
-
-    void DrawDebugPolygon(
-        const World& world,
-        DebugCategory::Enum category,
-        const std::vector<glm::vec3>& points,
-        const glm::vec4& color);
-
-    void DrawDebugPolygon(
-        const World& world,
-        DebugCategory::Enum category,
-        const std::vector<glm::vec2>& points,
-        const glm::vec4& color,
-        Plane::Enum plane = Plane::XZ);
+#ifdef DEBUG_DRAWING_ENABLED
+#define DEBUG_DRAW_FUNC_START 
+#define DEBUG_DRAW_FUNC_END ;
 #else
-    inline void DrawDebugLine(
-        const World&,
-        DebugCategory::Enum,
-        const glm::vec3&,
-        const glm::vec3&,
-        const glm::vec4&) {};
+#define DEBUG_DRAW_FUNC_START inline
+#define DEBUG_DRAW_FUNC_END  {}
+#endif
 
-    inline void DrawDebugLine(
-        const World&,
-        DebugCategory::Enum,
-        glm::vec2,
-        glm::vec2,
-        const glm::vec4&,
-        Plane::Enum = Plane::XZ) {};
+#ifdef DEBUG_DRAWING_ENABLED
+	bool IsDebugDrawCategoryVisible(DebugDraw::Enum category);
+#else
+	inline bool IsDebugDrawCategoryVisible([[maybe_unused]] DebugDraw::Enum category) { return false; }
+#endif // DEBUG_DRAWING_ENABLED
 
-    inline void DrawDebugCircle(
-        const World&,
-        DebugCategory::Enum,
-        const glm::vec3&,
-        float,
-        const glm::vec4&,
-        Plane::Enum = Plane::XZ) {};
+	DEBUG_DRAW_FUNC_START void AddDebugLine([[maybe_unused]] RenderCommandQueue& commandQueue,
+		[[maybe_unused]] DebugDraw::Enum category,
+		[[maybe_unused]] glm::vec3 from,
+		[[maybe_unused]] glm::vec3 to,
+		[[maybe_unused]] glm::vec4 color) DEBUG_DRAW_FUNC_END;
 
-    inline void DrawDebugSphere(
-        const World&,
-        DebugCategory::Enum,
-        const glm::vec3&,
-        float,
-        const glm::vec4&) {};
+	DEBUG_DRAW_FUNC_START void AddDebugCircle([[maybe_unused]] RenderCommandQueue& commandQueue,
+		[[maybe_unused]] DebugDraw::Enum category,
+		[[maybe_unused]] glm::vec3 center,
+		[[maybe_unused]] float radius,
+		[[maybe_unused]] glm::vec4 color) DEBUG_DRAW_FUNC_END;
 
-    inline void DrawDebugRectangle(
-        const World&,
-        DebugCategory::Enum,
-        const glm::vec3&,
-        glm::vec2,
-        const glm::vec4&,
-        Plane::Enum = Plane::XZ) {};
+	DEBUG_DRAW_FUNC_START void AddDebugSphere([[maybe_unused]] RenderCommandQueue& commandQueue,
+		[[maybe_unused]] DebugDraw::Enum category,
+		[[maybe_unused]] glm::vec3 center,
+		[[maybe_unused]] float radius,
+		[[maybe_unused]] glm::vec4 color) DEBUG_DRAW_FUNC_END;
 
-    inline void DrawDebugBox(
-        const World&,
-        DebugCategory::Enum,
-        const glm::vec3&,
-        const glm::vec3&,
-        const glm::vec4&) {};
+	DEBUG_DRAW_FUNC_START void AddDebugSquare([[maybe_unused]] RenderCommandQueue& commandQueue,
+		[[maybe_unused]] DebugDraw::Enum category,
+		[[maybe_unused]] glm::vec3 center,
+		[[maybe_unused]] float size,
+		[[maybe_unused]] glm::vec4 color) DEBUG_DRAW_FUNC_END;
 
-    inline void DrawDebugCylinder(
-        const World&,
-        DebugCategory::Enum,
-        const glm::vec3&,
-        const glm::vec3&,
-        float,
-        uint32,
-        const glm::vec4&) {};
+	DEBUG_DRAW_FUNC_START void AddDebugBox([[maybe_unused]] RenderCommandQueue& commandQueue,
+		[[maybe_unused]] DebugDraw::Enum category,
+		[[maybe_unused]] glm::vec3 center,
+		[[maybe_unused]] glm::vec3 halfExtents,
+		[[maybe_unused]] glm::vec4 color) DEBUG_DRAW_FUNC_END;
 
-    inline void DrawDebugPolygon(
-        const World&,
-        DebugCategory::Enum,
-        const std::vector<glm::vec3>&,
-        const glm::vec4&) {};
-
-    inline void DrawDebugPolygon(
-        const World&,
-        DebugCategory::Enum,
-        const std::vector<glm::vec2>&,
-        const glm::vec4&,
-        Plane::Enum = Plane::XZ) {};
-#endif // EDITOR
+	DEBUG_DRAW_FUNC_START void AddDebugCylinder([[maybe_unused]] RenderCommandQueue& commandQueue,
+		[[maybe_unused]] DebugDraw::Enum category, 
+		[[maybe_unused]] glm::vec3 from, 
+		[[maybe_unused]] glm::vec3 to, 
+		[[maybe_unused]] float radius, 
+		[[maybe_unused]] glm::vec4 color) DEBUG_DRAW_FUNC_END;
 }

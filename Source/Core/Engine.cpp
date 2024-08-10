@@ -5,6 +5,7 @@
 
 #include "Core/FileIO.h"
 #include "Core/Device.h"
+#include "Core/Renderer.h"
 #include "Core/AssetManager.h"
 #include "Core/Input.h"
 #include "Core/Editor.h"
@@ -16,7 +17,6 @@
 #include "World/World.h"
 #include "Utilities/Benchmark.h"
 #include "World/Registry.h"
-#include "Rendering/Renderer.h"
 
 // For the UNIT_TEST_DECLARATION macro used in the Generated file
 #include "Core/UnitTests.h"
@@ -26,7 +26,7 @@
 
 CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 {
-	Device::sIsHeadless = argc >= 2
+	const bool isHeadless = argc >= 2
 		&& strcmp(argv[1], "run_tests") == 0;
 
 	FileIO::StartUp(argc, argv, gameDir);
@@ -47,10 +47,10 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 		}
 	};
 
-	if (!Device::IsHeadless())
+	if (!isHeadless)
 	{
 		LOG(LogCore, Verbose, "Creating window & device");
-		Device::StartUp();
+		Device::StartUp(DeviceConfiguration{});
 		LOG(LogCore, Verbose, "Creating renderer");
 		Renderer::StartUp();
 	}
@@ -77,7 +77,7 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 	LOG(LogCore, Verbose, "Creating UnitTestManager");
 	UnitTestManager::StartUp();
 
-	if (Device::sIsHeadless)
+	if (isHeadless)
 	{
 		uint32 numFailed = 0;
 		for (UnitTest& test : UnitTestManager::Get().GetAllTests())
@@ -153,7 +153,6 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 		return;
 	}
 
-
 #ifndef EDITOR
 	AssetHandle<Level> level = AssetManager::Get().TryGetAsset<Level>(starterLevel);
 
@@ -168,6 +167,7 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 #endif // EDITOR
 
 	Input& input = Input::Get();
+	Renderer& renderer = Renderer::Get();
 	Device& device = Device::Get();
 
 #ifdef EDITOR
@@ -213,12 +213,10 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 			break;
 		}
 
-		if (!Device::IsHeadless())
-		{
-			Renderer::Get().Render(world);
-		}
+		world.Render();
 #endif  // EDITOR
 
+		renderer.RunCommandQueues();
 		device.EndFrame();
 
 #ifdef EDITOR

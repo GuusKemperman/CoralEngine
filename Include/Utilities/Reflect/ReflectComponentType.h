@@ -27,6 +27,8 @@ namespace CE
 	template<typename T>
 	void ReflectComponentType(MetaType& type)
 	{
+		ASSERT(MakeTypeId<T>() == type.GetTypeId());
+
 		MetaType& entityType = MetaManager::Get().GetType<entt::entity>();
 
 		static constexpr bool isEmpty = std::is_empty_v<T>;

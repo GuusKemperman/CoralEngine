@@ -31,7 +31,7 @@ namespace CE
 
 		void UpdateSystems(float dt);
 
-		void RenderSystems() const;
+		void RenderSystems(RenderCommandQueue& commandQueue) const;
 
 		entt::entity Create();
 		
@@ -236,6 +236,8 @@ namespace CE
 					events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
 				}
 			}
+
+			World::PopWorld();
 		}
 		else
 		{
@@ -311,8 +313,6 @@ namespace CE
 		ASSERT(storage != nullptr);
 		ASSERT(storage->contains(fromEntity));
 
-		World::PushWorld(mWorld);
-
 		if constexpr (sIsReflectable<ComponentType>)
 		{
 			static std::optional<BoundEvent> endPlayEvent =
@@ -341,14 +341,10 @@ namespace CE
 	template <typename ComponentType, typename It>
 	void Registry::RemoveComponents(It first, It last)
 	{
-		World::PushWorld(mWorld);
-
 		for (auto curr = first; curr != last; ++curr)
 		{
 			RemoveComponent<ComponentType>(*curr);
 		}
-
-		World::PopWorld();
 	}
 
 	template<typename ComponentType>

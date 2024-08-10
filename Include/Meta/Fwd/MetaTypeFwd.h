@@ -266,7 +266,7 @@ namespace CE
 		args[N] was passed in. This allows us to check if, for example, a const
 		reference was passed to a function whose parameter is a mutable reference.
 		 */
-		FuncResult CallFunction(const std::variant<Name, OperatorType>& funcNameOrType, Span<MetaAny> args, Span<const TypeForm> formOfArgs, MetaFunc::RVOBuffer rvoBuffer = nullptr) const;
+		FuncResult CallFunction(const std::variant<Name, OperatorType>& funcNameOrType, std::span<MetaAny> args, std::span<const TypeForm> formOfArgs, MetaFunc::RVOBuffer rvoBuffer = nullptr) const;
 
 		/*
 		Get a function with a specific set of parameters and return type. See MakeFuncId.

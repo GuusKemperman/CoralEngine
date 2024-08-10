@@ -95,7 +95,8 @@ namespace
 	std::unordered_map<ImGuiID, SearchContext> sContexts{};
 	std::stack<std::reference_wrapper<SearchContext>> sContextStack{};
 
-	constexpr std::string_view sDefaultLabel = ICON_FA_SEARCH "##SearchBar";
+	// C++20 is annoying about char_8, so we have to go through some hassle to construct a default label :(
+	std::string sDefaultLabel{ std::string{ reinterpret_cast<const char*>(u8"\uf002") }.append("##SearchBar") };
 	constexpr std::string_view sDefaultHint = "Search";
 
 	constexpr bool sDebugPrintingEnabled = false;

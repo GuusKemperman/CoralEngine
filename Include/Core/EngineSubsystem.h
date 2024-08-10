@@ -17,24 +17,34 @@ namespace CE
 		static inline Derived* sInstance = nullptr;
 
 		template <typename... Args>
-		static Derived& StartUp(Args&&... args)
-		{
-			assert(sInstance == nullptr);
-			sInstance = new Derived(std::forward<Args>(args)...);
-			sInstance->PostConstruct();
-			return *sInstance;
-		}
+		static Derived& StartUp(Args&&... args);
 
-		static void ShutDown()
-		{
-			delete sInstance;
-		}
+		static void ShutDown();
 
 	public:
-		[[nodiscard]] static Derived& Get()
-		{
-			assert(sInstance != nullptr && "Instance was nullptr. Make sure the subsystem has FINISHED constructing.");
-			return *sInstance;
-		}
+		[[nodiscard]] static Derived& Get();
 	};
+
+	template <class Derived>
+	template <typename ... Args>
+	Derived& EngineSubsystem<Derived>::StartUp(Args&&... args)
+	{
+		assert(sInstance == nullptr);
+		sInstance = new Derived(std::forward<Args>(args)...);
+		sInstance->PostConstruct();
+		return *sInstance;
+	}
+
+	template <class Derived>
+	void EngineSubsystem<Derived>::ShutDown()
+	{
+		delete sInstance;
+	}
+
+	template <class Derived>
+	Derived& EngineSubsystem<Derived>::Get()
+	{
+		assert(sInstance != nullptr && "Instance was nullptr. Make sure the subsystem has FINISHED constructing.");
+		return *sInstance;
+	}
 }

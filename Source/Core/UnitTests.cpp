@@ -145,7 +145,7 @@ void CE::UnitTestManager::RunTests(UnitTest::Result resultFlags)
 	}
 }
 
-CE::Span<CE::UnitTest> CE::UnitTestManager::GetAllTests()
+std::span<CE::UnitTest> CE::UnitTestManager::GetAllTests()
 {
 	return GetTests();
 }

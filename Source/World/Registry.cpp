@@ -138,22 +138,16 @@ void CE::Registry::UpdateSystems(float dt)
 	}
 }
 
-void CE::Registry::RenderSystems() const
+void CE::Registry::RenderSystems(RenderCommandQueue& commandQueue) const
 {
-	if (CameraComponent::GetSelected(mWorld) == entt::null)
-	{
-		LOG(LogTemp, Message, "No camera to render to");
-		return;
-	}
-
 	for (const FixedTickSystem& fixedTickSystem : mFixedTickSystems)
 	{
-		fixedTickSystem.mSystem->Render(mWorld);
+		fixedTickSystem.mSystem->Render(mWorld, commandQueue);
 	}
 
 	for (const InternalSystem& internalSystem : mNonFixedSystems)
 	{
-		internalSystem.mSystem->Render(mWorld);
+		internalSystem.mSystem->Render(mWorld, commandQueue);
 	}
 }
 

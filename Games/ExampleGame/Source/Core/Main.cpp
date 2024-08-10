@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
 	try
 	{
 		CE::Engine engine{ argc, argv, GAME_DIR };
-		engine.Run("L_MainMenu");
+		engine.Run("TestLevel");
 	}
 	catch ([[maybe_unused]] const std::exception& e)
 	{

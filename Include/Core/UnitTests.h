@@ -50,7 +50,7 @@ namespace CE
 	public:
 		void RunTests(UnitTest::Result resultFlags);
 
-		Span<UnitTest> GetAllTests();
+		std::span<UnitTest> GetAllTests();
 	};
 
 	namespace Internal

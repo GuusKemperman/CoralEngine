@@ -5,10 +5,12 @@
 
 namespace CE
 {
+	struct RenderCommandQueue;
+	class FrameBuffer;
+
 	class Level;
 	class Registry;
 	class WorldViewport;
-	class GPUWorld;
 	class Physics;
 	class EventManager;
 
@@ -25,51 +27,53 @@ namespace CE
 		World& operator=(const World&) = delete;
 
 		void Tick(float deltaTime);
+		void Render(FrameBuffer* renderTarget = nullptr);
 
 		void BeginPlay();
 		void EndPlay();
 
-		Registry& GetRegistry() { return *mRegistry; }
-		const Registry& GetRegistry() const { return *mRegistry; };
+		Registry& GetRegistry();
+		const Registry& GetRegistry() const;
 
-		Physics& GetPhysics() { return *mPhysics; }
-		const Physics& GetPhysics() const { return *mPhysics; }
+		Physics& GetPhysics();
+		const Physics& GetPhysics() const;
 
-		EventManager& GetEventManager() { return *mEventManager; }
-		const EventManager& GetEventManager() const { return *mEventManager; }
+		EventManager& GetEventManager();
+		const EventManager& GetEventManager() const;
 
-		WorldViewport& GetViewport() { ASSERT(mViewport != nullptr); return *mViewport; };
-		const WorldViewport& GetViewport() const { ASSERT(mViewport != nullptr); return *mViewport; };
+		WorldViewport& GetViewport();
+		const WorldViewport& GetViewport() const;
 
-		GPUWorld& GetGPUWorld() const;
+		RenderCommandQueue& GetRenderCommandQueue();
+		const RenderCommandQueue& GetRenderCommandQueue() const;
 
-		bool HasBegunPlay() const { return mHasBegunPlay; }
+		bool HasBegunPlay() const;
 
-		bool HasRequestedEndPlay() const { return mHasEndPlayBeenRequested; }
-
-		// In seconds
-		float GetCurrentTimeScaled() const { return mTime.mScaledTotalTimeElapsed; }
+		bool HasRequestedEndPlay() const;
 
 		// In seconds
-		float GetCurrentTimeReal() const { return mTime.mRealTotalTimeElapsed; }
+		float GetCurrentTimeScaled() const;
 
-		float GetTimeScale() const { return mTime.GetTimeScale(); }
+		// In seconds
+		float GetCurrentTimeReal() const;
 
-		void SetTimeScale(float timeScale) { mTime.mTimescale = timeScale; }
+		float GetTimeScale() const;
 
-		float GetRealDeltaTime() const { return mTime.mRealDeltaTime; }
+		void SetTimeScale(float timeScale);
 
-		float GetScaledDeltaTime() const { return mTime.mScaledDeltaTime; }
+		float GetRealDeltaTime() const;
 
-		bool IsPaused() const { return mTime.mIsPaused; }
+		float GetScaledDeltaTime() const;
 
-		void Pause() { mTime.mIsPaused = true; }
+		bool IsPaused() const;
 
-		void Unpause() { mTime.mIsPaused = false; }
+		void Pause();
 
-		void SetIsPaused(bool isPaused) { mTime.mIsPaused = isPaused; }
+		void Unpause();
 
-		void RequestEndplay() { mHasEndPlayBeenRequested = true; }
+		void SetIsPaused(bool isPaused);
+
+		void RequestEndplay();
 
 		static void PushWorld(World& world);
 		static void PopWorld();
@@ -86,7 +90,7 @@ namespace CE
 		 */
 		void TransitionToLevel(const AssetHandle<Level>& level);
 
-		const AssetHandle<Level>& GetNextLevel() const { return mLevelToTransitionTo; }
+		const AssetHandle<Level>& GetNextLevel() const;
 
 	private:
 		friend ReflectAccess;
@@ -98,9 +102,9 @@ namespace CE
 
 		std::unique_ptr<Registry> mRegistry{};
 		std::unique_ptr<WorldViewport> mViewport{};
-		std::unique_ptr<GPUWorld> mGPUWorld{};
 		std::unique_ptr<Physics> mPhysics{};
 		std::unique_ptr<EventManager> mEventManager{};
+		std::shared_ptr<RenderCommandQueue> mRenderCommandQueue{};
 
 		AssetHandle<Level> mLevelToTransitionTo{};
 		bool mHasEndPlayBeenRequested = false;

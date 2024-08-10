@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Utilities/StringFunctions.h"
 
-void CE::StringFunctions::HexToBinary(const std::string_view hex, Span<char> binaryDest)
+void CE::StringFunctions::HexToBinary(const std::string_view hex, std::span<char> binaryDest)
 {
 	constexpr int nibbles[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14, 15 };
 
@@ -39,7 +39,7 @@ std::string CE::StringFunctions::HexToBinary(const std::string_view hex)
 	return binary;
 }
 
-void CE::StringFunctions::BinaryToHex(const std::string_view binary, Span<char> hexDest)
+void CE::StringFunctions::BinaryToHex(const std::string_view binary, std::span<char> hexDest)
 {
 	ASSERT(hexDest.size_bytes() >= binary.size() * 2);
 	constexpr char syms[] = "0123456789ABCDEF";

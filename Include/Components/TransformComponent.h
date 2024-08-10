@@ -1,6 +1,5 @@
 #pragma once
 #include "Meta/MetaReflect.h"
-#include "Utilities/Math.h"
 
 namespace CE
 {

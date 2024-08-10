@@ -106,7 +106,7 @@ CE::MetaType CE::EmptyEventTestingComponent::Reflect()
 	BindEvent(type, sOnCollisionStay, &EmptyEventTestingComponent::OnCollisionStay);
 	BindEvent(type, sOnCollisionExit, &EmptyEventTestingComponent::OnCollisionExit);
 
-	ReflectComponentType<EventTestingComponent>(type);
+	ReflectComponentType<EmptyEventTestingComponent>(type);
 	return type;
 }
 

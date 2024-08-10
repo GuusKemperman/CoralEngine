@@ -63,7 +63,7 @@ std::string_view CE::MetaFunc::GetDesignerFriendlyName(const NameOrType& nameOrT
 		std::get<std::string>(nameOrType);
 }
 
-CE::FuncResult CE::MetaFunc::InvokeChecked(Span<MetaAny> args, Span<const TypeForm> formOfArgs, RVOBuffer rvoBuffer) const
+CE::FuncResult CE::MetaFunc::InvokeChecked(std::span<MetaAny> args, std::span<const TypeForm> formOfArgs, RVOBuffer rvoBuffer) const
 {
 	std::optional<std::string> reasonWeCantInvoke = CanArgBePassedIntoParam(args, formOfArgs, mParams);
 
@@ -75,8 +75,8 @@ CE::FuncResult CE::MetaFunc::InvokeChecked(Span<MetaAny> args, Span<const TypeFo
 	return InvokeUnchecked(args, formOfArgs, rvoBuffer);
 }
 
-CE::FuncResult CE::MetaFunc::InvokeUnchecked(Span<MetaAny> args,
-	[[maybe_unused]] Span<const TypeForm> formOfArgs, RVOBuffer rvoBuffer) const
+CE::FuncResult CE::MetaFunc::InvokeUnchecked(std::span<MetaAny> args,
+	[[maybe_unused]] std::span<const TypeForm> formOfArgs, RVOBuffer rvoBuffer) const
 {
 	ASSERT_LOG(!CanArgBePassedIntoParam(args, formOfArgs, mParams).has_value(), "Invalid arguments passed to function - {} - Use invoke checked if you are not sure your arguments are valid",
 		*CanArgBePassedIntoParam(args, formOfArgs, mParams));
@@ -90,8 +90,8 @@ CE::FuncResult CE::MetaFunc::InvokeUnchecked(Span<MetaAny> args,
 	return mFuncToInvoke(args, rvoBuffer);
 }
 
-std::optional<std::string> CE::MetaFunc::CanArgBePassedIntoParam(Span<const MetaAny> args,
-	Span<const TypeForm> formOfArgs,
+std::optional<std::string> CE::MetaFunc::CanArgBePassedIntoParam(std::span<const MetaAny> args,
+	std::span<const TypeForm> formOfArgs,
 	const std::vector<MetaFuncNamedParam>& params)
 {
 	if (args.size() != formOfArgs.size())

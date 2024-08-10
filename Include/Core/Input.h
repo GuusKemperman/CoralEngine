@@ -10,7 +10,7 @@ namespace CE
     class Input final :
 		public EngineSubsystem<Input>
     {
-        friend EngineSubsystem<Input>;
+        friend EngineSubsystem;
         friend MetaType;
         Input();
     	~Input();

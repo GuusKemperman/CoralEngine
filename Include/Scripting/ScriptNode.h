@@ -53,14 +53,14 @@ namespace CE
 		glm::vec2 GetPosition() const { return mPosition; }
 		void SetPosition(glm::vec2 position) { mPosition = position; }
 
-		Span<const ScriptPin> GetInputs(const ScriptFunc& scriptFunc) const;
-		Span<ScriptPin> GetInputs(ScriptFunc& scriptFunc);
+		std::span<const ScriptPin> GetInputs(const ScriptFunc& scriptFunc) const;
+		std::span<ScriptPin> GetInputs(ScriptFunc& scriptFunc);
 
-		Span<const ScriptPin> GetOutputs(const ScriptFunc& scriptFunc) const;
-		Span<ScriptPin> GetOutputs(ScriptFunc& scriptFunc);
+		std::span<const ScriptPin> GetOutputs(const ScriptFunc& scriptFunc) const;
+		std::span<ScriptPin> GetOutputs(ScriptFunc& scriptFunc);
 
-		Span<const ScriptPin> GetPins(const ScriptFunc& scriptFunc) const;
-		Span<ScriptPin> GetPins(ScriptFunc& scriptFunc);
+		std::span<const ScriptPin> GetPins(const ScriptFunc& scriptFunc) const;
+		std::span<ScriptPin> GetPins(ScriptFunc& scriptFunc);
 
 		PinId GetIdOfFirstPin() const { return mFirstPinId; }
 		bool IsPure(const ScriptFunc& scriptFunc) const;
@@ -135,32 +135,32 @@ namespace CE
 	};
 }
 
-inline CE::Span<const CE::ScriptPin> CE::ScriptNode::GetInputs(const ScriptFunc& scriptFunc) const
+inline std::span<const CE::ScriptPin> CE::ScriptNode::GetInputs(const ScriptFunc& scriptFunc) const
 {
 	return { mFirstPinId.IsValid() ? &scriptFunc.GetPin(mFirstPinId) : nullptr, mNumOfInputs };
 }
 
-inline CE::Span<CE::ScriptPin> CE::ScriptNode::GetInputs(ScriptFunc& scriptFunc)
+inline std::span<CE::ScriptPin> CE::ScriptNode::GetInputs(ScriptFunc& scriptFunc)
 {
 	return { mFirstPinId.IsValid() ? &scriptFunc.GetPin(mFirstPinId) : nullptr, mNumOfInputs };
 }
 
-inline CE::Span<const CE::ScriptPin> CE::ScriptNode::GetOutputs(const ScriptFunc& scriptFunc) const
+inline std::span<const CE::ScriptPin> CE::ScriptNode::GetOutputs(const ScriptFunc& scriptFunc) const
 {
 	return { mFirstPinId.IsValid() ? &scriptFunc.GetPin(mFirstPinId) + mNumOfInputs : nullptr, mNumOfOutputs };
 }
 
-inline CE::Span<CE::ScriptPin> CE::ScriptNode::GetOutputs(ScriptFunc& scriptFunc)
+inline std::span<CE::ScriptPin> CE::ScriptNode::GetOutputs(ScriptFunc& scriptFunc)
 {
 	return { mFirstPinId.IsValid() ? &scriptFunc.GetPin(mFirstPinId) + mNumOfInputs : nullptr , mNumOfOutputs };
 }
 
-inline CE::Span<const CE::ScriptPin> CE::ScriptNode::GetPins(const ScriptFunc& scriptFunc) const
+inline std::span<const CE::ScriptPin> CE::ScriptNode::GetPins(const ScriptFunc& scriptFunc) const
 {
 	return { mFirstPinId.IsValid() ? &scriptFunc.GetPin(mFirstPinId) : nullptr, mNumOfInputs + mNumOfOutputs };
 }
 
-inline CE::Span<CE::ScriptPin> CE::ScriptNode::GetPins(ScriptFunc& scriptFunc)
+inline std::span<CE::ScriptPin> CE::ScriptNode::GetPins(ScriptFunc& scriptFunc)
 {
 	return { mFirstPinId.IsValid() ? &scriptFunc.GetPin(mFirstPinId) : nullptr, mNumOfInputs + mNumOfOutputs };
 }

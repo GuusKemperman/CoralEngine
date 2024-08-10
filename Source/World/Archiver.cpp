@@ -275,7 +275,7 @@ CE::BinaryGSONObject CE::Archiver::Serialize(const World& world)
 	return SerializeInternal(world, std::move(entitiesToSerialize), true);
 }
 
-CE::BinaryGSONObject CE::Archiver::Serialize(const World& world, Span<const entt::entity> entities, bool serializeChildren)
+CE::BinaryGSONObject CE::Archiver::Serialize(const World& world, std::span<const entt::entity> entities, bool serializeChildren)
 {
 	std::vector<entt::entity> entitiesToSerialize{ entities.begin(), entities.end() };
 

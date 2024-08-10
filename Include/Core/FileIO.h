@@ -13,7 +13,7 @@ namespace CE
 	class FileIO :
 		public EngineSubsystem<FileIO>
 	{
-		friend class EngineSubsystem;
+		friend EngineSubsystem;
 
 		/// <summary>
 		/// Initializes the File IO system, filling in all the paths and

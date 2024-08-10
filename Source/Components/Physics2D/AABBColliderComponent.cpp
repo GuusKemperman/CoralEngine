@@ -4,6 +4,7 @@
 #include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
+#include "Utilities/Math.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
 CE::TransformedAABB CE::AABBColliderComponent::CreateTransformedCollider(const TransformComponent& transform) const

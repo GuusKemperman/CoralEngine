@@ -7,9 +7,9 @@
 
 void CE::PointLightComponent::OnDrawGizmos(World& world, entt::entity owner) const
 {
-	static constexpr DebugCategory::Enum category = DebugCategory::Editor;
+	static constexpr DebugDraw::Enum category = DebugDraw::Editor;
 
-	if (!DebugRenderer::IsCategoryVisible(category))
+	if (!IsDebugDrawCategoryVisible(category))
 	{
 		return;
 	}
@@ -21,12 +21,11 @@ void CE::PointLightComponent::OnDrawGizmos(World& world, entt::entity owner) con
 		return;
 	}
 
-	DrawDebugSphere(
-		world,
+	AddDebugSphere(world.GetRenderCommandQueue(),
 		category,
 		transform->GetWorldPosition(),
-		mRange,
-		Colors::Yellow);
+		transform->GetWorldScaleUniform() * mRange,
+		{ 1.0f, 1.0f, 0.0f, 1.0f });
 }
 
 CE::MetaType CE::PointLightComponent::Reflect()
@@ -35,7 +34,6 @@ CE::MetaType CE::PointLightComponent::Reflect()
 	metaType.GetProperties().Add(Props::sIsScriptableTag);
 
 	metaType.AddField(&PointLightComponent::mColor, "mColor").GetProperties().Add(Props::sIsScriptableTag);
-	metaType.AddField(&PointLightComponent::mIntensity, "mIntensity").GetProperties().Add(Props::sIsScriptableTag);
 	metaType.AddField(&PointLightComponent::mRange, "mRange").GetProperties().Add(Props::sIsScriptableTag);
 
 #ifdef EDITOR

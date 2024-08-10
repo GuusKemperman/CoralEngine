@@ -93,8 +93,6 @@ namespace CE
 {
 	class Ability;
 	class Weapon;
-	class SkinnedMesh;
-	class Animation;
 	class Material;
 	class StaticMesh;
 	class Level;
@@ -123,9 +121,6 @@ template<>
 CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<CE::Script>& forAsset);
 
 template<>
-CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<CE::Animation>& forAsset);
-
-template<>
 CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<CE::Ability>& forAsset);
 
 template<>
@@ -139,9 +134,6 @@ CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<CE::Prefab>& forA
 
 template<>
 CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<CE::StaticMesh>& forAsset);
-
-template<>
-CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<CE::SkinnedMesh>& forAsset);
 
 template<>
 CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<CE::Material>& forAsset);

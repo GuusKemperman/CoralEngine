@@ -28,7 +28,7 @@ namespace CE
 		static BinaryGSONObject Serialize(const World& world);
 
 		// Will serialize the provided entities, optionally their children as well.
-		static BinaryGSONObject Serialize(const World& world, Span<const entt::entity> entities, bool serializeChildren);
+		static BinaryGSONObject Serialize(const World& world, std::span<const entt::entity> entities, bool serializeChildren);
 
 	private:
 		static BinaryGSONObject SerializeInternal(const World& world, std::vector<entt::entity>&& entitiesToSerialize, bool allEntitiesInWorldAreBeingSerialized);

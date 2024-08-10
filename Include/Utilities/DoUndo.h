@@ -131,8 +131,8 @@ namespace CE
 			size_t GetNumOfActionsDone() const { return mNumOfActionsDone; }
 
 			// Some of these actions may have been undone already!
-			Span<std::unique_ptr<T>> GetAllStoredActions() { return mActionsTaken; }
-			Span<const std::unique_ptr<T>> GetAllStoredActions() const { return mActionsTaken; }
+			std::span<std::unique_ptr<T>> GetAllStoredActions() { return mActionsTaken; }
+			std::span<const std::unique_ptr<T>> GetAllStoredActions() const { return mActionsTaken; }
 
 		private:
 			std::vector<std::unique_ptr<T>> mActionsTaken{};

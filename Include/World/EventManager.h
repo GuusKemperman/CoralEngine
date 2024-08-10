@@ -21,13 +21,13 @@ namespace CE
 		template<typename Derived, typename Ret, EventFlags Flags, typename... Params, typename... Args>
 		void InvokeEventForAllComponentsOnEntity(const EventType<Derived, Ret(Params...), Flags>& eventType, entt::entity entity, Args&&... args);
 
-		Span<const BoundEvent> GetBoundEvents(const EventBase& eventBase) const;
+		std::span<const BoundEvent> GetBoundEvents(const EventBase& eventBase) const;
 
 	private:
 		void InvokeEventForAllComponentsOnEntityImpl(const EventBase& eventBase, 
 			entt::entity entity,
 			MetaFunc::DynamicArgs argsProvided, 
-			Span<TypeForm> argFormsProvided);
+			std::span<TypeForm> argFormsProvided);
 
 		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
 		friend class World;

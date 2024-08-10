@@ -10,7 +10,6 @@ namespace CE
 	{
 	public:
 		LinearColor mColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-		float mIntensity = 1.0f;
 		float mRange = 5.0f;
 
 		void OnDrawGizmos(World& world, entt::entity owner) const;

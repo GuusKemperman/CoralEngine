@@ -9,7 +9,7 @@ namespace CE
 	public:
 		void Update(World& world, float dt) override;
 
-		void Render(const World& world) override;
+		void Render(const World& world, RenderCommandQueue& commandQueue) const override;
 
 		SystemStaticTraits GetStaticTraits() const override
 		{
@@ -21,6 +21,8 @@ namespace CE
 		}
 
 	private:
+		static void UpdateMatrices(World& world);
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(UpdateCameraMatricesSystem);

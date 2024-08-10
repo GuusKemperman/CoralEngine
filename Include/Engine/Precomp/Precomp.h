@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <vector>
+#include <span>
 #include <assert.h>
 #include <memory>
 #include <unordered_map>
@@ -34,13 +35,11 @@
 #pragma warning(disable : 4201)
 #endif
 
-#define GLM_FORCE_LEFT_HANDED
 #include "glm/glm.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp> 
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/norm.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #ifdef _MSC_VER
 #pragma warning(pop)

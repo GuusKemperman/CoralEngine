@@ -107,7 +107,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Precomp.h</PrecompiledHeaderFile>
@@ -118,6 +118,8 @@
       <BuildStlModules>true</BuildStlModules>
       <SupportJustMyCode>false</SupportJustMyCode>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -133,7 +135,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Precomp.h</PrecompiledHeaderFile>
@@ -144,6 +146,8 @@
       <BuildStlModules>true</BuildStlModules>
       <SupportJustMyCode>false</SupportJustMyCode>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -162,7 +166,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Precomp.h</PrecompiledHeaderFile>
@@ -174,6 +178,8 @@
       <BuildStlModules>true</BuildStlModules>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -192,7 +198,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>Precomp.h</PrecompiledHeaderFile>
@@ -203,6 +209,8 @@
       <BuildStlModules>true</BuildStlModules>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -214,41 +222,7 @@
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Components\CorpseComponent.cpp" />
-    <ClCompile Include="Source\Components\CorpseManagerComponent.cpp" />
-    <ClCompile Include="Source\Components\ScoreComponent.cpp" />
-    <ClCompile Include="Source\Components\ScoreTextComponent.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\RunningAwayState.cpp" />
-    <ClCompile Include="Source\Components\CameraShakeComponent.cpp" />
-    <ClCompile Include="Source\Components\PointTowardsGraveyardTags.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\ShootingBowState.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\KnockbackEmitterComponent.cpp" />
-    <ClCompile Include="Source\Components\XPOrbComponent.cpp" />
-    <ClCompile Include="Source\Components\XPOrbManagerComponent.cpp" />
-    <ClCompile Include="Source\Systems\CorpseSystem.cpp" />
-    <ClCompile Include="Source\Systems\XPOrbSystem.cpp" />
-    <ClCompile Include="Source\Utilities\AiFunctionality.cpp" />
     <ClCompile Include="Source\Components\EnvironmentGeneratorComponent.cpp" />
-    <ClCompile Include="Source\Assets\Upgrade.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpStompState.cpp" />
-    <ClCompile Include="Source\Components\DifficultyScalingComponent.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\KnockBackState.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\DanceState.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\DeathState.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\RecoveryState.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\DashingState.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\ChargeUpDashState.cpp" />
-    <ClCompile Include="Source\Components\SpawnerComponent.cpp" />
-    <ClCompile Include="Source\EditorSystems\UpgradeEditorSystem.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Source\Systems\DifficultyScalingSystem.cpp" />
-    <ClCompile Include="Source\Systems\EnvironmentGeneratorSystem.cpp" />
-    <ClCompile Include="Source\Systems\SpawnerSystem.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\AttackingState.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\ChasingState.cpp" />
-    <ClCompile Include="Source\Components\UtilityAi\States\IdleState.cpp" />
     <ClCompile Include="Source\Core\Main.cpp" />
     <ClCompile Include="Source\Core\Precomp.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">Create</PrecompiledHeader>
@@ -256,51 +230,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Source\Components\WavesComponent.cpp" />
-    <ClCompile Include="Source\Components\UpgradeStoringComponent.cpp" />
-    <ClCompile Include="Source\Utilities\UpgradeFunctionality.cpp" />
+    <ClCompile Include="Source\Systems\EnvironmentGeneratorSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\Components\CameraShakeComponent.h" />
-    <ClInclude Include="Include\Assets\Upgrade.h" />
-    <ClCompile Include="Source\Components\UtilityAi\States\StompState.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Include\Components\CorpseComponent.h" />
-    <ClInclude Include="Include\Components\PointTowardsGraveyardTags.h" />
-    <ClInclude Include="Include\Components\XPOrbComponent.h" />
-    <ClInclude Include="Include\Components\XPOrbManagerComponent.h" />
-    <ClInclude Include="Include\Components\CorpseManagerComponent.h" />
-    <ClInclude Include="Include\Systems\CorpseSystem.h" />
-    <ClInclude Include="Include\Systems\XPOrbSystem.h" />
-    <ClInclude Include="Include\Utilities\AiFunctionality.h" />
-    <ClInclude Include="Include\Components\EnvironmentGeneratorComponent.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\ChargeUpStompState.h" />
-    <ClInclude Include="Include\Components\DifficultyScalingComponent.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\DanceState.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\DeathState.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\RecoveryState.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\DashingState.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\ChargeUpDashState.h" />
-    <ClInclude Include="Include\Components\SpawnerComponent.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\AttackingState.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\ChasingState.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\IdleState.h" />
-    <ClInclude Include="Include\EditorSystems\UpgradeEditorSystem.h" />
     <ClInclude Include="Include\ExampleGame\Precomp.h" />
-    <ClInclude Include="Include\Systems\DifficultyScalingSystem.h" />
-    <ClInclude Include="Include\Systems\EnvironmentGeneratorSystem.h" />
-    <ClInclude Include="Include\Systems\SpawnerSystem.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\ShootingBowState.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\KnockBackState.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\KnockbackEmitterComponent.h" />
-    <ClInclude Include="Include\Components\ScoreTextComponent.h" />
-    <ClInclude Include="Include\Components\ScoreComponent.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\RunningAwayState.h" />
-    <ClInclude Include="Include\Components\WavesComponent.h" />
-    <ClInclude Include="Include\Components\UpgradeStoringComponent.h" />
-    <ClInclude Include="Include\Utilities\UpgradeFunctionality.h" />
-    <ClInclude Include="Include\Components\UtililtyAi\States\StompState.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

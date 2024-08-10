@@ -10,7 +10,7 @@ namespace CE
 	{
 
 	public:
-		void Render(const World& world) override;
+		void Render(const World& world, RenderCommandQueue& commandQueue) const override;
 
 		SystemStaticTraits GetStaticTraits() const override
 		{

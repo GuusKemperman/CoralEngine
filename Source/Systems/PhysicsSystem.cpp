@@ -8,7 +8,6 @@
 #include "Components/Physics2D/AABBColliderComponent.h"
 #include "Components/Physics2D/DiskColliderComponent.h"
 #include "Components/Physics2D/PolygonColliderComponent.h"
-#include "Rendering/DebugRenderer.h"
 #include "Utilities/BVH.h"
 #include "World/Registry.h"
 #include "World/World.h"
@@ -34,10 +33,38 @@ void CE::PhysicsSystem::Update(World& world, float dt)
 	}
 }
 
-void CE::PhysicsSystem::Render(const World& world)
+void CE::PhysicsSystem::Render(const World& world, RenderCommandQueue& commandQueue) const
 {
-	DebugDrawing(world);
+	const Registry& reg = world.GetRegistry();
 
+	if (IsDebugDrawCategoryVisible(DebugDraw::Physics))
+	{
+		const auto diskView = reg.View<const TransformedDiskColliderComponent, const TransformComponent>();
+		constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
+		for (auto [entity, disk, transform] : diskView.each())
+		{
+			
+			AddDebugCircle(commandQueue, DebugDraw::Physics, To3DRightForward(disk.mCentre), disk.mRadius + 0.00001f, color);
+		}
+
+		const auto polyView = reg.View<const TransformedPolygonColliderComponent, const TransformComponent>();
+		for (auto [entity, poly, transform] : polyView.each())
+		{
+			const size_t pointCount = poly.mPoints.size();
+			for (size_t i = 0; i < pointCount; ++i)
+			{
+				const glm::vec2 from = poly.mPoints[i];
+				const glm::vec2 to = poly.mPoints[(i + 1) % pointCount];
+				AddDebugLine(commandQueue, DebugDraw::Physics, To3DRightForward(from), To3DRightForward(to), color);
+			}
+		}
+
+		const auto aabbView = reg.View<const TransformedAABBColliderComponent, const TransformComponent>();
+		for (auto [entity, aabb, transform] : aabbView.each())
+		{
+			AddDebugBox(commandQueue, DebugDraw::Physics, To3DRightForward(aabb.GetCentre()), To3DRightForward(aabb.GetSize() * .5f), color);
+		}
+	}
 	for (const BVH& bvh : world.GetPhysics().GetBVHs())
 	{
 		bvh.DebugDraw();
@@ -319,39 +346,6 @@ void CE::PhysicsSystem::CallEvents(World& world, const CollisionDataContainer& c
 		{
 			CallEvent(event, world, *storage, collision.mEntity1, collision.mEntity2, collision.mDepth, collision.mNormalFor1, collision.mContactPoint);
 			CallEvent(event, world, *storage, collision.mEntity2, collision.mEntity1, collision.mDepth, -collision.mNormalFor1, collision.mContactPoint);
-		}
-	}
-}
-
-void CE::PhysicsSystem::DebugDrawing(const World& world)
-{
-	const Registry& reg = world.GetRegistry();
-
-	if (DebugRenderer::IsCategoryVisible(DebugCategory::Physics))
-	{
-		const auto diskView = reg.View<const TransformedDiskColliderComponent, const TransformComponent>();
-		constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
-		for (auto [entity, disk, transform] : diskView.each())
-		{
-			DrawDebugCircle(world, DebugCategory::Physics, To3DRightForward(disk.mCentre), disk.mRadius + 0.00001f, color);
-		}
-
-		const auto polyView = reg.View<const TransformedPolygonColliderComponent, const TransformComponent>();
-		for (auto [entity, poly, transform] : polyView.each())
-		{
-			const size_t pointCount = poly.mPoints.size();
-			for (size_t i = 0; i < pointCount; ++i)
-			{
-				const glm::vec2 from = poly.mPoints[i];
-				const glm::vec2 to = poly.mPoints[(i + 1) % pointCount];
-				DrawDebugLine(world, DebugCategory::Physics, To3DRightForward(from), To3DRightForward(to), color);
-			}
-		}
-
-		const auto aabbView = reg.View<const TransformedAABBColliderComponent, const TransformComponent>();
-		for (auto [entity, aabb, transform] : aabbView.each())
-		{
-			DrawDebugRectangle(world, DebugCategory::Physics, To3DRightForward(aabb.GetCentre()), aabb.GetSize() * .5f, color);
 		}
 	}
 }

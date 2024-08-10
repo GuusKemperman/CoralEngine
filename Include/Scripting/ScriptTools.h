@@ -66,6 +66,6 @@ namespace CE
 	void InspectPin(const ScriptFunc& func, ScriptPin& pin);
 
 #else
-	CONSTEVAL bool CanInspectPin(const ScriptFunc&, const ScriptPin&) { return false; }
+	constexpr bool CanInspectPin(const ScriptFunc&, const ScriptPin&) { return false; }
 #endif // EDITOR
 }

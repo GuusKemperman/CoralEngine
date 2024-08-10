@@ -128,7 +128,7 @@ CE::FuncResult CE::MetaType::CallFunctionWithRVO(const std::variant<Name, Operat
 {
 	static constexpr uint32 numOfArgs = sizeof...(Args);
 	std::pair<std::array<MetaAny, numOfArgs>, std::array<TypeForm, numOfArgs>> packedArgs = MetaFunc::Pack(std::forward<Args>(args)...);
-	return CallFunction(funcNameOrType, Span<MetaAny>{ packedArgs.first }, Span<const TypeForm>{ packedArgs.second }, rvoBuffer);
+	return CallFunction(funcNameOrType, std::span<MetaAny>{ packedArgs.first }, std::span<const TypeForm>{ packedArgs.second }, rvoBuffer);
 }
 
 template <typename ... Args>
