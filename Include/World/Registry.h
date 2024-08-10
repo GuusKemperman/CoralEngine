@@ -236,6 +236,8 @@ namespace CE
 					events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
 				}
 			}
+
+			World::PopWorld();
 		}
 		else
 		{
@@ -270,7 +272,6 @@ namespace CE
 			}
 
 			World::PopWorld();
-
 			return component;
 		}
 	}
