@@ -23,7 +23,7 @@ CE::World::World(const bool beginPlayImmediately) :
 	mViewport(std::make_unique<WorldViewport>(*this)),
 	mPhysics(std::make_unique<Physics>(*this)),
 	mEventManager(std::make_unique<EventManager>(*this)),
-	mRenderCommandQueue(Renderer::Get().CreateCommandQueue())
+	mRenderCommandQueue(Device::IsHeadless() ? nullptr : Renderer::Get().CreateCommandQueue())
 {
 	if (beginPlayImmediately)
 	{
