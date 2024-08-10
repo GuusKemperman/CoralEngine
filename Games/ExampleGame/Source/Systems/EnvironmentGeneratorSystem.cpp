@@ -13,6 +13,7 @@
 #include "Meta/MetaType.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/Geometry2d.h"
+#include "Utilities/Math.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/Physics.h"
 
