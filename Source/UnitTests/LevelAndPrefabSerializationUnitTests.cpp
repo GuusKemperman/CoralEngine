@@ -548,6 +548,8 @@ namespace
 		MetaType type = MetaType{ MetaType::T<EntityRefTestComponent>{}, "EntityRefTestComponent" };
 		type.GetProperties().Add(Props::sNoInspectTag);
 
+		type.AddField(&EntityRefTestComponent::mReferenceEntity, "mReferenceEntity");
+
 		ReflectComponentType<EntityRefTestComponent>(type);
 		return type;
 	}
