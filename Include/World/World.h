@@ -18,13 +18,14 @@ namespace CE
 	{
 	public:
 		World(bool beginPlayImmediately);
-		World(World&& other) noexcept;
+
+		World(World&&) = delete;
 		World(const World&) = delete;
 
-		~World();
-
-		World& operator=(World&& other) noexcept;
+		World& operator=(World&&) noexcept = delete;
 		World& operator=(const World&) = delete;
+
+		~World();
 
 		void Tick(float deltaTime);
 		void Render(FrameBuffer* renderTarget = nullptr);

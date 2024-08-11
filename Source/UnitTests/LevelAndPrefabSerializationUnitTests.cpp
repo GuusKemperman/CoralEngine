@@ -21,9 +21,9 @@ static constexpr std::string_view sTestPrefabName = "__TestPrefab__";
 
 namespace
 {
-	World ReloadUsingLevel(World&& world);
+	std::unique_ptr<World> ReloadUsingLevel(std::unique_ptr<World> world);
 
-	World ReloadUsingPrefab(World&& world, entt::entity entity);
+	std::unique_ptr<World> ReloadUsingPrefab(std::unique_ptr<World> world, entt::entity entity);
 
 	struct PrefabChange
 	{
@@ -37,7 +37,7 @@ namespace
 		static MetaType Reflect();
 	};
 
-	UnitTest::Result TestPrefabChanges(World&& initialWorld,
+	UnitTest::Result TestPrefabChanges(std::unique_ptr<World> initialWorld,
 		entt::entity initialEntity,
 		std::vector<PrefabChange> changes,
 		std::function<void(World&, entt::entity)>&& changePrefabInstanceInWorld = {});
@@ -51,8 +51,8 @@ UNIT_TEST(Serialization, NoPrefabsLevelSerialization)
 	static const std::string childName = "ChildName\t\n\t!!";
 	static constexpr glm::vec3 childPosition = -glm::vec3{ 102.0f, 2035.f, -2035.f };
 
-	World world{ false };
-	Registry& reg = world.GetRegistry();
+	std::unique_ptr<World> world = std::make_unique<World>(false);
+	Registry& reg = world->GetRegistry();
 
 	const entt::entity parent = reg.Create();
 	const entt::entity child = reg.Create();
@@ -68,8 +68,8 @@ UNIT_TEST(Serialization, NoPrefabsLevelSerialization)
 		childTransform.SetParent(&reg.Get<TransformComponent>(parent));
 	}
 
-	World reloadedWorld = ReloadUsingLevel(std::move(world));
-	Registry& reloadedReg = reloadedWorld.GetRegistry();
+	const std::unique_ptr<World> reloadedWorld = ReloadUsingLevel(std::move(world));
+	Registry& reloadedReg = reloadedWorld->GetRegistry();
 
 	TEST_ASSERT(reloadedReg.Valid(parent));
 	TEST_ASSERT(reloadedReg.Valid(child));
@@ -100,8 +100,8 @@ UNIT_TEST(Serialization, PrefabsSerialization)
 	static const std::string childName = "ChildName\t\n\t!!";
 	static constexpr glm::vec3 childPosition = -glm::vec3{ 102.0f, 2035.f, -2035.f };
 
-	World world{ false };
-	Registry& reg = world.GetRegistry();
+	std::unique_ptr<World> world = std::make_unique<World>(false);
+	Registry& reg = world->GetRegistry();
 
 	const entt::entity parent = reg.Create();
 	const entt::entity child = reg.Create();
@@ -117,8 +117,8 @@ UNIT_TEST(Serialization, PrefabsSerialization)
 		childTransform.SetParent(&reg.Get<TransformComponent>(parent));
 	}
 
-	World reloadedWorld = ReloadUsingPrefab(std::move(world), parent);
-	Registry& reloadedReg = reloadedWorld.GetRegistry();
+	std::unique_ptr<World>  reloadedWorld = ReloadUsingPrefab(std::move(world), parent);
+	Registry& reloadedReg = reloadedWorld->GetRegistry();
 
 	TEST_ASSERT(reloadedReg.Valid(parent));
 	TEST_ASSERT(reloadedReg.Valid(child));
@@ -149,13 +149,13 @@ UNIT_TEST(Serialization, PrefabsSerialization)
 
 UNIT_TEST(Serialization, EmptyEntityLevelSerialization)
 {
-	World world{ false };
-	Registry& reg = world.GetRegistry();
+	std::unique_ptr<World> world = std::make_unique<World>(false);
+	Registry& reg = world->GetRegistry();
 
 	const entt::entity entity = reg.Create();
 
-	World reloadedWorld = ReloadUsingLevel(std::move(world));
-	Registry& reloadedReg = reloadedWorld.GetRegistry();
+	std::unique_ptr<World> reloadedWorld = ReloadUsingLevel(std::move(world));
+	Registry& reloadedReg = reloadedWorld->GetRegistry();
 
 	TEST_ASSERT(reloadedReg.Valid(entity));
 	TEST_ASSERT(reloadedReg.Storage<entt::entity>().in_use() == 1);
@@ -165,15 +165,15 @@ UNIT_TEST(Serialization, EmptyEntityLevelSerialization)
 
 UNIT_TEST(Serialization, EmptyComponentLevelSerialization)
 {
-	World world{ false };
-	Registry& reg = world.GetRegistry();
+	std::unique_ptr<World> world = std::make_unique<World>(false);
+	Registry& reg = world->GetRegistry();
 
 	const entt::entity entity = reg.Create(); 
 	reg.AddComponent<EmptyEventTestingComponent>(entity);
 	TEST_ASSERT(reg.HasComponent<EmptyEventTestingComponent>(entity));
 
-	World reloadedWorld = ReloadUsingLevel(std::move(world));
-	Registry& reloadedReg = reloadedWorld.GetRegistry();
+	std::unique_ptr<World> reloadedWorld = ReloadUsingLevel(std::move(world));
+	Registry& reloadedReg = reloadedWorld->GetRegistry();
 
 	TEST_ASSERT(reloadedReg.Valid(entity));
 	TEST_ASSERT(reloadedReg.Storage<entt::entity>().in_use() == 1);
@@ -184,13 +184,13 @@ UNIT_TEST(Serialization, EmptyComponentLevelSerialization)
 
 UNIT_TEST(Serialization, EmptyEntityPrefabSerialization)
 {
-	World world{ false };
-	Registry& reg = world.GetRegistry();
+	std::unique_ptr<World> world = std::make_unique<World>(false);
+	Registry& reg = world->GetRegistry();
 
 	const entt::entity entity = reg.Create();
 
-	World reloadedWorld = ReloadUsingPrefab(std::move(world), entity);
-	Registry& reloadedReg = reloadedWorld.GetRegistry();
+	std::unique_ptr<World> reloadedWorld = ReloadUsingPrefab(std::move(world), entity);
+	Registry& reloadedReg = reloadedWorld->GetRegistry();
 
 	TEST_ASSERT(reloadedReg.Valid(entity));
 	TEST_ASSERT(reloadedReg.Storage<entt::entity>().in_use() == 1);
@@ -200,9 +200,9 @@ UNIT_TEST(Serialization, EmptyEntityPrefabSerialization)
 
 UNIT_TEST(Serialization, PrefabAddComponent)
 {
-	World world{ false };
+	std::unique_ptr<World> world = std::make_unique<World>(false);
 
-	Registry& reg = world.GetRegistry();
+	Registry& reg = world->GetRegistry();
 	entt::entity entity = reg.Create();
 
 	return TestPrefabChanges(std::move(world), entity,
@@ -229,9 +229,9 @@ UNIT_TEST(Serialization, PrefabAddComponent)
 
 UNIT_TEST(Serialization, PrefabRemoveComponent)
 {
-	World world{ false };
+	std::unique_ptr<World> world = std::make_unique<World>(false);
 
-	Registry& reg = world.GetRegistry();
+	Registry& reg = world->GetRegistry();
 	entt::entity entity = reg.Create();
 	reg.AddComponent<NameComponent>(entity);
 
@@ -261,9 +261,9 @@ UNIT_TEST(Serialization, PrefabRemoveComponent)
 
 UNIT_TEST(Serialization, PrefabAddChild)
 {
-	World world{ false };
+	std::unique_ptr<World> world = std::make_unique<World>(false);
 
-	Registry& reg = world.GetRegistry();
+	Registry& reg = world->GetRegistry();
 	entt::entity parent = reg.Create();
 	reg.AddComponent<TransformComponent>(parent);
 
@@ -315,9 +315,9 @@ UNIT_TEST(Serialization, PrefabAddChild)
 
 UNIT_TEST(Serialization, PrefabRemoveChild)
 {
-	World world{ false };
+	std::unique_ptr<World> world = std::make_unique<World>(false);
 
-	Registry& reg = world.GetRegistry();
+	Registry& reg = world->GetRegistry();
 	entt::entity parent = reg.Create();
 	reg.AddComponent<TransformComponent>(parent);
 
@@ -369,9 +369,9 @@ UNIT_TEST(Serialization, PrefabRemoveChild)
 
 UNIT_TEST(Serialization, PrefabChildRemovedWhileInstancesHaveChanges)
 {
-	World world{ false };
+	std::unique_ptr<World> world = std::make_unique<World>(false);
 
-	Registry& reg = world.GetRegistry();
+	Registry& reg = world->GetRegistry();
 	entt::entity parent = reg.Create();
 	reg.AddComponent<TransformComponent>(parent);
 
@@ -445,8 +445,8 @@ UNIT_TEST(Serialization, CopyPaste)
 	static const std::string childName = "ChildName\t\n\t!!";
 	static constexpr glm::vec3 childPosition = -glm::vec3{ 102.0f, 2035.f, -2035.f };
 
-	World world{ false };
-	Registry& reg = world.GetRegistry();
+	std::unique_ptr<World> world = std::make_unique<World>(false);
+	Registry& reg = world->GetRegistry();
 
 	const entt::entity parent = reg.Create();
 	const entt::entity child = reg.Create();
@@ -503,8 +503,8 @@ UNIT_TEST(Serialization, CopyPaste)
 
 			if (depthRemaining > 0)
 			{
-				BinaryGSONObject copy = Archiver::Serialize(world, std::array<entt::entity, 2>{ parent, child }, true);
-				const std::vector<entt::entity> copiedEntities = Archiver::Deserialize(world, copy);
+				BinaryGSONObject copy = Archiver::Serialize(*world, std::array<entt::entity, 2>{ parent, child }, true);
+				const std::vector<entt::entity> copiedEntities = Archiver::Deserialize(*world, copy);
 				entitiesToCheck.insert(entitiesToCheck.end(), copiedEntities.begin(), copiedEntities.end());
 				return doesMatch(entitiesToCheck);
 			}
@@ -517,10 +517,10 @@ UNIT_TEST(Serialization, CopyPaste)
 
 namespace
 {
-	World ReloadUsingLevel(World&& world)
+	std::unique_ptr<World> ReloadUsingLevel(std::unique_ptr<World> world)
 	{
 		Level testLevel{ sTestLevelName };
-		testLevel.CreateFromWorld(world);
+		testLevel.CreateFromWorld(*world);
 
 		AssetLoadInfo savedLevel = testLevel.Save();
 
@@ -528,17 +528,17 @@ namespace
 		return reloadedLevel.CreateWorld(false);
 	}
 
-	World ReloadUsingPrefab(World&& world, entt::entity entity)
+	std::unique_ptr<World> ReloadUsingPrefab(std::unique_ptr<World> world, entt::entity entity)
 	{
 		Prefab testPrefab{ sTestPrefabName };
-		testPrefab.CreateFromEntity(world, entity);
+		testPrefab.CreateFromEntity(*world, entity);
 
 		AssetLoadInfo savedPrefab = testPrefab.Save();
 
 		Prefab reloadedPrefab{ savedPrefab };
 
-		World reloadedWorld{ false };
-		Registry& reloadedReg = reloadedWorld.GetRegistry();
+		std::unique_ptr<World> reloadedWorld = std::make_unique<World>(false);
+		Registry& reloadedReg = reloadedWorld->GetRegistry();
 		reloadedReg.CreateFromPrefab(reloadedPrefab, entity);
 		return reloadedWorld;
 	}
@@ -554,7 +554,7 @@ namespace
 		return type;
 	}
 
-	UnitTest::Result TestPrefabChanges(World&& initialWorld,
+	UnitTest::Result TestPrefabChanges(std::unique_ptr<World> initialWorld,
 	                                   entt::entity initialEntity,
 	                                   std::vector<PrefabChange> changes,
 	                                   std::function<void(World&, entt::entity)>&& changePrefabInstanceInWorld)
@@ -582,7 +582,7 @@ namespace
 				if (prefabInAssetManager == nullptr)
 				{
 					Prefab testPrefab{ sTestPrefabName };
-					testPrefab.CreateFromEntity(initialWorld, initialEntity);
+					testPrefab.CreateFromEntity(*initialWorld, initialEntity);
 					prefabInAssetManager = AssetManager::Get().AddAsset(std::move(testPrefab));
 				}
 				else
@@ -600,7 +600,7 @@ namespace
 					}
 
 					Prefab newPrefab{ loadInfo };
-					newPrefab.CreateFromEntity(initialWorld, initialEntity);
+					newPrefab.CreateFromEntity(*initialWorld, initialEntity);
 					prefabInAssetManager = AssetManager::Get().AddAsset(std::move(newPrefab));
 				}
 			};
@@ -629,7 +629,7 @@ namespace
 
 			for (const PrefabChange& change : changes)
 			{
-				UnitTest::Result result = change.mMakeChanges(initialWorld, initialEntity);
+				UnitTest::Result result = change.mMakeChanges(*initialWorld, initialEntity);
 
 				if (result != UnitTest::Result::Success)
 				{
@@ -639,8 +639,8 @@ namespace
 				updatePrefab();
 				AssetLoadInfo loadInfo{ serializedLevel };
 				Level level{ loadInfo };
-				World worldWithChangesApplied = level.CreateWorld(false);
-				result = change.mCheckChanges(worldWithChangesApplied, initialEntity);
+				std::unique_ptr<World> worldWithChangesApplied = level.CreateWorld(false);
+				result = change.mCheckChanges(*worldWithChangesApplied, initialEntity);
 
 				if (result != UnitTest::Result::Success)
 				{

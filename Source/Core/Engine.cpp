@@ -163,7 +163,7 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 	}
 
 	LOG(LogCore, Verbose, "Loading initial level - {}", starterLevel.StringView());
-	World world = level->CreateWorld(true);
+	std::unique_ptr<World> world = level->CreateWorld(true);
 #endif // EDITOR
 
 	Input& input = Input::Get();
@@ -206,14 +206,14 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 #ifdef EDITOR
 		editor.Tick(deltaTime);
 #else
-		world.Tick(deltaTime);
+		world->Tick(deltaTime);
 
-		if (world.HasRequestedEndPlay())
+		if (world->HasRequestedEndPlay())
 		{
 			break;
 		}
 
-		world.Render();
+		world->Render();
 #endif  // EDITOR
 
 		renderer.RunCommandQueues();

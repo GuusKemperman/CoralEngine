@@ -1,16 +1,9 @@
 #pragma once
 #include "ScriptIds.h"
-#include "imnodes/imgui_node_editor.h"
 
-#include "Meta/MetaAny.h"
-#include "Meta/MetaTypeTraits.h"
 #include "Meta/Fwd/MetaFuncFwd.h"
+#include "Meta/MetaTypeTraits.h"
 #include "Scripting/ScriptErrors.h"
-
-namespace CE
-{
-	struct MetaFuncNamedParam;
-}
 
 namespace CE
 {

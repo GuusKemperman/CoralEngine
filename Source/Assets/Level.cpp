@@ -44,7 +44,7 @@ CE::Level::Level(std::string_view name) :
 
 CE::Level::Level(AssetLoadInfo& loadInfo) :
 	Asset(loadInfo),
-	mWorld(false)
+	mWorld(std::make_unique<World>(false))
 {
 	BinaryGSONObject savedData{};
 	savedData.LoadFromBinary(loadInfo.GetStream());
@@ -178,7 +178,7 @@ void CE::Level::OnSave(AssetSaveInfo& saveInfo) const
 {
 	if (!mSerializedWorld.has_value())
 	{
-		if (!mWorld.has_value())
+		if (mWorld == nullptr)
 		{
 			LOG(LogAssets, Error, "Cannot save level {}, mSerializedComponents and mWorld are null",
 				GetName());
@@ -213,49 +213,49 @@ void CE::Level::CreateFromWorld(const World& world)
 	mSerializedWorld.emplace(Archiver::Serialize(world));
 }
 
-CE::World CE::Level::CreateWorld(const bool callBeginPlayImmediately) const
+void CE::Level::LoadIntoWorld(World& world) const
 {
-	if (mWorld.has_value())
+	if (!mSerializedWorld.has_value())
 	{
-		World world = std::move(*mWorld);
-		mWorld.reset();
+		LOG(LogAssets, Warning, "Failed to load {} into world, mSerializedWorld was null", GetName());
+		return;
+	}
 
+	Archiver::Deserialize(world, *mSerializedWorld);
+}
+
+std::unique_ptr<CE::World> CE::Level::CreateWorld(const bool callBeginPlayImmediately) const
+{
+	if (mWorld != nullptr)
+	{
 		if (!mSerializedWorld.has_value())
 		{
-			mSerializedWorld.emplace(Archiver::Serialize(world));
+			mSerializedWorld.emplace(Archiver::Serialize(*mWorld));
 		}
 
 		if (callBeginPlayImmediately)
 		{
-			world.BeginPlay();
+			mWorld->BeginPlay();
 		}
 
-		return world;
+		return std::move(mWorld);
 	}
 
-	World world{ false };
-
-	if (mSerializedWorld.has_value())
-	{
-		Archiver::Deserialize(world, *mSerializedWorld);
-	}
-	else
-	{
-		LOG(LogAssets, Warning, "mWorld and mSerializedWorld were both null for {}", GetName());
-	}
+	std::unique_ptr<World> world = std::make_unique<World>(false);
+	LoadIntoWorld(*world);
 
 	if (callBeginPlayImmediately)
 	{
-		world.BeginPlay();
+		world->BeginPlay();
 	}
 
 	return world;
 }
 
-CE::World CE::Level::CreateDefaultWorld()
+std::unique_ptr<CE::World> CE::Level::CreateDefaultWorld()
 {
-	World world{ false };
-	Registry& reg = world.GetRegistry();
+	std::unique_ptr<World> world = std::make_unique<World>(false);
+	Registry& reg = world->GetRegistry();
 
 	{
 		const entt::entity camera = reg.Create();

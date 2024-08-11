@@ -77,8 +77,8 @@ CE::BenchmarkResult CE::BenchMark(std::string_view levelName, BenchmarkParams pa
         return {};
     }
 
-	World world = level->CreateWorld(true);
-    return BenchMark(world, params);
+	std::unique_ptr<World> world = level->CreateWorld(true);
+    return BenchMark(*world, params);
 }
 
 void CE::BenchmarkResult::Print() const

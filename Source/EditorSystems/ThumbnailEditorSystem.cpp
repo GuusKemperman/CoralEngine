@@ -36,7 +36,7 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 
 			LOG(LogEditor, Verbose, "Rendering {} to thumbnail", current.mForAsset.GetMetaData().GetName());
 
-			current.mWorld.Render(&current.mFrameBuffer);
+			current.mWorld->Render(&current.mFrameBuffer);
 
 			const auto result = mGeneratedThumbnails.emplace(std::piecewise_construct,
 				std::forward_as_tuple(Name::HashString(current.mForAsset.GetMetaData().GetName())),
@@ -110,7 +110,8 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 		}
 		else
 		{
-			CurrentlyGenerating& result = mCurrentlyGenerating.emplace_back(std::move(std::get<World>(generatedThumbnail)), it->mForAsset);
+			std::unique_ptr<World>& world = std::get<std::unique_ptr<World>>(generatedThumbnail);
+			CurrentlyGenerating& result = mCurrentlyGenerating.emplace_back(std::move(world), it->mForAsset);
 			result.mTimeNeededToCreateWorld = timeToGenerate.GetSecondsElapsed();
 		}
 
@@ -266,12 +267,6 @@ CE::ThumbnailEditorSystem::GeneratedThumbnail::GeneratedThumbnail(AssetHandle<Te
 {
 }
 
-CE::ThumbnailEditorSystem::CurrentlyGenerating::CurrentlyGenerating(World&& world, WeakAssetHandle<> forAsset) :
-	mWorld(std::move(world)),
-	mForAsset(std::move(forAsset))
-{
-}
-
 CE::GetThumbnailRet CE::Internal::GenerateThumbnail(WeakAssetHandle<> forAsset)
 {
 	if (forAsset == nullptr)
@@ -332,18 +327,18 @@ CE::GetThumbnailRet GetThumbNailImpl<CE::Level>(const CE::WeakAssetHandle<CE::Le
 template <>
 CE::GetThumbnailRet GetThumbNailImpl<CE::Prefab>(const CE::WeakAssetHandle<CE::Prefab>& forAsset)
 {
-	CE::World world = CE::Level::CreateDefaultWorld();
-	world.GetRegistry().CreateFromPrefab(*CE::AssetHandle<CE::Prefab>{ forAsset });
+	std::unique_ptr<CE::World> world = CE::Level::CreateDefaultWorld();
+	world->GetRegistry().CreateFromPrefab(*CE::AssetHandle<CE::Prefab>{ forAsset });
 	return world;
 }
 
 template <>
 CE::GetThumbnailRet GetThumbNailImpl<CE::StaticMesh>(const CE::WeakAssetHandle<CE::StaticMesh>& forAsset)
 {
-	CE::World world = CE::Level::CreateDefaultWorld();
+	std::unique_ptr<CE::World> world = CE::Level::CreateDefaultWorld();
+	CE::Registry& reg = world->GetRegistry();
 
 	{
-		CE::Registry& reg = world.GetRegistry();
 		const entt::entity entity = reg.Create();
 
 		reg.AddComponent<CE::TransformComponent>(entity);
@@ -359,10 +354,10 @@ CE::GetThumbnailRet GetThumbNailImpl<CE::StaticMesh>(const CE::WeakAssetHandle<C
 template <>
 CE::GetThumbnailRet GetThumbNailImpl<CE::Material>(const CE::WeakAssetHandle<CE::Material>& forAsset)
 {
-	CE::World world = CE::Level::CreateDefaultWorld();
+	std::unique_ptr<CE::World> world = CE::Level::CreateDefaultWorld();
+	CE::Registry& reg = world->GetRegistry();
 
 	{
-		CE::Registry& reg = world.GetRegistry();
 		const entt::entity entity = reg.Create();
 
 		reg.AddComponent<CE::TransformComponent>(entity).SetLocalScale(2.5f);

@@ -31,53 +31,11 @@ CE::World::World(const bool beginPlayImmediately) :
 	}
 }
 
-CE::World::World(World&& other) noexcept :
-	mTime(other.mTime),
-	mHasBegunPlay(other.mHasBegunPlay),
-	mRegistry(std::move(other.mRegistry)),
-	mViewport(std::move(other.mViewport)),
-	mPhysics(std::move(other.mPhysics)),
-	mEventManager(std::move(other.mEventManager)),
-	mRenderCommandQueue(std::move(other.mRenderCommandQueue)),
-	mLevelToTransitionTo(std::move(other.mLevelToTransitionTo))
-{
-	mRegistry->mWorld = *this;
-	mViewport->mWorld = *this;
-	mPhysics->mWorld = *this;
-	mEventManager->mWorld = *this;
-}
-
 CE::World::~World()
 {
-	// Mightve been moved out
-	if (mRegistry != nullptr)
-	{
-		mRegistry->Clear();
-		mRegistry.reset();
-		mViewport.reset();
-	}
-}
-
-CE::World& CE::World::operator=(World&& other) noexcept
-{
-	if (&other == this)
-	{
-		return *this;
-	}
-
-	mRegistry = std::move(other.mRegistry);
-	mViewport = std::move(other.mViewport);
-	mRenderCommandQueue = std::move(other.mRenderCommandQueue);
-	mPhysics = std::move(other.mPhysics);
-	mLevelToTransitionTo = std::move(other.mLevelToTransitionTo);
-
-	mRegistry->mWorld = *this;
-	mViewport->mWorld = *this;
-	mPhysics->mWorld = *this;
-	mTime = other.mTime;
-	mHasBegunPlay = other.mHasBegunPlay;
-
-	return *this;
+	mRegistry->Clear();
+	mRegistry.reset();
+	mViewport.reset();
 }
 
 void CE::World::Tick(const float unscaledDeltaTime)
@@ -89,9 +47,22 @@ void CE::World::Tick(const float unscaledDeltaTime)
 	GetRegistry().UpdateSystems(unscaledDeltaTime);
 	GetRegistry().RemovedDestroyed();
 
-	if (GetNextLevel() != nullptr)
+	const AssetHandle<Level> nextLevel = GetNextLevel();
+
+	if (nextLevel != nullptr)
 	{
-		*this = GetNextLevel()->CreateWorld(true);
+		const bool hasBegunPlay = mHasBegunPlay;
+
+		World& self = *this;
+		self.~World();
+		new (this)World(false);
+
+		nextLevel->LoadIntoWorld(self);
+
+		if (hasBegunPlay)
+		{
+			BeginPlay();
+		}
 	}
 
 	PopWorld();

@@ -157,9 +157,6 @@ namespace CE
 
 		void CallEndPlayEventsForEntity(entt::sparse_set& storage, entt::entity entity, const BoundEvent& endPlayEvent);
 
-		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
-		friend World;
-
 		std::reference_wrapper<World> mWorld; 
 		
 		entt::registry mRegistry{};

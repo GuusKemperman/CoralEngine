@@ -33,9 +33,13 @@ namespace CE
 		Level& operator=(const Level&) = delete;
 
 		void CreateFromWorld(const World& world);
-		World CreateWorld(bool callBeginPlayImmediately) const;
+		void LoadIntoWorld(World& world) const;
 
-		static World CreateDefaultWorld();
+		// Will never return nullptr
+		std::unique_ptr<World> CreateWorld(bool callBeginPlayImmediately) const;
+
+		// Will never return nullptr
+		static std::unique_ptr<World> CreateDefaultWorld();
 
 	protected:
 		void OnSave(AssetSaveInfo& saveInfo) const override;
@@ -71,7 +75,7 @@ namespace CE
 		// when loading the level. Instead of
 		// discarding the world, we return this
 		// one on the first call to CreateWorld
-		mutable std::optional<World> mWorld{};
+		mutable std::unique_ptr<World> mWorld{};
 		mutable std::optional<BinaryGSONObject> mSerializedWorld{};
 
 		friend ReflectAccess;

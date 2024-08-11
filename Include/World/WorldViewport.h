@@ -23,8 +23,6 @@ namespace CE
 		glm::vec3 ScreenToWorldPlane(glm::vec2 screenPosition, float planeHeight) const;
 
 	private:
-		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
-		friend class World;
 		std::reference_wrapper<const World> mWorld;
 
 		// In pixels

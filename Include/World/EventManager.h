@@ -29,8 +29,6 @@ namespace CE
 			MetaFunc::DynamicArgs argsProvided, 
 			std::span<TypeForm> argFormsProvided);
 
-		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
-		friend class World;
 		std::reference_wrapper<World> mWorld;
 
 		std::unordered_map<std::string_view, std::vector<BoundEvent>> mBoundEvents{};

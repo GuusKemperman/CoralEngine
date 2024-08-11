@@ -12,7 +12,7 @@ namespace CE
 	class Texture;
 	class World;
 
-	using GetThumbnailRet = std::variant<AssetHandle<Texture>, World>;
+	using GetThumbnailRet = std::variant<AssetHandle<Texture>, std::unique_ptr<World>>;
 
 	class ThumbnailEditorSystem final :
 		public EditorSystem
@@ -72,9 +72,7 @@ namespace CE
 
 		struct CurrentlyGenerating
 		{
-			CurrentlyGenerating(World&& world, WeakAssetHandle<> forAsset);
-
-			World mWorld;
+			std::unique_ptr<World> mWorld{};
 			WeakAssetHandle<> mForAsset{};
 			FrameBuffer mFrameBuffer{ sGeneratedThumbnailResolution };
 			Timer mNumSecondsSinceLastRequested{};

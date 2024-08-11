@@ -54,9 +54,9 @@ namespace CE::Internal
 	static constexpr std::string_view sCopiedEntitiesId = "B1C2FF80";
 }
 
-CE::WorldInspectHelper::WorldInspectHelper(World&& worldThatHasNotYetBegunPlay) :
+CE::WorldInspectHelper::WorldInspectHelper(std::unique_ptr<World> worldThatHasNotYetBegunPlay) :
 	mViewportFrameBuffer(std::make_unique<FrameBuffer>(glm::ivec2(1.f, 1.f))),
-	mWorldBeforeBeginPlay(std::make_unique<World>(std::move(worldThatHasNotYetBegunPlay)))
+	mWorldBeforeBeginPlay(std::move(worldThatHasNotYetBegunPlay))
 {
 	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay());
 }
