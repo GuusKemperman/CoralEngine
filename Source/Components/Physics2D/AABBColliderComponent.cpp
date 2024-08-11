@@ -9,8 +9,8 @@
 
 CE::TransformedAABB CE::AABBColliderComponent::CreateTransformedCollider(const TransformComponent& transform) const
 {
-	const glm::vec2 worldPosition = transform.GetWorldPosition2D();
-	const glm::vec2 scale = transform.GetWorldScale2D();
+	const glm::vec2 worldPosition = transform.GetWorldPosition();
+	const glm::vec2 scale = transform.GetWorldScale();
 	const glm::vec2 scaledHalfExtends = mHalfExtends * scale;
 
 	const glm::vec2 vertices[4] =
@@ -26,7 +26,7 @@ CE::TransformedAABB CE::AABBColliderComponent::CreateTransformedCollider(const T
 
 	for (int i = 0; i < 4; i++)
 	{
-		const glm::vec2 transformedVertex = To2DRightForward(Math::RotateVector(To3DRightForward(vertices[i], 0.0f), orientation));
+		const glm::vec2 transformedVertex = To2D(Math::RotateVector(To3D(vertices[i], 0.0f), orientation));
 
 		rotatedAABB.mMin = glm::min(rotatedAABB.mMin, transformedVertex);
 		rotatedAABB.mMax = glm::max(rotatedAABB.mMax, transformedVertex);

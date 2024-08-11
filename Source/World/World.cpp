@@ -99,6 +99,9 @@ void CE::World::Tick(const float unscaledDeltaTime)
 
 void CE::World::Render(FrameBuffer* renderTarget)
 {
+	mViewport->UpdateSize(renderTarget == nullptr ? Device::Get().GetDisplaySize() : renderTarget->mSize);
+	mRegistry->RenderSystems(*mRenderCommandQueue);
+
 	const entt::entity cameraEntity = CameraComponent::GetSelected(*this);
 
 	if (cameraEntity == entt::null)
@@ -109,9 +112,6 @@ void CE::World::Render(FrameBuffer* renderTarget)
 
 	const CameraComponent& camera = mRegistry->Get<const CameraComponent>(cameraEntity);
 	Renderer::Get().SetRenderTarget(*mRenderCommandQueue, camera.mView, camera.mProjection, renderTarget);
-	mViewport->UpdateSize(renderTarget == nullptr ? Device::Get().GetDisplaySize() : renderTarget->mSize);
-
-	mRegistry->RenderSystems(*mRenderCommandQueue);
 }
 
 void CE::World::BeginPlay()

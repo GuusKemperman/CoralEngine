@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Core/Renderer.h"
 
+#include <OCIdl.h>
 #include <glad/glad.h>
 
 #include "Assets/Material.h"
@@ -65,12 +66,13 @@ struct CE::StaticMeshPlatformImpl
 
 struct CE::FrameBufferPlatformImpl
 {
+	~FrameBufferPlatformImpl();
+
 	void Resize(glm::ivec2 size);
 
+	std::shared_ptr<TexturePlatformImpl> mColorTexture{};
 	GLuint mFrameBuffer{};
-	GLuint mColorTexture{};
 	GLuint mDepthTexture{};
-	glm::ivec2 mSize{};
 	bool mIsInitialized{};
 };
 
@@ -82,31 +84,38 @@ CE::StaticMeshPlatformImpl::~StaticMeshPlatformImpl()
 	CHECK_GL;
 }
 
+CE::FrameBufferPlatformImpl::~FrameBufferPlatformImpl()
+{
+	glDeleteFramebuffers(1, &mFrameBuffer);
+	glDeleteRenderbuffers(1, &mDepthTexture);
+	CHECK_GL;
+}
+
 void CE::FrameBufferPlatformImpl::Resize(glm::ivec2 size)
 {
-	if (mSize == size)
+	if (mColorTexture->mSize == size)
 	{
 		return;
 	}
 
-	mSize = size;
+	mColorTexture->mSize = size;
 
-	glBindTexture(GL_TEXTURE_2D, mColorTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, mSize.x, mSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	glBindTexture(GL_TEXTURE_2D, mColorTexture->mId);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, mColorTexture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, mColorTexture->mId, 0);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mSize.x, mSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size.x, size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mColorTexture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mColorTexture->mId, 0);
 
 	glBindRenderbuffer(GL_RENDERBUFFER, mDepthTexture);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, mSize.x, mSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, size.x, size.y);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, mDepthTexture);
 	CHECK_GL;
 }
@@ -114,7 +123,7 @@ void CE::FrameBufferPlatformImpl::Resize(glm::ivec2 size)
 struct CE::RenderCommandQueue
 {
 	static constexpr int sMaxNumLines = 1 << 7;
-	static constexpr int sNumFloatsPerLine = sizeof(glm::vec3) + sizeof(glm::vec4) * 2; // Pos + Colour * 2
+	static constexpr int sNumFloatsPerLine = (3 + 4) * 2; // Pos + Colour * 2
 	std::array<float, sMaxNumLines * sNumFloatsPerLine> mLines;
 	std::atomic_int mTotalNumOfLinesRequested{};
 
@@ -197,19 +206,34 @@ CE::Renderer::Renderer() :
 	// Array buffer contains the attribute data
 	glBindBuffer(GL_ARRAY_BUFFER, mImpl->mLinesVBO);
 
-	// Allocate into VBO
-	// const auto size = sizeof(mImpl->m_vertexArray);
-	// glBufferData(GL_ARRAY_BUFFER, RenderCommandQueue::sMaxNumLines * RenderCommandQueue::sNumFloatsPerLine, &mImpl->m_vertexArray[0], GL_STREAM_DRAW);
+	struct Test
+	{
+		float posX;
+		float posY;
+		float posZ;
+		float colR;
+		float colG;
+		float colB;
+		float colA;
+	};
+
+	static constexpr size_t sizePos = sizeof(glm::vec3);
+	static constexpr size_t sizeCol = sizeof(glm::vec4);
+	static constexpr size_t sizeTotal = sizePos + sizeCol;
+	static_assert(sizeTotal == sizeof(Test));
+	static_assert(sizePos == offsetof(Test, colR));
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeTotal, nullptr);
 
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(
-		1, 3, GL_FLOAT, GL_FALSE, 3 + 4, nullptr);
-
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(
-		2, 4, GL_FLOAT, GL_FALSE, 3 + 4, reinterpret_cast<void*>(sizeof(glm::vec3)));
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeTotal, reinterpret_cast<void*>(sizePos));
 
 	glBindVertexArray(0);
+
+	glEnable(GL_DEPTH_TEST);
+	glFrontFace(GL_CW);
+	glEnable(GL_CULL_FACE);
 	CHECK_GL;
 }
 
@@ -277,6 +301,8 @@ void CE::Renderer::SetRenderTarget(RenderCommandQueue& context, const glm::mat4&
 
 void CE::Renderer::RunCommandQueues()
 {
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
 	static constexpr auto isLastReference = [](const auto& sharedPtr) -> bool
 		{
 			return sharedPtr.use_count() <= 1;
@@ -386,12 +412,12 @@ void CE::Renderer::RunCommandQueues()
 			glGenFramebuffers(1, &frameBuffer->mFrameBuffer);
 			glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer->mFrameBuffer);
 
-			glGenTextures(1, &frameBuffer->mColorTexture);
+			glGenTextures(1, &frameBuffer->mColorTexture->mId);
 			glGenRenderbuffers(1, &frameBuffer->mDepthTexture);
 
 			frameBuffer->Resize({ 1, 1 });
 
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, frameBuffer->mColorTexture, 0);
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, frameBuffer->mColorTexture->mId, 0);
 
 			const GLenum drawBuffer = GL_COLOR_ATTACHMENT0;
 			glDrawBuffers(1, &drawBuffer);
@@ -419,18 +445,14 @@ void CE::Renderer::RunCommandQueues()
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, target->mFrameBuffer);
 			target->Resize(commandQueue->mRenderTargetEntry->mRenderSize);
-			glViewport(0, 0, target->mSize.x, target->mSize.y);
+			glViewport(0, 0, target->mColorTexture->mSize.x, target->mColorTexture->mSize.y);
 		}
 
 		// Clear the screen
 		const glm::vec4 clearColor = commandQueue->mRenderTargetEntry->mClearColor;
 		glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
-		glClearDepth(1.0);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-		// Enable depth testing and set the depth function
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
+		
 		CHECK_GL;
 
 		// Activate the standard program
@@ -524,17 +546,19 @@ void CE::Renderer::RunCommandQueues()
 		}
 
 		// SetRenderTarget debug lines
-		const int numOfLines = std::min(static_cast<int>(commandQueue->mTotalNumOfLinesRequested), static_cast<int>(RenderCommandQueue::sMaxNumLines));
+		const int numOfLines = std::min<int>(commandQueue->mTotalNumOfLinesRequested, RenderCommandQueue::sMaxNumLines);
 
 		if (numOfLines > 0)
 		{
 			const glm::mat4 vp = commandQueue->mRenderTargetEntry->mProj * commandQueue->mRenderTargetEntry->mView;
 			glUseProgram(mImpl->mLinesProgram);
-			glUniformMatrix4fv(1, 1, false, &vp[0][0]);
-			glBindVertexArray(mImpl->mLinesVAO);
 
+			glUniformMatrix4fv(glGetUniformLocation(mImpl->mLinesProgram, "u_worldviewproj"), 1, GL_FALSE, &vp[0][0]);
+			glBindVertexArray(mImpl->mLinesVAO);
+			
 			glBindBuffer(GL_ARRAY_BUFFER, mImpl->mLinesVBO);
-			glBufferData(GL_ARRAY_BUFFER, numOfLines * RenderCommandQueue::sNumFloatsPerLine, commandQueue->mLines.data(), GL_DYNAMIC_DRAW);
+			const int numOfBytes = numOfLines * RenderCommandQueue::sNumFloatsPerLine * sizeof(float);
+			glBufferData(GL_ARRAY_BUFFER, numOfBytes, commandQueue->mLines.data(), GL_STREAM_DRAW);
 			glDrawArrays(GL_LINES, 0, numOfLines * 2);
 
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -552,10 +576,10 @@ void CE::Renderer::RunCommandQueues()
 
 	std::scoped_lock resourcesLock{ mImpl->mTexturesMutex, mImpl->mStaticMeshesMutex, mImpl->mFrameBuffersMutex };
 
-	std::erase_if(mImpl->mTextures, isLastReference);
-	std::erase_if(mImpl->mStaticMeshes, isLastReference);
 	std::erase_if(mImpl->mFrameBuffers, isLastReference);
 	std::erase_if(mImpl->mCommandQueues, isLastReference);
+	std::erase_if(mImpl->mStaticMeshes, isLastReference);
+	std::erase_if(mImpl->mTextures, isLastReference);
 }
 
 std::shared_ptr<CE::RenderCommandQueue> CE::Renderer::CreateCommandQueue()
@@ -603,18 +627,19 @@ std::shared_ptr<CE::TexturePlatformImpl> CE::Renderer::CreateTexturePlatformImpl
 	{
 		return nullptr;
 	}
-
-	const GLuint colorTexture = frameBufferImpl->mColorTexture;
-	frameBufferImpl->mColorTexture = 0;;
-
-	std::scoped_lock lock{ mImpl->mTexturesMutex };
-	return mImpl->mTextures.emplace_back(std::make_shared<TexturePlatformImpl>(nullptr, frameBufferImpl->mSize, colorTexture));
+	return frameBufferImpl->mColorTexture;
 }
 
 std::shared_ptr<CE::FrameBufferPlatformImpl> CE::Renderer::CreateFrameBufferPlatformImpl()
 {
+	std::shared_ptr<TexturePlatformImpl> colorTexture = [this]
+		{
+			std::scoped_lock lock{ mImpl->mTexturesMutex };
+			return mImpl->mTextures.emplace_back(std::make_shared<TexturePlatformImpl>());
+		}();
+	
 	std::scoped_lock lock{ mImpl->mFrameBuffersMutex };
-	return mImpl->mFrameBuffers.emplace_back(std::make_shared<FrameBufferPlatformImpl>());
+	return mImpl->mFrameBuffers.emplace_back(std::make_shared<FrameBufferPlatformImpl>(std::move(colorTexture)));
 }
 
 void* CE::Renderer::GetPlatformId(TexturePlatformImpl* platformImpl)
@@ -624,7 +649,7 @@ void* CE::Renderer::GetPlatformId(TexturePlatformImpl* platformImpl)
 
 void* CE::Renderer::GetPlatformId(FrameBufferPlatformImpl* platformImpl)
 {
-	return platformImpl == nullptr ? nullptr : reinterpret_cast<void*>(static_cast<intptr>(platformImpl->mColorTexture));
+	return platformImpl == nullptr ? nullptr : GetPlatformId(platformImpl->mColorTexture.get());
 }
 
 void CE::Renderer::ImplDeleter::operator()(Impl* impl) const
@@ -813,9 +838,11 @@ GLuint CE::Internal::CompileLinesProgram()
 {
 	return CompileProgram(
 		R"(#version 460 core
-		layout (location = 1) in vec3 a_position;
-		layout (location = 2) in vec4 a_color;
-		layout (location = 1) uniform mat4 u_worldviewproj;
+		layout (location = 0) in vec3 a_position;
+		layout (location = 1) in vec4 a_color;
+		
+		uniform mat4 u_worldviewproj;
+
 		out vec4 v_color;
 
 		void main()

@@ -121,7 +121,7 @@ glm::quat CE::Math::CalculateRotationBetweenOrientations(glm::quat start, glm::q
 }
 
 // Stolen from https://stackoverflow.com/questions/44705398/about-glm-quaternion-rotation
-glm::vec3 CE::Math::RotateVector(const glm::vec3& v, const glm::quat& q)
+glm::vec3 CE::Math::RotateVector(glm::vec3 v, const glm::quat& q)
 {
 	const glm::vec3 quatAsVector = { q.x, q.y, q.z };
 	return v * (q.w * q.w - dot(quatAsVector, quatAsVector)) + 2.0f * quatAsVector * dot(quatAsVector, v) + 2.0f * q.w * cross(quatAsVector, v);

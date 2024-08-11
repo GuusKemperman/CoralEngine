@@ -6,7 +6,7 @@
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-void CE::FlyCamControllerComponent::ApplyTranslation(TransformComponent& transform, const glm::vec3& timeScaledMovementInput) const
+void CE::FlyCamControllerComponent::ApplyTranslation(TransformComponent& transform, glm::vec3 timeScaledMovementInput) const
 {
 	const glm::vec3 scaledMovementInput = timeScaledMovementInput * mMovementSpeed;
 
@@ -16,7 +16,7 @@ void CE::FlyCamControllerComponent::ApplyTranslation(TransformComponent& transfo
 		totalTranslation += scaledMovementInput[i] * transform.GetWorldAxis(static_cast<Axis::Values>(i));
 	}
 
-	transform.TranslateWorldPosition(totalTranslation);
+	transform.SetWorldPosition(transform.GetWorldPosition() + totalTranslation);
 }
 
 void CE::FlyCamControllerComponent::ApplyRotation(TransformComponent& transform, const std::array<glm::quat, 2>& timeScaledRotations) const

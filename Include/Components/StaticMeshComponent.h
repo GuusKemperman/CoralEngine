@@ -14,12 +14,6 @@ namespace CE
 
         AssetHandle<Material> mMaterial{};
 
-        bool mTilesWithMeshScale = false;
-
-        float mTiling = 1;
-
-        bool mHighlightedMesh = false;
-
     private:
         friend ReflectAccess;
         static MetaType Reflect();

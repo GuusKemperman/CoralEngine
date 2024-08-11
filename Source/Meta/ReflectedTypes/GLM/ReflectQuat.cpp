@@ -22,7 +22,7 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc(std::equal_to<T>(), OperatorType::equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const T& n) { return -n; }, OperatorType::negate, MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](const glm::vec3& n) { return glm::quat{ n }; }, "EulerToQuat (Radians)", MetaFunc::ExplicitParams<const glm::vec3&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](glm::vec3 n) { return glm::quat{ n }; }, "EulerToQuat (Radians)", MetaFunc::ExplicitParams<glm::vec3>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const glm::quat& n) { return glm::eulerAngles(n); }, "QuatToEuler (Radians)", MetaFunc::ExplicitParams<const glm::quat&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const glm::quat& n)
 	{

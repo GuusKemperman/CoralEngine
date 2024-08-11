@@ -44,7 +44,7 @@ void CE::PhysicsSystem::Render(const World& world, RenderCommandQueue& commandQu
 		for (auto [entity, disk, transform] : diskView.each())
 		{
 			
-			AddDebugCircle(commandQueue, DebugDraw::Physics, To3DRightForward(disk.mCentre), disk.mRadius + 0.00001f, color);
+			AddDebugCircle(commandQueue, DebugDraw::Physics, To3D(disk.mCentre), disk.mRadius + 0.00001f, color);
 		}
 
 		const auto polyView = reg.View<const TransformedPolygonColliderComponent, const TransformComponent>();
@@ -55,14 +55,14 @@ void CE::PhysicsSystem::Render(const World& world, RenderCommandQueue& commandQu
 			{
 				const glm::vec2 from = poly.mPoints[i];
 				const glm::vec2 to = poly.mPoints[(i + 1) % pointCount];
-				AddDebugLine(commandQueue, DebugDraw::Physics, To3DRightForward(from), To3DRightForward(to), color);
+				AddDebugLine(commandQueue, DebugDraw::Physics, To3D(from), To3D(to), color);
 			}
 		}
 
 		const auto aabbView = reg.View<const TransformedAABBColliderComponent, const TransformComponent>();
 		for (auto [entity, aabb, transform] : aabbView.each())
 		{
-			AddDebugBox(commandQueue, DebugDraw::Physics, To3DRightForward(aabb.GetCentre()), To3DRightForward(aabb.GetSize() * .5f), color);
+			AddDebugBox(commandQueue, DebugDraw::Physics, To3D(aabb.GetCentre()), To3D(aabb.GetSize() * .5f), color);
 		}
 	}
 	for (const BVH& bvh : world.GetPhysics().GetBVHs())
@@ -88,7 +88,7 @@ void CE::PhysicsSystem::ApplyVelocities(World& world, float dt)
 			continue;
 		}
 
-		transform.TranslateWorldPosition(body.mLinearVelocity * dt);
+		transform.SetWorldPosition(To2D(transform.GetWorldPosition()) + body.mLinearVelocity * dt);
 	}
 }
 

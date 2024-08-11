@@ -263,23 +263,27 @@ CE::World CE::Level::CreateDefaultWorld()
 		reg.AddComponent<NameComponent>(camera, "Main Camera");
 
 		TransformComponent& transform = reg.AddComponent<TransformComponent>(camera);
-		transform.SetLocalPosition({ 5.5f, 2.5f, -7.5f });
-		transform.SetLocalOrientation({ glm::radians(14.5f), glm::radians(-33.0f), 0.0f });
+		transform.SetLocalPosition({ -10.0, 10.0f, 6.0f });
+		transform.SetLocalOrientation(glm::quat{ glm::vec3{ 0.0f, glm::radians(22.5), glm::radians(-45.0f) } });
 	}
+
+	
+	const glm::vec3 mainLightDir{ glm::radians(0.0f), glm::radians(38.5f), glm::radians(-51.0f) };
 
 	{
 		const entt::entity light = reg.Create();
 		reg.AddComponent<NameComponent>(light, "Main Light");
 		DirectionalLightComponent& lightComponent = reg.AddComponent<DirectionalLightComponent>(light);
-		lightComponent.mColor *= 6.0f;
-		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ glm::radians(-15.6), glm::radians(-47.6), glm::radians(51.6) });
+		lightComponent.mColor *= .7f;
+
+		reg.AddComponent<TransformComponent>(light).SetLocalOrientation(glm::quat{ mainLightDir });
 	}
 
 	{
 		const entt::entity light = reg.Create();
 		reg.AddComponent<NameComponent>(light, "Secondary Light");
-		reg.AddComponent<DirectionalLightComponent>(light).mColor *= 3.0f;
-		reg.AddComponent<TransformComponent>(light).SetLocalOrientation({ glm::radians(113.8), glm::radians(53.54), glm::radians(90.7) });
+		reg.AddComponent<DirectionalLightComponent>(light).mColor *= .3f;
+		reg.AddComponent<TransformComponent>(light).SetLocalOrientation(glm::quat{ -mainLightDir });
 	}
 
 	return world;

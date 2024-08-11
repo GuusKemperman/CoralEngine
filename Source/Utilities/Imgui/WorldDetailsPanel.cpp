@@ -361,18 +361,4 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 
 		Search::EndPopup();
 	}
-
-	// We don't have custom setter/getter support yet.
-	// WorldDetails may inspect mLocalPosition and
-	// adjust its value without ever updating the world
-	// matrix.
-	for (entt::entity entity : selectedEntities)
-	{
-		TransformComponent* transform = reg.TryGet<TransformComponent>(entity);
-
-		if (transform != nullptr)
-		{
-			transform->UpdateCachedWorldMatrix();
-		}
-	}
 }

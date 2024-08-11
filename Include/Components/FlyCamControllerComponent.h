@@ -8,7 +8,7 @@ namespace CE
 	class FlyCamControllerComponent
 	{
 	public:
-		void ApplyTranslation(TransformComponent& transform, const glm::vec3& timeScaledMovementInput) const;
+		void ApplyTranslation(TransformComponent& transform, glm::vec3 timeScaledMovementInput) const;
 		void ApplyRotation(TransformComponent& transform, const std::array<glm::quat, 2>& timeScaledRotations) const;
 
 		float mMovementSpeed = 18.0f;

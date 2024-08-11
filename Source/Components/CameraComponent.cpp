@@ -1,50 +1,9 @@
 #include "Precomp.h"
 #include "Components/CameraComponent.h" 
 
-#include "Components/TransformComponent.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
-#include "World/WorldViewport.h"
-
-void CE::CameraComponent::UpdateView(const glm::vec3 position, const glm::vec3 forward, const glm::vec3 up, bool recalulateViewProjection)
-{
-	mView = glm::lookAt(position, position + forward, up);
-
-	if (recalulateViewProjection)
-	{
-		RecalculateViewProjection();
-	}
-}
-
-void CE::CameraComponent::UpdateView(const TransformComponent& transform, bool recalulateViewProjection)
-{
-	UpdateView(transform.GetWorldPosition(), transform.GetWorldForward(), transform.GetWorldUp(), recalulateViewProjection);
-}
-
-void CE::CameraComponent::UpdateProjection(const glm::vec2 viewportSize, bool recalculateViewProjection)
-{
-	UpdateProjection(viewportSize.x / viewportSize.y, recalculateViewProjection);
-}
-
-void CE::CameraComponent::UpdateProjection(const float aspectRatio, bool recalculateViewProjection)
-{
-	mProjection = glm::perspective(mFOV, aspectRatio, mNear, mFar);
-
-	// Calculating the orthographic projection is a matter to discuss and look into further, 
-	// since it may not work as well on different resolution
-	mOrthographicProjection = glm::ortho(-aspectRatio, aspectRatio, -1.f, 1.f, -1.0f, 1.0f);
-	
-	if (recalculateViewProjection)
-	{
-		RecalculateViewProjection();
-	}
-}
-
-void CE::CameraComponent::RecalculateViewProjection()
-{
-	mViewProjection = mProjection * mView;
-}
 
 entt::entity CE::CameraComponent::GetSelected(const World& world)
 {
@@ -104,11 +63,6 @@ CE::MetaType CE::CameraComponent::Reflect()
 	type.AddField(&CameraComponent::mFar, "mFar").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&CameraComponent::mNear, "mNear").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&CameraComponent::mFOV, "mFOV").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(&CameraComponent::GetViewProjection, "GetViewProjection", "").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(&CameraComponent::GetView, "GetView", "").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(&CameraComponent::GetProjection, "GetProjection", "").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(&CameraComponent::GetOrthographicProjection, "GetOrthographicProjection", "").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(&CameraComponent::RecalculateViewProjection, "RecalculateViewProjection", "").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectComponentType<CameraComponent>(type);
 

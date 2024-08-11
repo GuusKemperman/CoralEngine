@@ -17,9 +17,7 @@ namespace
 		hasIndices = 1,
 		hasNormals = 1 << 1,
 		hasTextureCoords = 1 << 2,
-		//  hasColors = 1 << 3, // No longer used
-		areIndices16Bit = 1 << 4, // No longer used
-		hasTangents = 1 << 5
+		hasTangents = 1 << 3
 	};
 }
 
@@ -51,29 +49,8 @@ CE::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
 		const StaticMeshFlags flags = readContents.operator()<StaticMeshFlags>();
 		const uint32 numOfVertices = readContents.operator()<uint32>();
 		const std::span positions = { &readContents.operator()<glm::vec3>(numOfVertices), numOfVertices };
-
-		std::vector<uint32> indicesBuffer{};
-		const std::span<const uint32> indices = [flags, &readContents, &indicesBuffer]() -> std::span<const uint32>
-			{
-				if ((flags & hasIndices) == 0)
-				{
-					return {};
-				}
-
-				const uint32 numOfIndices = readContents.operator()<uint32>();
-
-				if ((flags & areIndices16Bit) == 0)
-				{
-					return { &readContents.operator()<uint32>(numOfIndices), numOfIndices };
-				}
-
-				const std::span shortIndices = { &readContents.operator()<uint16> (numOfIndices), numOfIndices };
-
-				// Cast to uint32's, and find a place to store them for now
-				indicesBuffer = { shortIndices.begin(), shortIndices.end() };
-				return indicesBuffer;
-			}();
-
+		const uint32 numOfIndices = readContents.operator()<uint32>();
+		const std::span indices = flags & hasIndices ? std::span{ &readContents.operator()<uint32>(numOfIndices), numOfIndices } : std::span<uint32>{};
 		const std::span normals = flags & hasNormals ? std::span{ &readContents.operator()<glm::vec3>(numOfVertices), numOfVertices } : std::span<glm::vec3>{};
 		const std::span textureCoordinates = flags & hasTextureCoords ? std::span{ &readContents.operator()<glm::vec2>(numOfVertices), numOfVertices } : std::span<glm::vec2>{};
 		const std::span tangents = flags & hasTangents ? std::span{ &readContents.operator()<glm::vec3>(numOfVertices), numOfVertices } : std::span<glm::vec3>{};
@@ -176,7 +153,14 @@ bool CE::Internal::SaveStaticMesh(AssetSaveInfo& saveInfo,
 		};
 
 	writeBuffer(positions, flags);
-	writeBuffer(indices, hasIndices);
+
+	if (flags & hasIndices)
+	{
+		const uint32 numOfIndices = static_cast<uint32>(indices.size());
+		str.write(reinterpret_cast<const char*>(&numOfIndices), sizeof(numOfIndices));
+		writeBuffer(indices, hasIndices);
+	}
+
 	writeBuffer(normals, hasNormals);
 	writeBuffer(textureCoordinates, hasTextureCoords);
 	writeBuffer(tangents, hasTangents);
