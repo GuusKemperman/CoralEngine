@@ -569,12 +569,10 @@ CE::MetaType CE::World::Reflect()
 			return world->GetScaledDeltaTime();
 		}, "GetScaledDeltaTime", MetaFunc::ExplicitParams<>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	type.AddFunc([]()
+	type.AddFunc([](const World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->GetRealDeltaTime();
-		}, "GetRealDeltaTime", MetaFunc::ExplicitParams<>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+			return world.GetRealDeltaTime();
+		}, "GetRealDeltaTime", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 	return type;
 }

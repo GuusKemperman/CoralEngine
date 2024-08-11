@@ -36,6 +36,8 @@ namespace CE::Internal
 		const MetaType& GetType() const { return mType; }
 		const MetaFunc* GetOnConstruct() const { return mOnConstruct; }
 		const MetaFunc* GetOnBeginPlay() const { return mOnBeginPlay; }
+		uintptr GetOffsetToOwner() const { return mOffsetToOwnerField; }
+		uintptr GetOffsetToWorld() const { return mOffsetToWorldField; }
 
 		const void* get_at(std::size_t pos) const override;
 
@@ -68,6 +70,12 @@ namespace CE::Internal
 		std::reference_wrapper<const MetaType> mType;
 		const MetaFunc* mOnConstruct{};
 		const MetaFunc* mOnBeginPlay{};
+
+		// Each script has these hardcoded fields.
+		// We initialize them manually when constructing
+		// a component.
+		uintptr mOffsetToWorldField{};
+		uintptr mOffsetToOwnerField{};
 
 		char* mData{};
 		size_t mCapacity{};
@@ -400,21 +408,13 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 
 		MetaAny componentToReturn = asAnyStorage->element_at(it.index());
 
-		const MetaField* const ownerMember = componentClass.TryGetField(Script::sNameOfOwnerField);
+		// Initialize our hard coded fields
+		std::byte* componentAddress = static_cast<std::byte*>(componentToReturn.GetData());
+		entt::entity* ownerAddress = reinterpret_cast<entt::entity*>(componentAddress + asAnyStorage->GetOffsetToOwner());
+		World** worldAddress = reinterpret_cast<World**>(componentAddress + asAnyStorage->GetOffsetToWorld());
 
-		if (ownerMember != nullptr)
-		{
-			if (ownerMember->GetType().GetTypeId() == MakeTypeId<entt::entity>())
-			{
-				MetaAny refToMember = ownerMember->MakeRef(componentToReturn);
-				*refToMember.As<entt::entity>() = toEntity;
-			}
-			else
-			{
-				LOG(LogScripting, Error, "Expected {}::Owner to be of type entt::entity",
-					componentClass.GetName());
-			}
-		}
+		*ownerAddress = toEntity;
+		*worldAddress = &mWorld.get();
 
 		// Call events
 		const MetaFunc* const onConstruct = asAnyStorage->GetOnConstruct();
@@ -773,6 +773,9 @@ CE::Internal::AnyStorage::AnyStorage(const MetaType& type) :
 	mType(type),
 	mTypeInfo(type.GetTypeId(), type.GetTypeInfo(), type.GetName())
 {
+	ASSERT(CanTypeBeUsed(type));
+	reserve(64);
+
 	if (const std::optional<BoundEvent> boundEvent = TryGetEvent(type, sOnConstruct))
 	{
 		mOnConstruct = &boundEvent->mFunc.get();
@@ -783,8 +786,12 @@ CE::Internal::AnyStorage::AnyStorage(const MetaType& type) :
 		mOnBeginPlay = &boundEvent->mFunc.get();
 	}
 
-	ASSERT(CanTypeBeUsed(type));
-	reserve(64);
+	const MetaField* ownerField = type.TryGetField(Script::sNameOfOwnerField);
+	const MetaField* worldField = type.TryGetField(Script::sNameOfWorldField);
+	ASSERT_LOG(ownerField != nullptr && worldField != nullptr, "Expected hardcoded fields in script type {}", type.GetName());
+
+	mOffsetToOwnerField = ownerField->GetOffset();
+	mOffsetToWorldField = worldField->GetOffset();
 }
 
 CE::Internal::AnyStorage::~AnyStorage()
