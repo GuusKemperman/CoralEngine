@@ -35,7 +35,7 @@ void CE::ThumbnailEditorSystem::Tick(float deltaTime)
 			Timer timeToRenderFrame{};
 
 			LOG(LogEditor, Verbose, "Rendering {} to thumbnail", current.mForAsset.GetMetaData().GetName());
-			
+
 			current.mWorld.Render(&current.mFrameBuffer);
 
 			const auto result = mGeneratedThumbnails.emplace(std::piecewise_construct,
@@ -184,13 +184,20 @@ bool CE::ThumbnailEditorSystem::DisplayImGuiImageButton(const WeakAssetHandle<>&
 {
 	const ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
 	const std::string_view id = forAsset != nullptr ? std::string_view{ forAsset.GetMetaData().GetName() } : "None";
-	return ImGui::ImageButton(id.data(), ImGui::IsRectVisible(cursorScreenPos, cursorScreenPos + size) ? GetThumbnail(forAsset) : GetDefaultThumbnail(), size);
+	return ImGui::ImageButton(id.data(), 
+		ImGui::IsRectVisible(cursorScreenPos, cursorScreenPos + size) ? GetThumbnail(forAsset) : GetDefaultThumbnail(), 
+		size,
+		ImVec2(0, 1),
+		ImVec2(1, 0));
 }
 
 void CE::ThumbnailEditorSystem::DisplayImGuiImage(const WeakAssetHandle<>& forAsset, ImVec2 size)
 {
 	const ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
-	ImGui::Image(ImGui::IsRectVisible(cursorScreenPos, cursorScreenPos + size) ? GetThumbnail(forAsset) : GetDefaultThumbnail(), size);
+	ImGui::Image(ImGui::IsRectVisible(cursorScreenPos, cursorScreenPos + size) ? GetThumbnail(forAsset) : GetDefaultThumbnail(), 
+		size,
+		ImVec2(0, 1),
+		ImVec2(1, 0));
 }
 
 ImTextureID CE::ThumbnailEditorSystem::GetDefaultThumbnail()
@@ -361,7 +368,7 @@ CE::GetThumbnailRet GetThumbNailImpl<CE::Material>(const CE::WeakAssetHandle<CE:
 		reg.AddComponent<CE::TransformComponent>(entity).SetLocalScale(2.5f);
 		CE::StaticMeshComponent& staticMeshComponent = reg.AddComponent<CE::StaticMeshComponent>(entity);
 
-		staticMeshComponent.mStaticMesh = CE::AssetManager::Get().TryGetAsset<CE::StaticMesh>("Sphere_Sphere");
+		staticMeshComponent.mStaticMesh = CE::AssetManager::Get().TryGetAsset<CE::StaticMesh>("SM_Sphere");
 
 		if (staticMeshComponent.mStaticMesh == nullptr)
 		{

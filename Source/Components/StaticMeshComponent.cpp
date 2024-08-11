@@ -14,9 +14,6 @@ CE::MetaType CE::StaticMeshComponent::Reflect()
 	props.Add(Props::sIsScriptableTag);
 	type.AddField(&StaticMeshComponent::mStaticMesh, "mStaticMesh").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&StaticMeshComponent::mMaterial, "mMaterial").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&StaticMeshComponent::mTilesWithMeshScale, "mTilesWithMeshScale").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&StaticMeshComponent::mTiling, "mTiling").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddField(&StaticMeshComponent::mHighlightedMesh, "mHighlighted").GetProperties().Add(Props::sIsScriptableTag);
 	ReflectComponentType<StaticMeshComponent>(type);
 	return type;
 }

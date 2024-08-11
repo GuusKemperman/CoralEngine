@@ -150,8 +150,8 @@ bool CE::Internal::GizmoManipulateSelectedTransforms(World& world,
 {
 	Registry& reg = world.GetRegistry();
 
-	const glm::mat4& view = camera.GetView();
-	const glm::mat4& proj = camera.GetProjection();
+	const glm::mat4& view = camera.mView;
+	const glm::mat4& proj = camera.mProjection;
 
 	// The snap needs to be converted to a vec3, otherwise the Y translation does not work.
 	const float* snap{};

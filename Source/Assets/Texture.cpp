@@ -34,6 +34,8 @@ CE::Texture::Texture(AssetLoadInfo& loadInfo) :
 	const std::string data = StringFunctions::StreamToString(loadInfo.GetStream());
 	int channels{};
 
+	stbi_set_flip_vertically_on_load(true);
+
 	std::byte* pixels = reinterpret_cast<std::byte*>(
 		stbi_load_from_memory(
 			reinterpret_cast<const stbi_uc*>(data.data()), 

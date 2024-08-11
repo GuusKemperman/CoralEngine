@@ -140,14 +140,18 @@ void CE::Registry::UpdateSystems(float dt)
 
 void CE::Registry::RenderSystems(RenderCommandQueue& commandQueue) const
 {
-	for (const FixedTickSystem& fixedTickSystem : mFixedTickSystems)
-	{
-		fixedTickSystem.mSystem->Render(mWorld, commandQueue);
-	}
+	std::vector<std::reference_wrapper<const InternalSystem>> sortedSystems{ mFixedTickSystems.begin(), mFixedTickSystems.end() };
+	sortedSystems.insert(sortedSystems.end(), mNonFixedSystems.begin(), mNonFixedSystems.end());
 
-	for (const InternalSystem& internalSystem : mNonFixedSystems)
+	std::stable_sort(sortedSystems.begin(), sortedSystems.end(),
+		[](const InternalSystem& lhs, const InternalSystem& rhs)
+		{
+				return lhs.mTraits.mPriority > rhs.mTraits.mPriority;
+		});
+
+	for (const InternalSystem& system : sortedSystems)
 	{
-		internalSystem.mSystem->Render(mWorld, commandQueue);
+		system.mSystem->Render(mWorld, commandQueue);
 	}
 }
 

@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Core/Renderer.h"
 
+#include <OCIdl.h>
 #include <glad/glad.h>
 
 #include "Assets/Material.h"
@@ -65,12 +66,13 @@ struct CE::StaticMeshPlatformImpl
 
 struct CE::FrameBufferPlatformImpl
 {
+	~FrameBufferPlatformImpl();
+
 	void Resize(glm::ivec2 size);
 
+	std::shared_ptr<TexturePlatformImpl> mColorTexture{};
 	GLuint mFrameBuffer{};
-	GLuint mColorTexture{};
 	GLuint mDepthTexture{};
-	glm::ivec2 mSize{};
 	bool mIsInitialized{};
 };
 
@@ -82,31 +84,38 @@ CE::StaticMeshPlatformImpl::~StaticMeshPlatformImpl()
 	CHECK_GL;
 }
 
+CE::FrameBufferPlatformImpl::~FrameBufferPlatformImpl()
+{
+	glDeleteFramebuffers(1, &mFrameBuffer);
+	glDeleteRenderbuffers(1, &mDepthTexture);
+	CHECK_GL;
+}
+
 void CE::FrameBufferPlatformImpl::Resize(glm::ivec2 size)
 {
-	if (mSize == size)
+	if (mColorTexture->mSize == size)
 	{
 		return;
 	}
 
-	mSize = size;
+	mColorTexture->mSize = size;
 
-	glBindTexture(GL_TEXTURE_2D, mColorTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, mSize.x, mSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+	glBindTexture(GL_TEXTURE_2D, mColorTexture->mId);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, mColorTexture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, mColorTexture->mId, 0);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mSize.x, mSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size.x, size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mColorTexture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mColorTexture->mId, 0);
 
 	glBindRenderbuffer(GL_RENDERBUFFER, mDepthTexture);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, mSize.x, mSize.y);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, size.x, size.y);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, mDepthTexture);
 	CHECK_GL;
 }
@@ -196,10 +205,6 @@ CE::Renderer::Renderer() :
 
 	// Array buffer contains the attribute data
 	glBindBuffer(GL_ARRAY_BUFFER, mImpl->mLinesVBO);
-
-	// Allocate into VBO
-	// const auto size = sizeof(mImpl->m_vertexArray);
-	// glBufferData(GL_ARRAY_BUFFER, RenderCommandQueue::sMaxNumLines * RenderCommandQueue::sNumFloatsPerLine, &mImpl->mLines.data(), GL_STREAM_DRAW);
 
 	struct Test
 	{
@@ -407,12 +412,12 @@ void CE::Renderer::RunCommandQueues()
 			glGenFramebuffers(1, &frameBuffer->mFrameBuffer);
 			glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer->mFrameBuffer);
 
-			glGenTextures(1, &frameBuffer->mColorTexture);
+			glGenTextures(1, &frameBuffer->mColorTexture->mId);
 			glGenRenderbuffers(1, &frameBuffer->mDepthTexture);
 
 			frameBuffer->Resize({ 1, 1 });
 
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, frameBuffer->mColorTexture, 0);
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, frameBuffer->mColorTexture->mId, 0);
 
 			const GLenum drawBuffer = GL_COLOR_ATTACHMENT0;
 			glDrawBuffers(1, &drawBuffer);
@@ -440,7 +445,7 @@ void CE::Renderer::RunCommandQueues()
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, target->mFrameBuffer);
 			target->Resize(commandQueue->mRenderTargetEntry->mRenderSize);
-			glViewport(0, 0, target->mSize.x, target->mSize.y);
+			glViewport(0, 0, target->mColorTexture->mSize.x, target->mColorTexture->mSize.y);
 		}
 
 		// Clear the screen
@@ -571,10 +576,10 @@ void CE::Renderer::RunCommandQueues()
 
 	std::scoped_lock resourcesLock{ mImpl->mTexturesMutex, mImpl->mStaticMeshesMutex, mImpl->mFrameBuffersMutex };
 
-	std::erase_if(mImpl->mTextures, isLastReference);
-	std::erase_if(mImpl->mStaticMeshes, isLastReference);
 	std::erase_if(mImpl->mFrameBuffers, isLastReference);
 	std::erase_if(mImpl->mCommandQueues, isLastReference);
+	std::erase_if(mImpl->mStaticMeshes, isLastReference);
+	std::erase_if(mImpl->mTextures, isLastReference);
 }
 
 std::shared_ptr<CE::RenderCommandQueue> CE::Renderer::CreateCommandQueue()
@@ -622,18 +627,19 @@ std::shared_ptr<CE::TexturePlatformImpl> CE::Renderer::CreateTexturePlatformImpl
 	{
 		return nullptr;
 	}
-
-	const GLuint colorTexture = frameBufferImpl->mColorTexture;
-	frameBufferImpl->mColorTexture = 0;;
-
-	std::scoped_lock lock{ mImpl->mTexturesMutex };
-	return mImpl->mTextures.emplace_back(std::make_shared<TexturePlatformImpl>(nullptr, frameBufferImpl->mSize, colorTexture));
+	return frameBufferImpl->mColorTexture;
 }
 
 std::shared_ptr<CE::FrameBufferPlatformImpl> CE::Renderer::CreateFrameBufferPlatformImpl()
 {
+	std::shared_ptr<TexturePlatformImpl> colorTexture = [this]
+		{
+			std::scoped_lock lock{ mImpl->mTexturesMutex };
+			return mImpl->mTextures.emplace_back(std::make_shared<TexturePlatformImpl>());
+		}();
+	
 	std::scoped_lock lock{ mImpl->mFrameBuffersMutex };
-	return mImpl->mFrameBuffers.emplace_back(std::make_shared<FrameBufferPlatformImpl>());
+	return mImpl->mFrameBuffers.emplace_back(std::make_shared<FrameBufferPlatformImpl>(std::move(colorTexture)));
 }
 
 void* CE::Renderer::GetPlatformId(TexturePlatformImpl* platformImpl)
@@ -643,7 +649,7 @@ void* CE::Renderer::GetPlatformId(TexturePlatformImpl* platformImpl)
 
 void* CE::Renderer::GetPlatformId(FrameBufferPlatformImpl* platformImpl)
 {
-	return platformImpl == nullptr ? nullptr : reinterpret_cast<void*>(static_cast<intptr>(platformImpl->mColorTexture));
+	return platformImpl == nullptr ? nullptr : GetPlatformId(platformImpl->mColorTexture.get());
 }
 
 void CE::Renderer::ImplDeleter::operator()(Impl* impl) const
