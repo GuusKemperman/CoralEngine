@@ -151,8 +151,8 @@ void CE::BVH::DebugDraw() const
         {
             AddDebugBox(mPhysics->GetWorld().GetRenderCommandQueue(), 
                 DebugDraw::AccelStructs, 
-                To3DRightForward(node.mBoundingBox.GetCentre()), 
-                To3DRightForward(node.mBoundingBox.GetSize() * .5f), glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
+                To3D(node.mBoundingBox.GetCentre()), 
+                To3D(node.mBoundingBox.GetSize() * .5f), glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });
         }
     }
 }

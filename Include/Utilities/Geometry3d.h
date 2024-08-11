@@ -27,7 +27,7 @@ namespace CE
 
 	inline AABB3D::AABB3D(std::span<const glm::vec3> points)
 	{
-		for (const glm::vec3& point : points)
+		for (glm::vec3 point : points)
 		{
 			mMin = glm::min(point, mMin);
 			mMax = glm::max(point, mMax);

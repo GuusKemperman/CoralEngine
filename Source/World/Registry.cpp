@@ -182,34 +182,25 @@ entt::entity CE::Registry::CreateFromPrefab(const Prefab& prefab,
 
 	if (transform != nullptr)
 	{
-		if (localPosition != nullptr
-			|| localOrientation != nullptr
-			|| localScale != nullptr
-			|| parent != nullptr)
+		if (localPosition != nullptr)
 		{
-
-			if (localPosition != nullptr)
-			{
-				transform->SetLocalPosition(*localPosition);
-			}
-
-			if (localOrientation != nullptr)
-			{
-				transform->SetLocalOrientation(*localOrientation);
-			}
-
-			if (localScale != nullptr)
-			{
-				transform->SetLocalScale(*localScale);
-			}
-
-			if (parent != nullptr)
-			{
-				transform->SetParent(parent, false);
-			}
+			transform->SetLocalPosition(*localPosition);
 		}
 
-		transform->UpdateCachedWorldMatrix();
+		if (localOrientation != nullptr)
+		{
+			transform->SetLocalOrientation(*localOrientation);
+		}
+
+		if (localScale != nullptr)
+		{
+			transform->SetLocalScale(*localScale);
+		}
+
+		if (parent != nullptr)
+		{
+			transform->SetParent(parent, false);
+		}
 	}
 
 	// We wait with calling BeginPlay until all the

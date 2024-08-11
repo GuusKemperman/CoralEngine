@@ -17,20 +17,20 @@ namespace CE
 			X,
 			Y,
 			Z,
-			Right = X,
-			Up = Y,
-			Forward = Z,
+			Forward = X,
+			Right = Y,
+			Up = Z,
 		};
 	};
 
 	constexpr glm::vec3 ToVector3(Axis::Values axis) { glm::vec3 v{}; v[static_cast<int>(axis)] = 1.0f; return v; }
 
-	constexpr glm::vec2 To2DRightForward(glm::vec3 v3)
+	constexpr glm::vec2 To2D(glm::vec3 v3)
 	{
 		return { v3[Axis::Right], v3[Axis::Forward] };
 	}
 
-	constexpr glm::vec3 To3DRightForward(glm::vec2 v2, float up = 0.0f)
+	constexpr glm::vec3 To3D(glm::vec2 v2, float up = 0.0f)
 	{
 		glm::vec3 v3{};
 		v3[Axis::Right] = v2.x;
@@ -67,7 +67,7 @@ namespace CE
 		glm::mat4 GetLocalMatrix() const;
 		void SetLocalMatrix(const glm::mat4& matrix);
 
-		const glm::mat4& GetWorldMatrix() const;
+		glm::mat4 GetWorldMatrix() const;
 		void SetWorldMatrix(const glm::mat4& matrix);
 
 		std::tuple<glm::vec3, glm::vec3, glm::quat> GetLocalPositionScaleOrientation() const;
@@ -103,100 +103,65 @@ namespace CE
 		// -----------------------------------------------------------------------------------------------------------------//
 
 		glm::vec3 GetLocalPosition() const;
-		glm::vec2 GetLocalPosition2D() const;
-
 		glm::vec3 GetWorldPosition() const;
-		glm::vec2 GetWorldPosition2D() const;
 
-		void SetLocalPosition(const glm::vec3 position);
-		void SetLocalPosition(const glm::vec2 position);
-
-		void TranslateLocalPosition(const glm::vec3 translation);
-		void TranslateLocalPosition(const glm::vec2 translation);
+		void SetLocalPosition(glm::vec3 position);
+		void SetLocalPosition(glm::vec2 position);
 
 		void SetWorldPosition(glm::vec3 position);
-		void SetWorldPosition(const glm::vec2 position);
-
-		void TranslateWorldPosition(const glm::vec3 translation);
-		void TranslateWorldPosition(const glm::vec2 translation);
+		void SetWorldPosition(glm::vec2 position);
 
 		// -----------------------------------------------------------------------------------------------------------------//
 		// Getting/setting the orientation																					//
 		// -----------------------------------------------------------------------------------------------------------------//
 
 		glm::quat GetLocalOrientation() const;
-		glm::vec3 GetLocalOrientationEuler() const;
-
 		glm::quat GetWorldOrientation() const;
-		glm::vec3 GetWorldOrientationEuler() const;
 
-		// In radians
-		void SetLocalOrientation(const glm::vec3 rotationEuler);
-		void SetLocalOrientation(const glm::quat rotation);
-
-		// In radians
-		void SetWorldOrientation(const glm::vec3 rotationEuler);
+		void SetLocalOrientation(glm::quat rotation);
 		void SetWorldOrientation(glm::quat orientation);
 
 		glm::vec3 GetLocalForward() const;
 		glm::vec3 GetLocalUp() const;
 		glm::vec3 GetLocalRight() const;
 
-		glm::vec3 GetLocalAxis(const Axis::Values axis) const;
+		glm::vec3 GetLocalAxis(Axis::Values axis) const;
 
 		glm::vec3 GetWorldForward() const;
 		glm::vec3 GetWorldUp() const;
 		glm::vec3 GetWorldRight() const;
-		glm::vec3 GetWorldAxis(const Axis::Values axis) const;
 
-		void SetLocalForward(const glm::vec3& forward);
-		void SetLocalUp(const glm::vec3& up);
-		void SetLocalRight(const glm::vec3& right);
+		glm::vec3 GetWorldAxis(Axis::Values axis) const;
 
-		void SetWorldForward(const glm::vec3& forward);
-		void SetWorldUp(const glm::vec3& up);
-		void SetWorldRight(const glm::vec3& right);
+		void SetLocalForward(glm::vec3 forward);
+		void SetLocalUp(glm::vec3 up);
+		void SetLocalRight(glm::vec3 right);
+
+		void SetWorldForward(glm::vec3 forward);
+		void SetWorldUp(glm::vec3 up);
+		void SetWorldRight(glm::vec3 right);
 
 		// -----------------------------------------------------------------------------------------------------------------//
 		// Getting/setting the Scale																						//
 		// -----------------------------------------------------------------------------------------------------------------//
 
 		glm::vec3 GetLocalScale() const;
-		glm::vec2 GetLocalScale2D() const;
 		float GetLocalScaleUniform() const;
 
 		glm::vec3 GetWorldScale() const;
-		glm::vec2 GetWorldScale2D() const;
 		float GetWorldScaleUniform() const;
-		float GetWorldScaleUniform2D() const;
 
-		void SetLocalScale(const float xyz);
-		void SetLocalScaleRightForward(const float scale);
-		void SetLocalScale(const glm::vec3 scale);
-		void SetLocalScale(const glm::vec2 scale);
+		void SetLocalScale(float xyz);
+		void SetLocalScale(glm::vec2 scale);
+		void SetLocalScale(glm::vec3 scale);
 
-		void SetWorldScale(const float xyz);
+		void SetWorldScale(float xyz);
+		void SetWorldScale(glm::vec2 scale);
 		void SetWorldScale(glm::vec3 scale);
-		void SetWorldScale(const glm::vec2 scale);
 
 	private:
 		void AttachChild(TransformComponent& child);
 		void DetachChild(TransformComponent& child);
-
-		void UpdateCachedWorldMatrix();
-
-		// We do not serialize the world
-		// matrix, so we require
-		// the archiver to call UpdateCachedWorldMatrix..
-		friend Archiver;
-
-
-		// We don't have custom setter/getter support yet.
-		// WorldDetails may inspect mLocalPosition and
-		// adjust its value without ever updating the world
-		// matrix. 
-		friend WorldDetails;
-		friend Registry;
 
 		friend ReflectAccess;
 		static MetaType Reflect();
@@ -207,8 +172,6 @@ namespace CE
 		entt::entity mOwner = entt::null;
 		glm::quat mLocalOrientation = { 1.0f, 0.0f, 0.0f, 0.0f };
 		glm::vec3 mLocalScale = { 1.0f, 1.0f, 1.0f };
-
-		glm::mat4 mCachedWorldMatrix{ 1.0f };
 
 		// Storing a pointer is safe, as pointer stability has been enabled.
 		TransformComponent* mParent{};

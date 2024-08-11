@@ -63,7 +63,7 @@ namespace CE
 		static glm::quat CalculateRotationBetweenOrientations(glm::quat start, glm::quat end);
 
 		// Stolen from https://stackoverflow.com/questions/44705398/about-glm-quaternion-rotation
-		static glm::vec3 RotateVector(const glm::vec3& v, const glm::quat& q);
+		static glm::vec3 RotateVector(glm::vec3 v, const glm::quat& q);
 
 		static constexpr uint32 floorlog2(uint32 x)
 		{

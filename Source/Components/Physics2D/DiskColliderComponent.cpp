@@ -8,7 +8,9 @@
 
 CE::TransformedDisk CE::DiskColliderComponent::CreateTransformedCollider(const TransformComponent& transform) const
 {
-	return { transform.GetWorldPosition2D(), transform.GetWorldScaleUniform2D() * mRadius };
+	const glm::vec2 scale = transform.GetWorldScale();
+	const float scaleUniform = .5f * (scale.x + scale.y);
+	return { transform.GetWorldPosition(), scaleUniform * mRadius };
 }
 
 CE::MetaType CE::DiskColliderComponent::Reflect()
@@ -35,8 +37,8 @@ CE::MetaType CE::DiskColliderComponent::Reflect()
 				LOG(LogPhysics, Error, "Entity {} passed to GetScaledRadius does not have a DiskColliderComponent.", entt::to_integral(owner));
 				return 0.0f;
 			}
-			return collider->mRadius * transform->GetWorldScaleUniform2D();
 
+			return collider->CreateTransformedCollider(*transform).mRadius;
 		}, "GetScaledRadius", MetaFunc::ExplicitParams<
 		entt::entity>{}, "Owner of Disk Collider").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 

@@ -183,27 +183,20 @@ bool CE::Internal::GizmoManipulateSelectedTransforms(World& world,
 	const glm::vec3 avgPosition = totalPosition / static_cast<float>(transformComponents.size());
 	const glm::vec3 avgScale = totalScale / static_cast<float>(transformComponents.size());
 
-	glm::mat4 avgMatrix;
+	// A bold lie
+	const glm::quat avgOrientation = transformComponents.size() == 1 ? transformComponents[0]->GetWorldOrientation() : glm::quat{};
 
-	ImGuizmo::RecomposeMatrixFromComponents(value_ptr(avgPosition),
-		value_ptr(transformComponents.size() == 1 ? transformComponents[0]->GetWorldOrientationEuler() * (360.0f / TWOPI) : glm::vec3{}),
-		value_ptr(avgScale),
-		&avgMatrix[0][0]);
+	glm::mat4 avgMatrix = TransformComponent::ToMatrix(avgPosition, avgScale, avgOrientation);
 
 	glm::mat4 delta;
 	bool isSelected{};
 
-	if (Manipulate(value_ptr(view), value_ptr(proj), sGuizmoOperation, sGuizmoMode, value_ptr(avgMatrix), value_ptr(delta), snap, nullptr, nullptr, &isSelected))
+	if (Manipulate(value_ptr(view), value_ptr(proj), sGuizmoOperation, sGuizmoMode, glm::value_ptr(avgMatrix), value_ptr(delta), snap, nullptr, nullptr, &isSelected))
 	{
 		// Apply the delta to all transformComponents
 		for (const auto transformComponent : transformComponents)
 		{
-			glm::mat4 transformMatrix;
-
-			ImGuizmo::RecomposeMatrixFromComponents(value_ptr(transformComponent->GetWorldPosition()),
-				value_ptr(transformComponent->GetWorldOrientationEuler() * (360.0f / TWOPI)),
-				value_ptr(transformComponent->GetWorldScale()),
-				&transformMatrix[0][0]);
+			glm::mat4 transformMatrix = transformComponent->GetWorldMatrix();
 
 			// TODO Fix the scaling of multiple items at a time
 			if (sGuizmoOperation & ImGuizmo::SCALE)

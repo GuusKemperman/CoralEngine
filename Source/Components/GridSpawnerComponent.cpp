@@ -71,7 +71,7 @@ void CE::GridSpawnerComponent::SpawnGrid()
 	}
 	const float angleStep = glm::two_pi<float>() / static_cast<float>(mNumOfPossibleRotations);
 
-	CE::DefaultRandomEngine cellGenerator{ Random::CreateSeed(transform->GetWorldPosition2D()) };
+	CE::DefaultRandomEngine cellGenerator{ Random::CreateSeed(transform->GetWorldPosition()) };
 
 	const std::function<uint32(uint32, uint32)> randomUint = mUseWorldPositionAsSeed ?
 		std::function
@@ -144,7 +144,7 @@ void CE::GridSpawnerComponent::SpawnGrid()
 			child->SetParent(transform);
 
 			const glm::vec2 offset = { randomFloat(0.0f, mMaxRandomOffset), randomFloat(0.0f, mMaxRandomOffset) };
-			child->SetLocalPosition(To3DRightForward(position + offset, randomFloat(mMinRandomHeightOffset, mMaxRandomHeightOffset)));
+			child->SetLocalPosition(To3D(position + offset, randomFloat(mMinRandomHeightOffset, mMaxRandomHeightOffset)));
 
 			child->SetLocalScale(randomFloat(mMinRandomScale, mMaxRandomScale));
 

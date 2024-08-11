@@ -114,7 +114,7 @@ void CE::FrameBufferPlatformImpl::Resize(glm::ivec2 size)
 struct CE::RenderCommandQueue
 {
 	static constexpr int sMaxNumLines = 1 << 7;
-	static constexpr int sNumFloatsPerLine = sizeof(glm::vec3) + sizeof(glm::vec4) * 2; // Pos + Colour * 2
+	static constexpr int sNumFloatsPerLine = (3 + 4) * 2; // Pos + Colour * 2
 	std::array<float, sMaxNumLines * sNumFloatsPerLine> mLines;
 	std::atomic_int mTotalNumOfLinesRequested{};
 
@@ -199,17 +199,36 @@ CE::Renderer::Renderer() :
 
 	// Allocate into VBO
 	// const auto size = sizeof(mImpl->m_vertexArray);
-	// glBufferData(GL_ARRAY_BUFFER, RenderCommandQueue::sMaxNumLines * RenderCommandQueue::sNumFloatsPerLine, &mImpl->m_vertexArray[0], GL_STREAM_DRAW);
+	// glBufferData(GL_ARRAY_BUFFER, RenderCommandQueue::sMaxNumLines * RenderCommandQueue::sNumFloatsPerLine, &mImpl->mLines.data(), GL_STREAM_DRAW);
+
+	struct Test
+	{
+		float posX;
+		float posY;
+		float posZ;
+		float colR;
+		float colG;
+		float colB;
+		float colA;
+	};
+
+	static constexpr size_t sizePos = sizeof(glm::vec3);
+	static constexpr size_t sizeCol = sizeof(glm::vec4);
+	static constexpr size_t sizeTotal = sizePos + sizeCol;
+	static_assert(sizeTotal == sizeof(Test));
+	static_assert(sizePos == offsetof(Test, colR));
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeTotal, nullptr);
 
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(
-		1, 3, GL_FLOAT, GL_FALSE, 3 + 4, nullptr);
-
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(
-		2, 4, GL_FLOAT, GL_FALSE, 3 + 4, reinterpret_cast<void*>(sizeof(glm::vec3)));
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeTotal, reinterpret_cast<void*>(sizePos));
 
 	glBindVertexArray(0);
+
+	glEnable(GL_DEPTH_TEST);
+	glFrontFace(GL_CW);
+	glEnable(GL_CULL_FACE);
 	CHECK_GL;
 }
 
@@ -277,6 +296,8 @@ void CE::Renderer::SetRenderTarget(RenderCommandQueue& context, const glm::mat4&
 
 void CE::Renderer::RunCommandQueues()
 {
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
 	static constexpr auto isLastReference = [](const auto& sharedPtr) -> bool
 		{
 			return sharedPtr.use_count() <= 1;
@@ -425,12 +446,8 @@ void CE::Renderer::RunCommandQueues()
 		// Clear the screen
 		const glm::vec4 clearColor = commandQueue->mRenderTargetEntry->mClearColor;
 		glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
-		glClearDepth(1.0);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-		// Enable depth testing and set the depth function
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
+		
 		CHECK_GL;
 
 		// Activate the standard program
@@ -524,17 +541,19 @@ void CE::Renderer::RunCommandQueues()
 		}
 
 		// SetRenderTarget debug lines
-		const int numOfLines = std::min(static_cast<int>(commandQueue->mTotalNumOfLinesRequested), static_cast<int>(RenderCommandQueue::sMaxNumLines));
+		const int numOfLines = std::min<int>(commandQueue->mTotalNumOfLinesRequested, RenderCommandQueue::sMaxNumLines);
 
 		if (numOfLines > 0)
 		{
 			const glm::mat4 vp = commandQueue->mRenderTargetEntry->mProj * commandQueue->mRenderTargetEntry->mView;
 			glUseProgram(mImpl->mLinesProgram);
-			glUniformMatrix4fv(1, 1, false, &vp[0][0]);
-			glBindVertexArray(mImpl->mLinesVAO);
 
+			glUniformMatrix4fv(glGetUniformLocation(mImpl->mLinesProgram, "u_worldviewproj"), 1, GL_FALSE, &vp[0][0]);
+			glBindVertexArray(mImpl->mLinesVAO);
+			
 			glBindBuffer(GL_ARRAY_BUFFER, mImpl->mLinesVBO);
-			glBufferData(GL_ARRAY_BUFFER, numOfLines * RenderCommandQueue::sNumFloatsPerLine, commandQueue->mLines.data(), GL_DYNAMIC_DRAW);
+			const int numOfBytes = numOfLines * RenderCommandQueue::sNumFloatsPerLine * sizeof(float);
+			glBufferData(GL_ARRAY_BUFFER, numOfBytes, commandQueue->mLines.data(), GL_STREAM_DRAW);
 			glDrawArrays(GL_LINES, 0, numOfLines * 2);
 
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -813,9 +832,11 @@ GLuint CE::Internal::CompileLinesProgram()
 {
 	return CompileProgram(
 		R"(#version 460 core
-		layout (location = 1) in vec3 a_position;
-		layout (location = 2) in vec4 a_color;
-		layout (location = 1) uniform mat4 u_worldviewproj;
+		layout (location = 0) in vec3 a_position;
+		layout (location = 1) in vec4 a_color;
+		
+		uniform mat4 u_worldviewproj;
+
 		out vec4 v_color;
 
 		void main()
