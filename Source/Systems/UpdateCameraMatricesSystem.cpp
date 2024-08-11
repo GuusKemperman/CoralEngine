@@ -29,7 +29,8 @@ void CE::UpdateCameraMatricesSystem::UpdateMatrices(World& world)
 	const auto viewWithTransform = world.GetRegistry().View<CameraComponent, const TransformComponent>();
 	for (auto [entity, camera, transform] : viewWithTransform.each())
 	{
-		camera.mView = glm::lookAt(transform.GetWorldPosition(), transform.GetWorldForward(), transform.GetWorldUp());
+		const glm::vec3 worldPos = transform.GetWorldPosition();
+		camera.mView = glm::lookAt(worldPos, worldPos + transform.GetWorldForward(), transform.GetWorldUp());
 		camera.mProjection = glm::perspective(camera.mFOV, aspectRatio, camera.mNear, camera.mFar);
 		camera.mViewProjection = camera.mProjection * camera.mView;
 	}
