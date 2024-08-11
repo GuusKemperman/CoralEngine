@@ -20,28 +20,6 @@ CE::MetaType CE::DiskColliderComponent::Reflect()
 
 	metaType.AddField(&DiskColliderComponent::mRadius, "mRadius").GetProperties().Add(Props::sIsScriptableTag);
 
-	metaType.AddFunc([](entt::entity owner)
-		{
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
-			const auto transform = world->GetRegistry().TryGet<TransformComponent>(owner);
-			if (transform == nullptr)
-			{
-				LOG(LogPhysics, Error, "Entity {} passed to GetScaledRadius does not have a TransformComponent.", entt::to_integral(owner));
-				return 0.0f;
-			}
-			const auto collider = world->GetRegistry().TryGet<DiskColliderComponent>(owner);
-			if (transform == nullptr)
-			{
-				LOG(LogPhysics, Error, "Entity {} passed to GetScaledRadius does not have a DiskColliderComponent.", entt::to_integral(owner));
-				return 0.0f;
-			}
-
-			return collider->CreateTransformedCollider(*transform).mRadius;
-		}, "GetScaledRadius", MetaFunc::ExplicitParams<
-		entt::entity>{}, "Owner of Disk Collider").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
-
 	ReflectComponentType<DiskColliderComponent>(metaType);
 
 	return metaType;

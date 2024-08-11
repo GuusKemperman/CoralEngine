@@ -10,10 +10,10 @@ namespace CE
 	{
 	public:
 		void OnConstruct(World&, entt::entity owner);
-		void OnBeginPlay(World&, entt::entity);
+		void OnBeginPlay(World& world, entt::entity);
 
-		void ClearGrid();
-		void SpawnGrid();
+		void ClearGrid(World& world);
+		void SpawnGrid(World& world);
 
 		std::vector<AssetHandle<Prefab>> mTiles{};
 

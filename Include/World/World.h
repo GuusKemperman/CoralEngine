@@ -76,11 +76,6 @@ namespace CE
 
 		void RequestEndplay();
 
-		static void PushWorld(World& world);
-		static void PopWorld();
-
-		static World* TryGetWorldAtTopOfStack();
-
 		/**
 		 * \brief Will request a transition to a different level.
 		 *

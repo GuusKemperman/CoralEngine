@@ -40,8 +40,6 @@ CE::World::~World()
 
 void CE::World::Tick(const float unscaledDeltaTime)
 {
-	PushWorld(*this);
-
 	mTime.Step(unscaledDeltaTime);
 
 	GetRegistry().UpdateSystems(unscaledDeltaTime);
@@ -64,8 +62,6 @@ void CE::World::Tick(const float unscaledDeltaTime)
 			BeginPlay();
 		}
 	}
-
-	PopWorld();
 }
 
 void CE::World::Render(FrameBuffer* renderTarget)
@@ -234,26 +230,6 @@ const CE::AssetHandle<CE::Level>& CE::World::GetNextLevel() const
 	return mLevelToTransitionTo;
 }
 
-// Each thread has their own worldstack. This allows multiple worlds to run in parallel.
-// While helpful for multi-threaded importing, this makes it difficult to do multi-threading
-// of a workload in the same world. This decision may have to be revised..
-static thread_local std::stack<std::reference_wrapper<CE::World>> sWorldStacks{};
-
-void CE::World::PushWorld(World& world)
-{
-	sWorldStacks.emplace(world);
-}
-
-void CE::World::PopWorld()
-{
-	sWorldStacks.pop();
-}
-
-CE::World* CE::World::TryGetWorldAtTopOfStack()
-{
-	return sWorldStacks.empty() ? nullptr : &sWorldStacks.top().get();
-}
-
 void CE::World::TransitionToLevel(const AssetHandle<Level>& level)
 {
 	if (GetNextLevel() == nullptr)
@@ -294,99 +270,73 @@ CE::MetaType CE::World::Reflect()
 	MetaType type = MetaType{ MetaType::T<World>{}, "World" };
 	type.GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([]
+	type.AddFunc([](const World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->HasBegunPlay();
-		}, "HasBegunPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+			return world.HasBegunPlay();
+		}, "HasBegunPlay", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	type.AddFunc([]
+	type.AddFunc([](const World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->GetCurrentTimeScaled();
-		}, "GetCurrentTimeScaled").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+			return world.GetCurrentTimeScaled();
+		}, "GetCurrentTimeScaled", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	type.AddFunc([]
+	type.AddFunc([](const World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->GetCurrentTimeReal();
-		}, "GetCurrentTimeReal").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+			return world.GetCurrentTimeReal();
+		}, "GetCurrentTimeReal", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	type.AddFunc([]
+	type.AddFunc([](const World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->GetTimeScale(); }, "GetTimeScale").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+			return world.GetTimeScale();
+		}, "GetTimeScale", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	type.AddFunc([](float timescale)
+	type.AddFunc([](World& world, float timescale)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			world->SetTimeScale(timescale);
-		}, "SetTimeScale", MetaFunc::ExplicitParams<float>{}, "TimeScale").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			world.SetTimeScale(timescale);
+		}, "SetTimeScale", MetaFunc::ExplicitParams<World&, float>{}, "TimeScale").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([]
+	type.AddFunc([](const World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->IsPaused();
-		}, "IsPaused").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+			return world.IsPaused();
+		}, "IsPaused", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	type.AddFunc([]
+	type.AddFunc([](World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			world->Pause();
-		}, "Pause").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			world.Pause();
+		}, "Pause", MetaFunc::ExplicitParams<World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([]
+	type.AddFunc([](World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			world->Unpause();
-		}, "Unpause").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			world.Unpause();
+		}, "Unpause", MetaFunc::ExplicitParams<World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](bool isPaused)
+	type.AddFunc([](World& world, bool isPaused)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			world->SetIsPaused(isPaused);
-		}, "SetIsPaused", MetaFunc::ExplicitParams<bool>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			world.SetIsPaused(isPaused);
+		}, "SetIsPaused", MetaFunc::ExplicitParams<World&, bool>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([]
+	type.AddFunc([](const World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->HasBegunPlay();
-		}, "HasBegunPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+			return world.HasBegunPlay();
+		}, "HasBegunPlay", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	type.AddFunc([]
+	type.AddFunc([](World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			world->RequestEndplay();
-		}, "RequestEndPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			world.RequestEndplay();
+		}, "RequestEndPlay", MetaFunc::ExplicitParams<World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const AssetHandle<Level>& level)
+	type.AddFunc([](World& world, const AssetHandle<Level>& level)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			world->TransitionToLevel(level);
+			world.TransitionToLevel(level);
 		},
 		"TransitionToLevel", 
-		MetaFunc::ExplicitParams<const AssetHandle<Level>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		MetaFunc::ExplicitParams<World&, const AssetHandle<Level>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([]
+	type.AddFunc([](const World& world)
 		{
-			const World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
 			std::vector<entt::entity> returnValue{};
 
-			const auto entityStorage = world->GetRegistry().Storage<entt::entity>();
+			const auto entityStorage = world.GetRegistry().Storage<entt::entity>();
 
 			if (entityStorage == nullptr)
 			{
@@ -401,35 +351,29 @@ CE::MetaType CE::World::Reflect()
 			}
 
 			return returnValue;
-		}, "Get all entities").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "Get all entities", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	type.AddFunc([]
+	type.AddFunc([](World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			world->GetRegistry().Clear();
-		}, "Clear").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			world.GetRegistry().Clear();
+		}, "Clear", MetaFunc::ExplicitParams<World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([]
+	type.AddFunc([](World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->GetRegistry().Create();
-		}, "Spawn entity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			return world.GetRegistry().Create();
+		}, "Spawn entity", MetaFunc::ExplicitParams<World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const AssetHandle<Prefab>& prefab)
+	type.AddFunc([](World& world, const AssetHandle<Prefab>& prefab)
 		{
 			if (prefab == nullptr)
 			{
 				LOG(LogWorld, Warning, "Attempted to spawn NULL prefab.");
 			}
 
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->GetRegistry().CreateFromPrefab(*prefab);
-		}, "Spawn prefab", MetaFunc::ExplicitParams<const AssetHandle<Prefab>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			return world.GetRegistry().CreateFromPrefab(*prefab);
+		}, "Spawn prefab", MetaFunc::ExplicitParams<World&, const AssetHandle<Prefab>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const AssetHandle<Prefab>& prefab, const glm::vec3 position, const glm::quat orientation, const glm::vec3 scale, TransformComponent* parent) -> entt::entity
+	type.AddFunc([](World& world, const AssetHandle<Prefab>& prefab, const glm::vec3 position, const glm::quat orientation, const glm::vec3 scale, TransformComponent* parent) -> entt::entity
 		{
 			if (prefab == nullptr)
 			{
@@ -442,25 +386,18 @@ CE::MetaType CE::World::Reflect()
 				LOG(LogWorld, Warning, "Spawning prefab {} with a scale of (0, 0, 0), may not be intended.", prefab.GetMetaData().GetName());
 			}
 
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->GetRegistry().CreateFromPrefab(*prefab, entt::null, &position, &orientation, &scale, parent);
-		}, "Spawn prefab at", MetaFunc::ExplicitParams<const AssetHandle<Prefab>&, glm::vec3, glm::quat, glm::vec3, TransformComponent*>{},
+			return world.GetRegistry().CreateFromPrefab(*prefab, entt::null, &position, &orientation, &scale, parent);
+		}, "Spawn prefab at", MetaFunc::ExplicitParams<World&, const AssetHandle<Prefab>&, glm::vec3, glm::quat, glm::vec3, TransformComponent*>{},
 			"Prefab", "LocalPosition", "LocalOrientation", "LocalScale", "Parent").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const entt::entity& entity, bool destroyChildren)
+	type.AddFunc([](World& world, const entt::entity& entity, bool destroyChildren)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			world->GetRegistry().Destroy(entity, destroyChildren);
-		}, "Destroy entity", MetaFunc::ExplicitParams<const entt::entity&, bool>{}, "Entity", "DestroyChildren").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			world.GetRegistry().Destroy(entity, destroyChildren);
+		}, "Destroy entity", MetaFunc::ExplicitParams<World&, const entt::entity&, bool>{}, "Entity", "DestroyChildren").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const std::string& name) -> entt::entity
+	type.AddFunc([](const World& world, const std::string& name) -> entt::entity
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
-			const auto view = world->GetRegistry().View<const NameComponent>();
+			const auto view = world.GetRegistry().View<const NameComponent>();
 
 			for (auto [entity, nameComponent] : view.each())
 			{
@@ -471,15 +408,12 @@ CE::MetaType CE::World::Reflect()
 			}
 
 			return entt::null;
-		}, "Find entity with name", MetaFunc::ExplicitParams<const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Find entity with name", MetaFunc::ExplicitParams<const World&, const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const std::string& name)
+	type.AddFunc([](const World& world, const std::string& name)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
 			std::vector<entt::entity> returnValue{};
-			const auto view = world->GetRegistry().View<const NameComponent>();
+			const auto view = world.GetRegistry().View<const NameComponent>();
 
 			for (auto [entity, nameComponent] : view.each())
 			{
@@ -490,84 +424,66 @@ CE::MetaType CE::World::Reflect()
 			}
 
 			return returnValue;
-		}, "Find all entities with name", MetaFunc::ExplicitParams<const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Find all entities with name", MetaFunc::ExplicitParams<const World&, const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const ComponentFilter& component) -> entt::entity
+	type.AddFunc([](const World& world, const ComponentFilter& component) -> entt::entity
 		{
-			const World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
-			const entt::runtime_view view = FindAllEntitiesWithComponents(*world, { &component, 1 });
+			const entt::runtime_view view = FindAllEntitiesWithComponents(world, { &component, 1 });
 
 			if (view.begin() == view.end())
 			{
 				return entt::null;
 			}
 			return *view.begin();
-		}, "Find entity with component", MetaFunc::ExplicitParams<const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Find entity with component", MetaFunc::ExplicitParams<const World&, const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const ComponentFilter& component)
+	type.AddFunc([](const World& world, const ComponentFilter& component)
 		{
-			const World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
-			const entt::runtime_view view = FindAllEntitiesWithComponents(*world, { &component, 1 });
+			const entt::runtime_view view = FindAllEntitiesWithComponents(world, { &component, 1 });
 
 			std::vector<entt::entity> returnValue{};
 			returnValue.reserve(view.size_hint());
 			returnValue.insert(returnValue.end(), view.begin(), view.end());
 
 			return returnValue;
-		}, "Find all entities with component", MetaFunc::ExplicitParams<const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Find all entities with component", MetaFunc::ExplicitParams<const World&, const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const std::vector<ComponentFilter>& components) -> entt::entity
+	type.AddFunc([](const World& world, const std::vector<ComponentFilter>& components) -> entt::entity
 		{
-			const World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
-			const entt::runtime_view view = FindAllEntitiesWithComponents(*world, components);
+			const entt::runtime_view view = FindAllEntitiesWithComponents(world, components);
 
 			if (view.begin() == view.end())
 			{
 				return entt::null;
 			}
 			return *view.begin();
-		}, "Find entity with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Find entity with components", MetaFunc::ExplicitParams<const World&, const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](const std::vector<ComponentFilter>& components)
+	type.AddFunc([](const World& world, const std::vector<ComponentFilter>& components)
 		{
-			const World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-
-			const entt::runtime_view view = FindAllEntitiesWithComponents(*world, components);
+			const entt::runtime_view view = FindAllEntitiesWithComponents(world, components);
 
 			std::vector<entt::entity> returnValue{};
 			returnValue.reserve(view.size_hint());
 			returnValue.insert(returnValue.end(), view.begin(), view.end());
 
 			return returnValue;
-		}, "Find all entities with components", MetaFunc::ExplicitParams<const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Find all entities with components", MetaFunc::ExplicitParams<const World&, const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
-	type.AddFunc([](glm::vec2 screenPosition, float distanceFromCamera)
+	type.AddFunc([](const World& world, glm::vec2 screenPosition, float distanceFromCamera)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->GetViewport().ScreenToWorld(screenPosition, distanceFromCamera);
-		}, "ScreenToWorld", MetaFunc::ExplicitParams<glm::vec2, float>{}, "Screen position", "Distance from camera").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+			return world.GetViewport().ScreenToWorld(screenPosition, distanceFromCamera);
+		}, "ScreenToWorld", MetaFunc::ExplicitParams<const World&, glm::vec2, float>{}, "Screen position", "Distance from camera").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	type.AddFunc([](glm::vec2 screenPosition, float planeHeight)
+	type.AddFunc([](const World& world, glm::vec2 screenPosition, float planeHeight)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->GetViewport().ScreenToWorldPlane(screenPosition, planeHeight);
-		}, "ScreenToWorldPlane", MetaFunc::ExplicitParams<glm::vec2, float>{}, "Screen position", "Plane height").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+			return world.GetViewport().ScreenToWorldPlane(screenPosition, planeHeight);
+		}, "ScreenToWorldPlane", MetaFunc::ExplicitParams<const World&, glm::vec2, float>{}, "Screen position", "Plane height").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
-	type.AddFunc([]()
+	type.AddFunc([](const World& world)
 		{
-			World* world = TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->GetScaledDeltaTime();
-		}, "GetScaledDeltaTime", MetaFunc::ExplicitParams<>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+			return world.GetScaledDeltaTime();
+		}, "GetScaledDeltaTime", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](const World& world)
 		{

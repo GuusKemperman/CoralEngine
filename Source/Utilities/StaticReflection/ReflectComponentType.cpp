@@ -40,12 +40,10 @@ void CE::Internal::ReflectRuntimeComponentType(MetaType& type, bool isEmpty)
 		entityType.AddFunc(
 			[&type](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer) -> FuncResult
 			{
-				World* world = World::TryGetWorldAtTopOfStack();
-				ASSERT(world != nullptr && "Reached a scripting context without pushing a world");
+				World& world = *static_cast<World*>(args[0].GetData());
+				const entt::entity entity = *static_cast<entt::entity*>(args[1].GetData());
 
-				entt::entity entity = *static_cast<entt::entity*>(args[0].GetData());
-
-				Registry& reg = world->GetRegistry();
+				Registry& reg = world.GetRegistry();
 
 				const MetaAny existingComponent = reg.TryGet(type.GetTypeId(), entity);
 
@@ -55,11 +53,11 @@ void CE::Internal::ReflectRuntimeComponentType(MetaType& type, bool isEmpty)
 						type.GetName(), entt::to_integral(entity));
 				}
 
-				return world->GetRegistry().AddComponent(type, entity);
+				return world.GetRegistry().AddComponent(type, entity);
 			},
 			Internal::GetAddComponentFuncName(type.GetName()),
 			MetaFunc::Return{ { type.GetTypeId(), TypeForm::Ref } },
-			MetaFunc::Params{ { MakeTypeTraits<const entt::entity&>(), "Entity" } }).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			MetaFunc::Params{ { MakeTypeTraits<World&>() }, { MakeTypeTraits<entt::entity>() }}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 	}
 
 	if (!isEmpty)
@@ -67,49 +65,42 @@ void CE::Internal::ReflectRuntimeComponentType(MetaType& type, bool isEmpty)
 		entityType.AddFunc(
 			[typeId = type.GetTypeId()](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer) -> FuncResult
 			{
-				World* world = World::TryGetWorldAtTopOfStack();
-				ASSERT(world != nullptr && "Reached a scripting context without pushing a world");
-
-				const entt::entity entity = *static_cast<entt::entity*>(args[0].GetData());
-
-				return world->GetRegistry().TryGet(typeId, entity);
+				World& world = *static_cast<World*>(args[0].GetData());
+				const entt::entity entity = *static_cast<entt::entity*>(args[1].GetData());
+				return world.GetRegistry().TryGet(typeId, entity);
 			},
 			GetGetComponentFuncName(type.GetName()),
 			MetaFuncNamedParam{ { type.GetTypeId(), TypeForm::Ptr } }, // Return value
-			std::vector<MetaFuncNamedParam>{ { MakeTypeTraits<const entt::entity&>() } }
-		).GetProperties().Add(Props::sIsScriptableTag);
-	}
-	else
-	{
-		entityType.AddFunc(
-			[typeId = type.GetTypeId()](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
-			{
-				World* world = World::TryGetWorldAtTopOfStack();
-				ASSERT(world != nullptr && "Reached a scripting context without pushing a world");
-
-				const entt::entity entity = *static_cast<entt::entity*>(args[0].GetData());
-
-				return MetaAny{ world->GetRegistry().HasComponent(typeId, entity), rvoBuffer };
-			},
-			GetHasComponentFuncName(type.GetName()),
-			MetaFuncNamedParam{ MakeTypeTraits<bool>() }, // Return value
-			std::vector<MetaFuncNamedParam>{ { MakeTypeTraits<const entt::entity&>() } }
+			std::vector<MetaFuncNamedParam>{ { MakeTypeTraits<World&>() }, { MakeTypeTraits<entt::entity>() } }
 		).GetProperties().Add(Props::sIsScriptableTag);
 	}
 
 	entityType.AddFunc(
+		[typeId = type.GetTypeId()](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
+		{
+			const World& world = *static_cast<const World*>(args[0].GetData());
+			const entt::entity entity = *static_cast<entt::entity*>(args[1].GetData());
+
+			return MetaAny{ world.GetRegistry().HasComponent(typeId, entity), rvoBuffer };
+		},
+		GetHasComponentFuncName(type.GetName()),
+		MetaFuncNamedParam{ MakeTypeTraits<bool>() }, // Return value
+		std::vector<MetaFuncNamedParam>{ { MakeTypeTraits<const World&>() }, { MakeTypeTraits<const entt::entity&>() } }
+	).GetProperties().Add(Props::sIsScriptableTag);
+	
+
+	entityType.AddFunc(
 		[typeId = type.GetTypeId()](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer) -> FuncResult
 		{
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr && "Reached a scripting context without pushing a world");
+			World& world = *static_cast<World*>(args[0].GetData());
+			const entt::entity entity = *static_cast<entt::entity*>(args[1].GetData());
 
-			const entt::entity entity = *static_cast<entt::entity*>(args[0].GetData());
-			world->GetRegistry().RemoveComponentIfEntityHasIt(typeId, entity);
+			world.GetRegistry().RemoveComponentIfEntityHasIt(typeId, entity);
 			return std::nullopt;
 		},
 		GetRemoveComponentFuncName(type.GetName()),
 		MetaFuncNamedParam{ MakeTypeTraits<void>() }, // Return value
-		std::vector<MetaFuncNamedParam>{ { MakeTypeTraits<const entt::entity&>() } }
+		std::vector<MetaFuncNamedParam>{ { MakeTypeTraits<World&>() }, { MakeTypeTraits<const entt::entity&>() } }
 	).GetProperties().Add(Props::sIsScriptableTag);
 }
 

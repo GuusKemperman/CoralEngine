@@ -304,8 +304,6 @@ void CE::Registry::Destroy(entt::entity entity, bool destroyChildren)
 
 void CE::Registry::RemovedDestroyed()
 {
-	World::PushWorld(mWorld);
-
 	while (true)
 	{
 		{
@@ -376,8 +374,6 @@ void CE::Registry::RemovedDestroyed()
 			mRegistry.destroy(entity);
 		}
 	}
-
-	World::PopWorld();
 }
 
 CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const entt::entity toEntity)
@@ -448,11 +444,7 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 		return MetaAny{ componentClass.GetTypeInfo(), nullptr };
 	}
 
-	World::PushWorld(mWorld);
-
-	FuncResult result = addComponentFunc->InvokeUncheckedUnpacked(toEntity);
-
-	World::PopWorld();
+	FuncResult result = addComponentFunc->InvokeUncheckedUnpacked(GetWorld(), toEntity);
 
 	if (result.HasError())
 	{
@@ -473,7 +465,6 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 
 void CE::Registry::RemoveComponent(const TypeId componentClassTypeId, const entt::entity fromEntity)
 {
-	World::PushWorld(mWorld);
 	entt::sparse_set* storage = Storage(componentClassTypeId);
 	ASSERT(storage != nullptr);
 	ASSERT(storage->contains(fromEntity));
@@ -494,7 +485,6 @@ void CE::Registry::RemoveComponent(const TypeId componentClassTypeId, const entt
 	}
 
 	storage->erase(fromEntity);
-	World::PopWorld();
 }
 
 void CE::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassTypeId, const entt::entity fromEntity)
@@ -506,13 +496,10 @@ void CE::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassTypeI
 		return;
 	}
 
-	World::PushWorld(mWorld);
-
 	if (mWorld.get().HasBegunPlay())
 	{
 		if (!storage->contains(fromEntity))
 		{
-			World::PopWorld();
 			return;
 		}
 
@@ -530,7 +517,6 @@ void CE::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassTypeI
 	}
 
 	storage->remove(fromEntity);
-	World::PopWorld();
 }
 
 std::vector<CE::MetaAny> CE::Registry::GetComponents(entt::entity entity)
@@ -577,8 +563,6 @@ bool CE::Registry::HasComponent(TypeId componentClassTypeId, entt::entity entity
 
 void CE::Registry::Clear()
 {
-	World::PushWorld(mWorld);
-
 	for (const entt::entity entity : mRegistry.storage<entt::entity>())
 	{
 		if (!HasComponent<IsDestroyedTag>(entity))
@@ -587,7 +571,6 @@ void CE::Registry::Clear()
 		}
 	}
 	RemovedDestroyed();
-	World::PopWorld();
 }
 
 std::vector<CE::Registry::SingleTick> CE::Registry::GetSortedSystemsToUpdate(const float dt)
@@ -713,8 +696,6 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 		return;
 	}
 
-	World::PushWorld(mWorld);
-
 	for (const BoundEvent& boundEvent : mWorld.get().GetEventManager().GetBoundEvents(sOnBeginPlay))
 	{
 		entt::sparse_set* storage = Storage(boundEvent.mType.get().GetTypeId());
@@ -743,8 +724,6 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 			}
 		}
 	}
-
-	World::PopWorld();
 }
 
 bool CE::Registry::ShouldWeCallBeginPlayImmediatelyAfterConstruct(entt::entity ownerOfNewlyConstructedComponent) const
