@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Utilities/Imgui/WorldDetailsPanel.h"
 
-#include "Components/ComponentFilter.h"
+#include "Utilities/ComponentFilter.h"
 #include "Components/NameComponent.h"
 #include "Components/TransformComponent.h"
 #include "Utilities/Imgui/ImguiHelpers.h"

@@ -44,8 +44,5 @@ namespace CE
 #endif
 #endif
 
-namespace CE
-{
 #define ENGINE_ALLOCA _alloca
 #define FORCE_INLINE __forceinline
-}

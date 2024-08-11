@@ -91,8 +91,6 @@ namespace CE
 
 namespace CE
 {
-	class Ability;
-	class Weapon;
 	class Material;
 	class StaticMesh;
 	class Level;
@@ -119,12 +117,6 @@ CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<CE::Texture>& for
 
 template<>
 CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<CE::Script>& forAsset);
-
-template<>
-CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<CE::Ability>& forAsset);
-
-template<>
-CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<CE::Weapon>& forAsset);
 
 template<>
 CE::GetThumbnailRet GetThumbNailImpl(const CE::WeakAssetHandle<CE::Level>& forAsset);

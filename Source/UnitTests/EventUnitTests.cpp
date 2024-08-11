@@ -9,7 +9,6 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/Events.h"
 #include "Meta/MetaType.h"
-#include "Components/UtilityAi/EnemyAiControllerComponent.h"
 
 namespace CE
 {
@@ -228,46 +227,6 @@ UNIT_TEST(Events, OnDestructDestroyEntity)
 	// I guess we can't really test the num of destructs if the instance were destroyed..
 	// But we have the static one atleast
 	TEST_ASSERT(EmptyEventTestingComponent::sNumOfDestructs == 1);
-
-	return UnitTest::Success;
-}
-
-UNIT_TEST(Events, OnAiTick)
-{
-	using namespace CE;
-
-	World world{true};
-	entt::entity owner = InitTest(world);
-
-	world.GetRegistry().AddComponent<EnemyAiControllerComponent>(owner);
-
-	world.Tick(sOnFixedTickStepSize * .5f);
-
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiTicks == 1);
-
-	world.Tick(sOnFixedTickStepSize * .5f);
-
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiTicks == 2);
-
-	return UnitTest::Success;
-}
-
-UNIT_TEST(Events, OnAiEvaluate)
-{
-	using namespace CE;
-
-	World world{true};
-	entt::entity owner = InitTest(world);
-
-	world.GetRegistry().AddComponent<EnemyAiControllerComponent>(owner);
-
-	world.Tick(sOnFixedTickStepSize * .5f);
-
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiEvaluates == 1);
-
-	world.Tick(sOnFixedTickStepSize * .5f);
-
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfAiEvaluates == 2);
 
 	return UnitTest::Success;
 }

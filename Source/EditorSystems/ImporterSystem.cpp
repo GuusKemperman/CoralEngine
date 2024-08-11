@@ -313,6 +313,11 @@ std::vector<CE::ImporterSystem::ImportRequest> CE::ImporterSystem::GetFilesToImp
 {
 	std::vector<ImportRequest> importableAssets{};
 
+	if (!std::filesystem::is_directory(directory.mDirectory))
+	{
+		return importableAssets;
+	}
+
 	for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(directory.mDirectory))
 	{
 		if (!dirEntry.is_regular_file())

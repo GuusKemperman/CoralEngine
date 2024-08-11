@@ -18,10 +18,6 @@ namespace CE
 
 		static void OnFixedTick(World& world, entt::entity owner, float dt);
 
-		static void OnAiTick(World& world, entt::entity owner, float dt);
-
-		static float OnAiEvaluate(const World& world, entt::entity owner);
-
 		static void OnCollisionEntry(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
 		static void OnCollisionStay(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
 		static void OnCollisionExit(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
@@ -33,8 +29,6 @@ namespace CE
 		static inline uint32 sNumOfBeginPlays{};
 		static inline uint32 sNumOfTicks{};
 		static inline uint32 sNumOfFixedTicks{};
-		static inline uint32 sNumOfAiTicks{};
-		static inline uint32 sNumOfAiEvaluates{};
 		static inline uint32 sNumOfCollisionEntry{};
 		static inline uint32 sNumOfCollisionStay{};
 		static inline uint32 sNumOfCollisionExit{};
@@ -60,10 +54,6 @@ namespace CE
 
 		void OnFixedTick(World& world, entt::entity owner, float dt);
 
-		void OnAiTick(World& world, entt::entity owner, float dt);
-
-		float OnAiEvaluate(const World& world, entt::entity owner);
-
 		void OnCollisionEntry(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
 		void OnCollisionStay(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
 		void OnCollisionExit(World&, entt::entity, entt::entity, float, glm::vec2, glm::vec2);
@@ -73,8 +63,6 @@ namespace CE
 		uint32 mNumOfBeginPlays{};
 		uint32 mNumOfTicks{};
 		uint32 mNumOfFixedTicks{};
-		uint32 mNumOfAiTicks{};
-		uint32 mNumOfAiEvaluates{};
 		uint32 mNumOfCollisionEntry{};
 		uint32 mNumOfCollisionStay{};
 		uint32 mNumOfCollisionExit{};

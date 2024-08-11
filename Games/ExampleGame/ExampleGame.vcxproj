@@ -222,7 +222,6 @@
     <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Components\EnvironmentGeneratorComponent.cpp" />
     <ClCompile Include="Source\Core\Main.cpp" />
     <ClCompile Include="Source\Core\Precomp.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorRelease|x64'">Create</PrecompiledHeader>
@@ -230,7 +229,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EditorDebug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Source\Systems\EnvironmentGeneratorSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\ExampleGame\Precomp.h" />

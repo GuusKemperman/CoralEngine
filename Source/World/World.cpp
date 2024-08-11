@@ -4,7 +4,7 @@
 #include <stack>
 #include "entt/entity/runtime_view.hpp"
 
-#include "Components/ComponentFilter.h"
+#include "Utilities/ComponentFilter.h"
 #include "Components/NameComponent.h"
 #include "Meta/MetaProps.h"
 #include "World/Registry.h"
