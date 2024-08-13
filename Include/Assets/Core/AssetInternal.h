@@ -16,18 +16,17 @@ namespace CE::Internal
 	{
 		AssetInternal(AssetFileMetaData&& metaData, const std::optional<std::filesystem::path>& path);
 
-		void Load();
-		void UnLoad();
+		Asset* TryGetLoadedAsset();
 
 		enum class RefCountType : bool { Strong, Weak };
 
-		std::array<uint32, 2> mRefCounters{};
-
 		std::unique_ptr<Asset, InPlaceDeleter<Asset, true>> mAsset{};
 
-		AssetFileMetaData mMetaData;
+		std::array<std::atomic<uint32>, 2> mRefCounters{};
+		std::atomic<bool> mHasBeenDereferencedSinceGarbageCollect{};
+		std::mutex mAccessMutex{};
 
-		bool mHasBeenDereferencedSinceGarbageCollect{};
+		AssetFileMetaData mMetaData;
 
 		// The .asset file. Is only nullopt if this
 		// asset was generated at runtime, and no path
@@ -36,6 +35,5 @@ namespace CE::Internal
 
 		// The .rename files that redirect to this asset.
 		std::vector<std::filesystem::path> mOldNames{};
-
 	};
 }

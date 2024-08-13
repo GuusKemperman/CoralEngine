@@ -1,7 +1,6 @@
 #include "Precomp.h"
 #include "Core/Renderer.h"
 
-#include <OCIdl.h>
 #include <glad/glad.h>
 
 #include "Assets/Material.h"
@@ -41,6 +40,11 @@ struct CE::TexturePlatformImpl
 
 CE::TexturePlatformImpl::~TexturePlatformImpl()
 {
+	if (mPendingInit != nullptr)
+	{
+		return;
+	}
+
 	glDeleteTextures(1, &mId);
 	CHECK_GL;
 }
@@ -78,6 +82,11 @@ struct CE::FrameBufferPlatformImpl
 
 CE::StaticMeshPlatformImpl::~StaticMeshPlatformImpl()
 {
+	if (mPendingInit != nullptr)
+	{
+		return;
+	}
+
 	glDeleteVertexArrays(1, &mVao);
 	glDeleteBuffers(1, &mEbo);
 	glDeleteBuffers(static_cast<GLsizei>(mVbos.size()), mVbos.data());
@@ -86,6 +95,11 @@ CE::StaticMeshPlatformImpl::~StaticMeshPlatformImpl()
 
 CE::FrameBufferPlatformImpl::~FrameBufferPlatformImpl()
 {
+	if (!mIsInitialized)
+	{
+		return;
+	}
+
 	glDeleteFramebuffers(1, &mFrameBuffer);
 	glDeleteRenderbuffers(1, &mDepthTexture);
 	CHECK_GL;
@@ -149,8 +163,8 @@ struct CE::RenderCommandQueue
 		glm::mat4 mTransform{};
 		glm::vec4 mMultiplicativeColor{};
 		glm::vec4 mAdditiveColor{};
-		AssetHandle<StaticMesh> mStaticMesh{};
-		AssetHandle<Material> mMaterial{};
+		std::shared_ptr<StaticMeshPlatformImpl> mStaticMesh{};
+		std::shared_ptr<TexturePlatformImpl> mBaseColorTexture{};
 	};
 	std::vector<StaticMeshEntry> mStaticMeshes{};
 	std::mutex mStaticMeshesMutex{};
@@ -191,6 +205,11 @@ struct CE::Renderer::Impl
 CE::Renderer::Renderer() :
 	mImpl(new Impl)
 {
+	if (Device::IsHeadless())
+	{
+		return;
+	}
+
 	// Consume any initial values
 	CHECK_GL;
 
@@ -206,22 +225,9 @@ CE::Renderer::Renderer() :
 	// Array buffer contains the attribute data
 	glBindBuffer(GL_ARRAY_BUFFER, mImpl->mLinesVBO);
 
-	struct Test
-	{
-		float posX;
-		float posY;
-		float posZ;
-		float colR;
-		float colG;
-		float colB;
-		float colA;
-	};
-
 	static constexpr size_t sizePos = sizeof(glm::vec3);
 	static constexpr size_t sizeCol = sizeof(glm::vec4);
 	static constexpr size_t sizeTotal = sizePos + sizeCol;
-	static_assert(sizeTotal == sizeof(Test));
-	static_assert(sizePos == offsetof(Test, colR));
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeTotal, nullptr);
@@ -241,8 +247,15 @@ void CE::Renderer::AddStaticMesh(RenderCommandQueue& context, const AssetHandle<
 	const AssetHandle<Material>& material, const glm::mat4& transform, glm::vec4 multiplicativeColor,
 	glm::vec4 additiveColor)
 {
+	if (mesh == nullptr
+		|| material == nullptr
+		|| material->mBaseColorTexture == nullptr)
+	{
+		return;
+	}
+
 	std::scoped_lock lock{ context.mStaticMeshesMutex };
-	context.mStaticMeshes.emplace_back(transform, multiplicativeColor, additiveColor, mesh, material);
+	context.mStaticMeshes.emplace_back(transform, multiplicativeColor, additiveColor, mesh->GetPlatformImpl(), material->mBaseColorTexture->GetPlatformImpl());
 }
 
 void CE::Renderer::AddDirectionalLight(RenderCommandQueue& context, glm::vec3 direction, glm::vec4 color) const
@@ -301,15 +314,37 @@ void CE::Renderer::SetRenderTarget(RenderCommandQueue& context, const glm::mat4&
 
 void CE::Renderer::RunCommandQueues()
 {
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	const std::scoped_lock lock
+	{
+		mImpl->mTexturesMutex,
+		mImpl->mStaticMeshesMutex,
+		mImpl->mCommandQueueMutex,
+		mImpl->mFrameBuffersMutex
+	};
 
 	static constexpr auto isLastReference = [](const auto& sharedPtr) -> bool
 		{
 			return sharedPtr.use_count() <= 1;
 		};
 
+	const auto cleanUp = [this]
+		{
+			std::erase_if(mImpl->mTextures, isLastReference);
+			std::erase_if(mImpl->mStaticMeshes, isLastReference);
+			std::erase_if(mImpl->mCommandQueues, isLastReference);
+			std::erase_if(mImpl->mFrameBuffers, isLastReference);
+		};
+
+	if (Device::IsHeadless())
 	{
-		const std::scoped_lock lock{ mImpl->mTexturesMutex };
+		cleanUp();
+		return;
+	}
+
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+	{
+		std::erase_if(mImpl->mTextures, isLastReference);
 
 		for (const std::shared_ptr<TexturePlatformImpl>& texture : mImpl->mTextures)
 		{
@@ -333,7 +368,7 @@ void CE::Renderer::RunCommandQueues()
 	}
 
 	{
-		const std::scoped_lock lock{ mImpl->mStaticMeshesMutex };
+		std::erase_if(mImpl->mStaticMeshes, isLastReference);
 
 		for (const std::shared_ptr<StaticMeshPlatformImpl>& staticMesh : mImpl->mStaticMeshes)
 		{
@@ -400,7 +435,7 @@ void CE::Renderer::RunCommandQueues()
 	}
 
 	{
-		std::scoped_lock lock{ mImpl->mFrameBuffersMutex };
+		std::erase_if(mImpl->mFrameBuffers, isLastReference);
 
 		for (const std::shared_ptr<FrameBufferPlatformImpl>& frameBuffer : mImpl->mFrameBuffers)
 		{
@@ -428,8 +463,6 @@ void CE::Renderer::RunCommandQueues()
 		}
 	}
 
-	std::scoped_lock commandQueueMutex{ mImpl->mCommandQueueMutex };
-
 	for (const std::shared_ptr<RenderCommandQueue>& commandQueue : mImpl->mCommandQueues)
 	{
 		if (!commandQueue->mRenderTargetEntry.has_value())
@@ -437,7 +470,13 @@ void CE::Renderer::RunCommandQueues()
 			continue;
 		}
 
-		std::scoped_lock targetLock{ commandQueue->mRenderTargetMutex };
+		std::scoped_lock commandQueueLock
+		{
+			commandQueue->mPointLightsMutex,
+			commandQueue->mDirectionalLightsMutex,
+			commandQueue->mRenderTargetMutex,
+			commandQueue->mStaticMeshesMutex
+		};
 
 		FrameBufferPlatformImpl* target = commandQueue->mRenderTargetEntry->mTarget.get();
 
@@ -465,8 +504,6 @@ void CE::Renderer::RunCommandQueues()
 		const GLint texture_location = glGetUniformLocation(program, "u_texture");
 
 		{
-			std::scoped_lock lock{ commandQueue->mDirectionalLightsMutex };
-
 			// Send the directional lights to the standard program
 			glUniform1i(glGetUniformLocation(program, "u_num_directional_lights"), static_cast<int>(commandQueue->mDirectionalLights.size()));
 
@@ -482,8 +519,6 @@ void CE::Renderer::RunCommandQueues()
 		}
 
 		{
-			std::scoped_lock lock{ commandQueue->mPointLightsMutex };
-
 			// Send the point lights to the standard program	
 			glUniform1i(glGetUniformLocation(program, "u_num_point_lights"), static_cast<int>(commandQueue->mPointLights.size()));
 
@@ -502,32 +537,21 @@ void CE::Renderer::RunCommandQueues()
 		}
 
 		{
-			std::scoped_lock lock{ commandQueue->mStaticMeshesMutex };
 			// SetRenderTarget each entry
 			for (const RenderCommandQueue::StaticMeshEntry& entry : commandQueue->mStaticMeshes)
 			{
 				if (entry.mStaticMesh == nullptr
-					|| entry.mMaterial == nullptr
-					|| entry.mMaterial->mBaseColorTexture == nullptr)
-				{
-					continue;
-				}
-
-				const TexturePlatformImpl* texture = entry.mMaterial->mBaseColorTexture->GetPlatformImpl();
-				const StaticMeshPlatformImpl* staticMesh = entry.mStaticMesh->GetPlatformImpl();
-
-				if (texture == nullptr
-					|| staticMesh == nullptr)
+					|| entry.mBaseColorTexture == nullptr)
 				{
 					continue;
 				}
 
 				// Bind the vertex array
-				glBindVertexArray(staticMesh->mVao);
+				glBindVertexArray(entry.mStaticMesh->mVao);
 
 				// Bind the texture
 				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, texture->mId);
+				glBindTexture(GL_TEXTURE_2D, entry.mBaseColorTexture->mId);
 				// texture_location
 				glUniform1i(texture_location, 0);
 
@@ -539,7 +563,7 @@ void CE::Renderer::RunCommandQueues()
 				glUniform3fv(glGetUniformLocation(program, "u_add_color"), 1, &entry.mAdditiveColor[0]);
 
 				// Draw the mesh
-				glDrawElements(GL_TRIANGLES, staticMesh->mNumOfIndices, GL_UNSIGNED_INT, 0);
+				glDrawElements(GL_TRIANGLES, entry.mStaticMesh->mNumOfIndices, GL_UNSIGNED_INT, 0);
 			}
 
 			commandQueue->mStaticMeshes.clear();
@@ -567,6 +591,7 @@ void CE::Renderer::RunCommandQueues()
 			commandQueue->mTotalNumOfLinesRequested = 0;
 		}
 
+		commandQueue->mRenderTargetEntry.reset();
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		const glm::ivec2 screenSize = Device::Get().GetDisplaySize();
@@ -574,12 +599,7 @@ void CE::Renderer::RunCommandQueues()
 		CHECK_GL;
 	}
 
-	std::scoped_lock resourcesLock{ mImpl->mTexturesMutex, mImpl->mStaticMeshesMutex, mImpl->mFrameBuffersMutex };
-
-	std::erase_if(mImpl->mFrameBuffers, isLastReference);
-	std::erase_if(mImpl->mCommandQueues, isLastReference);
-	std::erase_if(mImpl->mStaticMeshes, isLastReference);
-	std::erase_if(mImpl->mTextures, isLastReference);
+	cleanUp();
 }
 
 std::shared_ptr<CE::RenderCommandQueue> CE::Renderer::CreateCommandQueue()

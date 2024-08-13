@@ -44,9 +44,9 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 	if (!isHeadless)
 	{
 		Device::StartUp(DeviceConfiguration{});
-		Renderer::StartUp();
 	}
 
+	Renderer::StartUp();
 	Audio::StartUp();
 	Input::StartUp();
 
@@ -114,10 +114,10 @@ CE::Engine::~Engine()
 	MetaManager::ShutDown();
 	Audio::ShutDown();
 	Input::ShutDown();
+	Renderer::ShutDown();
 
 	if (!Device::IsHeadless())
 	{
-		Renderer::ShutDown();
 		Device::ShutDown();
 	}
 
@@ -208,7 +208,7 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 
 		if (timeElapsedSinceLastGarbageCollect > garbageCollectInterval)
 		{
-			AssetManager::Get().UnloadAllUnusedAssets();
+			AssetManager::Get().UnloadAllUnusedAssets(true);
 			timeElapsedSinceLastGarbageCollect = 0.0f;
 		}
 	}

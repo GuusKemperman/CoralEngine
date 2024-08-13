@@ -325,6 +325,7 @@
     <ClCompile Include="Source\Systems\Rendering\ParticleRenderingSystem.cpp" />
     <ClCompile Include="Source\Systems\Rendering\StaticMeshRenderingSystem.cpp" />
     <ClCompile Include="Source\UnitTests\AssetHandleUnitTests.cpp" />
+    <ClCompile Include="Source\UnitTests\AssetManagerUnitTests.cpp" />
     <ClCompile Include="Source\Utilities\BVH.cpp" />
     <ClCompile Include="Source\Utilities\Events.cpp" />
     <ClCompile Include="Source\Utilities\Imgui\WorldDetailsPanel.cpp">

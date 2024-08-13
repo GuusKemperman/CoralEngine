@@ -23,6 +23,11 @@ CE::AssetHandleBase::AssetHandleBase(AssetHandleBase&& other) noexcept :
 
 CE::AssetHandleBase& CE::AssetHandleBase::operator=(AssetHandleBase&& other) noexcept
 {
+	if (this == &other)
+	{
+		return *this;
+	}
+
 	mAssetInternal = other.mAssetInternal;
 	other.mAssetInternal = nullptr;
 	return *this;
@@ -64,14 +69,6 @@ bool CE::AssetHandleBase::IsLoaded() const
 	return mAssetInternal != nullptr && mAssetInternal->mAsset != nullptr;
 }
 
-void CE::AssetHandleBase::Unload()
-{
-	if (IsLoaded())
-	{
-		mAssetInternal->UnLoad();
-	}
-}
-
 const std::optional<std::filesystem::path>& CE::AssetHandleBase::GetFileOfOrigin() const
 {
 	AssureNotNull();
@@ -111,6 +108,17 @@ uint32 CE::AssetHandleBase::GetNumberOfSoftReferences() const
 	}
 
 	return mAssetInternal->mRefCounters[static_cast<int>(Internal::AssetInternal::RefCountType::Weak)];
+}
+
+const CE::Asset* CE::AssetHandleBase::GetAssetBase() const
+{
+	if (mAssetInternal == nullptr)
+	{
+		return nullptr;
+	}
+
+	mAssetInternal->mHasBeenDereferencedSinceGarbageCollect = true;
+	return mAssetInternal->TryGetLoadedAsset();
 }
 
 void CE::AssetHandleBase::AssureNotNull() const

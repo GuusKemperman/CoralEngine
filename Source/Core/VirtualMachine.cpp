@@ -367,12 +367,18 @@ void CE::VirtualMachine::DestroyAllTypesCreatedThroughScripts()
 	}
 }
 
+CE::VirtualMachine::Stack& CE::VirtualMachine::GetStack()
+{
+	thread_local Stack stack{};
+	return stack;
+}
+
 CE::VirtualMachine::VMContext::VMContext(const ScriptFunc& func) :
 	mFunc(func)
 {
 	VirtualMachine& vm = VirtualMachine::Get();
 
-	mStackPtrToFallBackTo = vm.mStackPtr;
+	mStackPtrToFallBackTo = GetStack().mStackPtr;
 	uint32 size = static_cast<uint32>(func.GetNumOfPinsIncludingRemoved() * sizeof(CachedValue));
 	mCachedValues = static_cast<CachedValue*>(vm.StackAllocate(size, 8));
 
@@ -402,19 +408,20 @@ CE::VirtualMachine::VMContext::~VMContext()
 		vm.FreeCachedValue(cachedValue, metaType);
 	}
 
-	vm.mStackPtr = mStackPtrToFallBackTo;
+	GetStack().mStackPtr = mStackPtrToFallBackTo;
 }
 
 void* CE::VirtualMachine::StackAllocate(uint32 numOfBytes, uint32 alignment)
 {
-	size_t sizeLeft = reinterpret_cast<uintptr>(&mStack.back()) - reinterpret_cast<uintptr>(mStackPtr) + 1;
+	Stack& stack = GetStack();
+	size_t sizeLeft = reinterpret_cast<uintptr>(&stack.mData.back()) - reinterpret_cast<uintptr>(stack.mStackPtr) + 1;
 
-	void* stackPtrAsVoid = mStackPtr;
+	void* stackPtrAsVoid = stack.mStackPtr;
 	void* allocatedAt = std::align(alignment, numOfBytes, stackPtrAsVoid, sizeLeft);
 
 	if (allocatedAt != nullptr)
 	{
-		mStackPtr = static_cast<char*>(allocatedAt) + numOfBytes;
+		stack.mStackPtr = static_cast<char*>(allocatedAt) + numOfBytes;
 	}
 	return allocatedAt;
 }

@@ -5,6 +5,7 @@
 
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
+#include "Core/Device.h"
 #include "Core/Renderer.h"
 #include "Utilities/ClassVersion.h"
 #include "Utilities/StringFunctions.h"
@@ -81,7 +82,6 @@ CE::StaticMesh::StaticMesh(AssetLoadInfo& loadInfo) :
 CE::MetaType CE::StaticMesh::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<StaticMesh>{}, "StaticMesh", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
-	type.GetProperties().Add(Props::sCannotReferenceOtherAssetsTag);
 
 	SetClassVersion(type, 1);
 

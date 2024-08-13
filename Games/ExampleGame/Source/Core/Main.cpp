@@ -3,18 +3,8 @@
 
 int main(int argc, char* argv[])
 {
-	std::cout << "Entered main - GameDir: " << GAME_DIR << std::endl;
+	CE::Engine engine{ argc, argv, GAME_DIR };
+	engine.Run("TestLevel");
 
-	try
-	{
-		CE::Engine engine{ argc, argv, GAME_DIR };
-		engine.Run("TestLevel");
-	}
-	catch ([[maybe_unused]] const std::exception& e)
-	{
-		std::cerr << "Fatal exception - " << e.what() << std::endl;
-		return 904;
-	}
-	
 	return 0;
 }

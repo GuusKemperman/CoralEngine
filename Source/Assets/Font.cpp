@@ -67,7 +67,6 @@ CE::Font::Font(AssetLoadInfo& loadInfo) :
 CE::MetaType CE::Font::Reflect()
 {
     MetaType type = MetaType{ MetaType::T<Font>{}, "Font", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
-    type.GetProperties().Add(Props::sCannotReferenceOtherAssetsTag);
     ReflectAssetType<Font>(type);
     return type;
 }

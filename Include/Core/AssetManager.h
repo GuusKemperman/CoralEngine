@@ -76,14 +76,29 @@ namespace CE
 		WeakAssetHandle<T> TryGetWeakAsset(Name key);
 
 		/*
-		If you want to save on memory, it is recommended to call this every frame
-		or at an interval, at the cost that this will lead to assets 
-		being loaded/unloaded more frequently.
+		
 
-		Assets generated at runtime are not unloaded automatically, because
-		they cannot be loaded back in by the asset manager.
+
 		*/
-		void UnloadAllUnusedAssets();
+		/**
+		 * \brief Unloads all assets that are considered unused.
+		 *
+		 * If you want to save on memory, it is recommended to
+		 * call this at an interval, at the cost that this will
+		 * lead to assets being loaded/unloaded more frequently.
+		 *
+		 * An asset may be considered based on a variety of factors,
+		 * such as the number of references or if it was recently
+		 * loaded.
+		 *
+		 * Assets generated at runtime are not unloaded automatically,
+		 * because they cannot be loaded back in by the asset manager.
+		 *
+		 * \param shouldSkipRecentlyDereferenced Assets that were
+		 * dereferenced since the last time this function was called
+		 * are always considered in use.
+		 */
+		void UnloadAllUnusedAssets(bool shouldSkipRecentlyDereferenced);
 
 		template<typename AssetType>
 		class EachAssetIt
@@ -193,7 +208,6 @@ namespace CE
 		std::unordered_map<Name::HashType, std::reference_wrapper<Internal::AssetInternal>> mLookUp{};
 
 		Internal::AssetInternal* TryGetAssetInternal(Name key, TypeId typeId);
-		Internal::AssetInternal* TryGetLoadedAssetInternal(Name key, TypeId typeId);
 
 		Internal::AssetInternal* TryConstruct(const std::filesystem::path& path);
 		Internal::AssetInternal* TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData);

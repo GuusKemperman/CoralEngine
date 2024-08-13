@@ -12,21 +12,20 @@ CE::Internal::AssetInternal::AssetInternal(AssetFileMetaData&& metaData, const s
 {
 }
 
-void CE::Internal::AssetInternal::Load()
+CE::Asset* CE::Internal::AssetInternal::TryGetLoadedAsset()
 {
-	LOG(LogAssets, Verbose, "Loading {}", mMetaData.GetName());
+	std::unique_lock lock{ mAccessMutex };
 
 	if (mAsset != nullptr)
 	{
-		LOG(LogAssets, Warning, "Attempting to load {} twice", mMetaData.GetName());
-		return;
+		return mAsset.get();
 	}
 
 	if (!mFileOfOrigin.has_value())
 	{
 		LOG(LogAssets, Error, "Attempted to load {}, but this asset was generated at runtime and should not have been unloaded to begin with.",
 			mMetaData.GetName());
-		return;
+		return nullptr;
 	}
 
 	std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromFile(*mFileOfOrigin);
@@ -35,7 +34,7 @@ void CE::Internal::AssetInternal::Load()
 	{
 		LOG(LogAssets, Error, "Asset {} could not be loaded, the metadata failed to load.",
 			mMetaData.GetName());
-		return;
+		return nullptr;
 	}
 
 	ASSERT(loadInfo.has_value());
@@ -47,19 +46,8 @@ void CE::Internal::AssetInternal::Load()
 		LOG(LogAssets, Error, "Asset of type {} could not be constructed. Does it have a constructor that takes a LoadInfo&, and was this constructor reflected in your reflect function? {}",
 			mMetaData.GetClass().GetName(),
 			constructResult.Error());
-		return;
+		return nullptr;
 	}
 	mAsset = MakeUnique<Asset>(std::move(constructResult.GetReturnValue()));
-}
-
-void CE::Internal::AssetInternal::UnLoad()
-{
-	if (mAsset != nullptr)
-	{
-		mAsset.reset();
-	}
-	else
-	{
-		LOG(LogAssets, Verbose, "Asset {} is already unloaded", mMetaData.GetName());
-	}
+	return mAsset.get();
 }
