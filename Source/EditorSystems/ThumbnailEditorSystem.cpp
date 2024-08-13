@@ -143,11 +143,11 @@ ImTextureID CE::ThumbnailEditorSystem::GetThumbnail(const WeakAssetHandle<>& for
 
 		if (texture.index() == 1)
 		{
-			return Renderer::Get().GetPlatformId(std::get<1>(texture).GetPlatformImpl());
+			return Renderer::Get().GetPlatformId(std::get<1>(texture).GetPlatformImpl().get());
 		}
 
 		const AssetHandle<Texture> handle = std::get<0>(texture);
-		return handle == nullptr ? nullptr : Renderer::Get().GetPlatformId(handle->GetPlatformImpl());
+		return handle == nullptr ? nullptr : Renderer::Get().GetPlatformId(handle->GetPlatformImpl().get());
 	}
 
 	const auto inQueue = std::find_if(mGenerateQueue.begin(), mGenerateQueue.end(), 
@@ -204,7 +204,7 @@ void CE::ThumbnailEditorSystem::DisplayImGuiImage(const WeakAssetHandle<>& forAs
 ImTextureID CE::ThumbnailEditorSystem::GetDefaultThumbnail()
 {
 	AssetHandle<Texture> icon = AssetManager::Get().TryGetAsset<Texture>("T_DefaultIcon");
-	return icon == nullptr ? nullptr : Renderer::Get().GetPlatformId(icon->GetPlatformImpl());
+	return icon == nullptr ? nullptr : Renderer::Get().GetPlatformId(icon->GetPlatformImpl().get());
 }
 
 bool CE::ThumbnailEditorSystem::AreAllAssetsLoaded(const Timer& timeOut)

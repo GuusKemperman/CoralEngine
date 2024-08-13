@@ -91,8 +91,12 @@ namespace CE
 		static constexpr uint32 sMaxNumOfNodesToExecutePerFunctionBeforeGivingUp = 10'000;
 		static constexpr uint32 sMaxStackSize = 1 << 16;
 
-		std::array<char, sMaxStackSize> mStack{};
-		char* mStackPtr = &mStack[0];
+		struct Stack
+		{
+			std::array<char, sMaxStackSize> mData;
+			char* mStackPtr = mData.data();
+		};
+		static Stack& GetStack();
 
 		std::vector<ScriptError> mErrorsFromLastCompilation{};
 		bool mIsCompiled{};

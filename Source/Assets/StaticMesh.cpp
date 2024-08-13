@@ -5,6 +5,7 @@
 
 #include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Core/AssetSaveInfo.h"
+#include "Core/Device.h"
 #include "Core/Renderer.h"
 #include "Utilities/ClassVersion.h"
 #include "Utilities/StringFunctions.h"

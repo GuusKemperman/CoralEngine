@@ -25,7 +25,7 @@ namespace CE
 
 		glm::ivec2 GetSize() const { return mSize; }
 
-		TexturePlatformImpl* GetPlatformImpl() const { return mImpl.get(); }
+		const std::shared_ptr<TexturePlatformImpl>& GetPlatformImpl() const { return mImpl; }
 
 		static AssetHandle<Texture> TryGetDefaultTexture();
 

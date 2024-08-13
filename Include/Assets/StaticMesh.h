@@ -24,7 +24,7 @@ namespace CE
         AABB3D GetBoundingBox() const { return mBoundingBox; }
 #endif
 
-        const StaticMeshPlatformImpl* GetPlatformImpl() const { return mImpl.get(); }
+        const std::shared_ptr<StaticMeshPlatformImpl>& GetPlatformImpl() const { return mImpl; }
 
     private:
         friend ReflectAccess;
