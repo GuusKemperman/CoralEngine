@@ -43,7 +43,7 @@ CE::MetaType::MetaType(T<TypeT>, const std::string_view name, Args&&... args) :
 			{
 				lhs = std::move(rhs);
 				return lhs;
-			}, OperatorType::assign, MetaFunc::ExplicitParams<TypeT&, TypeT&&>{});
+			}, OperatorType::assign);
 		ASSERT(TryGetMoveAssign() != nullptr);
 	}
 
@@ -54,7 +54,7 @@ CE::MetaType::MetaType(T<TypeT>, const std::string_view name, Args&&... args) :
 			{
 				lhs = rhs;
 				return lhs;
-			}, OperatorType::assign, MetaFunc::ExplicitParams<TypeT&, const TypeT&>{});
+			}, OperatorType::assign);
 		ASSERT(TryGetCopyAssign() != nullptr);
 	}
 
@@ -62,31 +62,19 @@ CE::MetaType::MetaType(T<TypeT>, const std::string_view name, Args&&... args) :
 		[](void* addr)
 		{
 			static_cast<TypeT*>(addr)->~TypeT();
-		}, OperatorType::destructor, MetaFunc::ExplicitParams<void*>{});
+		}, OperatorType::destructor);
 }
 
 template<typename FuncPtr, typename... Args>
 CE::MetaFunc& CE::MetaType::AddFunc(FuncPtr&& funcPtr, const MetaFunc::NameOrTypeInit nameOrType, Args&& ...args)
 {
-	const auto result = mFunctions.emplace(nameOrType, MetaFunc{ std::forward<FuncPtr>(funcPtr), nameOrType, std::forward<Args>(args)... });
-	return result->second;
+	return AddFunc(MetaFunc{ std::forward<FuncPtr>(funcPtr), nameOrType, std::forward<Args>(args)... });
 }
 
 template<typename ...Args>
 CE::MetaField& CE::MetaType::AddField([[maybe_unused]] Args&& ... args)
 {
-	MetaField& returnValue = mFields.emplace_back(*this, std::forward<Args>(args)...);
-
-#ifdef ASSERTS_ENABLED
-	auto it = std::find_if(mFields.begin(), mFields.end() - 1,
-		[&returnValue](const MetaField& field)
-		{
-			return field.GetName() == returnValue.GetName();
-		});
-	ASSERT_LOG(it == mFields.end() - 1, "{}::{} has already been added", GetName(), returnValue.GetName());
-#endif // ASSERTS_ENABLED
-
-	return returnValue;
+	return AddField(MetaField{ *this, std::forward<Args>(args)... });
 }
 
 namespace CE::Internal

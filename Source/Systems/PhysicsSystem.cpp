@@ -504,7 +504,7 @@ CE::MetaType CE::PhysicsSystem::Reflect()
 		{
 			return ResolveDiskCollision({ entity1 , entity2, depth, normalFor1, contactPoint }, bodyToMove, otherBody, bodyPosition).mResolvedPosition;
 		},
-		"ResolveCollision", MetaFunc::ExplicitParams<entt::entity , entt::entity , float, glm::vec2, glm::vec2, const PhysicsBody2DComponent&, const PhysicsBody2DComponent&, glm::vec2>{}, 
+		"ResolveCollision", 
 		"Entity1", "Entity2", "Depth", "NormalFor1", "ContactPoint", "PhysicsBodyToMove", "OtherPhysicsBody", "BodyPosition").GetProperties().Add(Props::sIsScriptableTag);
 
 	return metaType;

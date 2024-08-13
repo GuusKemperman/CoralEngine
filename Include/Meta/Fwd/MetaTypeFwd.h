@@ -95,10 +95,12 @@ namespace CE
 			typevec2.AddField(&vec2::z, "Z");
 		*/
 		template<typename... Args>
-		MetaField& AddField(Args&& ...args);
+		MetaField& AddField(Args&&... args);
+
+		MetaField& AddField(MetaField&& field);
 
 		/*
-		Constructs a MetaFunc in place using the provided Args.
+		Constructs a MetaFunc using the provided Args.
 
 		Example:
 			typeFloat.AddFunc(&sinf, "Sin");
@@ -107,6 +109,8 @@ namespace CE
 		*/
 		template<typename FuncPtr, typename... Args>
 		MetaFunc& AddFunc(FuncPtr&& funcPtr, MetaFunc::NameOrTypeInit nameOrType, Args&& ...args);
+
+		MetaFunc& AddFunc(MetaFunc&& func);
 
 		/*
 		Add a baseclass. This function does not check if you ACTUALLY derive

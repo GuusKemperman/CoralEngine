@@ -153,12 +153,12 @@ CE::MetaType CE::Physics::Reflect()
 	type.AddFunc([](const World& world, glm::vec2 centre, float radius, const CollisionRules& filter)
 		{
 			return world.GetPhysics().FindAllWithinShape(TransformedDisk{ centre, radius }, filter);
-		}, "Find all bodies in radius", MetaFunc::ExplicitParams<const World&, glm::vec2, float, const CollisionRules&>{}, "Centre", "Radius", "Filter").GetProperties().Add(Props::sIsScriptableTag);
+		}, "Find all bodies in radius", "Centre", "Radius", "Filter").GetProperties().Add(Props::sIsScriptableTag);
 
 	type.AddFunc([](const World& world, glm::vec2 min, glm::vec2 max, const CollisionRules& filter)
 		{
 			return world.GetPhysics().FindAllWithinShape(TransformedAABB{ min, max }, filter);
-		}, "Find all bodies in box", MetaFunc::ExplicitParams<const World&, glm::vec2, glm::vec2, const CollisionRules&>{}, "Min", "Max", "Filter").GetProperties().Add(Props::sIsScriptableTag);
+		}, "Find all bodies in box", "Min", "Max", "Filter").GetProperties().Add(Props::sIsScriptableTag);
 
 	return type;
 }

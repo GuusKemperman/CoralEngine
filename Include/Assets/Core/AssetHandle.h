@@ -353,7 +353,7 @@ namespace CE
 			[](const AssetHandle<U>& value, nullptr_t)
 			{
 				return value == nullptr;
-			}, OperatorType::equal, MetaFunc::ExplicitParams<const AssetHandle<U>&, nullptr_t>{});
+			}, OperatorType::equal);
 
 		return refType;
 	}
@@ -405,7 +405,7 @@ namespace CE
 			[](const WeakAssetHandle<U>& value, nullptr_t)
 			{
 				return value == nullptr;
-			}, OperatorType::equal, MetaFunc::ExplicitParams<const WeakAssetHandle<U>&, nullptr_t>{});
+			}, OperatorType::equal);
 
 		return refType;
 	}

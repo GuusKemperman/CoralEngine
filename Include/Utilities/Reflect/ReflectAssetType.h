@@ -20,8 +20,7 @@ namespace CE
 			{
 				ret = GetThumbNailImpl<T>(StaticAssetHandleCast<T>(asset));
 			},
-			Internal::sGetThumbnailFuncName,
-			MetaFunc::ExplicitParams<GetThumbnailRet&, const WeakAssetHandle<>&>{});
+			Internal::sGetThumbnailFuncName);
 #endif // EDITOR
 
 		// Will ensure the array and ptr types are reflected at startup

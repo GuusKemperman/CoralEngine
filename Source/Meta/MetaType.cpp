@@ -83,6 +83,32 @@ bool CE::MetaType::IsBaseClassOf(const TypeId derivedClassTypeId) const
 	return false;
 }
 
+CE::MetaField& CE::MetaType::AddField(MetaField&& field)
+{
+	ASSERT(&field.GetOuterType() == this);
+
+	MetaField& returnValue = mFields.emplace_back(std::move(field));
+
+#ifdef ASSERTS_ENABLED
+		for (const MetaField& otherField : EachField())
+		{
+			if (&otherField != &field
+				&& otherField.GetName() == field.GetName())
+			{
+				LOG(LogCore, Fatal, "{} has multiple fields with the name {}", mName, field.GetName());
+			}
+		}
+#endif // ASSERTS_ENABLED
+
+	return returnValue;
+}
+
+CE::MetaFunc& CE::MetaType::AddFunc(MetaFunc&& func)
+{
+	const auto nameOrType = func.GetNameOrType();
+	return mFunctions.emplace(std::move(nameOrType), std::move(func))->second;
+}
+
 void CE::MetaType::AddBaseClass(const MetaType& baseClass)
 {
 	mDirectBaseClasses.push_back(baseClass);

@@ -15,15 +15,15 @@ namespace CE
 		type.AddFunc(&ShowInspectUI<T>, sShowInspectUIFuncName.StringView());
 #endif // EDITOR
 
-		type.AddFunc(&BinaryGSONMember::operator<<<T>, sSerializeMemberFuncName.StringView());
-		type.AddFunc(&BinaryGSONMember::operator>><T>, sDeserializeMemberFuncName.StringView());
+		type.AddFunc([](BinaryGSONMember& m, const T& v) { m << v; }, sSerializeMemberFuncName.StringView());
+		type.AddFunc([](const BinaryGSONMember& m, T& v) { m >> v; }, sDeserializeMemberFuncName.StringView());
 		
 		if (type.TryGetFunc(OperatorType::equal, MakeFuncId<bool(const T&, const T&)>()) != nullptr)
 		{
 			return;
 		}
 
-		MetaProps& equalFuncProps = type.AddFunc(std::equal_to<T>(), OperatorType::equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties();
+		MetaProps& equalFuncProps = type.AddFunc(std::equal_to<T>(), OperatorType::equal).GetProperties();
 
 		if (type.GetProperties().Has(Props::sIsScriptableTag))
 		{

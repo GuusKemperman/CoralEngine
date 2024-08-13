@@ -273,64 +273,63 @@ CE::MetaType CE::World::Reflect()
 	type.AddFunc([](const World& world)
 		{
 			return world.HasBegunPlay();
-		}, "HasBegunPlay", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "HasBegunPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](const World& world)
 		{
 			return world.GetCurrentTimeScaled();
-		}, "GetCurrentTimeScaled", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "GetCurrentTimeScaled").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](const World& world)
 		{
 			return world.GetCurrentTimeReal();
-		}, "GetCurrentTimeReal", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "GetCurrentTimeReal").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](const World& world)
 		{
 			return world.GetTimeScale();
-		}, "GetTimeScale", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "GetTimeScale").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](World& world, float timescale)
 		{
 			world.SetTimeScale(timescale);
-		}, "SetTimeScale", MetaFunc::ExplicitParams<World&, float>{}, "TimeScale").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "SetTimeScale", "TimeScale").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const World& world)
 		{
 			return world.IsPaused();
-		}, "IsPaused", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "IsPaused").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](World& world)
 		{
 			world.Pause();
-		}, "Pause", MetaFunc::ExplicitParams<World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Pause").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](World& world)
 		{
 			world.Unpause();
-		}, "Unpause", MetaFunc::ExplicitParams<World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Unpause").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](World& world, bool isPaused)
 		{
 			world.SetIsPaused(isPaused);
-		}, "SetIsPaused", MetaFunc::ExplicitParams<World&, bool>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "SetIsPaused").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const World& world)
 		{
 			return world.HasBegunPlay();
-		}, "HasBegunPlay", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "HasBegunPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](World& world)
 		{
 			world.RequestEndplay();
-		}, "RequestEndPlay", MetaFunc::ExplicitParams<World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "RequestEndPlay").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](World& world, const AssetHandle<Level>& level)
 		{
 			world.TransitionToLevel(level);
 		},
-		"TransitionToLevel", 
-		MetaFunc::ExplicitParams<World&, const AssetHandle<Level>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		"TransitionToLevel").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const World& world)
 		{
@@ -351,17 +350,17 @@ CE::MetaType CE::World::Reflect()
 			}
 
 			return returnValue;
-		}, "Get all entities", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "Get all entities").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](World& world)
 		{
 			world.GetRegistry().Clear();
-		}, "Clear", MetaFunc::ExplicitParams<World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Clear").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](World& world)
 		{
 			return world.GetRegistry().Create();
-		}, "Spawn entity", MetaFunc::ExplicitParams<World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Spawn entity").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](World& world, const AssetHandle<Prefab>& prefab)
 		{
@@ -371,7 +370,7 @@ CE::MetaType CE::World::Reflect()
 			}
 
 			return world.GetRegistry().CreateFromPrefab(*prefab);
-		}, "Spawn prefab", MetaFunc::ExplicitParams<World&, const AssetHandle<Prefab>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Spawn prefab").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](World& world, const AssetHandle<Prefab>& prefab, const glm::vec3 position, const glm::quat orientation, const glm::vec3 scale, TransformComponent* parent) -> entt::entity
 		{
@@ -387,13 +386,13 @@ CE::MetaType CE::World::Reflect()
 			}
 
 			return world.GetRegistry().CreateFromPrefab(*prefab, entt::null, &position, &orientation, &scale, parent);
-		}, "Spawn prefab at", MetaFunc::ExplicitParams<World&, const AssetHandle<Prefab>&, glm::vec3, glm::quat, glm::vec3, TransformComponent*>{},
+		}, "Spawn prefab at",
 			"Prefab", "LocalPosition", "LocalOrientation", "LocalScale", "Parent").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](World& world, const entt::entity& entity, bool destroyChildren)
 		{
 			world.GetRegistry().Destroy(entity, destroyChildren);
-		}, "Destroy entity", MetaFunc::ExplicitParams<World&, const entt::entity&, bool>{}, "Entity", "DestroyChildren").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Destroy entity", "Entity", "DestroyChildren").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const World& world, const std::string& name) -> entt::entity
 		{
@@ -408,7 +407,7 @@ CE::MetaType CE::World::Reflect()
 			}
 
 			return entt::null;
-		}, "Find entity with name", MetaFunc::ExplicitParams<const World&, const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Find entity with name").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const World& world, const std::string& name)
 		{
@@ -424,7 +423,7 @@ CE::MetaType CE::World::Reflect()
 			}
 
 			return returnValue;
-		}, "Find all entities with name", MetaFunc::ExplicitParams<const World&, const std::string&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Find all entities with name").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const World& world, const ComponentFilter& component) -> entt::entity
 		{
@@ -435,7 +434,7 @@ CE::MetaType CE::World::Reflect()
 				return entt::null;
 			}
 			return *view.begin();
-		}, "Find entity with component", MetaFunc::ExplicitParams<const World&, const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Find entity with component").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const World& world, const ComponentFilter& component)
 		{
@@ -446,7 +445,7 @@ CE::MetaType CE::World::Reflect()
 			returnValue.insert(returnValue.end(), view.begin(), view.end());
 
 			return returnValue;
-		}, "Find all entities with component", MetaFunc::ExplicitParams<const World&, const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Find all entities with component").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const World& world, const std::vector<ComponentFilter>& components) -> entt::entity
 		{
@@ -457,7 +456,7 @@ CE::MetaType CE::World::Reflect()
 				return entt::null;
 			}
 			return *view.begin();
-		}, "Find entity with components", MetaFunc::ExplicitParams<const World&, const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Find entity with components").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const World& world, const std::vector<ComponentFilter>& components)
 		{
@@ -468,27 +467,27 @@ CE::MetaType CE::World::Reflect()
 			returnValue.insert(returnValue.end(), view.begin(), view.end());
 
 			return returnValue;
-		}, "Find all entities with components", MetaFunc::ExplicitParams<const World&, const std::vector<ComponentFilter>&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "Find all entities with components").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const World& world, glm::vec2 screenPosition, float distanceFromCamera)
 		{
 			return world.GetViewport().ScreenToWorld(screenPosition, distanceFromCamera);
-		}, "ScreenToWorld", MetaFunc::ExplicitParams<const World&, glm::vec2, float>{}, "Screen position", "Distance from camera").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "ScreenToWorld", "Screen position", "Distance from camera").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](const World& world, glm::vec2 screenPosition, float planeHeight)
 		{
 			return world.GetViewport().ScreenToWorldPlane(screenPosition, planeHeight);
-		}, "ScreenToWorldPlane", MetaFunc::ExplicitParams<const World&, glm::vec2, float>{}, "Screen position", "Plane height").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "ScreenToWorldPlane", "Screen position", "Plane height").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](const World& world)
 		{
 			return world.GetScaledDeltaTime();
-		}, "GetScaledDeltaTime", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "GetScaledDeltaTime").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](const World& world)
 		{
 			return world.GetRealDeltaTime();
-		}, "GetRealDeltaTime", MetaFunc::ExplicitParams<const World&>{}).GetProperties().Add(Props::sIsScriptableTag);
+		}, "GetRealDeltaTime").GetProperties().Add(Props::sIsScriptableTag);
 
 	return type;
 }

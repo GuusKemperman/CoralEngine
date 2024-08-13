@@ -339,7 +339,7 @@ void CE::ReflectParticleComponentType(MetaType& type)
 			{
 				reg.AddComponent<ComponentType>(newEntity, std::move(*component));
 			}
-		}, Internal::sTransferOwnershipName, MetaFunc::ExplicitParams<Registry&, entt::entity, entt::entity>{});
+		}, Internal::sTransferOwnershipName);
 
 	BindEvent(type, sOnEndPlay, &Internal::OnParticleComponentDestruct);
 	ReflectComponentType<ComponentType>(type);

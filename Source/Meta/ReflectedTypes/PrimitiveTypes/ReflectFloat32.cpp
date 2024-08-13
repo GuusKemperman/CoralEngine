@@ -17,24 +17,24 @@ MetaType Reflector<T>::Reflect()
 	MetaType type{ MetaType::T<T>{}, "Float" };
 
 	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-	type.AddFunc(std::plus<T>(), OperatorType::add, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::minus<T>(), OperatorType::subtract, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::multiplies<T>(), OperatorType::multiplies, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::divides<T>(), OperatorType::divides, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::plus<T>(), OperatorType::add).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::minus<T>(), OperatorType::subtract).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::multiplies<T>(), OperatorType::multiplies).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::divides<T>(), OperatorType::divides).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&fmodf, OperatorType::modulus).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::greater<T>(), OperatorType::greater, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::less<T>(), OperatorType::less, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::greater_equal<T>(), OperatorType::greater_equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::less_equal<T>(), OperatorType::less_equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::equal_to<T>(), OperatorType::equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](const T& n) { return -n; }, OperatorType::negate, MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::greater<T>(), OperatorType::greater).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::less<T>(), OperatorType::less).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::greater_equal<T>(), OperatorType::greater_equal).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::less_equal<T>(), OperatorType::less_equal).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::equal_to<T>(), OperatorType::equal).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](const T& n) { return -n; }, OperatorType::negate).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<T(*)(T, T)>(&glm::max), "Max").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<T(*)(T, T)>(&glm::min), "Min").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<T(*)(T, T, T)>(&glm::clamp), "Clamp", "Value", "Min", "Max").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<std::string(*)(T)>(&std::to_string), "ToString").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](const T& f) { return static_cast<int32>(f); }, "ToInt32", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](const T& f) { return static_cast<uint32>(f); }, "ToUInt32", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](const T& f) { return static_cast<int32>(f); }, "ToInt32").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](const T& f) { return static_cast<uint32>(f); }, "ToUInt32").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<T(*)(T)>(&glm::radians), "ToRadians", "Degrees", "Radians").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<T(*)(T)>(&glm::degrees), "ToDegrees", "Radians", "Degrees").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&sinf, "Sin").GetProperties().Add(Props::sIsScriptableTag);
@@ -49,13 +49,13 @@ MetaType Reflector<T>::Reflect()
 	type.AddFunc(&CE::Math::lerpInv<T>, "LerpInv", "Min", "Max", "Value", "T").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&CE::Math::lerp<T>, "Lerp", "Min", "Max", "T", "Value").GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](T& n) -> T& { ++n; return n; }, OperatorType::increment, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](T& n) -> T& { --n; return n; }, OperatorType::decrement, MetaFunc::ExplicitParams<T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](T& n, const T& l) -> T& { n += l; return n; }, OperatorType::add_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](T& n, const T& l) -> T& { n -= l; return n; }, OperatorType::subtract_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](T& n, const T& l) -> T& { n *= l; return n; }, OperatorType::multiplies_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](T& n, const T& l) -> T& { n /= l; return n; }, OperatorType::divides_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](T& n, const T& l) -> T& { n = fmodf(n, l); return n; }, OperatorType::modulus_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n) -> T& { ++n; return n; }, OperatorType::increment).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n) -> T& { --n; return n; }, OperatorType::decrement).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n += l; return n; }, OperatorType::add_assign).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n -= l; return n; }, OperatorType::subtract_assign).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n *= l; return n; }, OperatorType::multiplies_assign).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n /= l; return n; }, OperatorType::divides_assign).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](T& n, const T& l) -> T& { n = fmodf(n, l); return n; }, OperatorType::modulus_assign).GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectFieldType<T>(type);
 
