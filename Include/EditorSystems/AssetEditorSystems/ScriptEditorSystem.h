@@ -1,9 +1,8 @@
-#include "Utilities/ASync.h"
 #ifdef EDITOR
 #pragma once
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
 
-#include <thread>
+#include <future>
 
 #include "imnodes/imgui_node_editor.h"
 #include "Assets/Script.h"
@@ -202,8 +201,10 @@ namespace CE
 		void InitialiseAllNodesTheUserCanAdd();
 
 		std::vector<NodeCategory> mAllNodesTheUserCanAdd{};
-		ASyncThread mNodePopularityCalculateThread{};
-		bool mShouldWeStopCountingNodePopularity{};
+
+		// The popularity is stored inside of each node in mAllNodesTheUserCanAdd
+		std::future<void> mNodePopularityCalculations{};
+		std::atomic<bool> mShouldWeStopCountingNodePopularity{};
 
 		ax::NodeEditor::PinId mPinTheUserRightClicked{};
 		ax::NodeEditor::PinId mPinTheUserIsTryingToLink{};

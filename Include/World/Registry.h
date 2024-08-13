@@ -157,9 +157,6 @@ namespace CE
 
 		void CallEndPlayEventsForEntity(entt::sparse_set& storage, entt::entity entity, const BoundEvent& endPlayEvent);
 
-		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
-		friend World;
-
 		std::reference_wrapper<World> mWorld; 
 		
 		entt::registry mRegistry{};
@@ -217,8 +214,6 @@ namespace CE
 				}
 			}();
 
-		World::PushWorld(mWorld);
-
 		if constexpr (isEmpty)
 		{
 			mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
@@ -236,8 +231,6 @@ namespace CE
 					events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
 				}
 			}
-
-			World::PopWorld();
 		}
 		else
 		{
@@ -270,8 +263,6 @@ namespace CE
 					}
 				}
 			}
-
-			World::PopWorld();
 
 			return component;
 		}
@@ -307,7 +298,6 @@ namespace CE
 	template<typename ComponentType>
 	void Registry::RemoveComponent(entt::entity fromEntity)
 	{
-		World::PushWorld(mWorld);
 		static constexpr TypeId componentClassTypeId = MakeStrippedTypeId<ComponentType>();
 		entt::sparse_set* storage = Storage(componentClassTypeId);
 		ASSERT(storage != nullptr);
@@ -335,7 +325,6 @@ namespace CE
 		}
 
 		storage->erase(fromEntity);
-		World::PopWorld();
 	}
 
 	template <typename ComponentType, typename It>
@@ -358,8 +347,6 @@ namespace CE
 			return;
 		}
 
-		World::PushWorld(mWorld);
-
 		if constexpr (sIsReflectable<ComponentType>)
 		{
 			static std::optional<BoundEvent> endPlayEvent =
@@ -379,7 +366,6 @@ namespace CE
 			{
 				if (!storage->contains(fromEntity))
 				{
-					World::PopWorld();
 					return;
 				}
 
@@ -388,7 +374,6 @@ namespace CE
 		}
 
 		storage->remove(fromEntity);
-		World::PopWorld();
 	}
 
 	template<typename It>

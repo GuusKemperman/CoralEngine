@@ -2,7 +2,6 @@
 #include "EditorSystems/AssetEditorSystems/LevelEditorSystem.h"
 
 #include "Utilities/Imgui/WorldInspect.h"
-#include "World/World.h"
 
 CE::LevelEditorSystem::LevelEditorSystem(Level&& asset) :
 	AssetEditorSystem(std::move(asset)),
@@ -36,7 +35,7 @@ void CE::LevelEditorSystem::Tick(const float deltaTime)
 
 void CE::LevelEditorSystem::SaveState(std::ostream& toStream) const
 {
-	AssetEditorSystem<Level>::SaveState(toStream);
+	AssetEditorSystem::SaveState(toStream);
 
 	BinaryGSONObject savedState{};
 	mWorldHelper->SaveState(savedState);
@@ -45,7 +44,7 @@ void CE::LevelEditorSystem::SaveState(std::ostream& toStream) const
 
 void CE::LevelEditorSystem::LoadState(std::istream& fromStream)
 {
-	AssetEditorSystem<Level>::LoadState(fromStream);
+	AssetEditorSystem::LoadState(fromStream);
 
 	BinaryGSONObject savedState{};
 

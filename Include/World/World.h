@@ -18,13 +18,14 @@ namespace CE
 	{
 	public:
 		World(bool beginPlayImmediately);
-		World(World&& other) noexcept;
+
+		World(World&&) = delete;
 		World(const World&) = delete;
 
-		~World();
-
-		World& operator=(World&& other) noexcept;
+		World& operator=(World&&) noexcept = delete;
 		World& operator=(const World&) = delete;
+
+		~World();
 
 		void Tick(float deltaTime);
 		void Render(FrameBuffer* renderTarget = nullptr);
@@ -74,11 +75,6 @@ namespace CE
 		void SetIsPaused(bool isPaused);
 
 		void RequestEndplay();
-
-		static void PushWorld(World& world);
-		static void PopWorld();
-
-		static World* TryGetWorldAtTopOfStack();
 
 		/**
 		 * \brief Will request a transition to a different level.

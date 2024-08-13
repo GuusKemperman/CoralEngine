@@ -36,6 +36,8 @@ namespace CE::Internal
 		const MetaType& GetType() const { return mType; }
 		const MetaFunc* GetOnConstruct() const { return mOnConstruct; }
 		const MetaFunc* GetOnBeginPlay() const { return mOnBeginPlay; }
+		uintptr GetOffsetToOwner() const { return mOffsetToOwnerField; }
+		uintptr GetOffsetToWorld() const { return mOffsetToWorldField; }
 
 		const void* get_at(std::size_t pos) const override;
 
@@ -68,6 +70,12 @@ namespace CE::Internal
 		std::reference_wrapper<const MetaType> mType;
 		const MetaFunc* mOnConstruct{};
 		const MetaFunc* mOnBeginPlay{};
+
+		// Each script has these hardcoded fields.
+		// We initialize them manually when constructing
+		// a component.
+		uintptr mOffsetToWorldField{};
+		uintptr mOffsetToOwnerField{};
 
 		char* mData{};
 		size_t mCapacity{};
@@ -296,8 +304,6 @@ void CE::Registry::Destroy(entt::entity entity, bool destroyChildren)
 
 void CE::Registry::RemovedDestroyed()
 {
-	World::PushWorld(mWorld);
-
 	while (true)
 	{
 		{
@@ -368,8 +374,6 @@ void CE::Registry::RemovedDestroyed()
 			mRegistry.destroy(entity);
 		}
 	}
-
-	World::PopWorld();
 }
 
 CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const entt::entity toEntity)
@@ -400,21 +404,13 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 
 		MetaAny componentToReturn = asAnyStorage->element_at(it.index());
 
-		const MetaField* const ownerMember = componentClass.TryGetField(Script::sNameOfOwnerField);
+		// Initialize our hard coded fields
+		std::byte* componentAddress = static_cast<std::byte*>(componentToReturn.GetData());
+		entt::entity* ownerAddress = reinterpret_cast<entt::entity*>(componentAddress + asAnyStorage->GetOffsetToOwner());
+		World** worldAddress = reinterpret_cast<World**>(componentAddress + asAnyStorage->GetOffsetToWorld());
 
-		if (ownerMember != nullptr)
-		{
-			if (ownerMember->GetType().GetTypeId() == MakeTypeId<entt::entity>())
-			{
-				MetaAny refToMember = ownerMember->MakeRef(componentToReturn);
-				*refToMember.As<entt::entity>() = toEntity;
-			}
-			else
-			{
-				LOG(LogScripting, Error, "Expected {}::Owner to be of type entt::entity",
-					componentClass.GetName());
-			}
-		}
+		*ownerAddress = toEntity;
+		*worldAddress = &mWorld.get();
 
 		// Call events
 		const MetaFunc* const onConstruct = asAnyStorage->GetOnConstruct();
@@ -448,11 +444,7 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 		return MetaAny{ componentClass.GetTypeInfo(), nullptr };
 	}
 
-	World::PushWorld(mWorld);
-
-	FuncResult result = addComponentFunc->InvokeUncheckedUnpacked(toEntity);
-
-	World::PopWorld();
+	FuncResult result = addComponentFunc->InvokeUncheckedUnpacked(GetWorld(), toEntity);
 
 	if (result.HasError())
 	{
@@ -473,7 +465,6 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 
 void CE::Registry::RemoveComponent(const TypeId componentClassTypeId, const entt::entity fromEntity)
 {
-	World::PushWorld(mWorld);
 	entt::sparse_set* storage = Storage(componentClassTypeId);
 	ASSERT(storage != nullptr);
 	ASSERT(storage->contains(fromEntity));
@@ -494,7 +485,6 @@ void CE::Registry::RemoveComponent(const TypeId componentClassTypeId, const entt
 	}
 
 	storage->erase(fromEntity);
-	World::PopWorld();
 }
 
 void CE::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassTypeId, const entt::entity fromEntity)
@@ -506,13 +496,10 @@ void CE::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassTypeI
 		return;
 	}
 
-	World::PushWorld(mWorld);
-
 	if (mWorld.get().HasBegunPlay())
 	{
 		if (!storage->contains(fromEntity))
 		{
-			World::PopWorld();
 			return;
 		}
 
@@ -530,7 +517,6 @@ void CE::Registry::RemoveComponentIfEntityHasIt(const TypeId componentClassTypeI
 	}
 
 	storage->remove(fromEntity);
-	World::PopWorld();
 }
 
 std::vector<CE::MetaAny> CE::Registry::GetComponents(entt::entity entity)
@@ -577,8 +563,6 @@ bool CE::Registry::HasComponent(TypeId componentClassTypeId, entt::entity entity
 
 void CE::Registry::Clear()
 {
-	World::PushWorld(mWorld);
-
 	for (const entt::entity entity : mRegistry.storage<entt::entity>())
 	{
 		if (!HasComponent<IsDestroyedTag>(entity))
@@ -587,7 +571,6 @@ void CE::Registry::Clear()
 		}
 	}
 	RemovedDestroyed();
-	World::PopWorld();
 }
 
 std::vector<CE::Registry::SingleTick> CE::Registry::GetSortedSystemsToUpdate(const float dt)
@@ -713,8 +696,6 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 		return;
 	}
 
-	World::PushWorld(mWorld);
-
 	for (const BoundEvent& boundEvent : mWorld.get().GetEventManager().GetBoundEvents(sOnBeginPlay))
 	{
 		entt::sparse_set* storage = Storage(boundEvent.mType.get().GetTypeId());
@@ -743,8 +724,6 @@ void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 			}
 		}
 	}
-
-	World::PopWorld();
 }
 
 bool CE::Registry::ShouldWeCallBeginPlayImmediatelyAfterConstruct(entt::entity ownerOfNewlyConstructedComponent) const
@@ -773,6 +752,9 @@ CE::Internal::AnyStorage::AnyStorage(const MetaType& type) :
 	mType(type),
 	mTypeInfo(type.GetTypeId(), type.GetTypeInfo(), type.GetName())
 {
+	ASSERT(CanTypeBeUsed(type));
+	reserve(64);
+
 	if (const std::optional<BoundEvent> boundEvent = TryGetEvent(type, sOnConstruct))
 	{
 		mOnConstruct = &boundEvent->mFunc.get();
@@ -783,8 +765,12 @@ CE::Internal::AnyStorage::AnyStorage(const MetaType& type) :
 		mOnBeginPlay = &boundEvent->mFunc.get();
 	}
 
-	ASSERT(CanTypeBeUsed(type));
-	reserve(64);
+	const MetaField* ownerField = type.TryGetField(Script::sNameOfOwnerField);
+	const MetaField* worldField = type.TryGetField(Script::sNameOfWorldField);
+	ASSERT_LOG(ownerField != nullptr && worldField != nullptr, "Expected hardcoded fields in script type {}", type.GetName());
+
+	mOffsetToOwnerField = ownerField->GetOffset();
+	mOffsetToWorldField = worldField->GetOffset();
 }
 
 CE::Internal::AnyStorage::~AnyStorage()

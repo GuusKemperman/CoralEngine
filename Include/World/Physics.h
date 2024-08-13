@@ -52,8 +52,6 @@ namespace CE
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(Physics);
 
-		// mWorld needs to be updated in World::World(World&&), so we give access to World to do so.
-		friend class World;
 		std::reference_wrapper<World> mWorld;
 
 		BVHS mBVHs;

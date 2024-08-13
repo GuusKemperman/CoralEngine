@@ -150,15 +150,15 @@ CE::MetaType CE::Physics::Reflect()
 	MetaType type = MetaType{ MetaType::T<Physics>{}, "Physics" };
 	type.GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](glm::vec2 centre, float radius, const CollisionRules& filter)
+	type.AddFunc([](const World& world, glm::vec2 centre, float radius, const CollisionRules& filter)
 		{
-			return World::TryGetWorldAtTopOfStack()->GetPhysics().FindAllWithinShape(TransformedDisk{ centre, radius }, filter);
-		}, "Find all bodies in radius", MetaFunc::ExplicitParams<glm::vec2, float, const CollisionRules&>{}, "Centre", "Radius", "Filter").GetProperties().Add(Props::sIsScriptableTag);
+			return world.GetPhysics().FindAllWithinShape(TransformedDisk{ centre, radius }, filter);
+		}, "Find all bodies in radius", MetaFunc::ExplicitParams<const World&, glm::vec2, float, const CollisionRules&>{}, "Centre", "Radius", "Filter").GetProperties().Add(Props::sIsScriptableTag);
 
-	type.AddFunc([](glm::vec2 min, glm::vec2 max, const CollisionRules& filter)
+	type.AddFunc([](const World& world, glm::vec2 min, glm::vec2 max, const CollisionRules& filter)
 		{
-			return World::TryGetWorldAtTopOfStack()->GetPhysics().FindAllWithinShape(TransformedAABB{ min, max }, filter);
-		}, "Find all bodies in box", MetaFunc::ExplicitParams<glm::vec2, glm::vec2, const CollisionRules&>{}, "Min", "Max", "Filter").GetProperties().Add(Props::sIsScriptableTag);
+			return world.GetPhysics().FindAllWithinShape(TransformedAABB{ min, max }, filter);
+		}, "Find all bodies in box", MetaFunc::ExplicitParams<const World&, glm::vec2, glm::vec2, const CollisionRules&>{}, "Min", "Max", "Filter").GetProperties().Add(Props::sIsScriptableTag);
 
 	return type;
 }

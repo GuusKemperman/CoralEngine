@@ -301,6 +301,7 @@
     <ClCompile Include="Source\Components\Particles\ParticleLightComponent.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticleUtilities.cpp" />
     <ClCompile Include="Source\Core\Device.cpp" />
+    <ClCompile Include="Source\Core\ThreadPool.cpp" />
     <ClCompile Include="Source\Platform\PC\Core\Renderer.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetHandle.cpp" />
     <ClCompile Include="Source\Assets\Importers\AudioImporter.cpp">
@@ -324,7 +325,6 @@
     <ClCompile Include="Source\Systems\Rendering\ParticleRenderingSystem.cpp" />
     <ClCompile Include="Source\Systems\Rendering\StaticMeshRenderingSystem.cpp" />
     <ClCompile Include="Source\UnitTests\AssetHandleUnitTests.cpp" />
-    <ClCompile Include="Source\Utilities\ASync.cpp" />
     <ClCompile Include="Source\Utilities\BVH.cpp" />
     <ClCompile Include="Source\Utilities\Events.cpp" />
     <ClCompile Include="Source\Utilities\Imgui\WorldDetailsPanel.cpp">
@@ -862,13 +862,13 @@
     <ClInclude Include="Include\Components\Particles\ParticleUtilities\ParticleUtilitiesImpl.h" />
     <ClInclude Include="Include\Components\AudioEmitterComponent.h" />
     <ClInclude Include="Include\Core\Renderer.h" />
+    <ClInclude Include="Include\Core\ThreadPool.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
     <ClInclude Include="Include\Systems\AudioSystem.h" />
     <ClInclude Include="Include\Systems\Particles\ParticleLightSystem.h" />
     <ClInclude Include="Include\Systems\Rendering\LightRenderingSystem.h" />
     <ClInclude Include="Include\Systems\Rendering\ParticleRenderingSystem.h" />
     <ClInclude Include="Include\Systems\Rendering\StaticMeshRenderingSystem.h" />
-    <ClInclude Include="Include\Utilities\ASync.h" />
     <ClInclude Include="Include\Utilities\BVH.h" />
     <ClInclude Include="Include\Utilities\Geometry2d.h" />
     <ClInclude Include="Include\EditorSystems\ImporterSystem.h" />

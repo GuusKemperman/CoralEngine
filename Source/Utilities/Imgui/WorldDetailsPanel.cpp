@@ -116,12 +116,12 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 
 						if (onInspect->mIsStatic)
 						{
-							onInspect->mFunc.get().InvokeCheckedUnpacked(world, selectedEntities[0]);
+							onInspect->mFunc.get().InvokeUncheckedUnpacked(world, selectedEntities[0]);
 						}
 						else
 						{
 							MetaAny component = reg.Get(componentClass.GetTypeId(), selectedEntities[0]);
-							onInspect->mFunc.get().InvokeCheckedUnpacked(component, world, selectedEntities[0]);
+							onInspect->mFunc.get().InvokeUncheckedUnpacked(component, world, selectedEntities[0]);
 						}
 					}
 				}
@@ -136,12 +136,15 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 				continue;
 			}
 
-			const bool isMemberFunc = func.GetParameters().size() == 1 && func.GetParameters()[0].mTypeTraits.mStrippedTypeId == componentClass.GetTypeId();
+			const bool isMemberFunc = func.GetParameters().size() >= 1
+					&& func.GetParameters()[0].mTypeTraits.mStrippedTypeId == componentClass.GetTypeId();
 
-			if (!func.GetParameters().empty()
-				&& !isMemberFunc)
+			const bool doesFuncRequireWorld = func.GetParameters().size() >= (isMemberFunc + 1)
+				&& func.GetParameters()[isMemberFunc].mTypeTraits.mStrippedTypeId == MakeTypeId<World>();
+
+			if (func.GetParameters().size() > isMemberFunc + doesFuncRequireWorld)
 			{
-				LOG(LogEditor, Warning, "Function {}::{} has {} property, but the function has parameters",
+				LOG(LogEditor, Warning, "Function {}::{} has {} property, but the function has parameters that cannot be passed in from here",
 					componentClass.GetName(), func.GetDesignerFriendlyName(), Props::sCallFromEditorTag);
 				continue;
 			}
@@ -172,23 +175,20 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 				{
 					for (const entt::entity entity : selectedEntities)
 					{
+						std::vector<MetaAny> args{};
+						static constexpr std::array forms{ TypeForm::Ref, TypeForm::Ref };
+
 						if (isMemberFunc)
 						{
-							MetaAny component{ componentClass, storage->value(entity), false };
-
-							if (component == nullptr)
-							{
-								LOG(LogEditor, Error, "Error invoking {}::{}: Component was unexpectedly nullptr",
-									componentClass.GetName(), func.GetDesignerFriendlyName());
-								continue;
-							}
-
-							func.InvokeUncheckedUnpacked(component);
+							args.emplace_back(componentClass, storage->value(entity), false);
 						}
-						else
+
+						if (doesFuncRequireWorld)
 						{
-							func.InvokeUncheckedUnpacked();
+							args.emplace_back(world);
 						}
+
+						func.InvokeUnchecked(args, std::span{ forms.data(), static_cast<size_t>(isMemberFunc + doesFuncRequireWorld) });
 					}
 				}
 				else

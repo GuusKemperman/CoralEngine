@@ -36,12 +36,10 @@ namespace CE
 		MetaFunc& addComponentFunc = entityType.AddFunc(
 			[](MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer) -> FuncResult
 			{
-				World* world = World::TryGetWorldAtTopOfStack();
-				ASSERT(world != nullptr && "Reached a scripting context without pushing a world");
+				World& world = *static_cast<World*>(args[0].GetData());
+				const entt::entity entity = *static_cast<entt::entity*>(args[1].GetData());
 
-				entt::entity entity = *static_cast<entt::entity*>(args[0].GetData());
-
-				Registry& reg = world->GetRegistry();
+				Registry& reg = world.GetRegistry();
 
 				if (reg.HasComponent<T>(entity))
 				{
@@ -61,7 +59,7 @@ namespace CE
 			},
 			Internal::GetAddComponentFuncName(type.GetName()),
 			MetaFunc::Return{ isEmpty ? MakeTypeTraits<void>() : MakeTypeTraits<T&>() },
-			MetaFunc::Params{ { MakeTypeTraits<const entt::entity&>(), "Entity" } });
+			MetaFunc::Params{ { MakeTypeTraits<World&>() }, { MakeTypeTraits<entt::entity>() } });
 
 		if (type.GetProperties().Has(Props::sIsScriptableTag))
 		{

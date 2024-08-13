@@ -16,6 +16,16 @@
 #include "Utilities/Reflect/ReflectAssetType.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
+// We've hardcoded our scripts to always have a
+// While fields normally dont support ptr/ref types,
+// we can make a little wrapper around our pointer
+struct WorldPointer
+{
+	CE::World* mData{};
+	static CE::MetaType Reflect();
+	REFLECT_AT_START_UP(WorldPointer);
+};
+
 CE::Script::Script(std::string_view name) :
 	Asset(name, MakeTypeId<Script>())
 {
@@ -112,7 +122,7 @@ CE::ScriptFunc& CE::Script::AddEvent(const EventBase& event)
 		return *existingFunc;
 	}
 
-	auto& result = mFunctions.emplace_back(*this, event);
+	ScriptFunc& result = mFunctions.emplace_back(*this, event);
 
 	if (!result.IsPure()
 		|| !result.GetParameters(true).empty())
@@ -239,23 +249,23 @@ CE::MetaType* CE::Script::DeclareMetaType()
 		return nullptr;
 	}
 
-	const MetaType* const entityType = MetaManager::Get().TryGetType<entt::entity>();
-
-	if (entityType == nullptr)
-	{
-		LOG(LogScripting, Warning, "Making a metatype from {} failed - Type entt::entity was not reflected", GetName());
-		return nullptr;
-	}
+	const MetaType& entityType = MetaManager::Get().GetType<entt::entity>();
+	const MetaType& worldPtrType = MetaManager::Get().GetType<WorldPointer>();
 
 	struct MemberToAdd
 	{
-		MemberToAdd(const MetaType& type, const std::string& name) : mType(type), mName(name) {};
 		std::reference_wrapper<const MetaType> mType;
 		std::string mName{};
+		std::vector<Name> mPropsToAdd{ Props::sIsScriptableTag };
 		uint32 mOffset{};
 	};
 
-	std::vector<MemberToAdd> membersToAdd{ { *entityType, sNameOfOwnerField.String() } };
+	std::vector<MemberToAdd> membersToAdd{
+		{ entityType, sNameOfOwnerField.String(),
+			{ Props::sIsScriptableTag, Props::sNoInspectTag, Props::sNoSerializeTag, Props::sIsScriptReadOnlyTag } },
+		{ worldPtrType, sNameOfWorldField.String(),
+			{ Props::sNoInspectTag, Props::sNoSerializeTag } },
+	};
 
 	for (const ScriptField& field : mFields)
 	{
@@ -383,14 +393,39 @@ CE::MetaType* CE::Script::DeclareMetaType()
 	{
 		MetaField& newMember = metaType.AddField(memberToAdd.mType, memberToAdd.mOffset, memberToAdd.mName);
 		MetaProps& memberProperties = newMember.GetProperties();
+		memberProperties.Add(Props::sIsFromScriptsTag);
 
-		memberProperties.Add(Props::sIsScriptableTag).Add(Props::sIsFromScriptsTag);
-
-		if (newMember.GetName() == sNameOfOwnerField.StringView())
+		for (const Name prop : memberToAdd.mPropsToAdd)
 		{
-			// Don't allow the user to inspect it
-			memberProperties.Add(Props::sNoInspectTag).Add(Props::sNoSerializeTag).Add(Props::sIsScriptReadOnlyTag);
+			memberProperties.Add(prop);
 		}
+	}
+
+	{
+		// We hardcoded a function to get the world from any component. That way components can interact with
+		// the world without us resorting to a global world ptr (which is what we had before, pain to multi-thread and the cause of many bugs)
+		// So we do this instead!
+
+		const MetaField* worldField = metaType.TryGetField(sNameOfWorldField);
+		ASSERT(worldField != nullptr);
+		const uintptr offsetToWorldField = worldField->GetOffset();
+
+		static constexpr TypeTraits ret = { MakeTypeTraits<World*>() };
+		const std::vector<TypeTraits> params = { { ourTypeInfo.mTypeId, TypeForm::ConstRef } };
+
+		metaType.AddFunc(
+			[offsetToWorldField](MetaFunc::DynamicArgs arg, MetaFunc::RVOBuffer) -> FuncResult
+			{
+				MetaAny& self = arg[0];
+				std::byte* selfAddress = reinterpret_cast<std::byte*>(self.GetData());
+				World** worldAddress = reinterpret_cast<World**>(selfAddress + offsetToWorldField);
+				// Cast is needed to prevent implicit conversion to World*&
+				return MetaAny{ static_cast<World*>(*worldAddress) };
+			},
+			"Get World",
+			MetaFunc::Return{ ret }, // Return value
+			MetaFunc::Params{ params.data(), params.data() + params.size() } // Parameters
+		).GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsFromScriptsTag);
 	}
 
 	AddDefaultConstructor(metaType, false);
@@ -528,20 +563,23 @@ void CE::Script::AddDefaultConstructor(MetaType& toType, bool define) const
 	{
 		std::optional<BinaryGSONMember>& serializedNonDefaultValue = serializedDefaultValues.emplace_back();
 
-		if (metaField.GetName() == sNameOfOwnerField.StringView())
+		if (metaField.GetName() == sNameOfOwnerField.StringView()
+			|| metaField.GetName() == sNameOfWorldField.StringView())
 		{
 			continue;
 		}
 
-		const ScriptField& scriptField = *TryGetField(metaField.GetName());
+		const ScriptField* scriptField = TryGetField(metaField.GetName());
+		ASSERT_LOG(scriptField != nullptr, "Could not find corresponding scriptfield, hardcoded fields must be included in the if-statement above");
+
 		const MetaType& fieldType = metaField.GetType();
 
-		if (!scriptField.WasValueDefaultConstructed())
+		if (!scriptField->WasValueDefaultConstructed())
 		{
 			// Remove std::nullopt
 			serializedNonDefaultValue = BinaryGSONMember{};
 
-			FuncResult serializeResult = fieldType.CallFunction(sSerializeMemberFuncName, *serializedNonDefaultValue, scriptField.GetDefaultValue());
+			FuncResult serializeResult = fieldType.CallFunction(sSerializeMemberFuncName, *serializedNonDefaultValue, scriptField->GetDefaultValue());
 			ASSERT_LOG(!serializeResult.HasError(), "{}", serializeResult.Error());
 		}
 	}
@@ -826,5 +864,27 @@ CE::MetaType CE::Script::Reflect()
 	SetClassVersion(type, 1);
 
 	ReflectAssetType<Script>(type);
+	return type;
+}
+
+bool operator==(const WorldPointer& lhs, const WorldPointer& rhs)
+{
+	return lhs.mData == rhs.mData;
+}
+
+#ifdef EDITOR
+IMGUI_AUTO_DEFINE_INLINE(template<>, WorldPointer, (void)var; (void)name;)
+#endif
+
+namespace cereal
+{
+	template<typename Archive>
+	void serialize(Archive&, WorldPointer&) {}
+}
+
+CE::MetaType WorldPointer::Reflect()
+{
+	CE::MetaType type{ CE::MetaType::T<WorldPointer>{}, "WorldPointer" };
+	CE::ReflectFieldType<WorldPointer>(type);
 	return type;
 }

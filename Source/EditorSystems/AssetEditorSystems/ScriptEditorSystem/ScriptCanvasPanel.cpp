@@ -11,6 +11,7 @@
 
 #include "Utilities/Search.h"
 #include "Core/Input.h"
+#include "Core/ThreadPool.h"
 #include "Core/VirtualMachine.h"
 #include "Scripting/ScriptTools.h"
 #include "Scripting/Nodes/CommentScriptNode.h"
@@ -1034,9 +1035,8 @@ void CE::ScriptEditorSystem::InitialiseAllNodesTheUserCanAdd()
 			return lhs.mName < rhs.mName;
 		});
 
-	mNodePopularityCalculateThread =
-	{
-		[this]()
+	mNodePopularityCalculations = ThreadPool::Get().Enqueue(
+		[this]
 		{
 			uint32 totalNumOfNodesUsed{};
 
@@ -1105,8 +1105,7 @@ void CE::ScriptEditorSystem::InitialiseAllNodesTheUserCanAdd()
 					nodeThatCanBeAdded.mSearchBonus += sPopularityInfluenceOnSearchBonus * static_cast<float>(nodeThatCanBeAdded.mNumOfTimesUsed) / static_cast<float>(totalNumOfNodesUsed);
 				}
 			}
-		}
-	};
+		});
 }
 
 ImColor CE::ScriptEditorSystem::GetIconColor(const ScriptVariableTypeData& typeData) const

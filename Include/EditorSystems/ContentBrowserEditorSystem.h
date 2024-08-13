@@ -1,8 +1,9 @@
 #ifdef EDITOR
 #pragma once
+#include <future>
+
 #include "EditorSystems/EditorSystem.h"
 #include "Core/AssetManager.h"
-#include "Utilities/ASync.h"
 
 namespace CE
 {
@@ -25,7 +26,6 @@ namespace CE
 	private:
 		struct ContentFolder
 		{
-			ContentFolder() = default;
 			ContentFolder(const std::filesystem::path& path, std::string&& name, ContentFolder* parent) :
 				mActualPath(path),
 				mFolderName(std::move(name)),
@@ -33,10 +33,10 @@ namespace CE
 			{}
 
 			ContentFolder(const ContentFolder&) = delete;
-			ContentFolder(ContentFolder&&) noexcept = default;
+			ContentFolder(ContentFolder&&) noexcept = delete;
 
 			ContentFolder& operator=(const ContentFolder&) = delete;
-			ContentFolder& operator=(ContentFolder&&) noexcept = default;
+			ContentFolder& operator=(ContentFolder&&) noexcept = delete;
 
 			// Will be empty for the root folder
 			std::filesystem::path mActualPath{};
@@ -46,6 +46,7 @@ namespace CE
 			ContentFolder* mParent{};
 			std::vector<WeakAssetHandle<>> mContent{};
 		};
+
 		void RequestUpdateToFolderGraph();
 
 		void DisplayFolderHierarchyPanel();
@@ -87,11 +88,11 @@ namespace CE
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(ContentBrowserEditorSystem);
 
-		ContentFolder mRootFolder{ {}, "All", nullptr };
-		std::reference_wrapper<const ContentFolder> mSelectedFolder = mRootFolder;
+		std::unique_ptr<ContentFolder> mRootFolder = std::make_unique<ContentFolder>(std::filesystem::path{}, "All", nullptr);
+		std::reference_wrapper<const ContentFolder> mSelectedFolder = *mRootFolder;
 		std::filesystem::path mSelectedFolderPath{};
 
-		ASyncFuture<ContentFolder> mPendingRootFolder{};
+		std::future<std::unique_ptr<ContentFolder>> mPendingRootFolder{};
 
 		float mFolderHierarchyPanelWidthPercentage = .25f;
 		float mContentPanelWidthPercentage = .75f;

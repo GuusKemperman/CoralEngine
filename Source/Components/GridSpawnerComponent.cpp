@@ -14,24 +14,17 @@ void CE::GridSpawnerComponent::OnConstruct(World&, entt::entity owner)
 	mOwner = owner;
 }
 
-void CE::GridSpawnerComponent::OnBeginPlay(World&, entt::entity)
+void CE::GridSpawnerComponent::OnBeginPlay(World& world, entt::entity)
 {
 	if (mShouldSpawnOnBeginPlay)
 	{
-		SpawnGrid();
+		SpawnGrid(world);
 	}
 }
 
-void CE::GridSpawnerComponent::ClearGrid()
+void CE::GridSpawnerComponent::ClearGrid(World& world)
 {
-	World* const world = World::TryGetWorldAtTopOfStack();
-
-	if (world == nullptr)
-	{
-		return;
-	}
-
-	Registry& reg = world->GetRegistry();
+	Registry& reg = world.GetRegistry();
 
 	TransformComponent* transform = reg.TryGet<TransformComponent>(mOwner);
 
@@ -46,23 +39,16 @@ void CE::GridSpawnerComponent::ClearGrid()
 	}
 }
 
-void CE::GridSpawnerComponent::SpawnGrid()
+void CE::GridSpawnerComponent::SpawnGrid(World& world)
 {
 	if (mTiles.empty())
 	{
 		return;
 	}
 
-	World* const world = World::TryGetWorldAtTopOfStack();
+	ClearGrid(world);
 
-	if (world == nullptr)
-	{
-		return;
-	}
-
-	ClearGrid();
-
-	Registry& reg = world->GetRegistry();
+	Registry& reg = world.GetRegistry();
 	TransformComponent* transform = reg.TryGet<TransformComponent>(mOwner);
 
 	if (transform == nullptr)

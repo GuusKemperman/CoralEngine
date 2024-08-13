@@ -54,9 +54,9 @@ namespace CE::Internal
 	static constexpr std::string_view sCopiedEntitiesId = "B1C2FF80";
 }
 
-CE::WorldInspectHelper::WorldInspectHelper(World&& worldThatHasNotYetBegunPlay) :
+CE::WorldInspectHelper::WorldInspectHelper(std::unique_ptr<World> worldThatHasNotYetBegunPlay) :
 	mViewportFrameBuffer(std::make_unique<FrameBuffer>(glm::ivec2(1.f, 1.f))),
-	mWorldBeforeBeginPlay(std::make_unique<World>(std::move(worldThatHasNotYetBegunPlay)))
+	mWorldBeforeBeginPlay(std::move(worldThatHasNotYetBegunPlay))
 {
 	ASSERT(!mWorldBeforeBeginPlay->HasBegunPlay());
 }
@@ -263,7 +263,6 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 		// World will not change anymore
 		World& world = GetWorld();
-		World::PushWorld(world);
 
 		const glm::vec2 fpsCursorPos = { viewportPos.x + mViewportWidth - 60.0f, 0.0f };
 		ImGui::SetCursorPos(fpsCursorPos);
@@ -323,8 +322,6 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 
 		drawList->ChannelsMerge();
 
-		World::PopWorld();
-
 		if (world.HasRequestedEndPlay())
 		{
 			(void)EndPlay();
@@ -337,7 +334,6 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 	if (ImGui::BeginChild("HierarchyAndDetailsWindow", { mHierarchyAndDetailsWidth, 0.0f }, false, ImGuiWindowFlags_NoScrollbar))
 	{
 		World& world = GetWorld();
-		World::PushWorld(world);
 
 		ImGui::PushID(2); // Second splitter requires new ID
 		ImGui::Splitter(false, &mHierarchyHeight, &mDetailsHeight);
@@ -350,8 +346,6 @@ void CE::WorldInspectHelper::DisplayAndTick(const float deltaTime)
 		ImGui::BeginChild("WorldDetails", { 0.0f, mDetailsHeight - 5.0f }, false, ImGuiWindowFlags_NoScrollbar);
 		WorldDetails::Display(world, mSelectedEntities);
 		ImGui::EndChild();
-
-		World::PopWorld();
 	}
 
 	ImGui::EndChild();

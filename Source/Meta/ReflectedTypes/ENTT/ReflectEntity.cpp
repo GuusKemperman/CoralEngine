@@ -57,26 +57,22 @@ MetaType Reflector<T>::Reflect()
 		}, "ToString", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 
-	type.AddFunc([](const entt::entity& entity)
+	type.AddFunc([](const World& world, const entt::entity& entity)
 		{
-			const World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			return world->GetRegistry().Valid(entity);
-		}, "IsAlive", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+			return world.GetRegistry().Valid(entity);
+		}, "IsAlive", MetaFunc::ExplicitParams<const World&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 
 
-	type.AddFunc([](const entt::entity& entity, const ComponentFilter& component)
+	type.AddFunc([](World& world, const entt::entity& entity, const ComponentFilter& component)
 		{
 			if (component == nullptr)
 			{
 				return;
 			}
 
-			World* world = World::TryGetWorldAtTopOfStack();
-			ASSERT(world != nullptr);
-			world->GetRegistry().AddComponent(*component.Get(), entity);
+			world.GetRegistry().AddComponent(*component.Get(), entity);
 
-		}, "AddComponent", MetaFunc::ExplicitParams<const T&, const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "AddComponent", MetaFunc::ExplicitParams<World&, const T&, const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	ReflectFieldType<T>(type);
 

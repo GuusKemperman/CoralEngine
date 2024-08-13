@@ -21,7 +21,7 @@ namespace CE
 		The provided doUndoStack must remain alive for the duration of this
 		objects lifetime.
 		*/
-		WorldInspectHelper(World&& worldThatHasNotYetBegunPlay);
+		WorldInspectHelper(std::unique_ptr<World> worldThatHasNotYetBegunPlay);
 		~WorldInspectHelper();
 
 		/*

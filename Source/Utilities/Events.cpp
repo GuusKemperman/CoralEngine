@@ -120,9 +120,6 @@ void CE::EventBase::Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, con
 	metaFunc.RedirectFunction([&scriptFunc, script, firstNode = scriptFunc.GetFirstNode().GetValue(), entry = scriptFunc.GetEntryNode().GetValue(), numOfArgsToPass]
 		(MetaFunc::DynamicArgs args, MetaFunc::RVOBuffer rvoBuffer) -> FuncResult
 		{
-			World& world = *args[1].As<World>();
-			World::PushWorld(world);
-
 			// Raii object that manages the lifetime
 			struct ParamDeleter
 			{
@@ -148,9 +145,7 @@ void CE::EventBase::Define(MetaFunc& metaFunc, const ScriptFunc& scriptFunc, con
 				new (&scriptArgs[i + 1])MetaAny(MakeRef(args[i + 3]));
 			}
 
-			FuncResult result = VirtualMachine::Get().ExecuteScriptFunction(std::span<MetaAny>{ scriptArgs, numOfArgsToPass}, rvoBuffer, scriptFunc, firstNode, entry);
-
-			World::PopWorld();
+			FuncResult result = VirtualMachine::Get().ExecuteScriptFunction(std::span{ scriptArgs, numOfArgsToPass}, rvoBuffer, scriptFunc, firstNode, entry);
 			return result;
 		});
 }

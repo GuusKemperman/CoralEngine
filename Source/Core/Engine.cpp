@@ -3,6 +3,7 @@
 
 #include <chrono>
 
+#include "Core/ThreadPool.h"
 #include "Core/FileIO.h"
 #include "Core/Device.h"
 #include "Core/Renderer.h"
@@ -31,34 +32,22 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 
 	FileIO::StartUp(argc, argv, gameDir);
 	Logger::StartUp();
+	ThreadPool::StartUp();
 
-	LOG(LogCore, Verbose, "Created logger");
-
-	std::thread deviceAgnosticSystems
-	{
-		[&]
+	const std::future startupThread = ThreadPool::Get().Enqueue([&]
 		{
-			LOG(LogCore, Verbose, "Creating MetaManager");
 			MetaManager::StartUp();
-			LOG(LogCore, Verbose, "Creating AssetManager");
 			AssetManager::StartUp();
-			LOG(LogCore, Verbose, "Booting up virtual machine");
 			VirtualMachine::StartUp();
-		}
-	};
+		});
 
 	if (!isHeadless)
 	{
-		LOG(LogCore, Verbose, "Creating window & device");
 		Device::StartUp(DeviceConfiguration{});
-		LOG(LogCore, Verbose, "Creating renderer");
 		Renderer::StartUp();
 	}
 
-	LOG(LogCore, Verbose, "Creating Audio");
 	Audio::StartUp();
-
-	LOG(LogCore, Verbose, "Creating Input");
 	Input::StartUp();
 
 #ifdef EDITOR
@@ -68,13 +57,12 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 	}
 #endif // EDITOR
 
-	deviceAgnosticSystems.join();
+	startupThread.wait();
 
 #ifdef EDITOR
 	Editor::StartUp();
 #endif // EDITOR
 
-	LOG(LogCore, Verbose, "Creating UnitTestManager");
 	UnitTestManager::StartUp();
 
 	if (isHeadless)
@@ -92,7 +80,7 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 		const uint32 numOfErrorsLogged = Logger::Get().GetNumOfEntriesPerSeverity()[LogSeverity::Error];
 		if (numOfErrorsLogged != 0)
 		{
-			LOG(LogUnitTest, Error, "There were {} unresolved errors logged to the consoler", numOfErrorsLogged);
+			LOG(LogUnitTest, Error, "There were {} unresolved errors logged to the console", numOfErrorsLogged);
 			numFailed += numOfErrorsLogged;
 		}
 
@@ -114,34 +102,25 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 
 CE::Engine::~Engine()
 {
-	LOG(LogCore, Verbose, "Shutting down UnitTestManager");
+	ThreadPool::ShutDown();
 	UnitTestManager::ShutDown();
 
 #ifdef EDITOR
-	LOG(LogCore, Verbose, "Shutting down Editor");
 	Editor::ShutDown();
 #endif  // EDITOR
 
-	LOG(LogCore, Verbose, "Shutting down VirtualMachine");
 	VirtualMachine::ShutDown();
-	LOG(LogCore, Verbose, "Shutting down AssetManager");
 	AssetManager::ShutDown();
-	LOG(LogCore, Verbose, "Shutting down MetaManager");
 	MetaManager::ShutDown();
-	LOG(LogCore, Verbose, "Shutting down Audio");
 	Audio::ShutDown();
-	LOG(LogCore, Verbose, "Shutting down Input");
 	Input::ShutDown();
 
 	if (!Device::IsHeadless())
 	{
-		LOG(LogCore, Verbose, "Shutting down Renderer");
 		Renderer::ShutDown();
-		LOG(LogCore, Verbose, "Shutting down Device");
 		Device::ShutDown();
 	}
 
-	LOG(LogCore, Verbose, "Shutting down Logger");
 	Logger::ShutDown();
 	FileIO::ShutDown();
 }
@@ -163,7 +142,7 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 	}
 
 	LOG(LogCore, Verbose, "Loading initial level - {}", starterLevel.StringView());
-	World world = level->CreateWorld(true);
+	std::unique_ptr<World> world = level->CreateWorld(true);
 #endif // EDITOR
 
 	Input& input = Input::Get();
@@ -206,14 +185,14 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 #ifdef EDITOR
 		editor.Tick(deltaTime);
 #else
-		world.Tick(deltaTime);
+		world->Tick(deltaTime);
 
-		if (world.HasRequestedEndPlay())
+		if (world->HasRequestedEndPlay())
 		{
 			break;
 		}
 
-		world.Render();
+		world->Render();
 #endif  // EDITOR
 
 		renderer.RunCommandQueues();

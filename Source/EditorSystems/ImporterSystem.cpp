@@ -3,6 +3,7 @@
 
 #include "Core/Editor.h"
 #include "Core/FileIO.h"
+#include "Core/ThreadPool.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Meta/MetaTools.h"
@@ -116,44 +117,34 @@ CE::ImporterSystem::~ImporterSystem()
 {
 	*mWasImportingCancelled = true;
 
-	if (mChangedFilesInDirectoriesToWatch.GetThread().WasLaunched())
+	if (mChangedFilesInDirectoriesToWatch.valid())
 	{
-		mChangedFilesInDirectoriesToWatch.GetThread().CancelOrJoin();
+		mChangedFilesInDirectoriesToWatch.get();
 	}
 
-	for (ImportFuture& future : mImportFutures)
-	{
-		if (future.mImportResult.GetThread().WasLaunched())
-		{
-			future.mImportResult.GetThread().CancelOrDetach();
-		}
-	}
+	mImportFutures.clear();
 }
 
 void CE::ImporterSystem::Tick(const float dt)
 {
 	if (mCheckDirectoryCooldown.IsReady(dt)
-		&& !mChangedFilesInDirectoriesToWatch.GetThread().WasLaunched())
+		&& !mChangedFilesInDirectoriesToWatch.valid())
 	{
-		mChangedFilesInDirectoriesToWatch =
-		{
+		mChangedFilesInDirectoriesToWatch = ThreadPool::Get().Enqueue(
 			[this]
 			{
 				return GetAllFilesToImport();
-			}
-		};
+			});
 	}
 
-	if (mChangedFilesInDirectoriesToWatch.IsReady())
+	if (IsFutureReady(mChangedFilesInDirectoriesToWatch))
 	{
-		const std::vector<ImportRequest>& assetsToImport = mChangedFilesInDirectoriesToWatch.Get();
+		const std::vector<ImportRequest> assetsToImport = mChangedFilesInDirectoriesToWatch.get();
 
 		for (const ImportRequest& assetToImport : assetsToImport)
 		{
 			Import(assetToImport.mFile, assetToImport.mReasonForImporting);
 		}
-
-		mChangedFilesInDirectoriesToWatch = {};
 	}
 
 	RetrieveImportResultsFromFutures();
@@ -256,8 +247,7 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::
 		ImportFuture
 		{
 			request,
-			ASyncFuture<std::optional<std::vector<ImportPreview>>>
-			{
+			ThreadPool::Get().Enqueue(
 				[request, importer, isCancelled = mWasImportingCancelled]() -> std::optional<std::vector<ImportPreview>>
 				{
 					if (*isCancelled)
@@ -284,8 +274,7 @@ void CE::ImporterSystem::Import(const std::filesystem::path& fileToImport, std::
 					}
 
 					return previews;
-				}
-			}
+				})
 		});
 }
 
@@ -576,13 +565,13 @@ void CE::ImporterSystem::RetrieveImportResultsFromFutures()
 {
 	for (auto it = mImportFutures.begin(); it != mImportFutures.end();)
 	{
-		if (!it->mImportResult.IsReady())
+		if (!IsFutureReady(it->mImportResult))
 		{
 			++it;
 			continue;
 		}
 
-		std::optional<std::vector<ImportPreview>>& result = it->mImportResult.Get();
+		std::optional<std::vector<ImportPreview>> result = it->mImportResult.get();
 
 		if (!result.has_value())
 		{

@@ -96,9 +96,10 @@ namespace CE
 		// so if this ever changes, you'll know exactly where you need to start fixing things.
 		static constexpr bool sIsTypeIdTheSameAsNameHash = true;
 
-		// Each component script secretly gets assigned a field of type entt::entity with this name.
-		// Upon constructing the component, the correct entity id is assigned.
+		// Each component script secretly gets assigned a field of type entt::entity and World* with these names.
+		// Upon constructing the component, the correct entity id and world is assigned.
 		static constexpr Name sNameOfOwnerField = "Owner"_Name;
+		static constexpr Name sNameOfWorldField = "World"_Name;
 
 		void CollectErrors(ScriptErrorInserter inserter) const;
 
