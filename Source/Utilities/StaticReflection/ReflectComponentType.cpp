@@ -110,19 +110,21 @@ void CE::Internal::UnreflectComponentType(MetaType& type)
 
 	static constexpr TypeTraits entityRef = MakeTypeTraits<const entt::entity&>();
 
-	[[maybe_unused]] size_t numRemoved = entityType.RemoveFunc(Internal::GetAddComponentFuncName(type.GetName()),
-		MakeFuncId({ type.GetTypeId(), TypeForm::Ref }, { entityRef }));
+	[[maybe_unused]] size_t numRemoved = entityType.RemoveFunc(GetAddComponentFuncName(type.GetName()),
+		MakeFuncId({ type.GetTypeId(), TypeForm::Ref }, { MakeTypeTraits<World&>(), entityRef }));
 
 	numRemoved += entityType.RemoveFunc(GetGetComponentFuncName(type.GetName()),
-		MakeFuncId({ type.GetTypeId(), TypeForm::Ptr }, { entityRef }));
+		MakeFuncId({ type.GetTypeId(), TypeForm::Ptr }, { MakeTypeTraits<World&>(), entityRef }));
 
 	// Entity will only have one of these functions, not both.
-	numRemoved += entityType.RemoveFunc(GetRemoveComponentFuncName(type.GetName()), MakeFuncId<void(const entt::entity&)>());
-	numRemoved += entityType.RemoveFunc(GetHasComponentFuncName(type.GetName()), MakeFuncId<bool(const entt::entity&)>());
+	numRemoved += entityType.RemoveFunc(GetRemoveComponentFuncName(type.GetName()), MakeFuncId<void(World&, const entt::entity&)>());
+	numRemoved += entityType.RemoveFunc(GetHasComponentFuncName(type.GetName()), MakeFuncId<bool(const World&, const entt::entity&)>());
 
-	if (numRemoved != 3)
+	// Empty components (whose size == 1) will not have a Get function
+	const bool canBeEmptyType = type.GetSize() == 1;
+	if (numRemoved == 4 || (canBeEmptyType && numRemoved == 3))
 	{
-		LOG(LogMeta, Error, "Failed to unreflect component {}, expected to remove 3 functions, but removed {} instead",
+		LOG(LogMeta, Error, "Failed to unreflect component {}, removed {} functions",
 			type.GetName(),
 			numRemoved);
 	}

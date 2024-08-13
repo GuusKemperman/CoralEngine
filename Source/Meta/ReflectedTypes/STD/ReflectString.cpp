@@ -19,6 +19,7 @@ MetaType Reflector<T>::Reflect()
 
 	typestring.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
 	typestring.AddFunc(std::plus<T>(), OperatorType::add, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	typestring.AddFunc([](T& n, const T& l) -> T& { n += l; return n; }, OperatorType::add_assign, MetaFunc::ExplicitParams<T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	typestring.AddFunc(std::greater<T>(), OperatorType::greater, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	typestring.AddFunc(std::less<T>(), OperatorType::less, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
 	typestring.AddFunc(std::less<T>(), OperatorType::less, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);

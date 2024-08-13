@@ -392,56 +392,7 @@ system->GetName());
 	if (combinedFlags & RefreshRequest::ReloadAssets)
 	{
 		VirtualMachine::Get().ClearCompilationResult();
-
-		// We have a custom garbage collect implementation here,
-		// that only offloads assets if they might have dependencies
-		// on other assets. This prevents having to offload hundreds
-		// of textures and meshes, only to reload them a second later!
-		// We do still check to see if the file was written to, in which
-		// case we still offload it.
-
-		bool wereAnyUnloaded;
-
-		do
-		{
-			wereAnyUnloaded = false;
-			for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
-			{
-				if (!asset.IsLoaded()
-					|| asset.GetMetaData().GetClass().GetProperties().Has(Props::sCannotReferenceOtherAssetsTag)
-					|| !asset.GetFileOfOrigin().has_value()) // This asset was generated at runtime; if we unload it, we won't be able to load if back in again. 
-				{
-					continue;
-				}
-
-				asset.Unload();
-				wereAnyUnloaded = true;
-			}
-		} while (wereAnyUnloaded);
-
-		for (WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
-		{
-			if (!asset.IsLoaded())
-			{
-				continue;
-			}
-
-			if (asset.GetMetaData().GetClass().GetProperties().Has(Props::sCannotReferenceOtherAssetsTag))
-			{
-				if (asset.GetFileOfOrigin().has_value())
-				{
-					nonOffloadedAssets.emplace_back(
-						AssetThatWasNotOffloaded{
-							asset.GetMetaData().GetName(),
-							*asset.GetFileOfOrigin()
-						});
-				}
-			}
-			else
-			{
-				LOG(LogEditor, Warning, "We are refresing, but {} was still loaded into memory. Might lead to a crash", asset.GetMetaData().GetName());
-			}
-		}
+		AssetManager::Get().UnloadAllUnusedAssets(false);
 	}
 
 	// Iterate by index because more requests might be added
@@ -451,48 +402,6 @@ system->GetName());
 		if (request.mActionWhileUnloaded)
 		{
 			request.mActionWhileUnloaded();
-		}
-	}
-
-	// Only works on windows!
-#ifdef PLATFORM_WINDOWS
-	static constexpr auto toSysClock =
-		[](std::filesystem::file_time_type fileTimePoint)
-		{
-			using namespace std::literals;
-			return std::chrono::system_clock::time_point{ fileTimePoint.time_since_epoch() - 3'234'576h };
-		};
-#else
-	static_assert(false, "Implementation needed for this platform");
-#endif //
-
-	// While these assets have no dependencies on other assets,
-	// it's still possible that their file was modified. If this
-	// is the case, we do offload the asset. If someone needs the
-	// asset again, if will be loaded with the updated changes.
-	for (const AssetThatWasNotOffloaded& nonOffloadedAsset : nonOffloadedAssets)
-	{
-		WeakAssetHandle<> asset = AssetManager::Get().TryGetWeakAsset(nonOffloadedAsset.mName);
-
-		if (asset == nullptr)
-		{
-			continue;
-		}
-
-		if (!TRY_CATCH_LOG(
-			if (!asset.GetFileOfOrigin().has_value()
-				|| *asset.GetFileOfOrigin() != nonOffloadedAsset.mFile
-				|| !std::filesystem::exists(nonOffloadedAsset.mFile)
-				|| toSysClock(std::filesystem::last_write_time(nonOffloadedAsset.mFile)) >= mTimeOfLastRefresh)
-			{
-
-				if (asset != nullptr)
-				{
-					asset.Unload();
-				}
-			}))
-		{
-			asset.Unload();
 		}
 	}
 

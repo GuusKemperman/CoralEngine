@@ -68,7 +68,6 @@ FMOD::Channel* CE::Sound::Play(Audio::Group group) const
 CE::MetaType CE::Sound::Reflect()
 {
     MetaType type = MetaType{ MetaType::T<Sound>{}, "Sound", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
-    type.GetProperties().Add(Props::sCannotReferenceOtherAssetsTag);
     ReflectAssetType<Sound>(type);
     return type;
 }

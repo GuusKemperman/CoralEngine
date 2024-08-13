@@ -49,7 +49,6 @@ CE::Texture::Texture(AssetLoadInfo& loadInfo) :
 CE::MetaType CE::Texture::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<Texture>{}, "Texture", MetaType::Base<Asset>{}, MetaType::Ctor<AssetLoadInfo&>{}, MetaType::Ctor<std::string_view>{} };
-	type.GetProperties().Add(Props::sCannotReferenceOtherAssetsTag);
 	ReflectAssetType<Texture>(type);
 	return type;
 }

@@ -1,7 +1,6 @@
 #pragma once
 #include "AssetInternal.h"
 #include "Assets/Asset.h"
-#include "Meta/MetaTypeId.h"
 #include "Meta/MetaReflect.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
@@ -31,8 +30,6 @@ namespace CE
 
 		bool IsLoaded() const;
 
-		void Unload();
-
 		const std::optional<std::filesystem::path>& GetFileOfOrigin() const;
 
 		/**
@@ -44,6 +41,8 @@ namespace CE
 		uint32 GetNumberOfSoftReferences() const;
 
 	protected:
+		const Asset* GetAssetBase() const;
+
 		void AssureNotNull() const;
 
 		bool IsA(TypeId type) const;
@@ -118,7 +117,7 @@ namespace CE
 		AssetHandle& operator=(const AssetHandle<O>& other);
 
 		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
-		explicit operator WeakAssetHandle<O>() const;
+		operator WeakAssetHandle<O>() const;
 
 		const T& operator*() const;
 		const T* operator->() const;
@@ -156,7 +155,7 @@ namespace CE
 		WeakAssetHandle& operator=(const WeakAssetHandle<O>& other);
 
 		template<typename O, std::enable_if_t<std::is_convertible_v<O*, T*>, bool> = true>
-		explicit operator AssetHandle<O>() const;
+		operator AssetHandle<O>() const;
 
 	private:
 		template<typename U, typename O, std::enable_if_t<std::is_convertible_v<U*, O*>, bool>>
@@ -168,6 +167,12 @@ namespace CE
 		friend ReflectAccess;
 		static MetaType Reflect();
 	};
+
+	template<typename T>
+	AssetHandle(WeakAssetHandle<T>) -> AssetHandle<T>;
+
+	template<typename T>
+	WeakAssetHandle(AssetHandle<T>) -> WeakAssetHandle<T>;
 
 	template <Internal::AssetInternal::RefCountType IndexOfCounter>
 	AssetHandleRefCounter<IndexOfCounter>::AssetHandleRefCounter() = default;
@@ -295,25 +300,12 @@ namespace CE
 	template <typename T>
 	const T* AssetHandle<T>::Get() const
 	{
-		if (mAssetInternal == nullptr)
-		{
-			return nullptr;
-		}
-
-		mAssetInternal->mHasBeenDereferencedSinceGarbageCollect = true;
-
-		if (!IsLoaded())
-		{
-			mAssetInternal->Load();
-		}
-		ASSERT(IsLoaded());
-
 		// We do a reinterpret_cast,
 		// otherwise if we use a static_cast
 		// the user is forced to include the
 		// entire header of where the asset is
 		// located.
-		return reinterpret_cast<const T*>(mAssetInternal->mAsset.get());
+		return reinterpret_cast<const T*>(GetAssetBase());
 	}
 
 	template <typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool>>

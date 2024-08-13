@@ -208,7 +208,7 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 
 		if (timeElapsedSinceLastGarbageCollect > garbageCollectInterval)
 		{
-			AssetManager::Get().UnloadAllUnusedAssets();
+			AssetManager::Get().UnloadAllUnusedAssets(true);
 			timeElapsedSinceLastGarbageCollect = 0.0f;
 		}
 	}
