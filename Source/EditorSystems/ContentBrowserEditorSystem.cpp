@@ -9,6 +9,7 @@
 #include "Core/Editor.h"
 #include "Core/FileIO.h"
 #include "Core/Input.h"
+#include "Core/ThreadPool.h"
 #include "EditorSystems/ImporterSystem.h"
 #include "Utilities/Imgui/ImguiDragDrop.h"
 #include "Utilities/Imgui/ImguiInspect.h"
@@ -33,9 +34,9 @@ CE::ContentBrowserEditorSystem::ContentBrowserEditorSystem() :
 
 CE::ContentBrowserEditorSystem::~ContentBrowserEditorSystem()
 {
-	if (mPendingRootFolder.GetThread().WasLaunched())
+	if (mPendingRootFolder.valid())
 	{
-		mPendingRootFolder.GetThread().CancelOrDetach();
+		mPendingRootFolder.get();
 	}
 }
 
@@ -47,19 +48,9 @@ void CE::ContentBrowserEditorSystem::Tick(const float)
 		return;
 	}
 
-	if (mPendingRootFolder.IsReady())
+	if (IsFutureReady(mPendingRootFolder))
 	{
-		mRootFolder = std::move(mPendingRootFolder.Get());
-
-		// I didn't feel like making a move constructor,
-		// plus this reassignment only needs to happen for
-		// the rootfolder
-		for (ContentFolder& child : mRootFolder.mChildren)
-		{
-			child.mParent = &mRootFolder;
-		}
-
-		mPendingRootFolder = {};
+		mRootFolder = mPendingRootFolder.get();
 		SelectFolder(mSelectedFolderPath);
 	}
 
@@ -87,14 +78,13 @@ void CE::ContentBrowserEditorSystem::LoadState(std::istream& fromStream)
 
 void CE::ContentBrowserEditorSystem::RequestUpdateToFolderGraph()
 {
-	if (mPendingRootFolder.GetThread().WasLaunched())
+	if (mPendingRootFolder.valid())
 	{
-		mPendingRootFolder.GetThread().CancelOrDetach();
+		mPendingRootFolder.get();
 	}
 
-	mPendingRootFolder = 
-	{
-		[]
+	mPendingRootFolder = ThreadPool::Get().Enqueue(
+		[]() -> std::unique_ptr<ContentFolder>
 		{
 			std::unordered_map<std::filesystem::path, WeakAssetHandle<>> assetLookUp{};
 
@@ -107,10 +97,10 @@ void CE::ContentBrowserEditorSystem::RequestUpdateToFolderGraph()
 			}
 
 			// Create the root folder to hold the top-level directories and files
-			ContentFolder rootFolder = { "", "All", nullptr };
+			std::unique_ptr<ContentFolder> rootFolder = std::make_unique<ContentFolder>("", "All", nullptr);
 
-			ContentFolder& engineFolder = rootFolder.mChildren.emplace_back(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""), std::string{ sEngineAssetsDisplayName }, &rootFolder);
-			ContentFolder& gameFolder = rootFolder.mChildren.emplace_back(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""), std::string{ sGameAssetsDisplayName }, &rootFolder);
+			ContentFolder& engineFolder = rootFolder->mChildren.emplace_back(FileIO::Get().GetPath(FileIO::Directory::EngineAssets, ""), std::string{ sEngineAssetsDisplayName }, rootFolder.get());
+			ContentFolder& gameFolder = rootFolder->mChildren.emplace_back(FileIO::Get().GetPath(FileIO::Directory::GameAssets, ""), std::string{ sGameAssetsDisplayName }, rootFolder.get());
 
 			std::function<void(ContentFolder&)> parse = [&parse, &assetLookUp](ContentFolder& folder)
 				{
@@ -148,8 +138,7 @@ void CE::ContentBrowserEditorSystem::RequestUpdateToFolderGraph()
 			parse(gameFolder);
 
 			return rootFolder;
-		}
-	};
+		});
 }
 
 void CE::ContentBrowserEditorSystem::DisplayFolderHierarchyPanel()
@@ -163,7 +152,7 @@ void CE::ContentBrowserEditorSystem::DisplayFolderHierarchyPanel()
 		ImGui::SetItemTooltip("Create a new asset");
 
 		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-		DisplayFolder(mRootFolder);
+		DisplayFolder(*mRootFolder);
 
 		if (ImGui::BeginPopup("CreateNewAssetMenu"))
 		{
@@ -328,11 +317,11 @@ void CE::ContentBrowserEditorSystem::DisplayFolder(const ContentFolder& folder)
 		}
 		else
 		{
-			SelectFolder(mRootFolder);
+			SelectFolder(*mRootFolder);
 		}
 	}
 
-	if (&folder != &mRootFolder)
+	if (&folder != mRootFolder.get())
 	{
 		WeakAssetHandle receivedAsset = DragDrop::PeekAsset<Asset>();
 
@@ -675,7 +664,7 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const ContentFolder& 
 	ImGui::TextUnformatted(folder.mFolderName.c_str());
 	ImGui::Separator();
 
-	if (&folder != &mRootFolder
+	if (&folder != mRootFolder.get()
 		&& ImGui::BeginMenu("New folder"))
 	{
 		static std::string name{};
@@ -733,7 +722,7 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const ContentFolder& 
 			};
 		deleteRecursive(deleteRecursive, folder);
 
-		if (&folder != &mRootFolder)
+		if (&folder != mRootFolder.get())
 		{
 			Editor::Get().Refresh(
 				{
@@ -759,7 +748,7 @@ void CE::ContentBrowserEditorSystem::SelectFolder(const ContentFolder& folder)
 void CE::ContentBrowserEditorSystem::SelectFolder(const std::filesystem::path& path)
 {
 	mSelectedFolderPath = path;
-	mSelectedFolder = mRootFolder;
+	mSelectedFolder = *mRootFolder;
 
 	auto selectRecursive = [&](const auto& self, ContentFolder& current) -> void
 		{
@@ -773,7 +762,7 @@ void CE::ContentBrowserEditorSystem::SelectFolder(const std::filesystem::path& p
 				self(self, child);
 			}
 		};
-	selectRecursive(selectRecursive, mRootFolder);
+	selectRecursive(selectRecursive, *mRootFolder);
 }
 
 CE::MetaType CE::ContentBrowserEditorSystem::Reflect()

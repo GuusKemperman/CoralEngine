@@ -1,14 +1,11 @@
-#include "Utilities/ASync.h"
-#include "Utilities/Time.h"
 #ifdef EDITOR
 #include "EditorSystems/EditorSystem.h"
 
 #include <future>
 
 #include "Core/AssetManager.h"
-#include "Assets/Core/AssetLoadInfo.h"
 #include "Assets/Importers/Importer.h"
-#include "Utilities/MemFunctions.h"
+#include "Utilities/Time.h"
 
 namespace CE
 {
@@ -51,7 +48,7 @@ namespace CE
 		struct ImportFuture
 		{
 			ImportRequest mImportRequest{};
-			ASyncFuture<std::optional<std::vector<ImportPreview>>> mImportResult{};
+			std::future<std::optional<std::vector<ImportPreview>>> mImportResult{};
 		};
 
 		struct DirToWatch
@@ -113,7 +110,7 @@ namespace CE
 
 		std::array<DirToWatch, 2> mDirectoriesToWatch{};
 		Cooldown mCheckDirectoryCooldown{ 10.0f };
-		ASyncFuture<std::vector<ImportRequest>> mChangedFilesInDirectoriesToWatch{};
+		std::future<std::vector<ImportRequest>> mChangedFilesInDirectoriesToWatch{};
 
 		static inline bool sExcludeDuplicates{};
 		static inline bool sIgnoreReadOnly = true;

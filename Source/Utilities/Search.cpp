@@ -5,7 +5,7 @@
 #include <stack>
 #include <imgui/imgui_internal.h>
 
-#include "Utilities/ASync.h"
+#include "Core/ThreadPool.h"
 #include "Utilities/ManyStrings.h"
 #include "Utilities/Math.h"
 
@@ -67,8 +67,7 @@ namespace
 	{
 		~Result();
 
-		CE::ASyncThread mThread{};
-        bool mIsReady{};
+		std::future<void> mFuture{};
 
 		Input mInput{};
 		ReusableBuffers mBuffers{};
@@ -135,19 +134,14 @@ void CE::Search::End()
 	SearchContext& context = sContextStack.top();
 
 	// Check if the result from our previous thread is ready
-    if (context.mResults[!context.mIndexOfLastValidResult].mIsReady)
+    if (IsFutureReady(context.mResults[!context.mIndexOfLastValidResult].mFuture))
     {
         // Note that we do not check if the pending result is still valid.
         // We do this later, where we check if the last valid result is
         // still valid. Since our pending result now becomes our last valid result,
         // we can defer that check.
         Result& pendingResult = context.mResults[!context.mIndexOfLastValidResult];
-
-        if (pendingResult.mThread.WasLaunched())
-        {
-            pendingResult.mThread.Join();
-        }
-        pendingResult.mIsReady = false;
+		pendingResult.mFuture.get();
 
         // Swap the buffers
 		context.mIndexOfLastValidResult = !context.mIndexOfLastValidResult;
@@ -168,19 +162,13 @@ void CE::Search::End()
 	Result& pendingResult = context.mResults[!context.mIndexOfLastValidResult];
 
 	if (!IsResultUpToDate(lastValidResult, context.mInput)
-		&& !pendingResult.mThread.WasLaunched())
+		&& !pendingResult.mFuture.valid())
 	{
 		pendingResult.mInput = context.mInput;
-		pendingResult.mIsReady = false;
-
-		pendingResult.mThread =
-		{
-			[&pendingResult]
+		pendingResult.mFuture = ThreadPool::Get().Enqueue([&pendingResult]
 			{
 				BringResultUpToDate(pendingResult);
-				pendingResult.mIsReady = true;
-			}
-		};
+			});
 	}
 
 	if (!context.mInput.mEntries.empty()
@@ -434,9 +422,9 @@ namespace
 
 	Result::~Result()
 	{
-		if (mThread.WasLaunched())
+		if (mFuture.valid())
 		{
-			mThread.CancelOrJoin();
+			mFuture.wait();
 		}
 	}
 

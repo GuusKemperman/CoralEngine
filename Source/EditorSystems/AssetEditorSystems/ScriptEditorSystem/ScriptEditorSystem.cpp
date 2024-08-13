@@ -22,11 +22,10 @@ CE::ScriptEditorSystem::~ScriptEditorSystem()
 	// Frees the context
 	SelectFunction(nullptr);
 
-	mShouldWeStopCountingNodePopularity = true;
-
-	if (mNodePopularityCalculateThread.WasLaunched())
+	mShouldWeStopCountingNodePopularity = false;
+	if (mNodePopularityCalculations.valid())
 	{
-		mNodePopularityCalculateThread.CancelOrJoin();
+		mNodePopularityCalculations.get();
 	}
 }
 
