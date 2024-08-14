@@ -3,6 +3,7 @@
 
 #include "Core/AssetManager.h"
 #include "Core/Editor.h"
+#include "Core/Renderer.h"
 #include "EditorSystems/ThumbnailEditorSystem.h"
 #include "Meta/Fwd/MetaTypeFwd.h"
 #include "Utilities/NameLookUp.h"
@@ -202,7 +203,7 @@ void CE::Internal::DisplayHandleWidget(WeakAssetHandle<>& asset, const std::stri
 			ImGui::SameLine();
 			const glm::vec2 thumbnailSize{ 32.0f };
 
-			ImGui::Image(thumbnailEditorSystem->GetThumbnail(asset), thumbnailSize);
+			ImGui::Image(Renderer::Get().GetPlatformId(thumbnailEditorSystem->GetThumbnail(asset)), thumbnailSize);
 
 			if (Editor::Get().IsThereAnEditorTypeForAssetType(type))
 			{

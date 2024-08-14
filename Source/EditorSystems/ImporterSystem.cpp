@@ -430,12 +430,7 @@ bool CE::ImporterSystem::WouldAssetBeDeletedOrReplacedOnImporting(const WeakAsse
 	return WouldAssetBeDeletedOrReplacedOnImporting(asset, mImportPreview);
 }
 
-std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPreview& preview) const
-{
-	return GetPathToSaveAssetTo(preview, mImportPreview);
-}
-
-std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPreview& preview, const std::vector<ImportPreview>& toImport)
+std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPreview& preview)
 {
 	std::string filename = preview.mImportedAsset.GetMetaData().GetName();
 
@@ -459,19 +454,7 @@ std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPrevi
 		}
 	}
 
-	const size_t numFromThisFile = std::count_if(toImport.begin(), toImport.end(),
-		[&preview](const ImportPreview& other)
-		{
-			return preview.mImportRequest.mFile == other.mImportRequest.mFile;
-		});
-
-	std::filesystem::path dir = preview.mImportRequest.mFile.parent_path();
-
-	if (numFromThisFile > 1)
-	{
-		dir /= preview.mImportRequest.mFile.filename().replace_extension();
-	}
-
+	const std::filesystem::path dir = preview.mImportRequest.mFile.parent_path();
 	return dir / filename.append(AssetManager::sAssetExtension);
 }
 
@@ -816,7 +799,7 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 		}
 		else
 		{
-			const std::filesystem::path newAssetFile = GetPathToSaveAssetTo(*newImport, toImport);
+			const std::filesystem::path newAssetFile = GetPathToSaveAssetTo(*newImport);
 
 			if (newAssetFile != existingImportedAssetFile)
 			{
@@ -843,7 +826,7 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 	// Finally, we can safely import
 	for (const ImportPreview& imported : toImport)
 	{
-		const std::filesystem::path file = GetPathToSaveAssetTo(imported, toImport);
+		const std::filesystem::path file = GetPathToSaveAssetTo(imported);
 
 		if (!imported.mImportedAsset.SaveToFile(file))
 		{

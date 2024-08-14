@@ -3,19 +3,19 @@
 
 namespace CE
 {
-    struct RenderCommandQueue;
+	struct RenderCommandQueue;
     struct StaticMeshPlatformImpl;
     struct TexturePlatformImpl;
     struct FrameBufferPlatformImpl;
 
+	class Texture;
     class Material;
     class StaticMesh;
     class Asset;
+    class FrameBuffer;
 
     template<typename T>
     class AssetHandle;
-
-    class FrameBuffer;
 
 	class Renderer final :
 		public EngineSubsystem<Renderer>
@@ -74,11 +74,11 @@ namespace CE
 
         // Can, for example, be used as an ImTextureID for rendering images.
 		// Thread-safe
-        void* GetPlatformId(TexturePlatformImpl* platformImpl);
+        void* GetPlatformId(const AssetHandle<Texture>& texture);
 
         // Can, for example, be used as an ImTextureID for rendering images.
 		// Thread-safe
-        void* GetPlatformId(FrameBufferPlatformImpl* platformImpl);
+        void* GetPlatformId(const FrameBuffer& frameBuffer);
 
     private:
         struct Impl;

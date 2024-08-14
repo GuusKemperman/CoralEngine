@@ -34,14 +34,14 @@ namespace
 		return CE::Format("T_{}_{}", RemoveExtension(modelPath), index);
 	}
 
-	std::string GetTexName(std::string_view name)
+	std::string GetTexName(const std::filesystem::path& modelPath, std::string_view name)
 	{
-		return CE::Format("T_{}", RemoveExtension(name));
+		return CE::Format("T_{}_{}", RemoveExtension(modelPath), RemoveExtension(name));
 	}
 
-	std::string GetMeshName(std::string_view name)
+	std::string GetMeshName(const std::filesystem::path& modelPath, std::string_view name)
 	{
-		return CE::Format("SM_{}", RemoveExtension(name));
+		return CE::Format("SM_{}_{}", RemoveExtension(modelPath), RemoveExtension(name));
 	}
 
 	std::string GetSceneName(const std::filesystem::path& modelPath)
@@ -55,7 +55,7 @@ namespace
 		{
 			return CE::Format("MT_{}_{}", RemoveExtension(modelPath), index);
 		}
-		return CE::Format("MT_{}", name);
+		return CE::Format("MT_{}_{}", RemoveExtension(modelPath), RemoveExtension(name));
 	}
 
 	int GetIndexFromAssimpTextureName(const char* name)
@@ -121,7 +121,8 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 			anyErrors = true;
 		}
 
-		textures.emplace_back(MakeAssetHandle<Texture>(textureName));
+		textures.emplace_back(
+			MakeAssetHandle<Texture>(textureName));
 	}
 
 	for (uint32 i = 0; i < scene->mNumMaterials; i++)
@@ -158,7 +159,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 					{
 						return textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 					}
-					return textures.emplace_back(MakeAssetHandle<Texture>(GetTexName(textureName.C_Str())));
+					return textures.emplace_back(MakeAssetHandle<Texture>(GetTexName(file, textureName.C_Str())));
 				}
 				return nullptr;
 			};
@@ -176,7 +177,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 	{
 		const aiMesh& mesh = *scene->mMeshes[i];
 
-		const std::string meshName = GetMeshName(mesh.mName.C_Str());
+		const std::string meshName = GetMeshName(file, mesh.mName.C_Str());
 
 		const std::span<const glm::vec3> positions = { reinterpret_cast<const glm::vec3*>(mesh.mVertices), mesh.mNumVertices };
 		std::vector<uint32> indices{};
@@ -279,7 +280,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 				StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(meshHolder);
 
 				meshComponent.mStaticMesh = dummyStaticMeshes.emplace_back(
-					MakeAssetHandle<StaticMesh>(GetMeshName(scene->mMeshes[node.mMeshes[i]]->mName.C_Str())));
+					MakeAssetHandle<StaticMesh>(GetMeshName(file, scene->mMeshes[node.mMeshes[i]]->mName.C_Str())));
 				meshComponent.mMaterial = std::move(mat);
 			}
 

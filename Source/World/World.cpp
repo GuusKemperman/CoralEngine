@@ -64,9 +64,9 @@ void CE::World::Tick(const float unscaledDeltaTime)
 	}
 }
 
-void CE::World::Render(FrameBuffer* renderTarget)
+void CE::World::Render(glm::vec2 renderPos, FrameBuffer* renderTarget)
 {
-	mViewport->UpdateSize(renderTarget == nullptr ? Device::Get().GetDisplaySize() : renderTarget->mSize);
+	mViewport->UpdateSize(renderTarget == nullptr ? Device::Get().GetDisplaySize() : renderTarget->mSize, renderPos);
 	mRegistry->RenderSystems(*mRenderCommandQueue);
 
 	const entt::entity cameraEntity = CameraComponent::GetSelected(*this);

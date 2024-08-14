@@ -46,8 +46,8 @@ namespace CE
 	}
 
 
-	template<typename T>
-	bool IsFutureReady(const std::future<T>& f)
+	template<typename Future>
+	bool IsFutureReady(const Future& f)
 	{
 		return f.valid() && f.wait_for(std::chrono::seconds{}) == std::future_status::ready;
 	}

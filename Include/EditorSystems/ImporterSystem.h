@@ -66,9 +66,7 @@ namespace CE
 
 		bool WouldAssetBeDeletedOrReplacedOnImporting(const WeakAssetHandle<>& asset) const;
 
-		std::filesystem::path GetPathToSaveAssetTo(const ImportPreview& preview) const;
-
-		static std::filesystem::path GetPathToSaveAssetTo(const ImportPreview& preview, const std::vector<ImportPreview>& toImport);
+		static std::filesystem::path GetPathToSaveAssetTo(const ImportPreview& preview);
 
 		static std::vector<std::filesystem::path> GetDuplicatesOfExistingAssets(const ImportPreview& preview);
 
@@ -109,7 +107,7 @@ namespace CE
 		std::vector<ImportRequest> mFailedFiles{};
 
 		std::array<DirToWatch, 2> mDirectoriesToWatch{};
-		Cooldown mCheckDirectoryCooldown{ 10.0f };
+		Cooldown mCheckDirectoryCooldown{ 10.0f, 10.0f };
 		std::future<std::vector<ImportRequest>> mChangedFilesInDirectoriesToWatch{};
 
 		static inline bool sExcludeDuplicates{};

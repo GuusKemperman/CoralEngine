@@ -16,7 +16,7 @@ namespace CE
 	{
 #ifdef EDITOR
 		type.AddFunc(
-			[](GetThumbnailRet& ret, const WeakAssetHandle<>& asset)
+			[](AssetHandle<Texture>& ret, const WeakAssetHandle<>& asset)
 			{
 				ret = GetThumbNailImpl<T>(StaticAssetHandleCast<T>(asset));
 			},

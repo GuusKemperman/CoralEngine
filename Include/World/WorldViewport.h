@@ -12,7 +12,7 @@ namespace CE
 		WorldViewport(const World& world);
 		~WorldViewport();
 
-		void UpdateSize(glm::vec2 size);
+		void UpdateSize(glm::vec2 size, glm::vec2 pos);
 
 		const World& GetWorld() const { return mWorld; }
 
