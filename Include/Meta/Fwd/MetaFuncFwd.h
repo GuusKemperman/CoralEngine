@@ -163,13 +163,13 @@ namespace CE
 			const Params& parameters);
 
 	private:
-		struct UseContructor{};
+		struct ExplicitlyUseThisConstructor{};
 		explicit MetaFunc(InvokeT&& func,
 			NameOrType&& nameOrOp,
 			std::initializer_list<TypeTraits> paramTypes,
 			std::initializer_list<std::string_view> paramNames,
 			FuncId funcId,
-			UseContructor ctor);
+			ExplicitlyUseThisConstructor ctor);
 
 		MetaFunc(InvokeT&& func,
 			OperatorType op,
