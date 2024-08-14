@@ -107,8 +107,8 @@ namespace CE
 
 			// For more examples, take a look at the comments documenting the MetaFunc class
 		*/
-		template<typename FuncPtr, typename... Args>
-		MetaFunc& AddFunc(FuncPtr&& funcPtr, MetaFunc::NameOrTypeInit nameOrType, Args&& ...args);
+		template<typename... Args>
+		MetaFunc& AddFunc(Args&& ...args);
 
 		MetaFunc& AddFunc(MetaFunc&& func);
 

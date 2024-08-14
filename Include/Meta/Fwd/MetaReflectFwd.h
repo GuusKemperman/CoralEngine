@@ -48,25 +48,12 @@ namespace CE
 		void RegisterReflectFunc(TypeId typeId, MetaType(*reflectFunc)());
 
 		template<typename T>
+		bool InitStaticDummy();
+
+		template<typename T>
 		struct ReflectAtStartup
 		{
-			inline static bool sDummy = []
-				{
-					static_assert(!sHasExternalReflect<T> || !sHasInternalReflect<T>, "Both an internal and external reflect function.");
-					static_assert(sHasExternalReflect<T> || sHasInternalReflect<T>,
-						R"(No external or internal reflect function. You need to make sure the Reflect function is included from wherever you are trying to reflect it.
-If you are trying to reflect an std::vector<AssetHandle<Material>>, you need to include AssetHandle.h, Material.h and ReflectVector.h.)");
-
-					if constexpr (sHasInternalReflect<T>)
-					{
-						Internal::RegisterReflectFunc(MakeTypeId<T>(), ReflectAccess::GetReflectFunc<T>());
-					}
-					else if constexpr (sHasExternalReflect<T>)
-					{
-						Internal::RegisterReflectFunc(MakeTypeId<T>(), &Reflector<T>::Reflect);
-					}
-					return true;
-				}();
+			inline static bool sDummy = InitStaticDummy<T>();
 		};
 	}
 

@@ -44,13 +44,13 @@ constexpr bool CE::CanFormBeNullable(TypeForm form)
 }
 
 template<typename T>
-constexpr CE::TypeTraits CE::MakeTypeTraits()
+consteval CE::TypeTraits CE::MakeTypeTraits()
 {
 	return { MakeStrippedTypeId<T>(), MakeTypeForm<T>() };
 }
 
 template <typename TNonStripped>
-constexpr CE::TypeInfo CE::MakeTypeInfo()
+consteval CE::TypeInfo CE::MakeTypeInfo()
 {
 	using StrippedT = std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<TNonStripped>>>;
 
@@ -87,7 +87,7 @@ constexpr CE::TypeInfo CE::MakeTypeInfo()
 }
 
 template <typename T>
-constexpr CE::TypeForm CE::MakeTypeForm()
+consteval CE::TypeForm CE::MakeTypeForm()
 {
 	if constexpr (std::is_rvalue_reference_v<T>)
 	{
@@ -111,7 +111,7 @@ constexpr CE::TypeForm CE::MakeTypeForm()
 }
 
 template <typename T>
-constexpr CE::TypeId CE::MakeStrippedTypeId()
+consteval CE::TypeId CE::MakeStrippedTypeId()
 {
 	return MakeTypeId<std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>>();
 }

@@ -163,33 +163,48 @@ namespace CE
 			const Params& parameters);
 
 	private:
+		struct UseContructor{};
+		explicit MetaFunc(InvokeT&& func,
+			NameOrType&& nameOrOp,
+			std::initializer_list<TypeTraits> paramTypes,
+			std::initializer_list<std::string_view> paramNames,
+			FuncId funcId,
+			UseContructor ctor);
+
 		MetaFunc(InvokeT&& func,
-			NameOrTypeInit nameOrType,
-			Params&& paramsAndReturnAtBack,
+			OperatorType op,
+			std::initializer_list<TypeTraits> paramTypes,
+			std::initializer_list<std::string_view> paramNames,
+			FuncId funcId);
+
+		MetaFunc(InvokeT&& func,
+			std::string_view name,
+			std::initializer_list<TypeTraits> paramTypes,
+			std::initializer_list<std::string_view> paramNames,
 			FuncId funcId);
 
 	public:
-		template<typename Ret, typename... ParamsT, StringLike... ParamAndRetNames>
+		template<typename Ret, typename... ParamsT, typename NameOrOperator, StringLike... ParamAndRetNames>
 		MetaFunc(std::function<Ret(ParamsT...)>&& func,
-			NameOrTypeInit typeOrName,
+			NameOrOperator&& nameOrOp,
 			ParamAndRetNames&&... paramAndRetNames);
 
-		template<typename Functor, StringLike... ParamAndRetNames>
+		template<typename Functor, typename NameOrOperator, StringLike... ParamAndRetNames>
 		MetaFunc(Functor&& functor, 
-			NameOrTypeInit nameOrType, 
+			NameOrOperator&& nameOrType,
 			ParamAndRetNames&&... paramAndRetNames);
 
 		// Mutable member function
-		template<typename Ret, typename Obj, typename... ParamsT, StringLike... ParamAndRetNames>
-		MetaFunc(Ret(Obj::* func)(ParamsT...), NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames);
+		template<typename Ret, typename Obj, typename... ParamsT, typename NameOrOperator, StringLike... ParamAndRetNames>
+		MetaFunc(Ret(Obj::* func)(ParamsT...), NameOrOperator&& nameOrOp, ParamAndRetNames&&... paramAndRetNames);
 
 		// Const member function
-		template<typename Ret, typename Obj, typename... ParamsT, StringLike... ParamAndRetNames>
-		MetaFunc(Ret(Obj::* func)(ParamsT...) const, NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames);
+		template<typename Ret, typename Obj, typename... ParamsT, typename NameOrOperator, StringLike... ParamAndRetNames>
+		MetaFunc(Ret(Obj::* func)(ParamsT...) const, NameOrOperator&& nameOrOp, ParamAndRetNames&&... paramAndRetNames);
 
 		// Static function
-		template<typename Ret, typename... ParamsT, StringLike... ParamAndRetNames>
-		MetaFunc(Ret(*func)(ParamsT...), NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames);
+		template<typename Ret, typename... ParamsT, typename NameOrOperator, StringLike... ParamAndRetNames>
+		MetaFunc(Ret(*func)(ParamsT...), NameOrOperator&& typeOrName, ParamAndRetNames&&... paramAndRetNames);
 
 		MetaFunc(MetaFunc&& other) noexcept;
 		MetaFunc(const MetaFunc&) = delete;

@@ -8,5 +8,5 @@ namespace CE
 	FuncId MakeFuncId(TypeTraits returnType, const std::vector<TypeTraits>& parameters);
 
 	template<typename T>
-	constexpr FuncId MakeFuncId();
+	consteval FuncId MakeFuncId();
 };

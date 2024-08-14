@@ -32,17 +32,47 @@ CE::MetaFunc::MetaFunc(const InvokeT& funcToInvoke,
 {
 }
 
-CE::MetaFunc::MetaFunc(InvokeT&& func,
-	const NameOrTypeInit nameOrType, Params&& paramsAndReturnAtBack, uint32 funcId) :
-	mReturn(std::move(paramsAndReturnAtBack.back())),
-	mParams(std::move(paramsAndReturnAtBack)),
-	mNameOrType(std::holds_alternative<std::string_view>(nameOrType) ?
-		NameOrType{ std::string{ std::get<std::string_view>(nameOrType) } } : NameOrType{ std::get<OperatorType>(nameOrType) }),
+CE::MetaFunc::MetaFunc(InvokeT&& func, NameOrType&& nameOrOp, std::initializer_list<TypeTraits> paramTypes,
+	std::initializer_list<std::string_view> paramNames, FuncId funcId, UseContructor) :
+	mReturn({ *(paramTypes.end() - 1), paramNames.size() > 0 ? *(paramNames.end() - 1) : std::string_view{}}),
+	mParams([&paramNames, &paramTypes]()
+		{
+			std::vector<MetaFuncNamedParam> params{};
+			const auto typesStart = paramTypes.begin();
+			const auto typesEnd = paramTypes.end() - 1;
+
+			const auto namesStart = paramNames.begin();
+			const auto namesEnd = paramNames.end() - 1;
+
+			params.reserve(std::distance(typesStart, typesEnd));
+
+			auto typeIt = typesStart;
+			auto nameIt = namesStart;
+
+			for (; typeIt < typesEnd; ++typeIt, ++nameIt)
+			{
+				params.emplace_back(*typeIt, paramNames.size() > 0 && nameIt < namesEnd ? *nameIt : std::string_view{});
+			}
+
+			return params;
+		}()),
+	mNameOrType(std::move(nameOrOp)),
 	mProperties(std::make_unique<MetaProps>()),
 	mFuncId(funcId),
 	mFuncToInvoke(std::move(func))
 {
-	mParams.pop_back();
+}
+
+CE::MetaFunc::MetaFunc(InvokeT&& func, OperatorType op, std::initializer_list<TypeTraits> paramTypes,
+	std::initializer_list<std::string_view> paramNames, FuncId funcId) :
+	MetaFunc(std::move(func), NameOrType{ op }, paramTypes, paramNames, funcId, UseContructor{})
+{
+}
+
+CE::MetaFunc::MetaFunc(InvokeT&& func, std::string_view name, std::initializer_list<TypeTraits> paramTypes,
+	std::initializer_list<std::string_view> paramNames, FuncId funcId) :
+	MetaFunc(std::move(func), NameOrType{ std::string{ name } }, paramTypes, paramNames, funcId, UseContructor{})
+{
 }
 
 CE::MetaFunc::MetaFunc(MetaFunc&&) noexcept = default;

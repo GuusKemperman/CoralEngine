@@ -65,10 +65,10 @@ CE::MetaType::MetaType(T<TypeT>, const std::string_view name, Args&&... args) :
 		}, OperatorType::destructor);
 }
 
-template<typename FuncPtr, typename... Args>
-CE::MetaFunc& CE::MetaType::AddFunc(FuncPtr&& funcPtr, const MetaFunc::NameOrTypeInit nameOrType, Args&& ...args)
+template<typename... Args>
+CE::MetaFunc& CE::MetaType::AddFunc(Args&& ...args)
 {
-	return AddFunc(MetaFunc{ std::forward<FuncPtr>(funcPtr), nameOrType, std::forward<Args>(args)... });
+	return AddFunc(MetaFunc{ std::forward<Args>(args)... });
 }
 
 template<typename ...Args>

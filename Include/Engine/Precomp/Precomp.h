@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef _MSC_FULL_VER
+static_assert(_MSC_FULL_VER >= 194133923, "https://godbolt.org/z/97rsn91eh");
+#endif
+
 #include <sstream>
 #include <vector>
 #include <span>
@@ -18,6 +22,7 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
 #endif
+
 
 #include "entt/entity/component.hpp"
 #include "entt/entity/entity.hpp"
