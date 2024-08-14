@@ -111,7 +111,7 @@ namespace CE::Internal
 		}
 
 		template<>
-		STATIC_SPECIALIZATION bool Callback<TransformedDiskColliderComponent>(entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent& body1, const Registry& reg)
+		bool Callback<TransformedDiskColliderComponent>(entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent& body1, const Registry& reg)
 		{
 			if (entity1 >= entity2)
 			{

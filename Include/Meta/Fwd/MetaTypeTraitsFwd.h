@@ -86,14 +86,14 @@ namespace CE
 	constexpr bool CanFormBeNullable(TypeForm form);
 
 	template<typename T>
-	consteval TypeTraits MakeTypeTraits();
+	CONSTEVAL TypeTraits MakeTypeTraits();
 
 	template<typename T>
-	consteval TypeInfo MakeTypeInfo();
+	CONSTEVAL TypeInfo MakeTypeInfo();
 
 	template<typename T>
-	consteval TypeForm MakeTypeForm();
+	CONSTEVAL TypeForm MakeTypeForm();
 
 	template<typename T>
-	consteval TypeId MakeStrippedTypeId();
+	CONSTEVAL TypeId MakeStrippedTypeId();
 }

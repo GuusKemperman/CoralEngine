@@ -33,7 +33,7 @@ CE::MetaFunc::MetaFunc(const InvokeT& funcToInvoke,
 }
 
 CE::MetaFunc::MetaFunc(InvokeT&& func, NameOrType&& nameOrOp, std::initializer_list<TypeTraits> paramTypes,
-	std::initializer_list<std::string_view> paramNames, FuncId funcId, UseContructor) :
+	std::initializer_list<std::string_view> paramNames, FuncId funcId, ExplicitlyUseThisConstructor) :
 	mReturn({ *(paramTypes.end() - 1), paramNames.size() > 0 ? *(paramNames.end() - 1) : std::string_view{}}),
 	mParams([&paramNames, &paramTypes]()
 		{
@@ -65,13 +65,13 @@ CE::MetaFunc::MetaFunc(InvokeT&& func, NameOrType&& nameOrOp, std::initializer_l
 
 CE::MetaFunc::MetaFunc(InvokeT&& func, OperatorType op, std::initializer_list<TypeTraits> paramTypes,
 	std::initializer_list<std::string_view> paramNames, FuncId funcId) :
-	MetaFunc(std::move(func), NameOrType{ op }, paramTypes, paramNames, funcId, UseContructor{})
+	MetaFunc(std::move(func), NameOrType{ op }, paramTypes, paramNames, funcId, ExplicitlyUseThisConstructor{})
 {
 }
 
 CE::MetaFunc::MetaFunc(InvokeT&& func, std::string_view name, std::initializer_list<TypeTraits> paramTypes,
 	std::initializer_list<std::string_view> paramNames, FuncId funcId) :
-	MetaFunc(std::move(func), NameOrType{ std::string{ name } }, paramTypes, paramNames, funcId, UseContructor{})
+	MetaFunc(std::move(func), NameOrType{ std::string{ name } }, paramTypes, paramNames, funcId, ExplicitlyUseThisConstructor{})
 {
 }
 

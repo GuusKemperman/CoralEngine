@@ -344,10 +344,10 @@ namespace CE
 		static DynamicArg PackSingle(Arg&& arg);
 
 		template<>
-		STATIC_SPECIALIZATION DynamicArg PackSingle(const MetaAny& other);
+		DynamicArg PackSingle(const MetaAny& other);
 
 		template<>
-		STATIC_SPECIALIZATION DynamicArg PackSingle(MetaAny& other);
+		DynamicArg PackSingle(MetaAny& other);
 
 	private:
 		template<typename Ret, typename... ParamsT>

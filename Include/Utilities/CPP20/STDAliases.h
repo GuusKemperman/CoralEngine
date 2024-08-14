@@ -1,19 +1,15 @@
 #pragma once
 
 #ifdef _MSC_VER 
-
 #pragma warning(push)
 #pragma warning(disable : 4702) // Unreachable code
-
 #endif // _MSC_VER
 
 #define FMT_HEADER_ONLY
 #include "fmt/format.h"
 
 #ifdef _MSC_VER
-
 #pragma warning(pop)
-
 #endif // _MSC_VER
 
 namespace CE
@@ -25,24 +21,17 @@ namespace CE
 	}
 }
 
-#if __cplusplus >= 202002L // If we have C++20 or higher
+// Older versions of MSVC did not implement CONSTEVAL correctly,
+// see compiler explorer: https://godbolt.org/z/97rsn91eh
+// By using this macro, older versions will still compile,
+// they'll just do more work at runtime.
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER < 194133923
+#define CONSTEVAL constexpr
+#else
+#define CONSTEVAL consteval
+#endif
 
 #define UNLIKELY [[unlikely]]
 #define LIKELY [[likely]]
-
-#define STATIC_SPECIALIZATION 
-
-#else // If we don't have C++20
-
-#define UNLIKELY
-#define LIKELY
-
-#ifdef __clang__
-#define STATIC_SPECIALIZATION
-#else
-#define STATIC_SPECIALIZATION static
-#endif
-#endif
-
 #define ENGINE_ALLOCA _alloca
 #define FORCE_INLINE __forceinline

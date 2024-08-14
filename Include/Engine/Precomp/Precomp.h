@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef _MSC_FULL_VER
-static_assert(_MSC_FULL_VER >= 194133923, "https://godbolt.org/z/97rsn91eh");
-#endif
-
 #include <sstream>
 #include <vector>
 #include <span>
