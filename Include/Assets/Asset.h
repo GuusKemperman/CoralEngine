@@ -1,6 +1,6 @@
 #pragma once
 #include "Meta/MetaReflect.h"
-#include "Assets/Core/AssetFileMetaData.h"
+#include "Assets/Core/AssetMetaData.h"
 
 namespace CE
 {
@@ -46,7 +46,7 @@ namespace CE
 		In order to implement your own implementation
 		for saving an asset, override OnSave.
 		*/
-		[[nodiscard]] AssetSaveInfo Save(const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = std::nullopt) const;
+		[[nodiscard]] AssetSaveInfo Save(const std::optional<AssetMetaData::ImporterInfo>& importerInfo = std::nullopt) const;
 
 	private:
 		//********************************//

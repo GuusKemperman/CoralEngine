@@ -2,11 +2,11 @@
 #include "Assets/Core/AssetSaveInfo.h"
 
 #include "Core/AssetManager.h"
-#include "Assets/Core/AssetFileMetaData.h"
+#include "Assets/Core/AssetMetaData.h"
 #include "Utilities/ClassVersion.h"
 
 CE::AssetSaveInfo::AssetSaveInfo(const std::string& name, const MetaType& assetClass,
-	const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo) :
+	const std::optional<AssetMetaData::ImporterInfo>& importerInfo) :
 	mStream(std::ostringstream::binary),
 	mMetaData(name, assetClass, GetClassVersion(assetClass), importerInfo)
 {
@@ -46,7 +46,7 @@ bool CE::AssetSaveInfo::SaveToFile(const std::filesystem::path& path) const
 bool CE::AssetSaveInfo::IsEmpty() const
 {
 	std::stringstream readStream{ mStream.str(), std::istringstream::binary };
-	[[maybe_unused]] const std::optional<AssetFileMetaData> metaData = AssetFileMetaData::ReadMetaData(readStream);
+	[[maybe_unused]] const std::optional<AssetMetaData> metaData = AssetMetaData::ReadMetaData(readStream);
 	ASSERT(metaData.has_value());
 
 	// We modify flags we don't care about, not the actual contents of the stream

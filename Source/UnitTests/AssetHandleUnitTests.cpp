@@ -15,15 +15,15 @@ UNIT_TEST(AssetHandleTests, SingleThread)
 		TEST_ASSERT(emptyHandle.GetNumberOfStrongReferences() == 0);
 	}
 
-	Internal::AssetInternal assetInternal{ AssetFileMetaData{"TestAsset", MetaManager::Get().GetType<StaticMesh>() }, std::nullopt };
+	std::shared_ptr<Internal::AssetInternal> assetInternal = std::make_shared<Internal::AssetInternal>(AssetMetaData{"TestAsset", MetaManager::Get().GetType<StaticMesh>() }, std::nullopt);
 
 	{
-		AssetHandle<StaticMesh> nonEmpty{ &assetInternal };
+		AssetHandle<StaticMesh> nonEmpty{ assetInternal };
 
 		TEST_ASSERT(nonEmpty.GetNumberOfStrongReferences() == 1);
 
 		{
-			AssetHandle<> nonEmpty2{ &assetInternal };
+			AssetHandle<> nonEmpty2{ assetInternal };
 			TEST_ASSERT(nonEmpty.GetNumberOfStrongReferences() == 2);
 
 			AssetHandle<StaticMesh> nonEmpty3{};
@@ -44,7 +44,7 @@ UNIT_TEST(AssetHandleTests, SingleThread)
 		}
 		TEST_ASSERT(nonEmpty.GetNumberOfStrongReferences() == 1);
 	}
-	TEST_ASSERT(assetInternal.mRefCounters[static_cast<int>(Internal::AssetInternal::RefCountType::Strong)] == 0);
+	TEST_ASSERT(assetInternal->mRefCounters[static_cast<int>(Internal::AssetInternal::RefCountType::Strong)] == 0);
 
 	return UnitTest::Success;
 }
@@ -56,10 +56,9 @@ UNIT_TEST(AssetHandleTests, DynamicCasts)
 		const AssetHandle<StaticMesh> emptyHandle{};
 		TEST_ASSERT(emptyHandle.GetNumberOfStrongReferences() == 0);
 	}
+	std::shared_ptr<Internal::AssetInternal> assetInternal = std::make_shared<Internal::AssetInternal>(AssetMetaData{ "TestAsset", MetaManager::Get().GetType<StaticMesh>() }, std::nullopt);
 
-	Internal::AssetInternal assetInternal{ AssetFileMetaData{"TestAsset", MetaManager::Get().GetType<StaticMesh>() }, std::nullopt };
-
-	AssetHandle<StaticMesh> derived{ &assetInternal };
+	AssetHandle<StaticMesh> derived{ assetInternal };
 	AssetHandle<> base = derived;
 	TEST_ASSERT(base == derived);
 

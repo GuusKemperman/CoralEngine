@@ -4,7 +4,7 @@
 #include <forward_list>
 
 #include "Assets/Asset.h"
-#include "Assets/Core/AssetFileMetaData.h"
+#include "Assets/Core/AssetMetaData.h"
 #include "Assets/Core/AssetHandle.h"
 #include "Assets/Core/AssetInternal.h"
 #include "Meta/MetaManager.h"
@@ -105,7 +105,7 @@ namespace CE
 		{
 		public:
 			using value_type = WeakAssetHandle<AssetType>;
-			using ContainerType = std::forward_list<Internal::AssetInternal>;
+			using ContainerType = std::forward_list<std::shared_ptr<Internal::AssetInternal>>;
 			using UnderlyingIt = ContainerType::iterator;
 
 			EachAssetIt(UnderlyingIt&& it, ContainerType& container);
@@ -179,7 +179,7 @@ namespace CE
 		unreferenced. DeleteAsset must be explicitly called
 		if you want to remove the asset.
 		*/
-		template<typename T>
+		template <class T>
 		AssetHandle<T> AddAsset(T&& generatedAsset);
 
 		/*
@@ -195,7 +195,7 @@ namespace CE
 		// date to their latest version
 		void UpdateAssetsToLatestVersions();
 
-		static bool ReplaceMetaData(const std::filesystem::path& path, const AssetFileMetaData& metaData);
+		static bool ReplaceMetaData(const std::filesystem::path& path, const AssetMetaData& metaData);
 
 		// Made a friend, as the AssetManager is the only one
 		// allowed to create weak assets. We have a ToWeakAsset function
@@ -204,13 +204,17 @@ namespace CE
 		template<typename T>
 		friend class EachAssetT;
 
-		std::forward_list<Internal::AssetInternal> mAssets{};
-		std::unordered_map<Name::HashType, std::reference_wrapper<Internal::AssetInternal>> mLookUp{};
+		// Each asset occurs exactly once; great for iterating!
+		std::forward_list<std::shared_ptr<Internal::AssetInternal>> mAssets{};
 
-		Internal::AssetInternal* TryGetAssetInternal(Name key, TypeId typeId);
+		// Assets can still be referenced by their old name; some assets may have multiple
+		// entries in mLookUp, which makes iterating a bad idea.
+		std::unordered_map<Name::HashType, std::shared_ptr<Internal::AssetInternal>> mLookUp{};
 
-		Internal::AssetInternal* TryConstruct(const std::filesystem::path& path);
-		Internal::AssetInternal* TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData);
+		std::shared_ptr<Internal::AssetInternal> TryGetAssetInternal(Name key, TypeId typeId);
+
+		std::shared_ptr<Internal::AssetInternal> TryConstruct(const std::filesystem::path& path);
+		std::shared_ptr<Internal::AssetInternal> TryConstruct(const std::optional<std::filesystem::path>& path, AssetMetaData metaData);
 	};
 
 	template <typename AssetType>
@@ -245,7 +249,7 @@ namespace CE
 		// Not really a traditional iterator i suppose,
 		// but good enough for our purposes.
 		if (mIt == mContainer.get().begin()
-			&& !mIt->mMetaData.GetClass().IsDerivedFrom<AssetType>())
+			&& !(*mIt)->mMetaData.GetClass().IsDerivedFrom<AssetType>())
 		{
 			IncrementUntilTypeMatches();
 		}
@@ -254,7 +258,7 @@ namespace CE
 	template <typename AssetType>
 	decltype(auto) AssetManager::EachAssetIt<AssetType>::operator*() const
 	{
-		return WeakAssetHandle<AssetType>{ &*mIt };
+		return WeakAssetHandle<AssetType>{ *mIt };
 	}
 
 	template <typename AssetType>
@@ -289,7 +293,7 @@ namespace CE
 			{
 				++mIt;
 			} while (mIt != mContainer.get().end()
-				&& !mIt->mMetaData.GetClass().IsDerivedFrom<AssetType>());
+				&& !(*mIt)->mMetaData.GetClass().IsDerivedFrom<AssetType>());
 		}
 	}
 
@@ -302,7 +306,7 @@ namespace CE
 	template <typename T>
 	AssetHandle<T> AssetManager::AddAsset(T&& generatedAsset)
 	{
-		Internal::AssetInternal* internalAsset = TryConstruct(std::nullopt, AssetFileMetaData{ generatedAsset.GetName(), MetaManager::Get().GetType<T>() });
+		std::shared_ptr<Internal::AssetInternal> internalAsset = TryConstruct(std::nullopt, AssetMetaData{ generatedAsset.GetName(), MetaManager::Get().GetType<T>() });
 
 		if (internalAsset != nullptr)
 		{

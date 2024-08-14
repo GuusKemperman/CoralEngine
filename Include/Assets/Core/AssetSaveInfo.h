@@ -1,7 +1,7 @@
 #pragma once
 #include <sstream>
 
-#include "AssetFileMetaData.h"
+#include "AssetMetaData.h"
 
 namespace CE
 {
@@ -10,7 +10,7 @@ namespace CE
 	class AssetSaveInfo
 	{
 	public:
-		AssetSaveInfo(const std::string& name, const MetaType& assetClass, const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = std::nullopt);
+		AssetSaveInfo(const std::string& name, const MetaType& assetClass, const std::optional<AssetMetaData::ImporterInfo>& importerInfo = std::nullopt);
 		
 		AssetSaveInfo(AssetSaveInfo&& other) noexcept = default;
 		AssetSaveInfo(const AssetSaveInfo&) = delete;
@@ -28,12 +28,12 @@ namespace CE
 
 		std::string ToString() const;
 
-		const AssetFileMetaData& GetMetaData() const { return mMetaData; }
+		const AssetMetaData& GetMetaData() const { return mMetaData; }
 
 	private:
 		// First save to a string stream; if anything goes wrong, our original file is left unmodified
 		std::ostringstream mStream{};
 
-		AssetFileMetaData mMetaData;
+		AssetMetaData mMetaData;
 	};
 }

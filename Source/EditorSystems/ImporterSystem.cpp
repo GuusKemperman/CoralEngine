@@ -103,7 +103,7 @@ CE::ImporterSystem::ImporterSystem() :
 
 	for (const WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
 	{
-		const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = asset.GetMetaData().GetImporterInfo();
+		const std::optional<AssetMetaData::ImporterInfo>& importerInfo = asset.GetMetaData().GetImporterInfo();
 		if (!importerInfo.has_value())
 		{
 			continue;
@@ -367,7 +367,7 @@ std::vector<CE::ImporterSystem::ImportRequest> CE::ImporterSystem::GetFilesToImp
 				break;
 			}
 
-			if (asset.GetMetaData().GetMetaDataVersion() != AssetFileMetaData::GetCurrentMetaDataVersion())
+			if (asset.GetMetaData().GetMetaDataVersion() != AssetMetaData::GetCurrentMetaDataVersion())
 			{
 				importableAssets.push_back(
 					{
@@ -375,7 +375,7 @@ std::vector<CE::ImporterSystem::ImportRequest> CE::ImporterSystem::GetFilesToImp
 						Format("Asset {} is out-of-date, metadata version is {} (current is {}). The asset will be re-imported from {}",
 					asset.GetMetaData().GetName(),
 					asset.GetMetaData().GetMetaDataVersion(),
-					AssetFileMetaData::GetCurrentMetaDataVersion(),
+					AssetMetaData::GetCurrentMetaDataVersion(),
 					fileToImport.string())
 					}
 				);

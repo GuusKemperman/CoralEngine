@@ -559,7 +559,7 @@ void CE::ContentBrowserEditorSystem::DisplayImage(const WeakAssetHandle<>& asset
 			ImGui::Text("Generated at runtime");
 		}
 
-		if (const std::optional<AssetFileMetaData::ImporterInfo> importerInfo = asset.GetMetaData().GetImporterInfo();
+		if (const std::optional<AssetMetaData::ImporterInfo> importerInfo = asset.GetMetaData().GetImporterInfo();
 			importerInfo.has_value())
 		{
 			ImGui::Text("Imported from: %s", importerInfo->mImportedFile.string().c_str());
@@ -638,7 +638,7 @@ void CE::ContentBrowserEditorSystem::DisplayRightClickMenu(const WeakAssetHandle
 		}
 	}
 
-	if (const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = asset.GetMetaData().GetImporterInfo();
+	if (const std::optional<AssetMetaData::ImporterInfo>& importerInfo = asset.GetMetaData().GetImporterInfo();
 		importerInfo.has_value()
 		&& ImGui::MenuItem("Reimport"))
 	{

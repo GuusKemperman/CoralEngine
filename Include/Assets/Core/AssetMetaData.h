@@ -9,7 +9,7 @@ namespace CE
 {
 	class MetaType;
 
-	class AssetFileMetaData
+	class AssetMetaData
 	{
 	public:
 		// For assets that were imported from somewhere, useful for when we are reimporting
@@ -21,15 +21,18 @@ namespace CE
 		};
 
 		// If no version is provided, the current version is used.
-		AssetFileMetaData(std::string_view name, const MetaType& assetClass, uint32 assetVersion = std::numeric_limits<uint32>::max(), const std::optional<ImporterInfo>& importerInfo = std::nullopt);
+		AssetMetaData(std::string_view name, 
+			const MetaType& assetClass, 
+			uint32 assetVersion = std::numeric_limits<uint32>::max(), 
+			const std::optional<ImporterInfo>& importerInfo = std::nullopt);
 
-		AssetFileMetaData(const AssetFileMetaData&) = default;
-		AssetFileMetaData(AssetFileMetaData&&) noexcept = default;
+		AssetMetaData(const AssetMetaData&) = default;
+		AssetMetaData(AssetMetaData&&) noexcept = default;
 
-		~AssetFileMetaData() = default;
+		~AssetMetaData() = default;
 	
-		AssetFileMetaData& operator=(const AssetFileMetaData&) = default;
-		AssetFileMetaData& operator=(AssetFileMetaData&&) noexcept = default;
+		AssetMetaData& operator=(const AssetMetaData&) = default;
+		AssetMetaData& operator=(AssetMetaData&&) noexcept = default;
 
 		const std::string& GetName() const { return mAssetName; }
 		const MetaType& GetClass() const { return mClass; }
@@ -40,7 +43,7 @@ namespace CE
 
 		const std::optional<ImporterInfo>& GetImporterInfo() const { return mImporterInfo; }
 
-		static std::optional<AssetFileMetaData> ReadMetaData(std::istream& fromStream);
+		static std::optional<AssetMetaData> ReadMetaData(std::istream& fromStream);
 
 		void WriteMetaData(std::ostream& toStream) const;
 
@@ -50,8 +53,8 @@ namespace CE
 		friend class AssetSaveInfo;
 
 		// Backwards compatibility
-		static std::optional<AssetFileMetaData> ReadMetaDataV1V2V3(std::istream& fromStream, uint32 version);
-		static std::optional<AssetFileMetaData> ReadMetaDataV4(cereal::BinaryInputArchive& fromArchive);
+		static std::optional<AssetMetaData> ReadMetaDataV1V2V3(std::istream& fromStream, uint32 version);
+		static std::optional<AssetMetaData> ReadMetaDataV4(cereal::BinaryInputArchive& fromArchive);
 
 		static constexpr uint32 sMetaDataVersion = 4;
 		uint32 mMetaDataVersion{};

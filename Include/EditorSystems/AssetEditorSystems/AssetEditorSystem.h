@@ -288,7 +288,7 @@ namespace CE
 	{
 		ApplyChangesToAsset();
 
-		std::optional<AssetFileMetaData::ImporterInfo> importerInfo{};
+		std::optional<AssetMetaData::ImporterInfo> importerInfo{};
 
 		if (const WeakAssetHandle<T> originalAsset = TryGetOriginalAsset(); originalAsset != nullptr)
 		{

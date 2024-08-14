@@ -19,7 +19,7 @@ CE::Asset::Asset(AssetLoadInfo& loadInfo) :
 {
 }
 
-CE::AssetSaveInfo CE::Asset::Save(const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo) const
+CE::AssetSaveInfo CE::Asset::Save(const std::optional<AssetMetaData::ImporterInfo>& importerInfo) const
 {
 	MetaType& metaType = *MetaManager::Get().TryGetType(mTypeId);
 

@@ -6,9 +6,20 @@
 #include "Meta/MetaTools.h"
 #include "Meta/MetaType.h"
 
-CE::Internal::AssetInternal::AssetInternal(AssetFileMetaData&& metaData, const std::optional<std::filesystem::path>& path) :
+CE::Internal::AssetInternal::AssetInternal(AssetMetaData metaData, std::optional<std::filesystem::path> path) :
 	mMetaData(std::move(metaData)),
-	mFileOfOrigin(path)
+	mFileOfOrigin(std::move(path))
+{
+}
+
+CE::Internal::AssetInternal::AssetInternal(std::unique_ptr<Asset, InPlaceDeleter<Asset, true>> asset) :
+	mAsset(std::move(asset)),
+	mMetaData(mAsset->GetName(), [this]() -> decltype(auto)
+	{
+		const MetaType* type = MetaManager::Get().TryGetType(mAsset->GetTypeId());
+		ASSERT(type != nullptr);
+		return *type;
+	}())
 {
 }
 

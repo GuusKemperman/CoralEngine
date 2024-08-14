@@ -24,17 +24,6 @@
 
 namespace
 {
-	template<typename T>
-	struct DummyAsset
-	{
-		DummyAsset(std::string_view name) :
-			mDummyAsset(std::make_unique<CE::Internal::AssetInternal>(CE::AssetFileMetaData{ name, CE::MetaManager::Get().GetType<T>() }, std::filesystem::path{})),
-			mHandle(mDummyAsset.get())
-		{}
-		std::unique_ptr<CE::Internal::AssetInternal> mDummyAsset{};
-		CE::AssetHandle<T> mHandle{};
-	};
-
 	std::string RemoveExtension(const auto& str)
 	{
 		return std::filesystem::path{ str }.filename().replace_extension().string();
@@ -92,8 +81,8 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 
 	std::vector<ImportedAsset> returnValue{};
 
-	// Not really loaded in, but materials hold a shared ptr to textures
-	std::vector<DummyAsset<Texture>> textures{};
+	// Not really loaded in, but materials hold an AssetHandle to textures
+	std::vector<AssetHandle<Texture>> textures{};
 
 	// We set it to false initially. If we encounter errors, we continue importing for a bit (but set this to false), 
 	// just so we can log more errors and inform the user of any other issues.
@@ -132,7 +121,7 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 			anyErrors = true;
 		}
 
-		textures.emplace_back(textureName);
+		textures.emplace_back(MakeAssetHandle<Texture>(textureName));
 	}
 
 	for (uint32 i = 0; i < scene->mNumMaterials; i++)
@@ -161,15 +150,15 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 
 		aiString textureName{};
 
-		auto getTexture = [&](aiTextureType aiType, int index) -> CE::AssetHandle<Texture>
+		auto getTexture = [&](aiTextureType aiType, int index) -> AssetHandle<Texture>
 			{
 				if (aiGetMaterialTexture(&aiMat, aiType, index, &textureName) == aiReturn_SUCCESS)
 				{
 					if (textureName.C_Str()[0] == '*')
 					{
-						return textures[GetIndexFromAssimpTextureName(textureName.C_Str())].mHandle;
+						return textures[GetIndexFromAssimpTextureName(textureName.C_Str())];
 					}
-					return textures.emplace_back(GetTexName(textureName.C_Str())).mHandle;
+					return textures.emplace_back(MakeAssetHandle<Texture>(GetTexName(textureName.C_Str())));
 				}
 				return nullptr;
 			};
@@ -247,8 +236,8 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 		return Importer::ImportResult{};
 	}
 
-	std::vector<DummyAsset<StaticMesh>> dummyStaticMeshes{};
-	std::vector<DummyAsset<Material>> dummyMaterials{};
+	std::vector<AssetHandle<StaticMesh>> dummyStaticMeshes{};
+	std::vector<AssetHandle<Material>> dummyMaterials{};
 
 	World world{ false };
 	Registry& reg = world.GetRegistry();
@@ -281,14 +270,16 @@ std::optional<std::vector<CE::ImportedAsset>> CE::ModelImporter::Import(const st
 				}
 
 
-				AssetHandle<Material> mat = dummyMaterials.emplace_back(GetMaterialName(file, 
-					scene->mMaterials[scene->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), 
-					scene->mMeshes[node.mMeshes[i]]->mMaterialIndex)).mHandle;
+				AssetHandle<Material> mat = dummyMaterials.emplace_back(
+					MakeAssetHandle<Material>(GetMaterialName(file, 
+						scene->mMaterials[scene->mMeshes[node.mMeshes[i]]->mMaterialIndex]->GetName().C_Str(), 
+						scene->mMeshes[node.mMeshes[i]]->mMaterialIndex)));
 
 
 				StaticMeshComponent& meshComponent = reg.AddComponent<StaticMeshComponent>(meshHolder);
 
-				meshComponent.mStaticMesh = dummyStaticMeshes.emplace_back(GetMeshName(scene->mMeshes[node.mMeshes[i]]->mName.C_Str())).mHandle;
+				meshComponent.mStaticMesh = dummyStaticMeshes.emplace_back(
+					MakeAssetHandle<StaticMesh>(GetMeshName(scene->mMeshes[node.mMeshes[i]]->mName.C_Str())));
 				meshComponent.mMaterial = std::move(mat);
 			}
 
