@@ -71,6 +71,9 @@ namespace CE
 		std::string mName{};
 	};
 
+	template<class T>
+	concept StringLike = std::is_convertible_v<T, std::string_view>;
+
 	/*
 	FuncResult contains information about wether the function call succeeded. Examples of reasons
 	why a call can fail are if one of the arguments is of the wrong type, if the number of arguments
@@ -129,8 +132,8 @@ namespace CE
 		MetaFunc func2{[]() { return 42; }, "ReturnTheAnswerToLifeTheUniverseAndEverything"};
 
 		// For lambdas and other functors with parameters, the parameters have to be explicitely provided
-		MetaFunc func3{[](int32 i, int32 j) { return i + j; }, "LambdaWithParams", MetaFunc::ExplicitParams<int32, int32>{} };
-		MetaFunc func4{std::equal<int32>(), "Functor", MetaFunc::ExplicitParams<int32, int32>{} };
+		MetaFunc func3{[](int32 i, int32 j) { return i + j; }, "LambdaWithParams" };
+		MetaFunc func4{std::equal<int32>(), "Functor" };
 
 		// In order to distinquish between overloads, you may have to cast it to the correct signature first.
 		// This is not specifically related to the MetaFunc class, but a restraint enforced by C++ itself.
@@ -160,47 +163,48 @@ namespace CE
 			const Params& parameters);
 
 	private:
+		struct ExplicitlyUseThisConstructor{};
+		explicit MetaFunc(InvokeT&& func,
+			NameOrType&& nameOrOp,
+			std::initializer_list<TypeTraits> paramTypes,
+			std::initializer_list<std::string_view> paramNames,
+			FuncId funcId,
+			ExplicitlyUseThisConstructor ctor);
+
 		MetaFunc(InvokeT&& func,
-			NameOrTypeInit nameOrType,
-			Params&& paramsAndReturnAtBack,
-			uint32 funcId);
+			OperatorType op,
+			std::initializer_list<TypeTraits> paramTypes,
+			std::initializer_list<std::string_view> paramNames,
+			FuncId funcId);
+
+		MetaFunc(InvokeT&& func,
+			std::string_view name,
+			std::initializer_list<TypeTraits> paramTypes,
+			std::initializer_list<std::string_view> paramNames,
+			FuncId funcId);
 
 	public:
-		template<typename Ret, typename... ParamsT, typename... ParamAndRetNames>
+		template<typename Ret, typename... ParamsT, typename NameOrOperator, StringLike... ParamAndRetNames>
 		MetaFunc(std::function<Ret(ParamsT...)>&& func,
-			NameOrTypeInit typeOrName,
+			NameOrOperator&& nameOrOp,
+			ParamAndRetNames&&... paramAndRetNames);
+
+		template<typename Functor, typename NameOrOperator, StringLike... ParamAndRetNames>
+		MetaFunc(Functor&& functor, 
+			NameOrOperator&& nameOrType,
 			ParamAndRetNames&&... paramAndRetNames);
 
 		// Mutable member function
-		template<typename Ret, typename Obj, typename... ParamsT, typename... ParamAndRetNames>
-		MetaFunc(Ret(Obj::* func)(ParamsT...),
-			const NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames);
+		template<typename Ret, typename Obj, typename... ParamsT, typename NameOrOperator, StringLike... ParamAndRetNames>
+		MetaFunc(Ret(Obj::* func)(ParamsT...), NameOrOperator&& nameOrOp, ParamAndRetNames&&... paramAndRetNames);
 
 		// Const member function
-		template<typename Ret, typename Obj, typename... ParamsT, typename... ParamAndRetNames>
-		MetaFunc(Ret(Obj::* func)(ParamsT...) const,
-			const NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames);
+		template<typename Ret, typename Obj, typename... ParamsT, typename NameOrOperator, StringLike... ParamAndRetNames>
+		MetaFunc(Ret(Obj::* func)(ParamsT...) const, NameOrOperator&& nameOrOp, ParamAndRetNames&&... paramAndRetNames);
 
 		// Static function
-		template<typename Ret, typename... ParamsT, typename... ParamAndRetNames>
-		MetaFunc(Ret(*func)(ParamsT...),
-			const NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames);
-
-		// Functors without arguments
-		template<typename T, typename... ParamAndRetNames, std::enable_if_t<std::is_invocable_v<T>, bool> = true>
-		MetaFunc(const T& functor,
-			const NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames);
-
-		template<typename... T>
-		struct ExplicitParams
-		{
-		};
-
-		// Functors with arguments.		
-		template<typename T, typename... ParamsT, typename... ParamAndRetNames>
-		MetaFunc(const T& functor,
-			const NameOrTypeInit typeOrName, const ExplicitParams<ParamsT...>,
-			ParamAndRetNames&&... paramAndRetNames);
+		template<typename Ret, typename... ParamsT, typename NameOrOperator, StringLike... ParamAndRetNames>
+		MetaFunc(Ret(*func)(ParamsT...), NameOrOperator&& typeOrName, ParamAndRetNames&&... paramAndRetNames);
 
 		MetaFunc(MetaFunc&& other) noexcept;
 		MetaFunc(const MetaFunc&) = delete;
@@ -340,10 +344,10 @@ namespace CE
 		static DynamicArg PackSingle(Arg&& arg);
 
 		template<>
-		STATIC_SPECIALIZATION DynamicArg PackSingle(const MetaAny& other);
+		DynamicArg PackSingle(const MetaAny& other);
 
 		template<>
-		STATIC_SPECIALIZATION DynamicArg PackSingle(MetaAny& other);
+		DynamicArg PackSingle(MetaAny& other);
 
 	private:
 		template<typename Ret, typename... ParamsT>

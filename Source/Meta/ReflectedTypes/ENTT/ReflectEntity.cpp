@@ -47,20 +47,20 @@ MetaType Reflector<T>::Reflect()
 	type.SetTypeInfo(typeInfo);
 
 	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-	type.AddFunc(std::equal_to<T>(), OperatorType::equal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc([](const entt::entity& entity, nullptr_t) { return entity == entt::null; }, OperatorType::equal, MetaFunc::ExplicitParams<const T&, nullptr_t>{}).GetProperties();
+	type.AddFunc(std::equal_to<T>(), OperatorType::equal).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc([](const entt::entity& entity, nullptr_t) { return entity == entt::null; }, OperatorType::equal).GetProperties();
 
-	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal, MetaFunc::ExplicitParams<const T&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal).GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc([](const entt::entity& entity)
 		{
 			return std::to_string(entt::to_integral(entity));
-		}, "ToString", MetaFunc::ExplicitParams<const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+		}, "ToString").GetProperties().Add(Props::sIsScriptableTag);
 
 
 	type.AddFunc([](const World& world, const entt::entity& entity)
 		{
 			return world.GetRegistry().Valid(entity);
-		}, "IsAlive", MetaFunc::ExplicitParams<const World&, const T&>{}).GetProperties().Add(Props::sIsScriptableTag);
+		}, "IsAlive").GetProperties().Add(Props::sIsScriptableTag);
 
 
 	type.AddFunc([](World& world, const entt::entity& entity, const ComponentFilter& component)
@@ -72,7 +72,7 @@ MetaType Reflector<T>::Reflect()
 
 			world.GetRegistry().AddComponent(*component.Get(), entity);
 
-		}, "AddComponent", MetaFunc::ExplicitParams<World&, const T&, const ComponentFilter&>{}).GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "AddComponent").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	ReflectFieldType<T>(type);
 

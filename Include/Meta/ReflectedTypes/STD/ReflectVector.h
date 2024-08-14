@@ -4,31 +4,6 @@
 #include "Meta/MetaType.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
-//namespace CE::Internal
-//{
-//	template<typename T, typename Arg> std::false_type operator<(const T&, const Arg&);
-//	template<typename T, typename Arg> std::false_type operator==(const T&, const Arg&);
-//	template<typename T, typename Arg> std::false_type operator!=(const T&, const Arg&);
-//
-//	template<typename T, typename Arg = T>
-//	struct LessThanExists
-//	{
-//		enum { value = !std::is_same<decltype(std::declval<T>() < std::declval<Arg>()), std::false_type>::value };
-//	};
-//
-//	template<typename T, typename Arg = T>
-//	struct EqualExists
-//	{
-//		enum { value = !std::is_same<decltype(std::declval<T>() == std::declval<Arg>()), std::false_type>::value };
-//	};
-//
-//	template<typename T, typename Arg = T>
-//	struct NotEqualExists
-//	{
-//		enum { value = !std::is_same<decltype(std::declval<T>() != std::declval<Arg>()), std::false_type>::value };
-//	};
-//}
-
 template<typename T>
 struct Reflector<std::vector<T>>
 {
@@ -86,7 +61,7 @@ struct Reflector<std::vector<T>>
 
 		}
 
-		arrayType.AddFunc(&std::vector<T>::clear, "Clear").GetProperties().Add(Props::sIsScriptableTag);
+		arrayType.AddFunc(static_cast<void(std::vector<T>::*)()>(&std::vector<T>::clear), "Clear").GetProperties().Add(Props::sIsScriptableTag);
 
 		arrayType.AddFunc(static_cast<void(std::vector<T>::*)(const T&)>(&std::vector<T>::push_back), "Add to end").GetProperties().Add(Props::sIsScriptableTag);
 
@@ -100,7 +75,7 @@ struct Reflector<std::vector<T>>
 				{
 					LOG(LogScripting, Warning, "Called PopBack on empty array");
 				}
-			}, "Remove from end", MetaFunc::ExplicitParams<std::vector<T>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+			}, "Remove from end").GetProperties().Add(Props::sIsScriptableTag);
 
 		arrayType.AddFunc([](std::vector<T>& v, const int32& newSize)
 			{
@@ -110,43 +85,22 @@ struct Reflector<std::vector<T>>
 				}
 
 				v.resize(static_cast<size_t>(std::max(newSize, 0)));
-			}, "Resize", MetaFunc::ExplicitParams<std::vector<T>&, const int32&>{}).GetProperties().Add(Props::sIsScriptableTag);
+			}, "Resize").GetProperties().Add(Props::sIsScriptableTag);
 
 		arrayType.AddFunc([](const std::vector<T>& v) -> int32
 			{
 				return static_cast<int32>(v.size());
-			}, "Get size", MetaFunc::ExplicitParams<const std::vector<T>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-
-		//if constexpr (Internal::LessThanExists<T>::value)
-		//{
-		//	arrayType.AddFunc([](std::vector<T>& v)
-		//		{
-		//			std::sort(v.begin(), v.end());
-		//		}, "Sort", MetaFunc::ExplicitParams<std::vector<T>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-		//}
+			}, "Get size").GetProperties().Add(Props::sIsScriptableTag);
 
 		arrayType.AddFunc([](std::vector<T>& v)
 			{
 				std::reverse(v.begin(), v.end());
-			}, "Reverse", MetaFunc::ExplicitParams<std::vector<T>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-
-
-		//if constexpr (Internal::EqualExists<T>::value)
-		//{
-		//	arrayType.AddFunc(std::equal_to<std::vector<T>>(), OperatorType::equal,
-		//		MetaFunc::ExplicitParams<const std::vector<T>&, const std::vector<T>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-		//}
-
-		//if constexpr (Internal::NotEqualExists<T>::value)
-		//{
-		//	arrayType.AddFunc(std::not_equal_to<std::vector<T>>(), OperatorType::inequal,
-		//		MetaFunc::ExplicitParams<const std::vector<T>&, const std::vector<T>&>{}).GetProperties().Add(Props::sIsScriptableTag);
-		//}
+			}, "Reverse").GetProperties().Add(Props::sIsScriptableTag);
 
 		arrayType.AddFunc([](std::vector<T>& v, const std::vector<T>& other)
 			{
 				v.insert(v.end(), other.begin(), other.end());
-			}, "Combine", MetaFunc::ExplicitParams<std::vector<T>&, const std::vector<T>&>{}).GetProperties().Add(Props::sIsScriptableTag);
+			}, "Combine").GetProperties().Add(Props::sIsScriptableTag);
 
 
 		ReflectFieldType<std::vector<T>>(arrayType);
