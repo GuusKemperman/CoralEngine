@@ -19,6 +19,7 @@ CE::MetaField::MetaField(const MetaType& outerType,
 }
 
 CE::MetaField::MetaField(MetaField&&) noexcept = default;
+
 CE::MetaField::~MetaField() = default;
 
 bool CE::MetaField::operator==(const MetaField& other) const

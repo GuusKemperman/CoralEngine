@@ -28,9 +28,9 @@ namespace CE::Internal
 	static constexpr bool ValidNumOfParamsV = ValidNumOfParams<FuncSig>::template Value<ParamAndRetNames...>();
 }
 
-template<typename Ret, typename... ParamsT, typename... ParamAndRetNames>
+template<typename Ret, typename... ParamsT, typename NameOrOperator, CE::StringLike... ParamAndRetNames>
 CE::MetaFunc::MetaFunc(std::function<Ret(ParamsT...)>&& func,
-	const NameOrTypeInit typeOrName,
+	NameOrOperator&& nameOrOp,
 	ParamAndRetNames&&... paramAndRetNames) :
 	MetaFunc(
 		InvokeT
@@ -40,59 +40,33 @@ CE::MetaFunc::MetaFunc(std::function<Ret(ParamsT...)>&& func,
 				return DefaultInvoke<Ret, ParamsT...>(func, args, buffer);
 			}
 		},
-		typeOrName,
-		[&]
-		{
-			std::array<TypeTraits, sizeof...(ParamsT) + 1> paramTraits{ MakeTypeTraits<ParamsT>()..., MakeTypeTraits<Ret>() };
-			std::array<std::string, sizeof...(ParamAndRetNames)> paramNames{ std::forward<ParamAndRetNames>(paramAndRetNames)... };
-
-			std::vector<MetaFuncNamedParam> namedParams(sizeof...(ParamsT) + 1);
-
-			for (size_t i = 0; i < sizeof...(ParamsT) + 1; i++)
-			{
-				namedParams[i].mTypeTraits = paramTraits[i];
-			}
-
-			for (size_t i = 0; i < sizeof...(ParamAndRetNames); i++)
-			{
-				namedParams[i].mName = std::move(paramNames[i]);
-			}
-
-			return namedParams;
-		}(),
-			MakeFuncId<Ret(ParamsT...)>())
+		std::forward<NameOrOperator>(nameOrOp),
+		std::initializer_list<TypeTraits>{ MakeTypeTraits<ParamsT>()..., MakeTypeTraits<Ret>() },
+		std::initializer_list<std::string_view>{ std::forward<ParamAndRetNames>(paramAndRetNames)...},
+		MakeFuncId<Ret(ParamsT...)>())
 {
 	static_assert(Internal::ValidNumOfParamsV<Ret(ParamsT...), ParamAndRetNames...>, "Too many names provided; First one name for each parameter, and if the function does not return void, one for the return value.");
 }
 
-template <typename Ret, typename Obj, typename ... ParamsT, typename ... ParamAndRetNames>
-CE::MetaFunc::MetaFunc(Ret(Obj::* func)(ParamsT...), const NameOrTypeInit typeOrName,
-	ParamAndRetNames&&... paramAndRetNames) :
-	MetaFunc(std::function<Ret(Obj&, ParamsT...)>{ func }, typeOrName, std::forward<ParamAndRetNames>(paramAndRetNames)...)
+template <typename Functor, typename NameOrOperator, CE::StringLike ... ParamAndRetNames>
+CE::MetaFunc::MetaFunc(Functor&& functor, NameOrOperator&& nameOrOp, ParamAndRetNames&&... paramAndRetNames) :
+	MetaFunc(std::function{ std::forward<Functor>(functor) }, std::forward<NameOrOperator>(nameOrOp), std::forward<ParamAndRetNames>(paramAndRetNames)...)
 {}
 
-template <typename Ret, typename Obj, typename ... ParamsT, typename ... ParamAndRetNames>
-CE::MetaFunc::MetaFunc(Ret(Obj::* func)(ParamsT...) const, const NameOrTypeInit typeOrName,
-	ParamAndRetNames&&... paramAndRetNames) :
-	MetaFunc(std::function<Ret(const Obj&, ParamsT...)>{ func }, typeOrName, std::forward<ParamAndRetNames>(paramAndRetNames)...)
+template <typename Ret, typename Obj, typename ... ParamsT, typename NameOrOperator, CE::StringLike ... ParamAndRetNames>
+CE::MetaFunc::MetaFunc(Ret(Obj::* func)(ParamsT...), NameOrOperator&& nameOrOp, ParamAndRetNames&&... paramAndRetNames) :
+	MetaFunc(std::function<Ret(Obj&, ParamsT...)>{ func }, std::forward<NameOrOperator>(nameOrOp), std::forward<ParamAndRetNames>(paramAndRetNames)...)
 {}
 
-template <typename Ret, typename ... ParamsT, typename ... ParamAndRetNames>
-CE::MetaFunc::MetaFunc(Ret(*func)(ParamsT...), const NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames) :
-	MetaFunc(std::function<Ret(ParamsT...)>{ func }, typeOrName, std::forward<ParamAndRetNames>(paramAndRetNames)...)
+template <typename Ret, typename Obj, typename ... ParamsT, typename NameOrOperator, CE::StringLike ... ParamAndRetNames>
+CE::MetaFunc::MetaFunc(Ret(Obj::* func)(ParamsT...) const, NameOrOperator&& nameOrOp, ParamAndRetNames&&... paramAndRetNames) :
+	MetaFunc(std::function<Ret(const Obj&, ParamsT...)>{ func }, std::forward<NameOrOperator>(nameOrOp), std::forward<ParamAndRetNames>(paramAndRetNames)...)
 {}
 
-template <typename T, typename ... ParamAndRetNames, std::enable_if_t<std::is_invocable_v<T>, bool>>
-CE::MetaFunc::MetaFunc(const T& functor, const NameOrTypeInit typeOrName, ParamAndRetNames&&... paramAndRetNames) :
-	MetaFunc(std::function<decltype(functor())()>{ functor }, typeOrName, std::forward<ParamAndRetNames>(paramAndRetNames)...)
+template <typename Ret, typename ... ParamsT, typename NameOrOperator, CE::StringLike ... ParamAndRetNames>
+CE::MetaFunc::MetaFunc(Ret(*func)(ParamsT...), NameOrOperator&& nameOrOp, ParamAndRetNames&&... paramAndRetNames) :
+	MetaFunc(std::function<Ret(ParamsT...)>{ func }, std::forward<NameOrOperator>(nameOrOp), std::forward<ParamAndRetNames>(paramAndRetNames)...)
 {}
-
-template <typename T, typename ... ParamsT, typename ... ParamAndRetNames>
-CE::MetaFunc::MetaFunc(const T& functor, const NameOrTypeInit typeOrName, const ExplicitParams<ParamsT...>,
-                           ParamAndRetNames&&... paramAndRetNames) :
-	MetaFunc(std::function<std::invoke_result_t<T, ParamsT...>(ParamsT...)>{ functor }, typeOrName, std::forward<ParamAndRetNames>(paramAndRetNames)...)
-{
-}
 
 namespace CE::Internal
 {

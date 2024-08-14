@@ -38,7 +38,7 @@ namespace CE::Internal
 namespace CE
 {
 	template<typename T>
-	constexpr FuncId MakeFuncId()
+	CONSTEVAL FuncId MakeFuncId()
 	{
 		return Internal::FunctionHasher<T>::value();
 	}

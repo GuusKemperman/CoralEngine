@@ -224,7 +224,7 @@ CE::MetaType CE::AudioEmitterComponent::Reflect()
 	type.AddFunc([](AudioEmitterComponent& audioEmitter)
 		{
 			audioEmitter.Play(audioEmitter.mSound, audioEmitter.mVolume, audioEmitter.mPitch);
-		}, "Play Sound", MetaFunc::ExplicitParams<AudioEmitterComponent&>{}
+		}, "Play Sound"
 		).GetProperties().Add(Props::sCallFromEditorTag);
 
 	type.AddFunc(&AudioEmitterComponent::StopAll, "StopAll").GetProperties().Add(Props::sCallFromEditorTag);
@@ -232,7 +232,7 @@ CE::MetaType CE::AudioEmitterComponent::Reflect()
 	type.AddFunc([](AudioEmitterComponent& audioEmitter)
 			{
 				audioEmitter.SetChannelGroup(audioEmitter.mGroup);
-			}, "Set Channel Group", MetaFunc::ExplicitParams<AudioEmitterComponent&>{}
+			}, "Set Channel Group"
 			).GetProperties().Add(Props::sCallFromEditorTag);
 #endif // EDITOR
 

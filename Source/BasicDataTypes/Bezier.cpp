@@ -82,7 +82,7 @@ CE::MetaType CE::Bezier::Reflect()
 	type.AddFunc([](const Bezier& bezier, float t1, float t2)
 		{
 			return bezier.GetSurfaceAreaBetween(t1, t2, 0.05f);
-		}, "GetSurfaceAreaBetween", MetaFunc::ExplicitParams<const Bezier&, float, float>{}, "", "T1", "T2").GetProperties().Add(Props::sIsScriptableTag);
+		}, "GetSurfaceAreaBetween", "", "T1", "T2").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&Bezier::GetValueAt, "GetValueAt", "", "Time").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectFieldType<Bezier>(type);

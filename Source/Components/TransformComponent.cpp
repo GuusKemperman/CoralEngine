@@ -467,7 +467,7 @@ CE::MetaType CE::TransformComponent::Reflect()
 			}
 
 			return owners;
-		}, "GetChildren", MetaFunc::ExplicitParams<const TransformComponent&>{}, "").GetProperties().Add(Props::sIsScriptableTag);
+		}, "GetChildren", "").GetProperties().Add(Props::sIsScriptableTag);
 
 
 	type.AddFunc(&TransformComponent::IsOrphan, "IsOrphan", "").GetProperties().Add(Props::sIsScriptableTag);

@@ -5,8 +5,8 @@ namespace CE
 	using TypeId = uint32;
 
 	template<typename T>
-	constexpr TypeId MakeTypeId();
+	CONSTEVAL TypeId MakeTypeId();
 
 	template<typename T>
-	constexpr std::string_view MakeTypeName();
+	CONSTEVAL std::string_view MakeTypeName();
 }

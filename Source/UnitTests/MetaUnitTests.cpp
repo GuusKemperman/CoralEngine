@@ -47,7 +47,7 @@ UNIT_TEST(Meta, FunctionHash)
 		return UnitTest::Failure;
 	}
 
-	const MetaFunc func1{ [](int32, float32) -> glm::mat4 { return {}; }, "func1",  MetaFunc::ExplicitParams<int32, float32>{} };
+	const MetaFunc func1{ [](int32, float32) -> glm::mat4 { return {}; }, "func1" };
 
 	if (func1.GetFuncId() != CE::MakeFuncId<glm::mat4(int32, float32)>())
 	{
