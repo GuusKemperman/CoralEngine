@@ -779,7 +779,7 @@
     </ClCompile>
     <ClCompile Include="Source\Assets\Core\AssetSaveInfo.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetLoadInfo.cpp" />
-    <ClCompile Include="Source\Assets\Core\AssetFileMetaData.cpp" />
+    <ClCompile Include="Source\Assets\Core\AssetMetaData.cpp" />
     <ClCompile Include="source\Meta\MetaType.cpp" />
     <ClCompile Include="source\Assets\Material.cpp" />
     <ClCompile Include="source\Systems\Particles\ParticleDebugVisualizationSystem.cpp" />
@@ -893,7 +893,7 @@
     <ClInclude Include="External\predicates\constants.h" />
     <ClInclude Include="External\predicates\predicates.h" />
     <ClInclude Include="Include\Assets\Asset.h" />
-    <ClInclude Include="Include\Assets\Core\AssetFileMetaData.h" />
+    <ClInclude Include="Include\Assets\Core\AssetMetaData.h" />
     <ClInclude Include="Include\Assets\Core\AssetLoadInfo.h" />
     <ClInclude Include="Include\Assets\Core\AssetSaveInfo.h" />
     <ClInclude Include="Include\Assets\Core\ImportedAsset.h" />

@@ -108,7 +108,7 @@ void CE::AssetManager::PostConstruct()
 
 		for (auto it = renameLinks.begin(); it != renameLinks.end();)
 		{
-			Internal::AssetInternal* const assetWithNewName = TryGetAssetInternal(it->mNewName, MakeTypeId<Asset>());
+			std::shared_ptr<Internal::AssetInternal> assetWithNewName = TryGetAssetInternal(it->mNewName, MakeTypeId<Asset>());
 
 			if (assetWithNewName == nullptr)
 			{
@@ -116,7 +116,7 @@ void CE::AssetManager::PostConstruct()
 				continue;
 			}
 
-			const auto insertResult = mLookUp.emplace(Name::HashString(it->mOldName), *assetWithNewName);
+			const auto insertResult = mLookUp.emplace(Name::HashString(it->mOldName), assetWithNewName);
 
 			if (insertResult.second)
 			{
@@ -144,23 +144,23 @@ void CE::AssetManager::PostConstruct()
 
 CE::AssetManager::~AssetManager()
 {
-	for (Internal::AssetInternal& assetInternal : mAssets)
+	for (const std::shared_ptr<Internal::AssetInternal>& assetInternal : mAssets)
 	{
-		std::unique_lock lock{ assetInternal.mAccessMutex };
-		assetInternal.mAsset.reset();
+		std::unique_lock lock{ assetInternal->mAccessMutex };
+		assetInternal->mAsset.reset();
 	}
 }
 
-CE::Internal::AssetInternal* CE::AssetManager::TryGetAssetInternal(const Name key, const TypeId typeId)
+std::shared_ptr<CE::Internal::AssetInternal> CE::AssetManager::TryGetAssetInternal(const Name key, const TypeId typeId)
 {
 	const auto it = mLookUp.find(key.GetHash());
 
 	if (it == mLookUp.end()
-		|| !it->second.get().mMetaData.GetClass().IsDerivedFrom(typeId))
+		|| !it->second.get()->mMetaData.GetClass().IsDerivedFrom(typeId))
 	{
 		return nullptr;
 	}
-	return &it->second.get();
+	return it->second;
 }
 
 void CE::AssetManager::UnloadAllUnusedAssets(bool shouldSkipRecentlyDereferenced)
@@ -178,32 +178,32 @@ void CE::AssetManager::UnloadAllUnusedAssets(bool shouldSkipRecentlyDereferenced
 	do
 	{
 		wereAnyUnloaded = false;
-		for (Internal::AssetInternal& asset : mAssets)
+		for (std::shared_ptr<Internal::AssetInternal>& asset : mAssets)
 		{
 			// First do the check without locking
 			// to prevent blocking other threads
-			if (!shouldUnload(asset))
+			if (!shouldUnload(*asset))
 			{
 				continue;
 			}
 
-			std::unique_lock lock{ asset.mAccessMutex };
+			std::unique_lock lock{ asset->mAccessMutex };
 
 			// Maybe something changed on another thread
 			// before we had the lock in place
-			if (!shouldUnload(asset))
+			if (!shouldUnload(*asset))
 			{
 				continue;
 			}
 
-			asset.mAsset.reset();
+			asset->mAsset.reset();
 			wereAnyUnloaded = true;
 		}
 	} while (wereAnyUnloaded); // We might've unloaded an asset that held onto the last reference of another asset
 
-	for (Internal::AssetInternal& asset : mAssets)
+	for (const std::shared_ptr<Internal::AssetInternal>& asset : mAssets)
 	{
-		asset.mHasBeenDereferencedSinceGarbageCollect = false;
+		asset->mHasBeenDereferencedSinceGarbageCollect = false;
 	}
 }
 
@@ -229,10 +229,10 @@ void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view new
 				return;
 			}
 
-			AssetFileMetaData newMetaData = asset.GetMetaData();
+			AssetMetaData newMetaData = asset.GetMetaData();
 			newMetaData.mAssetName = newName;
 
-			Internal::AssetInternal* assetInternal = TryGetAssetInternal(asset.GetMetaData().GetName(), asset.GetMetaData().GetClass().GetTypeId());
+			std::shared_ptr<Internal::AssetInternal> assetInternal = TryGetAssetInternal(asset.GetMetaData().GetName(), asset.GetMetaData().GetClass().GetTypeId());
 
 			if (assetInternal == nullptr)
 			{
@@ -294,7 +294,7 @@ void CE::AssetManager::RenameAsset(WeakAssetHandle<> asset, std::string_view new
 			}
 
 			assetInternal->mMetaData = newMetaData;
-			auto emplaceResult = mLookUp.emplace(Name::HashString(newName), *assetInternal);
+			auto emplaceResult = mLookUp.emplace(Name::HashString(newName), assetInternal);
 
 			if (!emplaceResult.second)
 			{
@@ -314,7 +314,7 @@ void CE::AssetManager::DeleteAsset(WeakAssetHandle<>&& asset)
 {
 	auto deleteLambda = [this, assetName = asset.GetMetaData().GetName()]()
 		{
-			const Internal::AssetInternal* const asset = TryGetAssetInternal(assetName, MakeTypeId<Asset>());
+			const std::shared_ptr<Internal::AssetInternal> asset = TryGetAssetInternal(assetName, MakeTypeId<Asset>());
 
 			if (asset == nullptr)
 			{
@@ -326,10 +326,10 @@ void CE::AssetManager::DeleteAsset(WeakAssetHandle<>&& asset)
 			const uint32 numOfReferences = asset->mRefCounters[0] + asset->mRefCounters[1];
 			if (numOfReferences != 0)
 			{
-				LOG(LogAssets, Error, "Could not safely delete asset {}, as it was still referenced {} time(s).",
+				// Should be fine because we are using shared pointers, but still
+				LOG(LogAssets, Verbose, "Asset {} is being deleted, but still referenced {} time(s).",
 					assetName,
 					numOfReferences);
-				return;
 			}
 
 			if (asset->mFileOfOrigin.has_value())
@@ -344,7 +344,7 @@ void CE::AssetManager::DeleteAsset(WeakAssetHandle<>&& asset)
 
 			for (auto it = mLookUp.begin(); it != mLookUp.end();)
 			{
-				if (it->second.get().mMetaData.GetName() == assetName)
+				if (it->second.get()->mMetaData.GetName() == assetName)
 				{
 					it = mLookUp.erase(it);
 				}
@@ -354,9 +354,9 @@ void CE::AssetManager::DeleteAsset(WeakAssetHandle<>&& asset)
 				}
 			}
 
-			mAssets.remove_if([assetName](const Internal::AssetInternal& asset)
+			mAssets.remove_if([assetName](const std::shared_ptr<Internal::AssetInternal>& asset)
 				{
-					return asset.mMetaData.GetName() == assetName;
+					return asset->mMetaData.GetName() == assetName;
 				});
 		};
 
@@ -398,7 +398,7 @@ bool CE::AssetManager::MoveAsset(WeakAssetHandle<> asset, const std::filesystem:
 		return false;
 	}
 
-	Internal::AssetInternal* assetInternal = TryGetAssetInternal(asset.GetMetaData().GetName(), asset.GetMetaData().GetClass().GetTypeId());
+	const std::shared_ptr<Internal::AssetInternal> assetInternal = TryGetAssetInternal(asset.GetMetaData().GetName(), asset.GetMetaData().GetClass().GetTypeId());
 
 	if (assetInternal == nullptr)
 	{
@@ -465,13 +465,12 @@ CE::WeakAssetHandle<> CE::AssetManager::Duplicate(WeakAssetHandle<> asset, const
 			return nullptr;
 		}
 
-		(void)AssetFileMetaData::ReadMetaData(file);
+		(void)AssetMetaData::ReadMetaData(file);
 
 		fileContents = StringFunctions::StreamToString(file);
 	}
 
-
-	AssetFileMetaData newMetaData{ copyName, asset.GetMetaData().GetClass(), asset.GetMetaData().GetAssetVersion() };
+	AssetMetaData newMetaData{ copyName, asset.GetMetaData().GetClass(), asset.GetMetaData().GetAssetVersion() };
 
 	{
 		std::filesystem::create_directories(copyPath.parent_path());
@@ -487,7 +486,7 @@ CE::WeakAssetHandle<> CE::AssetManager::Duplicate(WeakAssetHandle<> asset, const
 		file.write(fileContents.c_str(), fileContents.size());
 	}
 
-	const Internal::AssetInternal* const constructedAsset = TryConstruct(copyPath.string());
+	const std::shared_ptr<Internal::AssetInternal> constructedAsset = TryConstruct(copyPath.string());
 
 	if (constructedAsset == nullptr)
 	{
@@ -546,7 +545,7 @@ CE::WeakAssetHandle<> CE::AssetManager::NewAsset(const MetaType& assetClass, con
 		return nullptr;
 	}
 
-	const Internal::AssetInternal* const constructedAsset = TryConstruct(path);
+	std::shared_ptr<Internal::AssetInternal> constructedAsset = TryConstruct(path);
 
 	if (constructedAsset == nullptr)
 	{
@@ -564,27 +563,28 @@ CE::WeakAssetHandle<> CE::AssetManager::OpenAsset(const std::filesystem::path& p
 
 void CE::AssetManager::UpdateAssetsToLatestVersions()
 {
-	for (Internal::AssetInternal& asset : mAssets)
+	for (std::shared_ptr<Internal::AssetInternal> asset : mAssets)
 	{
-		if (!asset.mFileOfOrigin.has_value()
-			|| asset.mMetaData.GetMetaDataVersion() == AssetFileMetaData::GetCurrentMetaDataVersion())
+		if (!asset->mFileOfOrigin.has_value()
+			|| asset->mMetaData.GetMetaDataVersion() == AssetMetaData::GetCurrentMetaDataVersion())
 		{
 			continue;
 		}
 
-		LOG(LogAssets, Error, "Metadata of {} is of an older version. It will automatically be updated, make sure to submit the changes to {} to source control.", asset.mMetaData.GetName(), asset.mFileOfOrigin->string());
+		LOG(LogAssets, Error, "Metadata of {} is of an older version. It will automatically be updated, make sure to submit the changes to {} to source control.", 
+			asset->mMetaData.GetName(), asset->mFileOfOrigin->string());
 
-		const uint32 oldVersion = asset.mMetaData.mMetaDataVersion;
-		asset.mMetaData.mMetaDataVersion = AssetFileMetaData::GetCurrentMetaDataVersion();
-		if (!ReplaceMetaData(*asset.mFileOfOrigin, asset.mMetaData))
+		const uint32 oldVersion = asset->mMetaData.mMetaDataVersion;
+		asset->mMetaData.mMetaDataVersion = AssetMetaData::GetCurrentMetaDataVersion();
+		if (!ReplaceMetaData(*asset->mFileOfOrigin, asset->mMetaData))
 		{
 			// It failed, make sure the metadata version is reset
-			asset.mMetaData.mMetaDataVersion = oldVersion;
+			asset->mMetaData.mMetaDataVersion = oldVersion;
 		}
 	}
 }
 
-bool CE::AssetManager::ReplaceMetaData(const std::filesystem::path& path, const AssetFileMetaData& metaData)
+bool CE::AssetManager::ReplaceMetaData(const std::filesystem::path& path, const AssetMetaData& metaData)
 {
 	std::string fileContents{};
 
@@ -597,7 +597,7 @@ bool CE::AssetManager::ReplaceMetaData(const std::filesystem::path& path, const 
 			return false;
 		}
 
-		(void)AssetFileMetaData::ReadMetaData(file);
+		(void)AssetMetaData::ReadMetaData(file);
 
 		fileContents = StringFunctions::StreamToString(file);
 	}
@@ -618,7 +618,7 @@ bool CE::AssetManager::ReplaceMetaData(const std::filesystem::path& path, const 
 	return true;
 }
 
-CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::filesystem::path& path)
+std::shared_ptr<CE::Internal::AssetInternal>CE::AssetManager::TryConstruct(const std::filesystem::path& path)
 {
 	if (path.extension() != sAssetExtension)
 	{
@@ -631,7 +631,7 @@ CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::filesyste
 
 	std::ifstream file{ path, std::ifstream::binary };
 
-	std::optional<AssetFileMetaData> metaData = AssetFileMetaData::ReadMetaData(file);
+	std::optional<AssetMetaData> metaData = AssetMetaData::ReadMetaData(file);
 
 	if (!metaData.has_value())
 	{
@@ -642,36 +642,37 @@ CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::filesyste
 	return TryConstruct(path, std::move(*metaData));
 }
 
-CE::Internal::AssetInternal* CE::AssetManager::TryConstruct(const std::optional<std::filesystem::path>& path, AssetFileMetaData metaData)
+std::shared_ptr<CE::Internal::AssetInternal> CE::AssetManager::TryConstruct(const std::optional<std::filesystem::path>& path, AssetMetaData metaData)
 {
 	if (path.has_value()
 		&& path->extension() != sAssetExtension)
 	{
 		LOG(LogAssets, Warning, "Expected {}, but extension was {}.", sAssetExtension, path->extension().string());
+		return nullptr;
 	}
 
-	Internal::AssetInternal& assetInternal = mAssets.emplace_front(std::move(metaData), path);
+	std::shared_ptr<Internal::AssetInternal> assetInternal = mAssets.emplace_front(std::make_shared<Internal::AssetInternal>(std::move(metaData), path));
 
-	const auto emplaceResult = mLookUp.emplace(Name::HashString(assetInternal.mMetaData.GetName()), assetInternal);
+	const auto emplaceResult = mLookUp.emplace(Name::HashString(assetInternal->mMetaData.GetName()), assetInternal);
 
 	if (!emplaceResult.second)
 	{
 		LOG(LogAssets, Error, "Failed to construct asset {}: there is already an asset with the name {}, from {}",
-			path.value_or("Generated at runtime").string(), assetInternal.mMetaData.GetName(), assetInternal.mFileOfOrigin.value_or("Generated at runtime").string());
+			path.value_or("Generated at runtime").string(), assetInternal->mMetaData.GetName(), assetInternal->mFileOfOrigin.value_or("Generated at runtime").string());
 		mAssets.pop_front();
 		return nullptr;
 	}
 
 #ifdef LOGGING_ENABLED
-	const uint32 currentVersion = GetClassVersion(assetInternal.mMetaData.GetClass());
-	if (assetInternal.mMetaData.mAssetVersion != currentVersion)
+	const uint32 currentVersion = GetClassVersion(assetInternal->mMetaData.GetClass());
+	if (assetInternal->mMetaData.mAssetVersion != currentVersion)
 	{
 		LOG(LogAssets, Verbose, "Asset {} is out of date: version is {} (current is {}). If the loader still supports this version, you have nothing to worry about.",
-			assetInternal.mMetaData.mAssetName,
-			assetInternal.mMetaData.mAssetVersion,
+			assetInternal->mMetaData.mAssetName,
+			assetInternal->mMetaData.mAssetVersion,
 			currentVersion);
 	}
 #endif // LOGGING_ENABLED
 
-	return &assetInternal;
+	return assetInternal;
 }

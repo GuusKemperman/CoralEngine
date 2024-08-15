@@ -14,6 +14,8 @@ namespace CE
 		AssetHandleBase();
 		AssetHandleBase(nullptr_t);
 
+		AssetHandleBase(std::shared_ptr<Internal::AssetInternal> assetInternal);
+
 		AssetHandleBase(AssetHandleBase&& other) noexcept;
 
 		AssetHandleBase& operator=(AssetHandleBase&& other) noexcept;
@@ -26,7 +28,7 @@ namespace CE
 
 		operator bool() const;
 
-		const AssetFileMetaData& GetMetaData() const;
+		const AssetMetaData& GetMetaData() const;
 
 		bool IsLoaded() const;
 
@@ -47,7 +49,7 @@ namespace CE
 
 		bool IsA(TypeId type) const;
 
-		Internal::AssetInternal* mAssetInternal{};
+		std::shared_ptr<Internal::AssetInternal> mAssetInternal{};
 	};
 
 	template<Internal::AssetInternal::RefCountType IndexOfCounter>
@@ -59,7 +61,7 @@ namespace CE
 
 		AssetHandleRefCounter(nullptr_t);
 
-		AssetHandleRefCounter(Internal::AssetInternal* assetInternal);
+		AssetHandleRefCounter(std::shared_ptr<Internal::AssetInternal> assetInternal);
 
 		AssetHandleRefCounter(AssetHandleRefCounter&& other) noexcept;
 
@@ -84,6 +86,17 @@ namespace CE
 
 	template<typename T = Asset>
 	class WeakAssetHandle;
+
+	/**
+	 * \brief Create an assethandle whose lifetime is not managed by the asset manager.
+	 *
+	 * The asset is destroyed when there are no AssetHandles or WeakAssetHandles that
+	 * reference the asset.
+	 *
+	 * \param args The arguments used to construct an instance of the asset
+	 */
+	template<typename T, typename... Args>
+	AssetHandle<T> MakeAssetHandle(Args&&... args);
 
 	template<typename T, typename O, std::enable_if_t<std::is_convertible_v<T*, O*>, bool> = true>
 	AssetHandle<T> StaticAssetHandleCast(const AssetHandle<O>& other);
@@ -182,35 +195,43 @@ namespace CE
 	{}
 
 	template <Internal::AssetInternal::RefCountType IndexOfCounter>
-	AssetHandleRefCounter<IndexOfCounter>::AssetHandleRefCounter(Internal::AssetInternal* assetInternal)
+	AssetHandleRefCounter<IndexOfCounter>::AssetHandleRefCounter(std::shared_ptr<Internal::AssetInternal> assetInternal)
 	{
-		mAssetInternal = assetInternal;
+		mAssetInternal = std::move(assetInternal);
 		IncreaseRef();
 	}
 
 	template <Internal::AssetInternal::RefCountType IndexOfCounter>
 	AssetHandleRefCounter<IndexOfCounter>::AssetHandleRefCounter(AssetHandleRefCounter&& other) noexcept :
 		AssetHandleBase(std::move(other))
-	{}
+	{
+	}
 
 	template <Internal::AssetInternal::RefCountType IndexOfCounter>
 	AssetHandleRefCounter<IndexOfCounter>::AssetHandleRefCounter(const AssetHandleRefCounter& other)
 	{
+		DecreaseRef(); // Our ref is overwritten
 		mAssetInternal = other.mAssetInternal;
-		IncreaseRef();
+		IncreaseRef(); // We made a copy, so increment
 	}
 
 	template <Internal::AssetInternal::RefCountType IndexOfCounter>
-	AssetHandleRefCounter<IndexOfCounter>& AssetHandleRefCounter<IndexOfCounter>::operator=(
-		AssetHandleRefCounter&& other) noexcept
+	AssetHandleRefCounter<IndexOfCounter>& AssetHandleRefCounter<IndexOfCounter>::operator=(AssetHandleRefCounter&& other) noexcept
 	{
-		DecreaseRef();
-		return static_cast<AssetHandleRefCounter&>(AssetHandleBase::operator=(std::move(other)));
+		if (&other == this)
+		{
+			return *this;
+		}
+
+		DecreaseRef(); // Our ref is overwritten
+		mAssetInternal = std::move(other.mAssetInternal);
+		// Ref count is not incremented; we stole it from other
+
+		return *this;
 	}
 
 	template <Internal::AssetInternal::RefCountType IndexOfCounter>
-	AssetHandleRefCounter<IndexOfCounter>& AssetHandleRefCounter<IndexOfCounter>::operator=(
-		const AssetHandleRefCounter& other)
+	AssetHandleRefCounter<IndexOfCounter>& AssetHandleRefCounter<IndexOfCounter>::operator=(const AssetHandleRefCounter& other)
 	{
 		DecreaseRef();
 		mAssetInternal = other.mAssetInternal;
@@ -247,6 +268,14 @@ namespace CE
 		{
 			--mAssetInternal->mRefCounters[static_cast<int>(IndexOfCounter)];
 		}
+	}
+
+	template <typename T, typename ... Args>
+	AssetHandle<T> MakeAssetHandle(Args&&... args)
+	{
+		std::unique_ptr<Asset, InPlaceDeleter<Asset, true>> asset = MakeUniqueInPlace<T, Asset>(std::forward<Args>(args)...);
+		std::shared_ptr<Internal::AssetInternal> assetInternal = std::make_shared<Internal::AssetInternal>(std::move(asset));
+		return { std::move(assetInternal) };
 	}
 
 	template <typename T>

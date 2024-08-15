@@ -28,7 +28,8 @@ namespace CE
 		~World();
 
 		void Tick(float deltaTime);
-		void Render(FrameBuffer* renderTarget = nullptr);
+
+		void Render(glm::vec2 viewportPos, FrameBuffer* renderTarget = nullptr);
 
 		void BeginPlay();
 		void EndPlay();

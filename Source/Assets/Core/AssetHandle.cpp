@@ -3,6 +3,7 @@
 
 #include "Core/AssetManager.h"
 #include "Core/Editor.h"
+#include "Core/Renderer.h"
 #include "EditorSystems/ThumbnailEditorSystem.h"
 #include "Meta/Fwd/MetaTypeFwd.h"
 #include "Utilities/NameLookUp.h"
@@ -11,27 +12,15 @@
 
 CE::AssetHandleBase::AssetHandleBase() = default;
 
-CE::AssetHandleBase::AssetHandleBase(nullptr_t)
-{
-}
+CE::AssetHandleBase::AssetHandleBase(nullptr_t) {}
 
-CE::AssetHandleBase::AssetHandleBase(AssetHandleBase&& other) noexcept :
-	mAssetInternal(other.mAssetInternal)
-{
-	other.mAssetInternal = nullptr;
-}
+CE::AssetHandleBase::AssetHandleBase(std::shared_ptr<Internal::AssetInternal> assetInternal) :
+	mAssetInternal(std::move(assetInternal))
+{}
 
-CE::AssetHandleBase& CE::AssetHandleBase::operator=(AssetHandleBase&& other) noexcept
-{
-	if (this == &other)
-	{
-		return *this;
-	}
+CE::AssetHandleBase::AssetHandleBase(AssetHandleBase&& other) noexcept = default;
 
-	mAssetInternal = other.mAssetInternal;
-	other.mAssetInternal = nullptr;
-	return *this;
-}
+CE::AssetHandleBase& CE::AssetHandleBase::operator=(AssetHandleBase&& other) noexcept = default;
 
 bool CE::AssetHandleBase::operator==(nullptr_t) const
 {
@@ -55,10 +44,10 @@ bool CE::AssetHandleBase::operator!=(const AssetHandleBase& other) const
 
 CE::AssetHandleBase::operator bool() const
 {
-	return mAssetInternal;
+	return mAssetInternal != nullptr;
 }
 
-const CE::AssetFileMetaData& CE::AssetHandleBase::GetMetaData() const
+const CE::AssetMetaData& CE::AssetHandleBase::GetMetaData() const
 {
 	AssureNotNull();
 	return mAssetInternal->mMetaData;
@@ -214,7 +203,7 @@ void CE::Internal::DisplayHandleWidget(WeakAssetHandle<>& asset, const std::stri
 			ImGui::SameLine();
 			const glm::vec2 thumbnailSize{ 32.0f };
 
-			ImGui::Image(thumbnailEditorSystem->GetThumbnail(asset), thumbnailSize);
+			ImGui::Image(Renderer::Get().GetPlatformId(thumbnailEditorSystem->GetThumbnail(asset)), thumbnailSize);
 
 			if (Editor::Get().IsThereAnEditorTypeForAssetType(type))
 			{

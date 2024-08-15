@@ -1,7 +1,7 @@
 #include "Precomp.h"
 #include "Assets/Core/AssetLoadInfo.h"
 
-#include "Assets/Core/AssetFileMetaData.h"
+#include "Assets/Core/AssetMetaData.h"
 #include "Assets/Core/AssetSaveInfo.h"
 #include "Meta/MetaType.h"
 #include "Assets/Asset.h"
@@ -9,14 +9,14 @@
 
 bool CE::AssetLoadInfo::ConstructFromCurrentStream()
 {
-	const std::optional<AssetFileMetaData> metaData = AssetFileMetaData::ReadMetaData(*mStream);
+	const std::optional<AssetMetaData> metaData = AssetMetaData::ReadMetaData(*mStream);
 
 	if (!metaData.has_value())
 	{
 		return false;
 	}
 
-	mMetaData = std::make_unique<AssetFileMetaData>(*metaData);
+	mMetaData = std::make_unique<AssetMetaData>(*metaData);
 	return true;
 }
 
@@ -54,7 +54,7 @@ CE::AssetLoadInfo::AssetLoadInfo(const AssetSaveInfo& saveInfo)
 
 CE::AssetLoadInfo::AssetLoadInfo(const MetaType& assetClass, const std::string_view name) :
 	mStream(std::make_unique<std::istringstream>()),
-	mMetaData(std::make_unique<AssetFileMetaData>(AssetFileMetaData{ name, assetClass, GetClassVersion(assetClass) }))
+	mMetaData(std::make_unique<AssetMetaData>(AssetMetaData{ name, assetClass, GetClassVersion(assetClass) }))
 {	
 	if (!assetClass.IsDerivedFrom<Asset>())
 	{

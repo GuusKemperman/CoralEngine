@@ -191,8 +191,7 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 		{
 			break;
 		}
-
-		world->Render();
+		world->Render(Device::Get().GetWindowPosition());
 #endif  // EDITOR
 
 		renderer.RunCommandQueues();

@@ -1,5 +1,5 @@
 #pragma once
-#include "AssetFileMetaData.h"
+#include "AssetMetaData.h"
 
 namespace CE
 {
@@ -24,7 +24,7 @@ namespace CE
 
 		std::istream& GetStream() { return *mStream; }
 
-		const AssetFileMetaData& GetMetaData() const { return *mMetaData; }
+		const AssetMetaData& GetMetaData() const { return *mMetaData; }
 
 	private:
 		// Returns true on succes
@@ -33,6 +33,6 @@ namespace CE
 		std::unique_ptr<std::istream> mStream;
 		
 		friend class AssetManager;
-		std::unique_ptr<AssetFileMetaData> mMetaData;
+		std::unique_ptr<AssetMetaData> mMetaData;
 	};
 }

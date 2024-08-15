@@ -1,12 +1,12 @@
 #include "Precomp.h"
-#include "Assets/Core/AssetFileMetaData.h"
+#include "Assets/Core/AssetMetaData.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 #include "Assets/Asset.h"
 #include "GSON/GSONBinary.h"
 #include "Utilities/ClassVersion.h"
 
-CE::AssetFileMetaData::AssetFileMetaData(std::string_view name, const MetaType& assetClass, uint32 assetVersion,
+CE::AssetMetaData::AssetMetaData(std::string_view name, const MetaType& assetClass, uint32 assetVersion,
 	const std::optional<ImporterInfo>& importerInfo) :
 	mAssetVersion(assetVersion == std::numeric_limits<uint32>::max() ? GetClassVersion(assetClass) : assetVersion),
 	mAssetName(name),
@@ -16,7 +16,7 @@ CE::AssetFileMetaData::AssetFileMetaData(std::string_view name, const MetaType& 
 	ASSERT(mClass.get().IsDerivedFrom<Asset>());
 }
 
-std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaData(std::istream& fromStream)
+std::optional<CE::AssetMetaData> CE::AssetMetaData::ReadMetaData(std::istream& fromStream)
 {
 	try
 	{
@@ -48,7 +48,7 @@ std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaData(std::is
 	}
 }
 
-std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV1V2V3(std::istream& fromStream, uint32 version)
+std::optional<CE::AssetMetaData> CE::AssetMetaData::ReadMetaDataV1V2V3(std::istream& fromStream, uint32 version)
 {
 	BinaryGSONObject obj{};
 
@@ -129,12 +129,12 @@ std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV1V2V3(s
 		}
 	}
 
-	AssetFileMetaData metaData{ std::move(assetName), *assetClass, assetVersion, std::move(importerInfo) };
+	AssetMetaData metaData{ std::move(assetName), *assetClass, assetVersion, std::move(importerInfo) };
 	metaData.mMetaDataVersion = version;
 	return metaData;
 }
 
-std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV4(cereal::BinaryInputArchive& fromArchive)
+std::optional<CE::AssetMetaData> CE::AssetMetaData::ReadMetaDataV4(cereal::BinaryInputArchive& fromArchive)
 {
 	uint32 assetVersion{};
 	Name::HashType hashedAssetClassName{};
@@ -167,13 +167,13 @@ std::optional<CE::AssetFileMetaData> CE::AssetFileMetaData::ReadMetaDataV4(cerea
 		importerInfo->mImportedFile = { std::move(importedFromFile) };
 	}
 
-	std::optional<AssetFileMetaData> metaData{};
+	std::optional<AssetMetaData> metaData{};
 	metaData.emplace(std::move(assetName), *assetClass, assetVersion, std::move(importerInfo));
 	metaData->mMetaDataVersion = 4;
 	return metaData;
 }
 
-void CE::AssetFileMetaData::WriteMetaData(std::ostream& toStream) const
+void CE::AssetMetaData::WriteMetaData(std::ostream& toStream) const
 {
 	cereal::BinaryOutputArchive ar{ toStream };
 

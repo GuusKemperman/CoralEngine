@@ -104,15 +104,8 @@ glm::vec3 CE::WorldViewport::ScreenToWorldPlane(glm::vec2 screenPosition, float 
 	return intersection;
 }
 
-void CE::WorldViewport::UpdateSize(glm::vec2 size)
+void CE::WorldViewport::UpdateSize(glm::vec2 size, glm::vec2 pos)
 {
 	mLastRenderedAtSize = size;
-
-	// If we are not using the editor, we always
-	// render starting from the topleft corner.
-#ifdef EDITOR
-	mLastRenderedAtPos = ImGui::GetCursorScreenPos();
-#else
-	mLastRenderedAtPos = Device::Get().GetWindowPosition();
-#endif // EDITOR
+	mLastRenderedAtPos = pos;
 }

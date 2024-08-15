@@ -10,6 +10,8 @@
 #include "Components/TransformComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Core/Renderer.h"
+#include "Core/ThreadPool.h"
+#include "Rendering/FrameBuffer.h"
 #include "World/Registry.h"
 #include "World/World.h"
 
@@ -18,165 +20,26 @@ CE::ThumbnailEditorSystem::ThumbnailEditorSystem() :
 {
 }
 
-void CE::ThumbnailEditorSystem::Tick(float deltaTime)
-{
-	const Timer timeSpendThisFrame{};
-
-	if (mRenderCooldown.IsReady(deltaTime)
-		&& !mCurrentlyGenerating.empty() 
-		&& AreAllAssetsLoaded(timeSpendThisFrame))
-	{
-		auto it = mCurrentlyGenerating.begin();
-		for (uint32 numRendered = 0; it != mCurrentlyGenerating.end() 
-			&& numRendered < sMaxNumOfFramesToRenderPerFrame 
-			&& timeSpendThisFrame.GetSecondsElapsed() <= sMaxTimeToSpendPerFrame; ++it, ++numRendered)
-		{
-			CurrentlyGenerating& current = *it;
-			Timer timeToRenderFrame{};
-
-			LOG(LogEditor, Verbose, "Rendering {} to thumbnail", current.mForAsset.GetMetaData().GetName());
-
-			current.mWorld->Render(&current.mFrameBuffer);
-
-			const auto result = mGeneratedThumbnails.emplace(std::piecewise_construct,
-				std::forward_as_tuple(Name::HashString(current.mForAsset.GetMetaData().GetName())),
-				std::forward_as_tuple(std::move(current.mFrameBuffer)));
-
-			result.first->second.mTimeToGenerate = timeToRenderFrame.GetSecondsElapsed() + current.mTimeNeededToCreateWorld;
-		}
-		mCurrentlyGenerating.erase(mCurrentlyGenerating.begin(), it);
-	}
-
-	if (!mWorkCooldown.IsReady(deltaTime))
-	{
-		return;
-	}
-
-	for (auto it = mGeneratedThumbnails.begin(); it != mGeneratedThumbnails.end() && timeSpendThisFrame.GetSecondsElapsed() <= sMaxTimeToSpendPerFrame;)
-	{
-		if (it->second.mNumSecondsSinceLastRequested.GetSecondsElapsed() >= sMinAmountOfTimeConsideredUnusedWhenFullyRendered
-			&& it->second.mNumSecondsSinceLastRequested.GetSecondsElapsed() >= it->second.mTimeToGenerate * sUnusedThumbnailRemoveStrictness)
-		{
-			it = mGeneratedThumbnails.erase(it);
-		}
-		else
-		{
-			++it;
-		}
-	}
-
-	for (auto it = mCurrentlyGenerating.begin(); it != mCurrentlyGenerating.end() && timeSpendThisFrame.GetSecondsElapsed() <= sMaxTimeToSpendPerFrame;)
-	{
-		if (it->mNumSecondsSinceLastRequested.GetSecondsElapsed() >= sMinAmountOfTimeConsideredUnused
-			&& it->mNumSecondsSinceLastRequested.GetSecondsElapsed() >= it->mTimeNeededToCreateWorld * sUnusedThumbnailRemoveStrictness)
-		{
-			it = mCurrentlyGenerating.erase(it);
-		}
-		else
-		{
-			++it;
-		}
-	}
-
-	std::stable_sort(mGenerateQueue.begin(), mGenerateQueue.end(),
-		[](const GenerateRequest& lhs, const GenerateRequest& rhs)
-		{
-			return lhs.mNumSecondsSinceLastRequested.GetSecondsElapsed() > rhs.mNumSecondsSinceLastRequested.GetSecondsElapsed();
-		});
-
-	for (auto it = mGenerateQueue.begin(); it != mGenerateQueue.end() && timeSpendThisFrame.GetSecondsElapsed() <= sMaxTimeToSpendPerFrame;)
-	{
-		if (it->mNumSecondsSinceLastRequested.GetSecondsElapsed() >= sMinAmountOfTimeConsideredUnused)
-		{
-			it = mGenerateQueue.erase(it);
-			continue;
-		}
-
-		const Timer timeToGenerate{};
-		GetThumbnailRet generatedThumbnail = Internal::GenerateThumbnail(it->mForAsset);
-
-		if (std::holds_alternative<AssetHandle<Texture>>(generatedThumbnail))
-		{
-			AssetHandle<Texture> texture = std::move(std::get<AssetHandle<Texture>>(generatedThumbnail));
-
-			if (texture != nullptr)
-			{
-				const auto result = mGeneratedThumbnails.emplace(std::piecewise_construct,
-					std::forward_as_tuple(Name::HashString(it->mForAsset.GetMetaData().GetName())),
-					std::forward_as_tuple(texture));
-
-				result.first->second.mTimeToGenerate = timeToGenerate.GetSecondsElapsed();
-			}
-		}
-		else
-		{
-			std::unique_ptr<World>& world = std::get<std::unique_ptr<World>>(generatedThumbnail);
-			CurrentlyGenerating& result = mCurrentlyGenerating.emplace_back(std::move(world), it->mForAsset);
-			result.mTimeNeededToCreateWorld = timeToGenerate.GetSecondsElapsed();
-		}
-
-		it = mGenerateQueue.erase(it);
-	}
-
-	if (!mCurrentlyGenerating.empty())
-	{
-		// Starts the loading process
-		// for all textures
-		(void)AreAllAssetsLoaded(timeSpendThisFrame);
-	}
-}
-
-ImTextureID CE::ThumbnailEditorSystem::GetThumbnail(const WeakAssetHandle<>& forAsset)
+CE::AssetHandle<CE::Texture> CE::ThumbnailEditorSystem::GetThumbnail(const WeakAssetHandle<>& forAsset)
 {
 	if (forAsset == nullptr)
 	{
 		return GetDefaultThumbnail();
 	}
 
-	const auto inGeneratedThumbnails = mGeneratedThumbnails.find(Name::HashString(forAsset.GetMetaData().GetName()));
+	const auto inGeneratedThumbnails = mThumbnails.find(Name::HashString(forAsset.GetMetaData().GetName()));
 
-	if (inGeneratedThumbnails != mGeneratedThumbnails.end())
+	if (inGeneratedThumbnails != mThumbnails.end())
 	{
-		inGeneratedThumbnails->second.mNumSecondsSinceLastRequested.Reset();
-
-		const std::variant<AssetHandle<Texture>, Texture>& texture = inGeneratedThumbnails->second.mTexture;
-
-		if (texture.index() == 1)
+		if (IsFutureReady(inGeneratedThumbnails->second))
 		{
-			return Renderer::Get().GetPlatformId(std::get<1>(texture).GetPlatformImpl().get());
+			return inGeneratedThumbnails->second.get();
 		}
-
-		const AssetHandle<Texture> handle = std::get<0>(texture);
-		return handle == nullptr ? nullptr : Renderer::Get().GetPlatformId(handle->GetPlatformImpl().get());
+		return GetDefaultThumbnail();
 	}
 
-	const auto inQueue = std::find_if(mGenerateQueue.begin(), mGenerateQueue.end(), 
-		[&forAsset](const GenerateRequest& request)
-		{
-			return request.mForAsset == forAsset;
-		});
-
-	const auto inCurrentlyGenerating = std::find_if(mCurrentlyGenerating.begin(), mCurrentlyGenerating.end(), 
-		[&forAsset](const CurrentlyGenerating& current)
-		{
-			return current.mForAsset == forAsset;
-		});
-
-	if (inQueue != mGenerateQueue.end())
-	{
-		inQueue->mNumSecondsSinceLastRequested.Reset();
-	}
-
-	if (inCurrentlyGenerating != mCurrentlyGenerating.end())
-	{
-		inCurrentlyGenerating->mNumSecondsSinceLastRequested.Reset();
-	}
-
-	if (inQueue == mGenerateQueue.end()
-		&& inCurrentlyGenerating == mCurrentlyGenerating.end())
-	{
-		mGenerateQueue.emplace_back(GenerateRequest{ forAsset });
-	}
+	std::future thumbnailFuture = ThreadPool::Get().Enqueue(&Internal::GenerateThumbnail, forAsset);
+	mThumbnails.emplace(Name::HashString(forAsset.GetMetaData().GetName()), thumbnailFuture.share());
 
 	return GetDefaultThumbnail();
 }
@@ -185,8 +48,11 @@ bool CE::ThumbnailEditorSystem::DisplayImGuiImageButton(const WeakAssetHandle<>&
 {
 	const ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
 	const std::string_view id = forAsset != nullptr ? std::string_view{ forAsset.GetMetaData().GetName() } : "None";
+
+	const AssetHandle<Texture> thumbnail = ImGui::IsRectVisible(cursorScreenPos, cursorScreenPos + size) ? GetThumbnail(forAsset) : GetDefaultThumbnail();
+
 	return ImGui::ImageButton(id.data(), 
-		ImGui::IsRectVisible(cursorScreenPos, cursorScreenPos + size) ? GetThumbnail(forAsset) : GetDefaultThumbnail(), 
+		Renderer::Get().GetPlatformId(thumbnail), 
 		size,
 		ImVec2(0, 1),
 		ImVec2(1, 0));
@@ -195,79 +61,20 @@ bool CE::ThumbnailEditorSystem::DisplayImGuiImageButton(const WeakAssetHandle<>&
 void CE::ThumbnailEditorSystem::DisplayImGuiImage(const WeakAssetHandle<>& forAsset, ImVec2 size)
 {
 	const ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
-	ImGui::Image(ImGui::IsRectVisible(cursorScreenPos, cursorScreenPos + size) ? GetThumbnail(forAsset) : GetDefaultThumbnail(), 
+	const AssetHandle<Texture> thumbnail = ImGui::IsRectVisible(cursorScreenPos, cursorScreenPos + size) ? GetThumbnail(forAsset) : GetDefaultThumbnail();
+
+	ImGui::Image(Renderer::Get().GetPlatformId(thumbnail),
 		size,
 		ImVec2(0, 1),
 		ImVec2(1, 0));
 }
 
-ImTextureID CE::ThumbnailEditorSystem::GetDefaultThumbnail()
+CE::AssetHandle<CE::Texture> CE::ThumbnailEditorSystem::GetDefaultThumbnail()
 {
-	AssetHandle<Texture> icon = AssetManager::Get().TryGetAsset<Texture>("T_DefaultIcon");
-	return icon == nullptr ? nullptr : Renderer::Get().GetPlatformId(icon->GetPlatformImpl().get());
+	return AssetManager::Get().TryGetAsset<Texture>("T_DefaultIcon");
 }
 
-bool CE::ThumbnailEditorSystem::AreAllAssetsLoaded(const Timer& timeOut)
-{
-	bool allLoaded = LoadAssets<Material>(timeOut)
-		&& LoadAssets<StaticMesh>(timeOut);
-
-	for (WeakAssetHandle<Texture> weakAsset : AssetManager::Get().GetAllAssets<Texture>())
-	{
-		if (timeOut.GetSecondsElapsed() > sMaxTimeToSpendPerFrame)
-		{
-			return false;
-		}
-
-		if (weakAsset.GetNumberOfStrongReferences() == 0)
-		{
-			continue;
-		}
-
-		AssetHandle<Texture> texture{ std::move(weakAsset) };
-
-		// Kickstarts the loading process
-		(void)*texture;
-	}
-
-	return allLoaded;
-}
-
-template <typename T>
-bool CE::ThumbnailEditorSystem::LoadAssets(const Timer& timeOut)
-{
-	for (WeakAssetHandle<T> weakAsset : AssetManager::Get().GetAllAssets<T>())
-	{
-		if (timeOut.GetSecondsElapsed() > sMaxTimeToSpendPerFrame)
-		{
-			return false;
-		}
-
-		if (weakAsset.GetNumberOfStrongReferences() == 0)
-		{
-			continue;
-		}
-
-		AssetHandle<T> asset{ std::move(weakAsset) };
-
-		// Load it in
-		(void)*asset;
-	}
-
-	return true;
-}
-
-CE::ThumbnailEditorSystem::GeneratedThumbnail::GeneratedThumbnail(FrameBuffer&& frameBuffer)
-{
-	mTexture.emplace<Texture>(std::string_view{}, std::move(frameBuffer));
-}
-
-CE::ThumbnailEditorSystem::GeneratedThumbnail::GeneratedThumbnail(AssetHandle<Texture> texture) :
-	mTexture(texture)
-{
-}
-
-CE::GetThumbnailRet CE::Internal::GenerateThumbnail(WeakAssetHandle<> forAsset)
+CE::AssetHandle<CE::Texture> CE::Internal::GenerateThumbnail(WeakAssetHandle<> forAsset)
 {
 	if (forAsset == nullptr)
 	{
@@ -286,7 +93,7 @@ CE::GetThumbnailRet CE::Internal::GenerateThumbnail(WeakAssetHandle<> forAsset)
 		return AssetHandle<Texture>{};
 	}
 
-	GetThumbnailRet returnValue{};
+	AssetHandle<Texture> returnValue{};
 	const FuncResult result = func->InvokeUncheckedUnpacked(returnValue, forAsset);
 
 	if (result.HasError())
@@ -306,36 +113,44 @@ CE::MetaType CE::ThumbnailEditorSystem::Reflect()
 	return type;
 }
 
-template <>
-CE::GetThumbnailRet GetThumbNailImpl<CE::Texture>(const CE::WeakAssetHandle<CE::Texture>& forAsset)
+CE::AssetHandle<CE::Texture> CE::RenderWorldToThumbnail(World& world)
 {
-	return CE::AssetHandle<CE::Texture>{ forAsset };
+	FrameBuffer frameBuffer{ ThumbnailEditorSystem::sGeneratedThumbnailResolution };
+	world.Render(glm::vec2{}, &frameBuffer);
+	return MakeAssetHandle<Texture>("Thumbnail", std::move(frameBuffer));
 }
 
 template <>
-CE::GetThumbnailRet GetThumbNailImpl<CE::Script>(const CE::WeakAssetHandle<CE::Script>&)
+CE::AssetHandle<CE::Texture> GetThumbNailImpl<CE::Texture>(const CE::WeakAssetHandle<CE::Texture>& forAsset)
+{
+	return forAsset;
+}
+
+template <>
+CE::AssetHandle<CE::Texture> GetThumbNailImpl<CE::Script>(const CE::WeakAssetHandle<CE::Script>&)
 {
 	return CE::AssetManager::Get().TryGetAsset<CE::Texture>("T_ScriptIcon");
 }
 
 template <>
-CE::GetThumbnailRet GetThumbNailImpl<CE::Level>(const CE::WeakAssetHandle<CE::Level>& forAsset)
+CE::AssetHandle<CE::Texture> GetThumbNailImpl<CE::Level>(const CE::WeakAssetHandle<CE::Level>& forAsset)
 {
-	return CE::AssetHandle<CE::Level>{ forAsset }->CreateWorld(false);
+	const std::unique_ptr<CE::World> world = CE::AssetHandle{ forAsset }->CreateWorld(false);
+	return CE::RenderWorldToThumbnail(*world);
 }
 
 template <>
-CE::GetThumbnailRet GetThumbNailImpl<CE::Prefab>(const CE::WeakAssetHandle<CE::Prefab>& forAsset)
+CE::AssetHandle<CE::Texture> GetThumbNailImpl<CE::Prefab>(const CE::WeakAssetHandle<CE::Prefab>& forAsset)
 {
-	std::unique_ptr<CE::World> world = CE::Level::CreateDefaultWorld();
-	world->GetRegistry().CreateFromPrefab(*CE::AssetHandle<CE::Prefab>{ forAsset });
-	return world;
+	const std::unique_ptr<CE::World> world = CE::Level::CreateDefaultWorld();
+	world->GetRegistry().CreateFromPrefab(*CE::AssetHandle{ forAsset });
+	return CE::RenderWorldToThumbnail(*world);
 }
 
 template <>
-CE::GetThumbnailRet GetThumbNailImpl<CE::StaticMesh>(const CE::WeakAssetHandle<CE::StaticMesh>& forAsset)
+CE::AssetHandle<CE::Texture> GetThumbNailImpl<CE::StaticMesh>(const CE::WeakAssetHandle<CE::StaticMesh>& forAsset)
 {
-	std::unique_ptr<CE::World> world = CE::Level::CreateDefaultWorld();
+	const std::unique_ptr<CE::World> world = CE::Level::CreateDefaultWorld();
 	CE::Registry& reg = world->GetRegistry();
 
 	{
@@ -348,13 +163,13 @@ CE::GetThumbnailRet GetThumbNailImpl<CE::StaticMesh>(const CE::WeakAssetHandle<C
 		staticMeshComponent.mMaterial = CE::Material::TryGetDefaultMaterial();
 	}
 
-	return world;
+	return CE::RenderWorldToThumbnail(*world);
 }
 
 template <>
-CE::GetThumbnailRet GetThumbNailImpl<CE::Material>(const CE::WeakAssetHandle<CE::Material>& forAsset)
+CE::AssetHandle<CE::Texture> GetThumbNailImpl<CE::Material>(const CE::WeakAssetHandle<CE::Material>& forAsset)
 {
-	std::unique_ptr<CE::World> world = CE::Level::CreateDefaultWorld();
+	const std::unique_ptr<CE::World> world = CE::Level::CreateDefaultWorld();
 	CE::Registry& reg = world->GetRegistry();
 
 	{
@@ -374,5 +189,5 @@ CE::GetThumbnailRet GetThumbNailImpl<CE::Material>(const CE::WeakAssetHandle<CE:
 		staticMeshComponent.mMaterial = CE::AssetHandle<CE::Material>{ forAsset };
 	}
 
-	return world;
+	return CE::RenderWorldToThumbnail(*world);
 }

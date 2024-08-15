@@ -244,18 +244,24 @@ CE::Renderer::Renderer() :
 }
 
 void CE::Renderer::AddStaticMesh(RenderCommandQueue& context, const AssetHandle<StaticMesh>& mesh,
-	const AssetHandle<Material>& material, const glm::mat4& transform, glm::vec4 multiplicativeColor,
+	const AssetHandle<Material>& requestedMaterial, const glm::mat4& transform, glm::vec4 multiplicativeColor,
 	glm::vec4 additiveColor)
 {
-	if (mesh == nullptr
-		|| material == nullptr
-		|| material->mBaseColorTexture == nullptr)
+	if (mesh == nullptr)
+	{
+		return;
+	}
+
+	const AssetHandle<Material> mat = requestedMaterial == nullptr ? Material::TryGetDefaultMaterial() : requestedMaterial;
+	const AssetHandle<Texture> baseColor = mat == nullptr || mat->mBaseColorTexture == nullptr ? Texture::TryGetDefaultTexture() : mat->mBaseColorTexture;
+
+	if (baseColor == nullptr)
 	{
 		return;
 	}
 
 	std::scoped_lock lock{ context.mStaticMeshesMutex };
-	context.mStaticMeshes.emplace_back(transform, multiplicativeColor, additiveColor, mesh->GetPlatformImpl(), material->mBaseColorTexture->GetPlatformImpl());
+	context.mStaticMeshes.emplace_back(transform, multiplicativeColor, additiveColor, mesh->GetPlatformImpl(), baseColor->GetPlatformImpl());
 }
 
 void CE::Renderer::AddDirectionalLight(RenderCommandQueue& context, glm::vec3 direction, glm::vec4 color) const
@@ -662,14 +668,26 @@ std::shared_ptr<CE::FrameBufferPlatformImpl> CE::Renderer::CreateFrameBufferPlat
 	return mImpl->mFrameBuffers.emplace_back(std::make_shared<FrameBufferPlatformImpl>(std::move(colorTexture)));
 }
 
-void* CE::Renderer::GetPlatformId(TexturePlatformImpl* platformImpl)
+void* CE::Renderer::GetPlatformId(const AssetHandle<Texture>& texture)
 {
-	return platformImpl == nullptr ? nullptr : reinterpret_cast<void*>(static_cast<intptr>(platformImpl->mId));
+	if (texture == nullptr
+		|| texture->GetPlatformImpl() == nullptr)
+	{
+		return nullptr;
+	}
+
+	return reinterpret_cast<void*>(static_cast<intptr>(texture->GetPlatformImpl()->mId));
 }
 
-void* CE::Renderer::GetPlatformId(FrameBufferPlatformImpl* platformImpl)
+void* CE::Renderer::GetPlatformId(const FrameBuffer& frameBuffer)
 {
-	return platformImpl == nullptr ? nullptr : GetPlatformId(platformImpl->mColorTexture.get());
+	if (frameBuffer.mImpl == nullptr
+		|| frameBuffer.mImpl->mColorTexture == nullptr)
+	{
+		return nullptr;
+	}
+
+	return  reinterpret_cast<void*>(static_cast<intptr>(frameBuffer.mImpl->mColorTexture->mId));
 }
 
 void CE::Renderer::ImplDeleter::operator()(Impl* impl) const

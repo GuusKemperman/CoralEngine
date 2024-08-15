@@ -103,7 +103,7 @@ CE::ImporterSystem::ImporterSystem() :
 
 	for (const WeakAssetHandle<> asset : AssetManager::Get().GetAllAssets())
 	{
-		const std::optional<AssetFileMetaData::ImporterInfo>& importerInfo = asset.GetMetaData().GetImporterInfo();
+		const std::optional<AssetMetaData::ImporterInfo>& importerInfo = asset.GetMetaData().GetImporterInfo();
 		if (!importerInfo.has_value())
 		{
 			continue;
@@ -367,7 +367,7 @@ std::vector<CE::ImporterSystem::ImportRequest> CE::ImporterSystem::GetFilesToImp
 				break;
 			}
 
-			if (asset.GetMetaData().GetMetaDataVersion() != AssetFileMetaData::GetCurrentMetaDataVersion())
+			if (asset.GetMetaData().GetMetaDataVersion() != AssetMetaData::GetCurrentMetaDataVersion())
 			{
 				importableAssets.push_back(
 					{
@@ -375,7 +375,7 @@ std::vector<CE::ImporterSystem::ImportRequest> CE::ImporterSystem::GetFilesToImp
 						Format("Asset {} is out-of-date, metadata version is {} (current is {}). The asset will be re-imported from {}",
 					asset.GetMetaData().GetName(),
 					asset.GetMetaData().GetMetaDataVersion(),
-					AssetFileMetaData::GetCurrentMetaDataVersion(),
+					AssetMetaData::GetCurrentMetaDataVersion(),
 					fileToImport.string())
 					}
 				);
@@ -430,12 +430,7 @@ bool CE::ImporterSystem::WouldAssetBeDeletedOrReplacedOnImporting(const WeakAsse
 	return WouldAssetBeDeletedOrReplacedOnImporting(asset, mImportPreview);
 }
 
-std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPreview& preview) const
-{
-	return GetPathToSaveAssetTo(preview, mImportPreview);
-}
-
-std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPreview& preview, const std::vector<ImportPreview>& toImport)
+std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPreview& preview)
 {
 	std::string filename = preview.mImportedAsset.GetMetaData().GetName();
 
@@ -459,19 +454,7 @@ std::filesystem::path CE::ImporterSystem::GetPathToSaveAssetTo(const ImportPrevi
 		}
 	}
 
-	const size_t numFromThisFile = std::count_if(toImport.begin(), toImport.end(),
-		[&preview](const ImportPreview& other)
-		{
-			return preview.mImportRequest.mFile == other.mImportRequest.mFile;
-		});
-
-	std::filesystem::path dir = preview.mImportRequest.mFile.parent_path();
-
-	if (numFromThisFile > 1)
-	{
-		dir /= preview.mImportRequest.mFile.filename().replace_extension();
-	}
-
+	const std::filesystem::path dir = preview.mImportRequest.mFile.parent_path();
 	return dir / filename.append(AssetManager::sAssetExtension);
 }
 
@@ -816,7 +799,7 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 		}
 		else
 		{
-			const std::filesystem::path newAssetFile = GetPathToSaveAssetTo(*newImport, toImport);
+			const std::filesystem::path newAssetFile = GetPathToSaveAssetTo(*newImport);
 
 			if (newAssetFile != existingImportedAssetFile)
 			{
@@ -843,7 +826,7 @@ void CE::ImporterSystem::FinishImporting(std::vector<ImportPreview> toImport)
 	// Finally, we can safely import
 	for (const ImportPreview& imported : toImport)
 	{
-		const std::filesystem::path file = GetPathToSaveAssetTo(imported, toImport);
+		const std::filesystem::path file = GetPathToSaveAssetTo(imported);
 
 		if (!imported.mImportedAsset.SaveToFile(file))
 		{
