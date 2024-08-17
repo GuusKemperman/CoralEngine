@@ -5,6 +5,7 @@
 // it was all in one file.
 #include "EditorSystems/AssetEditorSystems/ScriptEditorSystem.h"
 #include "Utilities/Events.h"
+#include "Utilities/StringFunctions.h"
 
 #include "Utilities/Imgui/ImguiHelpers.h"
 

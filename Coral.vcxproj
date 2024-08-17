@@ -302,6 +302,7 @@
     <ClCompile Include="Source\Components\Particles\ParticleUtilities.cpp" />
     <ClCompile Include="Source\Core\Device.cpp" />
     <ClCompile Include="Source\Core\ThreadPool.cpp" />
+    <ClCompile Include="Source\EditorSystems\AssetEditorSystems\AssetEditorSystem.cpp" />
     <ClCompile Include="Source\Platform\PC\Core\Renderer.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetHandle.cpp" />
     <ClCompile Include="Source\Assets\Importers\AudioImporter.cpp">
@@ -1025,7 +1026,6 @@
     <ClInclude Include="include\core\InputManager.h" />
     <ClInclude Include="Include\Core\Device.h" />
     <ClInclude Include="include\core\EngineSubsystem.h" />
-    <ClInclude Include="Include\Utilities\DoUndo.h" />
     <ClInclude Include="Include\Utilities\FileFunctions.h" />
     <ClInclude Include="Include\Utilities\Imgui\ImguiDragDrop.h" />
     <ClInclude Include="Include\Utilities\Imgui\ImguiHelpers.h" />
