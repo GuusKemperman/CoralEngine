@@ -302,7 +302,10 @@
     <ClCompile Include="Source\Components\Particles\ParticleUtilities.cpp" />
     <ClCompile Include="Source\Core\Device.cpp" />
     <ClCompile Include="Source\Core\ThreadPool.cpp" />
-    <ClCompile Include="Source\EditorSystems\AssetEditorSystems\AssetEditorSystem.cpp" />
+    <ClCompile Include="Source\EditorSystems\AssetEditorSystems\AssetEditorSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Platform\PC\Core\Renderer.cpp" />
     <ClCompile Include="Source\Assets\Core\AssetHandle.cpp" />
     <ClCompile Include="Source\Assets\Importers\AudioImporter.cpp">
