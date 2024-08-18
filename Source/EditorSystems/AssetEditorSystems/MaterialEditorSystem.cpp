@@ -11,15 +11,13 @@ CE::MaterialEditorSystem::MaterialEditorSystem(Material&& asset) :
 
 CE::MaterialEditorSystem::~MaterialEditorSystem() = default;
 
-void CE::MaterialEditorSystem::Tick(const float deltaTime)
+void CE::MaterialEditorSystem::Tick([[maybe_unused]] const float deltaTime)
 {
 	if (!Begin(ImGuiWindowFlags_MenuBar))
 	{
 		End();
 		return;
 	}
-
-	AssetEditorSystem::Tick(deltaTime);
 
 	if (ImGui::BeginMenuBar())
 	{

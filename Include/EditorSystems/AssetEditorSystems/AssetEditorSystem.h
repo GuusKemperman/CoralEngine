@@ -58,9 +58,6 @@ namespace CE
 
 		~AssetEditorSystemBase();
 
-		virtual const Asset& GetAsset() const = 0;
-		virtual Asset& GetAsset() = 0;
-
 		/*
 		AssetEditorSystems generally work on a copy of the original asset,
 		in order to prevent your changes leading to unexpected behaviour
@@ -86,14 +83,14 @@ namespace CE
 
 		bool IsSavedToFile() const;
 
-		void Tick(float deltaTime) override;
-
 		AssetEditorMementoStack ExtractStack();
 
 		void InsertMementoStack(AssetEditorMementoStack stack);
 
 	protected:
 		bool Begin(ImGuiWindowFlags flags) override;
+
+		void End() override;
 
 		void ShowSaveButton();
 
@@ -102,10 +99,13 @@ namespace CE
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(AssetEditorSystemBase);
 
+		virtual const Asset& GetAsset() const = 0;
+		virtual Asset& GetAsset() = 0;
+
 		/*
 		Often the changes aren't directly made to the asset; for example you will be
 		editing a world, moving some entities, deleting some others, but you are not
-		directly modifing the asset, instead storing the changes inside of the system.
+		directly modifing the asset, instead storing the changes inside the system.
 
 		This function alerts you that any changes you may have made must be applied to
 		the asset now.
@@ -124,7 +124,8 @@ namespace CE
 
 		AssetEditorMementoStack mMementoStack{};
 
-		Cooldown mDifferenceCheckCooldown{ 1.0f };
+		static constexpr float sDifferenceCheckCooldown = 1.0f;
+		Timer mDifferenceCheckTimer{};
 
 		struct CachedFile
 		{
@@ -134,6 +135,8 @@ namespace CE
 		CachedFile mCachedFile{};
 
 		std::future<std::optional<AssetEditorMementoStack::Action>> mActionToAdd{};
+
+		std::mutex mAssetMutex{};
 	};
 
 	/*
@@ -150,9 +153,6 @@ namespace CE
 		AssetEditorSystem(T&& asset);
 		~AssetEditorSystem() override = default;
 
-		const T& GetAsset() const override { return mAsset; }
-		T& GetAsset() override { return mAsset; }
-
 		//********************************//
 		//		Virtual functions		  //
 		//********************************//
@@ -163,10 +163,13 @@ namespace CE
 		T mAsset;
 
 	private:
+		const T& GetAsset() const final { return mAsset; }
+		T& GetAsset() final { return mAsset; }
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 
-		std::unique_ptr<Asset, InPlaceDeleter<Asset, true>> ConstructAsset(AssetLoadInfo& loadInfo) final override;
+		std::unique_ptr<Asset, InPlaceDeleter<Asset, true>> ConstructAsset(AssetLoadInfo& loadInfo) final;
 	};
 
 	namespace Internal

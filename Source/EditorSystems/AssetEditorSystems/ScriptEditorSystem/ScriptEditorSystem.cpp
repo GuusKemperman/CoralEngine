@@ -29,7 +29,7 @@ CE::ScriptEditorSystem::~ScriptEditorSystem()
 	}
 }
 
-void CE::ScriptEditorSystem::Tick(const float deltaTime)
+void CE::ScriptEditorSystem::Tick([[maybe_unused]] const float deltaTime)
 {
 	if (!Begin(ImGuiWindowFlags_MenuBar))
 	{
@@ -37,7 +37,6 @@ void CE::ScriptEditorSystem::Tick(const float deltaTime)
 		return;
 	}
 
-	AssetEditorSystem::Tick(deltaTime);
 	ax::NodeEditor::SetCurrentEditor(mContext);
 
 	if (ImGui::BeginMenuBar())

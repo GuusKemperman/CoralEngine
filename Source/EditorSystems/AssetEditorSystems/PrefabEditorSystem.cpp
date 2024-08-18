@@ -57,8 +57,6 @@ void CE::PrefabEditorSystem::Tick(const float deltaTime)
 		return;
 	}
 
-	AssetEditorSystem::Tick(deltaTime);
-
 	if (ImGui::BeginMenuBar())
 	{
 		ShowSaveButton();

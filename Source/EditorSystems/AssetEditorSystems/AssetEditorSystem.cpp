@@ -126,59 +126,6 @@ bool CE::AssetEditorSystemBase::IsSavedToFile() const
 	return mostRecentState->mSimilarityToFile.mDoesStateMatchFile;
 }
 
-void CE::AssetEditorSystemBase::Tick(float deltaTime)
-{
-	EditorSystem::Tick(deltaTime);
-
-	const bool checkForDifferences = mDifferenceCheckCooldown.IsReady(deltaTime);
-
-	if (!Input::Get().HasFocus())
-	{
-		return;
-	}
-
-	const auto requestApplyStateChange = [this]
-		{
-			// The refreshing will return the asset editor to the
-			// top state in the stack
-			Editor::Get().Refresh({ 0, {}, GetName() });
-			mDifferenceCheckCooldown.mAmountOfTimePassed = 0.0f;
-
-			if (mActionToAdd.valid())
-			{
-				mActionToAdd.get();
-			}
-		};
-
-	if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl)
-		|| Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
-	{
-		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Z)
-			&& mMementoStack.TryUndo())
-		{
-			requestApplyStateChange();
-			return;
-		}
-
-		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Y)
-			&& mMementoStack.TryRedo())
-		{
-			requestApplyStateChange();
-			return;
-		}
-
-		if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::S))
-		{
-			SaveToFile();
-		}
-	}
-
-	if (checkForDifferences)
-	{
-		CheckForDifferences();
-	}
-}
-
 CE::AssetEditorMementoStack CE::AssetEditorSystemBase::ExtractStack()
 {
 	if (mActionToAdd.valid())
@@ -205,7 +152,56 @@ void CE::AssetEditorSystemBase::InsertMementoStack(AssetEditorMementoStack stack
 
 bool CE::AssetEditorSystemBase::Begin(ImGuiWindowFlags flags)
 {
-	return EditorSystem::Begin(flags | (IsSavedToFile() ? 0 : ImGuiWindowFlags_UnsavedDocument));
+	const bool isWindowOpen = EditorSystem::Begin(flags | (IsSavedToFile() ? 0 : ImGuiWindowFlags_UnsavedDocument));
+	mAssetMutex.lock();
+
+	if (isWindowOpen)
+	{
+		if (!Input::Get().HasFocus())
+		{
+			return isWindowOpen;
+		}
+
+		const auto requestApplyStateChange = [this]
+			{
+				// The refreshing will return the asset editor to the
+				// top state in the stack
+				Editor::Get().Refresh({ 0, {}, GetName() });
+			};
+
+		if (Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::LeftControl)
+			|| Input::Get().IsKeyboardKeyHeld(Input::KeyboardKey::RightControl))
+		{
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Z)
+				&& mMementoStack.TryUndo())
+			{
+				requestApplyStateChange();
+				return isWindowOpen;
+			}
+
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::Y)
+				&& mMementoStack.TryRedo())
+			{
+				requestApplyStateChange();
+				return isWindowOpen;
+			}
+
+			if (Input::Get().WasKeyboardKeyPressed(Input::KeyboardKey::S))
+			{
+				SaveToFile();
+			}
+		}
+
+		CheckForDifferences();
+	}
+
+	return isWindowOpen;
+}
+
+void CE::AssetEditorSystemBase::End()
+{
+	mAssetMutex.unlock();
+	EditorSystem::End();
 }
 
 void CE::AssetEditorSystemBase::ShowSaveButton()
@@ -236,6 +232,13 @@ void CE::AssetEditorSystemBase::CheckForDifferences()
 		{
 			mMementoStack.Do(std::make_shared<AssetEditorMementoStack::Action>(std::move(*change)));
 		}
+
+		mDifferenceCheckTimer.Reset();
+	}
+
+	if (mDifferenceCheckTimer.GetSecondsElapsed() < sDifferenceCheckCooldown)
+	{
+		return;
 	}
 
 	const auto updateIsSameAsFile = [this](AssetEditorMementoStack::Action& action)
@@ -295,7 +298,11 @@ void CE::AssetEditorSystemBase::CheckForDifferences()
 			}
 
 			AssetEditorMementoStack::Action action{};
-			action.mState = std::move(currentState);
+			action.mState = [this]
+				{
+					std::unique_lock lock{ mAssetMutex };
+					return SaveToMemory().ToString();
+				}();
 
 			// Exactlyy the same as before, no changes were made
 			if (topAction != nullptr
