@@ -168,11 +168,12 @@ void CE::ImporterSystem::Tick(const float dt)
 
 	Preview();
 	uint32 numOfConflicts = ShowDuplicateAssetsErrors();
-	numOfConflicts += ShowErrorsToWarnAboutDiscardChanges();
+	numOfConflicts += ShowErrorsToWarnAboutOverwritingChanges();
 	numOfConflicts += ShowReadOnlyErrors();
 
 	ImGui::Checkbox("Exclude duplicates", &sExcludeDuplicates);
 	ImGui::Checkbox("Ignore read only", &sIgnoreReadOnly);
+	ImGui::Checkbox("Overwrite changes", &sOverWriteChanges);
 
 	if (numOfConflicts != 0)
 	{
@@ -679,8 +680,13 @@ uint32 CE::ImporterSystem::ShowDuplicateAssetsErrors()
 	return numOfErrors;
 }
 
-uint32 CE::ImporterSystem::ShowErrorsToWarnAboutDiscardChanges()
+uint32 CE::ImporterSystem::ShowErrorsToWarnAboutOverwritingChanges()
 {
+	if (sOverWriteChanges)
+	{
+		return 0;
+	}
+
 	bool isOpenAlready{}, shouldDisplay{};
 	uint32 numOfErrors{};
 

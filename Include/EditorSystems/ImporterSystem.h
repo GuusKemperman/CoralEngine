@@ -84,7 +84,7 @@ namespace CE
 
 		uint32 ShowDuplicateAssetsErrors();
 
-		uint32 ShowErrorsToWarnAboutDiscardChanges();
+		uint32 ShowErrorsToWarnAboutOverwritingChanges();
 
 		uint32 ShowReadOnlyErrors();
 
@@ -112,6 +112,7 @@ namespace CE
 
 		static inline bool sExcludeDuplicates{};
 		static inline bool sIgnoreReadOnly = true;
+		static inline bool sOverWriteChanges{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();
