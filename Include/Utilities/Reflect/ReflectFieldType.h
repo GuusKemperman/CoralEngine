@@ -23,7 +23,7 @@ namespace CE
 			return;
 		}
 
-		MetaProps& equalFuncProps = type.AddFunc(std::equal_to<T>(), OperatorType::equal).GetProperties();
+		MetaProps& equalFuncProps = type.AddFunc([](const T& lhs, const T& rhs) {  return lhs == rhs; }, OperatorType::equal).GetProperties();
 
 		if (type.GetProperties().Has(Props::sIsScriptableTag))
 		{
