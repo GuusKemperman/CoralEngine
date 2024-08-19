@@ -63,9 +63,31 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 	Search::Begin(Search::IgnoreParentScore);
 
+	// Very small chance that registry has not
+	// constructed name storage yet. We cant store
+	// a reference to transform storage, since it'd be
+	// invalidated. Storing the reference is a bit
+	// risky, but makes a big impact on performance
+	reg.Storage<TransformComponent>();
+	entt::storage_for_t<NameComponent>* nameStorage{};
+	entt::storage_for_t<TransformComponent>* transformStorage{};
+	const auto cacheStorages = [&]
+		{
+			nameStorage = &reg.Storage<NameComponent>();
+			transformStorage = &reg.Storage<TransformComponent>();
+		};
+
+	cacheStorages();
+
+	const auto tryGetTransform = [&transformStorage](entt::entity entity)
+		{
+			return transformStorage->contains(entity) ? &transformStorage->get(entity) : nullptr;
+		};
+
 	const auto displayEntity = [&](const auto& self, entt::entity entity, const TransformComponent* transform) -> void
 		{
-			const std::string_view displayName = NameComponent::GetDisplayName(reg, entity);
+			const NameComponent* nameComponent = nameStorage->contains(entity) ? &nameStorage->get(entity) : nullptr;
+			const std::string_view displayName = NameComponent::GetDisplayName(nameComponent, entity);
 
 			Search::BeginCategory(displayName,
 				[&, entity, transform](std::string_view name) -> bool
@@ -97,9 +119,9 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 							};
 
 						const auto shouldForceOpen = std::find_if(selectedEntities->begin(), selectedEntities->end(),
-							[&isChildOfCurrent, &reg](entt::entity selected)
+							[&](entt::entity selected)
 							{
-								const TransformComponent* transform = reg.TryGet<TransformComponent>(selected);
+								const TransformComponent* transform = tryGetTransform(selected);
 								return transform != nullptr
 									&& isChildOfCurrent(isChildOfCurrent, *transform);
 							});
@@ -151,8 +173,12 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 						{
 							const entt::entity prefabEntity = reg.CreateFromPrefab(*AssetHandle<Prefab>{ receivedPrefab });
 
-							TransformComponent* const prefabTransform = reg.TryGet<TransformComponent>(prefabEntity);
-							TransformComponent* const parentTransform = reg.TryGet<TransformComponent>(entity);
+							// New component types may have been added,
+							// invalidating our storage pointers
+							cacheStorages();
+
+							TransformComponent* const prefabTransform = tryGetTransform(prefabEntity);
+							TransformComponent* const parentTransform = tryGetTransform(entity);
 
 							if (prefabTransform != nullptr
 								&& parentTransform != nullptr)
@@ -183,7 +209,7 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 	{
 		for (const auto [entity] : reg.Storage<entt::entity>().each())
 		{
-			const TransformComponent* transform = reg.TryGet<TransformComponent>(entity);
+			const TransformComponent* transform = tryGetTransform(entity);
 
 			if (transform == nullptr // We display all entities without transforms
 				// We recursively display children.
