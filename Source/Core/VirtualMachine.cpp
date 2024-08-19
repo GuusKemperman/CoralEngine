@@ -730,14 +730,14 @@ CE::VirtualMachine::VMContext::CachedValue* CE::VirtualMachine::ExecuteNode(VMCo
 			}
 			else
 			{
-				result = metaMember->Get(refToTarget);
+				result = metaMember->Get(refToTarget, returnAddress->mData);
 			}
 			break;
 		}
 
 		if (static_cast<const GetterScriptNode&>(node).DoesNodeReturnCopy())
 		{
-			result = metaMember->Get(refToTarget);
+			result = metaMember->Get(refToTarget, returnAddress->mData);
 		}
 		else
 		{

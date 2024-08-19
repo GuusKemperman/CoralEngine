@@ -49,7 +49,7 @@ namespace CE
 		const MetaProps& GetProperties() const { return *mProperties; }
 		MetaProps& GetProperties() { return *mProperties; }
 
-		MetaAny Get(const MetaAny& objectOfOuterType) const;
+		MetaAny Get(const MetaAny& objectOfOuterType, void* rvoBuffer = nullptr) const;
 		void Set(MetaAny& objectOfOuterType, const MetaAny& value) const;
 
 		bool CanGetRef() const;

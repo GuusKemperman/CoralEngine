@@ -58,10 +58,20 @@ void CE::MetaField::SetGetter(const MetaFunc* func)
 	mGetter = func;
 }
 
-CE::MetaAny CE::MetaField::Get(const MetaAny& objectOfOuterType) const
+CE::MetaAny CE::MetaField::Get(const MetaAny& objectOfOuterType, void* rvoBuffer) const
 {
-	MetaAny any = CanGetConstRef() ? GetConstRef(objectOfOuterType) : std::move(mGetter->InvokeUncheckedUnpacked(objectOfOuterType).GetReturnValue());
-	return std::move(GetType().Construct(any).GetReturnValue());
+	if (CanGetConstRef())
+	{
+		if (rvoBuffer == nullptr)
+		{
+			rvoBuffer = FastAlloc(GetType().GetSize(), GetType().GetAlignment());
+		}
+
+		MetaAny constRef = GetConstRef(objectOfOuterType);
+		return std::move(GetType().ConstructAt(rvoBuffer, constRef).GetReturnValue());
+	}
+
+	return std::move(mGetter->InvokeUncheckedUnpackedWithRVO(rvoBuffer, objectOfOuterType).GetReturnValue());
 }
 
 void CE::MetaField::Set(MetaAny& objectOfOuterType, const MetaAny& value) const
