@@ -1,3 +1,4 @@
+#include "Core/Input.h"
 #ifdef EDITOR
 #pragma once
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"

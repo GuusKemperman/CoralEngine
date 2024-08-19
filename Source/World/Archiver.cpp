@@ -7,6 +7,7 @@
 #include "Components/TransformComponent.h"
 #include "Assets/Prefabs/PrefabEntityFactory.h"
 #include "Components/PrefabOriginComponent.h"
+#include "Core/ThreadPool.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaFuncId.h"
@@ -306,57 +307,74 @@ CE::BinaryGSONObject CE::Archiver::SerializeInternal(const World& world, std::ve
 	BinaryGSONObject save{ "SerializedWorld" };
 
 	std::sort(entitiesToSerialize.begin(), entitiesToSerialize.end());
-
 	save.AddGSONMember("entities") << entitiesToSerialize;
 
-	size_t numOfStorages{};
-	for ([[maybe_unused]] auto _ : reg.Storage())
-	{
-		++numOfStorages;
-	}
+	const auto storageRange = reg.Storage();
+	const size_t numOfStorages = std::distance(storageRange.begin(), storageRange.end());
+
 	save.ReserveChildren(numOfStorages);
+
+	std::vector<std::future<void>> storageFutures{};
+	storageFutures.reserve(numOfStorages);
 
 	for (auto&& [typeId, storage] : reg.Storage())
 	{
-		if (storage.empty())
-		{
-			continue;
-		}
+		BinaryGSONObject& serializedComponentClass = save.AddGSONObject({});
 
-		const std::optional<ComponentClassSerializeArg> serializeArg = GetComponentClassSerializeArg(storage);
-
-		if (!serializeArg.has_value())
-		{
-			continue;
-		}
-
-		BinaryGSONObject& serializedComponentClass = save.AddGSONObject(serializeArg->mComponentClass.GetName());
-		serializedComponentClass.ReserveChildren(storage.size());
-
-		for (const entt::entity entity : storage)
-		{
-			if (!allEntitiesInWorldAreBeingSerialized
-				&& !std::binary_search(entitiesToSerialize.begin(), entitiesToSerialize.end(), entity))
+		storageFutures.emplace_back(ThreadPool::Get().Enqueue(
+			[&]
 			{
-				continue;
-			}
+				if (storage.empty())
+				{
+					return;
+				}
 
-			SerializeSingleComponent(reg,
-				serializedComponentClass,
-				entity,
-				*serializeArg);
-		}
+				const std::optional<ComponentClassSerializeArg> serializeArg = GetComponentClassSerializeArg(storage);
 
-		// We want to guarantee that after deserializing this and then reserializing it, we get the same result.
-		// But entt::registry will jumble up the order of the entities for us.
-		// This ensures that we get the same order every time we save.
-		std::sort(serializedComponentClass.GetChildren().begin(), serializedComponentClass.GetChildren().end(),
-			[](const BinaryGSONObject& lhs, const BinaryGSONObject& rhs)
-			{
-				// Faster than string comparisons
-				return *reinterpret_cast<const entt::entity*>(lhs.GetName().c_str()) < *reinterpret_cast<const entt::entity*>(rhs.GetName().c_str());
-			});
+				if (!serializeArg.has_value())
+				{
+					return;
+				}
+
+				serializedComponentClass.SetName(serializeArg->mComponentClass.GetName());
+				serializedComponentClass.ReserveChildren(storage.size());
+
+				for (const entt::entity entity : storage)
+				{
+					if (!allEntitiesInWorldAreBeingSerialized
+						&& !std::binary_search(entitiesToSerialize.begin(), entitiesToSerialize.end(), entity))
+					{
+						continue;
+					}
+
+					SerializeSingleComponent(reg,
+						serializedComponentClass,
+						entity,
+						*serializeArg);
+				}
+
+				// We want to guarantee that after deserializing this and then reserializing it, we get the same result.
+				// But entt::registry will jumble up the order of the entities for us.
+				// This ensures that we get the same order every time we save.
+				std::sort(serializedComponentClass.GetChildren().begin(), serializedComponentClass.GetChildren().end(),
+					[](const BinaryGSONObject& lhs, const BinaryGSONObject& rhs)
+					{
+						// Faster than string comparisons
+						return *reinterpret_cast<const entt::entity*>(lhs.GetName().c_str()) < *reinterpret_cast<const entt::entity*>(rhs.GetName().c_str());
+					});
+			}));
 	}
+
+	for (const std::future<void>& future : storageFutures)
+	{
+		future.wait();
+	}
+
+	std::erase_if(save.GetChildren(),
+		[](const BinaryGSONObject& obj)
+		{
+			return obj.GetName().empty();
+		});
 
 	return save;
 }

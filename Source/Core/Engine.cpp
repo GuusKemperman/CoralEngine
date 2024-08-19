@@ -176,23 +176,21 @@ void CE::Engine::Run([[maybe_unused]] Name starterLevel)
 		device.NewFrame();
 		input.NewFrame();
 
-		if (device.GetDisplaySize().x <= 0
-			|| device.GetDisplaySize().y <= 0)
+		if (device.GetDisplaySize().x > 0
+			&& device.GetDisplaySize().y > 0)
 		{
-			continue;
-		}
+	#ifdef EDITOR
+			editor.Tick(deltaTime);
+	#else
+			world->Tick(deltaTime);
 
-#ifdef EDITOR
-		editor.Tick(deltaTime);
-#else
-		world->Tick(deltaTime);
-
-		if (world->HasRequestedEndPlay())
-		{
-			break;
+			if (world->HasRequestedEndPlay())
+			{
+				break;
+			}
+			world->Render(Device::Get().GetWindowPosition());
+	#endif  // EDITOR
 		}
-		world->Render(Device::Get().GetWindowPosition());
-#endif  // EDITOR
 
 		renderer.RunCommandQueues();
 		device.EndFrame();

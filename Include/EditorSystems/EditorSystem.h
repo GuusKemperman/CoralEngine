@@ -57,12 +57,7 @@ namespace CE
 		*/
 		virtual bool Begin(ImGuiWindowFlags flags = {});
 
-		/*
-		For consistency, if our Begin() is a call to a field function, it makes sense if
-		our call to End() is also a field function, although as you can see the behaviour
-		does not differ from ImGui::End().
-		*/
-		void End() const { ImGui::End(); }
+		virtual void End() { ImGui::End(); }
 
 	private:
 		friend ReflectAccess;

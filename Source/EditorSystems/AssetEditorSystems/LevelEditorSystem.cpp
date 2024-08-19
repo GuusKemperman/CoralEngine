@@ -20,8 +20,6 @@ void CE::LevelEditorSystem::Tick(const float deltaTime)
 		return;
 	}
 
-	AssetEditorSystem::Tick(deltaTime);
-
 	if (ImGui::BeginMenuBar())
 	{
 		ShowSaveButton();

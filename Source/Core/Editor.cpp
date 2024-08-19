@@ -15,7 +15,6 @@
 #include "Meta/MetaProps.h"
 #include "EditorSystems/AssetEditorSystems/AssetEditorSystem.h"
 #include "Utilities/view_istream.h"
-#include "GSON/GSONBinary.h"
 #include "Utilities/DrawDebugHelpers.h"
 #include "Utilities/NameLookUp.h"
 
@@ -328,7 +327,7 @@ void CE::Editor::FullFillRefreshRequests()
 		std::string mNameOfSystem{};
 
 		// Empty if this was not an asset editor,
-		std::optional<AssetEditorSystemInterface::MementoStack> mAssetEditorRestoreData{};
+		std::optional<AssetEditorMementoStack> mAssetEditorRestoreData{};
 	};
 
 	std::vector<SystemToRefresh> restorationData{};
@@ -366,7 +365,7 @@ system->GetName());
 		std::ostringstream savedStateStream{};
 		system->SaveState(savedStateStream);
 
-		if (AssetEditorSystemInterface* assetEditor = dynamic_cast<AssetEditorSystemInterface*>(system.get());
+		if (AssetEditorSystemBase* assetEditor = dynamic_cast<AssetEditorSystemBase*>(system.get());
 			assetEditor != nullptr)
 		{
 			if (combinedFlags & RefreshRequest::SaveAssetsToFile)
@@ -374,7 +373,7 @@ system->GetName());
 				assetEditor->SaveToFile();
 			}
 
-			restoreInfo.mAssetEditorRestoreData = assetEditor->ExtractMementoStack();
+			restoreInfo.mAssetEditorRestoreData = assetEditor->ExtractStack();
 		}
 
 		DestroySystem(system->GetName());
@@ -418,10 +417,15 @@ system->GetName());
 		EditorSystem* system{};
 		if (restoreData.mAssetEditorRestoreData.has_value())
 		{
-			AssetEditorSystemInterface::MementoStack& stack = *restoreData.mAssetEditorRestoreData;
+			AssetEditorMementoStack& stack = *restoreData.mAssetEditorRestoreData;
 
-			const AssetEditorSystemInterface::MementoAction* topAction = stack.PeekTop();
-			ASSERT(topAction != nullptr);
+			std::shared_ptr<AssetEditorMementoStack::Action> topAction = stack.GetMostRecentState();
+
+			if (topAction == nullptr)
+			{
+				LOG(LogEditor, Error, "Failed to restore to asset editor, topAction was nullptr");
+				continue;
+			}
 
 			std::optional<AssetLoadInfo> loadInfo = AssetLoadInfo::LoadFromStream(std::make_unique<view_istream>(topAction->mState));
 
@@ -438,11 +442,11 @@ system->GetName());
 			if (system != nullptr
 				&& system->GetName() == restoreData.mNameOfSystem)
 			{
-				AssetEditorSystemInterface* systemAsAssetEditor = dynamic_cast<AssetEditorSystemInterface*>(system);
+				AssetEditorSystemBase* systemAsAssetEditor = dynamic_cast<AssetEditorSystemBase*>(system);
 
 				if (systemAsAssetEditor != nullptr)
 				{
-					systemAsAssetEditor->SetMementoStack(std::move(stack));
+					systemAsAssetEditor->InsertMementoStack(std::move(stack));
 				}
 				else
 				{
