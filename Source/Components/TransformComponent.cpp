@@ -29,7 +29,8 @@ CE::TransformComponent::TransformComponent(const TransformComponent& other) noex
 	mLocalPosition(other.mLocalPosition),
 	mOwner(other.mOwner),
 	mLocalOrientation(other.mLocalOrientation),
-	mLocalScale(other.mLocalScale)
+	mLocalScale(other.mLocalScale),
+	mWorldMatrix(other.mWorldMatrix)
 {
 	SetParent(other.mParent);
 }
@@ -90,15 +91,9 @@ void CE::TransformComponent::SetLocalMatrix(const glm::mat4& matrix)
 	SetLocalScale(scale);
 }
 
-glm::mat4 CE::TransformComponent::GetWorldMatrix() const
+const glm::mat4& CE::TransformComponent::GetWorldMatrix() const
 {
-	const glm::mat4 localMatrix = GetLocalMatrix();
-
-	if (mParent == nullptr)
-	{
-		return localMatrix;
-	}
-	return mParent->GetWorldMatrix() * localMatrix;
+	return mWorldMatrix;
 }
 
 void CE::TransformComponent::SetWorldMatrix(const glm::mat4& matrix)
@@ -211,6 +206,7 @@ void CE::TransformComponent::SetLocalPosition(const glm::vec3 position)
 	}
 
 	mLocalPosition = position;
+	UpdateWorldMatrix();
 }
 
 void CE::TransformComponent::SetLocalPosition(const glm::vec2 position)
@@ -236,6 +232,7 @@ void CE::TransformComponent::SetLocalOrientation(const glm::quat rotation)
 	}
 
 	mLocalOrientation = rotation;
+	UpdateWorldMatrix();
 }
 
 glm::vec3 CE::TransformComponent::GetLocalForward() const
@@ -338,6 +335,7 @@ void CE::TransformComponent::SetLocalScale(const glm::vec3 scale)
 	}
 
 	mLocalScale = scale;
+	UpdateWorldMatrix();
 }
 
 void CE::TransformComponent::SetLocalScale(const glm::vec2 scale)
@@ -424,7 +422,6 @@ void CE::TransformComponent::SetWorldScale(const glm::vec3 scale)
 
 void CE::TransformComponent::AttachChild(TransformComponent& child)
 {
-	//ASSERT(!IsAForeFather(child) && "Cannot attach a parent to its child");
 	mChildren.push_back(child);
 }
 
@@ -438,6 +435,21 @@ void CE::TransformComponent::DetachChild(TransformComponent& child)
 	ASSERT(it != mChildren.end() && "Cannot detach child, it was never attached");
 
 	mChildren.erase(it);
+}
+
+void CE::TransformComponent::UpdateWorldMatrix()
+{
+	mWorldMatrix = GetLocalMatrix();
+
+	if (mParent != nullptr)
+	{
+		mWorldMatrix = mParent->GetWorldMatrix() * mWorldMatrix;
+	}
+
+	for (TransformComponent& child : mChildren)
+	{
+		child.UpdateWorldMatrix();
+	}
 }
 
 CE::MetaType CE::TransformComponent::Reflect()
