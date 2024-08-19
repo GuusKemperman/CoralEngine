@@ -153,7 +153,6 @@ void CE::AssetEditorSystemBase::InsertMementoStack(AssetEditorMementoStack stack
 bool CE::AssetEditorSystemBase::Begin(ImGuiWindowFlags flags)
 {
 	const bool isWindowOpen = EditorSystem::Begin(flags | (IsSavedToFile() ? 0 : ImGuiWindowFlags_UnsavedDocument));
-	mAssetMutex.lock();
 
 	if (isWindowOpen)
 	{
@@ -200,7 +199,6 @@ bool CE::AssetEditorSystemBase::Begin(ImGuiWindowFlags flags)
 
 void CE::AssetEditorSystemBase::End()
 {
-	mAssetMutex.unlock();
 	EditorSystem::End();
 }
 
@@ -298,11 +296,7 @@ void CE::AssetEditorSystemBase::CheckForDifferences()
 			}
 
 			AssetEditorMementoStack::Action action{};
-			action.mState = [this]
-				{
-					std::unique_lock lock{ mAssetMutex };
-					return SaveToMemory().ToString();
-				}();
+			action.mState = std::move(currentState);
 
 			// Exactlyy the same as before, no changes were made
 			if (topAction != nullptr

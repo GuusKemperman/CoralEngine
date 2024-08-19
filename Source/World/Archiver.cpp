@@ -180,9 +180,6 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 			}
 
 			const MetaType& memberType = field->GetType();
-
-			MetaAny fieldValue = field->MakeRef(component);
-
 			const MetaFunc* func = memberType.TryGetFunc(sDeserializeMemberFuncName);
 
 			if (func == nullptr)
@@ -193,12 +190,20 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 				continue;
 			}
 
+			const bool isDirectRef = field->CanGetRef();
+			MetaAny fieldValue = isDirectRef ? field->GetRef(component) : field->Get(component);
+
 			func->InvokeUncheckedUnpacked(serializedProperty, fieldValue);
 
 			if (memberType.GetTypeId() == MakeTypeId<entt::entity>())
 			{
 				entt::entity& asEntity = *fieldValue.As<entt::entity>();
 				asEntity = remapId(asEntity);
+			}
+
+			if (!isDirectRef)
+			{
+				field->Set(component, fieldValue);
 			}
 		}
 	}
@@ -468,7 +473,7 @@ void CE::SerializeSingleComponent(const Registry& registry,
 	ASSERT(parentObject.GetName() == arg.mComponentClass.GetName());
 
 	// Note that this might be nullptr if it's an empty component
-	MetaAny component = MetaAny{ arg.mComponentClass, const_cast<void*>(arg.mStorage.value(entity)), false };
+	const MetaAny component = MetaAny{ arg.mComponentClass, const_cast<void*>(arg.mStorage.value(entity)), false };
 	BinaryGSONObject& serializedComponent = parentObject.AddGSONObject(std::string_view{ reinterpret_cast<const char*>(&entity), sizeof(entity) });
 	serializedComponent.ReserveMembers(arg.mComponentClass.GetDirectFields().size());
 
@@ -488,7 +493,7 @@ void CE::SerializeSingleComponent(const Registry& registry,
 			// We only save the hash, which makes the save significantly smaller
 			Name::HashType hashedPropertyName = Name::HashString(data.GetName());
 			BinaryGSONMember& nonDefaultProperty = serializedComponent.AddGSONMember(std::string_view{ reinterpret_cast<const char*>(&hashedPropertyName), sizeof(hashedPropertyName) });
-			MetaAny memberRef = data.MakeRef(component);
+			const MetaAny memberRef = data.CanGetConstRef() ? data.GetConstRef(component) : data.Get(component);
 
 			serializeMemberFunc->InvokeUncheckedUnpacked(nonDefaultProperty, memberRef);
 		};
@@ -518,7 +523,7 @@ void CE::SerializeSingleComponent(const Registry& registry,
 			continue;
 		}
 
-		MetaAny valueInComponent = field.MakeRef(component);
+		const MetaAny valueInComponent = field.CanGetConstRef() ? field.GetConstRef(component) : field.Get(component);
 
 		// Check to see if this object was created by a prefab who has set a different default value for this field
 		const MetaAny* const valueAsOverridenByPrefabOfOrigin = factoryOfOrigin == nullptr ?
@@ -533,8 +538,10 @@ void CE::SerializeSingleComponent(const Registry& registry,
 		}
 		else if (arg.mComponentDefaultConstructed != nullptr)
 		{
-			const MetaAny defaultvalue = field.MakeRef(const_cast<MetaAny&>(arg.mComponentDefaultConstructed));
-			equalityOperator->InvokeUncheckedUnpackedWithRVO(&areEqual, valueInComponent, defaultvalue);
+			const MetaAny defaultValue = field.CanGetConstRef() ? 
+				field.GetConstRef(arg.mComponentDefaultConstructed) :
+				field.Get(arg.mComponentDefaultConstructed);
+			equalityOperator->InvokeUncheckedUnpackedWithRVO(&areEqual, valueInComponent, defaultValue);
 		}
 		else
 		{

@@ -51,6 +51,8 @@ namespace CE
 
 	bool CanBeSetThroughScripts(const MetaField& field);
 
+	TypeTraits GetSetterReturnType(const MetaField& field);
+
 	bool CanBeGetThroughScripts(const MetaField& field, bool byReference);
 
 	bool CanCreateLink(const ScriptPin& a, const ScriptPin& b);

@@ -32,7 +32,7 @@ void CE::MaterialEditorSystem::Tick([[maybe_unused]] const float deltaTime)
 
 	for (const MetaField& field : materialType->EachField())
 	{
-		MetaAny refToMember = field.MakeRef(refToMat);
+		MetaAny refToMember = field.GetRef(refToMat);
 		ShowInspectUI(std::string{ field.GetName() }, refToMember);
 	}
 	End();

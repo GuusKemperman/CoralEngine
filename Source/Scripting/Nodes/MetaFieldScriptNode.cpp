@@ -15,6 +15,16 @@ CE::NodeInvolvingField::NodeInvolvingField(const ScriptNodeType type,
 {
 }
 
+void CE::NodeInvolvingField::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
+{
+	FunctionLikeNode::CollectErrors(inserter, scriptFunc);
+
+	if (mCachedField == nullptr)
+	{
+		inserter = { ScriptError::Type::TypeCannotBeMember,  { scriptFunc, *this }, Format("Variable {} no longer exists in type {}", mFieldName, mTypeName) };
+	}
+}
+
 void CE::NodeInvolvingField::SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const
 {
 	ScriptNode::SerializeTo(to, scriptFunc);
@@ -74,6 +84,18 @@ CE::SetterScriptNode::SetterScriptNode(ScriptFunc& scriptFunc, const MetaField& 
 	ConstructExpectedPins(scriptFunc);
 }
 
+void CE::SetterScriptNode::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
+{
+	NodeInvolvingField::CollectErrors(inserter, scriptFunc);
+
+	if (mCachedField != nullptr
+		&& !CanBeSetThroughScripts(*mCachedField))
+	{
+		inserter = { ScriptError::Type::UnderlyingFuncNoLongerExists, { scriptFunc, *this },
+			Format("Variable {} in type {} cannot be set", mFieldName, mTypeName) };
+	}
+}
+
 std::optional<CE::FunctionLikeNode::InputsOutputs> CE::SetterScriptNode::GetExpectedInputsOutputs(const ScriptFunc&) const
 {
 	const MetaField* const originalMemberData = TryGetOriginalField();
@@ -104,7 +126,7 @@ std::optional<CE::FunctionLikeNode::InputsOutputs> CE::SetterScriptNode::GetExpe
 		});
 	
 	insOuts.mOutputs.emplace_back(ScriptPin::sFlow);
-	insOuts.mOutputs.emplace_back(TypeTraits{ originalMemberData->GetType().GetTypeId(), TypeForm::Ref });
+	insOuts.mOutputs.emplace_back(GetSetterReturnType(*originalMemberData));
 
 	return insOuts;
 }
@@ -119,6 +141,18 @@ CE::GetterScriptNode::GetterScriptNode(ScriptFunc& scriptFunc, const MetaField& 
 		field.GetName());
 
 	ConstructExpectedPins(scriptFunc);
+}
+
+void CE::GetterScriptNode::CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const
+{
+	NodeInvolvingField::CollectErrors(inserter, scriptFunc);
+
+	if (mCachedField != nullptr
+		&& !CanBeGetThroughScripts(*mCachedField, !mReturnsCopy))
+	{
+		inserter = { ScriptError::Type::UnderlyingFuncNoLongerExists, { scriptFunc, *this },
+			Format("Variable {} in type {} cannot be gotten", mFieldName, mTypeName) };
+	}
 }
 
 std::string CE::GetterScriptNode::GetTitle(std::string_view memberName, bool returnsCopy)

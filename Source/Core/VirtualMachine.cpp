@@ -717,37 +717,33 @@ CE::VirtualMachine::VMContext::CachedValue* CE::VirtualMachine::ExecuteNode(VMCo
 		MetaAny& refToTarget = inputValues[0];
 		ASSERT(metaMember->GetOuterType().IsBaseClassOf(refToTarget.GetTypeId()) && "Invalid link, should've been caught during script compilation");
 
-		MetaAny refToMemberInsideTarget = metaMember->MakeRef(refToTarget);
-
 		if (node.GetType() == ScriptNodeType::Setter)
 		{
 			ASSERT(inputDeleter.mSize == 2 && "setting a field always require two arguments");
 
-			MetaAny& valueToSetItTo = inputValues[1];
+			const MetaAny& valueToSetItTo = inputValues[1];
+			metaMember->Set(refToTarget, valueToSetItTo);
 
-			const MetaType* const typeOfArg = valueToSetItTo.TryGetType();
-			ASSERT(typeOfArg != nullptr && "Should've been caught during script-compilation");
-
-			// TODO Check if it has the copy assign operator at script-compile time
-			// We can't use this setResult, because the assignment operator returns a reference,
-			// and we want to cache this value. If the object gets destroyed, the reference
-			// will be dangling. We make a copy further along the line, and cache that instead.
-			FuncResult setResult = typeOfArg->Assign(refToMemberInsideTarget, valueToSetItTo);
-
-			if (setResult.HasError())
+			if (GetSetterReturnType(*metaMember).mForm == TypeForm::Ref)
 			{
-				throw ScriptError{ ScriptError::FunctionCallFailed, { context.mFunc, node }, setResult.Error() };
+				result = metaMember->GetRef(refToTarget);
 			}
-		}
-		else if (static_cast<const GetterScriptNode&>(node).DoesNodeReturnCopy())
-		{
-			// Make a copy of the value when getting or setting
-			// TODO Check if it has the copy-constructor at script-compile time
-			result = returnType->ConstructAt(returnAddress->mData, refToMemberInsideTarget);
+			else
+			{
+				result = metaMember->Get(refToTarget);
+			}
 			break;
 		}
 
-		result = std::move(refToMemberInsideTarget);
+		if (static_cast<const GetterScriptNode&>(node).DoesNodeReturnCopy())
+		{
+			result = metaMember->Get(refToTarget);
+		}
+		else
+		{
+			result = metaMember->GetRef(refToTarget);
+		}
+		
 		break;
 	}
 	case ScriptNodeType::FunctionCall:

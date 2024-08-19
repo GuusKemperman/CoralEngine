@@ -135,8 +135,6 @@ namespace CE
 		CachedFile mCachedFile{};
 
 		std::future<std::optional<AssetEditorMementoStack::Action>> mActionToAdd{};
-
-		std::mutex mAssetMutex{};
 	};
 
 	/*

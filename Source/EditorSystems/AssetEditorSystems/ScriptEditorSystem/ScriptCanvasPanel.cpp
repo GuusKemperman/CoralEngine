@@ -983,7 +983,7 @@ void CE::ScriptEditorSystem::InitialiseAllNodesTheUserCanAdd()
 						[&field](const ScriptPin& contextPin) -> bool
 						{
 							return DoesNodeMatchContext(contextPin,
-								{ field.GetType().GetTypeId() },
+								GetSetterReturnType(field),
 								{ { field.GetOuterType().GetTypeId()},{ field.GetType().GetTypeId() } }, false);
 						},
 						[&field](const ScriptNode& node) -> bool

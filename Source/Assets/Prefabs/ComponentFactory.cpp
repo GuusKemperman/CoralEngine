@@ -71,17 +71,7 @@ CE::MetaAny CE::ComponentFactory::Construct(Registry& reg, const entt::entity en
 
 	for (const OverridenValue& propValue : mOverridenDefaultValues)
 	{
-		MetaAny propInComponent = propValue.mField.get().MakeRef(component);
-
-		FuncResult result = propValue.mField.get().GetType().Assign(propInComponent, propValue.mValue);
-
-		if (result.HasError())
-		{
-			LOG(LogAssets, Error, "Could not copy assign {}::{}, prefab will only be partially deserialized - {}",
-				propValue.mField.get().GetOuterType().GetName(),
-				propValue.mField.get().GetName(),
-				result.Error());
-		}
+		propValue.mField.get().Set(component, propValue.mValue);
 	}
 
 	return component;

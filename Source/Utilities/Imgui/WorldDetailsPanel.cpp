@@ -3,7 +3,6 @@
 
 #include "Utilities/ComponentFilter.h"
 #include "Components/NameComponent.h"
-#include "Components/TransformComponent.h"
 #include "Utilities/Imgui/ImguiHelpers.h"
 #include "World/Registry.h"
 
@@ -235,7 +234,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 
 					const MetaFunc* const equalityOperator = memberType.TryGetFunc(OperatorType::equal, idOfEqualityFunc);
 
-					MetaAny refToValueInFirstComponent = field.MakeRef(firstComponent);
+					const MetaAny valueInFirstComponent = field.CanGetConstRef() ? field.GetConstRef(firstComponent) : field.Get(firstComponent);
 
 					bool allValuesTheSame = true;
 
@@ -252,9 +251,9 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 								return false;
 							}
 
-							MetaAny refToValueInAnotherComponent = field.MakeRef(anotherComponent);
+							const MetaAny valueInAnotherComponent = field.CanGetConstRef() ? field.GetConstRef(anotherComponent) : field.Get(anotherComponent);
 
-							FuncResult areEqualResult = (*equalityOperator)(refToValueInFirstComponent, refToValueInAnotherComponent);
+							FuncResult areEqualResult = (*equalityOperator)(valueInFirstComponent, valueInAnotherComponent);
 							ASSERT(!areEqualResult.HasError());
 							ASSERT(areEqualResult.HasReturnValue());
 
@@ -280,7 +279,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 					}
 
 					// If values are not the same, just display a zero initialized value.
-					FuncResult newValue = allValuesTheSame ? memberType.Construct(refToValueInFirstComponent) : memberType.Construct();
+					FuncResult newValue = allValuesTheSame ? memberType.Construct(valueInFirstComponent) : memberType.Construct();
 
 					if (newValue.HasError())
 					{
@@ -313,18 +312,7 @@ void CE::WorldDetails::Display(World& world, std::vector<entt::entity>& selected
 					for (const entt::entity entity : selectedEntities)
 					{
 						MetaAny component = reg.Get(componentClass.GetTypeId(), entity);
-						MetaAny refToValue = field.MakeRef(component);
-
-						const FuncResult result = memberType.Assign(refToValue, newValue.GetReturnValue());
-
-						if (result.HasError())
-						{
-							LOG(LogEditor, Error, "Updating field value failed, could not copy assign value to {}::{} - {}",
-								componentClass.GetName(),
-								field.GetName(),
-								result.Error());
-							return false;
-						}
+						field.Set(component, newValue.GetReturnValue());
 					}
 
 					return true;
