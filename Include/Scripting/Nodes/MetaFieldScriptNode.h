@@ -23,6 +23,8 @@ namespace CE
 		                        const MetaField& field);
 
 	public:
+		void CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const override;
+
 		void SerializeTo(BinaryGSONObject& to, const ScriptFunc& scriptFunc) const override;
 
 		const MetaField* TryGetOriginalField() const { return mCachedField; }
@@ -55,6 +57,8 @@ namespace CE
 	public:
 		SetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field);
 
+		void CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const override;
+
 		static std::string GetTitle(std::string_view memberName)
 		{
 			return Format("Set {}", memberName);
@@ -78,6 +82,8 @@ namespace CE
 			NodeInvolvingField(ScriptNodeType::Getter) {};
 	public:
 		GetterScriptNode(ScriptFunc& scriptFunc, const MetaField& field, bool returnsCopy);
+
+		void CollectErrors(ScriptErrorInserter inserter, const ScriptFunc& scriptFunc) const override;
 
 		static std::string GetTitle(std::string_view memberName, bool returnsCopy);
 

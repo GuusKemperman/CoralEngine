@@ -167,9 +167,23 @@ bool CE::CanBeSetThroughScripts(const MetaField& field)
 		&& CanMemberBeSetOrGetThroughScripts(field);
 }
 
+CE::TypeTraits CE::GetSetterReturnType(const MetaField& field)
+{
+	return { field.GetType().GetTypeId(),
+		[&]
+		{
+			if (field.CanGetRef())
+			{
+				return TypeForm::Ref;
+			}
+			return TypeForm::Value;
+		}()
+	};
+}
+
 bool CE::CanBeGetThroughScripts(const MetaField& field, bool byReference)
 {
-	return (!byReference || !field.GetProperties().Has(Props::sIsScriptReadOnlyTag))
+	return (!byReference || (!field.GetProperties().Has(Props::sIsScriptReadOnlyTag) && field.CanGetRef()))
 		&& CanMemberBeSetOrGetThroughScripts(field);
 }
 

@@ -32,18 +32,100 @@ bool CE::MetaField::operator!=(const MetaField& other) const
 	return mName != other.mName || mOuterType.get() != other.mOuterType.get();
 }
 
-CE::MetaAny CE::MetaField::MakeRef(MetaAny& object) const
+const CE::MetaFunc* CE::MetaField::GetSetter() const
 {
-	ASSERT(mOuterType.get().IsBaseClassOf(object.GetTypeId()));
+	return mSetter;
+}
 
-	void* data = object.GetData();
+void CE::MetaField::SetSetter(const MetaFunc* func)
+{
+	ASSERT(func->GetParameters().size() == 2);
+	ASSERT(!MetaFunc::CanArgBePassedIntoParam(TypeTraits(GetOuterType().GetTypeId(), TypeForm::Ref), func->GetParameters()[0].mTypeTraits).has_value());
+	ASSERT(!MetaFunc::CanArgBePassedIntoParam(TypeTraits(GetType().GetTypeId(), TypeForm::ConstRef), func->GetParameters()[1].mTypeTraits).has_value());
+	mSetter = func;
+}
 
-	if (data != nullptr)
+const CE::MetaFunc* CE::MetaField::GetGetter() const
+{
+	return mGetter;
+}
+
+void CE::MetaField::SetGetter(const MetaFunc* func)
+{
+	ASSERT(func->GetParameters().size() == 1);
+	ASSERT(!MetaFunc::CanArgBePassedIntoParam(TypeTraits(GetOuterType().GetTypeId(), TypeForm::ConstRef), func->GetParameters()[0].mTypeTraits).has_value());
+	ASSERT(mType.get().IsBaseClassOf(func->GetReturnType().mTypeTraits.mStrippedTypeId));
+	mGetter = func;
+}
+
+CE::MetaAny CE::MetaField::Get(const MetaAny& objectOfOuterType, void* rvoBuffer) const
+{
+	if (CanGetConstRef())
 	{
-		data = reinterpret_cast<void*>(reinterpret_cast<uintptr>(data) + static_cast<uintptr>(mOffset));
+		if (rvoBuffer == nullptr)
+		{
+			rvoBuffer = FastAlloc(GetType().GetSize(), GetType().GetAlignment());
+		}
+
+		MetaAny constRef = GetConstRef(objectOfOuterType);
+		return std::move(GetType().ConstructAt(rvoBuffer, constRef).GetReturnValue());
 	}
 
+	return std::move(mGetter->InvokeUncheckedUnpackedWithRVO(rvoBuffer, objectOfOuterType).GetReturnValue());
+}
+
+void CE::MetaField::Set(MetaAny& objectOfOuterType, const MetaAny& value) const
+{
+	if (mSetter != nullptr)
+	{
+		mSetter->InvokeUncheckedUnpacked(objectOfOuterType, value);
+		return;
+	}
+
+	MetaAny ref{ GetType(), GetFieldAddress(objectOfOuterType), false };
+	GetType().Assign(ref, value);
+}
+
+bool CE::MetaField::CanGetRef() const
+{
+	return mGetter == nullptr && mSetter == nullptr;
+}
+
+bool CE::MetaField::CanGetConstRef() const
+{
+	return mGetter == nullptr;
+}
+
+CE::MetaAny CE::MetaField::GetRef(MetaAny& objectOfOuterType) const
+{
+	ASSERT(CanGetRef());
+	ASSERT(mOuterType.get().IsBaseClassOf(objectOfOuterType.GetTypeId())
+		&& objectOfOuterType.GetData() != nullptr);
+
+	void* data = objectOfOuterType.GetData();
+	data = reinterpret_cast<void*>(reinterpret_cast<uintptr>(data) + static_cast<uintptr>(mOffset));
 	return MetaAny{ GetType().GetTypeInfo(), data };
+}
+
+CE::MetaAny CE::MetaField::GetConstRef(const MetaAny& objectOfOuterType) const
+{
+	ASSERT(CanGetConstRef());
+	ASSERT(mOuterType.get().IsBaseClassOf(objectOfOuterType.GetTypeId())
+		&& objectOfOuterType.GetData() != nullptr);
+
+	return MetaAny{ GetType().GetTypeInfo(), GetFieldAddress(const_cast<MetaAny&>(objectOfOuterType)) };
+}
+
+void* CE::MetaField::GetFieldAddress(MetaAny& objectOfOuterType) const
+{
+	void* data = objectOfOuterType.GetData();
+	return reinterpret_cast<void*>(reinterpret_cast<uintptr>(data) + static_cast<uintptr>(mOffset));
+}
+
+const void* CE::MetaField::GetFieldAddress(const MetaAny& objectOfOuterType) const
+{
+	void* data = const_cast<void*>(objectOfOuterType.GetData());
+	return reinterpret_cast<void*>(reinterpret_cast<uintptr>(data) + static_cast<uintptr>(mOffset));
 }
 
 #ifdef ASSERTS_ENABLED

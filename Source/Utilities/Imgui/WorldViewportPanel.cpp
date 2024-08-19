@@ -62,7 +62,7 @@ void CE::WorldViewportPanel::Display(World& world, FrameBuffer& frameBuffer,
 	ImGuizmo::SetRect(windowPos.x + contentMin.x, windowPos.y + contentMin.y, contentSize.x, contentSize.y);
 
 	frameBuffer.mSize = contentSize;
-	world.Render(ImGui::GetCursorPos(), &frameBuffer);
+	world.Render(ImGui::GetCursorScreenPos(), &frameBuffer);
 
 	ImGui::SetCursorPos(contentMin);
 

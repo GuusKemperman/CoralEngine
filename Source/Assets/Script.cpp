@@ -659,7 +659,7 @@ void CE::Script::AddMoveConstructor(MetaType& toType, bool define) const
 
 				void* memberAddress = reinterpret_cast<void*>(addrAsInt + memberOffset);
 
-				[[maybe_unused]] FuncResult result = memberType.ConstructAt(memberAddress, field.MakeRef(moveOutOf));
+				[[maybe_unused]] FuncResult result = memberType.ConstructAt(memberAddress, field.GetRef(moveOutOf));
 				ASSERT_LOG(!result.HasError(), "{}", result.Error());
 			}
 
@@ -707,7 +707,7 @@ void CE::Script::AddCopyConstructor(MetaType& toType, bool define) const
 				const uintptr memberOffset = field.GetOffset();
 				void* memberAddress = reinterpret_cast<void*>(addrAsInt + memberOffset);
 
-				[[maybe_unused]] FuncResult result = memberType.ConstructAt(memberAddress, field.MakeRef(copyFrom));
+				[[maybe_unused]] FuncResult result = memberType.ConstructAt(memberAddress, field.GetRef(copyFrom));
 				ASSERT_LOG(!result.HasError(), "{}", result.Error());
 			}
 
@@ -750,8 +750,8 @@ void CE::Script::AddMoveAssign(MetaType& toType, bool define) const
 
 			for (const MetaField& field : toType.EachField())
 			{
-				MetaAny valueToAssignTo = field.MakeRef(lhs);
-				MetaAny valueToMove = field.MakeRef(rhs);
+				MetaAny valueToAssignTo = field.GetRef(lhs);
+				MetaAny valueToMove = field.GetRef(rhs);
 
 				const MetaType& memberType = field.GetType();
 
@@ -798,8 +798,8 @@ void CE::Script::AddCopyAssign(MetaType& toType, bool define) const
 
 			for (const MetaField& field : toType.EachField())
 			{
-				MetaAny valueToAssignTo = field.MakeRef(lhs);
-				MetaAny valueToCopy = field.MakeRef(rhs);
+				MetaAny valueToAssignTo = field.GetRef(lhs);
+				MetaAny valueToCopy = field.GetRef(rhs);
 
 				const MetaType& memberType = field.GetType();
 

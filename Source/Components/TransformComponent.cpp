@@ -29,7 +29,8 @@ CE::TransformComponent::TransformComponent(const TransformComponent& other) noex
 	mLocalPosition(other.mLocalPosition),
 	mOwner(other.mOwner),
 	mLocalOrientation(other.mLocalOrientation),
-	mLocalScale(other.mLocalScale)
+	mLocalScale(other.mLocalScale),
+	mWorldMatrix(other.mWorldMatrix)
 {
 	SetParent(other.mParent);
 }
@@ -90,15 +91,9 @@ void CE::TransformComponent::SetLocalMatrix(const glm::mat4& matrix)
 	SetLocalScale(scale);
 }
 
-glm::mat4 CE::TransformComponent::GetWorldMatrix() const
+const glm::mat4& CE::TransformComponent::GetWorldMatrix() const
 {
-	const glm::mat4 localMatrix = GetLocalMatrix();
-
-	if (mParent == nullptr)
-	{
-		return localMatrix;
-	}
-	return mParent->GetWorldMatrix() * localMatrix;
+	return mWorldMatrix;
 }
 
 void CE::TransformComponent::SetWorldMatrix(const glm::mat4& matrix)
@@ -211,6 +206,7 @@ void CE::TransformComponent::SetLocalPosition(const glm::vec3 position)
 	}
 
 	mLocalPosition = position;
+	UpdateWorldMatrix();
 }
 
 void CE::TransformComponent::SetLocalPosition(const glm::vec2 position)
@@ -236,6 +232,7 @@ void CE::TransformComponent::SetLocalOrientation(const glm::quat rotation)
 	}
 
 	mLocalOrientation = rotation;
+	UpdateWorldMatrix();
 }
 
 glm::vec3 CE::TransformComponent::GetLocalForward() const
@@ -338,6 +335,7 @@ void CE::TransformComponent::SetLocalScale(const glm::vec3 scale)
 	}
 
 	mLocalScale = scale;
+	UpdateWorldMatrix();
 }
 
 void CE::TransformComponent::SetLocalScale(const glm::vec2 scale)
@@ -424,7 +422,6 @@ void CE::TransformComponent::SetWorldScale(const glm::vec3 scale)
 
 void CE::TransformComponent::AttachChild(TransformComponent& child)
 {
-	//ASSERT(!IsAForeFather(child) && "Cannot attach a parent to its child");
 	mChildren.push_back(child);
 }
 
@@ -440,14 +437,40 @@ void CE::TransformComponent::DetachChild(TransformComponent& child)
 	mChildren.erase(it);
 }
 
+void CE::TransformComponent::UpdateWorldMatrix()
+{
+	mWorldMatrix = GetLocalMatrix();
+
+	if (mParent != nullptr)
+	{
+		mWorldMatrix = mParent->GetWorldMatrix() * mWorldMatrix;
+	}
+
+	for (TransformComponent& child : mChildren)
+	{
+		child.UpdateWorldMatrix();
+	}
+}
+
 CE::MetaType CE::TransformComponent::Reflect()
 {
 	MetaType type = MetaType{ MetaType::T<TransformComponent>{}, "TransformComponent" };
 	MetaProps& props = type.GetProperties();
 	props.Add(Props::sIsScriptableTag);
-	type.AddField(&TransformComponent::mLocalPosition, "mLocalPosition");
-	type.AddField(&TransformComponent::mLocalOrientation, "mLocalOrientation");
-	type.AddField(&TransformComponent::mLocalScale, "mLocalScale");
+
+	MetaFunc& setLocalPos = type.AddFunc(static_cast<void (TransformComponent::*)(glm::vec3)>(&TransformComponent::SetLocalPosition), "SetLocalPosition", "", "position");
+	setLocalPos.GetProperties().Add(Props::sIsScriptableTag);
+
+	MetaFunc& setLocalOrientation = type.AddFunc(&TransformComponent::SetLocalOrientation, "SetLocalOrientation", "", "rotation");
+	setLocalOrientation.GetProperties().Add(Props::sIsScriptableTag);
+
+	MetaFunc& setLocalScale = type.AddFunc(static_cast<void (TransformComponent::*)(glm::vec3)>(&TransformComponent::SetLocalScale), "SetLocalScale", "", "scale");
+	setLocalScale.GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddField(&TransformComponent::mLocalPosition, "mLocalPosition").SetSetter(&setLocalPos);
+	type.AddField(&TransformComponent::mLocalOrientation, "mLocalOrientation").SetSetter(&setLocalOrientation);
+	type.AddField(&TransformComponent::mLocalScale, "mLocalScale").SetSetter(&setLocalScale);
+
 	type.AddFunc(&TransformComponent::GetLocalMatrix, "GetLocalMatrix", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::SetLocalMatrix, "SetLocalMatrix", "", "matrix").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::GetWorldMatrix, "GetWorldMatrix", "").GetProperties().Add(Props::sIsScriptableTag);
@@ -469,17 +492,14 @@ CE::MetaType CE::TransformComponent::Reflect()
 			return owners;
 		}, "GetChildren", "").GetProperties().Add(Props::sIsScriptableTag);
 
-
 	type.AddFunc(&TransformComponent::IsOrphan, "IsOrphan", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::IsAForeFather, "IsAForeFather", "", "potentialForeFather").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::GetOwner, "GetOwner", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::GetLocalPosition, "GetLocalPosition", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::GetWorldPosition, "GetWorldPosition", "").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(static_cast<void (TransformComponent::*)(glm::vec3)>(&TransformComponent::SetLocalPosition), "SetLocalPosition", "", "position").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<void (TransformComponent::*)(glm::vec3)>(&TransformComponent::SetWorldPosition), "SetWorldPosition", "", "position").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::GetLocalOrientation, "GetLocalOrientation", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::GetWorldOrientation, "GetWorldOrientation", "").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(&TransformComponent::SetLocalOrientation, "SetLocalOrientation", "", "rotation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::SetWorldOrientation, "SetWorldOrientation", "", "orientation").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::GetLocalForward, "GetLocalForward", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::GetLocalUp, "GetLocalUp", "").GetProperties().Add(Props::sIsScriptableTag);
@@ -497,7 +517,6 @@ CE::MetaType CE::TransformComponent::Reflect()
 	type.AddFunc(&TransformComponent::GetLocalScaleUniform, "GetLocalScaleUniform", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::GetWorldScale, "GetWorldScale", "").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(&TransformComponent::GetWorldScaleUniform, "GetWorldScaleUniform", "").GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(static_cast<void (TransformComponent::*)(glm::vec3)>(&TransformComponent::SetLocalScale), "SetLocalScale", "", "scale").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddFunc(static_cast<void (TransformComponent::*)(glm::vec3)>(&TransformComponent::SetWorldScale), "SetWorldScale", "", "scale").GetProperties().Add(Props::sIsScriptableTag);
 
 	BindEvent(type, sOnConstruct, &TransformComponent::OnConstruct);

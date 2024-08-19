@@ -59,7 +59,7 @@ namespace CE
 				return false;
 			}
 
-			MetaAny value = field->MakeRef(component);
+			const MetaAny value = field->GetConstRef(component);
 			const uint32 actualValue = *value.As<uint32>();
 
 			return actualValue == expectedValue;

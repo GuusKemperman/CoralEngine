@@ -67,7 +67,7 @@ namespace CE
 		glm::mat4 GetLocalMatrix() const;
 		void SetLocalMatrix(const glm::mat4& matrix);
 
-		glm::mat4 GetWorldMatrix() const;
+		const glm::mat4& GetWorldMatrix() const;
 		void SetWorldMatrix(const glm::mat4& matrix);
 
 		std::tuple<glm::vec3, glm::vec3, glm::quat> GetLocalPositionScaleOrientation() const;
@@ -163,6 +163,8 @@ namespace CE
 		void AttachChild(TransformComponent& child);
 		void DetachChild(TransformComponent& child);
 
+		void UpdateWorldMatrix();
+
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(TransformComponent);
@@ -175,6 +177,8 @@ namespace CE
 
 		// Storing a pointer is safe, as pointer stability has been enabled.
 		TransformComponent* mParent{};
+
+		glm::mat4 mWorldMatrix{ 1.0f };
 
 		// Storing pointers is safe, as pointer stability has been enabled for this component.
 		std::vector<std::reference_wrapper<TransformComponent>> mChildren{};

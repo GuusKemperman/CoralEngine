@@ -3,6 +3,7 @@
 
 namespace CE
 {
+	class MetaFunc;
 	class MetaType;
 	class MetaProps;
 	class MetaAny;
@@ -30,6 +31,12 @@ namespace CE
 		bool operator==(const MetaField& other) const;
 		bool operator!=(const MetaField& other) const;
 
+		const MetaFunc* GetSetter() const;
+		void SetSetter(const MetaFunc* func);
+
+		const MetaFunc* GetGetter() const;
+		void SetGetter(const MetaFunc* func);
+
 		std::string_view GetName() const { return mName; }
 
 		const MetaType& GetType() const { return mType; }
@@ -42,10 +49,15 @@ namespace CE
 		const MetaProps& GetProperties() const { return *mProperties; }
 		MetaProps& GetProperties() { return *mProperties; }
 
-		MetaAny MakeRef(MetaAny& objectThatHasThisMember) const;
+		MetaAny Get(const MetaAny& objectOfOuterType, void* rvoBuffer = nullptr) const;
+		void Set(MetaAny& objectOfOuterType, const MetaAny& value) const;
+
+		bool CanGetRef() const;
+		bool CanGetConstRef() const;
+		MetaAny GetRef(MetaAny& objectOfOuterType) const;
+		MetaAny GetConstRef(const MetaAny& objectOfOuterType) const;
 
 	private:
-
 #ifdef ASSERTS_ENABLED
 		// Since we can't include MetaType from here, 
 		// We use this in the templated constructor to assert 
@@ -54,12 +66,19 @@ namespace CE
 		void AssertThatOuterMatches(TypeId expectedTypeId) const;
 #endif // ASSERTS_ENABLED
 
+		void* GetFieldAddress(MetaAny& objectOfOuterType) const;
+		const void* GetFieldAddress(const MetaAny& objectOfOuterType) const;
+
 		std::reference_wrapper<const MetaType> mType;
 
 		friend class MetaType; // Friends because mOuterType has to be reasigned in MetaType move constructor
 		std::reference_wrapper<const MetaType> mOuterType;
 
 		uint32 mOffset{};
+
+		const MetaFunc* mGetter{};
+		const MetaFunc* mSetter{};
+
 		std::string mName{};
 		std::unique_ptr<MetaProps> mProperties;
 	};

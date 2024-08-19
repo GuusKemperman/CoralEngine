@@ -11,6 +11,7 @@ namespace CE
 		std::string mName{};
 
 		static std::string_view GetDisplayName(const Registry& registry, entt::entity entity);
+		static std::string_view GetDisplayName(const NameComponent* nameComponent, entt::entity entity);
 
 	private:
 		friend ReflectAccess;
