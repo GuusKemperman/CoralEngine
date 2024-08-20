@@ -133,6 +133,32 @@ void CE::Search::End()
 	// Display all the items here
 	SearchContext& context = sContextStack.top();
 
+	const auto cleanUp = [&context]
+		{
+			if (!context.mInput.mEntries.empty()
+				&& (context.mInput.mFlags & SearchFlags::DontCreateChildForContent) == 0)
+			{
+				ImGui::EndChild();
+			}
+
+			ImGui::PopID();
+
+			context.mInput.mEntries.clear();
+			context.mInput.mNames.Clear();
+			context.mInput.mBonuses.clear();
+			context.mDisplayFunctions.clear();
+			ASSERT_LOG(context.mCategoryStack.empty(), "There were more calls to BeginCategory than to EndCategory");
+
+			sContextStack.pop();
+		};
+
+	// We will have directly invoked all the functions already
+	if (context.mInput.mUserQuery.empty())
+	{
+		cleanUp();
+		return;
+	}
+
 	// Check if the result from our previous thread is ready
     if (IsFutureReady(context.mResults[!context.mIndexOfLastValidResult].mFuture))
     {
@@ -171,24 +197,10 @@ void CE::Search::End()
 			});
 	}
 
-	if (!context.mInput.mEntries.empty()
-		&& (context.mInput.mFlags & SearchFlags::DontCreateChildForContent) == 0)
-	{
-		ImGui::EndChild();
-	}
-
-	ImGui::PopID();
-
-	context.mInput.mEntries.clear();
-	context.mInput.mNames.Clear();
-	context.mInput.mBonuses.clear();
-	context.mDisplayFunctions.clear();
-	ASSERT_LOG(context.mCategoryStack.empty(), "There were more calls to BeginCategory than to EndCategory");
-
-	sContextStack.pop();
+	cleanUp();
 }
 
-void CE::Search::BeginCategory(std::string_view name, std::function<bool(std::string_view)> displayStart)
+void CE::Search::Internal::BeginCategoryImpl(std::string_view name, std::function<bool(std::string_view)> displayStart)
 {
 	SearchContext& context = sContextStack.top();
 
@@ -210,7 +222,7 @@ void CE::Search::BeginCategory(std::string_view name, std::function<bool(std::st
 	context.mCategoryStack.emplace(static_cast<uint32>(context.mInput.mEntries.size()) - 1);
 }
 
-void CE::Search::EndCategory(std::function<void()> displayEnd)
+void CE::Search::Internal::EndCategoryImpl(std::function<void()> displayEnd)
 {
 	SearchContext& context = sContextStack.top();
 
@@ -225,7 +237,7 @@ void CE::Search::EndCategory(std::function<void()> displayEnd)
 	context.mCategoryStack.pop();
 }
 
-bool CE::Search::AddItem(std::string_view name, std::function<bool(std::string_view)> display)
+bool CE::Search::Internal::AddItemImpl(std::string_view name, std::function<bool(std::string_view)> display)
 {
 	SearchContext& context = sContextStack.top();
 
@@ -255,9 +267,9 @@ bool CE::Search::AddItem(std::string_view name, std::function<bool(std::string_v
 	return wasPressed;
 }
 
-void CE::Search::TreeNode(std::string_view label)
+bool CE::Search::TreeNode(std::string_view label)
 {
-	BeginCategory(label, [](std::string_view l) { return ImGui::TreeNode(l.data()); });
+	return BeginCategory(label, [](std::string_view l) { return ImGui::TreeNode(l.data()); });
 }
 
 void CE::Search::TreePop()
@@ -394,7 +406,14 @@ void CE::Search::EndPopup()
 
 void CE::Search::SetBonus(float bonus)
 {
-	sContextStack.top().get().mInput.mBonuses.back() = bonus;
+	SearchContext& context = sContextStack.top();
+
+	if (context.mInput.mUserQuery.empty())
+	{
+		return;
+	}
+
+	context.mInput.mBonuses.back() = bonus;
 }
 
 const std::string& CE::Search::GetUserQuery()

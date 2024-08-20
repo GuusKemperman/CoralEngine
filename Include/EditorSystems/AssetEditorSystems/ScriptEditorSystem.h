@@ -163,7 +163,7 @@ namespace CE
 		void DeleteRequestedItems();
 
 		void DisplayCanvasPopUps();
-		void DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos);
+		void DisplayCreateNewNodePopUp(ImVec2 placeNodeAtPos);
 		void DisplayPinContextPopUp();
 
 		struct PinToInspect

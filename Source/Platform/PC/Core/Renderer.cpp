@@ -138,7 +138,7 @@ struct CE::RenderCommandQueue
 {
 	static constexpr int sMaxNumLines = 1 << 7;
 	static constexpr int sNumFloatsPerLine = (3 + 4) * 2; // Pos + Colour * 2
-	std::array<float, sMaxNumLines * sNumFloatsPerLine> mLines;
+	std::array<float, sMaxNumLines* sNumFloatsPerLine> mLines;
 	std::atomic_int mTotalNumOfLinesRequested{};
 
 	struct DirectionalLightEntry
@@ -252,16 +252,11 @@ void CE::Renderer::AddStaticMesh(RenderCommandQueue& context, const AssetHandle<
 		return;
 	}
 
-	const AssetHandle<Material> mat = requestedMaterial == nullptr ? Material::TryGetDefaultMaterial() : requestedMaterial;
-	const AssetHandle<Texture> baseColor = mat == nullptr || mat->mBaseColorTexture == nullptr ? Texture::TryGetDefaultTexture() : mat->mBaseColorTexture;
-
-	if (baseColor == nullptr)
-	{
-		return;
-	}
-
-	std::scoped_lock lock{ context.mStaticMeshesMutex };
-	context.mStaticMeshes.emplace_back(transform, multiplicativeColor, additiveColor, mesh->GetPlatformImpl(), baseColor->GetPlatformImpl());
+	context.mStaticMeshes.emplace_back(transform, multiplicativeColor, additiveColor,
+		mesh->GetPlatformImpl(),
+		requestedMaterial == nullptr ? nullptr :
+		requestedMaterial->mBaseColorTexture == nullptr ? nullptr :
+		requestedMaterial->mBaseColorTexture->GetPlatformImpl());
 }
 
 void CE::Renderer::AddDirectionalLight(RenderCommandQueue& context, glm::vec3 direction, glm::vec4 color) const
@@ -320,6 +315,12 @@ void CE::Renderer::SetRenderTarget(RenderCommandQueue& context, const glm::mat4&
 
 void CE::Renderer::RunCommandQueues()
 {
+	const AssetHandle<Material> defaultMat = Material::TryGetDefaultMaterial();
+	const AssetHandle<Texture> defaultBaseColor = defaultMat == nullptr || defaultMat->mBaseColorTexture == nullptr ?
+		Texture::TryGetDefaultTexture() : defaultMat->mBaseColorTexture;
+
+	const std::shared_ptr<TexturePlatformImpl> defaultBaseColorImpl = defaultBaseColor == nullptr ? nullptr : defaultBaseColor->GetPlatformImpl();
+
 	const std::scoped_lock lock
 	{
 		mImpl->mTexturesMutex,
@@ -497,7 +498,7 @@ void CE::Renderer::RunCommandQueues()
 		const glm::vec4 clearColor = commandQueue->mRenderTargetEntry->mClearColor;
 		glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-		
+
 		CHECK_GL;
 
 		// Activate the standard program
@@ -507,8 +508,11 @@ void CE::Renderer::RunCommandQueues()
 		// Send the view and projection matrices to the standard program
 		glUniformMatrix4fv(glGetUniformLocation(program, "u_view"), 1, GL_FALSE, &commandQueue->mRenderTargetEntry->mView[0][0]);
 		glUniformMatrix4fv(glGetUniformLocation(program, "u_projection"), 1, GL_FALSE, &commandQueue->mRenderTargetEntry->mProj[0][0]);
-		const GLint texture_location = glGetUniformLocation(program, "u_texture");
 
+		const GLint textureLocation = glGetUniformLocation(program, "u_texture");
+		const GLint modelLocation = glGetUniformLocation(program, "u_model");
+		const GLint mulColorLocation = glGetUniformLocation(program, "u_mul_color");
+		const GLint addColorLocation = glGetUniformLocation(program, "u_add_color");
 		{
 			// Send the directional lights to the standard program
 			glUniform1i(glGetUniformLocation(program, "u_num_directional_lights"), static_cast<int>(commandQueue->mDirectionalLights.size()));
@@ -542,12 +546,19 @@ void CE::Renderer::RunCommandQueues()
 			commandQueue->mPointLights.clear();
 		}
 
+
 		{
 			// SetRenderTarget each entry
 			for (const RenderCommandQueue::StaticMeshEntry& entry : commandQueue->mStaticMeshes)
 			{
-				if (entry.mStaticMesh == nullptr
-					|| entry.mBaseColorTexture == nullptr)
+				if (entry.mStaticMesh == nullptr)
+				{
+					continue;
+				}
+
+				const std::shared_ptr<TexturePlatformImpl>& baseColor = entry.mBaseColorTexture != nullptr ? entry.mBaseColorTexture : defaultBaseColorImpl;
+
+				if (baseColor == nullptr)
 				{
 					continue;
 				}
@@ -557,16 +568,16 @@ void CE::Renderer::RunCommandQueues()
 
 				// Bind the texture
 				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, entry.mBaseColorTexture->mId);
+				glBindTexture(GL_TEXTURE_2D, baseColor->mId);
 				// texture_location
-				glUniform1i(texture_location, 0);
+				glUniform1i(textureLocation, 0);
 
 				// Send the model matrix to the standard program
-				glUniformMatrix4fv(glGetUniformLocation(program, "u_model"), 1, GL_FALSE, &entry.mTransform[0][0]);
+				glUniformMatrix4fv(modelLocation, 1, GL_FALSE, &entry.mTransform[0][0]);
 
 				// Send the multiply and add colors to the standard program
-				glUniform3fv(glGetUniformLocation(program, "u_mul_color"), 1, &entry.mMultiplicativeColor[0]);
-				glUniform3fv(glGetUniformLocation(program, "u_add_color"), 1, &entry.mAdditiveColor[0]);
+				glUniform3fv(mulColorLocation, 1, &entry.mMultiplicativeColor[0]);
+				glUniform3fv(addColorLocation, 1, &entry.mAdditiveColor[0]);
 
 				// Draw the mesh
 				glDrawElements(GL_TRIANGLES, entry.mStaticMesh->mNumOfIndices, GL_UNSIGNED_INT, 0);
@@ -585,7 +596,7 @@ void CE::Renderer::RunCommandQueues()
 
 			glUniformMatrix4fv(glGetUniformLocation(mImpl->mLinesProgram, "u_worldviewproj"), 1, GL_FALSE, &vp[0][0]);
 			glBindVertexArray(mImpl->mLinesVAO);
-			
+
 			glBindBuffer(GL_ARRAY_BUFFER, mImpl->mLinesVBO);
 			const int numOfBytes = numOfLines * RenderCommandQueue::sNumFloatsPerLine * sizeof(float);
 			glBufferData(GL_ARRAY_BUFFER, numOfBytes, commandQueue->mLines.data(), GL_STREAM_DRAW);
@@ -630,7 +641,7 @@ std::shared_ptr<CE::StaticMeshPlatformImpl> CE::Renderer::CreateStaticMeshPlatfo
 }
 
 std::shared_ptr<CE::TexturePlatformImpl> CE::Renderer::CreateTexturePlatformImpl(std::span<const std::byte> pixelsRGBA,
-                                                                                   glm::ivec2 size)
+	glm::ivec2 size)
 {
 	if (size.x * size.y * 4 != static_cast<int>(pixelsRGBA.size()))
 	{
@@ -640,7 +651,7 @@ std::shared_ptr<CE::TexturePlatformImpl> CE::Renderer::CreateTexturePlatformImpl
 
 	std::unique_ptr<TexturePlatformImpl::InitData> initData = std::make_unique<TexturePlatformImpl::InitData>(
 		std::vector<std::byte>{ pixelsRGBA.data(), pixelsRGBA.data() + pixelsRGBA.size() });
-	
+
 	std::scoped_lock lock{ mImpl->mTexturesMutex };
 	return mImpl->mTextures.emplace_back(std::make_shared<TexturePlatformImpl>(std::move(initData), size));
 }
@@ -663,7 +674,7 @@ std::shared_ptr<CE::FrameBufferPlatformImpl> CE::Renderer::CreateFrameBufferPlat
 			std::scoped_lock lock{ mImpl->mTexturesMutex };
 			return mImpl->mTextures.emplace_back(std::make_shared<TexturePlatformImpl>());
 		}();
-	
+
 	std::scoped_lock lock{ mImpl->mFrameBuffersMutex };
 	return mImpl->mFrameBuffers.emplace_back(std::make_shared<FrameBufferPlatformImpl>(std::move(colorTexture)));
 }

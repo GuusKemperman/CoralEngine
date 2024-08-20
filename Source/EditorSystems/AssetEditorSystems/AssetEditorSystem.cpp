@@ -128,6 +128,13 @@ bool CE::AssetEditorSystemBase::IsSavedToFile() const
 
 CE::AssetEditorMementoStack CE::AssetEditorSystemBase::ExtractStack()
 {
+	if (!mActionToAdd.valid()
+		&& mMementoStack.GetMostRecentState() == nullptr)
+	{
+		mDifferenceCheckTimer.mStart = {};
+		CheckForDifferences();
+	}
+
 	if (mActionToAdd.valid())
 	{
 		mActionToAdd.get();

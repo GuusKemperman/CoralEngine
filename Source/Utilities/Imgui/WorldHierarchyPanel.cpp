@@ -57,7 +57,7 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 	displayOrder.clear();
 
 	entt::entity clickedEntity = entt::null;
-	ImVec2 sInvisibleDragDropAreaStart{};
+	ImVec2 invisibleDragDropAreaStart{};
 
 	ImGui::SameLine();
 
@@ -84,13 +84,29 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 			return transformStorage->contains(entity) ? &transformStorage->get(entity) : nullptr;
 		};
 
+	// We want to reduce the size of the
+	// lambda we pass to BeginCategory,
+	// so that it fits into the small
+	// buffer of std::function so that
+	// we avoid a heap allocation for every
+	// entity.
+	struct
+	{
+		std::vector<entt::entity>*& mSelectedEntities;
+		entt::entity& mClickedEntity;
+		ImVec2& mInvisibleDragDropAreaStart;
+		Registry& mReg;
+		decltype(tryGetTransform)& mTryGetTransform;
+		decltype(cacheStorages)& mCacheStorages;
+
+	} context{ selectedEntities, clickedEntity, invisibleDragDropAreaStart, reg, tryGetTransform, cacheStorages };
+
 	const auto displayEntity = [&](const auto& self, entt::entity entity, const TransformComponent* transform) -> void
 		{
 			const NameComponent* nameComponent = nameStorage->contains(entity) ? &nameStorage->get(entity) : nullptr;
 			const std::string_view displayName = NameComponent::GetDisplayName(nameComponent, entity);
 
-			Search::BeginCategory(displayName,
-				[&, entity, transform](std::string_view name) -> bool
+			if (Search::BeginCategory(displayName, [entity, transform, &context](std::string_view name) -> bool
 				{
 					displayOrder.emplace_back(entity);
 
@@ -118,15 +134,15 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 								return self(self, *parent);
 							};
 
-						const auto shouldForceOpen = std::find_if(selectedEntities->begin(), selectedEntities->end(),
+						const auto shouldForceOpen = std::find_if(context.mSelectedEntities->begin(), context.mSelectedEntities->end(),
 							[&](entt::entity selected)
 							{
-								const TransformComponent* transform = tryGetTransform(selected);
+								const TransformComponent* transform = context.mTryGetTransform(selected);
 								return transform != nullptr
 									&& isChildOfCurrent(isChildOfCurrent, *transform);
 							});
 
-						if (shouldForceOpen != selectedEntities->end())
+						if (shouldForceOpen != context.mSelectedEntities->end())
 						{
 							ImGui::SetNextItemOpen(true);
 						}
@@ -143,12 +159,13 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 24.0f);
 					}
 
-					bool isSelected = std::find(selectedEntities->begin(), selectedEntities->end(), entity) != selectedEntities->end();
+					bool isSelected = std::find(context.mSelectedEntities->begin(),
+						context.mSelectedEntities->end(), entity) != context.mSelectedEntities->end();
 					const ImVec2 selectableAreaSize = ImGui::CalcTextSize(name.data(), name.data() + name.size());
 
 					if (ImGui::Selectable(name.data(), &isSelected, 0, selectableAreaSize))
 					{
-						clickedEntity = entity;
+						context.mClickedEntity = entity;
 					}
 
 					if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
@@ -159,26 +176,26 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 					// Only objects with transforms can accept children
 					if (transform != nullptr)
 					{
-						if (!selectedEntities->empty())
+						if (!context.mSelectedEntities->empty())
 						{
-							DragDrop::SendEntities(*selectedEntities);
+							DragDrop::SendEntities(*context.mSelectedEntities);
 						}
 
-						Internal::ReceiveDragDropOntoParent(reg, entity);
+						Internal::ReceiveDragDropOntoParent(context.mReg, entity);
 
 						const WeakAssetHandle<Prefab> receivedPrefab = DragDrop::PeekAsset<Prefab>();
 
 						if (receivedPrefab != nullptr
 							&& DragDrop::AcceptAsset())
 						{
-							const entt::entity prefabEntity = reg.CreateFromPrefab(*AssetHandle<Prefab>{ receivedPrefab });
+							const entt::entity prefabEntity = context.mReg.CreateFromPrefab(*AssetHandle<Prefab>{ receivedPrefab });
 
 							// New component types may have been added,
 							// invalidating our storage pointers
-							cacheStorages();
+							context.mCacheStorages();
 
-							TransformComponent* const prefabTransform = tryGetTransform(prefabEntity);
-							TransformComponent* const parentTransform = tryGetTransform(entity);
+							TransformComponent* const prefabTransform = context.mTryGetTransform(prefabEntity);
+							TransformComponent* const parentTransform = context.mTryGetTransform(entity);
 
 							if (prefabTransform != nullptr
 								&& parentTransform != nullptr)
@@ -190,20 +207,21 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 					ImGui::PopID();
 
-					sInvisibleDragDropAreaStart = ImGui::GetCursorScreenPos();
+					context.mInvisibleDragDropAreaStart = ImGui::GetCursorScreenPos();
 
 					return isTreeNodeOpen;
-				});
-
-			if (transform != nullptr)
+				}))
 			{
-				for (const TransformComponent& child : transform->GetChildren())
+				if (transform != nullptr)
 				{
-					self(self, child.GetOwner(), &child);
+					for (const TransformComponent& child : transform->GetChildren())
+					{
+						self(self, child.GetOwner(), &child);
+					}
 				}
-			}
 
-			Search::TreePop();
+				Search::TreePop();
+			}
 		};
 
 	{
@@ -226,7 +244,7 @@ void CE::WorldHierarchy::Display(World& world, std::vector<entt::entity>* select
 
 	Internal::DisplayRightClickPopUp(world, *selectedEntities);
 
-	ImGui::SetCursorScreenPos(sInvisibleDragDropAreaStart);
+	ImGui::SetCursorScreenPos(invisibleDragDropAreaStart);
 	ImGui::InvisibleButton("DragToUnparent", glm::max(static_cast<glm::vec2>(ImGui::GetContentRegionAvail()), glm::vec2{ 1.0f }));
 	Internal::ReceiveDragDropOntoParent(reg, std::nullopt);
 	Internal::ReceiveDragDrops(world);
