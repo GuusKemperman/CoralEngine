@@ -352,12 +352,12 @@ void CE::ScriptEditorSystem::DisplayCanvasPopUps()
 	}
 
 	DisplayPinContextPopUp();
-	DisplayCreateNewNowPopUp(mMousePosInCanvasSpace);
+	DisplayCreateNewNodePopUp(mMousePosInCanvasSpace);
 
 	ax::NodeEditor::Resume();
 }
 
-void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
+void CE::ScriptEditorSystem::DisplayCreateNewNodePopUp(ImVec2 placeNodeAtPos)
 {
 	if (!Search::BeginPopup("Create New Node"))
 	{
@@ -381,26 +381,29 @@ void CE::ScriptEditorSystem::DisplayCreateNewNowPopUp(ImVec2 placeNodeAtPos)
 			continue;
 		}
 
-		Search::TreeNode(category.mName);
-		Search::SetBonus(category.mSearchBonus);
-
-		for (const NodeTheUserCanAdd& node : category.mNodes)
+		if (Search::TreeNode(category.mName))
 		{
-			if (!ShouldShowUserNode(node))
-			{
-				continue;
-			}
-
-			if (Search::Button(node.mName))
-			{
-				ImGui::CloseCurrentPopup();
-				AddNewNode(node);
-			}
-
 			Search::SetBonus(category.mSearchBonus);
-		}
 
-		Search::TreePop();
+			for (const NodeTheUserCanAdd& node : category.mNodes)
+			{
+				if (!ShouldShowUserNode(node))
+				{
+					continue;
+				}
+
+				if (Search::Button(node.mName))
+				{
+					ImGui::CloseCurrentPopup();
+					AddNewNode(node);
+				}
+
+				Search::SetBonus(category.mSearchBonus);
+			}
+
+			Search::TreePop();
+		}
+	
 	}
 
 	Search::EndPopup();

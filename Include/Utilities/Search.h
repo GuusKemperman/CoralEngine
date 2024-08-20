@@ -39,14 +39,14 @@ namespace CE::Search
 	 * ImGui calls need to be made changes depending on the user's query, since we sort the items. DisplayStart will only be called
 	 * if this category is in some way relevant to the user.
 	 */
-	void BeginCategory(std::string_view name, std::function<bool(std::string_view)> displayStart);
+	bool BeginCategory(std::string_view name, const auto& displayStart);
 
 	/**
 	 * \brief Closes the category. 
 	 * \param displayEnd If in the displayStart function of BeginCategory you called ImGui::TreeNode, the displayEnd
 	 * function could call for example ImGui::TreePop. This function is only called if displayStart returned true.
 	 */
-	void EndCategory(std::function<void()> displayEnd = {});
+	void EndCategory(const auto& displayEnd = []{});
 
 	/**
 	 * \brief Adds a single named item.
@@ -62,9 +62,9 @@ namespace CE::Search
 	 * if this category is in some way relevant to the user.
 	 * \return Returns true if your custom display function returned true.
 	 */
-	bool AddItem(std::string_view name, std::function<bool(std::string_view)> display);
+	bool AddItem(std::string_view name, const auto& display);
 
-	void TreeNode(std::string_view label);
+	bool TreeNode(std::string_view label);
 
 	void TreePop();
 
@@ -95,5 +95,43 @@ namespace CE::Search
 	 * \brief Can be used to find out what the user is currently searching for
 	 */
 	const std::string& GetUserQuery();
+
+
+	namespace Internal
+	{
+		void BeginCategoryImpl(std::string_view name, std::function<bool(std::string_view)> displayStart);
+		void EndCategoryImpl(std::function<void()> displayEnd = {});
+		bool AddItemImpl(std::string_view name, std::function<bool(std::string_view)> display);
+	}
 }
+
+bool CE::Search::BeginCategory(std::string_view name, const auto& displayStart)
+{
+	if (GetUserQuery().empty())
+	{
+		return displayStart(name);
+	}
+	Internal::BeginCategoryImpl(name, displayStart);
+	return true;
+}
+
+void CE::Search::EndCategory(const auto& displayEnd)
+{
+	if (GetUserQuery().empty())
+	{
+		displayEnd();
+		return;
+	}
+	Internal::EndCategoryImpl(displayEnd);
+}
+
+bool CE::Search::AddItem(std::string_view name, const auto& display)
+{
+	if (GetUserQuery().empty())
+	{
+		return display(name);
+	}
+	return Internal::AddItemImpl(name, display);
+}
+
 #endif // EDITOR
