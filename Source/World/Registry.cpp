@@ -395,8 +395,10 @@ CE::MetaAny CE::Registry::AddComponent(const MetaType& componentClass, const ent
 			storage = &mRegistry.GuusEngineAddPool<Internal::AnyStorage>(componentClass);
 			ASSERT(storage != nullptr);
 		}
-
 		ASSERT(dynamic_cast<Internal::AnyStorage*>(storage) != nullptr);
+
+		storage = Storage(componentClass.GetTypeId());
+
 		Internal::AnyStorage* const asAnyStorage = static_cast<Internal::AnyStorage*>(storage);
 		const auto it = asAnyStorage->try_emplace(toEntity, false, nullptr);
 

@@ -145,7 +145,7 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 
 			if (prefabOrigin != nullptr)
 			{
-				const PrefabEntityFactory* const entityFactoryOfOrigin = prefabOrigin->TryGetFactory();
+				const auto [prefab, entityFactoryOfOrigin] = prefabOrigin->TryGetFactory();
 
 				if (entityFactoryOfOrigin != nullptr)
 				{
@@ -478,8 +478,10 @@ void CE::SerializeSingleComponent(const Registry& registry,
 	serializedComponent.ReserveMembers(arg.mComponentClass.GetDirectFields().size());
 
 	const PrefabOriginComponent* prefabOriginComponent = registry.TryGet<PrefabOriginComponent>(entity);
-	const PrefabEntityFactory* const entityFactoryOfOrigin = prefabOriginComponent == nullptr ? nullptr : prefabOriginComponent->TryGetFactory();
-	const ComponentFactory* const factoryOfOrigin = entityFactoryOfOrigin == nullptr ? nullptr : entityFactoryOfOrigin->TryGetComponentFactory(arg.mComponentClass);
+	
+	auto entityFactoryOfOrigin = prefabOriginComponent == nullptr 
+		? std::pair<AssetHandle<Prefab>, const PrefabEntityFactory*>{ nullptr, nullptr } : prefabOriginComponent->TryGetFactory();
+	const ComponentFactory* const factoryOfOrigin = entityFactoryOfOrigin.second == nullptr ? nullptr : entityFactoryOfOrigin.second->TryGetComponentFactory(arg.mComponentClass);
 
 	auto writeValue = [&](const MetaField& data, const size_t indexOfData)
 		{

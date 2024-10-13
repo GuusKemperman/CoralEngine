@@ -29,14 +29,14 @@ CE::AssetHandle<CE::Prefab> CE::PrefabOriginComponent::TryGetPrefab() const
 	return AssetManager::Get().TryGetAsset<Prefab>(mHashedPrefabName);
 }
 
-const CE::PrefabEntityFactory* CE::PrefabOriginComponent::TryGetFactory() const
+std::pair<CE::AssetHandle<CE::Prefab>, const CE::PrefabEntityFactory*> CE::PrefabOriginComponent::TryGetFactory() const
 {
-	const Prefab* prefab = TryGetPrefab().Get();
+	const CE::AssetHandle<CE::Prefab> prefab = TryGetPrefab();
 
 	if (prefab == nullptr
 		|| prefab->GetFactories().empty())
 	{
-		return nullptr;
+		return { nullptr, nullptr };
 	}
 
 	// This is the root factory. The id
@@ -46,10 +46,10 @@ const CE::PrefabEntityFactory* CE::PrefabOriginComponent::TryGetFactory() const
 	// prefab is renamed.
 	if (mFactoryId == mHashedPrefabName)
 	{
-		return &prefab->GetFactories().front();
+		return { prefab, &prefab->GetFactories().front() };
 	}
 
-	return prefab->TryFindFactory(mFactoryId);
+	return { prefab, prefab->TryFindFactory(mFactoryId) };
 }
 
 CE::MetaType CE::PrefabOriginComponent::Reflect()

@@ -122,7 +122,7 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 
 			for (auto [parentEntity, parentTransform, parentOrigin] : prefabOriginView.each())
 			{
-				const PrefabEntityFactory* factoryOfOrigin = parentOrigin.TryGetFactory();
+				const auto [prefab, factoryOfOrigin] = parentOrigin.TryGetFactory();
 
 				if (factoryOfOrigin == nullptr
 					|| factoryOfOrigin != parent)
@@ -159,7 +159,8 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 
 				for (auto [entity, prefabOrigin] : prefabOriginView.each())
 				{
-					if (prefabOrigin.TryGetFactory() == &diffedFactory.mCurrentFactory.get()
+					const auto [prefabAsset, prefabFactory] = prefabOrigin.TryGetFactory();
+					if (prefabFactory == &diffedFactory.mCurrentFactory.get()
 						&& !reg.HasComponent(componentToAdd.GetProductClass().GetTypeId(), entity))
 					{
 						componentToAdd.Construct(reg, entity);

@@ -20,7 +20,7 @@ namespace CE
 		void SetFactoryOfOrigin(const PrefabEntityFactory& factory);
 
 		AssetHandle<Prefab> TryGetPrefab() const;
-		const PrefabEntityFactory* TryGetFactory() const;
+		std::pair<AssetHandle<Prefab>, const PrefabEntityFactory*> TryGetFactory() const;
 
 		Name::HashType GetHashedPrefabName() const { return mHashedPrefabName; }
 		uint32 GetFactoryId() const { return mFactoryId; }
