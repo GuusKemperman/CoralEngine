@@ -323,6 +323,7 @@
     <ClCompile Include="Source\Platform\PC\Core\FileIOPC.cpp" />
     <ClCompile Include="Source\Platform\PC\Core\InputPC.cpp" />
     <ClCompile Include="Source\Platform\Rendering\FrameBuffer.cpp" />
+    <ClCompile Include="Source\Scripting\Compiler\IRBuilder.cpp" />
     <ClCompile Include="Source\Systems\AudioSystem.cpp" />
     <ClCompile Include="Source\Systems\Particles\ParticleLightSystem.cpp" />
     <ClCompile Include="Source\Systems\Rendering\LightRenderingSystem.cpp" />
@@ -869,6 +870,7 @@
     <ClInclude Include="Include\Core\Renderer.h" />
     <ClInclude Include="Include\Core\ThreadPool.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
+    <ClInclude Include="Include\Scripting\Compiler\IRBuilder.h" />
     <ClInclude Include="Include\Systems\AudioSystem.h" />
     <ClInclude Include="Include\Systems\Particles\ParticleLightSystem.h" />
     <ClInclude Include="Include\Systems\Rendering\LightRenderingSystem.h" />
