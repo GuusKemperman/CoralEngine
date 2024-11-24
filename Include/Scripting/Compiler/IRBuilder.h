@@ -9,6 +9,8 @@ namespace CE
 	{
 		Declaration,
 		Invocation,
+		GetField,
+		SetField,
 		Branch,
 		ScopePush,
 		ScopePop,
@@ -16,37 +18,60 @@ namespace CE
 		Label,
 	};
 
-	using Source = void*;
+	using IRSource = void*;
+
+	struct IRString
+	{
+		IRString(ManyStrings& storage, std::string_view string);
+
+		operator std::string_view() const;
+
+		std::reference_wrapper<const ManyStrings> mStorage;
+		size_t mIndex{};
+	};
 
 	struct IRNode
 	{
-		Source mSource{};
+		IRSource mSource{};
 		IRNodeType mType{};
 	};
 
 	struct IRDeclarationNode : IRNode
 	{
-		std::string_view mTypeName{};
-		std::string_view mName{};
+		IRString mTypeName;
+		IRString mName;
 
-		std::optional<std::string_view> mDefaultValue{};
+		std::optional<IRString> mDefaultValue{};
 	};
 
 	struct IRInvocationNode : IRNode 
 	{
 		// The type that holds the func
-		std::string_view mTypeName{};
-		std::string_view mFuncName{};
+		IRString mTypeName;
+		IRString mFuncName;
 
-		std::vector<std::string_view> mArguments{};
-		std::vector<std::string_view> mReturnValues{};
+		std::vector<IRString> mArguments{};
+		std::vector<IRString> mReturnValues{};
+	};
+
+	struct IRGetField : IRNode
+	{
+		IRString mTarget;
+		IRString mFieldName;
+		IRString mDestinationVariable;
+	};
+
+	struct IRSetField : IRNode
+	{
+		IRString mTarget;
+		IRString mFieldName;
+		IRString mSourceVariable;
 	};
 
 	struct IRBranchNode : IRNode 
 	{
-		std::string_view mCondition{};
-		std::string_view mTrueLabel{};
-		std::string_view mFalseLabel{};
+		IRString mCondition;
+		std::optional<IRString> mFalseLabel;
 	};
 
 	struct IRScopePushNode : IRNode {};
@@ -54,111 +79,140 @@ namespace CE
 
 	struct IRGoToNode : IRNode 
 	{
-		std::string_view mLabel{};
+		IRString mLabel;
 	};
 
 	struct IRLabelNode : IRNode 
 	{
-		std::string_view mName{};
+		IRString mName;
 	};
 
 	struct IRParameter
 	{
-		Source mSource{};
-		std::string_view mName{};
-		std::string_view mTypeName{};
+		IRSource mSource{};
+		IRString mTypeName;
+		IRString mName;
 
-		std::optional<std::string_view> mDefaultValue{};
+		std::optional<IRString> mDefaultValue{};
 	};
 
 	struct IRFunc
 	{
-		Source mSource{};
-		std::string_view mName{};
-		std::string_view mTypeName{};
+		IRSource mSource{};
+		IRString mName;
+		std::unique_ptr<MetaProps> mProps;
+
+		std::vector<IRParameter> mParameters{};
+		std::vector<IRParameter> mReturns{};
 
 		std::vector<std::unique_ptr<IRNode>> mNodes{};
-		std::unique_ptr<MetaProps> mProps;
 	};
 
 	struct IRField
 	{
-		Source mSource{};
-		std::string_view mName{};
-		std::string_view mTypeName{};
-
-		std::optional<std::string_view> mDefaultValue{};
+		IRSource mSource{};
+		IRString mTypeName;
+		IRString mName;
 		std::unique_ptr<MetaProps> mProps;
+
+		std::optional<IRString> mDefaultValue{};
 	};
 
 	struct IRClass
 	{
-		std::string_view mName{};
+		IRSource mSource{};
+		IRString mName;
+		std::unique_ptr<MetaProps> mProps;
 
 		std::vector<IRField> mFields{};
 		std::vector<IRFunc> mFuncs{};
-
-		std::unique_ptr<MetaProps> mProps;
 	};
 	
+	struct IRError
+	{
+		IRSource mSource{};
+		IRString mMessage;
+	};
+
 	class IRBuilder
 	{
 	public:
-		IRBuilder& Class(Source source, std::string_view name);
+		IRBuilder& Class(IRSource source, std::string_view name);
 
-		IRBuilder& Field(Source source, std::string_view typeName, std::string_view name);
-		IRBuilder& Field(Source source, std::string_view typeName, std::string_view name, std::string_view defaultValue);
+		IRBuilder& Field(IRSource source, 
+			std::string_view typeName, 
+			std::string_view name, 
+			std::optional<std::string_view> defaultValue = std::nullopt);
 
-		IRBuilder& Function(Source source, std::string_view name);
+		IRBuilder& Function(IRSource source, std::string_view name);
 
-		IRBuilder& FunctionParameter(Source source, std::string_view typeName, std::string_view name);
-		IRBuilder& FunctionParameter(Source source, std::string_view typeName, std::string_view name, std::string_view defaultValue);
+		IRBuilder& FunctionParameter(IRSource source, 
+			std::string_view typeName, 
+			std::string_view name, 
+			std::optional<std::string_view> defaultValue = std::nullopt);
 
-		IRBuilder& FunctionReturn(Source source, std::string_view typeName);
+		IRBuilder& FunctionReturn(IRSource source, std::string_view typeName, std::string_view name);
 
-		IRBuilder& DeclareVariable(Source source, std::string_view typeName, std::string_view name);
-		IRBuilder& DeclareVariable(Source source, std::string_view typeName, std::string_view name, std::string_view defaultValue);
+		IRBuilder& DeclareVariable(IRSource source, 
+			std::string_view typeName, 
+			std::string_view name, 
+			std::optional<std::string_view> defaultValue = std::nullopt);
 
-		IRBuilder& Scope(Source source);
-		IRBuilder& EndScope(Source source);
+		IRBuilder& Scope(IRSource source);
+		IRBuilder& EndScope(IRSource source);
 
-		IRBuilder& Invoke(Source source, std::string_view typeName, std::string_view funcName);
+		IRBuilder& Invoke(IRSource source, std::string_view typeName, std::string_view funcName);
 
-		IRBuilder& InvokeArgument(Source source, std::string_view argumentName);
+		IRBuilder& InvokeArgument(IRSource source, std::string_view argumentName);
 
-		IRBuilder& InvokeResult(Source source, std::string_view resultName);
-		
-		IRBuilder& If(Source source, std::string_view conditionVariable);
+		IRBuilder& InvokeResult(IRSource source, std::string_view resultName);
 
-		IRBuilder& Else(Source source);
+		IRBuilder& GetField(IRSource source, 
+			std::string_view target, 
+			std::string_view fieldName,
+			std::string_view destinationVariable);
 
-		IRBuilder& EndIf(Source source);
+		IRBuilder& SetField(IRSource source,
+			std::string_view target,
+			std::string_view fieldName,
+			std::string_view sourceVariable);
 
-		IRBuilder& GoTo(Source source, std::string_view label);
+		IRBuilder& If(IRSource source, std::string_view conditionVariable);
 
-		IRBuilder& Label(Source source, std::string_view label);
+		IRBuilder& Else(IRSource source);
 
-		IRBuilder& While(Source source, std::string_view name, std::string_view condition)
-		{
-			Label(source, "UniqueWhileName");
-			If(source, condition);
-		}
+		IRBuilder& EndIf(IRSource source);
 
-		IRBuilder& EndWhile(Source source);
+		IRBuilder& GoTo(IRSource source, std::string_view label);
 
-		IRBuilder& For(Source source, std::string_view name);
+		IRBuilder& Label(IRSource source, std::string_view label);
 
-		IRBuilder& ForCondition(Source source);
+		IRBuilder& While(IRSource source, std::string_view loopName, std::string_view condition);
 
-		IRBuilder& ForUpdate(Source source);
+		IRBuilder& EndWhile(IRSource source, std::string_view loopName);
 
-		IRBuilder& ForBody(Source source);
+		IRBuilder& For(IRSource source, std::string_view loopName);
 
-		IRBuilder& ForEnd(Source source);
+		IRBuilder& ForCondition(IRSource source, std::string_view loopName);
 
-		IRBuilder& Break(Source source, std::string_view from);
+		IRBuilder& ForUpdate(IRSource source, std::string_view loopName);
 
-		std::list<IRClass> mClasses{};
-		CE::ManyStrings mStringsStorage{};
+		IRBuilder& ForBody(IRSource source, std::string_view loopName);
+
+		IRBuilder& ForEnd(IRSource source, std::string_view loopName);
+
+		IRBuilder& Break(IRSource source, std::string_view loopName);
+
+		IRBuilder& Error(IRSource source, std::string_view message);
+
+	private:
+		IRClass* GetClassOrRaiseError(IRSource source);
+		IRFunc* GetFuncOrRaiseError(IRSource source);
+
+		IRString MakeString(std::string_view str);
+
+		ManyStrings mStringsStorage{};
+		std::vector<IRClass> mClasses{};
+		std::vector<IRError> mErrors{};
 	};
 }
