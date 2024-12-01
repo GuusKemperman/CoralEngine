@@ -1,5 +1,7 @@
 #pragma once
 #include "Utilities/ManyStrings.h"
+#include "SourceInfo.h"
+#include "Meta/Fwd/MetaTypeTraitsFwd.h"
 
 namespace CE
 {
@@ -17,8 +19,6 @@ namespace CE
 		GoTo,
 		Label,
 	};
-
-	using IRSource = void*;
 
 	struct IRString
 	{
@@ -39,9 +39,16 @@ namespace CE
 	struct IRDeclarationNode : IRNode
 	{
 		IRString mTypeName;
+		TypeForm mTypeForm{};
 		IRString mName;
 
 		std::optional<IRString> mDefaultValue{};
+	};
+
+	struct IRArgument
+	{
+		IRString mVariableName;
+		TypeForm mTypeForm{};
 	};
 
 	struct IRInvocationNode : IRNode 
@@ -50,8 +57,8 @@ namespace CE
 		IRString mTypeName;
 		IRString mFuncName;
 
-		std::vector<IRString> mArguments{};
-		std::vector<IRString> mReturnValues{};
+		std::vector<IRArgument> mArguments{};
+		std::vector<IRArgument> mReturnValues{};
 	};
 
 	struct IRGetField : IRNode
@@ -91,6 +98,7 @@ namespace CE
 	{
 		IRSource mSource{};
 		IRString mTypeName;
+		TypeForm mForm{}; 
 		IRString mName;
 
 		std::optional<IRString> mDefaultValue{};
@@ -112,6 +120,7 @@ namespace CE
 	{
 		IRSource mSource{};
 		IRString mTypeName;
+		TypeForm mTypeForm;
 		IRString mName;
 		std::unique_ptr<MetaProps> mProps;
 
@@ -137,77 +146,85 @@ namespace CE
 	class IRBuilder
 	{
 	public:
-		IRBuilder& Class(IRSource source, std::string_view name);
+		static constexpr std::string_view sThis = "this";
 
-		IRBuilder& Field(IRSource source, 
-			std::string_view typeName, 
+		IRBuilder& Class(const IRSource& source, std::string_view name);
+
+		IRBuilder& Field(const IRSource& source, 
+			std::string_view typeName,
+			TypeForm typeForm,
 			std::string_view name, 
 			std::optional<std::string_view> defaultValue = std::nullopt);
 
-		IRBuilder& Function(IRSource source, std::string_view name);
+		IRBuilder& Function(const IRSource& source, std::string_view name);
 
-		IRBuilder& FunctionParameter(IRSource source, 
+		IRBuilder& FunctionParameter(const IRSource& source, 
+			std::string_view typeName,
+			TypeForm typeForm,
+			std::string_view name,
+			std::optional<std::string_view> defaultValue = std::nullopt);
+
+		IRBuilder& FunctionReturn(const IRSource& source,
 			std::string_view typeName, 
+			TypeForm typeForm,
+			std::string_view name);
+
+		IRBuilder& DeclareVariable(const IRSource& source, 
+			std::string_view typeName,
+			TypeForm typeForm,
 			std::string_view name, 
 			std::optional<std::string_view> defaultValue = std::nullopt);
 
-		IRBuilder& FunctionReturn(IRSource source, std::string_view typeName, std::string_view name);
+		IRBuilder& Scope(const IRSource& source);
+		IRBuilder& EndScope(const IRSource& source);
 
-		IRBuilder& DeclareVariable(IRSource source, 
-			std::string_view typeName, 
-			std::string_view name, 
-			std::optional<std::string_view> defaultValue = std::nullopt);
+		IRBuilder& Invoke(const IRSource& source, std::string_view typeName, std::string_view funcName);
 
-		IRBuilder& Scope(IRSource source);
-		IRBuilder& EndScope(IRSource source);
+		IRBuilder& InvokeArgument(const IRSource& source, TypeForm forwardAs, std::string_view argumentName);
 
-		IRBuilder& Invoke(IRSource source, std::string_view typeName, std::string_view funcName);
+		IRBuilder& InvokeResult(const IRSource& source, TypeForm forwardAs, std::string_view resultName);
 
-		IRBuilder& InvokeArgument(IRSource source, std::string_view argumentName);
-
-		IRBuilder& InvokeResult(IRSource source, std::string_view resultName);
-
-		IRBuilder& GetField(IRSource source, 
+		IRBuilder& GetField(const IRSource& source, 
 			std::string_view target, 
 			std::string_view fieldName,
 			std::string_view destinationVariable);
 
-		IRBuilder& SetField(IRSource source,
+		IRBuilder& SetField(const IRSource& source,
 			std::string_view target,
 			std::string_view fieldName,
 			std::string_view sourceVariable);
 
-		IRBuilder& If(IRSource source, std::string_view conditionVariable);
+		IRBuilder& If(const IRSource& source, std::string_view conditionVariable);
 
-		IRBuilder& Else(IRSource source);
+		IRBuilder& Else(const IRSource& source);
 
-		IRBuilder& EndIf(IRSource source);
+		IRBuilder& EndIf(const IRSource& source);
 
-		IRBuilder& GoTo(IRSource source, std::string_view label);
+		IRBuilder& GoTo(const IRSource& source, std::string_view label);
 
-		IRBuilder& Label(IRSource source, std::string_view label);
+		IRBuilder& Label(const IRSource& source, std::string_view label);
 
-		IRBuilder& While(IRSource source, std::string_view loopName, std::string_view condition);
+		IRBuilder& While(const IRSource& source, std::string_view loopName, std::string_view condition);
 
-		IRBuilder& EndWhile(IRSource source, std::string_view loopName);
+		IRBuilder& EndWhile(const IRSource& source, std::string_view loopName);
 
-		IRBuilder& For(IRSource source, std::string_view loopName);
+		IRBuilder& For(const IRSource& source, std::string_view loopName);
 
-		IRBuilder& ForCondition(IRSource source, std::string_view loopName);
+		IRBuilder& ForCondition(const IRSource& source, std::string_view loopName);
 
-		IRBuilder& ForUpdate(IRSource source, std::string_view loopName);
+		IRBuilder& ForUpdate(const IRSource& source, std::string_view loopName);
 
-		IRBuilder& ForBody(IRSource source, std::string_view loopName);
+		IRBuilder& ForBody(const IRSource& source, std::string_view loopName);
 
-		IRBuilder& ForEnd(IRSource source, std::string_view loopName);
+		IRBuilder& ForEnd(const IRSource& source, std::string_view loopName);
 
-		IRBuilder& Break(IRSource source, std::string_view loopName);
+		IRBuilder& Break(const IRSource& source, std::string_view loopName);
 
-		IRBuilder& Error(IRSource source, std::string_view message);
+		IRBuilder& Error(const IRSource& source, std::string_view message);
 
 	private:
-		IRClass* GetClassOrRaiseError(IRSource source);
-		IRFunc* GetFuncOrRaiseError(IRSource source);
+		IRClass* GetClassOrRaiseError(const IRSource& source);
+		IRFunc* GetFuncOrRaiseError(const IRSource& source);
 
 		IRString MakeString(std::string_view str);
 

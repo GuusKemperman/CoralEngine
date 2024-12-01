@@ -1,6 +1,8 @@
 #include "Precomp.h"
 #include "Scripting/Compiler/IRBuilder.h"
 
+#include <source_location>
+
 #include "Meta/Impl/MetaPropsImpl.h"
 
 namespace
@@ -115,14 +117,15 @@ CE::IRString::operator std::string_view() const
 	return mStorage.get()[mIndex];
 }
 
-CE::IRBuilder& CE::IRBuilder::Class(IRSource source, std::string_view name)
+CE::IRBuilder& CE::IRBuilder::Class(const IRSource& source, std::string_view name)
 {
-	mClasses.emplace_back(source, MakeString(name), std::make_unique<MetaProps>());
+	mClasses.emplace_back(std::move(source), MakeString(name), std::make_unique<MetaProps>());
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::Field(IRSource source, 
-	std::string_view typeName, 
+CE::IRBuilder& CE::IRBuilder::Field(const IRSource& source, 
+	std::string_view typeName,
+	TypeForm typeForm,
 	std::string_view name,
 	std::optional<std::string_view> defaultValue)
 {
@@ -135,6 +138,7 @@ CE::IRBuilder& CE::IRBuilder::Field(IRSource source,
 
 	irClass->mFields.emplace_back(source,
 		MakeString(typeName),
+		typeForm,
 		MakeString(name),
 		std::make_unique<MetaProps>(),
 		defaultValue.has_value() ? std::optional{ MakeString(*defaultValue) } : std::nullopt);
@@ -142,7 +146,7 @@ CE::IRBuilder& CE::IRBuilder::Field(IRSource source,
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::Function(IRSource source, std::string_view name)
+CE::IRBuilder& CE::IRBuilder::Function(const IRSource& source, std::string_view name)
 {
 	IRClass* irClass = GetClassOrRaiseError(source);
 
@@ -158,8 +162,9 @@ CE::IRBuilder& CE::IRBuilder::Function(IRSource source, std::string_view name)
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::FunctionParameter(IRSource source,
-	std::string_view typeName, 
+CE::IRBuilder& CE::IRBuilder::FunctionParameter(const IRSource& source,
+	std::string_view typeName,
+	TypeForm typeForm,
 	std::string_view name, 
 	std::optional<std::string_view> defaultValue)
 {
@@ -172,13 +177,17 @@ CE::IRBuilder& CE::IRBuilder::FunctionParameter(IRSource source,
 
 	irFunc->mParameters.emplace_back(source,
 		MakeString(typeName),
+		typeForm,
 		MakeString(name),
 		defaultValue.has_value() ? std::optional{ MakeString(*defaultValue) } : std::nullopt);
 
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::FunctionReturn(IRSource source, std::string_view typeName, std::string_view name)
+CE::IRBuilder& CE::IRBuilder::FunctionReturn(const IRSource& source, 
+	std::string_view typeName, 
+	TypeForm typeForm, 
+	std::string_view name)
 {
 	IRFunc* irFunc = GetFuncOrRaiseError(source);
 
@@ -189,13 +198,15 @@ CE::IRBuilder& CE::IRBuilder::FunctionReturn(IRSource source, std::string_view t
 
 	irFunc->mReturns.emplace_back(source,
 		MakeString(typeName),
+		typeForm,
 		MakeString(name));
 
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::DeclareVariable(IRSource source, 
-	std::string_view typeName, 
+CE::IRBuilder& CE::IRBuilder::DeclareVariable(const IRSource& source, 
+	std::string_view typeName,
+	TypeForm typeForm,
 	std::string_view name, 
 	std::optional<std::string_view> defaultValue)
 {
@@ -209,13 +220,14 @@ CE::IRBuilder& CE::IRBuilder::DeclareVariable(IRSource source,
 	irFunc->mNodes.emplace_back(std::make_unique<IRDeclarationNode>(
 		IRNode{ source, IRNodeType::Declaration, },
 		MakeString(typeName),
+		typeForm,
 		MakeString(name),
 		defaultValue.has_value() ? std::optional{ MakeString(*defaultValue) } : std::nullopt));
 
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::Scope(IRSource source)
+CE::IRBuilder& CE::IRBuilder::Scope(const IRSource& source)
 {
 	IRFunc* irFunc = GetFuncOrRaiseError(source);
 
@@ -230,7 +242,7 @@ CE::IRBuilder& CE::IRBuilder::Scope(IRSource source)
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::EndScope(IRSource source)
+CE::IRBuilder& CE::IRBuilder::EndScope(const IRSource& source)
 {
 	IRFunc* irFunc = GetFuncOrRaiseError(source);
 
@@ -245,7 +257,7 @@ CE::IRBuilder& CE::IRBuilder::EndScope(IRSource source)
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::Invoke(IRSource source, std::string_view typeName, std::string_view funcName)
+CE::IRBuilder& CE::IRBuilder::Invoke(const IRSource& source, std::string_view typeName, std::string_view funcName)
 {
 	IRFunc* irFunc = GetFuncOrRaiseError(source);
 
@@ -262,7 +274,9 @@ CE::IRBuilder& CE::IRBuilder::Invoke(IRSource source, std::string_view typeName,
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::InvokeArgument(IRSource source, std::string_view argumentName)
+CE::IRBuilder& CE::IRBuilder::InvokeArgument(const IRSource& source, 
+	TypeForm forwardAs, 
+	std::string_view argumentName)
 {
 	IRFunc* irFunc = GetFuncOrRaiseError(source);
 
@@ -275,11 +289,13 @@ CE::IRBuilder& CE::IRBuilder::InvokeArgument(IRSource source, std::string_view a
 	}
 
 	IRInvocationNode& irInvokeNode = static_cast<IRInvocationNode&>(*irFunc->mNodes.back());
-	irInvokeNode.mArguments.emplace_back(MakeString(argumentName));
+	irInvokeNode.mArguments.emplace_back(MakeString(argumentName), forwardAs);
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::InvokeResult(IRSource source, std::string_view resultName)
+CE::IRBuilder& CE::IRBuilder::InvokeResult(const IRSource& source, 
+	TypeForm forwardAs,
+	std::string_view resultName)
 {
 	IRFunc* irFunc = GetFuncOrRaiseError(source);
 
@@ -292,11 +308,11 @@ CE::IRBuilder& CE::IRBuilder::InvokeResult(IRSource source, std::string_view res
 	}
 
 	IRInvocationNode& irInvokeNode = static_cast<IRInvocationNode&>(*irFunc->mNodes.back());
-	irInvokeNode.mReturnValues.emplace_back(MakeString(resultName));
+	irInvokeNode.mReturnValues.emplace_back(MakeString(resultName), forwardAs);
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::GetField(IRSource source,
+CE::IRBuilder& CE::IRBuilder::GetField(const IRSource& source,
 	std::string_view target,
 	std::string_view fieldName,
 	std::string_view destinationVariable)
@@ -317,7 +333,7 @@ CE::IRBuilder& CE::IRBuilder::GetField(IRSource source,
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::SetField(IRSource source,
+CE::IRBuilder& CE::IRBuilder::SetField(const IRSource& source,
 	std::string_view target,
 	std::string_view fieldName,
 	std::string_view sourceVariable)
@@ -338,7 +354,7 @@ CE::IRBuilder& CE::IRBuilder::SetField(IRSource source,
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::If(IRSource source, std::string_view conditionVariable)
+CE::IRBuilder& CE::IRBuilder::If(const IRSource& source, std::string_view conditionVariable)
 {
 	IRFunc* irFunc = GetFuncOrRaiseError(source);
 
@@ -356,7 +372,7 @@ CE::IRBuilder& CE::IRBuilder::If(IRSource source, std::string_view conditionVari
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::Else(IRSource source)
+CE::IRBuilder& CE::IRBuilder::Else(const IRSource& source)
 {
 	IRFunc* irFunc = GetFuncOrRaiseError(source);
 
@@ -395,13 +411,13 @@ CE::IRBuilder& CE::IRBuilder::Else(IRSource source)
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::EndIf(IRSource source)
+CE::IRBuilder& CE::IRBuilder::EndIf(const IRSource& source)
 {
 	EndScope(source);
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::GoTo(IRSource source, std::string_view label)
+CE::IRBuilder& CE::IRBuilder::GoTo(const IRSource& source, std::string_view label)
 {
 	IRFunc* irFunc = GetFuncOrRaiseError(source);
 
@@ -417,7 +433,7 @@ CE::IRBuilder& CE::IRBuilder::GoTo(IRSource source, std::string_view label)
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::Label(IRSource source, std::string_view label)
+CE::IRBuilder& CE::IRBuilder::Label(const IRSource& source, std::string_view label)
 {
 	IRFunc* irFunc = GetFuncOrRaiseError(source);
 
@@ -433,7 +449,7 @@ CE::IRBuilder& CE::IRBuilder::Label(IRSource source, std::string_view label)
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::While(IRSource source, std::string_view loopName, std::string_view condition)
+CE::IRBuilder& CE::IRBuilder::While(const IRSource& source, std::string_view loopName, std::string_view condition)
 {
 	Label(source, loopName);
 	If(source, condition);
@@ -441,7 +457,7 @@ CE::IRBuilder& CE::IRBuilder::While(IRSource source, std::string_view loopName, 
 }
 
 
-CE::IRBuilder& CE::IRBuilder::EndWhile(IRSource source, std::string_view loopName)
+CE::IRBuilder& CE::IRBuilder::EndWhile(const IRSource& source, std::string_view loopName)
 {
 	GoTo(source, loopName);
 	Else(source);
@@ -452,13 +468,13 @@ CE::IRBuilder& CE::IRBuilder::EndWhile(IRSource source, std::string_view loopNam
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::For(IRSource source, std::string_view loopName)
+CE::IRBuilder& CE::IRBuilder::For(const IRSource& source, std::string_view loopName)
 {
 	Scope(source);
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::ForCondition(IRSource source, std::string_view loopName)
+CE::IRBuilder& CE::IRBuilder::ForCondition(const IRSource& source, std::string_view loopName)
 {
 	Scope(source);
 	Label(source, MakeString(GetForConditionLabel(loopName)));
@@ -466,7 +482,7 @@ CE::IRBuilder& CE::IRBuilder::ForCondition(IRSource source, std::string_view loo
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::ForUpdate(IRSource source, std::string_view loopName)
+CE::IRBuilder& CE::IRBuilder::ForUpdate(const IRSource& source, std::string_view loopName)
 {
 	// Check the condition
 	If(source, loopName);
@@ -482,7 +498,7 @@ CE::IRBuilder& CE::IRBuilder::ForUpdate(IRSource source, std::string_view loopNa
 
 }
 
-CE::IRBuilder& CE::IRBuilder::ForBody(IRSource source, std::string_view loopName)
+CE::IRBuilder& CE::IRBuilder::ForBody(const IRSource& source, std::string_view loopName)
 {
 	EndScope(source);
 	Label(source, MakeString(GetForBodyLabel(loopName)));
@@ -490,7 +506,7 @@ CE::IRBuilder& CE::IRBuilder::ForBody(IRSource source, std::string_view loopName
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::ForEnd(IRSource source, std::string_view loopName)
+CE::IRBuilder& CE::IRBuilder::ForEnd(const IRSource& source, std::string_view loopName)
 {
 	GoTo(source, MakeString(GetForUpdateLabel(loopName)));
 	GoTo(source, MakeString(GetForConditionLabel(loopName)));
@@ -502,19 +518,19 @@ CE::IRBuilder& CE::IRBuilder::ForEnd(IRSource source, std::string_view loopName)
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::Break(IRSource source, std::string_view loopName)
+CE::IRBuilder& CE::IRBuilder::Break(const IRSource& source, std::string_view loopName)
 {
 	GoTo(source, MakeString(GetLoopEndLabel(loopName)));
 	return *this;
 }
 
-CE::IRBuilder& CE::IRBuilder::Error(IRSource source, std::string_view message)
+CE::IRBuilder& CE::IRBuilder::Error(const IRSource& source, std::string_view message)
 {
-	mErrors.emplace_back(source, MakeString(message));
+	mErrors.emplace_back(std::move(source), MakeString(message));
 	return *this;
 }
 
-CE::IRClass* CE::IRBuilder::GetClassOrRaiseError(IRSource source)
+CE::IRClass* CE::IRBuilder::GetClassOrRaiseError(const IRSource& source)
 {
 	if (mClasses.empty())
 	{
@@ -524,7 +540,7 @@ CE::IRClass* CE::IRBuilder::GetClassOrRaiseError(IRSource source)
 	return &mClasses.back();
 }
 
-CE::IRFunc* CE::IRBuilder::GetFuncOrRaiseError(IRSource source)
+CE::IRFunc* CE::IRBuilder::GetFuncOrRaiseError(const IRSource& source)
 {
 	IRClass* irClass = GetClassOrRaiseError(source);
 

@@ -871,6 +871,7 @@
     <ClInclude Include="Include\Core\ThreadPool.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
     <ClInclude Include="Include\Scripting\Compiler\IRBuilder.h" />
+    <ClInclude Include="Include\Scripting\Compiler\SourceInfo.h" />
     <ClInclude Include="Include\Systems\AudioSystem.h" />
     <ClInclude Include="Include\Systems\Particles\ParticleLightSystem.h" />
     <ClInclude Include="Include\Systems\Rendering\LightRenderingSystem.h" />
