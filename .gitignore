@@ -4,3 +4,5 @@
 Intermediate/
 Build/
 /Assets/PolygonPack
+/Games/*
+!/Games/ExampleGame/
