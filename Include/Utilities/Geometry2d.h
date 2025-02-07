@@ -60,7 +60,7 @@ namespace CE
 		glm::vec2 GetCentre() const;
 
 		PolygonPoints mPoints{};
-		TransformedAABB mBoundingBox = { glm::vec2{INFINITY, INFINITY}, glm::vec2{-INFINITY, -INFINITY} };
+		TransformedAABB mBoundingBox = { glm::vec2{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()}, glm::vec2{-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity()} };
 	};
 
 	/// <summary>

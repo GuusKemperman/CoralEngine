@@ -25,8 +25,8 @@ void CE::ParticleDebugVisualizationSystem::Render(const World& world, RenderComm
 	{
 		const uint32 numOfParticles = emitter.GetNumOfParticles();
 
-		glm::vec3 boundingBoxMin{INFINITY};
-		glm::vec3 boundingBoxMax{-INFINITY};
+		glm::vec3 boundingBoxMin{std::numeric_limits<float>::infinity()};
+		glm::vec3 boundingBoxMax{-std::numeric_limits<float>::infinity()};
 
 		for (uint32 i = 0; i < numOfParticles; i++)
 		{
@@ -56,7 +56,7 @@ void CE::ParticleDebugVisualizationSystem::Render(const World& world, RenderComm
 			AddDebugLine(commandQueue, DebugDraw::Particles, particlePos, particlePos + up, glm::vec4{1.0f, 0.0f, 0.0f, 1.0f});
 		}
 
-		if (boundingBoxMin.x != INFINITY)
+		if (boundingBoxMin.x != std::numeric_limits<float>::infinity())
 		{
 			const glm::vec3 halfExtends = (boundingBoxMax - boundingBoxMin) * .5f;
 			const glm::vec3 centre = boundingBoxMin + halfExtends;

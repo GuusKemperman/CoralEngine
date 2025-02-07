@@ -350,9 +350,9 @@ void ShowDemo_FilledLinePlots() {
         ImPlot::SetupAxesLimits(0,100,0,500);
         if (show_fills) {
             ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.25f);
-            ImPlot::PlotShaded("Stock 1", xs1, ys1, 101, shade_mode == 0 ? -INFINITY : shade_mode == 1 ? INFINITY : fill_ref);
-            ImPlot::PlotShaded("Stock 2", xs1, ys2, 101, shade_mode == 0 ? -INFINITY : shade_mode == 1 ? INFINITY : fill_ref);
-            ImPlot::PlotShaded("Stock 3", xs1, ys3, 101, shade_mode == 0 ? -INFINITY : shade_mode == 1 ? INFINITY : fill_ref);
+            ImPlot::PlotShaded("Stock 1", xs1, ys1, 101, shade_mode == 0 ? -std::numeric_limits<float>::infinity() : shade_mode == 1 ? std::numeric_limits<float>::infinity() : fill_ref);
+            ImPlot::PlotShaded("Stock 2", xs1, ys2, 101, shade_mode == 0 ? -std::numeric_limits<float>::infinity() : shade_mode == 1 ? std::numeric_limits<float>::infinity() : fill_ref);
+            ImPlot::PlotShaded("Stock 3", xs1, ys3, 101, shade_mode == 0 ? -std::numeric_limits<float>::infinity() : shade_mode == 1 ? std::numeric_limits<float>::infinity() : fill_ref);
             ImPlot::PopStyleVar();
         }
         if (show_lines) {
@@ -869,7 +869,7 @@ void ShowDemo_RealtimePlots() {
         ImPlot::SetupAxisLimits(ImAxis_X1,t - history, t, ImGuiCond_Always);
         ImPlot::SetupAxisLimits(ImAxis_Y1,0,1);
         ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL,0.5f);
-        ImPlot::PlotShaded("Mouse X", &sdata1.Data[0].x, &sdata1.Data[0].y, sdata1.Data.size(), -INFINITY, sdata1.Offset, 2 * sizeof(float));
+        ImPlot::PlotShaded("Mouse X", &sdata1.Data[0].x, &sdata1.Data[0].y, sdata1.Data.size(), -std::numeric_limits<float>::infinity(), sdata1.Offset, 2 * sizeof(float));
         ImPlot::PlotLine("Mouse Y", &sdata2.Data[0].x, &sdata2.Data[0].y, sdata2.Data.size(), sdata2.Offset, 2*sizeof(float));
         ImPlot::EndPlot();
     }

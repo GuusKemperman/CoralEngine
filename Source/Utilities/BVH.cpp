@@ -166,8 +166,8 @@ float CE::BVH::UpdateNodeBounds(Node& node)
 {
     const TransformedAABB initialAABB = node.mBoundingBox;
 
-    node.mBoundingBox.mMin = glm::vec2(INFINITY);
-    node.mBoundingBox.mMax = glm::vec2(-INFINITY);
+    node.mBoundingBox.mMin = glm::vec2(std::numeric_limits<float>::infinity());
+    node.mBoundingBox.mMax = glm::vec2(-std::numeric_limits<float>::infinity());
 
     uint32 indexOfId = node.mStartIndex;
     const Registry& reg = mPhysics->GetWorld().GetRegistry();
@@ -326,8 +326,8 @@ void CE::BVH::Subdivide(Node& node)
         {
             if (children[i]->mTotalNumOfObjects == 0)
             {
-                children[i]->mBoundingBox.mMin = { -INFINITY, -INFINITY };
-                children[i]->mBoundingBox.mMax = { -INFINITY, -INFINITY };
+                children[i]->mBoundingBox.mMin = { -std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity() };
+                children[i]->mBoundingBox.mMax = { -std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity() };
             }
         }
     }
@@ -337,8 +337,8 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
 {
     TransformedAABB boxes[2]
     {
-        { glm::vec2{INFINITY}, glm::vec2{-INFINITY}},
-        { glm::vec2{INFINITY}, glm::vec2{-INFINITY}},
+        { glm::vec2{std::numeric_limits<float>::infinity()}, glm::vec2{-std::numeric_limits<float>::infinity()}},
+        { glm::vec2{std::numeric_limits<float>::infinity()}, glm::vec2{-std::numeric_limits<float>::infinity()}},
     };
     uint32 amountOfObjects[2]{};
 
@@ -392,7 +392,7 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
 
 CE::BVH::SplitPoint CE::BVH::DetermineSplitPos(const Node& node)
 {
-    TransformedAABB centroidsBoundingBox = { glm::vec2{INFINITY}, glm::vec2{-INFINITY} };
+    TransformedAABB centroidsBoundingBox = { glm::vec2{std::numeric_limits<float>::infinity()}, glm::vec2{-std::numeric_limits<float>::infinity()} };
 
     const Registry& reg = mPhysics->GetWorld().GetRegistry();
     uint32 indexOfId = node.mStartIndex;
@@ -440,7 +440,7 @@ CE::BVH::SplitPoint CE::BVH::DetermineSplitPos(const Node& node)
     SplitPoint currentPoint{}, bestPoint{};
     currentPoint.mAxis = extent.y > extent.x;
 
-    float lowestCost = INFINITY;
+    float lowestCost = std::numeric_limits<float>::infinity();
 
     constexpr uint32 numOfSamples = 16;
 

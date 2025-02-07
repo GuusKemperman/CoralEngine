@@ -345,7 +345,7 @@ bool CE::AreOverlapping(const Line line, const TransformedAABB aabb)
 {
 	// https://tavianator.com/2022/ray_box_boundary.html
 	// While this is fast, rays completely inside the box will be considered an intersection, which may not be what we want.
-	float tmin = 0.0, tmax = INFINITY;
+	float tmin = 0.0, tmax = std::numeric_limits<float>::infinity();
 
 	const glm::vec2 invRayDir = 1.0f / (line.mEnd - line.mStart);
 
@@ -492,12 +492,12 @@ float CE::TimeOfLineIntersection(Line line1, Line line2)
 	{
 		return t;
 	}
-	return INFINITY;
+	return std::numeric_limits<float>::infinity();
 }
 
 float CE::TimeOfLineIntersection(Line line, TransformedAABB aabb)
 {
-	float tmin = 0.0, tmax = INFINITY;
+	float tmin = 0.0, tmax = std::numeric_limits<float>::infinity();
 
 	glm::vec2 invRayDir = 1.0f / (line.mEnd - line.mStart);
 
@@ -510,7 +510,7 @@ float CE::TimeOfLineIntersection(Line line, TransformedAABB aabb)
 		tmax = glm::min(tmax, glm::max(glm::max(t1, t2), tmin));
 	}
 
-	return tmin < tmax ? tmin : INFINITY;
+	return tmin < tmax ? tmin : std::numeric_limits<float>::infinity();
 }
 
 float CE::TimeOfLineIntersection(Line line, TransformedDisk disk)
@@ -526,7 +526,7 @@ float CE::TimeOfLineIntersection(Line line, TransformedDisk disk)
 	if (discriminant < 0)
 	{
 		// no intersection
-		return INFINITY;
+		return std::numeric_limits<float>::infinity();
 	}
 
 	// ray didn't totally miss sphere,
@@ -568,7 +568,7 @@ float CE::TimeOfLineIntersection(Line line, TransformedDisk disk)
 	}
 
 	// no intn: FallShort, Past
-	return INFINITY;
+	return std::numeric_limits<float>::infinity();
 }
 
 float CE::TimeOfLineIntersection(Line line, const TransformedPolygon& polygon)
@@ -577,10 +577,10 @@ float CE::TimeOfLineIntersection(Line line, const TransformedPolygon& polygon)
 		&& !AreOverlapping(polygon.mBoundingBox, line.mStart))
 	// The ray might have started and ended inside the box, hence the additonal check
 	{
-		return INFINITY;
+		return std::numeric_limits<float>::infinity();
 	}
 
-	float earliestHitTime = INFINITY;
+	float earliestHitTime = std::numeric_limits<float>::infinity();
 	for (size_t i = 0, j = polygon.mPoints.size() - 1; i < polygon.mPoints.size(); j = i++)
 	{
 		const float hitTime = TimeOfLineIntersection(line, Line{polygon.mPoints[i], polygon.mPoints[j]});

@@ -502,8 +502,8 @@ namespace ImGui
         const bool hovered = IsItemHovered();
 
         int max = 0;
-        float graphLowerBound = INFINITY;
-        float graphUpperBound = -INFINITY;
+        float graphLowerBound = std::numeric_limits<float>::infinity();
+        float graphUpperBound = -std::numeric_limits<float>::infinity();
         while (max < maxpoints && points[max].x >= 0)
         {
             graphLowerBound = std::min(graphLowerBound, points[max].y);
