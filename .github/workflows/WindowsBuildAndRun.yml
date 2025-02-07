@@ -25,7 +25,6 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  # Cancel in-progress runs when a new workflow with the same group name is triggered
   cancel-in-progress: true
 env:
   # Path to the solution file relative to the root of the project.
@@ -38,7 +37,7 @@ jobs:
   build-and-run:
     runs-on: windows-latest
     strategy:
-      fail-fast: true # We want to run all configurations to see if the problem is for all of them or not
+      fail-fast: true
       matrix:
         build-configuration: [Debug, Release, EditorDebug, EditorRelease]
     steps:
@@ -56,7 +55,7 @@ jobs:
       timeout-minutes: 10
       run:  |
         $processInfo = New-Object System.Diagnostics.ProcessStartInfo
-        $processInfo.FileName = "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\Lichgate.exe"
+        $processInfo.FileName = "Games\ExampleGame\Build\x64\${{matrix.build-configuration}}\ExampleGame.exe"
         $processInfo.Arguments = "run_tests"
         $processInfo.WorkingDirectory = $pwd
         $processInfo.RedirectStandardOutput = $true
