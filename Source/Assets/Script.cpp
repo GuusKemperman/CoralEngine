@@ -16,9 +16,9 @@
 #include "Utilities/Reflect/ReflectAssetType.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
-// We've hardcoded our scripts to always have a
+// We've hardcoded our scripts to always have a World
 // While fields normally dont support ptr/ref types,
-// we can make a little wrapper around our pointer
+// we can make a little wrapper around our pointer.
 struct WorldPointer
 {
 	CE::World* mData{};
