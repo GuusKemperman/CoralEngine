@@ -34,7 +34,7 @@ CE::MetaFunc::MetaFunc(const InvokeT& funcToInvoke,
 
 CE::MetaFunc::MetaFunc(InvokeT&& func, NameOrType&& nameOrOp, std::initializer_list<TypeTraits> paramTypes,
 	std::initializer_list<std::string_view> paramNames, FuncId funcId, ExplicitlyUseThisConstructor) :
-	mReturn({ *(paramTypes.end() - 1), paramNames.size() > 0 ? *(paramNames.end() - 1) : std::string_view{}}),
+	mReturn({ *(paramTypes.end() - 1), paramNames.size() >= paramTypes.size() ? *(paramNames.end() - 1) : std::string_view{}}),
 	mParams([&paramNames, &paramTypes]()
 		{
 			std::vector<MetaFuncNamedParam> params{};
@@ -42,7 +42,7 @@ CE::MetaFunc::MetaFunc(InvokeT&& func, NameOrType&& nameOrOp, std::initializer_l
 			const auto typesEnd = paramTypes.end() - 1;
 
 			const auto namesStart = paramNames.begin();
-			const auto namesEnd = paramNames.end() - 1;
+			const auto namesEnd = namesStart + std::min(paramNames.size(), paramTypes.size() - 1);
 
 			params.reserve(std::distance(typesStart, typesEnd));
 
