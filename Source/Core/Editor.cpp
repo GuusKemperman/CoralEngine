@@ -423,7 +423,15 @@ system->GetName());
 
 			if (topAction == nullptr)
 			{
-				LOG(LogEditor, Error, "Failed to restore to asset editor, topAction was nullptr");
+				// No changes were made to the asset
+				LOG(LogEditor, Verbose, "topAction was nullptr, opening asset from original file");
+				std::string assetName = Internal::GetAssetNameBasedOnSystemName(restoreData.mNameOfSystem);
+				WeakAssetHandle asset = AssetManager::Get().TryGetWeakAsset(assetName);
+				
+				if (TryOpenAssetForEdit(asset) == nullptr)
+				{
+					LOG(LogEditor, Error, "Failed to restore asset editor. Attempt to open original asset failed.");
+				}
 				continue;
 			}
 
