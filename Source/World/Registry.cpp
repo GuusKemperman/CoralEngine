@@ -15,7 +15,6 @@
 #include "Meta/MetaType.h"
 #include "Meta/MetaManager.h"
 #include "Meta/MetaAny.h"
-#include "Meta/MetaTools.h"
 #include "Scripting/ScriptTools.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 #include "World/EventManager.h"
@@ -98,28 +97,6 @@ namespace CE::Internal
 CE::Registry::Registry(World& world) :
 	mWorld(world)
 {
-	const MetaType* const systemType = MetaManager::Get().TryGetType<System>();
-	ASSERT(systemType != nullptr);
-	std::function<void(const MetaType&)> registerChildren =
-		[&](const MetaType& type)
-		{
-			for (const MetaType& child : type.GetDirectDerivedClasses())
-			{
-				FuncResult childConstructResult = child.Construct();
-
-				if (childConstructResult.HasError())
-				{
-					LOG(LogWorld, Error, "System {} is not default constructible - {}", child.GetName(), childConstructResult.Error());
-					continue;
-				}
-				auto newSystem = MakeUnique<System>(std::move(childConstructResult.GetReturnValue()));
-
-				AddSystem(std::move(newSystem));
-				
-				registerChildren(child);
-			}
-		};
-	registerChildren(*systemType);
 }
 
 void CE::Registry::BeginPlay()
@@ -133,34 +110,6 @@ void CE::Registry::BeginPlay()
 	}
 
 	CallBeginPlayForEntitiesAwaitingBeginPlay();
-}
-
-void CE::Registry::UpdateSystems(float dt)
-{
-	const std::vector<SingleTick> ticksToCall = GetSortedSystemsToUpdate(dt);
-	World& world = GetWorld();
-
-	for (const SingleTick& tick : ticksToCall)
-	{
-		tick.mSystem.get().Update(world, tick.mDeltaTime);
-	}
-}
-
-void CE::Registry::RenderSystems(RenderCommandQueue& commandQueue) const
-{
-	std::vector<std::reference_wrapper<const InternalSystem>> sortedSystems{ mFixedTickSystems.begin(), mFixedTickSystems.end() };
-	sortedSystems.insert(sortedSystems.end(), mNonFixedSystems.begin(), mNonFixedSystems.end());
-
-	std::stable_sort(sortedSystems.begin(), sortedSystems.end(),
-		[](const InternalSystem& lhs, const InternalSystem& rhs)
-		{
-				return lhs.mTraits.mPriority > rhs.mTraits.mPriority;
-		});
-
-	for (const InternalSystem& system : sortedSystems)
-	{
-		system.mSystem->Render(mWorld, commandQueue);
-	}
 }
 
 entt::entity CE::Registry::Create()
@@ -573,100 +522,6 @@ void CE::Registry::Clear()
 	RemovedDestroyed();
 }
 
-std::vector<CE::Registry::SingleTick> CE::Registry::GetSortedSystemsToUpdate(const float dt)
-{
-	std::vector<SingleTick> returnValue{};
-
-	const bool hasBegunPlay = GetWorld().HasBegunPlay();
-	const bool isPaused = GetWorld().IsPaused();
-
-	const auto canEverTick = [&](const SystemStaticTraits& traits)
-		{
-			if (hasBegunPlay)
-			{
-				return !isPaused || traits.mShouldTickWhilstPaused;
-			}
-			return traits.mShouldTickBeforeBeginPlay;
-		};
-	{
-		struct SortableFixedTick
-		{
-			SortableFixedTick(FixedTickSystem& system, float timeOfNextStep) : mFixedTicksystem(system), mTimeOfNextStep(timeOfNextStep) {}
-			std::reference_wrapper<FixedTickSystem> mFixedTicksystem;
-			float mTimeOfNextStep{};
-		};
-		std::vector<SortableFixedTick> ticksToSort{};
-
-		for (FixedTickSystem& fixedSystem : mFixedTickSystems)
-		{
-			if (!canEverTick(fixedSystem.mTraits))
-			{
-				continue;
-			}
-
-			float timeOfNextStep = fixedSystem.mTimeOfNextStep;
-
-			while (timeOfNextStep <= (fixedSystem.mTraits.mShouldTickWhilstPaused ? 
-				mWorld.get().GetCurrentTimeReal() : 
-				mWorld.get().GetCurrentTimeScaled()))
-			{
-				ticksToSort.emplace_back(fixedSystem, timeOfNextStep);
-				timeOfNextStep += *fixedSystem.mTraits.mFixedTickInterval;
-			}
-
-			fixedSystem.mTimeOfNextStep = timeOfNextStep;
-		}
-
-		std::sort(ticksToSort.begin(), ticksToSort.end(),
-			[](const SortableFixedTick& l, const SortableFixedTick& r)
-			{
-				if (l.mTimeOfNextStep == r.mTimeOfNextStep)
-				{
-					return l.mFixedTicksystem.get().mTraits.mPriority > r.mFixedTicksystem.get().mTraits.mPriority;
-				}
-				else
-				{
-					return l.mTimeOfNextStep < r.mTimeOfNextStep;
-				}
-			});
-
-		for (const SortableFixedTick& sortableFixedTick : ticksToSort)
-		{
-			returnValue.emplace_back(*sortableFixedTick.mFixedTicksystem.get().mSystem, *sortableFixedTick.mFixedTicksystem.get().mTraits.mFixedTickInterval);
-		}
-	}
-
-	for (InternalSystem& internalSystem : mNonFixedSystems)
-	{
-		if (canEverTick(internalSystem.mTraits))
-		{
-			returnValue.emplace_back(*internalSystem.mSystem, dt);
-		}
-	}
-
-	return returnValue;
-}
-
-void CE::Registry::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system)
-{
-	SystemStaticTraits staticTraits = system->GetStaticTraits();
-
-	if (staticTraits.mFixedTickInterval.has_value())
-	{
-		mFixedTickSystems.emplace_back(std::move(system), staticTraits, GetWorld().GetCurrentTimeScaled());
-	}
-	else
-	{
-		InternalSystem newInternal{ std::move(system), staticTraits };
-
-		const auto whereToInsert = std::lower_bound(mNonFixedSystems.begin(), mNonFixedSystems.end(), newInternal,
-		                                            [](const InternalSystem& sl, const InternalSystem& sr)
-		                                            {
-			                                            return sl.mTraits.mPriority > sr.mTraits.mPriority;
-		                                            });
-		mNonFixedSystems.insert(whereToInsert, std::move(newInternal));
-	}
-}
 
 void CE::Registry::CallBeginPlayForEntitiesAwaitingBeginPlay()
 {

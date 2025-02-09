@@ -1,6 +1,5 @@
 #pragma once
 #include "World/World.h"
-#include "Systems/System.h"
 #include "Utilities/MemFunctions.h"
 #include "Meta/MetaFunc.h"
 #include "Meta/MetaManager.h"
@@ -13,7 +12,6 @@ namespace CE
 	class Prefab;
 	class PrefabEntityFactory;
 	class TransformComponent;
-	class System;
 
 	// Wrapper around the entt registry.
 	class Registry
@@ -28,10 +26,6 @@ namespace CE
 		Registry& operator=(const Registry&) = delete;
 
 		void BeginPlay();
-
-		void UpdateSystems(float dt);
-
-		void RenderSystems(RenderCommandQueue& commandQueue) const;
 
 		entt::entity Create();
 		
@@ -58,9 +52,6 @@ namespace CE
 		void Destroy(It first, It last, bool destroyChildren);
 
 		void RemovedDestroyed();
-
-		template <typename T, typename... Args>
-		T& CreateSystem(Args&&... args);
 
 		MetaAny AddComponent(const MetaType& componentClass, entt::entity toEntity);
 
@@ -141,16 +132,6 @@ namespace CE
 		void Clear();
 
 	private:
-		struct SingleTick
-		{
-			SingleTick(System& system, float deltaTime = 0.0f) : mSystem(system), mDeltaTime(deltaTime) {};
-			std::reference_wrapper<System> mSystem;
-			float mDeltaTime{};
-		};
-		std::vector<SingleTick> GetSortedSystemsToUpdate(float deltaTime);
-		
-		void AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system);
-
 		void CallBeginPlayForEntitiesAwaitingBeginPlay();
 
 		bool ShouldWeCallBeginPlayImmediatelyAfterConstruct(entt::entity ownerOfNewlyConstructedComponent) const;
@@ -160,30 +141,6 @@ namespace CE
 		std::reference_wrapper<World> mWorld; 
 		
 		entt::registry mRegistry{};
-
-		struct InternalSystem
-		{
-			InternalSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system, SystemStaticTraits traits) :
-				mSystem(std::move(system)),
-				mTraits(traits) {}
-
-			// Systems are created using the runtime reflection system,
-			// which uses placement new for the constructing of objects.
-			// Hence, the custom deleter
-			std::unique_ptr<System, InPlaceDeleter<System, true>> mSystem{};
-			SystemStaticTraits mTraits{};
-		};
-		
-		struct FixedTickSystem :
-			public InternalSystem
-		{
-			FixedTickSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system, SystemStaticTraits traits, float timeOfNextStep) :
-				InternalSystem(std::move(system), traits),
-				mTimeOfNextStep(timeOfNextStep) {}
-			float mTimeOfNextStep{};
-		};
-		std::vector<FixedTickSystem> mFixedTickSystems{};
-		std::vector<InternalSystem> mNonFixedSystems{};
 	};
 
 	template<typename ComponentType, typename ...AdditonalArgs>
@@ -389,22 +346,5 @@ namespace CE
 		{
 			Destroy(*it, destroyChildren);
 		}
-	}
-
-	template <typename T, typename... Args>
-	T& Registry::CreateSystem(Args&&... args)
-	{
-		// We could do std::make_unique in this case, we also create
-		// systems from a metatype. Metatypes construct using placement
-		// new and can thus not construct a normal, default deleter unique
-		// ptr, which is why we cannot do that here either.
-		void* buffer = FastAlloc(sizeof(T), alignof(T));
-		ASSERT(buffer != nullptr);
-
-		T* obj = new (buffer) T(std::forward<Args>(args)...);
-		std::unique_ptr<System, InPlaceDeleter<System, true>> newSystem{ obj };
-		AddSystem(std::move(newSystem));
-
-		return *obj;
 	}
 }
