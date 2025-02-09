@@ -38,6 +38,16 @@ namespace CE
 		Registry& GetRegistry();
 		const Registry& GetRegistry() const;
 
+		template<typename T>
+		T* TryGetSystem();
+
+		template<typename T>
+		const T* TryGetSystem() const;
+
+		System* TryGetSystem(TypeId typeId);
+
+		const System* TryGetSystem(TypeId typeId) const;
+
 		Physics& GetPhysics();
 		const Physics& GetPhysics() const;
 
@@ -95,9 +105,6 @@ namespace CE
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(World);
 
-		template <typename T, typename... Args>
-		T& CreateSystem(Args&&... args);
-
 		struct SingleTick
 		{
 			SingleTick(System& system, float deltaTime = 0.0f) : mSystem(system), mDeltaTime(deltaTime) {};
@@ -106,7 +113,7 @@ namespace CE
 		};
 		std::vector<SingleTick> GetSortedSystemsToUpdate(float deltaTime);
 
-		void AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system);
+		void AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system, TypeId typeId);
 
 		struct InternalSystem
 		{
@@ -123,7 +130,7 @@ namespace CE
 		};
 
 		struct FixedTickSystem :
-			public InternalSystem
+			InternalSystem
 		{
 			FixedTickSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system, SystemStaticTraits traits, float timeOfNextStep) :
 				InternalSystem(std::move(system), traits),
@@ -133,8 +140,7 @@ namespace CE
 		};
 		std::vector<FixedTickSystem> mFixedTickSystems{};
 		std::vector<InternalSystem> mNonFixedSystems{};
-
-
+		std::unordered_map<TypeId, std::reference_wrapper<System>> mSystemLookUp{};
 
 		ScalableTimer mTime{};
 		bool mHasBegunPlay{};
@@ -149,20 +155,15 @@ namespace CE
 		bool mHasEndPlayBeenRequested = false;
 	};
 
-	template <typename T, typename... Args>
-	T& World::CreateSystem(Args&&... args)
+	template <typename T>
+	T* World::TryGetSystem()
 	{
-		// We could do std::make_unique in this case, we also create
-		// systems from a metatype. Metatypes construct using placement
-		// new and can thus not construct a normal, default deleter unique
-		// ptr, which is why we cannot do that here either.
-		void* buffer = FastAlloc(sizeof(T), alignof(T));
-		ASSERT(buffer != nullptr);
+		return static_cast<T*>(TryGetSystem(MakeStrippedTypeId<T>()));
+	}
 
-		T* obj = new (buffer) T(std::forward<Args>(args)...);
-		std::unique_ptr<System, InPlaceDeleter<System, true>> newSystem{ obj };
-		AddSystem(std::move(newSystem));
-
-		return *obj;
+	template <typename T>
+	const T* World::TryGetSystem() const
+	{
+		return static_cast<const T*>(TryGetSystem(MakeStrippedTypeId<T>()));
 	}
 }

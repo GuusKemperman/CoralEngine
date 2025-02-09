@@ -27,8 +27,8 @@ CE::World::World(const bool beginPlayImmediately) :
 {
 	const MetaType* const systemType = MetaManager::Get().TryGetType<System>();
 	ASSERT(systemType != nullptr);
-	std::function<void(const MetaType&)> registerChildren =
-		[&](const MetaType& type)
+	const auto registerChildren =
+		[&](const auto& self, const MetaType& type) -> void
 		{
 			for (const MetaType& child : type.GetDirectDerivedClasses())
 			{
@@ -41,13 +41,12 @@ CE::World::World(const bool beginPlayImmediately) :
 				}
 				auto newSystem = MakeUnique<System>(std::move(childConstructResult.GetReturnValue()));
 
-				AddSystem(std::move(newSystem));
+				AddSystem(std::move(newSystem), child.GetTypeId());
 
-				registerChildren(child);
+				self(self, child);
 			}
 		};
-	registerChildren(*systemType);
-
+	registerChildren(registerChildren, *systemType);
 
 	if (beginPlayImmediately)
 	{
@@ -160,6 +159,21 @@ CE::Registry& CE::World::GetRegistry()
 const CE::Registry& CE::World::GetRegistry() const
 {
 	return *mRegistry;
+}
+
+CE::System* CE::World::TryGetSystem(TypeId typeId)
+{
+	return const_cast<System*>(const_cast<const World&>(*this).TryGetSystem(typeId));
+}
+
+const CE::System* CE::World::TryGetSystem(TypeId typeId) const
+{
+	auto it = mSystemLookUp.find(typeId);
+	if (it == mSystemLookUp.end())
+	{
+		return nullptr;
+	}
+	return &it->second.get();
 }
 
 CE::Physics& CE::World::GetPhysics()
@@ -354,9 +368,11 @@ std::vector<CE::World::SingleTick> CE::World::GetSortedSystemsToUpdate(const flo
 	return returnValue;
 }
 
-void CE::World::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system)
+void CE::World::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system, TypeId typeId)
 {
 	SystemStaticTraits staticTraits = system->GetStaticTraits();
+
+	mSystemLookUp.emplace(typeId, *system);
 
 	if (staticTraits.mFixedTickInterval.has_value())
 	{
