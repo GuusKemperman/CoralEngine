@@ -541,12 +541,12 @@ CE::MetaType CE::World::Reflect()
 
 			return world.GetRegistry().CreateFromPrefab(*prefab, entt::null, &position, &orientation, &scale, parent);
 		}, "Spawn prefab at",
-			"Prefab", "LocalPosition", "LocalOrientation", "LocalScale", "Parent").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+			"World", "Prefab", "LocalPosition", "LocalOrientation", "LocalScale", "Parent").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](World& world, const entt::entity& entity, bool destroyChildren)
 		{
 			world.GetRegistry().Destroy(entity, destroyChildren);
-		}, "Destroy entity", "Entity", "DestroyChildren").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
+		}, "World", "Destroy entity", "Entity", "DestroyChildren").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, false);
 
 	type.AddFunc([](const World& world, const std::string& name) -> entt::entity
 		{
@@ -626,12 +626,12 @@ CE::MetaType CE::World::Reflect()
 	type.AddFunc([](const World& world, glm::vec2 screenPosition, float distanceFromCamera)
 		{
 			return world.GetViewport().ScreenToWorld(screenPosition, distanceFromCamera);
-		}, "ScreenToWorld", "Screen position", "Distance from camera").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "ScreenToWorld", "World", "Screen position", "Distance from camera").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](const World& world, glm::vec2 screenPosition, float planeHeight)
 		{
 			return world.GetViewport().ScreenToWorldPlane(screenPosition, planeHeight);
-		}, "ScreenToWorldPlane", "Screen position", "Plane height").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
+		}, "ScreenToWorldPlane", "World", "Screen position", "Plane height").GetProperties().Add(Props::sIsScriptableTag).Set(Props::sIsScriptPure, true);
 
 	type.AddFunc([](const World& world)
 		{
