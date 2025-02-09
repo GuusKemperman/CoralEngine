@@ -70,6 +70,10 @@ namespace CE
 
 		constexpr CollisionResponse GetResponse(const CollisionRules& other) const;
 
+		constexpr CollisionResponse GetResponse(CollisionLayer layer) const;
+
+		constexpr void SetResponse(CollisionLayer layer, CollisionResponse response);
+
 		// Since there is always terrain beneath us (hopefully),
 		// it would always be registered as a collision, since
 		// from a 2D top-down perspective, the terrain and the object
@@ -273,10 +277,20 @@ namespace CE
 		return GetResponseIncludingTerrain(other);
 	}
 
+	constexpr CollisionResponse CollisionRules::GetResponse(CollisionLayer layer) const
+	{
+		return mResponses[static_cast<std::underlying_type_t<CollisionLayer>>(layer)];
+	}
+
+	constexpr void CollisionRules::SetResponse(CollisionLayer layer, CollisionResponse response)
+	{
+		mResponses[static_cast<std::underlying_type_t<CollisionLayer>>(layer)] = response;
+	}
+
 	constexpr CollisionResponse CollisionRules::GetResponseIncludingTerrain(const CollisionRules& other) const
 	{
-		return static_cast<CollisionResponse>(std::min(static_cast<std::underlying_type_t<CollisionResponse>>(mResponses[static_cast<std::underlying_type_t<CollisionLayer>>(other.mLayer)]),
-			static_cast<std::underlying_type_t<CollisionResponse>>(other.mResponses[static_cast<std::underlying_type_t<CollisionLayer>>(mLayer)])));
+		return static_cast<CollisionResponse>(std::min(static_cast<std::underlying_type_t<CollisionResponse>>(GetResponse(other.mLayer)),
+			static_cast<std::underlying_type_t<CollisionResponse>>(other.GetResponse(mLayer))));
 	}
 }
 
