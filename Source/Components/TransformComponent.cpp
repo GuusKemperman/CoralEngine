@@ -171,6 +171,10 @@ void CE::TransformComponent::SetParent(TransformComponent* const parent, const b
 		SetWorldOrientation(worldOrientationToRestore);
 		SetWorldScale(worldScaleToRestore);
 	}
+	else
+	{
+		UpdateWorldMatrix();
+	}
 }
 
 const CE::TransformComponent* CE::TransformComponent::GetParent() const
