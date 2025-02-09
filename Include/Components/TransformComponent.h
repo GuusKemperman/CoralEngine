@@ -27,14 +27,14 @@ namespace CE
 
 	constexpr glm::vec2 To2D(glm::vec3 v3)
 	{
-		return { v3[Axis::Right], v3[Axis::Forward] };
+		return { v3[Axis::Forward], v3[Axis::Right] };
 	}
 
 	constexpr glm::vec3 To3D(glm::vec2 v2, float up = 0.0f)
 	{
 		glm::vec3 v3{};
-		v3[Axis::Right] = v2.x;
-		v3[Axis::Forward] = v2.y;
+		v3[Axis::Forward] = v2[Axis::Forward];
+		v3[Axis::Right] = v2[Axis::Right];
 		v3[Axis::Up] = up;
 		return v3;
 	}
