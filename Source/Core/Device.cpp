@@ -9,6 +9,7 @@
 #include "imgui/imgui_impl_glfw.h"
 #endif // EDITOR
 
+#include "Core/Engine.h"
 #include "Core/FileIO.h"
 
 struct CE::Device::Impl
@@ -18,7 +19,7 @@ struct CE::Device::Impl
 	glm::ivec2 mPos{};
 };
 
-CE::Device::Device(const DeviceConfiguration& config) :
+CE::Device::Device(const EngineConfig& config) :
 	mImpl(new Impl)
 {
 	LOG(LogCore, Verbose, "Initializing GLFW");
@@ -39,7 +40,7 @@ CE::Device::Device(const DeviceConfiguration& config) :
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_FALSE);
 #endif
 
-	const std::string applicationName = config.title.has_value() ? *config.title :
+	const std::string applicationName = !config.mWindowTitle.empty() ? config.mWindowTitle :
 		[]()
 		{
 			std::string applicationName{};
@@ -59,7 +60,7 @@ CE::Device::Device(const DeviceConfiguration& config) :
 
 	GLFWmonitor* monitor{};
 
-	if (config.isFullscreen)
+	if (config.mIsFullScreen)
 	{
 		monitor = glfwGetPrimaryMonitor();
 		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
@@ -69,7 +70,7 @@ CE::Device::Device(const DeviceConfiguration& config) :
 	}
 	else
 	{
-		mImpl->mSize = config.size;
+		mImpl->mSize = config.mWindowSizeHint;
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 	}
 

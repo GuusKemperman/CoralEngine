@@ -2,19 +2,14 @@
 
 namespace CE
 {
-	struct DeviceConfiguration
-	{
-		glm::ivec2 size = { 1920, 1080 };
-		bool isFullscreen{};
-		std::optional<std::string> title{};
-	};
+	class EngineConfig;
 
 	class Device final :
         public EngineSubsystem<Device>
     {
         friend EngineSubsystem;
 
-        Device(const DeviceConfiguration& config);
+        Device(const EngineConfig& config);
         ~Device();
 
 	public:

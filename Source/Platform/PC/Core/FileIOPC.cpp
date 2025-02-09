@@ -1,15 +1,17 @@
 #include "Precomp.h"
+
+#include "Core/Engine.h"
 #include "Core/FileIO.h"
 
 using namespace CE;
 using namespace std;
 
-FileIO::FileIO(int argc, char* argv[], const std::string_view gameDir)
+FileIO::FileIO(const EngineConfig& config)
 {
 	mPaths[Directory::EngineAssets] = "Assets/";
-	mPaths[Directory::GameAssets] = std::string{ gameDir } + "Assets/";
-	mPaths[Directory::Intermediate] = std::string{ gameDir } + "Intermediate/";
-	mPaths[Directory::ThisExecutable] = argc == 0 ? std::string{} : std::string{ argv[0] };
+	mPaths[Directory::GameAssets] = std::string{ config.mGameDir } + "Assets/";
+	mPaths[Directory::Intermediate] = std::string{ config.mGameDir } + "Intermediate/";
+	mPaths[Directory::ThisExecutable] = std::string{ !config.mProgramArguments.empty() ? config.mProgramArguments[0] : std::string_view{} };
 }
 
 FileIO::~FileIO() = default;

@@ -7,6 +7,8 @@
 
 namespace CE
 {
+	class EngineConfig;
+
 	/// <summary>
 	/// The FileIO class provides a cross-platform way to read and write files.
 	/// </summary>
@@ -19,7 +21,7 @@ namespace CE
 		/// Initializes the File IO system, filling in all the paths and
 		/// mounting the virtual file system on platforms that need it.
 		/// </summary>
-		FileIO(int argc, char* argv[], std::string_view gameDir);
+		FileIO(const EngineConfig& config);
 
 		/// <summary>
 		/// Unmount the virtual file system and shut down the File IO system.

@@ -25,12 +25,21 @@
 // Forces initialization of otherwise unused static variables
 #include "../Intermediate/Generated/Generated.h"
 
-CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
+CE::EngineConfig::EngineConfig(int argc, char** argv)
 {
-	const bool isHeadless = argc >= 2
-		&& strcmp(argv[1], "run_tests") == 0;
+	for (int i = 0; i < argc; i++)
+	{
+		mProgramArguments.emplace_back(argv[i]);
+	}
+}
 
-	FileIO::StartUp(argc, argv, gameDir);
+CE::Engine::Engine(const EngineConfig& config)
+{
+	const bool shouldRunUnitTests = config.mProgramArguments.size() >= 2
+		&& std::find(config.mProgramArguments.begin(), config.mProgramArguments.end(), "run_tests") == config.mProgramArguments.end();
+
+	const bool isHeadless = shouldRunUnitTests;
+	FileIO::StartUp(config);
 	Logger::StartUp();
 	ThreadPool::StartUp();
 
@@ -43,7 +52,7 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 
 	if (!isHeadless)
 	{
-		Device::StartUp(DeviceConfiguration{});
+		Device::StartUp(config);
 	}
 
 	Renderer::StartUp();
@@ -65,7 +74,7 @@ CE::Engine::Engine(int argc, char* argv[], std::string_view gameDir)
 
 	UnitTestManager::StartUp();
 
-	if (isHeadless)
+	if (shouldRunUnitTests)
 	{
 		uint32 numFailed = 0;
 		for (UnitTest& test : UnitTestManager::Get().GetAllTests())

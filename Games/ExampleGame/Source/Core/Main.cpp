@@ -3,7 +3,10 @@
 
 int main(int argc, char* argv[])
 {
-	CE::Engine engine{ argc, argv, GAME_DIR };
+	CE::EngineConfig config{ argc, argv };
+	config.mGameDir = GAME_DIR;
+
+	CE::Engine engine{ config };
 	engine.Run("TestLevel");
 
 	return 0;
