@@ -45,7 +45,7 @@ CE::Engine::Engine(const EngineConfig& config)
 
 	const std::future startupThread = ThreadPool::Get().Enqueue([&]
 		{
-			MetaManager::StartUp();
+			MetaManager::StartUp(config);
 			AssetManager::StartUp();
 			VirtualMachine::StartUp();
 		});

@@ -1,6 +1,7 @@
 #include "Precomp.h"
 #include "Meta/MetaManager.h"
 
+#include "Core/Engine.h"
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
 #include "Utilities/NameLookUp.h"
@@ -26,13 +27,20 @@ namespace CE
 {
 	static std::unordered_map<TypeId, MetaType> mTypeByTypeId{};
 	static std::unordered_map<Name::HashType, std::reference_wrapper<MetaType>> mTypeByName{};
+	static std::unordered_set<TypeId> mBannedTypes{};
+}
+
+CE::MetaManager::MetaManager(const EngineConfig& config)
+{
+	mBannedTypes = config.mBannedTypes;
 }
 
 void CE::MetaManager::PostConstruct()
 {
 	for (const auto& [typeId, func] : Internal::GetTypesReflectedAtStartUp())
 	{
-		if (TryGetType(typeId) != nullptr)
+		if (TryGetType(typeId) != nullptr
+			|| IsBanned(typeId))
 		{
 			continue;
 		}
@@ -61,6 +69,11 @@ CE::MetaType& CE::MetaManager::AddType(MetaType&& type)
 	{
 		LOG(LogMeta, Error, "There is already a type with the name {}", type.GetName());
 		return *existingType;
+	}
+
+	if (IsBanned(type.GetTypeId()))
+	{
+		LOG(LogMeta, Error, "Type {} was banned, but still ended up in runtime reflection system.", type.GetName());
 	}
 
 	auto typeInsertResult = mTypeByTypeId.emplace(type.GetTypeId(), std::move(type));
@@ -137,6 +150,11 @@ bool CE::MetaManager::RemoveType(const TypeId typeId)
 	mTypeByTypeId.erase(it);
 
 	return true;
+}
+
+bool CE::MetaManager::IsBanned(TypeId typeId) const
+{
+	return mBannedTypes.contains(typeId);
 }
 
 bool CE::Internal::DoesTypeExist(const TypeId typeId)

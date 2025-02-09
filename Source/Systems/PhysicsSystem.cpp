@@ -25,7 +25,6 @@ void CE::PhysicsSystem::Update(World& world, float dt)
 
 	world.GetPhysics().RebuildBVHs();
 
-
 	if (world.HasBegunPlay()
 		&& !world.IsPaused())
 	{
@@ -43,7 +42,6 @@ void CE::PhysicsSystem::Render(const World& world, RenderCommandQueue& commandQu
 		constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
 		for (auto [entity, disk, transform] : diskView.each())
 		{
-			
 			AddDebugCircle(commandQueue, DebugDraw::Physics, To3D(disk.mCentre), disk.mRadius + 0.00001f, color);
 		}
 
@@ -497,15 +495,5 @@ bool CE::PhysicsSystem::CollisionCheckDiskAABB(TransformedDiskColliderComponent 
 
 CE::MetaType CE::PhysicsSystem::Reflect()
 {
-	MetaType metaType = MetaType{ MetaType::T<PhysicsSystem>{}, "PhysicsSystem", MetaType::Base<System>{} };
-	metaType.GetProperties().Add(Props::sIsScriptableTag);
-
-	metaType.AddFunc([](entt::entity entity1, entt::entity entity2, float depth, glm::vec2 normalFor1, glm::vec2 contactPoint, const PhysicsBody2DComponent& bodyToMove, const PhysicsBody2DComponent& otherBody, const glm::vec2& bodyPosition) -> glm::vec2
-		{
-			return ResolveDiskCollision({ entity1 , entity2, depth, normalFor1, contactPoint }, bodyToMove, otherBody, bodyPosition).mResolvedPosition;
-		},
-		"ResolveCollision", 
-		"Entity1", "Entity2", "Depth", "NormalFor1", "ContactPoint", "PhysicsBodyToMove", "OtherPhysicsBody", "BodyPosition").GetProperties().Add(Props::sIsScriptableTag);
-
-	return metaType;
+	return MetaType{ MetaType::T<PhysicsSystem>{}, "PhysicsSystem", MetaType::Base<System>{} };;
 }

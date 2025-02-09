@@ -8,6 +8,7 @@
 namespace CE
 {
 	class MetaType;
+	class EngineConfig;
 
 	class MetaManager final :
 		public EngineSubsystem<MetaManager>
@@ -16,6 +17,8 @@ namespace CE
 
 		// We only expose the value to the user; not the TypeId key.
 		using EachTypeT = IterableRange<EncapsulingForwardIterator<AlwaysSecondEncapsulator, std::unordered_map<TypeId, MetaType>::iterator>>;
+
+		MetaManager(const EngineConfig& config);
 
 		void PostConstruct() override;
 
@@ -65,5 +68,8 @@ namespace CE
 		Will return true on success. This function will return false if there is no type with this typeid.
 		*/
 		bool RemoveType(TypeId typeId);
+
+	private:
+		bool IsBanned(TypeId typeId) const;
 	};
 }
