@@ -11,7 +11,7 @@ bool CE::Cooldown::IsReady(float dt)
 
 	if (mAmountOfTimePassed >= mCooldown)
 	{
-		mAmountOfTimePassed = 0.0f;
+		Reset();
 		return true;
 	}
 	return false;
