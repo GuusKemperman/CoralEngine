@@ -36,7 +36,7 @@ CE::EngineConfig::EngineConfig(int argc, char** argv)
 CE::Engine::Engine(const EngineConfig& config)
 {
 	const bool shouldRunUnitTests = config.mProgramArguments.size() >= 2
-		&& std::find(config.mProgramArguments.begin(), config.mProgramArguments.end(), "run_tests") == config.mProgramArguments.end();
+		&& std::find(config.mProgramArguments.begin(), config.mProgramArguments.end(), "run_tests") != config.mProgramArguments.end();
 
 	const bool isHeadless = shouldRunUnitTests;
 	FileIO::StartUp(config);
