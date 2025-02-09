@@ -21,13 +21,20 @@ namespace CE
 		template<typename Derived, typename Ret, EventFlags Flags, typename... Params, typename... Args>
 		void InvokeEventForAllComponentsOnEntity(const EventType<Derived, Ret(Params...), Flags>& eventType, entt::entity entity, Args&&... args);
 
+		template<typename Derived, typename Ret, EventFlags Flags, typename... Params, typename... Args>
+		void InvokeEventsForAllComponents(const EventType<Derived, Ret(Params...), Flags>& eventType, Args&&... args);
+
 		std::span<const BoundEvent> GetBoundEvents(const EventBase& eventBase) const;
 
 	private:
 		void InvokeEventForAllComponentsOnEntityImpl(const EventBase& eventBase, 
 			entt::entity entity,
-			MetaFunc::DynamicArgs argsProvided, 
-			std::span<TypeForm> argFormsProvided);
+			MetaFunc::DynamicArgs args, 
+			std::span<TypeForm> argForms);
+
+		void InvokeEventForAllComponentsImpl(const EventBase& eventBase,
+			MetaFunc::DynamicArgs args,
+			std::span<TypeForm> argForms);
 
 		std::reference_wrapper<World> mWorld;
 
@@ -55,5 +62,30 @@ namespace CE
 		};
 
 		InvokeEventForAllComponentsOnEntityImpl(eventType, entity, { argsInclusive }, { formsInclusive });
+	}
+
+	template <typename Derived, typename Ret, EventFlags Flags, typename ... Params, typename ... Args>
+	void EventManager::InvokeEventsForAllComponents(const EventType<Derived, Ret(Params...), Flags>& eventType,
+		Args&&... args)
+	{
+		static_assert(std::is_invocable_v<std::function<void(Params...)>, Args...>);
+
+		entt::entity entityBuffer;
+
+		std::array<MetaAny, sizeof...(Args) + 3> argsInclusive{
+			MetaAny{ MakeTypeInfo<void>(), nullptr }, // This slot can be used for the component if the event is not static
+			MetaAny{ mWorld.get() },
+			MetaAny{ MakeTypeInfo<entt::entity>(), &entityBuffer }, // This slot is used for the entt::entity
+			MetaFunc::PackSingle<Args>(std::forward<Args>(args))...
+		};
+
+		std::array<TypeForm, sizeof...(Args) + 3> formsInclusive{
+			TypeForm::Ref, // This slot can be used for the component if the event is not static
+			TypeForm::Ref,
+			TypeForm::ConstRef,
+			MakeTypeForm<Args>()...
+		};
+
+		InvokeEventForAllComponentsImpl(eventType, { argsInclusive }, { formsInclusive });
 	}
 }

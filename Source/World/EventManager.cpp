@@ -1,6 +1,8 @@
 #include "Precomp.h"
 #include "World/EventManager.h"
 
+#include "entt/entity/runtime_view.hpp"
+
 #include "World/Registry.h"
 #include "World/World.h"
 
@@ -47,6 +49,40 @@ void CE::EventManager::InvokeEventForAllComponentsOnEntityImpl(const EventBase& 
 		{
 			args[0].AssignFromAnyOfDifferentType({ boundEvent.mType, storage->value(entity), false });
 			func.InvokeUnchecked(args, argForms);
+		}
+	}
+}
+
+void CE::EventManager::InvokeEventForAllComponentsImpl(const EventBase& eventBase, MetaFunc::DynamicArgs args,
+	std::span<TypeForm> argForms)
+{
+	for (const BoundEvent& boundEvent : GetBoundEvents(eventBase))
+	{
+		entt::sparse_set* const storage = mWorld.get().GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
+
+		if (storage == nullptr)
+		{
+			continue;
+		}
+
+		const MetaFunc& func = boundEvent.mFunc.get();
+
+		entt::runtime_view view{};
+		view.iterate(*storage);
+
+		for (const entt::entity entity : view)
+		{
+			*static_cast<entt::entity*>(args[2].GetData()) = entity;
+
+			if (boundEvent.mIsStatic)
+			{
+				func.InvokeUnchecked({ args.data() + 1, args.size() - 1 }, { argForms.data() + 1, argForms.size() - 1 });
+			}
+			else
+			{
+				args[0].AssignFromAnyOfDifferentType({ boundEvent.mType, storage->value(entity), false });
+				func.InvokeUnchecked(args, argForms);
+			}
 		}
 	}
 }
