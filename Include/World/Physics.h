@@ -29,6 +29,20 @@ namespace CE
 
 		void RebuildBVHs(bool forceRebuild = false);
 
+		struct LineTraceResult
+		{
+			operator bool() const { return mHitEntity != entt::null; }
+
+			float mDist = std::numeric_limits<float>::infinity();
+			entt::entity mHitEntity = entt::null;
+
+		private:
+			friend ReflectAccess;
+			static MetaType Reflect();
+			REFLECT_AT_START_UP(LineTraceResult);
+		};
+		LineTraceResult LineTrace(const Line& line, const CollisionRules& filter) const;
+
 		std::vector<entt::entity> FindAllWithinShape(const TransformedDisk& shape, const CollisionRules& filter) const;
 		std::vector<entt::entity> FindAllWithinShape(const TransformedAABB& shape, const CollisionRules& filter) const;
 		std::vector<entt::entity> FindAllWithinShape(const TransformedPolygon& shape, const CollisionRules& filter) const;

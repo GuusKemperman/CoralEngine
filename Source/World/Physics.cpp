@@ -130,6 +130,59 @@ void CE::Physics::UpdateTransformedColliders(World& world, std::array<bool, stat
 	}
 }
 
+namespace
+{
+	struct OnRayIntersect
+	{
+		static void Callback(const auto& shape, entt::entity entity, const CE::Line& line, CE::Physics::LineTraceResult& result)
+		{
+			float timeOfIntersect = CE::TimeOfLineIntersection(line, shape);
+			if (timeOfIntersect < result.mDist)
+			{
+				result.mDist = timeOfIntersect;
+				result.mHitEntity = entity;
+			}
+		}
+	};
+
+}
+
+CE::Physics::LineTraceResult CE::Physics::LineTrace(const Line& line, const CollisionRules& filter) const
+{
+	LineTraceResult result{};
+
+	if (line.mStart == line.mEnd)
+	{
+		return result;
+	}
+
+	for (const BVH& bvh : mBVHs)
+	{
+		if (filter.mResponses[static_cast<int>(bvh.GetLayer())] == CollisionResponse::Ignore)
+		{
+			continue;
+		}
+
+		bvh.Query<OnRayIntersect,
+			BVH::DefaultShouldCheckFunction<true>,
+			BVH::DefaultShouldReturnFunction<false>>(line, line, result);
+	}
+
+	float dist = glm::distance(line.mStart, line.mEnd);
+	if (result)
+	{
+		// We cheated and stored the time of intersect in mDist, so fix it here
+		result.mDist *= dist;
+	}
+	else
+	{
+		// If we hit nothing, the distance is from start to end.
+		result.mDist = dist;
+	}
+
+	return result;
+}
+
 std::vector<entt::entity> CE::Physics::FindAllWithinShape(const TransformedDisk& shape, const CollisionRules& filter) const
 {
 	return FindAllWithinShapeImpl(shape, filter);
@@ -159,6 +212,27 @@ CE::MetaType CE::Physics::Reflect()
 		{
 			return world.GetPhysics().FindAllWithinShape(TransformedAABB{ min, max }, filter);
 		}, "Find all bodies in box", "Min", "Max", "Filter").GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc([](const World& world, glm::vec2 start, glm::vec2 end, const CollisionRules& filter)
+		{
+			return world.GetPhysics().LineTrace({ start, end }, filter);
+		}, "LineTrace", "Start", "End", "Filter").GetProperties().Add(Props::sIsScriptableTag);
+
+	return type;
+}
+
+CE::MetaType CE::Physics::LineTraceResult::Reflect()
+{
+	MetaType type = MetaType{ MetaType::T<LineTraceResult>{}, "LineTraceResult" };
+
+	type.GetProperties()
+		.Add(Props::sIsScriptableTag)
+		.Add(Props::sIsScriptOwnableTag);
+
+	type.AddField(&LineTraceResult::mDist, "mDist").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&LineTraceResult::mHitEntity, "mHitEntity").GetProperties().Add(Props::sIsScriptableTag);
+
+	type.AddFunc(&LineTraceResult::operator bool, "DidRayHit").GetProperties().Add(Props::sIsScriptableTag);
 
 	return type;
 }
