@@ -131,7 +131,13 @@ CE::AssetEditorMementoStack CE::AssetEditorSystemBase::ExtractStack()
 	if (mActionToAdd.valid())
 	{
 		mActionToAdd.get();
+		mDifferenceCheckTimer.Reset();
 		CheckForDifferences();
+
+		if (mActionToAdd.valid())
+		{
+			mActionToAdd.wait();
+		}
 	}
 
 	return std::move(mMementoStack);
