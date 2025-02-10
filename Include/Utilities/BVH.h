@@ -33,7 +33,6 @@ namespace CE
 			static bool Callback(CallbackAdditionalArgs&& ...) { return AlwaysReturnValue; }
 		};
 
-
 		struct DefaultOnIntersectFunction
 		{
 			template<typename ...CallbackAdditionalArgs>
@@ -41,7 +40,7 @@ namespace CE
 		};
 
 		template<typename OnIntersectFunction = DefaultOnIntersectFunction, typename ShouldCheckFunction = DefaultShouldCheckFunction<true>, typename ShouldReturnFunction = DefaultShouldReturnFunction<true>, typename InquirerShape, typename ...CallbackAdditionalArgs>
-		bool Query(const InquirerShape inquirerShape, CallbackAdditionalArgs&& ...args) const;
+		bool Query(const InquirerShape& inquirerShape, CallbackAdditionalArgs&& ...args) const;
 
 		void DebugDraw() const;
 
@@ -92,7 +91,7 @@ namespace CE
 
 	template <typename OnIntersectFunction, typename ShouldCheckFunction, typename ShouldReturnFunction, typename
 		InquirerShape, typename ... CallbackAdditionalArgs>
-	bool BVH::Query(const InquirerShape inquirerShape, CallbackAdditionalArgs&&... args) const
+	bool BVH::Query(const InquirerShape& inquirerShape, CallbackAdditionalArgs&&... args) const
 	{
 		static constexpr uint32 stackSize = 256;
 		const Node* stack[stackSize];

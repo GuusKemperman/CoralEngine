@@ -47,15 +47,7 @@ std::vector<entt::entity> CE::Physics::FindAllWithinShapeImpl(const T& shape, co
 		}
 	};
 
-	for (const BVH& bvh : mBVHs)
-	{
-		if (filter.mResponses[static_cast<int>(bvh.GetLayer())] == CollisionResponse::Ignore)
-		{
-			continue;
-		}
-
-		bvh.Query<OnIntersect, BVH::DefaultShouldCheckFunction<true>, BVH::DefaultShouldReturnFunction<false>>(shape, ret);
-	}
+	Query<OnIntersect, BVH::DefaultShouldCheckFunction<true>, BVH::DefaultShouldReturnFunction<false>>(shape, filter, ret);
 
 	return ret;
 }
@@ -156,17 +148,9 @@ CE::Physics::LineTraceResult CE::Physics::LineTrace(const Line& line, const Coll
 		return result;
 	}
 
-	for (const BVH& bvh : mBVHs)
-	{
-		if (filter.mResponses[static_cast<int>(bvh.GetLayer())] == CollisionResponse::Ignore)
-		{
-			continue;
-		}
-
-		bvh.Query<OnRayIntersect,
-			BVH::DefaultShouldCheckFunction<true>,
-			BVH::DefaultShouldReturnFunction<false>>(line, line, result);
-	}
+	Query<OnRayIntersect,
+		BVH::DefaultShouldCheckFunction<true>,
+		BVH::DefaultShouldReturnFunction<false>>(line, filter, line, result);
 
 	float dist = glm::distance(line.mStart, line.mEnd);
 	if (result)
