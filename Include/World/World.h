@@ -39,6 +39,13 @@ namespace CE
 		const Registry& GetRegistry() const;
 
 		template<typename T>
+		T& AddSystem();
+
+		// May return nullptr if construction fails,
+		// or if the type does not derive from System.
+		System* AddSystem(const MetaType& systemType);
+
+		template<typename T>
 		T* TryGetSystem();
 
 		template<typename T>
@@ -113,7 +120,7 @@ namespace CE
 		};
 		std::vector<SingleTick> GetSortedSystemsToUpdate(float deltaTime);
 
-		void AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system, TypeId typeId);
+		System& AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system, TypeId typeId);
 
 		struct InternalSystem
 		{
@@ -154,6 +161,17 @@ namespace CE
 		AssetHandle<Level> mLevelToTransitionTo{};
 		bool mHasEndPlayBeenRequested = false;
 	};
+
+	template <typename T>
+	T& World::AddSystem()
+	{
+		if (T* existingSystem = TryGetSystem<T>(); existingSystem != nullptr)
+		{
+			return *existingSystem;
+		}
+
+		return static_cast<T&>(AddSystem(MakeUniqueInPlace<T, System>(), MakeStrippedTypeId<T>()));
+	}
 
 	template <typename T>
 	T* World::TryGetSystem()

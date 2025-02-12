@@ -25,28 +25,12 @@ CE::World::World(const bool beginPlayImmediately) :
 	mEventManager(std::make_unique<EventManager>(*this)),
 	mRenderCommandQueue(Device::IsHeadless() ? nullptr : Renderer::Get().CreateCommandQueue())
 {
-	const MetaType* const systemType = MetaManager::Get().TryGetType<System>();
-	ASSERT(systemType != nullptr);
-	const auto registerChildren =
-		[&](const auto& self, const MetaType& type) -> void
-		{
-			for (const MetaType& child : type.GetDirectDerivedClasses())
-			{
-				FuncResult childConstructResult = child.Construct();
+	const MetaType& systemType = MetaManager::Get().GetType<System>();
 
-				if (childConstructResult.HasError())
-				{
-					LOG(LogWorld, Error, "System {} is not default constructible - {}", child.GetName(), childConstructResult.Error());
-					continue;
-				}
-				auto newSystem = MakeUnique<System>(std::move(childConstructResult.GetReturnValue()));
-
-				AddSystem(std::move(newSystem), child.GetTypeId());
-
-				self(self, child);
-			}
-		};
-	registerChildren(registerChildren, *systemType);
+	for (const MetaType& child : systemType.GetDirectDerivedClasses())
+	{
+		AddSystem(child);
+	}
 
 	if (beginPlayImmediately)
 	{
@@ -136,6 +120,17 @@ void CE::World::BeginPlay()
 	mTime = {};
 
 	LOG(LogCore, Verbose, "World will begin play");
+
+	for (FixedTickSystem& fixedTick : mFixedTickSystems)
+	{
+		fixedTick.mSystem->BeginPlay(*this);
+	}
+
+	for (InternalSystem& tickSystem : mNonFixedSystems)
+	{
+		tickSystem.mSystem->BeginPlay(*this);
+	}
+
 	mRegistry->BeginPlay();
 }
 
@@ -159,6 +154,20 @@ CE::Registry& CE::World::GetRegistry()
 const CE::Registry& CE::World::GetRegistry() const
 {
 	return *mRegistry;
+}
+
+CE::System* CE::World::AddSystem(const MetaType& systemType)
+{
+	FuncResult childConstructResult = systemType.Construct();
+
+	if (childConstructResult.HasError())
+	{
+		LOG(LogWorld, Error, "System {} is not default constructible - {}", systemType.GetName(), childConstructResult.Error());
+		return nullptr;
+	}
+	auto newSystem = MakeUnique<System>(std::move(childConstructResult.GetReturnValue()));
+
+	return &AddSystem(std::move(newSystem), systemType.GetTypeId());
 }
 
 CE::System* CE::World::TryGetSystem(TypeId typeId)
@@ -368,10 +377,13 @@ std::vector<CE::World::SingleTick> CE::World::GetSortedSystemsToUpdate(const flo
 	return returnValue;
 }
 
-void CE::World::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system, TypeId typeId)
+CE::System& CE::World::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> system, TypeId typeId)
 {
+	System& returnValue = *system;
+
 	SystemStaticTraits staticTraits = system->GetStaticTraits();
 
+	ASSERT(TryGetSystem(typeId) == nullptr);
 	mSystemLookUp.emplace(typeId, *system);
 
 	if (staticTraits.mFixedTickInterval.has_value())
@@ -389,6 +401,8 @@ void CE::World::AddSystem(std::unique_ptr<System, InPlaceDeleter<System, true>> 
 			});
 		mNonFixedSystems.insert(whereToInsert, std::move(newInternal));
 	}
+
+	return returnValue;
 }
 
 
