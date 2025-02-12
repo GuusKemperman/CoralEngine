@@ -218,7 +218,14 @@ void CE::Level::LoadIntoWorld(World& world) const
 {
 	if (!mSerializedWorld.has_value())
 	{
-		LOG(LogAssets, Warning, "Failed to load {} into world, mSerializedWorld was null", GetName());
+		if (mWorld != nullptr)
+		{
+			mSerializedWorld.emplace(Archiver::Serialize(*mWorld));
+		}
+		else
+		{
+			LOG(LogAssets, Warning, "Failed to load {} into world, mSerializedWorld was null", GetName());
+		}
 		return;
 	}
 
