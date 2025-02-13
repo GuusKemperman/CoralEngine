@@ -43,8 +43,6 @@ namespace CE
 	public:
 		virtual ~System() = default;
 
-		virtual void BeginPlay([[maybe_unused]] World& world) {}
-
 		virtual void Update([[maybe_unused]] World& world, [[maybe_unused]] float dt) {}
 		virtual void Render([[maybe_unused]] const World& world, [[maybe_unused]] RenderCommandQueue& renderQueue) const {}
 

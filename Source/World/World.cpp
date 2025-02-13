@@ -120,17 +120,6 @@ void CE::World::BeginPlay()
 	mTime = {};
 
 	LOG(LogCore, Verbose, "World will begin play");
-
-	for (FixedTickSystem& fixedTick : mFixedTickSystems)
-	{
-		fixedTick.mSystem->BeginPlay(*this);
-	}
-
-	for (InternalSystem& tickSystem : mNonFixedSystems)
-	{
-		tickSystem.mSystem->BeginPlay(*this);
-	}
-
 	mRegistry->BeginPlay();
 }
 
