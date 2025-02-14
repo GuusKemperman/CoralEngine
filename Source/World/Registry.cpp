@@ -761,9 +761,10 @@ void CE::Internal::AnyStorage::reserve(const size_type cap)
 			continue;
 		}
 
-		const size_t placeAtIndex = index(entity);
 
+		const size_t placeAtIndex = index(entity);
 		void* const src = get_at(placeAtIndex);
+		ASSERT(placeAtIndex < cap);
 		void* const dst = &newBuffer[placeAtIndex * typeSize];
 		[[maybe_unused]] const FuncResult result = type.ConstructAt(dst, MetaAny{ type, src, false });
 		ASSERT_LOG(!result.HasError(), "{}", result.Error());
