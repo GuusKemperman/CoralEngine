@@ -71,12 +71,7 @@ namespace CE
 
 		static BinaryGSONObject GenerateCurrentStateOfPrefabs(const BinaryGSONObject& serializedWorld);
 
-		// A world is created as a byproduct
-		// when loading the level. Instead of
-		// discarding the world, we return this
-		// one on the first call to CreateWorld
-		mutable std::unique_ptr<World> mWorld{};
-		mutable std::optional<BinaryGSONObject> mSerializedWorld{};
+		BinaryGSONObject mSerializedWorld{};
 
 		friend ReflectAccess;
 		static MetaType Reflect();

@@ -37,14 +37,13 @@ namespace CE
 }
 
 CE::Level::Level(std::string_view name) :
-	Asset(name, MakeTypeId<Level>()),
-	mWorld(CreateDefaultWorld())
+	Asset(name, MakeTypeId<Level>())
 {
+	CreateFromWorld(*CreateDefaultWorld());
 }
 
 CE::Level::Level(AssetLoadInfo& loadInfo) :
-	Asset(loadInfo),
-	mWorld(std::make_unique<World>(false))
+	Asset(loadInfo)
 {
 	BinaryGSONObject savedData{};
 	savedData.LoadFromBinary(loadInfo.GetStream());
@@ -58,11 +57,13 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 		return;
 	}
 
-	Archiver::Deserialize(*mWorld, *serializedWorld);
+	World world{false};
+	Archiver::Deserialize(world, *serializedWorld);
 
 	BinaryGSONObject* const serializedPrefabs = savedData.TryGetGSONObject("Prefabs");
 	if (serializedPrefabs == nullptr)
 	{
+		mSerializedWorld = *serializedWorld;
 		return;
 	}
 
@@ -87,7 +88,7 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 
 			for (const std::string& componentClassName : diffedFactory.mNamesOfRemovedComponents)
 			{
-				EraseSerializedComponents(*mWorld, componentClassName, entitiesMadeWithThisFactory);
+				EraseSerializedComponents(world, componentClassName, entitiesMadeWithThisFactory);
 			}
 		}
 	}
@@ -97,11 +98,11 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 	{
 		for (const BinaryGSONObject& removedFactory : diffedPrefab.mSerializedFactoriesThatWereRemoved)
 		{
-			EraseSerializedFactory(*mWorld, removedFactory, diffedPrefab.mPrefabName);
+			EraseSerializedFactory(world, removedFactory, diffedPrefab.mPrefabName);
 		}
 	}
 
-	mWorld->GetRegistry().RemovedDestroyed();
+	world.GetRegistry().RemovedDestroyed();
 
 	// Add entire factories/prefabs
 	for (const DiffedPrefab& diffedPrefab : diffedPrefabs)
@@ -117,7 +118,7 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 				continue;
 			}
 
-			Registry& reg = mWorld->GetRegistry();
+			Registry& reg = world.GetRegistry();
 			const auto prefabOriginView = reg.View<TransformComponent, const PrefabOriginComponent>();
 
 			for (auto [parentEntity, parentTransform, parentOrigin] : prefabOriginView.each())
@@ -153,7 +154,7 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 		{
 			for (const ComponentFactory& componentToAdd : diffedFactory.mAddedComponents)
 			{
-				Registry& reg = mWorld->GetRegistry();
+				Registry& reg = world.GetRegistry();
 
 				const auto prefabOriginView = reg.View<const PrefabOriginComponent>();
 
@@ -169,6 +170,8 @@ CE::Level::Level(AssetLoadInfo& loadInfo) :
 			}
 		}
 	}
+
+	mSerializedWorld = Archiver::Serialize(world);
 }
 
 CE::Level::Level(Level&&) noexcept = default;
@@ -177,24 +180,12 @@ CE::Level::~Level() = default;
 
 void CE::Level::OnSave(AssetSaveInfo& saveInfo) const
 {
-	if (!mSerializedWorld.has_value())
-	{
-		if (mWorld == nullptr)
-		{
-			LOG(LogAssets, Error, "Cannot save level {}, mSerializedComponents and mWorld are null",
-				GetName());
-			return;
-		}
-
-		mSerializedWorld.emplace(Archiver::Serialize(*mWorld));
-	}
-
 	BinaryGSONObject serializedLevel{};
 
 	std::vector<BinaryGSONObject>& children = serializedLevel.GetChildren();
 	children.reserve(2);
 
-	children.emplace_back(std::move(*mSerializedWorld));
+	children.emplace_back(mSerializedWorld);
 
 	// We don't really care about the name anywhere else in the code,
 	// so instead of making sure we always initialize it with the name
@@ -204,51 +195,20 @@ void CE::Level::OnSave(AssetSaveInfo& saveInfo) const
 	children.emplace_back(GenerateCurrentStateOfPrefabs(children[0]));
 
 	serializedLevel.SaveToBinary(saveInfo.GetStream());
-
-	mSerializedWorld = std::move(children[0]);
 }
 
 void CE::Level::CreateFromWorld(const World& world)
 {
-	mWorld.reset();
-	mSerializedWorld.emplace(Archiver::Serialize(world));
+	mSerializedWorld = Archiver::Serialize(world);
 }
 
 void CE::Level::LoadIntoWorld(World& world) const
 {
-	if (!mSerializedWorld.has_value())
-	{
-		if (mWorld != nullptr)
-		{
-			mSerializedWorld.emplace(Archiver::Serialize(*mWorld));
-		}
-		else
-		{
-			LOG(LogAssets, Warning, "Failed to load {} into world, mSerializedWorld was null", GetName());
-		}
-		return;
-	}
-
-	Archiver::Deserialize(world, *mSerializedWorld);
+	Archiver::Deserialize(world, mSerializedWorld);
 }
 
 std::unique_ptr<CE::World> CE::Level::CreateWorld(const bool callBeginPlayImmediately) const
 {
-	if (mWorld != nullptr)
-	{
-		if (!mSerializedWorld.has_value())
-		{
-			mSerializedWorld.emplace(Archiver::Serialize(*mWorld));
-		}
-
-		if (callBeginPlayImmediately)
-		{
-			mWorld->BeginPlay();
-		}
-
-		return std::move(mWorld);
-	}
-
 	std::unique_ptr<World> world = std::make_unique<World>(false);
 	LoadIntoWorld(*world);
 
