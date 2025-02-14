@@ -139,6 +139,9 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 
 		const ComponentFactory* componentFactoryOfOrigin{};
 
+		// Prevents the prefab from being unloaded
+		AssetHandle<Prefab> prefabHandle{};
+
 		if (checkForFactoryOfOrigin)
 		{
 			const PrefabOriginComponent* const prefabOrigin = registry.TryGet<const PrefabOriginComponent>(owner);
@@ -146,6 +149,7 @@ void CE::DeserializeStorage(Registry& registry, const BinaryGSONObject& serializ
 			if (prefabOrigin != nullptr)
 			{
 				const auto [prefab, entityFactoryOfOrigin] = prefabOrigin->TryGetFactory();
+				prefabHandle = prefab;
 
 				if (entityFactoryOfOrigin != nullptr)
 				{
