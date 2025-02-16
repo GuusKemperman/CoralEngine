@@ -15,7 +15,6 @@ namespace CE
 		FrameBuffer& operator=(FrameBuffer&&) noexcept = default;
 		FrameBuffer& operator=(const FrameBuffer&) = delete;
 
-		glm::vec4 mClearColor{ .39f, .45f, .5f, 1.0f };
 		glm::vec2 mSize{ 1.0f, 1.0f };
 		std::shared_ptr<FrameBufferPlatformImpl> mImpl{};
 	};

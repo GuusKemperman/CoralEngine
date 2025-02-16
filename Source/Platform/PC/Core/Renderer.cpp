@@ -174,12 +174,14 @@ struct CE::RenderCommandQueue
 		std::shared_ptr<FrameBufferPlatformImpl> mTarget{};
 		// mRenderSize is unused if mTarget == nullptr
 		glm::ivec2 mRenderSize{ -1, -1 };
-		glm::vec4 mClearColor{ 0.2f, 0.2f, 0.2f, 1.0f };
 		glm::mat4 mView{};
 		glm::mat4 mProj{};
 	};
 	std::optional<RenderEntry> mRenderTargetEntry{};
 	std::mutex mRenderTargetMutex{};
+
+	glm::vec4 mClearColor{ .39f, .45f, .5f, 1.0f };
+	std::mutex mClearColorMutex{};
 };
 
 struct CE::Renderer::Impl
@@ -240,6 +242,10 @@ CE::Renderer::Renderer() :
 	glEnable(GL_DEPTH_TEST);
 	glFrontFace(GL_CW);
 	glEnable(GL_CULL_FACE);
+	CHECK_GL;
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
 	CHECK_GL;
 }
 
@@ -311,11 +317,16 @@ void CE::Renderer::SetRenderTarget(RenderCommandQueue& context, const glm::mat4&
 	{
 		entry.mTarget = renderTarget->mImpl;
 		entry.mRenderSize = renderTarget->mSize;
-		entry.mClearColor = renderTarget->mClearColor;
 	}
 
 	std::scoped_lock lock{ context.mRenderTargetMutex };
 	context.mRenderTargetEntry.emplace(std::move(entry));
+}
+
+void CE::Renderer::SetClearColor(RenderCommandQueue& commandQueue, glm::vec4 color)
+{
+	std::scoped_lock lock{ commandQueue.mClearColorMutex };
+	commandQueue.mClearColor = color;
 }
 
 void CE::Renderer::RunCommandQueues()
@@ -494,7 +505,7 @@ void CE::Renderer::RunCommandQueues()
 		}
 
 		// Clear the screen
-		const glm::vec4 clearColor = commandQueue->mRenderTargetEntry->mClearColor;
+		const glm::vec4 clearColor = commandQueue->mClearColor;
 		glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		
@@ -565,8 +576,8 @@ void CE::Renderer::RunCommandQueues()
 				glUniformMatrix4fv(glGetUniformLocation(program, "u_model"), 1, GL_FALSE, &entry.mTransform[0][0]);
 
 				// Send the multiply and add colors to the standard program
-				glUniform3fv(glGetUniformLocation(program, "u_mul_color"), 1, &entry.mMultiplicativeColor[0]);
-				glUniform3fv(glGetUniformLocation(program, "u_add_color"), 1, &entry.mAdditiveColor[0]);
+				glUniform4fv(glGetUniformLocation(program, "u_mul_color"), 1, &entry.mMultiplicativeColor[0]);
+				glUniform4fv(glGetUniformLocation(program, "u_add_color"), 1, &entry.mAdditiveColor[0]);
 
 				// Draw the mesh
 				glDrawElements(GL_TRIANGLES, entry.mStaticMesh->mNumOfIndices, GL_UNSIGNED_INT, 0);
@@ -803,8 +814,8 @@ out vec4 frag_color;
 uniform sampler2D u_texture;
 uniform int u_num_directional_lights;
 uniform int u_num_point_lights;
-uniform vec3 u_mul_color;
-uniform vec3 u_add_color;
+uniform vec4 u_mul_color;
+uniform vec4 u_add_color;
 
 const int MAX_DIR_LIGHTS = 4;
 const int MAX_POINT_LIGHTS = 4;
@@ -829,11 +840,11 @@ void main()
     vec3 normal = normalize(v_normal);
 
     // Start with the ambient color
-    vec3 ambient = vec3(0.1);
+    vec4 ambient = vec4(0.1, 0.1, 0.1, 0.0);
 
     // Initialize diffuse and specular components
-    vec3 diffuse = vec3(0.0);
-    vec3 specular = vec3(0.0);
+    vec4 diffuse = vec4(0.0);
+    vec4 specular = vec4(0.0);
 
     // Calculate directional lights contribution
     for (int i = 0; i < u_num_directional_lights; ++i) 
@@ -841,33 +852,13 @@ void main()
         vec3 light_dir = normalize(-u_directional_lights[i].direction);
         // Diffuse component
         float diff = max(dot(normal, light_dir), 0.0);
-        diffuse += diff * u_directional_lights[i].color;
-
-        // Specular component
-        //vec3 view_dir = normalize(-v_frag_position);
-        //vec3 reflect_dir = reflect(-light_dir, normal);
-        //float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0);
-        //specular += spec * u_directional_lights[i].color;
+        diffuse += vec4(diff * u_directional_lights[i].color, 1.0);
     }
 
-    // Calculate point lights contribution
-    //for (int i = 0; i < u_num_point_lights; ++i) {
-    //    vec3 light_dir = normalize(u_point_lights[i].position - v_frag_position);
-    //    // Diffuse component
-    //    float diff = max(dot(normal, light_dir), 0.0);
-    //    diffuse += diff * u_point_lights[i].color;
-
-    //    // Specular component
-    //    vec3 view_dir = normalize(-v_frag_position);
-    //    vec3 reflect_dir = reflect(-light_dir, normal);
-    //    float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0);
-    //    specular += spec * u_point_lights[i].color;
-    //}
-
     // Combine all components
-	vec3 base = u_add_color + u_mul_color * texture(u_texture, v_texture_coordinate).rgb;
-    vec3 result = base * (ambient + diffuse + specular);
-    frag_color = vec4(result, 1.0);
+	vec4 base = u_add_color + u_mul_color * texture(u_texture, v_texture_coordinate).rgba;
+    vec4 result = base * (ambient + diffuse + specular);
+    frag_color = result;
 }
 	)");
 }

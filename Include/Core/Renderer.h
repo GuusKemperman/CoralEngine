@@ -45,6 +45,9 @@ namespace CE
         // Thread-safe
         void SetRenderTarget(RenderCommandQueue& commandQueue, const glm::mat4& view, const glm::mat4& projection, FrameBuffer* renderTarget = nullptr);
 
+        // Thread-safe
+        void SetClearColor(RenderCommandQueue& commandQueue, glm::vec4 color);
+
         /**
 		 * This is the only function in this file that is not thread-safe,
 		 * as not all implementations supports submitting commands to the
