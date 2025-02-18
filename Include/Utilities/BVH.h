@@ -119,7 +119,6 @@ namespace CE
 		uint32 stackPtr = 0;
 
 		const Node* node = &mNodes[0];
-		const Registry& reg = GetRegistry();
 
 		while (1)
 		{
@@ -173,7 +172,7 @@ namespace CE
 					continue;
 				}
 
-				const TransformedAABB* aabb = reg.TryGet<TransformedAABBColliderComponent>(owner);
+				const TransformedAABB* aabb = TryGetCollider<TransformedAABBColliderComponent>(owner);
 
 				if (aabb == nullptr)
 				{
@@ -195,7 +194,7 @@ namespace CE
 					continue;
 				}
 
-				const TransformedDisk* circle = reg.TryGet<TransformedDiskColliderComponent>(owner);
+				const TransformedDisk* circle = TryGetCollider<TransformedDiskColliderComponent>(owner);
 
 				if (circle == nullptr)
 				{
@@ -218,7 +217,7 @@ namespace CE
 					continue;
 				}
 
-				const TransformedPolygon* polygon = reg.TryGet<TransformedPolygonColliderComponent>(owner);
+				const TransformedPolygon* polygon = TryGetCollider<TransformedPolygonColliderComponent>(owner);
 
 				if (polygon == nullptr)
 				{

@@ -226,15 +226,13 @@ void CE::BVH::Subdivide(Node& node)
 		children[i]->mNumOfAABBS = children[i]->mNumOfCircles = 0;
 	}
 
-	const Registry& reg = mPhysics->GetWorld().GetRegistry();
 	uint32 indexOfId = node.mStartIndex;
 	static bool edgeCaseFlipper{};
 
 	for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
 	{
 		const entt::entity owner = mIds[indexOfId];
-		const TransformedAABB& collider = reg.Get<TransformedAABBColliderComponent>(owner);
-
+		const TransformedAABB& collider = GetCollider<TransformedAABBColliderComponent>(owner);
 		const glm::vec2 centre = collider.GetCentre();
 		const float posOnAxis = centre[splitPoint.mAxis];
 		bool childIndex = posOnAxis < splitPoint.mPosition;
@@ -252,7 +250,7 @@ void CE::BVH::Subdivide(Node& node)
 	for (uint32 i = 0; i < node.mNumOfCircles; i++, indexOfId++)
 	{
 		const entt::entity owner = mIds[indexOfId];
-		const TransformedDisk& collider = reg.Get<TransformedDiskColliderComponent>(owner);
+		const TransformedDisk& collider = GetCollider<TransformedDiskColliderComponent>(owner);
 
 		const glm::vec2 centre = collider.GetCentre();
 		const float posOnAxis = centre[splitPoint.mAxis];
@@ -272,7 +270,7 @@ void CE::BVH::Subdivide(Node& node)
 	for (uint32 i = 0; i < numOfPolygons; i++, indexOfId++)
 	{
 		const entt::entity owner = mIds[indexOfId];
-		const TransformedPolygon& polygon = reg.Get<TransformedPolygonColliderComponent>(owner);
+		const TransformedPolygon& polygon = GetCollider<TransformedPolygonColliderComponent>(owner);
 
 		const glm::vec2 centre = polygon.mBoundingBox.GetCentre();
 		const float posOnAxis = centre[splitPoint.mAxis];
@@ -335,15 +333,10 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
 
 	uint32 indexOfId = node.mStartIndex;
 
-	const Registry& reg = mPhysics->GetWorld().GetRegistry();
-	auto AABBView = reg.View<TransformedAABBColliderComponent>();
-	auto diskView = reg.View<TransformedDiskColliderComponent>();
-	auto polyView = reg.View<TransformedPolygonColliderComponent>();
-
 	for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
 	{
 		const entt::entity owner = mIds[indexOfId];
-		const TransformedAABB& collider = AABBView.get<TransformedAABBColliderComponent>(owner);
+		const TransformedAABB& collider = GetCollider<TransformedAABBColliderComponent>(owner);
 
 		const glm::vec2 centre = collider.GetCentre();
 		const float posOnAxis = centre[splitPoint.mAxis];
@@ -356,7 +349,7 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
 	for (uint32 i = 0; i < node.mNumOfCircles; i++, indexOfId++)
 	{
 		const entt::entity owner = mIds[indexOfId];
-		const TransformedDisk& collider = diskView.get<TransformedDiskColliderComponent>(owner);
+		const TransformedDisk& collider = GetCollider<TransformedDiskColliderComponent>(owner);
 
 		const glm::vec2 centre = collider.GetCentre();
 		const float posOnAxis = centre[splitPoint.mAxis];
@@ -370,7 +363,7 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
 	for (uint32 i = 0; i < numOfPolygons; i++, indexOfId++)
 	{
 		const entt::entity owner = mIds[indexOfId];
-		const TransformedPolygon& polygon = polyView.get<TransformedPolygonColliderComponent>(owner);
+		const TransformedPolygon& polygon = GetCollider<TransformedPolygonColliderComponent>(owner);
 
 		const glm::vec2 centre = polygon.GetBoundingBox().GetCentre();
 		const float posOnAxis = centre[splitPoint.mAxis];
@@ -388,12 +381,11 @@ CE::BVH::SplitPoint CE::BVH::DetermineSplitPos(const Node& node)
 {
 	TransformedAABB centroidsBoundingBox = { glm::vec2{std::numeric_limits<float>::infinity()}, glm::vec2{-std::numeric_limits<float>::infinity()} };
 
-	const Registry& reg = mPhysics->GetWorld().GetRegistry();
 	uint32 indexOfId = node.mStartIndex;
 	for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
 	{
 		const entt::entity owner = mIds[indexOfId];
-		const TransformedAABB& collider = reg.Get<TransformedAABBColliderComponent>(owner);
+		const TransformedAABB& collider = GetCollider<TransformedAABBColliderComponent>(owner);
 
 		const glm::vec2 centre = collider.GetCentre();
 
@@ -406,7 +398,7 @@ CE::BVH::SplitPoint CE::BVH::DetermineSplitPos(const Node& node)
 	for (uint32 i = 0; i < node.mNumOfCircles; i++, indexOfId++)
 	{
 		const entt::entity owner = mIds[indexOfId];
-		const TransformedDisk& collider = reg.Get<TransformedDiskColliderComponent>(owner);
+		const TransformedDisk& collider = GetCollider<TransformedDiskColliderComponent>(owner);
 
 		const glm::vec2 centre = collider.mCentre;
 
@@ -420,7 +412,7 @@ CE::BVH::SplitPoint CE::BVH::DetermineSplitPos(const Node& node)
 	for (uint32 i = 0; i < numOfPolygons; i++, indexOfId++)
 	{
 		const entt::entity owner = mIds[indexOfId];
-		const TransformedPolygon& polygon = reg.Get<TransformedPolygonColliderComponent>(owner);
+		const TransformedPolygon& polygon = GetCollider<TransformedPolygonColliderComponent>(owner);
 
 		const glm::vec2 centre = polygon.mBoundingBox.GetCentre();
 		centroidsBoundingBox.mMin.x = glm::min(centroidsBoundingBox.mMin.x, centre.x);
