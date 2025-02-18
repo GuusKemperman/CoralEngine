@@ -179,7 +179,7 @@ float CE::BVH::UpdateNodeBounds(Node& node)
 
         if (aabb != nullptr)
         {
-    		    node.mBoundingBox.CombineWith(*aabb);
+            node.mBoundingBox.CombineWith(*aabb);
         }
     }
 
@@ -190,7 +190,7 @@ float CE::BVH::UpdateNodeBounds(Node& node)
 
         if (circle != nullptr)
         {
-			      node.mBoundingBox.CombineWith(circle->GetBoundingBox());
+            node.mBoundingBox.CombineWith(circle->GetBoundingBox());
         }
     }
 
@@ -345,11 +345,14 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
     uint32 indexOfId = node.mStartIndex;
 
     const Registry& reg = mPhysics->GetWorld().GetRegistry();
+    auto AABBView = reg.View<TransformedAABBColliderComponent>();
+    auto diskView = reg.View<TransformedDiskColliderComponent>();
+    auto polyView = reg.View<TransformedPolygonColliderComponent>();
 
     for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
-        const TransformedAABB& collider = reg.Get<TransformedAABBColliderComponent>(owner);
+        const TransformedAABB& collider = AABBView.get<TransformedAABBColliderComponent>(owner);
 
         const glm::vec2 centre = collider.GetCentre();
         const float posOnAxis = centre[splitPoint.mAxis];
@@ -362,7 +365,7 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
     for (uint32 i = 0; i < node.mNumOfCircles; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
-        const TransformedDisk& collider = reg.Get<TransformedDiskColliderComponent>(owner);
+        const TransformedDisk& collider = diskView.get<TransformedDiskColliderComponent>(owner);
 
         const glm::vec2 centre = collider.GetCentre();
         const float posOnAxis = centre[splitPoint.mAxis];
@@ -376,7 +379,7 @@ float CE::BVH::DetermineSplitPointCost(const Node& node, SplitPoint splitPoint) 
     for (uint32 i = 0; i < numOfPolygons; i++, indexOfId++)
     {
         const entt::entity owner = mIds[indexOfId];
-        const TransformedPolygon& polygon = reg.Get<TransformedPolygonColliderComponent>(owner);
+        const TransformedPolygon& polygon = polyView.get<TransformedPolygonColliderComponent>(owner);
 
         const glm::vec2 centre = polygon.GetBoundingBox().GetCentre();
         const float posOnAxis = centre[splitPoint.mAxis];
