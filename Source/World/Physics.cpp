@@ -14,12 +14,14 @@
 #include "Utilities/BVH.h"
 
 CE::Physics::Physics(World& world) :
-	mWorld(world)
+	mWorld(world),
+	mBVHs{ BVH{ *this, static_cast<CollisionLayer>(0) },
+		BVH{ *this, static_cast<CollisionLayer>(1) },
+		BVH{ *this, static_cast<CollisionLayer>(2) },
+		BVH{ *this, static_cast<CollisionLayer>(3) },
+		BVH{ *this, static_cast<CollisionLayer>(4) } }
 {
-	for (size_t i = 0; i < mBVHs.size(); i++)
-	{
-		mBVHs[i] = BVH{ *this, static_cast<CollisionLayer>(i) };
-	}
+
 }
 
 CE::Physics::~Physics() = default;

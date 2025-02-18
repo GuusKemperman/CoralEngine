@@ -13,7 +13,6 @@ namespace CE
 	class BVH
 	{
 	public:
-		BVH() = default;
 		BVH(Physics& physics, CollisionLayer layer);
 
 		void Build();
@@ -51,6 +50,24 @@ namespace CE
 	private:
 		const Registry& GetRegistry() const;
 
+		template<typename T>
+		const entt::storage_for_t<T>& GetStorage() const = delete;
+
+		template<>
+		const entt::storage_for_t<TransformedDiskColliderComponent>& GetStorage<TransformedDiskColliderComponent>() const;
+
+		template<>
+		const entt::storage_for_t<TransformedAABBColliderComponent>& GetStorage<TransformedAABBColliderComponent>() const;
+
+		template<>
+		const entt::storage_for_t<TransformedPolygonColliderComponent>& GetStorage<TransformedPolygonColliderComponent>() const;
+
+		template<typename T>
+		const T* TryGetCollider(entt::entity entity) const;
+
+		template<typename T>
+		const T& GetCollider(entt::entity entity) const;
+
 		struct Node
 		{
 			// Some of our overlap functions expect a 'valid'
@@ -87,6 +104,10 @@ namespace CE
 
 		bool mEmpty = true;
 		float mAmountRefitted{};
+
+		entt::storage_for_t<const TransformedAABBColliderComponent>& mAABBsStorage;
+		entt::storage_for_t<const TransformedDiskColliderComponent>& mDiskssStorage;
+		entt::storage_for_t<const TransformedPolygonColliderComponent>& mPolysStorage;
 	};
 
 	template <typename OnIntersectFunction, typename ShouldCheckFunction, typename ShouldReturnFunction, typename
@@ -220,8 +241,20 @@ namespace CE
 		return false;
 	}
 
+	template <typename T>
+	const T* BVH::TryGetCollider(entt::entity entity) const
+	{
+		return GetStorage<T>().contains(entity) ? &GetCollider<T>(entity) : nullptr;
+	}
+
+	template <typename T>
+	const T& BVH::GetCollider(entt::entity entity) const
+	{
+		return GetStorage<T>().get(entity);
+	}
+
 	template <typename OnIntersectFunction, typename ShouldReturnFunction, typename
-		InquirerShapeType, typename ObjectShapeType, typename ... CallbackAdditionalArgs>
+	          InquirerShapeType, typename ObjectShapeType, typename ... CallbackAdditionalArgs>
 	bool BVH::TestAgainstObject(const InquirerShapeType inquirerShape, const ObjectShapeType& object,
 		entt::entity owner, CallbackAdditionalArgs&&... args)
 	{
