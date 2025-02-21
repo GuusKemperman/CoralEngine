@@ -136,8 +136,8 @@ void CE::FrameBufferPlatformImpl::Resize(glm::ivec2 size)
 
 struct CE::RenderCommandQueue
 {
-	static constexpr int sMaxNumLines = 1 << 7;
-	static constexpr int sNumFloatsPerLine = (3 + 4) * 2; // Pos + Colour * 2
+	static constexpr size_t sMaxNumLines = 4096;
+	static constexpr size_t sNumFloatsPerLine = (3 + 4) * 2; // Pos + Colour * 2
 	std::array<float, sMaxNumLines * sNumFloatsPerLine> mLines;
 	std::atomic_int mTotalNumOfLinesRequested{};
 
@@ -586,8 +586,15 @@ void CE::Renderer::RunCommandQueues()
 			commandQueue->mStaticMeshes.clear();
 		}
 
-		// SetRenderTarget debug lines
 		const int numOfLines = std::min<int>(commandQueue->mTotalNumOfLinesRequested, RenderCommandQueue::sMaxNumLines);
+
+		// SetRenderTarget debug lines
+		if (commandQueue->mTotalNumOfLinesRequested > RenderCommandQueue::sMaxNumLines)
+		{
+			LOG(LogCore, Warning, "Requested to draw {} lines, {} lines will not be drawn due to full buffer.",
+				commandQueue->mTotalNumOfLinesRequested.load(),
+				commandQueue->mTotalNumOfLinesRequested.load() - numOfLines);
+		}
 
 		if (numOfLines > 0)
 		{
