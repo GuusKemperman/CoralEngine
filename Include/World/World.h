@@ -38,8 +38,8 @@ namespace CE
 		Registry& GetRegistry();
 		const Registry& GetRegistry() const;
 
-		template<typename T>
-		T& AddSystem();
+		template<typename T, typename... Args>
+		T& AddSystem(Args&&... args);
 
 		// May return nullptr if construction fails,
 		// or if the type does not derive from System.
@@ -162,15 +162,15 @@ namespace CE
 		bool mHasEndPlayBeenRequested = false;
 	};
 
-	template <typename T>
-	T& World::AddSystem()
+	template <typename T, typename ... Args>
+	T& World::AddSystem(Args&&... args)
 	{
 		if (T* existingSystem = TryGetSystem<T>(); existingSystem != nullptr)
 		{
 			return *existingSystem;
 		}
 
-		return static_cast<T&>(AddSystem(MakeUniqueInPlace<T, System>(), MakeStrippedTypeId<T>()));
+		return static_cast<T&>(AddSystem(MakeUniqueInPlace<T, System>(std::forward<Args>(args)...), MakeStrippedTypeId<T>()));
 	}
 
 	template <typename T>
