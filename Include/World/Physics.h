@@ -27,7 +27,14 @@ namespace CE
 		Physics& operator=(Physics&&) = delete;
 		Physics& operator=(const Physics&) = delete;
 
-		void RebuildBVHs(bool forceRebuild = false);
+		struct UpdateBVHConfig
+		{
+			bool mForceRebuild{};
+			bool mOnlyRebuildForNewColliders{};
+			float mMaxAmountRefitBeforeRebuilding = 10'000.0f;
+		};
+
+		void UpdateBVHs(UpdateBVHConfig config = {});
 
 		struct LineTraceResult
 		{

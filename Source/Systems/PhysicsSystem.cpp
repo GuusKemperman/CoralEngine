@@ -23,7 +23,7 @@ void CE::PhysicsSystem::Update(World& world, float dt)
 		ApplyVelocities(world, dt);
 	}
 
-	world.GetPhysics().RebuildBVHs();
+	world.GetPhysics().UpdateBVHs();
 
 	if (world.HasBegunPlay()
 		&& !world.IsPaused())

@@ -35,7 +35,7 @@ UNIT_TEST(BVH, BVHCheck)
 	addLambda(AABBColliderComponent{ glm::vec2{ 5.0f, 5.0f } });
 	addLambda(PolygonColliderComponent{ { glm::vec2{ -5.0f, 0.0f}, glm::vec2{ 0.0f, 5.0f}, glm::vec2{ 5.0f, 0.0f} } });
 
-	world.GetPhysics().RebuildBVHs();
+	world.GetPhysics().UpdateBVHs();
 
 	for (int i = 0; i < 1000; i++)
 	{

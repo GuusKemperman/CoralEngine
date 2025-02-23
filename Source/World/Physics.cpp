@@ -54,7 +54,7 @@ std::vector<entt::entity> CE::Physics::FindAllWithinShapeImpl(const T& shape, co
 	return ret;
 }
 
-void CE::Physics::RebuildBVHs(bool forceRebuild)
+void CE::Physics::UpdateBVHs(UpdateBVHConfig config)
 {
 	std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> wereItemsAddedToLayer{};
 
@@ -66,9 +66,9 @@ void CE::Physics::RebuildBVHs(bool forceRebuild)
 	{
 		BVH& bvh = mWorld.get().GetPhysics().GetBVHs()[i];
 
-		if (forceRebuild
+		if (config.mForceRebuild
 			|| wereItemsAddedToLayer[i]
-			|| bvh.GetAmountRefitted() > 10'000.f)
+			|| (!config.mOnlyRebuildForNewColliders && bvh.GetAmountRefitted() > config.mMaxAmountRefitBeforeRebuilding))
 		{
 			bvh.Build();
 		}
