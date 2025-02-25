@@ -154,7 +154,11 @@ namespace CE
 					node = child1;
 					if (intersect2)
 					{
-						ASSERT(stackPtr + 1 < stackSize);
+						if (stackPtr >= stackSize)
+						{
+							LOG(LogPhysics, Error, "Query reached too great of a depth, cancelling search");
+							return false;
+						}
 						stack[stackPtr++] = child2;
 					}
 				}
