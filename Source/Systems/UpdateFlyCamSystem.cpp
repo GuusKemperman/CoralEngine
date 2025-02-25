@@ -28,6 +28,17 @@ void CE::UpdateFlyCamSystem::Update(World& world, float dt)
 
 	Input& input = Input::Get();
 
+	const float mouseWheel = input.GetMouseWheel();
+
+	if (mouseWheel > 0.0f)
+	{
+		flyCam->mMovementSpeed *= FlyCamControllerComponent::sMovementSpeedIncreaseWhenScrolling;
+	}
+	else if (mouseWheel < 0.0f)
+	{
+		flyCam->mMovementSpeed /= FlyCamControllerComponent::sMovementSpeedIncreaseWhenScrolling;
+	}
+
 	const float isMouseButtonHeld = input.IsMouseButtonHeld(Input::MouseButton::Right);
 	movementInput[Axis::Forward] = input.GetKeyboardAxis(Input::KeyboardKey::W, Input::KeyboardKey::S) * isMouseButtonHeld;
 	movementInput[Axis::Up] = input.GetKeyboardAxis(Input::KeyboardKey::E, Input::KeyboardKey::Q) * isMouseButtonHeld;

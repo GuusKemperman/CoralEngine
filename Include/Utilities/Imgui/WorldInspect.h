@@ -70,6 +70,7 @@ namespace CE
 		std::unique_ptr<World> mWorldAfterBeginPlay{};
 
 		glm::mat4 mFlyCamWorldMatrix{};
+		float mFlyCamSpeed{};
 		std::optional<entt::entity> mSelectedCameraBeforeWeSwitchedToFlyCam{};
 
 		float mHierarchyHeight = .5f;

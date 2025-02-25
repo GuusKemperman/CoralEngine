@@ -360,6 +360,7 @@ void CE::WorldInspectHelper::SaveState(BinaryGSONObject& state)
 	state.AddGSONMember("hierarchyAndDetailsWidth") << mHierarchyAndDetailsWidth;
 	state.AddGSONMember("selectedCam") << mSelectedCameraBeforeWeSwitchedToFlyCam;
 	state.AddGSONMember("flycamWorldMat") << mFlyCamWorldMatrix;
+	state.AddGSONMember("flyCamSpeed") << mFlyCamSpeed;
 }
 
 void CE::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
@@ -399,6 +400,13 @@ void CE::WorldInspectHelper::LoadState(const BinaryGSONObject& state)
 	{
 		*flycamWorldMat >> mFlyCamWorldMatrix;
 	}
+
+	const BinaryGSONMember* const flycamSpeed = state.TryGetGSONMember("flyCamSpeed");
+
+	if (flycamSpeed != nullptr)
+	{
+		*flycamSpeed >> mFlyCamSpeed;
+	}
 }
 
 void CE::WorldInspectHelper::SaveFlyCam()
@@ -407,6 +415,7 @@ void CE::WorldInspectHelper::SaveFlyCam()
 
 	entt::entity flyCam = reg.View<Internal::EditorCameraTag>().front();
 	mFlyCamWorldMatrix = {};
+	mFlyCamSpeed = {};
 
 	if (flyCam == entt::null)
 	{
@@ -418,6 +427,13 @@ void CE::WorldInspectHelper::SaveFlyCam()
 	if (transform != nullptr)
 	{
 		mFlyCamWorldMatrix = transform->GetWorldMatrix();
+	}
+
+	const FlyCamControllerComponent* const controller = reg.TryGet<FlyCamControllerComponent>(flyCam);
+
+	if (controller != nullptr)
+	{
+		mFlyCamSpeed = controller->mMovementSpeed;
 	}
 }
 
@@ -441,6 +457,7 @@ void CE::WorldInspectHelper::SwitchToPlayCam()
 	{
 		CameraComponent::Select(GetWorld(), *mSelectedCameraBeforeWeSwitchedToFlyCam);
 		mFlyCamWorldMatrix = {};
+		mFlyCamSpeed = 0.0f;
 	}
 
 	mSelectedCameraBeforeWeSwitchedToFlyCam.reset();
@@ -474,6 +491,11 @@ void CE::WorldInspectHelper::SpawnFlyCam()
 	else
 	{
 		reg.Get<TransformComponent>(flyCam).SetWorldMatrix(mFlyCamWorldMatrix);
+	}
+
+	if (mFlyCamSpeed != 0.0f)
+	{
+		reg.Get<FlyCamControllerComponent>(flyCam).mMovementSpeed = mFlyCamSpeed;
 	}
 
 	CameraComponent::Select(GetWorld(), flyCam);

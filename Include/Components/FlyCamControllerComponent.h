@@ -14,6 +14,8 @@ namespace CE
 		float mMovementSpeed = 18.0f;
 		float mRotationSpeed = 2.5f;
 
+		static constexpr float sMovementSpeedIncreaseWhenScrolling = 1.25f;
+
 	private:
 		friend ReflectAccess;
 		static MetaType Reflect();
