@@ -85,6 +85,8 @@ Input::~Input()
 void Input::NewFrame()
 {
     previousmousepos = mousepos;
+    mousewheelDelta = 0.0f;
+
     glfwPollEvents();
 
     // update keyboard key states
