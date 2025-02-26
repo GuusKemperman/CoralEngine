@@ -63,6 +63,8 @@ CE::MetaType CE::CameraComponent::Reflect()
 	type.AddField(&CameraComponent::mFar, "mFar").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&CameraComponent::mNear, "mNear").GetProperties().Add(Props::sIsScriptableTag);
 	type.AddField(&CameraComponent::mFOV, "mFOV").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&CameraComponent::mIsOrthoGraphic, "mIsOrthoGraphic").GetProperties().Add(Props::sIsScriptableTag);
+	type.AddField(&CameraComponent::mOrthoGraphicSize, "mOrthoGraphicSize").GetProperties().Add(Props::sIsScriptableTag);
 
 	ReflectComponentType<CameraComponent>(type);
 

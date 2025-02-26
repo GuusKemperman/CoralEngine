@@ -20,11 +20,15 @@ namespace CE
 
 		float mFar = 5000.0f;		
 		float mNear = 1.0f;
+
 		float mFOV = glm::radians(45.0f);
+		float mOrthoGraphicSize = 5.0f;
 
 		glm::mat4 mView{};
 		glm::mat4 mProjection{};
 		glm::mat4 mViewProjection{};
+
+		bool mIsOrthoGraphic{};
 
 	private:
 		friend ReflectAccess;

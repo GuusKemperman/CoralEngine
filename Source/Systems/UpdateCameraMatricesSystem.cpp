@@ -31,7 +31,11 @@ void CE::UpdateCameraMatricesSystem::UpdateMatrices(World& world)
 	{
 		const glm::vec3 worldPos = transform.GetWorldPosition();
 		camera.mView = glm::lookAt(worldPos, worldPos + transform.GetWorldForward(), transform.GetWorldUp());
-		camera.mProjection = glm::perspective(camera.mFOV, aspectRatio, camera.mNear, camera.mFar);
+
+		camera.mProjection = camera.mIsOrthoGraphic ?
+			glm::ortho(-aspectRatio * camera.mOrthoGraphicSize, aspectRatio * camera.mOrthoGraphicSize, -camera.mOrthoGraphicSize, camera.mOrthoGraphicSize, camera.mNear, camera.mFar) :
+			glm::perspective(camera.mFOV, aspectRatio, camera.mNear, camera.mFar);
+
 		camera.mViewProjection = camera.mProjection * camera.mView;
 	}
 }
