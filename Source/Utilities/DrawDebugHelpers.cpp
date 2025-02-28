@@ -31,7 +31,7 @@ void CE::AddDebugCircle(RenderCommandQueue& commandQueue, DebugDraw::Enum catego
 		return;
 	}
 
-	constexpr float dt = glm::two_pi<float>() / 64.0f;
+	constexpr float dt = glm::two_pi<float>() / 8.0f;
 	float t = 0.0f;
 
 	glm::vec3 v0(center.x + radius * cos(t), center.y + radius * sin(t), center.z);
@@ -50,7 +50,7 @@ void CE::AddDebugSphere(RenderCommandQueue& commandQueue, DebugDraw::Enum catego
 		return;
 	}
 
-	constexpr float dt = glm::two_pi<float>() / 64.0f;
+	constexpr float dt = glm::two_pi<float>() / 8.0f;
 	float t = 0.0f;
 
 	glm::vec3 v0(center.x + radius * cos(t), center.y + radius * sin(t), center.z);
