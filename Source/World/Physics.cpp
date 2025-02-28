@@ -15,11 +15,24 @@
 
 CE::Physics::Physics(World& world) :
 	mWorld(world),
-	mBVHs{ BVH{ *this, static_cast<CollisionLayer>(0) },
+	mBVHs{
+		BVH{ *this, static_cast<CollisionLayer>(0) },
 		BVH{ *this, static_cast<CollisionLayer>(1) },
 		BVH{ *this, static_cast<CollisionLayer>(2) },
 		BVH{ *this, static_cast<CollisionLayer>(3) },
-		BVH{ *this, static_cast<CollisionLayer>(4) } }
+		BVH{ *this, static_cast<CollisionLayer>(4) },
+		BVH{ *this, static_cast<CollisionLayer>(5) },
+		BVH{ *this, static_cast<CollisionLayer>(6) },
+		BVH{ *this, static_cast<CollisionLayer>(7) },
+		BVH{ *this, static_cast<CollisionLayer>(8) },
+		BVH{ *this, static_cast<CollisionLayer>(9) },
+		BVH{ *this, static_cast<CollisionLayer>(10) },
+		BVH{ *this, static_cast<CollisionLayer>(11) },
+		BVH{ *this, static_cast<CollisionLayer>(12) },
+		BVH{ *this, static_cast<CollisionLayer>(13) },
+		BVH{ *this, static_cast<CollisionLayer>(14) },
+		BVH{ *this, static_cast<CollisionLayer>(15) },
+	}
 {
 
 }

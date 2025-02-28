@@ -295,6 +295,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\BasicDataTypes\CollisionRules.cpp" />
     <ClCompile Include="Source\Components\AudioListenerComponent.cpp" />
     <ClCompile Include="Source\Components\GridSpawnerComponent.cpp" />
     <ClCompile Include="Source\Components\Particles\ParticleEmitterShapes.cpp" />
@@ -858,6 +859,7 @@
     <ClInclude Include="Include\Assets\Core\AssetHandle.h" />
     <ClInclude Include="Include\Assets\Importers\AudioImporter.h" />
     <ClInclude Include="Include\Assets\Sound.h" />
+    <ClInclude Include="Include\BasicDataTypes\CollisionRules.h" />
     <ClInclude Include="Include\Components\AudioListenerComponent.h" />
     <ClInclude Include="Include\Assets\Core\AssetInternal.h" />
     <ClInclude Include="Include\Components\GridSpawnerComponent.h" />
