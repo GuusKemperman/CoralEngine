@@ -485,6 +485,16 @@ std::vector<CE::MetaAny> CE::Registry::GetComponents(entt::entity entity)
 	return found;
 }
 
+CE::World& CE::Registry::GetWorld()
+{
+	return mWorld;
+}
+
+const CE::World& CE::Registry::GetWorld() const
+{
+	return mWorld;
+}
+
 CE::MetaAny CE::Registry::TryGet(const TypeId componentClassTypeId, entt::entity entity)
 {
 	const auto storage = Storage(componentClassTypeId);

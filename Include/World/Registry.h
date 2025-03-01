@@ -76,41 +76,35 @@ namespace CE
 
 		std::vector<MetaAny> GetComponents(entt::entity entity);
 
-		World& GetWorld() { return mWorld; }
+		World& GetWorld();
 
-		const World& GetWorld() const { return mWorld; }
-
-		template<typename Type, typename... Other, typename... Exclude>
-		auto View(entt::exclude_t<Exclude...> exclude = entt::exclude_t{}) const { return mRegistry.view<Type, Other...>(exclude); }
+		const World& GetWorld() const;
 
 		template<typename Type, typename... Other, typename... Exclude>
-		auto View(entt::exclude_t<Exclude...> exclude = entt::exclude_t{}) { return mRegistry.view<Type, Other...>(exclude); }
+		auto View(entt::exclude_t<Exclude...> exclude = entt::exclude_t{}) const;
 
-		template<typename Type, typename Compare, typename Sort = entt::std_sort, typename... Args>
-		void Sort(Compare&& lambda, Sort algorithm = entt::std_sort{}, Args&&... args) { mRegistry.sort<Type>(lambda, algorithm, std::forward<Args>(args)...); }
-
-		template<typename Type>
-		entt::registry::storage_for_type<Type>& Storage() { return mRegistry.storage<Type>(); }
+		template<typename Type, typename... Other, typename... Exclude>
+		auto View(entt::exclude_t<Exclude...> exclude = entt::exclude_t{});
 
 		template<typename Type>
-		const entt::registry::storage_for_type<Type>* Storage() const { return mRegistry.storage<Type>(); }
+		entt::registry::storage_for_type<Type>& Storage();
 
 		template<typename Type>
-		Type* TryGet(entt::entity entity) { return mRegistry.try_get<Type>(entity); }
+		const entt::registry::storage_for_type<Type>* Storage() const;
 
 		template<typename Type>
-		const Type* TryGet(entt::entity entity) const { return mRegistry.try_get<Type>(entity); }
+		Type* TryGet(entt::entity entity);
+
+		template<typename Type>
+		const Type* TryGet(entt::entity entity) const;
 
 		MetaAny TryGet(TypeId componentClassTypeId, entt::entity entity);
 
 		template<typename Type>
-		Type& Get(entt::entity entity) { ASSERT(TryGet<Type>(entity)); return mRegistry.get<Type>(entity); }
+		Type& Get(entt::entity entity);
 
 		template<typename Type>
-		const Type& Get(entt::entity entity) const { ASSERT(TryGet<Type>(entity)); return mRegistry.get<Type>(entity); }
-
-		template<typename Type>
-		Type& GetOrAdd(entt::entity entity);
+		const Type& Get(entt::entity entity) const;
 
 		MetaAny Get(TypeId componentClassTypeId, entt::entity entity);
 
@@ -142,209 +136,248 @@ namespace CE
 		
 		entt::registry mRegistry{};
 	};
+}
 
-	template<typename ComponentType, typename ...AdditonalArgs>
-	decltype(auto) Registry::AddComponent(const entt::entity toEntity, AdditonalArgs && ...additionalArgs)
+template<typename ComponentType, typename ...AdditonalArgs>
+decltype(auto) CE::Registry::AddComponent(const entt::entity toEntity, AdditonalArgs && ...additionalArgs)
+{
+	struct ComponentEvents
 	{
-		struct ComponentEvents
+		std::optional<BoundEvent> mOnConstruct{};
+		std::optional<BoundEvent> mOnBeginPlay{};
+	};
+
+	static constexpr bool isEmpty = entt::component_traits<ComponentType>::page_size == 0;
+
+	static const ComponentEvents events =
+		[]
 		{
-			std::optional<BoundEvent> mOnConstruct{};
-			std::optional<BoundEvent> mOnBeginPlay{};
-		};
-
-		static constexpr bool isEmpty = entt::component_traits<ComponentType>::page_size == 0;
-
-		static const ComponentEvents events =
-			[]
-			{
-				if constexpr (sIsReflectable<ComponentType>)
-				{
-					ComponentEvents tmpEvents{};
-					const MetaType& type = MetaManager::Get().GetType<ComponentType>();
-					tmpEvents.mOnConstruct = TryGetEvent(type, sOnConstruct);
-					tmpEvents.mOnBeginPlay = TryGetEvent(type, sOnBeginPlay);
-					return tmpEvents;
-				}
-				else
-				{
-					return ComponentEvents{};
-				}
-			}();
-
-		if constexpr (isEmpty)
-		{
-			mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
-
 			if constexpr (sIsReflectable<ComponentType>)
 			{
-				if (events.mOnConstruct.has_value())
+				ComponentEvents tmpEvents{};
+				const MetaType& type = MetaManager::Get().GetType<ComponentType>();
+				tmpEvents.mOnConstruct = TryGetEvent(type, sOnConstruct);
+				tmpEvents.mOnBeginPlay = TryGetEvent(type, sOnBeginPlay);
+				return tmpEvents;
+			}
+			else
+			{
+				return ComponentEvents{};
+			}
+		}();
+
+	if constexpr (isEmpty)
+	{
+		mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);
+
+		if constexpr (sIsReflectable<ComponentType>)
+		{
+			if (events.mOnConstruct.has_value())
+			{
+				events.mOnConstruct->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
+			}
+
+			if (events.mOnBeginPlay.has_value()
+				&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
+			{
+				events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
+			}
+		}
+	}
+	else
+	{
+		ComponentType& component = mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);;
+
+		if constexpr (sIsReflectable<ComponentType>)
+		{
+			if (events.mOnConstruct.has_value())
+			{
+				if (events.mOnConstruct->mIsStatic)
 				{
 					events.mOnConstruct->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
 				}
+				else
+				{
+					events.mOnConstruct->mFunc.get().InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
+				}
+			}
 
-				if (events.mOnBeginPlay.has_value()
-					&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
+			if (events.mOnBeginPlay.has_value()
+				&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
+			{
+				if (events.mOnBeginPlay->mIsStatic)
 				{
 					events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
 				}
-			}
-		}
-		else
-		{
-			ComponentType& component = mRegistry.emplace<ComponentType>(toEntity, std::forward<AdditonalArgs>(additionalArgs)...);;
-
-			if constexpr (sIsReflectable<ComponentType>)
-			{
-				if (events.mOnConstruct.has_value())
+				else
 				{
-					if (events.mOnConstruct->mIsStatic)
-					{
-						events.mOnConstruct->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
-					}
-					else
-					{
-						events.mOnConstruct->mFunc.get().InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
-					}
-				}
-
-				if (events.mOnBeginPlay.has_value()
-					&& ShouldWeCallBeginPlayImmediatelyAfterConstruct(toEntity))
-				{
-					if (events.mOnBeginPlay->mIsStatic)
-					{
-						events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(GetWorld(), toEntity);
-					}
-					else
-					{
-						events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
-					}
+					events.mOnBeginPlay->mFunc.get().InvokeUncheckedUnpacked(component, GetWorld(), toEntity);
 				}
 			}
-
-			return component;
 		}
+
+		return component;
 	}
+}
 
-	template<typename Type, typename It>
-	void Registry::AddComponents(It first, It last, const Type& value)
+template<typename Type, typename It>
+void CE::Registry::AddComponents(It first, It last, const Type& value)
+{
+	for (auto curr = first; curr != last; ++curr)
 	{
-		for (auto curr = first; curr != last; ++curr)
-		{
-			AddComponent<Type>(*curr, value);
-		}
+		AddComponent<Type>(*curr, value);
 	}
+}
 
-	template<typename Type>
-	Type& Registry::GetOrAdd(entt::entity entity)
+template <typename Type>
+bool CE::Registry::HasComponent(entt::entity entity) const
+{
+	auto* storage = Storage<Type>();
+	return storage != nullptr && storage->contains(entity);
+}
+
+template<typename ComponentType>
+void CE::Registry::RemoveComponent(entt::entity fromEntity)
+{
+	static constexpr TypeId componentClassTypeId = MakeStrippedTypeId<ComponentType>();
+	entt::sparse_set* storage = Storage(componentClassTypeId);
+	ASSERT(storage != nullptr);
+	ASSERT(storage->contains(fromEntity));
+
+	if constexpr (sIsReflectable<ComponentType>)
 	{
-		Type* existing = TryGet<Type>(entity);
-		if (existing == nullptr)
-		{
-			return AddComponent<Type>(entity);
-		}
-		return *existing;
-	}
-
-	template <typename Type>
-	bool Registry::HasComponent(entt::entity entity) const
-	{
-		auto* storage = Storage<Type>();
-		return storage != nullptr && storage->contains(entity);
-	}
-
-	template<typename ComponentType>
-	void Registry::RemoveComponent(entt::entity fromEntity)
-	{
-		static constexpr TypeId componentClassTypeId = MakeStrippedTypeId<ComponentType>();
-		entt::sparse_set* storage = Storage(componentClassTypeId);
-		ASSERT(storage != nullptr);
-		ASSERT(storage->contains(fromEntity));
-
-		if constexpr (sIsReflectable<ComponentType>)
-		{
-			static std::optional<BoundEvent> endPlayEvent =
-				[]() -> std::optional<BoundEvent>
-				{
-					const MetaType* type = MetaManager::Get().TryGetType(componentClassTypeId);
-
-					if (type == nullptr)
-					{
-						return std::nullopt;
-					}
-
-					return TryGetEvent(*type, sOnEndPlay);
-				}();
-
-			if (endPlayEvent.has_value())
+		static std::optional<BoundEvent> endPlayEvent =
+			[]() -> std::optional<BoundEvent>
 			{
-				CallEndPlayEventsForEntity(*storage, fromEntity, *endPlayEvent);
-			}
-		}
+				const MetaType* type = MetaManager::Get().TryGetType(componentClassTypeId);
 
-		storage->erase(fromEntity);
-	}
-
-	template <typename ComponentType, typename It>
-	void Registry::RemoveComponents(It first, It last)
-	{
-		for (auto curr = first; curr != last; ++curr)
-		{
-			RemoveComponent<ComponentType>(*curr);
-		}
-	}
-
-	template<typename ComponentType>
-	void Registry::RemoveComponentIfEntityHasIt(entt::entity fromEntity)
-	{
-		static constexpr TypeId componentClassTypeId = MakeStrippedTypeId<ComponentType>();
-		entt::sparse_set* storage = Storage(componentClassTypeId);
-
-		if (storage == nullptr)
-		{
-			return;
-		}
-
-		if constexpr (sIsReflectable<ComponentType>)
-		{
-			static std::optional<BoundEvent> endPlayEvent =
-				[]() -> std::optional<BoundEvent>
+				if (type == nullptr)
 				{
-					const MetaType* type = MetaManager::Get().TryGetType(componentClassTypeId);
-
-					if (type == nullptr)
-					{
-						return std::nullopt;
-					}
-
-					return TryGetEvent(*type, sOnEndPlay);
-				}();
-
-			if (endPlayEvent.has_value())
-			{
-				if (!storage->contains(fromEntity))
-				{
-					return;
+					return std::nullopt;
 				}
 
-				CallEndPlayEventsForEntity(*storage, fromEntity, *endPlayEvent);
-			}
-		}
+				return TryGetEvent(*type, sOnEndPlay);
+			}();
 
-		storage->remove(fromEntity);
-	}
-
-	template<typename It>
-	void Registry::Create(It first, It last)
-	{
-		mRegistry.create(first, last);
-	}
-
-	template<typename It>
-	void Registry::Destroy(It first, It last, bool destroyChildren)
-	{
-		for (auto it = first; it != last; ++it)
+		if (endPlayEvent.has_value())
 		{
-			Destroy(*it, destroyChildren);
+			CallEndPlayEventsForEntity(*storage, fromEntity, *endPlayEvent);
 		}
+	}
+
+	storage->erase(fromEntity);
+}
+
+template <typename ComponentType, typename It>
+void CE::Registry::RemoveComponents(It first, It last)
+{
+	for (auto curr = first; curr != last; ++curr)
+	{
+		RemoveComponent<ComponentType>(*curr);
+	}
+}
+
+template<typename ComponentType>
+void CE::Registry::RemoveComponentIfEntityHasIt(entt::entity fromEntity)
+{
+	static constexpr TypeId componentClassTypeId = MakeStrippedTypeId<ComponentType>();
+	entt::sparse_set* storage = Storage(componentClassTypeId);
+
+	if (storage == nullptr)
+	{
+		return;
+	}
+
+	if constexpr (sIsReflectable<ComponentType>)
+	{
+		static std::optional<BoundEvent> endPlayEvent =
+			[]() -> std::optional<BoundEvent>
+			{
+				const MetaType* type = MetaManager::Get().TryGetType(componentClassTypeId);
+
+				if (type == nullptr)
+				{
+					return std::nullopt;
+				}
+
+				return TryGetEvent(*type, sOnEndPlay);
+			}();
+
+		if (endPlayEvent.has_value())
+		{
+			if (!storage->contains(fromEntity))
+			{
+				return;
+			}
+
+			CallEndPlayEventsForEntity(*storage, fromEntity, *endPlayEvent);
+		}
+	}
+
+	storage->remove(fromEntity);
+}
+
+template <typename Type, typename ... Other, typename ... Exclude>
+auto CE::Registry::View(entt::exclude_t<Exclude...> exclude) const
+{
+	return mRegistry.view<Type, Other...>(exclude);
+}
+
+template <typename Type, typename ... Other, typename ... Exclude>
+auto CE::Registry::View(entt::exclude_t<Exclude...> exclude)
+{
+	return mRegistry.view<Type, Other...>(exclude);
+}
+
+template <typename Type>
+entt::basic_registry<>::storage_for_type<Type>& CE::Registry::Storage()
+{
+	return mRegistry.storage<Type>();
+}
+
+template <typename Type>
+const entt::basic_registry<>::storage_for_type<Type>* CE::Registry::Storage() const
+{
+	return mRegistry.storage<Type>();
+}
+
+template <typename Type>
+Type* CE::Registry::TryGet(entt::entity entity)
+{
+	return mRegistry.try_get<Type>(entity);
+}
+
+template <typename Type>
+const Type* CE::Registry::TryGet(entt::entity entity) const
+{
+	return mRegistry.try_get<Type>(entity);
+}
+
+template <typename Type>
+Type& CE::Registry::Get(entt::entity entity)
+{
+	ASSERT(TryGet<Type>(entity));
+	return mRegistry.get<Type>(entity);
+}
+
+template <typename Type>
+const Type& CE::Registry::Get(entt::entity entity) const
+{
+	ASSERT(TryGet<Type>(entity));
+	return mRegistry.get<Type>(entity);
+}
+
+template<typename It>
+void CE::Registry::Create(It first, It last)
+{
+	mRegistry.create(first, last);
+}
+
+template<typename It>
+void CE::Registry::Destroy(It first, It last, bool destroyChildren)
+{
+	for (auto it = first; it != last; ++it)
+	{
+		Destroy(*it, destroyChildren);
 	}
 }
