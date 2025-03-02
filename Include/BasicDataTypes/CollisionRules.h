@@ -196,7 +196,7 @@ struct Reflector<CE::CollisionRules>
 {
 	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
-}; REFLECT_AT_START_UP(collRules, CE::CollisionRules)
+}; REFLECT_AT_START_UP(collRules, CE::CollisionRules);
 
 template<>
 struct CE::EnumStringPairsImpl<CE::CollisionLayer>

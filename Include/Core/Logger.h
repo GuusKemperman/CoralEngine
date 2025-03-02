@@ -12,7 +12,7 @@
 // a file.
 #ifdef ASSERTS_ENABLED
 
-#define ASSERT_LOG(condition, format, ...) if (!(condition)) { LOG(LogTemp, Fatal, "Assert failed: {} - " format, #condition, ##__VA_ARGS__); } static_assert(true, "")
+#define ASSERT_LOG(condition, format, ...) if (!(condition)) { LOG(LogTemp, Fatal, "Assert failed: {} - " format, #condition, ##__VA_ARGS__); } static_assert(true)
 
 #define ABORT LOG(LogTemp, Fatal, "Aborted")
 
@@ -20,21 +20,21 @@
 
 #else
 
-#define LOG(channel, severity, ...) if constexpr (severity == Fatal) { ABORT; } static_assert(true, "")
+#define LOG(channel, severity, ...) if constexpr (severity == Fatal) { ABORT; } static_assert(true)
 
 // If logging is not enabled, use the classic assert().
 #ifdef ASSERTS_ENABLED
 
 #define ABORT CE::Logger::Get().Log("Aborted", "LogTemp", Fatal, __FILE__, __LINE__)
-#define ASSERT_LOG(condition, ...) if (!(condition)) { CE::Logger::Get().Log(CE::Format("Assert failed: {} - ", #condition), "LogTemp", Fatal, __FILE__, __LINE__); } static_assert(true, "")
+#define ASSERT_LOG(condition, ...) if (!(condition)) { CE::Logger::Get().Log(CE::Format("Assert failed: {} - ", #condition), "LogTemp", Fatal, __FILE__, __LINE__); } static_assert(true)
 
 #endif // ASSERTS_ENABLED
 
 #endif // LOGGING_ENABLED
 
 #ifndef ASSERTS_ENABLED
-#define ASSERT_LOG(...) static_assert(true, "")
-#define ABORT static_assert(true, "")
+#define ASSERT_LOG(...) static_assert(true)
+#define ABORT static_assert(true)
 #endif
 
 #define ASSERT(condition) ASSERT_LOG(condition, "")

@@ -11,7 +11,7 @@ bool CE::Internal::ComponentTypeFilterFunctor::operator()(const MetaType& type) 
 	return type.GetProperties().Has(Props::sComponentTag);
 }
 
-REFLECT_AT_START_UP(ArrayOfComponentFilter, std::vector<CE::ComponentFilter>)
+REFLECT_AT_START_UP(ArrayOfComponentFilter, std::vector<CE::ComponentFilter>);
 
 CE::MetaType Reflector<CE::ComponentFilter>::Reflect()
 {

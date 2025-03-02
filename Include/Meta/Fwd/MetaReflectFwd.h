@@ -82,6 +82,6 @@ Example:
 	using namespace glm;
 	REFLECT_AT_START_UP(vec2)
 */
-#define REFLECT_AT_START_UP(...) EXPAND(GET_MACRO(__VA_ARGS__, REFLECT_AT_START_UP_2, REFLECT_AT_START_UP_1)(__VA_ARGS__))
+#define REFLECT_AT_START_UP(...) EXPAND(GET_MACRO(__VA_ARGS__, REFLECT_AT_START_UP_2, REFLECT_AT_START_UP_1)(__VA_ARGS__)) static_assert(true)
 
 
