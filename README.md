@@ -6,6 +6,8 @@
 
 Coral Engine is a game engine developed by students of [Breda University of Applied Sciences](https://www.buas.nl/en/programmes/creative-media-and-game-technologies). It was designed to be accesible to designers, so that entire games can be created without having to modify a line of C++.
 
+The 'main' branch of this repository represents the collective effort of various students, and included the code for Lichgate. To ensure each students work is preserved at this URL, **active development of Coral is done on [the main-lite branch](https://github.com/GuusKemperman/CoralEngine/tree/main-lite)**.
+
 ### Key Features
 
 #### Graphics
@@ -31,8 +33,9 @@ Coral Engine is a game engine developed by students of [Breda University of Appl
 - **Animation Blending**: For smooth transitions between animations.
 - **Audio**: Built-in support for game audio.
 
-## Games Created with Coral Engine
+## Projects Created with Coral Engine
 - [Lichgate](https://buas.itch.io/lichgate)
+- [Ant Simulation](https://github.com/GuusKemperman/Ants)
 
 ## Getting Started
 
