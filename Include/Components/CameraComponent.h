@@ -15,6 +15,9 @@ namespace CE
 		static entt::entity GetSelected(const World& world);
 		static bool IsSelected(const World& world, entt::entity cameraOwner);
 
+		static const CameraComponent* TryGetSelectedCamera(const World& world);
+		static CameraComponent* TryGetSelectedCamera(World& world);
+
 		static void Select(World& world, entt::entity cameraOwner);
 		static void Deselect(World& world);
 

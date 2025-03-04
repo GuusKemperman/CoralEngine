@@ -30,6 +30,16 @@ bool CE::CameraComponent::IsSelected(const World& world, entt::entity cameraOwne
 	return world.GetRegistry().HasComponent<CameraSelectedTag>(cameraOwner);
 }
 
+const CE::CameraComponent* CE::CameraComponent::TryGetSelectedCamera(const World& world)
+{
+	return world.GetRegistry().TryGet<CameraComponent>(GetSelected(world));
+}
+
+CE::CameraComponent* CE::CameraComponent::TryGetSelectedCamera(World& world)
+{
+	return world.GetRegistry().TryGet<CameraComponent>(GetSelected(world));
+}
+
 void CE::CameraComponent::Select(World& world, entt::entity cameraOwner)
 {
 	Deselect(world);
