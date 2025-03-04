@@ -12,6 +12,7 @@
 #include "World/Registry.h"
 #include "World/World.h"
 #include "Utilities/DrawDebugHelpers.h"
+#include "Utilities/Overload.h"
 #include "World/EventManager.h"
 #include "World/Physics.h"
 
@@ -90,40 +91,6 @@ void CE::PhysicsSystem::ApplyVelocities(World& world, float dt)
 	}
 }
 
-namespace CE::Internal
-{
-	struct ShouldCheckForCollision
-	{
-		template<typename ColliderType>
-		static bool Callback(entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent& body1, const Registry& reg)
-		{
-			if (entity1 == entity2)
-			{
-				return false;
-			}
-
-			const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
-
-			return body2 != nullptr
-				&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
-		}
-
-		template<>
-		bool Callback<TransformedDiskColliderComponent>(entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent& body1, const Registry& reg)
-		{
-			if (entity1 >= entity2)
-			{
-				return false;
-			}
-
-			const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
-
-			return body2 != nullptr
-				&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
-		}
-	};
-}
-
 void CE::PhysicsSystem::UpdateCollisions(World& world)
 {
 	Registry& reg = world.GetRegistry();
@@ -143,24 +110,6 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 	// buffer every frame, even if we have multiple worlds.
 	static std::vector<CollisionData> currentCollisions{};
 	currentCollisions.clear();
-
-	struct OnIntersect
-	{
-		static void Callback(const TransformedDiskColliderComponent&, entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent&, const Registry&)
-		{
-			diskDiskCollisions.emplace_back(entity1, entity2);
-		}
-
-		static void Callback(const TransformedAABBColliderComponent&, entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent&, const Registry&)
-		{
-			diskAABBCollisions.emplace_back(entity1, entity2);
-		}
-
-		static void Callback(const TransformedPolygonColliderComponent&, entt::entity entity2, entt::entity entity1, const PhysicsBody2DComponent&, const Registry&)
-		{
-			diskPolygonCollisions.emplace_back(entity1, entity2);
-		}
-	};
 
 	const auto viewDisk = reg.View<PhysicsBody2DComponent, TransformedDiskColliderComponent, TransformComponent>();
 	const auto viewPolygon = reg.View<PhysicsBody2DComponent, TransformedPolygonColliderComponent>();
@@ -182,7 +131,49 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 				continue;
 			}
 
-			bvh.Query<OnIntersect, Internal::ShouldCheckForCollision, BVH::DefaultShouldReturnFunction<false>>(disk1, entity1, body1, reg);
+			bvh.Query(
+				disk1,
+				Overload(
+					[&](const TransformedDiskColliderComponent&, entt::entity entity2)
+					{
+						diskDiskCollisions.emplace_back(entity1, entity2);
+					},
+					[&](const TransformedAABBColliderComponent&, entt::entity entity2)
+					{
+						diskAABBCollisions.emplace_back(entity1, entity2);
+					},
+					[&](const TransformedPolygonColliderComponent&, entt::entity entity2)
+					{
+						diskPolygonCollisions.emplace_back(entity1, entity2);
+					}
+				),
+				Overload(
+					[&]<typename T>(entt::entity entity2)
+					{
+						if (entity1 == entity2)
+						{
+							return false;
+						}
+
+						const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
+
+						return body2 != nullptr
+							&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
+					},
+					[&]<TransformedDiskColliderComponent>(entt::entity entity2)
+					{
+						if (entity1 >= entity2)
+						{
+							return false;
+						}
+
+						const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
+
+						return body2 != nullptr
+							&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
+					}
+				),
+				BVH::DefaultShouldReturnFunction<false>{});
 		}
 	}
 

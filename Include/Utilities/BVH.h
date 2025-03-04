@@ -22,20 +22,20 @@ namespace CE
 		struct DefaultShouldCheckFunction
 		{
 			template<typename TransformedColliderType, typename... Args>
-			bool operator()(Args...) const { return AlwaysReturnValue; }
+			bool operator()(entt::entity, Args...) const { return AlwaysReturnValue; }
 		};
 
 		template<bool AlwaysReturnValue>
 		struct DefaultShouldReturnFunction
 		{
 			template<typename TransformedColliderType, typename... Args>
-			bool operator()(Args...) const { return AlwaysReturnValue; }
+			bool operator()(const TransformedColliderType&, entt::entity, Args...) const { return AlwaysReturnValue; }
 		};
 
 		struct DefaultOnIntersectFunction
 		{
-			template<typename... Args>
-			void operator()(Args...) const {}
+			template<typename TransformedColliderType, typename... Args>
+			void operator()(const TransformedColliderType&, entt::entity, Args...) const {}
 		};
 
 		template<typename... CallbackAdditionalArgs>
@@ -191,7 +191,7 @@ namespace CE
 					{
 						const entt::entity owner = mIds[indexOfId];
 
-						if (!shouldCheck.template operator()<T>(args...))
+						if (!shouldCheck.template operator()<T>(owner, args...))
 						{
 							continue;
 						}
