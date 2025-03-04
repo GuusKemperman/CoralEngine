@@ -44,25 +44,15 @@ std::vector<entt::entity> CE::Physics::FindAllWithinShapeImpl(const T& shape, co
 {
 	std::vector<entt::entity> ret{};
 
-	struct OnIntersect
-	{
-		static void Callback(const TransformedDiskColliderComponent&, entt::entity entity, std::vector<entt::entity>& returnValue)
+	Query(
+		shape, 
+		filter, 
+		[&](const auto&, entt::entity entity)
 		{
-			returnValue.emplace_back(entity);
-		}
-
-		static void Callback(const TransformedAABBColliderComponent&, entt::entity entity, std::vector<entt::entity>& returnValue)
-		{
-			returnValue.emplace_back(entity);
-		}
-
-		static void Callback(const TransformedPolygonColliderComponent&, entt::entity entity, std::vector<entt::entity>& returnValue)
-		{
-			returnValue.emplace_back(entity);
-		}
-	};
-
-	Query<OnIntersect, BVH::DefaultShouldCheckFunction<true>, BVH::DefaultShouldReturnFunction<false>>(shape, filter, ret);
+			ret.emplace_back(entity);
+		},
+		BVH::DefaultShouldCheckFunction<true>{},
+		BVH::DefaultShouldReturnFunction<false>{});
 
 	return ret;
 }
@@ -137,23 +127,6 @@ void CE::Physics::UpdateTransformedColliders(World& world, std::array<bool, stat
 	}
 }
 
-namespace
-{
-	struct OnRayIntersect
-	{
-		static void Callback(const auto& shape, entt::entity entity, const CE::Line& line, CE::Physics::LineTraceResult& result)
-		{
-			float timeOfIntersect = CE::TimeOfLineIntersection(line, shape);
-			if (timeOfIntersect < result.mDist)
-			{
-				result.mDist = timeOfIntersect;
-				result.mHitEntity = entity;
-			}
-		}
-	};
-
-}
-
 CE::Physics::LineTraceResult CE::Physics::LineTrace(const Line& line, const CollisionRules& filter) const
 {
 	LineTraceResult result{};
@@ -163,9 +136,20 @@ CE::Physics::LineTraceResult CE::Physics::LineTrace(const Line& line, const Coll
 		return result;
 	}
 
-	Query<OnRayIntersect,
-		BVH::DefaultShouldCheckFunction<true>,
-		BVH::DefaultShouldReturnFunction<false>>(line, filter, line, result);
+	Query(
+		line,
+		filter,
+		[&](const auto& shape, entt::entity entity)
+		{
+			float timeOfIntersect = CE::TimeOfLineIntersection(line, shape);
+			if (timeOfIntersect < result.mDist)
+			{
+				result.mDist = timeOfIntersect;
+				result.mHitEntity = entity;
+			}
+		},
+		BVH::DefaultShouldCheckFunction<true>{},
+		BVH::DefaultShouldReturnFunction<false>{});
 
 	float dist = glm::distance(line.mStart, line.mEnd);
 	if (result)

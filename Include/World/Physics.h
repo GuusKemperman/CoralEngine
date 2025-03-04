@@ -54,13 +54,14 @@ namespace CE
 		std::vector<entt::entity> FindAllWithinShape(const TransformedAABB& shape, const CollisionRules& filter) const;
 		std::vector<entt::entity> FindAllWithinShape(const TransformedPolygon& shape, const CollisionRules& filter) const;
 
-		// Low level API. Will return true if a blocking hit was found (if ShouldReturnFunction returned true), and searching was stopped.
-		template<	typename OnIntersectFunction = BVH::DefaultOnIntersectFunction,
-					typename ShouldCheckFunction = BVH::DefaultShouldCheckFunction<true>,
-					typename ShouldReturnFunction = BVH::DefaultShouldReturnFunction<true>,
-					typename InquirerShape,
-					typename ...CallbackAdditionalArgs>
-		bool Query(const InquirerShape& inquirerShape, const CollisionRules& filter, CallbackAdditionalArgs&& ...args) const;
+		// Low level API. Will return true if a blocking hit was found (if shouldReturn returned true), and searching was stopped.
+		template<typename... CallbackAdditionalArgs>
+		bool Query(const auto& inquirerShape,
+			const CollisionRules& filter,
+			const auto& onIntersect = BVH::DefaultOnIntersectFunction{},
+			const auto& shouldCheck = BVH::DefaultShouldCheckFunction<true>{},
+			const auto& shouldReturn = BVH::DefaultShouldReturnFunction<true>{},
+			CallbackAdditionalArgs&&... args) const;
 
 		using BVHS = std::array<BVH, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>;
 
@@ -85,24 +86,31 @@ namespace CE
 
 		BVHS mBVHs;
 	};
+}
 
-	template <typename OnIntersectFunction, typename ShouldCheckFunction, typename ShouldReturnFunction, typename
-		InquirerShape, typename ... CallbackAdditionalArgs>
-	bool Physics::Query(const InquirerShape& inquirerShape, const CollisionRules& filter,
-		CallbackAdditionalArgs&&... args) const
+template <typename... CallbackAdditionalArgs>
+bool CE::Physics::Query(const auto& inquirerShape,
+	const CollisionRules& filter,
+	const auto& onIntersect, 
+	const auto& shouldCheck,
+	const auto& shouldReturn, 
+	CallbackAdditionalArgs&&... args) const
+{
+	for (const BVH& bvh : mBVHs)
 	{
-		for (const BVH& bvh : mBVHs)
+		if (filter.mResponses[static_cast<int>(bvh.GetLayer())] == CollisionResponse::Ignore)
 		{
-			if (filter.mResponses[static_cast<int>(bvh.GetLayer())] == CollisionResponse::Ignore)
-			{
-				continue;
-			}
-
-			if (bvh.Query<OnIntersectFunction, ShouldCheckFunction, ShouldReturnFunction>(inquirerShape, std::forward<CallbackAdditionalArgs>(args)...))
-			{
-				return true;
-			}
+			continue;
 		}
-		return false;
+
+		if (bvh.Query(inquirerShape, 
+			onIntersect,
+			shouldCheck,
+			shouldReturn,
+			args...))
+		{
+			return true;
+		}
 	}
+	return false;
 }

@@ -21,25 +21,29 @@ namespace CE
 		template<bool AlwaysReturnValue>
 		struct DefaultShouldCheckFunction
 		{
-			template<typename TransformedColliderType, typename ...CallbackAdditionalArgs>
-			static bool Callback(CallbackAdditionalArgs&& ...) { return AlwaysReturnValue; }
+			template<typename TransformedColliderType, typename... Args>
+			bool operator()(Args...) const { return AlwaysReturnValue; }
 		};
 
 		template<bool AlwaysReturnValue>
 		struct DefaultShouldReturnFunction
 		{
-			template<typename ...CallbackAdditionalArgs>
-			static bool Callback(CallbackAdditionalArgs&& ...) { return AlwaysReturnValue; }
+			template<typename TransformedColliderType, typename... Args>
+			bool operator()(Args...) const { return AlwaysReturnValue; }
 		};
 
 		struct DefaultOnIntersectFunction
 		{
-			template<typename ...CallbackAdditionalArgs>
-			static void Callback(CallbackAdditionalArgs&& ...) { }
+			template<typename... Args>
+			void operator()(Args...) const {}
 		};
 
-		template<typename OnIntersectFunction = DefaultOnIntersectFunction, typename ShouldCheckFunction = DefaultShouldCheckFunction<true>, typename ShouldReturnFunction = DefaultShouldReturnFunction<true>, typename InquirerShape, typename ...CallbackAdditionalArgs>
-		bool Query(const InquirerShape& inquirerShape, CallbackAdditionalArgs&& ...args) const;
+		template<typename... CallbackAdditionalArgs>
+		bool Query(const auto& inquirerShape,
+			const auto& onIntersect = DefaultOnIntersectFunction{},
+			const auto& shouldCheck = DefaultShouldCheckFunction<true>{},
+			const auto& shouldReturn = DefaultShouldReturnFunction<true>{},
+			CallbackAdditionalArgs&&... args) const;
 
 		void DebugDraw() const;
 
@@ -110,17 +114,31 @@ namespace CE
 		entt::storage_for_t<const TransformedPolygonColliderComponent>& mPolysStorage;
 	};
 
-	template <typename OnIntersectFunction, typename ShouldCheckFunction, typename ShouldReturnFunction, typename
-		InquirerShape, typename ... CallbackAdditionalArgs>
-	bool BVH::Query(const InquirerShape& inquirerShape, CallbackAdditionalArgs&&... args) const
+	template<typename ... CallbackAdditionalArgs>
+	bool BVH::Query(const auto& inquirerShape,
+		const auto& onIntersect,
+		const auto& shouldCheck,
+		const auto& shouldReturn,
+		CallbackAdditionalArgs&&... args) const
 	{
 		static constexpr uint32 stackSize = 256;
 		const Node* stack[stackSize];
 		uint32 stackPtr = 0;
 
-		const Node* node = &mNodes[0];
+		const Node* node = mNodes.data();
 
-		while (1)
+		const auto testAgainstObject = [&]<typename T>(const T& object, entt::entity owner)
+			{
+				if (!AreOverlapping(object, inquirerShape))
+				{
+					return false;
+				}
+
+				onIntersect(object, owner, args...);
+				return shouldReturn.template operator()<T>(object, owner, args...);
+			};
+
+		while (true)
 		{
 			if (node->mTotalNumOfObjects == 0)
 			{
@@ -167,72 +185,41 @@ namespace CE
 
 			uint32 indexOfId = node->mStartIndex;
 
-			for (uint32 i = 0; i < node->mNumOfAABBS; i++, indexOfId++)
+			const auto checkNode = [&]<typename T>(uint32 num)
+				{
+					for (uint32 i = 0; i < num; i++, indexOfId++)
+					{
+						const entt::entity owner = mIds[indexOfId];
+
+						if (!shouldCheck.template operator()<T>(args...))
+						{
+							continue;
+						}
+
+						const T* collider = TryGetCollider<T>(owner);
+
+						if (collider == nullptr)
+						{
+							continue;
+						}
+
+						if (testAgainstObject(*collider, owner))
+						{
+							return true;
+						}
+					}
+					return false;
+				};
+
+			const uint32 numPolygons = node->mTotalNumOfObjects - node->mNumOfAABBS - node->mNumOfCircles;
+
+			if (checkNode.template operator()<TransformedAABBColliderComponent>(node->mNumOfAABBS)
+				|| checkNode.template operator()<TransformedDiskColliderComponent>(node->mNumOfCircles)
+				|| checkNode.template operator()<TransformedPolygonColliderComponent>(numPolygons))
 			{
-				const entt::entity owner = mIds[indexOfId];
-
-				if(!ShouldCheckFunction::template Callback<TransformedAABBColliderComponent>(owner, std::forward<CallbackAdditionalArgs>(args)...))
-				{
-					continue;
-				}
-
-				const TransformedAABB* aabb = TryGetCollider<TransformedAABBColliderComponent>(owner);
-
-				if (aabb == nullptr)
-				{
-					continue;
-				}
-
-				if (TestAgainstObject<OnIntersectFunction, ShouldReturnFunction>(inquirerShape, *aabb, owner, std::forward<CallbackAdditionalArgs>(args)...))
-				{
-					return true;
-				}
+				return true;
 			}
 
-			for (uint32 i = 0; i < node->mNumOfCircles; i++, indexOfId++)
-			{
-				const entt::entity owner = mIds[indexOfId];
-
-				if (!ShouldCheckFunction::template Callback<TransformedDiskColliderComponent>(owner, std::forward<CallbackAdditionalArgs>(args)...))
-				{
-					continue;
-				}
-
-				const TransformedDisk* circle = TryGetCollider<TransformedDiskColliderComponent>(owner);
-
-				if (circle == nullptr)
-				{
-					continue;
-				}
-
-				if (TestAgainstObject<OnIntersectFunction, ShouldReturnFunction>(inquirerShape, *circle, owner, std::forward<CallbackAdditionalArgs>(args)...))
-				{
-					return true;
-				}
-			}
-
-			const uint32 numOfPolygons = node->mTotalNumOfObjects - node->mNumOfAABBS - node->mNumOfCircles;
-			for (uint32 i = 0; i < numOfPolygons; i++, indexOfId++)
-			{
-				const entt::entity owner = mIds[indexOfId];
-
-				if (!ShouldCheckFunction::template Callback<TransformedPolygonColliderComponent>(owner, std::forward<CallbackAdditionalArgs>(args)...))
-				{
-					continue;
-				}
-
-				const TransformedPolygon* polygon = TryGetCollider<TransformedPolygonColliderComponent>(owner);
-
-				if (polygon == nullptr)
-				{
-					continue;
-				}
-
-				if (TestAgainstObject<OnIntersectFunction, ShouldReturnFunction>(inquirerShape, *polygon, owner, std::forward<CallbackAdditionalArgs>(args)...))
-				{
-					return true;
-				}
-			}
 
 			if (stackPtr == 0)
 			{
