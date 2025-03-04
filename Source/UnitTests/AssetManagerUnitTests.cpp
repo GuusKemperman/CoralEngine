@@ -9,15 +9,13 @@ using namespace CE;
 UNIT_TEST(AssetManagerUnitTests, MultiThreadedAssetLoadingUnloading)
 {
 	static constexpr int amountOfLoadsToComplete = 2 << 11;
-	std::atomic numOfLoadsLeft = amountOfLoadsToComplete;
 
-	const auto loadAssets = [&numOfLoadsLeft]
+	const auto loadAssets = []
 		{
-			while (numOfLoadsLeft > 0)
+			for (int i = 0; i < amountOfLoadsToComplete; i++)
 			{
 				for (AssetHandle asset : AssetManager::Get().GetAllAssets())
 				{
-					numOfLoadsLeft -= !asset.IsLoaded();
 					TEST_ASSERT(asset.Get() != nullptr);
 				}
 			}
@@ -25,9 +23,9 @@ UNIT_TEST(AssetManagerUnitTests, MultiThreadedAssetLoadingUnloading)
 			return UnitTest::Success;
 		};
 
-	const auto unloadAssets = [&numOfLoadsLeft]
+	const auto unloadAssets = []
 		{
-			while (numOfLoadsLeft > 0)
+			for (int i = 0; i < amountOfLoadsToComplete; i++)
 			{
 				AssetManager::Get().UnloadAllUnusedAssets(false);
 			}
