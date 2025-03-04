@@ -133,7 +133,7 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 
 			bvh.Query(
 				disk1,
-				Overload(
+				Overload{
 					[&](const TransformedDiskColliderComponent&, entt::entity entity2)
 					{
 						diskDiskCollisions.emplace_back(entity1, entity2);
@@ -146,33 +146,29 @@ void CE::PhysicsSystem::UpdateCollisions(World& world)
 					{
 						diskPolygonCollisions.emplace_back(entity1, entity2);
 					}
-				),
-				Overload(
-					[&]<typename T>(entt::entity entity2)
-					{
-						if (entity1 == entity2)
-						{
-							return false;
-						}
-
-						const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
-
-						return body2 != nullptr
-							&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
-					},
-					[&]<TransformedDiskColliderComponent>(entt::entity entity2)
+				},
+				[&]<typename T>(entt::entity entity2)
+				{
+					if constexpr (std::is_same_v<T, TransformedDiskColliderComponent>)
 					{
 						if (entity1 >= entity2)
 						{
 							return false;
 						}
-
-						const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
-
-						return body2 != nullptr
-							&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
 					}
-				),
+					else
+					{
+						if (entity1 == entity2)
+						{
+							return false;
+						}
+					}
+
+					const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
+
+					return body2 != nullptr
+						&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
+				},
 				BVH::DefaultShouldReturnFunction<false>{});
 		}
 	}
