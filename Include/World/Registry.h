@@ -101,12 +101,28 @@ namespace CE
 		MetaAny TryGet(TypeId componentClassTypeId, entt::entity entity);
 
 		template<typename Type>
+		Type* TryGetAny();
+
+		template<typename Type>
+		const Type* TryGetAny() const;
+
+		MetaAny TryGetAny(TypeId componentClassTypeId);
+
+		template<typename Type>
 		Type& Get(entt::entity entity);
 
 		template<typename Type>
 		const Type& Get(entt::entity entity) const;
 
 		MetaAny Get(TypeId componentClassTypeId, entt::entity entity);
+
+		template<typename Type>
+		Type& GetAny();
+
+		template<typename Type>
+		const Type& GetAny() const;
+
+		MetaAny GetAny(TypeId componentClassTypeId);
 
 		template<typename Type>
 		bool HasComponent(entt::entity entity) const;
@@ -354,6 +370,33 @@ const Type* CE::Registry::TryGet(entt::entity entity) const
 }
 
 template <typename Type>
+Type* CE::Registry::TryGetAny()
+{
+	auto& storage = Storage<Type>();
+
+	if (!storage.empty())
+	{
+		return &*storage.begin();
+	}
+
+	return nullptr;
+}
+
+template <typename Type>
+const Type* CE::Registry::TryGetAny() const
+{
+	const auto* storage = Storage<Type>();
+
+	if (storage != nullptr
+		&& !storage->empty())
+	{
+		return &*storage->begin();
+	}
+
+	return nullptr;
+}
+
+template <typename Type>
 Type& CE::Registry::Get(entt::entity entity)
 {
 	ASSERT(TryGet<Type>(entity));
@@ -365,6 +408,23 @@ const Type& CE::Registry::Get(entt::entity entity) const
 {
 	ASSERT(TryGet<Type>(entity));
 	return mRegistry.get<Type>(entity);
+}
+
+template <typename Type>
+Type& CE::Registry::GetAny()
+{
+	auto& storage = Storage<Type>();
+	ASSERT(!storage.empty());
+	return *storage.begin();
+}
+
+template <typename Type>
+const Type& CE::Registry::GetAny() const
+{
+	auto* storage = Storage<Type>();
+	ASSERT(storage != nullptr);
+	ASSERT(!storage->empty());
+	return *storage->begin();
 }
 
 template<typename It>

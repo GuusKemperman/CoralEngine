@@ -507,11 +507,33 @@ CE::MetaAny CE::Registry::TryGet(const TypeId componentClassTypeId, entt::entity
 	return MetaAny{ MakeTypeInfo<void>(), nullptr };
 }
 
+CE::MetaAny CE::Registry::TryGetAny(TypeId componentClassTypeId)
+{
+	auto* storage = Storage(componentClassTypeId);
+
+	if (storage != nullptr
+		&& storage->begin() != storage->end())
+	{
+		ASSERT(storage->contains(*storage->begin()));
+		return MetaAny{ storage->type().ToGuusTypeInfo<TypeInfo>(), storage->value(*storage->begin()) };
+	}
+	return MetaAny{ MakeTypeInfo<void>(), nullptr };
+}
+
 CE::MetaAny CE::Registry::Get(const TypeId componentClassTypeId, entt::entity entity)
 {
 	const auto storage = Storage(componentClassTypeId);
 	ASSERT(storage != nullptr && storage->contains(entity));
 	return MetaAny{ storage->type().ToGuusTypeInfo<TypeInfo>(), storage->value(entity) };
+}
+
+CE::MetaAny CE::Registry::GetAny(TypeId componentClassTypeId)
+{
+	auto* storage = Storage(componentClassTypeId);
+	ASSERT(storage != nullptr);
+	ASSERT(storage->begin() != storage->end());
+	ASSERT(storage->contains(*storage->begin()));
+	return MetaAny{ storage->type().ToGuusTypeInfo<TypeInfo>(), storage->value(*storage->begin()) };
 }
 
 bool CE::Registry::HasComponent(TypeId componentClassTypeId, entt::entity entity) const
