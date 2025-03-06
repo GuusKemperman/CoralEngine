@@ -205,7 +205,7 @@ void CE::BVH::Subdivide(Node& node)
 {
 	const SplitPoint splitPoint = DetermineSplitPos(node);
 
-	static std::vector<entt::entity> childrenIds[2]{};
+	thread_local std::vector<entt::entity> childrenIds[2]{};
 	childrenIds[0].clear();
 	childrenIds[1].clear();
 	childrenIds[0].reserve(node.mTotalNumOfObjects);
@@ -228,7 +228,7 @@ void CE::BVH::Subdivide(Node& node)
 	}
 
 	uint32 indexOfId = node.mStartIndex;
-	static bool edgeCaseFlipper{};
+	thread_local bool edgeCaseFlipper{};
 
 	for (uint32 i = 0; i < node.mNumOfAABBS; i++, indexOfId++)
 	{
