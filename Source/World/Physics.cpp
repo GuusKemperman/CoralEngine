@@ -12,6 +12,9 @@
 #include "Meta/MetaProps.h"
 #include "Meta/ReflectedTypes/STD/ReflectVector.h"
 #include "Utilities/BVH.h"
+#include "Utilities/DrawDebugHelpers.h"
+#include "Utilities/Overload.h"
+#include "World/EventManager.h"
 
 CE::Physics::Physics(World& world) :
 	mWorld(world),
@@ -57,20 +60,106 @@ std::vector<entt::entity> CE::Physics::FindAllWithinShapeImpl(const T& shape, co
 	return ret;
 }
 
+void CE::Physics::Update(float deltaTime)
+{
+	if (GetWorld().HasBegunPlay()
+		&& !GetWorld().IsPaused())
+	{
+		ApplyVelocities(deltaTime);
+	}
+
+	SyncWorldToPhysics();
+	UpdateBVHs();
+
+	if (GetWorld().HasBegunPlay()
+		&& !GetWorld().IsPaused())
+	{
+		ResolveCollisions();
+	}
+}
+
+void CE::Physics::ApplyVelocities(float deltaTime)
+{
+	Registry& reg = GetWorld().GetRegistry();
+
+	const auto view = reg.View<PhysicsBody2DComponent, TransformComponent>();
+	for (auto [entity, body, transform] : view.each())
+	{
+		if (body.mIsAffectedByForces)
+		{
+			body.mLinearVelocity += body.mForce * body.mInvMass * deltaTime;
+		}
+
+		if (body.mLinearVelocity == glm::vec2{})
+		{
+			continue;
+		}
+
+		transform.SetWorldPosition(To2D(transform.GetWorldPosition()) + body.mLinearVelocity * deltaTime);
+	}
+}
+
+void CE::Physics::SyncWorldToPhysics()
+{
+	auto updateColliderType = [this]<typename Collider, typename TransformedCollider>()
+	{
+		Registry& reg = GetWorld().GetRegistry();
+		const auto collidersWithoutTransformed = reg.View<const PhysicsBody2DComponent,
+			const Collider>(entt::exclude_t<TransformedCollider>{});
+
+		for (const entt::entity entity : collidersWithoutTransformed)
+		{
+			const PhysicsBody2DComponent& body = collidersWithoutTransformed.template get<PhysicsBody2DComponent>(entity);
+
+			GetBVHs()[static_cast<int>(body.mRules.mLayer)].MakeDirty();
+
+			if (!IsCollisionLayerStatic(body.mRules.mLayer))
+			{
+				reg.AddComponent<TransformedCollider>(entity);
+				continue;
+			}
+
+			const TransformComponent* transform = reg.TryGet<const TransformComponent>(entity);
+
+			if (transform == nullptr)
+			{
+				continue;
+			}
+
+			const Collider& collider = collidersWithoutTransformed.template get<Collider>(entity);
+			reg.AddComponent<TransformedCollider>(entity, collider.CreateTransformedCollider(*transform));
+		}
+
+		const auto transformedWithoutColliders = reg.View<TransformedCollider>(entt::exclude_t<Collider>{});
+		reg.RemoveComponents<TransformedCollider>(transformedWithoutColliders.begin(), transformedWithoutColliders.end());
+
+		const auto colliderView = reg.View<PhysicsBody2DComponent, TransformComponent, Collider, TransformedCollider>();
+
+		for (auto [entity, body, transform, collider, transformedCollider] : colliderView.each())
+		{
+			if (IsCollisionLayerStatic(body.mRules.mLayer)
+				&& GetWorld().HasBegunPlay()) // We still update static colliders in the editor
+			{
+				continue;
+			}
+
+			transformedCollider = collider.CreateTransformedCollider(transform);
+		}
+	};
+
+	updateColliderType.operator()<DiskColliderComponent, TransformedDiskColliderComponent>();
+	updateColliderType.operator()<AABBColliderComponent, TransformedAABBColliderComponent>();
+	updateColliderType.operator()<PolygonColliderComponent, TransformedPolygonColliderComponent>();
+}
+
 void CE::Physics::UpdateBVHs(UpdateBVHConfig config)
 {
-	std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> wereItemsAddedToLayer{};
-
-	UpdateTransformedColliders<DiskColliderComponent, TransformedDiskColliderComponent>(mWorld, wereItemsAddedToLayer);
-	UpdateTransformedColliders<AABBColliderComponent, TransformedAABBColliderComponent>(mWorld, wereItemsAddedToLayer);
-	UpdateTransformedColliders<PolygonColliderComponent, TransformedPolygonColliderComponent>(mWorld, wereItemsAddedToLayer);
-
 	for (int i = 0; i < static_cast<int>(CollisionLayer::NUM_OF_LAYERS); i++)
 	{
 		BVH& bvh = mWorld.get().GetPhysics().GetBVHs()[i];
 
 		if (config.mForceRebuild
-			|| wereItemsAddedToLayer[i]
+			|| bvh.IsDirty()
 			|| (!config.mOnlyRebuildForNewColliders && bvh.GetAmountRefitted() > config.mMaxAmountRefitBeforeRebuilding))
 		{
 			bvh.Build();
@@ -82,48 +171,216 @@ void CE::Physics::UpdateBVHs(UpdateBVHConfig config)
 	}
 }
 
-template <typename Collider, typename TransformedCollider>
-void CE::Physics::UpdateTransformedColliders(World& world, std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>& wereItemsAddedToLayer)
+void CE::Physics::ResolveCollisions()
 {
-	Registry& reg = world.GetRegistry();
-	const auto collidersWithoutTransformed = reg.View<const PhysicsBody2DComponent, const Collider>(entt::exclude_t<TransformedCollider>{});
+	Registry& reg = GetWorld().GetRegistry();
 
-	for (const entt::entity entity : collidersWithoutTransformed)
+	thread_local std::vector<std::pair<entt::entity, entt::entity>> diskDiskCollisions{};
+	thread_local std::vector<std::pair<entt::entity, entt::entity>> diskAABBCollisions{};
+	thread_local std::vector<std::pair<entt::entity, entt::entity>> diskPolygonCollisions{};
+
+	diskDiskCollisions.clear();
+	diskAABBCollisions.clear();
+	diskPolygonCollisions.clear();
+
+	// prev collisions are stored as a member function,
+	// but this is made static so we can reuse the same
+	// buffer every frame, even if we have multiple worlds.
+	thread_local std::vector<CollisionData> currentCollisions{};
+	currentCollisions.clear();
+
+	const auto viewDisk = reg.View<PhysicsBody2DComponent, TransformedDiskColliderComponent>();
+	const auto viewPolygon = reg.View<PhysicsBody2DComponent, TransformedPolygonColliderComponent>();
+	const auto viewAABB = reg.View<PhysicsBody2DComponent, TransformedAABBColliderComponent>();
+
+	const BVHS& bvhs = GetBVHs();
+
+	// In the first pass we collect all the collision pairs,
+	// but we don't move anything to prevent the BVH from being
+	// invalidated.
+	for (entt::entity entity1 : viewDisk)
 	{
-		const PhysicsBody2DComponent& body = collidersWithoutTransformed.template get<PhysicsBody2DComponent>(entity);
-		wereItemsAddedToLayer[static_cast<int>(body.mRules.mLayer)] = true;
+		const auto [body1, disk1] = viewDisk.get<PhysicsBody2DComponent, TransformedDiskColliderComponent>(entity1);
 
-		if (!IsCollisionLayerStatic(body.mRules.mLayer))
+		for (const BVH& bvh : bvhs)
 		{
-			reg.AddComponent<TransformedCollider>(entity);
-			continue;
+			if (body1.mRules.mResponses[static_cast<int>(bvh.GetLayer())] == CollisionResponse::Ignore)
+			{
+				continue;
+			}
+
+			bvh.Query(
+				disk1,
+				Overload{
+					[&](const TransformedDiskColliderComponent&, entt::entity entity2)
+					{
+						diskDiskCollisions.emplace_back(entity1, entity2);
+					},
+					[&](const TransformedAABBColliderComponent&, entt::entity entity2)
+					{
+						diskAABBCollisions.emplace_back(entity1, entity2);
+					},
+					[&](const TransformedPolygonColliderComponent&, entt::entity entity2)
+					{
+						diskPolygonCollisions.emplace_back(entity1, entity2);
+					}
+				},
+				[&]<typename T>(entt::entity entity2)
+			{
+				if constexpr (std::is_same_v<T, TransformedDiskColliderComponent>)
+				{
+					if (entity1 >= entity2)
+					{
+						return false;
+					}
+				}
+				else
+				{
+					if (entity1 == entity2)
+					{
+						return false;
+					}
+				}
+
+				const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
+
+				return body2 != nullptr
+					&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
+			},
+				BVH::DefaultShouldReturnFunction<false>{});
 		}
-
-		const TransformComponent* transform = reg.TryGet<const TransformComponent>(entity);
-
-		if (transform == nullptr)
-		{
-			continue;
-		}
-
-		const Collider& collider = collidersWithoutTransformed.template get<Collider>(entity);
-		reg.AddComponent<TransformedCollider>(entity, collider.CreateTransformedCollider(*transform));
 	}
 
-	const auto transformedWithoutColliders = reg.View<TransformedCollider>(entt::exclude_t<Collider>{});
-	reg.RemoveComponents<TransformedCollider>(transformedWithoutColliders.begin(), transformedWithoutColliders.end());
-
-	const auto colliderView = reg.View<PhysicsBody2DComponent, TransformComponent, Collider, TransformedCollider>();
-
-	for (auto [entity, body, transform, collider, transformedCollider] : colliderView.each())
+	auto resolveCollision = [&]<typename Shape2>(auto& collisionPairs, auto& view2)
 	{
-		if (IsCollisionLayerStatic(body.mRules.mLayer)
-			&& world.HasBegunPlay()) // We still update static colliders in the editor
+		CollisionData collision{};
+
+		for (auto [entity1, entity2] : collisionPairs)
 		{
-			continue;
+			auto [body1, transformedDiskCollider1] = viewDisk.get<PhysicsBody2DComponent, TransformedDiskColliderComponent>(entity1);
+			auto [body2, collider2] = view2.template get<PhysicsBody2DComponent, Shape2>(entity2);
+
+			if (!CollisionCheck(transformedDiskCollider1, collider2, collision))
+			{
+				continue;
+			}
+
+			RegisterCollision(currentCollisions, collision, entity1, entity2);
+			const CollisionResponse response = body1.mRules.GetResponse(body2.mRules);
+
+			if (response != CollisionResponse::Blocking)
+			{
+				continue;
+			}
+
+			if (body1.mIsAffectedByForces)
+			{
+				auto [newEntity1Pos, entity1Impulse] = ResolveDiskCollision(collision, body1, body2, transformedDiskCollider1.mCentre);
+				body1.ApplyImpulse(entity1Impulse);
+				transformedDiskCollider1.mCentre = newEntity1Pos;
+			}
+
+			if constexpr (std::is_same_v<Shape2, TransformedDiskColliderComponent>)
+			{
+				if (body2.mIsAffectedByForces)
+				{
+					auto [newEntity2Pos, entity2Impulse] = ResolveDiskCollision(collision, body2, body1, collider2.mCentre, -1.0f);
+					body2.ApplyImpulse(entity2Impulse);
+					collider2.mCentre = newEntity2Pos;
+				}
+			}
+		}
+	};
+
+	resolveCollision.operator()<TransformedDiskColliderComponent>(diskDiskCollisions, viewDisk);
+	resolveCollision.operator()<TransformedAABBColliderComponent>(diskAABBCollisions, viewAABB);
+	resolveCollision.operator()<TransformedPolygonColliderComponent>(diskPolygonCollisions, viewPolygon);
+
+	thread_local std::vector<std::reference_wrapper<const CollisionData>> enters{};
+	thread_local std::vector<std::reference_wrapper<const CollisionData>> exits{};
+	enters.clear();
+	exits.clear();
+
+	for (const CollisionData& currFrame : currentCollisions)
+	{
+		const bool wasCollidingPrevFrame = std::any_of(mPreviousCollisions.begin(), mPreviousCollisions.end(),
+			[&currFrame](const CollisionData& prevFrame)
+			{
+				return currFrame.mEntity1 == prevFrame.mEntity1
+					&& currFrame.mEntity2 == prevFrame.mEntity2;
+			});
+
+		if (!wasCollidingPrevFrame)
+		{
+			enters.emplace_back(currFrame);
+		}
+	}
+
+	for (const CollisionData& prevFrame : mPreviousCollisions)
+	{
+		const bool isCollidingNow = std::any_of(currentCollisions.begin(), currentCollisions.end(),
+			[&prevFrame](const CollisionData& currFrame)
+			{
+				return currFrame.mEntity1 == prevFrame.mEntity1
+					&& currFrame.mEntity2 == prevFrame.mEntity2;
+			});
+
+		if (!isCollidingNow)
+		{
+			exits.emplace_back(prevFrame);
+		}
+	}
+
+	auto view = GetWorld().GetRegistry().View<TransformedDiskColliderComponent, TransformComponent>();
+
+	for (auto [entity, disk, transform] : view.each())
+	{
+		transform.SetWorldPosition(disk.mCentre);
+	}
+
+	// Call events
+	CallEvents(enters, sOnCollisionEntry);
+	CallEvents(currentCollisions, sOnCollisionStay);
+	CallEvents(exits, sOnCollisionExit);
+
+	std::swap(mPreviousCollisions, currentCollisions);
+}
+
+void CE::Physics::DebugDraw(RenderCommandQueue& commandQueue) const
+{
+	const Registry& reg = GetWorld().GetRegistry();
+
+	if (IsDebugDrawCategoryVisible(DebugDraw::Physics))
+	{
+		const auto diskView = reg.View<const TransformedDiskColliderComponent, const TransformComponent>();
+		constexpr glm::vec4 color = { 1.f, 0.f, 0.f, 1.f };
+		for (auto [entity, disk, transform] : diskView.each())
+		{
+			AddDebugCircle(commandQueue, DebugDraw::Physics, To3D(disk.mCentre), disk.mRadius + 0.00001f, color);
 		}
 
-		transformedCollider = collider.CreateTransformedCollider(transform);
+		const auto polyView = reg.View<const TransformedPolygonColliderComponent, const TransformComponent>();
+		for (auto [entity, poly, transform] : polyView.each())
+		{
+			const size_t pointCount = poly.mPoints.size();
+			for (size_t i = 0; i < pointCount; ++i)
+			{
+				const glm::vec2 from = poly.mPoints[i];
+				const glm::vec2 to = poly.mPoints[(i + 1) % pointCount];
+				AddDebugLine(commandQueue, DebugDraw::Physics, To3D(from), To3D(to), color);
+			}
+		}
+
+		const auto aabbView = reg.View<const TransformedAABBColliderComponent, const TransformComponent>();
+		for (auto [entity, aabb, transform] : aabbView.each())
+		{
+			AddDebugBox(commandQueue, DebugDraw::Physics, To3D(aabb.GetCentre()), To3D(aabb.GetSize() * .5f), color);
+		}
+	}
+
+	for (const BVH& bvh : GetBVHs())
+	{
+		bvh.DebugDraw(commandQueue);
 	}
 }
 
@@ -179,6 +436,180 @@ std::vector<entt::entity> CE::Physics::FindAllWithinShape(const TransformedAABB&
 std::vector<entt::entity> CE::Physics::FindAllWithinShape(const TransformedPolygon& shape, const CollisionRules& filter) const
 {
 	return FindAllWithinShapeImpl(shape, filter);
+}
+
+
+CE::Physics::ResolvedCollision CE::Physics::ResolveDiskCollision(const CollisionData& collisionToResolve,
+	const PhysicsBody2DComponent& bodyToMove,
+	const PhysicsBody2DComponent& otherBody,
+	const glm::vec2& bodyPosition,
+	float multiplicant)
+{
+	// displace the objects to resolve overlap
+	const float totalInvMass = bodyToMove.mInvMass + otherBody.mInvMass;
+	const glm::vec2 dist = (collisionToResolve.mDepth / totalInvMass) * collisionToResolve.mNormalFor1;
+
+	const glm::vec2 resolvedPos = bodyPosition + multiplicant * dist * bodyToMove.mInvMass;
+
+	// compute and apply impulses
+	const float dotProduct = dot(bodyToMove.mLinearVelocity - otherBody.mLinearVelocity, collisionToResolve.mNormalFor1);
+
+	glm::vec2 impulse{};
+
+	if (dotProduct <= 0)
+	{
+		const float restitution = bodyToMove.mRestitution + otherBody.mRestitution;
+		const float j = -(1.0f + restitution * 0.5f) * dotProduct / (1.0f / bodyToMove.mInvMass + 1.0f / otherBody.mInvMass);
+		impulse = multiplicant * j * collisionToResolve.mNormalFor1;
+	}
+
+	return { resolvedPos, impulse };
+}
+
+void CE::Physics::RegisterCollision(std::vector<CollisionData>& currentCollisions,
+	CollisionData& collision, entt::entity entity1, entt::entity entity2)
+{
+	collision.mEntity1 = entity1;
+	collision.mEntity2 = entity2;
+	currentCollisions.emplace_back(collision);
+}
+
+static constexpr glm::vec2 sDefaultNormal = glm::vec2{ 0.707107f };
+
+bool CE::Physics::CollisionCheck(TransformedDiskColliderComponent disk1, TransformedDiskColliderComponent disk2, CollisionData& result)
+{
+	// check for overlap
+	const glm::vec2 diff(disk1.mCentre - disk2.mCentre);
+	const float l2 = length2(diff);
+	const float r = disk1.mRadius + disk2.mRadius;
+
+	if (l2 > r * r)
+	{
+		return false;
+	}
+
+	const float l = sqrt(l2);
+
+	// compute collision details
+	result.mDepth = r - l;
+
+	if (l != 0.0f)
+	{
+		result.mNormalFor1 = diff / l;
+	}
+	else
+	{
+		result.mNormalFor1 = sDefaultNormal;
+	}
+
+	result.mContactPoint = disk2.mCentre + result.mNormalFor1 * disk2.mRadius;
+
+	return true;
+}
+
+bool CE::Physics::CollisionCheck(TransformedDiskColliderComponent disk, const TransformedPolygonColliderComponent& polygon, CollisionData& result)
+{
+	if (!AreOverlapping(disk, polygon.mBoundingBox))
+	{
+		return false;
+	}
+
+	glm::vec2 nearest = GetNearestPointOnPolygonBoundary(disk.mCentre, polygon.mPoints);
+	const glm::vec2 diff(disk.mCentre - nearest);
+	const float l2 = length2(diff);
+
+	if (AreOverlapping(disk.mCentre, polygon))
+	{
+		const float l = sqrt(l2);
+
+		if (l != 0.0f)
+		{
+			result.mNormalFor1 = -diff / l;
+		}
+		else
+		{
+			result.mNormalFor1 = sDefaultNormal;
+		}
+
+		result.mDepth = l + disk.mRadius;
+		return true;
+	}
+
+	if (l2 > disk.mRadius * disk.mRadius) return false;
+
+	// compute collision details
+	const float l = sqrt(l2);
+
+	if (l != 0.0f)
+	{
+		result.mNormalFor1 = diff / l;
+	}
+	else
+	{
+		result.mNormalFor1 = sDefaultNormal;
+	}
+
+	result.mDepth = disk.mRadius - l;
+	result.mContactPoint = nearest;
+	return true;
+}
+
+bool CE::Physics::CollisionCheck(TransformedDiskColliderComponent disk, TransformedAABBColliderComponent aabb, CollisionData& result)
+{
+	if (!AreOverlapping(disk, aabb))
+	{
+		return false;
+	}
+
+	return CollisionCheck(disk, aabb.GetAsPolygon(), result);
+}
+
+template <typename CollisionDataContainer>
+void CE::Physics::CallEvents(const CollisionDataContainer& collisions,
+	const EventBase& eventBase)
+{
+	if (collisions.empty())
+	{
+		return;
+	}
+
+	Registry& reg = GetWorld().GetRegistry();
+
+	for (const BoundEvent& event : GetWorld().GetEventManager().GetBoundEvents(eventBase))
+	{
+		entt::sparse_set* const storage = reg.Storage(event.mType.get().GetTypeId());
+
+		if (storage == nullptr)
+		{
+			continue;
+		}
+
+		for (const CollisionData& collision : collisions)
+		{
+			CallEvent(event, *storage, collision.mEntity1, collision.mEntity2, collision.mDepth, collision.mNormalFor1, collision.mContactPoint);
+			CallEvent(event, *storage, collision.mEntity2, collision.mEntity1, collision.mDepth, -collision.mNormalFor1, collision.mContactPoint);
+		}
+	}
+}
+
+void CE::Physics::CallEvent(const BoundEvent& event, entt::sparse_set& storage,
+	entt::entity owner, entt::entity otherEntity, float depth, glm::vec2 normal, glm::vec2 contactPoint)
+{
+	// Tombstone check, is needed
+	if (!storage.contains(owner))
+	{
+		return;
+	}
+
+	if (event.mIsStatic)
+	{
+		event.mFunc.get().InvokeUncheckedUnpacked(GetWorld(), owner, otherEntity, depth, normal, contactPoint);
+	}
+	else
+	{
+		MetaAny component{ event.mType, storage.value(owner), false };
+		event.mFunc.get().InvokeUncheckedUnpacked(component, GetWorld(), owner, otherEntity, depth, normal, contactPoint);
+	}
 }
 
 CE::MetaType CE::Physics::Reflect()

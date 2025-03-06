@@ -18,6 +18,9 @@ namespace CE
 		void Build();
 		void Refit();
 
+		void MakeDirty() { mIsDirty = true; }
+		bool IsDirty() const { return mIsDirty; }
+
 		template<bool AlwaysReturnValue>
 		struct DefaultShouldCheckFunction
 		{
@@ -45,7 +48,7 @@ namespace CE
 			const auto& shouldReturn = DefaultShouldReturnFunction<true>{},
 			CallbackAdditionalArgs&&... args) const;
 
-		void DebugDraw() const;
+		void DebugDraw(RenderCommandQueue& commandQueue) const;
 
 		CollisionLayer GetLayer() const { return mLayer; }
 
@@ -106,12 +109,13 @@ namespace CE
 		std::vector<entt::entity> mIds{};
 		std::vector<Node> mNodes{};
 
-		bool mEmpty = true;
-		float mAmountRefitted{};
-
 		entt::storage_for_t<const TransformedAABBColliderComponent>& mAABBsStorage;
 		entt::storage_for_t<const TransformedDiskColliderComponent>& mDiskssStorage;
 		entt::storage_for_t<const TransformedPolygonColliderComponent>& mPolysStorage;
+
+		bool mEmpty = true;
+		bool mIsDirty{};
+		float mAmountRefitted{};
 	};
 
 	template<typename ... CallbackAdditionalArgs>

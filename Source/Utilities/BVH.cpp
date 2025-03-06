@@ -28,6 +28,7 @@ void CE::BVH::Build()
 	mNodes.clear();
 	mIds.clear();
 	mAmountRefitted = 0.0f;
+	mIsDirty = false;
 
 	const Registry& reg = mPhysics->GetWorld().GetRegistry();
 
@@ -121,7 +122,7 @@ void CE::BVH::Refit()
 	}
 }
 
-void CE::BVH::DebugDraw() const
+void CE::BVH::DebugDraw(RenderCommandQueue& commandQueue) const
 {
 	if (mEmpty)
 	{
@@ -138,7 +139,7 @@ void CE::BVH::DebugDraw() const
 		const Node& node = mNodes[i];
 		if (node.mTotalNumOfObjects == 0)
 		{
-			AddDebugBox(mPhysics->GetWorld().GetRenderCommandQueue(),
+			AddDebugBox(commandQueue,
 				DebugDraw::AccelStructs,
 				To3D(node.mBoundingBox.GetCentre()),
 				To3D(node.mBoundingBox.GetSize() * .5f), glm::vec4{ 0.0f, 1.0f, 1.0f, 1.0f });

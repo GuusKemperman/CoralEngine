@@ -1,30 +1,32 @@
 #include "Precomp.h"
 
-#include "Systems/PhysicsSystem.h"
 #include "Core/UnitTests.h"
+#include "World/Physics.h"
 
-using namespace CE;
-
-struct Physics2DUnitTestAccess
+namespace CE
 {
-	static bool CollisionCheckDiskDiskUnitTest(glm::vec2 center1, float radius1, glm::vec2 center2, float radius2)
+	struct Physics2DUnitTestAccess
 	{
-		PhysicsSystem::CollisionData collision;
-		return PhysicsSystem::CollisionCheckDiskDisk({ center1, radius1 }, { center2, radius2 }, collision);
-	}
-
-	static bool CollisionCheckDiskPolygonUnitTest(glm::vec2 diskCenter, float diskRadius, glm::vec2 polygonPos, std::vector<glm::vec2> polygonPoints)
-	{
-		for (glm::vec2& p : polygonPoints)
+		static bool CollisionCheckDiskDiskUnitTest(glm::vec2 center1, float radius1, glm::vec2 center2, float radius2)
 		{
-			p += polygonPos;
+			Physics::CollisionData collision;
+			return Physics::CollisionCheck(TransformedDisk{ center1, radius1 }, TransformedDisk{ center2, radius2 }, collision);
 		}
 
-		PhysicsSystem::CollisionData collision;
-		return PhysicsSystem::CollisionCheckDiskPolygon({ diskCenter, diskRadius }, { std::move(polygonPoints) }, collision);
+		static bool CollisionCheckDiskPolygonUnitTest(glm::vec2 diskCenter, float diskRadius, glm::vec2 polygonPos, std::vector<glm::vec2> polygonPoints)
+		{
+			for (glm::vec2& p : polygonPoints)
+			{
+				p += polygonPos;
+			}
 
-	}
-};
+			Physics::CollisionData collision;
+			return Physics::CollisionCheck(TransformedDisk{ diskCenter, diskRadius }, TransformedPolygon{ std::move(polygonPoints) }, collision);
+		}
+	};
+}
+
+using namespace CE;
 
 UNIT_TEST(PhysicsSystem, CollisionCheckDiskDisk)
 {

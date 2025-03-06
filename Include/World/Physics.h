@@ -27,14 +27,31 @@ namespace CE
 		Physics& operator=(Physics&&) = delete;
 		Physics& operator=(const Physics&) = delete;
 
+		using BVHS = std::array<BVH, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>;
+
+		BVHS& GetBVHs() { return mBVHs; }
+		const BVHS& GetBVHs() const { return mBVHs; }
+
+		World& GetWorld() { return mWorld; }
+		const World& GetWorld() const { return mWorld; }
+
+		void Update(float deltaTime);
+
+		void ApplyVelocities(float deltaTime);
+
+		void SyncWorldToPhysics();
+
 		struct UpdateBVHConfig
 		{
 			bool mForceRebuild{};
 			bool mOnlyRebuildForNewColliders{};
 			float mMaxAmountRefitBeforeRebuilding = 10'000.0f;
 		};
-
 		void UpdateBVHs(UpdateBVHConfig config = {});
+
+		void ResolveCollisions();
+
+		void DebugDraw(RenderCommandQueue& commandQueue) const;
 
 		struct LineTraceResult
 		{
@@ -63,28 +80,65 @@ namespace CE
 			const auto& shouldReturn = BVH::DefaultShouldReturnFunction<true>{},
 			CallbackAdditionalArgs&&... args) const;
 
-		using BVHS = std::array<BVH, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>;
-
-		BVHS& GetBVHs() { return mBVHs; }
-		const BVHS& GetBVHs() const { return mBVHs; }
-
-		World& GetWorld() { return mWorld; }
-		const World& GetWorld() const { return mWorld; }
-
 	private:
 		template<typename T>
 		std::vector<entt::entity> FindAllWithinShapeImpl(const T& shape, const CollisionRules& filter) const;
-
-		template<typename Collider, typename TransformedCollider>
-		void UpdateTransformedColliders(World& world, std::array<bool, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>& wereItemsAddedToLayer);
 
 		friend ReflectAccess;
 		static MetaType Reflect();
 		REFLECT_AT_START_UP(Physics);
 
 		std::reference_wrapper<World> mWorld;
-
 		BVHS mBVHs;
+
+		struct CollisionData
+		{
+			entt::entity mEntity1{};
+			entt::entity mEntity2{};
+
+			/// The penetration depth of the two physics bodies
+			/// (before they were displaced to resolve overlap).
+			float mDepth{};
+
+			/// The normal vector on the point of contact, pointing away from entity2's physics body.
+			glm::vec2 mNormalFor1{};
+
+			/// The approximate point of contact of the collision, in world coordinates.
+			glm::vec2 mContactPoint{};
+		};
+		std::vector<CollisionData> mPreviousCollisions{};
+
+		struct ResolvedCollision
+		{
+			glm::vec2 mResolvedPosition{};
+			glm::vec2 mImpulse{};
+		};
+		static ResolvedCollision ResolveDiskCollision(const CollisionData& collisionToResolve,
+			const PhysicsBody2DComponent& bodyToMove,
+			const PhysicsBody2DComponent& otherBody,
+			const glm::vec2& bodyPosition,
+			float multiplicant = 1.0f);
+
+		void RegisterCollision(std::vector<CollisionData>& currentCollisions,
+			CollisionData& collision, entt::entity entity1, entt::entity entity2);
+
+		static bool CollisionCheck(TransformedDiskColliderComponent disk1, TransformedDiskColliderComponent disk2, CollisionData& result);
+
+		static bool CollisionCheck(TransformedDiskColliderComponent disk, const TransformedPolygonColliderComponent& polygon, CollisionData& result);
+
+		static bool CollisionCheck(TransformedDiskColliderComponent disk, TransformedAABBColliderComponent aabb, CollisionData& result);
+
+		template<typename CollisionDataContainer>
+		void CallEvents(const CollisionDataContainer& collisions, const EventBase& eventBase);
+
+		void CallEvent(const BoundEvent& event, entt::sparse_set& storage, 
+			entt::entity owner, 
+			entt::entity otherEntity, 
+			float depth, 
+			glm::vec2 normal, 
+			glm::vec2 contactPoint);
+
+		friend struct Physics2DUnitTestAccess;
 	};
 }
 
