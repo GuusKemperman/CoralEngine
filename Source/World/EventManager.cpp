@@ -53,9 +53,13 @@ void CE::EventManager::InvokeEventForAllComponentsOnEntityImpl(const EventBase& 
 	}
 }
 
-void CE::EventManager::InvokeEventForAllComponentsImpl(const EventBase& eventBase, MetaFunc::DynamicArgs args,
-	std::span<TypeForm> argForms)
+void CE::EventManager::InvokeEventForAllComponentsImpl(const EventBase& eventBase,
+	MetaFunc::DynamicArgs args,
+	std::span<TypeForm> argForms,
+	int8 threadNum)
 {
+	size_t executedNum{};
+
 	for (const BoundEvent& boundEvent : GetBoundEvents(eventBase))
 	{
 		entt::sparse_set* const storage = mWorld.get().GetRegistry().Storage(boundEvent.mType.get().GetTypeId());
@@ -72,6 +76,12 @@ void CE::EventManager::InvokeEventForAllComponentsImpl(const EventBase& eventBas
 
 		for (const entt::entity entity : view)
 		{
+			if (threadNum != -1
+				&& executedNum++ % Internal::sThreadStride != threadNum)
+			{
+				continue;
+			}
+
 			*static_cast<entt::entity*>(args[2].GetData()) = entity;
 
 			if (boundEvent.mIsStatic)
