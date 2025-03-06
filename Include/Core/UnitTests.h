@@ -59,12 +59,18 @@ namespace CE
 	}
 }
 
-#define UNIT_TEST(Category, TestName)																																			\
+#define INIT_DUMMY_VAR(Category, TestName)												\
+[[maybe_unused]] inline bool CONCAT(__sTestDummyVariable, CONCAT(Category, TestName)) = \
+CE::Internal::RegisterUnitTest(#Category,												\
+	#TestName,																			\
+	&(TestName));	
+
+#define UNIT_TEST_DECLARATION(Category, TestName)	\
+CE::UnitTest::Result TestName();					\
+INIT_DUMMY_VAR(Category, TestName)					\
+
+#define UNIT_TEST(Category, TestName)		\
+UNIT_TEST_DECLARATION(Category, TestName)	\
 CE::UnitTest::Result TestName()
 
-#define UNIT_TEST_DECLARATION(Category, TestName)																																			\
-CE::UnitTest::Result TestName();																																		\
-[[maybe_unused]] static inline const bool CONCAT(__sTestDummyVariable, CONCAT(Category, TestName)) = CE::Internal::RegisterUnitTest(#Category, #TestName, &(TestName));		\
-
-#define TEST_ASSERT(Condition) if (!(Condition)) { LOG(UnitTests, Error, "{} evaluated to false", #Condition); return CE::UnitTest::Failure; }; 
-
+#define TEST_ASSERT(Condition) if (!(Condition)) { LOG(UnitTests, Error, "{} evaluated to false", #Condition); return CE::UnitTest::Failure; }
