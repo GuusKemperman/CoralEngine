@@ -251,6 +251,14 @@ void CE::Physics::ResolveCollisions()
 		}
 	}
 
+	struct CollisionResolvement
+	{
+		std::reference_wrapper<TransformedDiskColliderComponent> mDisk;
+		glm::vec2 mDelta{};
+	};
+	thread_local std::vector<CollisionResolvement> collisionResolvements{};
+	collisionResolvements.clear();
+
 	auto resolveCollision = [&]<typename Shape2>(auto& collisionPairs, auto& view2)
 	{
 		CollisionData collision{};
@@ -275,18 +283,16 @@ void CE::Physics::ResolveCollisions()
 
 			if (body1.mIsAffectedByForces)
 			{
-				auto [newEntity1Pos, entity1Impulse] = ResolveDiskCollision(collision, body1, body2, transformedDiskCollider1.mCentre);
-				body1.ApplyImpulse(entity1Impulse);
-				transformedDiskCollider1.mCentre = newEntity1Pos;
+				glm::vec2 delta = ResolveDiskCollision(collision, body1, body2);
+				collisionResolvements.emplace_back(transformedDiskCollider1, delta);
 			}
 
 			if constexpr (std::is_same_v<Shape2, TransformedDiskColliderComponent>)
 			{
 				if (body2.mIsAffectedByForces)
 				{
-					auto [newEntity2Pos, entity2Impulse] = ResolveDiskCollision(collision, body2, body1, collider2.mCentre, -1.0f);
-					body2.ApplyImpulse(entity2Impulse);
-					collider2.mCentre = newEntity2Pos;
+					glm::vec2 delta = ResolveDiskCollision(collision, body2, body1, -1.0f);
+					collisionResolvements.emplace_back(collider2, delta);
 				}
 			}
 		}
@@ -295,6 +301,11 @@ void CE::Physics::ResolveCollisions()
 	resolveCollision.operator()<TransformedDiskColliderComponent>(diskDiskCollisions, viewDisk);
 	resolveCollision.operator()<TransformedAABBColliderComponent>(diskAABBCollisions, viewAABB);
 	resolveCollision.operator()<TransformedPolygonColliderComponent>(diskPolygonCollisions, viewPolygon);
+
+	for (auto [disk, delta] : collisionResolvements)
+	{
+		disk.get().mCentre += delta;
+	}
 
 	thread_local std::vector<std::reference_wrapper<const CollisionData>> enters{};
 	thread_local std::vector<std::reference_wrapper<const CollisionData>> exits{};
@@ -439,31 +450,16 @@ std::vector<entt::entity> CE::Physics::FindAllWithinShape(const TransformedPolyg
 }
 
 
-CE::Physics::ResolvedCollision CE::Physics::ResolveDiskCollision(const CollisionData& collisionToResolve,
+glm::vec2 CE::Physics::ResolveDiskCollision(const CollisionData& collisionToResolve,
 	const PhysicsBody2DComponent& bodyToMove,
 	const PhysicsBody2DComponent& otherBody,
-	const glm::vec2& bodyPosition,
 	float multiplicant)
 {
 	// displace the objects to resolve overlap
 	const float totalInvMass = bodyToMove.mInvMass + otherBody.mInvMass;
 	const glm::vec2 dist = (collisionToResolve.mDepth / totalInvMass) * collisionToResolve.mNormalFor1;
 
-	const glm::vec2 resolvedPos = bodyPosition + multiplicant * dist * bodyToMove.mInvMass;
-
-	// compute and apply impulses
-	const float dotProduct = dot(bodyToMove.mLinearVelocity - otherBody.mLinearVelocity, collisionToResolve.mNormalFor1);
-
-	glm::vec2 impulse{};
-
-	if (dotProduct <= 0)
-	{
-		const float restitution = bodyToMove.mRestitution + otherBody.mRestitution;
-		const float j = -(1.0f + restitution * 0.5f) * dotProduct / (1.0f / bodyToMove.mInvMass + 1.0f / otherBody.mInvMass);
-		impulse = multiplicant * j * collisionToResolve.mNormalFor1;
-	}
-
-	return { resolvedPos, impulse };
+	return multiplicant * dist * bodyToMove.mInvMass;
 }
 
 void CE::Physics::RegisterCollision(std::vector<CollisionData>& currentCollisions,

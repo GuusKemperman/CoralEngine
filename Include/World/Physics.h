@@ -108,15 +108,9 @@ namespace CE
 		};
 		std::vector<CollisionData> mPreviousCollisions{};
 
-		struct ResolvedCollision
-		{
-			glm::vec2 mResolvedPosition{};
-			glm::vec2 mImpulse{};
-		};
-		static ResolvedCollision ResolveDiskCollision(const CollisionData& collisionToResolve,
+		static glm::vec2 ResolveDiskCollision(const CollisionData& collisionToResolve,
 			const PhysicsBody2DComponent& bodyToMove,
 			const PhysicsBody2DComponent& otherBody,
-			const glm::vec2& bodyPosition,
 			float multiplicant = 1.0f);
 
 		void RegisterCollision(std::vector<CollisionData>& currentCollisions,
