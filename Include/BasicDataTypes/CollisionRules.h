@@ -99,7 +99,7 @@ namespace CE
 
 	namespace CollisionPresets
 	{
-		static constexpr CollisionPreset sProjectiles
+		static constexpr CollisionPreset sWorldDynamic
 		{
 			"WorldDynamic",
 			{
@@ -147,7 +147,7 @@ namespace CE
 
 	static constexpr std::array sCollisionPresets
 	{
-		CollisionPresets::sProjectiles,
+		CollisionPresets::sWorldDynamic,
 		CollisionPresets::sStaticObstacles,
 		CollisionPresets::sCharacter,
 	};

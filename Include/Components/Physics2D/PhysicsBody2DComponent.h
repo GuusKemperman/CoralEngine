@@ -79,7 +79,7 @@ namespace CE
 			mInvMass = mass == 0.f ? 0.f : (1.f / mass);
 		}
 
-		CollisionRules mRules = CollisionPresets::sProjectiles.mRules;
+		CollisionRules mRules = CollisionPresets::sWorldDynamic.mRules;
 
 		float mInvMass = 1.f;
 		float mRestitution = 1.f;
