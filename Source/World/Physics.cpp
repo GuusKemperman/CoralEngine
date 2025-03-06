@@ -189,6 +189,8 @@ void CE::Physics::ResolveCollisions()
 	thread_local std::vector<CollisionData> currentCollisions{};
 	currentCollisions.clear();
 
+	const auto& bodyStorage = reg.Storage<PhysicsBody2DComponent>();
+
 	const auto viewDisk = reg.View<PhysicsBody2DComponent, TransformedDiskColliderComponent>();
 	const auto viewPolygon = reg.View<PhysicsBody2DComponent, TransformedPolygonColliderComponent>();
 	const auto viewAABB = reg.View<PhysicsBody2DComponent, TransformedAABBColliderComponent>();
@@ -242,7 +244,7 @@ void CE::Physics::ResolveCollisions()
 					}
 				}
 
-				const PhysicsBody2DComponent* body2 = reg.TryGet<PhysicsBody2DComponent>(entity2);
+				const PhysicsBody2DComponent* body2 = bodyStorage.contains(entity2) ? &bodyStorage.get(entity2) : nullptr;
 
 				return body2 != nullptr
 					&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
