@@ -1,4 +1,6 @@
 #pragma once
+#include "magic_enum/magic_enum.hpp"
+
 #include "Meta/Fwd/MetaTypeFwd.h"
 #include "Utilities/Imgui/ImguiInspect.h"
 

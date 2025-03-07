@@ -1,5 +1,6 @@
 #pragma once
 #include "imnodes/imgui_node_editor.h"
+#include "magic_enum/magic_enum.hpp"
 
 #include "Utilities/Expected.h"
 #include "Utilities/IterableRange.h"

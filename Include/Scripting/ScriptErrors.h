@@ -111,8 +111,7 @@ namespace magic_enum::customize
 #ifdef REMOVE_FROM_SCRIPTS_ENABLED
 		case CE::ScriptError::Type::NodeOutOfDate: return { "NodeOutOfDate - The underlying function now has different parameters or a different return type" };
 #else
-		case CE::ScriptError::Type::NodeOutOfDate: return "NodeOutOfDate in a no-editor build - The underlying function has different parameters or a different return type, and is not refreshed. Resaving the asset will resolve the issue."
-		};
+		case CE::ScriptError::Type::NodeOutOfDate: return { "NodeOutOfDate in a no-editor build - The underlying function has different parameters or a different return type, and is not refreshed. Resaving the asset will resolve the issue." };
 #endif
 		default: return invalid_tag; // Handle any unexpected values
 		}
