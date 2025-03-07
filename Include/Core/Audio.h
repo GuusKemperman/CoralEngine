@@ -44,6 +44,5 @@ template<>
 struct Reflector<CE::Audio::Group>
 {
     static CE::MetaType Reflect();
-    static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(Group, CE::Audio::Group);
 

@@ -4,7 +4,6 @@
 template<typename>
 struct Reflector
 {
-	static constexpr bool sIsSpecialized = false;
 };
 
 namespace CE
@@ -40,10 +39,22 @@ namespace CE
 	namespace Internal
 	{
 		template<typename T>
+		struct HasExternalReflectHelper
+		{
+			template <class TT>
+			static auto test(int) -> decltype(Reflector<TT>::Reflect(), std::true_type());
+
+			template <class> static std::false_type test(...);
+
+			static constexpr bool value = std::is_same<decltype(test<T>(0)), std::true_type>::value;
+		};
+
+
+		template<typename T>
 		static constexpr bool sHasInternalReflect = ReflectAccess::HasReflectFunc<T>();
 
 		template<typename T>
-		static constexpr bool sHasExternalReflect = Reflector<T>::sIsSpecialized;
+		static constexpr bool sHasExternalReflect = HasExternalReflectHelper<T>::value;
 
 		void RegisterReflectFunc(TypeId typeId, MetaType(*reflectFunc)());
 

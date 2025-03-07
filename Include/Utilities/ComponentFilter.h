@@ -18,5 +18,4 @@ template<>
 struct Reflector<CE::ComponentFilter>
 {
 	static CE::MetaType Reflect();
-	static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(EngineComponentFilter, CE::ComponentFilter);

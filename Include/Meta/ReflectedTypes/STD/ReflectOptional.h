@@ -17,5 +17,4 @@ struct Reflector<std::optional<T>>
 
 		return optType;
 	}
-	static constexpr bool sIsSpecialized = true;
 };

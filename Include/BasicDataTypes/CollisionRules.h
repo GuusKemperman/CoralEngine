@@ -186,12 +186,10 @@ template<>
 struct Reflector<CE::CollisionLayer>
 {
 	static CE::MetaType Reflect();
-	static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(collLayer, CE::CollisionLayer);
 
 template<>
 struct Reflector<CE::CollisionRules>
 {
 	static CE::MetaType Reflect();
-	static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(collRules, CE::CollisionRules);

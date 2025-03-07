@@ -95,7 +95,6 @@ namespace ImGui
 
 			Search::EndCombo();
 		}
-		static constexpr bool sIsSpecialized = true;
 	};
 
 	template<typename T>
@@ -127,7 +126,6 @@ namespace ImGui
 				ImGui::TreePop();
 			}
 		}
-		static constexpr bool sIsSpecialized = true;
 	};
 	
 }

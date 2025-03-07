@@ -312,28 +312,24 @@ template<>
 struct Reflector<CE::Input::KeyboardKey>
 {
     static CE::MetaType Reflect();
-    static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(KeyBoardKey, CE::Input::KeyboardKey);
 
 template<>
 struct Reflector<CE::Input::GamepadAxis>
 {
     static CE::MetaType Reflect();
-    static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(GamepadAxis, CE::Input::GamepadAxis);
 
 template<>
 struct Reflector<CE::Input::GamepadButton>
 {
     static CE::MetaType Reflect();
-    static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(GamepadButton, CE::Input::GamepadButton);
 
 template<>
 struct Reflector<CE::Input::MouseButton>
 {
     static CE::MetaType Reflect();
-    static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(MouseButton, CE::Input::MouseButton);
 
 template <>

@@ -33,5 +33,4 @@ template<>
 struct Reflector<CE::TransformedPolygonColliderComponent>
 {
 	static CE::MetaType Reflect();
-	static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(TransformedPolygonColliderComponent, CE::TransformedPolygonColliderComponent);

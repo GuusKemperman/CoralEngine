@@ -107,5 +107,4 @@ struct Reflector<std::vector<T>>
 		return arrayType;
 	}
 
-	static constexpr bool sIsSpecialized = true;
 };

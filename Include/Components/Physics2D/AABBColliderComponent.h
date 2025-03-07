@@ -27,5 +27,4 @@ template<>
 struct Reflector<CE::TransformedAABBColliderComponent>
 {
 	static CE::MetaType Reflect();
-	static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(TransformedAABBColliderComponent, CE::TransformedAABBColliderComponent);

@@ -496,7 +496,6 @@ namespace ImGui
 			CE::Internal::DisplayHandleWidget(base, name, CE::MakeTypeId<T>());
 			asset = CE::StaticAssetHandleCast<T>(base);
 		}
-		static constexpr bool sIsSpecialized = true;
 	};
 
 	template<typename T>
@@ -508,7 +507,6 @@ namespace ImGui
 			CE::Internal::DisplayHandleWidget(base, name, CE::MakeTypeId<T>());
 			asset = CE::StaticAssetHandleCast<T>(base);
 		}
-		static constexpr bool sIsSpecialized = true;
 	};
 }
 #endif // EDITOR
