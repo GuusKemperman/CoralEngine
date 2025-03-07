@@ -3,6 +3,7 @@
 
 #include "Meta/MetaType.h"
 #include "Meta/MetaProps.h"
+#include "Meta/ReflectedTypes/ReflectEnums.h"
 #include "Utilities/Reflect/ReflectFieldType.h"
 
 CE::MetaType CE::Input::Reflect()
@@ -33,53 +34,20 @@ CE::MetaType CE::Input::Reflect()
 
 CE::MetaType Reflector<CE::Input::KeyboardKey>::Reflect()
 {
-	using namespace CE;
-	using T = Input::KeyboardKey;
-	MetaType type{ MetaType::T<T>{}, "KeyboardKey" };
-
-	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-	type.AddFunc(std::equal_to<T>(), OperatorType::equal).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal).GetProperties().Add(Props::sIsScriptableTag);
-	ReflectFieldType<T>(type);
-
-	return type;
+	return CE::ReflectEnumType<CE::Input::KeyboardKey>(true);
 }
 
 CE::MetaType Reflector<CE::Input::GamepadAxis>::Reflect()
 {
-	using namespace CE;
-	using T = Input::GamepadAxis;
-	MetaType type{ MetaType::T<T>{}, "GamepadAxis" };
-
-	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-	ReflectFieldType<T>(type);
-	return type;
+	return CE::ReflectEnumType<CE::Input::GamepadAxis>(true);
 }
 
 CE::MetaType Reflector<CE::Input::GamepadButton>::Reflect()
 {
-	using namespace CE;
-	using T = Input::GamepadButton;
-	MetaType type{ MetaType::T<T>{}, "GamepadButton" };
-
-	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-	type.AddFunc(std::equal_to<T>(), OperatorType::equal).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal).GetProperties().Add(Props::sIsScriptableTag);
-	ReflectFieldType<T>(type);
-
-	return type;
+	return CE::ReflectEnumType<CE::Input::GamepadButton>(true);
 }
 
 CE::MetaType Reflector<CE::Input::MouseButton>::Reflect()
 {
-	using namespace CE;
-	using T = Input::MouseButton;
-	MetaType type{ MetaType::T<T>{}, "MouseButton" };
-
-	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-	type.AddFunc(std::equal_to<T>(), OperatorType::equal).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal).GetProperties().Add(Props::sIsScriptableTag);
-	ReflectFieldType<T>(type);
-
-	return type;
+	return CE::ReflectEnumType<CE::Input::MouseButton>(true);
 }

@@ -300,7 +300,7 @@ namespace CE
     private:
         bool HasFocus(bool checkFocus) const;
 
-        inline static constexpr float sTriggerThreshold = 0.15f;
+        static constexpr float sTriggerThreshold = 0.15f;
 
         friend ReflectAccess;
         static MetaType Reflect();
