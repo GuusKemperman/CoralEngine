@@ -1,5 +1,6 @@
 #pragma once
 #ifdef EDITOR
+#include "magic_enum/magic_enum.hpp"
 
 #include "Utilities/Math.h"
 #include "Utilities/Search.h"
@@ -73,18 +74,18 @@ IMGUI_AUTO_DEFINE_INLINE(template<>, entt::entity, ImGui::Auto(reinterpret_cast<
 namespace ImGui
 {
 	template<typename EnumType>
-	struct Auto_t<EnumType, std::enable_if_t<CE::sIsEnumReflected<EnumType>>>
+	struct Auto_t<EnumType, std::enable_if_t<magic_enum::detail::is_enum_v<EnumType>>>
 	{
 		static void Auto(EnumType& var, const std::string& name)
 		{
 			using namespace CE;
 
-			if (!Search::BeginCombo(name, EnumToString(var)))
+			if (!Search::BeginCombo(name, magic_enum::enum_name(var)))
 			{
 				return;
 			}
 
-			for (const auto& [value, valName] : sEnumStringPairs<EnumType>)
+			for (const auto& [value, valName] : magic_enum::enum_entries<EnumType>())
 			{
 				if (Search::Button(valName))
 				{

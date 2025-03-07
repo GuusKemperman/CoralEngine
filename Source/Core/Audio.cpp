@@ -25,7 +25,7 @@ Audio::Audio()
         LOG(LogAudio, Fatal, "FMOD failed to initialise core audio system, FMOD error {}", static_cast<int>(result));
     }
 
-    for (auto& pair : CE::EnumStringPairsImpl<Audio::Group>().value)
+    for (auto& pair : magic_enum::enum_entries<Audio::Group>())
     {
         result = mCoreSystem->createChannelGroup(std::string(pair.second).c_str(), & mChannelGroups[static_cast<int>(pair.first)]);
         if (result != FMOD_OK)

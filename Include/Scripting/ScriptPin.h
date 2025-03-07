@@ -158,15 +158,15 @@ namespace cereal
 	{
 		ar(param.GetName());
 		ar(param.GetTypeName());
-		ar(static_cast<std::underlying_type_t<CE::TypeForm>>(param.GetTypeForm()));
+		ar(param.GetTypeForm());
 	}
 
 	inline void load(BinaryInputArchive& ar, CE::ScriptVariableTypeData& param)
 	{
 		std::string paramName{};
 		std::string typeName{};
-		std::underlying_type_t<CE::TypeForm> typeForm{};
+		CE::TypeForm typeForm{};
 		ar(paramName, typeName, typeForm);
-		param = CE::ScriptVariableTypeData{ typeName, static_cast<CE::TypeForm>(typeForm), paramName };
+		param = CE::ScriptVariableTypeData{ typeName, typeForm, paramName };
 	}
 }

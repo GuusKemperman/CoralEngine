@@ -33,24 +33,24 @@ void CE::CollisionRules::DisplayWidget(const std::string& name)
 
 		ShowInspectUI("Object type", mLayer);
 
-		static constexpr int numOfResponses = static_cast<int>(CollisionResponse::NUM_OF_RESPONSES);
+		static constexpr int numOfResponses = static_cast<int>(magic_enum::enum_count<CollisionResponse>());
 
 		if (ImGui::BeginTable("##ResponseTable", numOfResponses + 1))
 		{
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 
-			for (const auto& [value, str] : sEnumStringPairs<CollisionResponse>)
+			for (const auto& [value, str] : magic_enum::enum_entries<CollisionResponse>())
 			{
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted(str.data());
 			}
 
-			for (int layer = 0, id = 213456; layer < static_cast<int>(CollisionLayer::NUM_OF_LAYERS); layer++)
+			for (int layer = 0, id = 213456; layer < magic_enum::enum_count<CollisionLayer>(); layer++)
 			{
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
-				ImGui::TextUnformatted(EnumToString(static_cast<CollisionLayer>(layer)).data());
+				ImGui::TextUnformatted(magic_enum::enum_name(static_cast<CollisionLayer>(layer)).data());
 
 				for (int response = 0; response < numOfResponses; response++, id *= 2)
 				{

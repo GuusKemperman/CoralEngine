@@ -1,6 +1,8 @@
 #include "Precomp.h"
 #include "Meta/MetaFunc.h"
 
+#include "magic_enum/magic_enum_format.hpp"
+
 #include "Meta/MetaType.h"
 #include "Meta/MetaFuncId.h"
 #include "Meta/MetaManager.h"
@@ -275,8 +277,8 @@ std::optional<std::string> CE::MetaFunc::CanArgBePassedIntoParam(TypeTraits arg,
 	if (!errorMessage.empty())
 	{
 		return Format("Could not pass argument of form {} to parameter of form {} - {}",
-			EnumToString(arg.mForm),
-			EnumToString(param.mForm),
+			arg.mForm,
+			param.mForm,
 			errorMessage);
 	}
 

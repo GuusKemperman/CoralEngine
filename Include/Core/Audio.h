@@ -1,4 +1,6 @@
 #pragma once
+#include <magic_enum/magic_enum.hpp>
+
 #include "Meta/MetaReflect.h"
 #include "Core/EngineSubsystem.h"
 
@@ -25,7 +27,6 @@ namespace CE
 			Game,
 			Music,
 			Menu,
-			NUM_OF_GROUPS
 		};
 
 		FMOD::System& GetCoreSystem() const { return *mCoreSystem; }
@@ -35,7 +36,7 @@ namespace CE
 
 		FMOD::System* mCoreSystem = nullptr;
 
-		std::array<FMOD::ChannelGroup*,static_cast<int>(Group::NUM_OF_GROUPS)> mChannelGroups{};
+		std::array<FMOD::ChannelGroup*, magic_enum::enum_count<Group>()> mChannelGroups{};
 	};
 }
 
@@ -46,13 +47,3 @@ struct Reflector<CE::Audio::Group>
     static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(Group, CE::Audio::Group);
 
-template<>
-struct CE::EnumStringPairsImpl<CE::Audio::Group>
-{
-    static constexpr EnumStringPairs<Audio::Group, static_cast<size_t>(Audio::Group::NUM_OF_GROUPS)> value = {
-        EnumStringPair<Audio::Group>
-		{ Audio::Group::Music, "Music" },
-        { Audio::Group::Game, "Game" },
-        { Audio::Group::Menu, "Menu" },
-    };
-};

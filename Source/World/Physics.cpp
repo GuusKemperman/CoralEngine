@@ -154,10 +154,8 @@ void CE::Physics::SyncWorldToPhysics()
 
 void CE::Physics::UpdateBVHs(UpdateBVHConfig config)
 {
-	for (int i = 0; i < static_cast<int>(CollisionLayer::NUM_OF_LAYERS); i++)
+	for (BVH& bvh : mBVHs)
 	{
-		BVH& bvh = mWorld.get().GetPhysics().GetBVHs()[i];
-
 		if (config.mForceRebuild
 			|| bvh.IsDirty()
 			|| (!config.mOnlyRebuildForNewColliders && bvh.GetAmountRefitted() > config.mMaxAmountRefitBeforeRebuilding))

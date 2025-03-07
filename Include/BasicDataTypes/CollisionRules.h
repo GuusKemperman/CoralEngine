@@ -16,9 +16,7 @@ namespace CE
 		/**
 		 * \brief If both objects are blocking, the OnCollision events are invoked, and collision resolution will start.
 		 */
-		Blocking,
-
-		NUM_OF_RESPONSES
+		Blocking
 	};
 
 	enum class CollisionLayer : uint8
@@ -63,9 +61,7 @@ namespace CE
 		GameLayer4,
 		GameLayer5,
 		GameLayer6,
-		GameLayer7,
-
-		NUM_OF_LAYERS
+		GameLayer7
 	};
 
 	static constexpr bool IsCollisionLayerStatic(CollisionLayer layer)
@@ -88,7 +84,7 @@ namespace CE
 		constexpr void SetResponse(CollisionLayer layer, CollisionResponse response);
 
 		CollisionLayer mLayer{};
-		std::array<CollisionResponse, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> mResponses{};
+		std::array<CollisionResponse, magic_enum::enum_count<CollisionLayer>()> mResponses{};
 	};
 
 	struct CollisionPreset
@@ -197,40 +193,3 @@ struct Reflector<CE::CollisionRules>
 	static CE::MetaType Reflect();
 	static constexpr bool sIsSpecialized = true;
 }; REFLECT_AT_START_UP(collRules, CE::CollisionRules);
-
-template<>
-struct CE::EnumStringPairsImpl<CE::CollisionLayer>
-{
-	static constexpr EnumStringPairs<CollisionLayer, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)> value =
-	{
-		EnumStringPair
-		{ CollisionLayer::WorldStatic, "WorldStatic" },
-		{ CollisionLayer::WorldDynamic, "WorldDynamic" },
-		{ CollisionLayer::Character, "Character" },
-		{ CollisionLayer::Projectiles, "Projectiles" },
-		{ CollisionLayer::Query, "Query" },
-		{ CollisionLayer::EngineLayer5, "EngineLayer5" },
-		{ CollisionLayer::EngineLayer6, "EngineLayer6" },
-		{ CollisionLayer::EngineLayer7, "EngineLayer7" },
-		{ CollisionLayer::GameLayer0, "GameLayer0" },
-		{ CollisionLayer::GameLayer1, "GameLayer1" },
-		{ CollisionLayer::GameLayer2, "GameLayer2" },
-		{ CollisionLayer::GameLayer3, "GameLayer3" },
-		{ CollisionLayer::GameLayer4, "GameLayer4" },
-		{ CollisionLayer::GameLayer5, "GameLayer5" },
-		{ CollisionLayer::GameLayer6, "GameLayer6" },
-		{ CollisionLayer::GameLayer7, "GameLayer7" },
-	};
-};
-
-template<>
-struct CE::EnumStringPairsImpl<CE::CollisionResponse>
-{
-	static constexpr EnumStringPairs<CollisionResponse, static_cast<size_t>(CollisionResponse::NUM_OF_RESPONSES)> value =
-	{
-		EnumStringPair
-		{ CollisionResponse::Ignore, "Ignore" },
-		{ CollisionResponse::Overlap, "Overlap" },
-		{ CollisionResponse::Blocking, "Blocking" },
-	};
-};

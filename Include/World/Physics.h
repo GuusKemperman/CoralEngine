@@ -27,7 +27,7 @@ namespace CE
 		Physics& operator=(Physics&&) = delete;
 		Physics& operator=(const Physics&) = delete;
 
-		using BVHS = std::array<BVH, static_cast<size_t>(CollisionLayer::NUM_OF_LAYERS)>;
+		using BVHS = std::array<BVH, magic_enum::enum_count<CollisionLayer>()>;
 
 		BVHS& GetBVHs() { return mBVHs; }
 		const BVHS& GetBVHs() const { return mBVHs; }

@@ -52,10 +52,7 @@ CE::MetaType Reflector<CE::Input::GamepadAxis>::Reflect()
 	MetaType type{ MetaType::T<T>{}, "GamepadAxis" };
 
 	type.GetProperties().Add(Props::sIsScriptableTag).Add(Props::sIsScriptOwnableTag);
-	type.AddFunc(std::equal_to<T>(), OperatorType::equal).GetProperties().Add(Props::sIsScriptableTag);
-	type.AddFunc(std::not_equal_to<T>(), OperatorType::inequal).GetProperties().Add(Props::sIsScriptableTag);
 	ReflectFieldType<T>(type);
-
 	return type;
 }
 

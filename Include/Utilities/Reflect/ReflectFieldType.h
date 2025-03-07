@@ -11,6 +11,8 @@ namespace CE
 	template<typename T>
 	void ReflectFieldType(MetaType& type)
 	{
+		ASSERT(MakeTypeId<T>() == type.GetTypeId());
+
 #ifdef EDITOR
 		type.AddFunc(&ShowInspectUI<T>, sShowInspectUIFuncName.StringView());
 #endif // EDITOR

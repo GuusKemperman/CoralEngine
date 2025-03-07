@@ -1,11 +1,24 @@
 #pragma once
-#include "Meta/Fwd/MetaTypeTraitsFwd.h"
+#include "magic_enum/magic_enum.hpp"
 
+#include "Meta/Fwd/MetaTypeTraitsFwd.h"
 #include "Meta/MetaTypeId.h"
 
 constexpr uint32 CE::TypeTraits::Hash() const
 {
-	uint64 asUint64 = mStrippedTypeId | (static_cast<uint64>(mForm) << 32);
+	uint64 formHash;
+	switch (mForm)
+	{
+		case TypeForm::Value:formHash = 3574847;break;
+		case TypeForm::Ref:formHash = 2062657;break;
+		case TypeForm::ConstRef:formHash = 51182539;break;
+		case TypeForm::Ptr:formHash = 71661047;break;
+		case TypeForm::ConstPtr:formHash = 99105001;break;
+		case TypeForm::RValue:formHash = 1901583; break;
+		default: formHash = {};
+	}
+
+	uint64 asUint64 = mStrippedTypeId | (formHash << 32);
 	return static_cast<uint32>(asUint64 % 4294967291);
 }
 
@@ -116,19 +129,6 @@ CONSTEVAL CE::TypeId CE::MakeStrippedTypeId()
 	return MakeTypeId<std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>>();
 }
 
-template<>
-struct CE::EnumStringPairsImpl<CE::TypeForm>
-{
-	static constexpr EnumStringPairs<TypeForm, 137> value = {
-		EnumStringPair<TypeForm> { TypeForm::Value, "Value" },
-		{ TypeForm::Ref, "Ref" },
-		{ TypeForm::ConstRef, "ConstRef" },
-		{ TypeForm::Ptr, "Ptr" },
-		{ TypeForm::ConstPtr, "ConstPtr" },
-		{ TypeForm::RValue, "RValue" }
-	};
-};
-
 #include "cereal/archives/binary.hpp"
 
 namespace cereal
@@ -136,13 +136,42 @@ namespace cereal
 	class BinaryOutputArchive;
 	class BinaryInputArchive;
 
+	inline void save(BinaryOutputArchive& ar, const CE::TypeForm& form)
+	{
+		uint32 typeForm = static_cast<uint32>(form);
+		ar(typeForm);
+	}
+
+	inline void load(BinaryInputArchive& ar, CE::TypeForm& form)
+	{
+		uint32 typeForm{};
+		ar(typeForm);
+
+		// Backwards compatibility
+		switch (typeForm)
+		{
+		case 3574847: typeForm = static_cast<uint32>(CE::TypeForm::Value); break;
+		case 2062657: typeForm = static_cast<uint32>(CE::TypeForm::Ref); break;
+		case 51182539: typeForm = static_cast<uint32>(CE::TypeForm::ConstRef); break;
+		case 71661047: typeForm = static_cast<uint32>(CE::TypeForm::Ptr); break;
+		case 99105001: typeForm = static_cast<uint32>(CE::TypeForm::ConstPtr); break;
+		case 1901583: typeForm = static_cast<uint32>(CE::TypeForm::RValue); break;
+		default:;
+		}
+		form = static_cast<CE::TypeForm>(typeForm);
+	}
+
 	inline void save(BinaryOutputArchive& ar, const CE::TypeTraits& traits)
 	{
-		ar.saveBinary(&traits, sizeof(traits));
+		ar(traits.mStrippedTypeId);
+		ar(traits.mForm);
 	}
 
 	inline void load(BinaryInputArchive& ar, CE::TypeTraits& traits)
 	{
-		ar.loadBinary(&traits, sizeof(traits));
+		ar(traits.mStrippedTypeId);
+		ar(traits.mForm);
 	}
 }
+
+CEREAL_SPECIALIZE_FOR_ALL_ARCHIVES(CE::TypeForm, cereal::specialization::non_member_load_save);

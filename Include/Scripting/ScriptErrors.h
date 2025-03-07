@@ -1,5 +1,6 @@
 #pragma once
-#include "Utilities/EnumString.h"
+#include "magic_enum/magic_enum.hpp"
+
 #include "Scripting/ScriptIds.h"
 #include "Scripting/ScriptConfig.h"
 
@@ -85,30 +86,35 @@ namespace CE
 	};
 
 	using ScriptErrorInserter = std::back_insert_iterator<std::vector<ScriptError>>;
-
-	template<>
-	struct EnumStringPairsImpl<ScriptError::Type>
-	{
-		static constexpr EnumStringPairs<ScriptError::Type, 137> value = {
-			EnumStringPair<ScriptError::Type>{ ScriptError::Type::UnreflectedType, "UnreflectedType" },
-			{ ScriptError::Type::TypeCannotBeMember, "TypeCannotBeMember" },
-			{ ScriptError::Type::TypeCannotBeReferencedFromScripts, "This type can no longer be used by scripts" },
-			{ ScriptError::Type::TypeCannotBeOwnedByScripts, "This type cannot be owned by scripts, and can maybe not even be referenced by scripts at all." },
-			{ ScriptError::Type::NameNotUnique, "NameNotUnique - Classes, functions and fields must have a unique name" },
-#ifdef REMOVE_FROM_SCRIPTS_ENABLED
-			{ ScriptError::Type::NodeOutOfDate, "NodeOutOfDate - The underlying function now has different parameters or a different return type" },
-#else
-			{ ScriptError::Type::NodeOutOfDate, "NodeOutOfDate in a no-editor build - The underlying function has different parameters or a different return type, and is not refreshed. Resaving the asset will resolve the issue." },
-#endif
-			{ ScriptError::Type::UnderlyingFuncNoLongerExists, "The underlying function no longer exists" },
-			{ ScriptError::Type::CompilerBug, "CompilerBug - An error in the compiler, or front-end that was 100% not caused by a designer. " },
-			{ ScriptError::Type::LinkNotAllowed, "LinkNotAllowed - A link between two pins is invalid" },
-			{ ScriptError::Type::NotPossibleToEnterFunc, "NotPossibleToEnterFunc -  There is something wrong with the entry/return nodes, there may be too many or too little of them for example" },
-			{ ScriptError::Type::ExecutionTimeOut, "Execution time-out, Possibly an infinite loop. If this is not an error, try raising the maximum number of nodes that can be executed(or ask a programmer to raise it) in VirtualMachine.h" },
-			{ ScriptError::Type::FunctionCallFailed, "Function call failed" },
-			{ ScriptError::Type::ValueWasNull, "Value was null" },
-			{ ScriptError::Type::StackOverflow, "Stack overflow - Possibly an infinite loop" },
-		};
-	};
 }
 
+namespace magic_enum::customize
+{
+	template <>
+	constexpr customize_t enum_name<CE::ScriptError::Type>(CE::ScriptError::Type value) noexcept
+	{
+		switch (value)
+		{
+		case CE::ScriptError::Type::UnreflectedType: return { "UnreflectedType" };
+		case CE::ScriptError::Type::TypeCannotBeMember: return { "TypeCannotBeMember" };
+		case CE::ScriptError::Type::TypeCannotBeReferencedFromScripts: return { "This type can no longer be used by scripts" };
+		case CE::ScriptError::Type::TypeCannotBeOwnedByScripts: return { "This type cannot be owned by scripts, and can maybe not even be referenced by scripts at all." };
+		case CE::ScriptError::Type::NameNotUnique: return { "NameNotUnique - Classes, functions and fields must have a unique name" };
+		case CE::ScriptError::Type::UnderlyingFuncNoLongerExists: return { "The underlying function no longer exists" };
+		case CE::ScriptError::Type::CompilerBug: return { "CompilerBug - An error in the compiler, or front-end that was 100% not caused by a designer. " };
+		case CE::ScriptError::Type::LinkNotAllowed: return { "LinkNotAllowed - A link between two pins is invalid" };
+		case CE::ScriptError::Type::NotPossibleToEnterFunc: return { "NotPossibleToEnterFunc -  There is something wrong with the entry/return nodes, there may be too many or too little of them for example" };
+		case CE::ScriptError::Type::ExecutionTimeOut: return { "Execution time-out, Possibly an infinite loop. If this is not an error, try raising the maximum number of nodes that can be executed(or ask a programmer to raise it) in VirtualMachine.h" };
+		case CE::ScriptError::Type::FunctionCallFailed: return { "Function call failed" };
+		case CE::ScriptError::Type::ValueWasNull: return { "Value was null" };
+		case CE::ScriptError::Type::StackOverflow: return { "Stack overflow - Possibly an infinite loop" };
+#ifdef REMOVE_FROM_SCRIPTS_ENABLED
+		case CE::ScriptError::Type::NodeOutOfDate: return { "NodeOutOfDate - The underlying function now has different parameters or a different return type" };
+#else
+		case CE::ScriptError::Type::NodeOutOfDate: return "NodeOutOfDate in a no-editor build - The underlying function has different parameters or a different return type, and is not refreshed. Resaving the asset will resolve the issue."
+		};
+#endif
+		default: return invalid_tag; // Handle any unexpected values
+		}
+	}
+}

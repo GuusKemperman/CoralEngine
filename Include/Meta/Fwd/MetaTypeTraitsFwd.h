@@ -3,16 +3,14 @@
 
 namespace CE
 {
-	enum class TypeForm
+	enum class TypeForm : uint8
 	{
-		// Random prime numbers are assigned for better hashing of typetraits
-
-		Value = 3574847,
-		Ref = 2062657,
-		ConstRef = 51182539,
-		Ptr = 71661047,
-		ConstPtr = 99105001,
-		RValue = 1901583,
+		Value,
+		Ref,
+		ConstRef,
+		Ptr,
+		ConstPtr,
+		RValue,
 	};
 
 	struct TypeTraits

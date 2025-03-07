@@ -153,7 +153,7 @@ bool CE::ScriptLocation::IsLocationEqualToOrInsideOf(const ScriptLocation& other
 
 std::string CE::ScriptError::ToString(bool includeLocationInString) const
 {
-	std::string str = includeLocationInString ? Format("{} - {}", mOrigin.ToString(), EnumToString(mType)) : std::string{ EnumToString(mType) };;
+	std::string str = includeLocationInString ? Format("{} - {}", mOrigin.ToString(), magic_enum::enum_name(mType)) : std::string{ magic_enum::enum_name(mType) };;
 
 	if (mAdditionalInfo.has_value())
 	{

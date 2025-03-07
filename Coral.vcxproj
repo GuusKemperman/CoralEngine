@@ -872,6 +872,7 @@
     <ClInclude Include="Include\Core\Renderer.h" />
     <ClInclude Include="Include\Core\ThreadPool.h" />
     <ClInclude Include="Include\EditorSystems\ThumbnailEditorSystem.h" />
+    <ClInclude Include="Include\Meta\ReflectedTypes\ReflectEnums.h" />
     <ClInclude Include="Include\Systems\AudioSystem.h" />
     <ClInclude Include="Include\Systems\Particles\ParticleLightSystem.h" />
     <ClInclude Include="Include\Systems\Rendering\LightRenderingSystem.h" />
@@ -1017,7 +1018,6 @@
     <ClInclude Include="Include\Scripting\ScriptPin.h" />
     <ClInclude Include="Include\Scripting\ScriptTools.h" />
     <ClInclude Include="Include\Utilities\ClassVersion.h" />
-    <ClInclude Include="Include\Utilities\EnumString.h" />
     <ClInclude Include="Include\Utilities\Expected.h" />
     <ClInclude Include="Include\Rendering\FrameBuffer.h" />
     <ClInclude Include="Include\Utilities\Benchmark.h" />
