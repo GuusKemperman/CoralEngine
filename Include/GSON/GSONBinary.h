@@ -48,5 +48,7 @@ namespace CE
 
 		// Returns true on success
 		bool LoadFromBinary(std::istream& ostream);
+
+		bool operator==(const BinaryGSONObject& other) const;
 	};
 }

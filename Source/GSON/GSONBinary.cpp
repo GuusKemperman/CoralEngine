@@ -160,3 +160,13 @@ bool CE::BinaryGSONObject::LoadFromBinary(std::istream& istream)
 
 	return true;
 }
+
+bool CE::BinaryGSONObject::operator==(const BinaryGSONObject& other) const
+{
+	std::stringstream str1{};
+	SaveToBinary(str1);
+
+	std::stringstream str2{};
+	other.SaveToBinary(str2);
+	return str1.str() == str2.str();
+}
