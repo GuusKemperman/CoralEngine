@@ -46,14 +46,20 @@ namespace CE
 			return { std::cos(radian), std::sin(radian) };
 		}
 
-		//static glm::vec2 GLFWPixelToClipSpace(const glm::ivec2& pixelPosition);
-		//static inline glm::vec2 OpenGLPixelToClipspace(const glm::ivec2& pixelPosition)
-		//{
-		//	return {
-		//		(2.0 * pixelPosition.x + 1.0) / sScreenWidth - 1.0,
-		//		(2.0 * pixelPosition.y + 1.0) / sScreenHeight - 1.0
-		//	};
-		//}
+		template<typename T>
+		static constexpr T Round(T x)
+		{
+			if (std::is_constant_evaluated())
+			{
+				return static_cast<T>((x >= static_cast<T>(0.0)) ?
+					static_cast<int>(x + static_cast<T>(0.5)) :
+					static_cast<int>(x - static_cast<T>(0.5)));
+			}
+			else
+			{
+				return glm::round(x);
+			}
+		}
 
 		// Stolen from http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-17-quaternions/
 		static glm::quat CalculateOrientationTowards(glm::quat current, const glm::quat& target, float maxAngle);
