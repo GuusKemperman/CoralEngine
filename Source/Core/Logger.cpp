@@ -130,6 +130,10 @@ void CE::Logger::Log(std::string_view message,
 	{
 		DumpToCrashLogAndExit();
 	}
+	else if (severity == Error)
+	{
+		__debugbreak();
+	}
 }
 
 void CE::Logger::Clear()

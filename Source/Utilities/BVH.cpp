@@ -72,9 +72,9 @@ void CE::BVH::Build()
 	root.mNumOfCircles = numOfCircles;
 	root.mTotalNumOfObjects = totalNumObjects;
 
-	mEmpty = root.mTotalNumOfObjects == 0;
+	mIsEmpty = root.mTotalNumOfObjects == 0;
 
-	if (mEmpty)
+	if (mIsEmpty)
 	{
 		mNodes.resize(4);
 		return;
@@ -94,7 +94,7 @@ void CE::BVH::Build()
 
 void CE::BVH::Refit()
 {
-	if (mEmpty)
+	if (mIsEmpty)
 	{
 		return;
 	}
@@ -124,7 +124,7 @@ void CE::BVH::Refit()
 
 void CE::BVH::DebugDraw(RenderCommandQueue& commandQueue) const
 {
-	if (mEmpty)
+	if (mIsEmpty)
 	{
 		return;
 	}

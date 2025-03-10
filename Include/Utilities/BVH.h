@@ -21,31 +21,33 @@ namespace CE
 		void MakeDirty() { mIsDirty = true; }
 		bool IsDirty() const { return mIsDirty; }
 
-		template<bool AlwaysReturnValue>
 		struct DefaultShouldCheckFunction
 		{
 			template<typename TransformedColliderType, typename... Args>
-			bool operator()(entt::entity, Args...) const { return AlwaysReturnValue; }
+			constexpr bool operator()(entt::entity, Args...) const { return true; }
+		};
+
+		struct DefaultOnIntersectFunction
+		{
+			template<typename TransformedColliderType, typename... Args>
+			constexpr void operator()(const TransformedColliderType&, entt::entity, Args...) const {}
 		};
 
 		template<bool AlwaysReturnValue>
 		struct DefaultShouldReturnFunction
 		{
 			template<typename TransformedColliderType, typename... Args>
-			bool operator()(const TransformedColliderType&, entt::entity, Args...) const { return AlwaysReturnValue; }
+			constexpr bool operator()(const TransformedColliderType&, entt::entity, Args...) const { return AlwaysReturnValue; }
 		};
 
-		struct DefaultOnIntersectFunction
-		{
-			template<typename TransformedColliderType, typename... Args>
-			void operator()(const TransformedColliderType&, entt::entity, Args...) const {}
-		};
-
-		template<typename... CallbackAdditionalArgs>
+		template<typename OnIntersect = DefaultOnIntersectFunction,
+			typename ShouldReturn = DefaultShouldReturnFunction<false>,
+			typename ShouldCheck = DefaultShouldCheckFunction,
+			typename... CallbackAdditionalArgs>
 		bool Query(const auto& inquirerShape,
-			const auto& onIntersect = DefaultOnIntersectFunction{},
-			const auto& shouldCheck = DefaultShouldCheckFunction<true>{},
-			const auto& shouldReturn = DefaultShouldReturnFunction<true>{},
+			const OnIntersect& onIntersect = {},
+			const ShouldReturn& shouldReturn = {},
+			const ShouldCheck& shouldCheck = {},
 			CallbackAdditionalArgs&&... args) const;
 
 		void DebugDraw(RenderCommandQueue& commandQueue) const;
@@ -55,6 +57,8 @@ namespace CE
 		float GetAmountRefitted() const { return mAmountRefitted; }
 
 	private:
+		friend class Physics;
+
 		const Registry& GetRegistry() const;
 
 		template<typename T>
@@ -113,17 +117,14 @@ namespace CE
 		entt::storage_for_t<const TransformedDiskColliderComponent>& mDiskssStorage;
 		entt::storage_for_t<const TransformedPolygonColliderComponent>& mPolysStorage;
 
-		bool mEmpty = true;
+		bool mIsEmpty = true;
 		bool mIsDirty{};
 		float mAmountRefitted{};
 	};
 
-	template<typename ... CallbackAdditionalArgs>
-	bool BVH::Query(const auto& inquirerShape,
-		const auto& onIntersect,
-		const auto& shouldCheck,
-		const auto& shouldReturn,
-		CallbackAdditionalArgs&&... args) const
+	template <typename OnIntersect, typename ShouldReturn, typename ShouldCheck, typename ... CallbackAdditionalArgs>
+	bool BVH::Query(const auto& inquirerShape, const OnIntersect& onIntersect, const ShouldReturn& shouldReturn,
+		const ShouldCheck& shouldCheck, CallbackAdditionalArgs&&... args) const
 	{
 		static constexpr uint32 stackSize = 256;
 		const Node* stack[stackSize];
@@ -131,16 +132,16 @@ namespace CE
 
 		const Node* node = mNodes.data();
 
-		const auto testAgainstObject = [&]<typename T>(const T& object, entt::entity owner)
+		const auto testAgainstObject = [&]<typename T>(const T & object, entt::entity owner)
+		{
+			if (!AreOverlapping(object, inquirerShape))
 			{
-				if (!AreOverlapping(object, inquirerShape))
-				{
-					return false;
-				}
+				return false;
+			}
 
-				onIntersect(object, owner, args...);
-				return shouldReturn.template operator()<T>(object, owner, args...);
-			};
+			onIntersect(object, owner, args...);
+			return shouldReturn.template operator() < T > (object, owner, args...);
+		};
 
 		while (true)
 		{
@@ -190,36 +191,36 @@ namespace CE
 			uint32 indexOfId = node->mStartIndex;
 
 			const auto checkNode = [&]<typename T>(uint32 num)
+			{
+				for (uint32 i = 0; i < num; i++, indexOfId++)
 				{
-					for (uint32 i = 0; i < num; i++, indexOfId++)
+					const entt::entity owner = mIds[indexOfId];
+
+					if (!shouldCheck.template operator() < T > (owner, args...))
 					{
-						const entt::entity owner = mIds[indexOfId];
-
-						if (!shouldCheck.template operator()<T>(owner, args...))
-						{
-							continue;
-						}
-
-						const T* collider = TryGetCollider<T>(owner);
-
-						if (collider == nullptr)
-						{
-							continue;
-						}
-
-						if (testAgainstObject(*collider, owner))
-						{
-							return true;
-						}
+						continue;
 					}
-					return false;
-				};
+
+					const T* collider = TryGetCollider<T>(owner);
+
+					if (collider == nullptr)
+					{
+						continue;
+					}
+
+					if (testAgainstObject(*collider, owner))
+					{
+						return true;
+					}
+				}
+				return false;
+			};
 
 			const uint32 numPolygons = node->mTotalNumOfObjects - node->mNumOfAABBS - node->mNumOfCircles;
 
-			if (checkNode.template operator()<TransformedAABBColliderComponent>(node->mNumOfAABBS)
-				|| checkNode.template operator()<TransformedDiskColliderComponent>(node->mNumOfCircles)
-				|| checkNode.template operator()<TransformedPolygonColliderComponent>(numPolygons))
+			if (checkNode.template operator() < TransformedAABBColliderComponent > (node->mNumOfAABBS)
+				|| checkNode.template operator() < TransformedDiskColliderComponent > (node->mNumOfCircles)
+				|| checkNode.template operator() < TransformedPolygonColliderComponent > (numPolygons))
 			{
 				return true;
 			}

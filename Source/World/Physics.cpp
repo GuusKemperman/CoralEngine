@@ -35,9 +35,11 @@ CE::Physics::Physics(World& world) :
 		BVH{ *this, static_cast<CollisionLayer>(13) },
 		BVH{ *this, static_cast<CollisionLayer>(14) },
 		BVH{ *this, static_cast<CollisionLayer>(15) },
-	}
+	},
+	mAABBsStorage(world.GetRegistry().Storage<TransformedAABBColliderComponent>()),
+	mDiskssStorage(world.GetRegistry().Storage<TransformedDiskColliderComponent>()),
+	mPolysStorage(world.GetRegistry().Storage<TransformedPolygonColliderComponent>())
 {
-
 }
 
 CE::Physics::~Physics() = default;
@@ -53,9 +55,7 @@ std::vector<entt::entity> CE::Physics::FindAllWithinShapeImpl(const T& shape, co
 		[&](const auto&, entt::entity entity)
 		{
 			ret.emplace_back(entity);
-		},
-		BVH::DefaultShouldCheckFunction<true>{},
-		BVH::DefaultShouldReturnFunction<false>{});
+		});
 
 	return ret;
 }
@@ -225,29 +225,29 @@ void CE::Physics::ResolveCollisions()
 						diskPolygonCollisions.emplace_back(entity1, entity2);
 					}
 				},
+				BVH::DefaultShouldReturnFunction<false>{},
 				[&]<typename T>(entt::entity entity2)
-			{
-				if constexpr (std::is_same_v<T, TransformedDiskColliderComponent>)
 				{
-					if (entity1 >= entity2)
+					if constexpr (std::is_same_v<T, TransformedDiskColliderComponent>)
 					{
-						return false;
+						if (entity1 >= entity2)
+						{
+							return false;
+						}
 					}
-				}
-				else
-				{
-					if (entity1 == entity2)
+					else
 					{
-						return false;
+						if (entity1 == entity2)
+						{
+							return false;
+						}
 					}
-				}
 
-				const PhysicsBody2DComponent* body2 = bodyStorage.contains(entity2) ? &bodyStorage.get(entity2) : nullptr;
+					const PhysicsBody2DComponent* body2 = bodyStorage.contains(entity2) ? &bodyStorage.get(entity2) : nullptr;
 
-				return body2 != nullptr
-					&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
-			},
-				BVH::DefaultShouldReturnFunction<false>{});
+					return body2 != nullptr
+						&& body1.mRules.GetResponse(body2->mRules) != CollisionResponse::Ignore;
+				});
 		}
 	}
 
@@ -415,9 +415,7 @@ CE::Physics::LineTraceResult CE::Physics::LineTrace(const Line& line, const Coll
 				result.mDist = timeOfIntersect;
 				result.mHitEntity = entity;
 			}
-		},
-		BVH::DefaultShouldCheckFunction<true>{},
-		BVH::DefaultShouldReturnFunction<false>{});
+		});
 
 	float dist = glm::distance(line.mStart, line.mEnd);
 	if (result)
@@ -449,11 +447,91 @@ std::vector<entt::entity> CE::Physics::FindAllWithinShape(const TransformedPolyg
 	return FindAllWithinShapeImpl(shape, filter);
 }
 
+entt::entity CE::Physics::GetNearest(glm::vec2 point, const CollisionRules& filter) const
+{
+	entt::entity returnValue = entt::null;
+
+	Explore<ExploreOrder::NearestFirst>(point, filter,
+	             [&](entt::entity entity, float )
+	             {
+		             returnValue = entity;
+	             },
+				ExploreDefaultShouldReturnFunction<true>{});
+
+	return returnValue;
+}
+
+std::vector<entt::entity> CE::Physics::GetSortedNearToFar(glm::vec2 point, const CollisionRules& filter) const
+{
+	std::vector<entt::entity> returnValue{};
+
+	Explore<ExploreOrder::NearestFirst>(point, filter,
+		[&](entt::entity entity, float)
+		{
+			returnValue.emplace_back(entity);
+		});
+
+	return returnValue;
+}
+
+entt::entity CE::Physics::GetFarthest(glm::vec2 point, const CollisionRules& filter)
+{
+	entt::entity returnValue = entt::null;
+
+	Explore<ExploreOrder::FarthestFirst>(point, filter,
+		[&](entt::entity entity, float)
+		{
+			returnValue = entity;
+		},
+		ExploreDefaultShouldReturnFunction<true>{});
+
+	return returnValue;
+}
+
+std::vector<entt::entity> CE::Physics::GetSortedFarToNear(glm::vec2 point, const CollisionRules& filter)
+{
+	std::vector<entt::entity> returnValue{};
+
+	Explore<ExploreOrder::FarthestFirst>(point, filter,
+		[&](entt::entity entity, float)
+		{
+			returnValue.emplace_back(entity);
+		});
+
+	return returnValue;
+}
+
+float CE::Physics::GetSignedDistance(entt::entity entity, glm::vec2 point) const
+{
+	if (mDiskssStorage.contains(entity))
+	{
+		return mDiskssStorage.get(entity).SignedDistance(point);
+	}
+
+	if (mAABBsStorage.contains(entity))
+	{
+		return mAABBsStorage.get(entity).SignedDistance(point);
+	}
+
+	if (mPolysStorage.contains(entity))
+	{
+		return mPolysStorage.get(entity).SignedDistance(point);
+	}
+
+	const CE::TransformComponent* transform = GetWorld().GetRegistry().TryGet<CE::TransformComponent>(entity);
+
+	if (transform != nullptr)
+	{
+		return glm::distance(To2D(transform->GetWorldPosition()), point);
+	}
+
+	return std::numeric_limits<float>::infinity();
+}
 
 glm::vec2 CE::Physics::ResolveDiskCollision(const CollisionData& collisionToResolve,
-	const PhysicsBody2DComponent& bodyToMove,
-	const PhysicsBody2DComponent& otherBody,
-	float multiplicant)
+                                            const PhysicsBody2DComponent& bodyToMove,
+                                            const PhysicsBody2DComponent& otherBody,
+                                            float multiplicant)
 {
 	// displace the objects to resolve overlap
 	const float totalInvMass = bodyToMove.mInvMass + otherBody.mInvMass;
