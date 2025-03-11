@@ -102,7 +102,7 @@ namespace CE
 		struct DefaultOnExplore
 		{
 			template<typename... Args>
-			constexpr void operator()([[maybe_unused]] entt::entity entity, [[maybe_unused]] float signedDist, entt::entity, Args...) const {}
+			constexpr void operator()([[maybe_unused]] entt::entity entity, [[maybe_unused]] float signedDist, Args...) const {}
 		};
 
 		struct ExploreDefaultShouldCheckFunction
