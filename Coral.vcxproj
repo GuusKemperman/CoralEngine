@@ -331,6 +331,7 @@
     <ClCompile Include="Source\Systems\Rendering\StaticMeshRenderingSystem.cpp" />
     <ClCompile Include="Source\UnitTests\AssetHandleUnitTests.cpp" />
     <ClCompile Include="Source\UnitTests\AssetManagerUnitTests.cpp" />
+    <ClCompile Include="Source\UnitTests\FixedCapacityPriorityQueueTests.cpp" />
     <ClCompile Include="Source\UnitTests\QueryUnitTests.cpp" />
     <ClCompile Include="Source\Utilities\BVH.cpp" />
     <ClCompile Include="Source\Utilities\Events.cpp" />
@@ -879,6 +880,7 @@
     <ClInclude Include="Include\Systems\Rendering\ParticleRenderingSystem.h" />
     <ClInclude Include="Include\Systems\Rendering\StaticMeshRenderingSystem.h" />
     <ClInclude Include="Include\Utilities\BVH.h" />
+    <ClInclude Include="Include\Utilities\FixedCapacityPriorityQueue.h" />
     <ClInclude Include="Include\Utilities\Geometry2d.h" />
     <ClInclude Include="Include\EditorSystems\ImporterSystem.h" />
     <ClInclude Include="Include\Components\MeshColorComponent.h" />
