@@ -21,7 +21,7 @@ namespace CE
 			All = NotRan | Failure | Success | OutDated
 		};
 
-		UnitTest(std::string&& category, std::string&& name, std::function<Result()>&& result) :
+		UnitTest(std::string&& category, std::string&& name, std::function<void()>&& result) :
 			mCategory(std::move(category)),
 			mName(std::move(name)),
 			mFunc(std::move(result))
@@ -34,7 +34,7 @@ namespace CE
 
 		std::string mCategory{};
 		std::string mName{};
-		std::function<Result()> mFunc{};
+		std::function<void()> mFunc{};
 		int mResult = NotRan;
 		std::chrono::system_clock::time_point mTimeLastRan{};
 		std::chrono::milliseconds mLastTestDuration{};
@@ -55,7 +55,7 @@ namespace CE
 
 	namespace Internal
 	{
-		bool RegisterUnitTest(std::string_view name, std::string_view category, std::function<UnitTest::Result()>&& function);
+		bool RegisterUnitTest(std::string_view name, std::string_view category, std::function<void()>&& function);
 	}
 }
 
@@ -66,11 +66,15 @@ CE::Internal::RegisterUnitTest(#Category,												\
 	&(TestName));	
 
 #define UNIT_TEST_DECLARATION(Category, TestName)	\
-CE::UnitTest::Result TestName();					\
+void TestName();					\
 INIT_DUMMY_VAR(Category, TestName)					\
 
 #define UNIT_TEST(Category, TestName)		\
 UNIT_TEST_DECLARATION(Category, TestName)	\
-CE::UnitTest::Result TestName()
+void TestName()
 
-#define TEST_ASSERT(Condition) if (!(Condition)) { LOG(UnitTests, Error, "{} evaluated to false", #Condition); return CE::UnitTest::Failure; }
+#define TEST_FAILURE(FormatString, ...) LOG(UnitTests, Error, FormatString, ##__VA_ARGS__); throw CE::UnitTest::Failure
+#define TEST_ASSERT(Condition) if (!(Condition)) { TEST_FAILURE("{} evaluated to false", #Condition); } static_assert(true)
+#define TEST_EQUAL(Lhs, Rhs) TEST_ASSERT((Lhs) == (Rhs))
+#define TEST_NOT_EQUAL(Lhs, Rhs) TEST_ASSERT((Lhs) != (Rhs))
+#define TEST_NOT_NULL(Ptr) TEST_ASSERT((Ptr) != nullptr)

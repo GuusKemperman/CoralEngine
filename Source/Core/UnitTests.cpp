@@ -150,7 +150,7 @@ std::span<CE::UnitTest> CE::UnitTestManager::GetAllTests()
 	return GetTests();
 }
 
-bool CE::Internal::RegisterUnitTest(std::string_view category, std::string_view name, std::function<UnitTest::Result()>&& function)
+bool CE::Internal::RegisterUnitTest(std::string_view category, std::string_view name, std::function<void()>&& function)
 {
 	GetTests().emplace_back(std::string{category}, std::string{name}, std::move(function));
 	return true;
@@ -160,11 +160,26 @@ void CE::UnitTest::operator()()
 {
 	mTimeLastRan = std::chrono::system_clock::now();
 	LOG(LogUnitTests, Message, "Running {}::{}", mCategory, mName);
-	mResult = mFunc();
 
-	if (mResult == Failure)
+	try
 	{
+		mFunc();
+		mResult = Success;
+	}
+	catch (const std::exception& e)
+	{
+		LOG(LogUnitTest, Error, "Unit test {} threw exception - {}", mName, e.what());
+		throw Failure;
+	}
+	catch (Result result)
+	{
+		mResult = result;
 		LOG(LogUnitTest, Error, "Unit test {} failed", mName);
+	}
+	catch (...)
+	{
+		LOG(LogUnitTest, Error, "Unit test {} threw unknown exception", mName);
+		mResult = Failure;
 	}
 
 	LOG(LogUnitTests, Message, "Finished {}::{}", mCategory, mName);

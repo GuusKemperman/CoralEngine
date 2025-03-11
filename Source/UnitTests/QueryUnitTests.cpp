@@ -88,17 +88,16 @@ namespace
 						TEST_ASSERT(otherDist <= nearestDist);
 					}
 				}
-				return UnitTest::Result::Success;
 			};
-			TEST_ASSERT(testLambda.operator()<TransformedDiskColliderComponent>() == UnitTest::Result::Success);
-			TEST_ASSERT(testLambda.operator()<TransformedAABBColliderComponent>() == UnitTest::Result::Success);
-			TEST_ASSERT(testLambda.operator()<TransformedPolygonColliderComponent>() == UnitTest::Result::Success);
+			testLambda.operator()<TransformedDiskColliderComponent>();
+			testLambda.operator()<TransformedAABBColliderComponent>();
+			testLambda.operator()<TransformedPolygonColliderComponent>();
 		}
 
 		return UnitTest::Result::Success;
 	}
 
-	UnitTest::Result ExploreMulti(CE::World& world, CE::Physics::ExploreOrder order)
+	void ExploreMulti(CE::World& world, CE::Physics::ExploreOrder order)
 	{
 		for (int i = 0; i < 1000; i++)
 		{
@@ -128,8 +127,6 @@ namespace
 				}
 			}
 		}
-
-		return UnitTest::Result::Success;
 	}
 }
 
@@ -165,16 +162,13 @@ UNIT_TEST(PhysicsQueries, BVHCheck)
 					entities.erase(it);
 				}
 			}
-			return UnitTest::Result::Success;
 		};
-		TEST_ASSERT(testLambda.operator()<TransformedDiskColliderComponent>());
-		TEST_ASSERT(testLambda.operator()<TransformedAABBColliderComponent>());
-		TEST_ASSERT(testLambda.operator()<TransformedPolygonColliderComponent>());
+		testLambda.operator()<TransformedDiskColliderComponent>();
+		testLambda.operator()<TransformedAABBColliderComponent>();
+		testLambda.operator()<TransformedPolygonColliderComponent>();
 
 		TEST_ASSERT(entities.empty());
 	}
-
-	return UnitTest::Result::Success;
 }
 
 UNIT_TEST(PhysicsQueries, NearestCheckSingleFreshBuild)
@@ -186,7 +180,7 @@ UNIT_TEST(PhysicsQueries, NearestCheckSingleFreshBuild)
 	PopulateWithRandomColliders(world);
 	physics.UpdateBVHs();
 
-	return ExploreSingle(world, Physics::ExploreOrder::NearestFirst);
+	ExploreSingle(world, Physics::ExploreOrder::NearestFirst);
 }
 
 UNIT_TEST(PhysicsQueries, NearestCheckSingleRefit)
@@ -200,7 +194,7 @@ UNIT_TEST(PhysicsQueries, NearestCheckSingleRefit)
 	ShuffleColliders(world);
 	physics.UpdateBVHs(Physics::UpdateBVHConfig{ .mOnlyRebuildForNewColliders = true });
 
-	return ExploreSingle(world, Physics::ExploreOrder::NearestFirst);
+	ExploreSingle(world, Physics::ExploreOrder::NearestFirst);
 }
 
 UNIT_TEST(PhysicsQueries, FarthestCheckSingleFreshBuild)
@@ -212,7 +206,7 @@ UNIT_TEST(PhysicsQueries, FarthestCheckSingleFreshBuild)
 	PopulateWithRandomColliders(world);
 	physics.UpdateBVHs();
 
-	return ExploreSingle(world, Physics::ExploreOrder::FarthestFirst);
+	ExploreSingle(world, Physics::ExploreOrder::FarthestFirst);
 }
 
 UNIT_TEST(PhysicsQueries, FarthestCheckSingleRefit)
@@ -226,7 +220,7 @@ UNIT_TEST(PhysicsQueries, FarthestCheckSingleRefit)
 	ShuffleColliders(world);
 	physics.UpdateBVHs(Physics::UpdateBVHConfig{ .mOnlyRebuildForNewColliders = true });
 
-	return ExploreSingle(world, Physics::ExploreOrder::FarthestFirst);
+	ExploreSingle(world, Physics::ExploreOrder::FarthestFirst);
 }
 
 UNIT_TEST(PhysicsQueries, NearestCheckMultiFreshBuild)
@@ -238,7 +232,7 @@ UNIT_TEST(PhysicsQueries, NearestCheckMultiFreshBuild)
 	PopulateWithRandomColliders(world);
 	physics.UpdateBVHs();
 
-	return ExploreMulti(world, Physics::ExploreOrder::NearestFirst);
+	ExploreMulti(world, Physics::ExploreOrder::NearestFirst);
 }
 
 UNIT_TEST(PhysicsQueries, NearestCheckMultiRefit)
@@ -252,7 +246,7 @@ UNIT_TEST(PhysicsQueries, NearestCheckMultiRefit)
 	ShuffleColliders(world);
 	physics.UpdateBVHs(Physics::UpdateBVHConfig{ .mOnlyRebuildForNewColliders = true });
 
-	return ExploreMulti(world, Physics::ExploreOrder::NearestFirst);
+	ExploreMulti(world, Physics::ExploreOrder::NearestFirst);
 }
 
 UNIT_TEST(PhysicsQueries, FarthestCheckMultiFreshBuild)
@@ -264,7 +258,7 @@ UNIT_TEST(PhysicsQueries, FarthestCheckMultiFreshBuild)
 	PopulateWithRandomColliders(world);
 	physics.UpdateBVHs();
 
-	return ExploreMulti(world, Physics::ExploreOrder::FarthestFirst);
+	ExploreMulti(world, Physics::ExploreOrder::FarthestFirst);
 }
 
 UNIT_TEST(PhysicsQueries, FarthestCheckMultiRefit)
@@ -278,5 +272,5 @@ UNIT_TEST(PhysicsQueries, FarthestCheckMultiRefit)
 	ShuffleColliders(world);
 	physics.UpdateBVHs(Physics::UpdateBVHConfig{ .mOnlyRebuildForNewColliders = true });
 
-	return ExploreMulti(world, Physics::ExploreOrder::FarthestFirst);
+	ExploreMulti(world, Physics::ExploreOrder::FarthestFirst);
 }

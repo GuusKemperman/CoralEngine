@@ -11,7 +11,7 @@ using namespace CE;
 namespace
 {
 	template<typename Type, typename... CtorArgs>
-	UnitTest::Result RecurivelyCheckIfHasContructor()
+	void RecurivelyCheckIfHasContructor()
 	{
 		const MetaType& assetType = MetaManager::Get().GetType<Type>();
 
@@ -32,22 +32,22 @@ namespace
 			};
 		checkType(assetType);
 
-		return result;
+		TEST_EQUAL(result, UnitTest::Success);
 	}
 }
 
 UNIT_TEST(ReflectionUnitTests, DoesEachAssetHaveLoadInfoConstructor)
 {
-	return RecurivelyCheckIfHasContructor<Asset, AssetLoadInfo&>();
+	RecurivelyCheckIfHasContructor<Asset, AssetLoadInfo&>();
 }
 
 UNIT_TEST(ReflectionUnitTests, DoesEachAssetHaveStringViewConstructor)
 {
-	return RecurivelyCheckIfHasContructor<Asset, std::string_view>();
+	RecurivelyCheckIfHasContructor<Asset, std::string_view>();
 }
 
 UNIT_TEST(ReflectionUnitTests, DoesEachSystemHaveDefaultConstructor)
 {
-	return RecurivelyCheckIfHasContructor<System>();
+	RecurivelyCheckIfHasContructor<System>();
 }
 

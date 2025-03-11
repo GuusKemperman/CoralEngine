@@ -33,34 +33,28 @@ UNIT_TEST(PhysicsSystem, CollisionCheckDiskDisk)
 	// not overlapping
 	if (Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, 1.f, { 5.f, 0.f }, 1.f))
 	{
-		LOG(LogUnitTest, Error, "*Not overlapping* test failed.");
-		return UnitTest::Failure;
+		TEST_FAILURE("*Not overlapping* test failed.");
 	}
 	// overlapping
 	if (!Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, 2.f, { 3.f, 0.f }, 2.f))
 	{
-		LOG(LogUnitTest, Error, "*Overlapping* test failed.");
-		return UnitTest::Failure;
+		TEST_FAILURE("*Overlapping* test failed.");
 	}
 	// encapsulated
 	if (!Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, 1.f, { 0.f, 0.f }, 2.f))
 	{
-		LOG(LogUnitTest, Error, "*Encapsulated* test failed.");
-		return UnitTest::Failure;
+		TEST_FAILURE("*Encapsulated* test failed.");
 	}
 	// same circle
 	if (!Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, 1.f, { 0.f, 0.f }, 1.f))
 	{
-		LOG(LogUnitTest, Error, "*Same circle* test failed.");
-		return UnitTest::Failure;
+		TEST_FAILURE("*Same circle* test failed.");
 	}
 	// one point collision
 	if (!Physics2DUnitTestAccess::CollisionCheckDiskDiskUnitTest({ 0.f, 0.f }, 1.f, { 2.f, 0.f }, 1.f))
 	{
-		LOG(LogUnitTest, Error, "*One point collision* test failed.");
-		return UnitTest::Failure;
+		TEST_FAILURE("*One point collision* test failed.");
 	}
-	return UnitTest::Success;
 }
 
 UNIT_TEST(PhysicsSystem, CollisionCheckDiskPolygon)
@@ -75,38 +69,32 @@ UNIT_TEST(PhysicsSystem, CollisionCheckDiskPolygon)
 	// not overlapping
 	if (Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 1.f, { 5.f, 0.f }, polygonPoints))
 	{
-		LOG(LogUnitTest, Error, "*Not overlapping* test failed.");
-		return UnitTest::Failure;
+		TEST_FAILURE("*Not overlapping* test failed.");
 	}
 	// overlapping 1 edge
 	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 1.f, { 1.5f, 0.f }, polygonPoints))
 	{
-		LOG(LogUnitTest, Error, "*Overlapping 1 edge* test failed.");
-		return UnitTest::Failure;
+		TEST_FAILURE("*Overlapping 1 edge* test failed.");
 	}
 	// overlapping more edges
 	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 2.f, { 2.f, 0.f }, polygonPoints))
 	{
-		LOG(LogUnitTest, Error, "*Overlapping more edges* test failed.");
-		return UnitTest::Failure;
+		TEST_FAILURE("*Overlapping more edges* test failed.");
 	}
 	// polygon in circle
 	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 2.f, { 0.f, 0.f }, polygonPoints))
 	{
-		LOG(LogUnitTest, Error, "*Polygon in circle* test failed.");
-		return UnitTest::Failure;
+		TEST_FAILURE("*Polygon in circle* test failed.");
 	}
 	// circle in polygon
 	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 0.5f, { 0.f, 0.f }, polygonPoints))
 	{
-		LOG(LogUnitTest, Error, "*Circle in polygon* test failed.");
-		return UnitTest::Failure;
+		TEST_FAILURE("*Circle in polygon* test failed.");
 	}
 	// one point edge collision
 	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 1.f, { 2.f, 0.f }, polygonPoints))
 	{
-		LOG(LogUnitTest, Error, "*One point edge collision* test failed.");
-		return UnitTest::Failure;
+		TEST_FAILURE("*One point edge collision* test failed.");
 	}
 	const std::vector<glm::vec2> polygonPointsCornerTest = {
 		{-1.f, 0.f},
@@ -117,8 +105,6 @@ UNIT_TEST(PhysicsSystem, CollisionCheckDiskPolygon)
 	// one point corner collision
 	if (!Physics2DUnitTestAccess::CollisionCheckDiskPolygonUnitTest({ 0.f, 0.f }, 1.f, { 2.f, 0.f }, polygonPointsCornerTest))
 	{
-		LOG(LogUnitTest, Error, "*One point corner collision* test failed.");
-		return UnitTest::Failure;
+		TEST_FAILURE("*One point corner collision* test failed.");
 	}
-	return UnitTest::Success;
 }

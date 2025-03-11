@@ -29,15 +29,11 @@ static FuncResult CallScriptFuncChecked(const Name scriptName, const Name funcNa
 	return (*func)(std::forward<Args>(args)...);
 }
 
-static UnitTest::Result RunSimpleLoopTest(const Name funcName, std::function<int32(int32)> expectedNumOfIterations = [](int32 n) { return n; })
+static void RunSimpleLoopTest(const Name funcName, std::function<int32(int32)> expectedNumOfIterations = [](int32 n) { return n; })
 {
 	const MetaType* const type = MetaManager::Get().TryGetType("UnitTestScript"_Name);
 
-	if (type == nullptr)
-	{
-		LOG(LogUnitTest, Error, "Could not run test, the script we use for testing no longer exists");
-		return UnitTest::Failure;
-	}
+	TEST_NOT_NULL(type);
 
 	for (int32 i = 0; i < 10; i++)
 	{
@@ -45,35 +41,29 @@ static UnitTest::Result RunSimpleLoopTest(const Name funcName, std::function<int
 
 		if (instance.HasError())
 		{
-			LOG(LogUnitTest, Error, "Scripts do not produce a default constructible type - {}", instance.Error());
-			return UnitTest::Failure;
+			TEST_FAILURE("Scripts do not produce a default constructible type - {}", instance.Error());
 		}
 
 		FuncResult result = CallScriptFuncChecked("UnitTestScript"_Name, funcName, instance.GetReturnValue(), i);
 
 		if (result.HasError())
 		{
-			LOG(LogUnitTest, Error, "Expected {} iterations, but the function returned an error - {}", i, result.Error());
-			return UnitTest::Failure;
+			TEST_FAILURE("Expected {} iterations, but the function returned an error - {}", i, result.Error());
 		}
 
 		if (!result.HasReturnValue()
 			|| result.GetReturnValue().As<int32>() == nullptr)
 		{
-			LOG(LogUnitTest, Error, "Function did not return an integer");
-			return UnitTest::Failure;
+			TEST_FAILURE("Function did not return an integer");
 		}
 
 		int32 expected = expectedNumOfIterations(i);
 
 		if (*result.GetReturnValue().As<int32>() != expected)
 		{
-			LOG(LogUnitTest, Error, "Loopbody SHOULD have ran {} times with i = {}, but ran {} times instead!", expected, i, *result.GetReturnValue().As<int32>());
-			return UnitTest::Failure;
+			TEST_FAILURE("Loopbody SHOULD have ran {} times with i = {}, but ran {} times instead!", expected, i, *result.GetReturnValue().As<int32>());
 		}
 	}
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Scripting, ParamsAndReturn)
@@ -85,31 +75,25 @@ UNIT_TEST(Scripting, ParamsAndReturn)
 
 		if (isEvenResult.HasError())
 		{
-			LOG(LogUnitTest, Error, "{}", isEvenResult.Error());
-			return UnitTest::Failure;
+			TEST_FAILURE("{}", isEvenResult.Error());
 		}
 		else if (isOddResult.HasError())
 		{
-			LOG(LogUnitTest, Error, "{}", isOddResult.Error());
-			return UnitTest::Failure;
+			TEST_FAILURE("{}", isOddResult.Error());
 		}
 
 		if (!isEvenResult.HasReturnValue()
 			|| !isOddResult.HasReturnValue())
 		{
-			LOG(LogUnitTest, Error, "Expected a return value!");
-			return UnitTest::Failure;
+			TEST_FAILURE("Expected a return value!");
 		}
 
 		if (!isEvenResult.GetReturnValue().IsExactly<bool>()
 			|| !isOddResult.GetReturnValue().IsExactly<bool>())
 		{
-			LOG(LogUnitTest, Error, "Expected booleans!");
-			return UnitTest::Failure;
+			TEST_FAILURE("Expected booleans!");
 		}
 	}
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Scripting, NonStaticFunctions)
@@ -118,8 +102,7 @@ UNIT_TEST(Scripting, NonStaticFunctions)
 
 	if (type == nullptr)
 	{
-		LOG(LogUnitTest, Error, "Could not run test, the script we use for testing no longer exists");
-		return UnitTest::Failure;
+		TEST_FAILURE("Could not run test, the script we use for testing no longer exists");
 	}
 
 	FuncResult instance1 = type->Construct();
@@ -128,8 +111,7 @@ UNIT_TEST(Scripting, NonStaticFunctions)
 	if (instance1.HasError()
 		|| instance2.HasError())
 	{
-		LOG(LogUnitTest, Error, "Scripts do not produce a default constructible type - {}", instance1.Error());
-		return UnitTest::Failure;
+		TEST_FAILURE("Scripts do not produce a default constructible type - {}", instance1.Error());
 	}
 
 	for (int i = 1; i < 3; i++)
@@ -140,8 +122,7 @@ UNIT_TEST(Scripting, NonStaticFunctions)
 
 		if (setResult.HasError())
 		{
-			LOG(LogUnitTest, Error, "Function call failed: {}", setResult.Error());
-			return UnitTest::Failure;
+			TEST_FAILURE("Function call failed: {}", setResult.Error());
 		}
 
 		FuncResult getResult1 = CallScriptFuncChecked("UnitTestScript"_Name, "GetFloat"_Name, instance1.GetReturnValue());
@@ -149,21 +130,18 @@ UNIT_TEST(Scripting, NonStaticFunctions)
 
 		if (getResult1.HasError())
 		{
-			LOG(LogUnitTest, Error, "Function call failed: {}", getResult1.Error());
-			return UnitTest::Failure;
+			TEST_FAILURE("Function call failed: {}", getResult1.Error());
 		}
 
 		if (getResult2.HasError())
 		{
-			LOG(LogUnitTest, Error, "Function call failed: {}", getResult2.Error());
-			return UnitTest::Failure;
+			TEST_FAILURE("Function call failed: {}", getResult2.Error());
 		}
 
 		if (!getResult1.HasReturnValue()
 			|| !getResult2.HasReturnValue())
 		{
-			LOG(LogUnitTest, Error, "Function returned void unexpectedly");
-			return UnitTest::Failure;
+			TEST_FAILURE("Function returned void unexpectedly");
 		}
 
 		float* returnValue1 = getResult1.GetReturnValue().As<float>();
@@ -172,55 +150,51 @@ UNIT_TEST(Scripting, NonStaticFunctions)
 		if (returnValue1 == nullptr
 			|| returnValue2 == nullptr)
 		{
-			LOG(LogUnitTest, Error, "Function returned something that wasnt a float");
+			TEST_FAILURE("Function returned something that wasnt a float");
 		}
 
 		if (expectedValue != *returnValue1)
 		{
-			LOG(LogUnitTest, Error, "GetFloat returned {}, but we just set that value to {} - Expected them to match",
+			TEST_FAILURE("GetFloat returned {}, but we just set that value to {} - Expected them to match",
 				*returnValue1, expectedValue);
-			return UnitTest::Failure;
 		}
 
 		if (*returnValue1 == *returnValue2)
 		{
-			LOG(LogUnitTest, Error, "Calling a non-static function on one instance somehow influenced the other instance as well",
+			TEST_FAILURE("Calling a non-static function on one instance somehow influenced the other instance as well",
 				*returnValue1, expectedValue);
-			return UnitTest::Failure;
 		}
 	}
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Scripting, SimpleWhileLoop)
 {
-	return RunSimpleLoopTest("SimpleWhileLoop"_Name);
+	RunSimpleLoopTest("SimpleWhileLoop"_Name);
 }
 
 UNIT_TEST(Scripting, SimpleForLoop)
 {
-	return RunSimpleLoopTest("SimpleForLoop"_Name);
+	RunSimpleLoopTest("SimpleForLoop"_Name);
 }
 
 UNIT_TEST(Scripting, NestedForLoop)
 {
-	return RunSimpleLoopTest("NestedForLoop"_Name, [](int32 n) { return n * (n * 2); });
+	RunSimpleLoopTest("NestedForLoop"_Name, [](int32 n) { return n * (n * 2); });
 }
 
 UNIT_TEST(Scripting, BreakWhileLoop)
 {
-	return RunSimpleLoopTest("BreakWhileLoop"_Name);
+	RunSimpleLoopTest("BreakWhileLoop"_Name);
 }
 
 UNIT_TEST(Scripting, BreakForLoop)
 {
-	return RunSimpleLoopTest("BreakForLoop"_Name);
+	RunSimpleLoopTest("BreakForLoop"_Name);
 }
 
 UNIT_TEST(Scripting, BreakNestedLoop)
 {
-	return RunSimpleLoopTest("BreakNestedLoops"_Name);
+	RunSimpleLoopTest("BreakNestedLoops"_Name);
 }
 
 
@@ -232,16 +206,13 @@ UNIT_TEST(Scripting, IsNullTest)
 
 			if (result.HasError())
 			{
-				LOG(LogUnitTest, Error, "Failed to call IsNull function - {}", result.Error());
-				return UnitTest::Failure;
+				TEST_FAILURE("Failed to call IsNull function - {}", result.Error());
 			}
 
 			TEST_ASSERT(result.HasReturnValue() && result.GetReturnValue().As<bool>() != nullptr);
 			TEST_ASSERT(*result.GetReturnValue().As<bool>() == shouldBeNull);
-			return UnitTest::Success;
 		};
 
-	TEST_ASSERT(nullCheck({ MakeTypeInfo<AssetHandle<Material>>(), nullptr }, true) == UnitTest::Success);
-	TEST_ASSERT(nullCheck(MetaAny{ AssetHandle<Material>{ nullptr } }, true) == UnitTest::Success);
-	return UnitTest::Success;
+	nullCheck({ MakeTypeInfo<AssetHandle<Material>>(), nullptr }, true);
+	nullCheck(MetaAny{ AssetHandle<Material>{ nullptr } }, true);
 }

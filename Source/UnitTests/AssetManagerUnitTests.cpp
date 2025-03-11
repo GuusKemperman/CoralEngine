@@ -19,8 +19,6 @@ UNIT_TEST(AssetManagerUnitTests, MultiThreadedAssetLoadingUnloading)
 					TEST_ASSERT(asset.Get() != nullptr);
 				}
 			}
-
-			return UnitTest::Success;
 		};
 
 	const auto unloadAssets = []
@@ -31,7 +29,7 @@ UNIT_TEST(AssetManagerUnitTests, MultiThreadedAssetLoadingUnloading)
 			}
 		};
 
-	std::vector<std::future<UnitTest::Result>> loadResults{};
+	std::vector<std::future<void>> loadResults{};
 	std::vector<std::future<void>> unloadResults{};
 
 	for (size_t i = 0; i < ThreadPool::Get().NumberOfThreads(); i += 2)
@@ -42,14 +40,12 @@ UNIT_TEST(AssetManagerUnitTests, MultiThreadedAssetLoadingUnloading)
 
 	for (auto& result : loadResults)
 	{
-		TEST_ASSERT(result.get());
+		result.wait();
 	}
 
 	for (const auto& unloadResult : unloadResults)
 	{
 		unloadResult.wait();
 	}
-
-	return UnitTest::Success;
 }
 

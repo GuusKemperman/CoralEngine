@@ -25,34 +25,17 @@ UNIT_TEST(Meta, FunctionHash)
 	const MetaType* const floatType = manager.TryGetType<float32>();
 	const MetaType* const mat4 = manager.TryGetType<glm::mat4>();
 
-	if (intType == nullptr
-		|| floatType == nullptr
-		|| mat4 == nullptr)
-	{
-		return UnitTest::Failure;
-	}
+	TEST_NOT_NULL(intType);
+	TEST_NOT_NULL(floatType);
+	TEST_NOT_NULL(mat4);
 
-	if (intType->GetTypeId() != CE::MakeTypeId<int32>())
-	{
-		return UnitTest::Failure;
-	}
-
-	if (floatType->GetTypeId() != CE::MakeTypeId<float32>())
-	{
-		return UnitTest::Failure;
-	}
-
-	if (mat4->GetTypeId() != CE::MakeTypeId<glm::mat4>())
-	{
-		return UnitTest::Failure;
-	}
+	TEST_EQUAL(intType->GetTypeId(), CE::MakeTypeId<int32>());
+	TEST_EQUAL(floatType->GetTypeId(), CE::MakeTypeId<float32>());
+	TEST_EQUAL(mat4->GetTypeId(), CE::MakeTypeId<glm::mat4>());
 
 	const MetaFunc func1{ [](int32, float32) -> glm::mat4 { return {}; }, "func1" };
 
-	if (func1.GetFuncId() != CE::MakeFuncId<glm::mat4(int32, float32)>())
-	{
-		return UnitTest::Failure;
-	}
+	TEST_EQUAL(func1.GetFuncId(), CE::MakeFuncId<glm::mat4(int32, float32)>());
 
 	// This could obviously be done at compile time, but thats not the point of this test
 	const std::vector<MetaFuncNamedParam> params{
@@ -68,9 +51,5 @@ UNIT_TEST(Meta, FunctionHash)
 		params
 	};
 
-	if (dynamicFunc.GetFuncId() == func1.GetFuncId())
-	{
-		return UnitTest::Success;
-	}
-	return UnitTest::Failure;
+	TEST_EQUAL(dynamicFunc.GetFuncId(), func1.GetFuncId());
 }

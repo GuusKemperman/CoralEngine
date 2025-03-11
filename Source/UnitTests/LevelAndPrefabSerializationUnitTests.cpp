@@ -27,8 +27,8 @@ namespace
 
 	struct PrefabChange
 	{
-		std::function<UnitTest::Result(World&, entt::entity)> mMakeChanges{};
-		std::function<UnitTest::Result(const World&, entt::entity)> mCheckChanges{};
+		std::function<void(World&, entt::entity)> mMakeChanges{};
+		std::function<void(const World&, entt::entity)> mCheckChanges{};
 	};
 
 	struct EntityRefTestComponent
@@ -37,7 +37,7 @@ namespace
 		static MetaType Reflect();
 	};
 
-	UnitTest::Result TestPrefabChanges(std::unique_ptr<World> initialWorld,
+	void TestPrefabChanges(std::unique_ptr<World> initialWorld,
 		entt::entity initialEntity,
 		std::vector<PrefabChange> changes,
 		std::function<void(World&, entt::entity)>&& changePrefabInstanceInWorld = {});
@@ -88,8 +88,6 @@ UNIT_TEST(Serialization, NoPrefabsLevelSerialization)
 
 	TEST_ASSERT(reloadedReg.Get<TransformComponent>(child).GetParent() == &reloadedReg.Get<TransformComponent>(parent));
 	TEST_ASSERT(reloadedReg.Storage<entt::entity>().in_use() == 2);
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Serialization, PrefabsSerialization)
@@ -143,8 +141,6 @@ UNIT_TEST(Serialization, PrefabsSerialization)
 
 	TEST_ASSERT(reloadedReg.Get<TransformComponent>(child).GetParent() == &reloadedReg.Get<TransformComponent>(parent));
 	TEST_ASSERT(reloadedReg.Storage<entt::entity>().in_use() == 2);
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Serialization, EmptyEntityLevelSerialization)
@@ -159,8 +155,6 @@ UNIT_TEST(Serialization, EmptyEntityLevelSerialization)
 
 	TEST_ASSERT(reloadedReg.Valid(entity));
 	TEST_ASSERT(reloadedReg.Storage<entt::entity>().in_use() == 1);
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Serialization, EmptyComponentLevelSerialization)
@@ -178,8 +172,6 @@ UNIT_TEST(Serialization, EmptyComponentLevelSerialization)
 	TEST_ASSERT(reloadedReg.Valid(entity));
 	TEST_ASSERT(reloadedReg.Storage<entt::entity>().in_use() == 1);
 	TEST_ASSERT(reloadedReg.HasComponent<EmptyEventTestingComponent>(entity));
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Serialization, EmptyEntityPrefabSerialization)
@@ -194,8 +186,6 @@ UNIT_TEST(Serialization, EmptyEntityPrefabSerialization)
 
 	TEST_ASSERT(reloadedReg.Valid(entity));
 	TEST_ASSERT(reloadedReg.Storage<entt::entity>().in_use() == 1);
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Serialization, PrefabAddComponent)
@@ -205,7 +195,7 @@ UNIT_TEST(Serialization, PrefabAddComponent)
 	Registry& reg = world->GetRegistry();
 	entt::entity entity = reg.Create();
 
-	return TestPrefabChanges(std::move(world), entity,
+	TestPrefabChanges(std::move(world), entity,
 		{
 			{
 				[](World& world, entt::entity entity)
@@ -220,8 +210,6 @@ UNIT_TEST(Serialization, PrefabAddComponent)
 					TEST_ASSERT(reg.Valid(entity));
 					TEST_ASSERT(reg.TryGet<NameComponent>(entity) != nullptr);
 					TEST_ASSERT(reg.Get<NameComponent>(entity).mName == "Name!");
-
-					return UnitTest::Result::Success;
 				}
 			}
 		});
@@ -235,7 +223,7 @@ UNIT_TEST(Serialization, PrefabRemoveComponent)
 	entt::entity entity = reg.Create();
 	reg.AddComponent<NameComponent>(entity);
 
-	return TestPrefabChanges(std::move(world), entity,
+	TestPrefabChanges(std::move(world), entity,
 		{
 			{
 				[](World& world, entt::entity entity)
@@ -244,7 +232,6 @@ UNIT_TEST(Serialization, PrefabRemoveComponent)
 
 					TEST_ASSERT(reg.TryGet<NameComponent>(entity) != nullptr);
 					reg.RemoveComponent<NameComponent>(entity);
-					return UnitTest::Result::Success;
 
 				},
 				[](const World& world, entt::entity entity)
@@ -253,7 +240,6 @@ UNIT_TEST(Serialization, PrefabRemoveComponent)
 
 					TEST_ASSERT(reg.Valid(entity));
 					TEST_ASSERT(reg.TryGet<NameComponent>(entity) == nullptr);
-					return UnitTest::Result::Success;
 				}
 			}
 		});
@@ -277,7 +263,6 @@ UNIT_TEST(Serialization, PrefabAddChild)
 
 			TransformComponent& parentTransform = reg.Get<TransformComponent>(parent);
 			childTransform.SetParent(&parentTransform);
-			return UnitTest::Result::Success;
 		};
 
 	return TestPrefabChanges(std::move(world), parent,
@@ -293,7 +278,6 @@ UNIT_TEST(Serialization, PrefabAddChild)
 					const TransformComponent& parentTransform = reg.Get<TransformComponent>(parent);
 					TEST_ASSERT(parentTransform.GetChildren().size() == 1);
 					TEST_ASSERT(reg.Storage<entt::entity>()->in_use() == 2);
-					return UnitTest::Result::Success;
 				},
 			},
 			{
@@ -307,7 +291,6 @@ UNIT_TEST(Serialization, PrefabAddChild)
 					const TransformComponent& parentTransform = reg.Get<TransformComponent>(parent);
 					TEST_ASSERT(parentTransform.GetChildren().size() == 2);
 					TEST_ASSERT(reg.Storage<entt::entity>()->in_use() == 3);
-					return UnitTest::Result::Success;
 				},
 			}
 		});
@@ -349,8 +332,6 @@ UNIT_TEST(Serialization, PrefabRemoveChild)
 					reg.RemovedDestroyed();
 
 					TEST_ASSERT(reg.Storage<entt::entity>().in_use() == 1);
-
-					return UnitTest::Result::Success;
 				},
 				[](const World& world, entt::entity parent)
 				{
@@ -361,7 +342,6 @@ UNIT_TEST(Serialization, PrefabRemoveChild)
 					const TransformComponent& parentTransform = reg.Get<TransformComponent>(parent);
 					TEST_ASSERT(parentTransform.GetChildren().empty());
 					TEST_ASSERT(reg.Storage<entt::entity>()->in_use() == 1);
-					return UnitTest::Result::Success;
 				},
 			},
 		});
@@ -394,8 +374,6 @@ UNIT_TEST(Serialization, PrefabChildRemovedWhileInstancesHaveChanges)
 			TEST_ASSERT(parentTransform.GetChildren().size() == 1);
 			TransformComponent& childTransform = parentTransform.GetChildren()[0];
 			world.GetRegistry().AddComponent<NameComponent>(childTransform.GetOwner(), "Hello!");
-
-			return UnitTest::Success;
 		};
 
 	return TestPrefabChanges(std::move(world), parent,
@@ -418,8 +396,6 @@ UNIT_TEST(Serialization, PrefabChildRemovedWhileInstancesHaveChanges)
 					reg.RemovedDestroyed();
 
 					TEST_ASSERT(reg.Storage<entt::entity>().in_use() == 1);
-
-					return UnitTest::Result::Success;
 				},
 				[](const World& world, entt::entity parent)
 				{
@@ -430,7 +406,6 @@ UNIT_TEST(Serialization, PrefabChildRemovedWhileInstancesHaveChanges)
 					const TransformComponent& parentTransform = reg.Get<TransformComponent>(parent);
 					TEST_ASSERT(parentTransform.GetChildren().empty());
 					TEST_ASSERT(reg.Storage<entt::entity>()->in_use() == 1);
-					return UnitTest::Result::Success;
 				},
 			},
 		},
@@ -464,7 +439,7 @@ UNIT_TEST(Serialization, CopyPaste)
 	}
 
 	int depthRemaining = 4;
-	std::function<UnitTest::Result(std::vector<entt::entity>&)> doesMatch = [&](std::vector<entt::entity>& entitiesToCheck) -> UnitTest::Result
+	std::function<void(std::vector<entt::entity>&)> doesMatch = [&](std::vector<entt::entity>& entitiesToCheck) 
 		{
 			TEST_ASSERT(reg.Storage<entt::entity>().in_use() == entitiesToCheck.size());
 
@@ -506,13 +481,12 @@ UNIT_TEST(Serialization, CopyPaste)
 				BinaryGSONObject copy = Archiver::Serialize(*world, std::array<entt::entity, 2>{ parent, child }, true);
 				const std::vector<entt::entity> copiedEntities = Archiver::Deserialize(*world, copy);
 				entitiesToCheck.insert(entitiesToCheck.end(), copiedEntities.begin(), copiedEntities.end());
-				return doesMatch(entitiesToCheck);
+				doesMatch(entitiesToCheck);
 			}
-			return UnitTest::Success;
 		};
 
 	std::vector<entt::entity> entities{ parent, child };
-	return doesMatch(entities);
+	doesMatch(entities);
 }
 
 namespace
@@ -554,7 +528,7 @@ namespace
 		return type;
 	}
 
-	UnitTest::Result TestPrefabChanges(std::unique_ptr<World> initialWorld,
+	void TestPrefabChanges(std::unique_ptr<World> initialWorld,
 	                                   entt::entity initialEntity,
 	                                   std::vector<PrefabChange> changes,
 	                                   std::function<void(World&, entt::entity)>&& changePrefabInstanceInWorld)
@@ -629,25 +603,13 @@ namespace
 
 			for (const PrefabChange& change : changes)
 			{
-				UnitTest::Result result = change.mMakeChanges(*initialWorld, initialEntity);
-
-				if (result != UnitTest::Result::Success)
-				{
-					return result;
-				}
+				change.mMakeChanges(*initialWorld, initialEntity);
 
 				updatePrefab();
 				AssetLoadInfo loadInfo{ serializedLevel };
 				Level level{ loadInfo };
 				std::unique_ptr<World> worldWithChangesApplied = level.CreateWorld(false);
-				result = change.mCheckChanges(*worldWithChangesApplied, initialEntity);
-
-				if (result != UnitTest::Result::Success)
-				{
-					return result;
-				}
+				change.mCheckChanges(*worldWithChangesApplied, initialEntity);
 			}
-
-			return UnitTest::Result::Success;
 	}
 }

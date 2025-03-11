@@ -108,8 +108,6 @@ UNIT_TEST(Events, OnTick)
 	world.Tick(sOnFixedTickStepSize * .5f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfTicks", 1));
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Events, OnFixedTick)
@@ -132,8 +130,6 @@ UNIT_TEST(Events, OnFixedTick)
 	world.Tick(sOnFixedTickStepSize * .5f);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfFixedTicks", 2));
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Events, OnConstruct)
@@ -144,8 +140,6 @@ UNIT_TEST(Events, OnConstruct)
 	entt::entity owner = InitTest(world);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfConstructs", 1));
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Events, OnBeginPlay)
@@ -160,8 +154,6 @@ UNIT_TEST(Events, OnBeginPlay)
 	world.BeginPlay();
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfBeginPlays", 1));
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Events, OnBeginPlayWhenAddedAfterWorldBeginsPlay)
@@ -172,8 +164,6 @@ UNIT_TEST(Events, OnBeginPlayWhenAddedAfterWorldBeginsPlay)
 	entt::entity owner = InitTest(world);
 
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfBeginPlays", 1));
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Events, OnDestructEntireWorld)
@@ -190,8 +180,6 @@ UNIT_TEST(Events, OnDestructEntireWorld)
 	// I guess we can't really test the num of destructs if the instance were destroyed..
 	// But we have the static one atleast
 	TEST_ASSERT(EmptyEventTestingComponent::sNumOfDestructs == 1);
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Events, OnDestructRemoveComponent)
@@ -208,8 +196,6 @@ UNIT_TEST(Events, OnDestructRemoveComponent)
 	// I guess we can't really test the num of destructs if the instance were destroyed..
 	// But we have the static one atleast
 	TEST_ASSERT(EmptyEventTestingComponent::sNumOfDestructs == 1);
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Events, OnDestructDestroyEntity)
@@ -227,8 +213,6 @@ UNIT_TEST(Events, OnDestructDestroyEntity)
 	// I guess we can't really test the num of destructs if the instance were destroyed..
 	// But we have the static one atleast
 	TEST_ASSERT(EmptyEventTestingComponent::sNumOfDestructs == 1);
-
-	return UnitTest::Success;
 }
 
 UNIT_TEST(Events, CollisionEvents)
@@ -284,6 +268,4 @@ UNIT_TEST(Events, CollisionEvents)
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionEntry", 1));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionStay", 3));
 	TEST_ASSERT(DoBothValuesMatch(world, owner, "mNumOfCollisionExit", 1));
-
-	return UnitTest::Success;
 }
