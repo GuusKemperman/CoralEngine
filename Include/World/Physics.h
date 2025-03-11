@@ -290,13 +290,21 @@ bool CE::Physics::Explore(glm::vec2 location,
 		{
 			if constexpr (Order == ExploreOrder::NearestFirst)
 			{
-				return node.mBoundingBox.SignedDistance(location);
+				const float signedDist = node.mBoundingBox.SignedDistance(location);
+
+				if (signedDist <= 0.0f)
+				{
+					// We are inside the box.
+					// Any entities in this box (or its children)
+					// could be directly touching our query point.
+					// We need to explore these first.
+					return -std::numeric_limits<float>::infinity();
+				}
+				return signedDist;
 			}
 			else
 			{
 				// todo optimise
-
-
 				return glm::sqrt(glm::max(
 					glm::max(glm::distance2(node.mBoundingBox.mMin, location), glm::distance2(node.mBoundingBox.mMax, location)),
 					glm::max(glm::distance2(glm::vec2{ node.mBoundingBox.mMin.x, node.mBoundingBox.mMax.y }, location),

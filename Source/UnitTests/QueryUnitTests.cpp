@@ -14,7 +14,7 @@ using namespace CE;
 
 namespace
 {
-	constexpr int sNumCollidersToSpawn = 300;
+	constexpr int sNumCollidersToSpawn = 1200;
 
 	CollisionRules GetRules()
 	{
@@ -35,7 +35,7 @@ namespace
 			for (int i = 0; i < sNumCollidersToSpawn / 3; i++)
 			{
 				entt::entity entity = reg.Create();
-				reg.AddComponent<TransformComponent>(entity).SetWorldPosition(CE::Random::Range(glm::vec2{ -100.0f, -100.0f }, glm::vec2{ 100.0f, 100.0f }));
+				reg.AddComponent<TransformComponent>(entity).SetWorldPosition(CE::Random::Range(glm::vec2{ -50.0f }, glm::vec2{ 50.0f }));
 				reg.AddComponent<PhysicsBody2DComponent>(entity).mRules = rules;
 				reg.AddComponent<T>(entity, collider);
 			}
