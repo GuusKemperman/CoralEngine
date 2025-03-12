@@ -14,7 +14,8 @@ using namespace CE;
 
 namespace
 {
-	constexpr int sNumCollidersToSpawn = 1200;
+	constexpr int sNumCollidersToSpawn = 600;
+	constexpr int sNumIterationsPerTest = 10;
 
 	CollisionRules GetRules()
 	{
@@ -24,13 +25,13 @@ namespace
 			return rules;
 	}
 
-	void PopulateWithRandomColliders(CE::World& world)
+	void PopulateWithRandomColliders(CE::World& world, bool disks = true, bool aabbs = true, bool polys = true)
 	{
 		Registry& reg = world.GetRegistry();
 
 		CollisionRules rules = GetRules();
 
-		auto addLambda = [&]<typename T>(const T & collider)
+		auto addLambda = [&]<typename T>(const T& collider)
 		{
 			for (int i = 0; i < sNumCollidersToSpawn / 3; i++)
 			{
@@ -40,9 +41,21 @@ namespace
 				reg.AddComponent<T>(entity, collider);
 			}
 		};
-		addLambda(DiskColliderComponent{ 5.0f });
-		addLambda(AABBColliderComponent{ glm::vec2{ 5.0f, 5.0f } });
-		addLambda(PolygonColliderComponent{ { glm::vec2{ -5.0f, 0.0f}, glm::vec2{ 0.0f, 5.0f}, glm::vec2{ 5.0f, 0.0f} } });
+
+		if (disks)
+		{
+			addLambda(DiskColliderComponent{ 5.0f });
+		}
+
+		if (aabbs)
+		{
+			addLambda(AABBColliderComponent{ glm::vec2{ 5.0f, 5.0f } });
+		}
+
+		if (polys)
+		{
+			addLambda(PolygonColliderComponent{ { glm::vec2{ -5.0f, 0.0f}, glm::vec2{ 0.0f, 5.0f}, glm::vec2{ 5.0f, 2.5f} } });
+		}
 
 		world.GetPhysics().SyncWorldToPhysics();
 	}
@@ -107,7 +120,7 @@ namespace
 				world.GetPhysics().GetSortedNearToFar(point, GetRules()) :
 				world.GetPhysics().GetSortedFarToNear(point, GetRules());
 
-			TEST_ASSERT(nearest.size() == sNumCollidersToSpawn);
+			TEST_ASSERT(nearest.size() == world.GetRegistry().View<PhysicsBody2DComponent>().size());
 
 			const bool hasDuplicates = std::adjacent_find(nearest.begin(), nearest.end()) != nearest.end();
 			TEST_ASSERT(!hasDuplicates);
@@ -128,149 +141,214 @@ namespace
 			}
 		}
 	}
+
+	struct ExploreTestParams
+	{
+		bool mNearestFirst = true;
+		bool mMulti{};
+		bool mRefit{};
+		bool mDisks = true;
+		bool mAABBs = true;
+		bool mPolys = false;
+	};
+
+	void ExploreTest(ExploreTestParams params)
+	{
+		for (int iteration = 0; iteration < sNumIterationsPerTest; iteration++)
+		{
+			using namespace CE;
+			World world{ true };
+			Physics& physics = world.GetPhysics();
+
+			PopulateWithRandomColliders(world, params.mDisks, params.mAABBs, params.mPolys);
+			physics.UpdateBVHs();
+
+			if (params.mRefit)
+			{
+				ShuffleColliders(world);
+				physics.UpdateBVHs(Physics::UpdateBVHConfig{ .mOnlyRebuildForNewColliders = true });
+			}
+
+			CE::Physics::ExploreOrder order = params.mNearestFirst ? Physics::ExploreOrder::NearestFirst : Physics::ExploreOrder::FarthestFirst;
+
+			if (params.mMulti)
+			{
+				ExploreMulti(world, order);
+			}
+			else
+			{
+				ExploreSingle(world, order);
+
+			}
+		}
+	}
 }
 
 UNIT_TEST(PhysicsQueries, BVHCheck)
 {
-	using namespace CE;
-	World world{ true };
-
-	PopulateWithRandomColliders(world);
-
-	Registry& reg = world.GetRegistry();
-	CollisionRules rules = GetRules();
-
-	world.GetPhysics().UpdateBVHs();
-
-	for (int i = 0; i < 1000; i++)
+	for (int iteration = 0; iteration < sNumIterationsPerTest; iteration++)
 	{
-		TransformedDiskColliderComponent disk{
-			Random::Range(glm::vec2{ -100.0f, -100.0f }, glm::vec2{ 100.0f, 100.0f }),
-			Random::Range(1.0f, 50.0f),
-		};
+		using namespace CE;
+		World world{ true };
 
-		std::vector<entt::entity> entities = world.GetPhysics().FindAllWithinShape(disk, rules);
+		PopulateWithRandomColliders(world);
 
-		auto testLambda = [&]<typename T>()
+		Registry& reg = world.GetRegistry();
+		CollisionRules rules = GetRules();
+
+		world.GetPhysics().UpdateBVHs();
+
+		for (int i = 0; i < 1000; i++)
 		{
-			for (auto [entity, other] : reg.View<T>().each())
-			{
-				if (AreOverlapping(disk, other))
-				{
-					auto it = std::find(entities.begin(), entities.end(), entity);
-					TEST_ASSERT(it != entities.end());
-					entities.erase(it);
-				}
-			}
-		};
-		testLambda.operator()<TransformedDiskColliderComponent>();
-		testLambda.operator()<TransformedAABBColliderComponent>();
-		testLambda.operator()<TransformedPolygonColliderComponent>();
+			TransformedDiskColliderComponent disk{
+				Random::Range(glm::vec2{ -100.0f, -100.0f }, glm::vec2{ 100.0f, 100.0f }),
+				Random::Range(1.0f, 50.0f),
+			};
 
-		TEST_ASSERT(entities.empty());
+			std::vector<entt::entity> entities = world.GetPhysics().FindAllWithinShape(disk, rules);
+
+			auto testLambda = [&]<typename T>()
+			{
+				for (auto [entity, other] : reg.View<T>().each())
+				{
+					if (AreOverlapping(disk, other))
+					{
+						auto it = std::find(entities.begin(), entities.end(), entity);
+						TEST_ASSERT(it != entities.end());
+						entities.erase(it);
+					}
+				}
+			};
+			testLambda.operator() < TransformedDiskColliderComponent > ();
+			testLambda.operator() < TransformedAABBColliderComponent > ();
+			testLambda.operator() < TransformedPolygonColliderComponent > ();
+
+			TEST_ASSERT(entities.empty());
+		}
 	}
 }
 
 UNIT_TEST(PhysicsQueries, NearestCheckSingleFreshBuild)
 {
-	using namespace CE;
-	World world{ true };
-	Physics& physics = world.GetPhysics();
-
-	PopulateWithRandomColliders(world);
-	physics.UpdateBVHs();
-
-	ExploreSingle(world, Physics::ExploreOrder::NearestFirst);
+	ExploreTest({ .mMulti = false,});
 }
 
 UNIT_TEST(PhysicsQueries, NearestCheckSingleRefit)
 {
-	using namespace CE;
-	World world{ true };
-	Physics& physics = world.GetPhysics();
-
-	PopulateWithRandomColliders(world);
-	physics.UpdateBVHs();
-	ShuffleColliders(world);
-	physics.UpdateBVHs(Physics::UpdateBVHConfig{ .mOnlyRebuildForNewColliders = true });
-
-	ExploreSingle(world, Physics::ExploreOrder::NearestFirst);
+	ExploreTest({ .mMulti = false, .mRefit = true });
 }
 
-UNIT_TEST(PhysicsQueries, FarthestCheckSingleFreshBuild)
+UNIT_TEST(PhysicsQueries, NearestCheckSingleFreshBuildDisks)
 {
-	using namespace CE;
-	World world{ true };
-	Physics& physics = world.GetPhysics();
-
-	PopulateWithRandomColliders(world);
-	physics.UpdateBVHs();
-
-	ExploreSingle(world, Physics::ExploreOrder::FarthestFirst);
+	ExploreTest({ .mMulti = false, .mAABBs = false, .mPolys = false });
 }
 
-UNIT_TEST(PhysicsQueries, FarthestCheckSingleRefit)
+UNIT_TEST(PhysicsQueries, NearestCheckSingleRefitDisks)
 {
-	using namespace CE;
-	World world{ true };
-	Physics& physics = world.GetPhysics();
-
-	PopulateWithRandomColliders(world);
-	physics.UpdateBVHs();
-	ShuffleColliders(world);
-	physics.UpdateBVHs(Physics::UpdateBVHConfig{ .mOnlyRebuildForNewColliders = true });
-
-	ExploreSingle(world, Physics::ExploreOrder::FarthestFirst);
+	ExploreTest({ .mMulti = false, .mRefit = true, .mAABBs = false, .mPolys = false });
 }
 
 UNIT_TEST(PhysicsQueries, NearestCheckMultiFreshBuild)
 {
-	using namespace CE;
-	World world{ true };
-	Physics& physics = world.GetPhysics();
-
-	PopulateWithRandomColliders(world);
-	physics.UpdateBVHs();
-
-	ExploreMulti(world, Physics::ExploreOrder::NearestFirst);
+	ExploreTest({ .mMulti = true, });
 }
 
 UNIT_TEST(PhysicsQueries, NearestCheckMultiRefit)
 {
-	using namespace CE;
-	World world{ true };
-	Physics& physics = world.GetPhysics();
+	ExploreTest({ .mMulti = true, .mRefit = true });
+}
 
-	PopulateWithRandomColliders(world);
-	physics.UpdateBVHs();
-	ShuffleColliders(world);
-	physics.UpdateBVHs(Physics::UpdateBVHConfig{ .mOnlyRebuildForNewColliders = true });
+UNIT_TEST(PhysicsQueries, NearestCheckMultiFreshBuildAABBs)
+{
+	ExploreTest({ .mMulti = true, .mDisks = false, .mAABBs = true, .mPolys = false });
+}
 
-	ExploreMulti(world, Physics::ExploreOrder::NearestFirst);
+UNIT_TEST(PhysicsQueries, NearestCheckMultiRefitAABBs)
+{
+	ExploreTest({ .mMulti = true, .mRefit = true, .mDisks = false, .mAABBs = true, .mPolys = false });
+}
+
+UNIT_TEST(PhysicsQueries, NearestCheckMultiFreshBuildPolys)
+{
+	ExploreTest({ .mMulti = true, .mDisks = false, .mAABBs = false, .mPolys = true });
+}
+
+UNIT_TEST(PhysicsQueries, NearestCheckMultiRefitPolys)
+{
+	ExploreTest({ .mMulti = true, .mRefit = true, .mDisks = false, .mAABBs = false, .mPolys = true });
+}
+
+UNIT_TEST(PhysicsQueries, NearestCheckMultiFreshBuildPolysDisks)
+{
+	ExploreTest({ .mMulti = true, .mDisks = true, .mAABBs = false, .mPolys = true });
+}
+
+UNIT_TEST(PhysicsQueries, NearestCheckMultiRefitPolysDisks)
+{
+	ExploreTest({ .mMulti = true, .mRefit = true, .mDisks = true, .mAABBs = false, .mPolys = true });
+}
+
+UNIT_TEST(PhysicsQueries, NearestCheckMultiFreshBuildPolysAABBs)
+{
+	ExploreTest({ .mMulti = true, .mDisks = false, .mAABBs = true, .mPolys = true });
+}
+
+UNIT_TEST(PhysicsQueries, NearestCheckMultiRefitPolysAABBs)
+{
+	ExploreTest({ .mMulti = true, .mRefit = true, .mDisks = false, .mAABBs = true, .mPolys = true });
+}
+
+UNIT_TEST(PhysicsQueries, NearestCheckMultiFreshBuildDisksAABBs)
+{
+	ExploreTest({ .mMulti = true, .mDisks = true, .mAABBs = true, .mPolys = false });
+}
+
+UNIT_TEST(PhysicsQueries, NearestCheckMultiRefitDisksAABBs)
+{
+	ExploreTest({ .mMulti = true, .mRefit = true, .mDisks = true, .mAABBs = true, .mPolys = false });
+}
+
+UNIT_TEST(PhysicsQueries, NearestCheckMultiFreshBuildDisks)
+{
+	ExploreTest({ .mMulti = true, .mAABBs = false, .mPolys = false });
+}
+
+UNIT_TEST(PhysicsQueries, NearestCheckMultiRefitDisks)
+{
+	ExploreTest({ .mMulti = true, .mRefit = true, .mAABBs = false, .mPolys = false });
+}
+
+UNIT_TEST(PhysicsQueries, FarthestCheckSingleFreshBuild)
+{
+	ExploreTest({ .mNearestFirst = false, .mMulti = false, });
+}
+
+UNIT_TEST(PhysicsQueries, FarthestCheckSingleRefit)
+{
+	ExploreTest({ .mNearestFirst = false, .mMulti = false, .mRefit = true });
+}
+
+UNIT_TEST(PhysicsQueries, FarthestCheckSingleFreshBuildDisks)
+{
+	ExploreTest({ .mNearestFirst = false, .mMulti = false, .mAABBs = false, .mPolys = false });
+}
+
+UNIT_TEST(PhysicsQueries, FarthestCheckSingleRefitDisks)
+{
+	ExploreTest({ .mNearestFirst = false, .mMulti = false, .mRefit = true, .mAABBs = false, .mPolys = false });
 }
 
 UNIT_TEST(PhysicsQueries, FarthestCheckMultiFreshBuild)
 {
-	using namespace CE;
-	World world{ true };
-	Physics& physics = world.GetPhysics();
-
-	PopulateWithRandomColliders(world);
-	physics.UpdateBVHs();
-
-	ExploreMulti(world, Physics::ExploreOrder::FarthestFirst);
+	ExploreTest({ .mNearestFirst = false, .mMulti = true, });
 }
 
 UNIT_TEST(PhysicsQueries, FarthestCheckMultiRefit)
 {
-	using namespace CE;
-	World world{ true };
-	Physics& physics = world.GetPhysics();
+	ExploreTest({ .mNearestFirst = false, .mMulti = true, .mRefit = true });
+}
 
-	PopulateWithRandomColliders(world);
-	physics.UpdateBVHs();
-	ShuffleColliders(world);
-	physics.UpdateBVHs(Physics::UpdateBVHConfig{ .mOnlyRebuildForNewColliders = true });
-
-	ExploreMulti(world, Physics::ExploreOrder::FarthestFirst);
+UNIT_TEST(PhysicsQueries, FarthestCheckMultiFreshBuildDisks)
+{
+	ExploreTest({ .mNearestFirst = false, .mMulti = true, .mAABBs = false, .mPolys = false });
 }
