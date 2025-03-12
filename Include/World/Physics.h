@@ -4,6 +4,7 @@
 #include "Components/Physics2D/PhysicsBody2DComponent.h"
 #include "Utilities/BVH.h"
 #include "Meta/MetaReflect.h"
+#include "Utilities/FixedCapacityPriorityQueue.h"
 
 namespace CE
 {
@@ -349,7 +350,7 @@ bool CE::Physics::Explore(glm::vec2 location,
 		}
 	};
 
-	std::priority_queue<Entry> queue{};
+	FixedCapacityPriorityQueue<Entry, 1024> queue{};
 
 	for (const BVH& bvh : mBVHs)
 	{
@@ -363,70 +364,78 @@ bool CE::Physics::Explore(glm::vec2 location,
 		queue.push(Entry{ BVHNodeEntry{ SignedDistEntry{ getNodeDist(node) }, bvh.GetLayer(), &node}});
 	}
 
-	while (!queue.empty())
+	try
 	{
-		Entry topEntry = queue.top();
-		queue.pop();
-
-		if (std::holds_alternative<BVHNodeEntry>(topEntry.mVariant))
+		while (!queue.empty())
 		{
-			const BVHNodeEntry& bvhNodeEntry = std::get<BVHNodeEntry>(topEntry.mVariant);
-			const BVH::Node* node = bvhNodeEntry.mNode;
-			const CollisionLayer layer = bvhNodeEntry.mFromBVHOfLayer;
+			Entry topEntry = queue.top();
+			queue.pop();
 
-			const BVH& bvh = mBVHs[static_cast<int>(layer)];
-
-			if (node->mTotalNumOfObjects == 0)
+			if (std::holds_alternative<BVHNodeEntry>(topEntry.mVariant))
 			{
-				const BVH::Node& child1 = bvh.mNodes[node->mStartIndex];
-				const BVH::Node& child2 = bvh.mNodes[node->mStartIndex + 1];
+				const BVHNodeEntry& bvhNodeEntry = std::get<BVHNodeEntry>(topEntry.mVariant);
+				const BVH::Node* node = bvhNodeEntry.mNode;
+				const CollisionLayer layer = bvhNodeEntry.mFromBVHOfLayer;
 
-				queue.push(Entry{ BVHNodeEntry{ SignedDistEntry{ getNodeDist(child1) }, layer, &child1 } });
-				queue.push(Entry{ BVHNodeEntry{ SignedDistEntry{ getNodeDist(child2) }, layer, &child2 } });
-				continue;
-			}
+				const BVH& bvh = mBVHs[static_cast<int>(layer)];
 
-			uint32 indexOfId = node->mStartIndex;
-
-			const auto checkNode = [&]<typename T>(uint32 num)
-			{
-				for (uint32 i = 0; i < num; i++, indexOfId++)
+				if (node->mTotalNumOfObjects == 0)
 				{
-					const entt::entity owner = bvh.mIds[indexOfId];
+					const BVH::Node& child1 = bvh.mNodes[node->mStartIndex];
+					const BVH::Node& child2 = bvh.mNodes[node->mStartIndex + 1];
 
-					if (!shouldCheck(owner, args...))
-					{
-						continue;
-					}
-
-					const T* collider = bvh.TryGetCollider<T>(owner);
-
-					if (collider == nullptr)
-					{
-						continue;
-					}
-
-					queue.push(Entry{ EntityEntry{ SignedDistEntry{ collider->SignedDistance(location) }, owner } });
+					queue.push(Entry{ BVHNodeEntry{ SignedDistEntry{ getNodeDist(child1) }, layer, &child1 } });
+					queue.push(Entry{ BVHNodeEntry{ SignedDistEntry{ getNodeDist(child2) }, layer, &child2 } });
+					continue;
 				}
-			};
 
-			const uint32 numPolygons = node->mTotalNumOfObjects - node->mNumOfAABBS - node->mNumOfCircles;
+				uint32 indexOfId = node->mStartIndex;
 
-			checkNode.template operator()<TransformedAABBColliderComponent>(node->mNumOfAABBS);
-			checkNode.template operator()<TransformedDiskColliderComponent>(node->mNumOfCircles);
-			checkNode.template operator()<TransformedPolygonColliderComponent>(numPolygons);
-		}
-		else
-		{
-			const EntityEntry& entry = std::get<EntityEntry>(topEntry.mVariant);
+				const auto checkNode = [&]<typename T>(uint32 num)
+				{
+					for (uint32 i = 0; i < num; i++, indexOfId++)
+					{
+						const entt::entity owner = bvh.mIds[indexOfId];
 
-			onExplore(entry.mEntity, entry.mSignedDist, args...);
-			
-			if (shouldReturn(entry.mEntity, entry.mSignedDist, args...))
+						if (!shouldCheck(owner, args...))
+						{
+							continue;
+						}
+
+						const T* collider = bvh.TryGetCollider<T>(owner);
+
+						if (collider == nullptr)
+						{
+							continue;
+						}
+
+						queue.push(Entry{ EntityEntry{ SignedDistEntry{ collider->SignedDistance(location) }, owner } });
+					}
+				};
+
+				const uint32 numPolygons = node->mTotalNumOfObjects - node->mNumOfAABBS - node->mNumOfCircles;
+
+				checkNode.template operator() < TransformedAABBColliderComponent > (node->mNumOfAABBS);
+				checkNode.template operator() < TransformedDiskColliderComponent > (node->mNumOfCircles);
+				checkNode.template operator() < TransformedPolygonColliderComponent > (numPolygons);
+			}
+			else
 			{
-				return true;
+				const EntityEntry& entry = std::get<EntityEntry>(topEntry.mVariant);
+
+				onExplore(entry.mEntity, entry.mSignedDist, args...);
+
+				if (shouldReturn(entry.mEntity, entry.mSignedDist, args...))
+				{
+					return true;
+				}
 			}
 		}
+	}
+	catch (const std::out_of_range& e)
+	{
+		LOG(LogPhysics, Error, "Search was incomplete - {}", e.what());
+		return false;
 	}
 
 	return false;

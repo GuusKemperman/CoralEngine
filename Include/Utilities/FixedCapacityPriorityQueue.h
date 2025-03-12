@@ -78,9 +78,19 @@ namespace CE
 			clear();
 		}
 
+		SizeType size() const
+		{
+			return mSize;
+		}
+
 		bool empty() const
 		{
 			return mSize == 0;
+		}
+
+		bool full() const
+		{
+			return mSize == Capacity;
 		}
 
 		const T& top() const
@@ -97,7 +107,10 @@ namespace CE
 
 		void push(const T& v)
 		{
-			ASSERT(mSize < Capacity);
+			if (full())
+			{
+				throw std::out_of_range{ "Queue has reached max capacity" };
+			}
 			new (&mData[mSize++])T(v);
 			std::push_heap(begin(), end(), mComparer);
 		}
