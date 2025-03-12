@@ -300,7 +300,17 @@ bool CE::Physics::Explore(glm::vec2 location,
 					// We need to explore these first.
 					return -std::numeric_limits<float>::infinity();
 				}
-				return signedDist;
+
+				// floating point error nonsense can cause
+				// some objects to appear closer than their
+				// bounding box. The signed distance function
+				// works, the bounding box fully encapsulates
+				// the object, and yet...
+				//
+				// Could not find the underlying cause, which
+				// function it happens or when it happens.
+				// But this works.
+				return signedDist - 0.001f;
 			}
 			else
 			{
