@@ -3,7 +3,8 @@
 
 CE::ThreadPool::ThreadPool()
 {
-    const uint32 numOfHardwareThreads = std::max(4u, std::thread::hardware_concurrency());
+    const uint32 hardwareConcurrency = std::thread::hardware_concurrency();
+    const uint32 numOfHardwareThreads = std::max(4u, hardwareConcurrency == 0 ? 0 : hardwareConcurrency - 1);
     LOG(LogCore, Verbose, "Threadpool has {} thread(s)", numOfHardwareThreads);
 
     mThreads.reserve(numOfHardwareThreads);
