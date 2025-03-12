@@ -4,6 +4,7 @@
 #include "Core/AssetManager.h"
 #include "GSON/GSONReadable.h"
 #include "Core/FileIO.h"
+#include "Core/ThreadPool.h"
 
 static constexpr std::string_view sPathToTestResults = "UnitTestResults.txt";
 
@@ -57,11 +58,6 @@ void CE::UnitTestManager::PostConstruct()
 
 
 	std::vector<UnitTest>& tests = GetTests();
-	std::sort(tests.begin(), tests.end(),
-		[](const UnitTest& lhs, const UnitTest& rhs)
-		{
-			return lhs.mCategory < rhs.mCategory;
-		});
 
 	for (const ReadableGSONObject& child : object.GetChildren())
 	{
@@ -98,15 +94,15 @@ void CE::UnitTestManager::PostConstruct()
 
 		int tmp{};
 		*resultMember >> tmp;
-		test->mResult = static_cast<UnitTest::Result>(tmp);
+		test->mASyncState->mResult = static_cast<UnitTest::Result>(tmp);
 
-		test->mResult &= ~UnitTest::OutDated;
+		test->mASyncState->mResult &= ~UnitTest::OutDated;
 
 		// The test has been ran before, let's check if the result is up to date
-		if ((test->mResult & UnitTest::NotRan) == 0
+		if ((test->mASyncState->mResult & UnitTest::NotRan) == 0
 			&& test->mTimeLastRan < timeOfCompilation)
 		{
-			test->mResult |= UnitTest::OutDated;
+			test->mASyncState->mResult |= UnitTest::OutDated;
 		}
 	}
 }
@@ -115,10 +111,12 @@ CE::UnitTestManager::~UnitTestManager()
 {
 	ReadableGSONObject object{};
 
-	for (const UnitTest& test : GetTests())
+	for (UnitTest& test : GetTests())
 	{
+		test.CancelIfRunning();
+
 		ReadableGSONObject& result = object.AddGSONObject(test.mName);
-		result.AddGSONMember("result") << static_cast<int>(test.mResult);
+		result.AddGSONMember("result") << static_cast<int>(test.GetResult());
 		result.AddGSONMember("time") << std::chrono::duration_cast<std::chrono::microseconds>(test.mTimeLastRan.time_since_epoch()).count();
 		result.AddGSONMember("duration") << test.mLastTestDuration.count();
 	}
@@ -136,11 +134,21 @@ CE::UnitTestManager::~UnitTestManager()
 
 void CE::UnitTestManager::RunTests(UnitTest::Result resultFlags)
 {
+	RunTestsAsync(resultFlags);
+
 	for (UnitTest& test : GetTests())
 	{
-		if (test.mResult & resultFlags)
+		test.WaitUntilFinished();
+	}
+}
+
+void CE::UnitTestManager::RunTestsAsync(UnitTest::Result resultFlags)
+{
+	for (UnitTest& test : GetTests())
+	{
+		if (test.GetResult() & resultFlags)
 		{
-			test();
+			test.RunASync();
 		}
 	}
 }
@@ -152,44 +160,100 @@ std::span<CE::UnitTest> CE::UnitTestManager::GetAllTests()
 
 bool CE::Internal::RegisterUnitTest(std::string_view category, std::string_view name, std::function<void()>&& function)
 {
-	GetTests().emplace_back(std::string{category}, std::string{name}, std::move(function));
+	std::vector<UnitTest>& tests = GetTests();
+	UnitTest test{ category, name, std::move(function) };
+
+	static constexpr auto sortByName =
+		[](const UnitTest& lhs, const UnitTest& rhs)
+		{
+			if (lhs.GetCategory() == rhs.GetCategory())
+			{
+				return lhs.GetName() < rhs.GetName();
+			}
+			return lhs.GetCategory() < rhs.GetCategory();
+		};
+
+	auto whereToInsert = std::upper_bound(tests.begin(), tests.end(), test, sortByName);
+	tests.insert(whereToInsert, std::move(test));
+
 	return true;
 }
 
-void CE::UnitTest::operator()()
+void CE::UnitTest::RunASync()
 {
-	mTimeLastRan = std::chrono::system_clock::now();
-	LOG(LogUnitTests, Message, "Running {}::{}", mCategory, mName);
-
-	try
+	if (GetResult() & (WaitingForThread | Running))
 	{
-		mFunc();
-		mResult = Success;
-	}
-	catch (const std::exception& e)
-	{
-		LOG(LogUnitTest, Error, "Unit test {} threw exception - {}", mName, e.what());
-		throw Failure;
-	}
-	catch (Result result)
-	{
-		mResult = result;
-		LOG(LogUnitTest, Error, "Unit test {} failed", mName);
-	}
-	catch (...)
-	{
-		LOG(LogUnitTest, Error, "Unit test {} threw unknown exception", mName);
-		mResult = Failure;
+		return;
 	}
 
-	LOG(LogUnitTests, Message, "Finished {}::{}", mCategory, mName);
+	Clear();
 
-	mLastTestDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - mTimeLastRan);
+	mASyncState->mResult = WaitingForThread;
+	mASyncState->mPendingFuture = ThreadPool::Get().Enqueue([this]()
+		{
+			if (mASyncState->mResult != WaitingForThread)
+			{
+				return;
+			}
+
+			mASyncState->mResult = Running;
+
+			mTimeLastRan = std::chrono::system_clock::now();
+			LOG(LogUnitTests, Message, "Running {}::{}", mCategory, mName);
+
+			try
+			{
+				mFunc();
+				mASyncState->mResult = Success;
+			}
+			catch (const std::exception& e)
+			{
+				LOG(LogUnitTest, Error, "Unit test {} threw exception - {}", mName, e.what());
+				throw Failure;
+			}
+			catch (Result result)
+			{
+				mASyncState->mResult = result;
+				LOG(LogUnitTest, Error, "Unit test {} failed", mName);
+			}
+			catch (...)
+			{
+				LOG(LogUnitTest, Error, "Unit test {} threw unknown exception", mName);
+				mASyncState->mResult = Failure;
+			}
+
+			LOG(LogUnitTests, Message, "Finished {}::{}", mCategory, mName);
+
+			mLastTestDuration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - mTimeLastRan);
+		});
+}
+
+void CE::UnitTest::WaitUntilFinished() const
+{
+	if (mASyncState->mPendingFuture.valid())
+	{
+		mASyncState->mPendingFuture.get();
+	}
+}
+
+void CE::UnitTest::CancelIfRunning()
+{
+	if (GetResult() & WaitingForThread)
+	{
+		Clear();
+	}
+}
+
+void CE::UnitTest::Run()
+{
+	RunASync();
+	WaitUntilFinished();
 }
 
 void CE::UnitTest::Clear()
 {
-	mResult = NotRan;
+	mASyncState->mResult = NotRan;
+	WaitUntilFinished();
 	mTimeLastRan = {};
 	mLastTestDuration = {};
 }

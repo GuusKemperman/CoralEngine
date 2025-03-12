@@ -179,7 +179,7 @@ UNIT_TEST(Events, OnDestructEntireWorld)
 
 	// I guess we can't really test the num of destructs if the instance were destroyed..
 	// But we have the static one atleast
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfDestructs == 1);
+	TEST_ASSERT(EmptyEventTestingComponent::GetValue("mNumOfDestructs") == 1);
 }
 
 UNIT_TEST(Events, OnDestructRemoveComponent)
@@ -195,7 +195,7 @@ UNIT_TEST(Events, OnDestructRemoveComponent)
 
 	// I guess we can't really test the num of destructs if the instance were destroyed..
 	// But we have the static one atleast
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfDestructs == 1);
+	TEST_ASSERT(EmptyEventTestingComponent::GetValue("mNumOfDestructs") == 1);
 }
 
 UNIT_TEST(Events, OnDestructDestroyEntity)
@@ -212,7 +212,7 @@ UNIT_TEST(Events, OnDestructDestroyEntity)
 
 	// I guess we can't really test the num of destructs if the instance were destroyed..
 	// But we have the static one atleast
-	TEST_ASSERT(EmptyEventTestingComponent::sNumOfDestructs == 1);
+	TEST_ASSERT(EmptyEventTestingComponent::GetValue("mNumOfDestructs") == 1);
 }
 
 UNIT_TEST(Events, CollisionEvents)

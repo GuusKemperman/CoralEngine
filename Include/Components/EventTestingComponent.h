@@ -24,15 +24,6 @@ namespace CE
 
 		static uint32 GetValue(Name valueName);
 
-		static inline uint32 sNumOfConstructs{};
-		static inline uint32 sNumOfDestructs{};
-		static inline uint32 sNumOfBeginPlays{};
-		static inline uint32 sNumOfTicks{};
-		static inline uint32 sNumOfFixedTicks{};
-		static inline uint32 sNumOfCollisionEntry{};
-		static inline uint32 sNumOfCollisionStay{};
-		static inline uint32 sNumOfCollisionExit{};
-
 		static void Reset();
 
 	private:

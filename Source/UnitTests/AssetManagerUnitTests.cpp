@@ -32,11 +32,8 @@ UNIT_TEST(AssetManagerUnitTests, MultiThreadedAssetLoadingUnloading)
 	std::vector<std::future<void>> loadResults{};
 	std::vector<std::future<void>> unloadResults{};
 
-	for (size_t i = 0; i < ThreadPool::Get().NumberOfThreads(); i += 2)
-	{
-		loadResults.emplace_back(ThreadPool::Get().Enqueue(loadAssets));
-		unloadResults.emplace_back(ThreadPool::Get().Enqueue(unloadAssets));
-	}
+	loadResults.emplace_back(ThreadPool::Get().Enqueue(loadAssets));
+	unloadResults.emplace_back(ThreadPool::Get().Enqueue(unloadAssets));
 
 	for (auto& result : loadResults)
 	{

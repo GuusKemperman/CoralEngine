@@ -2,12 +2,23 @@
 #include "Core/EngineSubsystem.h"
 
 // To borrow the CONCAT macro
+#include <future>
+
 #include "Meta/MetaReflect.h"
 
 namespace CE
 {
-	struct UnitTest
+	class UnitTest
 	{
+		friend class UnitTestManager;
+	public:
+		UnitTest(std::string_view category, std::string_view name, std::function<void()>&& result) :
+			mCategory(category),
+			mName(name),
+			mFunc(std::move(result))
+		{
+		}
+
 		enum Result
 		{
 			NotRan = 1,
@@ -16,26 +27,40 @@ namespace CE
 
 			// The test was run on an older version
 			OutDated = 1 << 3,
+			WaitingForThread = 1 << 4,
+			Running = 1 << 5,
 			OutDatedAndFailed = Failure | OutDated,
 			OutDatedAndSuccess = Success | OutDated,
 			All = NotRan | Failure | Success | OutDated
 		};
 
-		UnitTest(std::string&& category, std::string&& name, std::function<void()>&& result) :
-			mCategory(std::move(category)),
-			mName(std::move(name)),
-			mFunc(std::move(result))
-		{
-		}
+		void RunASync();
+		void WaitUntilFinished() const;
+		void CancelIfRunning();
 
-		void operator()();
+		void Run();
 
 		void Clear();
 
-		std::string mCategory{};
-		std::string mName{};
+
+		Result GetResult() const { return static_cast<Result>(mASyncState->mResult.load()); }
+
+		std::string_view GetCategory() const { return mCategory; }
+		std::string_view GetName() const { return mName; }
+		std::chrono::system_clock::time_point GetTimeLastRan() const { return mTimeLastRan; }
+		std::chrono::milliseconds GetLastTestDuration() const { return mLastTestDuration; }
+
+	private:
+		struct ASyncState
+		{
+			std::atomic<int> mResult = NotRan;
+			std::future<void> mPendingFuture{};
+		};
+		std::unique_ptr<ASyncState> mASyncState = std::make_unique<ASyncState>();
+
+		std::string_view mCategory{};
+		std::string_view mName{};
 		std::function<void()> mFunc{};
-		int mResult = NotRan;
 		std::chrono::system_clock::time_point mTimeLastRan{};
 		std::chrono::milliseconds mLastTestDuration{};
 	};
@@ -49,6 +74,8 @@ namespace CE
 	
 	public:
 		void RunTests(UnitTest::Result resultFlags);
+
+		void RunTestsAsync(UnitTest::Result resultFlags);
 
 		std::span<UnitTest> GetAllTests();
 	};

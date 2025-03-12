@@ -24,19 +24,19 @@ void CE::UnitTestEditorSystem::Tick(const float)
 	{
 		if (ImGui::Button("Run failed"))
 		{
-			UnitTestManager::Get().RunTests(static_cast<UnitTest::Result>(UnitTest::NotRan | UnitTest::Failure));
+			UnitTestManager::Get().RunTestsAsync(static_cast<UnitTest::Result>(UnitTest::NotRan | UnitTest::Failure));
 		}
 		ImGui::SetItemTooltip("Runs all failed tests, and those that have never been run.");
 
 		if (ImGui::Button("Run outdated"))
 		{
-			UnitTestManager::Get().RunTests(static_cast<UnitTest::Result>(UnitTest::NotRan | UnitTest::OutDated));
+			UnitTestManager::Get().RunTestsAsync(static_cast<UnitTest::Result>(UnitTest::NotRan | UnitTest::OutDated));
 		}
 		ImGui::SetItemTooltip("Runs all tests that were run before the last compilation, and those that have never been run.");
 
 		if (ImGui::Button("Run all"))
 		{
-			UnitTestManager::Get().RunTests(UnitTest::All);
+			UnitTestManager::Get().RunTestsAsync(UnitTest::All);
 		}
 		ImGui::SetItemTooltip("Runs all tests, even those that succeeded.");
 
@@ -57,15 +57,23 @@ void CE::UnitTestEditorSystem::Tick(const float)
 
 			if (result & UnitTest::Failure)
 			{
-				color = { 1.0f, 0.0f, 0.0f, 1.0f };
+				color = { 1.0f, 0.0f, 0.0f, 1.0f }; // Vibrant Red (Error State)
 			}
 			else if (result & UnitTest::NotRan)
 			{
-				color = { 1.0f, 0.5f, 0.0f, 1.0f };
+				color = { 1.0f, 0.6f, 0.0f, 1.0f }; // Golden Orange (Pending/Not Started)
 			}
-			else
+			else if (result & UnitTest::Running)
 			{
-				color = { 0.0f, 1.0f, 0.0f, 1.0f };
+				color = { 0.0f, 0.7f, 1.0f, 1.0f }; // Electric Blue (Active Execution)
+			}
+			else if (result & UnitTest::WaitingForThread)
+			{
+				color = { 0.8f, 0.0f, 0.8f, 1.0f }; // Purple (Queued/Waiting)
+			}
+			else if (result & UnitTest::Success)
+			{
+				color = { 0.1f, 0.9f, 0.1f, 1.0f }; // Fresh Green (Successful Completion)
 			}
 
 			if (result & UnitTest::OutDated)
@@ -82,18 +90,18 @@ void CE::UnitTestEditorSystem::Tick(const float)
 		last = std::find_if(first, allTests.end(),
 			[&first](const UnitTest& unitTest)
 			{
-				return unitTest.mCategory != first->mCategory;
+				return unitTest.GetCategory() != first->GetCategory();
 			});
 
 		int combinedResult{};
 
 		for (auto it = first; it != last; ++it)
 		{
-			combinedResult |= it->mResult;
+			combinedResult |= it->GetResult();
 		}
 
 		bool runAllInCategory{};
-		std::string categoryText{ first->mCategory };
+		std::string categoryText{ first->GetCategory() };
 		ImVec4 categoryColor = getTextColor(categoryText, combinedResult);
 
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.00f, 0.00f, 0.00f, 0.00f));
@@ -110,7 +118,7 @@ void CE::UnitTestEditorSystem::Tick(const float)
 		{
 			for (auto it = first; it != last; ++it)
 			{
-				(*it)();
+				it->RunASync();
 			}
 		}
 
@@ -128,12 +136,20 @@ void CE::UnitTestEditorSystem::Tick(const float)
 
 			if (runAllInCategory)
 			{
-				test();
+				test.RunASync();
 			}
 
 			auto displayToolTip = [&test]
 				{
-					if (test.mResult & UnitTest::NotRan)
+					if (test.GetResult() & UnitTest::WaitingForThread)
+					{
+						ImGui::TextUnformatted("Test is queued, will be ran shortly.");
+					}
+					else if (test.GetResult() & UnitTest::Running)
+					{
+						ImGui::TextUnformatted("Test is running...");
+					}
+					else if (test.GetResult() & UnitTest::NotRan)
 					{
 						ImGui::TextUnformatted("Test has not been run yet.");
 					}
@@ -141,22 +157,22 @@ void CE::UnitTestEditorSystem::Tick(const float)
 					{
 						const auto now = std::chrono::system_clock::now();
 
-						if (test.mResult & UnitTest::OutDated)
+						if (test.GetResult() & UnitTest::OutDated)
 						{
 							ImGui::TextUnformatted(Format("Results are out of date, ran {:2}:{:2}:{:2} ago",
-								std::chrono::duration_cast<std::chrono::hours>(now - test.mTimeLastRan).count(),
-								std::chrono::duration_cast<std::chrono::minutes>(now - test.mTimeLastRan).count() % 60,
-								std::chrono::duration_cast<std::chrono::seconds>(now - test.mTimeLastRan).count() % 60).c_str());
+								std::chrono::duration_cast<std::chrono::hours>(now - test.GetTimeLastRan()).count(),
+								std::chrono::duration_cast<std::chrono::minutes>(now - test.GetTimeLastRan()).count() % 60,
+								std::chrono::duration_cast<std::chrono::seconds>(now - test.GetTimeLastRan()).count() % 60).c_str());
 						}
 
-						ImGui::TextUnformatted(Format("Test took {} ms", test.mLastTestDuration.count()).c_str());
+						ImGui::TextUnformatted(Format("Test took {} ms", test.GetLastTestDuration().count()).c_str());
 					}
 
 					ImGui::EndTooltip();
 				};
 
-			std::string testText{ test.mName };
-			ImVec4 color = getTextColor(testText, test.mResult);
+			std::string testText{ test.GetName() };
+			ImVec4 color = getTextColor(testText, test.GetResult());
 
 			ImGui::PushStyleColor(ImGuiCol_Text, color);
 			ImGui::TextUnformatted(testText.c_str());
@@ -167,15 +183,17 @@ void CE::UnitTestEditorSystem::Tick(const float)
 				displayToolTip();
 			}
 
-			ImGui::PushID(test.mName.c_str());
+			ImGui::PushID(testText.c_str());
 			const float buttonWidth = ImGui::CalcTextSize("|>", NULL, true).x;
 			ImGui::SameLine(ImGui::GetWindowWidth() - buttonWidth - 16.0f);
 
 			ImGui::PushStyleColor(ImGuiCol_Text, color);
+			ImGui::BeginDisabled(test.GetResult() & (UnitTest::WaitingForThread | UnitTest::Running));
 			if (ImGui::SmallButton("|>"))
 			{
-				test();
+				test.RunASync();
 			}
+			ImGui::EndDisabled();
 			ImGui::PopStyleColor();
 
 			if (ImGui::BeginItemTooltip())

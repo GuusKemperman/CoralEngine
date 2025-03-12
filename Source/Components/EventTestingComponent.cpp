@@ -6,6 +6,18 @@
 #include "Utilities/Events.h"
 #include "Utilities/Reflect/ReflectComponentType.h"
 
+namespace
+{
+	thread_local uint32 sNumOfConstructs{};
+	thread_local uint32 sNumOfDestructs{};
+	thread_local uint32 sNumOfBeginPlays{};
+	thread_local uint32 sNumOfTicks{};
+	thread_local uint32 sNumOfFixedTicks{};
+	thread_local uint32 sNumOfCollisionEntry{};
+	thread_local uint32 sNumOfCollisionStay{};
+	thread_local uint32 sNumOfCollisionExit{};
+}
+
 void CE::EmptyEventTestingComponent::OnConstruct(World&, entt::entity)
 {
 	++sNumOfConstructs;
