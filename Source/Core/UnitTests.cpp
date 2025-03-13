@@ -134,11 +134,12 @@ CE::UnitTestManager::~UnitTestManager()
 
 void CE::UnitTestManager::RunTests(UnitTest::Result resultFlags)
 {
-	RunTestsAsync(resultFlags);
-
 	for (UnitTest& test : GetTests())
 	{
-		test.WaitUntilFinished();
+		if (test.GetResult() & resultFlags)
+		{
+			test.Run();
+		}
 	}
 }
 

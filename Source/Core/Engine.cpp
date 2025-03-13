@@ -79,11 +79,10 @@ CE::Engine::Engine(const EngineConfig& config)
 		uint32 numFailed = 0;
 
 		UnitTestManager& testManager = UnitTestManager::Get();
-		testManager.RunTestsAsync(UnitTest::Result::All);
+		testManager.RunTests(UnitTest::Result::All);
 
 		for (UnitTest& test : UnitTestManager::Get().GetAllTests())
 		{
-			test.WaitUntilFinished();
 			if (test.GetResult() != UnitTest::Success)
 			{
 				numFailed++;

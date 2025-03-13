@@ -374,9 +374,9 @@ CE::BinaryGSONObject CE::Archiver::SerializeInternal(const World& world, std::ve
 			}));
 	}
 
-	for (const std::future<void>& future : storageFutures)
+	for (std::future<void>& future : storageFutures)
 	{
-		future.wait();
+		future.get();
 	}
 
 	std::erase_if(save.GetChildren(),
