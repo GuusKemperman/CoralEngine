@@ -264,9 +264,62 @@ bool CE::Physics::Explore(glm::vec2 location,
 	const ShouldCheck& shouldCheck, 
 	CallbackAdditionalArgs&&... args) const
 {
+	struct BVHNodeEntry
+	{
+		const BVH::Node* mNode;
+		CollisionLayer mFromBVHOfLayer;
+	};
+
 	struct SignedDistEntry
 	{
-		float mSignedDist{};
+		SignedDistEntry(const BVH::Node& node, CollisionLayer fromBVH, glm::vec2 location) :
+			mSignedDist([&]
+			{
+					if constexpr (Order == ExploreOrder::NearestFirst)
+					{
+						const float signedDist = node.mBoundingBox.SignedDistance(location);
+
+						if (signedDist <= 0.0f)
+						{
+							// We are inside the box.
+							// Any entities in this box (or its children)
+							// could be directly touching our query point.
+							// We need to explore these first.
+							return -std::numeric_limits<float>::infinity();
+						}
+
+						// floating point error nonsense can cause
+						// some objects to appear closer than their
+						// bounding box. The signed distance function
+						// works, the bounding box fully encapsulates
+						// the object, and yet...
+						//
+						// Could not find the underlying cause, which
+						// function it happens or when it happens.
+						// But this works.
+						return signedDist - 0.001f;
+					}
+					else
+					{
+						// todo optimise
+						return glm::sqrt(glm::max(
+							glm::max(glm::distance2(node.mBoundingBox.mMin, location), glm::distance2(node.mBoundingBox.mMax, location)),
+							glm::max(glm::distance2(glm::vec2{ node.mBoundingBox.mMin.x, node.mBoundingBox.mMax.y }, location),
+								glm::distance2(glm::vec2{ node.mBoundingBox.mMax.x, node.mBoundingBox.mMin.y }, location))));
+					}
+			}()),
+			mIsBVHNode(true),
+			mBVHNodeEntry{ &node, fromBVH }
+		{}
+
+		SignedDistEntry(entt::entity entity, float signedDist) :
+			mSignedDist(signedDist),
+			mIsBVHNode(false),
+			mEntity(entity)
+		{}
+
+		float mSignedDist;
+		bool mIsBVHNode;
 
 		bool operator<(const SignedDistEntry& other) const
 		{
@@ -279,78 +332,15 @@ bool CE::Physics::Explore(glm::vec2 location,
 				return mSignedDist < other.mSignedDist;
 			}
 		}
-	};
 
-	struct BVHNodeEntry : SignedDistEntry
-	{
-		CollisionLayer mFromBVHOfLayer{};
-		const BVH::Node* mNode{};
-	};
-
-	auto getNodeDist = [=](const BVH::Node& node)
+		union
 		{
-			if constexpr (Order == ExploreOrder::NearestFirst)
-			{
-				const float signedDist = node.mBoundingBox.SignedDistance(location);
-
-				if (signedDist <= 0.0f)
-				{
-					// We are inside the box.
-					// Any entities in this box (or its children)
-					// could be directly touching our query point.
-					// We need to explore these first.
-					return -std::numeric_limits<float>::infinity();
-				}
-
-				// floating point error nonsense can cause
-				// some objects to appear closer than their
-				// bounding box. The signed distance function
-				// works, the bounding box fully encapsulates
-				// the object, and yet...
-				//
-				// Could not find the underlying cause, which
-				// function it happens or when it happens.
-				// But this works.
-				return signedDist - 0.001f;
-			}
-			else
-			{
-				// todo optimise
-				return glm::sqrt(glm::max(
-					glm::max(glm::distance2(node.mBoundingBox.mMin, location), glm::distance2(node.mBoundingBox.mMax, location)),
-					glm::max(glm::distance2(glm::vec2{ node.mBoundingBox.mMin.x, node.mBoundingBox.mMax.y }, location),
-						glm::distance2(glm::vec2{ node.mBoundingBox.mMax.x, node.mBoundingBox.mMin.y }, location))));
-			}
+			BVHNodeEntry mBVHNodeEntry;
+			entt::entity mEntity;
 		};
-
-	struct EntityEntry : SignedDistEntry
-	{
-		entt::entity mEntity{};
 	};
 
-	struct Entry
-	{
-		std::variant<BVHNodeEntry, EntityEntry> mVariant;
-
-		bool operator<(const Entry& other) const
-		{
-			return std::visit(
-				[&](const auto& entry)
-				{
-					const SignedDistEntry& signedEntry = static_cast<const SignedDistEntry&>(entry);
-
-					return std::visit(
-						[&](const auto& otherEntry)
-						{
-							const SignedDistEntry& otherSignedEntry = static_cast<const SignedDistEntry&>(otherEntry);
-							return signedEntry < otherSignedEntry;
-						}, other.mVariant);
-				},
-				mVariant);
-		}
-	};
-
-	FixedCapacityPriorityQueue<Entry, 1024> queue{};
+	FixedCapacityPriorityQueue<SignedDistEntry, 1024> queue{};
 
 	for (const BVH& bvh : mBVHs)
 	{
@@ -360,20 +350,19 @@ bool CE::Physics::Explore(glm::vec2 location,
 			continue;
 		}
 
-		const BVH::Node& node = bvh.mNodes.front();
-		queue.push(Entry{ BVHNodeEntry{ SignedDistEntry{ getNodeDist(node) }, bvh.GetLayer(), &node}});
+		queue.emplace(bvh.mNodes.front(), bvh.GetLayer(), location);
 	}
 
 	try
 	{
 		while (!queue.empty())
 		{
-			Entry topEntry = queue.top();
+			SignedDistEntry topEntry = queue.top();
 			queue.pop();
 
-			if (std::holds_alternative<BVHNodeEntry>(topEntry.mVariant))
+			if (topEntry.mIsBVHNode)
 			{
-				const BVHNodeEntry& bvhNodeEntry = std::get<BVHNodeEntry>(topEntry.mVariant);
+				const BVHNodeEntry& bvhNodeEntry = topEntry.mBVHNodeEntry;
 				const BVH::Node* node = bvhNodeEntry.mNode;
 				const CollisionLayer layer = bvhNodeEntry.mFromBVHOfLayer;
 
@@ -384,8 +373,8 @@ bool CE::Physics::Explore(glm::vec2 location,
 					const BVH::Node& child1 = bvh.mNodes[node->mStartIndex];
 					const BVH::Node& child2 = bvh.mNodes[node->mStartIndex + 1];
 
-					queue.push(Entry{ BVHNodeEntry{ SignedDistEntry{ getNodeDist(child1) }, layer, &child1 } });
-					queue.push(Entry{ BVHNodeEntry{ SignedDistEntry{ getNodeDist(child2) }, layer, &child2 } });
+					queue.emplace(child1, layer, location);
+					queue.emplace(child2, layer, location);
 					continue;
 				}
 
@@ -409,23 +398,21 @@ bool CE::Physics::Explore(glm::vec2 location,
 							continue;
 						}
 
-						queue.push(Entry{ EntityEntry{ SignedDistEntry{ collider->SignedDistance(location) }, owner } });
+						queue.emplace(owner, collider->SignedDistance(location));
 					}
 				};
 
 				const uint32 numPolygons = node->mTotalNumOfObjects - node->mNumOfAABBS - node->mNumOfCircles;
 
-				checkNode.template operator() < TransformedAABBColliderComponent > (node->mNumOfAABBS);
-				checkNode.template operator() < TransformedDiskColliderComponent > (node->mNumOfCircles);
-				checkNode.template operator() < TransformedPolygonColliderComponent > (numPolygons);
+				checkNode.template operator()<TransformedAABBColliderComponent>(node->mNumOfAABBS);
+				checkNode.template operator()<TransformedDiskColliderComponent>(node->mNumOfCircles);
+				checkNode.template operator()<TransformedPolygonColliderComponent>(numPolygons);
 			}
 			else
 			{
-				const EntityEntry& entry = std::get<EntityEntry>(topEntry.mVariant);
+				onExplore(topEntry.mEntity, topEntry.mSignedDist, args...);
 
-				onExplore(entry.mEntity, entry.mSignedDist, args...);
-
-				if (shouldReturn(entry.mEntity, entry.mSignedDist, args...))
+				if (shouldReturn(topEntry.mEntity, topEntry.mSignedDist, args...))
 				{
 					return true;
 				}
