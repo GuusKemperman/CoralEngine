@@ -17,9 +17,9 @@ namespace CE
 			mSize(other.mSize),
 			mComparer(other.mComparer)
 		{
-			for (size_t i = 0; i < mSize; i++)
+			for (auto it = begin(), otherIt = other.begin(); it != end(); ++it, ++otherIt)
 			{
-				new(&mData[i])T(other.mData[i]);
+				new(&*it)T(*otherIt);
 			}
 		}
 
@@ -27,9 +27,9 @@ namespace CE
 			mSize(other.mSize),
 			mComparer(std::move(other.mComparer))
 		{
-			for (size_t i = 0; i < mSize; i++)
+			for (auto it = begin(), otherIt = other.begin(); it != end(); ++it, ++otherIt)
 			{
-				new(&mData[i])T(std::move(other.mData[i]));
+				new(&*it)T(std::move(*otherIt));
 			}
 		}
 
@@ -45,9 +45,9 @@ namespace CE
 			mSize = other.mSize;
 			mComparer = other.mComparer;
 
-			for (size_t i = 0; i < mSize; i++)
+			for (auto it = begin(), otherIt = other.begin(); it != end(); ++it, ++otherIt)
 			{
-				mData[i] = other.mData[i];
+				new(&*it)T(*otherIt);
 			}
 
 			return *this;
@@ -65,10 +65,12 @@ namespace CE
 			mSize = other.mSize;
 			mComparer = std::move(other.mComparer);
 
-			for (size_t i = 0; i < mSize; i++)
+			for (auto it = begin(), otherIt = other.begin(); it != end(); ++it, ++otherIt)
 			{
-				mData[i] = std::move(other.mData[i]);
+				new(&*it)T(*otherIt);
 			}
+
+			other.clear();
 
 			return *this;
 		}
@@ -96,22 +98,34 @@ namespace CE
 		const T& top() const
 		{
 			ASSERT(!empty());
-			return mData[0];
+			return *begin();
 		}
 
 		T& top()
 		{
 			ASSERT(!empty());
-			return mData[0];
+			return *begin();
 		}
 
 		void push(const T& v)
+		{
+			emplace(v);
+		}
+
+		void push(T&& v)
+		{
+			emplace(std::move(v));
+		}
+
+		template<typename... Args>
+		void emplace(Args&&... args)
 		{
 			if (full())
 			{
 				throw std::out_of_range{ "Queue has reached max capacity" };
 			}
-			new (&mData[mSize++])T(v);
+			new (&*end())T(std::forward<Args>(args)...);
+			++mSize;
 			std::push_heap(begin(), end(), mComparer);
 		}
 
@@ -119,7 +133,8 @@ namespace CE
 		{
 			ASSERT(!empty());
 			std::pop_heap(begin(), end(), mComparer);
-			mData[--mSize].~T();
+			--mSize;
+			end()->~T();
 		}
 
 		void clear()
@@ -128,22 +143,23 @@ namespace CE
 			{
 				value.~T();
 			}
+			mSize = 0;
 		}
 
 	private:
 		auto begin()
 		{
-			return mData.begin();
+			return reinterpret_cast<T*>(mData.data());
 		}
 
 		auto end()
 		{
-			auto it = mData.begin();
+			auto it = begin();
 			std::advance(it, mSize);
 			return it;
 		}
 
-		std::array<T, Capacity> mData;
+		std::array<char, Capacity * sizeof(T)> mData;
 		SizeType mSize{};
 		Comparer mComparer{};
 	};
