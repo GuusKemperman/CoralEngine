@@ -119,7 +119,6 @@ void CE::World::BeginPlay()
 	// Reset the total time elapsed, deltaTime, etc
 	mTime = {};
 
-	LOG(LogCore, Verbose, "World will begin play");
 	mRegistry->BeginPlay();
 }
 
