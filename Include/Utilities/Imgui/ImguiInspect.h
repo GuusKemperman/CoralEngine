@@ -1,5 +1,6 @@
 #pragma once
 #ifdef EDITOR
+#include <magic_enum/magic_enum_flags.hpp>
 #include "magic_enum/magic_enum.hpp"
 
 #include "Utilities/Math.h"
@@ -74,7 +75,8 @@ IMGUI_AUTO_DEFINE_INLINE(template<>, entt::entity, ImGui::Auto(reinterpret_cast<
 namespace ImGui
 {
 	template<typename EnumType>
-	struct Auto_t<EnumType, std::enable_if_t<magic_enum::detail::is_enum_v<EnumType>>>
+	struct Auto_t<EnumType, std::enable_if_t<magic_enum::detail::is_enum_v<EnumType>
+		&& !magic_enum::detail::has_is_flags<EnumType>::value>>
 	{
 		static void Auto(EnumType& var, const std::string& name)
 		{
@@ -94,6 +96,43 @@ namespace ImGui
 			}
 
 			Search::EndCombo();
+		}
+	};
+
+	template<typename EnumType>
+	struct Auto_t<EnumType, std::enable_if_t<magic_enum::detail::is_enum_v<EnumType>
+		&& magic_enum::detail::has_is_flags<EnumType>::value>>
+	{
+		static void Auto(EnumType& var, const std::string& name)
+		{
+			using namespace CE;
+			using Underlying = std::underlying_type_t<EnumType>;
+
+			static constexpr EnumType knownFlagsMask = []()
+				{
+					Underlying known{};
+					for (const EnumType value : magic_enum::enum_values<EnumType>())
+					{
+						known |= static_cast<Underlying>(value);
+					}
+					return static_cast<EnumType>(known);
+				}();
+
+			EnumType onlyKnownBits = static_cast<EnumType>(knownFlagsMask & static_cast<Underlying>(var));
+
+			if (ImGui::BeginCombo(name.c_str(), magic_enum::enum_flags_name(onlyKnownBits).c_str()))
+			{
+				for (const auto& [value, valName] : magic_enum::enum_entries<EnumType>())
+				{
+					bool isToggled = static_cast<Underlying>(var) & static_cast<Underlying>(value);
+
+					if (ShowInspectUI(std::string{ valName }, isToggled))
+					{
+						var = static_cast<EnumType>(static_cast<Underlying>(var) ^ static_cast<Underlying>(value));
+					}
+				}
+				ImGui::EndCombo();
+			}
 		}
 	};
 
